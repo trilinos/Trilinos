@@ -43,7 +43,7 @@
 #include "Teuchos_UnitTestHelpers.hpp"
 #include "Stokhos_UnitTestHelpers.hpp"
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 // For computing DeviceConfig
 #include "Kokkos_hwloc.hpp"

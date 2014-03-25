@@ -1244,4 +1244,7 @@ describe (Teuchos::FancyOStream& out,
 } // namespace Details
 } // namespace Ifpack2
 
+#define IFPACK2_DETAILS_CHEBYSHEV_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::Details::Chebyshev< S, Tpetra::MultiVector<S, LO, GO, N> >;
+
 #endif // IFPACK2_DETAILS_CHEBYSHEV_DEF_HPP

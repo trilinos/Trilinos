@@ -102,10 +102,10 @@ namespace Xpetra {
     virtual ArrayView< const int > getExportPIDs() const = 0;
 
     //! The source Map used to construct this Export.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const = 0;
+    virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const = 0;
 
     //! The target Map used to construct this Export.
-    virtual const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const = 0;
+    virtual Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const = 0;
 
     //@}
 

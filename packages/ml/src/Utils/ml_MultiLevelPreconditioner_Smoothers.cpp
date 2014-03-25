@@ -96,6 +96,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   int num_smoother_steps = List_.get("smoother: sweeps", 2);
 
   double omega = List_.get("smoother: damping factor",1.0);
+  ml_->Cheby_eig_boost = List_.get("smoother: Chebyshev eig boost", 1.1);
 
   int pre_or_post = 0;
   std::string PreOrPostSmoother = List_.get("smoother: pre or post","both");
@@ -132,6 +133,19 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   if (ChebyshevAlpha == -2.) ChebyshevAlpha = List_.get("smoother: Chebyshev alpha", -2.0);
 
   int SmootherLevels = NumLevels_;
+
+  int NumVerticalNodes = List_.get("smoother: line direction nodes",-1);
+  std::string MeshNumbering = List_.get("smoother: line orientation","use coordinates");
+  std::string GroupDofsString= List_.get("smoother: line group dofs","separate");
+  std::string GSType   = List_.get("smoother: line GS Type","symmetric");
+
+                                  /* 1: group all dofs per node within a line */
+                                  /*    into a single block. Current version  */
+                                  /*    is not efficient.                     */
+                                  /* 0: don't group dofs per node within a    */
+                                  /*    line. Instead if we have n dofs per   */
+                                  /*    node, we create n tridiagonal solves  */
+                                  /*    for each line.                        */
 
   int ParaSailsN = List_.get("smoother: ParaSails levels",0);
 
@@ -493,18 +507,58 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                           << MyPreOrPostSmoother << ")" << std::endl;
 
        int nnn = ml_->Amat[currentLevel].outvec_leng;
-       int NumVerticalNodes = smList.get("smoother: line direction nodes",-1);
-       std::string MeshNumbering = smList.get("smoother: line orientation","not specified");
+       int MyNumVerticalNodes = smList.get("smoother: line direction nodes",NumVerticalNodes);
+       std::string MyMeshNumbering = smList.get("smoother: line orientation",MeshNumbering);
+       std::string MyGSType = smList.get("smoother: line GS Type",GSType);
+       std::string MyGroupDofsString= List_.get("smoother: line group dofs",GroupDofsString);
+       int MyGroupDofsInLine = 0;
 
-       if  (NumVerticalNodes == -1) {
-          std::cerr << ErrorMsg_ << "must supply 'line direction nodes' with " << MySmoother << "\n";
-          exit(EXIT_FAILURE);
+       if (GroupDofsString == "separate") MyGroupDofsInLine = 0;
+       if (GroupDofsString == "grouped")  MyGroupDofsInLine = 1;
+                                  /* 1: group all dofs per node within a line */
+                                  /*    into a single block. Current version  */
+                                  /*    is not efficient.                     */
+                                  /* 0: don't group dofs per node within a    */
+                                  /*    line. Instead if we have n dofs per   */
+                                  /*    node, we create n tridiagonal solves  */
+                                  /*    for each line.                        */
+       ML_GS_SWEEP_TYPE GS_type;
+       if      (GSType == "standard") GS_type = ML_GS_standard;
+       else if (GSType == "symmetric")  GS_type = ML_GS_symmetric;
+       else if (GSType == "efficient symmetric") GS_type = ML_GS_efficient_symmetric;
+       else {
+             std::cerr << ErrorMsg_ << "smoother: line GS Type not recognized ==>" << MyGSType<< "\n";
+             exit(EXIT_FAILURE);
        }
+
+       /* the number of nodes per line and even the orientation can change level */
+       /* by level, so if these are in the P (via the semicoarsening        */
+       /* option), then we should use these values. Basically, this code started  */
+       /* out as only a fine level smoother ... so I set up things like          */
+       /* smoother:line orientation. However, for multilevel work it seems better*/
+       /* to grab these from A, which should be properly set up if one sets the  */
+       /* proper semi coarsening options.                                        */
+       if (ml_->Amat[currentLevel].NumZDir != -1) {
+          MyNumVerticalNodes = ml_->Amat[currentLevel].NumZDir;
+          if     (ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
+          else if(ml_->Amat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else MyMeshNumbering = "use coordinates";
+       }
+       if (ml_->Pmat[currentLevel].NumZDir != -1) {
+          MyNumVerticalNodes = ml_->Pmat[currentLevel].NumZDir;
+          if     (ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "vertical";
+          else if(ml_->Pmat[currentLevel].Zorientation== 1) MyMeshNumbering= "horizontal";
+          else MyMeshNumbering = "use coordinates";
+       }
+       if (ml_->Pmat[currentLevel].NumZDir == -7) {
+          MyNumVerticalNodes = 1;
+          MyMeshNumbering = "vertical";
+       }
+
        double *xvals= NULL, *yvals = NULL, *zvals = NULL;
        ML_Aggregate_Viz_Stats *grid_info = NULL;
 
-
-       if ((MeshNumbering != "horizontal") && (MeshNumbering != "vertical")) {
+       if ((MyMeshNumbering != "horizontal") && (MyMeshNumbering != "vertical")) {
 
           grid_info = (ML_Aggregate_Viz_Stats *) ml_->Grid[currentLevel].Grid;
           if (grid_info != NULL) xvals = grid_info->x;
@@ -512,52 +566,56 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) zvals = grid_info->z;
 
           if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
-             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << MeshNumbering << "\n";
+             std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << "\n";
              exit(EXIT_FAILURE);
           }
        }
-
-       if (   (nnn%(NumVerticalNodes) ) != 0) {
-          printf("mod(nnn = %d,NumVerticalNodes = %d) must be zero\n",
-                 nnn,NumVerticalNodes);
-          exit(1);
+       else {
+          if  (MyNumVerticalNodes == -1) {
+             std::cerr << ErrorMsg_ << "must supply 'line direction nodes' unless line orientation is not supplied and deduced from coordinates" << MySmoother << "\n";
+             exit(EXIT_FAILURE);
+          }
+          if (   (nnn%(MyNumVerticalNodes) ) != 0) {
+             printf("mod(nnn = %d,MyNumVerticalNodes = %d) must be zero\n",
+                    nnn,MyNumVerticalNodes);
+             exit(1);
+          }
        }
-       int nBlocks = nnn/(NumVerticalNodes);
        int *blockOffset  = NULL;
        int *blockIndices = (int *) ML_allocate(sizeof(int)*(nnn+1));
 
        for (int i = 0; i < nnn;  i++) blockIndices[i] = -1;
 
-       // old vertical numbering
-       //for (int iii = 0; iii < nnn; iii+= 2) blockIndices[iii] = (iii/(2*(NumVerticalNodes));
-       //for (int iii = 1; iii < nnn; iii+= 2) blockIndices[iii] = nBlocks/2 + (iii/(2*(NumVerticalNodes)));
-       if (NumPDEEqns_ != 2) {
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-             printf("Right now the code is hardwired for 2 PDE equations. It should be easy to change to be more general ... it just has not been done.\n");
-       }
-
        int tempi;
 
-       if (MeshNumbering == "vertical") {
-          // This is for GIS with vertical numbering scheme
-          for (int iii = 0; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalNodes));
-             blockIndices[iii] = 2*tempi;
+       if (MyMeshNumbering == "vertical") { /* vertical numbering for nodes */
+          if (MyGroupDofsInLine == 1) { /*  one line for all dofs */
+            for (int dof = 0; dof < NumPDEEqns_; dof++) {
+              for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
+                tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
+                blockIndices[iii] = tempi;
+              }
+            }
           }
-          for (int iii = 1; iii < nnn; iii+= 2) {
-             tempi = iii/(2*(NumVerticalNodes));
-             blockIndices[iii] = 2*tempi + 1;
+         else { /*  different lines for each dof */
+            for (int dof = 0; dof < NumPDEEqns_; dof++) {
+              for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
+                tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
+                blockIndices[iii] = NumPDEEqns_*tempi+dof;
+              }
+            }
           }
        }
-       else if (MeshNumbering == "horizontal") {
-          tempi = nnn/(NumVerticalNodes);
-          for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
+       else if (MyMeshNumbering == "horizontal") {/* horizontal numbering for nodes */
+          tempi = nnn/MyNumVerticalNodes;
+          if (MyGroupDofsInLine == 1) {/*  one line for all dofs */
+            for (int iii = 0; iii < nnn; iii++)
+               blockIndices[iii] = (int) floor(((double)(iii%tempi))/
+                                               ((double) NumPDEEqns_)+.00001);
+          }
+          else { /* different lines for each dof */
+            for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
+          }
        }
        else {
 
@@ -614,26 +672,30 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
          NumBlocks = 0;
          index = 0;
+         int   count, NotGrouped;
 
+         NotGrouped = 1 - MyGroupDofsInLine;
          while ( index < NumCoords ) {
             xfirst = xtemp[index];  yfirst = ytemp[index];
             next = index+1;
             while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
                     (ytemp[next] == yfirst))
                next++;
-            if (next-index != NumVerticalNodes) {
-               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumVerticalNodes);
+            if (NumBlocks == 0) MyNumVerticalNodes = next-index;
+            if (next-index != MyNumVerticalNodes) {
+               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,MyNumVerticalNodes);
                exit(EXIT_FAILURE);
             }
-            int count;
+            int count = 0;
             for (int i = 0; i < NumPDEEqns_; i++) {
-               count = 0;
+               if (MyGroupDofsInLine != 1) count = 0;
                for (int j= index; j < next; j++) {
                   blockIndices[NumPDEEqns_*OrigLoc[j]+i] = NumBlocks;
                   blockOffset[NumPDEEqns_*OrigLoc[j]+i] = count++;
                }
-               NumBlocks++;
+               NumBlocks += NotGrouped;
             }
+            NumBlocks += MyGroupDofsInLine;
             index = next;
          }
          ML_free(ztemp);
@@ -652,15 +714,33 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           }
        }
 
+       int nBlocks;
+       if (MyGroupDofsInLine == 1) nBlocks = nnn/(MyNumVerticalNodes*NumPDEEqns_);
+       else                      nBlocks = nnn/MyNumVerticalNodes;
 
-       if (MySmoother == "line Jacobi")
-           ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
-                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices, blockOffset,
-                   ML_Smoother_LineJacobi);
-       else
-           ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
-                   Mynum_smoother_steps, Myomega, nBlocks, blockIndices, blockOffset,
-                   ML_Smoother_LineGS);
+       if (MySmoother == "line Jacobi") {
+           if (MyGroupDofsInLine == 0)
+             ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
+                             Mynum_smoother_steps,Myomega,nBlocks,blockIndices,
+                             blockOffset, ML_Smoother_LineJacobi, GS_type);
+           else
+             ML_Gen_Smoother_VBlockJacobi( ml_ , currentLevel, pre_or_post,
+                             Mynum_smoother_steps,Myomega,nBlocks,blockIndices);
+
+       } else {
+           if (MyGroupDofsInLine == 0)
+             ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
+                             Mynum_smoother_steps,Myomega,nBlocks,blockIndices,
+                             blockOffset, ML_Smoother_LineGS, GS_type);
+           else {
+             ML_Gen_Smoother_VBlockSymGaussSeidel(ml_,currentLevel,pre_or_post,
+                             Mynum_smoother_steps,Myomega,nBlocks,blockIndices);
+             // real hack
+             ml_->pre_smoother[currentLevel].gs_sweep_type=GS_type;
+             ml_->post_smoother[currentLevel].gs_sweep_type=GS_type;
+           }
+
+       }
 
        ML_free(blockIndices);
        if (blockOffset != NULL) ML_free(blockOffset);
@@ -742,6 +822,17 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
       // freeing them.
       RCP<std::vector<int> > myaztecOptions   = smList.get("smoother: Aztec options",SmootherOptions_);
       RCP<std::vector<double> > myaztecParams = smList.get("smoother: Aztec params",SmootherParams_);
+#ifdef HARDWIRED_AZTEC_SOLVER
+RCP<std::vector<int> > m_smootherAztecOptions = rcp(new std::vector<int>(AZ_OPTIONS_SIZE));
+RCP<std::vector<double> > m_smootherAztecParams = rcp(new std::vector<double>(AZ_PARAMS_SIZE));
+AZ_defaults(&(*m_smootherAztecOptions)[0],&(*m_smootherAztecParams)[0]);
+(*m_smootherAztecOptions)[AZ_max_iter]         = 100;
+(*m_smootherAztecOptions)[AZ_solver]         = AZ_cg;
+(*m_smootherAztecOptions)[AZ_precond]         = AZ_dom_decomp;
+(*m_smootherAztecOptions)[AZ_subdomain_solve] = AZ_icc;
+myaztecOptions= m_smootherAztecOptions;  // output set in ml_aztec_utils.c
+myaztecParams = m_smootherAztecParams;
+#endif
       int* MySmootherOptionsPtr = &(*myaztecOptions)[0];
       double* MySmootherParamsPtr = &(*myaztecParams)[0];
       bool MyAztecSmootherAsASolver = smList.get("smoother: Aztec as solver",AztecSmootherAsASolver);
@@ -1601,7 +1692,6 @@ double ML_Smoother_ChebyshevAlpha(double alpha, ML* ml,int here, int next)
     coarsening_rate =  alpha;
   return coarsening_rate;
 } //ML_Smoother_ChebyshevAlpha()
-
 
 #endif /*ifdef ML_WITH_EPETRA && ML_HAVE_TEUCHOS*/
 

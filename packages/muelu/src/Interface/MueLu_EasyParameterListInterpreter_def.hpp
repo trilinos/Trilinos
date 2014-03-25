@@ -196,7 +196,7 @@ namespace MueLu {
 
     // Detect if we do implicit P and R rebalance
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
-      this->implicitPRrebalance_ = !paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
+      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -232,9 +232,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
-    if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << blockSize_ << " (value of \"number of equations\" parameter in the list) "
-          << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(A.GetFixedBlockSize() != blockSize_, Exceptions::RuntimeError,
+                               "Provided parameter list block size (\"number of equations\") is " << blockSize_ << ", but "
+                               << "the matrix block size (GetFixedBlockSize()) is " << A.GetFixedBlockSize());
     A.SetFixedBlockSize(blockSize_);
   }
 
@@ -544,7 +544,7 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
       newPparams.set("type",     "Interpolation");
-      newPparams.set("implicit", this->implicitPRrebalance_);
+      newPparams.set("implicit", !this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -554,7 +554,7 @@ namespace MueLu {
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
       newRparams.set("type",     "Restriction");
-      newRparams.set("implicit", this->implicitPRrebalance_);
+      newRparams.set("implicit", !this->doPRrebalance_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newR->  SetFactory("R",           manager.GetFactory("R"));

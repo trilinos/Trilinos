@@ -149,6 +149,7 @@ namespace MueLu {
     void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
     void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
+    double GetResidual();
 
   private:
 

@@ -130,7 +130,7 @@ EXTRA_ARGS=$@
 #$EXTRA_ARGS
 
 ../../checkin-test.py \
---make-options="-j 16" \
+--make-options="-j 32" \
 --ss-extra-builds=MPI_RELEASE_SS \
 --ctest-options="-j 16" \
 --ctest-timeout=1200 \

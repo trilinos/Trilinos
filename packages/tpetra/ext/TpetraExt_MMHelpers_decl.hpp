@@ -110,7 +110,10 @@ public:
   /** \brief Colmap garnered as a result of the import */
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > importColMap;
   /** \brief The imported matrix */
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >  importMatrix;
+  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >  importMatrix;  
+  /** \brief The original matrix */
+  Teuchos::RCP<const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >  origMatrix;
+  
 };
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>

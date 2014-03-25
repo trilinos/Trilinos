@@ -230,7 +230,7 @@ int main(int narg, char** arg)
 
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true));
 
-  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
+  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (me == 0) 
     cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl

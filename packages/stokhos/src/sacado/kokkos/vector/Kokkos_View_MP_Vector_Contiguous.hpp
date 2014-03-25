@@ -47,6 +47,7 @@
 
 #include "Kokkos_View.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
+#include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
 /*
@@ -258,8 +259,8 @@ private:
   enum { StokhosStorageStaticDimension = stokhos_storage_type::static_size };
   typedef Impl::integral_nonzero< unsigned , StokhosStorageStaticDimension > sacado_size_type;
 
-  typedef Impl::LayoutStride< typename traits::shape_type ,
-                              typename traits::array_layout > stride_type ;
+  typedef Impl::ViewOffset< typename traits::shape_type ,
+                            typename traits::array_layout > offset_map_type ;
 
   typedef Impl::AnalyzeSacadoShape< typename traits::data_type,
                                     typename traits::array_layout > analyze_sacado_shape;
@@ -268,7 +269,7 @@ private:
 
   typename traits::value_type           * m_ptr_on_device ;
   allocation_type                         m_allocation;
-  typename traits::shape_type             m_shape ;
+  offset_map_type                         m_offset_map ;
   unsigned                                m_stride ;
   typename traits::device_type::size_type m_storage_size ; // Storage size of sacado dimension
   sacado_size_type                        m_sacado_size ; // Size of sacado dimension
@@ -368,46 +369,46 @@ public:
   // Rank corresponding to the sacado dimension
   enum { Sacado_Rank = Impl::is_same< typename traits::array_layout, LayoutLeft >::value ? 0 : Rank+1 };
 
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
-  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_3() const { return m_offset_map.N3 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_4() const { return m_offset_map.N4 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
+  KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
   KOKKOS_FORCEINLINE_FUNCTION typename traits::size_type size() const
   {
-    return   m_shape.N0
-           * m_shape.N1
-           * m_shape.N2
-           * m_shape.N3
-           * m_shape.N4
-           * m_shape.N5
-           * m_shape.N6
-           * m_shape.N7
+    return   m_offset_map.N0
+           * m_offset_map.N1
+           * m_offset_map.N2
+           * m_offset_map.N3
+           * m_offset_map.N4
+           * m_offset_map.N5
+           * m_offset_map.N6
+           * m_offset_map.N7
            ;
   }
 
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
-    { return Impl::dimension( m_shape , i ); }
+    { return Impl::dimension( m_offset_map , i ); }
 
   // Dimensions of view, dimensioned to at least Rank
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   void dimensions( iType * const dims ) const
   {
-    if (Rank >= 1) dims[0] = m_shape.N0;
-    if (Rank >= 2) dims[1] = m_shape.N1;
-    if (Rank >= 3) dims[2] = m_shape.N2;
-    if (Rank >= 4) dims[3] = m_shape.N3;
-    if (Rank >= 5) dims[4] = m_shape.N4;
-    if (Rank >= 6) dims[5] = m_shape.N5;
-    if (Rank >= 7) dims[6] = m_shape.N6;
-    if (Rank >= 8) dims[7] = m_shape.N7;
+    if (Rank >= 1) dims[0] = m_offset_map.N0;
+    if (Rank >= 2) dims[1] = m_offset_map.N1;
+    if (Rank >= 3) dims[2] = m_offset_map.N2;
+    if (Rank >= 4) dims[3] = m_offset_map.N3;
+    if (Rank >= 5) dims[4] = m_offset_map.N4;
+    if (Rank >= 6) dims[5] = m_offset_map.N5;
+    if (Rank >= 7) dims[6] = m_offset_map.N6;
+    if (Rank >= 8) dims[7] = m_offset_map.N7;
   }
 
   //------------------------------------
@@ -423,7 +424,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0), m_storage_size(0), m_sacado_size(0)
     {
-      traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
+      m_offset_map.assign(0,0,0,0,0,0,0,0);
       m_stride = 1 ; // need to initialize to 1 as there are checks for
                      // m_stride != 1 that need to work for empty views
     }
@@ -488,11 +489,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
@@ -501,7 +498,7 @@ public:
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_shape,
+                               m_offset_map,
                                m_sacado_size.value );
 
       (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
@@ -520,11 +517,7 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
@@ -533,7 +526,7 @@ public:
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_shape,
+                               m_offset_map,
                                m_sacado_size.value );
     }
 
@@ -543,10 +536,6 @@ public:
         const iType * const n )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -555,7 +544,7 @@ public:
       const size_t n5 = Rank >= 5 ? n[5] : 0 ;
       const size_t n6 = Rank >= 6 ? n[6] : 0 ;
       const size_t n7 = Rank >= 7 ? n[7] : 0 ;
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
@@ -564,7 +553,7 @@ public:
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_shape,
+                               m_offset_map,
                                m_sacado_size.value );
 
       (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
@@ -577,10 +566,6 @@ public:
         const iType * const n )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -589,7 +574,7 @@ public:
       const size_t n5 = Rank >= 5 ? n[5] : 0 ;
       const size_t n6 = Rank >= 6 ? n[6] : 0 ;
       const size_t n7 = Rank >= 7 ? n[7] : 0 ;
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
         Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
@@ -598,7 +583,7 @@ public:
       m_sacado_size = m_storage_size;
       m_ptr_on_device =
         m_allocation.allocate( if_allocation_constructor::select( label ),
-                               m_shape,
+                               m_offset_map,
                                m_sacado_size.value );
     }
 
@@ -622,10 +607,7 @@ public:
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
-      typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::value_type   value_type ;
-
-      shape_type::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
       if (m_storage_size == 0)
@@ -666,7 +648,7 @@ public:
   typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, LayoutRight, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       // May have partitioned
       return m_ptr_on_device[ m_stride * i0 ];
@@ -694,10 +676,10 @@ public:
                                       traits, LayoutRight, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ m_stride * ( i1 + m_shape.N1 * i0 ) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1) ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -718,10 +700,10 @@ public:
                                       traits, LayoutRight, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ m_stride * ( i2 + m_shape.N2 * ( i1 + m_shape.N1 * i0 ) ) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -743,12 +725,9 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, i3 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 + m_shape.N1 * ( i0 )))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -771,13 +750,9 @@ public:
                  const iType4 & i4 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, i4 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 + m_shape.N1 * ( i0 ))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -803,14 +778,9 @@ public:
                  const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0, i1, i2, i3, i4, i5 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 + m_shape.N1 * ( i0 )))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4,i5) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -836,15 +806,9 @@ public:
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0, i1, i2, i3, i4, i5, i6 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i6 + m_shape.N6 * (
-                              i5 + m_shape.N5 * (
-                              i4 + m_shape.N4 * (
-                              i3 + m_shape.N3 * (
-                              i2 + m_shape.N2 * (
-                              i1 + m_shape.N1 * ( i0 ))))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4,i5,i6) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -866,7 +830,7 @@ public:
   typename Impl::ViewEnableArrayOper< typename traits::value_type & , traits, LayoutLeft, 1, iType0 >::type
     operator() ( const iType0 & i0 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
       // May have partitioned
       return m_ptr_on_device[ m_stride * i0 ];
@@ -894,10 +858,10 @@ public:
                                       traits, LayoutLeft, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0, i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0, i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ m_stride * ( i0 + m_shape.N0 * i1 ) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1) ];
     }
 
   template< typename iType0 , typename iType1 >
@@ -918,10 +882,10 @@ public:
                                       traits, LayoutLeft, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0, i1, i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0, i1, i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
 
-      return m_ptr_on_device[ m_stride * ( i0 + m_shape.N0 * ( i1 + m_shape.N1 * i2 ) ) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -943,12 +907,9 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0, i1, i2, i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0, i1, i2, i3 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i0 + m_shape.N0 * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * ( i3 )))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -971,13 +932,9 @@ public:
                  const iType4 & i4 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0, i1, i2, i3, i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0, i1, i2, i3, i4 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i0 + m_shape.N0 * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * ( i4 ))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -1003,14 +960,9 @@ public:
                  const iType4 & i4 , const iType5 & i5 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0, i1, i2, i3, i4, i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0, i1, i2, i3, i4, i5 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i0 + m_shape.N0 * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * ( i5 )))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4,i5) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -1036,15 +988,9 @@ public:
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_ptr_on_device );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0, i1, i2, i3, i4, i5, i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0, i1, i2, i3, i4, i5, i6 );
 
-      return m_ptr_on_device[ m_stride * (
-                              i0 + m_shape.N0 * (
-                              i1 + m_shape.N1 * (
-                              i2 + m_shape.N2 * (
-                              i3 + m_shape.N3 * (
-                              i4 + m_shape.N4 * (
-                              i5 + m_shape.N5 * ( i6 ))))))) ];
+      return m_ptr_on_device[ m_stride * m_offset_map(i0,i1,i2,i3,i4,i5,i6) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 ,
@@ -1068,20 +1014,17 @@ public:
   template< typename iType >
   KOKKOS_FORCEINLINE_FUNCTION
   void stride( iType * const s ) const
-  { stride_type stride;
-    stride_type::assign_no_padding(stride, m_shape);
-    Impl::stride( s , m_shape , stride );
-  }
+    { m_offset_map.stride( s ); }
 
   // Count of contiguously allocated data members including padding.
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type capacity() const
-  { return Impl::cardinality_count( m_shape ) * m_stride ; }
+    { return m_stride * m_offset_map.cardinality(); }
 
   // Size of sacado dimension
   KOKKOS_FORCEINLINE_FUNCTION
   typename traits::size_type sacado_size() const
-  { return m_sacado_size.value; }
+    { return m_sacado_size.value; }
 };
 
 /** \brief  A deep copy between views of the same specialization, compatible type,
@@ -1271,15 +1214,9 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     )>::type * = 0
                   )
   {
-    typedef View<DT,DL,DD,DM,specialize>   dst_type ;
-    typedef typename dst_type::shape_type  shape_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    shape_type::assign( dst.m_shape,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
+    dst.m_offset_map.assign( src.m_offset_map );
     dst.m_stride        = src.m_stride ;
     dst.m_ptr_on_device = src.m_ptr_on_device ;
     dst.m_allocation    = src.m_allocation ;
@@ -1328,7 +1265,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
   {
     typedef View<ST,SL,SD,SM,specialize>   src_type ;
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
-    typedef typename dst_type::shape_type  dst_shape_type ;
 
     // Must have: begin = i * src.m_sacado_size.value
     //            end   = begin + src.m_sacado_size.value
@@ -1345,9 +1281,7 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 
     const int length = part.end - part.begin ;
 
-    dst_shape_type::assign( dst.m_shape ,
-                            src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                            src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
+    dst.m_offset_map.assign( src.m_offset_map );
 
     // Original Sacado::MP::Vector length
     dst.m_storage_size = src.m_storage_size ;
@@ -1384,19 +1318,16 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                           ( View<DT,DL,DD,DM,specialize>::rank_dynamic == 1 )
                   ) >::type * = 0 )
   {
-    typedef View<DT,DL,DD,DM,specialize> dst_type ;
-    typedef typename dst_type::shape_type shape_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_shape.N0      = 0 ;
+    dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_ptr_on_device = 0 ;
 
     if ( range.first < range.second ) {
-      assert_shape_bounds( src.m_shape , 1 , range.first );
-      assert_shape_bounds( src.m_shape , 1 , range.second - 1 );
+      assert_shape_bounds( src.m_offset_map , 1 , range.first );
+      assert_shape_bounds( src.m_offset_map , 1 , range.second - 1 );
 
-      dst.m_shape.N0      = range.second - range.first ;
+      dst.m_offset_map.assign( range.second - range.first , 0,0,0,0,0,0,0 );
       dst.m_ptr_on_device = src.m_ptr_on_device + range.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
         src.m_allocation.m_scalar_ptr_on_device + range.first * src.m_storage_size ;
@@ -1428,14 +1359,12 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 1 )
                   ), unsigned >::type i1 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_shape.N0      = src.m_shape.N0 ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
+    dst.m_offset_map.assign( src.m_offset_map.N0 , 0,0,0,0,0,0,0);
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
-      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 * src.m_storage_size ;
+      src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size ;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
@@ -1463,15 +1392,12 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ( ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2 )
                   ), unsigned >::type i1 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_shape.N0      = src.m_shape.N0 ;
-    dst.m_shape.N1      = 1 ;
-    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_shape.N0 * i1 ;
+    dst.m_offset_map.assign( src.m_offset_map.N0, 1, 0,0,0,0,0,0);
+    dst.m_ptr_on_device = src.m_ptr_on_device + src.m_offset_map.N0 * i1 ;
     dst.m_allocation.m_scalar_ptr_on_device =
-      src.m_allocation.m_scalar_ptr_on_device + src.m_shape.N0 * i1 * src.m_storage_size;
+      src.m_allocation.m_scalar_ptr_on_device + src.m_offset_map.N0 * i1 * src.m_storage_size;
     dst.m_stride        = src.m_stride ;
     dst.m_storage_size  = src.m_storage_size ;
     dst.m_sacado_size   = src.m_sacado_size;
@@ -1499,28 +1425,23 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_shape.N0      = 0 ;
-    dst.m_shape.N1      = 0 ;
+    dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range1.first < range1.second ) {
-      assert_shape_bounds( src.m_shape , 2 , 0 , range1.first );
-      assert_shape_bounds( src.m_shape , 2 , src.m_shape.N0 - 1 , range1.second - 1 );
+      assert_shape_bounds( src.m_offset_map , 2 , 0 , range1.first );
+      assert_shape_bounds( src.m_offset_map , 2 , src.m_offset_map.N0 - 1 , range1.second - 1 );
 
-      dst.m_shape.N0 = src.m_shape.N0 ;
-      dst.m_shape.N1 = range1.second - range1.first ;
+      dst.m_offset_map.assign( src.m_offset_map.N0 , range1.second - range1.first , 0,0,0,0,0,0);
       dst.m_stride   = src.m_stride ;
 
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
-      dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_shape.N0 * range1.first ;
+      dst.m_ptr_on_device = src.m_ptr_on_device + dst.m_offset_map.N0 * range1.first ;
       dst.m_allocation.m_scalar_ptr_on_device =
-        src.m_allocation.m_scalar_ptr_on_device + dst.m_shape.N0 * range1.first * src.m_storage_size ;
+        src.m_allocation.m_scalar_ptr_on_device + dst.m_offset_map.N0 * range1.first * src.m_storage_size ;
       dst.m_storage_size = src.m_storage_size ;
       dst.m_sacado_size = src.m_sacado_size;
 
@@ -1550,22 +1471,17 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                     ViewTraits<DT,DL,DD,DM>::rank_dynamic == 2
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef typename traits_type::shape_type shape_type ;
-
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
-    dst.m_shape.N0      = 0 ;
-    dst.m_shape.N1      = 0 ;
+    dst.m_offset_map.assign(0,0,0,0,0,0,0,0);
     dst.m_stride        = 0 ;
     dst.m_ptr_on_device = 0 ;
 
     if ( range0.first < range0.second ) {
-      assert_shape_bounds( src.m_shape , 2 , range0.first , 0 );
-      assert_shape_bounds( src.m_shape , 2 , range0.second - 1 , src.m_shape.N1 - 1 );
+      assert_shape_bounds( src.m_offset_map , 2 , range0.first , 0 );
+      assert_shape_bounds( src.m_offset_map , 2 , range0.second - 1 , src.m_offset_map.N1 - 1 );
 
-      dst.m_shape.N0 = range0.second - range0.first ;
-      dst.m_shape.N1 = src.m_shape.N1 ;
+      dst.m_offset_map.assign( range0.second - range0.first , src.m_offset_map.N1 , 0,0,0,0,0,0);
       dst.m_stride   = src.m_stride ;
 
       // operator: dst.m_ptr_on_device[ i0 + dst.m_stride * i1 ]
@@ -1594,12 +1510,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
                 , const    View<ST,SL,SD,SM,ViewMPVectorContiguous> & src )
   {
     typedef View<ST,SL,SD,SM,ViewMPVectorContiguous> src_type ;
-    typedef typename src_type::value_type                        src_sacado_mp_vector_type ;
-    typedef typename src_sacado_mp_vector_type::storage_type     src_stokhos_storage_type ;
-
-    typedef typename src_type::array_type   dst_type ;
-    typedef typename dst_type::shape_type   dst_shape_type ;
-    typedef typename dst_type::stride_type  dst_stride_type ;
 
     if ( src.m_stride != 1 ) {
       const char msg[] = "Kokkos::View< Sacado::MP::Vector ... > incompatible assignment" ;
@@ -1613,14 +1523,14 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     unsigned dims[8];
-    dims[0] = src.m_shape.N0;
-    dims[1] = src.m_shape.N1;
-    dims[2] = src.m_shape.N2;
-    dims[3] = src.m_shape.N3;
-    dims[4] = src.m_shape.N4;
-    dims[5] = src.m_shape.N5;
-    dims[6] = src.m_shape.N6;
-    dims[7] = src.m_shape.N7;
+    dims[0] = src.m_offset_map.N0;
+    dims[1] = src.m_offset_map.N1;
+    dims[2] = src.m_offset_map.N2;
+    dims[3] = src.m_offset_map.N3;
+    dims[4] = src.m_offset_map.N4;
+    dims[5] = src.m_offset_map.N5;
+    dims[6] = src.m_offset_map.N6;
+    dims[7] = src.m_offset_map.N7;
     unsigned rank = src_type::Rank;
     unsigned sacado_size = src.sacado_size();
     if (is_same<typename src_type::array_layout, LayoutLeft>::value) {
@@ -1632,11 +1542,8 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
     else {
       dims[rank] = sacado_size;
     }
-    dst_shape_type::assign( dst.m_shape,
-                            dims[0] , dims[1] , dims[2] , dims[3] ,
-                            dims[4] , dims[5] , dims[6] , dims[7] );
-
-    dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+    dst.m_offset_map.assign( dims[0] , dims[1] , dims[2] , dims[3] ,
+                             dims[4] , dims[5] , dims[6] , dims[7] );
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 
@@ -1686,8 +1593,6 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
       ) >::type * = 0)
   {
     typedef View<DT,DL,DD,DM,ViewDefault>   dst_type ;
-    typedef typename dst_type::shape_type   dst_shape_type ;
-    typedef typename dst_type::stride_type  dst_stride_type ;
     typedef typename dst_type::array_layout dst_layout_type ;
 
     if ( src.m_stride != 1 ) {
@@ -1703,14 +1608,14 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
 
     // Create flattened shape
     unsigned dims[8];
-    dims[0] = src.m_shape.N0;
-    dims[1] = src.m_shape.N1;
-    dims[2] = src.m_shape.N2;
-    dims[3] = src.m_shape.N3;
-    dims[4] = src.m_shape.N4;
-    dims[5] = src.m_shape.N5;
-    dims[6] = src.m_shape.N6;
-    dims[7] = src.m_shape.N7;
+    dims[0] = src.m_offset_map.N0;
+    dims[1] = src.m_offset_map.N1;
+    dims[2] = src.m_offset_map.N2;
+    dims[3] = src.m_offset_map.N3;
+    dims[4] = src.m_offset_map.N4;
+    dims[5] = src.m_offset_map.N5;
+    dims[6] = src.m_offset_map.N6;
+    dims[7] = src.m_offset_map.N7;
     unsigned rank = dst_type::Rank;
     unsigned sacado_size = src.sacado_size();
     if (is_same<dst_layout_type, LayoutLeft>::value) {
@@ -1721,12 +1626,8 @@ struct ViewAssignment< ViewDefault , ViewMPVectorContiguous , void >
       dims[rank-1] = dims[rank-1]*sacado_size;
       dims[rank] = 0;
     }
-    dst_shape_type::assign( dst.m_shape,
-                            dims[0] , dims[1] , dims[2] , dims[3] ,
-                            dims[4] , dims[5] , dims[6] , dims[7] );
-
-    // No padding in dst to be consistent with src
-    dst_stride_type::assign_no_padding( dst.m_stride , dst.m_shape );
+    dst.m_offset_map.assign( dims[0] , dims[1] , dims[2] , dims[3] ,
+                             dims[4] , dims[5] , dims[6] , dims[7] );
 
     dst.m_ptr_on_device = src.m_allocation.m_scalar_ptr_on_device;
 

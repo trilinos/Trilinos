@@ -120,7 +120,7 @@ namespace MueLu {
      */
     Teuchos::RCP< Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > ComputeUnamalgamatedImportDofMap(const Aggregates& aggregates) const;
 
-    std::vector<GO> ComputeGlobalDOFs(GO const gNodeID) const;
+    GO ComputeGlobalDOF(GO const &gNodeID, LO const &step=0) const;
 
   private:
 
@@ -131,7 +131,8 @@ namespace MueLu {
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
 
     //! @brief DOF map (really column map of A)
-    const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
+    // keep an RCP on the column map to make sure that the map is still valid when it is used
+    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
 
     //@}
 

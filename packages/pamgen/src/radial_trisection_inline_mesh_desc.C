@@ -39,13 +39,19 @@ bool part_compare_size3(const Partition *a, const Partition *b) {
 
 
 /*****************************************************************************/
-void Radial_Trisection_Inline_Mesh_Desc::Calc_Intervals()
+  std::string Radial_Trisection_Inline_Mesh_Desc::Calc_Intervals()
 /*****************************************************************************/
 {
+  std::string errorString;
   if(transition_radius <= 0.){
     transition_radius = block_dist[0][0]/(sqrt(2.));
   }
  
+  if(transition_radius >= block_dist[0][0]){
+    errorString = "Transition radius must be less than radius of first radial block.";
+  }
+  
+
  for(long long i = 0; i < inline_bx; i ++){
     long long axis = 0;
     if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
@@ -101,6 +107,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Intervals()
       }
     }
   }
+  return errorString;
 }
 
 /*****************************************************************************/

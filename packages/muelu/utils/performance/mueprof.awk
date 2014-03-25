@@ -1,6 +1,6 @@
 # awk script to provide context for MueLu timers
 #
-# Don't run this script directly, instead use compareTE.sh.
+# Don't run this script directly, instead use mueprof.sh.
 #
 # Note: This requires GNU awk and won't run in compatibility mode.
 #
@@ -20,9 +20,14 @@ BEGIN {
     possibleTotalLabels[4] = "nalu MueLu/tpetra preconditioner setup";
     possibleTotalLabels[5] = "nalu MueLu/epetra preconditioner setup";
     tt=""
-    # variable etDelta controls how delta in Epetra and Tpetra times is displayed
+    cnt=0
+    # variable "etDelta" controls how delta in Epetra and Tpetra times is displayed
     # set from mueprof.sh, values can be "subtract" or "divide"
     # default is "subtract"
+    #
+    # variable "agnostic" allows comparison of two Epetra or two Tpetra files
+    # set from mueprof.sh, values can be 0 (false) or 1 (true)
+    # default is 0
 }
 
 ###############################################################################
@@ -36,6 +41,11 @@ BEGIN {
       foundTimersToReport=0;
       #hack, since we can't count on having "Linear algebra library: Tpetra" print in nalu
       linalg[FILENAME] = "Epetra"
+      if (agnostic==1) {
+        if (cnt==1)
+          linalg[FILENAME] = "Tpetra";
+        cnt++;
+      }
     }
 
     #indicates start of MueLu timer output
@@ -58,20 +68,22 @@ BEGIN {
         #fix minor difference between Epetra and Tpetra smoother tags
         sub(/Ifpack2Smoother/,"IfpackSmoother");
         sub(/Amesos2Smoother/,"AmesosSmoother");
-        if (match($0,"[(]level=[0-9][)]")) {
-          # timer is level-specific (and by its nature excludes calls to child factories)
-          foundTimersToReport=1;
-          factAndLevel = substr($0,1,RSTART-1+RLENGTH);
-          alltimes = substr($0,RSTART+RLENGTH);
-          cutCmd="cut -f3 -d')' | cut -f1 -d'('"
-          maxtime = ExtractTime(alltimes,cutCmd);
-          if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
-            #TODO figure out which solve labels to pull out
-            solveLabels[factAndLevel] = factAndLevel;
-            solveTimes[factAndLevel,FILENAME] = maxtime;
-          } else {
-            setupLabels[factAndLevel] = factAndLevel;
-            setupTimes[factAndLevel,FILENAME] = maxtime;
+        if (!match($0," sync ")) {
+          if (match($0,"[(]level=[0-9][)]")) {
+            # timer is level-specific (and by its nature excludes calls to child factories)
+            foundTimersToReport=1;
+            factAndLevel = substr($0,1,RSTART-1+RLENGTH);
+            alltimes = substr($0,RSTART+RLENGTH);
+            cutCmd="cut -f3 -d')' | cut -f1 -d'('"
+            maxtime = ExtractTime(alltimes,cutCmd);
+            if (match(factAndLevel,"MueLu: Hierarchy: Solve")) {
+              #TODO figure out which solve labels to pull out
+              solveLabels[factAndLevel] = factAndLevel;
+              solveTimes[factAndLevel,FILENAME] = maxtime;
+            } else {
+              setupLabels[factAndLevel] = factAndLevel;
+              setupTimes[factAndLevel,FILENAME] = maxtime;
+            }
           }
         }
       }
@@ -99,15 +111,27 @@ function PrintHeader(description,linalg)
 {
   space = " ";
   printf("%60s      ",toupper(description));
+  k=1
   for (j in linalg) {
-    printf("%10s  ",linalg[j]);
+    if (agnostic==1)
+      printf("file%d       ",k++);
+    else
+      printf("%10s  ",linalg[j]);
     printf(" (total)");
   }
   if (length(linalg)>1)
-    if (etDelta == "ratio")
-      printf("%13s  ","T/E ratio");
-    if (etDelta == "diff")
-      printf("%13s  ","T-E (sec.)");
+    if (etDelta == "ratio") {
+      if (agnostic==1)
+        printf("%13s  ","L/R ratio");
+      else
+        printf("%13s  ","T/E ratio");
+    }
+    if (etDelta == "diff") {
+      if (agnostic==1)
+        printf("%13s  ","L-R (sec.)");
+      else
+        printf("%13s  ","T-E (sec.)");
+    }
   printf("\n%60s          -------------------------------------------------\n",space);
 }
 
@@ -116,6 +140,8 @@ function PrintHeader(description,linalg)
 function PrintTotalSetupTime()
 {
   printf("%60s          ----------------\n"," ");
+  if (etDeltaTotal != 0)
+    printf("%90s          delta total=%5.1f\n"," ",etDeltaTotal);
   for (i in TotalSetup) {
     split(i,sep,SUBSEP); #breaks multiarray index i up into its constituent parts.
                          #we only want the first one, sep[1]
@@ -142,7 +168,8 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == libToSortOn) break
     sortField++
   }
-  sortCmd = "sort -k" sortField" -n -t @"
+  #use -g to sort properly numbers in scientific notation
+  sortCmd = "sort -k" sortField" -g -t @"
   SystemSort(valuesAndLabels,sortedValuesAndLabels,sortCmd);
 
   jj=2
@@ -152,6 +179,7 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
     if (linalg[i] == "Tpetra") tpetraInd = jj;
     jj++
   }
+  etDeltaTotal=0
   for (j=1; j<=len; j++) {
     split(sortedValuesAndLabels[j],fields,"@");
     printf("%3d: %60s  ==> ",len-j+1,fields[1]);
@@ -166,10 +194,20 @@ function SortAndReportTimings(libToSortOn, timerLabels, timerValues, linalg)
         printf("%11.2f   ",fields[tpetraInd] / fields[epetraInd]);
       if (etDelta == "diff")
         printf("%11.2f   ",fields[tpetraInd] - fields[epetraInd]);
+        etDeltaTotal+=fields[tpetraInd] - fields[epetraInd];
     }
     printf("\n");
   }
 
+}
+###############################################################################
+function DumpLabelsAndTimers(timerLabels, timerValues, linalg)
+{
+  for (i in timerLabels) {
+    print "timer name: >" timerLabels[i] "<"
+    for (j in linalg)
+      print "    values: >" timerValues[i,j] "<"
+  }
 }
 ###############################################################################
 
@@ -215,6 +253,11 @@ function RemoveWhiteSpace(theString)
 END {
 
   if (foundTimersToReport) {
+    if (debug) {
+      print "============================="
+      DumpLabelsAndTimers(setupLabels,setupTimes,linalg);
+      print "============================="
+    }
     PrintHeader("Setup times (level specific) excluding child calls ",linalg);
     SortAndReportTimings(sortByLib,setupLabels,setupTimes,linalg);
     PrintTotalSetupTime();

@@ -590,4 +590,12 @@ extract (const Teuchos::RCP<const row_matrix_type>& globalMatrix)
 
 } // namespace Ifpack2
 
+// For ETI
+#include "Ifpack2_ILUT.hpp"
+
+#define IFPACK2_SPARSECONTAINER_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                  Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > \
+                                  >;
+
 #endif // IFPACK2_SPARSECONTAINER_HPP

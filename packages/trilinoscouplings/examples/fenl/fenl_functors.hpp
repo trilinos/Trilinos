@@ -137,13 +137,11 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*134ull)/100ull;
+      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
 
 
       // Increase capacity until the (node,node) map is successfully filled.
-      do {
-        set_capacity += node_node_set.failed_inserts();
-
+      {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
@@ -153,8 +151,7 @@ public:
         set_capacity = node_node_set.capacity();
 
         Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-
-      } while ( node_node_set.failed_inserts() );
+      }
 
       device_type::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
@@ -239,7 +236,7 @@ public:
 
         const typename SetType::insert_result result = node_node_set.insert( key );
 
-        if ( result.first == Kokkos::INSERT_SUCCESS ) {
+        if ( result.success() ) {
           if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
           if ( col_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
         }
@@ -270,11 +267,12 @@ public:
   KOKKOS_INLINE_FUNCTION
   void sort_graph_entries( const unsigned irow ) const
   {
-    const unsigned row_beg = graph.row_map( irow );
-    const unsigned row_end = graph.row_map( irow + 1 );
-    for ( unsigned i = row_beg + 1 ; i < row_end ; ++i ) {
-      const unsigned col = graph.entries(i);
-      unsigned j = i ;
+    typedef typename CrsGraphType::size_type size_type;
+    const size_type row_beg = graph.row_map( irow );
+    const size_type row_end = graph.row_map( irow + 1 );
+    for ( size_type i = row_beg + 1 ; i < row_end ; ++i ) {
+      const typename CrsGraphType::data_type col = graph.entries(i);
+      size_type j = i ;
       for ( ; row_beg < j && col < graph.entries(j-1) ; --j ) {
         graph.entries(j) = graph.entries(j-1);
       }
@@ -285,6 +283,8 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
+    typedef typename CrsGraphType::size_type size_type;
+    typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -293,15 +293,15 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        unsigned entry = ~0u ;
+        entry_type entry = 0 ;
 
         if ( row_node + 1 < graph.row_map.dimension_0() ) {
 
-          const unsigned entry_end = graph.row_map( row_node + 1 );
+          const entry_type entry_end = static_cast<entry_type> (graph.row_map( row_node + 1 ));
 
           entry = graph.row_map( row_node );
 
-          for ( ; entry < entry_end && graph.entries(entry) != col_node ; ++entry );
+          for ( ; entry < entry_end && graph.entries(entry) != static_cast<entry_type> (col_node) ; ++entry );
 
           if ( entry == entry_end ) entry = ~0u ;
         }
@@ -651,20 +651,44 @@ public:
 } /* namespace Kokkos  */
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-template< class FiniteElementMeshType , class SparseMatrixType >
+struct ElementComputationConstantCoefficient {
+  enum { is_constant = true };
+
+  const float coeff_k ;
+
+  KOKKOS_INLINE_FUNCTION
+  float operator()( double /* x */
+                  , double /* y */
+                  , double /* z */
+                  ) const
+    { return coeff_k ; }
+
+  ElementComputationConstantCoefficient( const float val )
+    : coeff_k( val ) {}
+
+  ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
+    : coeff_k( rhs.coeff_k ) {}
+};
+
+template< class FiniteElementMeshType , class SparseMatrixType
+        , class CoeffFunctionType = ElementComputationConstantCoefficient
+        >
 class ElementComputation ;
 
 
 template< class DeviceType , BoxElemPart::ElemOrder Order , class CoordinateMap ,
-          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType >
-class ElementComputation<
-  Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap > ,
-  Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType > >
+          typename ScalarType , typename OrdinalType , class MemoryTraits , typename SizeType ,
+          class CoeffFunctionType >
+class ElementComputation
+  < Kokkos::Example::BoxElemFixture< DeviceType , Order , CoordinateMap >
+  , Kokkos::CrsMatrix< ScalarType , OrdinalType , DeviceType , MemoryTraits , SizeType >
+  , CoeffFunctionType >
 {
 public:
 
@@ -689,7 +713,7 @@ public:
   typedef typename mesh_type::elem_node_type                                       elem_node_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount][FunctionCount] , device_type > elem_matrices_type ;
   typedef Kokkos::View< scalar_type*[FunctionCount] ,                device_type > elem_vectors_type ;
-  typedef Kokkos::View< scalar_type* ,                               device_type > vector_type ;
+  typedef Kokkos::View< scalar_type* , Kokkos::LayoutLeft,          device_type > vector_type ;
 
   typedef typename NodeNodeGraph< elem_node_type , sparse_graph_type , ElemNodeCount >::ElemGraphType elem_graph_type ;
 
@@ -708,7 +732,7 @@ public:
   const vector_type         solution ;
   const vector_type         residual ;
   const sparse_matrix_type  jacobian ;
-  const scalar_type         coeff_K ;
+  const CoeffFunctionType   coeff_function ;
 
   ElementComputation( const ElementComputation & rhs )
     : elem_data()
@@ -720,13 +744,13 @@ public:
     , solution( rhs.solution )
     , residual( rhs.residual )
     , jacobian( rhs.jacobian )
-    , coeff_K( rhs.coeff_K )
+    , coeff_function( rhs.coeff_function )
     {}
 
   // If the element->sparse_matrix graph is provided then perform atomic updates
   // Otherwise fill per-element contributions for subequent gather-add into a residual and jacobian.
   ElementComputation( const mesh_type          & arg_mesh ,
-	              const scalar_type          arg_coeff_K ,
+	              const CoeffFunctionType  & arg_coeff_function ,
                       const vector_type        & arg_solution ,
                       const elem_graph_type    & arg_elem_graph ,
                       const sparse_matrix_type & arg_jacobian ,
@@ -740,12 +764,12 @@ public:
     , solution( arg_solution )
     , residual( arg_residual )
     , jacobian( arg_jacobian )
-    , coeff_K( arg_coeff_K )
+    , coeff_function( arg_coeff_function )
     {}
 
-  ElementComputation( const mesh_type    & arg_mesh ,
-	              const scalar_type    arg_coeff_K ,
-                      const vector_type  & arg_solution )
+  ElementComputation( const mesh_type          & arg_mesh ,
+	              const CoeffFunctionType  & arg_coeff_function ,
+                      const vector_type        & arg_solution )
     : elem_data()
     , elem_node_ids( arg_mesh.elem_node() )
     , node_coords(   arg_mesh.node_coord() )
@@ -755,7 +779,7 @@ public:
     , solution( arg_solution )
     , residual()
     , jacobian()
-    , coeff_K( arg_coeff_K )
+    , coeff_function( arg_coeff_function )
     {}
 
   //------------------------------------
@@ -852,16 +876,16 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
-    const float coeff_k ,
     const double dof_values[] ,
-    const float dpsidx[] ,
-    const float dpsidy[] ,
-    const float dpsidz[] ,
-    const float detJ ,
-    const float integ_weight ,
-    const float bases_vals[] ,
-    double elem_res[] ,
-    double elem_mat[][ FunctionCount ] ) const
+    const float  dpsidx[] ,
+    const float  dpsidy[] ,
+    const float  dpsidz[] ,
+    const float  detJ ,
+    const float  coeff_k ,
+    const float  integ_weight ,
+    const float  bases_vals[] ,
+    double       elem_res[] ,
+    double       elem_mat[][ FunctionCount ] ) const
   {
     double value_at_pt = 0 ;
     double gradx_at_pt = 0 ;
@@ -944,13 +968,32 @@ public:
       float dpsidy[ FunctionCount ] ;
       float dpsidz[ FunctionCount ] ;
 
+      float coeff_k = 0 ;
+
+      {
+        double pt_x = 0 ;
+        double pt_y = 0 ;
+        double pt_z = 0 ;
+
+        // If function is not constant
+        // then compute physical coordinates of integration point
+        if ( ! coeff_function.is_constant ) {
+          for ( unsigned j = 0 ; j < FunctionCount ; ++j ) {
+            pt_x += x[j] * elem_data.values[i][j] ;
+            pt_y += y[j] * elem_data.values[i][j] ;
+            pt_z += z[j] * elem_data.values[i][j] ;
+          }
+        }
+
+        coeff_k = coeff_function(pt_x,pt_y,pt_z);
+      }
+
       const float detJ =
         transform_gradients( elem_data.gradients[i] , x , y , z ,
                              dpsidx , dpsidy , dpsidz );
 
-      contributeResidualJacobian( coeff_K ,
-                                  val , dpsidx , dpsidy , dpsidz ,
-                                  detJ ,
+      contributeResidualJacobian( val , dpsidx , dpsidy , dpsidz ,
+                                  detJ , coeff_k ,
                                   elem_data.weights[i] ,
                                   elem_data.values[i] ,
                                   elem_vec , elem_mat );

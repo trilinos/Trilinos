@@ -4,7 +4,7 @@ IFS=$'\n'
 
 classListDir=../../../../../../muelu/src/Utils/ClassList/
 
-for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
+for i in SC-LO-GO-NO-LMO 
   do
 
   classList=$classListDir/$i.classList
@@ -12,7 +12,7 @@ for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
 
   for className in `cat $classList | grep -v ^\# | cut -d "-" -f1 | sed 's/ //'`
     do
-    if ! grep -q $className $classListDir/EI-Exceptions.classList && ! grep -q $className exceptions.classList
+    if ! grep -q -x $className $classListDir/EI-Exceptions.classList
         then
 
         condition=$(cat $classList | grep "^$className -" | cut -d "-" -f2-)
@@ -27,12 +27,27 @@ for i in LO-GO-NO-LMO SC-LO-GO-NO-LMO SC-LO-GO SC-LO
             conditionClose=""
         fi
 
-        cat $tmpl \
+        cat ${i}-Threads.tmpl \
             | sed "s/\$TMPL_CLASS/$className/g" \
             | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
             | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
             | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
-            > MueLu_$className.cpp
+            > MueLu_${className}_MP_Vector_Threads.cpp
+
+        cat ${i}-OpenMP.tmpl \
+            | sed "s/\$TMPL_CLASS/$className/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
+            | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
+            > MueLu_${className}_MP_Vector_OpenMP.cpp
+
+        cat ${i}-Cuda.tmpl \
+            | sed "s/\$TMPL_CLASS/$className/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN1/$conditionOpen1/g" \
+            | sed "s/\$TMPL_CONDITION_OPEN2/$conditionOpen2/g" \
+            | sed "s/\$TMPL_CONDITION_CLOSE/$conditionClose/g" \
+            > MueLu_${className}_MP_Vector_Cuda.cu
+
     fi
 
   done

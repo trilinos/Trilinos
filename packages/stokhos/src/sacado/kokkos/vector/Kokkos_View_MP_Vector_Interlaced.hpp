@@ -48,6 +48,7 @@
 #include <Kokkos_View.hpp>
 
 #include "Kokkos_View.hpp"
+#include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
 /*

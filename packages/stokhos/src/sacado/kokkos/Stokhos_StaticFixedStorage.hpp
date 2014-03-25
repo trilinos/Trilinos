@@ -175,13 +175,13 @@ namespace Stokhos {
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Resize to new size (values are preserved)

@@ -307,8 +307,8 @@ int main(int argc, char *argv[])
 #ifdef OMIT_UNTIL_CREATEINPUT_IS_DONE
 
     size_t numRows = M->getNodeNumRows();
-    int vWeightDim = objectWeights->getNumVectors();
-    int eWeightDim = edgeWeights->getNumVectors();
+    int nVertexWeights = objectWeights->getNumVectors();
+    int nEdgeWeights = edgeWeights->getNumVectors();
     int coordDim = objectCoordinates->getNumVectors();
 
     const RCP<const tmap_t> rowMap = M->getRowMap();
@@ -321,11 +321,11 @@ int main(int argc, char *argv[])
       coords.push_back(objectCoordinates->getData(i).getRawPtr());
 
     vector<const scalar_t *> vweights;
-    for (int i=0; i < vWeightDim; i++)
+    for (int i=0; i < nVertexWeights; i++)
       coords.push_back(objectWeights->getData(i).getRawPtr());
 
     vector<const scalar_t *> eweights;
-    for (int i=0; i < eWeightDim; i++)
+    for (int i=0; i < nEdgeWeights; i++)
       coords.push_back(objectWeights->getData(i).getRawPtr());
 
     std::vector<int> strides;  // empty vector implies all are "1"
@@ -390,7 +390,7 @@ int main(int argc, char *argv[])
       xmi_t *ia = NULL;
       RCP<const tcrsMatrix_t> Mptr(M);
       try{
-        ia = new xmi_t(Mptr, vWeightDim, coordDim);
+        ia = new xmi_t(Mptr, nVertexWeights, coordDim);
       }
       catch (std::exception &e){
         EXC_ERRMSG("Test error: InputAdapter build", e);
@@ -403,8 +403,8 @@ int main(int argc, char *argv[])
         }
       }
 
-      if (vWeightDim > 0){
-        for (int i=0; i < vWeightDim; i++){
+      if (nVertexWeights > 0){
+        for (int i=0; i < nVertexWeights; i++){
           ia->setRowWeights(vweights[i], 1, i);
         }
       }

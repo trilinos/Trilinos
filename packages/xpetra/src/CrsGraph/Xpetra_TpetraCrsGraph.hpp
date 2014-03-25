@@ -72,7 +72,9 @@ namespace Xpetra {
   RCP< const Tpetra::CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > > toTpetra(const RCP< const CrsGraph< LocalOrdinal, GlobalOrdinal, Node, LocalMatOps > >& graph);
 
   template <class LocalOrdinal, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
-  class TpetraCrsGraph : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> {
+  class TpetraCrsGraph
+    : public CrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  {
 
     // The following typedef is used by the XPETRA_DYNAMIC_CAST() macro.
     typedef TpetraCrsGraph<LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TpetraCrsGraphClass;
@@ -107,11 +109,11 @@ namespace Xpetra {
     //! @name Insertion/Removal Methods
     //@{
 
-    //! Insert graph indices, using global IDs.
+    //! Insert global indices into the graph.
     void insertGlobalIndices(GlobalOrdinal globalRow, const ArrayView< const GlobalOrdinal > &indices) { XPETRA_MONITOR("TpetraCrsGraph::insertGlobalIndices"); graph_->insertGlobalIndices(globalRow, indices); }
 
-    //! Insert graph indices, using local IDs.
-    void insertLocalIndices(LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices) { XPETRA_MONITOR("TpetraCrsGraph::insertLocalIndices"); graph_->insertLocalIndices(localRow, indices); }
+    //! Insert local indices into the graph.
+    void insertLocalIndices(const LocalOrdinal localRow, const ArrayView< const LocalOrdinal > &indices) { XPETRA_MONITOR("TpetraCrsGraph::insertLocalIndices"); graph_->insertLocalIndices(localRow, indices); }
 
     //! Remove all graph indices from the specified local row.
     void removeLocalIndices(LocalOrdinal localRow) { XPETRA_MONITOR("TpetraCrsGraph::removeLocalIndices"); graph_->removeLocalIndices(localRow); }
@@ -133,19 +135,19 @@ namespace Xpetra {
     //@{
 
     //! Returns the communicator.
-    const RCP< const Comm< int > >  getComm() const { XPETRA_MONITOR("TpetraCrsGraph::getComm"); return graph_->getComm(); }
+    RCP< const Comm< int > > getComm() const { XPETRA_MONITOR("TpetraCrsGraph::getComm"); return graph_->getComm(); }
 
     //! Returns the Map that describes the row distribution in this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("TpetraCrsGraph::getRowMap"); return toXpetra(graph_->getRowMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRowMap() const { XPETRA_MONITOR("TpetraCrsGraph::getRowMap"); return toXpetra(graph_->getRowMap()); }
 
     //! Returns the Map that describes the column distribution in this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("TpetraCrsGraph::getColMap"); return toXpetra(graph_->getColMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getColMap() const { XPETRA_MONITOR("TpetraCrsGraph::getColMap"); return toXpetra(graph_->getColMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("TpetraCrsGraph::getDomainMap"); return toXpetra(graph_->getDomainMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getDomainMap() const { XPETRA_MONITOR("TpetraCrsGraph::getDomainMap"); return toXpetra(graph_->getDomainMap()); }
 
     //! Returns the Map associated with the domain of this graph.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("TpetraCrsGraph::getRangeMap"); return toXpetra(graph_->getRangeMap()); }
+    RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getRangeMap() const { XPETRA_MONITOR("TpetraCrsGraph::getRangeMap"); return toXpetra(graph_->getRangeMap()); }
 
     //! Returns the importer associated with this graph.
     RCP< const Import< LocalOrdinal, GlobalOrdinal, Node > > getImporter() const { XPETRA_MONITOR("TpetraCrsGraph::getImporter"); return toXpetra(graph_->getImporter()); }
@@ -192,37 +194,37 @@ namespace Xpetra {
     //! Returns the number of local diagonal entries, based on global row/column index comparisons.
     size_t getNodeNumDiags() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeNumDiags"); return graph_->getNodeNumDiags(); }
 
-    //! Returns the maximum number of entries across all rows/columns on all nodes.
+    //! Maximum number of entries in all rows over all processes.
     size_t getGlobalMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsGraph::getGlobalMaxNumRowEntries"); return graph_->getGlobalMaxNumRowEntries(); }
 
-    //! Returns the maximum number of entries across all rows/columns on this node.
+    //! Maximum number of entries in all rows owned by the calling process.
     size_t getNodeMaxNumRowEntries() const { XPETRA_MONITOR("TpetraCrsGraph::getNodeMaxNumRowEntries"); return graph_->getNodeMaxNumRowEntries(); }
 
-    //! Indicates whether the graph has a well-defined column map.
+    //! Whether the graph has a column Map.
     bool hasColMap() const { XPETRA_MONITOR("TpetraCrsGraph::hasColMap"); return graph_->hasColMap(); }
 
-    //! Indicates whether the graph is lower triangular.
+    //! Whether the graph is locally lower triangular.
     bool isLowerTriangular() const { XPETRA_MONITOR("TpetraCrsGraph::isLowerTriangular"); return graph_->isLowerTriangular(); }
 
-    //! Indicates whether the graph is upper triangular.
+    //! Whether the graph is locally upper triangular.
     bool isUpperTriangular() const { XPETRA_MONITOR("TpetraCrsGraph::isUpperTriangular"); return graph_->isUpperTriangular(); }
 
-    //! If graph indices are in the local range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using local indices on the calling process.
     bool isLocallyIndexed() const { XPETRA_MONITOR("TpetraCrsGraph::isLocallyIndexed"); return graph_->isLocallyIndexed(); }
 
-    //! If graph indices are in the global range, this function returns true. Otherwise, this function returns false. */.
+    //! Whether column indices are stored using global indices on the calling process.
     bool isGloballyIndexed() const { XPETRA_MONITOR("TpetraCrsGraph::isGloballyIndexed"); return graph_->isGloballyIndexed(); }
 
-    //! Returns true if fillComplete() has been called and the graph is in compute mode.
+    //! Whether fillComplete() has been called and the graph is in compute mode.
     bool isFillComplete() const { XPETRA_MONITOR("TpetraCrsGraph::isFillComplete"); return graph_->isFillComplete(); }
 
     //! Returns true if storage has been optimized.
     bool isStorageOptimized() const { XPETRA_MONITOR("TpetraCrsGraph::isStorageOptimized"); return graph_->isStorageOptimized(); }
 
-    //! Extract a const, non-persisting view of global indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of global indices in the given row.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &Indices) const { XPETRA_MONITOR("TpetraCrsGraph::getGlobalRowView"); graph_->getGlobalRowView(GlobalRow, Indices); }
 
-    //! Extract a const, non-persisting view of local indices in a specified row of the graph.
+    //! Return a const, nonpersisting view of local indices in the given row.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices) const { XPETRA_MONITOR("TpetraCrsGraph::getLocalRowView"); graph_->getLocalRowView(LocalRow, indices); }
 
     //@}
@@ -250,7 +252,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsGraph::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(graph_->getMap()) ); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsGraph::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(graph_->getMap()) ); }
 
     //! Import.
     void doImport(const DistObject<GlobalOrdinal, LocalOrdinal, GlobalOrdinal, Node> &source,
@@ -320,7 +322,7 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  RCP< const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return TpetraCrsGraph instead of CrsGraph
+  RCP<const CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > toXpetra(RCP<const Tpetra::CrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > graph) { //TODO: return TpetraCrsGraph instead of CrsGraph
     // typedef TpetraCrsGraph<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> TpetraCrsGraphClass;
     // XPETRA_RCP_DYNAMIC_CAST(const TpetraCrsGraphClass, graph, tGraph, "toTpetra");
     if (graph.is_null())

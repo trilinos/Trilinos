@@ -42,6 +42,9 @@
 #ifndef KOKKOS_VIEW_MP_VECTOR_UTILS_HPP
 #define KOKKOS_VIEW_MP_VECTOR_UTILS_HPP
 
+#include "Kokkos_View_Utils.hpp"
+#include "Sacado_MP_Vector.hpp"
+
 namespace Kokkos {
 
 // Type name for a local, unmanaged view with possibly a different static size
@@ -81,30 +84,37 @@ struct LocalMPVectorView<ViewType, LocalSize, 1, false> {
                         Kokkos::MemoryUnmanaged > type;
 };
 
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
+template <typename ViewType,
+          unsigned LocalSize>
+struct LocalMPVectorView< ViewType, LocalSize, 2, true > {
+  typedef typename ViewType::value_type vector_type;
+  typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::device_type device_type;
+  typedef typename vector_type::storage_type storage_type;
+  typedef typename storage_type::template apply_N<LocalSize> StorageApply;
+  typedef typename StorageApply::type local_storage_type;
+  typedef Sacado::MP::Vector< local_storage_type > local_value_type;
+
+  typedef Kokkos::View< local_value_type**,
+                        array_layout,
+                        device_type,
+                        Kokkos::MemoryUnmanaged > type;
+};
+
+template <typename ViewType,
+          unsigned LocalSize>
+struct LocalMPVectorView<ViewType, LocalSize, 2, false> {
+  typedef typename ViewType::value_type vector_type;
+  typedef typename ViewType::array_layout array_layout;
+  typedef typename ViewType::device_type device_type;
+
+  typedef Kokkos::View< vector_type**,
+                        array_layout,
+                        device_type,
+                        Kokkos::MemoryUnmanaged > type;
+};
 
 namespace Impl {
-
-template< class T , class Device > struct RebindStokhosStorageDevice ;
-
-template< class T , class Device >
-struct RebindStokhosStorageDevice< T * , Device >
-{
-  typedef typename RebindStokhosStorageDevice< T , Device >::type * type ;
-};
-
-template< class T , class Device >
-struct RebindStokhosStorageDevice< T [] , Device >
-{
-  typedef typename RebindStokhosStorageDevice< T , Device >::type * type ;
-};
-
-template< class T , unsigned N , class Device >
-struct RebindStokhosStorageDevice< T[N] , Device >
-{
-  typedef typename RebindStokhosStorageDevice< T , Device >::type type[N] ;
-};
 
 template< class OldStorageType , class Device >
 struct RebindStokhosStorageDevice< Sacado::MP::Vector< OldStorageType > , Device >
@@ -138,121 +148,8 @@ struct RebindStokhosStorageDevice< const Sacado::MP::Vector< OldStorageType > , 
   typedef const typename NewVectorApply::type type ;
 };
 
-// Get Sacado size from a list of dimensions
-template <unsigned Rank> struct GetSacadoSize {};
-template <> struct GetSacadoSize<1> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 = 0 ,
-                      const size_t n3 = 0 ,
-                      const size_t n4 = 0 ,
-                      const size_t n5 = 0 ,
-                      const size_t n6 = 0 ,
-                      const size_t n7 = 0 ) {
-    return n1;
-  }
-};
-template <> struct GetSacadoSize<2> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 = 0 ,
-                      const size_t n4 = 0 ,
-                      const size_t n5 = 0 ,
-                      const size_t n6 = 0 ,
-                      const size_t n7 = 0 ) {
-    return n2;
-  }
-};
-template <> struct GetSacadoSize<3> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 ,
-                      const size_t n4 = 0 ,
-                      const size_t n5 = 0 ,
-                      const size_t n6 = 0 ,
-                      const size_t n7 = 0 ) {
-    return n3;
-  }
-};
-template <> struct GetSacadoSize<4> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 ,
-                      const size_t n4 ,
-                      const size_t n5 = 0 ,
-                      const size_t n6 = 0 ,
-                      const size_t n7 = 0 ) {
-    return n4;
-  }
-};
-template <> struct GetSacadoSize<5> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 ,
-                      const size_t n4 ,
-                      const size_t n5 ,
-                      const size_t n6 = 0 ,
-                      const size_t n7 = 0 ) {
-    return n5;
-  }
-};
-template <> struct GetSacadoSize<6> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 ,
-                      const size_t n4 ,
-                      const size_t n5 ,
-                      const size_t n6 ,
-                      const size_t n7 = 0 ) {
-    return n6;
-  }
-};
-template <> struct GetSacadoSize<7> {
-  static size_t eval( const size_t n0 ,
-                      const size_t n1 ,
-                      const size_t n2 ,
-                      const size_t n3 ,
-                      const size_t n4 ,
-                      const size_t n5 ,
-                      const size_t n6 ,
-                      const size_t n7 ) {
-    return n7;
-  }
-};
-
-template< typename T , T v , bool NonZero = ( v != T(0) ) >
-struct integral_nonzero
-{
-  // Declaration of 'static const' causes an unresolved linker symbol in debug
-  // static const T value = v ;
-  enum { value = T(v) };
-  typedef T value_type ;
-  typedef integral_nonzero<T,v> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & ) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero &) {return *this;}
-};
-
-template< typename T , T zero >
-struct integral_nonzero<T,zero,false>
-{
-  T value ;
-  typedef T value_type ;
-  typedef integral_nonzero<T,0> type ;
-  KOKKOS_INLINE_FUNCTION integral_nonzero() : value() {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const T & v ) : value(v) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero( const integral_nonzero & v) : value(v.value) {}
-  KOKKOS_INLINE_FUNCTION integral_nonzero& operator=(const integral_nonzero & v) { value = v.value; return *this; }
-};
-
 } // namespace Impl
 
 } // namespace Kokkos
 
-#endif // KOKKOS_VIEW_MP_VECTOR_
+#endif // KOKKOS_VIEW_MP_VECTOR_UTILS_HPP

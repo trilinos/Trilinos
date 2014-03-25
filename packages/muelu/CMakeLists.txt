@@ -11,16 +11,34 @@ TRIBITS_PACKAGE(MueLu ENABLE_SHADOWING_WARNINGS)
 #
 # B) Set up package-specific options
 #
+IF ((CMAKE_CXX_COMPILER_ID MATCHES "GNU") AND (CMAKE_CXX_COMPILER_VERSION VERSION_GREATER "4.7"))
+  SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -Wno-unused-local-typedefs")
+ENDIF()
 
 
 TRIBITS_ADD_EXPLICIT_INSTANTIATION_OPTION()
 TRIBITS_ADD_DEBUG_OPTION()
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 
+IF (${PACKAGE_NAME}_ENABLE_Epetra AND NOT ${PACKAGE_NAME}_ENABLE_EpetraExt)
+  MESSAGE(FATAL_ERROR "You have enabled Epetra, but not EpetraExt. MueLu requires that either both are enabled, or both are disabled. Please either disable Epetra, or enable EpetraExt.")
+ENDIF()
+
 # Disable Ifpack2 if Tpetra is off
 IF (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
   SET(${PACKAGE_NAME}_ENABLE_Ifpack2 OFF)
   GLOBAL_SET(HAVE_${PACKAGE_NAME_UC}_IFPACK2 OFF)
+ENDIF ()
+
+# Enable timer synchronization via barriers
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  ${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION
+  HAVE_${PACKAGE_NAME_UC}_TIMER_SYNCHRONIZATION
+  "Enable timer synchronization in MueLu via barriers."
+  NO)
+
+IF (${PACKAGE_NAME}_ENABLE_TIMER_SYNCHRONIZATION)
+  MESSAGE(STATUS "Enabling timer synchronization")
 ENDIF ()
 
 # Enable experimental code
@@ -32,6 +50,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
 IF (${PACKAGE_NAME}_ENABLE_Experimental AND NOT Xpetra_ENABLE_Experimental)
   MESSAGE(FATAL_ERROR "Option MueLu_ENABLE_Experimental=ON requires Xpetra_ENABLE_Experimental=ON.")
 ENDIF ()
+
+IF (${PACKAGE_NAME}_ENABLE_Experimental)
+  MESSAGE(STATUS "Enabling MueLu experimental code")
+ENDIF()
 
 # Memory testing
 IF (${PACKAGE_NAME}_ENABLE_MEMORY_TESTING)
@@ -45,6 +67,10 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_PROFILING
   HAVE_${PACKAGE_NAME_UC}_PROFILING
   "Enable detailed timing and memory profiling of MueLu."
   OFF)
+
+IF (${PACKAGE_NAME}_ENABLE_PROFILING)
+  MESSAGE(STATUS "Enabling MueLu profiling code")
+ENDIF()
 
 # Profiling (expert users only. There is no TPL for Google Perftools)
 TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_GOOGLE_PERFTOOLS

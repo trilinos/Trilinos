@@ -209,6 +209,14 @@ public:
            size_t( c[2] - m_owns_node_box[j][2][0] ) ) );
   }
 
+  KOKKOS_INLINE_FUNCTION
+  size_t global_node_id( const unsigned c[] ) const
+  {
+    return size_t( c[0] - m_global_node_box[0][0] ) + size_t( m_global_node_box[0][1] - m_global_node_box[0][0] ) * (
+           size_t( c[1] - m_global_node_box[1][0] ) + size_t( m_global_node_box[1][1] - m_global_node_box[1][0] ) * (
+           size_t( c[2] - m_global_node_box[2][0] ) ) );
+  }
+
   //----------------------------------------
 
   KOKKOS_INLINE_FUNCTION

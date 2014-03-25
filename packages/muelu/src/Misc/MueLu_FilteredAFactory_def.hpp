@@ -56,9 +56,9 @@
 
 #include "MueLu_FilteredAFactory_decl.hpp"
 
+#include "MueLu_FactoryManager.hpp"
 #include "MueLu_Level.hpp"
 #include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManager.hpp"
 
 namespace MueLu {
 
@@ -82,11 +82,17 @@ namespace MueLu {
     currentLevel.DeclareInput("Filtering", currentLevel.GetFactoryManager()->GetFactory("Filtering").get());
   }
 
+// Epetra's API allows direct access to row array.
+// Tpetra's API does not, providing only ArrayView<const .>
+// But in most situations we are currently interested in, it is safe to assume
+// that the view is to the actual data. So this macro directs the code to do
+// const_cast, and modify the entries directly. This allows us to avoid
+// replaceLocalValues() call which is quite expensive due to all the searches.
+#define ASSUME_DIRECT_ACCESS_TO_ROW
+
   // TODO: rewrite the function using AmalgamationInfo
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FilteredAFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
-    using Teuchos::as;
-
     FactoryMonitor m(*this, "Matrix filtering", currentLevel);
 
     RCP<Matrix> A = Get< RCP<Matrix> >(currentLevel, "A");
@@ -95,79 +101,113 @@ namespace MueLu {
       Set(currentLevel, "A", A);
       return;
     }
+    size_t blkSize = A->GetFixedBlockSize();
 
     const ParameterList& pL = GetParameterList();
     bool lumping = pL.get<bool>("lumping");
     if (lumping)
       GetOStream(Runtime0) << "Lumping dropped entries" << std::endl;
 
-    RCP<GraphBase> G       = Get< RCP<GraphBase> >(currentLevel, "Graph");
-    size_t         blkSize = A->GetFixedBlockSize();
+    RCP<GraphBase> G = Get< RCP<GraphBase> >(currentLevel, "Graph");
 
-    // Calculate max entries per row
-    RCP<Matrix> filteredA = MatrixFactory::Build(A->getRowMap(), A->getColMap(), A->getNodeMaxNumRowEntries(), Xpetra::StaticProfile);
+    SC zero = Teuchos::ScalarTraits<SC>::zero();
 
-    Array<LO>   newInds;
-    Array<SC>   newVals;
-    Array<char> filter(blkSize*G->GetImportMap()->getNodeNumElements(), 0);
+    // Both Epetra and Tpetra matrix-matrix multiply use the following trick:
+    // if an entry of the left matrix is zero, it does not compute or store the
+    // zero value.
+    //
+    // This trick allows us to bypass constructing a new matrix. Instead, we
+    // make a deep copy of the original one, and fill it in with zeros, which
+    // are ignored during the prolongator smoothing.
+    RCP<Matrix> filteredA = MatrixFactory::Build(A->getCrsGraph());
 
-    size_t numGRows = G->GetNodeNumVertices(), numInds = 0, diagIndex;
-    SC diagExtra;
+    filteredA->resumeFill();
+
+    ArrayView<const LO> inds;
+    ArrayView<const SC> valsA;
+#ifdef ASSUME_DIRECT_ACCESS_TO_ROW
+    ArrayView<SC>       vals;
+#else
+    Array<SC>           vals;
+#endif
+    Array<char> filter(blkSize * G->GetImportMap()->getNodeNumElements(), 0);
+
+    size_t numGRows = G->GetNodeNumVertices();
     for (size_t i = 0; i < numGRows; i++) {
       // Set up filtering array
-      Teuchos::ArrayView<const LO> indsG = G->getNeighborVertices(i);
-      for (size_t j = 0; j < as<size_t> (indsG.size()); j++)
+      ArrayView<const LO> indsG = G->getNeighborVertices(i);
+      for (size_t j = 0; j < as<size_t>(indsG.size()); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 1;
 
       for (size_t k = 0; k < blkSize; k++) {
-        LocalOrdinal row = i*blkSize+k;
-        ArrayView<const LO> oldInds;
-        ArrayView<const SC> oldVals;
-        A->getLocalRowView(row, oldInds, oldVals);
+        LO row = i*blkSize + k;
 
-        diagIndex = as<size_t>(-1);
-        diagExtra = Teuchos::ScalarTraits<SC>::zero();
+        A->getLocalRowView(row, inds, valsA);
 
-        newInds.resize(oldInds.size());
-        newVals.resize(oldVals.size());
-        numInds = 0;
-        for (size_t j = 0; j < as<size_t> (oldInds.size()); j++)
-          if (filter[oldInds[j]]) {
-            newInds[numInds] = oldInds[j];
-            newVals[numInds] = oldVals[j];
+        size_t nnz = inds.size();
+        if (nnz == 0)
+          continue;
 
-            // Remember diagonal position
-            if (newInds[numInds] == row)
-              diagIndex = numInds;
-            numInds++;
+#ifdef ASSUME_DIRECT_ACCESS_TO_ROW
+        // Transform ArrayView<const SC> into ArrayView<SC>
+        ArrayView<const SC> vals1;
+        filteredA->getLocalRowView(row, inds, vals1);
+        vals = ArrayView<SC>(const_cast<SC*>(vals1.getRawPtr()), nnz);
 
-          } else {
-            diagExtra += oldVals[j];
+        memcpy(vals.getRawPtr(), valsA.getRawPtr(), nnz*sizeof(SC));
+#else
+        vals = Array<SC>(valsA);
+#endif
+
+        if (lumping == false) {
+          for (size_t j = 0; j < nnz; j++)
+            if (!filter[inds[j]])
+              vals[j] = zero;
+
+        } else {
+          LO diagIndex = -1;
+          SC diagExtra = zero;
+
+          for (size_t j = 0; j < nnz; j++) {
+            if (filter[inds[j]])
+              continue;
+
+            if (inds[j] == row) {
+              // Remember diagonal position
+              diagIndex = j;
+
+            } else {
+              diagExtra += vals[j];
+            }
+
+            vals[j] = zero;
           }
-        // Lump dropped entries
-        // NOTE
-        //  * Does it make sense to lump for elasticity?
-        //  * Is it different for diffusion and elasticity?
-        if (lumping)
-          newVals[diagIndex] += diagExtra;
 
-        newInds.resize(numInds);
-        newVals.resize(numInds);
+          // Lump dropped entries
+          // NOTE
+          //  * Does it make sense to lump for elasticity?
+          //  * Is it different for diffusion and elasticity?
+          if (diagIndex != -1)
+            vals[diagIndex] += diagExtra;
+        }
 
+#ifndef ASSUME_DIRECT_ACCESS_TO_ROW
         // Because we used a column map in the construction of the matrix
         // we can just use insertLocalValues here instead of insertGlobalValues
-        filteredA->insertLocalValues(row, newInds, newVals);
+        filteredA->replaceLocalValues(row, inds, vals);
+#endif
       }
 
-      // Clean up filtering array
+      // Reset filtering array
       for (size_t j = 0; j < as<size_t> (indsG.size()); j++)
         for (size_t k = 0; k < blkSize; k++)
           filter[indsG[j]*blkSize+k] = 0;
     }
+
     RCP<ParameterList> fillCompleteParams(new ParameterList);
     fillCompleteParams->set("No Nonlocal Changes", true);
-    filteredA->fillComplete(A->getDomainMap(), A->getRangeMap(), fillCompleteParams);
+    filteredA->fillComplete(fillCompleteParams);
 
     filteredA->SetFixedBlockSize(blkSize);
 

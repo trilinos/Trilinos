@@ -111,47 +111,43 @@ public:
 
   size_t getLocalNumOf(MeshEntityType etype) const
   {
-    if (MESH_REGION == etype) {
-      return RnumIds_;
-    }
-
-    if (MESH_FACE == etype) {
-      return FnumIds_;
-    }
-
-    if (MESH_EDGE == etype) {
-      return EnumIds_;
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
+      return num_elem_;
     }
 
     if (MESH_VERTEX == etype) {
-      return VnumIds_:
+      return num_nodes_:
     }
+
+    return 0;
   }
    
   size_t getIDsViewOf(MeshEntityType etype, const gid_t *&Ids) const
   {
-    if (MESH_REGION == etype) {
-      Ids = RidList_;
-      return RnumIds_;
-    }
-
-    if (MESH_FACE == etype) {
-      Ids = FidList_;
-      return FnumIds_;
-    }
-
-    if (MESH_EDGE == etype) {
-      Ids = EidList_;
-      return EnumIds_;
+    if (MESH_REGION == etype && 3 == dimension_ ||
+	MESH_FACE == etype && 2 == dimension_) {
+      Ids = element_num_map_;
+      return num_elem_;
     }
 
     if (MESH_VERTEX == etype) {
-      Ids = VidList_;
-      return VnumIds_;
+      Ids = node_num_map_;
+      return num_nodes_;
     }
+
+    Ids = NULL;
+    return 0;
   }
 
-  int getDimensionOf(MeshEntityType etype) const { return dimension_; }
+  void getWeigthsViewOf(MeshEntityType etype, const scalar_t *&weights,
+			int &stride, int idx = 0) const
+  {
+    weights = NULL;
+    stride = 0;
+  }
+
+  int getDimensionOf() const { return dimension_; }
 
   void getCoordinatesViewOf(MeshEntityType etype, const scalar_t *&coords,
 			    int &stride, int dim} const {
@@ -160,35 +156,62 @@ public:
       emsg << __FILE__ << ";" <<__LINE__
 	   << "  Invalid dimension " << dim << std::endl;
       throw std::runtime_error(emsg.str());
+    } else if (MESH_REGION == etype && 3 == dimension_ ||
+	       MESH_FACE == etype && 2 == dimension_) {
+      coords = Acoords_;
+      stride = 1;
+    } else if (MESH_REGION == etype && 2 == dimension_) {
+      coords = NULL;
+      stride = 0;
+    } else if (MESH_VERTEX == etype) {
+      coords = coords_;
+      stride = 1;
+    } else {
+      coords = NULL;
+      stride = 0;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
+    }
+  }
+
+  bool availAdjs(MeshEntityType source, MeshEntityType target) {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension_) {
+      return TRUE;
     }
 
-    if (MESH_REGION == etype) {
-      coords = Rcoords_;
-      stride = 1;
+    return FALSE;
+  }
+
+  size_t getLocalNumAdjs(MeshEntityType source, MeshEntityType target) const
+  {
+    if (availAdjs(source, target)) {
+      return telct_;
     }
 
-    if (MESH_FACE == etype) {
-      coords = Fcoords_;
-      stride = 1;
-    }
+    return 0;
+  }
 
-    if (MESH_EDGE == etype) {
-      coords = Ecoords_;
-      stride = 1;
-    }
-
-    if (MESH_VERTEX == etype) {
-      coords = Vcoords_;
-      stride = 1;
+  void getAdjsView(MeshEntityType source, MeshEntityType target,
+		   const lno_t *&offsets, const gid_t *& adjacencyIds) const
+  {
+    if (MESH_REGION == source && MESH_VERTEX == target && 3 == dimension_ ||
+	MESH_FACE == source && MESH_VERTEX == target && 2 == dimension) {
+      offsets = elemOffsets;
+      adjacencyIds = elemToNode_;
+    } else if (MESH_REGION == source && 2 == dimension_) {
+      offsets = NULL;
+      adjacencyIds = NULL;
+    } else {
+      offsets = NULL;
+      adjacencyIds = NULL;
+      Z2_THROW_NOT_IMPLEMENTED_ERROR
     }
   }
 
 private:
-  lno_t RnumIds_, FnumIds_, EnumIds_, VnumIds_;
-  const gid_t *RidList_, *FidList_, *EidList_, *VidList_;
-
-  long long dimension_;
-  double * Rcoords_, Fcoords_, Ecoords_, Vcoords_, Acoords_;
+  long long dimension_, num_nodes_, num_elem_, *element_num_map_;
+  long long *node_num_map_, *elemToNode_, telct_, *elemOffsets_;
+  double *coords_, *Acoords_;
 };
 
 ////////////////////////////////////////////////////////////////
@@ -203,125 +226,96 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   int error = 0;
   int exoid = 0;
-  long long num_nodes, num_elem, num_elem_blk, num_node_sets, num_side_sets;
+  long long num_elem_blk, num_node_sets, num_side_sets;
   im_ex_get_init_l ( exoid, "PAMGEN Inline Mesh", &dimension_,
-		     &num_nodes, &num_elem, &num_elem_blk,
+		     &num_nodes_, &num_elem_, &num_elem_blk,
 		     &num_node_sets, &num_side_sets);
 
-  Vcoords_ = (double *)malloc(num_nodes * dimension_ * sizeof(double));
+  coords_ = new double [num_nodes_ * dimension_];
 
-  error += im_ex_get_coord_l(exoid, Vcoords_, Vcoords_ + num_nodes,
-			   Vcoords_ + 2 * num_nodes);
+  error += im_ex_get_coord_l(exoid, coords_, coords_ + num_nodes_,
+			     coords_ + 2 * num_nodes_);
 
-  if (3 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
+  *element_num_map_ = new long long [num_elem_];
+  error += im_ex_get_elem_num_map_l(exoid, element_num_map_);
 
-    RnumIds_ = num_elem;
-    RidList_ = element_num_map;
-  } else {
-    RnumIds_ = 0;
-    RidList_ = NULL;
-  }
-
-  if (2 == dimension_ && num_elem) {
-    int * element_num_map = (int *)malloc(num_elem * sizeof(int));
-    error += im_ex_get_elem_num_map_l(exoid, element_num_map);
-
-    FnumIds_ = num_elem;
-    FidList_ = element_num_map;
-  } else {
-    FnumIds_ = 0;
-    FidList_ = NULL;
-  }
-
-  EnumIds_ = 0;
-  EidList_ = NULL;
-
-  if (num_nodes) {
-    int * node_num_map = (int *)malloc(num_nodes * sizeof(int));
-    error += im_ex_get_node_num_map_l(exoid, node_num_map);
-
-    VnumIds_ = num_nodes;
-    VidList_ = node_num_map;
-  } else {
-    VnumIds_ = 0;
-    VidList_ = NULL;
-  }
+  *node_num_map_ = new long long [num_nodes_];
+  error += im_ex_get_node_num_map_l(exoid, node_num_map_);
 
   long long *elem_blk_ids       = new long long [num_elem_blk];
+  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
+
   long long *num_nodes_per_elem = new long long [num_elem_blk];
   long long *num_attr           = new long long [num_elem_blk];
   long long *num_elem_this_blk  = new long long [num_elem_blk];
   char **elem_type              = new char * [num_elem_blk];
   long long **connect           = new long long * [num_elem_blk];
 
-  error += im_ex_get_elem_blk_ids_l(exoid, elem_blk_ids);
-
   for(long long i = 0; i < num_elem_blk; i++){
     elem_type[i] = new char [MAX_STR_LENGTH + 1];
     error += im_ex_get_elem_block_l(exoid, elem_blk_id[i], elem_type[i],
-				  (long long*)&(num_elem_this_blk[i]),
-				  (long long*)&(num_nodes_per_elem[i]),
-				  (long long*)&(num_attr[i]));
+				    (long long*)&(num_elem_this_blk[i]),
+				    (long long*)&(num_nodes_per_elem[i]),
+				    (long long*)&(num_attr[i]));
   }
 
-  Acoords_ = (double *)malloc(num_elem * dimension_ * sizeof(double));
-  int a = 0;
+  Acoords_ = new double [num_elem_ * dimension_];
+  long long a = 0;
 
-  for(long long b = 0; b < num_elem_blk; b++){
-    connect[b] = new long long [num_nodes_per_elem[b] *
-				num_elem_this_blk[b]];
+  for(long long b = 0; b < num_elem_blk; b++) {
+    connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
     error += im_ex_get_elem_conn_l(exoid, elem_blk_id[b], connect[b]);
 
-    for(int i = 0; i < num_elem_this_blk[b]; i++){
+    for(long long i = 0; i < num_elem_this_blk[b]; i++) {
       Acoords_[a] = 0;
-      Acoords_[num_nodes + a] = 0;
+      Acoords_[num_nodes_ + a] = 0;
 
       if (3 == dimension_) {
-	Acoords_[2 * num_nodes + a] = 0;
+	Acoords_[2 * num_nodes_ + a] = 0;
       }
 
-      for(int j = 0; j < num_nodes_per_elem[b]; j++){
+      for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	Acoords_[a] +=
-	  Vcoords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
-	Acoords_[num_nodes + a] +=
-	  Vcoords_[connect[b]
-		 [num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] - 1];
+	  coords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	Acoords_[num_nodes_ + a] +=
+	  coords_[connect[b]
+		  [num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes + a] +=
-	    Vcoords_[connect[b]
-		   [2*num_nodes+i*num_elem_this_blk[b]+num_nodes_per_elem[b]] -
+	  Acoords_[2 * num_nodes_ + a] +=
+	    coords_[connect[b]
+		   [2*num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-
 		   1];
 	}
       }
 
       Acoords_[a] /= num_nodes_per_elem[b];
-      Acoords_[num_nodes + a] /= num_nodes_per_elem[b];
+      Acoords_[num_nodes_ + a] /= num_nodes_per_elem[b];
 
       if(3 == dimension_) {
-	Acoords_[2 * num_nodes + a] /= num_nodes_per_elem[b];
+	Acoords_[2 * num_nodes_ + a] /= num_nodes_per_elem[b];
       }
 
       a++;
     }
   }
 
-  if (3 == dimension_) {
-    Rcoords_ = Acoords_;
-  } else {
-    Rcoords_ = NULL;
+  elemToNode_     = new long long [num_elem_ * num_nodes_per_elem[0]];
+  long long tnoct = 0;
+  elemOffsets_    = new long long [num_elem_];
+  telct_ = 0;
+
+  for (long long b = 0; b < num_elem_blk; b++) {
+    for (long long i = 0; i < num_elem_this_blk[b]; i++) {
+      elemOffsets_[telct_] = tnoct;
+      ++telct_;
+
+      for (long long j = 0; j < num_nodes_per_elem[b]; j++) {
+	elemToNode_[tnoct] = connect[b][i*num_nodes_per_elem[b] + j]-1;
+	++tnolct;
+      }
+    }
   }
-
-  if (2 == dimension_) {
-    Fcoords_ = Acoords_;
-  } else {
-    Fcoords_ = NULL;
-  }
-
-  Ecoords_ = NULL;
-
 }
 
   

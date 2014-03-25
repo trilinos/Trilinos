@@ -47,9 +47,11 @@
 #define MUELU_SINGLELEVELFACTORY_HPP
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Factory.hpp"
 
+#include "MueLu_Factory.hpp"
 #include "MueLu_Level_fwd.hpp"
+#include "MueLu_TimeMonitor.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -105,7 +107,35 @@ namespace MueLu {
 
       lastLevelID_ = levelID;
 #endif
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+      RCP<const Teuchos::Comm<int> > comm = requestedLevel.GetComm();
+      if (comm.is_null()) {
+        // Some factories are called before we constructed Ac, and therefore,
+        // before we set the level communicator. For such factories we can get
+        // the comm from the previous level, as all processes go there
+        RCP<Level>& prevLevel = requestedLevel.GetPreviousLevel();
+        if (!prevLevel.is_null())
+          comm = prevLevel->GetComm();
+      }
+
+      // Synchronization timer
+      std::string syncTimer = this->ShortClassName() + ": Build sync (level=" + toString(requestedLevel.GetLevelID()) + ")";
+      if (!comm.is_null()) {
+        TimeMonitor timer(*this, syncTimer);
+        comm->barrier();
+      }
+#endif
+
       Build(requestedLevel);
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+      // Synchronization timer
+      if (!comm.is_null()) {
+        TimeMonitor timer(*this, syncTimer);
+        comm->barrier();
+      }
+#endif
 
       GetOStream(Test) << *RemoveFactoriesFromList(GetParameterList()) << std::endl;;
     }

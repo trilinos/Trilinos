@@ -179,9 +179,7 @@ public:
    *  Some algorithms can use geometric entity coordinate
    *    information if it is present.
    */
-//KDD Assumed uniform dimension of all entity types in other adapters.
-//KDD Should we do the same here?
-  virtual int getDimensionOf(MeshEntityType etype) const { return 0; }
+  virtual int getDimensionOf() const { return 0; }
 
   /*! \brief Provide a pointer to one dimension of entity coordinates.
       \param coords  points to a list of coordinate values for the dimension.

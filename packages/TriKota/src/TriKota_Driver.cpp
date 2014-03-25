@@ -93,7 +93,7 @@ void TriKota::Driver::run(Dakota::DirectApplicInterface* appInterface)
 {
 
   Model& first_model = *(problem_db.model_list().begin());
-  Interface& interface  = first_model.interface();
+  Interface& interface  = first_model.derived_interface();
 
   // Pass a pointer to a Dakota::DirectApplicInterface
   interface.assign_rep(appInterface, false);

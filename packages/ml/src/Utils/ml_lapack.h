@@ -29,8 +29,8 @@ typedef long ftnlen;
 #include "fortran.h"
 #define ml_fcd fcd
 #define PREFIX
-xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_ipiv[i], &info);
 
+#define DGBSV_F77   F77_BLAS_MANGLE(sgbsv,SGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(sgttrf,SGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
@@ -68,6 +68,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define DGEEV_F77   F77_BLAS_MANGLE(dgeev,DGEEV)
 #define DGEHRD_F77  F77_BLAS_MANGLE(dgehrd,DGEHRD)
 #define DGELS_F77   F77_BLAS_MANGLE(dgels,DGELS)
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -99,6 +100,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define ml_fcd char *
 #define PREFIX
 
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -156,6 +158,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #endif /* TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE */
 #endif /* TRILINOS_NO_CONFIG_H */
 
+#define DGBSV_F77   F77_BLAS_MANGLE(dgbsv,DGBSV)
 #define DGTTRF_F77  F77_BLAS_MANGLE(dgttrf,DGTTRF)
 #define DGTTS2_F77  F77_BLAS_MANGLE(dgtts2,DGTTS2)
 #define DGETRF_F77  F77_BLAS_MANGLE(dgetrf,DGETRF)
@@ -200,6 +203,7 @@ xxxxx DGTTRF_F77(&length, trid_dl[i], trid_d[i], trid_du[i], trid_du2[i], trid_i
 #define DORGQR_F77  F77_BLAS_MANGLE(dorgqr,DORGQR)
 #define DSTEQR_F77  F77_BLAS_MANGLE(dsteqr,DSTEQR)
 
+#define SGBSV_F77   F77_BLAS_MANGLE(sgbsv,SGBSV)
 #define SGTTRF_F77  F77_BLAS_MANGLE(sgttrf,SGTTRF)
 #define SGTTS2_F77  F77_BLAS_MANGLE(sgtts2,SGTTS2)
 #define SGETRF_F77  F77_BLAS_MANGLE(sgetrf,SGETRF)
@@ -245,6 +249,7 @@ extern "C" {
 #ifndef HAVE_ML_AZTEC2_1
 
   /* Double precision LAPACK linear solvers */
+void PREFIX DGBSV_F77(int *n, int *m, int *i, int *k, double *a, int *j, int *ipiv, double * b, int *nn, int *info);
 void PREFIX DGETRF_F77(int* m, int* n, double* a, int* lda, int* ipiv, int* info);
 void PREFIX DGTTRF_F77(int* leng, double* a, double *b, double *c, double *d, int *e, int *info);
 void PREFIX DGTTS2_F77(ml_fcd, int* n, int* nrhs, double* a, double* b,

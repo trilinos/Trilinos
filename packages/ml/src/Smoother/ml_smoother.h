@@ -16,6 +16,12 @@
 /* ******************************************************************** */
 /* data structure type definition                                       */
 /* ******************************************************************** */
+typedef enum {ML_GS_standard=0,ML_GS_symmetric,ML_GS_efficient_symmetric} ML_GS_SWEEP_TYPE;
+/* 0 - Standard G-S or Block G-S
+   1 - Symmetric G-S or Block G-S
+   2 - Efficient Symmetric G-S or Block G-S
+   (i.e. pre=forward, post=backward) */
+
 
 typedef struct ML_SmootherFunc_Struct ML_SmootherFunc;
 typedef struct ML_Smoother_Struct ML_Smoother;
@@ -62,11 +68,6 @@ struct ML_SmootherFunc_Struct
    envelope         message-passing information that is used in
                     ML_exchange_bdry
 *******************************************************************************/
-typedef enum {ML_GS_standard=0,ML_GS_symmetric,ML_GS_efficient_symmetric} ML_GS_SWEEP_TYPE;
-/* 0 - Standard G-S or Block G-S
-   1 - Symmetric G-S or Block G-S
-   2 - Efficient Symmetric G-S or Block G-S
-   (i.e. pre=forward, post=backward) */
 
 struct ML_Smoother_Struct
 {

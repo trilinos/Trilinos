@@ -155,6 +155,24 @@ const char * atomic_query_version()
 #include "impl/Kokkos_Atomic_Fetch_Add.hpp"
 
 //----------------------------------------------------------------------------
+// Atomic fetch and or
+//
+// template<class T>
+// T atomic_fetch_or(volatile T* const dest, const T val)
+// { T tmp = *dest ; *dest = tmp | val ; return tmp ; }
+
+#include "impl/Kokkos_Atomic_Fetch_Or.hpp"
+
+//----------------------------------------------------------------------------
+// Atomic fetch and and
+//
+// template<class T>
+// T atomic_fetch_or(volatile T* const dest, const T val)
+// { T tmp = *dest ; *dest = tmp & val ; return tmp ; }
+
+#include "impl/Kokkos_Atomic_Fetch_And.hpp"
+
+//----------------------------------------------------------------------------
 // Memory fence
 //
 // All loads and stores from this thread will be globally consistent before continuing

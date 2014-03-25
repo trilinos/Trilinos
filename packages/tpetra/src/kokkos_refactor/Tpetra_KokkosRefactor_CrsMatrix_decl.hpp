@@ -99,6 +99,7 @@ namespace Tpetra {
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
     typedef Kokkos::View<Scalar*, typename node_type::device_type> t_ValuesType;
+    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type,void,size_t> k_local_matrix_type;
 
     //@}
     //! @name Constructors and destructor
@@ -288,6 +289,32 @@ namespace Tpetra {
                const ArrayRCP<LocalOrdinal>& columnIndices,
                const ArrayRCP<Scalar>& values,
                const RCP<ParameterList>& params = null);
+
+    /// \brief Constructor specifying column Map and a local matrix,
+    ///   which the resulting CrsMatrix views.
+    ///
+    /// Unlike most other CrsMatrix constructors, successful
+    /// completion of this constructor will result in a fill-complete
+    /// matrix.
+    ///
+    /// \param rowMap [in] Distribution of rows of the matrix.
+    ///
+    /// \param colMap [in] Distribution of columns of the matrix.
+    ///
+    /// \param lclMatrix [in] A local CrsMatrix containing all local
+    ///    matrix values as well as a local graph.  The graph's local
+    ///    row indices must come from the specified row Map, and its
+    ///    local column indices must come from the specified column
+    ///    Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsMatrix (const RCP<const map_type>& rowMap,
+               const RCP<const map_type>& colMap,
+               const k_local_matrix_type& lclMatrix,
+               const RCP<Teuchos::ParameterList>& params = null);
+
 
     // This friend declaration makes the clone() method work.
     template <class S2, class LO2, class GO2, class N2, class LMO2>
@@ -877,6 +904,18 @@ namespace Tpetra {
                               const RCP<const Import<LocalOrdinal,GlobalOrdinal,node_type> >& importer = Teuchos::null,
                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,node_type> >& exporter = Teuchos::null,
                               const RCP<ParameterList>& params = Teuchos::null);
+
+    /// \brief Replace the matrix's column Map with the given Map.
+    ///
+    /// \param newColMap [in] New column Map.  Must be nonnull.
+    ///
+    /// \pre The matrix must have no entries inserted yet, on any
+    ///   process in the row Map's communicator.
+    ///
+    /// \pre The matrix must not have been created with a constant
+    ///   (a.k.a. "static") CrsGraph.
+    void
+    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given objects.
     ///
@@ -2093,7 +2132,7 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
-    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type> k_local_matrix_type;
+  protected:
 
     typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
     typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;

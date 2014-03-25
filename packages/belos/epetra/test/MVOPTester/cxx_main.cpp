@@ -86,17 +86,17 @@ int main(int argc, char *argv[])
     }
   }
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Teuchos::RCP<Epetra_Map> Map = Teuchos::rcp( new Epetra_Map(dim, 0, *Comm) );
-  
+
   // Get update list and number of local equations from newly created Map.
   int NumMyElements = Map->NumMyElements();
   std::vector<int> MyGlobalElements(NumMyElements);
   Map->MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer std::vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
   // on this processor
   std::vector<int> NumNz(NumMyElements);
 
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 
   // Create an Epetra_Matrix
   Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix(Copy, *Map, &NumNz[0]) );
-   
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -142,14 +142,14 @@ int main(int argc, char *argv[])
     ierr = A->InsertGlobalValues(MyGlobalElements[i],1,&two,&MyGlobalElements[i]);
     assert(ierr==0);
   }
-   
+
   // Finish building the epetra matrix A
   ierr = A->FillComplete();
   assert(ierr==0);
 
   // Issue several useful typedefs;
   typedef Belos::MultiVec<double> EMV;
-  typedef Belos::Operator<double> EOP;
+  //typedef Belos::Operator<double> EOP; // unused
 
   // Create an Epetra_MultiVector for an initial std::vector to start the solver.
   // Note that this needs to have the same number of columns as the blocksize.

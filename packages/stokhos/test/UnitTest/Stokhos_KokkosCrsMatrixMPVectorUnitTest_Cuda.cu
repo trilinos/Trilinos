@@ -44,7 +44,6 @@
 #include "Teuchos_GlobalMPISession.hpp"
 
 #include "Stokhos_KokkosCrsMatrixMPVectorUnitTest.hpp"
-#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // Instantiate test for Cuda device
 using Kokkos::Cuda;
@@ -167,8 +166,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL(
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, DefaultMultiply ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, EnsembleMultiply ) \
   CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( SFS, KokkosMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, EnsembleMultiply ) \
-  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
+  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, EnsembleMultiply )
+
+// KokkosMultiply now uses Default, which uses partitions, which doesn't work
+// for dynamic storage.
+//  CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_STORAGE_OP( DS, KokkosMultiply )
 
 CRS_MATRIX_MP_VECTOR_MULTIPLY_TESTS_ORDINAL_SCALAR_DEVICE(int, double, Cuda)
 
