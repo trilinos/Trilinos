@@ -761,7 +761,9 @@ namespace Tpetra {
           //
           // FIXME (mfh 23 Mar 2014) How do I know that i is the same
           // as the directory Map LID?
-          for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
+          const size_type numPairs =
+            static_cast<size_type> (ownedPidLidPairs.size ());
+          for (size_type i = 0; i < numPairs; ++i) {
             const LO dirMapLid = static_cast<LO> (i);
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
             const std::vector<std::pair<int, LO> >& pidLidList =
@@ -847,7 +849,9 @@ namespace Tpetra {
           //
           // FIXME (mfh 23 Mar 2014) How do I know that i is the same
           // as the directory Map LID?
-          for (size_type i = 0; i < ownedPidLidPairs.size (); ++i) {
+          const size_type numPairs =
+            static_cast<size_type> (ownedPidLidPairs.size ());
+          for (size_type i = 0; i < numPairs; ++i) {
             const LO dirMapLid = static_cast<LO> (i);
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
             const std::vector<std::pair<int, LO> >& pid_and_lid =
