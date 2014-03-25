@@ -5,7 +5,27 @@
 ################################################################################
 
 
-IF (TriBITS_PROCESSED_BASE_PROJECT)
+IF ("${PROJECT_SOURCE_DIR}" STREQUAL "" AND NOT TriBITS_PROCESSED_BASE_PROJECT)
+
+  # This CMakeLists.txt file is being processed as the TriBITSProj projects's
+  # base CMakeLists.txt file!  (See comments at bottom of this file.)
+
+  INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
+  PROJECT(${PROJECT_NAME} NONE)
+  
+  SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "")
+  INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
+  
+  CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
+
+  # TriBITS is the only package so just enable it!
+  SET(${PROJECT_NAME}_ENABLE_TriBITS ON)
+
+  SET(TriBITS_PROCESSED_BASE_PROJECT ON)
+
+  TRIBITS_PROJECT()
+
+ELSE()
 
   # This CMakeLists.txt file is being processed as the TriBITS package file.
 
@@ -25,26 +45,6 @@ IF (TriBITS_PROCESSED_BASE_PROJECT)
   ENDIF()
   
   TRIBITS_PACKAGE_POSTPROCESS()
-
-ELSE()
-
-  # This CMakeLists.txt file is being processed as the TriBITSProj projects's
-  # base CMakeLists.txt file!  (See comments at bottom of this file.)
-
-  INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
-  PROJECT(${PROJECT_NAME} NONE)
-  
-  SET(${PROJECT_NAME}_TRIBITS_DIR "${CMAKE_CURRENT_SOURCE_DIR}" CACHE PATH "")
-  INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
-  
-  CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
-
-  # TriBITS is the only package so just enable it!
-  SET(${PROJECT_NAME}_ENABLE_TriBITS ON)
-
-  SET(TriBITS_PROCESSED_BASE_PROJECT ON)
-
-  TRIBITS_PROJECT()
 
 ENDIF()
 
