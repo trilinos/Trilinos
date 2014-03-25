@@ -415,14 +415,26 @@ evaluateFields(typename Traits::EvalData workset)
          int fieldNum = fieldIds_[fieldIndex];
          const std::vector<int> & elmtOffset = globalIndexer_->getGIDFieldOffsets(blockId,fieldNum);
 
-         // loop over basis functions and fill the fields
-         for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
-            int offset = elmtOffset[basis];
-            int lid = LIDs[offset];
+         if(disableSensitivities_) {
+           // loop over basis functions and fill the fields
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
 
-            // set the value and seed the FAD object
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(LIDs.size(), (*x)[lid]);
-            (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+             // set the value and seed the FAD object
+             (gatherFields_[fieldIndex])(worksetCellIndex,basis) = (*x)[lid];
+           }
+         }
+         else {
+           // loop over basis functions and fill the fields
+           for(std::size_t basis=0;basis<elmtOffset.size();basis++) {
+             int offset = elmtOffset[basis];
+             int lid = LIDs[offset];
+
+             // set the value and seed the FAD object
+             (gatherFields_[fieldIndex])(worksetCellIndex,basis) = ScalarT(LIDs.size(), (*x)[lid]);
+             (gatherFields_[fieldIndex])(worksetCellIndex,basis).fastAccessDx(offset) = seed_value;
+           }
          }
       }
    }
