@@ -37,6 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   ExtraRepo1  ""  GIT  someurl.com:/git/data/SomeExtraRepo1  ""  Continuous
   )

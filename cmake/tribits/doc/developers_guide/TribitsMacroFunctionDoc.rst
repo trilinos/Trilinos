@@ -1612,6 +1612,11 @@ itself are:
   Typically, extra tests that depend on optional test TPLs involve
   integration testing of some type.
 
+Only upstream SE packages can be listed (as defined by the order the
+packages are listed in `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ in the
+`<repoDir>/PackagesList.cmake`_ file).  Otherwise an error will occur and
+processing will stop.  Also, mispelled SE package names are caught as well.
+
 Only direct package dependenices need to be listed.  Indirect package
 dependencies are automatically handled.  For example, if this SE package
 directly depends on PKG2 which depends on PKG1 (but this SE package does not
@@ -1620,18 +1625,25 @@ dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
 automatically by the TriBITS dependency tracking system.
 
 However, currently, all TPL dependendies must be listed, even the indirect
-ones.  This is a requirement that will be dropped in the future.
+ones.  This is a requirement that will be dropped in a future version of
+TriBITS.
 
 The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
 dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
 implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
 dependencies.
 
-The dependencies within a single list do not need to be listed in any order.
-For example if PKG2 depends on PKG1, and this given SE package depends on
-both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
-"LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
-not important.
+The upstream dependencies within a single list do not need to be listed in
+any order.  For example if ``PKG2`` depends on ``PKG1``, and this given SE
+package depends on both, one can list::
+
+  LIB_REQUIRED_PACKAGES PKG2 PKG1
+
+or::
+
+  "LIB_REQUIRED_PACKAGES PKG1 PKG2
+
+Likewise the listing of TPLs order is not important.
 
 If some upstream packages are allowed to be missing, this can be specified
 by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
@@ -1698,39 +1710,48 @@ TriBITS repo.
 Usage::
 
    TRIBITS_DEFINE_REPOSITORY_PACKAGES(
-      <pkg0>  <pkg0_dir>  <pkg0_classifications>
-      <pkg1>  <pkg1_dir>  <pkg1_classifications>
+      <pkg0>  <pkg0_dir>  <pkg0_classif>
+      <pkg1>  <pkg1_dir>  <pkg1_classif>
       ...
       )
 
 This macro sets up a 2D array of NumPackages by NumColumns listing out the
 packages for a TriBITS repository.  Each row (with 3 entries) specifies a
-package which contains the three columns:
+package which contains the 3 columns (ordered 0-2):
 
-* **PACKAGE** (1st column): The name of the TriBITS package.  This name must
-  be unique across all other TriBITS packages in this or any other TriBITS
-  repo that might be combined into a single TriBITS project meta-build.  The
-  name should be a valid identifier (e.g. matches the regex
-  ``[a-zA-Z_][a-zA-Z0-9_]*``).
+0. **PACKAGE** (``<pkgi>``): The name of the TriBITS package.  This name
+   must be unique across all other TriBITS packages in this or any other
+   TriBITS repo that might be combined into a single TriBITS project
+   meta-build.  The name should be a valid identifier (e.g. matches the
+   regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 
-* **DIR** (2nd column): The relative directory for the package.  This is
-  relative to the TriBITS repository base directory.  Under this directory
-  will be a package-specific 'cmake/' directory with file
-  'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
-  entire contents of the package including all of the source code and all of
-  the tests should be contained under this directory.  The TriBITS testing
-  infrastructure relies on the mapping of changed files to these base
-  directories when deciding what packages are modified and need to be
-  retested (along with downstream packages).
+1. **DIR** (``<pkgi_dir>``)): The relative directory for the package.  This
+   is relative to the TriBITS repository base directory.  Under this
+   directory will be a package-specific 'cmake/' directory with file
+   'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+   entire contents of the package including all of the source code and all
+   of the tests should be contained under this directory.  The TriBITS
+   testing infrastructure relies on the mapping of changed files to these
+   base directories when deciding what packages are modified and need to be
+   retested (along with downstream packages).
 
-* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-  by a coma with no space in between such as "RS,PT" for a "Research
-  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-  treats this a one field in the array.  The maturity level can be left off
-  in which case it is assumed to be UM for "Unspecified Maturity".  This
-  classification for individual packages can be changed to ``EX`` for
-  specific platforms by calling `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+2. **CLASSIFICATION** (``<pkgi_classif>``)): Gives the testing group PT, ST,
+   EX and the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are
+   seprated by a coma with no space in between such as "RS,PT" for a
+   "Research Stable", "Primary Tested" package.  No spaces are allowed so
+   that CMake treats this a one field in the array.  The maturity level can
+   be left off in which case it is assumed to be UM for "Unspecified
+   Maturity".  This classification for individual packages can be changed to
+   ``EX`` for specific platforms by calling
+   `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+
+**IMPORTANT:** The packages must be listed in increasing order of package
+dependencies; there are no cyclic package dependencies allowed.  That is,
+package ``i`` can only list dependencies (in
+`<packageDir>/cmake/Dependencies.cmake`_) for packages listed before this
+package in this list (or in upstream TriBITS repositories).  This avoids an
+expensive package sorting algorithm and makes it easy to flag packages with
+circular dependencies or misspelling of package names.
 
 NOTE: This macro just sets the varaible::
 
@@ -1761,36 +1782,37 @@ TPLsList.cmake fil for a given TriBITS repo.
 Usage::
 
   TRIBITS_DEFINE_REPOSITORY_TPLS(
-    <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
-    <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
+    <tpl0_name>   <tpl0_findmod>  <tpl0_classif>
+    <tpl1_name>   <tpl1_findmod>  <tpl1_classif>
     ...
     )
 
-This macro sets up a 2D array of NumTPLS by NumColumns listing out the
-TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
-package which contains the three columns:
+This macro sets up a 2D array of NumTPLS by NumColumns listing out the TPLs
+for a TriBITS repository.  Each row (with 3 entries) specifies a package
+which contains the 3 columns (ordered 0-2):
 
-* **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
-  name must be unique across all other TriBITS TPLs in this or any other
-  TriBITS repo that might be combined into a single TriBITS project
-  meta-build.  However, a TPL can be redefined (see below).  The name should
-  be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+0. **TPL** (``<tpli_name>``)): The name of the TriBITS TPL ``<TPL_NAME>``.
+   This name must be unique across all other TriBITS TPLs in this or any
+   other TriBITS repo that might be combined into a single TriBITS project
+   meta-build.  However, a TPL can be redefined (see below).  The name should
+   be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 
-* **FINDMOD** (2nd column): The relative directory for the find module,
-  usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
-  the repository base directory.  If just the base path for the find module
-  is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
-  be assumed to be under that this directory with the standard name
-  (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
-  ``FindTPL<TPL_NAME>.cmake`` module is to use the function
-  `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+1. **FINDMOD** (``<tpli_findmod>``): The relative path for the find module,
+   usually with the name ``FindTPL<TPL_NAME>.cmake``.  This path is relative
+   to the repository base directory.  If just the base path for the find
+   module is given, ending with ``"/"`` (e.g. ``"cmake/tpls/"``) then the
+   find module will be assumed to be under that this directory with the
+   standard name (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard
+   way to write a ``FindTPL<TPL_NAME>.cmake`` module is to use the function
+   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
 
-* **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-  the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-  by a coma with no space in between such as "RS,PT" for a "Research
-  Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-  treats this a one field in the array.  The maturity level can be left off
-  in which case it is assumed to be UM for "Unspecified Maturity".
+2. **CLASSIFICATION** (``<tpl0_classif>``): Gives the testing group ``PT``,
+   ``ST``, ``EX`` and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
+   ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are seprated by a coma with no
+   space in between such as ``"RS,PT"`` for a "Research Stable", "Primary
+   Tested" package.  No spaces are allowed so that CMake treats this a one
+   field in the array.  The maturity level can be left off in which case it
+   is assumed by default to be ``UM`` for "Unspecified Maturity".
 
 A TPL defined in a upstream repo can listed again, which allows redefining
 the find module that is used to specificy the TPL.  This allows downstream
@@ -1800,7 +1822,7 @@ fully compatible with the upstream's find module.
 
 This macro just sets the varaible::
 
- ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+  ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
 
 in the current scope.  The advantages of using this macro instead of
 directly setting this varible include:
@@ -2013,6 +2035,92 @@ This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
 then performs all processing of the TriBITS project files (see ???).
 
 ToDo: Give documentation!
+
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()
++++++++++++++++++++++++++++++++++++++++++++
+
+Declare a set of extra extra repositories for a project (typically in the
+project's `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).
+
+Usage::
+
+  TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+    <repo0_name> <repo0_dir> <repo0_type> <repo0_url> <repo0_packstat> <repo0_classif>
+    <repo1_name> <repo1_dir> <repo1_type> <repo1_url> <rep10_packstat> <repo1_classif>
+    ...
+   )
+
+This macro takes in a 2D array with 6 columns, where each row defines an
+extra repository.  The 6 columns (ordered 0-5) are:
+
+0. **REPO_NAME** (``<repoi_name>``): The name given to the repository
+   ``REPOSITORY_NAME``.
+
+1. **REPO_DIR** (``<repoi_dir>``): The relative directory for the repository
+   under the project directory ``${PROJECT_SOURCE_DIR}`` (or
+   ``<projectDir>``).  If this is set to empty quoted string ``""```, then
+   the relative directory name is assumed to be same as the repository name
+   ``<repoi_name>``.
+
+2. **REPO_TYPE** (``<repoi_type>``): The version control (VC) type of the
+   repo.  Value choses include ``GIT`` and ``SVN`` (i.e. Subversion).
+   *WARNING:* Only VC repos of type ``GIT`` can fully participate in the
+   TriBITS development tool workflows.  The other VC types are supported for
+   basic cloning and updating using the ``TribitsCTestDriverCore.cmake``
+   script.
+
+3. **REPO_URL** (``<repoi_url>``): The URL of the VC repo.  This info is
+   used to initially obtain the repo source code using the VC tool listed in
+   ``<repoi_type>``.  If the repos don't need to be cloned for needed use
+   cases, then this can be the empty quoted string ``""``.
+
+4. **REPO_PACKSTAT** (``<repoi_packstat>``): Determines if the VC repository
+   contains any TriBITS packages or if it just provides directories and
+   files.  If the VC repo contains TriBITS packages, then this field is set
+   as the empty quoted string ``""``, then this repository is considered to
+   be a `TriBITS Repository`_ and must therefore contain the files described
+   in `TriBITS Repository Core Files`_.  If the listed repository is **not**
+   a TriBITS repository, and just provideds directories and packages, then
+   this field is set as ``NOPACKAGES``.
+
+5. **REPO_CLASSIFICATION** (``<repoi_classif>``): Gives the testing
+   classification of the repository which also happens to be the CTest/CDash
+   testing mode and the default dashboard track.  The valid values are
+   ``Continuous``, ``Nightly``, and ``Experimental``.  See `TriBITS
+   Package-by-Package CTest/Dash Driver`_ for a detailed description of
+   repository classifications.
+
+This command is used to put together one or more VC and/or TriBITS
+repositories to construct a larger project.  Files that contain this macro
+call are what is passed in for the option `<Project>_EXTRAREPOS_FILE`_).
+Repositories with ``<repoi_packstat>=""`` are **not** TriBITS Repositories
+and are technically not considered at all during the basic configuration of
+the a TriBITS project.  They are only listed in this file so that they can
+be used in the version control logic for tools that perform version control
+with the repositories (such as cloning, updating, looking for changed files,
+etc.).
+
+**NOTE**: These repositories must be listed in the order of package
+dependencies.  That is, all of the packages listed in repository ``i`` must
+have upstream TPL and SE package dependencies listed before this package in
+this repository or in upstream repositories ``i-1``, ``i-2``, etc.
+
+NOTE: This module just sets the local varaible::
+
+ ${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+
+in the current scope.  The advantages of using this macro instead of
+directly setting this varible include:
+
+* Asserts that the varible ``PROJECT_NAME`` is defined and set.
+
+* Avoids having to hard-code the assumed project name ``${PROJECT_NAME}``.
+  This provides more flexibility for how other TriBITS project name a given
+  TriBITS repo (i.e. the name of repo subdirs).
+
+* Avoid mispelling the name of the varible
+  ``${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY``.  If
+  you misspell the name of the macro, it is an immediate error in CMake.
 
 TRIBITS_SET_ST_FOR_DEV_MODE()
 +++++++++++++++++++++++++++++

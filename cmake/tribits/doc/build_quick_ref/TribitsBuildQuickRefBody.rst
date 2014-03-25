@@ -1085,6 +1085,8 @@ c) Viewing current values of cache variables:
 Enabling extra repositories with add-on packages:
 -------------------------------------------------
 
+.. _<Project>_EXTRA_REPOSITORIES:
+
 To configure <Project> with an extra set of packages in extra TriBITS
 repositories, configure with::
 
@@ -1111,12 +1113,14 @@ package.
 NOTE: If ``<Project>_EXTRAREPOS_FILE`` and
 ``<Project>_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified then the list of
 extra repositories in ``<Project>_EXTRA_REPOSITORIES`` must be a subset and in
-the same order as the list extra repos read in from the file
-``<Project>_EXTRAREPOS_FILE``.
+the same order as the list extra repos read in from the file specified by
+`<Project>_EXTRAREPOS_FILE`_.
 
 
 Enabling extra repositories through a file
 ------------------------------------------
+
+.. _<Project>_EXTRAREPOS_FILE:
 
 In order to provide the list of extra TriBIITS repositories containing add-on
 packages from a file, configure with::

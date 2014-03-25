@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   dummyRepo1  ""  GIT  url1:/git/dummyRepo1  NOPACKAGES   Continuous
   preCopyrightTrilinos  ""  GIT  url1:/git/preCopyrightTrilinos  ""   Continuous
   )

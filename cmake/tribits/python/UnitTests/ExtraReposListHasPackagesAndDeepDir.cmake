@@ -37,6 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   ExtraTeuchosRepo  packages/teuchos/extrastuff GIT  url3.com:/ExtraStuff  ""  Continuous  
   )

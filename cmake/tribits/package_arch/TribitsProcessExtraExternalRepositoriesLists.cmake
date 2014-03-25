@@ -44,21 +44,106 @@ INCLUDE(AdvancedOption)
 INCLUDE(AssertDefined)
 INCLUDE(TribitsSortListAccordingToMasterList)
 
-#
-# This module defines the datastructure for the list of packages
-# ${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY which has the form:
-#
-#   repo0_name  repo1_dir  repo1_repotype  repo0_repourl  repo0_packstat  repo0_classification
-#   repo1_name  repo1_dir  repo1_repotype  repo1_repourl  repo1_packstat  repo1_classification
-#   ...
-#
-# If repoi_dir is "" then it is the same as repoi_name
-# If repo_packstak is "" then it means that the repo has packages and if is NO_PACKAGES IT
-#   has no packages
-#
-# There are 6 fields per row all stored in a flat array.
-# 
 
+#
+# @MACRO: TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()
+#
+# Declare a set of extra extra repositories for a project (typically in the
+# project's `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).
+#
+# Usage::
+#
+#   TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
+#     <repo0_name> <repo0_dir> <repo0_type> <repo0_url> <repo0_packstat> <repo0_classif>
+#     <repo1_name> <repo1_dir> <repo1_type> <repo1_url> <rep10_packstat> <repo1_classif>
+#     ...
+#    )
+#
+# This macro takes in a 2D array with 6 columns, where each row defines an
+# extra repository.  The 6 columns (ordered 0-5) are:
+#
+# 0. **REPO_NAME** (``<repoi_name>``): The name given to the repository
+#    ``REPOSITORY_NAME``.
+#
+# 1. **REPO_DIR** (``<repoi_dir>``): The relative directory for the repository
+#    under the project directory ``${PROJECT_SOURCE_DIR}`` (or
+#    ``<projectDir>``).  If this is set to empty quoted string ``""```, then
+#    the relative directory name is assumed to be same as the repository name
+#    ``<repoi_name>``.
+#
+# 2. **REPO_TYPE** (``<repoi_type>``): The version control (VC) type of the
+#    repo.  Value choses include ``GIT`` and ``SVN`` (i.e. Subversion).
+#    *WARNING:* Only VC repos of type ``GIT`` can fully participate in the
+#    TriBITS development tool workflows.  The other VC types are supported for
+#    basic cloning and updating using the ``TribitsCTestDriverCore.cmake``
+#    script.
+#
+# 3. **REPO_URL** (``<repoi_url>``): The URL of the VC repo.  This info is
+#    used to initially obtain the repo source code using the VC tool listed in
+#    ``<repoi_type>``.  If the repos don't need to be cloned for needed use
+#    cases, then this can be the empty quoted string ``""``.
+#
+# 4. **REPO_PACKSTAT** (``<repoi_packstat>``): Determines if the VC repository
+#    contains any TriBITS packages or if it just provides directories and
+#    files.  If the VC repo contains TriBITS packages, then this field is set
+#    as the empty quoted string ``""``, then this repository is considered to
+#    be a `TriBITS Repository`_ and must therefore contain the files described
+#    in `TriBITS Repository Core Files`_.  If the listed repository is **not**
+#    a TriBITS repository, and just provideds directories and packages, then
+#    this field is set as ``NOPACKAGES``.
+#
+# 5. **REPO_CLASSIFICATION** (``<repoi_classif>``): Gives the testing
+#    classification of the repository which also happens to be the CTest/CDash
+#    testing mode and the default dashboard track.  The valid values are
+#    ``Continuous``, ``Nightly``, and ``Experimental``.  See `TriBITS
+#    Package-by-Package CTest/Dash Driver`_ for a detailed description of
+#    repository classifications.
+#
+# This command is used to put together one or more VC and/or TriBITS
+# repositories to construct a larger project.  Files that contain this macro
+# call are what is passed in for the option `<Project>_EXTRAREPOS_FILE`_).
+# Repositories with ``<repoi_packstat>=""`` are **not** TriBITS Repositories
+# and are technically not considered at all during the basic configuration of
+# the a TriBITS project.  They are only listed in this file so that they can
+# be used in the version control logic for tools that perform version control
+# with the repositories (such as cloning, updating, looking for changed files,
+# etc.).
+#
+# **NOTE**: These repositories must be listed in the order of package
+# dependencies.  That is, all of the packages listed in repository ``i`` must
+# have upstream TPL and SE package dependencies listed before this package in
+# this repository or in upstream repositories ``i-1``, ``i-2``, etc.
+# 
+# NOTE: This module just sets the local varaible::
+#
+#  ${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+#
+# in the current scope.  The advantages of using this macro instead of
+# directly setting this varible include:
+#
+# * Asserts that the varible ``PROJECT_NAME`` is defined and set.
+#
+# * Avoids having to hard-code the assumed project name ``${PROJECT_NAME}``.
+#   This provides more flexibility for how other TriBITS project name a given
+#   TriBITS repo (i.e. the name of repo subdirs).
+#
+# * Avoid mispelling the name of the varible
+#   ``${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY``.  If
+#   you misspell the name of the macro, it is an immediate error in CMake.
+# 
+MACRO(TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES)
+  ASSERT_DEFINED(PROJECT_NAME)
+  IF ("${ARGN}" STREQUAL "")
+    SET(${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY)
+  ELSE()
+    SET(${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY  "${ARGN}")
+  ENDIF()
+ENDMACRO()
+
+
+#
+# Field offsets
+#
 
 SET(ERP_REPO_NAME_OFFSET 0)
 SET(ERP_REPO_DIR_OFFSET 1)

@@ -24,6 +24,14 @@ TriBITS Developers Guide and Reference
 .. contents::
 
 
+.. Common references to TribitsBuildQuickRef document
+
+.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+
+
+
+
+
 Introduction
 =============
 
@@ -52,15 +60,20 @@ various qualities like libraries, executables, etc.  Without this basic
 understanding of CMake, one will have trouble resolving problems when they
 might occur.
 
-The remainder of this documented is structured as follows.  First, there is a
-discussion of the various `TriBITS Developer and User Roles`_.  Then a brief
-discussion of `CMake Language Overview and Gotchas`_ is provided.
-
-ToDo: Finish outline of the document.
-
-The final sections are detailed documentation of `TriBITS Global Project
-Settings`_, `TriBITS Macros and Functions`_, and `General Utility Macros and
-Functions`_.
+The remainder of this documented is structured as follows.  First, there is
+some additional `Background`_ material provided.  Then, a detailed
+specification of `TriBITS Project Structure`_ is given.  This is followed up
+by short descriptions of `Example TriBITS Projects` that are provided with the
+TriBITS source tree that are used throughout this document.  The topic of
+`Package Dependencies and Enable/Disable Logic`_ is then discussed. An
+overview of the foundations for `TriBITS Automated Testing`_ is then given.
+The topic of TriBITS `Multi-Repository Support`_ is examined next.
+`Development Workflows`_ using TriBITS is then explored.  This is followed by
+a set of detailed `Howtos`_.  Later some `Additional Topics`_ are presented
+that don't fit well into other sections.  Then the main bulk of the detailed
+reference material for TriBITS is given in the section `TriBITS Detailed
+Reference Documentation`_.  Finally, several bits of information is provided
+in the `Appendix`_.
 
 Background
 ==========
@@ -416,7 +429,7 @@ are:
   one or more source files built into one or more libraries and has assoicated
   tests to help define and protect the functionality provided by the software.
   A package also typically defines a unit of documentation and testing (see
-  `Automated testing`_).  A TriBITS package may or may not be broken down into
+  `TriBITS Automated Testing`_).  A TriBITS package may or may not be broken down into
   multiple subpackages. Examples of TriBITS packages in
   ``TribitsExampleProject`` include ``SimpleCXX``, ``MixedLanguage`` and
   ``PackageWithSubpackages``.  (Don't confuse a TriBTS "Package" with a raw
@@ -707,11 +720,28 @@ file `<projectDir>/cmake/ExtraRepositoriesList.cmake`_.
 
 **<projectDir>/cmake/ExtraRepositoriesList.cmake**: [Optional] If present,
 this file defines a list of extra repositories that are added on to the
-project's native repositories.
+project's native repositories.  The list of repositories is defined using the
+macro `TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_.  For example, the extra
+repos file:
 
-ToDo: Create and document the macro
-TRIBITS_PROJECT_DEFINED_EXTRA_REPOSITORIES() and use it to define an example
-meta-project that is described here.
+.. include:: ../../python/UnitTests/ExtraReposList.cmake
+   :literal:
+
+shows the speification of both TriBITS Repositories and non-TriBITS VC
+Repositories.  In the above file, the repositories ``ExtraRepo1``,
+``ExtraRepo3``, and ``ExtraRepo4`` are VC repositories that are cloned into
+directories under ``<projectDir>`` of the same names from the URLs
+``someurl.com:/ExtraRepo1``, ``someurl3.com:/ExtraRepo3``, and
+``someurl4.com:/ExtraRepo4``, respectively.  However, the repository
+``ExtraRepo2`` is **not** a `TriBITS Repository`_ because it is marked as
+``NOPACKAGES``.  In this case, it gets cloned as the directory::
+
+  <projectDir>/packages/SomePackage/Blah
+
+However, the code in the tools ``checkin-test.py`` and
+``TribitsCTetsDriverCore.cmake`` will consider this repository and directory
+and any changes to this repository will be listed as changes to
+``somePackage``.
 
 .. _<projectDir>/cmake/ProjectDependenciesSetup.cmake:
 
@@ -1849,8 +1879,8 @@ ToDo: Fill in!
 
 ToDo: Fill in!
 
-Automated testing
-=================
+TriBITS Automated Testing
+=========================
 
 Much of the value provided by the TriBITS system is related to the support of
 testing of a complex project.  Many different types of testing is required in
@@ -2240,6 +2270,11 @@ Regulated Backward Compatibility and Deprecated Code
 
 ToDo: Fill in!
 
+Wrapping Exterally Configured/Built Software as a TriBITS Package
+-----------------------------------------------------------------
+
+ToDo: Fill in!
+
 TriBITS Dashboard Driver
 ------------------------
 
@@ -2509,7 +2544,7 @@ These options are described below.
 
   The cache varaible ``${PROJECT_NAME}_TEST_CATEGORIES`` detemines what tests
   defined using `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_ will
-  be added for ``ctest`` to run (see `Automated testing`) for
+  be added for ``ctest`` to run (see `TriBITS Automated Testing`) for
   discussion of test categories).  The TriBITS default is ``NIGHTLY`` for a
   standard local build.  The ``checkin-test.py`` script sets this to
   ``BASIC``.  A TriBITS project can override the default for a basic configure
@@ -2525,8 +2560,8 @@ These options are described below.
   enabling forward (downstream) dependent packages so the cost of running the
   test suite should not be too prohibitive.  This all depends on how good of a
   job the development teams do in making their test suites run fast and
-  keeping the cost of running the tests down.  See the section `Automated
-  testing`_ for a more detailed discussion.
+  keeping the cost of running the tests down.  See the section `TriBITS
+  Automated Testing`_ for a more detailed discussion.
 
 .. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
 

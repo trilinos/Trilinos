@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-SET( Trilinos_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY
+TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   preCopyrightTrilinos  ""  GIT  url1.com:/git/preCopyrightTrilinos  ""   Continuous
   MissingRepo  ""  GIT  someusrl  ""      Continuous
   )
