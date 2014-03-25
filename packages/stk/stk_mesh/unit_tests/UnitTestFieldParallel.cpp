@@ -45,8 +45,8 @@ enum Operation
   MAX
 };
 
-template <typename T, Operation Op>
-T do_operation(T lhs, T rhs)
+template <typename T>
+T do_operation(Operation Op, T lhs, T rhs)
 {
   switch(Op) {
   case SUM:
@@ -61,8 +61,10 @@ T do_operation(T lhs, T rhs)
   }
 }
 
-template <Operation Op, typename FieldVector>
-void do_assemble(BulkData & bulk, FieldVector const& field_vector)
+
+
+template <typename FieldVector>
+void do_assemble(Operation Op, BulkData & bulk, FieldVector const& field_vector)
 {
   switch(Op) {
   case SUM:
@@ -194,11 +196,11 @@ void do_parallel_assemble()
   double_field_vector.push_back(&universal_cartesian_node_field);
   double_field_vector.push_back(&universal_scalar_edge_field);
 
-  do_assemble<Op>(bulk, double_field_vector);
+  do_assemble(Op, bulk, double_field_vector);
 
   std::vector<FieldBase*> int_field_vector(1, &universal_scalar_int_node_field);
 
-  do_assemble<Op>(bulk, int_field_vector);
+  do_assemble(Op, bulk, int_field_vector);
 
   // Check field values
 
@@ -214,22 +216,22 @@ void do_parallel_assemble()
       int field_id = 1;
 
       EXPECT_EQ( *field_data(universal_scalar_node_field, node),
-                 (do_operation<double, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
+                 (do_operation<double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       ++field_id;
 
       double* data = field_data(universal_cartesian_node_field, node);
       for (int d = 0; d < 3; ++d) {
-        EXPECT_EQ( data[d], (do_operation<double, Op>(p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id)) );
+        EXPECT_EQ( data[d], (do_operation<double>(Op, p_rank + field_id*d + node_id, sharing_rank + field_id*d + node_id)) );
       }
       ++field_id;
 
       EXPECT_EQ( *field_data(universal_scalar_int_node_field, node),
-                 (do_operation<int, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
+                 (do_operation<int>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       ++field_id;
 
       if (bucket.member(center_part)) {
         EXPECT_EQ( *field_data(non_universal_scalar_node_field, node),
-                   (do_operation<double, Op>(p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
+                   (do_operation<double>(Op, p_rank + field_id + node_id, sharing_rank + field_id + node_id)) );
       }
     }
   }
@@ -246,7 +248,7 @@ void do_parallel_assemble()
       int field_id = 5;
 
       EXPECT_EQ( *field_data(universal_scalar_edge_field, edge),
-                 (do_operation<double, Op>(p_rank + field_id + edge_id, sharing_rank + field_id + edge_id)) );
+                 (do_operation<double>(Op, p_rank + field_id + edge_id, sharing_rank + field_id + edge_id)) );
     }
   }
 }
