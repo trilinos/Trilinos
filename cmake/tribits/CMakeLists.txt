@@ -5,7 +5,7 @@
 ################################################################################
 
 
-IF ("${PROJECT_SOURCE_DIR}" STREQUAL "" AND NOT TriBITS_PROCESSED_BASE_PROJECT)
+IF (NOT TriBITS_PROCESSED_BASE_PROJECT AND NOT PACKAGE_NAME STREQUAL "TriBITS")
 
   # This CMakeLists.txt file is being processed as the TriBITSProj projects's
   # base CMakeLists.txt file!  (See comments at bottom of this file.)
