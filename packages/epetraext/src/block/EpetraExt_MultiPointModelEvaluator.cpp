@@ -59,13 +59,17 @@ EpetraExt::MultiPointModelEvaluator::MultiPointModelEvaluator(
     timeStepsOnTimeDomain(globalComm_->NumTimeStepsOnDomain()),
     numTimeDomains(globalComm_->NumSubDomains()),
     timeDomain(globalComm_->SubDomainRank()),
-#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-    rowStencil_LL(0),
-    rowIndex_LL(0),
-#endif
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     rowStencil_int(0),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    rowStencil_LL(0),
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
     rowIndex_int(0),
+#endif
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+    rowIndex_LL(0),
 #endif
     matching_vec(matching_vec_)
 {
