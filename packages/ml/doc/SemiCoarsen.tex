@@ -66,7 +66,7 @@
 %Unlimited Release \\
 %\hfill
 %\begin{center}
-Printed Apr. 2014
+Printed Mar. 2014
 \end{center}
 
 \vspace{0.1in}
@@ -107,21 +107,50 @@ However, this semicoarsening may also be beneficial on isotropic problems.
 %
 \begin{enumerate}
 \item every (x,y) mesh pair must have the same number of $z$-nodes. 
-\item mesh must be partitioned so that entire $z$-lines reside within a
-   single core. Karen D. provided a new option for this. Right now, you
-   need to ask me for a few seacas files to replace an up-to-date 
-   repository and the following commands:
+\item mesh must be partitioned so entire $z$-lines reside within a
+   single core. Karen D. provided a new option. You must
+   build seacas with an up-to-date repository and then use
 \begin{verbatim}
-              decomp --rcb --processors=42 MyMesh.exo
-              nem_slice -rcb,ignore_z  MyMesh.exo
+              decomp --rcb_ignore_z --processors=42 MyMesh.exo
+              nem_slice -l rcb,ignore_z  ...  MyMesh.exo
 \end{verbatim}
 
 \item stencil must not span more than the immediate north and south neighboring
    layers. That is, stencils reaching across $4^+$ vertical layers are not allowed.
 \end{enumerate}
 \noindent
-Note: Code written for easy addition into \Mue. Also not hard to extend to 2D
-      problems (semicoarsening in the $y$ direction) if there is interest.
+Note: Code will go into \Mue. Also, not hard to extend to 2D
+      (i.e., $y$ coarsening) if there is interest.
+\newline
+\noindent
+\phantom{Note: }Finally, I build seacas via
+{\tiny 
+\begin{verbatim}
+                                   NETCDF=/data2/TPL/netcdf-4.2.1.1/install
+                                   PREFIX=/data2/TPL/zoltsea-install
+                                   rm -f CMakeCache.txt
+                                   cmake -D CMAKE_INSTALL_PREFIX:PATH=$PREFIX \
+                                         -D TPL_ENABLE_MPI:BOOL=ON \
+                                         -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=OFF \
+                                         -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF \
+                                         -D Trilinos_ENABLE_TESTS:BOOL=OFF \
+                                         -D Trilinos_ENABLE_EXAMPLES:BOOL=OFF \
+                                         -D Trilinos_ENABLE_SEACAS:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASAprepro:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASConjoin:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASEjoin:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASEpu:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASExodiff:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASNemslice:BOOL=ON \
+                                         -D Trilinos_ENABLE_Zoltan:BOOL=ON \
+                                         -D Trilinos_ENABLE_SEACASNemspread:BOOL=ON \
+                                         -D TPL_ENABLE_Netcdf:BOOL=ON \
+                                         -D TPL_Netcdf_INCLUDE_DIRS:PATH=$NETCDF/include \
+                                         -D Netcdf_LIBRARY_DIRS:PATH=$NETCDF/lib ${TRILINOS_HOME}
+\end{verbatim}
+}
+
+
 
 %
 %%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%%
