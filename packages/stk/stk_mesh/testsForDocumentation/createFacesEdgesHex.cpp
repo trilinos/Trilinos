@@ -86,23 +86,23 @@ namespace
     //+ Create the faces..
     stk::mesh::create_faces(bulkData);
 
-    unsigned goldValuesTopologyFaceNodes[6][4] = {
+    unsigned goldValuesForHexFaceNodesFromStkTopology[6][4] = {
             {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 5, 8, 4}, {1, 4, 3, 2}, {5, 6, 7, 8} };
 
     // Lexicographical smallest permutation per face leads from topology ordering (above) for face to ordering below
 
-    unsigned goldValuesFaceNodes[6][4] = {
+    unsigned goldValuesForHexFaceNodesFromCreateFaces[6][4] = {
             {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 4, 8, 5}, {1, 2, 3, 4}, {5, 6, 7, 8} };
 
     //+ Create the edges..
     stk::mesh::create_edges(bulkData);
 
-    unsigned goldValuesTopologyEdgeNodes[12][2] = {
+    unsigned goldValuesHexEdgeNodesFromStkTopology[12][2] = {
       {1, 2}, {2, 3}, {3, 4}, {4, 1}, {5, 6}, {6, 7}, {7, 8}, {8, 5}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
 
     // Lexicographical smallest permutation per edge leads from topology ordering (above) for edge to ordering below
 
-    unsigned goldValuesEdgeNodes[12][2] = {
+    unsigned goldValuesHexEdgeNodesFromCreateEdges[12][2] = {
       {1, 2}, {2, 3}, {3, 4}, {1, 4}, {5, 6}, {6, 7}, {7, 8}, {5, 8}, {1, 5}, {2, 6}, {3, 7}, {4, 8} };
 
     // END EXAMPLE 2
@@ -119,12 +119,12 @@ namespace
     for (unsigned i=0;i<bulkData.num_edges(element);i++)
     {
         const stk::mesh::Entity *edgeNodes = bulkData.begin_nodes(edges[i]);
-        EXPECT_EQ(goldValuesEdgeNodes[i][0], bulkData.identifier(edgeNodes[0]));
-        EXPECT_EQ(goldValuesEdgeNodes[i][1], bulkData.identifier(edgeNodes[1]));
+        EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][0], bulkData.identifier(edgeNodes[0]));
+        EXPECT_EQ(goldValuesHexEdgeNodesFromCreateEdges[i][1], bulkData.identifier(edgeNodes[1]));
 
         hex.edge_nodes(globalIdsHex, i, edgeNodeIds);
-        EXPECT_EQ(goldValuesTopologyEdgeNodes[i][0], edgeNodeIds[0]);
-        EXPECT_EQ(goldValuesTopologyEdgeNodes[i][1], edgeNodeIds[1]);
+        EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][0], edgeNodeIds[0]);
+        EXPECT_EQ(goldValuesHexEdgeNodesFromStkTopology[i][1], edgeNodeIds[1]);
     }
 
     const stk::mesh::Entity *faces = bulkData.begin_faces(element);
@@ -132,16 +132,16 @@ namespace
     for (unsigned i=0;i<bulkData.num_faces(element);i++)
     {
         const stk::mesh::Entity *faceNodes = bulkData.begin_nodes(faces[i]);
-        EXPECT_EQ(goldValuesFaceNodes[i][0], bulkData.identifier(faceNodes[0])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesFaceNodes[i][1], bulkData.identifier(faceNodes[1])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesFaceNodes[i][2], bulkData.identifier(faceNodes[2])) << "failed for face " << i << std::endl;
-        EXPECT_EQ(goldValuesFaceNodes[i][3], bulkData.identifier(faceNodes[3])) << "failed for face " << i << std::endl;
+        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][0], bulkData.identifier(faceNodes[0])) << "failed for face " << i << std::endl;
+        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][1], bulkData.identifier(faceNodes[1])) << "failed for face " << i << std::endl;
+        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][2], bulkData.identifier(faceNodes[2])) << "failed for face " << i << std::endl;
+        EXPECT_EQ(goldValuesForHexFaceNodesFromCreateFaces[i][3], bulkData.identifier(faceNodes[3])) << "failed for face " << i << std::endl;
 
         hex.face_nodes(globalIdsHex, i, faceNodeIds);
-        EXPECT_EQ(goldValuesTopologyFaceNodes[i][0], faceNodeIds[0]);
-        EXPECT_EQ(goldValuesTopologyFaceNodes[i][1], faceNodeIds[1]);
-        EXPECT_EQ(goldValuesTopologyFaceNodes[i][2], faceNodeIds[2]);
-        EXPECT_EQ(goldValuesTopologyFaceNodes[i][3], faceNodeIds[3]);
+        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][0], faceNodeIds[0]);
+        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][1], faceNodeIds[1]);
+        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][2], faceNodeIds[2]);
+        EXPECT_EQ(goldValuesForHexFaceNodesFromStkTopology[i][3], faceNodeIds[3]);
     }
 
     stk::mesh::Selector allEntities = stkIo.meta_data().universal_part();
