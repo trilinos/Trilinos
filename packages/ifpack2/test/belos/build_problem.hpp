@@ -130,13 +130,13 @@ build_problem (Teuchos::ParameterList& test_params,
   using Teuchos::RCP;
   typedef LocalOrdinal LO;
   typedef GlobalOrdinal GO;
-  typedef Tpetra::CrsGraph<LO, GO, Node>                crs_graph_type;
+  //typedef Tpetra::CrsGraph<LO, GO, Node>                crs_graph_type; // unused
   typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node>       crs_matrix_type;
   typedef Tpetra::Map<LO, GO, Node>                     map_type;
   typedef Tpetra::MultiVector<Scalar, LO, GO, Node>     TMV;
-  typedef Tpetra::Operator<Scalar, LO, GO, Node>        TOP;
+  //typedef Tpetra::Operator<Scalar, LO, GO, Node>        TOP; // unused
   typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
-  typedef Belos::LinearProblem<Scalar, TMV, TOP>        BLinProb;
+  //typedef Belos::LinearProblem<Scalar, TMV, TOP>        BLinProb; // unused
 
   RCP<const crs_matrix_type> A;
   RCP<TMV> b = Teuchos::null;
