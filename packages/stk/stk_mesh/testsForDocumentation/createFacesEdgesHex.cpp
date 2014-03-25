@@ -87,12 +87,12 @@ namespace
     stk::mesh::create_faces(bulkData);
 
     unsigned goldValuesForHexFaceNodesFromStkTopology[6][4] = {
-            {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 5, 8, 4}, {1, 4, 3, 2}, {5, 6, 7, 8} };
+        {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 5, 8, 4}, {1, 4, 3, 2}, {5, 6, 7, 8} };
 
     // Lexicographical smallest permutation per face leads from topology ordering (above) for face to ordering below
 
     unsigned goldValuesForHexFaceNodesFromCreateFaces[6][4] = {
-            {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 4, 8, 5}, {1, 2, 3, 4}, {5, 6, 7, 8} };
+        {1, 2, 6, 5}, {2, 3, 7, 6}, {3, 4, 8, 7}, {1, 4, 8, 5}, {1, 2, 3, 4}, {5, 6, 7, 8} };
 
     //+ Create the edges..
     stk::mesh::create_edges(bulkData);
