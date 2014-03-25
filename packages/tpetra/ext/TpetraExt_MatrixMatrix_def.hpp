@@ -1064,9 +1064,9 @@ void mult_A_B_newmatrix(
   ArrayView<LocalOrdinal> Ccolind;
   ArrayView<Scalar> Cvals;
   Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
-  Browptr = Browptr_RCP();  Bcolind = Acolind_RCP();  Bvals = Avals_RCP();
+  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
   if(!Bview.importMatrix.is_null()) {
-    Irowptr = Irowptr_RCP();  Icolind = Acolind_RCP();  Ivals = Avals_RCP();
+    Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
   }  
 
   // The status array will contain the index into colind where this entry was last deposited.
@@ -1084,7 +1084,6 @@ void mult_A_B_newmatrix(
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
   
-
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
   Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
