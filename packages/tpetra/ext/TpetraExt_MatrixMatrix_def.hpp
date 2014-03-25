@@ -976,6 +976,7 @@ void mult_A_B_newmatrix(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
+  using Teuchos::ArrayView;  
   typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
@@ -1043,16 +1044,30 @@ void mult_A_B_newmatrix(
   size_t n=Ccolmap->getNodeNumElements();
 
   // Get Data Pointers
-  ArrayRCP<const size_t> Arowptr, Browptr, Irowptr;
-  ArrayRCP<size_t> Crowptr;
-  ArrayRCP<const LocalOrdinal> Acolind, Bcolind, Icolind;
-  ArrayRCP<LocalOrdinal> Ccolind;
-  ArrayRCP<const Scalar> Avals, Bvals, Ivals;
-  ArrayRCP<Scalar> Cvals;
+  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
+  ArrayRCP<size_t> Crowptr_RCP;
+  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
+  ArrayRCP<LocalOrdinal> Ccolind_RCP;
+  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
+  ArrayRCP<Scalar> Cvals_RCP;
 
-  Aview.origMatrix->getAllValues(Arowptr,Acolind,Avals);
-  Bview.origMatrix->getAllValues(Browptr,Bcolind,Bvals);
-  if(!Bview.importMatrix.is_null()) Bview.importMatrix->getAllValues(Irowptr,Icolind,Ivals);
+  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
+  if(!Bview.importMatrix.is_null()) Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
+
+
+  // For efficiency
+  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
+  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
+  ArrayView<const Scalar> Avals, Bvals, Ivals;
+  ArrayView<size_t> Crowptr; 
+  ArrayView<LocalOrdinal> Ccolind;
+  ArrayView<Scalar> Cvals;
+  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
+  Browptr = Browptr_RCP();  Bcolind = Acolind_RCP();  Bvals = Avals_RCP();
+  if(!Bview.importMatrix.is_null()) {
+    Irowptr = Irowptr_RCP();  Icolind = Acolind_RCP();  Ivals = Avals_RCP();
+  }  
 
   // The status array will contain the index into colind where this entry was last deposited.
   // c_status[i] < CSR_ip - not in the row yet.
@@ -1065,9 +1080,10 @@ void mult_A_B_newmatrix(
   // Classic csr assembly (low memory edition)
   size_t CSR_alloc=std::max(C_estimate_nnz(*Aview.origMatrix,*Bview.origMatrix),n);
   size_t CSR_ip=0,OLD_ip=0;
-  Crowptr.resize(m+1);
-  Ccolind.resize(CSR_alloc);
-  Cvals.resize(CSR_alloc);
+  Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
+  Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
+  Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
+  
 
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
@@ -1147,8 +1163,8 @@ void mult_A_B_newmatrix(
     // Resize for next pass if needed
     if(CSR_ip + n > CSR_alloc){
       CSR_alloc*=2;
-      Cvals.resize(CSR_alloc);
-      Ccolind.resize(CSR_alloc);
+      Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
+      Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
     }
     OLD_ip=CSR_ip;
   }
@@ -1156,8 +1172,8 @@ void mult_A_B_newmatrix(
   Crowptr[m]=CSR_ip;
 
   // Downward resize
-  Cvals.resize(CSR_ip);
-  Ccolind.resize(CSR_ip);
+  Cvals_RCP.resize(CSR_ip);
+  Ccolind_RCP.resize(CSR_ip);
 
 
 #ifdef ENABLE_MMM_TIMINGS
@@ -1168,8 +1184,8 @@ void mult_A_B_newmatrix(
   C.replaceColMap(Ccolmap);
 
   // Final sort & set of CRS arrays
-  Import_Util::sortCrsEntries(Crowptr(),Ccolind(),Cvals());
-  C.setAllValues(Crowptr,Ccolind,Cvals);
+  Import_Util::sortCrsEntries(Crowptr_RCP(),Ccolind_RCP(),Cvals_RCP());
+  C.setAllValues(Crowptr_RCP,Ccolind_RCP,Cvals_RCP);
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = rcp (new TimeMonitor (* (TimeMonitor::getNewTimer("TpetraExt: MMM Newmatrix ESFC"))));
