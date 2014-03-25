@@ -61,39 +61,48 @@ INCLUDE(TribitsListHelpers)
 # Usage::
 #
 #    TRIBITS_DEFINE_REPOSITORY_PACKAGES(
-#       <pkg0>  <pkg0_dir>  <pkg0_classifications>
-#       <pkg1>  <pkg1_dir>  <pkg1_classifications>
+#       <pkg0>  <pkg0_dir>  <pkg0_classif>
+#       <pkg1>  <pkg1_dir>  <pkg1_classif>
 #       ...
 #       )
 #
 # This macro sets up a 2D array of NumPackages by NumColumns listing out the
 # packages for a TriBITS repository.  Each row (with 3 entries) specifies a
-# package which contains the three columns:
+# package which contains the 3 columns (ordered 0-2):
 #
-# * **PACKAGE** (1st column): The name of the TriBITS package.  This name must
-#   be unique across all other TriBITS packages in this or any other TriBITS
-#   repo that might be combined into a single TriBITS project meta-build.  The
-#   name should be a valid identifier (e.g. matches the regex
-#   ``[a-zA-Z_][a-zA-Z0-9_]*``).
+# 0. **PACKAGE** (``<pkgi>``): The name of the TriBITS package.  This name
+#    must be unique across all other TriBITS packages in this or any other
+#    TriBITS repo that might be combined into a single TriBITS project
+#    meta-build.  The name should be a valid identifier (e.g. matches the
+#    regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
-# * **DIR** (2nd column): The relative directory for the package.  This is
-#   relative to the TriBITS repository base directory.  Under this directory
-#   will be a package-specific 'cmake/' directory with file
-#   'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
-#   entire contents of the package including all of the source code and all of
-#   the tests should be contained under this directory.  The TriBITS testing
-#   infrastructure relies on the mapping of changed files to these base
-#   directories when deciding what packages are modified and need to be
-#   retested (along with downstream packages).
+# 1. **DIR** (``<pkgi_dir>``)): The relative directory for the package.  This
+#    is relative to the TriBITS repository base directory.  Under this
+#    directory will be a package-specific 'cmake/' directory with file
+#    'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+#    entire contents of the package including all of the source code and all
+#    of the tests should be contained under this directory.  The TriBITS
+#    testing infrastructure relies on the mapping of changed files to these
+#    base directories when deciding what packages are modified and need to be
+#    retested (along with downstream packages).
 #
-# * **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-#   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-#   by a coma with no space in between such as "RS,PT" for a "Research
-#   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-#   treats this a one field in the array.  The maturity level can be left off
-#   in which case it is assumed to be UM for "Unspecified Maturity".  This
-#   classification for individual packages can be changed to ``EX`` for
-#   specific platforms by calling `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+# 2. **CLASSIFICATION** (``<pkgi_classif>``)): Gives the testing group PT, ST,
+#    EX and the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are
+#    seprated by a coma with no space in between such as "RS,PT" for a
+#    "Research Stable", "Primary Tested" package.  No spaces are allowed so
+#    that CMake treats this a one field in the array.  The maturity level can
+#    be left off in which case it is assumed to be UM for "Unspecified
+#    Maturity".  This classification for individual packages can be changed to
+#    ``EX`` for specific platforms by calling
+#    `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.
+#
+# **IMPORTANT:** The packages must be listed in increasing order of package
+# dependencies; there are no cyclic package dependencies allowed.  That is,
+# package ``i`` can only list dependencies (in
+# `<packageDir>/cmake/Dependencies.cmake`_) for packages listed before this
+# package in this list (or in upstream TriBITS repositories).  This avoids an
+# expensive package sorting algorithm and makes it easy to flag packages with
+# circular dependencies or misspelling of package names.
 #
 # NOTE: This macro just sets the varaible::
 #
@@ -116,7 +125,7 @@ INCLUDE(TribitsListHelpers)
 #
 MACRO(TRIBITS_DEFINE_REPOSITORY_PACKAGES)
   ASSERT_DEFINED(REPOSITORY_NAME)
-  SET(${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS ${ARGN})
+  SET(${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS "${ARGN}")
 ENDMACRO()
 
 

@@ -54,36 +54,37 @@ INCLUDE(Split)
 # Usage::
 #
 #   TRIBITS_DEFINE_REPOSITORY_TPLS(
-#     <tpl0_name>   <tpl0_findmod>  <tpl0_classification>
-#     <tpl1_name>   <tpl1_findmod>  <tpl1_classification>
+#     <tpl0_name>   <tpl0_findmod>  <tpl0_classif>
+#     <tpl1_name>   <tpl1_findmod>  <tpl1_classif>
 #     ...
 #     )
 #
-# This macro sets up a 2D array of NumTPLS by NumColumns listing out the
-# TPLs for a TriBITS repository.  Each row (with 3 entries) specifies a
-# package which contains the three columns:
+# This macro sets up a 2D array of NumTPLS by NumColumns listing out the TPLs
+# for a TriBITS repository.  Each row (with 3 entries) specifies a package
+# which contains the 3 columns (ordered 0-2):
 #
-# * **TPL** (1st column): The name of the TriBITS TPL ``<TPL_NAME>``.  This
-#   name must be unique across all other TriBITS TPLs in this or any other
-#   TriBITS repo that might be combined into a single TriBITS project
-#   meta-build.  However, a TPL can be redefined (see below).  The name should
-#   be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
+# 0. **TPL** (``<tpli_name>``)): The name of the TriBITS TPL ``<TPL_NAME>``.
+#    This name must be unique across all other TriBITS TPLs in this or any
+#    other TriBITS repo that might be combined into a single TriBITS project
+#    meta-build.  However, a TPL can be redefined (see below).  The name should
+#    be a valid identifier (e.g. matches the regex ``[a-zA-Z_][a-zA-Z0-9_]*``).
 #
-# * **FINDMOD** (2nd column): The relative directory for the find module,
-#   usually with the name ``FindTPL<TPL_NAME>.cmake``.  This is relative to
-#   the repository base directory.  If just the base path for the find module
-#   is given, ending with "/" (e.g. "cmake/tpls/") then the find module will
-#   be assumed to be under that this directory with the standard name
-#   (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard way to write a
-#   ``FindTPL<TPL_NAME>.cmake`` module is to use the function
-#   `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
+# 1. **FINDMOD** (``<tpli_findmod>``): The relative path for the find module,
+#    usually with the name ``FindTPL<TPL_NAME>.cmake``.  This path is relative
+#    to the repository base directory.  If just the base path for the find
+#    module is given, ending with ``"/"`` (e.g. ``"cmake/tpls/"``) then the
+#    find module will be assumed to be under that this directory with the
+#    standard name (e.g. ``cmake/tpls/FindTPL<TPL_NAME>.cmake``).  A standard
+#    way to write a ``FindTPL<TPL_NAME>.cmake`` module is to use the function
+#    `TRIBITS_TPL_DECLARE_LIBRARIES()`_.
 #
-# * **CLASSIFICATION** (3rd column): Gives the testing group PT, ST, EX and
-#   the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are seprated
-#   by a coma with no space in between such as "RS,PT" for a "Research
-#   Stable", "Primary Tested" package.  No spaces are allowed so that CMake
-#   treats this a one field in the array.  The maturity level can be left off
-#   in which case it is assumed to be UM for "Unspecified Maturity".
+# 2. **CLASSIFICATION** (``<tpl0_classif>``): Gives the testing group ``PT``,
+#    ``ST``, ``EX`` and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
+#    ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are seprated by a coma with no
+#    space in between such as ``"RS,PT"`` for a "Research Stable", "Primary
+#    Tested" package.  No spaces are allowed so that CMake treats this a one
+#    field in the array.  The maturity level can be left off in which case it
+#    is assumed by default to be ``UM`` for "Unspecified Maturity".
 #
 # A TPL defined in a upstream repo can listed again, which allows redefining
 # the find module that is used to specificy the TPL.  This allows downstream
@@ -93,7 +94,7 @@ INCLUDE(Split)
 #
 # This macro just sets the varaible::
 #
-#  ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+#   ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
 #
 # in the current scope.  The advantages of using this macro instead of
 # directly setting this varible include:
@@ -108,7 +109,7 @@ INCLUDE(Split)
 #
 MACRO(TRIBITS_DEFINE_REPOSITORY_TPLS)
   ASSERT_DEFINED(REPOSITORY_NAME)
-  SET(${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS ${ARGN})
+  SET(${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS "${ARGN}")
 ENDMACRO()
 
 

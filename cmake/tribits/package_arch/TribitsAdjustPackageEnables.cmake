@@ -386,6 +386,11 @@ ENDMACRO()
 #   Typically, extra tests that depend on optional test TPLs involve
 #   integration testing of some type.
 #
+# Only upstream SE packages can be listed (as defined by the order the
+# packages are listed in `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ in the
+# `<repoDir>/PackagesList.cmake`_ file).  Otherwise an error will occur and
+# processing will stop.  Also, mispelled SE package names are caught as well.
+#
 # Only direct package dependenices need to be listed.  Indirect package
 # dependencies are automatically handled.  For example, if this SE package
 # directly depends on PKG2 which depends on PKG1 (but this SE package does not
@@ -394,18 +399,25 @@ ENDMACRO()
 # automatically by the TriBITS dependency tracking system.
 #
 # However, currently, all TPL dependendies must be listed, even the indirect
-# ones.  This is a requirement that will be dropped in the future.
+# ones.  This is a requirement that will be dropped in a future version of
+# TriBITS.
 #
 # The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
 # dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
 # implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
 # dependencies.
 #
-# The dependencies within a single list do not need to be listed in any order.
-# For example if PKG2 depends on PKG1, and this given SE package depends on
-# both, one can list "LIB_REQUIRED_PACKAGES PKG2 PKG1" or
-# "LIB_REQUIRED_PACKAGES PKG1 PKG2".  Likewise the listing of TPLs order is
-# not important.
+# The upstream dependencies within a single list do not need to be listed in
+# any order.  For example if ``PKG2`` depends on ``PKG1``, and this given SE
+# package depends on both, one can list::
+#
+#   LIB_REQUIRED_PACKAGES PKG2 PKG1
+#
+# or::
+#
+#   "LIB_REQUIRED_PACKAGES PKG1 PKG2
+#
+# Likewise the listing of TPLs order is not important.
 #
 # If some upstream packages are allowed to be missing, this can be specified
 # by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
