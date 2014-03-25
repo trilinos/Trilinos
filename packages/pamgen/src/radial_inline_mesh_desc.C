@@ -78,9 +78,10 @@ void Radial_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 }
 
 /*****************************************************************************/
-void Radial_Inline_Mesh_Desc::Calc_Intervals()
+  std::string Radial_Inline_Mesh_Desc::Calc_Intervals()
 /*****************************************************************************/
 {
+  std::string errorString;
   for(long long i = 0; i < inline_bx; i ++){
     long long axis = 0;
     if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
@@ -135,6 +136,7 @@ void Radial_Inline_Mesh_Desc::Calc_Intervals()
       }
     }
   }
+  return errorString;
 }
 
 

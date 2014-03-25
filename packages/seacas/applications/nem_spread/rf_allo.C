@@ -36,6 +36,7 @@
 #include <stddef.h>                     // for size_t
 #include <stdio.h>                      // for fprintf, NULL, stderr
 #include <stdlib.h>                     // for exit, free, malloc
+#include "rf_format.h"
 
 /*#include "rf_allo.h"*/
 
@@ -216,7 +217,7 @@ static double *smalloc (size_t n, char *filename, int lineno)
 
   if (pntr == NULL && n != 0) {
     fprintf(stderr, "%s (from %s,%d) Out of space - number of bytes "
-            "requested = %lu\n", yo, filename, lineno, (unsigned long)n);
+            "requested = "ST_ZU"\n", yo, filename, lineno, (unsigned long)n);
     exit(0);
   }
 

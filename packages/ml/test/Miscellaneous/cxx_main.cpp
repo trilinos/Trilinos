@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /*
@@ -59,7 +59,7 @@ int main(int argc, char *argv[])
     std::cout << "TEST PASSED" << std::endl;
 
   exit(EXIT_SUCCESS);
-  
+
 } //end of main program
 
 // == =========================================================== ==

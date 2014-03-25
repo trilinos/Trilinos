@@ -14,7 +14,7 @@ cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] --processors <processor count> [-n <nemslice options>]
                [--root <root directory>] [--subdir <sub directory]
                [--multikl] [--spectral] [--inertial] [--linear]
-               [--rcb] [--rib] [--hsfc] [--random] [--scattered]
+               [--rcb] [--rcb_ignore_z] [--rib] [--hsfc] [--random] [--scattered]
                [...others...] meshfile.ext
 
 Decomposition methods: [0..3] = speed ranking 0=fastest
@@ -26,6 +26,7 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  --hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
  --rib:       [?] Recursive Inertial Bisection (uses Zoltan)
  --rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ --rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan), ignoring the z dimension coordinates
  --inertial:  [1] (default) vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
  --linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
@@ -59,7 +60,7 @@ cat <<DECOMP_USAGE_EOF
 Usage:  decomp [-h] -p <processor count> [-n <nemslice options>]
                [-R <root directory>] [-S <sub directory]
                [-l multikl] [-l spectral] [-l inertial] [-l linear]
-               [-l rcb] [-l rib] [-l hsfc] [-l random] [-l scattered]
+               [-l rcb] [-l rcb_ignore_z] [-l rib] [-l hsfc] [-l random] [-l scattered]
                [...others...] meshfile.ext
 
 Decomposition methods: [0..3] = speed ranking 0=fastest
@@ -71,6 +72,7 @@ Decomposition methods: [0..3] = speed ranking 0=fastest
  -l hsfc       [?] Hilbert Space-Filling Curve (uses Zoltan)
  -l rib:       [?] Recursive Inertial Bisection (uses Zoltan)
  -l rcb:       [?] Recursive Coordinate Bisection (uses Zoltan)
+ -l rcb_ignore_z:       [?] Recursive Coordinate Bisection (uses Zoltan) ignoring the z dimension coordinates
  -l inertial:  [1] (default) vertices divided into sets of equal mass by planes
                   orthogonal to the principle axis. Good, fast, medium memory
  -l linear:    [0] vertices in order first n/p to proc 0, next to proc 1. 
@@ -125,6 +127,7 @@ function execute_loadbalance {
     nem_slice_flag=$4
     NEM_SLICE=$5
     input=$6
+    LAUNCH=$7
 
     output=$basename.decomp.out
     error=$basename.decomp.err
@@ -142,14 +145,6 @@ function execute_loadbalance {
 	echo
 
 	return -1
-    fi
-
-    # See if Sierra launch command is in path; if it is, use
-    # otherwise, run nem_slice directly...
-    LAUNCH=`command -v launchx`
-    if [ ! -z "$LAUNCH" ]
-    then
-	LAUNCH="$LAUNCH -n 1"
     fi
 
     date=`date '+%m/%d/%y'`
@@ -274,6 +269,14 @@ ACCESSBIN="`( cd \"${ACCESSBIN}\" && pwd )`"
 NEM_SLICE=${ACCESSBIN}/nem_slice
 NEM_SPREAD=${ACCESSBIN}/nem_spread
 
+# See if Sierra launch command is in path; if it is, use
+# otherwise, run nem_slice directly...
+LAUNCH=`command -v launch`
+if [ ! -z "$LAUNCH" ]
+then
+    LAUNCH="$LAUNCH -n 1"
+fi
+
 ########################################################################
 # Test that the getopt being used will handle the long options...
 TEST=`getopt -T`
@@ -294,8 +297,8 @@ if [ $OLDGETOPT -eq 1 ] ; then
    TEMP=`getopt Hhn:i:o:p:j:r:R:S:sl: $*`
 else
    TEMP=`getopt -o Hhn:i:o:p:j:r:R:S:sl: -a \
-       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear \
-       --long multikl,rcb,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
+       --long input:,help,nem_slice_flag,processors:,rootdir:,subdir:,spheres_linear,nolaunch \
+       --long multikl,rcb,rcb_ignore_z,rib,hsfc,spectral,inertial,linear,random,scattered,brick,zpinch \
        -n 'decomp' -- "$@"`
 fi
 
@@ -319,14 +322,17 @@ while true ; do
 	      rootdir=$2 ; shift 2 ;;
 	    -S|--subdir)
 	      subdir=$2 ; shift 2 ;;
-	    -s|--spheres_linear) spheres="" ; shift ;;
-
+	    -s|--spheres_linear) 
+	      spheres="" ; shift ;;
+	    --nolaunch)
+              LAUNCH="" ; shift ;;
 	    -l)
 	      decomp_method="-l $2" ; shift 2 ;;
 
 # Decomposition Method options...
 	    --multikl)   decomp_method="-l multikl" ; shift ;;
 	    --rcb)       decomp_method="-l rcb" ; shift ;;
+	    --rcb_ignore_z)       decomp_method="-l rcb,ignore_z" ; shift ;;
 	    --rib)       decomp_method="-l rib" ; shift ;;
 	    --hsfc)      decomp_method="-l hsfc" ; shift ;;
 	    --spectral)  decomp_method="-l spectral" ; shift ;;
@@ -409,7 +415,7 @@ then
 fi
 
 ########################################################################
-execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input"
+execute_loadbalance "$basename" "$processors" "$decomp_method" "$nem_slice_flag" "$NEM_SLICE" "$input" "$LAUNCH"
 if [ $? -ne 0 ]
 then
     echo ${txtred}

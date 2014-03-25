@@ -43,6 +43,10 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+
 #include <Kokkos_Threads.hpp>
 #include <Kokkos_hwloc.hpp>
 
@@ -65,6 +69,7 @@
 #include <TestRequest.hpp>
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -356,5 +361,13 @@ TEST_F( threads , team_scan )
   TestScanRequest< Kokkos::Threads >( 10000 );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( threads , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Threads >() ) );
+}
+
 } // namespace Test
 
+#endif /* #if defined( KOKKOS_HAVE_PTHREAD ) */

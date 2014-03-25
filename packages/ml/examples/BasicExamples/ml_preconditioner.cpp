@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 //@HEADER
 
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
 #endif
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
-    
+
   // Build a linear system with trivial solution, using a random vector
   // as starting solution.
   Epetra_Vector LHS(*Map); LHS.Random();
@@ -105,7 +105,7 @@ int main(int argc, char *argv[])
 
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
-  // As we wish to use AztecOO, we need to construct a solver object 
+  // As we wish to use AztecOO, we need to construct a solver object
   // for this problem
   AztecOO solver(Problem);
 #ifdef ML_SCALING
@@ -113,7 +113,7 @@ int main(int argc, char *argv[])
 #endif
 
   // =========================== begin of ML part ===========================
-  
+
 #ifdef ML_SCALING
   timeVec[precBuild].value = MPI_Wtime();
 #endif
@@ -126,12 +126,12 @@ int main(int argc, char *argv[])
   // Other sets of parameters are available for non-symmetric systems
   // ("DD" and "DD-ML"), and for the Maxwell equations ("maxwell").
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // overwrite some parameters. Please refer to the user's guide
   // for more information
   // some of the parameters do not differ from their default value,
   // and they are here reported for the sake of clarity
-  
+
   // output level, 0 being silent and 10 verbose
   MLList.set("ML output", 10);
   // maximum number of levels
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
   // use Uncoupled scheme to create the aggregate
   MLList.set("aggregation: type", "Uncoupled");
 
-  // smoother is Chebyshev. Example file 
+  // smoother is Chebyshev. Example file
   // `ml/examples/TwoLevelDD/ml_2level_DD.cpp' shows how to use
   // AZTEC's preconditioners as smoothers
 
@@ -156,7 +156,7 @@ int main(int argc, char *argv[])
   // solve with serial direct solver KLU
   MLList.set("coarse: type","Amesos-KLU");
 #else
-  // this is for testing purposes only, you should have 
+  // this is for testing purposes only, you should have
   // a direct solver for the coarse problem (either Amesos, or the SuperLU/
   // SuperLU_DIST interface of ML)
   MLList.set("coarse: type","Jacobi");
@@ -166,7 +166,7 @@ int main(int argc, char *argv[])
   // `delete' because the destructor contains some calls to MPI (as
   // required by ML and possibly Amesos). This is an issue only if the
   // destructor is called **after** MPI_Finalize().
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // verify unused parameters on process 0 (put -1 to print on all
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
 
   // ML allows the user to cheaply recompute the preconditioner. You can
   // simply uncomment the following line:
-  // 
+  //
   // MLPrec->ReComputePreconditioner();
   //
   // It is supposed that the linear system matrix has different values, but
@@ -189,11 +189,11 @@ int main(int argc, char *argv[])
   // threshold.
 
   // =========================== end of ML part =============================
-  
-  // tell AztecOO to use the ML preconditioner, specify the solver 
-  // and the output, then solve with 500 maximum iterations and 1e-12 
+
+  // tell AztecOO to use the ML preconditioner, specify the solver
+  // and the output, then solve with 500 maximum iterations and 1e-12
   // of tolerance (see AztecOO's user guide for more details)
-  
+
 #ifdef ML_SCALING
   timeVec[solve].value = MPI_Wtime();
 #endif
@@ -207,12 +207,12 @@ int main(int argc, char *argv[])
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual;
   LHS.Norm2(&residual);
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
   }
@@ -288,7 +288,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 

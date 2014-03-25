@@ -100,7 +100,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   typedef Scalar                              scalar_type ;
   typedef FixtureType                         fixture_type ;
   typedef typename fixture_type::device_type  device_type;
-  typedef typename device_type::size_type     size_type ;
+  //typedef typename device_type::size_type     size_type ; // unused
 
   typedef typename fixture_type::FEMeshType mesh_type ;
   typedef typename fixture_type::coordinate_scalar_type coordinate_scalar_type ;
@@ -122,8 +122,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Sparse linear system types:
 
-  typedef Kokkos::View< Scalar* , device_type >   vector_type ;
-  typedef Kokkos::CrsMatrix< Scalar , device_type >     matrix_type ;
+  typedef Kokkos::View< scalar_type* , device_type >   vector_type ;
+  typedef Kokkos::CrsMatrix< scalar_type , device_type >     matrix_type ;
   typedef typename matrix_type::graph_type         matrix_graph_type ;
   typedef typename matrix_type::coefficients_type  matrix_coefficients_type ;
 
@@ -132,8 +132,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
   //------------------------------------
   // Problem setup types:
 
-  typedef ElementComputation< Scalar , Scalar , device_type > ElementFunctor ;
-  typedef DirichletBoundary< Scalar , Scalar , device_type > BoundaryFunctor ;
+  typedef ElementComputation< scalar_type , scalar_type , device_type > ElementFunctor ;
+  typedef DirichletBoundary< scalar_type , scalar_type , device_type > BoundaryFunctor ;
 
   typedef typename ElementFunctor::elem_matrices_type elem_matrices_type ;
   typedef typename ElementFunctor::elem_vectors_type  elem_vectors_type ;
@@ -145,8 +145,8 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
   //------------------------------------
 
-  const Scalar elem_coeff_K = 2 ;
-  const Scalar elem_load_Q  = 1 ;
+  const scalar_type elem_coeff_K = 2 ;
+  const scalar_type elem_load_Q  = 1 ;
 
   matrix_type linsys_matrix ;
   vector_type linsys_rhs ;
@@ -214,7 +214,7 @@ PerformanceData run( const typename FixtureType::FEMeshType & mesh ,
 
     wall_clock.reset();
 
-    BoundaryFunctor::apply( linsys_matrix , linsys_rhs , mesh , 
+    BoundaryFunctor::apply( linsys_matrix , linsys_rhs , mesh ,
                             0 , global_max_z , 0 , global_max_z );
 
     device_type::fence();
@@ -308,7 +308,7 @@ void driver( const char * const label ,
 
     for(int j = 0; j < runs; j++){
 
-     perf_data = run<Scalar,fixture_type>(mesh,ix,iy,iz, false );
+     perf_data = run<scalar_type,fixture_type>(mesh,ix,iy,iz, false );
 
      if( j == 0 ) {
        perf_best = perf_data ;

@@ -838,7 +838,7 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
     // when computing the output.  Otherwise, alias X_temp to X.
     RCP<const MV> X_temp;
     if (X.getLocalMV ().getValues () == Y.getLocalMV ().getValues ()) {
-      X_temp = rcp (new MV (X));
+      X_temp = rcp (new MV (createCopy(X)));
     } else {
       X_temp = rcpFromRef (X);
     }
@@ -873,30 +873,33 @@ apply (const Tpetra::MultiVector<scalar_type, local_ordinal_type, global_ordinal
 
 
 template <class MatrixType>
-std::string ILUT<MatrixType>::description() const {
-  using Teuchos::TypeNameTraits;
+std::string ILUT<MatrixType>::description () const
+{
   std::ostringstream os;
 
-  os << "Ifpack2::ILUT : {"
-     << "Initialized: " << (isInitialized () ? "true" : "false")
-     << ", "
-     << "Computed: " << (isComputed () ? "true" : "false")
-     << ", "
-     << "Number of rows: " << A_->getGlobalNumRows ()
-     << ", "
-     << "Number of columns: " << A_->getGlobalNumCols ()
-     << ", "
-     << "Level of fill: " << getLevelOfFill()
-     << ", "
-     << "Absolute threshold: " << getAbsoluteThreshold()
-     << ", "
-     << "Relative threshold: " << getRelativeThreshold()
-     << ", "
-     << "Relax value: " << getRelaxValue();
-  if (isComputed())
-    os << ", nnz = " << getGlobalNumEntries();
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::ILUT\": {";
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  os << "Level-of-fill: " << getLevelOfFill() << ", "
+     << "absolute threshold: " << getAbsoluteThreshold() << ", "
+     << "relative threshold: " << getRelativeThreshold() << ", "
+     << "relaxation value: " << getRelaxValue() << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
+  }
+
   os << "}";
-  return os.str();
+  return os.str ();
 }
 
 
@@ -918,11 +921,12 @@ describe (Teuchos::FancyOStream& out,
   using Teuchos::VERB_HIGH;
   using Teuchos::VERB_EXTREME;
 
-  const Teuchos::EVerbosityLevel vl = (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == VERB_DEFAULT) ? VERB_LOW : verbLevel;
   OSTab tab0 (out);
 
   if (vl > VERB_NONE) {
-    out << "Ifpack2::ILUT:" << endl;
+    out << "\"Ifpack2::ILUT\":" << endl;
     OSTab tab1 (out);
     out << "MatrixType: " << TypeNameTraits<MatrixType>::name () << endl;
     if (this->getObjectLabel () != "") {
@@ -943,8 +947,10 @@ describe (Teuchos::FancyOStream& out,
       const double nnzToRows =
         (double) getGlobalNumEntries () / (double) U_->getGlobalNumRows ();
 
-      out << "Dimensions of L: (" << L_->getGlobalNumRows () << "," << L_->getGlobalNumRows () << ")" << endl
-          << "Dimensions of U: (" << U_->getGlobalNumRows () << "," << U_->getGlobalNumRows () << ")" << endl
+      out << "Dimensions of L: [" << L_->getGlobalNumRows () << ", "
+          << L_->getGlobalNumRows () << "]" << endl
+          << "Dimensions of U: [" << U_->getGlobalNumRows () << ", "
+          << U_->getGlobalNumRows () << "]" << endl
           << "Number of nonzeros in factors: " << getGlobalNumEntries () << endl
           << "Fill fraction of factors over A: " << fillFraction << endl
           << "Ratio of nonzeros to rows: " << nnzToRows << endl;
@@ -975,5 +981,7 @@ ILUT<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
 
 }//namespace Ifpack2
 
-#endif /* IFPACK2_ILUT_DEF_HPP */
+#define IFPACK2_ILUT_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::ILUT< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
+#endif /* IFPACK2_ILUT_DEF_HPP */

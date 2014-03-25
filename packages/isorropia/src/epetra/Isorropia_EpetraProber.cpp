@@ -205,7 +205,7 @@ Teuchos::RCP<Epetra_CrsMatrix> Prober::probe(const Epetra_Operator & op)
   Teuchos::RCP<Epetra_CrsMatrix> out_matrix = Teuchos::rcp(new Epetra_CrsMatrix(Copy,*input_graph_));
   Teuchos::RCP<Epetra_CrsMatrix> null;
   int rv=probe(op,*out_matrix); 
-  if(rv==0) return out_matrix;
+  if(rv==0 || colorer_->numColors() == 0 ) return out_matrix;
   else return null;
 }
 ////////////////////////////////////////////////////////////////////////////////

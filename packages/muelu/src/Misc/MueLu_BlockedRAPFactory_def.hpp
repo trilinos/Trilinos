@@ -54,10 +54,12 @@
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
 
-#include "MueLu_RAPFactory_decl.hpp"
 #include "MueLu_BlockedRAPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
+
 #include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_RAPFactory_decl.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -138,7 +140,7 @@ namespace MueLu {
     if (checkAc_)
       CheckMainDiagonal(bAc);
 
-    GetOStream(Statistics1, 0) << Utils::PrintMatrixInfo(*bAc, "Ac (blocked)");
+    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*bAc, "Ac (blocked)");
 
     Set<RCP <Matrix> >(coarseLevel, "A", bAc);
 
@@ -148,7 +150,7 @@ namespace MueLu {
       // call Build of all user-given transfer factories
       for (std::vector<RCP<const FactoryBase> >::const_iterator it = transferFacts_.begin(); it != transferFacts_.end(); ++it) {
         RCP<const FactoryBase> fac = *it;
-        GetOStream(Runtime0, 0) << "BlockRAPFactory: call transfer factory: " << fac->description() << std::endl;
+        GetOStream(Runtime0) << "BlockRAPFactory: call transfer factory: " << fac->description() << std::endl;
         fac->CallBuild(coarseLevel);
         // AP (11/11/13): I am not sure exactly why we need to call Release, but we do need it to get rid
         // of dangling data for CoordinatesTransferFactory

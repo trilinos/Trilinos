@@ -71,6 +71,29 @@
 #include <vector>
 #include <stdexcept>
 
+
+// Macro that marks a function as "possibly unused," in order to
+// suppress build warnings.
+#if ! defined(TRILINOS_UNUSED_FUNCTION)
+#  if defined(__GNUC__) || defined(__INTEL_COMPILER)
+#    define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#  elif defined(__clang__)
+#    if __has_attribute(unused)
+#      define TRILINOS_UNUSED_FUNCTION __attribute__((__unused__))
+#    else
+#      define TRILINOS_UNUSED_FUNCTION
+#    endif // Clang has 'unused' attribute
+#  elif defined(__IBMCPP__)
+// IBM's C++ compiler for Blue Gene/Q (V12.1) implements 'used' but not 'unused'.
+//
+// http://pic.dhe.ibm.com/infocenter/compbg/v121v141/index.jsp
+#    define TRILINOS_UNUSED_FUNCTION
+#  else // some other compiler
+#    define TRILINOS_UNUSED_FUNCTION
+#  endif
+#endif // ! defined(TRILINOS_UNUSED_FUNCTION)
+
+
 namespace Tpetra {
   ///
   /// \namespace MatrixMarket
@@ -107,12 +130,20 @@ namespace Tpetra {
       // We're communicating integers of type IntType.  Figure
       // out the right MPI_Datatype for IntType.  Usually it
       // is int or long, so these are good enough for now.
-      template<class IntType> MPI_Datatype getMpiDatatype () {
-        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented for IntType != int, long, or long long");
+      template<class IntType> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype () {
+        TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
+          "Not implemented for IntType != int, long, or long long");
       }
-      template<> MPI_Datatype getMpiDatatype<int> () { return MPI_INT; }
-      template<> MPI_Datatype getMpiDatatype<long> () { return MPI_LONG; }
-      template<> MPI_Datatype getMpiDatatype<long long> () { return MPI_LONG_LONG; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<int> () { return MPI_INT; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<long> () { return MPI_LONG; }
+
+      template<> TRILINOS_UNUSED_FUNCTION MPI_Datatype
+      getMpiDatatype<long long> () { return MPI_LONG_LONG; }
 #endif // HAVE_MPI
 
       template<class IntType>
@@ -5743,7 +5774,7 @@ namespace Tpetra {
         // will prevent later code from hanging in Proc 0 threw an
         // exception above.
         int globalWriteSuccess = localWriteSuccess;
-        broadcast (*comm, 0, outArg (globalWriteSuccess));
+        Teuchos::broadcast (*comm, 0, outArg (globalWriteSuccess));
         TEUCHOS_TEST_FOR_EXCEPTION(
           globalWriteSuccess == 0, std::runtime_error,
           "Failed to write data: " << exMsg.str ());

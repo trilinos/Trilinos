@@ -41,13 +41,13 @@ typedef struct ML_CSolve_Struct ML_CSolve;
 /* These data structures define the coarse solver object.               */
 /* -------------------------------------------------------------------- */
 
-struct ML_CSolveFunc_Struct 
+struct ML_CSolveFunc_Struct
 {
    int ML_id;
    int (*func_ptr)(ML_Solver *, int, double *, int, double *);
 };
 
-struct ML_CSolve_Struct 
+struct ML_CSolve_Struct
 {
    int                     ML_id;
    struct ML_1Level_Struct *my_level;
@@ -82,7 +82,7 @@ extern int ML_CSolve_Apply(ML_CSolve *, int, double *, int, double *);
 
 #ifdef WKC
 /* WKC -- Added prototype */
-extern int ML_CSolve_Apply(ML_CSolve *, int, Epetra_MultiVector &, int, 
+extern int ML_CSolve_Apply(ML_CSolve *, int, Epetra_MultiVector &, int,
                            Epetra_MultiVector &);
 #endif
 

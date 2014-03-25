@@ -18,16 +18,16 @@ typedef MueLu::AmalgamationFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalM
 typedef MueLu::Amesos2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Amesos2Smoother;
 #endif
 
-#ifdef MUELU_SCHWARZSMOOTHER_SHORT
-typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
-#endif
-
 #ifdef MUELU_ALGEBRAICPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::AlgebraicPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> AlgebraicPermutationStrategy;
 #endif
 
 #ifdef MUELU_BLOCKEDCOARSEMAPFACTORY_SHORT
 typedef MueLu::BlockedCoarseMapFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedCoarseMapFactory;
+#endif
+
+#ifdef MUELU_BLOCKEDDIRECTSOLVER_SHORT
+typedef MueLu::BlockedDirectSolver<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> BlockedDirectSolver;
 #endif
 
 #ifdef MUELU_BLOCKEDGAUSSSEIDELSMOOTHER_SHORT
@@ -138,6 +138,10 @@ typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 typedef MueLu::MapTransferFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MapTransferFactory;
 #endif
 
+#ifdef MUELU_MERGEDBLOCKEDMATRIXFACTORY_SHORT
+typedef MueLu::MergedBlockedMatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MergedBlockedMatrixFactory;
+#endif
+
 #ifdef MUELU_MERGEDSMOOTHER_SHORT
 typedef MueLu::MergedSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MergedSmoother;
 #endif
@@ -164,6 +168,10 @@ typedef MueLu::ParameterListInterpreter<Scalar,LocalOrdinal,GlobalOrdinal,Node,L
 
 #ifdef MUELU_PATTERNFACTORY_SHORT
 typedef MueLu::PatternFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PatternFactory;
+#endif
+
+#ifdef MUELU_PERFUTILS_SHORT
+typedef MueLu::PerfUtils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> PerfUtils;
 #endif
 
 #ifdef MUELU_PERMUTATIONFACTORY_SHORT
@@ -232,6 +240,10 @@ typedef MueLu::SaPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Sa
 
 #ifdef MUELU_SCHURCOMPLEMENTFACTORY_SHORT
 typedef MueLu::SchurComplementFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchurComplementFactory;
+#endif
+
+#ifdef MUELU_SCHWARZSMOOTHER_SHORT
+typedef MueLu::SchwarzSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> SchwarzSmoother;
 #endif
 
 #ifdef MUELU_SHIFTEDLAPLACIAN_SHORT

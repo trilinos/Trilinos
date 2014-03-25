@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -39,7 +39,7 @@ public:
 
     int locNumMyRows = RowSpace_.GetNumMyElements();
     int locNumMyCols = ColSpace_.GetNumMyElements();
-    
+
     // FIXME: add MyGlobalElements()
     RangeMap_ = new Epetra_Map(-1, locNumMyRows, 0, GetEpetra_Comm());
     DomainMap_ = new Epetra_Map(-1, locNumMyCols, 0, GetEpetra_Comm());
@@ -57,7 +57,7 @@ public:
     return(Matrix_->MaxNumEntries());
   }
 
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
+  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
                                double* Values, int* Indices) const
   {
     ML_RETURN(Matrix_->ExtractMyRowCopy(MyRow, Length, NumEntries,
@@ -69,13 +69,13 @@ public:
     ML_RETURN(Matrix_->ExtractDiagonalCopy(Diagonal));
   }
 
-  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
+  virtual int Multiply(bool TransA, const Epetra_MultiVector& X,
                        Epetra_MultiVector& Y) const
   {
     ML_RETURN(Matrix_->Multiply(TransA, X, Y));
   }
 
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X, 
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, const Epetra_MultiVector& X,
                     Epetra_MultiVector& Y) const
   {
     ML_RETURN(Matrix_->Solve(Upper, Trans, UnitDiagonal, X, Y));
@@ -106,7 +106,7 @@ public:
     return(Matrix_->Filled());
   }
 
-  virtual double NormInf() const 
+  virtual double NormInf() const
   {
     return(Matrix_->NormInf());
   }
@@ -183,7 +183,7 @@ public:
     return(Matrix_->LowerTriangular());
   }
 
-  virtual bool UpperTriangular() const 
+  virtual bool UpperTriangular() const
   {
     return(Matrix_->UpperTriangular());
   }
@@ -217,14 +217,14 @@ public:
   {
     return(Matrix_->RowMatrixRowMap());
   }
-    
+
   //@}
 
   virtual int SetUseTranspose(bool what)
   {
     return(Matrix_->SetUseTranspose(what));
   }
-  
+
   int Apply(const MultiVector& X, MultiVector& Y) const
   {
     return(Operator::Apply(X, Y));
@@ -264,7 +264,7 @@ public:
 
   virtual const Epetra_Comm& Comm() const
   {
-    return(Matrix_->Comm()); 
+    return(Matrix_->Comm());
   }
 
   std::ostream& Print(std::ostream& os, const bool verbose = true) const;
@@ -293,8 +293,8 @@ public:
       return(vals_[vals_.size() - 1]);
     }
   }
-  
-  inline void ReplaceElement(const int GRID, const int GCID, 
+
+  inline void ReplaceElement(const int GRID, const int GCID,
                              const double value)
   {
     if (!IsFillCompleted())
@@ -302,7 +302,7 @@ public:
 
     int LRID = RangeMap_->LID(GRID);
     int LCID = Matrix_->ColMap().LID(GCID);
-    if (Matrix_->ReplaceMyValues((int)LRID, 1, (double*)&value, 
+    if (Matrix_->ReplaceMyValues((int)LRID, 1, (double*)&value,
                                  (int*)&LCID) < 0)
       ML_THROW("Can only replace locally owned elements", -1);
   }
@@ -334,7 +334,7 @@ public:
     Reshape(ColSpace_, RowSpace_, Matrix_, true);
   }
 
-  bool IsFillCompleted() const 
+  bool IsFillCompleted() const
   {
     return(FillCompleted_);
   }

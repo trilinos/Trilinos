@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -25,12 +25,12 @@
 /*                       matrix should be CSR or MSR.                   */
 /* -------------------------------------------------------------------- */
 
-void ML_rap(ML_Operator *Rmat, ML_Operator *Amat, 
+void ML_rap(ML_Operator *Rmat, ML_Operator *Amat,
             ML_Operator *Pmat, ML_Operator *Result, int matrix_type)
 {
   int         max_per_proc, i, j, N_input_vector;
    ML_Operator *APmat, *RAPmat, *Pcomm, *RAPcomm, *APcomm, *AP2comm, *tptr;
-   ML_CommInfoOP *getrow_comm; 
+   ML_CommInfoOP *getrow_comm;
    double      *scales = NULL;
 #  ifdef ML_TIMING
    double tpre,tmult,tpost,ttotal;
@@ -71,8 +71,8 @@ fflush(stdout);
    Pmat->getrow->use_loc_glob_map = ML_YES;
 
 
- 
-   if (Amat->getrow->pre_comm != NULL) 
+
+   if (Amat->getrow->pre_comm != NULL)
       ML_exchange_rows( Pmat, &Pcomm, Amat->getrow->pre_comm);
    else Pcomm = Pmat;
 
@@ -102,7 +102,7 @@ fflush(stdout);
    Pmat->getrow->use_loc_glob_map = ML_NO;
    if (Amat->getrow->pre_comm != NULL) {
       tptr = Pcomm;
-      while ( (tptr!= NULL) && (tptr->sub_matrix != Pmat)) 
+      while ( (tptr!= NULL) && (tptr->sub_matrix != Pmat))
          tptr = tptr->sub_matrix;
       if (tptr != NULL) tptr->sub_matrix = NULL;
       ML_RECUR_CSR_MSRdata_Destroy(Pcomm);
@@ -118,10 +118,10 @@ fflush(stdout);
 
    if (Rmat->from != NULL)
       ML_DVector_GetDataPtr(Rmat->from->Amat_Normalization,&scales);
-   if (scales != NULL) 
+   if (scales != NULL)
       ML_Scale_CSR(APcomm, scales, 0);
 
-   if (Rmat->getrow->pre_comm != NULL) 
+   if (Rmat->getrow->pre_comm != NULL)
       ML_exchange_rows( APcomm, &AP2comm, Rmat->getrow->pre_comm);
    else AP2comm = APcomm;
 
@@ -161,14 +161,14 @@ fflush(stdout);
    tpost = GetClock();
 #  endif
 
-   if (Rmat->getrow->post_comm != NULL) 
+   if (Rmat->getrow->post_comm != NULL)
       ML_exchange_rows( RAPmat, &RAPcomm, Rmat->getrow->post_comm);
    else RAPcomm = RAPmat;
 
    scales = NULL;
    if (Rmat->to != NULL)
       ML_DVector_GetDataPtr(Rmat->to->Amat_Normalization,&scales);
-   if (scales != NULL) 
+   if (scales != NULL)
       ML_Scale_CSR(RAPcomm, scales, 1);
 
    RAPcomm->num_PDEs = Amat->num_PDEs;

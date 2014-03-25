@@ -65,7 +65,7 @@ public:
 			     long long & total_node_count, 
 			     long long & total_edge_count);
   virtual void setStrides();
-  virtual void Calc_Intervals();
+  virtual std::string Calc_Intervals();
   virtual long long Calc_Coord_Vectors();
 
   virtual long long numBlocks(){return((inline_bx-1)*inline_by+1)*inline_bz;}

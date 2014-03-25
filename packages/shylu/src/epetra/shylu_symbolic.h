@@ -50,6 +50,7 @@
 #include "Isorropia_EpetraProber.hpp"
 //#include "EpetraExt_Transpose_RowMatrix.h"
 #include <EpetraExt_Reindex_LinearProblem2.h>
+#include "Ifpack_Preconditioner.h"
 
 // This is NOT just the symbolic structure, needs a better name
 typedef struct
@@ -67,6 +68,7 @@ typedef struct
     Teuchos::RCP<Epetra_MultiVector> Drhs;
     Teuchos::RCP<Epetra_MultiVector> Gvec;
     Teuchos::RCP<Amesos_BaseSolver> Solver;  // Local solver for D
+    Teuchos::RCP<Ifpack_Preconditioner> ifSolver; //Local incomplete preconditioner
     Teuchos::RCP<Epetra_CrsGraph> Sg;        // The approximate graph of S
                                              // Graph(S) + few diagonals
     Teuchos::RCP<Isorropia::Epetra::Prober> prober;  // Prober for Sbar

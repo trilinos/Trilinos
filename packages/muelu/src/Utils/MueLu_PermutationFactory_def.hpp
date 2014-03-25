@@ -78,14 +78,6 @@
 
 #undef DEBUG_OUTPUT
 
-// MPI helper
-#define sumAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
-#define minAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
-#define maxAll(rcpComm, in, out)                                        \
-    Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MAX, in, Teuchos::outArg(out));
-
 namespace MueLu {
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::PermutationFactory()
@@ -151,7 +143,7 @@ void PermutationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>:
                                   "`PermutationStrategy' has incorrect value (" << strStrategy << ") in input to PermutationFactory."
                                   << "Check the documentation for a list of valid choices");
 
-  GetOStream(Runtime0, 0) << "Using " << strStrategy << " permutation strategy." << std::endl;
+  GetOStream(Runtime0) << "Using " << strStrategy << " permutation strategy." << std::endl;
 
 }
 

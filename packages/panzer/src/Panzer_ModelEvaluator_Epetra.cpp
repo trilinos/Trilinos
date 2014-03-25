@@ -405,7 +405,7 @@ panzer::ModelEvaluator_Epetra::createOutArgs() const
  
       // class must supoprt a derivative 
       if(resp->supportsDerivative())
-        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_MV_BY_COL));
+        outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_TRANS_MV_BY_ROW));
         //outArgs.setSupports(OUT_ARG_DgDx,i,DerivativeSupport(DERIV_LINEAR_OP));
     }
   }

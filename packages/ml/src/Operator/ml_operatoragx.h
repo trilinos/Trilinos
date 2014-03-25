@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -72,11 +72,11 @@ extern int ML_OperatorAGX_Destroy(ML_OperatorAGX **);
 extern int ML_OperatorAGX_Print(ML_OperatorAGX *);
 extern int ML_OperatorAGX_Restrict(ML_Operator *,int,double *,int,double*);
 extern int ML_OperatorAGX_Prolongate(ML_Operator *,int,double*,int,double*);
-extern int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows, 
-              int requested_rows[], int allocated_space, int columns[], 
+extern int ML_OperatorAGX_Getrows(ML_Operator *data, int N_requested_rows,
+              int requested_rows[], int allocated_space, int columns[],
               double values[], int row_lengths[]);
-extern int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows, 
-              int requested_rows[], int allocated_space, int columns[], 
+extern int ML_OperatorAGX_Getcols(ML_Operator *data, int N_requested_rows,
+              int requested_rows[], int allocated_space, int columns[],
 	      double values[], int row_lengths[]);
 extern int ML_OperatorAGX_Gen_ComminfoOp(ML_OperatorAGX *vop, ML_Operator *Rmat,
         ML_Operator *Pmat);

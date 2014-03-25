@@ -69,6 +69,7 @@
 #include <TestScan.hpp>
 #include <TestMultiReduce.hpp>
 #include <TestAggregate.hpp>
+#include <TestCompilerMacros.hpp>
 
 namespace Test {
 
@@ -84,7 +85,9 @@ protected:
                                    std::max( 2u , ( cores_per_numa * threads_per_core ) / 2 );
 
     Kokkos::OpenMP::initialize( threads_count );
-    // Kokkos::OpenMP::print_configuration( std::cout );
+
+    std::cout << "OpenMP threads: " << omp_get_max_threads() << std::endl;
+    std::cout << "requested threads: " << threads_count << std::endl;
   }
 
   static void TearDownTestCase()
@@ -246,6 +249,12 @@ TEST_F( openmp , team_scan )
   TestScanRequest< Kokkos::OpenMP >( 10000 );
 }
 
+//----------------------------------------------------------------------------
+
+TEST_F( openmp , compiler_macros )
+{
+  ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::OpenMP >() ) );
+}
 
 } // namespace test
 

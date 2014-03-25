@@ -8,7 +8,7 @@ int convertSund2AZdatafile( char *infile, char *outfile)
 	int row, col, nrows, prevrow;
 	double val;
 
-	nrows=0;  
+	nrows=0;
 
 	infp=fopen(infile, "r");
 	outfp=fopen(outfile, "w");
@@ -18,7 +18,7 @@ int convertSund2AZdatafile( char *infile, char *outfile)
 
 	while (fscanf(infp,"%d %d %lf", &row, &col, &val) != EOF)
 		nrows=row+1; /* zero-based array, so need to add 1 */
- 	
+
 	fprintf(outfp, "%d\n", nrows);
 
 	rewind(infp);
@@ -28,7 +28,7 @@ int convertSund2AZdatafile( char *infile, char *outfile)
 	while (fscanf(infp,"%d %d %lf", &row, &col, &val) != EOF) {
 		if (row !=prevrow)
 			fprintf(outfp,"  -1");
-		if (val != 0.0) 
+		if (val != 0.0)
 			fprintf(outfp,"\n%d   %g", col, val);
 		prevrow=row;
 	}
@@ -47,17 +47,17 @@ main()
 {
 	char infile[80], outfile[80];
 	int ret;
-	 
+
 	sprintf(infile, "/home/people/dawn/Software/Sundance/examples/Amatrix.dat\0");
 	sprintf(outfile, "AmatrixAZ.dat\0");
-	
+
 	ret=convertSund2AZdatafile(infile, outfile);
 
 	sprintf(infile, "/home/people/dawn/Software/Sundance/examples/Mpmatrix.dat\0");
 	sprintf(outfile, "MpmatrixAZ.dat\0");
-	
+
 	ret=convertSund2AZdatafile(infile, outfile);
-	
+
 }
 
 

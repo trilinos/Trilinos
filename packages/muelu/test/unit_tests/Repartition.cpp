@@ -43,6 +43,7 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <vector>
 #include "Teuchos_UnitTestHarness.hpp"
 
 #include "Xpetra_VectorFactory.hpp"
@@ -58,10 +59,13 @@
 #include "MueLu_RepartitionFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 
-#include "Galeri_XpetraUtils.hpp"
+#include <Galeri_XpetraUtils.hpp>
+#include <Galeri_XpetraProblemFactory.hpp>
+#include <Galeri_XpetraMaps.hpp>
 
 #include "MueLu_SingleLevelFactoryBase.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_EasyParameterListInterpreter.hpp"
 
 namespace MueLuTests {
 
@@ -175,7 +179,6 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor",  1);
     paramList.set("nonzeroImbalance",     1.2);
     paramList.set("remapPartitions",      false);
-    paramList.set("number of partitions", Teuchos::rcp_static_cast<const FactoryBase>(MueLu::NoFactory::getRCP())); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -753,7 +756,6 @@ namespace MueLuTests {
     paramList.set("minRowsPerProcessor",  1);
     paramList.set("nonzeroImbalance",     1.2);
     paramList.set("remapPartitions",      true);
-    paramList.set("number of partitions", Teuchos::rcp_static_cast<const FactoryBase>(MueLu::NoFactory::getRCP())); // use user-defined #partitions
     repart->SetParameterList(paramList);
     repart->SetFactory("Partition", zoltan);
 
@@ -793,5 +795,95 @@ namespace MueLuTests {
     TEST_EQUALITY(norms[0] < 1e-14, true);
 
   } // Correctness
+
+  GlobalOrdinal myrandom (GlobalOrdinal i) { return std::rand()%i;}
+
+// JJH 17Feb2014  Disabling for now.  This is hanging in the nightly
+// tests on typhon, which is playing havoc w/ the other tests.
+#ifdef MUELU_NOT_WORKING
+  TEUCHOS_UNIT_TEST(Repartition, CoordinateMap)
+  {
+    out << "version: " << MueLu::Version() << std::endl;
+    out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
+    out << std::endl;
+    return;
+
+    /*
+      This test checks that MueLu successfully ignores the map of the coordinate MultiVector (MV).
+      MueLu treats the coordinate data as if the MV is consistent with the linear system A.
+    */
+
+    // Create a matrix and coordinates.
+    RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+
+    GO nx = 20, ny = 20;
+    Teuchos::ParameterList matrixList;
+    matrixList.set("nx",      nx);
+    matrixList.set("ny",      ny);
+    matrixList.set("keepBCs", false);
+
+    // Describes the initial layout of matrix rows across processors.
+    Teuchos::ParameterList galeriList;
+    galeriList.set("nx", nx);
+    galeriList.set("ny", ny);
+    RCP<const Map> map = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
+
+    //build coordinates before expanding map (nodal coordinates, not dof-based)
+    RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixList);
+    map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2); //expand map for 2 DOFs per node
+
+    matrixList.set("right boundary" , "Neumann");
+    matrixList.set("bottom boundary", "Neumann");
+    matrixList.set("top boundary"   , "Neumann");
+    matrixList.set("front boundary" , "Neumann");
+    matrixList.set("back boundary"  , "Neumann");
+          
+    RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, matrixList);
+    RCP<Matrix> A = Pr->BuildMatrix();
+    A->SetFixedBlockSize(2);
+
+    RCP<HierarchyManager> mueLuFactory = rcp(new EasyParameterListInterpreter("testCoordinates.xml", *comm));
+    RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A", A);
+    H->GetLevel(0)->Set("Coordinates", coordinates);
+    mueLuFactory->SetupHierarchy(*H);
+    ParameterList stats1 = H->print();
+    H = Teuchos::null;
+    comm->barrier();
+
+    //build a map that is a "randomly" permuted version of the correct
+    //coordinate map.  This map will be used to build the "bad" coordinates.
+    RCP<const Map> coordMap = coordinates->getMap();
+    std::srand(Teuchos::as<unsigned int>(comm->getRank()*31415));
+    Teuchos::ArrayView<const GO> correctLocalElts = coordMap->getNodeElementList();
+    std::vector<GO> eltsToShuffle;
+    for (size_t i=0; i<correctLocalElts.size(); ++i)
+      eltsToShuffle.push_back(correctLocalElts[i]);
+    std::random_shuffle(eltsToShuffle.begin(),eltsToShuffle.end(),myrandom);
+    Teuchos::Array<GO> eltList(eltsToShuffle);
+    RCP<const Map> badMap = MapFactory::Build(TestHelpers::Parameters::getLib(), coordMap->getGlobalNumElements(), eltList(), coordMap->getIndexBase(), comm);
+
+    Teuchos::Array<Teuchos::ArrayView<const Scalar> > coordVals;
+    Teuchos::ArrayRCP<const Scalar> xcoords = coordinates->getData(0);
+    Teuchos::ArrayRCP<const Scalar> ycoords = coordinates->getData(1);
+    coordVals.push_back(xcoords());
+    coordVals.push_back(ycoords());
+    RCP<MultiVector> badCoordinates = MultiVectorFactory::Build(badMap, coordVals(), coordinates->getNumVectors());
+    xcoords = Teuchos::null;
+    ycoords = Teuchos::null;
+
+    H = mueLuFactory->CreateHierarchy();
+    H->GetLevel(0)->Set("A", A);
+    H->GetLevel(0)->Set("Coordinates", badCoordinates);
+    mueLuFactory->SetupHierarchy(*H);
+    ParameterList stats2 = H->print();
+
+    double cplx1 = stats1.get<double>("complexity");
+    double cplx2 = stats2.get<double>("complexity");
+    TEST_EQUALITY(cplx1, cplx2);
+
+  } // CoordinateMap
+#endif
 
 } // namespace MueLuTests

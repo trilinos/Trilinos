@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -24,10 +24,10 @@ int ML_Mapper_Create(ML_Mapper **mapper)
    ML_memory_alloc( (void**) mapper, sizeof(ML_Mapper), "MA1" );
    ml_mapper = (*mapper);
    ml_mapper->ML_id = ML_ID_MAPPER;
-   ml_mapper->data = NULL; 
-   ml_mapper->inlength = 0; 
-   ml_mapper->outlength = 0; 
-   ml_mapper->map = NULL; 
+   ml_mapper->data = NULL;
+   ml_mapper->inlength = 0;
+   ml_mapper->outlength = 0;
+   ml_mapper->map = NULL;
    return 0;
 }
 
@@ -38,10 +38,10 @@ int ML_Mapper_Create(ML_Mapper **mapper)
 int ML_Mapper_Init(ML_Mapper *ml_mapper)
 {
    ml_mapper->ML_id = ML_ID_MAPPER;
-   ml_mapper->data = NULL; 
-   ml_mapper->inlength = 0; 
-   ml_mapper->outlength = 0; 
-   ml_mapper->map = NULL; 
+   ml_mapper->data = NULL;
+   ml_mapper->inlength = 0;
+   ml_mapper->outlength = 0;
+   ml_mapper->map = NULL;
    return 0;
 }
 
@@ -59,7 +59,7 @@ int ML_Mapper_Destroy(ML_Mapper **mapper)
       exit(1);
    }
    ml_mapper->ML_id = -1;
-   ml_mapper->data = NULL; 
+   ml_mapper->data = NULL;
    ml_mapper->inlength = 0;
    ml_mapper->outlength = 0;
    ml_mapper->map = NULL;
@@ -79,7 +79,7 @@ int ML_Mapper_Clean(ML_Mapper *ml_mapper)
       exit(1);
    }
    ml_mapper->ML_id = -1;
-   ml_mapper->data = NULL; 
+   ml_mapper->data = NULL;
    ml_mapper->inlength = 0;
    ml_mapper->outlength = 0;
    ml_mapper->map = NULL;
@@ -100,7 +100,7 @@ int ML_Mapper_Check(ML_Mapper *ml_mapper)
 #endif
    if ( ml_mapper->map != NULL ) return 1;
    else                          return 0;
-} 
+}
 
 /* ******************************************************************** */
 /* Set the mapper function                                              */
@@ -161,7 +161,7 @@ int ML_Mapper_Apply(ML_Mapper *ml_mapper, double *invec, double *outvec)
    if ( ml_mapper->map != NULL ) {
       ml_mapper->map(ml_mapper->data, invec, outvec);
       return 0;
-   } else { 
+   } else {
       return -1;
    }
 }
@@ -178,7 +178,7 @@ int ML_Mapper_Apply(ML_Mapper *ml_mapper, double *invec, double *outvec)
 /* -------------------------------------------------------------------- */
 /* NOT CALLED! */
 
-int ML_Mapper_Apply(ML_Mapper *ml_mapper, Epetra_MultiVector &ep_invec, 
+int ML_Mapper_Apply(ML_Mapper *ml_mapper, Epetra_MultiVector &ep_invec,
                     Epetra_MultiVector &ep_outvec)
 {
    double ** pp_invec;

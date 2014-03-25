@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #ifdef HAVE_ML_MLAPI
@@ -73,7 +73,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type)
   Reshape(Op, Type, List);
 }
 
-void InverseOperator::Reshape(Ifpack_Preconditioner* prec, const Operator& Op, 
+void InverseOperator::Reshape(Ifpack_Preconditioner* prec, const Operator& Op,
                               const bool ownership)
 {
   ResetTimer();
@@ -101,7 +101,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
 
   // FIXME: to add overlap and level-of-fill
   int NumSweeps   = List.get("smoother: sweeps", 1);
-  double Damping  = List.get("smoother: damping factor", 0.67); 
+  double Damping  = List.get("smoother: damping factor", 0.67);
   int LOF_ilu     = List.get("smoother: ilu fill", 0);
   double LOF_ict  = List.get("smoother: ilut fill", 1.0);
   double LOF_ilut = List.get("smoother: ict fill", 1.0);
@@ -135,7 +135,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
 
   if (Type == "Jacobi") {
     if (verbose) {
-      std::cout << "Damping factor = " << Damping 
+      std::cout << "Damping factor = " << Damping
         << ", sweeps = " << NumSweeps << std::endl;
       std::cout << std::endl;
     }
@@ -144,7 +144,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
   }
   else if (Type == "Gauss-Seidel") {
     if (verbose) {
-      std::cout << "Damping factor = " << Damping 
+      std::cout << "Damping factor = " << Damping
         << ", sweeps = " << NumSweeps << std::endl;
       std::cout << std::endl;
     }
@@ -153,7 +153,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
   }
   else if (Type == "symmetric Gauss-Seidel") {
     if (verbose) {
-      std::cout << "Damping factor = " << Damping 
+      std::cout << "Damping factor = " << Damping
         << ", sweeps = " << NumSweeps << std::endl;
       std::cout << std::endl;
     }
@@ -167,7 +167,7 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
         << LOF_ilu << std::endl;
       std::cout << std::endl;
     }
-    
+
     // use the Additive Schwarz class because it does reordering
     Prec = new Ifpack_AdditiveSchwarz<Ifpack_ILU>(RowMatrix());
   }
@@ -209,9 +209,9 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
     }
     Prec = new Ifpack_Amesos(RowMatrix());
   }
-  else if (Type == "MLS" || Type == "ML MLS" || 
+  else if (Type == "MLS" || Type == "ML MLS" ||
            Type == "ML symmetric Gauss-Seidel" ||
-           Type == "ML Gauss-Seidel") 
+           Type == "ML Gauss-Seidel")
   {
     if (verbose) {
       std::cout << "ML's MLS smoother" << std::endl;
@@ -256,9 +256,9 @@ void InverseOperator::Reshape(const Operator& Op, const std::string Type,
     UpdateFlops(RCPData_->InitializeFlops());
     UpdateFlops(RCPData_->ComputeFlops());
   }
-  else 
+  else
     RCPData_ = Teuchos::null;
-    
+
   StackPop();
   UpdateTime();
 
@@ -295,29 +295,29 @@ const Operator& InverseOperator::GetOperator() const
   return(Op_);
 }
 
-Teuchos::RefCountPtr<Ifpack_Preconditioner>& InverseOperator::GetRCPData() 
+Teuchos::RefCountPtr<Ifpack_Preconditioner>& InverseOperator::GetRCPData()
 {
   return(RCPData_);
 }
 
-const Teuchos::RefCountPtr<Ifpack_Preconditioner>& 
+const Teuchos::RefCountPtr<Ifpack_Preconditioner>&
 InverseOperator::GetRCPData() const
 {
   return(RCPData_);
 }
 
-Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& InverseOperator::GetRCPMLPrec() 
+Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& InverseOperator::GetRCPMLPrec()
 {
   return(RCPMLPrec_);
 }
 
-const Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>& 
+const Teuchos::RefCountPtr<ML_Epetra::MultiLevelPreconditioner>&
 InverseOperator::GetRCPMLPrec() const
 {
   return(RCPMLPrec_);
 }
 
-int 
+int
 InverseOperator::Apply(const MultiVector& x, MultiVector& y) const
 {
   ResetTimer();
@@ -362,7 +362,7 @@ InverseOperator::Apply(const MultiVector& x, MultiVector& y) const
   return(0);
 }
 
-MultiVector 
+MultiVector
 InverseOperator::operator()(const MultiVector& LHS)
 {
   StackPush();
@@ -376,7 +376,7 @@ InverseOperator::operator()(const MultiVector& LHS)
   return(RHS);
 }
 
-MultiVector 
+MultiVector
 InverseOperator::operator()(const MultiVector& LHS,
                        const MultiVector& RHS)
 {
@@ -385,7 +385,7 @@ InverseOperator::operator()(const MultiVector& LHS,
   return(RHS2);
 }
 
-std::ostream& 
+std::ostream&
 InverseOperator::Print(std::ostream& os, const bool verbose) const
 {
 

@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include <iostream>
@@ -25,7 +25,7 @@ namespace MLAPI {
  *
  * \brief Basic class for MLAPI objects
  *
- * BaseObject is the basic class for all MLAPI objects. Currently, it 
+ * BaseObject is the basic class for all MLAPI objects. Currently, it
  * contains the label of the object and method Print().
  *
  * \author Marzio Sala, SNL 9214
@@ -36,7 +36,7 @@ class BaseObject {
 
 public:
   //! Constructor with empty label.
-  BaseObject() 
+  BaseObject()
   {
     Label_ = "obj_" + GetString(count_);
     ++count_;
@@ -64,7 +64,7 @@ public:
   }
 
   //! Prints information on stream.
-  virtual std::ostream& Print(std::ostream& os, 
+  virtual std::ostream& Print(std::ostream& os,
                               const bool Verbose = true) const = 0;
 
 private:

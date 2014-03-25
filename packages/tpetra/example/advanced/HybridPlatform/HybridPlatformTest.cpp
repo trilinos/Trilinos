@@ -50,12 +50,6 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 #include <Teuchos_TimeMonitor.hpp>
 
-#include <Tpetra_ConfigDefs.hpp>
-#if !defined(HAVE_KOKKOS_CUDA_DOUBLE)
-// disable GPU support in HybridPlatform before including its header file
-#undef HAVE_KOKKOSCLASSIC_THRUST
-#endif
-
 #include <Tpetra_HybridPlatform.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_MatrixIO.hpp>

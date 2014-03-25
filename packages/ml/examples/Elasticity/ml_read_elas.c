@@ -1,12 +1,12 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef MB_MODIF
 #define MB_MODIF
 #endif
 /*
-#define ML_partition 
+#define ML_partition
 */
 
 /*****************************************************************************/
@@ -146,7 +146,7 @@ double max_diag, min_diag, max_sum, sum;
   AZ_read_msr_matrix(update, &val, &bindx, N_update, proc_config);
 
 
-  /* This code is to fix things up so that we are sure we have */ 
+  /* This code is to fix things up so that we are sure we have */
   /* all block (including the ghost nodes the same size.       */
 
   AZ_block_MSR(&bindx, &val, N_update, num_PDE_eqns, update);
@@ -154,27 +154,27 @@ double max_diag, min_diag, max_sum, sum;
   AZ_transform_norowreordering(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
 	       AZ_MSR_MATRIX);
-	
+
   Amat = AZ_matrix_create( leng );
   AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
 
   Amat->matrix_type  = data_org[AZ_matrix_type];
-	
+
   data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
 
 #ifdef SCALE_ME
-  ML_MSR_sym_diagonal_scaling(Amat, proc_config, &scaling_vect);  
+  ML_MSR_sym_diagonal_scaling(Amat, proc_config, &scaling_vect);
 #endif
-			
+
   start_time = AZ_second();
 
   options[AZ_scaling] = AZ_none;
   ML_Create(&ml, N_levels);
   ML_Set_PrintLevel(10);
-			
-			
+
+
   /* set up discretization matrix and matrix vector function */
-	
+
   AZ_ML_Set_Amat(ml, N_levels-1, N_update, N_update, Amat, proc_config);
 
 #ifdef ML_partition
@@ -210,7 +210,7 @@ double max_diag, min_diag, max_sum, sum;
 #endif
   exit(1);
 #endif
-	
+
   ML_Aggregate_Create( &ag );
 /*
   ML_Aggregate_Set_CoarsenScheme_MIS(ag);
@@ -265,8 +265,8 @@ double max_diag, min_diag, max_sum, sum;
     rhs   = (double *) malloc(leng*sizeof(double));
     xxx   = (double *) malloc(leng*sizeof(double));
 
-    for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
-	
+    for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0;
+
 
 
     for (i = 0; i < Nrigid; i++) {
@@ -298,7 +298,7 @@ double max_diag, min_diag, max_sum, sum;
        }
 
        /*
-        *  Rescale matrix/rigid body modes and checking 
+        *  Rescale matrix/rigid body modes and checking
         *
         AZ_sym_rescale_sl(mode, Amat->data_org, options, proc_config, scaling);
         Amat->matvec(mode, rigid, Amat, proc_config);
@@ -320,7 +320,7 @@ double max_diag, min_diag, max_sum, sum;
            if ( Amat->bindx[ii+1] - Amat->bindx[ii] != 80) {
               Amode[ii] = 0.; j++;
            }
-           else { 
+           else {
               if ( fabs(Amode[ii]) > biggest) {
                  biggest=fabs(Amode[ii]); big_ind = ii;
               }
@@ -340,7 +340,7 @@ double max_diag, min_diag, max_sum, sum;
 
         for (j = 0; j < i; j++) {
            alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
-                    AZ_gdot(N_update, &(rigid[j*N_update]), 
+                    AZ_gdot(N_update, &(rigid[j*N_update]),
                                &(rigid[j*N_update]), proc_config);
 	   /*           daxpy_(&N_update,&alpha,&(rigid[j*N_update]),  &one, mode, &one); */
         }
@@ -363,17 +363,17 @@ double max_diag, min_diag, max_sum, sum;
     ML_Aggregate_Scale_NullSpace(ag, scaling_vect, N_update);
 #endif
 
-    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1, 
+    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, N_levels-1,
 				ML_DECREASING, ag);
    AZ_defaults(options, params);
    coarsest_level = N_levels - coarsest_level;
    if ( proc_config[AZ_node] == 0 )
 	printf("Coarse level = %d \n", coarsest_level);
-	
+
    /* set up smoothers */
-	
+
    for (level = N_levels-1; level > coarsest_level; level--) {
-		
+
 /*
       ML_Gen_Smoother_BlockGaussSeidel(ml, level,ML_BOTH, 1, 1., num_PDE_eqns);
 */
@@ -381,8 +381,8 @@ double max_diag, min_diag, max_sum, sum;
     /*  Sparse approximate inverse smoother that acutally does both */
     /*  pre and post smoothing.                                     */
     /*
-      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
-                                parasails_sym, parasails_thresh, 
+      ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 parasails_loadbal, parasails_factorized);
      */
@@ -403,15 +403,15 @@ double max_diag, min_diag, max_sum, sum;
      /*
       ML_Gen_Smoother_SymGaussSeidel(ml , level, ML_BOTH, nsmooth,1.);
      */
-     
+
 
       /* This is a true Gauss Seidel in parallel. This seems to work for  */
       /* elasticity problems.  However, I don't believe that this is very */
-      /* efficient in parallel.                                           */       
+      /* efficient in parallel.                                           */
      /*
       nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
       blocks = (int *) ML_allocate(sizeof(int)*N_update);
-      for (i =0; i < ml->Amat[level].invec_leng; i++) 
+      for (i =0; i < ml->Amat[level].invec_leng; i++)
          blocks[i] = i/num_PDE_eqns;
 
       ML_Gen_Smoother_VBlockSymGaussSeidelSequential(ml , level, ML_PRESMOOTHER,
@@ -425,21 +425,21 @@ double max_diag, min_diag, max_sum, sum;
       /*
       nblocks = ml->Amat[level].invec_leng/num_PDE_eqns;
       blocks = (int *) ML_allocate(sizeof(int)*N_update);
-      for (i =0; i < ml->Amat[level].invec_leng; i++) 
+      for (i =0; i < ml->Amat[level].invec_leng; i++)
          blocks[i] = i/num_PDE_eqns;
 
-      ML_Gen_Smoother_VBlockJacobi(ml , level, ML_BOTH, nsmooth, 
+      ML_Gen_Smoother_VBlockJacobi(ml , level, ML_BOTH, nsmooth,
                                    ML_ONE_STEP_CG, nblocks, blocks);
       free(blocks);
       */
-   
+
       /* Jacobi Smoothing                                                 */
      /*
-     
+
       ML_Gen_Smoother_Jacobi(ml , level, ML_PRESMOOTHER, nsmooth, ML_ONE_STEP_CG);
       ML_Gen_Smoother_Jacobi(ml , level, ML_POSTSMOOTHER, nsmooth,ML_ONE_STEP_CG);
      */
-     
+
 
 
       /*  This does a block Gauss-Seidel (not true GS in parallel)        */
@@ -456,7 +456,7 @@ double max_diag, min_diag, max_sum, sum;
    /* Choose coarse grid solver: mls, superlu, symGS, or Aztec */
 
    /*
-   ML_Gen_Smoother_Cheby(ml, coarsest_level, ML_BOTH, 30., nsmooth); 	   
+   ML_Gen_Smoother_Cheby(ml, coarsest_level, ML_BOTH, 30., nsmooth);
    ML_Gen_CoarseSolverSuperLU( ml, coarsest_level);
    */
    /*
@@ -474,7 +474,7 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_conv] = AZ_r0;
    options[AZ_orth_kvecs] = AZ_TRUE;
 
-   j = AZ_gsum_int(ml->Amat[coarsest_level].outvec_leng, proc_config); 
+   j = AZ_gsum_int(ml->Amat[coarsest_level].outvec_leng, proc_config);
 
    options[AZ_keep_kvecs] = j - 6;
    options[AZ_max_iter] =  options[AZ_keep_kvecs];
@@ -493,15 +493,15 @@ double max_diag, min_diag, max_sum, sum;
 
 
 #ifdef RST_MODIF
-   ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level); 
+   ML_Gen_Solver(ml, ML_MGV, N_levels-1, coarsest_level);
 #else
 #ifdef	MB_MODIF
-   ML_Gen_Solver(ml, ML_SAAMG,   N_levels-1, coarsest_level); 
+   ML_Gen_Solver(ml, ML_SAAMG,   N_levels-1, coarsest_level);
 #else
-   ML_Gen_Solver(ml, ML_MGFULLV, N_levels-1, coarsest_level); 
+   ML_Gen_Solver(ml, ML_MGFULLV, N_levels-1, coarsest_level);
 #endif
 #endif
-	
+
    options[AZ_solver]   = AZ_GMRESR;
          options[AZ_solver]   = AZ_cg;
    options[AZ_scaling]  = AZ_none;
@@ -514,9 +514,9 @@ double max_diag, min_diag, max_sum, sum;
    options[AZ_kspace]   = 40;
    params[AZ_tol]       = 4.8e-6;
 
-   AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
+   AZ_set_ML_preconditioner(&Pmat, Amat, ml, options);
    setup_time = AZ_second() - start_time;
-	
+
    /* Set rhs */
 
    fp = fopen("AZ_capture_rhs.dat","r");
@@ -560,7 +560,7 @@ double max_diag, min_diag, max_sum, sum;
 /*
    for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) {
       if ( (val[i] > .99999999) && (val[i] < 1.0000001))
-         xxx[i] = rhs[i];      
+         xxx[i] = rhs[i];
    }
 */
 
@@ -576,17 +576,17 @@ double max_diag, min_diag, max_sum, sum;
       options[AZ_ignore_scaling] = AZ_TRUE;
 
       options[AZ_keep_info] = 1;
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 
 /*
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 */
    }
    else {
@@ -623,22 +623,22 @@ for (i = 0; i < N_update; i++) {
 printf("Largest diagonal = %e, min diag = %e large abs row sum = %e\n",
 max_diag, min_diag, max_sum);
 
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
 
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
 /*
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
 */
    }
    solve_time = AZ_second() - start_time;
 
-   if (proc_config[AZ_node] == 0) 
+   if (proc_config[AZ_node] == 0)
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
    if (proc_config[AZ_node] == 0)
      printf("Printing out a few entries of the solution ...\n");
@@ -683,14 +683,14 @@ max_diag, min_diag, max_sum);
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-	
+
   return 0;
-	
+
 }
 
 #else
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);

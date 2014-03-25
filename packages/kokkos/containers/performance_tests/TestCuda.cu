@@ -44,12 +44,17 @@
 #include <gtest/gtest.h>
 
 #include <iostream>
+#include <sstream>
+#include <string>
+#include <fstream>
 
 #include <Kokkos_Cuda.hpp>
 
 #include <Kokkos_UnorderedMap.hpp>
 
 #include <TestGlobal2LocalIds.hpp>
+
+#include <TestUnorderedMapPerformance.hpp>
 
 namespace Performance {
 
@@ -59,6 +64,16 @@ void cuda_test_global_to_local_ids()
   std::cout << "size, create, generate, fill, find" << std::endl;
   for (unsigned i=Performance::begin_id_size; i<=Performance::end_id_size; i *= Performance::id_step)
     test_global_to_local_ids<Kokkos::Cuda>(i);
+}
+
+void cuda_unordered_map_performance_near() 
+{
+  Perf::run_performance_tests<Kokkos::Cuda,true>("cuda-near");
+}
+
+void cuda_unordered_map_performance_far() 
+{
+  Perf::run_performance_tests<Kokkos::Cuda,false>("cuda-far");
 }
 
 }

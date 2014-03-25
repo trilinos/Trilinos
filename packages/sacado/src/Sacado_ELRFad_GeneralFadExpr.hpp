@@ -90,7 +90,7 @@ namespace Sacado {
 
       //! Copy constructor
       Expr(const Expr& x) : 
-	GeneralFad<T,Storage>(x) {}
+	GeneralFad<T,Storage>(static_cast<const GeneralFad<T,Storage>&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S> Expr(const Expr<S>& x) :

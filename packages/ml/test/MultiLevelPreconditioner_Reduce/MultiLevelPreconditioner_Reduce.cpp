@@ -39,14 +39,14 @@ using namespace Teuchos;
 using namespace Galeri;
 using namespace EpetraExt;
 
-void PrintLine() 
+void PrintLine()
 {
   cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
   cout << endl;
-  
+
   return;
 }
 
@@ -55,7 +55,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
 				 Epetra_LinearProblem & Problem, double & TotalErrorResidual,
 				 double & TotalErrorExactSol)
 {
-  
+
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
   Epetra_CrsMatrix* A = dynamic_cast<Epetra_CrsMatrix*>(Problem.GetMatrix());
@@ -63,29 +63,29 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   int numProcs = A->Comm().NumProc();
   RCP<const Epetra_RowMatrix> Arcp = Teuchos::rcp(A, false);
   double n1, n2,nf;
-  
+
   // ======================================== //
   // create a rhs corresponding to lhs or 1's //
   // ======================================== //
-  
+
   lhs->PutScalar(1.0);
   A->Multiply(false,*lhs,*rhs);
 
   lhs->PutScalar(0.0);
   MLList.set("ML output", 0);
 
-  RowMatrixToMatlabFile("mat_f.dat",*A);  
+  RowMatrixToMatlabFile("mat_f.dat",*A);
   MultiVectorToMatrixMarketFile("lhs_f.dat",*lhs,0,0,false);
   MultiVectorToMatrixMarketFile("rhs_f.dat",*rhs,0,0,false);
 
-  
+
   Epetra_Time Time(A->Comm());
   /* Build the Zoltan list - Group #1 */
   ParameterList Zlist1,Sublist1;
   Sublist1.set("DEBUG_LEVEL","0");
   Sublist1.set("NUM_GLOBAL_PARTITIONS","2");
   Zlist1.set("Zoltan",Sublist1);
-  
+
   /* Start Isorropia's Ninja Magic - Group #1 */
   RefCountPtr<Isorropia::Epetra::Partitioner> partitioner1 =
     Isorropia::Epetra::create_partitioner(Arcp, Zlist1);
@@ -107,7 +107,7 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   if(PID > 1) Sublist2.set("NUM_LOCAL_PARTITIONS","1");
   else Sublist2.set("NUM_LOCAL_PARTITIONS","0");
   Zlist2.set("Zoltan",Sublist2);
-    
+
   /* Start Isorropia's Ninja Magic - Group #2 */
   RefCountPtr<Isorropia::Epetra::Partitioner> partitioner2 =
     Isorropia::Epetra::create_partitioner(Arcp, Zlist2);
@@ -126,15 +126,15 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   if(RW1.RestrictedProcIsActive()){
     Teuchos::RCP<Epetra_CrsMatrix> SubA1 = RW1.RestrictedMatrix();
     Teuchos::RCP<Epetra_MultiVector> SubX1 = RX1.RestrictedMultiVector();
-    Teuchos::RCP<Epetra_MultiVector> SubB1 = RB1.RestrictedMultiVector();    
-    ML_Epetra::MultiLevelPreconditioner * SubPrec1 = new ML_Epetra::MultiLevelPreconditioner(*SubA1, MLList, true);        
+    Teuchos::RCP<Epetra_MultiVector> SubB1 = RB1.RestrictedMultiVector();
+    ML_Epetra::MultiLevelPreconditioner * SubPrec1 = new ML_Epetra::MultiLevelPreconditioner(*SubA1, MLList, true);
 
     Epetra_LinearProblem Problem1(&*SubA1,&*SubX1,&*SubB1);
     AztecOO solver1(Problem1);
-    solver1.SetPrecOperator(SubPrec1);  
+    solver1.SetPrecOperator(SubPrec1);
     solver1.SetAztecOption(AZ_solver, AZ_gmres);
     solver1.SetAztecOption(AZ_output, 32);
-    solver1.SetAztecOption(AZ_kspace, 160);  
+    solver1.SetAztecOption(AZ_kspace, 160);
     solver1.Iterate(1550, 1e-12);
     delete SubPrec1;
 
@@ -142,33 +142,33 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   else{
     Teuchos::RCP<Epetra_CrsMatrix> SubA2 = RW2.RestrictedMatrix();
     Teuchos::RCP<Epetra_MultiVector> SubX2 = RX2.RestrictedMultiVector();
-    Teuchos::RCP<Epetra_MultiVector> SubB2 = RB2.RestrictedMultiVector();        
-    ML_Epetra::MultiLevelPreconditioner * SubPrec2 = new ML_Epetra::MultiLevelPreconditioner(*SubA2, MLList, true);        
-    
+    Teuchos::RCP<Epetra_MultiVector> SubB2 = RB2.RestrictedMultiVector();
+    ML_Epetra::MultiLevelPreconditioner * SubPrec2 = new ML_Epetra::MultiLevelPreconditioner(*SubA2, MLList, true);
+
     Epetra_LinearProblem Problem2(&*SubA2,&*SubX2,&*SubB2);
     AztecOO solver2(Problem2);
-    solver2.SetPrecOperator(SubPrec2);  
+    solver2.SetPrecOperator(SubPrec2);
     solver2.SetAztecOption(AZ_solver, AZ_gmres);
     solver2.SetAztecOption(AZ_output, 32);
-    solver2.SetAztecOption(AZ_kspace, 160);  
+    solver2.SetAztecOption(AZ_kspace, 160);
     solver2.Iterate(1550, 1e-12);
     delete SubPrec2;
 
   }
 
   /* Post-processing exports */
-  Epetra_MultiVector ans1(*lhs), ans2(*lhs); 
+  Epetra_MultiVector ans1(*lhs), ans2(*lhs);
   rd1.redistribute_reverse(*ResX1,ans1);
   rd2.redistribute_reverse(*ResX2,ans2);
-  
+
   /* Run on Full Problem */
-  A->Comm().Barrier();    
-  ML_Epetra::MultiLevelPreconditioner * FullPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);          
+  A->Comm().Barrier();
+  ML_Epetra::MultiLevelPreconditioner * FullPrec = new ML_Epetra::MultiLevelPreconditioner(*A, MLList, true);
   AztecOO solverF(Problem);
-  solverF.SetPrecOperator(FullPrec);  
+  solverF.SetPrecOperator(FullPrec);
   solverF.SetAztecOption(AZ_solver, AZ_gmres);
   solverF.SetAztecOption(AZ_output, 32);
-  solverF.SetAztecOption(AZ_kspace, 160);  
+  solverF.SetAztecOption(AZ_kspace, 160);
   solverF.Iterate(1550, 1e-12);
   delete FullPrec;
 
@@ -184,8 +184,8 @@ int TestMultiLevelPreconditioner(char ProblemType[],
   }
 
   TotalErrorExactSol += n1 + n2;
-    
-  
+
+
 }
 
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
-  
+
   Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   Teuchos::ParameterList MLList;
@@ -242,7 +242,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
-  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
   // ============================== //
@@ -266,13 +266,13 @@ int main(int argc, char *argv[]) {
   ML_Epetra::SetDefaults("SA",MLList);
   MLList.set("smoother: type", "Chebyshev");
 
-  TestMultiLevelPreconditioner(mystring, MLList, Problem, 
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
   // ===================== //
   // print out total error //
   // ===================== //
 
-  
+
   if (Comm.MyPID() == 0) {
     cout << endl;
     cout << "......Total error for residual        = " << TotalErrorResidual << endl;
@@ -280,10 +280,10 @@ int main(int argc, char *argv[]) {
     cout << endl;
   }
 
-  
+
   delete Matrix;
   delete Map;
-  
+
   if (TotalErrorResidual > 1e-8) {
     cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;
     exit(EXIT_FAILURE);

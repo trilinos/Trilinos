@@ -34,29 +34,29 @@
 using namespace Teuchos;
 using namespace Galeri;
 
-void PrintLine() 
+void PrintLine()
 {
   cout << endl;
   for( int i=0 ; i<80 ; ++i )
     cout << "=";
   cout << endl;
   cout << endl;
-  
+
   return;
 }
 
 
 
 
-void BuildProlongator(Epetra_CrsMatrix &A,Epetra_CrsMatrix *&P) { 
+void BuildProlongator(Epetra_CrsMatrix &A,Epetra_CrsMatrix *&P) {
   ML_Comm* ml_comm_;
   ML_Comm_Create(&ml_comm_);
   ML_Operator* A_ML = ML_Operator_Create(ml_comm_);
-  
+
   /* Wrap A in a ML_Operator */
   ML_Operator_WrapEpetraCrsMatrix(&A,A_ML);
-  
-  
+
+
   /* Pull Teuchos Options */
   string CoarsenType = "Uncoupled";
   double Threshold   = 0.0;
@@ -69,17 +69,17 @@ void BuildProlongator(Epetra_CrsMatrix &A,Epetra_CrsMatrix *&P) {
   ML_Aggregate_Set_Threshold(MLAggr, Threshold);
   MLAggr->cur_level = 0;
   ML_Aggregate_Set_Reuse(MLAggr);
-  MLAggr->keep_agg_information = 1;  
+  MLAggr->keep_agg_information = 1;
   ML_Operator *P_ML = ML_Operator_Create(ml_comm_);
   ML_Aggregate_Set_CoarsenScheme_Uncoupled(MLAggr);
-  
+
   /* Aggregate Nodes */
   int NumAggregates = ML_Aggregate_Coarsen(MLAggr, A_ML, &P_ML, ml_comm_);
   if (NumAggregates == 0){
     cerr << "Found 0 aggregates, perhaps the problem is too small." << endl;
     exit(-2);
   }/*end if*/
-  
+
   // Wrap P to Crs
   int nnz;
   double time;
@@ -97,86 +97,86 @@ void BuildProlongator(Epetra_CrsMatrix &A,Epetra_CrsMatrix *&P) {
 
 int TestLevelWrapPreconditioner(char ProblemType[],
 				Teuchos::ParameterList & MLList,
-				Epetra_LinearProblem & Problem, 
+				Epetra_LinearProblem & Problem,
 				Epetra_CrsMatrix & P0,
 				double & TotalErrorResidual,
 				 double & TotalErrorExactSol,bool cg=false)
 {
-  
+
   Epetra_MultiVector* lhs = Problem.GetLHS();
   Epetra_MultiVector* rhs = Problem.GetRHS();
   Epetra_RowMatrix* A = Problem.GetMatrix();
-  
+
   // ======================================== //
   // create a rhs corresponding to lhs or 1's //
   // ======================================== //
-  
+
   lhs->PutScalar(1.0);
   A->Multiply(false,*lhs,*rhs);
 
   lhs->PutScalar(0.0);
-  
+
   Epetra_Time Time(A->Comm());
-  
+
 
   // =================== //
   // call ML and AztecOO //
   // =================== //
-  
+
   AztecOO solver(Problem);
-  
+
   ML_Epetra::LevelWrap *MLPrec= new ML_Epetra::LevelWrap(rcp<Epetra_CrsMatrix>(dynamic_cast<Epetra_CrsMatrix*>(A),false),rcp<Epetra_CrsMatrix>(&P0,false),MLList,true);
-  
+
   // tell AztecOO to use this preconditioner, then solve
   solver.SetPrecOperator(MLPrec);
 
   solver.SetAztecOption(AZ_solver, AZ_cg);
   solver.SetAztecOption(AZ_output, 10);
   //  solver.SetAztecOption(AZ_kspace, 160);
-  
+
 #ifdef HAVE_ML_EPETRAEXT
   EpetraExt::MultiVectorToMatrixMarketFile("rhs.dat",(*rhs));
 #endif
 
   solver.Iterate(100, 1e-12);
-  
+
   delete MLPrec;
-  
+
   // ==================================================== //
   // compute difference between exact solution and ML one //
   // ==================================================== //
-  
+
   double d = 0.0, d_tot = 0.0;
-  
+
   for( int i=0 ; i<lhs->Map().NumMyElements() ; ++i )
     d += ((*lhs)[0][i] - 1.0) * ((*lhs)[0][i] - 1.0);
-  
+
   A->Comm().SumAll(&d,&d_tot,1);
-  
+
   // ================== //
   // compute ||Ax - b|| //
   // ================== //
-  
+
   double Norm;
   Epetra_Vector Ax(rhs->Map());
   A->Multiply(false, *lhs, Ax);
   Ax.Update(1.0, *rhs, -1.0);
   Ax.Norm2(&Norm);
-  
+
   string msg = ProblemType;
-  
+
   if (A->Comm().MyPID() == 0) {
     cout << msg << "......Using " << A->Comm().NumProc() << " processes" << endl;
     cout << msg << "......||A x - b||_2 = " << Norm << endl;
     cout << msg << "......||x_exact - x||_2 = " << sqrt(d_tot) << endl;
     cout << msg << "......Total Time = " << Time.ElapsedTime() << endl;
   }
-  
+
   TotalErrorExactSol += sqrt(d_tot);
   TotalErrorResidual += Norm;
-  
+
   return( solver.NumIters() );
-  
+
 }
 
 using namespace Galeri;
@@ -207,7 +207,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
-  
+
   Epetra_LinearProblem Problem(Matrix, &LHS, &RHS);
 
   Teuchos::ParameterList MLList;
@@ -225,7 +225,7 @@ int main(int argc, char *argv[]) {
   if (Comm.MyPID() == 0) PrintLine();
 
   ML_Epetra::SetDefaultsLevelWrap(MLList);
-  
+
   char mystring[80];
   strcpy(mystring,"LW/SA");
   TestLevelWrapPreconditioner(mystring, MLList, Problem, *P,
@@ -258,7 +258,7 @@ int main(int argc, char *argv[]) {
 
   delete Matrix;
   delete Map;
-  
+
   if (TotalErrorResidual > 1e-8) {
     cerr << "Error: `LevelTest.exe' failed!" << endl;
     exit(EXIT_FAILURE);

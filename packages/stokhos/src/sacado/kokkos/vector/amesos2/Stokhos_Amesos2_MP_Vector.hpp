@@ -42,10 +42,11 @@
 #ifndef STOKHOS_AMESOS2_MP_VECTOR_HPP
 #define STOKHOS_AMESOS2_MP_VECTOR_HPP
 
-// MP includes and specializations
-#include "Amesos2_Solver_MP_Vector.hpp"
+// This header file should be included whenever compiling any Amesos2
+// code with Stokhos scalar types
 
-// Amesos2 includes
-#include "Amesos2_Factory.hpp"
+// MP includes and specializations
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Amesos2_Solver_MP_Vector.hpp"
 
 #endif // STOKHOS_AMESOS2_MP_VECTOR_HPP

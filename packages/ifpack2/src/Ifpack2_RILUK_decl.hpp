@@ -291,9 +291,7 @@ class RILUK:
   /// \param A_in [in] The input matrix.
   RILUK (const Teuchos::RCP<const crs_matrix_type>& A_in);
 
-
  private:
-
   /// \brief Copy constructor: declared private but not defined, so
   ///   that calling it is syntactically forbidden.
   RILUK (const RILUK<MatrixType> & src);
@@ -309,7 +307,7 @@ class RILUK:
   clone (const Teuchos::RCP<const NewMatrixType>& A_newnode) const;
 
   //! Destructor (declared virtual for memory safety).
-  virtual ~RILUK();
+  virtual ~RILUK ();
 
   /// \brief Set RILU(k) relaxation parameter
   ///
@@ -350,10 +348,10 @@ class RILUK:
   ///   - "fact: absolute threshold" (magnitude_type)
   ///   - "fact: relative threshold" (magnitude_type)
   ///   - "fact: relax value" (magnitude_type)
-  void setParameters(const Teuchos::ParameterList& params);
+  void setParameters (const Teuchos::ParameterList& params);
 
   //! Initialize by computing the symbolic incomplete factorization.
-  void initialize();
+  void initialize ();
 
   /// \brief Compute the (numeric) incomplete factorization.
   ///
@@ -363,10 +361,10 @@ class RILUK:
   /// - Value for the a priori diagonal threshold values.
   ///
   /// initialize() must be called first, before this method may be called.
-  void compute();
+  void compute ();
 
   //! Whether initialize() has been called on this object.
-  bool isInitialized() const {
+  bool isInitialized () const {
     return isInitialized_;
   }
   //! Whether compute() has been called on this object.
@@ -375,7 +373,7 @@ class RILUK:
   }
 
   //! Number of successful initialize() calls for this object.
-  int getNumInitialize() const {
+  int getNumInitialize () const {
     return numInitialize_;
   }
   //! Number of successful compute() calls for this object.
@@ -383,7 +381,7 @@ class RILUK:
     return numCompute_;
   }
   //! Number of successful apply() calls for this object.
-  int getNumApply() const {
+  int getNumApply () const {
     return numApply_;
   }
 
@@ -427,6 +425,13 @@ class RILUK:
   /// the same communicator as the original matrix.
   virtual void
   setMatrix (const Teuchos::RCP<const row_matrix_type>& A);
+
+  //@}
+  //! @name Implementation of Teuchos::Describable interface
+  //@{
+
+  //! A one-line description of this object.
+  std::string description () const;
 
   //@}
   //! \name Implementation of Tpetra::Operator

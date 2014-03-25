@@ -31,6 +31,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Mat2exo     applications/mat2exo    SS  OPTIONAL
   Nemslice    applications/nem_slice  SS  REQUIRED
   Nemspread   applications/nem_spread SS  REQUIRED
+  Numbers     applications/numbers    SS  REQUIRED
   Txtexo      applications/txtexo     SS  REQUIRED
   )
 

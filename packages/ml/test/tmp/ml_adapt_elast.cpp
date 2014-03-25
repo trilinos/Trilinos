@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_include.h"
 
@@ -25,7 +25,7 @@
 #include "Epetra_CrsMatrix.h"
 #include "Epetra_BlockMap.h"
 #include "Epetra_Map.h"
-class Epetra_Map; 
+class Epetra_Map;
 
 // includes required by ML
 #include "ml_MultiLevelPreconditioner.h"
@@ -37,7 +37,7 @@ using namespace Trilinos_Util;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -50,7 +50,7 @@ int main(int argc, char *argv[])
   // Create the linear problem using the class `Trilinos_Util::CrsMatrixGallery.'
   // Various matrix examples are supported; please refer to the
   // Trilinos tutorial for more details.
-  
+
   // create Aztec stuff
   int    proc_config[AZ_PROC_SIZE], options[AZ_OPTIONS_SIZE];
 #ifdef ML_MPI
@@ -88,15 +88,15 @@ int main(int argc, char *argv[])
   double *val=NULL;
   int    *bindx=NULL;
   for (i=0; i<N_update; i++) update[i] = i+leng2;
-  
+
   // create the Epetra_CrSMatrix
   Epetra_Map*        StandardMap = new Epetra_Map(leng,N_update,update,0,Comm);
   Epetra_CrsMatrix*  A           = new Epetra_CrsMatrix(Copy,*StandardMap,1);
-  
+
   AZ_input_msr_matrix("ExampleMatrices/cantilever2D/data_matrix.txt",
                       update, &val, &bindx, N_update, proc_config);
 
-  
+
   for (i=0; i<leng; i++)
   {
     int row = update[i];
@@ -104,7 +104,7 @@ int main(int argc, char *argv[])
     A->SumIntoGlobalValues(row,bindx[i+1]-bindx[i],&(val[bindx[i]]),&(bindx[bindx[i]]));
   }
   A->TransformToLocal();
-  
+
   // create solution and right-hand side (MultiVectors are fine as well)
   Epetra_Vector* LHS = new Epetra_Vector(A->OperatorDomainMap());
   Epetra_Vector* RHS = new Epetra_Vector(A->OperatorRangeMap());
@@ -113,12 +113,12 @@ int main(int argc, char *argv[])
 
   // build the epetra linear problem
   Epetra_LinearProblem Problem(A, LHS, RHS);
-  
+
   // Construct a solver object for this problem
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // create a parameter list for ML options
   ParameterList MLList;
 
@@ -132,7 +132,7 @@ int main(int argc, char *argv[])
   MLList.set("adaptive: num vectors",2);
 
 #if 1
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(dynamic_cast<Epetra_RowMatrix&>(*A), MLList, false);
 
   // need to allocate and fill the null space (also the
@@ -155,7 +155,7 @@ int main(int argc, char *argv[])
 
   MLPrec->ComputeAdaptivePreconditioner(NullSpaceSize,&NullSpace[0]);
 #else
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(dynamic_cast<Epetra_RowMatrix&>(*A), MLList);
 #endif
 
@@ -163,19 +163,19 @@ int main(int argc, char *argv[])
   solver.SetPrecOperator(MLPrec);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
 
-  // solve with 500 iterations and 1e-12 tolerance  
+  // solve with 500 iterations and 1e-12 tolerance
   solver.Iterate(1550, 1e-5);
 
   delete MLPrec;
-  
+
   // compute the real residual
 
   double residual, diff;
-  
+
   if( Comm.MyPID()==0 ) {
     cout << "||b-Ax||_2 = " << residual << endl;
     cout << "||x_exact - x||_2 = " << diff << endl;
@@ -187,7 +187,7 @@ int main(int argc, char *argv[])
 #endif
 
   return(0);
-  
+
 }
 
 #else
@@ -210,7 +210,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 

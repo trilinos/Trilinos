@@ -20,7 +20,7 @@
 int ML_Solver_Create( ML_Solver **sol )
 {
    ML_Solver *solver;
-  
+
    ML_memory_alloc((void**) sol, sizeof( ML_Solver ), "SO1" );
    solver = (*sol);
    solver->ML_id = ML_ID_SOLVER;
@@ -52,20 +52,20 @@ int ML_Solver_Create( ML_Solver **sol )
 int ML_Solver_Destroy( ML_Solver **sol )
 {
    ML_Solver *solver;
-  
+
    solver = (*sol);
    solver->ML_id = -1;
    solver->func = NULL;
    solver->Mat1 = NULL;
    solver->Mat2 = NULL;
    solver->Mat3 = NULL;
-   if ( solver->int_params1 != NULL ) 
+   if ( solver->int_params1 != NULL )
       ML_memory_free( (void**) &(solver->int_params1) );
-   if ( solver->int_params2 != NULL ) 
+   if ( solver->int_params2 != NULL )
       ML_memory_free( (void**) &(solver->int_params2) );
-   if ( solver->dble_params1 != NULL ) 
+   if ( solver->dble_params1 != NULL )
       ML_memory_free( (void**) &(solver->dble_params1) );
-   if ( solver->dble_params2 != NULL ) 
+   if ( solver->dble_params2 != NULL )
       ML_memory_free( (void**) &(solver->dble_params2) );
    if ( solver->LUspl != NULL )
       ML_memory_free( (void**) &(solver->LUspl) );

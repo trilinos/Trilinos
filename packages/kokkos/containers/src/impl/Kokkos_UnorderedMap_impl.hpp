@@ -49,6 +49,8 @@
 
 #include <cstdio>
 #include <climits>
+#include <iostream>
+#include <iomanip>
 
 namespace Kokkos { namespace Impl {
 
@@ -56,22 +58,43 @@ uint32_t find_hash_size( uint32_t size );
 
 // find the first set bit of the integer
 KOKKOS_FORCEINLINE_FUNCTION
-int find_first_set(uint32_t i)
+int bit_scan_forward(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
-  return __ffs(i);
+  return __ffs(i) - 1;
 #elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return i ? _bit_scan_forward(i) + 1 : 0;
+  return _bit_scan_forward(i);
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
-  return __builtin_ffs(i);
+  return __builtin_ffs(i) - 1;
 #else
-  if(!i)
-    return 0;
+
   uint32_t t = 1;
-  int r = 1;
-  while (i & t == 0)
+  int r = 0;
+  while (i && (i & t == 0))
   {
-    t <<= 1;
+    t = t << 1;
+    ++r;
+  }
+  return r;
+#endif
+}
+
+// find the first set bit of the integer
+KOKKOS_FORCEINLINE_FUNCTION
+int bit_scan_reverse(uint32_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return 31 - __clz(i);
+#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
+  return _bit_scan_reverse(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return 31 - __builtin_clz(i);
+#else
+  uint32_t t = 1 << 31;
+  int r = 0;
+  while (i && (i & t == 0))
+  {
+    t = t >> 1;
     ++r;
   }
   return r;
@@ -169,83 +192,7 @@ struct UnorderedMapSize
   KOKKOS_INLINE_FUNCTION
   void final( value_type & size ) const
   {
-    m_map.m_scalars().modified = false;
     m_map.m_scalars().size = size;
-  }
-};
-
-template <typename UMap>
-struct UnorderedMapPrint
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-
-  map_type m_map;
-
-  UnorderedMapPrint( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_for(m_map.m_hash_lists.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()(size_type i) const
-  {
-    const size_type invalid_index = map_type::invalid_index;
-    size_type curr = m_map.m_hash_lists(i);
-    while (curr != invalid_index) {
-      printf("%d %d\n", m_map.m_keys[curr], i);
-      curr = m_map.m_next_index[curr];
-    }
-  }
-};
-
-template <typename UMap>
-struct UnorderedMapCountFailedInserts
-{
-  typedef UMap map_type;
-  typedef typename map_type::device_type device_type;
-  typedef typename map_type::size_type size_type;
-  typedef uint32_t value_type;
-
-  map_type m_map;
-
-  UnorderedMapCountFailedInserts( map_type const& map)
-    : m_map(map)
-  {}
-
-  void apply() const
-  {
-    parallel_reduce(m_map.m_failed_insert_scratch.size(), *this);
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void init( value_type & failed_inserts)
-  {
-    failed_inserts = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  static void join( volatile value_type & failed_inserts, const volatile size_type & incr )
-  {
-    failed_inserts += incr;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void operator()( size_type i, value_type & failed_inserts) const
-  {
-    failed_inserts += m_map.m_failed_insert_scratch[i];
-    m_map.m_failed_insert_scratch[i] = 0;
-  }
-
-  KOKKOS_INLINE_FUNCTION
-  void final( value_type & failed_inserts ) const
-  {
-    m_map.m_scalars().failed_inserts = failed_inserts;
   }
 };
 
@@ -257,7 +204,6 @@ struct UnorderedMapErase
   typedef typename map_type::size_type size_type;
   typedef typename map_type::key_type key_type;
   typedef typename map_type::impl_value_type value_type;
-
 
   map_type m_map;
 
@@ -307,6 +253,106 @@ struct UnorderedMapErase
         }
         curr = next;
       }
+    }
+  }
+};
+
+template <typename UMap>
+struct UnorderedMapHistogram
+{
+  typedef UMap map_type;
+  typedef typename map_type::device_type device_type;
+  typedef typename map_type::size_type size_type;
+
+  typedef View<int[100], device_type> histogram_view;
+  typedef typename histogram_view::HostMirror host_histogram_view;
+
+  map_type m_map;
+  histogram_view m_length;
+  histogram_view m_distance;
+  histogram_view m_block_distance;
+
+  UnorderedMapHistogram( map_type const& map)
+    : m_map(map)
+    , m_length("UnorderedMap Histogram")
+    , m_distance("UnorderedMap Histogram")
+    , m_block_distance("UnorderedMap Histogram")
+  {}
+
+  void calculate()
+  {
+    parallel_for(m_map.m_hash_lists.size(), *this);
+  }
+
+  void clear()
+  {
+    Kokkos::deep_copy(m_length, 0);
+    Kokkos::deep_copy(m_distance, 0);
+    Kokkos::deep_copy(m_block_distance, 0);
+  }
+
+  void print_length(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_length);
+    Kokkos::deep_copy(host_copy, m_length);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  void print_distance(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_distance);
+    Kokkos::deep_copy(host_copy, m_distance);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  void print_block_distance(std::ostream &out)
+  {
+    host_histogram_view host_copy = create_mirror_view(m_block_distance);
+    Kokkos::deep_copy(host_copy, m_block_distance);
+
+    for (int i=0, size = host_copy.size(); i<size; ++i)
+    {
+      out << host_copy[i] << " , ";
+    }
+    out << "\b\b\b   " << std::endl;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( size_type i ) const
+  {
+    const size_type invalid_index = map_type::invalid_index;
+
+    uint32_t length = 0;
+    size_type min_index = ~0u, max_index = 0;
+    for (size_type curr = m_map.m_hash_lists(i); curr != invalid_index; curr = m_map.m_next_index[curr]) {
+      ++length;
+      min_index = (curr < min_index) ? curr : min_index;
+      max_index = (max_index < curr) ? curr : max_index;
+    }
+
+    size_type distance = (0u < length) ? max_index - min_index : 0u;
+    size_type blocks = (0u < length) ? max_index/map_type::block_size - min_index/map_type::block_size : 0u;
+
+    // normalize data
+    length   = length   < 100u ? length   : 99u;
+    distance = distance < 100u ? distance : 99u;
+    blocks   = blocks   < 100u ? blocks   : 99u;
+
+    if (0u < length)
+    {
+      atomic_fetch_add( &m_length(length), 1);
+      atomic_fetch_add( &m_distance(distance), 1);
+      atomic_fetch_add( &m_block_distance(blocks), 1);
     }
   }
 };

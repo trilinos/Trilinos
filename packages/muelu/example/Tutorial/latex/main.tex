@@ -73,7 +73,7 @@ Welcome to \MueLu, the next generation multigrid package in Trilinos.
 \paragraph{Preparation for hands-on tutorial}
 To compile the test programs, you first have to run the configuration script, that prepares the compilation on your computer. Just open a terminal, change to the folder with the text examples and type \verb|./do-configure|. Usually you have to do this step only once in the beginning.
 
-After the configuration process you can compile the test programs by typing \verb|make|. The compiler now should generate the executables \verb|Laplace2D.exe|, \verb|Recirc2D.exe| and \verb|Recirc2D_api.exe|. 
+After the configuration process you can compile the test programs by typing \verb|make|. The compiler now should generate the executables \verb|MueLu_laplace2d.exe|, \verb|MueLu_recirc2d.exe| and \verb|MueLu_recirc2d_api.exe|. 
 
 For visualization purposes make sure, that python is installed on your machine with the VTK bindings. Furthermore \verb|paraview| is needed for displaying the multigrid aggregates (optional) and \verb|gnuplot| is needed for plotting the solutions.
 
@@ -86,7 +86,7 @@ We generate a test matrix corresponding to the stencil of a 2D Laplacian operato
 \end{displaymath}
 The resulting matrix is symmetric positive definite. We choose the right hand side to be the constant vector one and use a random initial guess for the iterative solution process. The problem domain is the unit cube with a Cartesian (uniform) mesh.
 
-\subsection{Test program}
+%\subsection{Test program}
 
 \subsection{XML Interface}
 
@@ -374,7 +374,7 @@ The \texttt{Recirc2D} example uses a matrix corresponding to the finite-differen
 on the unit square, with $\varepsilon=1e-5$ and homogeneous Dirichlet boundary conditions. It is $v_x=4x(x-1)(1-2y)$ and $v_y=-4y(y-1)(1-2x)$.
 The right hand side vector $f$ is chosen to be the constant vector 1. Due to the convective term the resulting linear system is non-symmetric and therefore more challenging for the iterative solver. The multigrid algorithm has to be adapted to the non-symmetry to obtain good convergence behaviour.
 
-\subsection{Test program}
+%\subsection{Test program}
 
 \subsection{Multigrid setup phase}
 

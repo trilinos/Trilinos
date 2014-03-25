@@ -47,6 +47,7 @@
 #include "MueLu_Factory.hpp"
 
 namespace MueLu {
+
 #ifdef HAVE_MUELU_DEBUG
   Factory::multipleCallCheckEnum Factory::multipleCallCheckGlobal_ = ENABLED;
 #endif

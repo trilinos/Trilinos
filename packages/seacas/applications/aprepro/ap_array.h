@@ -43,6 +43,8 @@ struct array {
 };
 typedef struct array array;
 
+extern double array_value(array *arr, double row, double col);
+extern array *array_construct(int rows, int cols);
 extern array *array_add(array *a, array *b);
 extern array *array_sub(array *a, array *b);
 extern array *array_scale(array *a, double s);

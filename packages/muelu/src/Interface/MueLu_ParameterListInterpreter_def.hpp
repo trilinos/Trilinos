@@ -117,11 +117,20 @@ namespace MueLu {
       Teuchos::ParameterList hieraList = paramList.sublist("Hierarchy"); // copy because list temporally modified (remove 'id')
 
       // Get hierarchy options
-      this->numDesiredLevel_ = 10; /* default should be provided by the Hierarchy class */;
-      if(hieraList.isParameter("numDesiredLevel")) { this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel"); hieraList.remove("numDesiredLevel"); }
+      if (hieraList.isParameter("numDesiredLevel")) {
+        this->numDesiredLevel_ = hieraList.get<int>("numDesiredLevel");
+        hieraList.remove("numDesiredLevel");
+      }
 
-      this->maxCoarseSize_ = 50; /* default should be provided by the Hierarchy class */;
-      if(hieraList.isParameter("maxCoarseSize")) { this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize"); hieraList.remove("maxCoarseSize"); }
+      if (hieraList.isParameter("maxCoarseSize")) {
+        this->maxCoarseSize_ = hieraList.get<int>("maxCoarseSize");
+        hieraList.remove("maxCoarseSize");
+      }
+
+      if (hieraList.isParameter("rebalance P and R")) {
+        this->doPRrebalance_ = hieraList.get<bool>("rebalance P and R");
+        hieraList.remove("rebalance P and R");
+      }
 
       //TODO Move this its own class or MueLu::Utils?
       std::map<std::string,MsgType> verbMap;
@@ -264,7 +273,7 @@ namespace MueLu {
           factoryManagers[paramName] = m;
 
         } else {
-          this->GetOStream(Warnings0,  0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
+          this->GetOStream(Warnings0) << "Warning: Could not interpret parameter list " << paramList1 << std::endl;
           TEUCHOS_TEST_FOR_EXCEPTION(false, Exceptions::RuntimeError, "XML Parameter list must either be of type \"factory\" or of type \"group\".");
         }
       } else {
@@ -279,7 +288,7 @@ namespace MueLu {
     if(operatorList_.isParameter("PDE equations")) {
       int nPDE = operatorList_.get<int>("PDE equations");
       if (Op.GetFixedBlockSize() != nPDE)
-        this->GetOStream(Warnings0,  0) << "Warning: setting matrix block size to " << nPDE << " (value of \"PDE equations\" parameter in the list) "
+        this->GetOStream(Warnings0) << "Warning: setting matrix block size to " << nPDE << " (value of \"PDE equations\" parameter in the list) "
             << "instead of " << Op.GetFixedBlockSize() << " (provided matrix)." << std::endl;
       Op.SetFixedBlockSize(nPDE);
     }
@@ -343,7 +352,7 @@ namespace MueLu {
       //dim=3;
     }
 
-    //    GetOStream(Runtime1, 0) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
+    //    GetOStream(Runtime1) << "MueLu::ParameterListInterpreter: Coordinates found! (dim=" << dim << ")" << std::endl;
   }
 
 } // namespace MueLu

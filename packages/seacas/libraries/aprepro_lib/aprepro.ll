@@ -245,6 +245,13 @@ integer {D}+({E})?
   }
 }
 
+<END_CASE_SKIP>"{endswitch}".*"\n"  {
+  aprepro.ap_file_list.top().lineno++;
+  BEGIN(INITIAL);
+  switch_active = false;
+  switch_skip_to_endcase = false;
+}
+
 <END_CASE_SKIP>.*"\n" {  aprepro.ap_file_list.top().lineno++; }
 
 <INITIAL>{WS}"{endswitch}".*"\n"        {

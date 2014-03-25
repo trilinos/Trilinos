@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -53,7 +53,7 @@ typedef struct
 }
 MLI_Context;
 
-typedef struct 
+typedef struct
 {
     ML_MPI_Comm  comm;
     ML           *ml_ptr;
@@ -121,11 +121,11 @@ int MLI_CSRGetRow(ML_Operator *obj, int N_requested_rows, int requested_rows[],
     int allocated_space, int columns[], double values[], int row_lengths[]);
 void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
                                 double **rhs, char *matfile, char *rhsfile);
-extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*, 
-                         MLI_CSRMatrix *, MLI_Solver*, int *,MLI_Context*); 
-extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, 
+extern int MLI_Solver_Construct_CSRMatrix(int, int*, int*, double*,
+                         MLI_CSRMatrix *, MLI_Solver*, int *,MLI_Context*);
+extern int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia,
                          int *mat_ja, double *mat_a, MLI_CSRMatrix *mli_mat,
-                         MLI_Solver *solver, int *partition, MLI_Context *obj); 
+                         MLI_Solver *solver, int *partition, MLI_Context *obj);
 
 #ifndef ML_CPP
 #ifdef __cplusplus

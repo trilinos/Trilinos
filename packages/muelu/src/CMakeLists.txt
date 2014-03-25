@@ -115,20 +115,37 @@ INCLUDE_DIRECTORIES(${BDIR}/)
 APPEND_GLOB(HEADERS ${BDIR}/*.hpp)
 
 # Cpp file
+SET(CU_SOURCES "")
 IF(${PACKAGE_NAME}_ENABLE_EXPLICIT_INSTANTIATION)
   CONFIGURE_FILE(${DIR}/Utils/ExplicitInstantiation/${PACKAGE_NAME}_ExplicitInstantiation.hpp.in ${BDIR}/MueLu_ExplicitInstantiation.hpp)
   APPEND_GLOB(SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cpp)
+  APPEND_GLOB(CU_SOURCES ${DIR}/Utils/ExplicitInstantiation/*.cu)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Ifpack2)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_Ifpack2Smoother.hpp)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp)
+  LIST(REMOVE_ITEM SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_Threads.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_OpenMP.cpp)
+  LIST(REMOVE_ITEM CU_SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_Ifpack2Smoother_Cuda.cu)
   LIST(REMOVE_ITEM HEADERS ${DIR}/Smoothers/MueLu_SchwarzSmoother.hpp)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp)
+  LIST(REMOVE_ITEM SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_Threads.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_OpenMP.cpp)
+   LIST(REMOVE_ITEM CU_SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_SchwarzSmoother_Cuda.cu)
 ENDIF()
 
 if (NOT ${PACKAGE_NAME}_ENABLE_Tpetra)
-  LIST(REMOVE_ITEM SOURCES ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp)
+  LIST(REMOVE_ITEM SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_Threads.cpp
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_OpenMP.cpp)
+  LIST(REMOVE_ITEM CU_SOURCES
+    ${DIR}/Utils/ExplicitInstantiation/MueLu_TpetraOperator_Cuda.cu)
 ENDIF()
 
 
@@ -143,6 +160,18 @@ TRIBITS_ADD_LIBRARY(
   DEPLIBS xpetra xpetra-sup xpetra-ext
   )
 
+IF(KokkosClassic_ENABLE_Thrust OR
+   (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda))
+  IF( TPL_ENABLE_MPI )
+    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+  TRIBITS_ADD_LIBRARY(
+    muelu_cuda
+    SOURCES ${CU_SOURCES}
+    CUDALIBRARY
+    )
+ENDIF()
+
 # for debugging
 #MESSAGE("")
 #MESSAGE("**************** in muelu src ***********")
@@ -152,5 +181,6 @@ TRIBITS_ADD_LIBRARY(
 #MESSAGE("INCLUDE_DIRECTORIES = ")
 #get_directory_property(output INCLUDE_DIRECTORIES)
 #message(STATUS ${output})
+# touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration
 # touch CMakeLists.txt because a new file was created in Utils/ExplicitInstantiation of Utils/ForwardDeclaration

@@ -56,7 +56,7 @@ foo(double d, ADVar x, ADVar y)
 goo(double d, ADVar x, ADVar y)
 { return d*(x*x + y*y); }
 
- typedef struct
+ struct
 ExpectedAnswer {
 	const char *name;
 	double v;	// value of name

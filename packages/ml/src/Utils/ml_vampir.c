@@ -1,9 +1,9 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /* This file allows the use of the Vampir utility.
-   
+
    Classes are general categories, e.g., Setup, Solve, Aggregation.   Within a
    class, you define functions and associated state variables (just integer
    handles).   (Functions don't necessarily have to correspond to C functions.)

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Goal of this example if to show how to take advantage of the getrow()
@@ -56,7 +56,7 @@ using namespace ML_Epetra;
 // ================================================================== //
 
 class Laplace3D : public virtual Epetra_RowMatrix {
-      
+
 public:
   //! Constructor.
   /*!
@@ -92,7 +92,7 @@ public:
     // creates the distribution of rows across the processors,
     // by subdividing the cube into smaller cubes, as specified
     // by the mx, my, mz parameters.
-    
+
     CreateMap();
 
     // We need to compute the communication pattern. To that aim,
@@ -100,7 +100,7 @@ public:
     // FillComplete() on this class, then extract all the necessary
     // information, including the importer of off-processor
     // elements. Then, we delete the graph.
-    
+
     int left, right, lower, upper, below, above;
 
     Epetra_CrsGraph Graph(Copy,*RowMap_,7);
@@ -110,11 +110,11 @@ public:
     int NumMyElements = RowMap_->NumMyElements();
     int* MyGlobalElements = RowMap_->MyGlobalElements();
 
-    for (int i = 0 ; i < NumMyElements; ++i) 
+    for (int i = 0 ; i < NumMyElements; ++i)
     {
       Indices[0] = MyGlobalElements[i];
       int NumEntries=1;
-      GetNeighboursCartesian3d(MyGlobalElements[i], left, right, 
+      GetNeighboursCartesian3d(MyGlobalElements[i], left, right,
                                lower, upper, below, above);
       if( left != -1 ) {
         Indices[NumEntries] = left;
@@ -174,13 +174,13 @@ public:
       if (RowEntries_[i] != 0)
       {
         RowIndices_[i].resize(RowEntries_[i]);
-        Graph.ExtractMyRowCopy(i, RowEntries_[i], NumEntries, 
+        Graph.ExtractMyRowCopy(i, RowEntries_[i], NumEntries,
                                &(RowIndices_[i][0]));
       }
     }
-    
+
     // from now on, the Graph object is no longer necessary.
-    
+
     if (BuildCoord)
       CreateCoordinates();
   }
@@ -199,7 +199,7 @@ public:
     return(MaxNumIndices_);
   }
 
-  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
+  virtual int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
                                double *Values, int * Indices) const
   {
     ML_RETURN(getrow(MyRow, Length, NumEntries, Values, Indices));
@@ -212,7 +212,7 @@ public:
     return(0);
   }
 
-  virtual int Multiply(bool TransA, const Epetra_MultiVector& X, 
+  virtual int Multiply(bool TransA, const Epetra_MultiVector& X,
                        Epetra_MultiVector& Y) const
   {
     Epetra_MultiVector Xtmp(RowMatrixColMap(), X.NumVectors());
@@ -232,16 +232,16 @@ public:
         for (int k = 0 ; k < Y.NumVectors() ; ++k)
           Y[k][i] += Values[j] * Xtmp[k][Indices[j]];
     }
-    
+
     return(0);
   }
-  
 
-  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal, 
-                    const Epetra_MultiVector& X, 
+
+  virtual int Solve(bool Upper, bool Trans, bool UnitDiagonal,
+                    const Epetra_MultiVector& X,
                     Epetra_MultiVector& Y) const
   {
-    ML_RETURN(-1); // not implemented 
+    ML_RETURN(-1); // not implemented
   }
 
   virtual int Apply(const Epetra_MultiVector& X,
@@ -271,7 +271,7 @@ public:
     ML_RETURN(-1); // not implemented
   }
 
-  virtual int RightScale(const Epetra_Vector& x) 
+  virtual int RightScale(const Epetra_Vector& x)
   {
     ML_RETURN(-1); // not implemented
   }
@@ -346,7 +346,7 @@ public:
   {
     return(NumGlobalDiagonals_);
   }
-    
+
   virtual int NumMyNonzeros() const
   {
     return(NumMyNonzeros_);
@@ -391,7 +391,7 @@ public:
   {
     return(Importer_);
   }
-  
+
   int SetOwnership(bool ownership)
   {
     return(-1);
@@ -400,25 +400,25 @@ public:
   int SetUseTranspose(bool UseTranspose){return(-1);}
 
   bool UseTranspose() const {return(false);};
-  
+
   bool HasNormInf() const{return(true);};
-  
+
   const Epetra_Comm& Comm() const
   {
     return(Comm_);
   }
-  
-  const Epetra_Map & OperatorDomainMap() const 
-  {
-    return(*RowMap_);
-  }
-  
-  const Epetra_Map & OperatorRangeMap() const 
+
+  const Epetra_Map & OperatorDomainMap() const
   {
     return(*RowMap_);
   }
 
-  void SetLabel(const char* label) 
+  const Epetra_Map & OperatorRangeMap() const
+  {
+    return(*RowMap_);
+  }
+
+  void SetLabel(const char* label)
   {
     strcpy(Label_,label);
   }
@@ -466,17 +466,17 @@ public:
   {
     return(&x_coord[0]);
   }
-    
+
   inline const double* YCoord() const
   {
     return(&y_coord[0]);
   }
-    
+
   inline const double* ZCoord() const
   {
     return(&z_coord[0]);
   }
-    
+
 private:
 
   void CreateCoordinates()
@@ -491,7 +491,7 @@ private:
     double delta_y = ly / (ny() - 1);
     double delta_z = lz / (nz() - 1);
 
-    for (int i = 0 ; i < NumMyRows() ; i++) 
+    for (int i = 0 ; i < NumMyRows() ; i++)
     {
       int GlobalRow = RowMatrixRowMap().GID(i);
       int ixy = GlobalRow % (nx() * ny());
@@ -499,7 +499,7 @@ private:
 
       int ix = ixy % nx();
       int iy = (ixy - ix) / ny();
-      
+
       x_coord[i] = delta_x * ix;
       y_coord[i] = delta_y * iy;
       z_coord[i] = delta_z * iz;
@@ -507,7 +507,7 @@ private:
   }
 
   //! Interal getrow, to be inlined.
-  inline int getrow(int MyRow, int Length, int & NumEntries, 
+  inline int getrow(int MyRow, int Length, int & NumEntries,
                     double *Values, int * Indices) const
   {
     if (Length < RowEntries_[MyRow])
@@ -528,26 +528,26 @@ private:
   }
 
   //! Defines the neighbors in a 2D Cartesian grid.
-  void GetNeighboursCartesian2d(const int i, int& left, int& right, 
-                                int& lower, int& upper) 
+  void GetNeighboursCartesian2d(const int i, int& left, int& right,
+                                int& lower, int& upper)
   {
     int ix, iy;
     ix = i % nx();
     iy = (i - ix) / nx();
 
-    if (ix == 0) 
+    if (ix == 0)
       left = -1;
-    else 
+    else
       left = i-1;
-    if (ix == nx() - 1) 
+    if (ix == nx() - 1)
       right = -1;
     else
       right = i + 1;
-    if (iy == 0) 
+    if (iy == 0)
       lower = -1;
     else
       lower = i - nx();
-    if (iy == ny() - 1) 
+    if (iy == ny() - 1)
       upper = -1;
     else
       upper = i + nx();
@@ -556,20 +556,20 @@ private:
   }
 
   //! Defines the neighbors in a 3D Cartesian grid.
-  void GetNeighboursCartesian3d(const int i, int& left, int& right, 
+  void GetNeighboursCartesian3d(const int i, int& left, int& right,
                                 int& lower, int& upper,
-                                int& below, int& above ) 
+                                int& below, int& above )
   {
     int ixy, iz;
     ixy = i % (nx() * ny());
 
     iz = (i - ixy)/(nx() * ny());
 
-    if (iz == 0) 
+    if (iz == 0)
       below = -1;
-    else 
+    else
       below = i - nx() * ny();
-    if (iz == nz() - 1) 
+    if (iz == nz() - 1)
       above = -1;
     else
       above = i + nx() * ny();
@@ -584,7 +584,7 @@ private:
     return;
   }
 
-  void CreateMap() 
+  void CreateMap()
   {
     int modx = (nx() + (nx() % mx())) / mx();
     int mody = (ny() + (ny() % my())) / my();
@@ -687,7 +687,7 @@ private:
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -714,7 +714,7 @@ int main(int argc, char *argv[])
   CLP.parse(argc,argv);
 
   if (m * m * m != Comm.NumProc()) {
-    if (Comm.MyPID() == 0) 
+    if (Comm.MyPID() == 0)
     {
       std::cout << "Number of processes must be a perfect cube." << std::endl;
       std::cout << "Please re-run with --help option for details." << std::endl;
@@ -724,7 +724,7 @@ int main(int argc, char *argv[])
 #endif
     exit(EXIT_SUCCESS);
   }
-    
+
   n *= m;
 
   Laplace3D A(Comm, n, n, n, m, m, m, true);
@@ -743,7 +743,7 @@ int main(int argc, char *argv[])
 
   // set defaults for classic smoothed aggregation
   ML_Epetra::SetDefaults("SA",MLList);
-  
+
   // overwrite some parameters. Please refer to the user's guide
   // for more information
   MLList.set("max levels",MaxLevels);
@@ -763,7 +763,7 @@ int main(int argc, char *argv[])
   MLList.set("x-coordinates", (double*) A.XCoord());
   MLList.set("y-coordinates", (double*) A.YCoord());
   MLList.set("z-coordinates", (double*) A.ZCoord());
-  
+
   // create the preconditioner object and compute hierarchy
   MultiLevelPreconditioner* MLPrec = new MultiLevelPreconditioner(A, MLList);
 
@@ -774,11 +774,11 @@ int main(int argc, char *argv[])
   solver.Iterate(500, 1e-10);
 
   delete MLPrec;
-  
+
   double norm;
   LHS.Norm2(&norm);
 
-  if (Comm.MyPID() == 0) 
+  if (Comm.MyPID() == 0)
     std::cout << "Norm of the error = " << norm << std::endl;
 
 #ifdef HAVE_MPI
@@ -786,7 +786,7 @@ int main(int argc, char *argv[])
 #endif
 
   exit(EXIT_SUCCESS);
-  
+
 }
 
 #else
@@ -811,7 +811,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 #endif

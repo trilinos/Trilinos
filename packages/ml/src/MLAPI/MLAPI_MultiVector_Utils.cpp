@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_common.h"
 #if defined(HAVE_ML_MLAPI)
@@ -24,7 +24,7 @@ MultiVector Duplicate(const MultiVector& y, const int v)
   if ((v < 0) || v >= y.GetNumVectors())
     ML_THROW("Wrong input parameter v (" +
              GetString(v) + ")", -1);
-      
+
   // FIXME: use Extract
   MultiVector x(y.GetVectorSpace(), 1);
   for (int i = 0 ; i < x.GetMyLength() ; ++i)
@@ -39,7 +39,7 @@ MultiVector Extract(const MultiVector& y, const int v)
   if ((v < 0) || v >= y.GetNumVectors())
     ML_THROW("Wrong input parameter v (" +
              GetString(v) + ")", -1);
-      
+
   MultiVector x(y.GetVectorSpace(), y.GetRCPValues(v));
 
   return(x);

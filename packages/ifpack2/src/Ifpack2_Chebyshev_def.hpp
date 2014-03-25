@@ -376,11 +376,11 @@ PowerMethod (const Tpetra::Operator<scalar_type, local_ordinal_type, global_ordi
   // }
 }
 
-//==========================================================================
+
 template<class MatrixType>
 void Chebyshev<MatrixType>::
-CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
-            const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
+CG (const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& Operator,
+    const Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& InvPointDiagonal,
    const int MaximumIterations,
    scalar_type& lambda_min, scalar_type& lambda_max)
 {
@@ -390,35 +390,50 @@ CG(const Tpetra::Operator<scalar_type,local_ordinal_type,global_ordinal_type,nod
     "Please use Belos' implementation of CG with Tpetra objects.");
 }
 
-//==========================================================================
+
 template <class MatrixType>
-std::string Chebyshev<MatrixType>::description() const {
-  std::ostringstream oss;
-  oss << Teuchos::LabeledObject::getObjectLabel();
-  if (isInitialized()) {
-    if (isComputed()) {
-      oss << "{status = initialized, computed, ";
-    }
-    else {
-      oss << "{status = initialized, not computed, ";
-    }
+std::string Chebyshev<MatrixType>::description () const {
+  std::ostringstream out;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  out << "\"Ifpack2::Chebyshev\": {";
+  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+      << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  out << impl_.description() << ", ";
+
+  if (impl_.getMatrix ().is_null ()) {
+    out << "Matrix: null";
   }
   else {
-    oss << "{status = not initialized, not computed, ";
+    out << "Global matrix dimensions: ["
+        << impl_.getMatrix ()->getGlobalNumRows () << ", "
+        << impl_.getMatrix ()->getGlobalNumCols () << "]"
+        << ", Global nnz: " << impl_.getMatrix ()->getGlobalNumEntries();
   }
 
-  oss << impl_.description();
-
-  oss << ", global rows = " << impl_.getMatrix ()->getGlobalNumRows()
-      << ", global cols = " << impl_.getMatrix ()->getGlobalNumCols()
-      << ", global nnz  = " << impl_.getMatrix ()->getGlobalNumEntries()
-      << "}";
-  return oss.str();
+  out << "}";
+  return out.str ();
 }
 
-//==========================================================================
+
 template <class MatrixType>
-void Chebyshev<MatrixType>::describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) const {
+void Chebyshev<MatrixType>::
+describe (Teuchos::FancyOStream &out,
+          const Teuchos::EVerbosityLevel verbLevel) const
+{
+  const Teuchos::EVerbosityLevel vl =
+    (verbLevel == Teuchos::VERB_DEFAULT) ? Teuchos::VERB_LOW : verbLevel;
+  const int myRank = this->getComm ()->getRank ();
+
+  if (vl != Teuchos::VERB_NONE && myRank == 0) {
+    // By convention, describe() starts with a tab.
+    Teuchos::OSTab tab0 (out);
+    out << description ();
+  }
+
 #if 0
   using Teuchos::Comm;
   using Teuchos::RCP;
@@ -527,7 +542,7 @@ applyImpl (const MV& X,
   // worry about caching Y_org.
   RCP<MV> Y_orig;
   if (beta != zero) {
-    Y_orig = rcp (new MV (Y));
+    Y_orig = rcp (new MV (createCopy(Y)));
   }
 
   // If X and Y point to the same memory location, we need to use a
@@ -539,7 +554,7 @@ applyImpl (const MV& X,
   RCP<const MV> X_copy;
   bool copiedInput = false;
   if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = rcp (new MV (X));
+    X_copy = rcp (new MV (createCopy(X)));
     copiedInput = true;
   }
   else {
@@ -554,7 +569,7 @@ applyImpl (const MV& X,
   if (alpha != one) {
     RCP<MV> X_copy_nonConst = rcp_const_cast<MV> (X_copy);
     if (! copiedInput) {
-      X_copy_nonConst = rcp (new MV (X));
+      X_copy_nonConst = rcp (new MV (createCopy(X)));
       copiedInput = true;
     }
     X_copy_nonConst->scale (alpha);
@@ -568,15 +583,18 @@ applyImpl (const MV& X,
   }
 }
 
-//==========================================================================
+
 template<class MatrixType>
-typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply() const {
-  return impl_.getLambdaMaxForApply();
+typename MatrixType::scalar_type Chebyshev<MatrixType>::getLambdaMaxForApply () const {
+  return impl_.getLambdaMaxForApply ();
 }
 
 
 
 }//namespace Ifpack2
 
-#endif // IFPACK2_CHEBYSHEV_DEF_HPP
+#define IFPACK2_CHEBYSHEV_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::Chebyshev< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::Chebyshev< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif // IFPACK2_CHEBYSHEV_DEF_HPP

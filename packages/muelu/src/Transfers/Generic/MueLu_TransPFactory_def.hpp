@@ -57,10 +57,13 @@
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_TransPFactory_decl.hpp"
-#include "MueLu_Utilities.hpp"
-#include "MueLu_Monitor.hpp"
-#include "MueLu_FactoryManagerBase.hpp"
+
 #include "MueLu_DisableMultipleCallCheck.hpp"
+
+#include "MueLu_FactoryManagerBase.hpp"
+#include "MueLu_Monitor.hpp"
+#include "MueLu_PerfUtils.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -99,6 +102,11 @@ namespace MueLu {
     //      RCP<Matrix> R = Utils::TwoMatrixMultiply(I, false, P, true);
 
     RCP<Matrix> R = Utils2::Transpose(*P, true);
+
+    RCP<ParameterList> params = rcp(new ParameterList());;
+    params->set("printLoadBalancingInfo", true);
+    params->set("printCommInfo",          true);
+    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*R, "R", params);
 
     Set(coarseLevel, "R", R);
 

@@ -316,12 +316,37 @@ namespace Iovs {
 
     if(this->pvcsa)
       {
+      std::vector<int> error_codes;
+      std::vector<std::string> error_messages;
       this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
-      this->pvcsa->PerformCoProcessing(this->DBFilename.c_str());
+      this->pvcsa->PerformCoProcessing(this->DBFilename.c_str(),
+                                       error_codes,
+                                       error_messages);
       this->pvcsa->logMemoryUsageAndTakeTimerReading(this->DBFilename.c_str());
       this->pvcsa->ReleaseMemory(this->DBFilename.c_str());
+      if(error_codes.size() > 0 &&
+         error_messages.size() > 0 &&
+         error_codes.size() == error_messages.size())
+        {
+        for(int i = 0; i < error_codes.size(); i++)
+          {
+          if(error_codes[i] > 0)
+            {
+            IOSS_WARNING << "\n\n** ParaView Catalyst Plugin Warning Message Severity Level "
+                         << error_codes[i] << ", On Processor " << this->myProcessor << " **\n\n";
+            IOSS_WARNING << error_messages[i];
+            }
+          else
+            {
+            std::ostringstream errmsg;
+            errmsg << "\n\n** ParaView Catalyst Plugin Error Message Severity Level "
+                   << error_codes[i] << ", On Processor " << this->myProcessor << " **\n\n"
+                   << error_messages[i];
+            IOSS_ERROR(errmsg);
+            }
+          }
+        }
       }
-
     return true;
   }
 

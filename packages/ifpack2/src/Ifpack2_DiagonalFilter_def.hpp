@@ -423,4 +423,7 @@ TPETRA_DEPRECATED  void DiagonalFilter<MatrixType>::getLocalRowView(LocalOrdinal
 
 }// namespace Ifpack2
 
+#define IFPACK2_DIAGONALFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::DiagonalFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
+
 #endif

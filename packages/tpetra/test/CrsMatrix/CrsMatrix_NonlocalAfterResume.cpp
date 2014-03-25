@@ -119,6 +119,9 @@ namespace {
 
 TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scalar, Node )
 {
+  using std::cerr;
+  using std::endl;
+
   RCP<Node> node = getNode<Node>();
   // test that an exception is thrown when we exceed statically allocated memory
   typedef ScalarTraits<Scalar> ST;
@@ -127,14 +130,36 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
   RCP<const Comm<int> > comm = getDefaultComm();
   const size_t numImages = size(*comm);
   const size_t myImageID = rank(*comm);
-  // create a row Map, 5 rows per processor
+
+  comm->barrier ();
+  if (myImageID == 0) {
+    std::ostringstream os;
+    os << "=== Tpetra::CrsMatrix nonlocal-after-resume test ===" << endl;
+    cerr << os.str ();
+  }
+  comm->barrier ();
+
   const GO numLocal = 5;
+  {
+    std::ostringstream os;
+    os << "  Proc " << myImageID << ": Create row Map with " << numLocal
+       << " rows per process" << endl;
+    cerr << os.str ();
+  }
   RCP<const Map<LO,GO,Node> > rmap = createContigMapWithNode<LO,GO,Node>(INVALID,numLocal,comm,node);
+
+  {
+    std::ostringstream os;
+    os << "  Proc " << myImageID << ": "
+       << "Create a column Map with super- and sub-diagonal blocks" << endl;
+    cerr << os.str ();
+  }
   RCP<const Map<LO,GO,Node> > cmap;
-  // create a column Map, with super- and sub-diagonal blocks
   {
     Array<GO> cols;
-    for (GO c=rmap->getMinGlobalIndex(); c <= rmap->getMaxGlobalIndex(); ++c) cols.push_back(c);
+    for (GO c = rmap->getMinGlobalIndex (); c <= rmap->getMaxGlobalIndex (); ++c) {
+      cols.push_back (c);
+    }
     if (rmap->getMinGlobalIndex() >= rmap->getMinAllGlobalIndex() + numLocal) {
       for (GO c = rmap->getMinGlobalIndex()-numLocal; c < rmap->getMinGlobalIndex(); ++c) {
         cols.push_back(c);
@@ -147,7 +172,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     }
     cmap = createNonContigMapWithNode<LO,GO,Node>(cols(), comm, node);
   }
+
+  comm->barrier ();
+  if (myImageID == 0) {
+    std::ostringstream os;
+    os << "  GLOBAL: Created column Map" << endl;
+    cerr << os.str ();
+  }
+  comm->barrier ();
+
   {
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Insert diagonal entries" << endl;
+      cerr << os.str ();
+    }
     //----------------------------------------------------------------------
     // put in diagonal, locally
     //----------------------------------------------------------------------
@@ -155,8 +194,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
       matrix.insertGlobalValues(r,tuple(r),tuple(ST::one()));
     }
+
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Fill-complete the matrix" << endl;
+      cerr << os.str ();
+    }
     // fill, but do not pack, because we will add new entries below
-    RCP<ParameterList> params = parameterList(); 
+    RCP<ParameterList> params = parameterList();
     params->set("Optimize Storage",false);
     TEST_NOTHROW       ( matrix.fillComplete( params ) );
     TEST_EQUALITY_CONST( matrix.isFillComplete(),      true );
@@ -164,6 +209,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
     TEST_EQUALITY      ( matrix.getGlobalNumEntries(), numLocal*numImages );
     TEST_EQUALITY      ( matrix.getNodeNumEntries(),   (size_t)numLocal   );
 
+    comm->barrier ();
+    if (myImageID == 0) {
+      std::ostringstream os;
+      os << "  GLOBAL: Done with first fillComplete" << endl;
+      cerr << os.str ();
+    }
+    comm->barrier ();
+
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Insert super-diagonal entries" << endl;
+      cerr << os.str ();
+    }
     //----------------------------------------------------------------------
     // add super-diagonal, non-locally
     //----------------------------------------------------------------------
@@ -173,6 +231,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
         matrix.insertGlobalValues(r+numLocal,tuple(r),tuple(ST::one()));
       }
+    }
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Fill-complete the matrix" << endl;
+      cerr << os.str ();
     }
     // fill, but do not pack, because we will add new entries below
     params->set("Optimize Storage",false);
@@ -186,6 +249,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       TEST_EQUALITY( matrix.getNodeNumEntries(), expected );
     }
 
+    comm->barrier ();
+    if (myImageID == 0) {
+      std::ostringstream os;
+      os << "  GLOBAL: Done with second fillComplete" << endl;
+      cerr << os.str ();
+    }
+    comm->barrier ();
+
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Insert sub-diagonal entries" << endl;
+      cerr << os.str ();
+    }
     //----------------------------------------------------------------------
     // add sub-diagonal block, non-locally
     //----------------------------------------------------------------------
@@ -195,6 +271,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       for (GO r=rmap->getMinGlobalIndex(); r <= rmap->getMaxGlobalIndex(); ++r) {
         matrix.insertGlobalValues(r-numLocal,tuple(r),tuple(ST::one()));
       }
+    }
+    {
+      std::ostringstream os;
+      os << "  Proc " << myImageID << ": Fill-complete the matrix (with "
+         << "optimized storage)" << endl;
+      cerr << os.str ();
     }
     // fill; it is okay to pack now
     params->set("Optimize Storage",true);
@@ -208,11 +290,25 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, NonlocalAfterResume, LO, GO, Scala
       if (myImageID < numImages-1) expected += numLocal; // sub-diagonal
       TEST_EQUALITY( matrix.getNodeNumEntries(), expected );
     }
+
+    comm->barrier ();
+    if (myImageID == 0) {
+      std::ostringstream os;
+      os << "  GLOBAL: Done with third fillComplete" << endl;
+      cerr << os.str ();
+    }
+    comm->barrier ();
   }
   // All procs fail if any node fails
   int globalSuccess_int = -1;
-  reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+  Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
   TEST_EQUALITY_CONST( globalSuccess_int, 0 );
+
+  if (myImageID == 0) {
+    std::ostringstream os;
+    os << "=== Done with test (globally) ===" << endl;
+    cerr << os.str ();
+  }
 }
 
 //

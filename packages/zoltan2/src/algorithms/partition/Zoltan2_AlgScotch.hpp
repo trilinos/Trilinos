@@ -263,7 +263,7 @@ void AlgPTScotch(
                                   // TODO:  Set from parameters
   SCOTCH_stratInit(&stratstr);
 
-  // Allocate & initialize PTScotch data structure.
+  // Allocate and initialize PTScotch Graph data structure.
   SCOTCH_Dgraph *gr = SCOTCH_dgraphAlloc();  // Scotch distributed graph
   ierr = SCOTCH_dgraphInit(gr, mpicomm);
 
@@ -306,8 +306,8 @@ void AlgPTScotch(
   // TODO:  Actually get the weights; for now, not using weights.
   SCOTCH_Num *veloloctab = NULL;  // Vertex weights
   SCOTCH_Num *edloloctab = NULL;  // Edge weights
-  //TODO int vwtdim = model->getVertexWeightDim();
-  //TODO int ewtdim = model->getEdgeWeightDim();
+  //TODO int vwtdim = model->getNumWeightsPerVertex();
+  //TODO int ewtdim = model->getNumWeightsPerEdge();
   //TODO if (vwtdim) veloloctab = new SCOTCH_Num[nVtx];
   //TODO if (ewtdim) edloloctab = new SCOTCH_Num[nEdges];
   //TODO scale weights to SCOTCH_Nums.
@@ -335,14 +335,41 @@ void AlgPTScotch(
     partloctab = new SCOTCH_Num[nVtx+1];
   }
 
+  // Get target part sizes
+  float *partsizes = new float[numGlobalParts];
+  if (!solution->criteriaHasUniformPartSizes(0))
+    for (size_t i=0; i<numGlobalParts; i++)
+      partsizes[i] = solution->getCriteriaPartSize(0, i);
+  else
+    for (size_t i=0; i<numGlobalParts; i++)
+      partsizes[i] = 1.0 / float(numGlobalParts);
+
+  // Allocate and initialize PTScotch target architecture data structure
+  SCOTCH_Arch archdat;
+  SCOTCH_archInit(&archdat);
+
+  SCOTCH_Num velosum = 0;
+  SCOTCH_dgraphSize (gr, &velosum, NULL, NULL, NULL);
+  SCOTCH_Num *goalsizes = new SCOTCH_Num[partnbr];
+  // TODO: The goalsizes are set as in Zoltan; not sure it is correct there 
+  // or here.
+  // It appears velosum is global NUMBER of vertices, not global total 
+  // vertex weight.  I think we should use the latter.
+  // Fix this when we add vertex weights.
+  for (SCOTCH_Num i = 0; i < partnbr; i++)
+    goalsizes[i] = ceil(velosum * partsizes[i]);
+  delete [] partsizes;
+
+  SCOTCH_archCmpltw(&archdat, partnbr, goalsizes);
 
   // Call partitioning; result returned in partloctab.
-  // TODO:  Use SCOTCH_dgraphMap so can include a machine model in partitioning
+  ierr = SCOTCH_dgraphMap(gr, &archdat, &stratstr, partloctab);
 
-  ierr = SCOTCH_dgraphPart(gr, partnbr, &stratstr, partloctab);
-
-  env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphPart", 
+  env->globalInputAssertion(__FILE__, __LINE__, "SCOTCH_dgraphMap", 
     !ierr, BASIC_ASSERTION, problemComm);
+
+  SCOTCH_archExit(&archdat);
+  delete [] goalsizes;
 
   // TODO - metrics
 

@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_operator.h"
@@ -47,7 +47,7 @@ public:
   }
 
   //! Returns a pointer to the internally stored ML_Operator.
-  ML_Operator* GetData() const 
+  ML_Operator* GetData() const
   {
     return(Op_);
   }

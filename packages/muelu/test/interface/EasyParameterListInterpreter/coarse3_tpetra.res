@@ -147,10 +147,10 @@ Level 2
  A 1    3333   9997     3.00  1
  A 2    1111   3331     3.00  1
  
- Smoother (level 0) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 9999, "Global number of columns": 9999 }
+ Smoother (level 0) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [9999, 9999], Global nnz: 29995}
  
- Smoother (level 1) both : "Ifpack2::Relaxation": { MatrixType: "Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode, KokkosClassic::AltSparseOps<void, int, KokkosClassic::SerialNode, KokkosClassic::details::AltSparseOpsDefaultAllocator<int, KokkosClassic::SerialNode> > >", Status: initialized, computed, "relaxation: type": Symmetric Gauss-Seidel, "relaxation: sweeps": 1, "relaxation: damping factor": 1, "Global number of rows": 3333, "Global number of columns": 3333 }
+ Smoother (level 1) both : "Ifpack2::Relaxation": {Initialized: true, Computed: true, Type: Symmetric Gauss-Seidel, sweeps: 1, damping factor: 1, Global matrix dimensions: [3333, 3333], Global nnz: 9997}
  
- Smoother (level 2) pre  : Ifpack2::ILUT : {Initialized: true, Computed: true, Number of rows: 1111, Number of columns: 1111, Level of fill: 1, Absolute threshold: 0, Relative threshold: 1, Relax value: 0, nnz = 3331}
+ Smoother (level 2) pre  : "Ifpack2::ILUT": {Initialized: true, Computed: true, Level-of-fill: 1, absolute threshold: 0, relative threshold: 1, relaxation value: 0, Global matrix dimensions: [1111, 1111], Global nnz: 3331}
  Smoother (level 2) post : no smoother
  

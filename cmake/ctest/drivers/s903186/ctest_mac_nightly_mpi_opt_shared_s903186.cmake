@@ -54,7 +54,7 @@
 # @HEADER
 
 
-INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc.cmake")
+INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc4.8.2.cmake")
 
 #
 # Set the options specific to this build case
@@ -62,7 +62,7 @@ INCLUDE("${CTEST_SCRIPT_DIRECTORY}/TrilinosCTestDriverCore.s903186.gcc.cmake")
 
 SET(COMM_TYPE MPI)
 SET(BUILD_TYPE RELEASE)
-SET(BUILD_DIR_NAME MPI_OPT_DEV_SHARED)
+SET(BUILD_DIR_NAME MPI_OPT_SHARED)
 SET(CTEST_TEST_TYPE Experimental)
 #SET(CTEST_TEST_TIMEOUT 900)
 
@@ -74,6 +74,7 @@ SET( EXTRA_CONFIGURE_OPTIONS
   "-DSWIG_EXECUTABLE:FILEPATH=/Users/jmwille/install/swig-2.0.4/bin/swig"
   "-DTrilinos_ENABLE_EXPLICIT_INSTANTIATION:BOOL=ON"
   "-DTPL_ENABLE_Boost:BOOL=ON"
+  "-DTPL_ENABLE_X11:BOOL=OFF"
   "-DNetcdf_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/lib"
   "-DNetcdf_INCLUDE_DIRS=/Users/trilinos/tpl/gcc/pnetcdf_4.2/include"
   "-DHDF5_LIBRARY_DIRS=/Users/trilinos/tpl/gcc/phdf5-1.8.6/lib"

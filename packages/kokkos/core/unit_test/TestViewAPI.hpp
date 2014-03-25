@@ -149,6 +149,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   typedef Kokkos::
     View< DataType, Kokkos::LayoutRight, device_type > right_view ;
 
+  typedef Kokkos::
+    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
 
@@ -156,6 +159,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
   right_shape  rsh ;
   left_view    left ;
   right_view   right ;
+  stride_view  left_stride ;
+  stride_view  right_stride ;
   long         left_alloc ;
   long         right_alloc ;
 
@@ -164,6 +169,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
     , rsh()
     , left(  "left" )
     , right( "right" )
+    , left_stride( left )
+    , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -201,6 +208,11 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
                      & left(  0,  0,  0,  0,  0,  0,  0,  0 );
       if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
       offset = j ;
+
+      if ( & left(i0,i1,i2,i3,i4,i5,i6,i7) !=
+           & left_stride(i0,i1,i2,i3,i4,i5,i6,i7) ) {
+        update |= 4 ;
+      }
     }
 
     offset = -1 ;
@@ -217,6 +229,11 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 8 >
                      & right(  0,  0,  0,  0,  0,  0,  0,  0 );
       if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
       offset = j ;
+
+      if ( & right(i0,i1,i2,i3,i4,i5,i6,i7) !=
+           & right_stride(i0,i1,i2,i3,i4,i5,i6,i7) ) {
+        update |= 8 ;
+      }
     }
   }
 };
@@ -434,6 +451,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   typedef Kokkos::
     View< DataType, Kokkos::LayoutRight, device_type > right_view ;
 
+  typedef Kokkos::
+    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
 
@@ -441,6 +461,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
   right_shape  rsh ;
   left_view    left ;
   right_view   right ;
+  stride_view  left_stride ;
+  stride_view  right_stride ;
   long         left_alloc ;
   long         right_alloc ;
 
@@ -449,6 +471,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
     , rsh()
     , left(  "left" )
     , right( "right" )
+    , left_stride( left )
+    , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -483,6 +507,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
                      & left(  0,  0,  0,  0,  0 );
       if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
       offset = j ;
+
+      if ( & left( i0, i1, i2, i3, i4 ) !=
+           & left_stride( i0, i1, i2, i3, i4 ) ) { update |= 4 ; }
     }
 
     offset = -1 ;
@@ -496,6 +523,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 5 >
                      & right(  0,  0,  0,  0,  0 );
       if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
       offset = j ;
+
+      if ( & right( i0, i1, i2, i3, i4 ) !=
+           & right_stride( i0, i1, i2, i3, i4 ) ) { update |= 8 ; }
     }
   }
 };
@@ -614,6 +644,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   typedef Kokkos::
     View< DataType, Kokkos::LayoutRight, device_type > right_view ;
 
+  typedef Kokkos::
+    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
 
@@ -621,6 +654,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
   right_shape  rsh ;
   left_view    left ;
   right_view   right ;
+  stride_view  left_stride ;
+  stride_view  right_stride ;
   long         left_alloc ;
   long         right_alloc ;
 
@@ -629,6 +664,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
     , rsh()
     , left(  "left" )
     , right( "right" )
+    , left_stride( left )
+    , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -661,6 +698,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
                      & left(  0,  0,  0 );
       if ( j <= offset || left_alloc <= j ) { update |= 1 ; }
       offset = j ;
+
+      if ( & left(i0,i1,i2) != & left_stride(i0,i1,i2) ) { update |= 4 ; }
     }
 
     offset = -1 ;
@@ -672,6 +711,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 3 >
                      & right(  0,  0,  0 );
       if ( j <= offset || right_alloc <= j ) { update |= 2 ; }
       offset = j ;
+
+      if ( & right(i0,i1,i2) != & right_stride(i0,i1,i2) ) { update |= 8 ; }
     }
 
     for ( unsigned i0 = 0 ; i0 < lsh.N0 ; ++i0 )
@@ -801,6 +842,9 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   typedef Kokkos::
     View< DataType, Kokkos::LayoutRight, device_type > right_view ;
 
+  typedef Kokkos::
+    View< DataType, Kokkos::LayoutStride, device_type > stride_view ;
+
   typedef typename left_view ::shape_type  left_shape ;
   typedef typename right_view::shape_type  right_shape ;
 
@@ -808,6 +852,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
   right_shape  rsh ;
   left_view    left ;
   right_view   right ;
+  stride_view  left_stride ;
+  stride_view  right_stride ;
   long         left_alloc ;
   long         right_alloc ;
 
@@ -816,6 +862,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
     , rsh()
     , left(  "left" )
     , right( "right" )
+    , left_stride( left )
+    , right_stride( right )
     , left_alloc( allocation_count( left ) )
     , right_alloc( allocation_count( right ) )
     {}
@@ -841,6 +889,8 @@ struct TestViewOperator_LeftAndRight< DataType , DeviceType , 1 >
     {
       if ( & left(i0)  != & left.at(i0,0,0,0,0,0,0,0) )  { update |= 3 ; }
       if ( & right(i0) != & right.at(i0,0,0,0,0,0,0,0) ) { update |= 3 ; }
+      if ( & left(i0)  != & left_stride(i0) ) { update |= 4 ; }
+      if ( & right(i0) != & right_stride(i0) ) { update |= 8 ; }
     }
   }
 };
@@ -922,11 +972,38 @@ public:
 
   static void run_test()
   {
+    // mfh 14 Feb 2014: This test doesn't actually create instances of
+    // these types.  In order to avoid "declared but unused typedef"
+    // warnings, we declare empty instances of these types, with the
+    // usual "(void)" marker to avoid compiler warnings for unused
+    // variables.
+
     typedef typename dView0::HostMirror  hView0 ;
     typedef typename dView1::HostMirror  hView1 ;
     typedef typename dView2::HostMirror  hView2 ;
     typedef typename dView3::HostMirror  hView3 ;
     typedef typename dView4::HostMirror  hView4 ;
+
+    {
+      hView0 thing;
+      (void) thing;
+    }
+    {
+      hView1 thing;
+      (void) thing;
+    }
+    {
+      hView2 thing;
+      (void) thing;
+    }
+    {
+      hView3 thing;
+      (void) thing;
+    }
+    {
+      hView4 thing;
+      (void) thing;
+    }
 
     dView4 dx , dy , dz ;
     hView4 hx , hy , hz ;
@@ -961,6 +1038,17 @@ public:
                                                               dx.dimension_1(),
                                                               dx.dimension_2(),
                                                               dx.dimension_3());
+
+    {
+      // Destruction of this view should be harmless
+      const_dView4 unmanaged_from_ptr_const_dx( Kokkos::view_without_managing ,
+                                                dx.ptr_on_device() ,
+                                                dx.dimension_0() ,
+                                                dx.dimension_1() ,
+                                                dx.dimension_2() ,
+                                                dx.dimension_3() );
+    }
+
     const_dView4 const_dx = dx ;
 
 

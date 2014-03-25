@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -25,7 +25,7 @@ extern "C" {
 extern int ML_CG_Solve(ML_Krylov *, int, double *, double *);
 extern int ML_CG_ComputeEigenvalues(ML_Krylov *data, int length, int);
 extern int ML_Power_ComputeEigenvalues(ML_Krylov *data, int length, int);
-extern int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data, 
+extern int ML_SubspaceIteration_ComputeEigenvalues(ML_Krylov *data,
                 int length, int scale_by_diag);
 
 

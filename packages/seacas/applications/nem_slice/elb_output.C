@@ -122,6 +122,10 @@ int write_nemesis(std::string &nemI_out_file,
   else
     ex_opts(EX_VERBOSE);
 
+  /* Enable compression (if netcdf-4) */
+  ex_set_option(exoid, EX_OPT_COMPRESSION_LEVEL, 1);
+  ex_set_option(exoid, EX_OPT_COMPRESSION_SHUFFLE, 1);
+
   /* Create the title */
   if(problem->type == NODAL)
     strcpy(method1, "nodal");

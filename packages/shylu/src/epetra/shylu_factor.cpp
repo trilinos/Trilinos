@@ -692,11 +692,6 @@ int shylu_symbolic_factor
 
     delete[] SColElems;
 
-    Amesos Factory;
-    const char* SolverType = config->diagonalBlockSolver.c_str();
-    bool IsAvailable = Factory.Query(SolverType);
-    assert(IsAvailable == true);
-
     Teuchos::RCP<Epetra_LinearProblem> LP = Teuchos::RCP<Epetra_LinearProblem> 
                                         (new Epetra_LinearProblem());
     LP->SetOperator((ssym->D).getRawPtr());
@@ -710,6 +705,12 @@ int shylu_symbolic_factor
     ssym->Gvec = Teuchos::RCP<Epetra_MultiVector>
                     (new Epetra_MultiVector(ssym->G->RowMap(), 16));
 
+    // Are these even needed, plan to remove them ?
+    data->temp3 = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(View, *(ssym->Drhs), 0, 1));
+    data->locallhs = Teuchos::RCP<Epetra_MultiVector>
+                    (new Epetra_MultiVector(View, *(ssym->Dlhs), 0, 1));
+
     LP->SetRHS(ssym->Drhs.getRawPtr());
     LP->SetLHS(ssym->Dlhs.getRawPtr());
 
@@ -719,8 +720,30 @@ int shylu_symbolic_factor
     ssym->LP = Teuchos::RCP<Epetra_LinearProblem>(&((*(ssym->ReIdx_LP))(*LP)),
                                         false);
 
-    Teuchos::RCP<Amesos_BaseSolver> Solver = Teuchos::RCP<Amesos_BaseSolver>
-                                    (Factory.Create(SolverType, *(ssym->LP)));
+    Teuchos::RCP<Amesos_BaseSolver> Solver;
+    Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver;
+    std::size_t found = (config->diagonalBlockSolver).find("Amesos");
+    if (found == 0)
+    {
+        Amesos Factory;
+        const char* SolverType = config->diagonalBlockSolver.c_str();
+        bool IsAvailable = Factory.Query(SolverType);
+        assert(IsAvailable == true);
+        config->amesosForDiagonal = true;
+        Solver = Teuchos::RCP<Amesos_BaseSolver>
+                    (Factory.Create(SolverType, *(ssym->LP)));
+    }
+    else
+    {
+        config->amesosForDiagonal = false;
+#ifdef HAVE_IFPACK_DYNAMIC_FACTORY
+    Ifpack_DynamicFactory IfpackFactory;
+#else
+    Ifpack IfpackFactory;
+#endif
+        ifpackSolver = Teuchos::rcp<Ifpack_Preconditioner>(IfpackFactory.Create
+         (config->diagonalBlockSolver, (ssym->D).getRawPtr(), 0, false));
+    }
     //config->dm.print(5, "Created the diagonal solver");
 
 #ifdef TIMING_OUTPUT
@@ -728,10 +751,17 @@ int shylu_symbolic_factor
     ftime.start();
 #endif
     //Solver->SetUseTranspose(true); // for transpose
-    Teuchos::ParameterList aList;
-    aList.set("TrustMe", true);
-    Solver->SetParameters(aList);
-    Solver->SymbolicFactorization();
+    if (config->amesosForDiagonal)
+    {
+        Teuchos::ParameterList aList;
+        aList.set("TrustMe", true);
+        Solver->SetParameters(aList);
+        Solver->SymbolicFactorization();
+    }
+    else
+    {
+        ifpackSolver->Initialize();
+    }
 
     //config->dm.print(3, "Symbolic Factorization done");
 
@@ -744,6 +774,7 @@ int shylu_symbolic_factor
     ssym->OrigLP = LP;
     //ssym->LP = LP;
     ssym->Solver = Solver;
+    ssym->ifSolver = ifpackSolver;
 
     if (config->schurApproxMethod == 1)
     {
@@ -765,6 +796,45 @@ int shylu_symbolic_factor
 #endif
         ssym->prober = prober;
     }
+
+    // Set the maps, importers and multivectors to be used in the solve once.
+    Epetra_MpiComm LComm(MPI_COMM_SELF);
+    data->LDRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Dnr,
+                                 data->DRowElems, 0, LComm));
+    data->LGRowMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
+                                 data->SRowElems, 0, LComm));
+    data->GMap = Teuchos::rcp(new Epetra_Map(-1, data->Snr,
+                             data->SRowElems, 0, A->Comm()));
+
+    // Assuming X and A will have the same rowmap. Should it be domain map ?
+    data->BdImporter = Teuchos::rcp(new Epetra_Import(*(data->LDRowMap),
+                     A->RowMap()));
+    data->DistImporter = Teuchos::rcp(new Epetra_Import(*(data->GMap),
+                         *(data->LGRowMap)));;
+    // Assuming X and A will have the same rowmap. Should it be domain map ?
+    data->BsImporter = Teuchos::rcp(new Epetra_Import(*(data->GMap),
+                     A->RowMap()));
+    data->XsImporter = Teuchos::rcp(new Epetra_Import(*(data->LGRowMap),
+                         *(data->GMap)));
+    // Assuming Y and A will have the same rowmap. Should it be range map ?
+    data->XdExporter = Teuchos::rcp(new Epetra_Export(*(data->LDRowMap), 
+                 A->RowMap()));
+    data->XsExporter = Teuchos::rcp(new Epetra_Export(*(data->LGRowMap),
+             A->RowMap()));
+
+    // Create multivectors for solve, TODO: Can we do with fewer
+    data->localrhs = Teuchos::rcp(new Epetra_MultiVector(*(data->LDRowMap), 1));
+    data->temp1 = Teuchos::rcp(new Epetra_MultiVector(*(data->LGRowMap), 1));
+    data->temp2 = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->Bs = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->Xs = Teuchos::rcp(new Epetra_MultiVector(*(data->GMap), 1));
+    data->LocalXs = Teuchos::rcp(new Epetra_MultiVector(*(data->LGRowMap), 1));
+    data->Xs->PutScalar(0.0);
+
+    //data->importExportTime = Teuchos::rcp(new Teuchos::Time("import export time"));
+    //data->innerIterTime = Teuchos::rcp(new Teuchos::Time("innertIter time"));
+    //data->fwdTime = Teuchos::rcp(new Teuchos::Time("reindex fwd time"));
+    //data->amesosSchurTime = Teuchos::rcp(new Teuchos::Time("amesos schur time"));
 #ifdef TIMING_OUTPUT
     symtime.stop();
     cout << "Symbolic Time" << symtime.totalElapsedTime() << endl;
@@ -782,6 +852,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 
     Teuchos::RCP<Epetra_LinearProblem> LP = ssym->LP;
     Teuchos::RCP<Amesos_BaseSolver> Solver = ssym->Solver;
+    Teuchos::RCP<Ifpack_Preconditioner> ifpackSolver = ssym->ifSolver;
     Teuchos::RCP<Isorropia::Epetra::Prober> prober = ssym->prober;
 
     /*--Extract the Epetra Matrices into already existing matrices --- */
@@ -794,12 +865,16 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
 
     //config->dm.print(3, "In Numeric Factorization");
-    Solver->NumericFactorization();
+    if (config->amesosForDiagonal)
+        Solver->NumericFactorization();
+    else
+        ifpackSolver->Compute();
 
     //config->dm.print(3, "Numeric Factorization done");
 
 #ifdef SHYLU_DEBUG
-    Solver->PrintStatus();
+    if (config->amesosForDiagonal)
+        Solver->PrintStatus();
 #endif
 
 #ifdef TIMING_OUTPUT
@@ -814,10 +889,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     Teuchos::RCP<Epetra_CrsMatrix> Sbar;
 
    data->schur_op = Teuchos::RCP<ShyLU_Probing_Operator> (new
-             ShyLU_Probing_Operator(ssym, (ssym->G).getRawPtr(),
+             ShyLU_Probing_Operator(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
-             1));
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(), &LocalDRowMap, 1));
 
     if (config->schurApproxMethod == 1)
     {
@@ -825,10 +900,10 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         //Set up the probing operator
         // TODO: Change to RCPs. Call Set vectors on schur_op and remove
         // probeop
-        ShyLU_Probing_Operator probeop(ssym, (ssym->G).getRawPtr(),
+        ShyLU_Probing_Operator probeop(config, ssym, (ssym->G).getRawPtr(),
          (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-         (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(), &LocalDRowMap,
-         nvectors);
+         (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+         (ssym->C).getRawPtr(), &LocalDRowMap, nvectors);
 
         //cout << "Doing probing" << endl;
         Sbar = prober->probe(probeop);
@@ -852,12 +927,13 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
         if (config->sep_type == 2)
             Sbar = computeApproxSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
-             &LocalDRowMap);
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(), &LocalDRowMap);
         else
             Sbar = computeApproxWideSchur(config, ssym, (ssym->G).getRawPtr(),
              (ssym->R).getRawPtr(), (ssym->LP).getRawPtr(),
-             (ssym->Solver).getRawPtr(), (ssym->C).getRawPtr(),
+             (ssym->Solver).getRawPtr(), (ssym->ifSolver).getRawPtr(),
+             (ssym->C).getRawPtr(),
              &LocalDRowMap);
 
         //cout << *Sbar << endl;
@@ -946,7 +1022,7 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
 #endif
     	data->schur_prec = Teuchos::rcp<Ifpack_Preconditioner>
     				(IfpackFactory.Create(schurPrec,
-					 Sbar.getRawPtr(), 0, false));
+					 Sbar.getRawPtr(), config->overlap, false));
 
         data->schur_prec->Initialize();
         data->schur_prec->Compute();
@@ -1006,7 +1082,6 @@ int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
     {
         assert (0 == 1);
     }
-
 
     //cout << " Out of factor" << endl ;
 #ifdef TIMING_OUTPUT

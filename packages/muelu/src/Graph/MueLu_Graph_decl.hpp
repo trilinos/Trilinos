@@ -98,6 +98,9 @@ namespace MueLu {
     //! Returns map with local ids of boundary nodes.
     const ArrayRCP<const bool> GetBoundaryNodeMap() const                    { return localDirichletNodes_; }
 
+    //! Returns the maximum number of entries across all rows/columns on this node
+    size_t getNodeMaxNumRowEntries () const                                  { return graph_->getNodeMaxNumRowEntries(); }
+
     //! Return the list of vertices adjacent to the vertex 'v'.
     ArrayView<const LO> getNeighborVertices(LO i) const {
       ArrayView<const LO> rowView;

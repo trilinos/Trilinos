@@ -65,9 +65,13 @@ namespace Stokhos {
     typedef value_t value_type;
     typedef device_t device_type;
     typedef value_type& reference;
+    typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
+    typedef const volatile value_type& const_volatile_reference;
     typedef value_type* pointer;
+    typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
+    typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::StaticArrayTraits<value_type,device_type> ss;
 
     //! Turn StaticFixedStorage into a meta-function class usable with mpl::apply
@@ -88,9 +92,19 @@ namespace Stokhos {
       ss::fill(coeff_, Num, x);
     }
 
+    //! Constructor for creating a view (not allowed)
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
+
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const StaticFixedStorage& s) {
+      ss::copy(s.coeff_, coeff_, Num);
+    }
+
+    //! Copy constructor
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const volatile StaticFixedStorage& s) {
       ss::copy(s.coeff_, coeff_, Num);
     }
 
@@ -105,9 +119,38 @@ namespace Stokhos {
       return *this;
     }
 
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage& operator=(const volatile StaticFixedStorage& s) {
+      ss::copy(s.coeff_, coeff_, Num);
+      return *this;
+    }
+
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    /*volatile*/ StaticFixedStorage&
+    operator=(const StaticFixedStorage& s) volatile {
+      ss::copy(s.coeff_, coeff_, Num);
+      return const_cast<StaticFixedStorage&>(*this);
+    }
+
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    /*volatile*/ StaticFixedStorage&
+    operator=(const volatile StaticFixedStorage& s) volatile {
+      ss::copy(s.coeff_, coeff_, Num);
+      return const_cast<StaticFixedStorage&>(*this);
+    }
+
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
     void init(const_reference v) {
+      ss::fill(coeff_, Num, v);
+    }
+
+    //! Initialize values to a constant value
+    KOKKOS_INLINE_FUNCTION
+    void init(const_reference v) volatile {
       ss::fill(coeff_, Num, v);
     }
 
@@ -120,20 +163,44 @@ namespace Stokhos {
         ss::copy(v, coeff_, sz);
     }
 
+    //! Initialize values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void init(const_pointer v, const ordinal_type& sz = 0) volatile {
+      if (sz == 0)
+        ss::copy(v, coeff_, Num);
+      else
+        ss::copy(v, coeff_, sz);
+    }
+
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
+    }
+
+    //! Load values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void load(pointer v) volatile {
+      ss::copy(v, coeff_, Num);
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) {}
 
+    //! Resize to new size (values are preserved)
+    KOKKOS_INLINE_FUNCTION
+    void resize(const ordinal_type& sz) volatile {}
+
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
                       const ordinal_type& stride, bool owned) {}
+
+    //! Reset storage to given array, size, and stride
+    KOKKOS_INLINE_FUNCTION
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) volatile {}
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
@@ -147,7 +214,18 @@ namespace Stokhos {
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
+    const_volatile_reference operator[] (const ordinal_type& i) const volatile {
+      return coeff_[i];
+    }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) { return coeff_[i]; }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
+    volatile_reference operator[] (const ordinal_type& i) volatile {
+      return coeff_[i]; }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
@@ -155,11 +233,27 @@ namespace Stokhos {
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
+    volatile_reference getCoeff() volatile { return coeff_[i]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_reference getCoeff() const volatile { return coeff_[i]; }
+
+     template <int i>
+    KOKKOS_INLINE_FUNCTION
     const_reference getCoeff() const { return coeff_[i]; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
+    const_volatile_pointer coeff() const volatile { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
+    volatile_pointer coeff() volatile { return coeff_; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION

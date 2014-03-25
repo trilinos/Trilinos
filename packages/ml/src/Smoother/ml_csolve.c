@@ -28,7 +28,7 @@ int ML_CSolve_Create(ML_CSolve **cs)
 
    ML_memory_alloc((void**) cs, sizeof(ML_CSolve), "CS1" );
    ml_cs = (*cs);
-   ml_cs->ML_id = ML_ID_CSOLVE; 
+   ml_cs->ML_id = ML_ID_CSOLVE;
    ml_cs->my_level = NULL;
    ml_cs->ntimes = 0;
    ml_cs->tol = 0;
@@ -41,7 +41,7 @@ int ML_CSolve_Create(ML_CSolve **cs)
    ml_cs->label      = NULL;
    ml_cs->data_destroy = NULL;
    return 0;
-} 
+}
 
 /* *********************************************************************** */
 /* Initialize                                                              */
@@ -49,7 +49,7 @@ int ML_CSolve_Create(ML_CSolve **cs)
 
 int ML_CSolve_Init(ML_CSolve *ml_cs)
 {
-   ml_cs->ML_id = ML_ID_CSOLVE; 
+   ml_cs->ML_id = ML_ID_CSOLVE;
    ml_cs->my_level = NULL;
    ml_cs->ntimes = 0;
    ml_cs->tol = 0;
@@ -62,7 +62,7 @@ int ML_CSolve_Init(ML_CSolve *ml_cs)
    ml_cs->label      = NULL;
    ml_cs->data_destroy = NULL;
    return 0;
-} 
+}
 
 /* *********************************************************************** */
 /* Destructor                                                              */
@@ -72,7 +72,7 @@ int ML_CSolve_Destroy(ML_CSolve **cs)
 {
    ML_CSolve_Clean(*cs);
    ML_memory_free( (void**) cs );
-   (*cs) = NULL; 
+   (*cs) = NULL;
    return 0;
 }
 
@@ -87,7 +87,7 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
    ML_Comm *comm = NULL;
 #endif
 
-   if ( ml_cs->ML_id != ML_ID_CSOLVE ) 
+   if ( ml_cs->ML_id != ML_ID_CSOLVE )
    {
       printf("ML_CSolve_Clean error : wrong object.\n");
       exit(-1);
@@ -114,7 +114,7 @@ int ML_CSolve_Clean(ML_CSolve *ml_cs)
     }
 #endif
 
-   ml_cs->ML_id = -1; 
+   ml_cs->ML_id = -1;
    ml_cs->my_level = NULL;
    ml_cs->ntimes = 0;
    ml_cs->tol = 0;
@@ -169,14 +169,14 @@ int ML_CSolve_Set_1Level(ML_CSolve *ml_cs, ML_1Level *mylevel)
 /* perform solve                                                           */
 /* ----------------------------------------------------------------------- */
 
-int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[], 
+int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, double din[],
                     int outlen, double dout[])
 {
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->func_ptr == NULL) 
+   if (csolve->func->func_ptr == NULL)
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
    csolve->func->func_ptr((ML_Solver *)csolve->data, inlen, din, outlen, dout);
@@ -309,7 +309,7 @@ extern int ML_SuperLU_Solve_WKC(void *vsolver,int ilen,double *x,int olen,
                             double *rhs);
 
 
-int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din, 
+int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
                     int outlen, Epetra_MultiVector &ep_dout )
 {
 
@@ -322,21 +322,21 @@ int ML_CSolve_Apply(ML_CSolve *csolve, int inlen, Epetra_MultiVector &ep_din,
    double t0;
    t0 = GetClock();
 #endif
-   if (csolve->func->func_ptr == NULL) 
+   if (csolve->func->func_ptr == NULL)
       pr_error("ML_CSolve_Apply error : coarse solver not defined\n");
 
    if ( (void *) csolve->func->func_ptr == (void *)ML_SuperLU_Solve )
-     ML_SuperLU_Solve_WKC ((ML_Solver *)csolve->data, inlen, (double *) &ep_din, outlen, 
-                         (double *) &ep_dout); 
+     ML_SuperLU_Solve_WKC ((ML_Solver *)csolve->data, inlen, (double *) &ep_din, outlen,
+                         (double *) &ep_dout);
    else {
        for ( int KK = 0 ; KK != ep_din.NumVectors() ; KK++ ) {
          double *din = pp_din[KK];
          double *dout = pp_dout[KK];
 
-         csolve->func->func_ptr ((ML_Solver *)csolve->data, inlen, din, outlen, dout); 
+         csolve->func->func_ptr ((ML_Solver *)csolve->data, inlen, din, outlen, dout);
        }
    }
-   
+
 
 #if defined(ML_TIMING) || defined(ML_TIMING_DETAILED)
    csolve->apply_time += (GetClock() - t0);

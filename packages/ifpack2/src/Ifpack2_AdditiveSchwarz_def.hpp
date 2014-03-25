@@ -63,6 +63,10 @@
 #include "Zoltan2_OrderingSolution.hpp"
 #endif
 
+#if defined(HAVE_IFPACK2_EXPERIMENTAL) && defined(HAVE_IFPACK2_SUPPORTGRAPH)
+#include "Ifpack2_SupportGraph_decl.hpp"
+#endif
+
 #include "Ifpack2_Condest.hpp"
 #include "Ifpack2_Details_CanChangeMatrix.hpp"
 #include "Ifpack2_LocalFilter_def.hpp"
@@ -498,7 +502,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
-      Xtmp = rcp (new MV (X));
+      Xtmp = rcp (new MV (createCopy(X)));
 
       TEUCHOS_TEST_FOR_EXCEPTION(
         LocalDistributedMap_.is_null (), std::logic_error,
@@ -577,8 +581,8 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         Inverse_->apply (*OverlappingX, *OverlappingY);
       }
       else {
-        MV ReorderedX (*OverlappingX);
-        MV ReorderedY (*OverlappingY);
+        MV ReorderedX = createCopy(*OverlappingX);
+        MV ReorderedY = createCopy(*OverlappingY);
         ReorderedLocalizedMatrix_->permuteOriginalToReordered (*OverlappingX, ReorderedX);
         Inverse_->apply (ReorderedX, ReorderedY);
         ReorderedLocalizedMatrix_->permuteReorderedToOriginal (ReorderedY, *OverlappingY);
@@ -1066,22 +1070,34 @@ double AdditiveSchwarz<MatrixType,LocalInverseType>::getApplyTime() const
 
 
 template<class MatrixType,class LocalInverseType>
-std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
+std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
 {
-  using Teuchos::TypeNameTraits;
-
   std::ostringstream out;
-  out << "Ifpack2::AdditiveSchwarz: {";
-  out << "MatrixType: " << TypeNameTraits<MatrixType>::name ()
-      << ", LocalInverseType: " << TypeNameTraits<LocalInverseType>::name ();
+
+  out << "\"Ifpack2::AdditiveSchwarz\": {";
   if (this->getObjectLabel () != "") {
-    out << ", Label: \"" << this->getObjectLabel () << "\"";
+    out << "Label: \"" << this->getObjectLabel () << "\"";
   }
   out << ", Initialized: " << (isInitialized () ? "true" : "false")
       << ", Computed: " << (isComputed () ? "true" : "false")
       << ", Overlap level: " << OverlapLevel_
-      << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\""
-      << "}";
+      << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"";
+
+  if (Matrix_.is_null ()) {
+    out << ", Matrix: null";
+  }
+  else {
+    out << ", Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << Matrix_->getGlobalNumRows () << ", "
+        << Matrix_->getGlobalNumCols () << "]";
+  }
+
+  // It's useful to print this instance's overlap level.  If you want
+  // more info than that, call describe() instead.
+  out << ", Overlap level: " << OverlapLevel_;
+
+  out << "}";
   return out.str ();
 }
 
@@ -1089,7 +1105,8 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description() const
 template<class MatrixType,class LocalInverseType>
 void
 AdditiveSchwarz<MatrixType,LocalInverseType>::
-describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) const
+describe (Teuchos::FancyOStream& out,
+          const Teuchos::EVerbosityLevel verbLevel) const
 {
   using Teuchos::OSTab;
   using Teuchos::TypeNameTraits;
@@ -1104,7 +1121,7 @@ describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) 
     // describe() starts with a tab, by convention.
     OSTab tab0 (out);
     if (myRank == 0) {
-      out << "Ifpack2::AdditiveSchwarz:";
+      out << "\"Ifpack2::AdditiveSchwarz\":";
     }
     OSTab tab1 (out);
     if (myRank == 0) {
@@ -1127,17 +1144,18 @@ describe (Teuchos::FancyOStream& out, const Teuchos::EVerbosityLevel verbLevel) 
       } else if (CombineMode_ == Tpetra::ZERO) {
         out << "ZERO";
       }
-      out << "\"" << endl;
+      out << "\"" << endl
+          << "Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"" << endl;
     }
 
     if (Matrix_.is_null ()) {
       if (myRank == 0) {
-        out << "Input matrix A: null" << endl;
+        out << "Matrix: null" << endl;
       }
     }
     else {
       if (myRank == 0) {
-        out << "Input matrix A:" << endl;
+        out << "Matrix:" << endl;
         std::flush (out);
       }
       Matrix_->getComm ()->barrier (); // wait for output to finish
@@ -1210,6 +1228,7 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
 #ifdef HAVE_MPI
   using Teuchos::MpiComm;
 #endif // HAVE_MPI
+  using Teuchos::ArrayRCP;
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_dynamic_cast;
@@ -1308,12 +1327,25 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     MyOrderingProblem.solve ();
 
     // Now create the reordered matrix & mark it as active
+    {
+      typedef ReorderFilter<row_matrix_type> reorder_filter_type;
+      typedef Zoltan2::OrderingSolution<global_ordinal_type,
+        local_ordinal_type> ordering_solution_type;
 
-    typedef ReorderFilter<row_matrix_type> reorder_filter_type;
-    typedef Zoltan2::OrderingSolution<global_ordinal_type, local_ordinal_type> ordering_solution_type;
-    ReorderedLocalizedMatrix_ = rcp (new reorder_filter_type (ActiveMatrix, rcp (new ordering_solution_type (*MyOrderingProblem.getSolution ()))));
+      ordering_solution_type sol (*MyOrderingProblem.getSolution ());
 
-    ActiveMatrix = ReorderedLocalizedMatrix_;
+      // perm[i] gives the where OLD index i shows up in the NEW
+      // ordering.  revperm[i] gives the where NEW index i shows
+      // up in the OLD ordering.  Note that perm is actually the
+      // "inverse permutation," in Zoltan2 terms.
+      ArrayRCP<local_ordinal_type> perm = sol.getPermutationRCPConst (true);
+      ArrayRCP<local_ordinal_type> revperm = sol.getPermutationRCPConst ();
+
+      ReorderedLocalizedMatrix_ =
+        rcp (new reorder_filter_type (ActiveMatrix, perm, revperm));
+
+      ActiveMatrix = ReorderedLocalizedMatrix_;
+    }
 #else
     // This is a logic_error, not a runtime_error, because
     // setParameters() should have excluded this case already.
@@ -1490,5 +1522,10 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 }
 
 } // namespace Ifpack2
+
+#define IFPACK2_ADDITIVESCHWARZ_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::AdditiveSchwarz< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                                  Ifpack2::ILUT<Tpetra::CrsMatrix< S, LO, GO, N > > >;
 
 #endif // IFPACK2_ADDITIVESCHWARZ_DECL_HPP

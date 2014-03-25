@@ -502,11 +502,10 @@ initAllValues (const row_matrix_type& A)
 
   // First we copy the user's matrix into L and U, regardless of fill level
 
-  // FIXME (mfh 24 Jan 2014) This assumes that the row Map's global
-  // indices are contiguous on the calling process!
-  for (global_ordinal_type i = rowMap->getMinGlobalIndex ();
-       i <= rowMap->getMaxGlobalIndex (); ++i) {
-    global_ordinal_type global_row = i;
+  Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
+  for (typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator avi = nodeGIDs.begin(); avi != nodeGIDs.end(); avi++)
+  {
+    global_ordinal_type global_row = *avi;
     local_ordinal_type local_row = rowMap->getLocalElement (global_row);
 
     A.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
@@ -520,7 +519,7 @@ initAllValues (const row_matrix_type& A)
     for (size_t j = 0; j < NumIn; ++j) {
       const global_ordinal_type k = InI[j];
 
-      if (k == i) {
+      if (k == global_row) {
         DiagFound = true;
         // Store perturbed diagonal in Tpetra::Vector D_
         DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_;
@@ -534,7 +533,7 @@ initAllValues (const row_matrix_type& A)
           "Nevertheless, the code I found here insisted on this being an error "
           "state, so I will throw an exception here.");
       }
-      else if (k < i) {
+      else if (k < global_row) {
         LI[NumL] = k;
         LV[NumL] = InV[j];
         NumL++;
@@ -767,8 +766,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   using Teuchos::RCP;
   using Teuchos::rcpFromRef;
-  typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
-    global_ordinal_type, node_type> MV;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     A_.is_null (), std::runtime_error, "Ifpack2::RILUK::apply: The matrix is "
@@ -941,7 +938,39 @@ computeCondEst (CondestType CT,
   return Condest_;
 }
 
+
+template<class MatrixType>
+std::string RILUK<MatrixType>::description () const
+{
+  std::ostringstream os;
+
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  os << "\"Ifpack2::RILUK\": {";
+  os << "Initialized: " << (isInitialized () ? "true" : "false") << ", "
+     << "Computed: " << (isComputed () ? "true" : "false") << ", ";
+
+  os << "Level-of-fill: " << getLevelOfFill() << ", ";
+
+  if (A_.is_null ()) {
+    os << "Matrix: null";
+  }
+  else {
+    os << "Global matrix dimensions: ["
+       << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]"
+       << ", Global nnz: " << A_->getGlobalNumEntries();
+  }
+
+  os << "}";
+  return os.str ();
+}
+
+
 } // namespace Ifpack2
 
-#endif
+#define IFPACK2_RILUK_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::RILUK< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::RILUK< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif

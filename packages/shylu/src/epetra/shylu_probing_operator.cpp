@@ -45,6 +45,7 @@
 #include <Epetra_CrsMatrix.h>
 #include <Epetra_LinearProblem.h>
 #include <Amesos_BaseSolver.h>
+#include <Ifpack_Preconditioner.h>
 #include <Epetra_MultiVector.h>
 #include <Teuchos_Time.hpp>
 #include "shylu_probing_operator.h"
@@ -52,17 +53,21 @@
 // TODO: 1. ltemp is not needed in the all local case.
 
 ShyLU_Probing_Operator::ShyLU_Probing_Operator(
+    shylu_config *config,
     shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G,
     Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap, int nvectors)
 {
+    config_ = config;
     ssym_ = ssym;
     G_ = G;
     R_ = R;
     LP_ = LP;
     solver_ = solver;
+    ifSolver_ = ifSolver;
     C_ = C;
     localDRowMap_ = localDRowMap;
     ResetTempVectors(nvectors);
@@ -185,10 +190,15 @@ int ShyLU_Probing_Operator::Apply(const Epetra_MultiVector &X,
     //LP_->SetLHS(localX.getRawPtr());
 
     //TODO: Why not just in Reset(). Check the distr path.
-    ssym_->OrigLP->SetLHS(localX.getRawPtr());
-    ssym_->OrigLP->SetRHS(temp.getRawPtr());
-    ssym_->ReIdx_LP->fwd();
-    solver_->Solve();
+    if (config_->amesosForDiagonal)
+    {
+        ssym_->OrigLP->SetLHS(localX.getRawPtr());
+        ssym_->OrigLP->SetRHS(temp.getRawPtr());
+        ssym_->ReIdx_LP->fwd();
+        solver_->Solve();
+    }
+    else
+        ifSolver_->ApplyInverse(*temp, *localX);
 
 #ifdef TIMING_OUTPUT
     trisolve_time_->stop();
@@ -270,6 +280,8 @@ void ShyLU_Probing_Operator::ResetTempVectors(int nvectors)
 {
     using Teuchos::RCP;
     nvectors_ = nvectors;
+    if (nvectors_ == 0) return;
+
     if (nvectors <= ssym_->Drhs->NumVectors())
     {
         // If vectors were created already, they will be freed.

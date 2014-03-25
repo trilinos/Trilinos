@@ -24,6 +24,7 @@ ADD_SUBDIRECTORIES(
   MatrixMatrix
   TypeStack
   inout
+  PerformanceCGSolve
   )
 
 ADD_SUBDIRECTORY(BugTests)

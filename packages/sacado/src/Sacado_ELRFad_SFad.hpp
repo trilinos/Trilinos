@@ -403,7 +403,7 @@ namespace Sacado {
 
       //! Copy constructor
       SFad(const SFad& x) : 
-	Expr< SFadExprTag< ValueT,Num > >(x) {}
+	Expr< SFadExprTag< ValueT,Num > >(static_cast<const Expr< SFadExprTag< ValueT,Num > >&>(x)) {}
 
       //! Copy constructor from any Expression object
       template <typename S> SFad(const Expr<S>& x) : 

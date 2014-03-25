@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //          Kokkos: Node API and Parallel Node Kernels
 //              Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,10 +50,10 @@
     RCP<Node> node = getNode<Node>();
     typedef typename DefaultKernels<Scalar,Ordinal,Node>::SparseOps          DSM;
     typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
-    typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
-    typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
-    typedef MultiVector<Scalar,Node>                                          MV;
-    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    // typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
+    // typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
+    // typedef MultiVector<Scalar,Node>                                          MV;
+    // typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     OPS dsm(node);
     TEST_EQUALITY(dsm.getNode(), node);
   }
@@ -65,8 +65,8 @@
     typedef typename DSM::template bind_scalar<Scalar>::other_type           OPS;
     typedef typename OPS::template matrix<Scalar,Ordinal,Node>::matrix_type  MAT;
     typedef typename OPS::template graph<Ordinal,Node>::graph_type          GRPH;
-    typedef MultiVector<Scalar,Node>                                          MV;
-    typedef Teuchos::ScalarTraits<Scalar>                                     ST;
+    // typedef MultiVector<Scalar,Node>                                          MV;
+    // typedef Teuchos::ScalarTraits<Scalar>                                     ST;
     const Ordinal numRows = 0;
     Teuchos::ArrayRCP<size_t> ptrs(1); ptrs[0] = 0;
     RCP<GRPH> G = rcp( new GRPH(numRows,numRows,node,null) );
@@ -74,7 +74,7 @@
     G->setStructure(ptrs,null);
     A->setValues(null);
     OPS::finalizeGraphAndMatrix(Teuchos::UNDEF_TRI,Teuchos::NON_UNIT_DIAG,*G,*A,null);
-    Teuchos::EDiag diag; 
+    Teuchos::EDiag diag;
     Teuchos::EUplo uplo;
     G->getMatDesc(uplo,diag);
     TEST_EQUALITY_CONST( uplo, Teuchos::UNDEF_TRI );

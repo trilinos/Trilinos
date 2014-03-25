@@ -99,7 +99,7 @@ namespace Xpetra {
     //! The number of elements in this Map.
     global_size_t getGlobalNumElements() const { XPETRA_MONITOR("EpetraMap::getGlobalNumElements"); return map_->NumGlobalElements(); }
 
-    //! The number of elements belonging to the calling node.
+    //! The number of elements belonging to the calling process.
     size_t getNodeNumElements() const { XPETRA_MONITOR("EpetraMap::getNodeNumElements"); return map_->NumMyElements(); }
 
     //! The index base for this Map.
@@ -126,13 +126,13 @@ namespace Xpetra {
     //! The local index corresponding to the given global index.
     LocalOrdinal getLocalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMap::getLocalElement"); return map_->LID(globalIndex); }
 
-    //! Return the process IDs and corresponding local IDs for the given global IDs.
+    //! Return the process ranks and corresponding local indices for the given global indices.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList, const Teuchos::ArrayView< LocalOrdinal > &LIDList) const;
 
-    //! Return the process IDs for the given global IDs.
+    //! Return the process ranks for the given global indices.
     LookupStatus getRemoteIndexList(const Teuchos::ArrayView< const GlobalOrdinal > &GIDList, const Teuchos::ArrayView< int > &nodeIDList) const;
 
-    //! Return a view of the global indices owned by this node.
+    //! Return a view of the global indices owned by this process.
     Teuchos::ArrayView< const GlobalOrdinal > getNodeElementList() const;
 
     //@}
@@ -140,10 +140,10 @@ namespace Xpetra {
     //! @name Boolean tests
     //@{
 
-    //! True if the local index is valid for this Map on this node, else false.
+    //! Whether the given local index is valid for this Map on this process.
     bool isNodeLocalElement(LocalOrdinal localIndex) const { XPETRA_MONITOR("EpetraMap::isNodeLocalElement"); return map_->MyLID(localIndex); }
 
-    //! True if the global index is found in this Map on this node, else false.
+    //! Whether the given global index is valid for this Map on this process.
     bool isNodeGlobalElement(GlobalOrdinal globalIndex) const { XPETRA_MONITOR("EpetraMap::isNodeGlobalElement"); return map_->MyGID(globalIndex); }
 
     //! True if this Map is distributed contiguously, else false.
@@ -164,27 +164,10 @@ namespace Xpetra {
     //@{
 
     //! Get this Map's Comm object.
-    const Teuchos::RCP< const Teuchos::Comm< int > >  getComm() const { XPETRA_MONITOR("EpetraMap::getComm"); return toXpetra(map_->Comm()); }
+    Teuchos::RCP< const Teuchos::Comm< int > > getComm() const { XPETRA_MONITOR("EpetraMap::getComm"); return toXpetra(map_->Comm()); }
 
     //! Get this Map's Node object.
-    const Teuchos::RCP< Node >  getNode() const;
-
-    
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > removeEmptyProcesses () const {
-      const Epetra_BlockMap * NewMap = map_->RemoveEmptyProcesses();
-      if(!NewMap) return Teuchos::null;
-      else {
-	const RCP< const Map<int, int> >  NewMapX = toXpetra(*NewMap);
-	delete NewMap;   // NOTE: toXpetra *copys* the epetra map rather than wrapping it, so we have to delete NewMap to avoid a memory leak.
-	return NewMapX;
-      }
-    }
-
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > replaceCommWithSubset (const Teuchos::RCP<const Teuchos::Comm<int> >& newComm) const{ 
-      throw std::runtime_error("Xpetra::EpetraMap::replaceCommWithSubset has not yet been implemented.");
-      return Teuchos::null;
-    }
-
+    Teuchos::RCP< Node > getNode() const;
 
     //@}
 
@@ -194,8 +177,19 @@ namespace Xpetra {
     //! Return a simple one-line description of this object.
     std::string description() const;
 
-    //! Print this object with the given verbosity level to the given FancyOStream.
+    //! Print this object with the given verbosity level to the given Teuchos::FancyOStream.
     void describe(Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel=Teuchos::Describable::verbLevel_default) const;
+
+    //@}
+
+    //! @name
+    //@{
+
+    //! Return a new Map with processes with zero elements removed.
+    RCP<const Map<int,int> > removeEmptyProcesses() const;
+
+    //! Replace this Map's communicator with a subset communicator.
+    RCP<const Map<int,int> > replaceCommWithSubset(const Teuchos::RCP< const Teuchos::Comm< int > > &newComm) const;
 
     //@}
 

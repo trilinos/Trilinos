@@ -176,7 +176,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -206,7 +206,7 @@ namespace {
     }
     // All procs fail if any process fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 #endif // HAVE_TPETRA_DEBUG
@@ -434,7 +434,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -474,7 +474,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -560,7 +560,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -590,7 +590,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -704,7 +704,7 @@ namespace {
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -749,7 +749,7 @@ namespace {
 
     // All procs fail if any proc fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -805,7 +805,7 @@ namespace {
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -814,48 +814,74 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL( CrsGraph, NonLocals, LO, GO , Node )
   {
     using Teuchos::as;
+    using std::endl;
     typedef CrsGraph<LO,GO,Node> GRAPH;
-    // what happens when we call CrsGraph::submitEntry() for a row that isn't on the Map?
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    // get a comm
-    RCP<Node> node = getNode<Node>();
-    RCP<const Comm<int> > comm = getDefaultComm();
-    const int myImageID = comm->getRank();
-    const int numImages = comm->getSize();
-    // create a Map, one row per processor
+    typedef Tpetra::global_size_t GST;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    out << "Tpetra::CrsGraph: Test insert into nonowned rows" << endl;
+    Teuchos::OSTab tab0 (out);
+
+    // Get a communicator and Kokkos Node instance
+    RCP<Node> node = getNode<Node> ();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    const int myImageID = comm->getRank ();
+    const int numImages = comm->getSize ();
+
+    // Create a Map with one row per process
     const size_t numLocal = 1;
-    RCP<const Map<LO,GO,Node> > map = createContigMapWithNode<LO,GO>(INVALID,numLocal,comm,node);
-    GO myrowind = map->getGlobalElement(0);
-    RCP<ParameterList> params = parameterList();
-    for (int T=0; T<4; ++T) {
-      ProfileType pftype = ( (T & 1) == 1 ) ? StaticProfile : DynamicProfile;
-      params->set("Optimize Storage",((T & 2) == 2));
+    RCP<const map_type> map =
+      createContigMapWithNode<LO,GO> (INVALID, numLocal, comm, node);
+
+    GO myrowind = map->getGlobalElement (0);
+    RCP<ParameterList> params = parameterList ();
+
+    for (int T = 0; T < 4; ++T) {
+      const ProfileType pftype = ((T & 1) == 1) ? StaticProfile : DynamicProfile;
+      const bool optimizeStorage = ((T & 2) == 2);
+
+      params->set ("Optimize Storage", optimizeStorage);
+      out << "ProfileType: "
+          << (pftype == StaticProfile ? "StaticProfile" : "DynamicProfile")
+          << endl;
+      out << "Optimize Storage: " << (optimizeStorage ? "true" : "false");
+
       {
-        // create a diagonal graph, where the graph entries are contributed by a single off-node contribution, no filtering
-        // let node i contribute to row i+1, where node the last node contributes to row 0
-        GRAPH diaggraph(map,1,pftype);
+        out << "Diagonal graph test" << endl;
+        Teuchos::OSTab tab1 (out);
+
+        // create a diagonal graph, where the graph entries are
+        // contributed by a single off-node contribution, no
+        // filtering.  let node i contribute to row i+1, where node
+        // the last node contributes to row 0
+        GRAPH diaggraph (map, 1, pftype);
         GO grow = myImageID+1;
-        if (as<int>(grow) == numImages) {
+        if (as<int> (grow) == numImages) {
           grow = 0;
         }
-        diaggraph.insertGlobalIndices(grow, tuple<GO>(grow));
+        diaggraph.insertGlobalIndices (grow, tuple<GO> (grow));
         // before globalAssemble(), there should be no local entries if numImages > 1
         ArrayView<const GO> myrow_gbl;
-        diaggraph.getGlobalRowView(myrowind, myrow_gbl);
-        TEST_EQUALITY( myrow_gbl.size(), (numImages == 1 ? 1 : 0) );
-        diaggraph.globalAssemble();   // after globalAssemble(), there should be one local entry per row, corresponding to the diagonal
-        diaggraph.getGlobalRowView(myrowind,myrow_gbl);
-        TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO>(myrowind) );
+        diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+        TEST_EQUALITY( myrow_gbl.size (), (numImages == 1 ? 1 : 0) );
+        diaggraph.globalAssemble ();
+        // after globalAssemble(), there should be one local entry per
+        // row, corresponding to the diagonal
+        diaggraph.getGlobalRowView (myrowind, myrow_gbl);
+        TEST_COMPARE_ARRAYS( myrow_gbl, tuple<GO> (myrowind) );
         if (pftype == StaticProfile) { // no room for more
-          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)), std::runtime_error );
+          TEST_THROW( diaggraph.insertGlobalIndices(myrowind,tuple<GO>(myrowind)),
+                      std::runtime_error );
         }
-        diaggraph.fillComplete(params);
-        // after fillComplete(), there should be a single entry on my row, corresponding to the diagonal
+        diaggraph.fillComplete (params);
+        // after fillComplete(), there should be a single entry on my
+        // row, corresponding to the diagonal
         ArrayView<const LO> myrow_lcl;
-        diaggraph.getLocalRowView(0, myrow_lcl);
-        TEST_EQUALITY_CONST( myrow_lcl.size(), 1 );
+        diaggraph.getLocalRowView (0, myrow_lcl);
+        TEST_EQUALITY_CONST( myrow_lcl.size (), 1 );
         if (myrow_lcl.size() == 1) {
-          TEST_EQUALITY( diaggraph.getColMap()->getGlobalElement(myrow_lcl[0]), myrowind );
+          TEST_EQUALITY( diaggraph.getColMap ()->getGlobalElement (myrow_lcl[0]), myrowind );
         }
         // also, the row map and column map should be equivalent
         TEST_EQUALITY_CONST( diaggraph.getRowMap()->isSameAs(*diaggraph.getColMap()), true );
@@ -866,59 +892,94 @@ namespace {
         STD_TESTS(diaggraph);
       }
       {
-        // create a next-door-neighbor graph (tridiagonal plus corners), where the graph entries are contributed by single off-node contribution, no filtering
-        // let node i add the contributions for column i of the graph: (i-1,i), (i,i), (i+1,i)
-        // allocate only as much space as we need
-        // some hacking here to support this test when numImages == 1 or 2
+        out << "Next-door-neighbor graph test" << endl;
+        Teuchos::OSTab tab1 (out);
+
+        // create a next-door-neighbor graph (tridiagonal plus
+        // corners), where the graph entries are contributed by single
+        // off-node contribution, no filtering.  let node i add the
+        // contributions for column i of the graph: (i-1,i), (i,i),
+        // (i+1,i). allocate only as much space as we need. some
+        // hacking here to support this test when numImages == 1 or 2
         GRAPH ngraph(map,3,pftype);
         Array<GO> grows(3);
         grows[0] = (numImages+myImageID-1) % numImages;   // my left neighbor
         grows[1] = (numImages+myImageID  ) % numImages;   // myself
         grows[2] = (numImages+myImageID+1) % numImages;   // my right neighbor
-        ngraph.insertGlobalIndices(grows[0],tuple<GO>(myImageID)); // ^^^^^^^^^^^^^^^^^^^^^^^
-        ngraph.insertGlobalIndices(grows[1],tuple<GO>(myImageID)); // add me to the graph for my neighbors
-        ngraph.insertGlobalIndices(grows[2],tuple<GO>(myImageID)); // vvvvvvvvvvvvvvvvvvvvvvv
-        // before globalAssemble(), there should be a single local entry on parallel runs, three on serial runs
+
+        // Add me to the graph for my neighbors
+        ngraph.insertGlobalIndices (grows[0], tuple<GO> (myImageID));
+        ngraph.insertGlobalIndices (grows[1], tuple<GO> (myImageID));
+        ngraph.insertGlobalIndices (grows[2], tuple<GO> (myImageID));
+
+        // before globalAssemble(), there should be a single local
+        // entry on parallel runs, three on serial runs
         ArrayView<const GO> myrow_gbl;
-        ngraph.getGlobalRowView(myrowind, myrow_gbl);
+        ngraph.getGlobalRowView (myrowind, myrow_gbl);
         TEST_EQUALITY_CONST( myrow_gbl.size(), (numImages == 1 ? 3 : 1) );
-        ngraph.globalAssemble();    // after globalAssemble(), storage should be maxed out
-        TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0), ngraph.getNumAllocatedEntriesInLocalRow(0) );
+
+        // after globalAssemble(), storage should be maxed out
+        out << "Calling globalAssemble()" << endl;
+        ngraph.globalAssemble();
+        TEST_EQUALITY( ngraph.getNumEntriesInLocalRow(0),
+                       ngraph.getNumAllocatedEntriesInLocalRow(0) );
         if (pftype == StaticProfile) {
-          TEST_THROW( ngraph.insertGlobalIndices(myImageID,tuple<GO>(myImageID)), std::runtime_error );  // adding an addition entry under static allocation should fail
+          // Adding another entry under static allocation should fail.
+          TEST_THROW(
+            ngraph.insertGlobalIndices (myImageID, tuple<GO> (myImageID)),
+            std::runtime_error );
         }
-        ngraph.fillComplete(params);
-        // after fillComplete(), there should be entries for me and my neighbors on my row
+        out << "Calling fillComplete(params)" << endl;
+        ngraph.fillComplete (params);
+
+        // after fillComplete(), there should be entries for me and my
+        // neighbors on my row
         ArrayView<const LO> myrow_lcl;
-        ngraph.getLocalRowView(0, myrow_lcl);
+        ngraph.getLocalRowView (0, myrow_lcl);
+        out << "Returned view of column indices on Proc 0: "
+            << Teuchos::toString (myrow_lcl) << endl;
+
         {
           // check indices on my row
           typename Array<GO>::iterator glast;
-          sort(grows.begin(),grows.end());
-          glast = unique(grows.begin(),grows.end());
-          size_t numunique = glast - grows.begin();
+          sort (grows.begin (), grows.end ());
+          glast = unique (grows.begin (), grows.end ());
+          size_t numunique = glast - grows.begin ();
           // test the test: numunique == min(numImages,3)
           TEST_EQUALITY( numunique, (size_t)min(numImages,3) );
           TEST_EQUALITY_CONST( (size_t)myrow_lcl.size(), numunique );
           if ((size_t)myrow_lcl.size() == numunique) {
             size_t numinds;
             Array<GO> inds(numunique+1);
-            TEST_THROW(   ngraph.getGlobalRowCopy(myrowind,inds(0,numunique-1), numinds), std::runtime_error );
-            TEST_NOTHROW( ngraph.getGlobalRowCopy(myrowind,inds(0,numunique), numinds) );
-            TEST_NOTHROW( ngraph.getGlobalRowCopy(myrowind,inds(), numinds) );
-            sort(inds.begin(), inds.begin()+numinds);
-            TEST_COMPARE_ARRAYS( inds(0,numinds), grows(0,numunique) );
+            TEST_THROW(
+              ngraph.getGlobalRowCopy (myrowind, inds (0, numunique-1), numinds),
+              std::runtime_error );
+            TEST_NOTHROW(
+              ngraph.getGlobalRowCopy (myrowind, inds (0, numunique), numinds) );
+            TEST_NOTHROW( ngraph.getGlobalRowCopy (myrowind,inds (), numinds) );
+            sort (inds.begin (), inds.begin () + numinds);
+            TEST_COMPARE_ARRAYS( inds (0, numinds), grows (0, numunique) );
+
+            out << "On Proc 0:" << endl;
+            Teuchos::OSTab tab2 (out);
+            out << "numinds: " << numinds << endl
+                << "inds(0,numinds): " << inds (0, numinds) << endl
+                << "numunique: " << numunique << endl
+                << "grows(0,numunique): " << grows (0, numunique) << endl;
           }
         }
-        TEST_EQUALITY_CONST( ngraph.getRowMap()->isSameAs(*ngraph.getColMap()), (numImages==1 ? true : false) );
-        TEST_EQUALITY( ngraph.getGlobalNumDiags(), (global_size_t)numImages );
+        TEST_EQUALITY_CONST( ngraph.getRowMap ()->isSameAs (* (ngraph.getColMap ())),
+                             (numImages == 1 ? true : false) );
+        TEST_EQUALITY( ngraph.getGlobalNumDiags (), static_cast<GST> (numImages) );
         TEST_EQUALITY( ngraph.getNodeNumDiags(), 1 );
+
+        out << "Concluding with standard graph tests" << endl;
         STD_TESTS(ngraph);
       }
     }
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -1158,7 +1219,7 @@ namespace {
 
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 
@@ -1192,7 +1253,7 @@ namespace {
 
     // All procs fail if any node fails
     int globalSuccess_int = -1;
-    reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
+    Teuchos::reduceAll( *comm, Teuchos::REDUCE_SUM, success ? 0 : 1, outArg(globalSuccess_int) );
     TEST_EQUALITY_CONST( globalSuccess_int, 0 );
   }
 

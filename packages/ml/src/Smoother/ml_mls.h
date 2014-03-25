@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #ifndef __MLMLS__
 #define __MLMLS__
@@ -11,17 +11,18 @@
 
 struct MLSthing {
  /*
-  * set degree and 
+  * set degree and
   * the precomputed coefficients used in MLS application
   */
   int     mlsDeg; /* degree for current level */
-  double  mlsBoost; 
-  double  mlsOver; 
+  double  mlsBoost;
+  double  mlsOver;
   double  mlsOm[MLS_MAX_DEG];
   double  mlsOm2;
   double  mlsCf[MLS_MAX_DEG];
   double *pAux, *res, *y;  /* workarrays allocated in .... to be reused */
   double eig_ratio;
+  double eig_boost;
   double beta_real, beta_img;
 
   ML_Sm_BGS_Data *block_scaling;/* these last arguments are used to */
@@ -42,11 +43,11 @@ extern "C" {
 #endif
 #endif
 
-int   ML_MLS_Smooth0( double b[], double vx[], double vy[], int deg, 
-		      double *om, double *cf, int nit, double over, 
+int   ML_MLS_Smooth0( double b[], double vx[], double vy[], int deg,
+		      double *om, double *cf, int nit, double over,
 		      double wk);
-int   ML_MLS_Smooth1( double b[], double vx[], double vy[], int deg, 
-		      double *om, double *cf, int nit, double over, 
+int   ML_MLS_Smooth1( double b[], double vx[], double vy[], int deg,
+		      double *om, double *cf, int nit, double over,
 		      double wk);
 int ML_MLS_SandwPres(void *sm, int inlen, double x[], int outlen, double y[]);
 int ML_MLS_SandwPost(void *sm, int inlen, double x[], int outlen, double y[]);

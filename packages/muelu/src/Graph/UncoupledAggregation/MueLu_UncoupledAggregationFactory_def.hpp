@@ -77,6 +77,7 @@
 #include "MueLu_Aggregates.hpp"
 #include "MueLu_Monitor.hpp"
 #include "MueLu_AmalgamationInfo.hpp"
+#include "MueLu_Utilities.hpp"
 
 namespace MueLu {
 
@@ -245,7 +246,7 @@ namespace MueLu {
         sumAll(comm, numLocalAggs,       numGlobalAggs);
 
         double aggPercent = 100*as<double>(numGlobalAggregated)/as<double>(numGlobalRows);
-        GetOStream(Statistics1, 0) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
+        GetOStream(Statistics1) << "  aggregated : " << (numGlobalAggregated - numGlobalAggregatedPrev) << " (phase), " << std::fixed
                                    << std::setprecision(2) << numGlobalAggregated << "/" << numGlobalRows << " [" << aggPercent << "%] (total)\n"
                                    << "  remaining  : " << numGlobalRows - numGlobalAggregated << "\n"
                                    << "  aggregates : " << numGlobalAggs-numGlobalAggsPrev << " (phase), " << numGlobalAggs << " (total)" << std::endl;
@@ -260,7 +261,7 @@ namespace MueLu {
 
     Set(currentLevel, "Aggregates", aggregates);
 
-    GetOStream(Statistics0, 0) << aggregates->description() << std::endl;
+    GetOStream(Statistics0) << aggregates->description() << std::endl;
   }
 
 } //namespace MueLu

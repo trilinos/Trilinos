@@ -10,7 +10,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -60,7 +60,7 @@ static void MLP_print(int count, char * str, double status[AZ_STATUS_SIZE], doub
   std::cout << status[AZ_scaled_r];
   std::cout.width(15); std::cout.setf(std::ios::left);
   std::cout << time;
-  
+
   if( status[AZ_why] == AZ_normal         ) std::cout << "N";
   else if( status[AZ_why] == AZ_maxits    ) std::cout << "M";
   else if( status[AZ_why] == AZ_loss      ) std::cout << "L";
@@ -78,7 +78,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
   // sanity checks
 
-  if (RowMatrix_ == 0) 
+  if (RowMatrix_ == 0)
     ML_CHK_ERR(-1); // Matrix not yet set
 
   if (ML_isKLUAvailable() == 0)
@@ -118,13 +118,13 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   AztecOO solver(Problem);
 
   if( IsSymmetric ) solver.SetAztecOption(AZ_solver, AZ_cg);
-  else              solver.SetAztecOption(AZ_solver, AZ_gmres); 
+  else              solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_kspace, 50);
   solver.SetAztecOption(AZ_conv, AZ_r0);
   solver.SetAztecOption(AZ_output, AZ_none);
 
   // output
- 
+
   if( Comm().MyPID() == 0 ) {
     std::cout << std::endl;
     ML_print_line("-",78);
@@ -141,7 +141,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
     std::cout << "L: numerical loss of precision occurred" << std::endl;
     std::cout << std::endl;
     std::cout << "count  ";
-    std::cout.width(30); std::cout.setf(std::ios::left); 
+    std::cout.width(30); std::cout.setf(std::ios::left);
     std::cout << "smoother type";
     std::cout.width(10); std::cout.setf(std::ios::left);
     std::cout << "its";
@@ -338,13 +338,13 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
 
       delete yo;
-    } 
+    }
   }
 
   // ==================== //
   // Aztec preconditioner //
   // ==================== //
-  
+
   if (InputList.get("test: Aztec",true) == true) {
 
     if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Aztec preconditioner" << std::endl;
@@ -404,7 +404,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
   // ================= //
   // Aztec as a solver //
   // ================= //
-  
+
   if (InputList.get("test: Aztec as solver",true) == true) {
 
     if( Comm().MyPID() == 0 ) std::cout << std::endl << "- Aztec as solver" << std::endl;
@@ -426,7 +426,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
       yo = new ML_Epetra::MultiLevelPreconditioner(*RowMatrix_,NewList, true);
       assert( yo != 0 );
 
-      solver.SetAztecOption(AZ_solver, AZ_GMRESR); 
+      solver.SetAztecOption(AZ_solver, AZ_GMRESR);
       solver.SetPrecOperator(yo);
 
       SetLHSAndRHS(LHS, RHS, *RowMatrix_);
@@ -444,7 +444,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 	BestItersCount = count;
       }
       if( Comm().MyPID() == 0 ) MLP_print(count++,smoother,status,ReqTime);
-      solver.SetAztecOption(AZ_solver, AZ_gmres); 
+      solver.SetAztecOption(AZ_solver, AZ_gmres);
 
       delete yo;
     }
@@ -497,7 +497,7 @@ TestSmoothers(Teuchos::ParameterList& InputList,
 
 #if defined(HAVE_ML_IFPACK) && defined(HAVE_ML_EPETRA) && defined(HAVE_ML_TEUCHOS)
   if (InputList.get("test: IFPACK",true) == true) {
-    
+
     if( Comm().MyPID() == 0 ) std::cout << std::endl << "- IFPACK" << std::endl;
 
     // test IFPACK with block symmetric Gauss-Seidel, block

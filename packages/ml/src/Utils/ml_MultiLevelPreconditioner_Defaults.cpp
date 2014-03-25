@@ -8,7 +8,7 @@
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -22,7 +22,7 @@ using namespace ML_Epetra;
 
 // ============================================================================
 
-int ML_Epetra::SetDefaults(std::string ProblemType, ParameterList & List, 
+int ML_Epetra::SetDefaults(std::string ProblemType, ParameterList & List,
 			   int * ioptions, double * iparams, const bool OverWrite)
 {
   RCP<std::vector<int> >    options;
@@ -74,7 +74,7 @@ int ML_Epetra::SetDefaults(std::string ProblemType, ParameterList & List,
   }
 
   return(0);
-  
+
 }
 
 void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List,bool OverWrite);
@@ -103,7 +103,7 @@ void ML_OverwriteDefaults(ParameterList &inList, ParameterList &List,bool OverWr
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsSA(ParameterList & inList, 
+int ML_Epetra::SetDefaultsSA(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -125,7 +125,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
   List.set("smoother: damping factor",1.0);
   List.set("smoother: pre or post","both");
   List.set("smoother: type","symmetric Gauss-Seidel");
-  
+
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
   List.set("coarse: pre or post","post");
@@ -154,7 +154,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
    - Smoothing
         - \c "smoother: sweeps" \c = \c 1
         - \c "smoother: pre or post" \c = \c "both"
-        - \c "smoother: type" \c = \c Aztec". 
+        - \c "smoother: type" \c = \c Aztec".
         - \c "smoother: Aztec options" \c = \c options
         - \c "smoother: Aztec params" \c = \c params
         - \c "smoother: Aztec as solver" \c = \c false
@@ -162,7 +162,7 @@ int ML_Epetra::SetDefaultsSA(ParameterList & inList,
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsDD(ParameterList & inList, 
+int ML_Epetra::SetDefaultsDD(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -229,7 +229,7 @@ int ML_Epetra::SetDefaultsDD(ParameterList & inList,
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList, 
+int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -260,7 +260,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
   List.set("smoother: Aztec params",params);
   List.set("smoother: Aztec as solver",false);
 #endif
-  
+
   List.set("coarse: type","Amesos-KLU");
   List.set("coarse: max size",128);
   List.set("coarse: pre or post","post");
@@ -300,7 +300,7 @@ int ML_Epetra::SetDefaultsDD_3Levels(ParameterList & inList,
        - \c "coarse: type" \c = \c "Amesos-KLU"
        - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList, 
+int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -364,7 +364,7 @@ int ML_Epetra::SetDefaultsMaxwell(ParameterList & inList,
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 256
  */
-int ML_Epetra::SetDefaultsNSSA(ParameterList & inList, 
+int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -415,7 +415,7 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
    - Smoothing
         - \c "smoother: sweeps" \c = \c 1
         - \c "smoother: pre or post" \c = \c "both"
-        - \c "smoother: type" \c = \c "Aztec" 
+        - \c "smoother: type" \c = \c "Aztec"
         - \c "smoother: Aztec options" \c = \c options
         - \c "smoother: Aztec params" \c = \c params
         - \c "smoother: Aztec as solver" \c = \c false
@@ -423,7 +423,7 @@ int ML_Epetra::SetDefaultsNSSA(ParameterList & inList,
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList, 
+int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
                  Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -492,7 +492,7 @@ int ML_Epetra::SetDefaultsDD_LU(ParameterList & inList,
         - \c "coarse: type" \c = \c "Amesos-KLU"
         - \c "coarse: max size" \c = \c 128
  */
-int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList, 
+int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
 			     Teuchos::RCP<std::vector<int> > &options,
                  Teuchos::RCP<std::vector<double> > &params,
                  bool OverWrite)
@@ -509,7 +509,7 @@ int ML_Epetra::SetDefaultsDD_3Levels_LU(ParameterList & inList,
   List.set("aggregation: nodes per aggregate",512);
   List.set("aggregation: next-level aggregates per process",128);
   List.set("aggregation: damping factor",1.333);
-  
+
   List.set("smoother: sweeps",1);
   List.set("smoother: pre or post","both");
 #ifdef HAVE_ML_AZTECOO

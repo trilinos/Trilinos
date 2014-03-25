@@ -428,8 +428,15 @@ testReadAndWriteFile (Teuchos::FancyOStream& out,
   result = compareCrsMatrixValues<crs_matrix_type> (*A_in, *A_out, out);
   TEST_EQUALITY( result, true );
 
-  (void) success; // silence compile warning ("set but not used")
-  return result;
+  // mfh 24 Feb 2014: Apparently, "set but not used" errors may still
+  // show up on some compilers, even with use of the "(void) success"
+  // idiom.  We can fix this by noting that success has to be true in
+  // order for this function to return true, so we can just Boolean
+  // AND the return value with success.
+  //
+  //(void) success; // silence compile warning ("set but not used")
+  //return result;
+  return result && success;
 }
 
 } // namespace (anonymous)

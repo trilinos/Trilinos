@@ -17,7 +17,7 @@ using std::string;
 int ML_Epetra::SetDefaultsLevelWrap(Teuchos::ParameterList & inList,bool OverWrite){
   Teuchos::ParameterList ilist,&ilist_in=inList.sublist("smoother: ifpack list");
   Teuchos::ParameterList ListLW,sublist, &sublist_in=inList.sublist("levelwrap: coarse list");
-  
+
   // sublist
   ML_Epetra::SetDefaults("SA",sublist);
   ML_Epetra::UpdateList(sublist,sublist_in,OverWrite);
@@ -54,7 +54,7 @@ ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
   FirstApplicationTime_(0.0),
   NumConstructions_(0),
   ConstructionTime_(0.0)
-{ 
+{
   A0_=A0;
   P0_=P0;
   List_=List;
@@ -83,7 +83,7 @@ ML_Epetra::LevelWrap::LevelWrap(Teuchos::RCP<Epetra_CrsMatrix> A0,
   P0_=P0;
   R0_=R0;
   List_=List;
-  if(ComputePrec) ComputePreconditioner();  
+  if(ComputePrec) ComputePreconditioner();
 }
 
 
@@ -114,7 +114,7 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   else if(PreOrPostSmoother == "both") pre_or_post = ML_BOTH;
 
   Smoother_=rcp(ML_Gen_Smoother_Ifpack_Epetra(const_cast<Epetra_CrsMatrix*>(&*A0_),0,List_,"LevelWrap Smoother (level 0): ",verbose_));
-  
+
   //********************
   // Setup A1
   //********************
@@ -131,10 +131,10 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
     A1_=rcp<Epetra_CrsMatrix>(A1);
   }
 
-  //********************  
+  //********************
   // Setup Coarse Solver
   //********************
-  Teuchos::ParameterList & CoarseList=List_.sublist("levelwrap: coarse list");  
+  Teuchos::ParameterList & CoarseList=List_.sublist("levelwrap: coarse list");
   A1prec_=rcp<MultiLevelPreconditioner>(new MultiLevelPreconditioner(*A1_,CoarseList,true));
 
 #ifdef ML_TIMING
@@ -143,17 +143,17 @@ int ML_Epetra::LevelWrap::ComputePreconditioner(const bool CheckFiltering){
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
   int printl=ML_Get_PrintLevel();
-  ML_Set_PrintLevel(output_level);  
+  ML_Set_PrintLevel(output_level);
   ReportTimer(t_diff,"ML_LevelWrap::ComputePreconditioner",comm_);
   ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
   NumConstructions_++;
   ConstructionTime_+=t_diff;
-#endif  
+#endif
   return 0;
 }
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Return operator complexity and #nonzeros in fine grid matrix.
 void ML_Epetra::LevelWrap::Complexities(double &complexity, double &fineNnz){
   fineNnz= (!A0_.is_null()) ? A0_->NumGlobalNonzeros() : 0.0;
@@ -167,26 +167,26 @@ void ML_Epetra::LevelWrap::Complexities(double &complexity, double &fineNnz){
 }/*end Complexities */
 
 
-// ================================================ ====== ==== ==== == = 
+// ================================================ ====== ==== ==== == =
 // Apply the preconditioner w/ RHS B and get result X
 int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_MultiVector& X_) const{
 #ifdef ML_TIMING
   double t_time,t_diff;
   StartTimer(&t_time);
 #endif
-   
+
   // Sanity Checks
   if (!B.Map().SameAs(OperatorDomainMap())) return -1;
   if (!X_.Map().SameAs(OperatorRangeMap())) return -1;
   if (!X_.Map().SameAs(B.Map())) return -1;
   if (B.NumVectors() != X_.NumVectors()) return -1;
 
-  // Build new work vector X 
+  // Build new work vector X
   Epetra_MultiVector X(X_.Map(),X_.NumVectors(),true);
   Epetra_MultiVector tmp0(X_.Map(),X_.NumVectors(),true);
   Epetra_MultiVector tmp1(P0_->DomainMap(),X_.NumVectors(),true);
   Epetra_MultiVector tmp2(P0_->DomainMap(),X_.NumVectors(),true);
-  
+
   // Pre Smoother
   if(pre_or_post==ML_BOTH || pre_or_post==ML_PRESMOOTHER){
     Smoother_->ApplyInverse(B,X);
@@ -194,7 +194,7 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
 
   // Form coarse residual
   A0_->Apply(X,tmp0);
-  tmp0.Update(1.0,B,-1.0); 
+  tmp0.Update(1.0,B,-1.0);
   if(use_pt_) P0_->Multiply(true,tmp0,tmp1);
   else R0_->Multiply(false,tmp0,tmp1);
 
@@ -224,11 +224,11 @@ int ML_Epetra::LevelWrap::ApplyInverse(const Epetra_MultiVector& B, Epetra_Multi
     FirstApplicationTime_=ApplicationTime_;
   }/*end if*/
   ML_Comm_Destroy(&comm_);
-#endif  
+#endif
 
   return 0;
 }
-    
+
 
 // Print the individual operators in the multigrid hierarchy.
 void ML_Epetra::LevelWrap::Print(int level){
@@ -252,13 +252,13 @@ int ML_Epetra::LevelWrap::DestroyPreconditioner(){
 #ifdef ML_TIMING
   ML_Comm *comm_;
   ML_Comm_Create(&comm_);
-  ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);  
-  ReportTimer(FirstApplicationTime_,"ML_LevelWrap (1st iter time )",comm_);  
+  ReportTimer(ConstructionTime_ ,   "ML_LevelWrap (construction  )",comm_);
+  ReportTimer(FirstApplicationTime_,"ML_LevelWrap (1st iter time )",comm_);
   ReportTimer(ApplicationTime_ ,    "ML_LevelWrap (total itr cost)",comm_);
-  ML_Set_PrintLevel(printl);  
+  ML_Set_PrintLevel(printl);
   ML_Comm_Destroy(&comm_);
 #else
-  ML_Set_PrintLevel(printl);  
+  ML_Set_PrintLevel(printl);
 #endif
   return 0;
 }

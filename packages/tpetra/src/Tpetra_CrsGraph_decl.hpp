@@ -175,10 +175,19 @@ namespace Tpetra {
     friend class CrsGraph;
 
   public:
-    typedef LocalOrdinal                         local_ordinal_type;
-    typedef GlobalOrdinal                        global_ordinal_type;
-    typedef Node                                 node_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
+    //! This class' first template parameter; the type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! This class' second template parameter; the type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! This class' third template parameter; the Kokkos Node type.
+    typedef Node node_type;
+
+    //! The Map specialization used by this class.
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+    //! The Import specialization used by this class.
+    typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
+    //! The Export specialization used by this class.
+    typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -1102,9 +1111,7 @@ namespace Tpetra {
     ///
     /// \param newColMap [in] New colMap.  Must be nonnull.
     ///
-    /// \pre The matrix must have no entries inserted yet
-    void
-    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
+    void replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
@@ -1120,7 +1127,7 @@ namespace Tpetra {
     ///    of the given Import is the same as this graph's domain Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
-                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter);
+                                 const Teuchos::RCP<const import_type>& newImporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -1150,18 +1157,18 @@ namespace Tpetra {
     /// method call should only fail on user error or failure to
     /// allocate memory.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
     //@}
 
   private:
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &Source);
+    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
     CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
+    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
   protected:
     typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;

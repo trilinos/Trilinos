@@ -12,7 +12,7 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_common.h"
@@ -39,9 +39,9 @@ class MATLABStream
 public:
 
   // @{ \name Constructors and destructors.
-  
+
   //! Opens the specified file for writing.
-  MATLABStream(const std::string& FileName, bool UseSparse = true) 
+  MATLABStream(const std::string& FileName, bool UseSparse = true)
   {
     FileName_ = FileName;
     SetUseSparse(UseSparse);
@@ -235,7 +235,7 @@ public:
   {
     UseSparse_ = UseSparse;
   }
-    
+
   //! Returns the name of the output file.
   inline std::string GetFileName() const
   {
@@ -243,7 +243,7 @@ public:
   }
 
   //@}
-  
+
 private:
 
   //! Opens the file stream in append mode, or in write more if \c FirstTime == \c true.
@@ -254,9 +254,9 @@ private:
     else
       fp_ = fopen(FileName_.c_str(),"a");
   }
-  
+
   //! Closes the file stream.
-  void Close() 
+  void Close()
   {
     fclose(fp_);
   }

@@ -85,10 +85,6 @@ protected:
   static void TearDownTestCase()
   {
     Kokkos::OpenMP::finalize();
-
-    omp_set_num_threads(0);
-
-    ASSERT_EQ( 1 , omp_get_max_threads() );
   }
 };
 
@@ -126,10 +122,11 @@ protected:
       test_dualview_combinations<int,Kokkos::OpenMP>(size);                     \
   }
 
-OPENMP_INSERT_TEST(close,               100000, 90000, 100, 500)
-OPENMP_INSERT_TEST(far,                 100000, 90000, 100, 500)
+OPENMP_INSERT_TEST(close, 100000, 90000, 100, 500)
+OPENMP_INSERT_TEST(far, 100000, 90000, 100, 500)
 OPENMP_FAILED_INSERT_TEST( 10000, 1000 )
 OPENMP_DEEP_COPY( 10000, 1 )
+
 OPENMP_VECTOR_COMBINE_TEST( 10 )
 OPENMP_VECTOR_COMBINE_TEST( 3057 )
 OPENMP_DUALVIEW_COMBINE_TEST( 10 )

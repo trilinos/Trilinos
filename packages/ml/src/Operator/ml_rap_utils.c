@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -27,7 +27,7 @@
 /*   Novec         On output, length of 'ovec'.                      */
 /*********************************************************************/
 
-void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec, 
+void ML_getrow_matvec(ML_Operator *matrix, double *vec, int Nvec,
                       double *ovec, int *Novec)
 {
    ML_Operator *temp, *temp2, *temp3, *temp4, *tptr;
@@ -222,7 +222,7 @@ void ML_rap_check(ML *ml, ML_Operator *RAP, ML_Operator *R,
 /*                     and *values may be reallocated within the     */
 /*                     subroutine if there is not enough space.      */
 /*                                                                   */
-/*   columns      On input, an array of length 'allocated_space'. On */ 
+/*   columns      On input, an array of length 'allocated_space'. On */
 /*                output, column numbers of the nonzero in retreived */
 /*                rows are stored starting from (*columns)[index]    */
 /*                (first row stored first). Note: if there is not    */
@@ -266,7 +266,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
    }
 #endif
 
-   row = requested_rows[0]; 
+   row = requested_rows[0];
 #ifdef DEBUG2
    if ( (row >= input_matrix->getrow->Nrows) || (row < 0) ) {
       row_lengths[0] = 0;
@@ -275,10 +275,10 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
 #endif
 
    if (input_matrix->getrow->row_map != NULL) {
-      if (input_matrix->getrow->row_map[row] != -1) 
+      if (input_matrix->getrow->row_map[row] != -1)
          row = input_matrix->getrow->row_map[row];
-      else { 
-	row_lengths[0] = 0; 
+      else {
+	row_lengths[0] = 0;
 	ML_avoid_unused_param( (void *) &N_requested_rows);
 	return;}
    }
@@ -307,7 +307,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
       }
       else {
          for (i = 0; i < index; i++) t1[i] = (*columns)[i];
-         if (*columns != NULL) ML_free(*columns);  
+         if (*columns != NULL) ML_free(*columns);
          *columns = t1;
       }
 
@@ -325,7 +325,7 @@ void ML_get_matrix_row(ML_Operator *input_matrix, int N_requested_rows,
 
    if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
       mapper       = input_matrix->getrow->loc_glob_map;
-      for (i = 0; i < row_lengths[0]; i++) 
+      for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];
    }
 }
@@ -353,7 +353,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    }
 #endif
 
-   row = requested_rows[0]; 
+   row = requested_rows[0];
 #ifdef DEBUG2
    if ( (row >= input_matrix->getrow->N_block_rows) || (row < 0) ) {
       row_lengths[0] = 0;
@@ -362,9 +362,9 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
 #endif
 
    if (input_matrix->getrow->row_map != NULL) {
-      if (input_matrix->getrow->row_map[row] != -1) 
+      if (input_matrix->getrow->row_map[row] != -1)
          row = input_matrix->getrow->row_map[row];
-      else { row_lengths[0] = 0; 
+      else { row_lengths[0] = 0;
 	ML_avoid_unused_param( (void *) &N_requested_rows);
 	return;}
    }
@@ -386,7 +386,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
 
    if (*row_lengths+index > *allocated_space) {
       *allocated_space = 2*(*allocated_space) + 1;
-      if (*row_lengths+index > *allocated_space) 
+      if (*row_lengths+index > *allocated_space)
          *allocated_space = *row_lengths + 5 + index;
       t1 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
       t2 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
@@ -416,7 +416,7 @@ void ML_get_matrow_VBR(ML_Operator *input_matrix, int N_requested_rows,
    if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
       col_size = matrix->cpntr[1]-matrix->cpntr[0];
 /*mapper       = input_matrix->getrow->loc_glob_map;*/
-      for (i = 0; i < row_lengths[0]; i++) 
+      for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = input_matrix->getrow->loc_glob_map[(*columns)[i+index]*col_size]/col_size;
 
          /*(*columns)[i+index] = mapper[(*columns)[index+i]];*/
@@ -444,7 +444,7 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
    }
 #endif
 
-   row = requested_rows[0]; 
+   row = requested_rows[0];
 #ifdef DEBUG2
    if ( (row >= input_matrix->getrow->Nrows) || (row < 0) ) {
       row_lengths[0] = 0;
@@ -453,9 +453,9 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 #endif
 
    if (input_matrix->getrow->row_map != NULL) {
-      if (input_matrix->getrow->row_map[row] != -1) 
+      if (input_matrix->getrow->row_map[row] != -1)
          row = input_matrix->getrow->row_map[row];
-      else { row_lengths[0] = 0; 
+      else { row_lengths[0] = 0;
 	ML_avoid_unused_param( (void *) &N_requested_rows);
 	return;}
    }
@@ -477,7 +477,7 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 
    if (*row_lengths+index > *allocated_space) {
       *allocated_space = 2*(*allocated_space) + 1;
-      if (*row_lengths+index > *allocated_space) 
+      if (*row_lengths+index > *allocated_space)
          *allocated_space = *row_lengths + 5 + index;
       t1 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
       t2 = (double *) ML_allocate(*allocated_space*sizeof(double));
@@ -505,7 +505,7 @@ void ML_get_matrow_CSR(ML_Operator *input_matrix, int N_requested_rows,
 
    if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
       mapper       = input_matrix->getrow->loc_glob_map;
-      for (i = 0; i < row_lengths[0]; i++) 
+      for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];
    }
 }
@@ -529,7 +529,7 @@ void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, int N_requested_rows,
    }
 #endif
 
-   row = requested_rows[0]; 
+   row = requested_rows[0];
 #ifdef DEBUG2
    if ( (row >= input_matrix->getrow->Nrows) || (row < 0) ) {
       row_lengths[0] = 0;
@@ -554,7 +554,7 @@ void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, int N_requested_rows,
 
    if (*row_lengths+index > *allocated_space) {
       *allocated_space = 2*(*allocated_space) + 1;
-      if (*row_lengths+index > *allocated_space) 
+      if (*row_lengths+index > *allocated_space)
          *allocated_space = *row_lengths + 5 + index;
       t1 = (int    *) ML_allocate(*allocated_space*sizeof(int   ));
       t2 = (double *) ML_allocate(*allocated_space*sizeof(double));
@@ -583,7 +583,7 @@ void ML_get_row_CSR_norow_map(ML_Operator *input_matrix, int N_requested_rows,
 
    if ( (input_matrix->getrow->use_loc_glob_map == ML_YES)) {
       mapper       = input_matrix->getrow->loc_glob_map;
-      for (i = 0; i < row_lengths[0]; i++) 
+      for (i = 0; i < row_lengths[0]; i++)
          (*columns)[i+index] = mapper[(*columns)[index+i]];
    }
 }

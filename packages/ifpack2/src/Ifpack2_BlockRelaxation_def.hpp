@@ -313,7 +313,7 @@ apply (const Tpetra::MultiVector<typename MatrixType::scalar_type,
   // we need to create an auxiliary vector, Xcopy
   Teuchos::RCP<const MV> X_copy;
   if (X.getLocalMV().getValues() == Y.getLocalMV().getValues()) {
-    X_copy = Teuchos::rcp (new MV (X));
+    X_copy = Teuchos::rcp (new MV (createCopy(X)));
   } else {
     X_copy = Teuchos::rcpFromRef (X);
   }
@@ -864,33 +864,43 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 
 
 template<class MatrixType, class ContainerType>
-std::string BlockRelaxation<MatrixType,ContainerType>::description() const {
-  using Teuchos::TypeNameTraits;
-
+std::string BlockRelaxation<MatrixType,ContainerType>::description () const
+{
   std::ostringstream out;
-  out << "Ifpack2::BlockRelaxation<"
-      << TypeNameTraits<MatrixType>::name () << ", "
-      << TypeNameTraits<ContainerType>::name () << " >: {";
 
+  // Output is a valid YAML dictionary in flow style.  If you don't
+  // like everything on a single line, you should call describe()
+  // instead.
+  out << "\"Ifpack2::BlockRelaxation\": {";
   if (this->getObjectLabel () != "") {
-    out << "label: \"" << this->getObjectLabel () << "\", ";
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  out << "initialized: " << (isInitialized () ? "true" : "false") << ", ";
-  out << "computed: " << (isComputed () ? "true" : "false") << ", ";
+  out << "Initialized: " << (isInitialized () ? "true" : "false") << ", ";
+  out << "Computed: " << (isComputed () ? "true" : "false") << ", ";
 
-  std::string precType;
+  if (A_.is_null ()) {
+    out << "Matrix: null";
+  }
+  else {
+    out << "Matrix: not null"
+        << ", Global matrix dimensions: ["
+        << A_->getGlobalNumRows () << ", " << A_->getGlobalNumCols () << "]";
+  }
+
+  // It's useful to print this instance's relaxation method.  If you
+  // want more info than that, call describe() instead.
+  out << "\"relaxation: type\": ";
   if (PrecType_ == Ifpack2::Details::JACOBI) {
-    precType = "Block Jacobi";
+    out << "Block Jacobi";
   } else if (PrecType_ == Ifpack2::Details::GS) {
-    precType = "Block Gauss-Seidel";
+    out << "Block Gauss-Seidel";
   } else if (PrecType_ == Ifpack2::Details::SGS) {
-    precType = "Block Symmetric Gauss-Seidel";
+    out << "Block Symmetric Gauss-Seidel";
+  } else {
+    out << "INVALID";
   }
-  out << "type: " << precType << ", ";
-  out << "global number of rows: " << A_->getGlobalNumRows () << ", "
-      << "global number of columns: " << A_->getGlobalNumCols ()
-      << "}";
 
+  out << "}";
   return out.str();
 }
 
@@ -970,5 +980,14 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 
 }//namespace Ifpack2
 
-#endif // IFPACK2_BLOCKRELAXATION_DEF_HPP
+// For ETI
+#include "Ifpack2_SparseContainer.hpp"
+#include "Ifpack2_ILUT.hpp"
 
+#define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::BlockRelaxation< \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
+                              Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > > >;
+
+#endif // IFPACK2_BLOCKRELAXATION_DEF_HPP

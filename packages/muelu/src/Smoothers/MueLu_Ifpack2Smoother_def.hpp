@@ -105,7 +105,7 @@ namespace MueLu {
     FactoryMonitor m(*this, "Setup Smoother", currentLevel);
 
     if (this->IsSetup() == true)
-      this->GetOStream(Warnings0, 0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
+      this->GetOStream(Warnings0) << "Warning: MueLu::Ifpack2Smoother::Setup(): Setup() has already been called";
 
     A_ = Factory::Get< RCP<Matrix> >(currentLevel, "A");
 
@@ -121,13 +121,16 @@ namespace MueLu {
 
       // Get/calculate the maximum eigenvalue
       if (paramList.isParameter(maxEigString)) {
-        lambdaMax = paramList.get<SC>(maxEigString);
-        this->GetOStream(Statistics1, 0) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
+        if (paramList.isType<double>(maxEigString))
+          lambdaMax = paramList.get<double>(maxEigString);
+        else
+          lambdaMax = paramList.get<SC>(maxEigString);
+        this->GetOStream(Statistics1) << maxEigString << " (cached with smoother parameter list) = " << lambdaMax << std::endl;
 
       } else {
         lambdaMax = A_->GetMaxEigenvalueEstimate();
         if (lambdaMax != negone) {
-          this->GetOStream(Statistics1, 0) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
+          this->GetOStream(Statistics1) << maxEigString << " (cached with matrix) = " << lambdaMax << std::endl;
           paramList.set(maxEigString, lambdaMax);
         }
       }
@@ -135,7 +138,13 @@ namespace MueLu {
       // Calculate the eigenvalue ratio
       const SC defaultEigRatio = 20;
 
-      SC ratio = (paramList.isParameter(eigRatioString) ? paramList.get<SC>(eigRatioString) : defaultEigRatio);
+      SC ratio = defaultEigRatio;
+      if (paramList.isParameter(eigRatioString)) {
+        if (paramList.isType<double>(eigRatioString))
+          ratio = paramList.get<double>(eigRatioString);
+        else
+          ratio = paramList.get<SC>(eigRatioString);
+      }
       if (currentLevel.GetLevelID()) {
         // Update ratio to be
         //   ratio = max(number of fine DOFs / number of coarse DOFs, defaultValue)
@@ -150,7 +159,7 @@ namespace MueLu {
           ratio = levelRatio;
       }
 
-      this->GetOStream(Statistics1, 0) << eigRatioString << " (computed) = " << ratio << std::endl;
+      this->GetOStream(Statistics1) << eigRatioString << " (computed) = " << ratio << std::endl;
       paramList.set(eigRatioString, ratio);
     }
 
@@ -170,12 +179,12 @@ namespace MueLu {
       if (chebyPrec != Teuchos::null) {
         lambdaMax = chebyPrec->getLambdaMaxForApply();
         A_->SetMaxEigenvalueEstimate(lambdaMax);
-        this->GetOStream(Statistics1, 0) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
+        this->GetOStream(Statistics1) << "chebyshev: max eigenvalue (calculated by Ifpack2)" << " = " << lambdaMax << std::endl;
       }
       TEUCHOS_TEST_FOR_EXCEPTION(lambdaMax == negone, Exceptions::RuntimeError, "MueLu::IfpackSmoother::Setup(): no maximum eigenvalue estimate");
     }
 
-    this->GetOStream(Statistics0, 0) << description() << std::endl;
+    this->GetOStream(Statistics0) << description() << std::endl;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -216,18 +225,22 @@ namespace MueLu {
     SetPrecParameters(paramList);
 
     // Apply
-    if (supportInitialGuess || InitialGuessIsZero) {
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(X);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(B);
-      prec_->apply(tpB,tpX);
+    if (InitialGuessIsZero || supportInitialGuess) {
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(X);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(B);
+
+      prec_->apply(tpB, tpX);
 
     } else {
       typedef Teuchos::ScalarTraits<Scalar> TST;
-      RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
+      RCP<MultiVector> Residual   = Utils::Residual(*A_, X, B);
       RCP<MultiVector> Correction = MultiVectorFactory::Build(A_->getDomainMap(), X.getNumVectors());
-      Tpetra::MultiVector<SC,LO,GO,NO> &tpX = Utils::MV2NonConstTpetraMV(*Correction);
-      Tpetra::MultiVector<SC,LO,GO,NO> const &tpB = Utils::MV2TpetraMV(*Residual);
-      prec_->apply(tpB,tpX);
+
+      Tpetra::MultiVector<SC,LO,GO,NO>&       tpX = Utils::MV2NonConstTpetraMV(*Correction);
+      const Tpetra::MultiVector<SC,LO,GO,NO>& tpB = Utils::MV2TpetraMV(*Residual);
+
+      prec_->apply(tpB, tpX);
+
       X.update(TST::one(), *Correction, TST::one());
     }
   }

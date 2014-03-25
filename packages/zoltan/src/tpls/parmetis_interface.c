@@ -157,22 +157,16 @@ int Zoltan_ParMetis(
 
   if (sizeof(realtype) != sizeof(float)) {
     int tmp = zz->LB.Num_Global_Parts * MAX(zz->Obj_Weight_Dim, 1);
-    realtype sum = 0.;
+    prt.input_part_sizes = (realtype *) ZOLTAN_MALLOC(tmp * sizeof(realtype));
 
-    prt.input_part_sizes = (realtype *)
-                   ZOLTAN_MALLOC(tmp * sizeof(realtype));
-    for (i = 0; i < tmp; i++) {
+    for (i = 0; i < tmp; i++) 
       prt.input_part_sizes[i] = (realtype) part_sizes[i];
-      sum += prt.input_part_sizes[i];
-    }
-    if (sum != (realtype) 1.0) {
-      /* rescale part sizes in case of roundoff in conversion; 
-       * ParMETIS requires sum of part sizes to be 1.0
-       */
-      for (i = 0; i < tmp; i++) {
-        prt.input_part_sizes[i] /= sum;
-      }
-    }
+
+    /* KDD 2/2014:  removed re-scaling part sizes so they sum to one.  
+     *              part_sizes are already scaled in Zoltan_LB_Get_Part_Sizes.
+     *              plus, the code here was wrong for multiple object weights.
+     *              similar scaling code did not exist in the Scotch interface.
+     */
     prt.part_sizes = prt.input_part_sizes;
   }
   else

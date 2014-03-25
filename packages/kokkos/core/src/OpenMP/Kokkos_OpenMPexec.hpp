@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,6 +46,8 @@
 
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_spinwait.hpp>
+
+#include <Kokkos_Atomic.hpp>
 
 namespace Kokkos {
 namespace Impl {
@@ -187,6 +189,7 @@ public:
       // OpenMPexec::Active == m_scan_state
 
       work_value[0] = value ;
+      memory_fence();
 
       // Fan-in reduction, wait for source thread to complete it's fan-in reduction.
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
@@ -196,9 +199,11 @@ public:
         Impl::spinwait( th.m_scan_state , OpenMPexec::Active );
         // Source thread is 'ReductionAvailable' or 'ScanAvailable'
         work_value[0] += ((volatile type*)th.reduce_team())[0];
+        memory_fence();
       }
 
       work_value[1] = work_value[0] ;
+      memory_fence();
 
       if ( rank_rev ) {
 
@@ -214,6 +219,7 @@ public:
           Impl::spinwait( th.m_scan_state , OpenMPexec::ReductionAvailable );
 
           work_value[1] += ((volatile type*)th.reduce_team())[1] ;
+          memory_fence();
         }
 
         m_scan_state = OpenMPexec::ScanAvailable ; // Scan value is available.
@@ -242,6 +248,7 @@ public:
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         OpenMPexec & th = *m_team_base[ rank_rev + (1<<i) ];
         ((volatile type*)th.reduce_team())[0] = global_val ;
+        memory_fence();
         th.m_scan_state = OpenMPexec::Active ;
       }
       // Exclusive scan, subtract contributed value

@@ -3,12 +3,12 @@
 /* and disclaimer.                                                          */
 /* ************************************************************************ */
 
-/****************************************************************************/ 
+/****************************************************************************/
 /* Declaration of the MLI_Solver functions                                  */
-/****************************************************************************/ 
+/****************************************************************************/
 /* Author        : Charles Tong (LLNL)                                      */
 /* Date          : December, 1999                                           */
-/****************************************************************************/ 
+/****************************************************************************/
 
 #include <stdlib.h>
 #include <stdio.h>
@@ -21,7 +21,7 @@
 #include "ml_agg_genP.h"
 #include "mli_solver.h"
 
-/****************************************************************************/ 
+/****************************************************************************/
 /* communication functions on parallel platforms                            */
 /*--------------------------------------------------------------------------*/
 
@@ -30,7 +30,7 @@ int MLI_Irecv(void* buf, unsigned int count, int *src, int *mid,
 {
    int my_id, lsrc, retcode;
 
-   if ( *src < 0 ) lsrc = MPI_ANY_SOURCE; else lsrc = (*src); 
+   if ( *src < 0 ) lsrc = MPI_ANY_SOURCE; else lsrc = (*src);
    retcode = MPI_Irecv( buf, (int) count, MPI_BYTE, lsrc, *mid, comm, request);
    if ( retcode != 0 )
    {
@@ -55,7 +55,7 @@ int MLI_Wait(void* buf, unsigned int count, int *src, int *mid,
    int        my_id, incount, retcode;
 
    retcode = MPI_Wait( request, &status );
-   if ( *src < 0 ) *src = status.MPI_SOURCE; 
+   if ( *src < 0 ) *src = status.MPI_SOURCE;
    if ( retcode != 0 )
    {
       MPI_Comm_rank(comm, &my_id);
@@ -90,7 +90,7 @@ int MLI_SSend(void* buf, unsigned int count, int dest, int mid, MPI_Comm comm )
    return 0;
 }
 
-/****************************************************************************/ 
+/****************************************************************************/
 /* wrapper function for interprocessor communication for matvec and getrow  */
 /*--------------------------------------------------------------------------*/
 
@@ -101,7 +101,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
    MLI_Context   *context;
    MLI_CSRMatrix *Amat;
    MPI_Comm    comm;
-   MPI_Request *request; 
+   MPI_Request *request;
 
    int sendProcCnt, recvProcCnt;
    int *sendProc, *recvProc;
@@ -155,7 +155,7 @@ int MLI_CSRExchBdry(double *vec, void *obj)
    return 1;
 }
 
-/****************************************************************************/ 
+/****************************************************************************/
 /* matvec function for local matrix structure MLI_CSRMatrix                 */
 /*--------------------------------------------------------------------------*/
 
@@ -183,13 +183,13 @@ int MLI_CSRMatVec(ML_Operator *obj, int leng1, double p[], int leng2, double ap[
     dbuf = (double *) ML_allocate( length * sizeof( double ) );
     for ( i = 0; i < nRows; i++ ) dbuf[i] = p[i];
     MLI_CSRExchBdry(dbuf, obj);
-    for ( i = 0 ; i < nRows; i++ ) 
+    for ( i = 0 ; i < nRows; i++ )
     {
        sum = 0.0;
        ibeg = rowptr[i];
        iend = rowptr[i+1];
        for ( j = ibeg; j < iend; j++ )
-       { 
+       {
           k = colnum[j];
           sum += ( values[j] * dbuf[k] );
        }
@@ -244,7 +244,7 @@ MLI_Solver *MLI_Solver_Create( MPI_Comm comm )
     /* create an internal ML data structure */
 
     MLI_Solver *solver = (MLI_Solver *) ML_allocate(sizeof(MLI_Solver));
-    if ( solver == NULL ) return NULL;   
+    if ( solver == NULL ) return NULL;
 
     /* fill in all other default parameters */
 
@@ -296,7 +296,7 @@ int MLI_Solver_Destroy( MLI_Solver *solver )
        Amat = (MLI_CSRMatrix *) solver->contxt->Amat;
        if ( Amat->sendProc != NULL ) ML_free(Amat->sendProc);
        if ( Amat->sendLeng != NULL ) ML_free(Amat->sendLeng);
-       if ( Amat->sendList != NULL ) 
+       if ( Amat->sendList != NULL )
        {
           for (i = 0; i < Amat->sendProcCnt; i++ )
              if (Amat->sendList[i] != NULL) ML_free(Amat->sendList[i]);
@@ -335,26 +335,26 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     MLI_CSRMatrix  *mli_mat;
     ML             *ml;
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* create an ML object                                      */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Create( &(solver->ml_ptr), solver->nlevels );
     ml          = solver->ml_ptr;
     nlevels     = solver->nlevels;
     solver->sol = sol;
-   
-    /* -------------------------------------------------------- */ 
+
+    /* -------------------------------------------------------- */
     /* set up the parallel environment                          */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     MPI_Comm_rank(solver->comm, &my_id);
     MPI_Comm_size(solver->comm, &nprocs);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* fetch the matrix row partition information and put it    */
     /* into the matrix data object (for matvec and getrow)      */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     localEqns = solver->nRows;
     row_partition = (int*) ML_allocate( (nprocs+1) * sizeof(int));
@@ -375,14 +375,14 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     mat_a  = solver->mat_a;
     rhs    = solver->rhs  ;
     MLI_Solver_Construct_CSRMatrix(localEqns,mat_ia,mat_ja,mat_a,mli_mat,
-                            solver, context->partition,context); 
+                            solver, context->partition,context);
 
     if ( solver->ag_method == 2 ) /* scaling for smoothed aggregation */
        for ( i = 0; i < localEqns; i++ ) rhs[i] *= solver->diag_scale[i];
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up the ML communicator information                   */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Set_Comm_Communicator(ml, solver->comm);
     ML_Set_Comm_MyRank(ml, my_id);
@@ -391,9 +391,9 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     ML_Set_Comm_Recv(ml, MLI_Irecv);
     ML_Set_Comm_Wait(ml, MLI_Wait);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up the ML matrix information                         */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Init_Amatrix(ml,nlevels-1,localEqns,localEqns,(void *)context);
     ML_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
@@ -401,15 +401,15 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
     ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up the mg method                                     */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     if ( solver->ag_method == 2 )
     {
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* create an aggregate context                           */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        ML_Aggregate_Create(&(solver->ml_ag));
        ML_Aggregate_Set_MaxLevels( solver->ml_ag, solver->nlevels );
@@ -432,18 +432,18 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
        ML_Aggregate_Set_NullSpace(solver->ml_ag,nPDE,nullDim,dble_array,localEqns);
        ML_free(dble_array);
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* perform aggregation                                   */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
-       coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1, 
+       coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1,
                                         ML_DECREASING, solver->ml_ag);
     }
     else if ( solver->ag_method == 1 )
     {
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* create an AMG context                                 */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        ML_AMG_Create(&(solver->ml_amg));
        ML_AMG_Set_MaxLevels( solver->ml_amg, solver->nlevels );
@@ -455,9 +455,9 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
 
     coarsest_level = nlevels - coarsest_level;
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up coarse grid solve                                 */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     if ( nlevels - 1 != coarsest_level )
     {
@@ -469,11 +469,11 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     } else
        ML_Gen_Smoother_OverlappedDDILUT(ml,coarsest_level,ML_PRESMOOTHER);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up smoother and coarse solver                        */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
-    for (level = nlevels-1; level > coarsest_level; level--) 
+    for (level = nlevels-1; level > coarsest_level; level--)
     {
        sweeps = solver->pre_sweeps;
        wght   = solver->jacobi_wt;
@@ -645,7 +645,7 @@ int MLI_Solver_Setup(MLI_Solver *solver, double *sol)
     }
 
     ML_Gen_Solver(ml, ML_MGV, nlevels-1, coarsest_level);
-   
+
     return 0;
 }
 
@@ -670,7 +670,7 @@ int MLI_Solver_Solve( MLI_Solver *solver)
     leng = Amat->outvec_leng;
     diag_scale = solver->diag_scale;
 
-    /********* another choice : diagonal preconditioner 
+    /********* another choice : diagonal preconditioner
     ML_Krylov_Set_Precon(ml_kry, ml_kry);
     ML_Krylov_Set_PreconFunc(ml_kry, ML_DiagScale_Wrapper);
     diag = (double *) ML_allocate(leng * sizeof(double));
@@ -688,7 +688,7 @@ int MLI_Solver_Solve( MLI_Solver *solver)
     if ( ml->comm->ML_mypid == 0 )
        printf("====> Solve Time = %e\n", elapsed_time);
     ML_Krylov_Destroy(&ml_kry);
-  
+
     if ( solver->ag_method == 2 )
        for ( i = 0; i < leng; i++ ) sol[i] *= diag_scale[i];
     return 0;
@@ -704,11 +704,11 @@ int MLI_Solver_Set_MLNumLevels(MLI_Solver *solver,int nlevels)
     {
        printf("MLI_Solver_Set_MLNumLevels error : nlevels set to 1.\n");
        solver->nlevels = 1;
-    } 
+    }
     else
     {
        solver->nlevels = nlevels;
-    } 
+    }
     return( 0 );
 }
 
@@ -722,11 +722,11 @@ int MLI_Solver_Set_KrylovMethod(MLI_Solver *solver,int method)
     {
        printf("MLI_Solver_Set_KrylovMethod error : reset to CG.\n");
        solver->method = 0;
-    } 
+    }
     else
     {
        solver->method = method;
-    } 
+    }
     return( 0 );
 }
 
@@ -740,11 +740,11 @@ int MLI_Solver_Set_StrongThreshold(MLI_Solver *solver,double strong_threshold)
     {
        printf("MLI_Solver_Set_StrongThreshold error : reset to 0.\n");
        solver->ag_threshold = 0.0;
-    } 
+    }
     else
     {
        solver->ag_threshold = strong_threshold;
-    } 
+    }
     return( 0 );
 }
 
@@ -758,11 +758,11 @@ int MLI_Solver_Set_NumPreSmoothings( MLI_Solver *solver, int num_sweeps  )
     {
        printf("MLI_Solver_Set_NumPreSmoothings error : reset to 0.\n");
        solver->pre_sweeps = 0;
-    } 
+    }
     else
     {
        solver->pre_sweeps = num_sweeps;
-    } 
+    }
     return( 0 );
 }
 
@@ -776,11 +776,11 @@ int MLI_Solver_Set_NumPostSmoothings( MLI_Solver *solver, int num_sweeps  )
     {
        printf("MLI_Solver_Set_NumPostSmoothings error : reset to 0.\n");
        solver->post_sweeps = 0;
-    } 
+    }
     else
     {
        solver->post_sweeps = num_sweeps;
-    } 
+    }
     return( 0 );
 }
 
@@ -794,11 +794,11 @@ int MLI_Solver_Set_PreSmoother( MLI_Solver *solver, int smoother_type  )
     {
        printf("MLI_Solver_Set_PreSmoother error : set to Jacobi.\n");
        solver->pre = 0;
-    } 
+    }
     else
     {
        solver->pre = smoother_type;
-    } 
+    }
     return( 0 );
 }
 
@@ -812,11 +812,11 @@ int MLI_Solver_Set_PostSmoother( MLI_Solver *solver, int smoother_type  )
     {
        printf("MLI_Solver_Set_PostSmoother error : set to Jacobi.\n");
        solver->post = 0;
-    } 
+    }
     else
     {
        solver->post = smoother_type;
-    } 
+    }
     return( 0 );
 }
 
@@ -830,11 +830,11 @@ int MLI_Solver_Set_DampingFactor( MLI_Solver *solver, double factor  )
     {
        printf("MLI_Solver_Set_DampingFactor error : set to 0.5.\n");
        solver->jacobi_wt = 0.5;
-    } 
+    }
     else
     {
        solver->jacobi_wt = factor;
-    } 
+    }
     return( 0 );
 }
 
@@ -848,11 +848,11 @@ int MLI_Solver_Set_CoarsenScheme( MLI_Solver *solver, int scheme  )
     {
        printf("MLI_Solver_Set_CoarsenScheme error : scheme set to Uncoupled.\n");
        solver->ag_coarsen = 1;
-    } 
+    }
     else
     {
        solver->ag_coarsen = scheme;
-    } 
+    }
     return( 0 );
 }
 
@@ -866,11 +866,11 @@ int MLI_Solver_Set_MGMethod( MLI_Solver *solver, int method  )
     {
        printf("MLI_Solver_Set_MGMethod error : method set to AMG.\n");
        solver->ag_method  = 1;
-    } 
+    }
     else
     {
        solver->ag_method = method;
-    } 
+    }
     return( 0 );
 }
 
@@ -881,7 +881,7 @@ int MLI_Solver_Set_MGMethod( MLI_Solver *solver, int method  )
 int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
                                    double *mat_a, MLI_CSRMatrix *mli_mat,
                                    MLI_Solver *solver, int *partition,
-                                   MLI_Context *obj) 
+                                   MLI_Context *obj)
 {
     int         i, j, index, my_id, nprocs, msgid, *tempCnt;
     int         sendProcCnt, *sendLeng, *sendProc, **sendList;
@@ -896,7 +896,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* -------------------------------------------------------- */
     /* get machine information and local matrix information     */
     /* -------------------------------------------------------- */
-    
+
     comm = solver->comm;
     MPI_Comm_rank(comm, &my_id);
     MPI_Comm_size(comm, &nprocs);
@@ -930,7 +930,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
              diagSize[i-startRow]++;
           }
        }
-       if ( diagSize[i-startRow] + offdiagSize[i-startRow] == 1 ) 
+       if ( diagSize[i-startRow] + offdiagSize[i-startRow] == 1 )
           num_bdry++;
     }
 
@@ -959,7 +959,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     ncnt = 1;
     for ( i = 1; i < externLeng; i++ )
     {
-       if ( externList[i] != externList[ncnt-1] ) 
+       if ( externList[i] != externList[ncnt-1] )
           externList[ncnt++] = externList[i];
     }
     if ( externLeng > 0 ) externLeng = ncnt;
@@ -967,17 +967,17 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
 
     /* -------------------------------------------------------- */
     /* allocate the CSR matrix                                  */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
-    diag_scale = (double *) ML_allocate((nrows+externLeng)*sizeof(double)); 
-    nnz = 0; 
-    for (i = 0; i < localEqns; i++) nnz += diagSize[i] + offdiagSize[i]; 
+    diag_scale = (double *) ML_allocate((nrows+externLeng)*sizeof(double));
+    nnz = 0;
+    for (i = 0; i < localEqns; i++) nnz += diagSize[i] + offdiagSize[i];
     ML_free( diagSize );
     ML_free( offdiagSize );
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* put the matrix data in the CSR matrix                    */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     for ( i = startRow; i <= endRow; i++ )
     {
@@ -1001,10 +1001,10 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           }
        }
     }
-   
-    /* -------------------------------------------------------- */ 
+
+    /* -------------------------------------------------------- */
     /* initialize the MLI_CSRMatrix data structure              */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     mli_mat->Nrows       = localEqns;
     mli_mat->rowptr      = mat_ia;
@@ -1018,17 +1018,17 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     mli_mat->recvProc    = NULL;
     mli_mat->sendList    = NULL;
     mli_mat->map         = externList;
- 
-    /* -------------------------------------------------------- */ 
-    /* form the remote portion of the matrix                    */
-    /* -------------------------------------------------------- */ 
 
-    if ( nprocs > 1 ) 
+    /* -------------------------------------------------------- */
+    /* form the remote portion of the matrix                    */
+    /* -------------------------------------------------------- */
+
+    if ( nprocs > 1 )
     {
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* count number of elements to be received from each     */
        /* remote processor (assume sequential mapping)          */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        tempCnt = (int *) ML_allocate( sizeof(int) * nprocs );
        for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0;
@@ -1036,7 +1036,7 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        {
           for ( j = 0; j < nprocs; j++ )
           {
-             if ( externList[i] >= partition[j] && 
+             if ( externList[i] >= partition[j] &&
                   externList[i] < partition[j+1] )
              {
                 tempCnt[j]++;
@@ -1045,9 +1045,9 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           }
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* compile a list processors data is to be received from */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        recvProcCnt = 0;
        for ( i = 0; i < nprocs; i++ )
@@ -1057,17 +1057,17 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        recvProcCnt = 0;
        for ( i = 0; i < nprocs; i++ )
        {
-          if ( tempCnt[i] > 0 ) 
+          if ( tempCnt[i] > 0 )
           {
              recvProc[recvProcCnt]   = i;
              recvLeng[recvProcCnt++] = tempCnt[i];
           }
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* each processor has to find out how many processors it */
        /* has to send data to                                   */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        sendLeng = (int *) ML_allocate( nprocs * sizeof(int) );
        for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0;
@@ -1081,40 +1081,40 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           sendProc = (int *)  ML_allocate( sendProcCnt * sizeof(int) );
           sendList = (int **) ML_allocate( sendProcCnt * sizeof(int*) );
        }
-       else 
+       else
        {
           sendLeng = sendProc = NULL;
           sendList = NULL;
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* each processor sends to all processors it expects to  */
        /* receive data about the lengths of data expected       */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        msgid = 539;
-       for ( i = 0; i < recvProcCnt; i++ ) 
+       for ( i = 0; i < recvProcCnt; i++ )
        {
           MPI_Send((void*) &recvLeng[i],1,MPI_INT,recvProc[i],msgid,comm);
        }
-       for ( i = 0; i < sendProcCnt; i++ ) 
+       for ( i = 0; i < sendProcCnt; i++ )
        {
           MPI_Recv((void*) &sendLeng[i],1,MPI_INT,MPI_ANY_SOURCE,msgid,
                    comm,&status);
           sendProc[i] = status.MPI_SOURCE;
           sendList[i] = (int *) ML_allocate( sendLeng[i] * sizeof(int) );
-          if ( sendList[i] == NULL ) 
+          if ( sendList[i] == NULL )
              printf("allocate problem %d \n", sendLeng[i]);
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* each processor sends to all processors it expects to  */
        /* receive data about the equation numbers               */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
-       for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0; 
+       for ( i = 0; i < nprocs; i++ ) tempCnt[i] = 0;
        ncnt = 1;
-       for ( i = 0; i < externLeng; i++ ) 
+       for ( i = 0; i < externLeng; i++ )
        {
           if ( externList[i] >= partition[ncnt] )
           {
@@ -1122,15 +1122,15 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
              i--;
              ncnt++;
           }
-       }    
-       for ( i = ncnt-1; i < nprocs; i++ ) tempCnt[i] = externLeng; 
+       }
+       for ( i = ncnt-1; i < nprocs; i++ ) tempCnt[i] = externLeng;
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* send the global equation numbers                      */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        msgid = 540;
-       for ( i = 0; i < recvProcCnt; i++ ) 
+       for ( i = 0; i < recvProcCnt; i++ )
        {
           if ( recvProc[i] == 0 ) j = 0;
           else                    j = tempCnt[recvProc[i]-1];
@@ -1138,19 +1138,19 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           MPI_Send((void*) &externList[j],rowLeng,MPI_INT,recvProc[i],
                     msgid,comm);
        }
-       for ( i = 0; i < sendProcCnt; i++ ) 
+       for ( i = 0; i < sendProcCnt; i++ )
        {
           rowLeng = sendLeng[i];
           MPI_Recv((void*)sendList[i],rowLeng,MPI_INT,sendProc[i],
                    msgid,comm,&status);
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* convert the send list from global to local numbers    */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        for ( i = 0; i < sendProcCnt; i++ )
-       { 
+       {
           for ( j = 0; j < sendLeng[i]; j++ )
           {
              index = sendList[i][j] - startRow;
@@ -1163,9 +1163,9 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           }
        }
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* convert the send list from global to local numbers    */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        mli_mat->sendProcCnt = sendProcCnt;
        mli_mat->recvProcCnt = recvProcCnt;
@@ -1175,23 +1175,23 @@ int MLI_Solver_Construct_CSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        mli_mat->recvProc    = recvProc;
        mli_mat->sendList    = sendList;
 
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
        /* clean up                                              */
-       /* ----------------------------------------------------- */ 
+       /* ----------------------------------------------------- */
 
        ML_free( tempCnt );
     }
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* finally scale the matrix                                 */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     MLI_CSRExchBdry(diag_scale, obj);
     if ( solver->ag_method == 2 )
     {
        for ( i = 0; i < nrows+externLeng; i++ )
        {
-          if ( diag_scale[i] != 0.0 ) 
+          if ( diag_scale[i] != 0.0 )
              diag_scale[i] = 1.0 / sqrt(diag_scale[i]);
        }
        for ( i = 0; i < nrows; i++ )
@@ -1253,16 +1253,16 @@ void MLI_Solver_Read_IJAFromFile(double **val, int **ia, int **ja, int *N,
          printf("Error reading row %d (curr_row = %d)\n", rowindex, curr_row);
       if ( colindex < 0 || colindex >= Nrows )
          printf("Error reading col %d (rowindex = %d)\n", colindex, rowindex);
-      if ( rowindex == colindex && value == 0.0 ) 
+      if ( rowindex == colindex && value == 0.0 )
          printf("Warning : zero diagonal at row %d\n", rowindex);
       /*
       if ( value != 0.0 ) {
-      */      
+      */
          mat_ja[icount] = colindex;
          mat_a[icount++]  = value;
       /*
       }
-      */      
+      */
       if ( i % 100000 == 0 ) printf("processing data %d\n", i);
    }
    fclose(fp);
@@ -1377,9 +1377,9 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    rhs = (double *) ML_allocate( local_N * sizeof(double));
    ia[0] = 0;
    ncnt = 0;
-   for ( i = mybegin; i <= myend; i++ ) 
+   for ( i = mybegin; i <= myend; i++ )
    {
-      for ( j = mat_ia[i]; j < mat_ia[i+1]; j++ ) 
+      for ( j = mat_ia[i]; j < mat_ia[i+1]; j++ )
       {
          ja[ncnt] = mat_ja[j];
          val[ncnt++] = mat_a[j];
@@ -1396,7 +1396,7 @@ int MLI_Solver_Get_IJAFromFile(MLI_Solver *solver, char *matfile, char *rhsfile)
    ML_free( mat_ja);
    ML_free( mat_a);
    return local_N;
-} 
+}
 
 /****************************************************************************/
 /* reading a number of vectors corresponding to the rigid body mode         */
@@ -1424,7 +1424,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
          printf("No rbm file found.\n");
          if ( global_N == 0 )
          {
-            if ( my_id == 0 ) 
+            if ( my_id == 0 )
                printf("Error : should call MatrixRead before RBMRead\n");
             exit(1);
          }
@@ -1447,7 +1447,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
          }
       }
    }
- 
+
    chunksize = global_N / blksize;
    chunksize = chunksize / nprocs;
    mybegin = chunksize * my_id * blksize;
@@ -1468,8 +1468,8 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
 
    rbm = (double *) ML_allocate(local_N * nullDimension * sizeof(double));
    ncnt = 0;
-   for ( k = 0; k < nullDimension; k++ ) 
-      for ( i = mybegin; i <= myend; i++ ) 
+   for ( k = 0; k < nullDimension; k++ )
+      for ( i = mybegin; i <= myend; i++ )
          rbm[ncnt++] = rbm_global[k*global_N+i];
 
    if ( nullDimension == 1 ) solver->nPDE = 1;
@@ -1485,7 +1485,7 @@ int MLI_Solver_Get_NullSpaceFromFile(MLI_Solver *solver, char *rbmfile)
 /*--------------------------------------------------------------------------*/
 
 int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
-                     int *mat_ia,int *mat_ja, double *mat_a, double *b, 
+                     int *mat_ia,int *mat_ja, double *mat_a, double *b,
                      double *x)
 {
     int            i, my_id, nprocs, coarsest_level, level, sweeps, nlevels;
@@ -1495,24 +1495,24 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     MLI_Context    *context;
     MLI_CSRMatrix  *mli_mat;
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* fetch the ML pointer                                     */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML      *ml   = solver->ml_ptr;
     nlevels       = solver->nlevels;
-   
-    /* -------------------------------------------------------- */ 
+
+    /* -------------------------------------------------------- */
     /* set up the serial environment                            */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     MPI_Comm_rank(solver->comm, &my_id);
     MPI_Comm_size(solver->comm, &nprocs);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* fetch the matrix row partition information and put it    */
     /* into the matrix data object (for matvec and getrow)      */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     localEqns = Nrows;
     row_partition = (int*) ML_allocate( (nprocs+1) * sizeof(int));
@@ -1529,12 +1529,12 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     mli_mat = ( MLI_CSRMatrix * ) ML_allocate( sizeof( MLI_CSRMatrix) );
     context->Amat = mli_mat;
     MLI_Solver_Construct_LocalCSRMatrix(Nrows,mat_ia,mat_ja,mat_a,
-                         mli_mat, solver, context->partition,context); 
+                         mli_mat, solver, context->partition,context);
     for ( i = 0; i < Nrows; i++ ) b[i] *= solver->diag_scale[i];
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up the ML communicator information                   */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Set_Comm_Communicator(ml, (USR_COMM) one);
     ML_Set_Comm_MyRank(ml, 0);
@@ -1543,9 +1543,9 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     ML_Set_Comm_Recv(ml, MLI_SIrecv);
     ML_Set_Comm_Wait(ml, MLI_SWait);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up the ML matrix information                         */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Init_Amatrix(ml,nlevels-1,localEqns,localEqns,(void *)context);
     ML_Set_Amatrix_Matvec(ml, nlevels-1, MLI_CSRMatVec);
@@ -1553,30 +1553,30 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     for (i=0; i<mli_mat->recvProcCnt; i++) length += mli_mat->recvLeng[i];
     ML_Set_Amatrix_Getrow(ml,nlevels-1,MLI_CSRGetRow,MLI_CSRExchBdry,length);
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* create an aggregate context                              */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ML_Aggregate_Create(&(solver->ml_ag));
     solver->ml_ag->max_levels = solver->nlevels;
     ML_Aggregate_Set_Threshold( solver->ml_ag, solver->ag_threshold );
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* perform aggregation                                      */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
-    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1, 
+    coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, nlevels-1,
                                         ML_DECREASING, solver->ml_ag);
     if ( my_id == 0 )
        printf("ML : number of levels = %d\n", coarsest_level);
 
     coarsest_level = nlevels - coarsest_level;
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* set up smoother and coarse solver                        */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
-    for (level = nlevels-1; level > coarsest_level; level--) 
+    for (level = nlevels-1; level > coarsest_level; level--)
     {
        sweeps = solver->pre_sweeps;
        wght   = solver->jacobi_wt;
@@ -1682,7 +1682,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
     /*ML_Gen_Smoother_GaussSeidel(ml, coarsest_level, ML_PRESMOOTHER, 100);*/
 
     ML_Gen_Solver(ml, ML_MGV, nlevels-1, coarsest_level);
-   
+
     return 0;
 }
 
@@ -1693,7 +1693,7 @@ int MLI_Solver_SetupDD(MLI_Solver *solver,int startRow, int Nrows,
 int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
                                    double *mat_a, MLI_CSRMatrix *mli_mat,
                                    MLI_Solver *solver, int *partition,
-                                   MLI_Context *obj) 
+                                   MLI_Context *obj)
 {
     int         i, j, index, ncnt, nnz;
     int         rowLeng, *colInd, startRow, endRow, localEqns;
@@ -1703,7 +1703,7 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     /* -------------------------------------------------------- */
     /* get matrix information                                   */
     /* -------------------------------------------------------- */
-    
+
     startRow  = 0;
     endRow    = nrows - 1;
     localEqns = endRow - startRow + 1;
@@ -1733,16 +1733,16 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
 
     /* -------------------------------------------------------- */
     /* allocate the CSR matrix                                  */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
-    diag_scale = (double *) ML_allocate(nrows*sizeof(double)); 
-    nnz = 0; 
-    for (i = 0; i < localEqns; i++) nnz += diagSize[i]; 
+    diag_scale = (double *) ML_allocate(nrows*sizeof(double));
+    nnz = 0;
+    for (i = 0; i < localEqns; i++) nnz += diagSize[i];
     ML_free( diagSize );
 
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
     /* put the matrix data in the CSR matrix                    */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     ncnt = 0;
     mat_ia[0] = ncnt;
@@ -1765,11 +1765,11 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
        }
        mat_ia[i-startRow+1] = ncnt;
     }
-   
-   
-    /* -------------------------------------------------------- */ 
+
+
+    /* -------------------------------------------------------- */
     /* initialize the MLI_CSRMatrix data structure              */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     mli_mat->Nrows       = localEqns;
     mli_mat->rowptr      = mat_ia;
@@ -1783,14 +1783,14 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
     mli_mat->recvProc    = NULL;
     mli_mat->sendList    = NULL;
     mli_mat->map         = NULL;
- 
-    /* -------------------------------------------------------- */ 
+
+    /* -------------------------------------------------------- */
     /* finally scale the matrix                                 */
-    /* -------------------------------------------------------- */ 
+    /* -------------------------------------------------------- */
 
     for ( i = 0; i < nrows; i++ )
     {
-       if ( diag_scale[i] != 0.0 ) 
+       if ( diag_scale[i] != 0.0 )
            diag_scale[i] = 1.0 / sqrt(diag_scale[i]);
     }
     for ( i = 0; i < nrows; i++ )
@@ -1799,7 +1799,7 @@ int MLI_Solver_Construct_LocalCSRMatrix(int nrows, int *mat_ia, int *mat_ja,
           mat_a[j] = mat_a[j] * diag_scale[i] * diag_scale[mat_ja[j]];
     }
     solver->diag_scale = diag_scale;
-    
+
     return 0;
 }
 #endif

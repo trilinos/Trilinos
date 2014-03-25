@@ -63,19 +63,16 @@
 #include <Xpetra_CrsMatrixWrap_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
-#include "MueLu_Utilities_fwd.hpp"
-#include "MueLu_PFactory.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_CoarseMapFactory_fwd.hpp"
 
-#include "MueLu_Level_fwd.hpp"
 #include "MueLu_Aggregates_fwd.hpp"
 #include "MueLu_AmalgamationFactory_fwd.hpp"
 #include "MueLu_AmalgamationInfo_fwd.hpp"
-
-// MPI helper
-#define minAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_MIN, in, Teuchos::outArg(out));
+#include "MueLu_CoarseMapFactory_fwd.hpp"
+#include "MueLu_Level_fwd.hpp"
+#include "MueLu_PerfUtils_fwd.hpp"
+#include "MueLu_PFactory.hpp"
+#include "MueLu_Utilities_fwd.hpp"
 
 namespace MueLu {
 

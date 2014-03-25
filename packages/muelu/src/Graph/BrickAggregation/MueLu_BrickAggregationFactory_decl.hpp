@@ -88,7 +88,7 @@ namespace MueLu {
     // Therefore, we hardcode a constant so that close points are considered the same.
     class compare {
     public:
-      bool operator()(const Scalar& x, const Scalar& y) {
+      bool operator()(const Scalar& x, const Scalar& y) const {
         if (STS::magnitude(x - y) < 1e-14)
           return false;
         return STS::real(x) < STS::real(y);

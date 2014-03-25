@@ -81,6 +81,10 @@ namespace MueLu {
     // This method is const because the clean concerns only mutable data.
     virtual void Clean() const { } // TODO: should be used inside of MueLu::Hierarchy
 
+#ifdef HAVE_MUELU_DEBUG
+    virtual void ResetDebugData() const = 0;
+#endif
+
     //! returns internal IgnoreUserData flag
     //! The FactoryManager has some control over the Level::GetFactory function
     //! If IgnoreUserData is set, the Level::GetFactory function always asks the factory manager for a valid factory

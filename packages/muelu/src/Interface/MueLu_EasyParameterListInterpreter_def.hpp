@@ -86,7 +86,7 @@
 namespace MueLu {
 
   //! Helper functions to compare two paramter lists
-  bool areSame(const ParameterList& list1, const ParameterList& list2);
+  static bool areSame(const ParameterList& list1, const ParameterList& list2);
 
 
   // This macro is tricky. The use case is when we do not have a level specific parameter, so we
@@ -135,10 +135,10 @@ namespace MueLu {
       Cycle_ = cycleMap[cycleType];
     }
 
-    this->maxCoarseSize_    = paramList.get<int>("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
-    this->numDesiredLevel_  = paramList.get<int>("max levels",          Hierarchy::GetDefaultMaxLevels());
-    this->graphOutputLevel_ = paramList.get<int>("debug: graph level", -1);
-    this->blockSize_        = paramList.get<int>("number of equations", 1);
+    this->maxCoarseSize_       = paramList.get<int> ("coarse: max size",    Hierarchy::GetDefaultMaxCoarseSize());
+    this->numDesiredLevel_     = paramList.get<int> ("max levels",          Hierarchy::GetDefaultMaxLevels());
+    this->graphOutputLevel_    = paramList.get<int> ("debug: graph level", -1);
+    this->blockSize_           = paramList.get<int> ("number of equations", 1);
 
     // Save level data
     if (paramList.isSublist("print")) {
@@ -194,6 +194,10 @@ namespace MueLu {
       }
     }
 
+    // Detect if we do implicit P and R rebalance
+    if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
+      this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
+
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
@@ -228,9 +232,9 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void EasyParameterListInterpreter<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetupMatrix(Matrix& A) const {
-    if (A.GetFixedBlockSize() != blockSize_)
-      this->GetOStream(Warnings0,  0) << "Warning: setting matrix block size to " << blockSize_ << " (value of \"number of equations\" parameter in the list) "
-          << "instead of " << A.GetFixedBlockSize() << " (provided matrix)." << std::endl;
+    TEUCHOS_TEST_FOR_EXCEPTION(A.GetFixedBlockSize() != blockSize_, Exceptions::RuntimeError,
+                               "Provided parameter list block size (\"number of equations\") is " << blockSize_ << ", but "
+                               << "the matrix block size (GetFixedBlockSize()) is " << A.GetFixedBlockSize());
     A.SetFixedBlockSize(blockSize_);
   }
 
@@ -539,7 +543,8 @@ namespace MueLu {
       // Rebalanced P
       RCP<RebalanceTransferFactory> newP = rcp(new RebalanceTransferFactory());
       ParameterList newPparams;
-      newPparams.set("type", "Interpolation");
+      newPparams.set("type",     "Interpolation");
+      newPparams.set("implicit", !this->doPRrebalance_);
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
@@ -548,7 +553,8 @@ namespace MueLu {
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
-      newRparams.set("type", "Restriction");
+      newRparams.set("type",     "Restriction");
+      newRparams.set("implicit", !this->doPRrebalance_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newR->  SetFactory("R",           manager.GetFactory("R"));
@@ -592,7 +598,7 @@ namespace MueLu {
 
     return true;
   }
-  bool areSame(const ParameterList& list1, const ParameterList& list2) {
+  static bool areSame(const ParameterList& list1, const ParameterList& list2) {
     return compare(list1, list2) && compare(list2, list1);
   }
 

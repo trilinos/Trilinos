@@ -49,10 +49,13 @@
 #include "Epetra_LinearProblem.h" 
 #include "Epetra_SerialComm.h"
 #include "Amesos_BaseSolver.h"
+#include "Ifpack.h"
+#include "Ifpack_Preconditioner.h"
 #include "AztecOO.h"
 #include "Isorropia_EpetraProber.hpp"
 
 #include "shylu_symbolic.h"
+#include "shylu_config.h"
 #include "shylu_probing_operator.h"
 #include "AmesosSchurOperator.h"
 
@@ -74,8 +77,32 @@ typedef struct
     int *gvals;                 // O(n) array differentiating local/global
                                 //  row/col
     //Epetra_SerialComm *SComm;   // Serial comm for block diagonals
-    //Epetra_Map *LDRowMap;       // RowMap for block diagonals
-    //Epetra_Map *LDColMap;       // ColMap for block diagonals
+    Teuchos::RCP<Epetra_Map> LDRowMap;       // RowMap for block diagonals
+    Teuchos::RCP<Epetra_Map> LGRowMap;       // RowMap for G (local)
+    Teuchos::RCP<Epetra_Map> GMap;           // Dist Map for G
+
+    Teuchos::RCP<Epetra_Import> BdImporter;
+    Teuchos::RCP<Epetra_Import> DistImporter;
+    Teuchos::RCP<Epetra_Import> BsImporter;
+    Teuchos::RCP<Epetra_Import> XsImporter;
+    Teuchos::RCP<Epetra_Export> XdExporter;
+    Teuchos::RCP<Epetra_Export> XsExporter;
+
+    Teuchos::RCP<Epetra_MultiVector> localrhs;
+    Teuchos::RCP<Epetra_MultiVector> temp1;
+    Teuchos::RCP<Epetra_MultiVector> temp2;
+    Teuchos::RCP<Epetra_MultiVector> Bs;
+    Teuchos::RCP<Epetra_MultiVector> Xs;
+    Teuchos::RCP<Epetra_MultiVector> LocalXs;
+    Teuchos::RCP<Epetra_MultiVector> temp3;
+    Teuchos::RCP<Epetra_MultiVector> locallhs;
+
+    // temp timers
+    //Teuchos::RCP<Teuchos::Time> importExportTime;
+    //Teuchos::RCP<Teuchos::Time> innerIterTime;
+    //Teuchos::RCP<Teuchos::Time> fwdTime;
+    //Teuchos::RCP<Teuchos::Time> amesosSchurTime;
+
     //Epetra_CrsMatrix *D;        // Actual D Matrix, not reqd for Amesos_KLU
                                 // but required for Amesos_Pardiso
     Teuchos::RCP<IQR::IQRSolver> iqrSolver; // Solver object for IQR func.
@@ -97,29 +124,6 @@ typedef struct
                                 // or in otherwords #nonlinear iteration-1
 } shylu_data;
 
-typedef struct
-{
-    int sym;                    // flag for symmetry
-    double Sdiagfactor;         // % of diagonals added to Schur complement
-    int schurApproxMethod;      // ==1 implies blockdiagonal + A22
-                                // ==2 implies dropping based
-    							// ==4 implies IQR
-    double relative_threshold;  // Relative threshold for dropping
-                                // only used if schurApproxMethod == 2
-    int inner_maxiters;         // maximum iterations for inner solver
-    double inner_tolerance;     // relative residual tolerance for inner solver
-    string libName;             // library for the outer solver
-    string schurSolver;         // Solver for the Schur complement
-    string schurAmesosSolver;   // Amesos solver for the Schur complement
-    string diagonalBlockSolver; // Solver to use to factorize the diagonal blocks
-    string schurPreconditioner; // Preconditioner for the inner iterations on Sbar (AztecOO-Exact)
-    bool silent_subiter;
-    int sep_type;
-    int debug_level;
-    //DebugManager dm;
-    int reset_iter;             // When should we reset the guided_probing
-} shylu_config;
-
 int shylu_factor(Epetra_CrsMatrix *A, shylu_symbolic *ssym, shylu_data *data,
                 shylu_config *config);
 
@@ -137,14 +141,16 @@ int shylu_solve(shylu_symbolic *ssym, shylu_data *data, shylu_config *config,
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxSchur(shylu_config *config,
     shylu_symbolic *ssym,
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
 Teuchos::RCP<Epetra_CrsMatrix> computeApproxWideSchur(
     shylu_config *config,
     shylu_symbolic *ssym,   // symbolic structure
     Epetra_CrsMatrix *G, Epetra_CrsMatrix *R,
-    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver, Epetra_CrsMatrix *C,
+    Epetra_LinearProblem *LP, Amesos_BaseSolver *solver,
+    Ifpack_Preconditioner *ifSolver, Epetra_CrsMatrix *C,
     Epetra_Map *localDRowMap);
 
 Teuchos::RCP<Epetra_CrsMatrix> computeSchur_GuidedProbing

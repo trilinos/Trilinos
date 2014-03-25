@@ -271,6 +271,13 @@ integer {D}+({E})?
   }
 }
 
+<END_CASE_SKIP>"{endswitch}".*"\n"  {
+  LINENUM_INC;
+  BEGIN(INITIAL);
+  switch_active = 0;
+  switch_skip_to_endcase = 0;
+}
+
 <END_CASE_SKIP>.*"\n" { LINENUM_INC; }
 
 <INITIAL>{WS}"{endswitch}".*"\n"        {

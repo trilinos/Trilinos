@@ -221,7 +221,8 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
   RCP<Epetra_Vector> x = rcp(new Epetra_Vector(*model->get_x_init()));
   RCP<Epetra_Vector> v = rcp(new Epetra_Vector(*model->get_x_dot_init()));
   RCP<Epetra_Vector> a = rcp(new Epetra_Vector(*model->get_x_dotdot_init()));
-  RCP<Epetra_Vector> x_pred = rcp(new Epetra_Vector(*model->get_f_map()));
+  RCP<Epetra_Vector> x_pred_a = rcp(new Epetra_Vector(*model->get_f_map()));
+  RCP<Epetra_Vector> x_pred_v = rcp(new Epetra_Vector(*model->get_f_map()));
   RCP<Epetra_Vector> a_old = rcp(new Epetra_Vector(*model->get_f_map()));
 
   TEUCHOS_TEST_FOR_EXCEPTION(v == Teuchos::null || x == Teuchos::null, 
@@ -238,35 +239,43 @@ void Piro::Epetra::TrapezoidRuleSolver::evalModel( const InArgs& inArgs,
    v->Norm2(&nrm); *out << "Initial Velocity = " << nrm << std::endl;
 
    //calculate intial acceleration using small time step (1.0e-3*delta_t)
+   // AGS: Check this for inital velocity
    {
      double pert= 1.0e6 * 4.0 / (delta_t * delta_t);
-     *x_pred = *x;
-     model->injectData(x_pred, x_pred, pert, t);
+     *x_pred_a = *x;
+     *x_pred_v = *x;
+     x_pred_v->Update(sqrt(pert), *v, 1.0);
+     model->injectData(x_pred_a, x_pred_a, pert, x_pred_v, sqrt(pert), t);
      noxSolver->evalModel(nox_inargs, nox_outargs);
-     a->Update(pert, *gx_out,  -pert, *x_pred, 0.0);
+     a->Update(pert, *gx_out,  -pert, *x_pred_a, 0.0);
      a->Norm2(&nrm); *out << "Calculated a_init = " << nrm << std::endl;
    }
 
    // Start integration loop
+   // AGS: Rename these variables to make sense
    double fdt2 = 4.0 / (delta_t * delta_t);
    double dt2f =  delta_t * delta_t / 4.0;
    double hdt  =  delta_t/ 2.0;
+   double tdt  =  2.0 / delta_t;
 
    for (int timeStep = 1; timeStep <= numTimeSteps; timeStep++) {
  
      t += delta_t;
  
      *a_old = *a;
-     *x_pred = *x;
-     x_pred->Update(delta_t, *v, dt2f, *a, 1.0);
-     model->injectData(x, x_pred, fdt2, t);
+     *x_pred_a = *x;
+     x_pred_a->Update(delta_t, *v, dt2f, *a, 1.0);
+     *x_pred_v = *x;
+     x_pred_v->Update(hdt, *v, 1.0);
+     model->injectData(x, x_pred_a, fdt2, x_pred_v, tdt, t);
 
      noxSolver->evalModel(nox_inargs, nox_outargs);
      // Copy out final solution from nonlinear solver
      *x =  *gx_out;
      // Compute a and v and new conditions
-     a->Update(fdt2, *x,  -fdt2, *x_pred,0.0);
+     a->Update(fdt2, *x,  -fdt2, *x_pred_a, 0.0);
      v->Update(hdt, *a, hdt, *a_old, 1.0); 
+      // Should be equivalent to: v->Update(tdt, *x, -tdt, *x_pred_v, 0.0); 
 
      // Observe completed time step
      if (observer != Teuchos::null) observer->observeSolution(*x,t);
@@ -300,7 +309,9 @@ Piro::Epetra::TrapezoidDecorator::TrapezoidDecorator(
   using Teuchos::ParameterList;
 
   xDotDot = Teuchos::rcp(new Epetra_Vector(*model->get_x_map()));
-  x_pred = Teuchos::rcp(new Epetra_Vector(*model->get_x_init()));
+  xDot = Teuchos::rcp(new Epetra_Vector(*model->get_x_map()));
+  x_pred_a = Teuchos::rcp(new Epetra_Vector(*model->get_x_init()));
+  x_pred_v = Teuchos::rcp(new Epetra_Vector(*model->get_x_init()));
   x_save = Teuchos::rcp(new Epetra_Vector(*model->get_x_init()));
 
   Teuchos::RCP<Teuchos::FancyOStream> out
@@ -368,12 +379,15 @@ EpetraExt::ModelEvaluator::OutArgs Piro::Epetra::TrapezoidDecorator::createOutAr
 
 void Piro::Epetra::TrapezoidDecorator::injectData(
     const Teuchos::RCP<Epetra_Vector>& x_, 
-    const Teuchos::RCP<Epetra_Vector>& x_pred_, 
-    double fdt2_, double time_) 
+    const Teuchos::RCP<Epetra_Vector>& x_pred_a_, double fdt2_,
+    const Teuchos::RCP<Epetra_Vector>& x_pred_v_, double tdt_,
+    double time_) 
 {
   *x_save = *x_;
-  *x_pred = *x_pred_;
+  *x_pred_a = *x_pred_a_;
+  *x_pred_v = *x_pred_v_;
   fdt2 = fdt2_;
+  tdt = tdt_;
   time = time_;
 }
 
@@ -387,10 +401,14 @@ void Piro::Epetra::TrapezoidDecorator::evalModel( const InArgs& inArgs,
   OutArgs modelOutArgs(outArgs);
   InArgs modelInArgs(inArgs);
 
-  xDotDot->Update(fdt2, *inArgs.get_x(), -fdt2, *x_pred, 0.0);
+  xDotDot->Update(fdt2, *inArgs.get_x(), -fdt2, *x_pred_a, 0.0);
   modelInArgs.set_x_dotdot(xDotDot); 
 
+  xDot->Update(tdt, *inArgs.get_x(), -tdt, *x_pred_v, 0.0);
+  modelInArgs.set_x_dot(xDot); 
+
   modelInArgs.set_omega(fdt2);  // fdt2 = 4/(dt)^2
+  modelInArgs.set_alpha(tdt);    // tdt  = 2/dt
   modelInArgs.set_beta(1.0);
   modelInArgs.set_t(time);
 

@@ -113,14 +113,20 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
+  if(BelosLinearProblem_!=Teuchos::null)
+    BelosLinearProblem_ -> setOperator ( TpetraA_ );
+  
 }
-
+  
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setProblemMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraA) {
 
   TpetraA_=TpetraA;
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
+
+  if(BelosLinearProblem_!=Teuchos::null)
+    BelosLinearProblem_ -> setOperator ( TpetraA_ );
 
 }
 
@@ -701,6 +707,19 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIte
   }
   else {
     return 0;
+  }
+}
+
+// Get most recent solver tolerance achieved
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetResidual()
+{
+  if(useKrylov_==true) {
+    double residual = BelosSolverManager_ -> achievedTol();
+    return residual;
+  }
+  else {
+    return 0.0;
   }
 }
 

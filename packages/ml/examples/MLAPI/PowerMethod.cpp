@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -21,7 +21,7 @@ using namespace MLAPI;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
 #endif
@@ -29,21 +29,21 @@ int main(int argc, char *argv[])
   try {
 
     // initialize the MLAPI workspace
-    
+
     Init();
 
     // Global dimension of our problem. It must be a square number
-    
+
     int NumGlobalRows = 16;
 
     // Create the space in which vectors and operators live
-    
+
     Space MySpace(NumGlobalRows);
 
     // Define vectors and operator, based on `MySpace'. The linear system
-    // matrix is created using the MLAPI Gallery, which is only a 
+    // matrix is created using the MLAPI Gallery, which is only a
     // convenient wrapper of the Galeri package.
-    
+
     MultiVector x(MySpace), y(MySpace);
     Operator A = Gallery("Tridiag", MySpace);
 
@@ -52,14 +52,14 @@ int main(int argc, char *argv[])
     // we divide each element by the 2-norm of the vector, computed as
     // x * x. For two general vectors, x * y represents the scalar product
     // between x and y (defined on the same space).
-    
+
     x.Random();
     x = x / sqrt(x * x);
 
     // ==================== //
     // loop of power method //
     // ==================== //
-    
+
     int MaxIters = 10;
 
     for (int i = 0 ; i < MaxIters ; ++i) {
@@ -69,7 +69,7 @@ int main(int argc, char *argv[])
       // note that you need parenthesis in the following expression
       // and that x * y is a global operation (therefore all
       // processes must execute it)
-      
+
       double RQ = (y * x) / (x * x);
       if (GetMyPID() == 0)
         std::cout << "iter = " << i << ", RQ = " << RQ << std::endl;
@@ -82,10 +82,10 @@ int main(int argc, char *argv[])
 
     Finalize();
 
-  } 
+  }
   catch (const int e) {
     std::cout << "Caught integer exception, code = " << e << std::endl;
-  } 
+  }
   catch (...) {
     std::cout << "problems here..." << std::endl;
   }

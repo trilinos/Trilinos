@@ -69,9 +69,12 @@
 
 #include "MueLu_AggregationExportFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_BlockedCoarseMapFactory.hpp"
+#include "MueLu_BlockedDirectSolver.hpp"
 #include "MueLu_BlockedGaussSeidelSmoother.hpp"
 #include "MueLu_BlockedPFactory.hpp"
 #include "MueLu_BlockedRAPFactory.hpp"
+#include "MueLu_BraessSarazinSmoother.hpp"
 #include "MueLu_BrickAggregationFactory.hpp"
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
@@ -90,6 +93,8 @@
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
 #include "MueLu_SaPFactory.hpp"
+#include "MueLu_SchurComplementFactory.hpp"
+#include "MueLu_SimpleSmoother.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_SubBlockAFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
@@ -150,6 +155,7 @@ namespace MueLu {
       // TODO: see how Teko handles this (=> register factories).
       if (factoryName == "AggregationExportFactory")        return Build2<AggregationExportFactory>     (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "AmalgamationFactory")             return Build2<AmalgamationFactory>          (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedCoarseMapFactory")         return Build2<BlockedCoarseMapFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BlockedRAPFactory")               return BuildRAPFactory<BlockedRAPFactory>   (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "BrickAggregationFactory")         return Build2<BrickAggregationFactory>      (paramList, factoryMapIn, factoryManagersIn);
       if (factoryName == "CoarseMapFactory")                return Build2<CoarseMapFactory>             (paramList, factoryMapIn, factoryManagersIn);
@@ -212,21 +218,13 @@ namespace MueLu {
         TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "MueLu::FactoryFactory:BuildFactory(): Cannot create a RepartitionFactory object: HAVE_MPI == false.");
 #endif // HAVE_MPI
       }
-
-      /*if (factoryName == "FactoryGroup") {
-        // group of factories to build a factory manager?
-        return BuildFactoryGroup(paramList, factoryMapIn);
-      }*/
-
-      if (factoryName == "BlockedPFactory") {
-
-        return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
-      }
-
-      if (factoryName == "BlockedGaussSeidelSmoother") {
-
-        return BuildBlockedGaussSeidelSmoother(paramList, factoryMapIn, factoryManagersIn);
-      }
+      // Blocked factories
+      if (factoryName == "BlockedPFactory")            return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedGaussSeidelSmoother") return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SimpleSmoother")             return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BraessSarazinSmoother")      return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SchurComplementFactory")     return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedDirectSolver")        return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {
@@ -477,10 +475,8 @@ namespace MueLu {
       return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));
     }
 
-    RCP<FactoryBase> BuildBlockedGaussSeidelSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "BlockedGaussSeidelSmoother", Exceptions::RuntimeError, "");
-      int bgs_sweeps=1;          if(paramList.isParameter("sweeps"))       bgs_sweeps = paramList.get<int>        ("sweeps");
-      double bgs_omega=1.0;      if(paramList.isParameter("omega"))        bgs_omega  = paramList.get<double>     ("omega");
+    template <class T> // T must implement the Factory interface
+    RCP<FactoryBase> BuildBlockedSmoother(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
 
       // read in sub lists
       RCP<ParameterList> paramListNonConst = rcp(new ParameterList(paramList));
@@ -529,12 +525,30 @@ namespace MueLu {
 
       }
 
-      RCP<BlockedGaussSeidelSmoother> bgs = rcp(new BlockedGaussSeidelSmoother(bgs_sweeps,bgs_omega));
+      // create a new blocked smoother
+      RCP<T> bs = Build2<T>(*paramListNonConst, factoryMapIn, factoryManagersIn);
 
-      bgs->AddFactoryManager(facManagers[0]);
-      bgs->AddFactoryManager(facManagers[1]);
+      // important: set block factory for A here! TODO think about this in more detail
+      bs->SetFactory("A", MueLu::NoFactory::getRCP());
 
-      return rcp(new SmootherFactory(bgs));
+      for (int i = 0; i<Teuchos::as<int>(facManagers.size()); i++) {
+        bs->AddFactoryManager(facManagers[i],i);
+      }
+
+      return rcp(new SmootherFactory(bs));
+    }
+
+    RCP<FactoryBase> BuildBlockedDirectSolver(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {
+      //if (paramList.begin() == paramList.end())
+        return rcp(new SmootherFactory(rcp(new BlockedDirectSolver())));
+
+      /*TEUCHOS_TEST_FOR_EXCEPTION(paramList.get<std::string>("factory") != "DirectSolver", Exceptions::RuntimeError, "");
+
+      std::string type;              if(paramList.isParameter("type"))          type = paramList.get<std::string>("type");
+      // std::string verbose;        if(paramList.isParameter("verbose"))       verbose = paramList.get<std::string>("verbose");
+      Teuchos::ParameterList params; if(paramList.isParameter("ParameterList")) params  = paramList.get<Teuchos::ParameterList>("ParameterList");
+
+      return rcp(new SmootherFactory(rcp(new DirectSolver(type, params))));*/
     }
 
     RCP<FactoryBase> BuildBlockedPFactory(const Teuchos::ParameterList& paramList, const FactoryMap& factoryMapIn, const FactoryManagerMap& factoryManagersIn) const {

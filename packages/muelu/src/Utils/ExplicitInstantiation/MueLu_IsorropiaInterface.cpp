@@ -43,11 +43,10 @@
 // ***********************************************************************
 //
 // @HEADER
-
 #include "MueLu_ConfigDefs.hpp"
-
 #if defined(HAVE_MUELU_ISORROPIA) && defined(HAVE_MPI)
 #include "MueLu_ExplicitInstantiation.hpp"
+
 #include "MueLu_IsorropiaInterface_def.hpp"
 
 #ifdef HAVE_MUELU_INST_DOUBLE_INT_INT

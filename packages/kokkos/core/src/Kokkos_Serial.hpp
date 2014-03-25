@@ -137,8 +137,6 @@ public:
   //! Print configuration information to the given output stream.
   static void print_configuration( std::ostream & , const bool detail = false );
 
-  inline static void memory_fence() {};
-
   inline int league_rank() const { return 0 ; }
   inline int league_size() const { return 1 ; }
   inline int team_rank() const { return 0 ; }
@@ -146,7 +144,7 @@ public:
 
   inline void team_barrier() {}
 
-  inline std::pair<size_t,size_t> work_range( size_t n ) const 
+  inline std::pair<size_t,size_t> work_range( size_t n ) const
     { return std::pair<size_t,size_t>(0,n); }
 
   template< typename T >

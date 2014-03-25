@@ -42,7 +42,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Map Map(numNodes, 0, Comm);
 
-  // Define the matrix A from the discretization of Laplace equation 
+  // Define the matrix A from the discretization of Laplace equation
   // with homogeneous Dirichlet condition (using square Q1 elements)
 
   Epetra_CrsMatrix A(Copy, Map, 0);
@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     Epetra_MultiVector Y2(Map, iBlock);
     Y2.PutScalar(0.0);
 
-    // Apply the preconditioner one vector at a time 
+    // Apply the preconditioner one vector at a time
     double t0 = - MyWatch.WallTime();
     Prec.ApplyInverse_WKC(X, Y0);
     t0 += MyWatch.WallTime();
@@ -173,7 +173,7 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < iBlock; ++j) {
       if (y1Norm[j] > maxError1*y0Norm[j])
         maxError1 = y1Norm[j]/y0Norm[j];
-    } 
+    }
 
     Y2.Update(1.0, Y0, -1.0);
     double *y2Norm = new double[iBlock];
@@ -182,12 +182,12 @@ int main(int argc, char *argv[]) {
     for (int j = 0; j < iBlock; ++j) {
       if (y2Norm[j] > maxError2*y0Norm[j])
         maxError2 = y2Norm[j]/y0Norm[j];
-    } 
+    }
 
 
-    delete[] y0Norm; 
-    delete[] y1Norm; 
-    delete[] y2Norm; 
+    delete[] y0Norm;
+    delete[] y1Norm;
+    delete[] y2Norm;
 
     if (myPid == 0) {
       std::cout << " --- Block size " << iBlock << " --- " << std::endl;
@@ -232,7 +232,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return 0;
 }
 

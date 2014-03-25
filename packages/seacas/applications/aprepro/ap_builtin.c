@@ -1226,25 +1226,14 @@ char *do_print_array(array *my_array_data)
 
 array *do_make_array(double rows, double cols)
 {
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = rows;
-  array_data->cols = cols;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(rows*cols,sizeof(double));
-  return array_data;
+  return array_construct(rows, cols);
 }
 
 array *do_identity(double size)
 {
   int i;
   int isize = size;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = isize;
-  array_data->cols = isize;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(size*size,sizeof(double));
+  array *array_data = array_construct(isize,isize);
 
   for (i=0; i < isize; i++) {
     array_data->data[i*isize+i] = 1.0;
@@ -1255,12 +1244,8 @@ array *do_identity(double size)
 array *do_transpose(array *a)
 {
   int i,j;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = a->cols;
-  array_data->cols = a->rows;
+  array *array_data = array_construct(a->cols, a->rows);
 
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
   for (i=0; i < a->rows; i++) {
     for (j=0; j < a->cols; j++) {
       array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
@@ -1282,7 +1267,7 @@ array *do_csv_array(char *filename)
   
   FILE *fp = NULL;
   
-  array *array_data = (array*) malloc(sizeof(array));
+  array *array_data = NULL;
 
   fp = open_file(filename, "r");
   while (getline(&line, &len, fp) != -1) {
@@ -1292,11 +1277,8 @@ array *do_csv_array(char *filename)
     }
     rows++;
   }
-  array_data->rows = rows;
-  array_data->cols = cols;
 
-  /* Allocate space to store data... */
-  array_data->data = (double*) malloc( (rows*cols)*sizeof(double));
+  array_data = array_construct(rows, cols);
 
   /* Read file again storing entries in array_data->data */
   rewind(fp);

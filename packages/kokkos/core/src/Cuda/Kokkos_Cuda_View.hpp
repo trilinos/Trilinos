@@ -185,7 +185,7 @@ struct CudaTextureFetch {
 
     template< typename iType >
     KOKKOS_INLINE_FUNCTION
-    double operator[]( const iType & i ) const
+    ValueType operator[]( const iType & i ) const
     {
   #if defined( __CUDA_ARCH__ ) && ( 300 <= __CUDA_ARCH__ )
   // Enable the usage of the _ldg intrinsic even in cases where texture fetches work
@@ -290,23 +290,13 @@ struct ViewAssignment< ViewCudaTexture , ViewCudaTexture , void >
                     ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::value
                   ) >::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
-
-    typedef typename DstViewType::shape_type    shape_type ;
-    typedef typename DstViewType::memory_space  memory_space ;
-    typedef typename DstViewType::memory_traits memory_traits ;
-
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
     dst.m_texture  = src.m_texture ;
-    dst.m_stride   = src.m_stride ;
+    dst.m_offset_map.assign( src.m_offset_map );
+    dst.m_tracking = src.m_tracking ;
 
-    shape_type::assign( dst.m_shape,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
@@ -326,24 +316,15 @@ struct ViewAssignment< ViewCudaTexture , ViewDefault , void >
                                     ViewTraits<ST,SL,SD,SM> >::value
                   )>::type * = 0 )
   {
-    typedef ViewTraits<DT,DL,DD,DM> traits_type ;
-    typedef View<DT,DL,DD,DM,ViewCudaTexture> DstViewType ;
+    dst.m_tracking.decrement( dst.m_texture.ptr );
 
-    typedef typename DstViewType::shape_type  shape_type ;
-    typedef typename DstViewType::value_type  value_type ;
-    typedef typename DstViewType::stride_type stride_type ;
+    dst.m_texture = CudaTextureFetch< typename ViewTraits<DT,DL,DD,DM>::value_type >( src.m_ptr_on_device );
 
-    ViewTracking< traits_type >::decrement( dst.m_texture.ptr );
+    dst.m_offset_map.assign( src.m_offset_map );
 
-    dst.m_texture = CudaTextureFetch< value_type >( src.m_ptr_on_device );
+    dst.m_tracking  = src.m_tracking ;
 
-    shape_type::assign( dst.m_shape,
-                        src.m_shape.N0 , src.m_shape.N1 , src.m_shape.N2 , src.m_shape.N3 ,
-                        src.m_shape.N4 , src.m_shape.N5 , src.m_shape.N6 , src.m_shape.N7 );
-
-    stride_type::assign( dst.m_stride , src.m_stride.value );
-
-    ViewTracking< traits_type >::increment( dst.m_texture.ptr );
+    dst.m_tracking.increment( dst.m_texture.ptr );
   }
 };
 
@@ -368,16 +349,13 @@ private:
 
   template< class , class , class > friend struct Impl::ViewAssignment ;
 
-  typedef Impl::LayoutStride< typename traits::shape_type ,
-                              typename traits::array_layout > stride_type ;
-
-  typedef Impl::CalculateOffset< typename traits::array_layout ,
-                         typename traits::shape_type > calculate_offset;
-
+  typedef Impl::ViewOffset< typename traits::shape_type
+                          , typename traits::array_layout
+                          > offset_map_type ;
 
   Impl::CudaTextureFetch<typename traits::value_type > m_texture ;
-  typename traits::shape_type           m_shape ;
-  stride_type                           m_stride ;
+  offset_map_type                                      m_offset_map ;
+  Impl::ViewTracking< traits >                         m_tracking ;
 
 public:
 
@@ -395,50 +373,47 @@ public:
 
   enum { Rank = traits::rank };
 
-  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_shape ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_shape.N0 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_shape.N1 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_shape.N2 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_3() const { return m_shape.N3 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_4() const { return m_shape.N4 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_shape.N5 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_shape.N6 ; }
-  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_shape.N7 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_3() const { return m_offset_map.N3 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_4() const { return m_offset_map.N4 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_5() const { return m_offset_map.N5 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_6() const { return m_offset_map.N6 ; }
+  KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_7() const { return m_offset_map.N7 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type size() const
   {
-    return   m_shape.N0
-           * m_shape.N1
-           * m_shape.N2
-           * m_shape.N3
-           * m_shape.N4
-           * m_shape.N5
-           * m_shape.N6
-           * m_shape.N7
+    return   m_offset_map.N0
+           * m_offset_map.N1
+           * m_offset_map.N2
+           * m_offset_map.N3
+           * m_offset_map.N4
+           * m_offset_map.N5
+           * m_offset_map.N6
+           * m_offset_map.N7
            ;
   }
 
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
   typename traits::size_type dimension( const iType & i ) const
-    { return Impl::dimension( m_shape , i ); }
+    { return Impl::dimension( m_offset_map , i ); }
 
   //------------------------------------
 
   View() : m_texture()
-   {
-     traits::shape_type::assign(m_shape,0,0,0,0,0,0,0,0);
-     stride_type::assign( m_stride , 0 );
-   }
+   { m_offset_map.assign(0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
-  ~View() { Impl::ViewTracking< traits >::decrement( m_texture.ptr ); }
+  ~View() { m_tracking.decrement( m_texture.ptr ); }
 
   View( const View & rhs )
     : m_texture( rhs.m_texture )
-    , m_stride(  rhs.m_stride )
     {
-      m_shape = rhs.m_shape ;
-      Impl::ViewTracking< traits >::increment( m_texture.ptr );
+      m_offset_map.assign( rhs.m_offset_map );
+      m_tracking = rhs.m_tracking ;
+      m_tracking.increment( m_texture.ptr );
     }
 
   View & operator = ( const View & rhs )
@@ -472,16 +447,12 @@ public:
         const size_t n5 = 0 ,
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
-          Impl::is_same<TT,typename traits::value_type>::value &&
-          ! traits::is_managed ),
-        const size_t >::type n7 = 0 )
+          Impl::is_same<TT,typename traits::value_type>::value
+        ), const size_t >::type n7 = 0 )
     : m_texture( Impl::CudaTextureFetch< typename traits::value_type >(ptr))
     {
-      typedef typename traits::shape_type  shape_type ;
-      typedef typename traits::value_type  value_type ;
-
-      shape_type ::assign( m_shape, n0, n1, n2, n3, n4, n5, n6, n7 );
-      stride_type::assign_no_padding( m_stride , m_shape );
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_tracking = false ;
     }
 
   //------------------------------------
@@ -498,7 +469,7 @@ public:
     operator[] ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       return m_texture[ i0 ];
     }
 
@@ -508,7 +479,7 @@ public:
     operator() ( const iType0 & i0 ) const
     {
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
-      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_shape, i0 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_1( m_offset_map, i0 );
       return m_texture[ i0 ];
     }
 
@@ -517,10 +488,10 @@ public:
   typename Impl::ViewEnableArrayOper< typename traits::value_type , traits, typename traits::array_layout, 2, iType0, iType1 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_shape, i0,i1 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_2( m_offset_map, i0,i1 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 >
@@ -529,10 +500,10 @@ public:
                                       traits, typename traits::array_layout, 3, iType0, iType1, iType2 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_shape, i0,i1,i2 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_3( m_offset_map, i0,i1,i2 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 >
@@ -541,10 +512,10 @@ public:
                                       traits, typename traits::array_layout, 4, iType0, iType1, iType2, iType3 >::type
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_shape, i0,i1,i2,i3 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_4( m_offset_map, i0,i1,i2,i3 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,i3,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2,i3) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -555,10 +526,10 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_shape, i0,i1,i2,i3,i4 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_5( m_offset_map, i0,i1,i2,i3,i4 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,i3,i4,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2,i3,i4) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -569,10 +540,10 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_shape, i0,i1,i2,i3,i4,i5 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_6( m_offset_map, i0,i1,i2,i3,i4,i5 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2,i3,i4,i5) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -583,10 +554,10 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_shape, i0,i1,i2,i3,i4,i5,i6 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_7( m_offset_map, i0,i1,i2,i3,i4,i5,i6 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2,i3,i4,i5,i6) ];
     }
 
   template< typename iType0 , typename iType1 , typename iType2 , typename iType3 ,
@@ -597,10 +568,10 @@ public:
     operator() ( const iType0 & i0 , const iType1 & i1 , const iType2 & i2 , const iType3 & i3 ,
                  const iType4 & i4 , const iType5 & i5 , const iType6 & i6 , const iType7 & i7 ) const
     {
-      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_shape, i0,i1,i2,i3,i4,i5,i6,i7 );
+      KOKKOS_ASSERT_SHAPE_BOUNDS_8( m_offset_map, i0,i1,i2,i3,i4,i5,i6,i7 );
       KOKKOS_RESTRICT_EXECUTION_TO_DATA( typename traits::memory_space , m_texture.ptr );
 
-      return m_texture[ calculate_offset::apply(i0,i1,i2,i3,i4,i5,i6,i7,m_shape,m_stride) ];
+      return m_texture[ m_offset_map(i0,i1,i2,i3,i4,i5,i6,i7) ];
     }
 
   //------------------------------------
@@ -611,24 +582,7 @@ public:
   // Stride of physical storage, dimensioned to at least Rank
   template< typename iType >
   KOKKOS_INLINE_FUNCTION
-  void stride( iType * const s ) const
-  {
-    enum { is_left = Impl::is_same< typename traits::array_layout , LayoutLeft >::value };
-
-    if ( 1 == Rank ) {
-      s[0] = 1 ;
-    }
-    else if ( is_left ) {
-      s[0] = 1 ;
-      s[1] = m_stride.value ;
-      for ( int i = 2 ; i < Rank ; ++i ) { s[i] = s[i-1] * dimension(i-1); }
-    }
-    else {
-      s[0] = m_stride.value ;
-      s[Rank-1] = 1 ;
-      for ( int i = Rank - 2 ; 0 < i ; --i ) { s[i] = s[i+1] * dimension(i+1); }
-    }
-  }
+  void stride( iType * const s ) const { m_offset_map.stride(s); }
 };
 
 } /* namespace Kokkos */

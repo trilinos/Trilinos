@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_include.h"
 
@@ -17,7 +17,7 @@
 //==============================================================================
 ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
                                 const Epetra_Comm* UserComm,
-                                const bool cheap, 
+                                const bool cheap,
                                 const USR_COMM comm) :
   Op_(0),
   FreeCommObject_(false),
@@ -36,7 +36,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   NumGlobalDiagonals_(0),
   Importer_(0)
 {
- 
+
   if (UserComm) {
     // simply stick it to the pointer if the user passed Comm
     Comm_ = UserComm;
@@ -57,9 +57,9 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   Label_ = new char[80];
   sprintf(Label_,"%s","ML_Epetra::RowMatrix");
 
-  NumMyRows_ = Op->outvec_leng; 
-  NumMyCols_ = Op->invec_leng;  // this is fixed at the end of this method 
- 
+  NumMyRows_ = Op->outvec_leng;
+  NumMyCols_ = Op->invec_leng;  // this is fixed at the end of this method
+
   // create a row map based on linear distribution
   // I need this map because often codes use the RowMatrixRowMap.
   // Also, I need to check that the map of the input vector
@@ -91,7 +91,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   else {
     NumMyRowEntries_.resize(NumMyRows());
 
-    Diagonal_.resize(NumMyRows()); 
+    Diagonal_.resize(NumMyRows());
     Indices_.resize(Allocated_);
     Values_.resize(Allocated_);
 
@@ -120,7 +120,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
       NumMyRowEntries_[i] = ncnt;
       NumMyNonzeros_ += ncnt;
 
-      if (ncnt > MaxMyNumEntries) 
+      if (ncnt > MaxMyNumEntries)
         MaxMyNumEntries = ncnt;
 
       double tmp = 0.0;
@@ -154,7 +154,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
   // build a list of global indices for columns
 
   if (Comm().NumProc() == 1) {
-    ColMap_ = DomainMap_; 
+    ColMap_ = DomainMap_;
   }
   else {
 
@@ -172,13 +172,13 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
     Ncols = Op->invec_leng;
 
-    Comm().ScanSum(&Ncols,&Ncols_offset,1); 
+    Comm().ScanSum(&Ncols,&Ncols_offset,1);
     Ncols_offset -= Ncols;
 
-    std::vector<double> global_col_id; 
+    std::vector<double> global_col_id;
     global_col_id.resize(Ncols + Nghost + 1);
 
-    std::vector<int> global_col_id_as_int; 
+    std::vector<int> global_col_id_as_int;
     global_col_id_as_int.resize(Ncols + Nghost + 1);
 
     for (int i = 0 ; i < Ncols ; ++i) {
@@ -186,7 +186,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
       global_col_id_as_int[i] = Ncols_offset + i;
     }
 
-    for (int i = 0 ; i < Nghost; i++) 
+    for (int i = 0 ; i < Nghost; i++)
       global_col_id[i + Ncols] = -1;
 
     ML_exchange_bdry(&global_col_id[0],Op->getrow->pre_comm,
@@ -205,7 +205,7 @@ ML_Epetra::RowMatrix::RowMatrix(ML_Operator* Op,
 
   return;
 }
-      
+
 //==============================================================================
 ML_Epetra::RowMatrix::~RowMatrix()
 {
@@ -216,7 +216,7 @@ ML_Epetra::RowMatrix::~RowMatrix()
     }
 
   // the one that is always allocated is RangeMap_;
-  if (DomainMap_) 
+  if (DomainMap_)
     if (DomainMap_ != RangeMap_) {
       delete DomainMap_;
       DomainMap_ = 0;
@@ -235,7 +235,7 @@ ML_Epetra::RowMatrix::~RowMatrix()
 
   if (Importer_)
     delete Importer_;
-  
+
   return;
 }
 
@@ -244,7 +244,7 @@ int ML_Epetra::RowMatrix::NumMyRowEntries(int MyRow, int & NumEntries) const
 {
   if (NumMyRowEntries_.size() == 0)
     ML_CHK_ERR(-2); // prec was built as "cheap"
-    
+
   if (MyRow < 0 || MyRow >= NumMyRows())
     ML_CHK_ERR(-1); // out of range
 
@@ -261,7 +261,7 @@ int ML_Epetra::RowMatrix::MaxNumEntries() const
 
 //==============================================================================
 int ML_Epetra::RowMatrix::
-ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, 
+ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 		 double *Values, int * Indices) const
 {
 
@@ -280,7 +280,7 @@ ExtractMyRowCopy(int MyRow, int Length, int & NumEntries,
 
   if (ierr < 0)
     ML_CHK_ERR(ierr);
-  
+
 #if 0
   if (NumEntries != NumMyRowEntries_[MyRow])
     ML_CHK_ERR(-4); // something went wrong
@@ -315,8 +315,8 @@ int ML_Epetra::RowMatrix::ExtractDiagonalCopy(Epetra_Vector & Diagonal) const
 
 //==============================================================================
 // FIXME: some problems with ghost nodes here ??
-int ML_Epetra::RowMatrix::Multiply(bool TransA, 
-				   const Epetra_MultiVector& X, 
+int ML_Epetra::RowMatrix::Multiply(bool TransA,
+				   const Epetra_MultiVector& X,
 				   Epetra_MultiVector& Y) const
 {
 
@@ -325,7 +325,7 @@ int ML_Epetra::RowMatrix::Multiply(bool TransA,
 
   if (X.Map().SameAs(*DomainMap_) != true)
     ML_CHK_ERR(-2); // incompatible maps
-  
+
   if (Y.Map().SameAs(*RangeMap_) != true)
     ML_CHK_ERR(-3); // incompatible maps
 

@@ -74,7 +74,7 @@ namespace Xpetra {
   RCP<const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<const Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
+  RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > >       toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec);
 
   //
   //
@@ -198,7 +198,10 @@ namespace Xpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node > > toXpetra(RCP<Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > > vec) {
-    return rcp( new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+    if (!vec.is_null())
+      return rcp(new TpetraVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(vec));
+
+    return Teuchos::null;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>

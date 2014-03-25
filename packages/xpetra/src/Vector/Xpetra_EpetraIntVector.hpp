@@ -251,7 +251,7 @@ namespace Xpetra {
     }
 
     // Implementing DistObject
-    const Teuchos::RCP<const Map<int,int> > getMap() const {
+    Teuchos::RCP<const Map<int,int> > getMap() const {
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
       return rcp ( new Xpetra::EpetraMap(map) );
     }

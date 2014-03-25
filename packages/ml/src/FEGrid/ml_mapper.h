@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -20,7 +20,7 @@
 #ifdef WKC
 #include <Epetra_Comm.h>
 #include <Epetra_MultiVector.h>
-#endif 
+#endif
 
 typedef struct ML_Mapper_Struct ML_Mapper;
 

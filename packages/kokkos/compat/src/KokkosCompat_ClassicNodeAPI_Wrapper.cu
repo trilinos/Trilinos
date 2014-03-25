@@ -17,11 +17,17 @@ namespace Kokkos {
       if(count==0) {
         if(Cuda::host_mirror_device_type::is_initialized()) {
           // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
-          if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0)
-            Cuda::host_mirror_device_type::finalize();
+          if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0) {
+            //Don't try to kill me if HostSpace was already destroyed.
+            //Typical reason: static global instance of node is used, which might get destroyed after
+            //the static HostSpace is destroyed.
+            if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
+              Cuda::host_mirror_device_type::finalize();
+          }
         }
         if(Cuda::is_initialized())
-          Cuda::finalize();
+          if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
+            Cuda::finalize();
       }
     }
     template<>
@@ -39,10 +45,15 @@ namespace Kokkos {
 
       if(!Kokkos::Cuda::host_mirror_device_type::is_initialized())
         Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
-      Kokkos::Cuda::SelectDevice select_device(Device);
+      Kokkos::Cuda::SelectDevice select_device(0);
       if(!Kokkos::Cuda::is_initialized())
         Kokkos::Cuda::initialize(select_device);
     }
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Cuda>::name() {
+      return std::string("Cuda/Wrapper");
+    }
+
 #endif
   }
 }

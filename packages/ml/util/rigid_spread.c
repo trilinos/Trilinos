@@ -48,7 +48,7 @@ double dvalue;
       }
       fprintf(fp_out,"%d\n",length);
       for (j = 0; j < length; j++) {
-         if (fscanf(fp_in,"%lf",&dvalue) != 1) 
+         if (fscanf(fp_in,"%lf",&dvalue) != 1)
             printf("Data missing for %dth mode %dth component\n",i+1,j);
          fprintf(fp_out,"%d %20.13e\n-1\n",j,dvalue);
       }

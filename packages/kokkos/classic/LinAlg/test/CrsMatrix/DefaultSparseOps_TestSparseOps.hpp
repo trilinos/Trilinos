@@ -1976,10 +1976,6 @@ public:
     using Teuchos::UPPER_TRI;
     using Teuchos::NON_UNIT_DIAG;
     using Teuchos::UNIT_DIAG;
-    typedef Teuchos::ScalarTraits<scalar_type> STS;
-    typedef Teuchos::ScalarTraits<magnitude_type> STM;
-    typedef KokkosClassic::MultiVector<scalar_type, node_type> MV;
-    typedef KokkosClassic::DefaultArithmetic<MV> MVT;
 
     const bool testTriSolve = (numRows == numCols);
 

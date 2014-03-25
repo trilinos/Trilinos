@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "ml_config.h"
@@ -33,7 +33,7 @@ using namespace ML_Epetra;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -66,7 +66,7 @@ int main(int argc, char *argv[])
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
   AztecOO solver(Problem);
   double *x_coord = 0, *y_coord = 0, *z_coord = 0;
-  
+
   Epetra_MultiVector *coords = CreateCartesianCoordinates("2D", &(CrsA->Map()),
                                                           GaleriList);
 
@@ -106,21 +106,21 @@ int main(int argc, char *argv[])
   // specify the reduction with respect to the previous level
   // (very small values can break the code)
   int ratio = 16;
-  MLList.set("aggregation: global aggregates (level 0)", 
+  MLList.set("aggregation: global aggregates (level 0)",
              NumNodes / ratio);
-  MLList.set("aggregation: global aggregates (level 1)", 
+  MLList.set("aggregation: global aggregates (level 1)",
              NumNodes / (ratio * ratio));
-  MLList.set("aggregation: global aggregates (level 2)", 
+  MLList.set("aggregation: global aggregates (level 2)",
              NumNodes / (ratio * ratio * ratio));
 
-  MultiLevelPreconditioner* MLPrec = 
+  MultiLevelPreconditioner* MLPrec =
     new MultiLevelPreconditioner(*A, MLList, true);
 
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, 1);
   solver.Iterate(100, 1e-12);
-  
+
   // compute the real residual
   Epetra_Vector Residual(A->DomainMap());
   //1.0 * RHS + 0.0 * RHS - 1.0 * (A * LHS)
@@ -128,7 +128,7 @@ int main(int argc, char *argv[])
   Residual.Update(1.0, RHS, 0.0, RHS, -1.0);
   double rn;
   Residual.Norm2(&rn);
-  
+
   if (Comm.MyPID() == 0 )
     std::cout << "||b-Ax||_2 = " << rn << endl;
 
@@ -154,5 +154,5 @@ int main(int argc, char *argv[])
 #endif
 
   exit(EXIT_SUCCESS);
-  
+
 }

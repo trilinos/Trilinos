@@ -29,7 +29,7 @@ int ML_Smoother_Ifpack(ML_Smoother *sm,int inlen,double x[],int outlen,
   int one_int = 1;
   double minus_one_double = -1.0;
 
-  if (sm->init_guess == ML_NONZERO) 
+  if (sm->init_guess == ML_NONZERO)
   {
     n = sm->my_level->Amat->invec_leng;
     assert (n == sm->my_level->Amat->outvec_leng);
@@ -77,7 +77,7 @@ void ML_Smoother_Clean_Ifpack(void *Ifpack_Handle)
 
   ML_Ifpack_Destroy(Ifpack_Handle);
   return;
-  
+
 } /* ML_Smoother_Clean_Ifpack */
 
 #endif

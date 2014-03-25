@@ -67,7 +67,7 @@
 #include <Xpetra_EpetraUtils.hpp>
 #include <Xpetra_EpetraMultiVector.hpp>
 #include <EpetraExt_BlockMapOut.h>
-#endif // HAVE_MUELU_EPETRAEXT
+#endif
 
 #ifdef HAVE_MUELU_TPETRA
 #include <MatrixMarket_Tpetra.hpp>
@@ -75,25 +75,24 @@
 #include <TpetraExt_MatrixMatrix.hpp>
 #include <Xpetra_TpetraMultiVector.hpp>
 #include <Xpetra_TpetraCrsMatrix.hpp>
-#endif // HAVE_MUELU_TPETRA
+#endif
 
 #ifdef HAVE_MUELU_EPETRA
 #include <Xpetra_EpetraMap.hpp>
-#endif //ifdef HAVE_MUELU_EPETRA
+#endif
 
-#include <Xpetra_Map.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_MapFactory.hpp>
-#include <Xpetra_Vector.hpp>
-#include <Xpetra_VectorFactory.hpp>
-#include <Xpetra_MultiVectorFactory.hpp>
 #include <Xpetra_BlockedCrsMatrix.hpp>
-#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_DefaultPlatform.hpp>
 #include <Xpetra_Import.hpp>
 #include <Xpetra_ImportFactory.hpp>
-#include "Xpetra_DefaultPlatform.hpp"
+#include <Xpetra_Map.hpp>
+#include <Xpetra_MapFactory.hpp>
+#include <Xpetra_MatrixFactory.hpp>
+#include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Vector.hpp>
+#include <Xpetra_VectorFactory.hpp>
 
-#include <XpetraExt_MatrixMatrix.hpp>  // standard matrix matrix routines
+#include <XpetraExt_MatrixMatrix.hpp>
 
 #include <MueLu_Utilities_decl.hpp>
 
@@ -312,11 +311,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
-									const Vector& Dinv,
-									const Matrix& A,
-									const Matrix& B,
-									RCP<Matrix> C_in,
-									Teuchos::FancyOStream &fos) {
+                                                                        const Vector& Dinv,
+                                                                        const Matrix& A,
+                                                                        const Matrix& B,
+                                                                        RCP<Matrix> C_in,
+                                                                        Teuchos::FancyOStream &fos) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -601,6 +600,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix& A) {
+
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -641,12 +641,12 @@ namespace MueLu {
       LO j = 0;
       for (; j < cols.size(); ++j) {
         if (Teuchos::as<size_t>(cols[j]) == i) {
-	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-	  else
-	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-	  break;
-	}
+          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
+            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
+          else
+            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+          break;
+        }
       }
       if (j == cols.size()) {
         // Diagonal entry is absent
@@ -683,20 +683,31 @@ namespace MueLu {
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix& A) {
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
-    ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
 
-    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
-    for (LO i = 0; i < localDiagVals.size(); i++)
-      localDiagVals[i] = diagVals[i];
-    localDiagVals = diagVals = null;
-
-    // TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
-    // TODO so right now construct an importer.
-    // diagonal->doImport(*localDiag, *(A.getCrsGraph()->getImporter()), Xpetra::INSERT);
-    RCP<const Import> importer = ImportFactory::Build(rowMap, colMap);
+    try {
+       const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+       if (crsOp == NULL) {
+         throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
+       }
+       Teuchos::ArrayRCP<size_t> offsets;
+       crsOp->getLocalDiagOffsets(offsets);
+       crsOp->getLocalDiagCopy(*localDiag,offsets());
+    }
+    catch (...) {
+      ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
+      Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
+      for (LO i = 0; i < localDiagVals.size(); i++)
+        localDiagVals[i] = diagVals[i];
+      localDiagVals = diagVals = null;
+    }
 
     RCP<Vector> diagonal = VectorFactory::Build(colMap);
-    diagonal->doImport(*localDiag, *importer, Xpetra::INSERT);
+    RCP< const Import> importer;
+    importer = A.getCrsGraph()->getImporter();
+    if (importer == Teuchos::null) {
+      importer = ImportFactory::Build(rowMap, colMap);
+    }
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
 
     return diagonal;
   } //GetMatrixOverlappedDiagonal
@@ -865,13 +876,13 @@ namespace MueLu {
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
 //        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
-	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
 
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
         //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-	Teuchos::ParameterList pl = Teuchos::ParameterList();
-	RCP<Node> node = rcp(new Node(pl));
+        Teuchos::ParameterList pl = Teuchos::ParameterList();
+        RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
@@ -1037,7 +1048,7 @@ namespace MueLu {
     }
 #endif // HAVE_MUELU_TPETRA
 
-    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 
   } //Write
 
@@ -1308,50 +1319,6 @@ namespace MueLu {
     }
 
     return boundaryNodes;
-  }
-
-  template <class SC, class LO, class GO, class NO, class LMO>
-  std::string Utils<SC, LO, GO, NO, LMO>::PrintMatrixInfo(const Matrix& A, const std::string& msgTag, RCP<const ParameterList> params) {
-    std::ostringstream ss;
-    ss << msgTag << " size =  " << A.getGlobalNumRows() << " x " << A.getGlobalNumCols() << ", nnz = " << A.getGlobalNumEntries() << std::endl;
-
-    if (params.is_null())
-      return ss.str();
-
-    if (params->isParameter("printLoadBalancingInfo") && params->get<bool>("printLoadBalancingInfo")) {
-      RCP<const Teuchos::Comm<int> > comm = A.getRowMap()->getComm();
-      GO numActiveProcesses = comm->getSize(), numProcessesWithData = 0;
-
-      // aggregate data
-      GO  numMyNnz = A.getNodeNumEntries(),     minNnz,     maxNnz;
-      GO numMyRows = A.getNodeNumRows(),    minNumRows, maxNumRows;
-      double  numMyNnz2 =  Teuchos::as<double>(numMyNnz)* numMyNnz,     sumNnz = Teuchos::as<double>(A.getGlobalNumEntries()),     sum2Nnz;
-      double numMyRows2 = Teuchos::as<double>(numMyRows)*numMyRows, sumNumRows = Teuchos::as<double>(A.getGlobalNumRows()),    sum2NumRows;
-      maxAll(comm,                                       numMyNnz, maxNnz);
-      maxAll(comm,                                      numMyRows, maxNumRows);
-      sumAll(comm, (GO)((numMyRows > 0) ?         1 :          0), numProcessesWithData);
-      minAll(comm, (GO)(( numMyNnz > 0) ?  numMyNnz :     maxNnz), minNnz);
-      minAll(comm, (GO)((numMyRows > 0) ? numMyRows : maxNumRows), minNumRows);
-      sumAll(comm,                                      numMyNnz2, sum2Nnz);
-      sumAll(comm,                                     numMyRows2, sum2NumRows);
-
-      double avgNumRows = sumNumRows / numProcessesWithData;
-      double avgNnz     = sumNnz     / numProcessesWithData;
-      double devNumRows = (numProcessesWithData != 1 ? sqrt((sum2NumRows - sumNumRows*sumNumRows/numProcessesWithData)/(numProcessesWithData-1)) : 0);
-      double devNnz     = (numProcessesWithData != 1 ? sqrt((sum2Nnz     -     sumNnz*    sumNnz/numProcessesWithData)/(numProcessesWithData-1)) : 0);
-
-      char buf[256];
-      ss << msgTag << " Load balancing info:" << std::endl;
-      ss << msgTag << "   # active processes: "   << numActiveProcesses << ",  # processes with data = " << numProcessesWithData << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNumRows,
-              (devNumRows/avgNumRows)*100, (minNumRows/avgNumRows-1)*100, (maxNumRows/avgNumRows-1)*100);
-      ss << msgTag << "   # rows per proc   : " << buf << std::endl;
-      sprintf(buf, "avg = %.2e,  dev = %4.1f%%,  min = %+5.1f%%,  max = %+5.1f%%", avgNnz,
-              (devNnz/avgNnz)*100, (minNnz/avgNnz-1)*100, (maxNnz/avgNnz-1)*100);
-      ss << msgTag << "   #  nnz per proc   : " << buf << std::endl;
-    }
-
-    return ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

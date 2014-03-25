@@ -150,8 +150,6 @@ void ParameterListCallback<LocalOrdinalT,GlobalOrdinalT,Node>::buildCoordinates(
          coordinatesBuilt_ = true;
          return;
       }
-
-      // std::cout << "BUILDING: " << blockId << ": " << data[blockId].rank() << " " << data[blockId].size() << std::endl;
    }
 
    Teuchos::RCP<Tpetra::MultiVector<double,int,GlobalOrdinalT,Node> > resultVec 

@@ -1143,12 +1143,7 @@ const char *do_print_array(const array *my_array_data)
 
 array *do_make_array(double rows, double cols)
 {
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = rows;
-  array_data->cols = cols;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(rows*cols,sizeof(double));
+  array *array_data = new array(rows, cols);
   return array_data;
 }
 
@@ -1156,12 +1151,7 @@ array *do_identity(double size)
 {
   int i;
   int isize = size;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = isize;
-  array_data->cols = isize;
-
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(size*size,sizeof(double));
+  array *array_data = new array(size,size);
 
   for (i=0; i < isize; i++) {
     array_data->data[i*isize+i] = 1.0;
@@ -1172,12 +1162,8 @@ array *do_identity(double size)
 array *do_transpose(const array *a)
 {
   int i,j;
-  array *array_data = (array*) malloc(sizeof(array));
-  array_data->rows = a->cols;
-  array_data->cols = a->rows;
+  array *array_data = new array(a->cols, a->rows);
 
-  /* Allocate space to store data... */
-  array_data->data = (double*) calloc(a->rows*a->cols,sizeof(double));
   for (i=0; i < a->rows; i++) {
     for (j=0; j < a->cols; j++) {
       array_data->data[j*a->rows+i] = a->data[i*a->cols+j];
@@ -1202,12 +1188,7 @@ array *do_csv_array(const char *filename)
     cols = tokens.size() > cols ? tokens.size() : cols;
   }
 
-  array *array_data = new array;
-  array_data->rows = rows;
-  array_data->cols = cols;
-
-  /* Allocate space to store data... */
-  array_data->data = new double[rows*cols];
+  array *array_data = new array(rows, cols);
 
   /* Read file again storing entries in array_data->data */
   file->clear();

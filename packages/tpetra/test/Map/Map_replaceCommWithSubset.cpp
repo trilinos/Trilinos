@@ -144,11 +144,11 @@ TEUCHOS_UNIT_TEST( Map, replaceCommWithSubset )
       err << "removeEmptyProcesses() should not have returned null, but did."
           << endl;
     } else {
-      RCP<const Comm<int> > newComm = newMap->getComm ();
-      if (newComm->getSize () != numProcs - 1) {
+      RCP<const Comm<int> > theNewComm = newMap->getComm ();
+      if (theNewComm->getSize () != numProcs - 1) {
         localSuccess = 0;
         err << "New communicator should have " << (numProcs - 1)
-            << " processes, but has " << newComm->getSize ()
+            << " processes, but has " << theNewComm->getSize ()
             << " processes instead." << endl;
       }
 

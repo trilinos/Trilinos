@@ -64,9 +64,13 @@ namespace Stokhos {
     typedef value_t value_type;
     typedef device_t device_type;
     typedef value_type& reference;
+    typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
+    typedef const volatile value_type& const_volatile_reference;
     typedef value_type* pointer;
+    typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
+    typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn DynamicStridedStorage into a meta-function class usable with mpl::apply
@@ -83,9 +87,27 @@ namespace Stokhos {
       coeff_ = ds::get_and_fill(sz_, x);
     }
 
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    DynamicStridedStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), sz_(sz), stride_(1), is_owned_(owned) {}
+
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStridedStorage(const DynamicStridedStorage& s) :
+    sz_(s.sz_), stride_(1), is_owned_(true) {
+      if (s.stride_ == 1)
+        coeff_ = ds::get_and_fill(s.coeff_, sz_);
+      else {
+        coeff_ = ds::get_and_fill(sz_);
+        for (ordinal_type i=0; i<sz_; ++i)
+          coeff_[i] = s[i];
+      }
+    }
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
+    DynamicStridedStorage(const volatile DynamicStridedStorage& s) :
     sz_(s.sz_), stride_(1), is_owned_(true) {
       if (s.stride_ == 1)
         coeff_ = ds::get_and_fill(s.coeff_, sz_);
@@ -131,9 +153,108 @@ namespace Stokhos {
       return *this;
     }
 
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    DynamicStridedStorage& operator=(const volatile DynamicStridedStorage& s) {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          if (is_owned_)
+            ds::destroy_and_release(coeff_, sz_*stride_);
+          if (s.stride_ == 1)
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          else {
+            coeff_ = ds::get_and_fill(s.sz_);
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i] = s[i];
+          }
+          sz_ = s.sz_;
+          stride_ = 1;
+          is_owned_ = true;
+        }
+        else {
+          if (stride_ == 1 and s.stride_ == 1)
+            ds::copy(s.coeff_, coeff_, sz_);
+          else
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i*stride_] = s[i];
+        }
+      }
+      return *this;
+    }
+
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    volatile DynamicStridedStorage&
+    operator=(const DynamicStridedStorage& s) volatile {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          if (is_owned_)
+            ds::destroy_and_release(coeff_, sz_*stride_);
+          if (s.stride_ == 1)
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          else {
+            coeff_ = ds::get_and_fill(s.sz_);
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i] = s[i];
+          }
+          sz_ = s.sz_;
+          stride_ = 1;
+          is_owned_ = true;
+        }
+        else {
+          if (stride_ == 1 and s.stride_ == 1)
+            ds::copy(s.coeff_, coeff_, sz_);
+          else
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i*stride_] = s[i];
+        }
+      }
+      return *this;
+    }
+
+    //! Assignment operator
+    KOKKOS_INLINE_FUNCTION
+    volatile DynamicStridedStorage&
+    operator=(const volatile DynamicStridedStorage& s) volatile {
+      if (&s != this) {
+        if (s.sz_ != sz_) {
+          if (is_owned_)
+            ds::destroy_and_release(coeff_, sz_*stride_);
+          if (s.stride_ == 1)
+            coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          else {
+            coeff_ = ds::get_and_fill(s.sz_);
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i] = s[i];
+          }
+          sz_ = s.sz_;
+          stride_ = 1;
+          is_owned_ = true;
+        }
+        else {
+          if (stride_ == 1 and s.stride_ == 1)
+            ds::copy(s.coeff_, coeff_, sz_);
+          else
+            for (ordinal_type i=0; i<s.sz_; ++i)
+              coeff_[i*stride_] = s[i];
+        }
+      }
+      return *this;
+    }
+
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
     void init(const_reference v) {
+      if (stride_ == 1)
+        ds::fill(coeff_, sz_, v);
+      else
+        for (ordinal_type i=0; i<sz_; ++i)
+          coeff_[i*stride_] = v;
+    }
+
+    //! Initialize values to a constant value
+    KOKKOS_INLINE_FUNCTION
+    void init(const_reference v) volatile {
       if (stride_ == 1)
         ds::fill(coeff_, sz_, v);
       else
@@ -154,11 +275,33 @@ namespace Stokhos {
           coeff_[i*stride_] = v[i];
     }
 
+    //! Initialize values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void init(const_pointer v, const ordinal_type& sz = 0) volatile {
+      ordinal_type my_sz = sz;
+      if (sz == 0)
+        my_sz = sz_;
+      if (stride_ == 1)
+        ds::copy(v, coeff_, my_sz);
+      else
+        for (ordinal_type i=0; i<my_sz; ++i)
+          coeff_[i*stride_] = v[i];
+    }
+
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
       if (stride_ == 1)
-        ds::copy(coeff_, v, sz_);
+        copy(v, coeff_, sz_);
+      for (ordinal_type i=0; i<sz_; ++i)
+        coeff_[i*stride_] = v[i];
+    }
+
+    //! Load values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void load(pointer v) volatile {
+      if (stride_ == 1)
+        copy(v, coeff_, sz_);
       for (ordinal_type i=0; i<sz_; ++i)
         coeff_[i*stride_] = v[i];
     }
@@ -166,6 +309,28 @@ namespace Stokhos {
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) {
+      if (sz != sz_) {
+        value_type *coeff_new = ds::get_and_fill(sz);
+        ordinal_type my_sz = sz_;
+        if (sz_ > sz)
+          my_sz = sz;
+        if (stride_ == 1)
+          ds::copy(coeff_, coeff_new, my_sz);
+        else
+          for (ordinal_type i=0; i<my_sz; ++i)
+            coeff_new[i] = coeff_[i*stride_];
+        if (is_owned_)
+          ds::destroy_and_release(coeff_, sz_*stride_);
+        coeff_ = coeff_new;
+        sz_ = sz;
+        stride_ = 1;
+        is_owned_ = true;
+      }
+    }
+
+    //! Resize to new size (values are preserved)
+    KOKKOS_INLINE_FUNCTION
+    void resize(const ordinal_type& sz) volatile {
       if (sz != sz_) {
         value_type *coeff_new = ds::get_and_fill(sz);
         ordinal_type my_sz = sz_;
@@ -197,9 +362,25 @@ namespace Stokhos {
       is_owned_ = owned;
     }
 
+    //! Reset storage to given array, size, and stride
+    KOKKOS_INLINE_FUNCTION
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) volatile {
+      if (is_owned_)
+        ds::destroy_and_release(coeff_, sz_*stride_);
+      coeff_ = v;
+      sz_ = sz;
+      stride_ = stride;
+      is_owned_ = owned;
+    }
+
     //! Return size
     KOKKOS_INLINE_FUNCTION
     ordinal_type size() const { return sz_; }
+
+    //! Return size
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type size() const volatile { return sz_; }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
@@ -209,21 +390,49 @@ namespace Stokhos {
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
+    const_volatile_reference operator[] (const ordinal_type& i) const volatile {
+      return coeff_[i*stride_];
+    }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
     reference operator[] (const ordinal_type& i) {
+      return coeff_[i*stride_];
+    }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
+    volatile_reference operator[] (const ordinal_type& i) volatile {
       return coeff_[i*stride_];
     }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    reference getCoeff() { return coeff_[i]; }
+    reference getCoeff() { return coeff_[i*stride_]; }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
-    const_reference getCoeff() const { return coeff_[i]; }
+    volatile_reference getCoeff() volatile { return coeff_[i*stride_]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_reference getCoeff() const { return coeff_[i*stride_]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_reference getCoeff() const volatile { return coeff_[i*stride_]; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_pointer coeff() const volatile { return coeff_; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
+    volatile_pointer coeff() volatile { return coeff_; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION

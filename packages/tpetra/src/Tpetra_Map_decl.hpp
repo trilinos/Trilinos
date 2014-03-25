@@ -52,6 +52,11 @@
 // it is by default), then Map will used the fixed-structure hash
 // table variant for global-to-local index lookups.  Otherwise, it
 // will use the dynamic-structure hash table variant.
+//
+// mfh 23 Mar 2014: I've removed all code in Map that uses the
+// dynamic-structure hash table variant, since it has not been used
+// for at least a year.  However, I am retaining the #define, in case
+// downstream code depends on it.
 
 #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
 #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
@@ -65,20 +70,30 @@ namespace Tpetra {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
   // Forward declaration of Directory.
   template <class LO, class GO, class N> class Directory;
+#endif // DOXYGEN_SHOULD_SKIP_THIS
 
   namespace Details {
+
+#ifndef DOXYGEN_SHOULD_SKIP_THIS
     // Forward declaration of TieBreak
     template <class LO, class GO> class TieBreak;
 
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     template<class GlobalOrdinal, class LocalOrdinal>
     class FixedHashTable;
-#  else
-    template<class GlobalOrdinal, class LocalOrdinal>
-    class HashTable;
-#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
-  } // namespace Details
 #endif // DOXYGEN_SHOULD_SKIP_THIS
+
+    /// \class MapCloner
+    /// \brief Implementation detail of Map::clone().
+    template<class OutMapType, class InMapType>
+    struct MapCloner {
+      typedef typename OutMapType::node_type out_node_type;
+      typedef typename InMapType::node_type in_node_type;
+
+      static Teuchos::RCP<const OutMapType>
+      clone (const InMapType& mapIn,
+             const Teuchos::RCP<out_node_type>& node2);
+    };
+  } // namespace Details
 
   /// \class Map
   /// \brief Describes a parallel distribution of objects over processes.
@@ -113,7 +128,7 @@ namespace Tpetra {
   /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
   /// MultiVector).
   ///
-  /// \section Kokkos_Map_prereq Prerequisites
+  /// \section Tpetra_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -245,7 +260,7 @@ namespace Tpetra {
      *
      * Preconditions on \c numGlobalElements and \c indexBase will
      * only be checked in a debug build (when Trilinos was configured
-     * with CMake option <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     * with CMake option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
      * checks are enabled and any check fails, the constructor will
      * throw std::invalid_argument on all processes in the given
      * communicator.
@@ -630,8 +645,8 @@ namespace Tpetra {
     //@{
 
     //! Create a shallow copy of this Map, with a different Node type.
-    template <class Node2>
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> > clone (const RCP<Node2>& node2) const;
+    template <class NodeOut>
+    RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > clone (const RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -729,6 +744,9 @@ namespace Tpetra {
     Map() {}
 
   private:
+    template<class OutMapType, class InMapType>
+    friend struct Details::MapCloner;
+
     /// \brief Create this Map's Directory, if it hasn't been created already.
     ///
     /// This method must be called collectively over all processes in
@@ -743,56 +761,89 @@ namespace Tpetra {
     /// \return True if the map is globally distributed, else false.
     ///
     /// This operation requires communication (a single all-reduce).
-    /// See the documentation of \c isDistributed() for definitions
-    /// of "globally distributed" and "locally replicated."
+    /// See the documentation of isDistributed() for definitions of
+    /// "globally distributed" and "locally replicated."
     ///
     /// Map invokes this method in its constructors if necessary, to
-    /// set the \c distributed_ flag (and thus the return value of \c
-    /// isDistributed()).  Map doesn't need to call \c checkIsDist()
-    /// when using the uniform contiguous constructor with
-    /// lg=GloballyDistributed, since then checking the number of
-    /// processes in the communicator suffices.
+    /// set the \c distributed_ flag (and thus the return value of
+    /// isDistributed()).  Map doesn't need to call checkIsDist() when
+    /// using the uniform contiguous constructor with
+    /// <tt>lg=GloballyDistributed</tt>, since then checking the
+    /// number of processes in the communicator suffices.
     bool checkIsDist() const;
 
-    //! Copy constructor (declared but not defined; do not use).
-    Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
-
-    //! Assignment operator (declared but not defined; do not use).
-    Map<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
-    /// \brief The Kokkos Node instance (for shared-memory parallelism).
-    ///
-    /// Map doesn't need node yet, but it likely will later. In the
-    /// meantime, passing a Node to Map means that we don't have to
-    /// pass a Node to downstream classes such as MultiVector, Vector,
-    /// CrsGraph and CrsMatrix.
+    //! The Kokkos Node instance (for shared-memory parallelism).
     Teuchos::RCP<Node> node_;
 
-    //! The index base for global IDs in this Map.
+    //! The index base for global indices in this Map.
     GlobalOrdinal indexBase_;
-    //! The number of global IDs located in this Map across all nodes.
+
+    //! The total number of global indices in this Map over all processes in its communicator.
     global_size_t numGlobalElements_;
-    //! The number of global IDs located in this Map on this node.
+
+    //! The number of global indices owned by this process.
     size_t numLocalElements_;
-    //! The minimum and maximum global IDs located in this Map on this node.
-    GlobalOrdinal minMyGID_, maxMyGID_;
-    //! The minimum and maximum global IDs located in this Map across all nodes.
-    GlobalOrdinal minAllGID_, maxAllGID_;
-    //! First, last contiguous GID for use-cases of partially contiguous maps
-    GlobalOrdinal firstContiguousGID_, lastContiguousGID_;
+
+    //! The min global index owned by this process.
+    GlobalOrdinal minMyGID_;
+
+    //! The max global index owned by this process.
+    GlobalOrdinal maxMyGID_;
+
+    //! The min global index in this Map over all processes in its communicator.
+    GlobalOrdinal minAllGID_;
+
+    //! The max global index in this Map over all processes in its communicator.
+    GlobalOrdinal maxAllGID_;
+
+    /// \brief First contiguous GID.
+    ///
+    /// This is only set if the Map was created using the
+    /// noncontiguous constructor.  In that case, if the calling
+    /// process owns at least one GID, this will always equal that
+    /// first GID in the list of GIDs given to the constructor.
+    GlobalOrdinal firstContiguousGID_;
+
+    /// \brief Last contiguous GID.
+    ///
+    /// This is only set if the Map was created using the
+    /// noncontiguous constructor.  In that case, if the calling
+    /// process owns at least one GID, this will always equal the last
+    /// GID (inclusive) that forms an initial sequence of contiguous
+    /// GIDs, in the list of GIDs given to the constructor.
+    ///
+    /// For example, if the list is [42, 43, 44, 45, 100, 1001],
+    /// firstContiguousGID_ will be 42 and lastContiguousGID_ will be
+    /// 45.  If the list is [42, 100, 1001, 1002, 1003],
+    /// firstContiguousGID_ will be 42 and lastContiguousGID_ will
+    /// also be 42.
+    GlobalOrdinal lastContiguousGID_;
+
     /// \brief Whether the range of global indices is uniform.
     ///
     /// This is only true if the Map was constructed using the first
     /// (uniform contiguous) constructor or a nonmember constructor
     /// that calls it.
     bool uniform_;
+
     //! Whether the range of global indices are contiguous and ordered.
     bool contiguous_;
-    //! Whether this map's global indices are non-identically distributed among different nodes.
+
+    /// \brief Whether this map's global indices are distributed.
+    ///
+    /// This is true if the Map is globally distributed, and false
+    /// otherwise (if the Map is locally replicated).  See the
+    /// documentation of isDistributed() for a definition of these two
+    /// mutually exclusive terms.
     bool distributed_;
 
     /// \brief A mapping from local IDs to global IDs.
@@ -813,13 +864,8 @@ namespace Tpetra {
     /// describe(), may invoke getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
-#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#else
-    //! Type of the table that maps global IDs to local IDs.
-    typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///
@@ -1022,42 +1068,58 @@ namespace Tpetra {
 #include "Tpetra_Directory_decl.hpp"
 
 namespace Tpetra {
-  template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  template <class Node2>
-  RCP<const Map<LocalOrdinal, GlobalOrdinal, Node2> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<Node2> &node2) const
-  {
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node2> Map2;
-    RCP<Map2> map = rcp (new Map2 ());
-    // Fill the new Map with shallow copies of all of the original
-    // Map's data.  This is safe because Map is immutable, so users
-    // can't change the original Map.
-    map->comm_              = comm_;
-    map->indexBase_         = indexBase_;
-    map->numGlobalElements_ = numGlobalElements_;
-    map->numLocalElements_  = numLocalElements_;
-    map->minMyGID_          = minMyGID_;
-    map->maxMyGID_          = maxMyGID_;
-    map->minAllGID_         = minAllGID_;
-    map->maxAllGID_         = maxAllGID_;
-    map->firstContiguousGID_= firstContiguousGID_;
-    map->lastContiguousGID_ = lastContiguousGID_;
-    map->uniform_           = uniform_;
-    map->contiguous_        = contiguous_;
-    map->distributed_       = distributed_;
-    map->lgMap_             = lgMap_;
-    map->glMap_             = glMap_;
-    // New Map gets the new Node instance.
-    map->node_              = node2;
-    // mfh 02 Apr 2013: While Map only needs to create the Directory
-    // on demand in getRemoteIndexList, we have a Directory here that
-    // we can clone inexpensively, so there is no harm in creating it
-    // here.
-    if (! directory_.is_null ()) {
-      map->directory_ = directory_->template clone<Node2> (*map);
+  namespace Details {
+
+    template<class OutMapType, class InMapType>
+    Teuchos::RCP<const OutMapType>
+    MapCloner<OutMapType, InMapType>::
+    clone (const InMapType& mapIn,
+           const Teuchos::RCP<out_node_type>& nodeOut)
+    {
+      Teuchos::RCP<OutMapType> mapOut = Teuchos::rcp (new OutMapType ());
+      // Fill the new Map with shallow copies of all of the original
+      // Map's data.  This is safe because Map is immutable, so
+      // users can't change the original Map.
+      mapOut->comm_              = mapIn.comm_;
+      mapOut->indexBase_         = mapIn.indexBase_;
+      mapOut->numGlobalElements_ = mapIn.numGlobalElements_;
+      mapOut->numLocalElements_  = mapIn.numLocalElements_;
+      mapOut->minMyGID_          = mapIn.minMyGID_;
+      mapOut->maxMyGID_          = mapIn.maxMyGID_;
+      mapOut->minAllGID_         = mapIn.minAllGID_;
+      mapOut->maxAllGID_         = mapIn.maxAllGID_;
+      mapOut->firstContiguousGID_= mapIn.firstContiguousGID_;
+      mapOut->lastContiguousGID_ = mapIn.lastContiguousGID_;
+      mapOut->uniform_           = mapIn.uniform_;
+      mapOut->contiguous_        = mapIn.contiguous_;
+      mapOut->distributed_       = mapIn.distributed_;
+      mapOut->lgMap_             = mapIn.lgMap_;
+      mapOut->glMap_             = mapIn.glMap_;
+      // New Map gets the new Node instance.
+      mapOut->node_              = nodeOut;
+      // mfh 02 Apr 2013: While Map could just wait to create the
+      // Directory on demand in getRemoteIndexList, we have a
+      // Directory here that we can clone inexpensively, so there is
+      // no harm in creating it here.
+      // if (! mapIn.directory_.is_null ()) {
+      //   mapOut->directory_ =
+      //     mapIn.directory_->template clone<out_node_type> (mapIn);
+      // }
+      return mapOut;
     }
-    return map;
+  } // namespace Details
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  template <class NodeOut>
+  RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<NodeOut> &nodeOut) const
+  {
+    typedef Map<LocalOrdinal, GlobalOrdinal, Node> in_map_type;
+    typedef Map<LocalOrdinal, GlobalOrdinal, NodeOut> out_map_type;
+    return Details::MapCloner<out_map_type, in_map_type>::clone (*this, nodeOut);
   }
+
 } // namespace Tpetra
 
 /// \brief True if map1 is the same as (in the sense of isSameAs()) map2, else false.
@@ -1073,6 +1135,15 @@ template <class LocalOrdinal, class GlobalOrdinal, class Node>
 bool operator!= (const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map1,
                  const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> &map2)
 { return ! map1.isSameAs (map2); }
+
+
+#if defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
+// Include KokkosRefactor partial specialization if enabled
+#  if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#    include "Tpetra_KokkosRefactor_Map_decl.hpp"
+#  endif // defined(TPETRA_HAVE_KOKKOS_REFACTOR)
+#endif // defined(TPETRA_USE_KOKKOS_REFACTOR_MAP)
+
 
 #endif // TPETRA_MAP_DECL_HPP
 

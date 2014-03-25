@@ -52,18 +52,16 @@
 // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX, and comment out the three
 // lines below them that define that macro.
 //
-
-// #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-// #  undef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-// #endif HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+// mfh 23 Mar 2014: I want Bug 5822 to stay fixed, so I am removing
+// all references to HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX.  I hope no
+// downstream code is using that macro, but just in case, I will leave
+// it defined.
 
 #ifndef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 #  define HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX 1
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-#  include <Tpetra_Details_FixedHashTable_decl.hpp>
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#include <Tpetra_Details_FixedHashTable_decl.hpp>
 
 
 namespace Tpetra {
@@ -132,7 +130,7 @@ namespace Tpetra {
       ///   work.
       LookupStatus
       getEntries (const map_type& map,
-		  const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                  const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                   const Teuchos::ArrayView<int> &nodeIDs,
                   const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                   const bool computeLIDs) const;
@@ -141,7 +139,7 @@ namespace Tpetra {
       //! Actually do the work of getEntries(), with no input validation.
       virtual LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const = 0;
@@ -180,7 +178,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -231,7 +229,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -277,7 +275,7 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
@@ -328,7 +326,7 @@ namespace Tpetra {
 
       //! Constructor.
       DistributedNoncontiguousDirectory (const map_type& map,
-					 const tie_break_type& tie_break);
+                                         const tie_break_type& tie_break);
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -336,15 +334,15 @@ namespace Tpetra {
       {
         typedef DistributedNoncontiguousDirectory<LocalOrdinal,GlobalOrdinal,Node2> Dir2;
         RCP<Dir2> dir (new Dir2 (cloneMap));
+
         dir->directoryMap_ =
           directoryMap_->template clone<Node2> (cloneMap.getNode ());
         dir->PIDs_ = PIDs_;
         dir->LIDs_ = LIDs_;
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
         dir->lidToPidTable_ = lidToPidTable_;
         dir->lidToLidTable_ = lidToLidTable_;
-#endif
         dir->useHashTables_ = useHashTables_;
+
         return dir;
       }
 
@@ -358,20 +356,20 @@ namespace Tpetra {
       //! Find process IDs and (optionally) local IDs for the given global IDs.
       LookupStatus
       getEntriesImpl (const map_type& map,
-		      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
+                      const Teuchos::ArrayView<const GlobalOrdinal> &globalIDs,
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
     private:
-      /// \brief Initialization routine that unifies the implementation of 
+      /// \brief Initialization routine that unifies the implementation of
       ///        the two constructors
-      /// 
+      ///
       /// If the pointer to the TieBreak object is null this proceeds using
       /// a simple ordering to break any ownership ties. Otherwise the
       /// tie_break object is used to determine ownership.
       void
       initialize (const map_type& map,
-		  Teuchos::Ptr<const tie_break_type> tie_break);
+                  Teuchos::Ptr<const tie_break_type> tie_break);
 
       /// \brief This Directory's Map which describes the distribution of its data.
       ///
@@ -409,7 +407,6 @@ namespace Tpetra {
       /// owned by the Directory Map on this process.
       Teuchos::ArrayRCP<LocalOrdinal> LIDs_;
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
       //@}
       //! \name Second of two implementations of Directory storage
       //@{
@@ -428,7 +425,6 @@ namespace Tpetra {
       /// the GID's LID in the input Map on the GID's owning process.
       Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
       //@}
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
       /// \brief Whether this process is using hash tables for Directory storage.
       ///

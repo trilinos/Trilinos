@@ -115,9 +115,9 @@ public:
 
   /// \brief True if and only if this method is being called in a
   ///   thread-parallel function.
-  KOKKOS_INLINE_FUNCTION static int in_parallel() { 
-#if defined( __CUDA_ARCH__ ) 
-    return true; 
+  KOKKOS_INLINE_FUNCTION static int in_parallel() {
+#if defined( __CUDA_ARCH__ )
+    return true;
 #else
     return false;
 #endif
@@ -174,7 +174,7 @@ public:
   static int is_initialized();
 
   /// \brief Cuda device architecture of the selected device.
-  /// 
+  ///
   /// This matches the __CUDA_ARCH__ specification.
   static size_type device_arch();
 
@@ -193,8 +193,6 @@ public:
 #if defined( __CUDA_ARCH__ )
   //! \name Functions for the functor device interface
   //@{
-
-  __device__ inline static void memory_fence() { __threadfence(); }
 
   __device__ inline int league_size() const { return gridDim.x ; }
   __device__ inline int league_rank() const { return blockIdx.x ; }
@@ -242,8 +240,6 @@ private:
 
   //--------------------------------------------------------------------------
 #else
-
-  static void memory_fence();
 
   int league_size() const ;
   int league_rank() const ;

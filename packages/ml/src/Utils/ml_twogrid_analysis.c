@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -219,7 +219,7 @@ double ML_GetTwoLevelConvergenceFactor(ML *ml,
       for (i=0; i< Amat->outvec_leng; i++)
          err_h[i] = exact_soln[i] - approx_soln[i];
    }
-      
+
    alpha =  ML_GetSmoothingConst(Amat, err_h, sm);
    beta = ML_GetCoarseGridConst(Amat, Rmat, Pmat, err_h);
 

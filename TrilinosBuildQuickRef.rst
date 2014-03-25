@@ -159,11 +159,12 @@ a) Create a 'do-configure' script such as [Recommended]::
 
     ./do-configure [OTHER OPTIONS] -DTrilinos_ENABLE_<TRIBITS_PACKAGE>=ON
 
-  where <TRIBITS_PACKAGE> is Epetra, AztecOO, etc. and SOURCE_BASE is et
-  to the Trilinos source base directory (or your can just give it
-  explicitly).
+  where ``<TRIBITS_PACKAGE>`` is a valid SE Package name (see above), etc. and
+  ``SOURCE_BASE`` is set to the Trilinos source base directory (or your can
+  just give it explicitly in the script).
 
-  See `Trilinos/sampleScripts/*cmake` for real examples.
+  See `Trilinos/sampleScripts/*cmake` for examples of real `do-configure`
+  scripts for different platforms..
 
   NOTE: If one has already configured once and one needs to configure from
   scratch (needs to wipe clean defaults for cache variables, updates
@@ -218,6 +219,21 @@ d) Using the QT CMake configuration GUI:
 
 Selecting the list of packages to enable
 ----------------------------------------
+
+In order to see the list of avaiable Trilinos SE Packages to enable, just run
+a basic CMake configure, enabling nothing, and then grep the output to see
+what packages are avaiable to enable.  The full set of defined packages is
+contained the lines starting with ``'Final set of enabled SE packages'`` and
+``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
+default (which is base behavior), the full list of pacakges will be listed on
+the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
+full list of defined packages, run::
+
+  ./do-configure 2>&1 | grep "Final set of .*enabled SE packages"
+
+Any of the packages shown on those lines can potentially be enabled using ``-D
+Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are forcabily
+disabled for some reason, see the CMake ouptut for package disable warnings).
 
 a) Configuring a package(s) along with all of the packages it can use::
 
@@ -458,6 +474,11 @@ e) Turning off strong warnings for individual packages:
   ``<TRIBITS_PACKAGES>``, not warnings generated from the header files in
   downstream packages or client code.
 
+  Note that strong warnings are only enabled by default in development mode
+  (``Trilinos_ENABLE_DEVELOPMENT_MODE==ON``) but not release mode
+  (``Trilinos_ENABLE_DEVELOPMENT_MODE==ON``).  A release of Trilinos should
+  therefore not have strong warning options enabled.
+
 f) Overriding all (strong warnings and debug/release) compiler options:
 
   To override all compiler options, including both strong warning options
@@ -664,12 +685,13 @@ c) **Setting up to run MPI programs:**
   the right program and options but you will have to override them in many
   cases.
 
-  MPI test and example executables are run as::
+  MPI test and example executables are passed to CTest ``ADD_TEST()`` as::
 
-    ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} \
-      ${MPI_EXEC_NUMPROCS_FLAG} <NP> \
-      ${MPI_EXEC_POST_NUMPROCS_FLAGS} \
-      <TEST_EXECUTABLE_PATH> <TEST_ARGS>
+    ADD_TEST(
+      ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+      ${MPI_EXEC_NUMPROCS_FLAG} <NP>
+      ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+      <TEST_EXECUTABLE_PATH> <TEST_ARGS> )
 
   where ``<TEST_EXECUTABLE_PATH>``, ``<TEST_ARGS>``, and ``<NP>`` are specific
   to the test being run.
@@ -711,18 +733,21 @@ c) **Setting up to run MPI programs:**
 
   ::
 
-    -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+    -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1;arg2;...;argn"
 
   (Other command-line arguments that must come *before* the numprocs
   argument.  The default is empty "".)
 
   ::
 
-    -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+    -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1;arg2;...;argn"
 
   (Other command-line arguments that must come *after* the numprocs
   argument.  The default is empty "".)
 
+  NOTE: Multiple arguments listed in ``MPI_EXEC_PRE_NUMPROCS_FLAGS`` and
+  ``MPI_EXEC_POST_NUMPROCS_FLAGS`` must be quoted and seprated by ``';'`` as
+  these variables are interpreted as CMake arrays.
 
 Configuring for OpenMP support
 ------------------------------
@@ -889,16 +914,33 @@ Generating verbose output
 There are several different ways to generate verbose output to debug problems
 when they occur:
 
-a) **Getting verbose output from TriBITS configure:**
+a) **Trace file processing during configure:**
+
+  ::
+
+    -D Trilinos_TRACE_FILE_PROCESSING:BOOL=ON
+
+  This will cause TriBITS to print out a trace for all of the project's,
+  repositorie's, and package's files get processed on lines using the prefix
+  ``File Trace:``.  This shows what files get processed and in what order they
+  get processed.  To get a clean listing of all the files processed by TriBITS
+  just grep out the lines starting with ``-- File Trace:``.  This can be
+  helpful in debugging configure problems without generating too much extra
+  output.
+
+  This is set to ``ON`` automatically when
+  ``Trilinos_VERBOSE_CONFIGURE:BOOL=ON``.
+
+b) **Getting verbose output from TriBITS configure:**
 
   ::
 
     -D Trilinos_VERBOSE_CONFIGURE:BOOL=ON
 
-  NOTE: This produces a *lot* of output but can be very useful when debugging
+  This produces a *lot* of output but can be very useful when debugging
   configuration problems.
 
-b) **Getting verbose output from the makefile:**
+c) **Getting verbose output from the makefile:**
 
   ::
 
@@ -908,7 +950,7 @@ b) **Getting verbose output from the makefile:**
   calling ``make`` after configuration is finihsed.  See `Building with
   verbose output without reconfiguring`_.
 
-c) **Getting very verbose output from configure:**
+d) **Getting very verbose output from configure:**
 
   ::
 
@@ -1020,6 +1062,31 @@ where ``<fulltestName>`` must exactly match the test listed out by ``ctest
 ``-E`` argument.
 
 
+Setting test timeouts at configure time
+---------------------------------------
+
+A maximum time limit for any single test can be set at configure time by
+setting::
+
+  -D DART_TESTING_TIMEOUT:STRING=<maxSeconds>
+
+where ``<maxSeconds>`` is the number of wall-clock seconds.  By default there
+is no timeout limit so it is a good idea to set some limit just so tests don't
+hang and run forever.  When an MPI code has a defect, it can easily hang
+forever until it is manually killed.  If killed, CTest will kill all of this
+child processes correctly.
+
+NOTES:
+
+* Be careful not set the timeout too low since if a machine becomes loaded
+  tests can take longer to run and may result in timeouts that would not
+  otherwise occur.
+* Individual tests can have there timeout limit increased on a test-by-test
+  basis internally in the project's CMakeLists.txt files.
+* To set or override the test timeout limit at runtime, see `Overridding test
+  timeouts`_.
+
+
 Enabling support for coverage testing
 -------------------------------------
 
@@ -1067,39 +1134,45 @@ c) Viewing current values of cache variables:
 Enabling extra repositories with add-on packages:
 -------------------------------------------------
 
+.. _Trilinos_EXTRA_REPOSITORIES:
+
 To configure Trilinos with an extra set of packages in extra TriBITS
-repositoris, configure with::
+repositories, configure with::
 
   -DTrilinos_EXTRA_REPOSITORIES:STRING="<REPO0>,<REPO1>,..."
 
-Here, <REPOi> is the name of an extra repository that typically has been
-cloned under the main 'Trilinos' source directory as::
+Here, ``<REPOi>`` is the name of an extra repository that typically has been
+cloned under the main Trilinos source directory as::
 
   Trilinos/<REPOi>/
 
 For example, to add the packages from SomeExtraRepo one would configure as::
 
   $ cd $SOURCE_BASE_DIR
-  $ eg clone some_url.com/some/dir/SomeExtraRepo
+  $ git clone some_url.com/some/dir/SomeExtraRepo
   $ cd $BUILD_DIR
   $ ./do-configure -DTrilinos_EXTRA_REPOSITORIES:STRING=SomeExtraRepo \
      [Other Options]
 
-After that, all of the extra packages defined in SomeExtraRepo will appear in
-the list of official Trilinos packages and you are free to enable any that
-you would like just like any other Trilinos package.
+After that, all of the extra packages defined in ``SomeExtraRepo`` will appear
+in the list of official Trilinos packages and you are free to enable any of
+the defined add-on packages that you would like just like any other Trilinos
+package.
 
 NOTE: If ``Trilinos_EXTRAREPOS_FILE`` and
 ``Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` are specified then the list of
-extra repositories in ``<REPOi>`` must be a subset of the extra repos read in
-from this file.
+extra repositories in ``Trilinos_EXTRA_REPOSITORIES`` must be a subset and in
+the same order as the list extra repos read in from the file specified by
+`Trilinos_EXTRAREPOS_FILE`_.
 
 
 Enabling extra repositories through a file
 ------------------------------------------
 
+.. _Trilinos_EXTRAREPOS_FILE:
+
 In order to provide the list of extra TriBIITS repositories containing add-on
-apckages from a file, configure with::
+packages from a file, configure with::
 
   -DTrilinos_EXTRAREPOS_FILE:FILEPATH=<EXTRAREPOSFILE> \
   -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous
@@ -1107,18 +1180,26 @@ apckages from a file, configure with::
 Specifing extra repositories through an extra repos file allows greater
 flexibility in the specification of extra repos.  This is not helpful for a
 basic configure of the project but is useful in automated testing using the
-TribitsCTestDriverCore.cmake script and the checkin-test.py script.
+``TribitsCTestDriverCore.cmake`` script and the ``checkin-test.py`` script.
 
 The valid values of ``Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` include
-``Continuous`` and ``Nightly``.  Only repositories listed in the file
-``<EXTRAREPOSFILE>`` that match this type will be included.  Note that
-``Nightly`` also matches ``Continuous``.
+``Continuous``, ``Nightly``, and ``Experimental``.  Only repositories listed
+in the file ``<EXTRAREPOSFILE>`` that match this type will be included.  Note
+that ``Nightly`` matches ``Continuous`` and ``Experimental`` matches
+``Nightly`` and ``Continuous`` and therefore includes all repos by default.
 
 If ``Trilinos_IGNORE_MISSING_EXTRA_REPOSITORIES`` is set to ``TRUE``, then
 any extra repositories selected who's directory is missing will be ignored.
-This is useful when the list of extra repos that one developers or tests with
-is variable and one just wants TriBITS to pick up the list of existing repos
-automatically.
+This is useful when the list of extra repos that a given developers develops
+or tests with is variable and one just wants TriBITS to pick up the list of
+existing repos automatically.
+
+If the file ``<projectDir>/cmake/ExtraRepositoriesList.cmake`` exists, then it
+is used as the default value for ``Trilinos_EXTRAREPOS_FILE``.  However, the
+default value for ``Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is empty so
+no extra repostories are defined by default unless
+``Trilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE`` is specifically set to one of
+the allowed values.
 
   
 Reconfiguring completely from scratch
@@ -1182,7 +1263,7 @@ In development mode working with local git repos for the project sources, on
 can generate a TrilinosRepoVersion.txt file which lists all of the repos and
 their current versions using::
 
-   -D <PROJECT>_GENERATE_REPO_VERSION_FILE:BOOL=ON
+   -D Trilinos_GENERATE_REPO_VERSION_FILE:BOOL=ON
 
 This will cause a TrilinosRepoVersion.txt file to get created in the binary
 directory, get installed in the install directory, and get included in the
@@ -1348,18 +1429,26 @@ Running all tests
 To run all of the defined tests (i.e. created using ``TRIBITS_ADD_TEST()`` or
 ``TRIBITS_ADD_ADVANCED_TEST()``) use::
 
-  $ ctest -j4
+  $ ctest -j<N>
 
-A summary of what tests are run and their pass/fail status will be printed to
-the screen.  Detailed output about each of the tests is archived in the
-generate file::
+(where ``<N>`` is an integer for the number of processes to try to run tests
+in parallel).  A summary of what tests are run and their pass/fail status will
+be printed to the screen.  Detailed output about each of the tests is archived
+in the generate file::
 
   Testing/Temporary/LastTest.log
 
+where CTest creates the ``Testing`` directory in the local directory where you
+run it from.
+
 NOTE: The ``-j<N>`` argument allows CTest to use more processes to run tests.
 This will intelligently load ballance the defined tests with multiple
-processes (i.e. MPI tests) and will not exceed the number of processes
-``<N>``.
+processes (i.e. MPI tests) and will try not exceed the number of processes
+``<N>``.  However, if tests are defined that use more that ``<N>`` processes,
+then CTest will still run the test but will not run any other tests while the
+limit of ``<N>`` processes is exceeded.  To exclude tests that require more
+than ``<N>`` processes, set the cache variable ``MPI_EXEC_MAX_NUMPROCS`` (see
+`Configuring with MPI support`_).
 
 
 Only running tests for a single package
@@ -1400,6 +1489,20 @@ test command manually to allow passing in more options.  To see what the actual 
 This will only print out the test command that ``ctest`` runs and show the
 working directory.  To run the test exactly as ``ctest`` would, cd into the
 shown working directory and run the shown command.
+
+
+Overridding test timeouts
+-------------------------
+
+The configured test timeout described in ``Setting test timeouts at configure
+time`` can be overridden on the CTest command-line as::
+
+  $ ctest --timeout <maxSeconds>
+
+This will override the configured cache variable ``DART_TESTING_TIMEOUT``.
+
+**WARNING:** Do not try to use ``--timeout=<maxSeconds>`` or CTest will just
+ignore the argument!
 
 
 Running memory checking
@@ -1519,12 +1622,15 @@ using::
 You can also include generated files, such as Doxygen output files first, then
 run ``make package_source`` and it will be included in the distribution.
 
-While this TriBITS project has a default, disabled subpackages can be include
+While this TriBITS project has a default, disabled subpackages can be included
 or excluded from the tarball by setting
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
 ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
 to include some subpackages that are otherwise excluded, just enable them or
-their outer package so they will be included in the source tarball.
+their outer package so they will be included in the source tarball.  To get a
+printout of the files being excluded, set::
+
+  -D Trilinos_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
 
 While a set of default CPack source generator types is defined, it can be
 overridden using, for example::
@@ -1540,7 +1646,9 @@ with::
   -D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
 
 so that missing packages will be ignored.  Otherwise, TriBITS will error out
-about missing packages.
+about missing packages.  (Note that ``Trilinos_ASSERT_MISSING_PACKAGES`` will
+default to ```OFF``` in release mode,
+i.e. ``Trilinos_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
 Dashboard submissions

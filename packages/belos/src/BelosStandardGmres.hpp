@@ -112,6 +112,9 @@ namespace Belos {
 		   const bool flexible) :
       GmresBase<Scalar, MV, OP> (lp, ortho, outMan, maxIterCount, flexible) {}
 
+    /// Destructor -- need to have it because class is polymorphic
+    virtual ~StandardGmres() {}
+
     virtual bool canExtendBasis() const {
       return this->getNumIters() < this->maxNumIters();
     }

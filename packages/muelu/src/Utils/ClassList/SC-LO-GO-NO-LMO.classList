@@ -4,6 +4,7 @@ AmalgamationFactory
 Amesos2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
 AlgebraicPermutationStrategy
 BlockedCoarseMapFactory
+BlockedDirectSolver
 BlockedGaussSeidelSmoother
 BlockedPFactory
 BlockedRAPFactory
@@ -31,6 +32,7 @@ HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 LocalPermutationStrategy
 MapTransferFactory
+MergedBlockedMatrixFactory
 MergedSmoother
 MLParameterListInterpreter
 MultiVectorTransferFactory
@@ -38,6 +40,7 @@ NullspaceFactory
 NullspacePresmoothFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
 ParameterListInterpreter
 PatternFactory - #ifdef HAVE_MUELU_EXPERIMENTAL
+PerfUtils
 PermutationFactory
 PermutingSmoother
 PgPFactory

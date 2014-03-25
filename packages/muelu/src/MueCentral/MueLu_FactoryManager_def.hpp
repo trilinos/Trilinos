@@ -79,7 +79,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetFactory(const std::string& varName, const RCP<const FactoryBase>& factory) {
     if (factoryTable_.count(varName))
-      GetOStream(Warnings1, 0) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
+      GetOStream(Warnings1) << "Warning: FactoryManager::SetFactory(): Changing an already defined factory for '" << varName << "'" << std::endl;
 
     factoryTable_[varName] = factory;
   }
@@ -132,7 +132,6 @@ namespace MueLu {
                                                         return SetAndReturnDefaultFactory(varName, NoFactory::getRCP());
 #endif
       }
-      if (varName == "number of partitions")            return GetFactory("Importer");
 
       if (varName == "Graph")                           return SetAndReturnDefaultFactory(varName, rcp(new CoalesceDropFactory()));
       if (varName == "UnAmalgamationInfo")              return SetAndReturnDefaultFactory(varName, rcp(new AmalgamationFactory())); //GetFactory("Graph"));
@@ -171,7 +170,7 @@ namespace MueLu {
   const RCP<const FactoryBase> FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::SetAndReturnDefaultFactory(const std::string& varName, const RCP<const FactoryBase>& factory) const {
     TEUCHOS_TEST_FOR_EXCEPTION(factory.is_null(), Exceptions::RuntimeError, "The default factory for building '" << varName << "' is null");
 
-    GetOStream(Warnings1, 0) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
+    GetOStream(Warnings1) << "Using default factory (" << factory->description() << ") for building '" << varName << "'." << std::endl;
 
     defaultFactoryTable_[varName] = factory;
 
@@ -182,7 +181,7 @@ namespace MueLu {
   void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Print() const {
     std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
 
-    Teuchos::FancyOStream& fancy = GetOStream(Debug, 0);
+    Teuchos::FancyOStream& fancy = GetOStream(Debug);
 
     fancy << "Users factory table (factoryTable_):" << std::endl;
     for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
@@ -192,6 +191,21 @@ namespace MueLu {
     for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
       fancy << "  " << it->first << " -> " << Teuchos::toString(it->second.get()) << std::endl;
   }
+
+#ifdef HAVE_MUELU_DEBUG
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void FactoryManager<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ResetDebugData() const {
+    std::map<std::string, RCP<const FactoryBase> >::const_iterator it;
+
+    for (it = factoryTable_.begin(); it != factoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+
+    for (it = defaultFactoryTable_.begin(); it != defaultFactoryTable_.end(); it++)
+      if (!it->second.is_null())
+        it->second->ResetDebugData();
+  }
+#endif
 
 } // namespace MueLu
 

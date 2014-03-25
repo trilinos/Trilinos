@@ -90,7 +90,6 @@ int main(int argc, char **argv)
     bool use_pce_quad_points = false;
     bool normalize = true;
     bool sparse_grid = true;
-    bool project_integrals = false;
 #ifndef HAVE_STOKHOS_DAKOTA
     sparse_grid = false;
 #endif

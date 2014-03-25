@@ -1,21 +1,21 @@
 <xsl:stylesheet version="2.0"
- xmlns:xsl="http://www.w3.org/1999/XSL/Transform"> 
- 
+ xmlns:xsl="http://www.w3.org/1999/XSL/Transform">
+
   <xsl:template match="/">
     <html>
       <head>
-        <link rel="stylesheet" type="text/css" 
-	 href="common/paramList/bootstrap/css/bootstrap.css" />
-        <link rel="stylesheet" type="text/css" 
-	 href="common/paramList/trilinos-bootstrap.css" />
-  
+        <link rel="stylesheet" type="text/css"
+   href="common/paramList/bootstrap/css/bootstrap.css" />
+        <link rel="stylesheet" type="text/css"
+   href="common/paramList/trilinos-bootstrap.css" />
+
 
         <script type="text/javascript"
          src="common/paramList/js/jquery.js"></script>
         <script type="text/javascript"
          src="common/paramList/bootstrap/js/bootstrap.js"></script>
         <script type="text/javascript">
-	 $('.accordion-toggle').click(function(){
+   $('.accordion-toggle').click(function(){
            $("i", this).toggleClass("t-icon-arrow-right t-icon-arrow-down");
          });
         </script>
@@ -40,7 +40,7 @@
           <div class="accordion-heading">
             <a class="accordion-toggle" data-toggle="collapse"
               data-parent="#accordion{$paramlistid}"
-              href="#collapse{$paramlistid}"><i class="t-icon-arrow-down"></i>
+              href="#collapse{$paramlistid}"><i class="t-icon-arrow-right"></i>
                 <xsl:choose>
                   <xsl:when test="@name='ANONYMOUS'">Valid Parameters</xsl:when>
                   <xsl:otherwise>
@@ -73,7 +73,7 @@
           <div class="accordion-heading">
             <a class="accordion-toggle" data-toggle="collapse"
               data-parent="#accordion{$paramid}"
-              href="#collapse{$paramid}"><i class="t-icon-arrow-down"></i>
+              href="#collapse{$paramid}"><i class="t-icon-arrow-right"></i>
                 <xsl:call-template name="quoteStr">
                   <xsl:with-param name="inputStr" select="@name"/>
                 </xsl:call-template>

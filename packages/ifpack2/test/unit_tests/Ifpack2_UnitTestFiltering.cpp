@@ -66,9 +66,11 @@
 
 using Tpetra::global_size_t;
 typedef tif_utest::Node Node;
-using namespace std;
-using Teuchos::rcp;
+
+using Teuchos::ArrayRCP;
 using Teuchos::RCP;
+using Teuchos::rcp;
+using Teuchos::rcpFromRef;
 
 //this macro declares the unit-test-class:
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal, GlobalOrdinal)
@@ -77,11 +79,13 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   out << "Ifpack2::Version(): " << version << std::endl;
   typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> CRS;
   typedef Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> ROW;
-  
+
   // Useful matrices and such (tridiagonal test)
   global_size_t num_rows_per_proc = 5;
-  const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc); 
-  Teuchos::RCP<const Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Matrix = tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowmap =
+    tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+  RCP<const CRS> Matrix =
+    tif_utest::create_test_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowmap);
   Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> x(rowmap), y(rowmap), z(rowmap), b(rowmap);
 
 
@@ -90,8 +94,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // Fill x for all time
   Teuchos::ScalarTraits<double>::seedrandom(24601);
   x.randomize();
-
-
 
   // ====================================== //
   // create a new matrix, diagonally filtered //
@@ -104,7 +106,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   DiagA.apply(x,y);
 
   // Apply manually
-  Matrix->getLocalDiagCopy(b); 
+  Matrix->getLocalDiagCopy(b);
   Matrix->apply(x,z);
   z.update(alpha,x,beta-1,b,1.0);
 
@@ -114,10 +116,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ====================================== //
   // create a new matrix, locally filtered  //
   // ====================================== //
-  Ifpack2::LocalFilter<CRS > LocalA(Matrix);
-  Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localrowmap = LocalA.getRowMap();
-  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> lx(rowmap), ly(rowmap), lz(rowmap), la(rowmap),lb(rowmap);
-  lx.randomize();
+  Ifpack2::LocalFilter<CRS> LocalA(Matrix);
+  RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > localrowmap =
+    LocalA.getRowMap ();
+  Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> lx(rowmap),
+    ly(rowmap), lz(rowmap), la(rowmap),lb(rowmap);
+  lx.randomize ();
 
   // Apply w/ filter
   LocalA.apply(lx,ly);
@@ -137,7 +141,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
     }
     lz.replaceLocalValue(i,sum);
   }
-    
+
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
 
@@ -177,7 +181,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ======================================== //
   // create new matrices, dropping singletons //
   // ======================================== //
-  
+
   // This matrix should be the same after the singleton filter since it doesn't have singletons.
   Ifpack2::SingletonFilter<CRS> SingletonA(RCP<ROW >(&LocalA,false));
 
@@ -194,22 +198,29 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
   // ======================================== //
   // create new matrices, with reordering
   // ======================================== //
-#ifdef HAVE_IFPACK2_ZOLTAN2
-  // Fill the permutation AND its inverse with a local reversal
-  // Note Zoltan2 would normally do this, but for unit testing we do it
-  Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering((size_t)num_rows_per_proc);
-  Teuchos::ArrayRCP<LocalOrdinal> l_perm=Ordering.getPermutationRCP();
-  Teuchos::ArrayRCP<LocalOrdinal> l_invperm=Ordering.getPermutationRCP(true);
-  for(LocalOrdinal i=0; i < (LocalOrdinal)num_rows_per_proc; i++){
-    l_perm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
-    l_invperm[i] = (LocalOrdinal) (num_rows_per_proc - i - 1);
+
+  // Fill the permutation AND its inverse with a local reversal.
+  // Zoltan2 would normally do this, but for unit testing we do it
+  // without Zoltan2.
+
+  // Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> Ordering ((size_t)num_rows_per_proc);
+  // ArrayRCP<LocalOrdinal> l_perm = Ordering.getPermutationRCP ();
+  // ArrayRCP<LocalOrdinal> l_invperm = Ordering.getPermutationRCP (true);
+
+  ArrayRCP<LocalOrdinal> l_perm (num_rows_per_proc);
+  ArrayRCP<LocalOrdinal> l_invperm (num_rows_per_proc);
+
+  for (LocalOrdinal i = 0; i < static_cast<LocalOrdinal> (num_rows_per_proc); ++i) {
+    l_perm[i] = static_cast<LocalOrdinal> (num_rows_per_proc - i - 1);
+    l_invperm[i] = static_cast<LocalOrdinal> (num_rows_per_proc - i - 1);
   }
 
   // Now, build a reordering and a reverse reordering
-  Ifpack2::ReorderFilter<CRS> Reorder1(RCP<ROW >(&LocalA,false),
-				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
-  Ifpack2::ReorderFilter<CRS> Reorder2(RCP<ROW >(&Reorder1,false),
-				       RCP<Zoltan2::OrderingSolution<GlobalOrdinal,LocalOrdinal> >(&Ordering,false));
+  //
+  // ReorderFilter has the opposite naming convention of Zoltan2, in
+  // terms of which permutation is the inverse.
+  Ifpack2::ReorderFilter<CRS> Reorder1 (rcpFromRef (LocalA), l_invperm, l_perm);
+  Ifpack2::ReorderFilter<CRS> Reorder2 (rcpFromRef (Reorder1), l_invperm, l_perm);
 
   // Apply w/ double-reversed reordering
   Reorder2.apply(lx,ly);
@@ -219,10 +230,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2Filtering, Test0, Scalar, LocalOrdinal,
 
   // Diff
   TEST_COMPARE_FLOATING_ARRAYS(ly.get1dView(), lz.get1dView(), 1e4*Teuchos::ScalarTraits<Scalar>::eps());
-
-#endif
-
-
 }
 
 

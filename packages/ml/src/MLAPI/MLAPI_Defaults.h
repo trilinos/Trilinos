@@ -12,18 +12,18 @@
 */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #include "MLAPI_Error.h"
 #include "Teuchos_ParameterList.hpp"
 
-namespace MLAPI 
+namespace MLAPI
 {
 
-// ====================================================================== 
+// ======================================================================
 //! Sets default values in input \c List.
-// ====================================================================== 
+// ======================================================================
 
 void SetDefaults(Teuchos::ParameterList& List);
 

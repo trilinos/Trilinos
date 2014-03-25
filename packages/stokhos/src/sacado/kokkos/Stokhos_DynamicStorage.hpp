@@ -64,9 +64,13 @@ namespace Stokhos {
     typedef value_t value_type;
     typedef device_t device_type;
     typedef value_type& reference;
+    typedef volatile value_type& volatile_reference;
     typedef const value_type& const_reference;
+    typedef const volatile value_type& const_volatile_reference;
     typedef value_type* pointer;
+    typedef volatile value_type* volatile_pointer;
     typedef const value_type* const_pointer;
+    typedef const volatile value_type* const_volatile_pointer;
     typedef Stokhos::DynArrayTraits<value_type,device_type> ds;
 
     //! Turn DynamicStorage into a meta-function class usable with mpl::apply
@@ -75,43 +79,130 @@ namespace Stokhos {
       typedef DynamicStorage<ord_t,val_t,dev_t> type;
     };
 
+    template <int N>
+    struct apply_N {
+      typedef DynamicStorage<ordinal_type,value_type,device_type> type;
+    };
+
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStorage(const ordinal_type& sz,
-                   const value_type& x = value_type(0.0)) : sz_(sz) {
+                   const value_type& x = value_type(0.0)) :
+      sz_(sz), is_view_(false) {
       coeff_ = ds::get_and_fill(sz_, x);
+    }
+
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), sz_(sz), is_view_(!owned) {}
+
+    //! Constructor
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage(const DynamicStorage& s) :
+      sz_(s.sz_), is_view_(false) {
+      coeff_ = ds::get_and_fill(s.coeff_, sz_);
     }
 
     //! Constructor
     KOKKOS_INLINE_FUNCTION
-    DynamicStorage(const DynamicStorage& s) : sz_(s.sz_) {
+    DynamicStorage(const volatile DynamicStorage& s) :
+      sz_(s.sz_), is_view_(false) {
       coeff_ = ds::get_and_fill(s.coeff_, sz_);
     }
 
     //! Destructor
     KOKKOS_INLINE_FUNCTION
     ~DynamicStorage() {
-      ds::destroy_and_release(coeff_, sz_);
+      if (!is_view_) ds::destroy_and_release(coeff_, sz_);
     }
 
     //! Assignment operator
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
     KOKKOS_INLINE_FUNCTION
     DynamicStorage& operator=(const DynamicStorage& s) {
       if (&s != this) {
-        if (s.sz_ != sz_) {
+        // Only reallocate if we own the array and the sizes
+        // differ
+        if (!is_view_ && s.sz_ != sz_) {
           ds::destroy_and_release(coeff_, sz_);
           coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
           sz_ = s.sz_;
         }
-        else
-          ds::copy(s.coeff_, coeff_, sz_);
+        else {
+          ds::copy(s.coeff_, coeff_, s.sz_);
+        }
       }
       return *this;
+    }
+
+    //! Assignment operator
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
+    KOKKOS_INLINE_FUNCTION
+    DynamicStorage& operator=(const volatile DynamicStorage& s) {
+      if (&s != this) {
+        // Only reallocate if we own the array and the sizes
+        // differ
+        if (!is_view_ && s.sz_ != sz_) {
+          ds::destroy_and_release(coeff_, sz_);
+          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          sz_ = s.sz_;
+        }
+        else {
+          ds::copy(s.coeff_, coeff_, s.sz_);
+        }
+      }
+      return *this;
+    }
+
+    //! Assignment operator
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
+    KOKKOS_INLINE_FUNCTION
+    /*volatile*/ DynamicStorage& operator=(const DynamicStorage& s) volatile {
+      if (&s != this) {
+        // Only reallocate if we own the array and the sizes
+        // differ
+        if (!is_view_ && s.sz_ != sz_) {
+          ds::destroy_and_release(coeff_, sz_);
+          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          sz_ = s.sz_;
+        }
+        else {
+          ds::copy(s.coeff_, coeff_, s.sz_);
+        }
+      }
+      return const_cast<DynamicStorage&>(*this);
+    }
+
+    //! Assignment operator
+    // To do:  add error check if is_view_ == true && s.sz_ > sz_
+    KOKKOS_INLINE_FUNCTION
+    /*volatile*/ DynamicStorage&
+    operator=(const volatile DynamicStorage& s) volatile {
+      if (&s != this) {
+        // Only reallocate if we own the array and the sizes
+        // differ
+        if (!is_view_ && s.sz_ != sz_) {
+          ds::destroy_and_release(coeff_, sz_);
+          coeff_ = ds::get_and_fill(s.coeff_, s.sz_);
+          sz_ = s.sz_;
+        }
+        else {
+          ds::copy(s.coeff_, coeff_, s.sz_);
+        }
+      }
+      return const_cast<DynamicStorage&>(*this);
     }
 
     //! Initialize values to a constant value
     KOKKOS_INLINE_FUNCTION
     void init(const_reference v) {
+      ds::fill(coeff_, sz_, v);
+    }
+
+    //! Initialize values to a constant value
+    KOKKOS_INLINE_FUNCTION
+    void init(const_reference v) volatile {
       ds::fill(coeff_, sz_, v);
     }
 
@@ -124,22 +215,54 @@ namespace Stokhos {
         ds::copy(v, coeff_, sz);
     }
 
+    //! Initialize values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void init(const_pointer v, const ordinal_type& sz = 0) volatile {
+      if (sz == 0)
+        ds::copy(v, coeff_, sz_);
+      else
+        ds::copy(v, coeff_, sz);
+    }
+
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ds::copy(coeff_, v, sz_);
+      ds::copy(v, coeff_, sz_);
+    }
+
+    //! Load values to an array of values
+    KOKKOS_INLINE_FUNCTION
+    void load(pointer v) volatile {
+      ds::copy(v, coeff_, sz_);
     }
 
     //! Resize to new size (values are preserved)
     KOKKOS_INLINE_FUNCTION
     void resize(const ordinal_type& sz) {
-      if (sz != sz_) {
+      if (!is_view_ && sz != sz_) {
         value_type *coeff_new = ds::get_and_fill(sz);
         if (sz > sz_)
           ds::copy(coeff_, coeff_new, sz_);
         else
           ds::copy(coeff_, coeff_new, sz);
-        ds::destroy_and_release(coeff_, sz_);
+        if (!is_view_)
+          ds::destroy_and_release(coeff_, sz_);
+        coeff_ = coeff_new;
+        sz_ = sz;
+      }
+    }
+
+    //! Resize to new size (values are preserved)
+    KOKKOS_INLINE_FUNCTION
+    void resize(const ordinal_type& sz) volatile {
+      if (!is_view_ && sz != sz_) {
+        value_type *coeff_new = ds::get_and_fill(sz);
+        if (sz > sz_)
+          ds::copy(coeff_, coeff_new, sz_);
+        else
+          ds::copy(coeff_, coeff_new, sz);
+        if (!is_view_)
+          ds::destroy_and_release(coeff_, sz_);
         coeff_ = coeff_new;
         sz_ = sz;
       }
@@ -148,11 +271,40 @@ namespace Stokhos {
     //! Reset storage to given array, size, and stride
     KOKKOS_INLINE_FUNCTION
     void shallowReset(pointer v, const ordinal_type& sz,
-                      const ordinal_type& stride, bool owned) {}
+                      const ordinal_type& stride, bool owned) {
+      if (!is_view_)
+        ds::destroy_and_release(coeff_, sz_);
+      coeff_ = v;
+      sz_ = sz;
+      is_view_ = !owned;
+    }
+
+    //! Reset storage to given array, size, and stride
+    KOKKOS_INLINE_FUNCTION
+    void shallowReset(pointer v, const ordinal_type& sz,
+                      const ordinal_type& stride, bool owned) volatile {
+      if (!is_view_)
+        ds::destroy_and_release(coeff_, sz_);
+      coeff_ = v;
+      sz_ = sz;
+      is_view_ = !owned;
+    }
 
     //! Return size
     KOKKOS_INLINE_FUNCTION
     ordinal_type size() const { return sz_; }
+
+    //! Return size
+    KOKKOS_INLINE_FUNCTION
+    ordinal_type size() const volatile { return sz_; }
+
+    //! Return whether storage is a view
+    KOKKOS_INLINE_FUNCTION
+    bool is_view() const { return is_view_; }
+
+     //! Return whether storage is a view
+    KOKKOS_INLINE_FUNCTION
+    bool is_view() const volatile { return is_view_; }
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
@@ -162,9 +314,18 @@ namespace Stokhos {
 
     //! Coefficient access (avoid if possible)
     KOKKOS_INLINE_FUNCTION
-    reference operator[] (const ordinal_type& i) {
+    const_volatile_reference operator[] (const ordinal_type& i) const volatile {
       return coeff_[i];
     }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
+    reference operator[] (const ordinal_type& i) { return coeff_[i]; }
+
+    //! Coefficient access (avoid if possible)
+    KOKKOS_INLINE_FUNCTION
+    volatile_reference operator[] (const ordinal_type& i) volatile {
+      return coeff_[i]; }
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
@@ -172,11 +333,27 @@ namespace Stokhos {
 
     template <int i>
     KOKKOS_INLINE_FUNCTION
+    volatile_reference getCoeff() volatile { return coeff_[i]; }
+
+    template <int i>
+    KOKKOS_INLINE_FUNCTION
+    const_volatile_reference getCoeff() const volatile { return coeff_[i]; }
+
+     template <int i>
+    KOKKOS_INLINE_FUNCTION
     const_reference getCoeff() const { return coeff_[i]; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
+    const_volatile_pointer coeff() const volatile { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
     const_pointer coeff() const { return coeff_; }
+
+    //! Get coefficients
+    KOKKOS_INLINE_FUNCTION
+    volatile_pointer coeff() volatile { return coeff_; }
 
     //! Get coefficients
     KOKKOS_INLINE_FUNCTION
@@ -189,6 +366,9 @@ namespace Stokhos {
 
     //! Size of array used
     ordinal_type sz_;
+
+    //! Do we own the array
+    bool is_view_;
 
   };
 

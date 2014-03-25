@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 #include "ml_include.h"
 #include "ml_qr_fix.h"
@@ -29,9 +29,9 @@ int ML_qr_fix_Destroy(void)
   return(0);
 }
 
-int ML_qr_fix_NumDeadNodDof(void) { 
+int ML_qr_fix_NumDeadNodDof(void) {
     if (QRFixStructure == NULL) return 0;
-    return QRFixStructure->numAggsWithDeadDofs; 
+    return QRFixStructure->numAggsWithDeadDofs;
 }
 
 void ML_qr_fix_setNumDeadNod(int num)

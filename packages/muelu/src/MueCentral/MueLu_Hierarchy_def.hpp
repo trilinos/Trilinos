@@ -67,20 +67,20 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), isPreconditioner_(true),
-      Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+      isPreconditioner_(true), Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
-    AddLevel(rcp( new Level() ));
+    AddLevel(rcp(new Level));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), isPreconditioner_(true),
-      Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+      isPreconditioner_(true), Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     lib_ = A->getRowMap()->lib();
 
-    RCP<Level> Finest = rcp( new Level() );
+    RCP<Level> Finest = rcp(new Level);
     AddLevel(Finest);
 
     Finest->Set("A", A);
@@ -91,7 +91,7 @@ namespace MueLu {
     int levelID = LastLevelID() + 1; // ID of the inserted level
 
     if (level->GetLevelID() != -1 && (level->GetLevelID() != levelID))
-      GetOStream(Warnings1, 0) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
+      GetOStream(Warnings1) << "Warning: Hierarchy::AddLevel(): Level with ID=" << level->GetLevelID() << " have been added at the end of the hierarchy" << std::endl
                                << "         but its ID have been redefined because last level ID of the hierarchy was " << LastLevelID() << "." << std::endl;
 
     Levels_.push_back(level);
@@ -186,10 +186,21 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    // Record the communicator on the level (used for timers sync)
+    if (isFinestLevel) {
+      RCP<Matrix> A = level.Get< RCP<Matrix> >("A");
+      level.SetComm(A->getRowMap()->getComm());
+    }
+#endif
+
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
     if (!isFinestLevel)
       SFMFine = rcp(new SetFactoryManager(Levels_[coarseLevelID-1], rcpfineLevelManager));
+
+    if (isFinestLevel && Levels_[coarseLevelID]->IsAvailable("Coordinates"))
+      ReplaceCoordinateMap(*Levels_[coarseLevelID]);
 
     // Attach FactoryManager to the coarse level
     SetFactoryManager SFMCoarse(Levels_[coarseLevelID], rcpcoarseLevelManager);
@@ -256,6 +267,12 @@ namespace MueLu {
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
 
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    // Record the communicator on the level (used for timers sync)
+    if (!Ac.is_null())
+      level.SetComm(Ac->getRowMap()->getComm());
+#endif
+
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
     if (isLastLevel || Ac.is_null() || (Ac->getRowMap()->getGlobalNumElements() <= maxCoarseSize_)) {
@@ -316,32 +333,31 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Setup(const FactoryManagerBase& manager, int startLevel, int numDesiredLevels) {
-    PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")"); // Use MueLu::BaseClass::description()to avoid printing "{numLevels = 1}" (numLevels is increasing...)
+    // Use MueLu::BaseClass::description() to avoid printing "{numLevels = 1}" (numLevels is increasing...)
+    PrintMonitor m0(*this, "Setup (" + this->MueLu::BaseClass::description() + ")");
 
-    RCP<const FactoryManagerBase> rcpManager = rcpFromRef(manager);
-
-    // FIXME: it has to work for one level method (numDesiredLevels==1) too!!
-    TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels < 2, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): numDesiredLevels < 2");
-
-    // TODO: check Levels_[startLevel] exists.
+    // Check Levels_[startLevel] exists.
+    TEUCHOS_TEST_FOR_EXCEPTION(Levels_.size() <= startLevel, Exceptions::RuntimeError,
+                               "MueLu::Hierarchy::Setup(): fine level (" << startLevel << ") does not exist");
 
     // Check for fine level matrix A
-    TEUCHOS_TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): no fine level matrix A! Set fine level matrix A using Level.Set()");
+    TEUCHOS_TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError,
+                               "MueLu::Hierarchy::Setup(): fine level (" << startLevel << ") has no matrix A! "
+                               "Set fine level matrix A using Level.Set()");
+
     RCP<Matrix> A = Levels_[startLevel]->template Get<RCP<Matrix> >("A");
     lib_ = A->getRowMap()->lib();
 
-    // Check coarse levels
-    // TODO: check if Ac available. If yes, issue a warning (bcse level already built...)
+    Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
 
     const int lastLevel = startLevel + numDesiredLevels - 1;
-    int iLevel = 0;  // counter for the current number of multigrid levels after Setup phase
-    GetOStream(Runtime0, 0) << "Loop: startLevel=" << startLevel << ", lastLevel=" << lastLevel
-        << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() = " << maxCoarseSize_ << ")" << std::endl;
+    GetOStream(Runtime0) << "Setup loop: startLevel = " << startLevel << ", lastLevel = " << lastLevel
+        << " (stop if numLevels = " << numDesiredLevels << " or Ac.size() < " << maxCoarseSize_ << ")" << std::endl;
 
     Clear();
 
     // Setup multigrid levels
-    Teuchos::Ptr<const FactoryManagerBase> ptrmanager = Teuchos::ptrInArg(manager);
+    int iLevel = 0;
     bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
     if (bIsLastLevel == false) {
       for (iLevel = startLevel + 1; iLevel < lastLevel; iLevel++) {
@@ -354,20 +370,22 @@ namespace MueLu {
     }
 
     // TODO: some check like this should be done at the beginning of the routine
-    TEUCHOS_TEST_FOR_EXCEPTION(Levels_.size() != iLevel + 1, Exceptions::RuntimeError, "MueLu::Hierarchy::Setup(): number of level");
+    TEUCHOS_TEST_FOR_EXCEPTION(iLevel != Levels_.size() - 1, Exceptions::RuntimeError,
+                               "MueLu::Hierarchy::Setup(): number of level");
 
-    // TODO: this is not exception safe: manager will still hold default factories if you exit this function with an exception
+    // TODO: this is not exception safe: manager will still hold default
+    // factories if you exit this function with an exception
     manager.Clean();
 
     std::ostringstream ss;
     print(ss, GetVerbLevel());
-    GetOStream(Statistics0,0) << ss.str();
+    GetOStream(Statistics0) << ss.str();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Clear() {
     if (GetNumberOfLevels())
-      GetOStream(Runtime0, 0) << "Clearing old data (if any)" << std::endl;
+      GetOStream(Runtime0) << "Clearing old data (if any)" << std::endl;
 
     for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->Clear();
@@ -375,7 +393,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ExpertClear() {
-    GetOStream(Runtime0, 0) << "Clearing old data (expert)" << std::endl;
+    GetOStream(Runtime0) << "Clearing old data (expert)" << std::endl;
     for (int iLevel = 0; iLevel < GetNumberOfLevels(); iLevel++)
       Levels_[iLevel]->ExpertClear();
   }
@@ -424,7 +442,7 @@ namespace MueLu {
     if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
       Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
       rn = Utils::ResidualNorm(*A, X, B);
-      GetOStream(Statistics1, 0) << "iter:    "
+      GetOStream(Statistics1) << "iter:    "
                                  << std::setiosflags(std::ios::left)
                                  << std::setprecision(3) << 0 // iter 0
                                  << "           residual = "
@@ -448,8 +466,8 @@ namespace MueLu {
       }
 #endif
 
-      // on the coarsest level we do either smoothing (if defined) or a direct solve.
       if (startLevel == as<LO>(Levels_.size())-1) {
+        // On the coarsest level, we do either smoothing (if defined) or a direct solve.
         RCP<TimeMonitor> CLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : coarse" + levelSuffix, Timings0));
 
         bool emptySolve = true;
@@ -467,10 +485,10 @@ namespace MueLu {
           emptySolve = false;
         }
         if (emptySolve == true)
-          GetOStream(Warnings0, 0) << "Warning: No coarse grid solver" << std::endl;
+          GetOStream(Warnings0) << "Warning: No coarse grid solver" << std::endl;
 
       } else {
-        // on intermediate levels we do cycles
+        // On intermediate levels, we do cycles
         RCP<Level> Coarse = Levels_[startLevel+1];
 
         {
@@ -482,7 +500,7 @@ namespace MueLu {
             RCP<SmootherBase> preSmoo = Fine->Get< RCP<SmootherBase> >("PreSmoother");
             preSmoo->Apply(X, B, zeroGuess);
           } else {
-            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PreSmoother!" << std::endl;
           }
         }
 
@@ -495,30 +513,47 @@ namespace MueLu {
 
         RCP<Matrix>      P = Coarse->Get< RCP<Matrix> >("P");
         RCP<MultiVector> coarseRhs, coarseX;
-        RCP<const Map>   origMap;
+        const bool initializeWithZeros = true;
         {
           // ============== RESTRICTION ==============
           RCP<TimeMonitor> RTime      = rcp(new TimeMonitor(*this, prefix + "Solve : restriction (total)"      , Timings0));
           RCP<TimeMonitor> RLevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : restriction" + levelSuffix, Timings0));
 
           if (implicitTranspose_) {
-            origMap   = P->getDomainMap();
-            coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
-            coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
-            P->apply(*residual, *coarseRhs, Teuchos::TRANS,    one, zero);
+            coarseRhs = MultiVectorFactory::Build(P->getDomainMap(), X.getNumVectors(), !initializeWithZeros);
+            P->apply(*residual, *coarseRhs, Teuchos::TRANS, one, zero);
 
           } else {
             RCP<Matrix> R = Coarse->Get< RCP<Matrix> >("R");
-            origMap   = R->getRangeMap();
-            coarseRhs = MultiVectorFactory::Build(origMap, X.getNumVectors(), false); // no need to initialize
-            coarseX   = MultiVectorFactory::Build(origMap, X.getNumVectors());        // should be initialized to zero
+            coarseRhs = MultiVectorFactory::Build(R->getRangeMap(), X.getNumVectors(), !initializeWithZeros);
             R->apply(*residual, *coarseRhs, Teuchos::NO_TRANS, one, zero);
           }
         }
 
-        // replace maps with maps with a subcommunicator
+        RCP<const Import> importer;
+        if (Coarse->IsAvailable("Importer"))
+          importer = Coarse->Get< RCP<const Import> >("Importer");
+
+        if (!implicitPRrebalance_ || importer.is_null()) {
+          coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
+
+        } else {
+          RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : import (total)"      , Timings0));
+          RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : import" + levelSuffix, Timings0));
+
+          // Import: range map of R --> domain map of rebalanced Ac (before subcomm replacement)
+          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getTargetMap(), coarseRhs->getNumVectors(), false);
+          coarseTmp->doImport(*coarseRhs, *importer, Xpetra::INSERT);
+          coarseRhs.swap(coarseTmp);
+
+          coarseX = MultiVectorFactory::Build(importer->getTargetMap(), X.getNumVectors(), initializeWithZeros);
+        }
+
         RCP<Matrix> Ac = Coarse->Get< RCP<Matrix> >("A");
         if (!Ac.is_null()) {
+          RCP<const Map> origXMap = coarseX->getMap();
+
+          // Replace maps with maps with a subcommunicator
           coarseRhs->replaceMap(Ac->getRangeMap());
           coarseX  ->replaceMap(Ac->getDomainMap());
 
@@ -533,10 +568,20 @@ namespace MueLu {
 
             iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level
           }
-          coarseX->replaceMap(origMap);
+          coarseX->replaceMap(origXMap);
         }
 
-        // update X += P * coarseX
+        if (implicitPRrebalance_ && !importer.is_null()) {
+          RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      , Timings0));
+          RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix, Timings0));
+
+          // Import: range map of rebalanced Ac (before subcomm replacement) --> domain map of P
+          RCP<MultiVector> coarseTmp = MultiVectorFactory::Build(importer->getSourceMap(), coarseX->getNumVectors(), false);
+          coarseTmp->doExport(*coarseX, *importer, Xpetra::INSERT);
+          coarseX.swap(coarseTmp);
+        }
+
+        // Update X += P * coarseX
         // Note that due to what may be round-off error accumulation, use of the fused kernel
         //    P->apply(*coarseX, X, Teuchos::NO_TRANS, one, one);
         // can in some cases result in slightly higher iteration counts.
@@ -559,7 +604,7 @@ namespace MueLu {
             postSmoo->Apply(X, B, false);
 
           } else {
-            GetOStream(Warnings1, 0) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
+            GetOStream(Warnings1) << "Warning: Level " <<  startLevel << ": No PostSmoother!" << std::endl;
           }
         }
       }
@@ -568,7 +613,7 @@ namespace MueLu {
       if (startLevel == 0 && IsPrint(Statistics1) && !isPreconditioner_) {
         Teuchos::Array<typename Teuchos::ScalarTraits<Scalar>::magnitudeType> rn;
         rn = Utils::ResidualNorm(*A, X, B);
-        GetOStream(Statistics1, 0) << "iter:    "
+        GetOStream(Statistics1) << "iter:    "
                                    << std::setiosflags(std::ios::left)
                                    << std::setprecision(3) << i
                                    << "           residual = "
@@ -590,23 +635,17 @@ namespace MueLu {
 
     TEUCHOS_TEST_FOR_EXCEPTION(startLevel < 0 || endLevel >= Levels_.size(), Exceptions::RuntimeError, "MueLu::Hierarchy::Write bad start or end level");
 
-    for (LO i = startLevel; i < endLevel+1; ++i) {
-      std::ostringstream buf; buf << i;
-      std::string fileName = "A_" + buf.str() + ".m";
-      Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("A")) );
+    for (LO i = startLevel; i < endLevel + 1; i++) {
+      Utils::Write("A_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("A")));
 
-      if (i>0) {
-        fileName = "P_" + buf.str() + ".m";
-        Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("P")) );
+      if (i > 0) {
+        Utils::Write("P_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("P")));
 
-        if (!implicitTranspose_) {
-          fileName = "R_" + buf.str() + ".m";
-          Utils::Write( fileName,*(Levels_[i]-> template Get< RCP< Matrix> >("R")) );
-        }
+        if (!implicitTranspose_)
+          Utils::Write("R_" + toString(i) + ".m", *(Levels_[i]-> template Get< RCP< Matrix> >("R")));
       }
     }
-
-  } //Write()
+  }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Keep(const std::string & ename, const FactoryBase* factory) {
@@ -784,9 +823,63 @@ namespace MueLu {
     std::ofstream out(dumpFile_.c_str());
     boost::write_graphviz_dp(out, graph, dp, std::string("id"));
 #else
-    GetOStream(Errors,0) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
+    GetOStream(Errors) <<  "Dependency graph output requires boost and MueLu_ENABLE_Boost_for_real" << std::endl;
 #endif
   }
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReplaceCoordinateMap(Level &level) {
+    RCP<Matrix> A = level.Get<RCP<Matrix> >("A");
+    // Enforce that coordinate vector's map is consistent with that of A
+    RCP<MultiVector> Coordinates = level.Get<RCP<MultiVector> >("Coordinates");
+    size_t blkSize   = A->GetFixedBlockSize();
+    RCP<const Map> nodeMap;
+
+    bool canReplaceMap = false;
+    // TODO For nontrivial strided maps, the map will not be replaced.
+    if (blkSize == 1)
+      canReplaceMap = true;
+    else if (blkSize > 1) {
+      if (A->IsView("stridedMaps") && Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null)
+      {
+        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps");
+        RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
+        TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap == Teuchos::null,Exceptions::BadCast,
+                                   "Hierarchy::ReplaceCoordinateMap : cast to strided row map failed.");
+        if (stridedRowMap->getFixedBlockSize() == blkSize && stridedRowMap->getOffset() == 0)
+          canReplaceMap = true;
+        oldView = A->SwitchToView(oldView);
+      } else
+        canReplaceMap = true;
+    }
+
+    if (canReplaceMap) {
+      GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
+      if (blkSize == 1)
+        nodeMap = A->getRowMap();
+      else {
+        // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
+        RCP<const Map> dofMap = A->getRowMap();
+        GO indexBase = dofMap->getIndexBase();
+        size_t numLocalDOFs = dofMap->getNodeNumElements();
+        Teuchos::Array<GO> nodeGIDs;
+        nodeGIDs.reserve(numLocalDOFs/blkSize);
+        for (size_t i=0; i<numLocalDOFs; i+=blkSize) {
+          GO dofGID = dofMap->getGlobalElement(i);
+          nodeGIDs.push_back( ((GlobalOrdinal) dofGID - indexBase) / blkSize + indexBase );
+        }
+        nodeMap = MapFactory::Build(dofMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nodeGIDs(), indexBase, dofMap->getComm());
+      }
+      Teuchos::Array<Teuchos::ArrayView<const Scalar> > coordDataView;
+      std::vector<Teuchos::ArrayRCP<const Scalar> > coordData;
+      for (size_t i=0; i < Coordinates->getNumVectors(); ++i) {
+        coordData.push_back( Coordinates->getData(i) );
+        coordDataView.push_back( coordData[i]() );
+      }
+      RCP<MultiVector> newCoordinates = MultiVectorFactory::Build(nodeMap, coordDataView(), Coordinates->getNumVectors());
+      level.Set("Coordinates", newCoordinates);
+    }
+  } //ReplaceCoordinateMap()
 
 } //namespace MueLu
 

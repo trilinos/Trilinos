@@ -153,6 +153,16 @@ public:
     CreateDefaultView();
   }
 
+  CrsMatrixWrap(const RCP<const CrsGraph>& graph, const RCP<ParameterList>& paramList = Teuchos::null)
+    : finalDefaultView_(false)
+  {
+    // Set matrix data
+    matrixData_ = CrsMatrixFactory::Build(graph, paramList);
+
+    // Default view
+    CreateDefaultView();
+  }
+
   //! Destructor
   virtual ~CrsMatrixWrap() {}
 
@@ -406,6 +416,16 @@ public:
     the zero and non-zero diagonals owned by this node. */
   void getLocalDiagCopy(Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &diag) const {
     matrixData_->getLocalDiagCopy(diag);
+  }
+
+  //! Get offsets of the diagonal entries in the matrix.
+  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+    matrixData_->getLocalDiagOffsets(offsets);
+  }
+
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+    matrixData_->getLocalDiagCopy(diag,offsets);
   }
 
   //! Get Frobenius norm of the matrix

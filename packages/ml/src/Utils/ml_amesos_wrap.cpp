@@ -11,7 +11,7 @@
 #include "ml_epetra_utils.h"
 #include "ml_xyt.h"
 
-#include "Epetra_Map.h" 
+#include "Epetra_Map.h"
 #include "Epetra_Vector.h"
 #include "Epetra_LinearProblem.h"
 #include "Epetra_Time.h"
@@ -20,7 +20,7 @@
 #include "ml_mat_formats.h"
 #include "ml_RowMatrix.h"
 #include "Amesos_BaseSolver.h"
-#include "Amesos.h" 
+#include "Amesos.h"
 #include "ml_amesos_wrap.h"
 #include "Teuchos_ParameterList.hpp"
 
@@ -45,7 +45,7 @@ int ML_isKLUAvailable()
   else
     return(0); // this is false
 }
-  
+
 static void print_out(const Epetra_Comm& Comm, const int level, const char* what)
 {
   if (Comm.MyPID() == 0 && ML_Get_PrintLevel() > 2)
@@ -58,7 +58,7 @@ static void print_out(const Epetra_Comm& Comm, const int level, const char* what
 
 // ================================================ ====== ==== ==== == =
 
-int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs, 
+int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
                   double AddToDiag, Amesos_Handle_Type *Amesos_Handle)
 {
 # ifdef ML_MPI
@@ -102,10 +102,10 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 */
 
   if (hasRows == 1) {
-    ML_Epetra::RowMatrix* Amesos_Matrix = 
+    ML_Epetra::RowMatrix* Amesos_Matrix =
       new ML_Epetra::RowMatrix(Ke, 0, false, amesosComm);
     assert (Amesos_Matrix != 0);
-    
+
     int NumGlobalRows = Amesos_Matrix->NumGlobalRows();
     int NumGlobalNonzeros = Amesos_Matrix->NumGlobalNonzeros();
 
@@ -142,9 +142,9 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     }
 
 #   endif
-    
+
     Epetra_LinearProblem *Amesos_LinearProblem = new Epetra_LinearProblem;
-    Amesos_LinearProblem->SetOperator(Amesos_Matrix); 
+    Amesos_LinearProblem->SetOperator(Amesos_Matrix);
 
     Teuchos::ParameterList AmesosList;
 
@@ -179,19 +179,19 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     case ML_AMESOS_SUPERLUDIST:
       print_out(Comm, curr_level, "SuperLU_DIST");
       A_Base = A_Factory.Create("Amesos_Superludist", *Amesos_LinearProblem);
-      
+
       break;
 
     case ML_AMESOS_SUPERLU:
       print_out(Comm, curr_level, "SuperLU");
       A_Base = A_Factory.Create("Amesos_Superlu", *Amesos_LinearProblem);
-      
+
       break;
 
     case ML_AMESOS_SCALAPACK:
       print_out(Comm, curr_level, "ScaLAPACK");
       A_Base = A_Factory.Create("Amesos_Scalapack", *Amesos_LinearProblem);
-      
+
       break;
 
     case ML_AMESOS_MUMPS:
@@ -209,7 +209,7 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     // may happen the desired solver is not available. KLU is almost
     // always compiled, so try this first. If not, then LAPACK is
     // the last choice before quitting
-    if (A_Base == 0) 
+    if (A_Base == 0)
     {
       if (choice != ML_AMESOS_KLU)
       {
@@ -222,9 +222,9 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
         }
         A_Base = A_Factory.Create("Amesos_Klu", *Amesos_LinearProblem);
       }
-      if (A_Base == 0) 
+      if (A_Base == 0)
       {
-        if (Amesos_Matrix->Comm().MyPID() == 0) 
+        if (Amesos_Matrix->Comm().MyPID() == 0)
         {
           std::cerr << "Amesos (level " << curr_level
                << ") : This coarse solver is not available." << std::endl;
@@ -232,9 +232,9 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
                << ") : Now re-building with LAPACK" << std::endl;
         }
         A_Base = A_Factory.Create("Amesos_Lapack", *Amesos_LinearProblem);
-        if (A_Base == 0) 
+        if (A_Base == 0)
         {
-          if (Amesos_Matrix->Comm().MyPID() == 0) 
+          if (Amesos_Matrix->Comm().MyPID() == 0)
           {
             std::cerr << "*ML*ERR* no Amesos solver is available!" << std::endl;
           }
@@ -251,12 +251,12 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
     int rv;
     try{rv=A_Base->NumericFactorization();}
     catch(...) {
-      if (Amesos_Matrix->Comm().MyPID() == 0) 
+      if (Amesos_Matrix->Comm().MyPID() == 0)
         printf("\n*** * ML_Amesos_Gen: exception thrown from Amesos_BaseSolver->NumericFactorization(). * ***\n\n");
       exit( EXIT_FAILURE );
     }
     double Time2 = Time.ElapsedTime();
-    
+
     if(rv){
       if(!Amesos_Matrix->Comm().MyPID())
        printf("ERROR: Amesos NumericFactorization failed... dumping relevant matrix for post-mortem\n");
@@ -279,11 +279,11 @@ int ML_Amesos_Gen(ML *ml, int curr_level, int choice, int MaxProcs,
 	 << Time2 << " (s)" << std::endl;
     }
 #   endif
-    
+
     // those are very simple timing for solution
     TimeForSolve__ = 0.0;
     NumSolves__ = 0;
-    
+
     Amesos_Handle->A_Base = (void *) A_Base ;
 
   } //if (hasRows==1)
@@ -302,19 +302,19 @@ int ML_Amesos_Solve( void *data, double x[], double rhs[] )
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle->A_Base ;
 
-  Epetra_Time Time(A_Base->Comm());  
+  Epetra_Time Time(A_Base->Comm());
 
   Epetra_LinearProblem *Amesos_LinearProblem = (Epetra_LinearProblem *)A_Base->GetProblem() ;
-  
-  const Epetra_BlockMap & map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ; 
+
+  const Epetra_BlockMap & map = Amesos_LinearProblem->GetOperator()->OperatorDomainMap() ;
 
   Epetra_Vector EV_rhs( View, map, rhs ) ;
   Epetra_Vector EV_lhs( View, map, x ) ;
 
-  Amesos_LinearProblem->SetRHS( &EV_rhs ) ; 
+  Amesos_LinearProblem->SetRHS( &EV_rhs ) ;
   Amesos_LinearProblem->SetLHS( &EV_lhs ) ;
 
-  A_Base->Solve() ; 
+  A_Base->Solve() ;
 
   TimeForSolve__ += Time.ElapsedTime();
   NumSolves__++;
@@ -323,16 +323,16 @@ int ML_Amesos_Solve( void *data, double x[], double rhs[] )
   // verify that the residual is actually small (and print the max
   // in the destruction phase)
   Epetra_Vector Ax(map);
-  
+
   (Amesos_LinearProblem->GetMatrix())->Multiply(false,EV_lhs,Ax);
-  
+
   ML_CHK_ERR(Ax.Update(1.0, EV_rhs, -1.0));
-  
+
   double residual;
   ML_CHK_ERR(Ax.Norm2(&residual));
   if( residual > MaxError__ ) MaxError__ = residual;
 #endif
-  
+
   return 0;
 } //ML_Amesos_Solve()
 
@@ -348,18 +348,18 @@ void ML_Amesos_Destroy(void *data)
 #ifdef TFLOP
   if( Level__ != -1 ) {
     printf("Amesos (level %d) : Time for solve = %f (s)\n",Level__,TimeForSolve__);
-    if( NumSolves__ ) 
+    if( NumSolves__ )
       printf("Amesos (level %d) : avg time for solve = %f (s) ( # solve = %d)\n",Level__,TimeForSolve__/NumSolves__,NumSolves__);
     else
       printf("Amesos (level %d) : no solve\n",Level__);
   }
 #else
-  if( false && Level__ != -1 ) { // MS // I don't like this output any more 
+  if( false && Level__ != -1 ) { // MS // I don't like this output any more
     std::cout << std::endl;
     std::cout << "Amesos (level " << Level__
 	 << ") : Time for solve = "
 	 << TimeForSolve__ << " (s)" << std::endl;
-    if( NumSolves__ ) 
+    if( NumSolves__ )
       std::cout << "Amesos (level " << Level__
 	   << ") : avg time for solve = "
 	   << TimeForSolve__/NumSolves__ << " (s) ( # solves = "
@@ -378,7 +378,7 @@ void ML_Amesos_Destroy(void *data)
 #endif
 
   Amesos_Handle_Type *Amesos_Handle = (Amesos_Handle_Type*) data;
-  
+
   if (Amesos_Handle->A_Base == 0) {
     ML_free(Amesos_Handle);
     return;
@@ -386,7 +386,7 @@ void ML_Amesos_Destroy(void *data)
 
   Amesos_BaseSolver *A_Base = (Amesos_BaseSolver *) Amesos_Handle->A_Base;
   const Epetra_LinearProblem *Amesos_LinearProblem;
-  Amesos_LinearProblem = A_Base->GetProblem(); 
+  Amesos_LinearProblem = A_Base->GetProblem();
 # ifdef ML_MPI
   const Epetra_MpiComm *comm = dynamic_cast<const Epetra_MpiComm*>(&(Amesos_LinearProblem->GetOperator()->Comm()));
   if (comm == 0) {
@@ -398,7 +398,7 @@ void ML_Amesos_Destroy(void *data)
 
 
   delete A_Base ;
-  delete Amesos_LinearProblem->GetOperator(); 
+  delete Amesos_LinearProblem->GetOperator();
   delete Amesos_LinearProblem ;
 # ifdef ML_MPI
   if (Amesos_Handle->freeMpiComm == 1) MPI_Comm_free(&subcomm);

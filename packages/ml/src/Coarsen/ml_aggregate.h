@@ -49,7 +49,7 @@ typedef struct ML_Aggregate_Struct
    int    ordering;                    /**<  natural, random, graph        */
    int    min_nodes_per_aggregate;     /**<  aggregate size control        */
    int    max_neigh_already_selected;  /**<  complexity control            */
-   double threshold;                   /**<  for pruning matrix            */ 
+   double threshold;                   /**<  for pruning matrix            */
    double curr_threshold;              /**<  adjusted for levels           */
    double drop_tol_for_smoothing;      /**<  self-explanatory              */
    int    attach_scheme;               /**<  aggregate shape control       */
@@ -57,7 +57,7 @@ typedef struct ML_Aggregate_Struct
    int   * smoothP_damping_sweeps;     /**<  #prolongator smoother sweeps  */
    int    smoothP_type;                /**<  point, block                  */
    int    coarsen_scheme;              /**<  Uncoupled, Coupled, MIS       */
-   int   * coarsen_scheme_level;  
+   int   * coarsen_scheme_level;
    int    num_PDE_eqns;                /**<  block size                    */
    int    nullspace_dim;               /**<  self-explanatory              */
    double *nullspace_vect;             /**<  for null space vectors        */
@@ -82,31 +82,35 @@ typedef struct ML_Aggregate_Struct
 /*MS*/
   void *aggr_options;                  /**<  option about METIS and ParMETIS    */
   void *aggr_viz_and_stats;            /**<  information about the aggregates   */
-                                       /**<  only if the user explicitely       
+                                       /**<  only if the user explicitely
                                           < requires them                      */
   void * field_of_values;
-  int    block_scaled_SA;              /**<  = 1 indicates that the prolongator 
-                                          smoother should use block diagonal 
+  int    block_scaled_SA;              /**<  = 1 indicates that the prolongator
+                                          smoother should use block diagonal
                                           scaling (blocksize = num_PDE_eqns) */
 
-  double phase3_agg_creation;          /**<  Steers how the MIS  and Uncoupled 
-                                          handle phase 3 of aggregation.     
+  double phase3_agg_creation;          /**<  Steers how the MIS  and Uncoupled
+                                          handle phase 3 of aggregation.
                                           Values near 0 create few additional
                                           aggregates.Large values create many
-                                          additional aggregates. Convergence 
-                                          can be improve convergence by new  
-                                          aggregates but nonzero fill-in     
-                                          increases on coarse meshes.        
+                                          additional aggregates. Convergence
+                                          can be improve convergence by new
+                                          aggregates but nonzero fill-in
+                                          increases on coarse meshes.
                                           Default: .5                        */
-  double **nodal_coord;                 /**< Coordinates of fine-grid nodes 
+  double **nodal_coord;                 /**< Coordinates of fine-grid nodes
 					  and aggregates */
   int N_dimensions;
 /*ms*/
 /*mgee*/
   void  *vblock_data;                 /**< holds data structure aggr_vblock */
   int minimizing_energy, cheap_minimizing_energy;
-  double minimizing_energy_droptol;    
+  double minimizing_energy_droptol;
   double   *old_RowOmegas;
+  int    coarsen_rate;               /* used only for semicoarsening */
+  int    semicoarsen_levels;         /* number of levels where semicoarsening */
+                                     /* will be applied                       */
+
 
 } ML_Aggregate;
 
@@ -163,7 +167,7 @@ typedef struct ML_Aggregate_Comm_Struct
 
 typedef struct ML_agg_indx_comm_struct {
   int N_neighbors;
-  int *temp_leng, *send_leng, *recv_leng, *send_list, *recv_list, *tem2_index, 
+  int *temp_leng, *send_leng, *recv_leng, *send_list, *recv_list, *tem2_index,
     *neighbors, *temp_index;
 } ML_agg_indx_comm;
 
@@ -174,7 +178,7 @@ typedef struct ML_agg_indx_comm_struct {
 
 #ifndef ML_CPP
 #ifdef __cplusplus
-extern "C" 
+extern "C"
 {
 #endif
 #endif
@@ -233,8 +237,8 @@ int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_Zoltan( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_User( ML_Aggregate *ag  );
 int ML_Aggregate_Phase2_3_Cleanup(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
-				  int *aggr_count, int nvertices, 
-				  int *aggr_index, int exp_Nrows, 
+				  int *aggr_count, int nvertices,
+				  int *aggr_index, int exp_Nrows,
 				  ML_Comm *comm, char *input_bdry,char *label,
                                   ML_agg_indx_comm *);
 int ML_Aggregate_Set_CoarsenSchemeLevel( int level, int, ML_Aggregate *ag,
@@ -248,7 +252,7 @@ int ML_Aggregate_Set_CoarsenSchemeLevel_ParMETIS( int level, int, ML_Aggregate *
 int ML_Aggregate_Set_CoarsenSchemeLevel_Zoltan( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenSchemeLevel_User( int level, int, ML_Aggregate *ag  );
 int ML_Aggregate_Set_Vblocks_CoarsenScheme_VBMETIS( ML_Aggregate *ag,const int level,
-                                                    const int N_levels,const int nblocks, 
+                                                    const int N_levels,const int nblocks,
                                                     const int *blocks,const int *block_pde,
                                                     const int block_dim);
 
@@ -283,7 +287,7 @@ int ML_Aggregate_Get_DampingSweeps( ML_Aggregate *ag, int level);
 
 int ML_Aggregate_Get_AggrCount( ML_Aggregate *, int level );
 int ML_Aggregate_Get_AggrMap( ML_Aggregate *, int level, int**);
-extern int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level, 
+extern int ML_Gen_Blocks_Aggregates(ML_Aggregate *ag, int level,
                                     int *nblocks, int **block_list);
 
 
@@ -329,10 +333,10 @@ int ML_Aggregate_LabelVertices(int, int *, int, char *,char *,int,
               int, int **, int *, int *, int **, int, ML_Comm *, int *);
 
 int ML_Aggregate_UpdateVertexStates(int N_remaining_vertices,
-              char vertex_state[], int recv_cnt, int recv_proc[], 
-              int recv_leng[], int **recv_buf, int **recv_list, 
-              int proc_flag[], int *NremainingRcvProcs, int send_cnt, 
-              int send_proc[], int send_leng[], int **send_buf, 
+              char vertex_state[], int recv_cnt, int recv_proc[],
+              int recv_leng[], int **recv_buf, int **recv_list,
+              int proc_flag[], int *NremainingRcvProcs, int send_cnt,
+              int send_proc[], int send_leng[], int **send_buf,
               int *send_flag, USR_REQ *Request, ML_Comm *comm, int);
 
 int ML_Aggregate_ExchangeBdry(double *data, void *comm);
@@ -364,7 +368,7 @@ extern int ML_modified_matvec(void *Amat_in, int, double *,int , double *,int);
 extern int ML_random_global_subset(ML_Operator *Amat, double reduction,
                                    int **list, int *length, int num_PDE_eqns);
 extern int ML_repartition_matrix(ML_Operator *mat, ML_Operator **new_mat,
-                                 ML_Operator **permutation, 
+                                 ML_Operator **permutation,
                                  ML_Operator **permt, int num_PDE_eqns,int,
                                  double *, double *, double *, int,
                                  ML_Partitioner);
@@ -373,51 +377,51 @@ extern ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
 
 
 
-int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx, 
-           int num_PDEs, ML_Comm *comm, int **new_mat_indx, 
+int ML_Aggregate_Compress_Matrix(ML_GetrowFunc *getrow_obj, int *mat_indx,
+           int num_PDEs, ML_Comm *comm, int **new_mat_indx,
            int *N_neighbors, int **neighbors, int **recv_leng,
            int **send_leng, int **send_list, int **recv_list, int *bc_array);
 int ML_Aggregate_CoarsenCoupledCore(ML_Aggregate *, ML_Comm *comm,
-           int *amal_mat_indx, int *aggr_count, int **aggr_index2, 
+           int *amal_mat_indx, int *aggr_count, int **aggr_index2,
            int N_neighbors, int *neighbors, int *recv_leng, int *send_leng,
-           int *send_list,int *,int **, int *bc_array); 
-int  ML_Aggregate_ExchangeStatus(char *recvbuf, char *sendbuf, 
-           int N_neighbors, int *neighbors, int *recv_leng, 
-           int *send_leng, int *recv_list, int Nrows, int msgid, 
+           int *send_list,int *,int **, int *bc_array);
+int  ML_Aggregate_ExchangeStatus(char *recvbuf, char *sendbuf,
+           int N_neighbors, int *neighbors, int *recv_leng,
+           int *send_leng, int *recv_list, int Nrows, int msgid,
            int datatype, ML_Comm *comm);
-int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj, 
-           int num_PDEs, ML_Comm *comm, 
-           int *new_N_neighbors, int **new_neighbors, int **new_recv_leng, 
+int ML_Aggregate_ComposeExpandedCommInfo(ML_GetrowFunc *getrow_obj,
+           int num_PDEs, ML_Comm *comm,
+           int *new_N_neighbors, int **new_neighbors, int **new_recv_leng,
            int **new_send_leng, int **new_send_list, int **new_recv_list);
 int ML_Aggregate_ComposeRecvFromSend(int nprocs, int mypid, int new_N_send,
-           int *new_send_leng, int *new_send_neighbors, int *N_rcv, 
+           int *new_send_leng, int *new_send_neighbors, int *N_rcv,
            int **recv_leng, int **recv_neighbors, ML_Comm *comm);
-int ML_Aggregate_Form_Aggregates(int phaseID, int phaseAFlag, int Nrows, 
-           int *mat_indx, int *aggr_index, int *aggr_stat, 
-           int *node_type, int *node_type2, int *order_array, 
+int ML_Aggregate_Form_Aggregates(int phaseID, int phaseAFlag, int Nrows,
+           int *mat_indx, int *aggr_index, int *aggr_stat,
+           int *node_type, int *node_type2, int *order_array,
            int *aggr_count_in, int *aggr_cnt_leng_in,
-           int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size, 
-           int max_neigh_selected, int N_neighbors, int *neighbors, 
-           int *send_leng, int *send_list, int *recv_leng, int *recv_list, 
+           int **aggr_cnt_array_in, int max_row_nnz, int min_agg_size,
+           int max_neigh_selected, int N_neighbors, int *neighbors,
+           int *send_leng, int *send_list, int *recv_leng, int *recv_list,
            int *sendlist_proc, ML_Comm *comm, double printflag);
-int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme, 
-           int *mat_indx, int *aggr_index, int *aggr_stat, 
-           int *aggr_count_in, int **aggr_cnt_array_in, 
-           int N_neighbors, int *neighbors, int *send_leng, int *send_list, 
+int ML_Aggregate_PutInto_Aggregates(char phaseID, int attach_scheme,
+           int *mat_indx, int *aggr_index, int *aggr_stat,
+           int *aggr_count_in, int **aggr_cnt_array_in,
+           int N_neighbors, int *neighbors, int *send_leng, int *send_list,
            int *recv_leng, int *recv_list, ML_Comm *comm, double printflag);
 int ML_Graph_CreateFromMatrix(ML_Aggregate *ml_ag, ML_Operator *Amatrix,
            int **mat_indx_out, ML_Comm *comm, double epsilon, int *nrows,
            int **bc_array);
 
 int  ML_Aggregate_CoarsenUncoupledCore(ML_Aggregate *, ML_Comm *,
-                ML_Operator *, int *mat_indx, int *bdry_array, 
+                ML_Operator *, int *mat_indx, int *bdry_array,
                 int *aggr_count_in, int **aggr_index_in, char *true_bdry);
 int ML_Aggregate_Set_CoarsenScheme_METIS( ML_Aggregate *ag  );
 int ML_Aggregate_Set_CoarsenScheme_ParMETIS( ML_Aggregate *ag  );
 
 int ML_Aggregate_Set_SmoothRestrictionWithA( ML_Aggregate *ag );
 int ML_Aggregate_Set_SmoothRestrictionWithAT( ML_Aggregate *ag );
-  
+
 extern int ML_Aggregate_Set_NodalCoordinates(ML* ml, ML_Aggregate *ag, double *ptr);
 extern int ML_Aggregate_Set_Dimensions(ML_Aggregate *ag, int N_dimensions);
 extern int ML_Aggregate_Get_CoarsenScheme( ML_Aggregate *ag  );

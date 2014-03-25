@@ -10,15 +10,15 @@
  *  - use Anasazi to compute the field-of-values of a non-symmetric operator,
  *    and use this information to improve smoothed aggregation for highly
  *    non-symmetric systems.
- *    
+ *
  *  \author Marzio Sala, SNL (9214)
- *  
+ *
  *  \date Last update to Doxygen: 22-Jul-04
  *
  */
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 #ifndef _ML_ANASAZI_H_
@@ -50,14 +50,14 @@ namespace ML_Anasazi {
 
     \param RealEigenvalues (Out) : double array that will contain the real
            part of the computed eigenvalues;
-    
+
     \param ImagEigenvalues (Out) : double array that will contain the
            imaginary part of the computed eigenvalues;
 
-    \param RealEigenvectors (Out) : pointer to allocated space to store the 
+    \param RealEigenvectors (Out) : pointer to allocated space to store the
            real eigenvectors
 
-    \param ImagEigenvectors (Out) : pointer to allocated space to store the 
+    \param ImagEigenvectors (Out) : pointer to allocated space to store the
            imaginary eigenvectors
 
     \param NumRealEigenvectors (Out) : number of computed real eigenvectors
@@ -66,15 +66,15 @@ namespace ML_Anasazi {
 
     \param List (InOut) : Teuchos parameters' list containing the required options.
 
-    \param ml (In) : already filled ML hierarchy (only for the eigen-analysis 
+    \param ml (In) : already filled ML hierarchy (only for the eigen-analysis
            of "I-ML^{-1}A").
-    
+
     The following parameters parsed from List:
-    - "eigen-analysis: use diagonal scaling". Enables 
+    - "eigen-analysis: use diagonal scaling". Enables
       scaling by the diagonal. Default: \c true.
-    - "eigen-analysis: symmetric problem" . Instructs Anasazi to use an 
+    - "eigen-analysis: symmetric problem" . Instructs Anasazi to use an
       algorithm for symmetric problems. Default: \c false.
-    - "eigen-analysis: matrix operation". Defined the matrix-vector product. 
+    - "eigen-analysis: matrix operation". Defined the matrix-vector product.
       Possible values are:
       - "A"
       - "I-A"
@@ -97,7 +97,7 @@ namespace ML_Anasazi {
 		     ML * ml = 0);
 
   //! Computes the size of a box containing the field of values.
- int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix, 
+ int GetFieldOfValuesBox(const Epetra_RowMatrix * RowMatrix,
 			       double & MaxReal, double & MaxImag,
 			       Teuchos::ParameterList & AnasaziList);
 
@@ -108,11 +108,11 @@ namespace ML_Anasazi {
 #ifndef ML_CPP
 #ifdef __cplusplus
 extern "C"
-{  
+{
 #endif
 #endif
 
-  //! Interface from C code to Anasazi to compute the field of values. 
+  //! Interface from C code to Anasazi to compute the field of values.
   extern int ML_Anasazi_Get_FieldOfValuesBox_Interface(ML_Operator * Amat,
 						       struct ML_Field_Of_Values * fov );
 

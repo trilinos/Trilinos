@@ -1,19 +1,27 @@
 TRILINOS_DRIVER_SETUP()
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_CLANG_STABLE
-  ctest_mac_nightly_clang_stable_mpi_opt_s903186.cmake
+  MPI_OPT_CLANG_NO_FORTRAN
+  ctest_mac_nightly_clang_mpi_opt_s903186.cmake
   CTEST_INSTALLER_TYPE release
   RUN_SERIAL
   TIMEOUT_MINUTES 360
 )
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT
-  ctest_mac_nightly_mpi_opt_s903186.cmake
+  SERIAL_DEBUG_CLANG_NO_FORTRAN
+  ctest_mac_nightly_clang_serial_debug_s903186.cmake
   CTEST_INSTALLER_TYPE release
+  RUN_SERIAL
   TIMEOUT_MINUTES 360
 )
+
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT
+#  ctest_mac_nightly_mpi_opt_s903186.cmake
+#  CTEST_INSTALLER_TYPE release
+#  TIMEOUT_MINUTES 360
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   SERIAL_DEBUG

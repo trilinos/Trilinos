@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 /* ************************************************************************* */
 /* ************************************************************************* */
@@ -32,16 +32,16 @@ int ML_DecomposeGraph_LocalToGlobal( ML_Comm *comm,
   int i;
   int N_procs = comm->ML_nprocs;
   int *offsets = (int*)ML_allocate(sizeof(int)*(N_procs+1));
-  
+
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm->USR_comm);
 
   for( i=0 ; i<N_rows ; i++ )
     graph_decomposition[i] += offsets[comm->ML_mypid];
-  
+
   ML_free( offsets ); offsets=NULL;
 
   return 0;
-  
+
 } /* ML_DecomposeGraph_LocalToGlobal */
 
 int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
@@ -52,7 +52,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
   int i;
   int N_procs = comm->ML_nprocs;
   int *offsets = (int*)ML_allocate(sizeof(int)*(N_procs+1));
-  
+
   ML_DecomposeGraph_BuildOffsets( N_parts, offsets, comm->ML_nprocs, comm->USR_comm);
 
   for( i=0 ; i<N_rows ; i++ )
@@ -61,7 +61,7 @@ int ML_DecomposeGraph_GlobalToLocal( ML_Comm *comm,
   ML_free( offsets ); offsets=NULL;
 
   return 0;
-  
+
 } /* ML_DecomposeGraph_LocalToGlobal */
 
 int ML_DecomposeGraph_ConvertToDouble(ML_Operator *Amatrix,
@@ -78,7 +78,7 @@ int ML_DecomposeGraph_ConvertToDouble(ML_Operator *Amatrix,
   /* ------------------- execution begins --------------------------------- */
 
   /* need aggregate numbering in local form */
-  
+
   if( local_or_global == ML_LOCAL_INDICES ) {
     ML_DecomposeGraph_LocalToGlobal( Amatrix->comm,
 				     N_rows, N_local_parts,
@@ -90,9 +90,9 @@ int ML_DecomposeGraph_ConvertToDouble(ML_Operator *Amatrix,
 
   for( i=0 ; i<N_rows ; i++ )
     values[i] = (double)graph_decomposition[i];
-  
+
   /* back to input data */
-  
+
   if( convert_to_local == 1 ) {
     ML_DecomposeGraph_GlobalToLocal( Amatrix->comm,
 				     N_rows, N_local_parts,
@@ -100,7 +100,7 @@ int ML_DecomposeGraph_ConvertToDouble(ML_Operator *Amatrix,
   }
 
   return 0;
-  
+
 } /* ML_DecomposeGraph_ConvertToDouble */
 
 /* ======================================================================== */
@@ -140,7 +140,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   int *values;
   int ok;
   int shuffle, * reorder = NULL;
-  
+
   /* ------------------- execution begins --------------------------------- */
 
   if( Nlocal != Nrows ) {
@@ -154,9 +154,9 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 	     __LINE__ );
     exit( EXIT_FAILURE );
   }
-  
+
   /* define file name for this processor */
-  
+
   sprintf( filename,
 	   "%s%d",
 	   base_filename,
@@ -168,17 +168,17 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 	     filename );
     exit( EXIT_FAILURE );
   }
- 
+
   /* write on file the nodal coordinates */
-  
+
   fprintf( fp,
 	   "\nobject 1 class array type float rank 1"
 	   " shape 3 items %d data follows\n" ,
 	   Nrows );
 
   /* handle 1D, 2D and 3D cases */
-  
-  if( y == NULL ) 
+
+  if( y == NULL )
     for( irow=0 ; irow<Nrows ; irow++ ) {
       fprintf( fp,
 	       "%f 0 0\n",
@@ -206,11 +206,11 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 
     for( i=0 ; i<rowi_N ; i++ ) {
       if( rowi_col[i]<Nrows ) N_edges++;
-      
+
     }
-    
+
   }
-  
+
   /* write on file the edges connectivity */
 
   fprintf( fp,
@@ -228,17 +228,17 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 	fprintf( fp,
 		 "%d %d\n",
 		 irow, rowi_col[i] );
-      
+
     }
-    
+
   }
-  
+
   fprintf( fp,
 	   "attribute \"element type\" string \"lines\"\n"
 	   "attribute \"ref\" string \"positions\"\n" );
-  
+
   /* how write the partition_index */
-  
+
   fprintf( fp,
 	   "\nobject 3 class array type float"
 	   " rank 0 items %d data follows\n",
@@ -263,7 +263,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
 	     __LINE__ );
     exit( EXIT_FAILURE );
   }
-  
+
   if( local_or_global == ML_LOCAL_INDICES ) {
 
 #ifdef ML_MPI
@@ -289,7 +289,7 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   reorder = (int *) ML_allocate( sizeof(int) * Naggregates );
 
   if( shuffle == 1 ) { /* now always reordering */
-    
+
     if( reorder == NULL ) {
       fprintf( stderr,
 	       "*ML*ERR* not enough memory for %d bytes\n"
@@ -302,13 +302,13 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
     for( i=0 ; i<Naggregates ; ++i ) reorder[i] = -1;
 
     srand(0);
-    
+
     for( i=0 ; i<Naggregates ; ++i ) {
 
       do {
 
 	ok = 0;
-	
+
 	j = (int)(1.0*(Naggregates)*rand()/RAND_MAX);
 
 	if( reorder[j] == -1 && j<Naggregates ) {
@@ -322,17 +322,17 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   } else {
 
     for( i=0 ; i<Naggregates ; ++i ) reorder[i] = i;
-    
+
   }
 
   if( local_or_global == ML_LOCAL_INDICES ) {
-    
+
     /* max_Naggregates = ML_gmax_int( Naggregates, comm); */
 
     for( i=0 ; i<Nrows ; i++ ) {
       values[i] = mypid +  nprocs * reorder[graph_decomposition[i]];
     }
-    
+
   } else {
 
     for( i=0 ; i<Nrows ; i++ ) {
@@ -341,15 +341,15 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   }
 
   ML_free(reorder);
-  
-  for( irow=0 ; irow<Nrows ; irow++ ) 
+
+  for( irow=0 ; irow<Nrows ; irow++ )
     fprintf( fp,
 	     "%f\n",
 	     (float)values[irow] );
 
-  
+
   /* still some stuff for OpenDX */
-  
+
   fprintf( fp,
 	   "attribute \"dep\" string \"positions\"\n"
 	   "\nobject \"viz mamma\" class field\n"
@@ -366,8 +366,8 @@ int ML_Aggregate_VisualizeWithOpenDX( ML_Aggregate_Viz_Stats info,
   ML_free( Nnz_row ); Nnz_row=NULL;
   ML_free(rowi_col); ML_free(rowi_val);
   rowi_col = NULL; rowi_val = NULL;
-  allocated = 0; 
-  
+  allocated = 0;
+
   return 0;
-  
+
 } /* ML_VisualizeWithOpenDX */

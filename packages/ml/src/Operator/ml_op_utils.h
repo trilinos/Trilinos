@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -66,7 +66,7 @@ extern "C" {
 
 
 extern int oldML_Mdfy_Prolongator_DirBdry(ML *, int , double *, double *);
-extern int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size, 
+extern int ML_Compute_Coarse_Bdry(ML *ml_handle, int level, int size,
            int fine_size);
 extern int ML_Mdfy_Prolongator_DirBdry(ML *ml_handle, int level2, int size,
      int fine_size );
@@ -76,7 +76,7 @@ extern ML_Operator *ML_Operator_ExplicitlyScale(ML_Operator *matrix,
 
 extern int ML_Operator_ChangeToSinglePrecision(ML_Operator *matrix);
 extern int ML_Operator_ChangeToChar(ML_Operator *matrix);
-extern int ML_Operator_ImplicitTranspose(ML_Operator *Rmat, 
+extern int ML_Operator_ImplicitTranspose(ML_Operator *Rmat,
 					 ML_Operator *Pmat,
 					 int PostCommAlreadySet);
 extern int ML_Gen_Restrictor_TransP(ML *, int, int, ML_Operator*);
@@ -95,14 +95,14 @@ extern int ML_Operator_Transpose_byrow(ML_Operator *A, ML_Operator *Atrans);
 extern int ML_Operator_Getrow_Diag(ML_Operator *Amat, double **diagonal);
 extern int ML_build_overlapped_pre_comm(ML_Operator *tempA, ML_CommInfoOP
 					*old_comm, int max_per_proc,
-					int *hash_list, int hash_length, 
-					int *hash_used, int old_Nrows, 
+					int *hash_list, int hash_length,
+					int *hash_used, int old_Nrows,
 					int *Nexternal, int *external[],
 					int *Nexternal_allocated);
-extern int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows, 
-					 int hash_list[], int hash_length, 
-					 int *hash_used, int Gid_assigned_to_proc[], 
-					 ML_Comm *comm, 
+extern int ML_Operator_HashGlobalRcvList(ML_CommInfoOP *pre_comm, int Nrows,
+					 int hash_list[], int hash_length,
+					 int *hash_used, int Gid_assigned_to_proc[],
+					 ML_Comm *comm,
 					 int *Nexternal, int **external,
 					 int *Nexternal_allocated);
 extern int ML_overlap(ML_Operator *oldA, ML_Operator *newA, int overlap,

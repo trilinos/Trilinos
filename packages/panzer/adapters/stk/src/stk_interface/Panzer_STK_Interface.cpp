@@ -93,13 +93,13 @@ const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
 STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0)
+   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
 }
 
 STK_Interface::STK_Interface(unsigned dim)
-   : dimension_(dim), initialized_(false), currentLocalId_(0)
+   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false)
 {
    std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
    entity_rank_names.push_back("FAMILY_TREE");
@@ -176,15 +176,27 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
    TEUCHOS_TEST_FOR_EXCEPTION(!validBlockId(blockId),ElementBlockException,
                       "Unknown element block \"" << blockId << "\"");
 
+   // we only allow one alternative coordinate field
+   TEUCHOS_TEST_FOR_EXCEPTION(meshCoordFields_.find(blockId)!=meshCoordFields_.end(),std::invalid_argument,
+                              "STK_Interface::addMeshCoordFields: Can't set more than one set of coordinate "
+                              "fields for element block \""+blockId+"\".");
+
    // Note that there is a distinction between the key which is used for lookups
    // and the field that lives on the mesh, which is used for printing the displacement.
 
-   std::map<std::string,std::string> & dispFields = meshCoordFields_[blockId];
-   std::map<std::string,int> & dispAxis = meshFieldsAxis_[blockId];
+   // just copy the coordinate names
+   meshCoordFields_[blockId] = coordNames;
+
+   // must fill in the displacement fields
+   std::vector<std::string> & dispFields = meshDispFields_[blockId];
+   dispFields.resize(dimension_);
 
    for(unsigned i=0;i<dimension_;i++) {
       std::pair<std::string,std::string> key = std::make_pair(coordNames[i],blockId);
       std::string dispName = dispPrefix+coordNames[i];
+
+      dispFields[i] = dispName; // record this field as a
+                                // displacement field
    
       // add & declare field if not already added...currently assuming linears
       if(fieldNameToSolution_.find(key)==fieldNameToSolution_.end()) {
@@ -192,9 +204,6 @@ void STK_Interface::addMeshCoordFields(const std::string & blockId,
          SolutionFieldType * field = metaData_->get_field<SolutionFieldType>(dispName);
          if(field==0) {
             field = &metaData_->declare_field<SolutionFieldType>(dispName);     
-            dispFields[coordNames[i]] = dispName; // record this field as a
-                                                  // displacement field
-            dispAxis[coordNames[i]] = i;          // record axis too
          }
          fieldNameToSolution_[key] = field;
       }
@@ -917,20 +926,20 @@ STK_Interface::isMeshCoordField(const std::string & eBlock,
                                 const std::string & fieldName,
                                 int & axis) const
 {
-  typedef std::map<std::string,int> IntMap;
- 
-  std::map<std::string,IntMap>::const_iterator blkItr = meshFieldsAxis_.find(eBlock);
-  if(blkItr==meshFieldsAxis_.end()) {
+  std::map<std::string,std::vector<std::string> >::const_iterator blkItr = meshCoordFields_.find(eBlock);
+  if(blkItr==meshCoordFields_.end()) {
     return false;
   }
 
-  IntMap::const_iterator fldItr = blkItr->second.find(fieldName);
-  if(fldItr==blkItr->second.end()) {
-    return false;
+  axis = 0;
+  for(axis=0;axis<blkItr->second.size();axis++) {
+    if(blkItr->second[axis]==fieldName) 
+      break; // found axis, break
   }
+    
+  if(axis>=blkItr->second.size())
+    return false;
  
-  axis = fldItr->second; 
-
   return true;
 }
 

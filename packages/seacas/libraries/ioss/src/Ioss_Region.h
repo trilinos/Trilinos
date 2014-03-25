@@ -98,9 +98,11 @@ namespace Ioss {
     virtual int  add_state(double time);
 
     // Get time corresponding to specified state
+    
     virtual double get_state_time(int state=-1) const;
-    virtual double begin_state(int state);
-    virtual double end_state(int state);
+    int get_current_state() const;
+    double begin_state(int state);
+    double end_state(int state);
     bool model_defined() const {return modelDefined;}
     bool transient_defined() const {return transientDefined;}
 
@@ -247,6 +249,10 @@ namespace Ioss {
     bool transientDefined;
   };
 }
+
+inline int Ioss::Region::get_current_state() const
+{return currentState;}
+
 inline bool Ioss::Region::supports_field_type(Ioss::EntityType fld_type) const
 {return get_database()->entity_field_support() & fld_type;}
 

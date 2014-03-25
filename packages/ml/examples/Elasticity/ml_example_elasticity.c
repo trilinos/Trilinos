@@ -1,15 +1,15 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /*****************************************************************************
-   Sample driver for AZTEC/ML package. 
+   Sample driver for AZTEC/ML package.
    this driver comes together with the examples in the directories
 
    ExampleMatrices/shell_vb_intersection/ (<-under construction)
-   ExampleMatrices/shell_vb_lineal/       
-   
+   ExampleMatrices/shell_vb_lineal/
+
    Each directory holds a file "inputfile" specifying ML-options and
    a couple of data*.txt files specifying the variable block system of equations
 
@@ -38,7 +38,7 @@
 #if defined(HAVE_ML_AZTEC2_1) || defined(HAVE_ML_AZTECOO)
 #include "az_aztec.h"
 #if 1
-#undef ML_partition 
+#undef ML_partition
 #endif
 extern int AZ_using_fortran;
 int    parasails_factorized = 0;
@@ -77,7 +77,7 @@ int main(int argc, char *argv[])
   int i, j, Nrigid, *garbage, nblocks=0, *blocks = NULL, *block_pde=NULL;
   struct AZ_SCALING *scaling;
   ML_Aggregate *ag;
-  double *mode, *rigid=NULL, alpha; 
+  double *mode, *rigid=NULL, alpha;
   char filename[80];
   int    one = 1;
   int    proc,nprocs;
@@ -161,23 +161,23 @@ int main(int argc, char *argv[])
       fflush(stderr); exit(EXIT_FAILURE);
   }
   for (i=0; i<N_update; i++) update[i] = i+leng2;
-  
+
 #if 0 /* debug */
   printf("proc %d N_update %d\n",proc_config[AZ_node],N_update);
-  fflush(stdout);                   
+  fflush(stdout);
 #endif
   sprintf(pathfilename,"%s/data_vblocks.txt",argv[1]);
   ML_AZ_Reader_ReadVariableBlocks(pathfilename,&nblocks,&blocks,&block_pde,
                                   &N_update,&update,proc_config);
 #if 0 /* debug */
   printf("proc %d N_update %d\n",proc_config[AZ_node],N_update);
-  fflush(stdout);                   
+  fflush(stdout);
 #endif
 
   sprintf(pathfilename,"%s/data_matrix.txt",argv[1]);
   AZ_input_msr_matrix(pathfilename,update, &val, &bindx, N_update, proc_config);
 
-  /* This code is to fix things up so that we are sure we have   */ 
+  /* This code is to fix things up so that we are sure we have   */
   /* all blocks (including the ghost nodes) the same size.       */
   /* not sure, whether this is a good idea with variable blocks  */
   /* the examples inpufiles (see top of this file) don't need it */
@@ -188,22 +188,22 @@ int main(int argc, char *argv[])
   AZ_transform_norowreordering(proc_config, &external, bindx, val,  update, &update_index,
 	       &extern_index, &data_org, N_update, 0, 0, 0, &cpntr,
 	       AZ_MSR_MATRIX);
-	
+
   Amat = AZ_matrix_create( leng );
 
   AZ_set_MSR(Amat, bindx, val, data_org, 0, NULL, AZ_LOCAL);
 
   Amat->matrix_type  = data_org[AZ_matrix_type];
-	
+
   data_org[AZ_N_rows]  = data_org[AZ_N_internal] + data_org[AZ_N_border];
-			
+
   start_time = AZ_second();
 
   options[AZ_scaling] = AZ_none;
 
   ML_Create(&ml, N_levels);
-			
-			
+
+
   /* set up discretization matrix and matrix vector function */
   AZ_ML_Set_Amat(ml, 0, N_update, N_update, Amat, proc_config);
 
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   }
   else if (ML_strcmp(context->agg_coarsen_scheme,"VBMetis") == 0) {
      /* when no blocks read, use standard metis assuming constant block sizes */
-     if (!blocks) 
+     if (!blocks)
         ML_Aggregate_Set_CoarsenScheme_METIS(ag);
      else {
         ML_Aggregate_Set_CoarsenScheme_VBMETIS(ag);
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
    else {
       fclose(fp);
       if (proc_config[AZ_node] == 0) printf("reading rhs from a file\n");
-      AZ_input_msr_matrix(pathfilename, update, &rhs, &garbage, N_update, 
+      AZ_input_msr_matrix(pathfilename, update, &rhs, &garbage, N_update,
                           proc_config);
    }
    AZ_reorder_vec(rhs, data_org, update_index, NULL);
@@ -295,7 +295,7 @@ int main(int argc, char *argv[])
    for (i = 0; i < Nrigid; i++) {
       sprintf(filename,"data_nullsp%d.txt",i);
       sprintf(pathfilename,"%s/%s",argv[1],filename);
-      AZ_input_msr_matrix(pathfilename, update, &mode, &garbage, N_update, 
+      AZ_input_msr_matrix(pathfilename, update, &mode, &garbage, N_update,
                           proc_config);
       AZ_reorder_vec(mode, data_org, update_index, NULL);
 
@@ -306,11 +306,11 @@ int main(int argc, char *argv[])
 
     for (j = 0; j < i; j++) {
        alpha = -AZ_gdot(N_update, mode, &(rigid[j*N_update]), proc_config)/
-                  AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), 
+                  AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]),
                                proc_config);
        DAXPY_F77(&N_update, &alpha,  &(rigid[j*N_update]),  &one, mode, &one);
     }
-   
+
     /* rhs orthogonalization */
 
     alpha = -AZ_gdot(N_update, mode, rhs, proc_config)/
@@ -324,7 +324,7 @@ int main(int argc, char *argv[])
 
   for (j = 0; j < Nrigid; j++) {
      alpha = -AZ_gdot(N_update, rhs, &(rigid[j*N_update]), proc_config)/
-              AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]), 
+              AZ_gdot(N_update, &(rigid[j*N_update]), &(rigid[j*N_update]),
                       proc_config);
      DAXPY_F77(&N_update, &alpha,  &(rigid[j*N_update]),  &one, rhs, &one);
   }
@@ -339,13 +339,13 @@ int main(int argc, char *argv[])
   if (rigid) ML_free(rigid);
 
   ag->keep_agg_information = 1;
-  coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, 0, 
+  coarsest_level = ML_Gen_MGHierarchy_UsingAggregation(ml, 0,
                                             ML_INCREASING, ag);
-  coarsest_level--;                                            
+  coarsest_level--;
 
   if ( proc_config[AZ_node] == 0 )
 	printf("Coarse level = %d \n", coarsest_level);
-	
+
 #if 0
   /* set up smoothers */
   if (!blocks)
@@ -355,13 +355,13 @@ int main(int argc, char *argv[])
   for (level = 0; level < coarsest_level; level++) {
 
       num_PDE_eqns = ml->Amat[level].num_PDEs;
-		
+
      /*  Sparse approximate inverse smoother that acutally does both */
      /*  pre and post smoothing.                                     */
 
      if (ML_strcmp(context->smoother,"Parasails") == 0) {
-        ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth, 
-                                parasails_sym, parasails_thresh, 
+        ML_Gen_Smoother_ParaSails(ml , level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 (int) parasails_loadbal, parasails_factorized);
      }
@@ -399,7 +399,7 @@ int main(int argc, char *argv[])
 
      /* This is a true Gauss Seidel in parallel. This seems to work for  */
      /* elasticity problems.  However, I don't believe that this is very */
-     /* efficient in parallel.                                           */       
+     /* efficient in parallel.                                           */
      /*
       nblocks = ml->Amat[level].invec_leng;
       for (i =0; i < nblocks; i++) blocks[i] = i;
@@ -433,15 +433,15 @@ int main(int argc, char *argv[])
          exit(1);
      }
    }
-	
+
    /* set coarse level solver */
    nsmooth   = context->coarse_its;
    /*  Sparse approximate inverse smoother that acutally does both */
    /*  pre and post smoothing.                                     */
 
    if (ML_strcmp(context->coarse_solve,"Parasails") == 0) {
-        ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth, 
-                                parasails_sym, parasails_thresh, 
+        ML_Gen_Smoother_ParaSails(ml , coarsest_level, ML_PRESMOOTHER, nsmooth,
+                                parasails_sym, parasails_thresh,
                                 parasails_nlevels, parasails_filter,
                                 (int) parasails_loadbal, parasails_factorized);
    }
@@ -463,7 +463,7 @@ int main(int argc, char *argv[])
          if (blocks)    ML_free(blocks);
          if (block_pde) ML_free(block_pde);
          ML_Gen_Blocks_Aggregates(ag, coarsest_level, &nblocks, &blocks);
-         ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH, 
+         ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
                                         nsmooth,1., nblocks, blocks);
    }
    else if (ML_strcmp(context->coarse_solve,"Jacobi") == 0) {
@@ -474,7 +474,7 @@ int main(int argc, char *argv[])
          if (block_pde) ML_free(block_pde);
          nblocks = 250;
          ML_Gen_Blocks_Metis(ml, coarsest_level, &nblocks, &blocks);
-         ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH, 
+         ML_Gen_Smoother_VBlockSymGaussSeidel(ml , coarsest_level, ML_BOTH,
                                               nsmooth,1., nblocks, blocks);
    }
    else if (ML_strcmp(context->coarse_solve,"SuperLU") == 0) {
@@ -487,11 +487,11 @@ int main(int argc, char *argv[])
          printf("unknown coarse grid solver %s\n",context->coarse_solve);
          exit(1);
    }
-		
-   ML_Gen_Solver(ml, ML_MGV, 0, coarsest_level); 
+
+   ML_Gen_Solver(ml, ML_MGV, 0, coarsest_level);
 
    AZ_defaults(options, params);
-	
+
    if (ML_strcmp(context->krylov,"Cg") == 0) {
       options[AZ_solver]   = AZ_cg;
    }
@@ -519,14 +519,14 @@ int main(int argc, char *argv[])
    params[AZ_tol]       = context->tol;
    options[AZ_output]   = context->output;
    ML_free(context);
-	
-   AZ_set_ML_preconditioner(&Pmat, Amat, ml, options); 
+
+   AZ_set_ML_preconditioner(&Pmat, Amat, ml, options);
    setup_time = AZ_second() - start_time;
-	
+
    xxx = (double *) malloc( leng*sizeof(double));
 
-   for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0; 
-	
+   for (iii = 0; iii < leng; iii++) xxx[iii] = 0.0;
+
 
    /* Set x */
    /*
@@ -536,7 +536,7 @@ int main(int argc, char *argv[])
    if (fp != NULL) {
       fclose(fp);
       if (proc_config[AZ_node]== 0) printf("reading initial guess from file\n");
-      AZ_input_msr_matrix("data_initguess.txt", update, &xxx, &garbage, N_update, 
+      AZ_input_msr_matrix("data_initguess.txt", update, &xxx, &garbage, N_update,
                           proc_config);
 
       options[AZ_conv] = AZ_expected_values;
@@ -549,7 +549,7 @@ int main(int argc, char *argv[])
 
    for (i = 0; i < data_org[AZ_N_internal]+data_org[AZ_N_border]; i++) {
       if ( (val[i] > .99999999) && (val[i] < 1.0000001))
-         xxx[i] = rhs[i];      
+         xxx[i] = rhs[i];
    }
 
    fp = fopen("AZ_no_multilevel.dat","r");
@@ -562,39 +562,39 @@ int main(int argc, char *argv[])
       options[AZ_ignore_scaling] = AZ_TRUE;
 
       options[AZ_keep_info] = 1;
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 
 /*
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, NULL, scaling);
 */
    }
    else {
       options[AZ_keep_info] = 1;
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
       options[AZ_pre_calc] = AZ_reuse;
       options[AZ_conv] = AZ_expected_values;
 /*
-      if (proc_config[AZ_node] == 0) 
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Second solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
-      if (proc_config[AZ_node] == 0) 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
+      if (proc_config[AZ_node] == 0)
               printf("\n-------- Third solve with improved convergence test -----\n");
-      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling); 
+      AZ_iterate(xxx, rhs, options, params, status, proc_config, Amat, Pmat, scaling);
 */
    }
    solve_time = AZ_second() - start_time;
 
-   if (proc_config[AZ_node] == 0) 
+   if (proc_config[AZ_node] == 0)
       printf("Solve time = %e, MG Setup time = %e\n", solve_time, setup_time);
 
-   if (proc_config[AZ_node] == 0) 
+   if (proc_config[AZ_node] == 0)
      printf("Printing out a few entries of the solution ...\n");
 
    for (j=0;j<Amat->data_org[AZ_N_internal]+ Amat->data_org[AZ_N_border];j++)
@@ -635,14 +635,14 @@ int main(int argc, char *argv[])
 #ifdef ML_MPI
   MPI_Finalize();
 #endif
-	
+
   return 0;
-	
+
 }
 
 
 #else /* do not have aztec */
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
 #ifdef ML_MPI
   MPI_Init(&argc,&argv);

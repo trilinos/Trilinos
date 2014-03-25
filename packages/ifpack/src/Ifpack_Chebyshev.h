@@ -421,7 +421,6 @@ private:
   Teuchos::RefCountPtr<EpetraExt_PointToBlockDiagPermute> InvBlockDiagonal_;
 #endif
 
-
   //! Run on the normal equations
   bool SolveNormalEquations_;
 

@@ -1,6 +1,6 @@
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 /* ******************************************************************** */
@@ -35,7 +35,7 @@ typedef struct ML_Comm_Envelope_Struct ML_Comm_Envelope;
 /* of Galerkin coarse grid operator.                                    */
 /* -------------------------------------------------------------------- */
 
-struct ML_NeighborList_Struct 
+struct ML_NeighborList_Struct
 {
    int ML_id; /*Process id*/
    int N_rcv, N_send; /*how many doubles sent and recived to this process id.  One of these could be zero for someone only sending or recieving*/
@@ -66,15 +66,15 @@ struct ML_CommInfoOP_Struct {
    double          time;
    int             NumActiveProc;
    int             proc_active;
-   int             message_tag;  
+   int             message_tag;
   /* Don't increment this explicitly - use ML_CommInfoOp_IncrementMessageTag instead */
   ML_Comm         *comm;
 
 };
 
-/* -------------------------------------------------------------------- 
-   'Comm_Envelope' holds message envelope information (e.g., message    
-   tag). The motivation is to avoid asynchronous communication behavior.        
+/* --------------------------------------------------------------------
+   'Comm_Envelope' holds message envelope information (e.g., message
+   tag). The motivation is to avoid asynchronous communication behavior.
 
    tag              the message tag
    -------------------------------------------------------------------- */
@@ -90,7 +90,7 @@ extern "C" {
 #endif
 
 extern int  ML_CommInfoOP_Generate(ML_CommInfoOP **comm_info,
-                   int (*user_comm)(double *, void *), void *user_data, 
+                   int (*user_comm)(double *, void *), void *user_data,
                    ML_Comm *ml_comm, int N_cols, int Nghost );
 extern int  ML_CommInfoOP_Clone(ML_CommInfoOP **newone, ML_CommInfoOP *oldone);
 
@@ -98,7 +98,7 @@ extern ML_CommInfoOP *ML_CommInfoOP_Create(void);
 extern void ML_CommInfoOP_Destroy(ML_CommInfoOP **comm_info);
 
 extern void ML_CommInfoOp_IncrementMessageTag(ML_CommInfoOP *c_info);
-  
+
 extern int  ML_CommInfoOP_Get_Nneighbors(ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_neighbors( ML_CommInfoOP *c_info);
 extern int *ML_CommInfoOP_Get_sendlist(  ML_CommInfoOP *c_info, int neighbor);
@@ -117,10 +117,10 @@ extern int  ML_CommInfoOP_Print(ML_CommInfoOP *c_info, char *label);
 extern int ML_CommInfoOP_Deficient_GhostBlk_Check(ML_CommInfoOP *c_info,
                                                 int BlkSize, int PrintFromNode);
 
-extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm, 
+extern int ML_CommInfoOP_TransComm(ML_CommInfoOP *pre_comm,
 				   ML_CommInfoOP **post_comm,
 				   int invec_leng);
-extern ML_CommInfoOP *ML_CommInfoOP_SqueezeColumns(ML_CommInfoOP *pre_comm, 
+extern ML_CommInfoOP *ML_CommInfoOP_SqueezeColumns(ML_CommInfoOP *pre_comm,
                                             int invec_leng, int NewCols[]);
 
 extern int ML_CommInfoOP_PopulateBlks(ML_CommInfoOP *pre_comm,
@@ -132,8 +132,8 @@ extern void ML_create_unique_BlockCol_id(int N_local, int **map, int BlkSize,
 
 extern void ML_create_unique_col_id(int Ncols, int **map, ML_CommInfoOP *,
                                     int *max_per_proc, ML_Comm *comm);
-extern void ML_create_unique_col_id_exactoffset(int N_local, int **map, 
-                                         ML_CommInfoOP *comm_info, 
+extern void ML_create_unique_col_id_exactoffset(int N_local, int **map,
+                                         ML_CommInfoOP *comm_info,
                                          int *max_per_proc, ML_Comm *comm);
 extern void ML_create_unique_id(int N_local, int **map, ML_CommInfoOP *, ML_Comm *comm, int offset);
 extern void ML_cheap_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
@@ -146,7 +146,7 @@ extern void ML_exchange_bdry(double dtemp[], ML_CommInfoOP *comm_info,
 extern int ML_reverse_exchange(double *, ML_CommInfoOP *, int, ML_Comm *comm);
 
 extern void ML_transposed_exchange_bdry(double x[], ML_CommInfoOP *comm_info,
-                     int start_location, ML_Comm *comm, int overwrite_or_add); 
+                     int start_location, ML_Comm *comm, int overwrite_or_add);
 
 extern int ML_Comm_Envelope_Create(ML_Comm_Envelope**);
 extern int ML_Comm_Envelope_Init(ML_Comm_Envelope* envelope);

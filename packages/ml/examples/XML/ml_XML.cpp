@@ -1,7 +1,7 @@
 
 /* ******************************************************************** */
 /* See the file COPYRIGHT for a complete copyright notice, contact      */
-/* person and disclaimer.                                               */        
+/* person and disclaimer.                                               */
 /* ******************************************************************** */
 
 // Shows the usage of ml_ParameterList.xml file reader.
@@ -79,7 +79,7 @@ using namespace Galeri;
 
 int main(int argc, char *argv[])
 {
-  
+
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
@@ -98,7 +98,7 @@ int main(int argc, char *argv[])
 
   Epetra_Map* Map = CreateMap("Cartesian2D", Comm, GaleriList);
   Epetra_CrsMatrix* A = CreateCrsMatrix("Laplace2D", Map, GaleriList);
-    
+
   // Build a linear system with trivial solution, using a random vector
   // as starting solution.
   Epetra_Vector LHS(*Map); LHS.Random();
@@ -106,12 +106,12 @@ int main(int argc, char *argv[])
 
   Epetra_LinearProblem Problem(A, &LHS, &RHS);
 
-  // As we wish to use AztecOO, we need to construct a solver object 
+  // As we wish to use AztecOO, we need to construct a solver object
   // for this problem
   AztecOO solver(Problem);
 
   // =========================== begin of ML part ===========================
-  
+
   // Create an almost empty list. Note: you *must* add
   //      MLList.set("read XML", true);
   // to your MLList in order to read the XML file.
@@ -121,12 +121,12 @@ int main(int argc, char *argv[])
 
   // Since a file called ml_ParameterList.xml is present in the working
   // directory, ML will parse this XML file and use it to specify the
-  // parameters. 
-  ML_Epetra::MultiLevelPreconditioner* MLPrec = 
+  // parameters.
+  ML_Epetra::MultiLevelPreconditioner* MLPrec =
     new ML_Epetra::MultiLevelPreconditioner(*A, MLList);
 
   // =========================== end of ML part =============================
-  
+
   solver.SetPrecOperator(MLPrec);
   solver.SetAztecOption(AZ_solver, AZ_gmres);
   solver.SetAztecOption(AZ_output, 32);
@@ -134,7 +134,7 @@ int main(int argc, char *argv[])
 
   // destroy the preconditioner
   delete MLPrec;
-  
+
   delete A;
   delete Map;
 
@@ -168,7 +168,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
-  
+
   return(EXIT_SUCCESS);
 }
 

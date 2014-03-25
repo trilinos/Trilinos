@@ -522,8 +522,8 @@ namespace MueLu {
         // TODO fix this (type mismatch double vs. int)
         //MUELU_COPY_PARAM(paramList, "smoother: ifpack level-of-fill", double /*int*/, 0.0 /*2*/,  smootherParamList, "fact: level-of-fill");
         if (paramList.isParameter("smoother: ifpack level-of-fill"))
-          smootherParamList.set<int>("fact: level-of-fill", Teuchos::as<int>(paramList.get<double>("smoother: ifpack level-of-fill")));
-        else smootherParamList.set<int>("fact: level-of-fill", 0);
+          smootherParamList.set("fact: level-of-fill", Teuchos::as<int>(paramList.get<double>("smoother: ifpack level-of-fill")));
+        else smootherParamList.set("fact: level-of-fill", as<int>(0));
 
         MUELU_COPY_PARAM(paramList, "smoother: ifpack overlap",       int, 2,  smootherParamList, "partitioner: overlap");
 

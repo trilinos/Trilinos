@@ -67,7 +67,7 @@
 #endif // ! _OPENMP
 
 #ifdef KOKKOS_USE_CUSPARSE
-#  include <cusparse_v2.h>
+#  include <cusparse.h>
 #  include <Kokkos_CrsMatrix_CuSparse.hpp>
 #endif // KOKKOS_USE_CUSPARSE
 
@@ -141,10 +141,10 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView (value_type* const values,
-                 ordinal_type* const colidx,
+                 ordinal_type* const colidx__,
                  const int stride,
                  const int count) :
-    values_ (values), colidx_ (colidx), stride_ (stride), length (count)
+    values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
   /// \brief Constructor
   ///
@@ -155,11 +155,11 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowView (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx,
+      const typename MatrixType::index_type& colidx__,
                  const int& stride,
                  const int& count,
                  const int& idx) :
-    values_ (&values(idx)), colidx_ (&colidx(idx)), stride_ (stride), length (count)
+    values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
   /// \brief Number of entries in the row.
@@ -221,10 +221,10 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst (value_type* const values,
-                      ordinal_type* const colidx,
+                      ordinal_type* const colidx__,
                       const int stride,
                       const int count) :
-    values_ (values), colidx_ (colidx), stride_ (stride), length (count)
+    values_ (values), colidx_ (colidx__), stride_ (stride), length (count)
   {}
   /// \brief Constructor
   ///
@@ -235,11 +235,11 @@ public:
   /// \param count [in] Number of entries in the row.
   KOKKOS_INLINE_FUNCTION
   SparseRowViewConst (const typename MatrixType::values_type& values,
-      const typename MatrixType::index_type& colidx,
+      const typename MatrixType::index_type& colidx__,
                  const int& stride,
                  const int& count,
                  const int& idx) :
-    values_ (&values(idx)), colidx_ (&colidx(idx)), stride_ (stride), length (count)
+    values_ (&values(idx)), colidx_ (&colidx__(idx)), stride_ (stride), length (count)
   {}
 
   /// \brief Number of entries in the row.
@@ -569,9 +569,9 @@ public:
   // FIXME (mfh 29 Sep 2013) See notes on the three-argument version
   // of this method below.
   void
-  insertInGraph(OrdinalType row, OrdinalType col)
+  insertInGraph(OrdinalType rowi, OrdinalType col)
   {
-    insertInGraph(row, &col, 1);
+    insertInGraph(rowi, &col, 1);
   }
 
   // FIXME (mfh 29 Sep 2013) We need a way to disable atomic updates
@@ -584,13 +584,13 @@ public:
   // support atomic updates) won't work on GPUs.
   KOKKOS_INLINE_FUNCTION
   void
-  sumIntoValues (const OrdinalType row,
+  sumIntoValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const size_t ncol,
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (row);
+    SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const int length = row_view.length;
     for (size_t i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
@@ -608,13 +608,13 @@ public:
   // FIXME (mfh 29 Sep 2013) See above notes on sumIntoValues.
   KOKKOS_INLINE_FUNCTION
   void
-  replaceValues (const OrdinalType row,
+  replaceValues (const OrdinalType rowi,
                  const OrdinalType cols[],
                  const size_t ncol,
                  ScalarType vals[],
                  const bool force_atomic = false) const
   {
-    SparseRowView<CrsMatrix> row_view = this->row (row);
+    SparseRowView<CrsMatrix> row_view = this->row (rowi);
     const int length = row_view.length;
     for (size_t i = 0; i < ncol; ++i) {
       for (int j = 0; j < length; ++j) {
@@ -715,10 +715,10 @@ public:
   // Furthermore, this should be a device function, by analogy with
   // UnorderedMap.
   void
-  insertInGraph (const OrdinalType row, OrdinalType *cols, const size_t ncol)
+  insertInGraph (const OrdinalType rowi, OrdinalType *cols, const size_t ncol)
   {
-    OrdinalType* const start = &h_entries_[rows_[row]];
-    OrdinalType* const end   = &h_entries_[rows_[row+1]];
+    OrdinalType* const start = &h_entries_[rows_[rowi]];
+    OrdinalType* const end   = &h_entries_[rows_[rowi+1]];
     for (size_t i = 0; i < ncol; ++i) {
       OrdinalType *iter = start;
       while (iter < end && *iter != -1 && *iter != cols[i]) {
@@ -813,7 +813,7 @@ generate (const std::string &label,
   srand(13721);
   h_row_map(0) = 0;
 
-  for (int row = 0; row < nrows; ++row) {
+  for (int rowi = 0; rowi < nrows; ++rowi) {
    // int varianz = (1.0 * rand() / INT_MAX - 0.5) * varianz_nel_row;
    // h_row_map(row + 1) = h_row_map(row) + elements_per_row + varianz;
   }
@@ -824,8 +824,8 @@ generate (const std::string &label,
   typename values_type::HostMirror h_values = Kokkos::create_mirror_view(values);
   typename index_type::HostMirror h_entries = Kokkos::create_mirror_view(graph.entries);
 
-  for(int row = 0; row < nrows; row++) {
-    for(int k = h_row_map(row); k < h_row_map(row + 1); row++) {
+  for(int rowi = 0; rowi < nrows; rowi++) {
+    for(int k = h_row_map(rowi); k < h_row_map(rowi + 1); k++) {
       //int pos = (1.0 * rand() / INT_MAX - 0.5) * width_row;
 
       //if(pos < 0) pos += ncols;
@@ -902,16 +902,16 @@ generate (const std::string &label)
     rows_[++cur_row] = ptr_to;
   }
   OrdinalType nrows = rows_.size()-1;
-  OrdinalType nnz = ptr_to;
+  OrdinalType nnz_ = ptr_to;
 
-  h_entries_.resize(nnz);
+  h_entries_.resize(nnz_);
 
   //sort the rows
   for (OrdinalType i=0; i<nrows; ++i )
     std::sort(&h_entries_[i], &h_entries_[i+1]);
 
   // generate the matrix
-  import(label, nrows, nrows, nnz, NULL, &rows_[0], &h_entries_[0]);
+  import(label, nrows, nrows, nnz_, NULL, &rows_[0], &h_entries_[0]);
 
 }
 
@@ -1091,8 +1091,12 @@ struct MV_MultiplyFunctor {
     //
     // FIXME (mfh 29 Sep 2013) Is a "loop count" of "24" a good idea
     // when the matrix has many fewer entries per row than that?
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
     for (size_type k = 0 ; k < UNROLL ; ++k) {
       // NOTE (mfh 09 Aug 2013) This requires that assignment from int
       // (in this case, 0) to value_type be defined.  It's not for
@@ -1110,14 +1114,22 @@ struct MV_MultiplyFunctor {
     if (doalpha != -1) {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for (size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value ) {
         const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] +=  val * m_x(ind, kk + k);
         }
@@ -1125,61 +1137,89 @@ struct MV_MultiplyFunctor {
     } else {
       const SparseRowView<CrsMatrix> row = m_A.row(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
-#pragma loop count (15)
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
       for(size_type iEntry = lane ; iEntry < row.length ; iEntry+=ShflThreadsPerRow::device_value ) {
         const value_type val = row.value(iEntry);
         const size_type ind = row.colidx(iEntry);
 
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] -= val * m_x(ind, kk + k);
         }
       }
     }
-    for (int i=0; i < UNROLL; ++i) {
+    for (int ii=0; ii < UNROLL; ++ii) {
       if (ShflThreadsPerRow::device_value > 1)
-        sum[i] += shfl_down(sum[i], 1,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 1,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 2)
-        sum[i] += shfl_down(sum[i], 2,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 2,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 4)
-        sum[i] += shfl_down(sum[i], 4,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 4,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 8)
-        sum[i] += shfl_down(sum[i], 8,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 8,ShflThreadsPerRow::device_value);
       if (ShflThreadsPerRow::device_value > 16)
-        sum[i] += shfl_down(sum[i], 16,ShflThreadsPerRow::device_value);
+        sum[ii] += shfl_down(sum[ii], 16,ShflThreadsPerRow::device_value);
     }
     if (lane==0) {
       if(doalpha * doalpha != 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           sum[k] *= alpha(kk + k);
         }
       }
 
       if (dobeta == 0) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = sum[k];
         }
       } else if(dobeta == 1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) += sum[k];
         }
       } else if (dobeta == -1) {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = -m_y(iRow, kk + k) +  sum[k];
         }
       } else {
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
         for (size_type k = 0; k < UNROLL; ++k) {
           m_y(iRow, kk + k) = beta(kk + k) * m_y(iRow, kk + k) + sum[k] ;
         }
@@ -1196,14 +1236,30 @@ struct MV_MultiplyFunctor {
     if(doalpha != -1) {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum += row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
     } else {
       const SparseRowViewConst<CrsMatrix> row = m_A.rowConst(iRow);
 
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
 #pragma loop count (15)
+#endif
       for(size_type iEntry = lane; iEntry < row.length; iEntry += ShflThreadsPerRow::device_value) {
         sum -= row.value(iEntry) * m_x(row.colidx(iEntry),0);
       }
@@ -1367,15 +1423,29 @@ struct MV_MultiplyFunctor {
 
       if (doalpha != -1) {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum += row.value(iEntry) * m_x(row.colidx(iEntry));
         }
       } else {
 
-#pragma loop count (15)
+#ifdef KOKKOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
 #pragma unroll
+#endif
+#ifdef KOKKOS_HAVE_PRAGMA_LOOPCOUNT
+#pragma loop count (15)
+#endif
         for (size_type iEntry = lane; iEntry < row_length; iEntry += ShflThreadsPerRow::device_value) {
           sum -= row.value(iEntry) * m_x(row.colidx(iEntry));
         }
@@ -1526,14 +1596,18 @@ struct MV_MultiplyFunctor {
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), alpha(k) * val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(alpha(k) * val * m_x(iRow, k)));
           }
         } else {
-          #pragma unroll
+#ifdef KOKKOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (size_type k = 0; k < n; ++k) {
-            atomic_add(&m_y(ind,k), val * m_x(iRow, k));
+            atomic_add(&m_y(ind,k), value_type(val * m_x(iRow, k)));
           }
         }
       }
@@ -1575,9 +1649,9 @@ struct MV_MultiplyFunctor {
         const size_type ind = row.colidx(iEntry);
 
         if(doalpha!=1) {
-          atomic_add(&m_y(ind), alpha(0) * val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(alpha(0) * val * m_x(iRow)));
         } else {
-          atomic_add(&m_y(ind), val * m_x(iRow));
+          atomic_add(&m_y(ind), value_type(val * m_x(iRow)));
         }
       }
     }
@@ -1597,11 +1671,14 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
              const TCrsMatrix &A,
              const DomainVector &x)
 {
+  //Special case for zero Rows RowMap
+  if(A.numRows() == -1) return;
+
   if (doalpha == 0) {
     if (dobeta==2) {
             MV_MulScalar(y,betav,y);
     } else {
-            MV_MulScalar(y,dobeta,y);
+            MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
     }
     return;
   } else {
@@ -1706,6 +1783,13 @@ MV_MultiplyTranspose (typename Kokkos::Impl::enable_if<DomainVector::Rank == 2, 
             Kokkos::deep_copy(beta, h_b);
     }
 
+    if (dobeta==2) {
+       MV_MulScalar(y,betav,y);
+    } else {
+      if (dobeta!=1)
+       MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
+    }
+
     const typename CrsMatrixType::ordinal_type nrow = A.numRows();
     op.m_A = A;
     op.m_x = x;
@@ -1798,7 +1882,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 0, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 0, -1);
     else {
       a = aVector("a", numVecs);
@@ -1814,7 +1898,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, 1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1825,12 +1909,12 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       Kokkos::deep_copy (a, h_a);
       return MV_MultiplyTranspose (a, y, a, A, x, 1, 2);
     }
-  } else if (s_b == -1) {
+  } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
     if (s_a == 0)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (a, y, a, A, x, -1, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (a, y, a, A, x, -1, -1);
     else {
       a = aVector("a", numVecs);
@@ -1853,7 +1937,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 0);
     else if (s_a == 1)
       return MV_MultiplyTranspose (b, y, a, A, x, 2, 1);
-    else if (s_a == -1)
+    else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
       return MV_MultiplyTranspose (b, y, a, A, x, 2, -1);
     else {
       a = aVector("a", numVecs);
@@ -1881,11 +1965,14 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const TCrsMatrix &A,
                const DomainVector &x)
   {
+    //Special case for zero Rows RowMap
+    if(A.numRows() == -1) return;
+
     if (doalpha == 0) {
       if (dobeta==2) {
               MV_MulScalar(y,betav,y);
       } else {
-              MV_MulScalar(y,dobeta,y);
+              MV_MulScalar(y,static_cast<typename RangeVector::const_value_type> (dobeta),y);
       }
       return;
     } else {
@@ -2207,7 +2294,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
     // that compares the Scalar and Device types to those accepted by
     // the TPL(s).
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, 1.0, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2230,7 +2317,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (0.0, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOS_USE_CUSPARSE
@@ -2243,7 +2330,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
     aVector a;
     const int numVecs = x.dimension_1();
 
-    if (s_a == -1) {
+    if ((s_a < 1) && (s_a != 0)) {
       return MV_Multiply (a, y, a, A, x, 0, -1);
     } else if (s_a == 1) {
       return MV_Multiply (a, y, a, A, x, 0, 1);
@@ -2269,7 +2356,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
                const DomainVector& x)
   {
 #ifdef KOKKOS_USE_CUSPARSE
-    if (MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
+    if (CuSparse::MV_Multiply_Try_CuSparse (s_b, y, s_a, A, x)) {
       return;
     }
 #endif // KOKKOSE_USE_CUSPARSE
@@ -2290,7 +2377,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (a, y, a, A, x, 0, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 0, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 0, -1);
       else {
         a = aVector("a", numVecs);
@@ -2306,7 +2393,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (a, y, a, A, x, 1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, 1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, 1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2317,12 +2404,12 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         Kokkos::deep_copy (a, h_a);
         return MV_Multiply (a, y, a, A, x, 1, 2);
       }
-    } else if (s_b == -1) {
+    } else if (s_b == static_cast<typename RangeVector::const_value_type> (-1)) {
       if (s_a == 0)
         return MV_Multiply (a, y, a, A, x, -1, 0);
       else if (s_a == 1)
         return MV_Multiply (a, y, a, A, x, -1, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (a, y, a, A, x, -1, -1);
       else {
         a = aVector("a", numVecs);
@@ -2345,7 +2432,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
         return MV_Multiply (b, y, a, A, x, 2, 0);
       else if (s_a == 1)
         return MV_Multiply (b, y, a, A, x, 2, 1);
-      else if (s_a == -1)
+      else if (s_a == static_cast<typename DomainVector::const_value_type> (-1))
         return MV_Multiply (b, y, a, A, x, 2, -1);
       else {
         a = aVector("a", numVecs);

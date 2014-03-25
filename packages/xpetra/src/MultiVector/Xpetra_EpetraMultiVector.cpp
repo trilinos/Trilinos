@@ -200,17 +200,17 @@ namespace Xpetra {
   }
 
   void EpetraMultiVector::replaceMap(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map) {
-    int err=0;
-    if(!map.is_null()) {
-      err=this->getEpetra_MultiVector()->ReplaceMap(toEpetra(map));
-    }
-    else {
+    int err = 0;
+    if (!map.is_null()) {
+      err = this->getEpetra_MultiVector()->ReplaceMap(toEpetra(map));
+
+    } else {
       // Replace map with a dummy map to avoid potential hangs later
       Epetra_SerialComm SComm;
-      Epetra_Map NewMap(vec_->MyLength(),vec_->Map().IndexBase(),SComm);
-      err=this->getEpetra_MultiVector()->ReplaceMap(NewMap);
+      Epetra_Map NewMap(vec_->MyLength(), vec_->Map().IndexBase(), SComm);
+      err = this->getEpetra_MultiVector()->ReplaceMap(NewMap);
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");      
+    TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
 
 
@@ -226,8 +226,11 @@ namespace Xpetra {
   }
   //
 
-  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec){
-    return rcp(new EpetraMultiVector(vec));
+  RCP<MultiVector<double, int, int> > toXpetra(RCP<Epetra_MultiVector> vec) {
+    if (!vec.is_null())
+      return rcp(new EpetraMultiVector(vec));
+
+    return Teuchos::null;
   }
 
 
