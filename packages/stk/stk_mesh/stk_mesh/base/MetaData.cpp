@@ -982,60 +982,100 @@ stk::topology get_topology( CellTopology shards_topology, int spatial_dimension)
 
   return stk::topology::INVALID_TOPOLOGY;
 }
-
+//begin-get_cell_topology
 CellTopology get_cell_topology(stk::topology t)
 {
-
   switch(t())
   {
-  case stk::topology::NODE:         return CellTopology( shards::getCellTopologyData< shards::Node                  >() );
-  case stk::topology::LINE_2:       return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
-  case stk::topology::LINE_3:       return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
-  case stk::topology::TRI_3:        return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
-  case stk::topology::TRI_4:        return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
-  case stk::topology::TRI_6:        return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
-  case stk::topology::QUAD_4:       return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
-  case stk::topology::QUAD_8:       return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
-  case stk::topology::QUAD_9:       return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
-  case stk::topology::PARTICLE:     return CellTopology( shards::getCellTopologyData< shards::Particle              >() );
-  case stk::topology::LINE_2_1D:    return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
-  case stk::topology::LINE_3_1D:    return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
-  case stk::topology::BEAM_2:       return CellTopology( shards::getCellTopologyData< shards::Beam<2>               >() );
-  case stk::topology::BEAM_3:       return CellTopology( shards::getCellTopologyData< shards::Beam<3>               >() );
-  case stk::topology::SHELL_LINE_2: return CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
-  case stk::topology::SHELL_LINE_3: return CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
-  case stk::topology::TRI_3_2D:     return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
-  case stk::topology::TRI_4_2D:     return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
-  case stk::topology::TRI_6_2D:     return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
-  case stk::topology::QUAD_4_2D:    return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
-  case stk::topology::QUAD_8_2D:    return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
-  case stk::topology::QUAD_9_2D:    return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
-  case stk::topology::SHELL_TRI_3:  return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
-  case stk::topology::SHELL_TRI_4:  break;
+  case stk::topology::NODE:         
+      return CellTopology( shards::getCellTopologyData< shards::Node                  >() );
+  case stk::topology::LINE_2:
+      return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
+  case stk::topology::LINE_3:
+      return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
+  case stk::topology::TRI_3:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
+  case stk::topology::TRI_4:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
+  case stk::topology::TRI_6:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
+  case stk::topology::QUAD_4:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
+  case stk::topology::QUAD_8:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
+  case stk::topology::QUAD_9:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
+  case stk::topology::PARTICLE:
+      return CellTopology( shards::getCellTopologyData< shards::Particle              >() );
+  case stk::topology::LINE_2_1D:
+      return CellTopology( shards::getCellTopologyData< shards::Line<2>               >() );
+  case stk::topology::LINE_3_1D:
+      return CellTopology( shards::getCellTopologyData< shards::Line<3>               >() );
+  case stk::topology::BEAM_2:
+      return CellTopology( shards::getCellTopologyData< shards::Beam<2>               >() );
+  case stk::topology::BEAM_3:
+      return CellTopology( shards::getCellTopologyData< shards::Beam<3>               >() );
+  case stk::topology::SHELL_LINE_2:
+      return CellTopology( shards::getCellTopologyData< shards::ShellLine<2>          >() );
+  case stk::topology::SHELL_LINE_3:
+      return CellTopology( shards::getCellTopologyData< shards::ShellLine<3>          >() );
+  case stk::topology::TRI_3_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<3>           >() );
+  case stk::topology::TRI_4_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<4>           >() );
+  case stk::topology::TRI_6_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Triangle<6>           >() );
+  case stk::topology::QUAD_4_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<4>      >() );
+  case stk::topology::QUAD_8_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<8>      >() );
+  case stk::topology::QUAD_9_2D:
+      return CellTopology( shards::getCellTopologyData< shards::Quadrilateral<9>      >() );
+  case stk::topology::SHELL_TRI_3:
+      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
+  case stk::topology::SHELL_TRI_4:break;
                                     //NOTE: shards does not define a shell topology 4
-                                    //return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
-  case stk::topology::SHELL_TRI_6:  return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
-  case stk::topology::SHELL_QUAD_4: return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<4> >() );
-  case stk::topology::SHELL_QUAD_8: return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<8> >() );
-  case stk::topology::SHELL_QUAD_9: return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<9> >() );
-  case stk::topology::TET_4:        return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<4>        >() );
-  case stk::topology::TET_8:        return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<8>        >() );
-  case stk::topology::TET_10:       return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<10>       >() );
-  case stk::topology::TET_11:       return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<11>       >() );
-  case stk::topology::PYRAMID_5:    return CellTopology( shards::getCellTopologyData< shards::Pyramid<5>            >() );
-  case stk::topology::PYRAMID_13:   return CellTopology( shards::getCellTopologyData< shards::Pyramid<13>           >() );
-  case stk::topology::PYRAMID_14:   return CellTopology( shards::getCellTopologyData< shards::Pyramid<14>           >() );
-  case stk::topology::WEDGE_6:      return CellTopology( shards::getCellTopologyData< shards::Wedge<6>              >() );
-  case stk::topology::WEDGE_15:     return CellTopology( shards::getCellTopologyData< shards::Wedge<15>             >() );
-  case stk::topology::WEDGE_18:     return CellTopology( shards::getCellTopologyData< shards::Wedge<18>             >() );
-  case stk::topology::HEX_8:        return CellTopology( shards::getCellTopologyData< shards::Hexahedron<8>         >() );
-  case stk::topology::HEX_20:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
-  case stk::topology::HEX_27:       return CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
+                                    //
+                                    //      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
+  case stk::topology::SHELL_TRI_6:
+      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
+  case stk::topology::SHELL_QUAD_4:
+      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<4> >() );
+  case stk::topology::SHELL_QUAD_8:
+      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<8> >() );
+  case stk::topology::SHELL_QUAD_9:
+      return CellTopology( shards::getCellTopologyData< shards::ShellQuadrilateral<9> >() );
+  case stk::topology::TET_4:
+      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<4>        >() );
+  case stk::topology::TET_8:
+      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<8>        >() );
+  case stk::topology::TET_10:
+      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<10>       >() );
+  case stk::topology::TET_11:
+      return CellTopology( shards::getCellTopologyData< shards::Tetrahedron<11>       >() );
+  case stk::topology::PYRAMID_5:
+      return CellTopology( shards::getCellTopologyData< shards::Pyramid<5>            >() );
+  case stk::topology::PYRAMID_13:
+      return CellTopology( shards::getCellTopologyData< shards::Pyramid<13>           >() );
+  case stk::topology::PYRAMID_14:
+      return CellTopology( shards::getCellTopologyData< shards::Pyramid<14>           >() );
+  case stk::topology::WEDGE_6:
+      return CellTopology( shards::getCellTopologyData< shards::Wedge<6>              >() );
+  case stk::topology::WEDGE_15:
+      return CellTopology( shards::getCellTopologyData< shards::Wedge<15>             >() );
+  case stk::topology::WEDGE_18:
+      return CellTopology( shards::getCellTopologyData< shards::Wedge<18>             >() );
+  case stk::topology::HEX_8:
+      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<8>         >() );
+  case stk::topology::HEX_20:
+      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<20>        >() );
+  case stk::topology::HEX_27:
+      return CellTopology( shards::getCellTopologyData< shards::Hexahedron<27>        >() );
   default: break;
   }
   return CellTopology(NULL);
 }
-
+//end-get_cell_topology
 FieldBase* MetaData::get_field( const std::string& name ) const
 {
   const FieldVector& fields = m_field_repo.get_fields();
