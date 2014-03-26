@@ -797,16 +797,21 @@ bool is_cell_topology_root_part(const Part & part) {
   return false;
 }
 
-/// This is a convenience get_cellfunction to get the root cell topology part and then
+/// This is a convenience function to get the root cell topology part and then
 /// call declare_part_subset.
 /// Note:  MetaData::declare_part_subset is the function that actually
 /// updates the PartCellTopologyVector in MetaData for fast look-up of the
 /// Cell Topology.
 void set_topology(Part & part, stk::topology topo)
 {
+  MetaData& meta = part.mesh_meta_data();
+  if (part.primary_entity_rank() == InvalidEntityRank) {
+    //declare_part will set the rank on the part, if the part already exists.
+    meta.declare_part(part.name(), topo.rank());
+  }
+
   if (topo.is_superelement()) {
     // Need to (possibly) create a CellTopology corresponding to this superelement stk::topology.
-    MetaData &meta = part.mesh_meta_data();
     shards::CellTopology cell_topology = meta.register_superelement_cell_topology(topo);
     set_cell_topology(part, cell_topology);
   } else {
