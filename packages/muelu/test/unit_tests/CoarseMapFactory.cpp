@@ -122,7 +122,6 @@ namespace MueLuTests {
     myCMF->Build(myLevel);
     Teuchos::RCP<const Map> myCoarseMap = myLevel.Get<Teuchos::RCP<const Map> >("CoarseMap",myCMF.get());
 
-    std::cout << myCoarseMap->getMinAllGlobalIndex() << std::endl;
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 100, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
 
@@ -135,7 +134,6 @@ namespace MueLuTests {
     myCMF->Build(myLevel);
     myCoarseMap = myLevel.Get<Teuchos::RCP<const Map> >("CoarseMap",myCMF.get());
 
-    std::cout << myCoarseMap->getMinAllGlobalIndex() << std::endl;
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 50, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
 
@@ -148,7 +146,6 @@ namespace MueLuTests {
     myCMF->Build(myLevel);
     myCoarseMap = myLevel.Get<Teuchos::RCP<const Map> >("CoarseMap",myCMF.get());
 
-    std::cout << myCoarseMap->getMinAllGlobalIndex() << std::endl;
     TEST_EQUALITY(myCoarseMap->getMinAllGlobalIndex() == 0, true);
     TEST_EQUALITY(myCoarseMap->getMaxLocalIndex()==9,true);
   }
