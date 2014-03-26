@@ -316,20 +316,21 @@ namespace stk {
       // be called to read the bulk data from the mesh and generate the
       // corresponding stk mesh entities (nodes, elements, faces, ...)
       //
-      // The meta_data will not be committed by this function, so the
-      // caller will need to call meta_data.commit() after the
-      // function returns.
+      // The meta_data will not be committed by this function.
       void create_input_mesh();
 
       // Read/Generate the bulk data for the mesh.  This function will
       // create all stk mesh entities (nodes, elements) with the
       // correct nodeal coordinates, element connectivity, element
-      // attribute data, and nodeset and sideset membership.  Note
-      // that meta_data.commit() needs to be called prior to calling
-      // this function.
-      // Note: this function internally calls the two methods
-      // 'populate_mesh()' and 'populate_field_data()', declared below,
-      // and does NOT do the delayed field-data allocation optimization.
+      // attribute data, and nodeset and sideset membership.
+      //
+      // NOTE: this function will commit the meta data if it hasn't
+      // already been committed.
+      //
+      // NOTE: this function internally calls the two methods
+      // 'populate_mesh()' and 'populate_field_data()', declared
+      // below, and does NOT do the delayed field-data allocation
+      // optimization.
       void populate_bulk_data();
 
       // Read/generate the bulk data for the mesh, delaying (by default)
@@ -480,9 +481,10 @@ namespace stk {
       // 	write_defined_output_fields(output_file_index);
       // 	end_output_step(output_file_index);
       //
-      // Note that if there are any global varibles defined, they
-      // will *not* be output with this function and will be
-      // zero-filled on the database.
+      // NOTE: if there are any global variables defined, they will
+      // *not* be output with this function and will be zero-filled on
+      // the database. Call the individual functions listed above if
+      // you have global variables to output.
       int process_output_request(size_t output_file_index, double time);
 
       void write_global(size_t output_file_index,
