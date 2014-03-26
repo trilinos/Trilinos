@@ -4,9 +4,10 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <fieldNameTestUtils.hpp>
-#include <restartTestUtils.hpp>
+#include <Ioss_SubSystem.h>
 
 namespace {
 
@@ -33,6 +34,7 @@ namespace {
     }
 
     {
+      //-BEGIN
       // ============================================================
       //+ EXAMPLE: 
       //+ Read mesh data from the specified file.
@@ -58,11 +60,8 @@ namespace {
       //+ mesh will be written to the results output file.
       size_t fh = stkIo.create_output_mesh(results_name, stk::io::WRITE_RESULTS);
 
-      //-BEGIN
-      //+ The field 'fieldName' will be output to the results file with the name 'alternateFieldName'
-      std::string alternateFieldName("displacement");
-      stkIo.add_field(fh, field, alternateFieldName);
-      //-END      
+      //+ The field will be output to the results file with the default field name.
+      stkIo.add_field(fh, field); /*@\label{io:results:add_field}*/
 
       std::vector<stk::mesh::Entity> nodes;
       stk::mesh::get_entities(stkIo.bulk_data(), stk::topology::NODE_RANK, nodes);
@@ -84,15 +83,41 @@ namespace {
 	stkIo.write_defined_output_fields(fh);
         stkIo.end_output_step(fh);
       }
+      //-END      
+    }
+    // ============================================================
+    //+ VERIFICATION
+    {
+      Ioss::DatabaseIO *resultsDb = Ioss::IOFactory::create("exodus", results_name,
+							    Ioss::READ_MODEL, communicator);
+      Ioss::Region results(resultsDb);
+      // Should be 5 steps on database...
+      EXPECT_EQ(results.get_property("state_count").get_int(), 5);
+      // Should be 1 nodal field on database named "disp";
+      Ioss::NodeBlock *nb = results.get_node_blocks()[0];
+      EXPECT_EQ(1u, nb->field_count(Ioss::Field::TRANSIENT));
+      EXPECT_TRUE(nb->field_exists("disp"));
 
-      // ============================================================
-      //+ VERIFICATION
-      EXPECT_TRUE( fieldWithNameChangedIsOutput(stkIo, communicator, fh,
-						alternateFieldName));
+      // Iterate each step and verify that the correct data was written.
+      for (size_t step=0; step < 5; step++) {
+	double time = step;
+
+	double db_time = results.begin_state(step+1);
+	EXPECT_EQ(time, db_time);
+      
+	std::vector<double> field_data;
+	nb->get_field_data("disp", field_data);
+	double expected = 10.0 * time;
+	for (size_t node = 0; node < field_data.size(); node++) {
+	  EXPECT_EQ(field_data[node], expected);
+	}
+	results.end_state(step+1);
+      }
     }
 
     // ============================================================
     // Cleanup
+    unlink(mesh_name.c_str());
     unlink(results_name.c_str());
   }
 }
