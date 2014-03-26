@@ -447,15 +447,15 @@ order and those that are missing are empty (or false) by default.
 
 Any initial arguments that are not recongnised as ``<argNamesList>`` or
 ``<optionNamesList>`` keyword arguments will be put into the local varible
-``_DEFAULT_ARGS``.  If no arguments in ``${ARGN}`` match any in
+``<prefix>_DEFAULT_ARGS``.  If no arguments in ``${ARGN}`` match any in
 ``<argNamesList>``, then all non-option arguments are point into
-``DEFAULT_ARGS``.  For example, if you pass in::
+``<prefix>_DEFAULT_ARGS``.  For example, if you pass in::
 
   PARSE_SPECIAL_VARS(MyVar ARG5 a b c)
 
 you will get::
 
-  DEFAULT_ARGS="a;b;c"
+  MyVar_DEFAULT_ARGS="a;b;c"
   MyVar_ARG0=""
   MyVar_ARG1=""
   MyVar_ARG2=""

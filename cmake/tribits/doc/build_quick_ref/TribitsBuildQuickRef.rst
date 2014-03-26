@@ -669,12 +669,13 @@ c) **Setting up to run MPI programs:**
   the right program and options but you will have to override them in many
   cases.
 
-  MPI test and example executables are run as::
+  MPI test and example executables are passed to CTest ``ADD_TEST()`` as::
 
-    ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS} \
-      ${MPI_EXEC_NUMPROCS_FLAG} <NP> \
-      ${MPI_EXEC_POST_NUMPROCS_FLAGS} \
-      <TEST_EXECUTABLE_PATH> <TEST_ARGS>
+    ADD_TEST(
+      ${MPI_EXEC} ${MPI_EXEC_PRE_NUMPROCS_FLAGS}
+      ${MPI_EXEC_NUMPROCS_FLAG} <NP>
+      ${MPI_EXEC_POST_NUMPROCS_FLAGS}
+      <TEST_EXECUTABLE_PATH> <TEST_ARGS> )
 
   where ``<TEST_EXECUTABLE_PATH>``, ``<TEST_ARGS>``, and ``<NP>`` are specific
   to the test being run.
@@ -716,18 +717,21 @@ c) **Setting up to run MPI programs:**
 
   ::
 
-    -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+    -D MPI_EXEC_PRE_NUMPROCS_FLAGS:STRING="arg1;arg2;...;argn"
 
   (Other command-line arguments that must come *before* the numprocs
   argument.  The default is empty "".)
 
   ::
 
-    -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1 arg2 ... argn"
+    -D MPI_EXEC_POST_NUMPROCS_FLAGS:STRING="arg1;arg2;...;argn"
 
   (Other command-line arguments that must come *after* the numprocs
   argument.  The default is empty "".)
 
+  NOTE: Multiple arguments listed in ``MPI_EXEC_PRE_NUMPROCS_FLAGS`` and
+  ``MPI_EXEC_POST_NUMPROCS_FLAGS`` must be quoted and seprated by ``';'`` as
+  these variables are interpreted as CMake arrays.
 
 Configuring for OpenMP support
 ------------------------------

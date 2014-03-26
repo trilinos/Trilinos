@@ -5674,15 +5674,15 @@ in other languages.  The keyword-based arguments can be passed in any
 order and those that are missing are empty (or false) by default.</p>
 <p>Any initial arguments that are not recongnised as <tt class="docutils literal">&lt;argNamesList&gt;</tt> or
 <tt class="docutils literal">&lt;optionNamesList&gt;</tt> keyword arguments will be put into the local varible
-<tt class="docutils literal">_DEFAULT_ARGS</tt>.  If no arguments in <tt class="docutils literal">${ARGN}</tt> match any in
+<tt class="docutils literal">&lt;prefix&gt;_DEFAULT_ARGS</tt>.  If no arguments in <tt class="docutils literal">${ARGN}</tt> match any in
 <tt class="docutils literal">&lt;argNamesList&gt;</tt>, then all non-option arguments are point into
-<tt class="docutils literal">DEFAULT_ARGS</tt>.  For example, if you pass in:</p>
+<tt class="docutils literal">&lt;prefix&gt;_DEFAULT_ARGS</tt>.  For example, if you pass in:</p>
 <pre class="literal-block">
 PARSE_SPECIAL_VARS(MyVar ARG5 a b c)
 </pre>
 <p>you will get:</p>
 <pre class="literal-block">
-DEFAULT_ARGS=&quot;a;b;c&quot;
+MyVar_DEFAULT_ARGS=&quot;a;b;c&quot;
 MyVar_ARG0=&quot;&quot;
 MyVar_ARG1=&quot;&quot;
 MyVar_ARG2=&quot;&quot;
