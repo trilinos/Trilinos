@@ -1233,7 +1233,7 @@ TEUCHOS_UNIT_TEST( MDMap, exceptions )
   MDMap<> mdMap(mdComm, dims());
 
   // Unit test methods that should throw exceptions
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEST_THROW(mdMap.getCommDim(         -1), Domi::RangeError);
   TEST_THROW(mdMap.isPeriodic(         -1), Domi::RangeError);
   TEST_THROW(mdMap.getCommIndex(       -1), Domi::RangeError);

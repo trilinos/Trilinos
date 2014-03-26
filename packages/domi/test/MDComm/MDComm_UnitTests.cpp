@@ -523,7 +523,7 @@ TEUCHOS_UNIT_TEST( MDComm, exceptions )
   MDComm mdComm(comm, numDims, commDims);
 
   // Unit test methods that should throw exceptions
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEST_THROW(mdComm.getCommDim(      -1), Domi::RangeError);
   TEST_THROW(mdComm.isPeriodic(      -1), Domi::RangeError);
   TEST_THROW(mdComm.getCommIndex(    -1), Domi::RangeError);

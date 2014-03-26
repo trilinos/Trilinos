@@ -7,6 +7,10 @@ INCLUDE(TribitsAddOptionAndDefine)
 TRIBITS_PACKAGE(Domi DISABLE_STRONG_WARNINGS)
 
 #
+# Standardized debugging options
+TRIBITS_ADD_DEBUG_OPTION()
+
+#
 # Set up package-specific options
 TRIBITS_ADD_OPTION_AND_DEFINE(
   ${PACKAGE_NAME}_ENABLE_ABC

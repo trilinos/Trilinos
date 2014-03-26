@@ -357,7 +357,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, squareBracketSlice2, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, rangeError, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4);
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEST_THROW(a(3,3), RangeError);
   TEST_THROW(a(0,4), RangeError);
 #else
@@ -368,7 +368,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, rangeError, T )
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDArray, rangeErrorCOrder, T )
 {
   MDArray< T > a = generateMDArray< T >(3,4,Domi::C_ORDER);
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEST_THROW(a(3,3), RangeError);
   TEST_THROW(a(0,4), RangeError);
 #else

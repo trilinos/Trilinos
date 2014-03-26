@@ -49,6 +49,7 @@
 #include "Teuchos_Array.hpp"
 
 // Domi includes
+#include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDIterator.hpp"
 #include "Domi_MDRevIterator.hpp"

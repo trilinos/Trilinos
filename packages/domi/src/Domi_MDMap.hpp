@@ -1650,7 +1650,7 @@ MDMap< Node >::
 getGlobalDim(int axis,
              bool withBndryPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1671,7 +1671,7 @@ MDMap< Node >::
 getGlobalBounds(int axis,
                 bool withBndryPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1696,7 +1696,7 @@ MDMap< Node >::
 getLocalDim(int axis,
             bool withPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1717,7 +1717,7 @@ MDMap< Node >::
 getGlobalRankBounds(int axis,
                     bool withBndryPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1747,7 +1747,7 @@ MDMap< Node >::
 getLocalBounds(int axis,
                bool withPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1782,7 +1782,7 @@ template< class Node >
 int
 MDMap< Node >::getLowerPadSize(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1798,7 +1798,7 @@ template< class Node >
 int
 MDMap< Node >::getUpperPadSize(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1814,7 +1814,7 @@ template< class Node >
 int
 MDMap< Node >::getCommPadSize(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1830,7 +1830,7 @@ template< class Node >
 int
 MDMap< Node >::getLowerBndryPad(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1846,7 +1846,7 @@ template< class Node >
 int
 MDMap< Node >::getUpperBndryPad(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -1862,7 +1862,7 @@ template< class Node >
 int
 MDMap< Node >::getBndryPadSize(int axis) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -2171,7 +2171,7 @@ MDMap< Node >::
 getEpetraAxisMap(int axis,
                  bool withCommPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -2368,7 +2368,7 @@ MDMap< Node >::
 getTpetraAxisMap(int axis,
                  bool withCommPad) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -2399,7 +2399,7 @@ Teuchos::Array< dim_type >
 MDMap< Node >::
 getGlobalIndex(size_type globalID) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((globalID < _globalMin) || (globalID >= _globalMax)),
     RangeError,
@@ -2437,7 +2437,7 @@ Teuchos::Array< dim_type >
 MDMap< Node >::
 getLocalIndex(size_type localID) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((localID < _localMin) || (localID >= _localMax)),
     RangeError,
@@ -2475,7 +2475,7 @@ size_type
 MDMap< Node >::
 getGlobalID(size_type localID) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((localID < 0) || (localID >= _localMax)),
     RangeError,
@@ -2500,7 +2500,7 @@ size_type
 MDMap< Node >::
 getGlobalID(const Teuchos::ArrayView< dim_type > & globalIndex) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (globalIndex.size() != numDims()),
     InvalidArgument,
@@ -2529,7 +2529,7 @@ size_type
 MDMap< Node >::
 getLocalID(size_type globalID) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((globalID < _globalMin) || (globalID >= _globalMax)),
     RangeError,
@@ -2559,7 +2559,7 @@ size_type
 MDMap< Node >::
 getLocalID(const Teuchos::ArrayView< dim_type > & localIndex) const
 {
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     (localIndex.size() != numDims()),
     InvalidArgument,

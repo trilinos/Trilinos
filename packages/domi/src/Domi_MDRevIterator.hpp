@@ -292,7 +292,7 @@ MDRevIterator(const MDARRAY & mdarray,
     (_dimensions.size() != _index.size()), RangeError,
     "Input array has " << _dimensions.size() << " dimensions, while index "
     "has " << _index.size());
-#ifdef DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   for (_axis = 0; _axis < _index.size(); ++_axis)
     assert_index(_index[_axis], _axis);
 #endif

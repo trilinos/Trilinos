@@ -49,6 +49,7 @@
 #include "Teuchos_ArrayRCPDecl.hpp"
 
 // Domi includes
+#include "Domi_ConfigDefs.hpp"
 #include "Domi_Utils.hpp"
 #include "Domi_MDArrayView.hpp"
 

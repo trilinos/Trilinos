@@ -453,7 +453,7 @@ MDComm::getCommDim(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getCommDim()");
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -472,7 +472,7 @@ MDComm::isPeriodic(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::isPeriodic()");
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -491,7 +491,7 @@ MDComm::getCommIndex(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getCommIndex()");
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -510,7 +510,7 @@ MDComm::getLowerNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getLowerNeighbor()");
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
@@ -541,7 +541,7 @@ MDComm::getUpperNeighbor(int axis) const
     not onSubcommunicator(),
     SubcommunicatorError,
     "MDComm::getUpperNeighbor()");
-#if DOMI_ENABLE_ABC
+#ifdef HAVE_DOMI_ARRAY_BOUNDSCHECK
   TEUCHOS_TEST_FOR_EXCEPTION(
     ((axis < 0) || (axis >= numDims())),
     RangeError,
