@@ -132,5 +132,22 @@ c) Find all symbols that match a regular expression
 
   $ global -c -e PARTIAL_SYMBOL
 
+D) CMake emacs mode
 
+An CMake editing mode is also avaiable.  To enable it, just copy the file:
 
+  ./elisp/cmake-mode.pl ~/elisp/
+
+and then add the following to the bottom of you .emacs file:
+
+; Add cmake listfile names to the mode list.
+(setq auto-mode-alist
+	  (append
+	   '(("CMakeLists\\.txt\\'" . cmake-mode))
+	   '(("\\.cmake\\'" . cmake-mode))
+	   auto-mode-alist))
+
+(autoload 'cmake-mode "~/elisp/cmake-mode.el" t)
+
+This will add color to your CMake files and will fix the ctrl+Q indentation
+mode inside of comments.
