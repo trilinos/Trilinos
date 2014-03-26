@@ -13,6 +13,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+#include "Epetra_MultiVector.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
@@ -23,6 +24,7 @@
 #include "AztecOO.h"
 
 #include "Galeri_Maps.h"
+#include "Galeri_Utils.h"
 #include "Galeri_CrsMatrices.h"
 
 using namespace Teuchos;
@@ -150,6 +152,7 @@ int main(int argc, char *argv[]) {
 
   Epetra_Map* Map = CreateMap("Cartesian3D", Comm, GaleriList);
   Epetra_CrsMatrix* Matrix = CreateCrsMatrix("Laplace3D", Map, GaleriList);
+  Epetra_MultiVector* Coords = CreateCartesianCoordinates("3D",Map,GaleriList);
 
   Epetra_Vector LHS(*Map);
   Epetra_Vector RHS(*Map);
@@ -278,6 +281,20 @@ int main(int argc, char *argv[]) {
 #endif
 
 
+  // =========================== //
+  // Autodetected Line SGS (trivial lines) 
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "line Gauss-Seidel");
+  MLList.set("smoother: line detection threshold",0.1);
+  MLList.set("x-coordinates",(*Coords)[0]);
+  MLList.set("y-coordinates",(*Coords)[1]);
+  MLList.set("z-coordinates",(*Coords)[2]);
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+
   // ===================== //
   // print out total error //
   // ===================== //
@@ -290,7 +307,9 @@ int main(int argc, char *argv[]) {
   }
 
   delete Matrix;
+  delete Coords;
   delete Map;
+
 
   if (TotalErrorResidual > 1e-8) {
     cerr << "Error: `MultiLevelPrecoditioner_Sym.exe' failed!" << endl;

@@ -99,6 +99,7 @@ void ML_Epetra::SetValidSmooParams(Teuchos::ParameterList *PL, Teuchos::Array<st
   setStringToIntegralParameter<int>("smoother: type", std::string("Chebyshev"),
 				    "Smoothing algorithm",smoothers,PL);
   setIntParameter("smoother: sweeps", 2, "Number of smoothing sweeps", PL, intParam);
+  setDoubleParameter("smoother: line detection threshold",-1.0,"Smoother line detection threshold",PL,dblParam);
   setIntParameter("smoother: line direction nodes", -1, "Number of mesh points in z direction", PL, intParam);
   setDoubleParameter("smoother: damping factor",1.0,"Smoother damping factor",PL,dblParam);
   setDoubleParameter("smoother: Chebyshev eig boost", 1.1, "factor to scale eig_max when using Cheby smoothing", PL,dblParam);
