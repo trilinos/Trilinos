@@ -175,7 +175,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllSecondaryStable
   ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING: Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
+    "WARNING: Set var Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
     "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
     "Final set of non-enabled packages:  Stokhos 1"

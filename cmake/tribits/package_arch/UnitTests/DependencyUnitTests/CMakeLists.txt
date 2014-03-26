@@ -531,7 +531,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllPackages_EnableSecondaryStableCode_EnableAllOptionalPackges_BackwardCompatible
   ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "WARNING: Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
+    "WARNING: Set var Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx 22"
     "Final set of enabled TPLs:  BLAS LAPACK Boost DUMMY 4"
   )
@@ -544,7 +544,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS  -DTrilinos_ENABLE_ALL_PACKAGES=ON  -DTrilinos_ENABLE_SECONDARY_TESTED_CODE=ON
     -DTrilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "ERROR: Can.t set deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE"
+    "WARNING: Set deprecated Trilinos_ENABLE_SECONDARY_STABLE_CODE and"
   )
 
 
