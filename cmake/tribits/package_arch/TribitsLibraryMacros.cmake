@@ -60,13 +60,13 @@ INCLUDE(SetAndIncDirs)
 #
 FUNCTION(TRIBITS_ADD_CONFIG_DEFINE DEFINE)
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPackage ${PARENT_PACKAGE_NAME}: adding compiler"
+    MESSAGE("-- " "Package ${PARENT_PACKAGE_NAME}: adding compiler"
       " define to config file: ${DEFINE}")
   ENDIF()
   GLOBAL_SET(${PARENT_PACKAGE_NAME}_CONFIG_DEFINES
     "${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}\n#define ${DEFINE}")
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("--${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
+    MESSAGE("-- ${${PARENT_PACKAGE_NAME}_CONFIG_DEFINES}")
   ENDIF()
 ENDFUNCTION()
 
@@ -347,7 +347,7 @@ ENDFUNCTION()
 FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
   IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-    MESSAGE("\nPACKAGE_ADD_LIBRARY: ${LIBRARY_NAME}")
+    MESSAGE("\nTRIBITS_ADD_LIBRARY: ${LIBRARY_NAME}")
     IF(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING)
       MESSAGE("\n${PACKAGE_NAME}_LIBRARIES In installation testing mode,"
         " libraries will be found instead of created.")
@@ -399,10 +399,10 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     # Add dependent libraries passed directly in
 
     IF (PARSE_DEPLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "DEPLIBS = ${PARSE_DEPLIBS}")
+      MESSAGE("-- " "DEPLIBS = ${PARSE_DEPLIBS}")
     ENDIF()
     IF (PARSE_IMPORTEDLIBS AND ${PROJECT_NAME}_VERBOSE_CONFIGURE)
-      MESSAGE(STATUS "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
+      MESSAGE("-- " "IMPORTEDLIBS = ${PARSE_IMPORTEDLIBS}")
     ENDIF()
 
     IF (PARSE_DEPLIBS)
@@ -454,7 +454,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       ENDIF()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "\nPulling in header and libraries dependencies"
+        MESSAGE("-- " "Pulling in header and libraries dependencies"
           " for ${LIB_OR_TEST_ARG} ...")
       ENDIF()
 
@@ -514,7 +514,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
     IF (PARSE_TESTONLY)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation hooks for this library"
+        MESSAGE("-- " "Skipping installation hooks for this library"
           " because 'TESTONLY' was passed in ...")
       ENDIF()
       SET(INSTALL_LIB OFF)
@@ -522,21 +522,21 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
       SET(APPEND_LIB_AND_HEADERS_TO_PACKAGE OFF)
     ELSEIF (PARSE_NO_INSTALL_LIB_OR_HEADERS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation hooks for this library"
+        MESSAGE("-- " "Skipping installation hooks for this library"
           " because 'NO_INSTALL_LIB_OR_HEADERS' was passed in ...")
       ENDIF()
       SET(INSTALL_LIB OFF)
       SET(INSTALL_HEADERS OFF)
     ELSEIF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND NOT BUILD_SHARED_LIBS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation of headers and libraries"
+        MESSAGE("-- " "Skipping installation of headers and libraries"
           " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and BUILD_SHARED_LIBS=FALSE  ...")
       ENDIF()
       SET(INSTALL_LIB OFF)
       SET(INSTALL_HEADERS OFF)
     ELSEIF (NOT ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS AND BUILD_SHARED_LIBS)
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping installation of headers but installing libraries"
+        MESSAGE("-- " "Skipping installation of headers but installing libraries"
           " because ${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE and BUILD_SHARED_LIBS=TRUE  ...")
       ENDIF()
       SET(INSTALL_HEADERS OFF)
@@ -591,7 +591,7 @@ FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
     ELSE()
 
       IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
-        MESSAGE(STATUS "Skipping augmentation of package's lists of include"
+        MESSAGE("-- " "Skipping augmentation of package's lists of include"
           " directories and libraries! ...")
       ENDIF()
 
