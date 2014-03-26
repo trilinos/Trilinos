@@ -67,10 +67,14 @@ namespace MueLu {
 
 #define SET_VALID_ENTRY(name) validParamList->setEntry(name, MasterList::getEntry(name))
     SET_VALID_ENTRY("sa: damping factor");
+    SET_VALID_ENTRY("sa: recalculate eigenvalue estimate");
+    SET_VALID_ENTRY("sa: eigenvalue estimate iterations");
 #undef  SET_VALID_ENTRY
 
     validParamList->set< RCP<const FactoryBase> >("A",              Teuchos::null, "Generating factory of the matrix A used during the prolongator smoothing process");
     validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Tentative prolongator factory");
+    //validParamList->set< LO >                    ("eigenvalue estimate iterations", 10  , "Number of iterations to use for estimating maximum eigenvalue");
+    //validParamList->set< bool >                  ("calculate eigenvalue estimate", false ,"Estimate max eigenvalue for prolongator smoothing (ignores any previously cached estimate)");
 
     return validParamList;
   }
@@ -117,16 +121,18 @@ namespace MueLu {
 
     const ParameterList & pL = GetParameterList();
     Scalar dampingFactor = as<Scalar>(pL.get<double>("sa: damping factor"));
+    LO maxEigenIterations = pL.get<LO>("sa: eigenvalue estimate iterations");
+    bool estimateMaxEigen = pL.get<bool>("sa: recalculate eigenvalue estimate");
     if (dampingFactor != Teuchos::ScalarTraits<Scalar>::zero()) {
 
       Scalar lambdaMax;
       {
         SubFactoryMonitor m2(*this, "Eigenvalue estimate", coarseLevel);
         lambdaMax = A->GetMaxEigenvalueEstimate();
-        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one()) {
-          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now" << std::endl;
+        if (lambdaMax == -Teuchos::ScalarTraits<SC>::one() || estimateMaxEigen) {
+          GetOStream(Statistics1) << "Calculating max eigenvalue estimate now (max iters = "<< maxEigenIterations << ")" << std::endl;
           Magnitude stopTol = 1e-4;
-          lambdaMax = Utils::PowerMethod(*A, true, (LO) 10, stopTol);
+          lambdaMax = Utils::PowerMethod(*A, true, maxEigenIterations, stopTol);
           A->SetMaxEigenvalueEstimate(lambdaMax);
         } else {
           GetOStream(Statistics1) << "Using cached max eigenvalue estimate" << std::endl;
