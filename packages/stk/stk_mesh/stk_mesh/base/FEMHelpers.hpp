@@ -94,15 +94,6 @@ Entity declare_element_edge( BulkData & mesh ,
                                Part * part = NULL );
 
 
-
-/** \brief  Declare a part with a given cell topology. This is just a convenient
-            function that wraps MetaData's declare_part.
- */
-template< class Top >
-Part &declare_part(MetaData& meta_data, const std::string &name) {
-  return meta_data.declare_part(name, shards::getCellTopologyData<Top>());
-}
-
 /**
  * Given an entity, subcell_rank, and subcell_id, return the nodes
  * that make up the subcell in a correct order for the given polarity.
