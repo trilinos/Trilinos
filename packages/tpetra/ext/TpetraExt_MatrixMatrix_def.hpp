@@ -224,16 +224,16 @@ void Multiply(
 
 
 template <class Scalar,
-	  class LocalOrdinal,
-	  class GlobalOrdinal,
-	  class Node,
-	  class SpMatOps >
+          class LocalOrdinal,
+          class GlobalOrdinal,
+          class Node,
+          class SpMatOps >
 void Jacobi(Scalar omega,
-	    const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
-	    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
-	    const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
-	    CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
-	    bool call_FillComplete_on_result=true) 
+            const Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node> & Dinv,
+            const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+            const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+            CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C,
+            bool call_FillComplete_on_result)
 {
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -349,7 +349,7 @@ void Jacobi(Scalar omega,
     }
   }
 }
-	   	    
+
 
 
 template <class Scalar,
@@ -1107,7 +1107,7 @@ void mult_A_B_newmatrix(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;  
+  using Teuchos::ArrayView;
   typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
@@ -1191,14 +1191,14 @@ void mult_A_B_newmatrix(
   ArrayView<const size_t> Arowptr, Browptr, Irowptr;
   ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
   ArrayView<const Scalar> Avals, Bvals, Ivals;
-  ArrayView<size_t> Crowptr; 
+  ArrayView<size_t> Crowptr;
   ArrayView<LocalOrdinal> Ccolind;
   ArrayView<Scalar> Cvals;
   Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
   Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
   if(!Bview.importMatrix.is_null()) {
     Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
-  }  
+  }
 
   // The status array will contain the index into colind where this entry was last deposited.
   // c_status[i] < CSR_ip - not in the row yet.
@@ -1214,7 +1214,7 @@ void mult_A_B_newmatrix(
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
-  
+
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
   Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
@@ -1341,7 +1341,7 @@ void jacobi_A_B_newmatrix(
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  using Teuchos::ArrayView;  
+  using Teuchos::ArrayView;
   typedef Import<LocalOrdinal, GlobalOrdinal, Node> import_type;
   typedef Map<LocalOrdinal, GlobalOrdinal, Node> map_type;
 
@@ -1426,7 +1426,7 @@ void jacobi_A_B_newmatrix(
   ArrayView<const size_t> Arowptr, Browptr, Irowptr;
   ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
   ArrayView<const Scalar> Avals, Bvals, Ivals;
-  ArrayView<size_t> Crowptr; 
+  ArrayView<size_t> Crowptr;
   ArrayView<LocalOrdinal> Ccolind;
   ArrayView<Scalar> Cvals;
   ArrayView<const Scalar> Dvals;
@@ -1434,7 +1434,7 @@ void jacobi_A_B_newmatrix(
   Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
   if(!Bview.importMatrix.is_null()) {
     Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
-  }  
+  }
   Dvals = Dvals_RCP();
 
   // The status array will contain the index into colind where this entry was last deposited.
@@ -1451,7 +1451,7 @@ void jacobi_A_B_newmatrix(
   Crowptr_RCP.resize(m+1);       Crowptr = Crowptr_RCP();
   Ccolind_RCP.resize(CSR_alloc); Ccolind = Ccolind_RCP();
   Cvals_RCP.resize(CSR_alloc);   Cvals   = Cvals_RCP();
-  
+
   // Run through all the hash table lookups once and for all
   Array<LocalOrdinal> targetMapToOrigRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
   Array<LocalOrdinal> targetMapToImportRow(Aview.colMap->getNodeNumElements(),LO_INVALID);
@@ -1491,7 +1491,7 @@ void jacobi_A_B_newmatrix(
       Scalar Bval = Bvals[k];
       if(Bval==SC_ZERO) continue;
       LocalOrdinal Ck=Bcol2Ccol[Bcolind[k]];
-      
+
       // Assume no repeated entries in B
       c_status[Ck]    = CSR_ip;
       Ccolind[CSR_ip] = Ck;
@@ -1517,11 +1517,11 @@ void jacobi_A_B_newmatrix(
             // New entry
             c_status[Cj]    = CSR_ip;
             Ccolind[CSR_ip] = Cj;
-	    Cvals[CSR_ip]   = - omega * Dval* Aval * Bvals[j];
+            Cvals[CSR_ip]   = - omega * Dval* Aval * Bvals[j];
             CSR_ip++;
           }
           else
-	    Cvals[c_status[Cj]] -= omega * Dval* Aval * Bvals[j];
+            Cvals[c_status[Cj]] -= omega * Dval* Aval * Bvals[j];
         }
       }
       else{
@@ -1534,11 +1534,11 @@ void jacobi_A_B_newmatrix(
             // New entry
             c_status[Cj]    = CSR_ip;
             Ccolind[CSR_ip] = Cj;
-	    Cvals[CSR_ip]   = - omega * Dval* Aval * Ivals[j];
+            Cvals[CSR_ip]   = - omega * Dval* Aval * Ivals[j];
             CSR_ip++;
           }
           else
-	    Cvals[c_status[Cj]] -= omega * Dval* Aval * Ivals[j];
+            Cvals[c_status[Cj]] -= omega * Dval* Aval * Ivals[j];
         }
       }
     }
