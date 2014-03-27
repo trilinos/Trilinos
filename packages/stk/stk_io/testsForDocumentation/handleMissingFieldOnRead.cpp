@@ -95,6 +95,11 @@ namespace {
       //+ any fields that were not found.
       std::vector<stk::io::MeshField> missing_fields;
       stkIo.read_defined_input_fields(2.0, &missing_fields);
+      
+      //+ If read the fields, but don't pass in the 'missing_fields'
+      //+ vector, the code will print an error message and throw an
+      //+ exception if it doesn't find all of the requested fields.
+      EXPECT_THROW(stkIo.read_defined_input_fields(2.0), std::exception);
 
       // ============================================================
       //+ VERIFICATION
