@@ -39,11 +39,11 @@
 // ************************************************************************
 //@HEADER
 
-/// \file BelosBlockGCRODRSolMgr.hpp
+/// \file BelosBlockGCRODRCSolMgr.hpp
 /// \brief A solver manager for the Block GCRO-DR (Block Recycling GMRES) linear solver.
 ///
-#ifndef BELOS_BLOCK_GCRODR_SOLMGR_HPP
-#define BELOS_BLOCK_GCRODR_SOLMGR_HPP
+#ifndef BELOS_BLOCK_GCRODRC_SOLMGR_HPP
+#define BELOS_BLOCK_GCRODRC_SOLMGR_HPP
 
 #include "BelosConfigDefs.hpp"
 #include "BelosTypes.hpp"
@@ -51,7 +51,6 @@
 #include "BelosLinearProblem.hpp"
 #include "BelosSolverManager.hpp"
 #include "BelosGmresIteration.hpp"
-#include "BelosBlockGCRODRCSolMgr.hpp"
 #include "BelosBlockGCRODRIter.hpp"
 #include "BelosBlockGmresIter.hpp"
 #include "BelosBlockFGmresIter.hpp"
@@ -78,41 +77,41 @@ namespace Belos{
   /// \brief Thrown when the linear problem was not set up correctly.
   ///
   /// This exception is thrown if \c setProblem() is not called before \c solve() is called.
-  class BlockGCRODRSolMgrLinearProblemFailure : public BelosError {
+  class BlockGCRODRCSolMgrLinearProblemFailure : public BelosError {
   public:
-    BlockGCRODRSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg) {}
+    BlockGCRODRCSolMgrLinearProblemFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
   /// \class BlockGCRODRSolMgrOrthoFailure
   /// \brief Thrown when the solution manager was unable to orthogonalize the basis vectors.
   ///
   /// This exception is thrown from the \c solve() method if the orthogonalization manager is unable to generate orthonormal columns from the initial basis vectors.
-  class BlockGCRODRSolMgrOrthoFailure : public BelosError {
+  class BlockGCRODRCSolMgrOrthoFailure : public BelosError {
   public:
-    BlockGCRODRSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
+    BlockGCRODRCSolMgrOrthoFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
   /// \class BlockGCRODRSolMgrLAPACKFailure
   /// \brief Thrown when an LAPACK call fails.
   ///
   /// This exception is thrown if an LAPACK call return an error code.
-  class BlockGCRODRSolMgrLAPACKFailure : public BelosError {
+  class BlockGCRODRCSolMgrLAPACKFailure : public BelosError {
   public:
-    BlockGCRODRSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg) {}
+    BlockGCRODRCSolMgrLAPACKFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
   /// \class BlockGCRODRSolMgrRecyclingFailure
   /// \brief Thrown if any problem occurs in using or creating the recycle subspace.
   ///
   /// This exception is thrown from the BlockGCRODRSolMgr::solve() method.
-  class BlockGCRODRSolMgrRecyclingFailure : public BelosError {
+  class BlockGCRODRCSolMgrRecyclingFailure : public BelosError {
   public:
-    BlockGCRODRSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg) {}
+    BlockGCRODRCSolMgrRecyclingFailure(const std::string& what_arg) : BelosError(what_arg) {}
   };
 
   //@}
 
-/// \class BlockGCRODRSolMgr
+/// \class BlockGCRODRCSolMgr
 /// \brief A solver manager for the Block GCRO-DR (Block Recycling GMRES) linear solver.
 /// \ingroup belos_solver_framework
 /// \author Kirk M. Soodhalter and Michael L. Parks
@@ -123,474 +122,330 @@ namespace Belos{
 /// The original GCRO-DR algorithm can only solve one right-hand side at a time.  Block GCRO-DR extends GCRO-DR so that it can solve
 /// multiple right-hand sides at a time; thus, it can solve sequences of block systems.
 ///
-  
-  // Trivial implementation
-  template<class ScalarType, class MV, class OP,
-           const bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
-  class BlockGCRODRSolMgr :
-    public Details::NewSolverManager<ScalarType, MV, OP,
-				     Teuchos::ScalarTraits<ScalarType>::isComplex>
-  {
-    static const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
-    typedef Details::NewSolverManager<ScalarType, MV, OP, isComplex> base_type;
 
-  public:
-    BlockGCRODRSolMgr () :
-      base_type ()
-    {}
-    BlockGCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		       const Teuchos::RCP<Teuchos::ParameterList> &pl) :
-      base_type ()
-    {}
-    virtual ~BlockGCRODRSolMgr () {}
-  };
+template<class ScalarType, class MV, class OP>
+class BlockGCRODRCSolMgr : public SolverManager<ScalarType, MV, OP> {
+private:
 
-  // Partial specialization for complex ScalarType.
-  template<class ScalarType, class MV, class OP>
-  class BlockGCRODRSolMgr<ScalarType, MV, OP, true> :
-    public Details::NewSolverManager<ScalarType, MV, OP, true> {
+  typedef MultiVecTraits<ScalarType,MV> MVT;
+  typedef MultiVecTraitsExt<ScalarType,MV> MVText;
+  typedef OperatorTraits<ScalarType,MV,OP> OPT;
+  typedef Teuchos::ScalarTraits<ScalarType> SCT;
+  typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
+  typedef Teuchos::ScalarTraits<MagnitudeType> MT;
+  typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
+  typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
+  typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
+  typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
 
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
-    typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
-    typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
-    typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
+public:
+  //! @name Constructors/Destructor
+  //@{
 
-  public:
+  /// \brief Default constructor.
+  ///
+  /// This constructor sets up the solver with default parameters.
+  /// The linear problem must be passed in using \c setProblem() before \c solve() is called on this object.
+  /// The solver values can be changed using \c setParameters().
+  BlockGCRODRCSolMgr();
 
-    BlockGCRODRSolMgr() {
-      complexSolver_=Teuchos::rcp( new BlockGCRODRCSolMgr<ScalarType,MV,OP>() );
-    }
-    
-    BlockGCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		       const Teuchos::RCP<Teuchos::ParameterList> &pl) {
-      complexSolver_=Teuchos::rcp( new BlockGCRODRCSolMgr<ScalarType,MV,OP>(problem,pl) );
-    }
-    
-    virtual ~BlockGCRODRSolMgr() {
-      complexSolver_=Teuchos::null;
-    }
+  /*! \brief Basic constructor for GCRODRCSolMgr.
+   *
+   * This constructor accepts the LinearProblem to be solved in
+   * addition to a parameter list of options for the solver manager.
+   * Some of the more important options include the following:
+   * - "Num Blocks": an \c int specifying the number of blocks allocated for the Krylov basis. Default: 50.
+   * - "Block Size": an \c int specifying the number of right hand sides being solved at a time.
+   * - "Num Recycled Blocks": an \c int specifying the number of blocks allocated for the Krylov basis. Default: 5.
+   * - "Maximum Iterations": an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 5000.
+   * - "Maximum Restarts": an \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 100.
+   * - "Orthogonalization": an \c std::string specifying the desired orthogonalization. Currently supported values: "DGKS", "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR support). Default: "DGKS".
+   * - "Orthogonalization Parameters": a ParameterList or RCP<(const) ParameterList> of parameters specific to the type of orthogonalization used. Defaults are set automatically.
+   * - "Verbosity": a sum of MsgType specifying the verbosity. Default: Belos::Errors.
+   * - "Output Style": a OutputType specifying the style of output. Default: Belos::General.
+   * - "Convergence Tolerance": a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
+   *
+   * Other supported options:
 
-    std::string description() const {
-      return complexSolver_->description();
-    }
+   * - "Output Frequency": an int specifying how often (in terms of number of iterations) convergence information should be output to the output stream. Default: -1 (never output convergence information).
+   * - "Output Stream": a reference-counted pointer to the output stream where all solver output is sent. Default stream is std::cout (stdout, in C terms). For stderr, supply Teuchos::rcp(&std::cerr, false).
+   * - "Implicit Residual Scaling": the type of scaling used in the implicit residual convergence test. Default: "Norm of Preconditioned Initial Residual".
+   * - "Explicit Residual Scaling": the type of scaling used in the explicit residual convergence test. Default: "Norm of Initial Residual".
+   * - "Timer Label": the string to use as a prefix for the timer labels. Default: "Belos"
+   * - "Orthogonalization Constant": a \c MagnitudeType corresponding to the "depTol" parameter of DGKS orthogonalization. Ignored unless DGKS orthogonalization is used. DGKS decides the default value.
+   */
+  BlockGCRODRCSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                     const Teuchos::RCP<Teuchos::ParameterList> &pl);
 
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
-      return complexSolver_->getProblem();
-    }
+  //! Destructor.
+  virtual ~BlockGCRODRCSolMgr() {};
+  //@}
 
-    //! Get a parameter list containing the valid parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const {
-      return complexSolver_->getValidParameters();
-    }
+  /** \name Implementation of the Teuchos::Describable interface */
+  //@{
 
-    //! Get a parameter list containing the current parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const {
-      return complexSolver_->getCurrentParameters();
-    }
+  //! A description of the Block GCRODRC solver manager.
+  std::string description() const;
 
-    //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const {
-      return complexSolver_->getNumIters();
-    }
+  //@}
 
-    //! Whether a loss of accuracy was detected during the most recent solve.
-    bool isLOADetected() const {
-      return complexSolver_->isLOADetected();
-    }
 
-    /// \brief Set the linear problem to solve on the next call to \c solve().
-    void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) {
-      complexSolver_->setProblem(problem);
-    }
+  //! @name Accessor methods
+  //@{
 
-    //! Set the parameters the solver should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params ) {
-      complexSolver_->setParameters(params);
-    }
+  //! Get current linear problem being solved for in this object.
+  const LinearProblem<ScalarType,MV,OP>& getProblem() const {
+    return *problem_;
+  }
 
-    //! @name Reset methods
-    void reset (const ResetType type) {
-      complexSolver_->reset(type);
-    }
+  //! Get a parameter list containing the valid parameters for this object.
+  Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
 
-    // solve
-    ReturnType solve() {
-      return complexSolver_->solve();
-    }
+  //! Get a parameter list containing the current parameters for this object.
+  Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
 
-  private:
-    
-    // Called by all constructors; Contains init instructions common to all constructors
-    void init() {
-      complexSolver_->init();
-    }
-    
-    // Initialize solver state storage
-    void initializeStateStorage() {
-      complexSolver_->initializeStateStorage();
+  //! Get the iteration count for the most recent call to \c solve().
+  int getNumIters() const { return numIters_; }
+
+  //! Whether a loss of accuracy was detected during the most recent solve.
+  bool isLOADetected() const { return loaDetected_; }
+
+  //@}
+
+  //! @name Set methods
+  //@{
+
+  /// \brief Set the linear problem to solve on the next call to \c solve().
+  void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) {
+    TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
+      "Belos::BlockGCRODRCSolMgr::setProblem: The input LinearProblem cannot be null.");
+
+    // Check state of problem object before proceeding
+    if (! problem->isProblemSet()) {
+      const bool success = problem->setProblem();
+      TEUCHOS_TEST_FOR_EXCEPTION(success, std::runtime_error,
+        "Belos::BlockGCRODRCSolMgr::setProblem: Calling the input LinearProblem's setProblem() method failed.  This likely means that the "
+        "LinearProblem has a missing (null) matrix A, solution vector X, or right-hand side vector B.  Please set these items in the LinearProblem and try again.");
     }
 
-    // Functions which control the building of a recycle space
-    void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter) {
-      complexSolver_->buildRecycleSpaceKryl(keff,block_gmres_iter);
-    }
-    void buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > gcrodr_iter) {
-      complexSolver_->buildRecycleSpaceAugKryl(gcrodr_iter);
-    }
+    problem_ = problem;
+  }
 
-    int getHarmonicVecsKryl (int m, const SDM& HH, SDM& PP) {
-      return complexSolver_->getHarmonicVecsKryl(m,HH,PP);
-    }
+  //! Set the parameters the solver should use to solve the linear problem.
+  void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
 
-    int getHarmonicVecsAugKryl (int keff,
-				int m,
-				const SDM& HH,
-				const Teuchos::RCP<const MV>& VV,
-				SDM& PP) {
-      return complexSolver_->getHarmonicVecsAugKryl(keff,m,HH,VV,PP);
-    }
+  //@}
 
-    // Sort list of n floating-point numbers and return permutation vector
-    void sort (std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
-      complexSolver_->sort(dlist,n,iperm);
-    }
+  //! @name Reset methods
+  //@{
 
-    Teuchos::RCP< BlockGCRODRCSolMgr<ScalarType,MV,OP> > complexSolver_;
+  /*! \brief Performs a reset of the solver manager specified by the \c ResetType.
+   *
+   * This informs the solver manager that the solver should prepare
+   * for the next call to solve by resetting certain elements of the
+   * iterative solver strategy.
+   */
+  void reset (const ResetType type) {
+    if ((type & Belos::Problem) && ! problem_.is_null ())
+      problem_->setProblem();
+    else if (type & Belos::RecycleSubspace)
+      keff = 0;
+  }
 
-  };
+  //@}
 
-  // Partial specialization for real ScalarType.
-  template<class ScalarType, class MV, class OP>
-  class BlockGCRODRSolMgr<ScalarType, MV, OP, false> :
-    public Details::NewSolverManager<ScalarType, MV, OP, false> {
+  //! @name Solver application methods
+  //@{
 
-  private:
+  /// \brief Solve the current linear problem.
+  ///
+  /// This method performs possibly repeated calls to the underlying linear solver's \c iterate() routine until the problem has been
+  /// solved (as decided by the solver manager) or the solver manager decides to quit.
+  ///
+  /// This method calls BlockGCRODRIter::iterate(), which will return either because a specially constructed status test evaluates to
+  /// ::Passed or an exception is thrown.
+  ///
+  /// A return from BlockGCRODRIter::iterate() signifies one of the
+  /// following scenarios:
+  /// - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system will be
+  ///   placed in the linear problem and return ::Unconverged.
+  /// - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
+  ///   problem and the solver manager will return ::Converged.
+  ///
+  // \returns ::ReturnType specifying:
+  /// - ::Converged: the linear problem was solved to the specification required by the solver manager.
+  /// - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
+  ReturnType solve();
 
-    typedef MultiVecTraits<ScalarType,MV> MVT;
-    typedef MultiVecTraitsExt<ScalarType,MV> MVText;
-    typedef OperatorTraits<ScalarType,MV,OP> OPT;
-    typedef Teuchos::ScalarTraits<ScalarType> SCT;
-    typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
-    typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    typedef Teuchos::ScalarTraits<MagnitudeType> SMT;
-    typedef OrthoManagerFactory<ScalarType, MV, OP> ortho_factory_type;
-    typedef Teuchos::SerialDenseMatrix<int,ScalarType> SDM;
-    typedef Teuchos::SerialDenseVector<int,ScalarType> SDV;
+  //@}
 
-  public:
-    //! @name Constructors/Destructor
-    //@{
+private:
 
-    /// \brief Default constructor.
-    ///
-    /// This constructor sets up the solver with default parameters.
-    /// The linear problem must be passed in using \c setProblem() before \c solve() is called on this object.
-    /// The solver values can be changed using \c setParameters().
-    BlockGCRODRSolMgr();
+  // Called by all constructors; Contains init instructions common to all constructors
+  void init();
 
-    /*! \brief Basic constructor for GCRODRSolMgr.
-     *
-     * This constructor accepts the LinearProblem to be solved in
-     * addition to a parameter list of options for the solver manager.
-     * Some of the more important options include the following:
-     * - "Num Blocks": an \c int specifying the number of blocks allocated for the Krylov basis. Default: 50.
-     * - "Block Size": an \c int specifying the number of right hand sides being solved at a time.
-     * - "Num Recycled Blocks": an \c int specifying the number of blocks allocated for the Krylov basis. Default: 5.
-     * - "Maximum Iterations": an \c int specifying the maximum number of iterations the underlying solver is allowed to perform. Default: 5000.
-     * - "Maximum Restarts": an \c int specifying the maximum number of restarts the underlying solver is allowed to perform. Default: 100.
-     * - "Orthogonalization": an \c std::string specifying the desired orthogonalization. Currently supported values: "DGKS", "ICGS", "IMGS", and "TSQR" (if Belos was built with TSQR support). Default: "DGKS".
-     * - "Orthogonalization Parameters": a ParameterList or RCP<(const) ParameterList> of parameters specific to the type of orthogonalization used. Defaults are set automatically.
-     * - "Verbosity": a sum of MsgType specifying the verbosity. Default: Belos::Errors.
-     * - "Output Style": a OutputType specifying the style of output. Default: Belos::General.
-     * - "Convergence Tolerance": a \c MagnitudeType specifying the level that residual norms must reach to decide convergence. Default: 1e-8.
-     *
-     * Other supported options:
+  // Initialize solver state storage
+  void initializeStateStorage();
 
-     * - "Output Frequency": an int specifying how often (in terms of number of iterations) convergence information should be output to the output stream. Default: -1 (never output convergence information).
-     * - "Output Stream": a reference-counted pointer to the output stream where all solver output is sent. Default stream is std::cout (stdout, in C terms). For stderr, supply Teuchos::rcp(&std::cerr, false).
-     * - "Implicit Residual Scaling": the type of scaling used in the implicit residual convergence test. Default: "Norm of Preconditioned Initial Residual".
-     * - "Explicit Residual Scaling": the type of scaling used in the explicit residual convergence test. Default: "Norm of Initial Residual".
-     * - "Timer Label": the string to use as a prefix for the timer labels. Default: "Belos"
-     * - "Orthogonalization Constant": a \c MagnitudeType corresponding to the "depTol" parameter of DGKS orthogonalization. Ignored unless DGKS orthogonalization is used. DGKS decides the default value.
-     */
-    BlockGCRODRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		       const Teuchos::RCP<Teuchos::ParameterList> &pl);
+  // Recycling Methods
+  // Appending Function name by:
+  //  "Kryl" indicates it is specialized for building a recycle space after an
+  //         initial run of Block GMRES which generates an initial unaugmented block Krylov subspace
+  //  "AugKryl" indicates  it is specialized for building a recycle space from the augmented Krylov subspace
 
-    //! Destructor.
-    virtual ~BlockGCRODRSolMgr() {};
-    //@}
+  // Functions which control the building of a recycle space
+  void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter);
+  void buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > gcrodrc_iter);
 
-    /** \name Implementation of the Teuchos::Describable interface */
-    //@{
+  // Recycling with Harmonic Ritz Vectors
+  // Computes harmonic eigenpairs of projected matrix created during the priming solve.
+  // The return value is the number of vectors needed to be stored, recycledBlocks or recycledBlocks+1.
 
-    //! A description of the Block GCRODR solver manager.
-    std::string description() const;
+  // HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension (numBlocks+1)*blockSize x numBlocks.
+  // PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
+  int getHarmonicVecsKryl (int m, const SDM& HH, SDM& PP);
 
-    //@}
+  // HH is the total block projected problem from the GCRO-DR algorithm, it is (at least) of dimension keff+(numBlocks+1)*blockSize x keff+numBlocksm.
+  // VV is the Krylov vectors from the projected GMRES algorithm, which has (at least) (numBlocks+1)*blockSize vectors.
+  // PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
+  int getHarmonicVecsAugKryl (int keff,
+                              int m,
+                              const SDM& HH,
+                              const Teuchos::RCP<const MV>& VV,
+                              SDM& PP);
 
+  // Sort list of n floating-point numbers and return permutation vector
+  void sort (std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm);
 
-    //! @name Accessor methods
-    //@{
+  // Lapack interface
+  Teuchos::LAPACK<int,ScalarType> lapack;
 
-    //! Get current linear problem being solved for in this object.
-    const LinearProblem<ScalarType,MV,OP>& getProblem() const {
-      return *problem_;
-    }
+  //! The current linear problem to solve.
+  Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
 
-    //! Get a parameter list containing the valid parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
+  //Output Manager
+  Teuchos::RCP<OutputManager<ScalarType> > printer_;
+  Teuchos::RCP<std::ostream> outputStream_;
 
-    //! Get a parameter list containing the current parameters for this object.
-    Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
+  //Status Test
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
+  Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
+  Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
+  Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
+  Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
 
-    //! Get the iteration count for the most recent call to \c solve().
-    int getNumIters() const { return numIters_; }
+  //! Factory for creating MatOrthoManager subclass instances.
+  ortho_factory_type orthoFactory_;
 
-    //! Whether a loss of accuracy was detected during the most recent solve.
-    bool isLOADetected() const { return loaDetected_; }
+  /// \brief Orthogonalization manager.
+  ///
+  /// This is created by the OrthoManagerFactory instance.  The
+  /// pointer may be invalidated if this solver's parameters are
+  /// changed.
+  Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
 
-    //@}
+  //! This solver's current parameter list.
+  Teuchos::RCP<Teuchos::ParameterList> params_;
 
-    //! @name Set methods
-    //@{
+  /// \brief Default parameter list.
+  ///
+  /// This is declared "mutable" so that it can be created on demand
+  /// by \c getValidParameters().  The \c SolverManager interface
+  /// forces \c getValidParameters() to be a const method.
+  ///
+  /// Using the "mutable" keyword is ugly, but the previous caching
+  /// solution involved static method data in getValidParameters().
+  /// That solution made creating multiple instances of this solver
+  /// in different threads not safe.
+  mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
 
-    /// \brief Set the linear problem to solve on the next call to \c solve().
-    void setProblem (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem) {
-      TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
-				 "Belos::BlockGCRODRSolMgr::setProblem: The input LinearProblem cannot be null.");
+  //Default Solver Values
+  static const bool adaptiveBlockSize_default_;
+  static const std::string recycleMethod_default_;
 
-      // Check state of problem object before proceeding
-      if (! problem->isProblemSet()) {
-	const bool success = problem->setProblem();
-	TEUCHOS_TEST_FOR_EXCEPTION(success, std::runtime_error,
-				   "Belos::BlockGCRODRSolMgr::setProblem: Calling the input LinearProblem's setProblem() method failed.  This likely means that the "
-				   "LinearProblem has a missing (null) matrix A, solution vector X, or right-hand side vector B.  Please set these items in the LinearProblem and try again.");
-      }
+  //Current Solver Values
+  MagnitudeType convTol_, orthoKappa_;
+  int blockSize_, maxRestarts_, maxIters_, numIters_;
+  int verbosity_, outputStyle_, outputFreq_;
+  bool adaptiveBlockSize_;
+  std::string orthoType_, recycleMethod_;
+  std::string impResScale_, expResScale_;
+  std::string label_;
 
-      problem_ = problem;
-    }
+  /////////////////////////////////////////////////////////////////////////
+  // Solver State Storage
+  /////////////////////////////////////////////////////////////////////////
+  //
+  // The number of blocks and recycle blocks (m and k, respectively)
+  int numBlocks_, recycledBlocks_;
+  // Current size of recycled subspace
+  int keff;
+  //
+  // Residual Vector
+  Teuchos::RCP<MV> R_;
+  //
+  // Search Space
+  Teuchos::RCP<MV> V_;
+  //
+  // Recycle subspace and its image under action of the operator
+  Teuchos::RCP<MV> U_, C_;
+  //
+  // Updated recycle Space and its image under action of the operator
+  Teuchos::RCP<MV> U1_, C1_;
+  //
+  // Storage used in constructing recycle space
+  Teuchos::RCP<SDM > G_;
+  Teuchos::RCP<SDM > H_;
+  Teuchos::RCP<SDM > B_;
+  Teuchos::RCP<SDM > PP_;
+  Teuchos::RCP<SDM > HP_;
+  std::vector<ScalarType> tau_;
+  std::vector<ScalarType> work_;
+  Teuchos::RCP<SDM > F_;
+  std::vector<int> ipiv_;
 
-    //! Set the parameters the solver should use to solve the linear problem.
-    void setParameters( const Teuchos::RCP<Teuchos::ParameterList> &params );
+  //! Timer for \c solve().
+  Teuchos::RCP<Teuchos::Time> timerSolve_;
 
-    //@}
+  //! Whether \c setParameters() successfully finished setting parameters.
+  bool isSet_;
 
-    //! @name Reset methods
-    //@{
+  //! Whether a loss of accuracy was detected during the solve.
+  bool loaDetected_;
 
-    /*! \brief Performs a reset of the solver manager specified by the \c ResetType.
-     *
-     * This informs the solver manager that the solver should prepare
-     * for the next call to solve by resetting certain elements of the
-     * iterative solver strategy.
-     */
-    void reset (const ResetType type) {
-      if ((type & Belos::Problem) && ! problem_.is_null ())
-	problem_->setProblem();
-      else if (type & Belos::RecycleSubspace)
-	keff = 0;
-    }
-
-    //@}
-
-    //! @name Solver application methods
-    //@{
-
-    /// \brief Solve the current linear problem.
-    ///
-    /// This method performs possibly repeated calls to the underlying linear solver's \c iterate() routine until the problem has been
-    /// solved (as decided by the solver manager) or the solver manager decides to quit.
-    ///
-    /// This method calls BlockGCRODRIter::iterate(), which will return either because a specially constructed status test evaluates to
-    /// ::Passed or an exception is thrown.
-    ///
-    /// A return from BlockGCRODRIter::iterate() signifies one of the
-    /// following scenarios:
-    /// - the maximum number of restarts has been exceeded. In this scenario, the current solutions to the linear system will be
-    ///   placed in the linear problem and return ::Unconverged.
-    /// - global convergence has been met. In this case, the current solutions to the linear system will be placed in the linear
-    ///   problem and the solver manager will return ::Converged.
-    ///
-    // \returns ::ReturnType specifying:
-    /// - ::Converged: the linear problem was solved to the specification required by the solver manager.
-    /// - ::Unconverged: the linear problem was not solved to the specification desired by the solver manager.
-    ReturnType solve();
-
-    //@}
-
-  private:
-
-    // Called by all constructors; Contains init instructions common to all constructors
-    void init();
-
-    // Initialize solver state storage
-    void initializeStateStorage();
-
-    // Recycling Methods
-    // Appending Function name by:
-    //  "Kryl" indicates it is specialized for building a recycle space after an
-    //         initial run of Block GMRES which generates an initial unaugmented block Krylov subspace
-    //  "AugKryl" indicates  it is specialized for building a recycle space from the augmented Krylov subspace
-
-    // Functions which control the building of a recycle space
-    void buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter);
-    void buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > gcrodr_iter);
-
-    // Recycling with Harmonic Ritz Vectors
-    // Computes harmonic eigenpairs of projected matrix created during the priming solve.
-    // The return value is the number of vectors needed to be stored, recycledBlocks or recycledBlocks+1.
-
-    // HH is the projected problem from the initial cycle of Gmres, it is (at least) of dimension (numBlocks+1)*blockSize x numBlocks.
-    // PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
-    int getHarmonicVecsKryl (int m, const SDM& HH, SDM& PP);
-
-    // HH is the total block projected problem from the GCRO-DR algorithm, it is (at least) of dimension keff+(numBlocks+1)*blockSize x keff+numBlocksm.
-    // VV is the Krylov vectors from the projected GMRES algorithm, which has (at least) (numBlocks+1)*blockSize vectors.
-    // PP contains the harmonic eigenvectors corresponding to the recycledBlocks eigenvalues of smallest magnitude.
-    int getHarmonicVecsAugKryl (int keff,
-				int m,
-				const SDM& HH,
-				const Teuchos::RCP<const MV>& VV,
-				SDM& PP);
-
-    // Sort list of n floating-point numbers and return permutation vector
-    void sort (std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
-
-    // Lapack interface
-    Teuchos::LAPACK<int,ScalarType> lapack;
-
-    //! The current linear problem to solve.
-    Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > problem_;
-
-    //Output Manager
-    Teuchos::RCP<OutputManager<ScalarType> > printer_;
-    Teuchos::RCP<std::ostream> outputStream_;
-
-    //Status Test
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > sTest_;
-    Teuchos::RCP<StatusTestMaxIters<ScalarType,MV,OP> > maxIterTest_;
-    Teuchos::RCP<StatusTest<ScalarType,MV,OP> > convTest_;
-    Teuchos::RCP<StatusTestGenResNorm<ScalarType,MV,OP> > expConvTest_, impConvTest_;
-    Teuchos::RCP<StatusTestOutput<ScalarType,MV,OP> > outputTest_;
-
-    //! Factory for creating MatOrthoManager subclass instances.
-    ortho_factory_type orthoFactory_;
-
-    /// \brief Orthogonalization manager.
-    ///
-    /// This is created by the OrthoManagerFactory instance.  The
-    /// pointer may be invalidated if this solver's parameters are
-    /// changed.
-    Teuchos::RCP<MatOrthoManager<ScalarType,MV,OP> > ortho_;
-
-    //! This solver's current parameter list.
-    Teuchos::RCP<Teuchos::ParameterList> params_;
-
-    /// \brief Default parameter list.
-    ///
-    /// This is declared "mutable" so that it can be created on demand
-    /// by \c getValidParameters().  The \c SolverManager interface
-    /// forces \c getValidParameters() to be a const method.
-    ///
-    /// Using the "mutable" keyword is ugly, but the previous caching
-    /// solution involved static method data in getValidParameters().
-    /// That solution made creating multiple instances of this solver
-    /// in different threads not safe.
-    mutable Teuchos::RCP<const Teuchos::ParameterList> defaultParams_;
-
-    //Default Solver Values
-    static const bool adaptiveBlockSize_default_;
-    static const std::string recycleMethod_default_;
-
-    //Current Solver Values
-    MagnitudeType convTol_, orthoKappa_;
-    int blockSize_, maxRestarts_, maxIters_, numIters_;
-    int verbosity_, outputStyle_, outputFreq_;
-    bool adaptiveBlockSize_;
-    std::string orthoType_, recycleMethod_;
-    std::string impResScale_, expResScale_;
-    std::string label_;
-
-    /////////////////////////////////////////////////////////////////////////
-    // Solver State Storage
-    /////////////////////////////////////////////////////////////////////////
-    //
-    // The number of blocks and recycle blocks (m and k, respectively)
-    int numBlocks_, recycledBlocks_;
-    // Current size of recycled subspace
-    int keff;
-    //
-    // Residual Vector
-    Teuchos::RCP<MV> R_;
-    //
-    // Search Space
-    Teuchos::RCP<MV> V_;
-    //
-    // Recycle subspace and its image under action of the operator
-    Teuchos::RCP<MV> U_, C_;
-    //
-    // Updated recycle Space and its image under action of the operator
-    Teuchos::RCP<MV> U1_, C1_;
-    //
-    // Storage used in constructing recycle space
-    Teuchos::RCP<SDM > G_;
-    Teuchos::RCP<SDM > H_;
-    Teuchos::RCP<SDM > B_;
-    Teuchos::RCP<SDM > PP_;
-    Teuchos::RCP<SDM > HP_;
-    std::vector<ScalarType> tau_;
-    std::vector<ScalarType> work_;
-    Teuchos::RCP<SDM > F_;
-    std::vector<int> ipiv_;
-
-    //! Timer for \c solve().
-    Teuchos::RCP<Teuchos::Time> timerSolve_;
-
-    //! Whether \c setParameters() successfully finished setting parameters.
-    bool isSet_;
-
-    //! Whether a loss of accuracy was detected during the solve.
-    bool loaDetected_;
-
-    //! Whether we have generated or regenerated a recycle space yet this solve.
-    bool builtRecycleSpace_;
-  };
+  //! Whether we have generated or regenerated a recycle space yet this solve.
+  bool builtRecycleSpace_;
+};
 
   //
   // Set default solver values
   //
   template<class ScalarType, class MV, class OP>
-  const bool BlockGCRODRSolMgr<ScalarType,MV,OP,false>::adaptiveBlockSize_default_ = true;
+  const bool BlockGCRODRCSolMgr<ScalarType,MV,OP>::adaptiveBlockSize_default_ = true;
 
   template<class ScalarType, class MV, class OP>
-  const std::string BlockGCRODRSolMgr<ScalarType,MV,OP,false>::recycleMethod_default_ = "harmvecs";
+  const std::string BlockGCRODRCSolMgr<ScalarType,MV,OP>::recycleMethod_default_ = "harmvecs";
 
   //
   // Method definitions
   //
 
   template<class ScalarType, class MV, class OP>
-  BlockGCRODRSolMgr<ScalarType,MV,OP,false>::BlockGCRODRSolMgr() {
+  BlockGCRODRCSolMgr<ScalarType,MV,OP>::BlockGCRODRCSolMgr() {
     init();
   }
 
   //Basic Constructor
   template<class ScalarType, class MV, class OP>
-  BlockGCRODRSolMgr<ScalarType,MV,OP,false>::
-  BlockGCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+  BlockGCRODRCSolMgr<ScalarType,MV,OP>::
+  BlockGCRODRCSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) {
     // Initialize local pointers to null, and initialize local
     // variables to default values.
     init ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(problem.is_null(), std::invalid_argument,
-      "Belos::BlockGCRODR constructor: The solver manager's constructor needs "
+      "Belos::BlockGCRODRC constructor: The solver manager's constructor needs "
       "the linear problem argument 'problem' to be nonnull.");
 
     problem_ = problem;
@@ -602,7 +457,7 @@ namespace Belos{
   }
 
   template<class ScalarType, class MV, class OP>
-  void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::init() {
+  void BlockGCRODRCSolMgr<ScalarType,MV,OP>::init() {
     adaptiveBlockSize_ = adaptiveBlockSize_default_;
     recycleMethod_ = recycleMethod_default_;
     isSet_ = false;
@@ -679,9 +534,9 @@ namespace Belos{
 
   //  This method requires the solver manager to return a string that describes itself.
   template<class ScalarType, class MV, class OP>
-  std::string BlockGCRODRSolMgr<ScalarType,MV,OP,false>::description() const {
+  std::string BlockGCRODRCSolMgr<ScalarType,MV,OP>::description() const {
     std::ostringstream oss;
-    oss << "Belos::BlockGCRODRSolMgr<" << SCT::name() << ", ...>";
+    oss << "Belos::BlockGCRODRCSolMgr<" << SCT::name() << ", ...>";
     oss << "{";
     oss << "Ortho Type='"<<orthoType_ ;
     oss << ", Num Blocks=" <<numBlocks_;
@@ -694,7 +549,7 @@ namespace Belos{
 
    template<class ScalarType, class MV, class OP>
    Teuchos::RCP<const Teuchos::ParameterList>
-   BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getValidParameters() const {
+   BlockGCRODRCSolMgr<ScalarType,MV,OP>::getValidParameters() const {
      using Teuchos::ParameterList;
      using Teuchos::parameterList;
      using Teuchos::RCP;
@@ -724,7 +579,7 @@ namespace Belos{
        // Setting this to a negative value by default ensures that
        // this parameter is only _not_ ignored if the user
        // specifically sets a valid value.
-       const MagnitudeType orthoKappa = -SCT::one();
+       const MagnitudeType orthoKappa = -SMT::one();
 
        // Set all the valid parameters and their default values.
        pl->set ("Convergence Tolerance", convTol,
@@ -781,7 +636,7 @@ namespace Belos{
 
    template<class ScalarType, class MV, class OP>
    void
-   BlockGCRODRSolMgr<ScalarType,MV,OP,false>::
+   BlockGCRODRCSolMgr<ScalarType,MV,OP>::
    setParameters (const Teuchos::RCP<Teuchos::ParameterList> &params) {
      using Teuchos::isParameterType;
      using Teuchos::getParameter;
@@ -796,7 +651,7 @@ namespace Belos{
      using Teuchos::Exceptions::InvalidParameterName;
      using Teuchos::Exceptions::InvalidParameterType;
 
-     // The default parameter list contains all parameters that BlockGCRODRSolMgr understands, and none that it doesn't
+     // The default parameter list contains all parameters that BlockGCRODRCSolMgr understands, and none that it doesn't
      RCP<const ParameterList> defaultParams = getValidParameters();
 
      if (params.is_null()) {
@@ -815,7 +670,7 @@ namespace Belos{
        // missing parameters: these will be filled in with their
        // default values.  There is additional discussion of other
        // validation strategies in the comments of this function for
-       // Belos::GCRODRSolMgr.
+       // Belos::GCRODRCSolMgr.
        params->validateParametersAndSetDefaults (*defaultParams);
        // No side effects on the solver until after validation passes.
        params_ = params;
@@ -834,35 +689,35 @@ namespace Belos{
      {
        const int maxRestarts = params_->get<int> ("Maximum Restarts");
        TEUCHOS_TEST_FOR_EXCEPTION(maxRestarts <= 0, std::invalid_argument,
-         "Belos::BlockGCRODRSolMgr: The \"Maximum Restarts\" parameter "
+         "Belos::BlockGCRODRCSolMgr: The \"Maximum Restarts\" parameter "
          "must be nonnegative, but you specified a negative value of "
          << maxRestarts << ".");
 
        const int maxIters = params_->get<int> ("Maximum Iterations");
        TEUCHOS_TEST_FOR_EXCEPTION(maxIters <= 0, std::invalid_argument,
-         "Belos::BlockGCRODRSolMgr: The \"Maximum Iterations\" parameter "
+         "Belos::BlockGCRODRCSolMgr: The \"Maximum Iterations\" parameter "
          "must be positive, but you specified a nonpositive value of "
          << maxIters << ".");
 
        const int numBlocks = params_->get<int> ("Num Blocks");
        TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument,
-         "Belos::BlockGCRODRSolMgr: The \"Num Blocks\" parameter must be "
+         "Belos::BlockGCRODRCSolMgr: The \"Num Blocks\" parameter must be "
          "positive, but you specified a nonpositive value of " << numBlocks
          << ".");
 
        const int blockSize = params_->get<int> ("Block Size");
        TEUCHOS_TEST_FOR_EXCEPTION(blockSize <= 0, std::invalid_argument,
-         "Belos::BlockGCRODRSolMgr: The \"Block Size\" parameter must be "
+         "Belos::BlockGCRODRCSolMgr: The \"Block Size\" parameter must be "
          "positive, but you specified a nonpositive value of " << blockSize
          << ".");
 
        const int recycledBlocks = params_->get<int> ("Num Recycled Blocks");
        TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks <= 0, std::invalid_argument,
-         "Belos::BlockGCRODRSolMgr: The \"Num Recycled Blocks\" parameter must "
+         "Belos::BlockGCRODRCSolMgr: The \"Num Recycled Blocks\" parameter must "
          "be positive, but you specified a nonpositive value of "
          << recycledBlocks << ".");
        TEUCHOS_TEST_FOR_EXCEPTION(recycledBlocks >= numBlocks,
-         std::invalid_argument, "Belos::BlockGCRODRSolMgr: The \"Num Recycled "
+         std::invalid_argument, "Belos::BlockGCRODRCSolMgr: The \"Num Recycled "
          "Blocks\" parameter must be less than the \"Num Blocks\" parameter, "
          "but you specified \"Num Recycled Blocks\" = " << recycledBlocks
          << " and \"Num Blocks\" = " << numBlocks << ".");
@@ -884,7 +739,7 @@ namespace Belos{
        const bool labelChanged = (tempLabel != label_);
 
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
-       std::string solveLabel = label_ + ": BlockGCRODRSolMgr total solve time";
+       std::string solveLabel = label_ + ": BlockGCRODRCSolMgr total solve time";
        if (timerSolve_.is_null()) {
          // We haven't created a timer yet.
          timerSolve_ = Teuchos::TimeMonitor::getNewCounter (solveLabel);
@@ -934,7 +789,7 @@ namespace Belos{
 
      // Get the output stream for the output manager.
      //
-     // It has been pointed out (mfh 28 Feb 2011 in GCRODRSolMgr code)
+     // It has been pointed out (mfh 28 Feb 2011 in GCRODRCSolMgr code)
      // that including an RCP<std::ostream> parameter makes it
      // impossible to serialize the parameter list.  If you serialize
      // the list and read it back in from the serialized
@@ -998,7 +853,7 @@ namespace Belos{
        // Ensure that the specified orthogonalization type is valid.
        if (! orthoFactory_.isValidName (tempOrthoType)) {
          std::ostringstream os;
-         os << "Belos::BlockGCRODRSolMgr: Invalid orthogonalization name \""
+         os << "Belos::BlockGCRODRCSolMgr: Invalid orthogonalization name \""
             << tempOrthoType << "\".  The following are valid options "
             << "for the \"Orthogonalization\" name parameter: ";
          orthoFactory_.printValidNames (os);
@@ -1036,7 +891,7 @@ namespace Belos{
      // orthogonalization method name (orthoType_) and its parameters
      // (orthoParams) above.
      //
-     // As suggested (by mfh 12 Jan 2011 in Belos::GCRODRSolMgr) In
+     // As suggested (by mfh 12 Jan 2011 in Belos::GCRODRCSolMgr) In
      // order to ensure parameter changes get propagated to the
      // orthomanager we simply reinstantiate the OrthoManager every
      // time, whether or not the orthogonalization method name or
@@ -1187,7 +1042,7 @@ namespace Belos{
                                       Passed+Failed+Undefined);
 
      // Set the solver string for the output test
-     std::string solverDesc = "Block GCRODR ";
+     std::string solverDesc = "Block GCRODRC ";
      outputTest_->setSolverDesc (solverDesc);
 
      // Inform the solver manager that the current parameters were set.
@@ -1197,7 +1052,7 @@ namespace Belos{
   // initializeStateStorage.
   template<class ScalarType, class MV, class OP>
   void
-  BlockGCRODRSolMgr<ScalarType,MV,OP,false>::initializeStateStorage()
+  BlockGCRODRCSolMgr<ScalarType,MV,OP>::initializeStateStorage()
   {
 
     ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1349,7 +1204,7 @@ namespace Belos{
   }
 
 template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter) {
+void BlockGCRODRCSolMgr<ScalarType,MV,OP>::buildRecycleSpaceKryl(int& keff, Teuchos::RCP<BlockGmresIter<ScalarType,MV,OP> > block_gmres_iter){
 
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
@@ -1400,20 +1255,21 @@ HPtmp.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, *H_, *PPtmp, zero );
 int lwork = -1;
 tau_.resize(keff);
 lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure, "Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
 // Step #2: Compute QR factorization of HP
-lwork = (int)work_[0];
+lwork = (int)std::abs(work_[0]);
 work_.resize(lwork);
 lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,  "Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,  "Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
 // Step #3: Explicitly construct Q and R factors
 // The upper triangular part of HP is copied into R and HP becomes Q.
 SDM Rtmp( Teuchos::View, *F_, keff, keff );
 for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
-lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+//lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure, "Belos::BlockGCRODRCSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
                 // Now we have [Q,R] = qr(H*P)
 
                 // Now compute C = V(:,1:p+blockSize_) * Q
@@ -1429,12 +1285,12 @@ TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::Bl
 // Step #1: First, compute LU factorization of R
 ipiv_.resize(Rtmp.numRows());
 lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure, "Belos::GCRODRCSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 // Step #2: Form inv(R)
 lwork = Rtmp.numRows();
 work_.resize(lwork);
 lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-//TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+//TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,  "Belos::GCRODRCSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 // Step #3: Let U = U * R^{-1}
 MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
 
@@ -1443,15 +1299,16 @@ return;
 } // end buildRecycleSpaceKryl defnition
 
 template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodr_iter){
+void BlockGCRODRCSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodrc_iter){
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   std::vector<MagnitudeType> d(keff);
+  std::vector<ScalarType> dscalar(keff);
   std::vector<int> index(numBlocks_+1);
 
   // Get the state
-  BlockGCRODRIterState<ScalarType,MV> oldState = block_gcrodr_iter->getState();
+  BlockGCRODRIterState<ScalarType,MV> oldState = block_gcrodrc_iter->getState();
   int p = oldState.curDim;
 
   // insufficient new information to update recycle space
@@ -1473,10 +1330,12 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos
     for (int ii=0; ii<keff; ++ii) { index[ii] = ii; }
     Teuchos::RCP<MV> Utmp  = MVT::CloneViewNonConst( *U_, index );
     d.resize(keff);
+    dscalar.resize(keff);
     MVT::MvNorm( *Utmp, d );
-    for (int i=0; i<keff; ++i)
-      d[i] = one / d[i];
-    MVT::MvScale( *Utmp, d );
+    for (int i=0; i<keff; ++i) {
+      dscalar[i] = one / d[i];
+    }
+    MVT::MvScale( *Utmp, dscalar );
   }
 
   // Get view into current "full" upper Hessnburg matrix
@@ -1532,19 +1391,20 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos
   int info = 0, lwork = -1;
   tau_.resize(keff_new);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
 
-  lwork = (int)work_[0];
+  lwork = (int)std::abs( work_[0] );
   work_.resize(lwork);
   lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
 
   // Explicitly construct Q and F factors
   // NOTE:  The upper triangular part of HP is copied into F and HP becomes Q.
   SDM Ftmp( Teuchos::View, *F_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Ftmp(i,j) = HPtmp(i,j); }
-  lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+  //lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+  lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
   // C = [C V] * Q;
@@ -1579,13 +1439,13 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos
   // First, compute LU factorization of R
   ipiv_.resize(Ftmp.numRows());
   lapack.GETRF(Ftmp.numRows(),Ftmp.numCols(),Ftmp.values(),Ftmp.stride(),&ipiv_[0],&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 
   // Now, form inv(R)
   lwork = Ftmp.numRows();
   work_.resize(lwork);
   lapack.GETRI(Ftmp.numRows(),Ftmp.values(),Ftmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GETRI failed to compute an LU factorization.");
 
   {
     index.resize(keff_new);
@@ -1598,7 +1458,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos
   // dimension with the Block GCRO-DR iteration.
   if (keff != keff_new) {
     keff = keff_new;
-    block_gcrodr_iter->setSize( keff, numBlocks_ );
+    block_gcrodrc_iter->setSize( keff, numBlocks_ );
     // Important to zero this out before next cyle
     SDM b1( Teuchos::View, *G_, recycledBlocks_+2, 1, 0, recycledBlocks_ );
     b1.putScalar(zero);
@@ -1607,7 +1467,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpaceAugKryl(Teuchos
 } //end buildRecycleSpaceAugKryl definition
 
 template<class ScalarType, class MV, class OP>
-int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsAugKryl(int keff, int m, const SDM& GG, const Teuchos::RCP<const MV>& VV, SDM& PP){
+int BlockGCRODRCSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m, const SDM& GG, const Teuchos::RCP<const MV>& VV, SDM& PP){
   int i, j;
   int m2 = GG.numCols();
   bool xtraVec = false;
@@ -1616,7 +1476,8 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsAugKryl(int keff, 
   std::vector<int> index;
 
   // Real and imaginary eigenvalue components
-  std::vector<ScalarType> wr(m2), wi(m2);
+  //std::vector<ScalarType> wr(m2), wi(m2);
+  std::vector<ScalarType> wscalar(m2);
 
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(m2);
@@ -1675,31 +1536,37 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsAugKryl(int keff, 
   int lwork = 6*ld;
   int ldvl = ld, ldvr = ld;
   int info = 0,ilo = 0,ihi = 0;
-  ScalarType abnrm = zero, bbnrm = zero;
+  MagnitudeType abnrm = 0.0, bbnrm = 0.0;
   ScalarType *vl = 0; // This is never referenced by dggevx if jobvl == 'N'
   std::vector<ScalarType> beta(ld);
   std::vector<ScalarType> work(lwork);
+  std::vector<MagnitudeType> rwork(lwork);
   std::vector<MagnitudeType> lscale(ld), rscale(ld);
   std::vector<MagnitudeType> rconde(ld), rcondv(ld);
   std::vector<int> iwork(ld+6);
   int *bwork = 0; // If sense == 'N', bwork is never referenced
-  lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0],
-  &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
-  &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
+  //lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0],
+  //             &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
+  //             &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
+  lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wscalar[0], 
+               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
+               &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &rwork[0],
+	       &iwork[0], bwork, &info);
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure, "Belos::BlockGCRODRCSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
   for( i=0; i<ld; i++ ) // Construct magnitude of each harmonic Ritz value
-    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( (wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]) );
+    w[i] = std::abs( wscalar[i] ) / std::abs( beta[i] );
+    //w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( (wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]) );
 
   this->sort(w,ld,iperm);
 
   // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[ld-recycledBlocks_]] != zero) {
+  if (std::imag(wscalar[iperm[ld-recycledBlocks_]]) != 0.0) {
     int countImag = 0;
     for ( i=ld-recycledBlocks_; i<ld; i++ )
-      if (wi[iperm[i]] != zero) countImag++;
+      if (std::imag( wscalar[iperm[i]] ) != 0.0) countImag++;
     // Check to see if this count is even or odd:
     if (countImag % 2) xtraVec = true;
   }
@@ -1711,7 +1578,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsAugKryl(int keff, 
       PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
 
   if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[ld-recycledBlocks_]] > 0) { // I picked the "real" component
+    if (std::imag( wscalar[iperm[ld-recycledBlocks_]] ) > 0.0) { // I picked the "real" component
       for( j=0; j<ld; j++ )                  // so get the "imag" component
         PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
     }
@@ -1730,13 +1597,13 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsAugKryl(int keff, 
 } //end getHarmonicVecsAugKryl definition
 
 template<class ScalarType, class MV, class OP>
-int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const SDM& HH, SDM& PP){
+int BlockGCRODRCSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& HH, SDM& PP){
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
   ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   // Real and imaginary eigenvalue components
-  std::vector<MagnitudeType> wr(m), wi(m);
+  std::vector<ScalarType> wscalar(m);
 
   // Real and imaginary (right) eigenvectors; Don't zero out matrix when constructing
   SDM vr(m,m,false);
@@ -1750,6 +1617,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const 
   // Size of workspace and workspace for DGEEV
   int lwork = 4*m;
   std::vector<ScalarType> work(lwork);
+  std::vector<MagnitudeType> rwork(lwork);
 
   // Output info
   int info = 0;
@@ -1767,7 +1635,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const 
   //compute harmRitzMatrix <- H_m^{-H}*E_m
   lapack.GESV(m, blockSize_, HHt.values(), HHt.stride(), &iperm[0], harmRitzMatrix->values(), harmRitzMatrix->stride(), &info);
 
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure, "Belos::BlockGCRODRSolMgr::solve(): LAPACK GESV failed to compute a solution.");
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure, "Belos::BlockGCRODRCSolMgr::solve(): LAPACK GESV failed to compute a solution.");
   // Compute H_m + H_m^{-H}*E_m*H_lbl^{H}*H_lbl
   // H_lbl is bottom-right block of H_, which is a blockSize_ x blockSize_ matrix
 
@@ -1802,20 +1670,24 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const 
 
   const int ldvl = m;
   ScalarType* vl = 0;
-  lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wr[0], &wi[0],
-              vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
+  //lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wr[0], &wi[0],
+  //            vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
+  lapack.GEEV('N', 'V', m, harmRitzMatrix -> values(), harmRitzMatrix -> stride(), &wscalar[0],
+	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
-  for( int i=0; i<m; ++i ) w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] );
+  //for( int i=0; i<m; ++i ) w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] );
+  for( int i=0; i<m; ++i ) w[i] = std::abs( wscalar[i] );
 
   this->sort(w, m, iperm);
 
   // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[recycledBlocks_-1]] != zero) {
+  if (std::imag( wscalar[iperm[recycledBlocks_-1]] ) != 0.0) {
     int countImag = 0;
     for (int i=0; i<recycledBlocks_; ++i )
-      if (wi[iperm[i]] != zero) countImag++;
+      if (std::imag( wscalar[iperm[i]] ) != 0.0) countImag++;
     // Check to see if this count is even or odd:
     if (countImag % 2) xtraVec = true;
   }
@@ -1826,7 +1698,7 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const 
       PP(j,i) = vr(j,iperm[i]);
 
   if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[recycledBlocks_-1]] > 0) { // I picked the "real" component
+    if (std::imag( wscalar[iperm[recycledBlocks_-1]] ) > 0.0) { // I picked the "real" component
       for(int j=0; j<m; ++j )               // so get the "imag" component
         PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
     }
@@ -1849,10 +1721,10 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecsKryl(int m, const 
 
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP>
-void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm) {
+void BlockGCRODRCSolMgr<ScalarType,MV,OP>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
   int l, r, j, i, flag;
   int    RR2;
-  ScalarType dRR, dK;
+  MagnitudeType dRR, dK;
 
   // Initialize the permutation vector.
   for(j=0;j<n;j++)
@@ -1909,7 +1781,7 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP,false>::sort(std::vector<ScalarType>& dl
 } //end sort() definition
 
 template<class ScalarType, class MV, class OP>
-ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
+ReturnType BlockGCRODRCSolMgr<ScalarType,MV,OP>::solve() {
   using Teuchos::RCP;
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
@@ -1981,8 +1853,8 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
     if(keff > 0){//If there is already a subspace to recycle, then use it
       // Update U, C for the new operator
 
-//      TEUCHOS_TEST_FOR_EXCEPTION(keff < recycledBlocks_,BlockGCRODRSolMgrRecyclingFailure,
-//                                 "Belos::BlockGCRODRSolMgr::solve(): Requested size of recycled subspace is not consistent with the current recycle subspace.");
+//      TEUCHOS_TEST_FOR_EXCEPTION(keff < recycledBlocks_,BlockGCRODRCSolMgrRecyclingFailure,
+//                                 "Belos::BlockGCRODRCSolMgr::solve(): Requested size of recycled subspace is not consistent with the current recycle subspace.");
                                  printer_->stream(Debug) << " Now solving RHS index " << currIdx[0] << " using recycled subspace of dimension " << keff << std::endl << std::endl;
 
       // Compute image of U_ under the new operator
@@ -1999,20 +1871,20 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
       SDM Ftmp( Teuchos::View, *F_, keff, keff );
       int rank = ortho_->normalize(*Ctmp, rcp(&Ftmp,false));
       // Throw an error if we could not orthogonalize this block
-      TEUCHOS_TEST_FOR_EXCEPTION(rank != keff,BlockGCRODRSolMgrOrthoFailure,"Belos::BlockGCRODRSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
+      TEUCHOS_TEST_FOR_EXCEPTION(rank != keff,BlockGCRODRCSolMgrOrthoFailure,"Belos::BlockGCRODRCSolMgr::solve(): Failed to compute orthonormal basis for initial recycled subspace.");
 
       // U_ = U_*F^{-1}
       // First, compute LU factorization of R
       int info = 0;
       ipiv_.resize(Ftmp.numRows());
       lapack.GETRF(Ftmp.numRows(),Ftmp.numCols(),Ftmp.values(),Ftmp.stride(),&ipiv_[0],&info);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
 
       // Now, form inv(F)
       int lwork = Ftmp.numRows();
       work_.resize(lwork);
       lapack.GETRI(Ftmp.numRows(),Ftmp.values(),Ftmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRSolMgrLAPACKFailure,"Belos::BlockGCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+      TEUCHOS_TEST_FOR_EXCEPTION(info != 0, BlockGCRODRCSolMgrLAPACKFailure,"Belos::BlockGCRODRCSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
 
       // U_ = U1_; (via a swap)
       MVT::MvTimesMatAddMv( one, *Utmp, Ftmp, zero, *U1tmp );
@@ -2257,13 +2129,13 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
     // Initial subspace update/construction done
     // Start cycles of recycled GMRES
     // *****************************************
-    Teuchos::ParameterList blockgcrodrList;
-    blockgcrodrList.set("Num Blocks",numBlocks_);
-    blockgcrodrList.set("Block Size",blockSize_);
-    blockgcrodrList.set("Recycled Blocks",keff);
+    Teuchos::ParameterList blockgcrodrcList;
+    blockgcrodrcList.set("Num Blocks",numBlocks_);
+    blockgcrodrcList.set("Block Size",blockSize_);
+    blockgcrodrcList.set("Recycled Blocks",keff);
 
-    Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodr_iter;
-    block_gcrodr_iter = Teuchos::rcp( new BlockGCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,blockgcrodrList) );
+    Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodrc_iter;
+    block_gcrodrc_iter = Teuchos::rcp( new BlockGCRODRIter<ScalarType,MV,OP>(problem_,printer_,outputTest_,ortho_,blockgcrodrcList) );
     BlockGCRODRIterState<ScalarType,MV> newstate;
 
     index.resize( blockSize_ );
@@ -2284,13 +2156,13 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
     newstate.C = MVT::CloneViewNonConst(*C_, index);
     newstate.H = H_;
     newstate.curDim = blockSize_;
-    block_gcrodr_iter -> initialize(newstate);
+    block_gcrodrc_iter -> initialize(newstate);
 
     int numRestarts = 0;
 
-    while(1){//Each execution of this loop is a cycle of block GCRODR
+    while(1){//Each execution of this loop is a cycle of block GCRODRC
       try{
-        block_gcrodr_iter -> iterate();
+        block_gcrodrc_iter -> iterate();
 
         // ***********************
         // Check Convergence First
@@ -2312,14 +2184,14 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
         // **********************************************
         // Check if subspace full; do we need to restart?
         // **********************************************
-        else if (block_gcrodr_iter->getCurSubspaceDim() == block_gcrodr_iter->getMaxSubspaceDim()){
+        else if (block_gcrodrc_iter->getCurSubspaceDim() == block_gcrodrc_iter->getMaxSubspaceDim()){
 
           // Update recycled space even if we have reached max number of restarts
 
           // Update linear problem
-          Teuchos::RCP<MV> update = block_gcrodr_iter->getCurrentUpdate();
+          Teuchos::RCP<MV> update = block_gcrodrc_iter->getCurrentUpdate();
           problem_->updateSolution(update, true);
-          buildRecycleSpaceAugKryl(block_gcrodr_iter);
+          buildRecycleSpaceAugKryl(block_gcrodrc_iter);
 
           printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
           // NOTE: If we have hit the maximum number of restarts, then we will quit
@@ -2353,7 +2225,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
           restartState.B = B_;
           restartState.H = H_;
           restartState.curDim = blockSize_;
-          block_gcrodr_iter->initialize(restartState);
+          block_gcrodrc_iter->initialize(restartState);
 
         } //end else if need to restart
 
@@ -2362,21 +2234,21 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
         // Something is wrong, and it is probably our fault.
         // ****************************************************************
         else {
-          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
+          TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::BlockGCRODRCSolMgr::solve(): Invalid return from BlockGCRODRIter::iterate().");
         } //end else (no status test passed)
 
       }//end try
       catch(const BlockGCRODRIterOrthoFailure &e){ //there was an exception
         // Try to recover the most recent least-squares solution
-        block_gcrodr_iter->updateLSQR( block_gcrodr_iter->getCurSubspaceDim() );
+        block_gcrodrc_iter->updateLSQR( block_gcrodrc_iter->getCurSubspaceDim() );
         // Check to see if the most recent least-squares solution yielded convergence.
-        sTest_->checkStatus( &*block_gcrodr_iter );
+        sTest_->checkStatus( &*block_gcrodrc_iter );
         if (convTest_->getStatus() != Passed) isConverged = false;
         break;
       }  // end catch orthogonalization failure
       catch(const std::exception &e){
         printer_->stream(Errors) << "Error! Caught exception in BlockGCRODRIter::iterate() at iteration "
-                                 << block_gcrodr_iter->getNumIters() << std::endl
+                                 << block_gcrodrc_iter->getNumIters() << std::endl
                                  << e.what() << std::endl;
         throw;
       } //end catch standard exception
@@ -2384,7 +2256,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
 
     // Compute the current solution.
     // Update the linear problem.
-    Teuchos::RCP<MV> update = block_gcrodr_iter->getCurrentUpdate();
+    Teuchos::RCP<MV> update = block_gcrodrc_iter->getCurrentUpdate();
     problem_->updateSolution( update, true );
 
     /* MLP:  POSSIBLY INCORRECT CODE WE ARE REPLACING *********************************
@@ -2430,7 +2302,7 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
 
     // If we didn't build a recycle space this solve but ran at least k iterations, force build of new recycle space
     if (!builtRecycleSpace_) {
-      buildRecycleSpaceAugKryl(block_gcrodr_iter);
+      buildRecycleSpaceAugKryl(block_gcrodrc_iter);
       printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
     }
   }//end while (numRHS2Solve > 0)
@@ -2447,10 +2319,10 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
 
-  if (!isConverged) return Unconverged; // return from BlockGCRODRSolMgr::solve()
-    return Converged; // return from BlockGCRODRSolMgr::solve()
+  if (!isConverged) return Unconverged; // return from BlockGCRODRCSolMgr::solve()
+    return Converged; // return from BlockGCRODRCSolMgr::solve()
 } //end solve()
 
 } //End Belos Namespace
 
-#endif /* BELOS_BLOCK_GCRODR_SOLMGR_HPP */
+#endif /* BELOS_BLOCK_GCRODRC_SOLMGR_HPP */
