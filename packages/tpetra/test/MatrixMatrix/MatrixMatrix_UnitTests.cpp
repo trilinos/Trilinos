@@ -306,6 +306,51 @@ mult_test_results multiply_test(
 }
 
 
+mult_test_results jacobi_test(
+  const std::string& name,
+  RCP<Matrix_t> A,
+  RCP<Matrix_t> B,
+  RCP<const Comm<int> > comm,
+  FancyOStream& out)
+{
+  typedef Vector<double,int,int,SerialNode> Vector_t;
+  typedef Map<int, int, SerialNode> Map_t;
+  RCP<const Map_t> map = A->getRowMap();
+
+  double omega=1.0;
+  Vector_t Dinv(B->getRowMap());
+  Dinv.putScalar(1.0);
+
+  // Jacobi version
+  RCP<Matrix_t> C = rcp(new Matrix_t(B->getRowMap(),0));
+  Tpetra::MatrixMatrix::Jacobi(omega,Dinv,*A,*B,*C);
+    
+  // Multiply + Add version
+  Dinv.putScalar(omega);
+  RCP<Matrix_t> AB = rcp(new Matrix_t(B->getRowMap(),0));
+  RCP<Matrix_t> C_check = rcp(new Matrix_t(B->getRowMap(),0));
+  Tpetra::MatrixMatrix::Multiply(*A,false,*B,false,*AB);
+  AB->leftScale(Dinv);
+  Tpetra::MatrixMatrix::Add(*AB,false,-1.0,*B,false,1.0,C_check);
+
+  // Check the difference
+  Tpetra::MatrixMatrix::Add(*C, false, -1.0, *C_check, 1.0);    
+  C_check->fillComplete(B->getDomainMap(),B->getRangeMap());
+
+  // Error Check
+  double compNorm = C_check->getFrobeniusNorm();
+  double cNorm = C->getFrobeniusNorm();
+  mult_test_results results;
+  results.epsilon  = compNorm/cNorm;
+  results.cNorm    = cNorm;
+  results.compNorm = compNorm;
+  return results;
+}
+
+
+
+
+
 TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
   using Teuchos::ParameterList;
   using std::endl;
@@ -353,6 +398,22 @@ TEUCHOS_UNIT_TEST(Tpetra_MatMat, operations_test){
         out << "\tcompNorm: " << results.compNorm << endl;
       }
       TEST_COMPARE(results.epsilon, <, epsilon)
+	
+      // Do we try Jacobi?
+      if(AT==false && BT == false && A->getDomainMap()->isSameAs(*A->getRangeMap())) {
+	if(verbose){
+	  out << "Running jacobi test for " << currentSystem.name() << endl;
+	}
+	mult_test_results results = jacobi_test(name, A,B,comm, out);
+	if (verbose) {
+	  out << "Results:" <<endl;
+	  out << "\tEpsilon: " << results.epsilon << endl;
+	  out << "\tcNorm: " << results.cNorm << endl;
+	  out << "\tcompNorm: " << results.compNorm << endl;
+	}
+	TEST_COMPARE(results.epsilon, <, epsilon)
+
+	  }
     }
     else if(op == "add"){
       if (verbose) {
