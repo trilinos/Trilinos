@@ -450,7 +450,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
