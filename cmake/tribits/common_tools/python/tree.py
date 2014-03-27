@@ -13,12 +13,26 @@ from os.path import abspath, basename, isdir
 from sys import argv, exit
 from optparse import OptionParser
 
-def tree(dir, padding, print_files=False, print_compact=False, top_level=False):
+def tree(dir, padding, options, top_level=False):
+
+  print_files = options.printFiles
+  print_compact = options.printCompact
+
+  if options.noDirectorySep:
+    verticalLineChar = ' '
+    fileDirPrefix = '  '
+  else:
+    verticalLineChar = '|'
+    fileDirPrefix = '+-'
+    
   init_prefix = padding[:-1]
   if top_level: init_prefix += '  '
-  else: init_prefix += '+-'
+  else: init_prefix += fileDirPrefix
+
   print init_prefix + basename(abspath(dir)) + '/'
+
   padding = padding + ' '
+
   files = []
   if print_files:
     files = listdir(dir)
@@ -29,15 +43,15 @@ def tree(dir, padding, print_files=False, print_compact=False, top_level=False):
   for file in files:
     count += 1
     if not print_compact:
-      print padding + '|'
+      print padding + verticalLineChar
     path = dir + sep + file
     if isdir(path):
       if count == len(files):
-        tree(path, padding + ' ', print_files, print_compact)
+        tree(path, padding + ' ', options)
       else:
-        tree(path, padding + '|', print_files, print_compact)
+        tree(path, padding + verticalLineChar, options)
     else:
-      print padding + '+-' + file
+      print padding + fileDirPrefix + file
 
 usageHelp = r""" tree.py [-f] [-c] <PATH>
 Print tree structure of specified <PATH>.
@@ -58,6 +72,11 @@ def main():
     "-c", dest="printCompact", action="store_true",
     help="Make output more compact.",
     default=False )
+
+  clp.add_option(
+    "-x", dest="noDirectorySep", action="store_true",
+    help="Remove the directory seperators and continuation lines.",
+    default=False )
   
   (options, args) = clp.parse_args()
 
@@ -68,7 +87,7 @@ def main():
     print "See --help!"
     exit(1)
 
-  tree(path, ' ', options.printFiles, options.printCompact, True)
+  tree(path, ' ', options, True)
 
 
 if __name__ == '__main__':
