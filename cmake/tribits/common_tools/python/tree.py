@@ -25,6 +25,7 @@ def tree(dir, padding, print_files=False, print_compact=False, top_level=False):
   else:
     files = [x for x in listdir(dir) if isdir(dir + sep + x)]
   count = 0
+  files.sort()
   for file in files:
     count += 1
     if not print_compact:
