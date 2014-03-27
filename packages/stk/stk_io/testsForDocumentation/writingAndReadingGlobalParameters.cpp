@@ -15,31 +15,23 @@ namespace
     const std::string file_name = "GlobalParameters.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
-    stk::util::ParameterList params;
-    stk::util::ParameterList gold_params; // To compare values read
-    
     // Add some parameters to write and read...
+    stk::util::ParameterList params;
     params.set_param("PI", 3.14159);  // Double 
     params.set_param("Answer", 42);   // Integer
-    gold_params.set_param("PI", 3.14159);  // Double 
-    gold_params.set_param("Answer", 42);   // Integer
 
     std::vector<double> my_vector;
     my_vector.push_back(2.78);
     my_vector.push_back(5.30);
     my_vector.push_back(6.21);
     params.set_param("doubles", my_vector); // Vector of doubles...
-    gold_params.set_param("doubles", my_vector);
     
     std::vector<int> ages;
     ages.push_back(55);
     ages.push_back(49);
     ages.push_back(21);
     ages.push_back(19);
-    
     params.set_param("Ages", ages);   // Vector of integers...
-    gold_params.set_param("Ages", ages);   // Vector of integers...
-    
 
     {
       stk::io::StkMeshIoBroker stkIo(communicator);
@@ -95,6 +87,12 @@ namespace
 
       // ============================================================
       //+ VALIDATION
+      stk::util::ParameterList gold_params; // To compare values read
+      gold_params.set_param("PI", 3.14159);  // Double 
+      gold_params.set_param("Answer", 42);   // Integer
+      gold_params.set_param("doubles", my_vector);
+      gold_params.set_param("Ages", ages);   // Vector of integers...
+
       size_t param_count = 0;
       for (i = params.begin(); i != ie; ++i) {
 	param_count++;

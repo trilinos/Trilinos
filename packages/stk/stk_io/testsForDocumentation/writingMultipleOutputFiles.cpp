@@ -9,55 +9,60 @@
 
 namespace {
 
-TEST(StkMeshIoBrokerHowTo, writeTwoResultFiles)
-{
+  TEST(StkMeshIoBrokerHowTo, writingMultipleOutputFiles)
+  {
+    // ============================================================
+    //+ INITIALIZATION
     const std::string resultsFilename1 = "output1.results";
     const std::string resultsFilename2 = "output2.results";
     const std::string displacementFieldName = "displacement";
     const std::string velocityFieldName = "velocity";
 
     MPI_Comm communicator = MPI_COMM_WORLD;
-    stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-    setupMeshAndFieldsForTest(stkMeshIoBroker, displacementFieldName, velocityFieldName);
-    stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+    stk::io::StkMeshIoBroker stkIo(communicator);
+    setupMeshAndFieldsForTest(stkIo, displacementFieldName, velocityFieldName);
+    stk::mesh::MetaData &meta_data = stkIo.meta_data();
 
-    // Now that input mesh with field data have been set, start output
-
+    //-BEGIN
+    // ============================================================
+    //+ EXAMPLE -- Two results output files
     stk::mesh::FieldBase *displacementField =
-      stkMeshMetaData.get_field(displacementFieldName);
+      meta_data.get_field(displacementFieldName);
 
     //+ For file one, set up results and global variables
-    size_t file1Handle = stkMeshIoBroker.create_output_mesh(resultsFilename1,
-							    stk::io::WRITE_RESULTS);
-    stkMeshIoBroker.add_field(file1Handle, *displacementField);
+    size_t file1Handle = stkIo.create_output_mesh(resultsFilename1,
+						  stk::io::WRITE_RESULTS);
+    stkIo.add_field(file1Handle, *displacementField);
     std::string globalVarNameFile1 = "eigenValue";
-    stkMeshIoBroker.add_global(file1Handle, globalVarNameFile1, Ioss::Field::REAL);
+    stkIo.add_global(file1Handle, globalVarNameFile1, Ioss::Field::REAL);
 
     //+ For file two, set up results and global variables
-    size_t file2Handle = stkMeshIoBroker.create_output_mesh(resultsFilename2,
-							    stk::io::WRITE_RESULTS);
+    size_t file2Handle = stkIo.create_output_mesh(resultsFilename2,
+						  stk::io::WRITE_RESULTS);
     std::string nameOnOutputFile("deformations");
-    stkMeshIoBroker.add_field(file2Handle, *displacementField, nameOnOutputFile);
-    stk::mesh::FieldBase *velocityField = stkMeshMetaData.get_field(velocityFieldName);
-    stkMeshIoBroker.add_field(file2Handle, *velocityField);
+    stkIo.add_field(file2Handle, *displacementField, nameOnOutputFile);
+    stk::mesh::FieldBase *velocityField = meta_data.get_field(velocityFieldName);
+    stkIo.add_field(file2Handle, *velocityField);
     std::string globalVarNameFile2 = "kineticEnergy";
-    stkMeshIoBroker.add_global(file2Handle, globalVarNameFile2, Ioss::Field::REAL);
+    stkIo.add_global(file2Handle, globalVarNameFile2, Ioss::Field::REAL);
 
     //+ Write output
     double time = 0.0;
-    stkMeshIoBroker.begin_output_step(file1Handle, time);
-    stkMeshIoBroker.write_defined_output_fields(file1Handle);
+    stkIo.begin_output_step(file1Handle, time);
+    stkIo.write_defined_output_fields(file1Handle);
     const double globalVarValue1 = 13.0;
-    stkMeshIoBroker.write_global(file1Handle, globalVarNameFile1, globalVarValue1);
-    stkMeshIoBroker.end_output_step(file1Handle);
+    stkIo.write_global(file1Handle, globalVarNameFile1, globalVarValue1);
+    stkIo.end_output_step(file1Handle);
 
-    stkMeshIoBroker.begin_output_step(file2Handle, time);
-    stkMeshIoBroker.write_defined_output_fields(file2Handle);
+    stkIo.begin_output_step(file2Handle, time);
+    stkIo.write_defined_output_fields(file2Handle);
     const double globalVarValue2 = 14.0;
-    stkMeshIoBroker.write_global(file2Handle, globalVarNameFile2, globalVarValue2);
-    stkMeshIoBroker.end_output_step(file2Handle);
+    stkIo.write_global(file2Handle, globalVarNameFile2, globalVarValue2);
+    stkIo.end_output_step(file2Handle);
 
-    // Code below is for testing that above code is working
+    //-END
+    // ============================================================
+    //+ Validation
     std::vector<std::string> goldNodalVarNamesInFile1;
     goldNodalVarNamesInFile1.push_back(displacementFieldName);
     checkFileForNodalVarNames(resultsFilename1, goldNodalVarNamesInFile1);
@@ -72,6 +77,6 @@ TEST(StkMeshIoBrokerHowTo, writeTwoResultFiles)
     // Cleanup
     unlink(resultsFilename1.c_str());
     unlink(resultsFilename2.c_str());
-}
+  }
 
 }

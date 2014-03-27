@@ -44,17 +44,12 @@ namespace {
       stkIo.get_output_io_region(fh)->get_database()->set_cycle_count(1); /*@\label{io:cycle}*/
 	
       // Write multiple steps to the restart file.
-      stkIo.begin_output_step(fh, 0.0);
-      stkIo.write_defined_output_fields(fh);
-      stkIo.end_output_step(fh);
-
-      stkIo.begin_output_step(fh, 1.0);
-      stkIo.write_defined_output_fields(fh);
-      stkIo.end_output_step(fh);
-
-      stkIo.begin_output_step(fh, 2.0);
-      stkIo.write_defined_output_fields(fh);
-      stkIo.end_output_step(fh);
+      for (size_t step=0; step < 3; step++) {
+	double time = step;
+	stkIo.begin_output_step(fh, time);
+	stkIo.write_defined_output_fields(fh);
+	stkIo.end_output_step(fh);
+      }
 
       //+ At this point, there should only be a single state on the
       //+ restart database. The time of this state should be 2.0.

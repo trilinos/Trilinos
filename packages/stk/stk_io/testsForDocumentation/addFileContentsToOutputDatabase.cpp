@@ -11,8 +11,9 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
     std::string filename = "information_records.e";
     MPI_Comm communicator = MPI_COMM_WORLD;
 
+    //-BEGIN
     // ============================================================
-    // SETUP
+    //+ SETUP
     std::string input_file = "application_input_file.i";
     std::string info1("This is the first line of the input file.");
     std::string info2("This is the second line of the input file. "
@@ -24,28 +25,23 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
                                          " not from the input file.";
     {
       std::ofstream my_file(input_file.c_str());
-      my_file << info1 << "\n";
-      my_file << info2 << "\n";
-      my_file << info3 << "\n";
-      my_file << info4 << "\n";
+      my_file << info1 <<"\n" << info2 <<"\n" << info3 <<"\n" << info4 <<"\n";
     }
     
     {
-      //-BEGIN
-      // ... Setup deleted
       // ============================================================
-      // EXAMPLE
-      stk::io::StkMeshIoBroker mesh_data(communicator);
-      size_t ifh = mesh_data.add_mesh_database("9x9x9|shell:xyzXYZ", "generated",
+      //+ EXAMPLE
+      stk::io::StkMeshIoBroker stkIo(communicator);
+      size_t ifh = stkIo.add_mesh_database("9x9x9|shell:xyzXYZ", "generated",
 					       stk::io::READ_MESH);
-      mesh_data.set_active_mesh(ifh);
-      mesh_data.create_input_mesh();
-      mesh_data.populate_bulk_data();
+      stkIo.set_active_mesh(ifh);
+      stkIo.create_input_mesh();
+      stkIo.populate_bulk_data();
 
       // Output...
-      size_t fh = mesh_data.create_output_mesh(filename,
+      size_t fh = stkIo.create_output_mesh(filename,
 					       stk::io::WRITE_RESULTS);
-      Ioss::Region *io_reg = mesh_data.get_output_io_region(fh).get();
+      Ioss::Region *io_reg = stkIo.get_output_io_region(fh).get();
 
       //+ Add the data from the file "application_input_file.i"
       //+    as information records on this file.
@@ -55,7 +51,7 @@ TEST(StkMeshIoBrokerHowTo, addFileContentsToOutputDatabase)
       //+    information records on this file.
       io_reg->add_information_record(additional_info_record); /*@\label{io:info:vector}*/
       
-      mesh_data.write_output_mesh(fh);
+      stkIo.write_output_mesh(fh);
       // ... Verification deleted
       //-END
     }

@@ -102,8 +102,6 @@ namespace {
       //+ since it was specified to be "only_read_once()"
       stkIo.read_defined_input_fields(3.0);
 
-      // ============================================================
-      //+ VERIFICATION
       //+ The value of the field at all nodes should still be 2.0
       for(size_t i=0; i<nodes.size(); i++) {
 	double *fieldDataForNode = stk::mesh::field_data(temperature, nodes[i]);

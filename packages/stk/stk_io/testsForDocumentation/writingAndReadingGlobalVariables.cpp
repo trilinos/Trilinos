@@ -16,7 +16,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
     const double currentTime = 1.0;
     MPI_Comm communicator = MPI_COMM_WORLD;
 
-    //Write restart file with time step size as a global variable
+    //+ Write restart file with time step size as a global variable
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
 	const std::string exodusFileName = "generated:1x1x8";
@@ -32,7 +32,7 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
         stkIo.end_output_step(fileIndex);
     }
 
-    //Read restart file with time step size as a global variable
+    //+ Read restart file with time step size as a global variable
     {
         stk::io::StkMeshIoBroker stkIo(communicator);
         stkIo.add_mesh_database(restartFileName, stk::io::READ_RESTART);
@@ -50,13 +50,13 @@ TEST(StkMeshIoBrokerHowTo, writeAndReadGlobalVariables)
         const double tolerance = 1e-16;
         EXPECT_NEAR(timeStepSize, timeStepSizeReadFromFile, tolerance);
 
-	// If try to get a global that does not exist, will throw
-	// an exception by default...
+	//+ If try to get a global that does not exist, will throw
+	//+ an exception by default...
 	double value = 0.0;
 	EXPECT_THROW(stkIo.get_global("does_not_exist", value),std::exception);
 	
-	// If the application wants to handle the error instead (without a try/catch),
-	// can pass in an optional boolean:
+	//+ If the application wants to handle the error instead (without a try/catch),
+	//+ can pass in an optional boolean:
 	bool abort_if_not_found = false;
 	bool found = stkIo.get_global("does_not_exist", value, abort_if_not_found);
 	ASSERT_FALSE(found);

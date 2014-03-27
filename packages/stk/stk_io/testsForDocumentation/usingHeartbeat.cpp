@@ -20,7 +20,7 @@ namespace
     
     {
       // ============================================================
-      // INITIALIZATION...
+      //+ INITIALIZATION...
       // Add some params to write and read...
       params.set_param("PI", -3.14159);  // Double 
       params.set_param("Answer", 42);   // Integer
@@ -36,14 +36,13 @@ namespace
       ages.push_back(49);
       ages.push_back(21);
       ages.push_back(19);
-    
       params.set_param("Ages", ages);   // Vector of integers
     }
 
     {
       // ============================================================
-      // EXAMPLE USAGE...
-      // Begin use of stk io heartbeat file...
+      //+ EXAMPLE USAGE...
+      //+ Begin use of stk io heartbeat file...
       stk::io::StkMeshIoBroker stkIo(communicator);
 
       //+ Define the heartbeat output to be in TEXT format.
@@ -70,8 +69,7 @@ namespace
 	//+ NOTE: All registered global values automatically output.
 	stkIo.process_heartbeat_output(hb, step, time);/*@\label{io:hb:output}*/
       }
-    }
-    //-END
+    } //-END
 
     if (my_processor == 0) { // Heartbeat is only output on processor 0.
       // ============================================================
