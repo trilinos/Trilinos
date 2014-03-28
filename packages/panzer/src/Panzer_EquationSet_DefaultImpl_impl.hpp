@@ -818,7 +818,9 @@ Teuchos::RCP<panzer::IntegrationRule>
 panzer::EquationSet_DefaultImpl<EvalT>::getIntRuleForDOF(const std::string& dof_name) const
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
-  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  TEUCHOS_TEST_FOR_EXCEPTION(desc_it == m_provided_dofs_desc.end(),std::logic_error,
+                             "EquationSet_DefaultImpl::getIntRuleForDOF: Failed to find degree of freedom "
+                             "with name \"" << dof_name << "\".");
   return desc_it->second.intRule;
 }
 
@@ -828,7 +830,9 @@ Teuchos::RCP<panzer::BasisIRLayout>
 panzer::EquationSet_DefaultImpl<EvalT>::getBasisIRLayoutForDOF(const std::string& dof_name) const
 {
   typename std::map<std::string,DOFDescriptor>::const_iterator desc_it = m_provided_dofs_desc.find(dof_name);
-  TEUCHOS_ASSERT(desc_it != m_provided_dofs_desc.end());
+  TEUCHOS_TEST_FOR_EXCEPTION(desc_it == m_provided_dofs_desc.end(),std::logic_error,
+                             "EquationSet_DefaultImpl::getBasisIRLayoutForDOF: Failed to find degree of freedom "
+                             "with name \"" << dof_name << "\".");
 
   return panzer::basisIRLayout(desc_it->second.basis,*(desc_it->second.intRule));
 }
