@@ -183,12 +183,12 @@ public:
   /// Both device and host View objects are constructed using their
   /// default constructors.  The "modified" flags are both initialized
   /// to "unmodified."
-  DualView() {
-    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");
-    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");
-  }
+  DualView () :
+    modified_device (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_host"))
+  {}
 
-  /// \brief Allocate View objects on both host and device.
+  /// \brief Constructor that allocates View objects on both host and device.
   ///
   /// This constructor works like the analogous constructor of View.
   /// The first argument is a string label, which is entirely for your
@@ -197,34 +197,33 @@ public:
   /// View objects.  For example, if the View has three dimensions,
   /// the first three integer arguments will be nonzero, and you may
   /// omit the integer arguments that follow.
-  DualView( const std::string & label ,
-    const size_t n0 = 0 ,
-    const size_t n1 = 0 ,
-    const size_t n2 = 0 ,
-    const size_t n3 = 0 ,
-    const size_t n4 = 0 ,
-    const size_t n5 = 0 ,
-    const size_t n6 = 0 ,
-    const size_t n7 = 0 )
-    : d_view( label, n0, n1, n2, n3, n4, n5, n6, n7 )
+  DualView (const std::string& label,
+            const size_t n0 = 0,
+            const size_t n1 = 0,
+            const size_t n2 = 0,
+            const size_t n3 = 0,
+            const size_t n4 = 0,
+            const size_t n5 = 0,
+            const size_t n6 = 0,
+            const size_t n7 = 0)
+    : d_view (label, n0, n1, n2, n3, n4, n5, n6, n7)
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
-    , h_view( d_view ) // with UVM, host View is _always_ a shallow copy
+    , h_view (d_view) // with UVM, host View is _always_ a shallow copy
 #else
-    , h_view( create_mirror_view( d_view ) ) // without UVM, host View mirrors
+    , h_view (create_mirror_view (d_view)) // without UVM, host View mirrors
 #endif
-  {
-    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");;
-    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");;
-  }
+    , modified_device (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_device"))
+    , modified_host (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_host"))
+  {}
 
   //! Copy constructor (shallow copy)
   template<class SS, class LS, class DS, class MS>
-  DualView(const DualView<SS,LS,DS,MS> src) {
-    d_view = src.d_view;
-    h_view = src.h_view;
-    modified_host = src.modified_host;
-    modified_device = src.modified_device;
-  }
+  DualView (const DualView<SS,LS,DS,MS>& src) :
+    d_view (src.d_view),
+    h_view (src.h_view),
+    modified_device (src.modified_device),
+    modified_host (src.modified_host)
+  {}
 
   /// \brief Create DualView from existing device and host View objects.
   ///
@@ -236,12 +235,13 @@ public:
   ///
   /// \param d_view_ Device View
   /// \param h_view_ Host View (must have type t_host = t_dev::HostMirror)
-  DualView (const t_dev& d_view_, const t_host& h_view_) {
-    d_view = d_view_;
-    h_view = h_view_;
-    modified_host = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_host");
-    modified_device = View<unsigned int,LayoutLeft,host_mirror_device_type>("DualView::modified_device");
-    Impl::assert_shapes_are_equal( d_view.shape() , h_view.shape() );
+  DualView (const t_dev& d_view_, const t_host& h_view_) :
+    d_view (d_view_),
+    h_view (h_view_),
+    modified_device (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_device")),
+    modified_host (View<unsigned int,LayoutLeft,host_mirror_device_type> ("DualView::modified_host"))
+  {
+    Impl::assert_shapes_are_equal (d_view.shape (), h_view.shape ());
   }
 
   //@}
