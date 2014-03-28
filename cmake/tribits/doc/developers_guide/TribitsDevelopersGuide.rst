@@ -26,7 +26,11 @@ TriBITS Developers Guide and Reference
 
 .. Common references to TribitsBuildQuickRef document
 
+.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+
 .. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+
+.. Common references to the TribitsOverview document
 
 .. _TriBITS Overview: ../overview/TribitsOverview.pdf
 
@@ -561,12 +565,13 @@ the first file is read by a number of tools in order to get the TriBITS
 project's name.  This file is read first in every context that involves
 processing the TriBITS project's files, including processes and tools that
 just need to build a package and TPL dependnecy tree (see `Package
-Enable/Disable Logic`).  Being this is the first file read in for a TriBITS
-project and that it is read in first at the top level scope in every context,
-this is a good file to put other universal static project options in that
-affect dependency handling.  Note that this is a project, not a repository
-file so no general repository-specific settings should go in this file.  A
-simple example of this file is `TribitsExampleProject`_/``PackageName.cmake``:
+Dependencies and Enable/Disable Logic`_).  Being this is the first file read
+in for a TriBITS project and that it is read in first at the top level scope
+in every context, this is a good file to put other universal static project
+options in that affect dependency handling.  Note that this is a project, not
+a repository file so no general repository-specific settings should go in this
+file.  A simple example of this file is
+`TribitsExampleProject`_/``PackageName.cmake``:
 
 .. include:: ../examples/TribitsExampleProject/ProjectName.cmake
    :literal:
@@ -970,21 +975,24 @@ with their directories and other properties.  For example, the file
 .. include:: ../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-Other comamnds that are appropriate to use this file are
-`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  If the binary directory for any
-package ``<packageName>`` needs to be changed from the default, then the
+Other comamnds that are appropriate to use in this file include
+`TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  Also, if the binary directory for
+any package ``<packageName>`` needs to be changed from the default, then the
 variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see an
 example of this in the file ``tribits/PackageList.cmake`` which shows
 
 .. include:: ../../PackagesList.cmake
    :literal:
 
+(see `TriBITS Package, TriBITS Repository, TriBITS Package sharing the same
+source directory`_).
+
 It is perfectly legal for a TriBITS repjository to define no packages at all
 with::
 
   TRIBITS_DEFINE_REPOSITORY_PACKAGES()
 
-and this would be the case for a TribITS meta-project that has no native
+and this would be the case for a TriBITS meta-project that has no native
 packages, only extra repositories.
 
 .. ToDo: Point to example meta-project.
@@ -1301,6 +1309,14 @@ tests/example of its own, it can define those after calling
 rare for a package broken up into subpackages to have its own libraries and/or
 tests and examples.  As always, the final command called inside of the
 ``CMakeLists.txt`` is `TRIBITS_PACKAGE_POSTPROCESS()`_.
+
+NOTE: The package's ``CMakeLists.txt`` file only gets processed if the package
+is actually enabled with ``${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON``.  This
+is an important design feature of TriBITS is that the contents of non-enabled
+package's can't damnage the configure, build, and test of the enabled packages
+based on errors in non-enabled packages.  This is critical to allow
+experimental ``EX`` test packages and lower-maturity packages to exist in the
+same soruce repositories safely.
 
 
 TriBITS Package Core Variables
@@ -1872,29 +1888,34 @@ unconditional command that is explicitly called in one of the the package's
 ``CMakeLists.txt`` files so it should be clear that this file is being
 processed.
 
+
 Coexisting Projects, Repositories, and Packages
 -----------------------------------------------
 
-Certain simplifications area allowed when defining TriBITS projects,
+Certain simplifications are allowed when defining TriBITS projects,
 repositories and packages.  The known allowed simplifications are described
 below.
 
 **TriBITS Repository == TriBITS Project**: It is allowed for a TriBITS Project
-and a TriBITS Repository to be the same source directory.  In this case, the
-repository name and the project name are the same as well.  This is quite
-common.  This is the case, for example, with the the Trilinos and the
-`TribitsExampleProject`_ projects and repositories.  In this case, the
-Project's and the Repository's ``Version.cmake`` and ``Copyright.txt`` files
-are one and the same, as they should be (see `Project and Repositiory
-Versioning and Release Mode`_).
+and a TriBITS Repository to be the same source directory and in fact this is
+the default for every TriBITS project (unless the the
+`<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
+the repository name and the project name are the same as well.  This is quite
+common and is in fact the default that every TriBITS Project is also a TriBITS
+repository (and therefore must contain `<repoDir>/PackagesList.cmake`_ and
+`<repoDir>/TPLsList.cmake`_ files).  This is the case, for example, with the
+the Trilinos and the `TribitsExampleProject`_ projects and repositories.  In
+this case, the Project's and the Repository's ``Version.cmake`` and
+``Copyright.txt`` files are one and the same, as they should be (see `Project
+and Repositiory Versioning and Release Mode`_).
 
 **TriBITS Package == TriBITS Repository**: It is also allowed for a TriBITS
 Repository to have only one package and to have that package be the base
-repository directory and have the same names.  The TriBITS Pepository and the
-single TriBITS Package would typically have the same name in this case (but
-that is actually not required but is confusing if one does not make it so).
-For example, in the TriBITS test project ``MockTrilinos``, the repostory and
-package ``extraRepoOnePackage`` are one in the same.  In this case, the file
+repository directory.  The TriBITS Repository and the single TriBITS Package
+would typically have the same name in this case (but that is actually not
+required but it is confusing if they are not the same).  For example, in the
+TriBITS test project ``MockTrilinos``, the repostory and package
+``extraRepoOnePackage`` are one in the same.  In this case, the file
 ``extraRepoOnePackage/PackagesList.cmake`` looks like:
 
 .. include:: ../../package_arch/UnitTests/MockTrilinos/extraRepoOnePackage/PackagesList.cmake
@@ -1907,43 +1928,55 @@ This is used in the real TriBITS repository `DataTransferKit`_.
 However, to maximize flexibility, it is recommended that a TriBITS package and
 TriBITS repository not share the same directory.
 
+.. _TriBITS Package, TriBITS Repository, TriBITS Package sharing the same source directory:
+
 **TriBITS Package, TriBITS Repository, TriBITS Package sharing the same source
 directory**: In the extreme, it is posisble to collapase a single TriBITS
-dackage, repository, and project into the same base source directory.
+package, repository, and project into the same base source directory.
 However, in this case, the TriBITS Project name and the TriBITS Package name
-can not be the same and some modifications and tricks are needed to allow this
-to work.  One example of this is the TriBITS project and TriBITS package
-themselves, which are both rooted in the base ``tribits`` directory.  There
-are a few restructions and modifications needed to get this to work:
+cannot be the same and some modifications and tricks are needed to allow this
+to work.  One example of this is the TriBITS project and `The TriBITS Test
+Package`_ themselves, which are both rooted in the base ``tribits`` source
+directory.  There are a few restructions and modifications needed to get this
+to work:
 
-* The Project and Package names can not be the same: In the case of TriBTS,
-  the project name is ``TriBITSProj`` (as defined in
+* The Project and Package names cannot be the same: In the case of the TriBITS
+  project, the project name is ``TriBITSProj`` (as defined in
   ``tribits/ProjectName.cmake``) and the package name is ``TriBITS`` (as
   defined in ``tribits/PackagesList.cmake``).
-* The base ``CMakeLists.txt`` file must me modified to allow it to be
-  processed both as the base project file and as the package file: In the case
-  of ``tribits/CMakeLists.txt``, a big if statement based in the local
-  variable ``TriBITS_PROCESSED_BASED_PROJECT`` is used.
-* The TriBITS package's binary directory must be modified.  Because of
-  directory level targets like ``${PROJECT_NAME}_libs`` and
-  ``${PACKAGE_NAME}_libs``, a subdirectory for package's the binary directory
-  must be created.  This is simply done by overriding the binary directory
-  name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of TriBITS, this
-  is set to ``tribits`` in the ``tribits/PackagesList.cmake`` file.
+* The base ``CMakeLists.txt`` file must be modified to allow it to be
+  processed both as the base project ``CMakeLists.txt`` file and as the
+  package's base ``CMakeLists.txt`` file: In the case of
+  ``tribits/CMakeLists.txt``, a big if statement is used.
+* An extra subdirectory must be created for TriBITS package's binary
+  directory: Because of directory-level targets like ``${PROJECT_NAME}_libs``
+  and ``${PACKAGE_NAME}_libs``, a subdirectory for package's the binary
+  directory must be created.  This is simply done by overriding the binary
+  directory name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of
+  TriBITS, this is set to ``tribits`` in the ``tribits/PackagesList.cmake``
+  file.
 
 Other than those modifications, a TriBITS project, repository, and package can
-all be rooted in the same source directory.  However, to do so is a little
-messing and is not recommended.  It was only done this way with the base
-TriBITS directory in order to maintain backward compatibility.
+all be rooted in the same source directory.  However, as one can see above, to
+do so is a little messy and is not recommended.  It was only done this way
+with the base TriBITS directory in order to maintain backward compatibility
+for the usage of TriBITS in existing TriBITS projects.
 
 However, one possible use case for collapsing a project, repository, and
 package into a single base source directory would be to support the
-stand-alone build of a TriBITS package as its own entity that uses and
-installation of the TriBITS CMake modules.  If a given upstream TriBITS
-package has no required upstream TriBITS package dependencies and minimal TPL
-dependencies (or only uses "standard" TriBITS TPLs already defined in the
-``tribits/tpls/`` directory), then creating a stand-alone project build of a
-loan TriBITS package requires fairly little extra overhead.
+stand-alone build of a TriBITS package as its own entity that uses an
+installation of the TriBITS.  If a given TriBITS package has no required
+upstream TriBITS package dependencies and minimal TPL dependencies (or only
+uses `Standard TriBITS TPLs`_ already defined in the ``tribits/tpls/``
+directory), then creating a stand-alone project build of a loan TriBITS
+package requires fairly little extra overhead or duplication.  However, as
+mentioned above, one cannot use the same name for the package and the project.
+
+.. NOTE: We could modify the TriBITS system to allow having the project and
+.. package names be the same if we disable one of the sets of XXX_libs and
+.. other targets created by TriBITS.  We could also provide a standard wrapper
+.. CMakeLists.txt file to make it easy for packages to support stand-alone
+.. builds.  However, that is an effort for later.
 
 
 Standard TriBITS TPLs
@@ -2204,8 +2237,9 @@ of SE packages provided by this TriBITS repo as::
 The above list of SE packages is shown formatted this way since this is the
 format that the SE packages are printed by TriBITS in the ``cmake`` STDOUT on
 the line starting with ``"Final set of non-enabled SE packages:"`` when no
-packages are enabled.  TriBITS defines enable/disable cache variables for each
-of the defined SE packages like ``TribitsExProj_ENBLE_SimpleCxx``,
+packages are enabled (see `Selecting the list of packages to enable`_).
+TriBITS defines enable/disable cache variables for each of the defined SE
+packages like ``TribitsExProj_ENBLE_SimpleCxx``,
 ``TribitsExProj_ENBLE_PackageWithSubpackagesSubpackageA``, and defines all the
 variables listed in `TriBITS Package Cache Variables`_ that are settable by
 the users or by the dependnecy logic described in section `Package
@@ -2238,13 +2272,111 @@ when using TriBITS for the typical use cases.
 MockTrilinos
 -------------
 
-ToDo: Fill in!
+The TriBITS project ``MockTrilinos`` is contained under the directory::
+
+  tribits/package_arch/UnitTests/MockTrilinos/
+
+This TriBITS project is not a full TriBITS project (i.e. it does not build
+anything).  Instead, it is used to test the TriBITS system using tests defined
+in the `The TriBITS Test Package`_.  The ``MockTrilinos`` project contains a
+subset of packages with slightly modified dependencies from a snapshot of the
+real Trilinos project from May 2009.  The list of packages in::
+
+  tribits/package_arch/UnitTests/MockTrilinos/PackagesList.cmake
+
+is:
+
+.. include:: ../../package_arch/UnitTests/MockTrilinos/PackagesList.cmake
+   :literal:
+
+All of the package directories listed above have ``cmake/Dependenices.cmake``
+files but generally do not have ``CMakeLists.txt`` files since most of the
+testing of ``MockTrilinos`` just involves dependency handling.
+
+``MockTrilinos`` also contains a number of extra TriBITS repositories used in
+various tests.  These extra repositories offer examples of different types of
+TriBITS repositories like:
+
+* ``extraRepoOnePackage``: Contains just the single package
+  ``extraRepoOnePackage`` which is defined in the base repository directory.
+
+* ``extraRepoOnePackageThreeSubpackages``: Contains just the single package
+  ``extraRepoOnePackageThreeSubpackages`` which is defined in the base
+  repository directory but is broken up into subpackages.
+
+* ``extraRepoTwoPackages``: Contains just two packages but provides an exmaple
+  of defining multiple repositories with possible missing required and
+  optional upstream packages (see `Multi-Repository Support`_).
+
+* ``extraTrilinosRepo``: Just a typical extra repo with add-on packages and
+  new TPLs defined that depends on a few ``MockTrilinos`` packages.
+
+New test extra repostories are added when new types of tests are needed that
+would require new package and TPL dependency structures since existing
+dependency tests based on ``MockTrilinos`` are expensive to change by their
+very nature.
+
+The reason that the ``MockTrilinos`` test project is mentioned in this
+developers guide is because it contains a greater variety of packages,
+subpackages, and TPLs with a greater variety of different types of
+dependencies.  This variety is is needed to fully test the TriBITS system but
+this project and the tests also serve as examples and extra documentation for
+the behavior of the TriBITS system.  Several of the examples referenced in
+this document come from ``MockTrilinos``.
+
+Most of the dependency tests involving ``MockTrilinos`` are specified in::
+
+  tribits/package_arch/UnitTests/DependencyUnitTests/CMakeLists.txt
+
+A great deal about the current behavior of TriBITS `Package Dependencies and
+Enable/Disable Logic`_ can be learned from inspecting the tests defined in
+this ``CMakeLists.txt`` file.  There are also some faster-running unit tests
+involving ``MockTrilinos`` defined in the file::
+
+  tribits/package_arch/UnitTests/TribitsAdjustPackageEnables_UnitTests.cmake
 
 
 The TriBITS Test Package
 ------------------------
 
-ToDo: Fill in!
+The last TriBITS example mentioned here is the TriBITS test package named
+(appropriately) ``TriBITS`` itself.  The directory for the ``TriBITS`` package
+is the base TriBITS source directory ``tribits``.  This allows any TriBITS
+project to add testing for the TriBITS system by just listing this package and
+its directory in its repository's `<repoDir>/PackagesList.cmake`_ file.  For
+example, the Trilinos repository which currently snaphsots the TriBITS source
+tree lists the ``TriBITS`` package with::
+
+  TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+    TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
+    ...
+    )
+
+No downstream packages list a dependency on ``TriBITS`` in their
+`<packageDir>/cmake/Dependencies.cmake`_ files.  Listing the ``TriBITS``
+package in only done in the ``PackagesList.cmake`` file for testing TriBITS.
+
+Other TriBITS projects/repositories that don't snapshot TriBITS but also want
+to test TriBITS (perhaps just to mine the running tests for examples) can do
+so by including the ``TriBITS`` test package in their ``PackagesList.cmake``
+file using::
+
+  TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+    TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
+    ...
+    )
+
+Once the ``TriBITS`` test package is added to the list of project/repository
+packages, it can be enabled just like any other package by adding the
+following to the ``cmake`` command-line options::
+
+  -D <Project>_ENABLE_TriBITS=ON \
+  -D <Project>_ENABLE_TESTS=ON
+
+One can then inspect the added tests prefixed by ``"TriBITS_"`` to see what
+tests are defined and how they are run.  There is a wealth of information
+about the TriBITS system embedded in these tests and where documentation and
+these tests disagreed, believe the tests!
 
 
 Package Dependencies and Enable/Disable Logic
