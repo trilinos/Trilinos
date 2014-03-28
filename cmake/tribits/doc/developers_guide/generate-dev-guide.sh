@@ -24,8 +24,8 @@
 #
 # To see output from extract_rst_cmake_doc.py just run the script as:
 #
-#   env EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS=--do-trace \
-#      ./generate-dev-guide.sh [other args]
+#   $ env TRIBITS_DEV_GUIDE_EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS=--do-trace \
+#       ./generate-dev-guide.sh [other args]
 #
 # NOTE: If you see rst2html or rst2latex errors for the file
 # TribitsDeveloeprsGuilde.rst with line numbers that don't seem to make sense,
@@ -38,9 +38,11 @@
 # function.
 #
 # NOTE: To skip the extraction of the documentation from the *.cmake files,
-# just sent the env varaible SKIP_DOCUMENTATION_EXTRACTION as:
+# just sent the env TRIBITS_DEV_GUIDE_varaible SKIP_DOCUMENTATION_EXTRACTION
+# as:
 #
-#   env SKIP_DOCUMENTATION_EXTRACTION=1 ./generate-dev-guilde.sh
+#   $ env TRIBITS_DEV_GUIDE_SKIP_DOCUMENTATION_EXTRACTION=1 \
+#      ./generate-dev-guilde.sh
 #
 # That will result in the generated files TribitsMacroFunctionDoc.rst and
 # UtilsMacroFunctionDoc.rst being left as is.  This would be useful to speed
@@ -54,7 +56,8 @@ ARGS=$@
 
 source source_set_env
 
-if [ "$SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
+
+if [ "$TRIBITS_DEV_GUIDE_SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
 
   echo
   echo "Extracting TriBITS documentation from *.cmake files ..."
@@ -62,8 +65,23 @@ if [ "$SKIP_DOCUMENTATION_EXTRACTION" == "" ] ; then
   ../../python/extract_rst_cmake_doc.py \
     --extract-from=../../package_arch/,../../utils/ \
     --rst-file-pairs=TribitsMacroFunctionDocTemplate.rst:TribitsMacroFunctionDoc.rst,UtilsMacroFunctionDocTemplate.rst:UtilsMacroFunctionDoc.rst \
-    $EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
+    $TRIBITS_DEV_GUIDE_EXTRACT_RST_CMAKE_DOC_EXTRA_ARGS
   
+fi
+
+if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
+
+  echo
+  echo "Generating list of Standard TriBITS TPLs ..."
+  echo
+  ls -w 1 ../../tpls/ &> TribitsStandardTPLsList.txt
+
+  echo
+  echo "Generating Directory structure of TribitsHelloWorld ..."
+  echo
+  ../../common_tools/python/tree.py -f -c -x ../examples/TribitsHelloWorld/ \
+    &> TribitsHelloWorldDirAndFiles.txt
+
 fi
 
 
