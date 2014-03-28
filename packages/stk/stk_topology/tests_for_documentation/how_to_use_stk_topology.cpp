@@ -100,7 +100,8 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
 
     // zero noded super element
     unsigned num_nodes_in_super_element = 10;
-    element_rank_topologies.push_back(stk::create_superelement_topology(num_nodes_in_super_element));
+    element_rank_topologies.
+      push_back(stk::create_superelement_topology(num_nodes_in_super_element));
 
     // add a topology of invalid_rank
     unsigned zeroNodes = 0;
