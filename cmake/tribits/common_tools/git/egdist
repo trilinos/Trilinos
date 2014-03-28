@@ -17,8 +17,9 @@ base git repo.  The options in [egdist options] are prefixed with '--dist-'
 and are are pulled out before running eg/git on the underlying executable.
 See --help to see the egdist options.
 
-If --dist-extra-repos="", then the list of extra repos will be read from the file
-.egdist.  The format of this file is to have one repo name per line as in:
+If --dist-extra-repos="", then the list of extra repos will be read from the
+file .egdist.  The format of this file is to have one repo name per line as
+in:
 
    Repo1
    Repo2
@@ -46,13 +47,14 @@ TIPS:
  - By default, egdist will use 'eg' in the environment.  If it can't find 'eg'
    in the environment, it will try to use 'eg' in the same directory as
    'egdist' (which is the case in the home tribits directory).  If it can't
-   find this 'eg' it will look for 'git' in the environment.  If it can't find 'git'
-   it will require that the user specify the eg/git command to run with
+   find this 'eg' it will look for 'git' in the environment.  If it can't find
+   'git' it will require that the user specify the eg/git command to run with
    --with-eg-git=<the command>.
 
- - To exclude processing either the base git repo and/or git repos listed in .egdist,
-   pass in --dist-not-base-repo and/or --dist-not-extra-repos=RepoX,RepoZ,...
-   The provides complete control over what git repos the given command is run on.
+ - To exclude processing either the base git repo and/or git repos listed in
+   .egdist, pass in --dist-not-base-repo and/or
+   --dist-not-extra-repos=RepoX,RepoZ,...  The provides complete control over
+   what git repos the given command is run on.
 
 REPO VERSION FILES:
 
