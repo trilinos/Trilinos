@@ -2640,7 +2640,7 @@ ToDo: Fill in!
 Multi-Repository Development Workflow
 -------------------------------------
 
-ToDo: Fill in!
+ToDo: Discuss 'egdist' and the rep clone script.
 
 
 Howtos
@@ -3297,12 +3297,22 @@ just searching for them.
 checkin-test.py --help
 ----------------------
 
-ToDo: Include output from checkin-test --help
+Below is a snapshot of the output from ``checkin-test.py --help``.  This
+documentation contains a lot of information about the recommended development
+workflow (mostly related to pushing commits) and outlines a number of
+different use cases for using the script.
+
+.. include:: checkin-test-help.txt
+   :literal:
 
 
 egdist --help
 -------------
 
-ToDo: Include output from egdist --help
+Below is a snapshot of the output from ``egdist --help``.  For more details on
+the usage of ``egdist``, see `Multi-Repository Support`_ and `Multi-Repository
+Development Workflow`_.
 
+.. include:: egdist-help.txt
+   :literal:
 

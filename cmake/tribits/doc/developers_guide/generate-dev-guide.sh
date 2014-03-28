@@ -82,6 +82,16 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   ../../common_tools/python/tree.py -f -c -x ../examples/TribitsHelloWorld/ \
     &> TribitsHelloWorldDirAndFiles.txt
 
+  echo
+  echo "Generating output for 'checkin-test.py --help' ..."
+  echo
+  ../../checkin-test.py --help &> checkin-test-help.txt
+
+  echo
+  echo "Generating output for 'egdist --help' ..."
+  echo
+  ../../common_tools/git/egdist --help &> egdist-help.txt
+
 fi
 
 
