@@ -818,6 +818,71 @@ namespace ROL {
     }
     return TESTOPTPROBLEM_HS1;
   }
+
+
+  /** \enum   ROL::EConstraint
+      \brief  Enumeration of constraint types.
+
+      \arg    EQUALITY        describe
+      \arg    INEQUALITY      describe
+   */
+  enum EConstraint{
+    CONSTRAINT_EQUALITY = 0,
+    CONSTRAINT_INEQUALITY,
+    CONSTRAINT_LAST
+  };
+
+  inline std::string EConstraintToString(EConstraint c) {
+    std::string retString;
+    switch(c) {
+      case CONSTRAINT_EQUALITY:     retString = "Equality";                           break;
+      case CONSTRAINT_INEQUALITY:   retString = "Inequality";                         break;
+      case CONSTRAINT_LAST:         retString = "Last Type (Dummy)";                  break;
+      default:                      retString = "INVALID EConstraint";
+    }
+    return retString;
+  }
+
+  /** \brief  Verifies validity of a Secant enum.
+    
+      \param  c  [in]  - enum of the Secant
+      \return 1 if the argument is a valid Secant; 0 otherwise.
+    */
+  inline int isValidConstraint(EConstraint c){
+    return( (c == CONSTRAINT_EQUALITY)      ||
+            (c == CONSTRAINT_INEQUALITY) );
+  }
+
+  inline EConstraint & operator++(EConstraint &type) {
+    return type = static_cast<EConstraint>(type+1);
+  }
+
+  inline EConstraint operator++(EConstraint &type, int) {
+    EConstraint oldval = type;
+    ++type;
+    return oldval;
+  }
+
+  inline EConstraint & operator--(EConstraint &type) {
+    return type = static_cast<EConstraint>(type-1);
+  }
+
+  inline EConstraint operator--(EConstraint &type, int) {
+    EConstraint oldval = type;
+    --type;
+    return oldval;
+  }
+
+  inline EConstraint StringToEConstraint(std::string s) {
+    s = removeStringFormat(s);
+    for ( EConstraint ctype = CONSTRAINT_EQUALITY; ctype < CONSTRAINT_LAST; ctype++ ) {
+      if ( !s.compare(removeStringFormat(EConstraintToString(ctype))) ) {
+        return ctype;
+      }
+    }
+    return CONSTRAINT_EQUALITY;
+  }
+
 } // namespace ROL
 
 

@@ -155,6 +155,122 @@ public:
     }
   }
 
+  /** \brief Check if the vector, v, is feasible
+  */
+  bool isFeasible( const Vector<Real> &v ) {
+    bool iFeas = true;
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        iFeas = iFeas && (this->ic_[i]->isFeasible(v));
+      }
+    }
+    return iFeas;
+  }
+
+
+  /** \brief Evaluate constraints:
+             either for all activated equality constraints or
+             for all activated inequality constraints.
+  */
+  void value(std::vector<Teuchos::RCP<Vector<Real> > > &c, const Vector<Real> &x, const EConstraint & ctype, std::vector<Real> & tol) {
+    if (ctype == CONSTRAINT_EQUALITY) {
+      for (unsigned i=0; i<size(this->ec_.size()); i++) {
+        if (this->ec_[i]->isActivated()) {
+          this->ec_[i]->value(*(c[i]), x, tol[i]);
+        }
+      }
+    }
+    else if (ctype == CONSTRAINT_INEQUALITY) {
+      for (unsigned i=0; i<size(this->ic_.size()); i++) {
+        if (this->ic_[i]->isActivated()) {
+          this->ic_[i]->value(*(c[i]), x, tol[i]);
+        }
+      }
+    }
+  }
+
+
+  /** \brief Apply constraint Jacobians or their adjoints:
+             either for all activated equality constraints or
+             for all activated inequality constraints.
+  */
+  void applyJacobian(std::vector<Teuchos::RCP<Vector<Real> > > &jv,
+                     std::vector<Teuchos::RCP<const Vector<Real> > > &v,
+                     const Vector<Real> &x,
+                     const bool &adj,
+                     const EConstraint &ctype,
+                     std::vector<Real> &tol) {
+    if (ctype == CONSTRAINT_EQUALITY) {
+      for (unsigned i=0; i<size(this->ec_.size()); i++) {
+        if (this->ec_[i]->isActivated()) {
+          this->ec_[i]->applyJacobian(*(jv[i]), *(v[i]), x, adj, tol[i]);
+        }
+      }
+    }
+    else if (ctype == CONSTRAINT_INEQUALITY) {
+      for (unsigned i=0; i<size(this->ic_.size()); i++) {
+        if (this->ic_[i]->isActivated()) {
+          this->ic_[i]->applyJacobian(*(jv[i]), *(v[i]), x, adj, tol[i]);
+        }
+      }
+    }
+  }
+
+
+  /** \brief Compute the action of the operators W that are onto
+             the null space (kernel) of the contraint Jacobians:
+             either for all activated equality constraints or
+             for all activated inequality constraints.
+  */
+  void maptoJacobianKernel(std::vector<Teuchos::RCP<Vector<Real> > > &wv,
+                           std::vector<Teuchos::RCP<const Vector<Real> > > &v,
+                           const Vector<Real> &x,
+       	       	           const EConstraint &ctype,
+                           std::vector<Real> &tol) {
+    if (ctype == CONSTRAINT_EQUALITY) {
+      for (unsigned i=0; i<size(this->ec_.size()); i++) {
+        if (this->ec_[i]->isActivated()) {
+          this->ec_[i]->maptoJacobianKernel(*(wv[i]), *(v[i]), x, tol[i]);
+        }
+      }
+    }
+    else if (ctype == CONSTRAINT_INEQUALITY) {
+      for (unsigned i=0; i<size(this->ic_.size()); i++) {
+        if (this->ic_[i]->isActivated()) {
+          this->ic_[i]->maptoJacobianKernel(*(wv[i]), *(v[i]), x, tol[i]);
+        }
+      }
+    }
+  }
+
+
+  /** \brief Apply constraint Hessians to (v,u), c''(x)(v,u) = (c''(x)u)v:
+             either for all activated equality constraints or
+             for all activated inequality constraints.
+  */
+  void applyHessian(std::vector<Teuchos::RCP<Vector<Real> > > &huv,
+                    std::vector<Teuchos::RCP<const Vector<Real> > > &u,
+                    std::vector<Teuchos::RCP<const Vector<Real> > > &v,
+                    const Vector<Real> &x,
+       	       	    const EConstraint &ctype,
+                    std::vector<Real> &tol) {
+    if (ctype == CONSTRAINT_EQUALITY) {
+      for (unsigned i=0; i<size(this->ec_.size()); i++) {
+        if (this->ec_[i]->isActivated()) {
+          this->ec_[i]->applyHessian(*(huv[i]), *(u[i]), *(v[i]), x, tol[i]);
+        }
+      }
+    }
+    else if (ctype == CONSTRAINT_INEQUALITY) {
+      for (unsigned i=0; i<size(this->ic_.size()); i++) {
+        if (this->ic_[i]->isActivated()) {
+          this->ic_[i]->applyHessian(*(huv[i]), *(u[i]), *(v[i]), x, tol[i]);
+        }
+      }
+    }
+  }
+
+
   /** \brief Remove the inactive set variables that are not in the binding set.
                 v is the vector to be pruned 
                 g is the gradient of the objective function at x
@@ -180,18 +296,6 @@ public:
     v.axpy(-1.0,*tmp);
   }
  
-  /** \brief Check if the vector, v, is feasible
-  */
-  bool isFeasible( const Vector<Real> &v ) {
-    bool iFeas = true;
-    for (unsigned i=0; i<this->ic_.size(); i++) {
-      if (this->ic_[i]->isActivated()) {
-        iFeas = iFeas && (this->ic_[i]->isFeasible(v));
-      }
-    }
-    return iFeas;
-  }
-
   /** \brief Compute projected gradient.
   *             g is the gradient of the objective function at x
   *             x is the optimization variable
