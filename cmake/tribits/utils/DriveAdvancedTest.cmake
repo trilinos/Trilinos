@@ -141,6 +141,7 @@ FUNCTION(DRIVE_ADVANCED_TEST)
       MESSAGE("  Writing output to file \"${OUTPUT_FILE_USED}\"\n")
       SET(EXEC_CMND ${EXEC_CMND}
         OUTPUT_FILE "${OUTPUT_FILE_USED}"
+        ERROR_FILE "${OUTPUT_FILE_USED}"
         )
     ELSE()
       SET(EXEC_CMND ${EXEC_CMND}
