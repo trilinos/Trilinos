@@ -439,6 +439,11 @@ public:
   ///   empty, this method will only print timers whose labels begin
   ///   with this string.
   ///
+  /// \param ignoreZeroTimers [in] Processes that either do not have
+  ///   a particular timer or have zero time for a timer are not used
+  ///   in calculating global statistics. This mode requires one
+  ///   additional all-reduce per invocation.
+  ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if
