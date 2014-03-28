@@ -81,7 +81,7 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const view_type view)
+          const dual_view_type view)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view)
   {}
 
@@ -307,15 +307,15 @@ namespace Tpetra {
                            Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& src)
   {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    typedef MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> MV;
     typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, node_type> V;
 
-    V dest (src.getMap ());
-    Kokkos::deep_copy (dest.getLocalView (), src.getLocalView ());
+    V dst (src.getMap ());
+    deep_copy ((MV&) (dst), (const MV&) (src));
 
-    // The Kokkos refactor specializations have view semantics, so
-    // returning the Vector directly, rather than through RCP, only
-    // involves a shallow copy.
-    return dest;
+    // Vector now has view semantics, so returning the Vector
+    // directly, rather than through RCP, only does a shallow copy.
+    return dst;
   }
 } // namespace Tpetra
 

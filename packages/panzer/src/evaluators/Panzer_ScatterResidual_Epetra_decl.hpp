@@ -71,6 +71,15 @@ class UniqueGlobalIndexer;
     and that the number of dofs is equal to the size of the solution
     names vector.
 
+    \verbatim
+      <ParameterList>
+        <Parameter name="Scatter Name" type="string" value="<Name to give to the evaluate (dummy) field>"/>
+        <Parameter name="Dependent Names" type="RCP<std::vector<std::string> >" value="<Name of fields to be scattered>"/>
+        <Parameter name="Dependent Map" type="RCP<std::map<std::string,std::string> >" value="<Map from scattered field name to DOF name>"/>
+        <Parameter name="Basis" type="RCP<const PureBasis>" value="<Basis function for all fields scattered (implicitly associated with DOF)>"/>
+        <Parameter name="Global Data Key" type="string" value="<Lookup key for global evaluation data containers, defaults to \"Resiudal Scatter Container\">"/>
+      </ParameterList>
+    \endverbatim
 */
 template<typename EvalT, typename Traits,typename LO,typename GO> class ScatterResidual_Epetra;
 

@@ -43,6 +43,8 @@
 #ifndef IFPACK2_CRSRILUK_DEF_HPP
 #define IFPACK2_CRSRILUK_DEF_HPP
 
+#include <Ifpack2_LocalFilter.hpp>
+
 namespace Ifpack2 {
 
 template<class MatrixType>
@@ -101,7 +103,7 @@ RILUK<MatrixType>::setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     isAllocated_ = false;
     isInitialized_ = false;
     isComputed_ = false;
-    A_crs_ = Teuchos::null;
+    A_local_crs_ = Teuchos::null;
     Graph_ = Teuchos::null;
     L_ = Teuchos::null;
     U_ = Teuchos::null;
@@ -219,7 +221,6 @@ void RILUK<MatrixType>::allocate_L_and_U ()
     // FIXME (mfh 24 Jan 2014) This assumes domain == range Map for L and U.
     L_->fillComplete ();
     U_->fillComplete ();
-
     D_ = rcp (new vec_type (Graph_->getL_Graph ()->getRowMap ()));
   }
   isAllocated_ = true;
@@ -379,6 +380,45 @@ RILUK<MatrixType>::getCrsMatrix () const {
 }
 
 
+template<class MatrixType>
+Teuchos::RCP<const typename RILUK<MatrixType>::row_matrix_type>
+RILUK<MatrixType>::makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
+
+  // If A_'s communicator only has one process, or if its column and
+  // row Maps are the same, then it is already local, so use it
+  // directly.
+  if (A->getRowMap ()->getComm ()->getSize () == 1 ||
+      A->getRowMap ()->isSameAs (* (A->getColMap ()))) {
+    return A;
+  }
+
+  // If A_ is already a LocalFilter, then use it directly.  This
+  // should be the case if RILUK is being used through
+  // AdditiveSchwarz, for example.  There are (unfortunately) two
+  // kinds of LocalFilter, depending on the template parameter, so we
+  // have to test for both.
+  RCP<const LocalFilter<row_matrix_type> > A_lf_r =
+    rcp_dynamic_cast<const LocalFilter<row_matrix_type> > (A);
+  if (! A_lf_r.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_r);
+  }
+  RCP<const LocalFilter<crs_matrix_type> > A_lf_c =
+    rcp_dynamic_cast<const LocalFilter<crs_matrix_type> > (A);
+  if (! A_lf_c.is_null ()) {
+    return rcp_implicit_cast<const row_matrix_type> (A_lf_c);
+  }
+
+  // A_'s communicator has more than one process, its row Map and
+  // its column Map differ, and A_ is not a LocalFilter.  Thus, we
+  // have to wrap it in a LocalFilter.
+  return rcp (new LocalFilter<row_matrix_type> (A));
+}
+
 
 template<class MatrixType>
 void RILUK<MatrixType>::initialize ()
@@ -387,6 +427,7 @@ void RILUK<MatrixType>::initialize ()
   using Teuchos::rcp;
   using Teuchos::rcp_const_cast;
   using Teuchos::rcp_dynamic_cast;
+  using Teuchos::rcp_implicit_cast;
   typedef Tpetra::CrsGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> crs_graph_type;
@@ -411,47 +452,49 @@ void RILUK<MatrixType>::initialize ()
     isComputed_ = false;
     Graph_ = Teuchos::null;
 
-    // mfh 13 Dec 2013: If it's a Tpetra::CrsMatrix, just give Graph_
-    // its Tpetra::CrsGraph.  Otherwise, we might need to rewrite
-    // IlukGraph to handle a Tpetra::RowGraph.  Just throw an exception
-    // for now.
+    RCP<const row_matrix_type> A_local = makeLocalFilter (A_);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      A_local.is_null (), std::logic_error, "Ifpack2::RILUK::initialize: "
+      "makeLocalFilter returned null; it failed to compute A_local.  "
+      "Please report this bug to the Ifpack2 developers.");
+
+    // FIXME (mfh 24 Jan 2014, 26 Mar 2014) It would be more efficient
+    // to rewrite RILUK so that it works with any RowMatrix input, not
+    // just CrsMatrix.  (That would require rewriting IlukGraph to
+    // handle a Tpetra::RowGraph.)  However, to make it work for now,
+    // we just copy the input matrix if it's not a CrsMatrix.
     {
-      RCP<const crs_matrix_type> A_crs =
-        rcp_dynamic_cast<const crs_matrix_type> (A_);
-      if (A_crs.is_null ()) {
-        // FIXME (mfh 24 Jan 2014) It would be more efficient to rewrite
-        // RILUK so that it works with any RowMatrix input, not just
-        // CrsMatrix.  However, to make it work for now, we can copy the
-        // input matrix and hope for the best.
-
+      RCP<const crs_matrix_type> A_local_crs =
+        rcp_dynamic_cast<const crs_matrix_type> (A_local);
+      if (A_local_crs.is_null ()) {
         // FIXME (mfh 24 Jan 2014) It would be smarter to count up the
-        // number of elements in each row of A_, so that we can create
-        // A_crs_nc using static profile.  The code below is correct but
-        // potentially slow.
-        RCP<crs_matrix_type> A_crs_nc =
-          rcp (new crs_matrix_type (A_->getRowMap (), A_->getColMap (), 0));
-
+        // number of elements in each row of A_local, so that we can
+        // create A_local_crs_nc using static profile.  The code below is
+        // correct but potentially slow.
+        RCP<crs_matrix_type> A_local_crs_nc =
+          rcp (new crs_matrix_type (A_local->getRowMap (),
+                                    A_local->getColMap (), 0));
         // FIXME (mfh 24 Jan 2014) This Import approach will only work
         // if A_ has a one-to-one row Map.  This is generally the case
         // with matrices given to Ifpack2.
-        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
-          node_type> import_type;
-
+        //
         // Source and destination Maps are the same in this case.
         // That way, the Import just implements a copy.
-        import_type import (A_->getRowMap (), A_->getRowMap ());
-        A_crs_nc->doImport (*A_, import, Tpetra::REPLACE);
-        A_crs_nc->fillComplete (A_->getDomainMap (), A_->getRangeMap ());
-        A_crs = rcp_const_cast<const crs_matrix_type> (A_crs_nc);
+        typedef Tpetra::Import<local_ordinal_type, global_ordinal_type,
+          node_type> import_type;
+        import_type import (A_local->getRowMap (), A_local->getRowMap ());
+        A_local_crs_nc->doImport (*A_local, import, Tpetra::REPLACE);
+        A_local_crs_nc->fillComplete (A_local->getDomainMap (), A_local->getRangeMap ());
+        A_local_crs = rcp_const_cast<const crs_matrix_type> (A_local_crs_nc);
       }
-      A_crs_ = A_crs;
-      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_crs->getCrsGraph (),
+      A_local_crs_ = A_local_crs;
+      Graph_ = rcp (new Ifpack2::IlukGraph<crs_graph_type> (A_local_crs->getCrsGraph (),
                                                             LevelOfFill_, 0));
     }
 
     Graph_->initialize ();
     allocate_L_and_U ();
-    initAllValues (*A_crs_);
+    initAllValues (*A_local_crs_);
   } // Stop timing
 
   isInitialized_ = true;
@@ -578,8 +621,8 @@ initAllValues (const row_matrix_type& A)
   // must be the same as those of the original matrix, However if the
   // original matrix is a VbrMatrix, these two latter maps are
   // translation from a block map to a point map.
-  L_->fillComplete (L_->getColMap (), A_->getRangeMap ());
-  U_->fillComplete (A_->getDomainMap (), U_->getRowMap ());
+  L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
+  U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
 
   // At this point L and U have the values of A in the structure of L
   // and U, and diagonal vector D
@@ -736,11 +779,10 @@ void RILUK<MatrixType>::compute ()
 
     // FIXME (mfh 23 Dec 2013) Do we know that the column Map of L_ is
     // always one-to-one?
-    L_->fillComplete (L_->getColMap (), A_->getRangeMap ());
-    U_->fillComplete (A_->getDomainMap (), U_->getRowMap ());
+    L_->fillComplete (L_->getColMap (), A_local_crs_->getRangeMap ());
+    U_->fillComplete (A_local_crs_->getDomainMap (), U_->getRowMap ());
 
     // Validate that the L and U factors are actually lower and upper triangular
-
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! L_->isLowerTriangular (), std::runtime_error,
       "Ifpack2::RILUK::compute: L isn't lower triangular.");

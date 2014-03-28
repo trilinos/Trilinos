@@ -425,6 +425,102 @@ public:
 #endif
 };
 
+template <>
+class Multiply<
+  CrsMatrix< float , Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< float** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  void ,
+  IntegralRank<2> >
+{
+public:
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< float**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< float , device_type > matrix_type;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const float alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
+    const int nz = A.graph.entries.dimension_0();
+    const size_t ncol = x.dimension_1();
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseScsrmm( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n , nz ,
+                      &alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      n ,
+                      &beta ,
+                      y.ptr_on_device() ,
+                      n );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
+};
+
+template <>
+class Multiply<
+  CrsMatrix< double , Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  Kokkos::View< double** , Kokkos::LayoutLeft, Kokkos::Cuda > ,
+  void ,
+  IntegralRank<2> >
+{
+public:
+  typedef Kokkos::Cuda device_type;
+  typedef device_type::size_type size_type;
+  typedef Kokkos::View< double**, Kokkos::LayoutLeft, device_type > multi_vector_type;
+  typedef CrsMatrix< double , device_type > matrix_type;
+
+  //--------------------------------------------------------------------------
+
+  static void apply( const matrix_type & A ,
+                     const multi_vector_type & x ,
+                     const multi_vector_type & y )
+  {
+    CudaSparseSingleton & s = CudaSparseSingleton::singleton();
+    const double alpha = 1 , beta = 0 ;
+    const int n = A.graph.row_map.dimension_0() - 1 ;
+    const int nz = A.graph.entries.dimension_0();
+    const size_t ncol = x.dimension_1();
+
+    // Sparse matrix-times-multivector
+    cusparseStatus_t status =
+      cusparseDcsrmm( s.handle ,
+                      CUSPARSE_OPERATION_NON_TRANSPOSE ,
+                      n , ncol , n , nz ,
+                      &alpha ,
+                      s.descra ,
+                      A.values.ptr_on_device() ,
+                      A.graph.row_map.ptr_on_device() ,
+                      A.graph.entries.ptr_on_device() ,
+                      x.ptr_on_device() ,
+                      n ,
+                      &beta ,
+                      y.ptr_on_device() ,
+                      n );
+
+    if ( CUSPARSE_STATUS_SUCCESS != status ) {
+      throw std::runtime_error( std::string("ERROR - cusparseDcsrmv " ) );
+    }
+  }
+};
+
 #else
 // Working on creating a version that doesn't copy vectors to a contiguous
 // 2-D view and doesn't call CUSPARSE.  Not done yet.

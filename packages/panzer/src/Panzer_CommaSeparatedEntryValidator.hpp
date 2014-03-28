@@ -40,32 +40,56 @@
 // ***********************************************************************
 // @HEADER
 
-#ifndef PANZER_RESPONSE_AGGREGATOR_FACTORY_HPP
-#define PANZER_RESPONSE_AGGREGATOR_FACTORY_HPP
+#ifndef __Panzer_CommaSeparatedEntryValidator_hpp__
+#define __Panzer_CommaSeparatedEntryValidator_hpp__
 
-#include "Panzer_ResponseAggregator_Manager.hpp"
+#include <map>
+#include <set>
+#include <vector>
+#include <string>
+#include <iostream>
+
+#include "Teuchos_ParameterList.hpp"
+#include "Teuchos_ParameterEntry.hpp"
+#include "Teuchos_ParameterEntryValidator.hpp"
+#include "Teuchos_RCP.hpp"
+
+#include <boost/algorithm/string.hpp>
+#include <boost/tokenizer.hpp>
 
 namespace panzer {
 
-  /** \brief Adds user defined aggregator types to the response library
-
-      User defined aggregators are added to response library by adding
-      aggregator builders to the ResponseAggregatorManager via the
-      method defineAggregatorTypeFromBuilder(...).  This class is a
-      pure virtual interface for users to add builders to the
-      aggregator manager.
+/** This class validates a response type. Essentially
+  * it is used to make sure the parameter value is correctly
+  * formatted. 
   */
-  template <typename Traits>
-  class ResponseAggregatorFactory {
+class CommaSeparatedEntryValidator : public Teuchos::ParameterEntryValidator {
+public:
+  /** A basic constructor. If <code>allowEmpty</code> is true then the 
+    * empty string is a valid entry.
+    */
+  CommaSeparatedEntryValidator(bool allowEmpty=false) : allowEmpty_(allowEmpty) {}
 
-  public:
+  ValidStringsList validStringValues() const
+  { return Teuchos::null; }
 
-    virtual ~ResponseAggregatorFactory() {}
+  void validate(const Teuchos::ParameterEntry & entry, 
+                const std::string & paramName,
+                const std::string & sublistName) const;
 
-    /** \brief Registers user defined response aggregator types with a response aggregator manager */
-    virtual void addResponseTypes(panzer::ResponseAggregator_Manager<Traits>& ram) const = 0;
+  const std::string getXMLTypeName() const
+  { return "string-list"; }
 
-  };
+  void printDoc(const std::string & docString, std::ostream &out) const;
+
+  //! Utility function for tokenizing
+  static void split(const std::string & str,
+                    const std::string & delim,
+                    std::vector<std::string> & tokens);
+private:
+
+  bool allowEmpty_; //! Is an empty string valid?
+};
 
 }
 

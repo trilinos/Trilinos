@@ -67,7 +67,6 @@ using Teuchos::rcp;
 #include "user_app_STKClosureModel_Factory_TemplateBuilder.hpp"
 #include "user_app_BCStrategy_Factory.hpp"
 
-#include "Panzer_ResponseContainer.hpp"
 #include "Panzer_ResponseLibrary.hpp"
 #include "Panzer_WorksetContainer.hpp"
 

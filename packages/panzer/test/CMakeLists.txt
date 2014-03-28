@@ -7,7 +7,6 @@ ADD_SUBDIRECTORY(physics_block)
 ADD_SUBDIRECTORY(epetra_gatherscatter)
 ADD_SUBDIRECTORY(la_factory)
 ADD_SUBDIRECTORY(evaluator_tests)
-# ADD_SUBDIRECTORY(response_library)
 ADD_SUBDIRECTORY(workset_container)
 
 IF(${PACKAGE_NAME}_ENABLE_Stokhos)
