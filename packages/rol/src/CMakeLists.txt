@@ -46,7 +46,10 @@ APPEND_SET(HEADERS
   function/ROL_Objective.hpp
   function/ROL_ObjectiveDef.hpp
   function/ROL_Constraints.hpp
+  function/ROL_EqualityConstraint.hpp
+  function/ROL_EqualityConstraintDef.hpp
   function/ROL_InequalityConstraint.hpp
+  function/ROL_InequalityConstraintDef.hpp
 )
 
 #
