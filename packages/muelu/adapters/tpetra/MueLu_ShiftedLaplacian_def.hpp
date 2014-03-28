@@ -274,7 +274,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -321,7 +321,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
@@ -515,7 +515,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -560,7 +560,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
