@@ -171,7 +171,7 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
     for(int j=0; j<nz; j+=NumEqns) {
       double mydist = 0.0;
       int nn = cols[j] / NumEqns;
-      if(cols[i] >=N) continue; // Check for off-proc entries
+      if(cols[j] >=N) continue; // Check for off-proc entries
       if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
       if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
       if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
@@ -186,11 +186,11 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
       blockIndices[i + k] = num_lines;
 
     // Fire off a neighbor line search (nearest neighbor)
-    if(neighbor_len > 1 && dist[1]/dist[nz-1] < tol) {
+    if(neighbor_len > 2 && dist[1]/dist[neighbor_len-1] < tol) {
       local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
     }
     // Fire off a neighbor line search (second nearest neighbor)
-    if(neighbor_len > 2 && dist[2]/dist[nz-1] < tol) {
+    if(neighbor_len > 3 && dist[2]/dist[neighbor_len-1] < tol) {
       local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
     }
 
