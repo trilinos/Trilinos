@@ -50,6 +50,7 @@
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -225,7 +226,23 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
     comm->barrier();
 
-    A = Utils::Read(matrixFile, map);
+    if (lib == Xpetra::UseEpetra) {
+      A = Utils::Read(matrixFile, map);
+
+    } else {
+      // Tpetra matrix reader is still broken, so instead we read in
+      // a matrix in a binary format and then redistribute it
+      const bool binaryFormat = true;
+      A = Utils::Read(matrixFile, lib, comm, binaryFormat);
+
+      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
+      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
+      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
+      newMatrix->fillComplete();
+
+      A.swap(newMatrix);
+    }
+
     comm->barrier();
 
     coordinates = Utils2::ReadMultiVector(coordFile, map);

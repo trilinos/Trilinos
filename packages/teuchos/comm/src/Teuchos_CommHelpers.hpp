@@ -97,6 +97,7 @@ const char* toString( const EReductionType reductType )
         "Invalid EReductionType value " << reductType << ".  Valid values "
         "include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.");
   }
+  return "ERROR"; /* Will not reach here; eliminate compiler warning */
 }
 
 /** \brief Get the process rank.

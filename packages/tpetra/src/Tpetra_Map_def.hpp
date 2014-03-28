@@ -48,11 +48,7 @@
 #define TPETRA_MAP_DEF_HPP
 
 #include <Tpetra_Directory.hpp> // must include for implicit instantiation to work
-#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
-#  include <Tpetra_Details_FixedHashTable.hpp>
-#else
-#  include <Tpetra_HashTable.hpp>
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
+#include <Tpetra_Details_FixedHashTable.hpp>
 #include <Tpetra_Util.hpp>
 #include <Teuchos_as.hpp>
 #include <stdexcept>
@@ -474,7 +470,7 @@ namespace Tpetra {
 
     minMyGID_ = indexBase_;
     maxMyGID_ = indexBase_;
-#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
+
     if (numLocalElements_ > 0) {
       // Find contiguous GID range, with the restriction that the
       // beginning of the range starts with the first entry.  While
@@ -534,50 +530,6 @@ namespace Tpetra {
       lastContiguousGID_ = indexBase_;
       glMap_ = rcp (new global_to_local_table_type (entryList)); // is empty
     }
-#else
-    glMap_ = rcp (new global_to_local_table_type (numLocalElements_));
-    if (numLocalElements_ > 0) {
-      lgMap_ = arcp<GO> (numLocalElements_);
-      minMyGID_ = entryList[0];
-      maxMyGID_ = entryList[0];
-      for (size_t i = 0; i < numLocalElements_; ++i) {
-        const GO curGid = entryList[i];
-        const LO curLid = as<LO> (i);
-
-        lgMap_[curLid] = curGid; // LID -> GID table
-        glMap_->add (curGid, curLid); // GID -> LID table
-
-        // While iterating through entryList, we compute its
-        // (process-local) min and max elements.
-        if (curGid < minMyGID_) {
-          minMyGID_ = curGid;
-        }
-        if (curGid > maxMyGID_) {
-          maxMyGID_ = curGid;
-        }
-      }
-    }
-
-    // Find contiguous GID range, with the restriction that the
-    // beginning of the range starts with the first entry.
-    if (numLocalElements_ > 0) {
-      firstContiguousGID_ = lgMap_[as<LO>(0)];
-      lastContiguousGID_ = firstContiguousGID_+1;
-      for (size_t i = 1; i < numLocalElements_; ++i) {
-        const LO curLid = as<LO> (i);
-        if (lastContiguousGID_ != lgMap_[curLid]) break;
-        ++lastContiguousGID_;
-      }
-      --lastContiguousGID_;
-    }
-    else {
-      // This insures tests for GIDs in the range
-      // [firstContiguousGID_, lastContiguousGID_] fail for processes
-      // with no local elements.
-      firstContiguousGID_ = indexBase_+1;
-      lastContiguousGID_ = indexBase_;
-    }
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     // Compute the min and max of all processes' GIDs.  If
     // numLocalElements_ == 0 on this process, minMyGID_ and maxMyGID_

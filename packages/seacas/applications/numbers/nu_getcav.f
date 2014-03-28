@@ -1,0 +1,35 @@
+C $Id: getcav.f,v 1.1 1991/02/21 15:43:18 gdsjaar Exp $
+C $Log: getcav.f,v $
+C Revision 1.1  1991/02/21 15:43:18  gdsjaar
+C Initial revision
+C
+      SUBROUTINE GETCAV (ERROR, IDESS, NUMESS)
+      DIMENSION IDESS(*)
+      include 'nu_cav.blk'
+      LOGICAL ERROR
+      CHARACTER*80 STRA
+
+      PARAMETER (MXFLD = 12)
+      DIMENSION RV(MXFLD), KV(MXFLD)
+      CHARACTER*32 CV(MXFLD), PRMPT
+      PRMPT = '  Cavity Side Set > '
+      MAXF = MIN (MXFLD, MAXCAV)
+      IF (ICAV(1) .EQ. 0 .OR. NUMCAV .EQ. 0) THEN
+         CALL FREFLD (0, 0, PRMPT(:LENSTR(PRMPT)+1), MAXF, IOS,
+     *      NUMCAV, KV, CV, ICAV, RV)
+      END IF
+C
+      ERROR = .FALSE.
+      DO 10 NCAV = 1, NUMCAV
+         IFND(NCAV) = LOCINT (ICAV(NCAV), NUMESS, IDESS)
+         IF (IFND(NCAV) .EQ. 0) THEN
+            WRITE (STRA, 20) ICAV(NCAV)
+            CALL SQZSTR (STRA, LSTR)
+            CALL PRTERR ('ERROR', STRA(:LSTR))
+            ERROR = .TRUE.
+         END IF
+   10 CONTINUE
+   20 FORMAT (' Cavity Flag ',I5,' not found. ')
+C
+      RETURN
+      END

@@ -111,10 +111,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
+  // typedef Tpetra::RowMatrix<scalar_type,
+  //                           local_ordinal_type,
+  //                           global_ordinal_type,
+  //                           node_type> row_matrix_type; // unused
   typedef Tpetra::Vector<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
@@ -278,10 +278,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
+  // typedef Tpetra::RowMatrix<scalar_type,
+  //                           local_ordinal_type,
+  //                           global_ordinal_type,
+  //                           node_type> row_matrix_type; // unused
   typedef Tpetra::Vector<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,

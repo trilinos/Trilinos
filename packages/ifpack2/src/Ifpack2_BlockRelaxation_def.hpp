@@ -982,6 +982,7 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 
 // For ETI
 #include "Ifpack2_SparseContainer.hpp"
+#include "Ifpack2_ILUT.hpp"
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
   template class Ifpack2::BlockRelaxation< \

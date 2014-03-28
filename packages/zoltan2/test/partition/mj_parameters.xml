@@ -1,5 +1,6 @@
-<ParameterList name="pqJagged Parameter List">
-    <!-- <Parameter name="memory_output_stream" type ="string" value="std::cout" />
+<ParameterList name="MJ Parameter List">
+    <!--
+    <Parameter name="memory_output_stream" type ="string" value="std::cout" />
     <Parameter name="memory_procs" type ="int" value="0" />
     -->
     <Parameter name="timer_output_stream" type ="string" value="std::cout" />
@@ -7,13 +8,10 @@
     <Parameter name="algorithm" type ="string" value="multijagged" />
     <Parameter name="compute_metrics" type ="string" value="true" />
     <Parameter name="imbalance_tolerance" type ="double" value="1.0" />
-    
-    <!-- <Parameter name="pqParts" type ="string" value="16,16,16" /> -->
-    <Parameter name="num_global_parts" type ="int" value="4096" />
-    <Parameter name="parallel_part_calculation_count" type ="int" value="1" />
-    
-    <Parameter name="migration_processor_assignment_type" type ="int" value="0" />
-    <Parameter name="migration_check_option" type ="int" value="2" />
-    <Parameter name="migration_all_to_all_type" type ="int" value="1" />
-    <Parameter name="migration_imbalance_cut_off" type ="double" value="1.15" />
+	
+    <Parameter name="rectilinear_blocks" type ="string" value="0" />
+    <Parameter name="mj_concurrent_part_count" type ="int" value="1" />
+    <Parameter name="mj_migration_option" type ="int" value="1" />
+    <Parameter name="mj_minimum_migration_imbalance" type ="double" value="1.30" />
+    <Parameter name="mapping_type" type ="int" value="-1"/>
 </ParameterList>

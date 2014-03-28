@@ -192,7 +192,7 @@ C
      &         'FOLLOWING FORMAT:')
             CALL MESAGE ('[ LINE NO., POINT 1, POINT 2, POINT 3, NO. '//
      &         'INTERVALS, FACTOR ]')
-            IT = 6
+            IT = 7
          ELSE IF ((CIN(ICOM)(1:2) .EQ. 'CO') .OR.
      &      (CIN(ICOM)(1:2) .EQ. 'co')) THEN
             ICOM = ICOM + 1

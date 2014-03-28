@@ -719,7 +719,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   LocalOrdinal pce_size = cijk.dimension();
 
   // Build banded matrix
-  GlobalOrdinal nrow = 10;
+  GlobalOrdinal nrow = 13;
   RCP<const Tpetra_Comm> comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   RCP<Node> node = KokkosClassic::Details::getNode<Node>();
@@ -1306,7 +1306,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
                                        tol, max_its, out.getOStream().get());
   TEST_EQUALITY_CONST( solved_flat, true );
 
-  btol = 100*btol;
+  btol = 500*btol;
   ArrayRCP<Scalar> x_view = x->get1dViewNonConst();
   ArrayRCP<Scalar> x2_view = x2->get1dViewNonConst();
   for (size_t i=0; i<num_my_row; ++i) {

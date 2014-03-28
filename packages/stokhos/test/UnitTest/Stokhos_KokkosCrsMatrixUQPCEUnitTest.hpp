@@ -44,7 +44,8 @@
 
 #include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Kokkos_CrsMatrix.hpp"
-//#include "Kokkos_CrsMatrix_UQ_PCE.hpp"
+#include "Kokkos_CrsMatrix_UQ_PCE.hpp"
+#include "Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp"
 #include "Stokhos_LegendreBasis.hpp"
 #include "Stokhos_CompletePolynomialBasis.hpp"
 #include "Stokhos_Sparse3Tensor.hpp"
@@ -479,7 +480,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   typedef typename PCEType::storage_type storage_type;
   typedef typename PCEType::cijk_type cijk_type;
   typedef typename storage_type::device_type device_type;
-  typedef Kokkos::LayoutRight Layout;
+  typedef Kokkos::LayoutLeft Layout;
   typedef Kokkos::View< PCEType*, Layout, device_type > block_vector_type;
   typedef Kokkos::CrsMatrix< PCEType, ordinal_type, device_type > block_matrix_type;
   typedef typename block_matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -501,7 +502,8 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   const ordinal_type fem_graph_length = generate_fem_graph( nGrid, fem_graph );
 
   //------------------------------
-  // Generate input multivector:
+  // Generate input/output multivectors -- Sacado dimension is always last,
+  // regardless of LayoutLeft/Right
 
   block_vector_type x =
     block_vector_type(Kokkos::allocate_without_initializing,
@@ -519,10 +521,10 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
 
   for (ordinal_type iRowFEM=0; iRowFEM<fem_length; ++iRowFEM) {
     for (ordinal_type iRowStoch=0; iRowStoch<stoch_length; ++iRowStoch) {
-      hax(iRowFEM,iRowStoch) =
+      hax(iRowStoch, iRowFEM) =
         generate_vector_coefficient<scalar_type>(
           fem_length, stoch_length, iRowFEM, iRowStoch );
-      hay(iRowFEM,iRowStoch) = 0.0;
+      hay(iRowStoch, iRowFEM) = 0.0;
     }
   }
 
@@ -530,7 +532,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   Kokkos::deep_copy( y, hy );
 
   //------------------------------
-  // Generate block matrix
+  // Generate block matrix -- it is always LayoutRight (currently)
 
   matrix_graph_type matrix_graph =
     Kokkos::create_staticcrsgraph<matrix_graph_type>(
@@ -555,7 +557,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
       const ordinal_type iColFEM = fem_graph[iRowFEM][iRowEntryFEM];
 
       for (ordinal_type k=0; k<stoch_length; ++k) {
-        haM(iEntryFEM,k) =
+        haM(iEntryFEM, k) =
           generate_matrix_coefficient<scalar_type>(
             fem_length, stoch_length, iRowFEM, iColFEM, k);
       }
@@ -574,7 +576,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
 
   typedef typename block_vector_type::array_type array_type;
   array_type ay_expected =
-    array_type("ay_expected", fem_length, stoch_length);
+    array_type("ay_expected", stoch_length, fem_length);
   typename array_type::HostMirror hay_expected =
     Kokkos::create_mirror_view(ay_expected);
   typename cijk_type::HostMirror host_cijk =
@@ -607,7 +609,7 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
               fem_length, stoch_length, iColFEM, k);
           tmp += host_cijk.value(entry) * ( a_j * x_k + a_k * x_j );
         }
-        hay_expected(iRowFEM, i) += tmp;
+        hay_expected(i, iRowFEM) += tmp;
       }
     }
   }

@@ -63,6 +63,13 @@
 #if defined(TPETRA_HAVE_KOKKOS_REFACTOR)
 #include "Kokkos_ArithTraits_MP_Vector.hpp"
 #include "Kokkos_InnerProductSpaceTraits_MP_Vector.hpp"
+#include "Kokkos_MV_MP_Vector.hpp"
+
+// Order may be important here because Cuda provides a slightly more
+// specialized version of MV_Multiply() for a single column
+#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector.hpp"
+
 #include "Kokkos_TeuchosCommAdapters_MP_Vector.hpp"
 #endif
 
