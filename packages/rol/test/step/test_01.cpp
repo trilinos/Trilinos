@@ -149,6 +149,7 @@ int main(int argc, char *argv[]) {
           e.set(x);
           e.axpy(-1.0,z);
           *outStream << "\nNorm of Error: " << e.norm() << "\n";
+          //errorFlag += (int)(e.norm() < std::sqrt(ROL::ROL_EPSILON)); 
         }
       }
     }

@@ -71,6 +71,7 @@
 #include "ROL_Types.hpp"
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
+#include "ROL_InequalityConstraint.hpp"
 #include "ROL_Constraints.hpp"
 
 namespace ROL {
@@ -95,18 +96,20 @@ namespace ROL {
   void getTestObjectives( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<Constraints<Real> > &con, 
                           Vector<Real> &x0, Vector<Real> &x, 
                           const ETestOptProblem test ) {
+    Teuchos::RCP<InequalityConstraint<Real> > ic = Teuchos::null;
     switch (test) {
-      case TESTOPTPROBLEM_HS1:  getHS1(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS2:  getHS2(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS3:  getHS3(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS4:  getHS4(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS5:  getHS5(obj,con,x0,x);  break;
-      case TESTOPTPROBLEM_HS25: getHS25(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_HS38: getHS38(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_HS45: getHS45(obj,con,x0,x); break;
-      case TESTOPTPROBLEM_BVP:  getBVP(obj,con,x0,x);  break;
+      case TESTOPTPROBLEM_HS1:  getHS1(obj,ic,x0,x);  break;
+      case TESTOPTPROBLEM_HS2:  getHS2(obj,ic,x0,x);  break;
+      case TESTOPTPROBLEM_HS3:  getHS3(obj,ic,x0,x);  break;
+      case TESTOPTPROBLEM_HS4:  getHS4(obj,ic,x0,x);  break;
+      case TESTOPTPROBLEM_HS5:  getHS5(obj,ic,x0,x);  break;
+      case TESTOPTPROBLEM_HS25: getHS25(obj,ic,x0,x); break;
+      case TESTOPTPROBLEM_HS38: getHS38(obj,ic,x0,x); break;
+      case TESTOPTPROBLEM_HS45: getHS45(obj,ic,x0,x); break;
+      case TESTOPTPROBLEM_BVP:  getBVP(obj,ic,x0,x);  break;
       case TESTOPTPROBLEM_LAST: break;
     }
+    con = Teuchos::rcp(new Constraints<Real>(ic));
   }
 } // namespace ROL
 

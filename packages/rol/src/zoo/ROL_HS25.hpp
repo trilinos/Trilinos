@@ -55,7 +55,7 @@
 
 #include "ROL_StdVector.hpp"
 #include "ROL_Objective.hpp"
-#include "ROL_Constraints.hpp"
+#include "ROL_InequalityConstraint.hpp"
 
 namespace ROL {
 
@@ -129,13 +129,13 @@ namespace ROL {
   };
 
   template<class Real>
-  class Constraints_HS25 : public Constraints<Real> {
+  class InequalityConstraint_HS25 : public InequalityConstraint<Real> {
   private: 
     std::vector<Real> x_lo_;
     std::vector<Real> x_up_;
     Real min_diff_;
   public:
-    Constraints_HS25() {
+    InequalityConstraint_HS25() {
       x_lo_.push_back(0.1);
       x_lo_.push_back(0.0);
       x_lo_.push_back(0.0);
@@ -198,7 +198,7 @@ namespace ROL {
   };  
 
   template<class Real>
-  void getHS25( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<Constraints<Real> > &con, 
+  void getHS25( Teuchos::RCP<Objective<Real> > &obj, Teuchos::RCP<InequalityConstraint<Real> > &con, 
                 Vector<Real> &x0, Vector<Real> &x ) {
     // Cast Initial Guess and Solution Vectors
     Teuchos::RCP<std::vector<Real> > x0p =
@@ -212,8 +212,8 @@ namespace ROL {
     xp->resize(n);
     // Instantiate Objective Function
     obj = Teuchos::rcp( new Objective_HS25<Real> );
-    // Instantiate Constraints
-    con = Teuchos::rcp( new Constraints_HS25<Real> );
+    // Instantiate InequalityConstraint
+    con = Teuchos::rcp( new InequalityConstraint_HS25<Real> );
     // Get Initial Guess
     (*x0p)[0] =  100.0;
     (*x0p)[1] =  12.5;

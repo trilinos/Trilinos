@@ -45,6 +45,8 @@
 #define ROL_CONSTRAINTS_H
 
 #include "ROL_Vector.hpp"
+#include "ROL_InequalityConstraint.hpp"
+#include "ROL_EqualityConstraint.hpp"
 #include "ROL_Types.hpp"
 #include <iostream>
 
@@ -60,46 +62,118 @@ class Constraints {
 private:
   bool activated_;
 
+  std::vector<Teuchos::RCP<InequalityConstraint<Real> > > ic_;
+  std::vector<Teuchos::RCP<EqualityConstraint<Real> > >   ec_;
+
 public:
 
   virtual ~Constraints() {}
 
   Constraints(void) : activated_(true) {}
 
+  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > & ic) : activated_(true), ic_(ic) {}
+
+  Constraints(Teuchos::RCP<InequalityConstraint<Real> > & ic) : activated_(true) {
+    ic_.clear();
+    ic_.push_back(ic);
+  }
+
+  Constraints(std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ec_(ec) {}
+
+  Constraints(Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true) {
+    ec_.clear();
+    ec_.push_back(ec);
+  }
+
+  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > & ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ic_(ic), ec_(ec) {}
+
+  Constraints(Teuchos::RCP<InequalityConstraint<Real> > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true) {
+    ic_.clear();
+    ic_.push_back(ic);
+    ec_.clear();
+    ec_.push_back(ec);
+  }
+
+  Constraints(Teuchos::RCP<InequalityConstraint<Real> > &ic, std::vector<Teuchos::RCP<EqualityConstraint<Real> > > & ec) : activated_(true), ec_(ec) {
+    ic_.clear();
+    ic_.push_back(ic);
+  }
+
+  Constraints(std::vector<Teuchos::RCP<InequalityConstraint<Real> > > &ic, Teuchos::RCP<EqualityConstraint<Real> > & ec) : activated_(true), ic_(ic) {
+    ec_.clear();
+    ec_.push_back(ec);
+  }
+
   /** \brief Update constraint functions.  
                 x is the optimization variable, 
-                flag = true if control is changed,
+                flag = true if x is changed,
                 iter is the outer algorithm iterations count.
   */
-  virtual void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {}
+  void update( const Vector<Real> &x, bool flag = true, int iter = -1 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->update(x, flag, iter);
+      }
+    }
+  }
 
   /** \brief Project optimization variables onto constraint set.
                 x is the optimization variable
   */
-  virtual void project( Vector<Real> &x ) {}
+  void project( Vector<Real> &x ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->project(x);
+      }
+    }
+  }
+
+  /** \brief Remove active set variables that are also in the binding set.
+                v is the vector to be pruned 
+                g is the gradient of the objective function at x
+                x is the optimization variable
+                eps is the active set tolerance
+  */
+  void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneActive(v, g, x, eps);
+      }
+    }
+  }
 
   /** \brief Remove active set variables.
                 v is the vector to be pruned 
-                g is the gradient of the objective function at x
                 x is the optimization variable
                 eps is the active set tolerance
   */
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) {}
-  virtual void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {}
+  void pruneActive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) {
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        this->ic_[i]->pruneActive(v, x, eps);
+      }
+    }
+  }
 
-  /** \brief Remove the inactive set variables.
+  /** \brief Remove the inactive set variables that are not in the binding set.
                 v is the vector to be pruned 
                 g is the gradient of the objective function at x
                 x is the optimization variable
                 eps is the active set tolerance
   */
-  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &g, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,g,x,eps);
     v.axpy(-1.0,*tmp);
   }
-  virtual void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
+
+  /** \brief Remove the inactive set variables.
+                v is the vector to be pruned 
+                x is the optimization variable
+                eps is the active set tolerance
+  */
+  void pruneInactive( Vector<Real> &v, const Vector<Real> &x, Real eps = 0.0 ) { 
     Teuchos::RCP<Vector<Real> > tmp = x.clone(); 
     tmp->set(v);
     this->pruneActive(*tmp,x,eps);
@@ -108,7 +182,15 @@ public:
  
   /** \brief Check if the vector, v, is feasible
   */
-  virtual bool isFeasible( const Vector<Real> &v ) { return true; }
+  bool isFeasible( const Vector<Real> &v ) {
+    bool iFeas = true;
+    for (unsigned i=0; i<this->ic_.size(); i++) {
+      if (this->ic_[i]->isActivated()) {
+        iFeas = iFeas && (this->ic_[i]->isFeasible(v));
+      }
+    }
+    return iFeas;
+  }
 
   /** \brief Compute projected gradient.
   *             g is the gradient of the objective function at x
