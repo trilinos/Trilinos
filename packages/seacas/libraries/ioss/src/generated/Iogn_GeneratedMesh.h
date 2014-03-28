@@ -97,6 +97,10 @@ namespace Iogn {
        Sideset Count         = 3
        \endcode
 
+       - tets -- no argument - specifies that each hex should be
+       split into 6 tetrahedral elements.  Cannot currently be used with
+       shells or sidesets.
+
        - shell -- argument = xXyYzZ which specifies whether there is a shell
        block at that location. 'x' is minimum x face, 'X' is maximum x face,
        similarly for y and z.  Note that the argument string is a single
@@ -191,6 +195,12 @@ namespace Iogn {
     GeneratedMesh();
     virtual ~GeneratedMesh();
 
+    /**
+     * Split each hexahedral element into 6 tetrahedral elements.
+     * Cannot currently be used with sidesets or shells.
+     */
+    void create_tets(bool yesno);
+    
     /**
      * Add a shell block along the specified face of the hex mesh.
      * The shell blocks will maintain the order of definition. The
@@ -372,7 +382,7 @@ namespace Iogn {
      * processor in block "block_number".
      */
     virtual void element_map(int64_t block_number, MapVector &map) const;
-    virtual void element_map(int     block_number, IntVector &map) const;
+    virtual void element_map(int64_t block_number, IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
@@ -466,6 +476,13 @@ namespace Iogn {
 
   private:
     
+    template <typename INT>
+      void raw_element_map(int64_t block_number, std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_element_map(std::vector<INT> &map) const;
+    template <typename INT>
+      void raw_connectivity(int64_t block_number, INT *connect) const;
+
     GeneratedMesh( const GeneratedMesh & );
     GeneratedMesh & operator = ( const GeneratedMesh & );
 
@@ -493,6 +510,7 @@ namespace Iogn {
 			      * position is (sclX*i+offX,
 			      * sclY*i+offY, sclZ*i+offZ) */
     bool doRotation;
+    bool createTets;
   };
 
 

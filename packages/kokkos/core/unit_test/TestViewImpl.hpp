@@ -84,10 +84,10 @@ void test_view_impl()
   typedef ArrayType< int[5][6][700]          >::type type_03 ;
   typedef ArrayType< double*[8][9][900]      >::type type_14 ;
   typedef ArrayType< long**                  >::type type_22 ;
-  typedef ArrayType< short***[5][6][7]       >::type type_36 ;
-  //typedef ArrayType< const short***[5][6][7] >::type const_type_36 ; // unused
   typedef ArrayType< short **[5][6][7]       >::type type_25 ;
   typedef ArrayType< const short **[5][6][7] >::type const_type_25 ;
+  typedef ArrayType< short***[5][6][7]       >::type type_36 ;
+  typedef ArrayType< const short***[5][6][7] >::type const_type_36 ;
 
   // mfh 14 Feb 2014: With gcc 4.8.2 -Wall, this emits a warning:
   //
@@ -108,9 +108,16 @@ void test_view_impl()
     typename Kokkos::Impl::AnalyzeShape<type_25>::const_type,
     typename Kokkos::Impl::AnalyzeShape<const_type_25>::type
       > ok_const_25 ;
+
+  typedef typename Kokkos::Impl::StaticAssertSame<
+    typename Kokkos::Impl::AnalyzeShape<type_36>::const_type,
+    typename Kokkos::Impl::AnalyzeShape<const_type_36>::type
+      > ok_const_36 ;
   {
-    ok_const_25 thing;
-    (void) thing; // silence warning for unused variable
+    ok_const_25 thing_25 ;
+    ok_const_36 thing_36 ;
+    (void) thing_25 ; // silence warning for unused variable
+    (void) thing_36 ; // silence warning for unused variable
   }
 
   ASSERT_TRUE( ( Kokkos::Impl::is_same< ExtractValueType<type_03>::type , int >::value ) );
@@ -179,34 +186,84 @@ void test_view_impl()
   ASSERT_TRUE( shape_01 != shape_36 );
   ASSERT_TRUE( shape_22 != shape_36 );
 
+  //------------------------------------------------------------------------
 
-  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutLeft > shape_01_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutLeft > shape_11_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutLeft > shape_03_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutLeft > shape_14_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutLeft > shape_22_left_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutLeft > shape_36_left_stride ;
+  typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutLeft > shape_01_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_11_type , Kokkos::LayoutLeft > shape_11_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_03_type , Kokkos::LayoutLeft > shape_03_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_14_type , Kokkos::LayoutLeft > shape_14_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_22_type , Kokkos::LayoutLeft > shape_22_left_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutLeft > shape_36_left_offset ;
 
-  typedef Kokkos::Impl::LayoutStride< shape_01_type , Kokkos::LayoutRight > shape_01_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_11_type , Kokkos::LayoutRight > shape_11_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_03_type , Kokkos::LayoutRight > shape_03_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_14_type , Kokkos::LayoutRight > shape_14_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_22_type , Kokkos::LayoutRight > shape_22_right_stride ;
-  typedef Kokkos::Impl::LayoutStride< shape_36_type , Kokkos::LayoutRight > shape_36_right_stride ;
+  typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutRight > shape_01_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_11_type , Kokkos::LayoutRight > shape_11_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_03_type , Kokkos::LayoutRight > shape_03_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_14_type , Kokkos::LayoutRight > shape_14_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_22_type , Kokkos::LayoutRight > shape_22_right_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutRight > shape_36_right_offset ;
 
-  ASSERT_TRUE( ! shape_01_left_stride::dynamic );
-  ASSERT_TRUE( ! shape_11_left_stride::dynamic );
-  ASSERT_TRUE( ! shape_03_left_stride::dynamic );
-  ASSERT_TRUE(   shape_14_left_stride::dynamic );
-  ASSERT_TRUE(   shape_22_left_stride::dynamic );
-  ASSERT_TRUE(   shape_36_left_stride::dynamic );
+  ASSERT_TRUE( ! shape_01_left_offset::has_padding );
+  ASSERT_TRUE( ! shape_11_left_offset::has_padding );
+  ASSERT_TRUE( ! shape_03_left_offset::has_padding );
+  ASSERT_TRUE(   shape_14_left_offset::has_padding );
+  ASSERT_TRUE(   shape_22_left_offset::has_padding );
+  ASSERT_TRUE(   shape_36_left_offset::has_padding );
 
-  ASSERT_TRUE( ! shape_01_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_11_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_03_right_stride::dynamic );
-  ASSERT_TRUE( ! shape_14_right_stride::dynamic );
-  ASSERT_TRUE(   shape_22_right_stride::dynamic );
-  ASSERT_TRUE(   shape_36_right_stride::dynamic );
+  ASSERT_TRUE( ! shape_01_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_11_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_03_right_offset::has_padding );
+  ASSERT_TRUE( ! shape_14_right_offset::has_padding );
+  ASSERT_TRUE(   shape_22_right_offset::has_padding );
+  ASSERT_TRUE(   shape_36_right_offset::has_padding );
+
+  //------------------------------------------------------------------------
+
+  typedef Kokkos::Impl::ViewOffset< shape_01_type , Kokkos::LayoutStride > shape_01_stride_offset ;
+  typedef Kokkos::Impl::ViewOffset< shape_36_type , Kokkos::LayoutStride > shape_36_stride_offset ;
+
+  {
+    shape_01_stride_offset stride_offset_01 ;
+
+    stride_offset_01.assign( 1, stride_offset_01.N0, 0,0,0,0,0,0,0 );
+
+    ASSERT_EQ( int(stride_offset_01.S[0]) , int(1) );
+    ASSERT_EQ( int(stride_offset_01.S[1]) , int(stride_offset_01.N0) );
+  }
+
+  {
+    shape_36_stride_offset stride_offset_36 ;
+
+    size_t str[7] ;
+    str[5] = 1 ;
+    str[4] = str[5] * stride_offset_36.N5 ;
+    str[3] = str[4] * stride_offset_36.N4 ;
+    str[2] = str[3] * stride_offset_36.N3 ;
+    str[1] = str[2] * 100 ;
+    str[0] = str[1] * 200 ;
+    str[6] = str[0] * 300 ;
+
+    stride_offset_36.assign( str[0] , str[1] , str[2] , str[3] , str[4] , str[5] , str[6] , 0 , 0 );
+
+    ASSERT_EQ( size_t(stride_offset_36.S[6]) , size_t(str[6]) );
+    ASSERT_EQ( size_t(stride_offset_36.N2)   , size_t(100) );
+    ASSERT_EQ( size_t(stride_offset_36.N1)   , size_t(200) );
+    ASSERT_EQ( size_t(stride_offset_36.N0)   , size_t(300) );
+  }
+
+  //------------------------------------------------------------------------
+
+  {
+    const int rank = 6 ;
+    const int order[] = { 5 , 3 , 1 , 0 , 2 , 4 };
+    const unsigned dim[] = { 2 , 3 , 5 , 7 , 11 , 13 };
+    Kokkos::LayoutStride stride_6 = Kokkos::LayoutStride::order_dimensions( rank , order , dim );
+    size_t n = 1 ;
+    for ( int i = 0 ; i < rank ; ++i ) {
+      ASSERT_EQ( size_t(dim[i]) , size_t( stride_6.dimension[i] ) );
+      ASSERT_EQ( size_t(n) , size_t( stride_6.stride[ order[i] ] ) );
+      n *= dim[i] ;
+    }
+  }
 
   //------------------------------------------------------------------------
 }

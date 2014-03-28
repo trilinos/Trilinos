@@ -61,7 +61,10 @@ int main(int argc, char *argv[])
 {
   // Defaults
   bool test_host = true;
+#ifdef KOKKOS_HAVE_CUDA
   bool test_cuda = true;
+  int device = 0;
+#endif
   bool test_block = true;
   bool test_flat = true;
   bool test_orig = true;
@@ -72,29 +75,30 @@ int main(int argc, char *argv[])
   bool mkl = false;
 #ifdef KOKKOS_HAVE_OPENMP
   bool omp = true;
-#else
-  bool omp = false;
 #endif
 #ifdef KOKKOS_HAVE_PTHREAD
   bool threads = true;
-#else
-  bool threads = false;
 #endif
-  int device = 0;
 
   // Parse command line arguments
   bool print_usage = false;
   int i=1;
   while (i<argc) {
     std::string s(argv[i]);
-    if (s == "cuda")
-      test_cuda = true;
-    else if (s == "no-cuda")
-      test_cuda = false;
-    else if (s == "host")
+    if (s == "host")
       test_host = true;
     else if (s == "no-host")
       test_host = false;
+#ifdef KOKKOS_HAVE_CUDA
+    else if (s == "cuda")
+      test_cuda = true;
+    else if (s == "no-cuda")
+      test_cuda = false;
+    else if (s == "device") {
+      ++i;
+      device = std::atoi(argv[i]);
+    }
+#endif
     else if (s == "block")
       test_block = true;
     else if (s == "no-block")
@@ -127,10 +131,6 @@ int main(int argc, char *argv[])
       single = true;
     else if (s == "double")
       single = false;
-    else if (s == "device") {
-      ++i;
-      device = std::atoi(argv[i]);
-    }
 #ifdef KOKKOS_HAVE_OPENMP
     else if (s == "omp")
       omp = true;

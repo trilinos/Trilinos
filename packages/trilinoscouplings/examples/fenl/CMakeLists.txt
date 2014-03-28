@@ -1,0 +1,36 @@
+INCLUDE(TribitsAddExecutableAndTest)
+
+IF (Trilinos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
+  INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
+
+  SET(SOURCES "")
+
+  FILE(GLOB SOURCES *.cpp)
+
+  IF (Kokkos_ENABLE_Cuda) 
+
+    # add MPI include dir to nvcc
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
+
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+
+    CUDA_COMPILE( OBJECTS_CUDA fenl.cpp.cu )
+
+    LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+
+  ENDIF () # Kokkos_ENABLE_Cuda
+
+  TRIBITS_ADD_EXECUTABLE(
+    fenl
+    SOURCES ${SOURCES}
+    COMM serial mpi
+    DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
+    )
+ENDIF ()
+

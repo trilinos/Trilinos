@@ -258,26 +258,9 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
 } //EpetraVsTpetra
 
 
+#if 0
 TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
 {
-
-  //JG: This test is failing. Last known good version: 6ad0eeba
-  // mpirun -n 2 ./MueLu_UnitTests.exe --linAlgebra=Epetra --test=NonStandardMaps --group=PgPFactory
-  /*
-    Level 2
-    [...]
-    Setup Smoother (MueLu::AmesosSmoother{type = Klu})
-
-    p=0: *** Caught an integer std::exception with value = 1
-    [FAILED]  (0.106 sec) PgPFactory_NonStandardMaps_UnitTest
-    Location: /home/jngaida/dev/MueLu/src/preCopyrightTrilinos/muelu/test/unit_tests/PgPFactory.cpp:216
-  */
-
-#ifdef __GNUC__
-#warning Unit test PgPFactory NonStandardMaps disabled
-#endif
-  return;
-
   RCP<const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   Xpetra::UnderlyingLib lib = MueLuTests::TestHelpers::Parameters::getLib();
 
@@ -451,6 +434,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, NonStandardMaps)
   TEST_EQUALITY(coarseLevel2->GetKeepFlag("R",Rfact.get()), 0);
 
 }
+#endif
 
 TEUCHOS_UNIT_TEST(PgPFactory, MinimizationModes)
 {

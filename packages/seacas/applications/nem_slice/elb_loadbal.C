@@ -128,7 +128,7 @@ namespace {
   
 #ifdef USE_ZOLTAN
   /* ZOLTAN_RCB partitioning interface */
-  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *,
+  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *, int,
 			   int *, int, char **);
 #endif
   void BALANCE_STATS(Machine_Description*, int *, size_t, int *);
@@ -720,17 +720,17 @@ int generate_loadbal(Machine_Description* machine,
 #ifdef USE_ZOLTAN
       else if (lb->type == ZOLTAN_RCB) {
         flag = ZOLTAN_assign("RCB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_RIB) {
         flag = ZOLTAN_assign("RIB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_HSFC) {
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
 #endif
@@ -1768,9 +1768,6 @@ namespace {
 		  }
 		  
 		} else {
-		  if (!dflag) {
-		    fprintf(stderr, "Possible corrupted mesh detected at element "ST_ZU", strange connectivity.\n", ecnt);
-		  } 
 		  /* This is the second or later time through this
 		     loop and each time through, there have been two
 		     or more elements that are connected to 'node'
@@ -1801,6 +1798,9 @@ namespace {
 		    }
 		  }
 		  nelem = ncnt3;
+		  if (!dflag && nelem > 2) {
+		    fprintf(stderr, "Possible corrupted mesh detected at element "ST_ZU", strange connectivity.\n", ecnt);
+		  } 
 		}
 	      }
 	      else { /* nelem == 1 or 0 */
@@ -2707,6 +2707,7 @@ namespace {
 		    float *x,             /* x-coordinates */
 		    float *y,             /* y-coordinates */
 		    float *z,             /* z-coordinates */
+                    int ignore_z,          /* flag indicating whether to use z-coords*/
 		    int *part,          /* Output:  partition assignments for each element */
 		    int argc,             /* Fields needed by MPI_Init */
 		    char *argv[]          /* Fields needed by MPI_Init */
@@ -2734,7 +2735,7 @@ namespace {
     Zoltan_Data.vwgt = vwgt;
     Zoltan_Data.x = x;
     Zoltan_Data.y = y;
-    Zoltan_Data.z = z;
+    Zoltan_Data.z = (ignore_z ? NULL : z);
 
     /* Initialize Zoltan */
     Zoltan_Initialize(argc, argv, &ver);
@@ -2764,6 +2765,7 @@ namespace {
     Zoltan_Set_Param(zz, "REMAP", "0");
     Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
     if (vwgt) Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+    if (ignore_z) Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
 
     /* Call partitioner */
     printf("Using Zoltan version %f, method %s\n", ver, method);

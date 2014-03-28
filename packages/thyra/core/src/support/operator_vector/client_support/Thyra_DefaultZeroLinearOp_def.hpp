@@ -44,6 +44,7 @@
 
 #include "Thyra_DefaultZeroLinearOp_decl.hpp"
 #include "Thyra_MultiVectorStdOps.hpp"
+#include "Thyra_VectorStdOps.hpp"
 #include "Thyra_AssertOp.hpp"
 
 
@@ -164,6 +165,30 @@ void DefaultZeroLinearOp<Scalar>::applyImpl(
   scale(beta, Y);
 }
 
+template<class Scalar>
+bool DefaultZeroLinearOp<Scalar>::
+rowStatIsSupportedImpl(const RowStatLinearOpBaseUtils::ERowStat rowStat) const
+{
+  if(   rowStat==RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM 
+     || rowStat==RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM)
+    return true;
+
+  // else(   rowStat==RowStatLinearOpBaseUtils::ROW_STAT_INV_ROW_SUM 
+  //      || rowStat==RowStatLinearOpBaseUtils::ROW_STAT_INV_COL_SUM)
+  
+  // inverse of a zero diagonal is bad news, we won't allow it, return false
+  return false;
+}
+
+template<class Scalar>
+void DefaultZeroLinearOp<Scalar>::
+getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
+    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const
+{ 
+  Thyra::put_scalar(Teuchos::ScalarTraits<Scalar>::zero(),rowStatVec); 
+}
+
 
 }	// end namespace Thyra
 
@@ -171,6 +196,16 @@ void DefaultZeroLinearOp<Scalar>::applyImpl(
 template<class Scalar>
 Teuchos::RCP<const Thyra::LinearOpBase<Scalar> >
 Thyra::zero(
+  const RCP<const VectorSpaceBase<Scalar> > &range_in,
+  const RCP<const VectorSpaceBase<Scalar> > &domain_in
+  )
+{
+  return Teuchos::rcp(new DefaultZeroLinearOp<Scalar>(range_in, domain_in));
+}
+
+template<class Scalar>
+Teuchos::RCP<Thyra::LinearOpBase<Scalar> >
+Thyra::nonconstZero(
   const RCP<const VectorSpaceBase<Scalar> > &range_in,
   const RCP<const VectorSpaceBase<Scalar> > &domain_in
   )
@@ -190,6 +225,12 @@ Thyra::zero(
   \
   template RCP<const Thyra::LinearOpBase<SCALAR > >  \
   zero(  \
+    const RCP<const VectorSpaceBase<SCALAR > > &range,  \
+    const RCP<const VectorSpaceBase<SCALAR > > &domain  \
+    );  \
+  \
+  template RCP<Thyra::LinearOpBase<SCALAR > >  \
+  nonconstZero(  \
     const RCP<const VectorSpaceBase<SCALAR > > &range,  \
     const RCP<const VectorSpaceBase<SCALAR > > &domain  \
     );  \

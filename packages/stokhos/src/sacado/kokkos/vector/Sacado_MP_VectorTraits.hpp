@@ -145,13 +145,19 @@ namespace Sacado {
         StringName<S>::eval() + " >"; }
   };
 
-  //! Specialization of IsEqual to Vector types
+  //! Specialization of %IsEqual to Vector types
   template <typename S>
   struct IsEqual< MP::Vector<S> > {
     static bool eval(const MP::Vector<S>& x,
                      const MP::Vector<S>& y) {
       return x.isEqualTo(y);
     }
+  };
+
+  //! Specialization of %IsStaticallySized to Vector types
+  template <typename S>
+  struct IsStaticallySized< MP::Vector<S> > {
+    static const bool value = S::is_static;
   };
 
 } // namespace Sacado
@@ -216,36 +222,47 @@ namespace Teuchos {
       Teuchos::ScalarTraits<value_type>::isComparable;
     static const bool hasMachineParameters =
       Teuchos::ScalarTraits<value_type>::hasMachineParameters;
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType eps() {
       return Teuchos::ScalarTraits<value_type>::eps();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType sfmin() {
       return Teuchos::ScalarTraits<value_type>::sfmin();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType base()  {
       return Teuchos::ScalarTraits<value_type>::base();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType prec()  {
       return Teuchos::ScalarTraits<value_type>::prec();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType t()     {
       return Teuchos::ScalarTraits<value_type>::t();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType rnd()   {
       return Teuchos::ScalarTraits<value_type>::rnd();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType emin()  {
       return Teuchos::ScalarTraits<value_type>::emin();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmin()  {
       return Teuchos::ScalarTraits<value_type>::rmin();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType emax()  {
       return Teuchos::ScalarTraits<value_type>::emax();
     }
+    KOKKOS_INLINE_FUNCTION
     static typename Teuchos::ScalarTraits<value_type>::magnitudeType rmax()  {
       return Teuchos::ScalarTraits<value_type>::rmax();
     }
+    KOKKOS_INLINE_FUNCTION
     static magnitudeType magnitude(const ScalarType& a) {
       return std::fabs(a);
       // magnitudeType m = magnitudeType(0.0);
@@ -254,14 +271,17 @@ namespace Teuchos {
       //   m += a.fastAccessCoeff(i)*a.fastAccessCoeff(i);
       // return std::sqrt(m);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType zero()  {
       return ScalarType(0.0);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType one()   {
       return ScalarType(1.0);
     }
 
     // Conjugate is only defined for real derivative components
+    KOKKOS_INLINE_FUNCTION
     static ScalarType conjugate(const ScalarType& x) {
       int sz = x.size();
       ScalarType y(sz, value_type(0.0));
@@ -272,6 +292,7 @@ namespace Teuchos {
     }
 
     // Real part is only defined for real derivative components
+    KOKKOS_INLINE_FUNCTION
     static ScalarType real(const ScalarType& x) {
       int sz = x.size();
       ScalarType y(sz, value_type(0.0));
@@ -282,6 +303,7 @@ namespace Teuchos {
     }
 
     // Imaginary part is only defined for real derivative components
+    KOKKOS_INLINE_FUNCTION
     static ScalarType imag(const ScalarType& x) {
       int sz = x.size();
       ScalarType y(sz, value_type(0.0));
@@ -291,33 +313,42 @@ namespace Teuchos {
       return y;
     }
 
+    KOKKOS_INLINE_FUNCTION
     static value_type nan() {
       return Teuchos::ScalarTraits<value_type>::nan();
     }
+    KOKKOS_INLINE_FUNCTION
     static bool isnaninf(const ScalarType& x) {
       for (int i=0; i<x.size(); i++)
         if (Teuchos::ScalarTraits<value_type>::isnaninf(x.fastAccessCoeff(i)))
           return true;
       return false;
     }
+    KOKKOS_INLINE_FUNCTION
     static void seedrandom(unsigned int s) {
       Teuchos::ScalarTraits<value_type>::seedrandom(s);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType random() {
       return ScalarType(Teuchos::ScalarTraits<value_type>::random());
     }
-    static std::string name() {
-      return Sacado::StringName<ScalarType>::eval();
+    KOKKOS_INLINE_FUNCTION
+    static const char * name() {
+      return "Sacado::MP::Vector<>";
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType squareroot(const ScalarType& x) {
       return std::sqrt(x);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType pow(const ScalarType& x, const ScalarType& y) {
       return std::pow(x,y);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType log(const ScalarType& x) {
       return std::log(x);
     }
+    KOKKOS_INLINE_FUNCTION
     static ScalarType log10(const ScalarType& x) {
       return std::log10(x);
     }

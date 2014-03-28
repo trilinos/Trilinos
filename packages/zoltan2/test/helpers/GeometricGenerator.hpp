@@ -115,7 +115,7 @@ int getNumObj(void *data, int *ierr)
 }
 //////////////////////////
 template <typename tMVector_t>
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords_, int *ierr)
 {
@@ -161,7 +161,7 @@ int getDim(void *data, int *ierr)
 template <typename tMVector_t>
 void getObjList(void *data, int numGid, int numLid,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-  int wgt_dim, float *obj_wgts, int *ierr)
+  int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   DOTS<tMVector_t> *dots_ = (DOTS<tMVector_t> *) data;
@@ -176,10 +176,10 @@ void getObjList(void *data, int numGid, int numLid,
     for (size_t i=0; i < localLen; i++)
       gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
-  if (wgt_dim > 0){
+  if (num_wgts > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
-      for (int w=0; w < wgt_dim; w++)
+      for (int w=0; w < num_wgts; w++)
         *wgts++ = dots_->weights[w][i];
   }
 }
@@ -908,7 +908,7 @@ private:
   T **coords;
   T **wghts;
   WeightDistribution<T,T> **wd;
-  int weight_dimension;  //dimension of the geometry
+  int numWeightsPerCoord; 
   int predistribution;
   RCP<const Teuchos::Comm<int> > comm;
   //RCP< Tpetra::MultiVector<T, lno_t, gno_t, node_t> >tmVector;
@@ -1382,7 +1382,7 @@ private:
 
       }
     }
-    if(wcount != this->weight_dimension){
+    if(wcount != this->numWeightsPerCoord){
       throw "Weight Dimension is provided as " + toString<int>(wdimension) + ". But " + toString<int>(wcount)+" weight distributions are provided.";
     }
   }
@@ -1393,9 +1393,9 @@ private:
       std::string proc_load_distributions = "";
       std::string distinctDescription = "";
       std::string coordinate_distributions = "";
-      std::string weight_dimension_parameters[MAX_WEIGHT_DIM];
+      std::string numWeightsPerCoord_parameters[MAX_WEIGHT_DIM];
       for (int i = 0; i < MAX_WEIGHT_DIM; ++i){
-        weight_dimension_parameters[i] = "";
+        numWeightsPerCoord_parameters[i] = "";
       }
 
 
@@ -1428,9 +1428,9 @@ private:
           int distribution_index = fromString<int>(distribution_index_string);
 
           if(distribution_index >= MAX_WEIGHT_DIM){
-            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed weight dimension:" + toString<int>(MAX_WEIGHT_DIM);
+            throw "Given distribution index:" + distribution_index_string + " larger than maximum allowed number of weights:" + toString<int>(MAX_WEIGHT_DIM);
           }
-          weight_dimension_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
+          numWeightsPerCoord_parameters[distribution_index] +=  " " + weight_dist_param.substr(dash_pos + 1)+ "="+ getParamVal<std::string>(pe, paramName);
         }
         else if(paramName == "dim"){
           int dim = fromString<int>(getParamVal<std::string>(pe, paramName));
@@ -1445,7 +1445,7 @@ private:
           if(dim < 1 && dim > MAX_WEIGHT_DIM){
             throw INVALID(paramName);
           } else {
-            this->weight_dimension = dim;
+            this->numWeightsPerCoord = dim;
           }
         }
         else if(paramName == "predistribution"){
@@ -1519,7 +1519,7 @@ private:
       //this->getDistinctCoordinateDescription(distinctDescription);
       this->getProcLoadDistributions(proc_load_distributions);
       this->getCoordinateDistributions(coordinate_distributions);
-      this->getWeightDistribution(weight_dimension_parameters, this->weight_dimension);
+      this->getWeightDistribution(numWeightsPerCoord_parameters, this->numWeightsPerCoord);
       /*
 			if(this->numGlobalCoords <= 0){
 				throw "Must have at least 1 point";
@@ -1560,14 +1560,14 @@ public:
       free (this->coordinateDistributions);
     }
     if (this->wd){
-      for (int i = 0; i < this->weight_dimension; ++i){
+      for (int i = 0; i < this->numWeightsPerCoord; ++i){
         delete this->wd[i];
       }
       delete []this->wd;
     }
 
-    if(this->weight_dimension){
-      for(int i = 0; i < this->weight_dimension; ++i)
+    if(this->numWeightsPerCoord){
+      for(int i = 0; i < this->numWeightsPerCoord; ++i)
       delete [] this->wghts[i];
       delete []this->wghts;
     }
@@ -1586,7 +1586,7 @@ public:
     cout <<"\tUNIFORM: -> distribution-1=UNIFORM,NUMCOORDINATES,XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
     cout <<"\tGRID: -> distribution-2=GRID,XLENGTH,YLENGTH{,ZLENGTH},XMIN,XMAX,YMIN,YMAX{,ZMIN,ZMAX}" << endl;
     cout <<"\tNORMAL: -> distribution-3=NORMAL,XCENTER,YCENTER{,ZCENTER},XSD,YSD,{,ZSD}" << endl;
-    cout <<"- wdim=weight_dimension: weight dimension >= 0. There should be as many weight function as weight dimension." << endl;
+    cout <<"- wdim=numWeightsPerCoord:  There should be as many weight function as number of weights per coord." << endl;
     cout <<"- Weight Equation: w = (a1 * (x - x1)^b1) + (a2 * (y - y1)^b2) + (a3 * (z - z1)^b3) + c" << endl;
     cout << "Parameter settings:" << endl;
     cout << "\tWeightDistribution-1-a1=a1 " << endl;
@@ -1624,7 +1624,7 @@ public:
     this->comm = comm_;
     this->holes = NULL; //to represent if there is any hole in the input
     this->coordinate_dimension = 0;  //dimension of the geometry
-    this->weight_dimension = 0;  //dimension of the geometry
+    this->numWeightsPerCoord = 0;
     this->worldSize = comm_->getSize(); //comminication world object.
     this->numGlobalCoords = 0;	//global number of coordinates requested to be created.
     this->loadDistributions = NULL; //sized as the number of processors, the load of each processor.
@@ -1806,14 +1806,14 @@ public:
 		Zoltan2::PartitioningSolution< Tpetra::MultiVector<T, lno_t, gno_t, node_t> > solution;
 		xmv.applyPartitioningSolution<Tpetra::MultiVector<T, lno_t, gno_t, node_t> >(this->tmVector, &tmVector2, solution);
      */
-    if (this->weight_dimension > 0){
-    	this->wghts = new T *[this->weight_dimension];
-    	for(int i = 0; i < this->weight_dimension; ++i){
+    if (this->numWeightsPerCoord > 0){
+    	this->wghts = new T *[this->numWeightsPerCoord];
+    	for(int i = 0; i < this->numWeightsPerCoord; ++i){
     		this->wghts[i] = new T[this->numLocalCoords];
     	}
     }
 
-    for(int ii = 0; ii < this->weight_dimension; ++ii){
+    for(int ii = 0; ii < this->numWeightsPerCoord; ++ii){
       switch(this->coordinate_dimension){
       case 1:
 #ifdef HAVE_ZOLTAN2_OMP
@@ -2378,7 +2378,6 @@ public:
   //calls MJ for p = numProcs
   int predistributeMJ(int *coordinate_grid_parts){
 	  int coord_dim = this->coordinate_dimension;
-	  //int weight_dim = 0;
 
 	  lno_t numLocalPoints = this->numLocalCoords;
 	  gno_t numGlobalPoints = this->numGlobalCoords;
@@ -2466,7 +2465,7 @@ public:
 	  MEMORY_CHECK(rank==0 || rank==nprocs-1, "After initializing MPI");
 
 
-	  int weightDim = 0;
+	  int nWeights = 0;
 	  int debugLevel=0;
 	  string memoryOn("memoryOn");
 	  string memoryOff("memoryOff");
@@ -2499,7 +2498,7 @@ public:
 	    "Approximate number of global coordinates.");
 	  commandLine.setOption("numParts", &numGlobalParts,
 	    "Number of parts (default is one per proc).");
-	  commandLine.setOption("weightDim", &weightDim,
+	  commandLine.setOption("nWeights", &nWeights,
 	    "Number of weights per coordinate, zero implies uniform weights.");
 	  commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
 	  commandLine.setOption("remap", "no-remap", &remap,
@@ -2561,7 +2560,7 @@ public:
 	  tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
 
 	  dots_.coordinates = tmVector;
-	  dots_.weights.resize(weightDim);
+	  dots_.weights.resize(nWeights);
 
 
 	  MEMORY_CHECK(doMemory && rank==0, "After creating input");
@@ -2599,7 +2598,7 @@ public:
 
 	  if (objective != balanceCount){
 	    oss.str("");
-	    oss << weightDim;
+	    oss << nWeights;
 	    Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
 
 	    if (objective == mcnorm1)
@@ -2616,7 +2615,7 @@ public:
 	  Zoltan_Set_Num_Obj_Fn(zz, getNumObj<tMVector_t>, &dots_);
 	  Zoltan_Set_Obj_List_Fn(zz, getObjList<tMVector_t>, &dots_);
 	  Zoltan_Set_Num_Geom_Fn(zz,  getDim<tMVector_t>, &dots_);
-	  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates<tMVector_t>, &dots_);
+	  Zoltan_Set_Geom_Multi_Fn(zz, getCoords<tMVector_t>, &dots_);
 
 	  int changes, numGidEntries, numLidEntries, numImport, numExport;
 	  ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
@@ -2673,8 +2672,8 @@ public:
   //############################################################//
 
 
-  int getWeightDimension(){
-    return this->weight_dimension;
+  int getNumWeights(){
+    return this->numWeightsPerCoord;
   }
   int getCoordinateDimension(){
     return this->coordinate_dimension;
@@ -2706,7 +2705,7 @@ public:
   }
 
   void getLocalWeightsCopy(T **w){
-    for(int ii = 0; ii < this->weight_dimension; ++ii){
+    for(int ii = 0; ii < this->numWeightsPerCoord; ++ii){
 #ifdef HAVE_ZOLTAN2_OMP
 #pragma omp parallel for
 #endif

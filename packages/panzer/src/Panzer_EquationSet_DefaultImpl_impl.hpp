@@ -258,7 +258,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("Basis", basis_it->second.first);
       p.set("DOF Names", basis_it->second.second);
       p.set("Indexer Names", basis_it->second.second);
-      
+     
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
       
       fm.template registerEvaluator<EvalT>(op);
@@ -360,6 +360,11 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     p.set("Name", td_name);
     p.set("Basis", fl.lookupLayout(itr->first)); 
     p.set("IR", ir);
+
+    // set the orientiation field name explicitly if orientations are
+    // required for the basis
+    if(itr->second.basis->requiresOrientations())
+      p.set("Orientation Field Name", itr->first+" Orientation");
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));

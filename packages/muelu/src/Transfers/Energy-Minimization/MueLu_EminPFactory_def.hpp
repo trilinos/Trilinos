@@ -130,9 +130,12 @@ namespace MueLu {
       Set(coarseLevel, "Constraint0", X);
     }
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      params->set("printCommInfo",          true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*P, "P", params);
+    }
   }
 
 } // namespace MueLu

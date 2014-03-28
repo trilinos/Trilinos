@@ -87,6 +87,11 @@ namespace Stokhos {
       coeff_ = ds::get_and_fill(sz_, x);
     }
 
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    DynamicStridedStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), sz_(sz), stride_(1), is_owned_(owned) {}
+
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     DynamicStridedStorage(const DynamicStridedStorage& s) :
@@ -287,7 +292,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
       if (stride_ == 1)
-        ds::copy(coeff_, v, sz_);
+        copy(v, coeff_, sz_);
       for (ordinal_type i=0; i<sz_; ++i)
         coeff_[i*stride_] = v[i];
     }
@@ -296,7 +301,7 @@ namespace Stokhos {
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
       if (stride_ == 1)
-        ds::copy(coeff_, v, sz_);
+        copy(v, coeff_, sz_);
       for (ordinal_type i=0; i<sz_; ++i)
         coeff_[i*stride_] = v[i];
     }

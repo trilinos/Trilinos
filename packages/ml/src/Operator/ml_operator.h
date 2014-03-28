@@ -146,6 +146,11 @@ struct ML_Operator_Struct {
    int           N_total_cols_est;
    int           halfclone;
    int           spectral_radius_scheme, spectral_radius_max_iters;
+   int           NumZDir;
+   int           Zorientation;      /* -1: not specified */
+                                    /*  1: vertical      */
+                                    /*  2: horizontal    */
+
    ML_Operator_Subspace *subspace;
                 /* This is just a hook into modes that we want to project out
                    before (after) invoking a MG cycle.  I couldn't think of

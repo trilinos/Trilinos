@@ -143,6 +143,7 @@ int cmd_line_arg_parse(
     "rcb",
     "rib",
     "hsfc",
+    "ignore_z",
     NULL
   };
 
@@ -619,6 +620,10 @@ int cmd_line_arg_parse(
           lb->cnctd_dom = 1;
           break;
 
+        case IGNORE_Z:
+          lb->ignore_z = 1;
+          break;
+
         case OUTFILE:
           if(value == NULL)
           {
@@ -942,6 +947,10 @@ int read_cmd_file(std::string &ascii_inp_file,
             {
               if(lb->refine < 0)
                 lb->refine = NONE;
+            }
+            else if(strcmp(cptr, "ignore_z") == 0)
+            {
+              lb->ignore_z = 1;
             }
             else if(strstr(cptr, "num_sects"))
             {

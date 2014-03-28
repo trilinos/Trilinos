@@ -12,10 +12,11 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   )
 ENDIF()
   
+# MultiJagged Tests
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    pqJaggedTest
-    SOURCES PQJaggedTest.cpp
+    mjTest
+    SOURCES MultiJaggedTest.cpp
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS 
@@ -23,6 +24,53 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     PASS_REGULAR_EXPRESSION "PASS"
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
+
+  TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+  TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_noholes
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "P=2,2,2,2 C=16 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+#muelu like usecase, don't specify mjparts
+  TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_nomjparts
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "C=16 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+#muelu like usecase, don't specify mjparts, odd parts
+  TRIBITS_ADD_TEST(
+    mjTest
+    NAME mjTest_geomgen_nomjparts_odd
+    NUM_MPI_PROCS 3
+    COMM serial mpi
+    ARGS 
+    "C=9 O=1 F=GeomGenParam_noholes.txt"
+    PASS_REGULAR_EXPRESSION "PASS"
+    FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
@@ -79,6 +127,7 @@ TRIBITS_COPY_FILES_TO_BINARY_DIR(copy_files_for_partition_tests
     USAir97.mtx
     USAir97_coord.mtx
     GeomGenParam.txt
+    GeomGenParam_noholes.txt
     proc.txt
     part.txt
     machine.txt

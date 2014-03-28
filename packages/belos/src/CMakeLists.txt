@@ -139,6 +139,7 @@ APPEND_SET(${PACKAGE_NAME}_EXPERIMENTAL_HEADERS
   BelosAkx.hpp
   BelosBlockGCRODRIter.hpp
   BelosBlockGCRODRSolMgr.hpp
+  BelosBlockGCRODRCSolMgr.hpp
   BelosCaGmres.hpp
   BelosGmresBaseFactory.hpp
   BelosGmresBase.hpp

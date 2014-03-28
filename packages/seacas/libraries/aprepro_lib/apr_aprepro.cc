@@ -46,6 +46,8 @@ namespace SEAMS {
 
   Aprepro::~Aprepro()
   {
+    delete lexer;
+    
     for (unsigned hashval = 0; hashval < HASHSIZE; hashval++) {
       for (symrec *ptr = sym_table[hashval]; ptr != NULL; ) {
 	symrec *save = ptr;
@@ -72,8 +74,8 @@ namespace SEAMS {
       echo = false;
     }
 
-    Scanner scanner(*this, &in, &parsingResults);
-    this->lexer = &scanner;
+    Scanner *scanner = new Scanner(*this, &in, &parsingResults);
+    this->lexer = scanner;
 
     Parser parser(*this);
     parser.set_debug_level(ap_options.trace_parsing);

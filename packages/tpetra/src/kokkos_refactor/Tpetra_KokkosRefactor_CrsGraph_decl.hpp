@@ -177,17 +177,31 @@ namespace Tpetra {
     friend class CrsGraph;
 
   public:
-    typedef LocalOrdinal                         local_ordinal_type;
-    typedef GlobalOrdinal                        global_ordinal_type;
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
-    typedef typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps LocalMatOps;
-    typedef Node                                 node_type;
-    typedef typename node_type::device_type      device_type;
-    typedef Map<LocalOrdinal,GlobalOrdinal,Node> map_type;
-    typedef Kokkos::StaticCrsGraph<LocalOrdinal, Kokkos::LayoutLeft, device_type,size_t> LocalStaticCrsGraphType;
+    //! This class' first template parameter; the type of local indices.
+    typedef LocalOrdinal local_ordinal_type;
+    //! This class' second template parameter; the type of global indices.
+    typedef GlobalOrdinal global_ordinal_type;
+    //! The Kokkos Node type used by this class.
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+    //! The Kokkos Device type used by this class.
+    typedef typename node_type::device_type device_type;
+
+    typedef typename KokkosClassic::DefaultKernels<void, local_ordinal_type,
+                                                   node_type>::SparseOps LocalMatOps;
+    typedef node_type Node;
+
+    typedef Kokkos::StaticCrsGraph<LocalOrdinal,
+                                   Kokkos::LayoutLeft,
+                                   device_type, size_t> LocalStaticCrsGraphType;
     typedef Kokkos::View<size_t*, typename Node::device_type> t_RowPtrs;
     typedef Kokkos::View<LocalOrdinal*, typename Node::device_type> t_LocalOrdinal_1D;
 
+    //! The Map specialization used by this class.
+    typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, node_type> map_type;
+    //! The Import specialization used by this class.
+    typedef Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
+    //! The Export specialization used by this class.
+    typedef Tpetra::Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
 
     //! @name Constructor/Destructor Methods
     //@{
@@ -336,6 +350,28 @@ namespace Tpetra {
               const ArrayRCP<LocalOrdinal> & columnIndices,
               const RCP<ParameterList>& params = null);
 
+    /// \brief Constructor specifying column Map and a local (sorted)
+    ///   graph, which the resulting CrsGraph views.
+    ///
+    /// Unlike most other CrsGraph constructors, successful completion
+    /// of this constructor will result in a fill-complete graph.
+    ///
+    /// \param rowMap [in] Distribution of rows of the graph.
+    ///
+    /// \param colMap [in] Distribution of columns of the graph.
+    ///
+    /// \param lclGraph [in] A locally indexed Kokkos::StaticCrsGraph
+    ///   whose local row indices come from the specified row Map, and
+    ///   whose local column indices come from the specified column
+    ///   Map.
+    ///
+    /// \param params [in/out] Optional list of parameters.  If not
+    ///   null, any missing parameters will be filled in with their
+    ///   default values.
+    CrsGraph (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rowMap,
+              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &colMap,
+              const LocalStaticCrsGraphType& lclGraph,
+              const RCP<ParameterList>& params);
 
     /// \brief Create a cloned CrsGraph for a different Node type.
     ///
@@ -681,10 +717,10 @@ namespace Tpetra {
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
     void
-    expertStaticFillComplete (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-                              const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-                              const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-                              const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+    expertStaticFillComplete (const RCP<const map_type> & domainMap,
+                              const RCP<const map_type> & rangeMap,
+                              const RCP<const import_type> &importer=Teuchos::null,
+                              const RCP<const export_type> &exporter=Teuchos::null,
                               const RCP<ParameterList> &params=Teuchos::null);
     //@}
     //! @name Methods implementing RowGraph.
@@ -697,22 +733,22 @@ namespace Tpetra {
     RCP<Node> getNode() const;
 
     //! Returns the Map that describes the row distribution in this graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRowMap() const;
+    RCP<const map_type> getRowMap () const;
 
     //! \brief Returns the Map that describes the column distribution in this graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getColMap() const;
+    RCP<const map_type> getColMap () const;
 
     //! Returns the Map associated with the domain of this graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getDomainMap() const;
+    RCP<const map_type> getDomainMap () const;
 
     //! Returns the Map associated with the domain of this graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > getRangeMap() const;
+    RCP<const map_type> getRangeMap () const;
 
     //! Returns the importer associated with this graph.
-    RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > getImporter() const;
+    RCP<const import_type> getImporter () const;
 
     //! Returns the exporter associated with this graph.
-    RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > getExporter() const;
+    RCP<const export_type> getExporter () const;
 
     //! Returns the number of global rows in the graph.
     /** Undefined if isFillActive().
@@ -1007,7 +1043,7 @@ namespace Tpetra {
     ///
     /// \pre The matrix must have no entries inserted yet
     void
-    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
+    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given parameters.
     ///
@@ -1023,7 +1059,7 @@ namespace Tpetra {
     ///    of the given Import is the same as this graph's domain Map.
     void
     replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
-                                 Teuchos::RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> >& newImporter);
+                                 const Teuchos::RCP<const import_type>& newImporter);
 
     /// \brief Remove processes owning zero rows from the Maps and their communicator.
     ///
@@ -1053,7 +1089,7 @@ namespace Tpetra {
     /// method call should only fail on user error or failure to
     /// allocate memory.
     virtual void
-    removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+    removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
     //@}
 
     template<class ViewType, class OffsetViewType >
@@ -1082,12 +1118,12 @@ namespace Tpetra {
   private:
     // We forbid copy construction by declaring this method private
     // and not implementing it.
-    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &Source);
+    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
     // We forbid assignment (operator=) by declaring this method
     // private and not implementing it.
     CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node> &rhs);
+    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
 
   protected:
     typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
@@ -1643,13 +1679,13 @@ namespace Tpetra {
     void checkInternalState() const;
 
     //! The Map describing the distribution of rows of the graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap_;
+    RCP<const map_type> rowMap_;
     //! The Map describing the distribution of columns of the graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > colMap_;
+    RCP<const map_type> colMap_;
     //! The Map describing the range of the (matrix corresponding to the) graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > rangeMap_;
+    RCP<const map_type> rangeMap_;
     //! The Map describing the domain of the (matrix corresponding to the) graph.
-    RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > domainMap_;
+    RCP<const map_type> domainMap_;
 
     /// \brief The Import from the domain Map to the column Map.
     ///
@@ -1657,14 +1693,14 @@ namespace Tpetra {
     /// the domain Map and the column Map are the same, since no
     /// Import is necessary in that case for sparse matrix-vector
     /// multiply.
-    RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > importer_;
+    RCP<const import_type> importer_;
 
     /// \brief The Export from the row Map to the range Map.
     ///
     /// This gets constructed by fillComplete.  It may be null if
     /// the row Map and the range Map are the same, since no Export
     /// is necessary in that case for sparse matrix-vector multiply.
-    RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter_;
+    RCP<const export_type> exporter_;
 
     // local data, stored in a KokkosClassic::CrsGraph. only initialized after fillComplete()
     RCP<local_graph_type> lclGraph_;
@@ -1766,18 +1802,8 @@ namespace Tpetra {
 
     bool haveRowInfo_;
 
-    inline bool hasRowInfo() const {
-#ifdef HAVE_TPETRA_DEBUG
-      bool actuallyHasRowInfo = true;
-      if (indicesAreAllocated() && getProfileType() == StaticProfile && rowPtrs_ == null) {
-        actuallyHasRowInfo = false;
-      }
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        actuallyHasRowInfo != haveRowInfo_,
-        std::logic_error, "Internal logic error. Please contact Tpetra team.");
-#endif // HAVE_TPETRA_DEBUG
-      return haveRowInfo_;
-    }
+    inline bool hasRowInfo () const;
+
   }; // class CrsGraph
 
   /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.

@@ -114,21 +114,6 @@ public:
 
   //@}
 
-  //! @name ovrloaded Get/Set functions
-
-  /*! @brief setDomainMapOffset
-     sets offset for domain map DOF Gids in tentative prolongation operator.
-     offset must not be smaller than zero. Note: Direct solvers (Amesos/Amesos2) are not properly working with offset > 0.
-   */
-  void setDomainMapOffset(GlobalOrdinal offset);
-
-  /*! @brief getDomainMapOffset
-   * returns offset of the domain DOF map (=coarse map).
-   */
-  GlobalOrdinal getDomainMapOffset() const;
-
-  //@}
-
 private:
 
 }; //class BlockedCoarseMapFactory

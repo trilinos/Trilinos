@@ -94,7 +94,6 @@
       <Parameter name="factory"                             type="string" value="RepartitionInterface"/>
       <Parameter name="A"                                   type="string" value="myRAPFact"/>
       <Parameter name="AmalgamatedPartition"                type="string" value="myIsorropiaInterface"/>
-      <Parameter name="UnAmalgamationInfo"                  type="string" value="myRebAmalgFact"/>
     </ParameterList>
 
 

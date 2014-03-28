@@ -411,11 +411,12 @@ void BelosLinearOpWithSolve<Scalar>::describe(
   RCP<FancyOStream> out = rcp(&out_arg,false);
   OSTab tab(out);
   switch (verbLevel) {
-    case Teuchos::VERB_DEFAULT:
     case Teuchos::VERB_LOW:
+      break;
+    case Teuchos::VERB_DEFAULT:
+    case Teuchos::VERB_MEDIUM:
       *out << this->description() << std::endl;
       break;
-    case Teuchos::VERB_MEDIUM:
     case Teuchos::VERB_HIGH:
     case Teuchos::VERB_EXTREME:
     {
@@ -628,9 +629,10 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
 
   Belos::ReturnType belosSolveStatus;
   {
+    // Write detailed convergence information if requested for levels >= VERB_LOW
     RCP<std::ostream>
       outUsed =
-      ( static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW)
+      ( static_cast<int>(verbLevel) >= static_cast<int>(Teuchos::VERB_LOW)
         ? out
         : rcp(new FancyOStream(rcp(new Teuchos::oblackholestream())))
         );
@@ -706,7 +708,7 @@ BelosLinearOpWithSolve<Scalar>::solveImpl(
     <<"\" returned a solve status of \""<< toString(solveStatus.solveStatus) << "\""
     << " in " << iterativeSolver_->getNumIters() << " iterations"
     << " with total CPU time of " << totalTimer.totalElapsedTime() << " sec" ;
-  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_NONE))
+  if (out.get() && static_cast<int>(verbLevel) > static_cast<int>(Teuchos::VERB_LOW))
     *out << "\n" << ossmessage.str() << "\n";
 
   solveStatus.message = ossmessage.str();

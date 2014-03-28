@@ -293,13 +293,17 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   OFF
   )
 
-# Determine whether Kokkos refactor code is really supported
+# Make sure all requisite packages are enabled
 IF (Tpetra_ENABLE_Kokkos_Refactor AND
-    Tpetra_ENABLE_KokkosCore AND
-    Tpetra_ENABLE_KokkosCompat AND
-    Tpetra_ENABLE_KokkosLinAlg AND
-    Tpetra_ENABLE_KokkosContainers AND
-    Tpetra_ENABLE_KokkosMpiComm)
+    (NOT Tpetra_ENABLE_KokkosCore OR
+     NOT Tpetra_ENABLE_KokkosCompat OR
+     NOT Tpetra_ENABLE_KokkosLinAlg OR
+     NOT Tpetra_ENABLE_KokkosContainers OR
+     NOT Tpetra_ENABLE_KokkosMpiComm))
+  MESSAGE(FATAL_ERROR "Tpetra_ENABLE_Kokkos_Refactor is ON but not all required packages are enabled.  Please enable Kokkos subpackages Core, Compat, LinAlg, Containers, and MpiComm.")
+ENDIF()
+
+IF (Tpetra_ENABLE_Kokkos_Refactor)
   SET(Tpetra_Have_Kokkos_Refactor ON CACHE INTERNAL "")
 ELSE()
   SET(Tpetra_Have_Kokkos_Refactor OFF CACHE INTERNAL "")
@@ -316,7 +320,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 IF (Tpetra_ENABLE_Kokkos_Refactor_Map AND NOT Tpetra_Have_Kokkos_Refactor)
-  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, and Containers subpackages of Kokkos to be enabled." )
+  MESSAGE( FATAL_ERROR "If Tpetra_ENABLE_Kokkos_Refactor_Map is ON, then Tpetra's Kokkos refactor code must be enabled as well.  This requires Tpetra_ENABLE_Kokkos_Refactor to be ON, and the Core, Compat, LinAlg, Containers, and MpiComm subpackages of Kokkos to be enabled." )
 ENDIF ()
 
 #

@@ -41,10 +41,10 @@
 //
 // @HEADER
 
-#include "Amesos2_Superlu_decl.hpp"
-
+#include "Amesos2_config.h"
 #ifdef HAVE_AMESOS2_EXPLICIT_INSTANTIATION
 
+#  include "Amesos2_Superlu_decl.hpp"
 #  include "Amesos2_Superlu_def.hpp"
 #  include "Amesos2_ExplicitInstantiationHelpers.hpp"
 
@@ -71,17 +71,33 @@ namespace Amesos2 {
 // mfh 16 Jan 2014: Hack to make explicit instantiation for
 // Ifpack2::Details::Amesos2Wrapper work.
 //
-#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE)
-namespace Amesos2 {
-  // template class
-  // SolverCore<Superlu,
-  //            Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
-  //            Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
+#include "Kokkos_DefaultNode.hpp"
+#include "Tpetra_ETIHelperMacros.h"
 
-  template class
-  Superlu<Tpetra::CrsMatrix<double, int, int, KokkosClassic::TPINode>,
-          Tpetra::MultiVector<double, int, int, KokkosClassic::TPINode> >;
-} // namespace Amesos2
+#define AMESOS2_SUPERLU_LOCAL_INSTANT(S,LO,GO,N)                        \
+  template class Amesos2::Superlu<Tpetra::CrsMatrix<S, LO, GO, N>,      \
+                                  Tpetra::MultiVector<S, LO, GO,  N> >;
+
+TPETRA_ETI_MANGLING_TYPEDEFS()
+
+#if defined(HAVE_KOKKOSCLASSIC_THREADPOOL) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_TPINODE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, KokkosClassic_TPINode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_TPETRA_INST_DOUBLE) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THRUSTGPUNODE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, KokkosClassic_ThrustGPUNode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_THREADSWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosThreadsWrapperNode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_OPENMPWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosOpenMPWrapperNode)
+#endif
+
+#if defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_CUDA) && !defined(HAVE_KOKKOSCLASSIC_DEFAULTNODE_CUDAWRAPPERNODE) && defined(HAVE_TPETRA_INST_DOUBLE)
+  AMESOS2_SUPERLU_LOCAL_INSTANT(double, int, int, Kokkos_Compat_KokkosCudaWrapperNode)
 #endif
 
 #endif  // HAVE_AMESOS2_EXPLICIT_INSTANTIATION

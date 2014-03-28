@@ -99,6 +99,12 @@ int ML_Operator_Init( ML_Operator *mat, ML_Comm *comm)
    mat->subspace            = NULL;
    mat->spectral_radius_scheme = ML_USE_CG;
    mat->spectral_radius_max_iters = 10;
+   mat->NumZDir             = -1;
+   mat->Zorientation        = -1;  /* -1: not specified */
+                                   /*  1: vertical      */
+                                   /*  2: horizontal    */
+
+
    ML_Aux_Data_Create(&(mat->aux_data));
    mat->type                = ML_TYPE_UNKNOWN;
 
@@ -358,6 +364,11 @@ int ML_Operator_halfClone_Init(ML_Operator *mat,
    mat->from_an_ml_operator = original->from_an_ml_operator;
    mat->spectral_radius_scheme = original->spectral_radius_scheme;
    mat->spectral_radius_max_iters = original->spectral_radius_max_iters;
+   mat->NumZDir             = original->NumZDir;
+   mat->Zorientation        = original->Zorientation;
+                                   /* -1: not specified */
+                                   /*  1: vertical      */
+                                   /*  2: horizontal    */
    mat->data_destroy        = NULL;
    mat->build_time          = 0.0;
    mat->apply_time          = 0.0;

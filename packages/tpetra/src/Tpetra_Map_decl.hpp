@@ -52,6 +52,11 @@
 // it is by default), then Map will used the fixed-structure hash
 // table variant for global-to-local index lookups.  Otherwise, it
 // will use the dynamic-structure hash table variant.
+//
+// mfh 23 Mar 2014: I've removed all code in Map that uses the
+// dynamic-structure hash table variant, since it has not been used
+// for at least a year.  However, I am retaining the #define, in case
+// downstream code depends on it.
 
 #ifndef HAVE_TPETRA_FIXED_HASH_TABLE
 #  define HAVE_TPETRA_FIXED_HASH_TABLE 1
@@ -73,13 +78,8 @@ namespace Tpetra {
     // Forward declaration of TieBreak
     template <class LO, class GO> class TieBreak;
 
-#  ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     template<class GlobalOrdinal, class LocalOrdinal>
     class FixedHashTable;
-#  else
-    template<class GlobalOrdinal, class LocalOrdinal>
-    class HashTable;
-#  endif // HAVE_TPETRA_FIXED_HASH_TABLE
 #endif // DOXYGEN_SHOULD_SKIP_THIS
 
     /// \class MapCloner
@@ -128,7 +128,7 @@ namespace Tpetra {
   /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
   /// MultiVector).
   ///
-  /// \section Kokkos_Map_prereq Prerequisites
+  /// \section Tpetra_Map_prereq Prerequisites
   ///
   /// Before reading the rest of this documentation, it helps to know
   /// something about the Teuchos memory management classes, in
@@ -260,7 +260,7 @@ namespace Tpetra {
      *
      * Preconditions on \c numGlobalElements and \c indexBase will
      * only be checked in a debug build (when Trilinos was configured
-     * with CMake option <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     * with CMake option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
      * checks are enabled and any check fails, the constructor will
      * throw std::invalid_argument on all processes in the given
      * communicator.
@@ -772,12 +772,11 @@ namespace Tpetra {
     /// number of processes in the communicator suffices.
     bool checkIsDist() const;
 
-    //! Copy constructor (declared but not defined; do not use).
-    Map(const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
-
-    //! Assignment operator (declared but not defined; do not use).
-    Map<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const Map<LocalOrdinal,GlobalOrdinal,Node> & source);
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
 
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
@@ -865,13 +864,8 @@ namespace Tpetra {
     /// describe(), may invoke getNodeElementList().
     mutable Teuchos::ArrayRCP<GlobalOrdinal> lgMap_;
 
-#ifdef HAVE_TPETRA_FIXED_HASH_TABLE
     //! Type of the table that maps global IDs to local IDs.
     typedef Details::FixedHashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#else
-    //! Type of the table that maps global IDs to local IDs.
-    typedef Details::HashTable<GlobalOrdinal, LocalOrdinal> global_to_local_table_type;
-#endif // HAVE_TPETRA_FIXED_HASH_TABLE
 
     /// \brief A mapping from global IDs to local IDs.
     ///

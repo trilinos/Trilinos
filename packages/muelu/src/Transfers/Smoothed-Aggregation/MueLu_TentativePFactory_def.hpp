@@ -125,16 +125,20 @@ namespace MueLu {
     Set(coarseLevel, "Nullspace", coarseNullspace);
     Set(coarseLevel, "P",         Ptentative);
 
-    RCP<ParameterList> params = rcp(new ParameterList());
-    params->set("printLoadBalancingInfo", true);
-    GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    if (IsPrint(Statistics1)) {
+      RCP<ParameterList> params = rcp(new ParameterList());
+      params->set("printLoadBalancingInfo", true);
+      if (aggregates->AggregatesCrossProcessors())
+        params->set("printCommInfo",        true);
+      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
+    }
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::MakeTentative(
                      const Matrix& fineA, const Aggregates& aggregates, const AmalgamationInfo& amalgInfo,
-                     const MultiVector & fineNullspace, RCP<const Map> coarseMap,
-                     RCP<MultiVector> & coarseNullspace, RCP<Matrix> & Ptentative) const
+                     const MultiVector& fineNullspace, RCP<const Map> coarseMap,
+                     RCP<MultiVector>& coarseNullspace, RCP<Matrix>& Ptentative) const
   {
     RCP<const Teuchos::Comm<int> > comm = fineA.getRowMap()->getComm();
     LO INVALID = Teuchos::OrdinalTraits<LO>::invalid();
@@ -190,55 +194,63 @@ namespace MueLu {
 
     // prerequisites: rowMapForPtent, NSDim
 
-    // Set up storage for the rows of the local Qs that belong to other processors.
-    // FIXME This is inefficient and could be done within the main loop below with std::vector's.
-    RCP<const Map> colMap = fineA.getColMap();
-    Array<GO> ghostGIDs;
-    for (LO j=0; j<numAggs; ++j) {
-      for (LO k=aggStart[j]; k<aggStart[j+1]; ++k) {
-        if (rowMapForPtentRef.isNodeGlobalElement(aggToRowMap[k]) == false) {
-          ghostGIDs.push_back(aggToRowMap[k]);
-        }
-      }
-    }
-    RCP<const Map > ghostQMap = MapFactory::Build(fineA.getRowMap()->lib(),
-                                                  Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
-                                                  ghostGIDs,
-                                                  indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
-    //Vector to hold bits of Q that go to other processors.
-    RCP<MultiVector> ghostQvalues = MultiVectorFactory::Build(ghostQMap,NSDim);
-    //Note that Epetra does not support MultiVectors templated on Scalar != double.
-    //So to work around this, we allocate an array of Vectors.  This shouldn't be too
-    //expensive, as the number of Vectors is NSDim.
-    Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > ghostQcolumns(NSDim);
-    for (size_t i=0; i<NSDim; ++i)
-      ghostQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
-    RCP<Xpetra::Vector<GO,LO,GO,Node> > ghostQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
-    ArrayRCP< ArrayRCP<SC> > ghostQvals;
-    ArrayRCP< ArrayRCP<GO> > ghostQcols;
-    ArrayRCP< GO > ghostQrows;
-    if (ghostQvalues->getLocalLength() > 0) {
-      ghostQvals.resize(NSDim);
-      ghostQcols.resize(NSDim);
-      for (size_t i=0; i<NSDim; ++i) {
-        ghostQvals[i] = ghostQvalues->getDataNonConst(i);
-        ghostQcols[i] = ghostQcolumns[i]->getDataNonConst(0);
-      }
-      ghostQrows = ghostQrowNums->getDataNonConst(0);
-    }
-
-    //importer to handle moving Q
-    importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
-
-    // Dense QR solver
-    Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
-
     // decide whether to use ESFC or not
     // use expert mode if aggregates do not overlap processors
     bool bExpert = true;
     if(aggregates.AggregatesCrossProcessors()) {
       bExpert = false;
     }
+
+    // Set up storage for the rows of the local Qs that belong to other processors.
+    // FIXME This is inefficient and could be done within the main loop below with std::vector's.
+    RCP<const Map> colMap = fineA.getColMap();
+
+    RCP<const Map > ghostQMap;
+    RCP<MultiVector> ghostQvalues;
+    Array<RCP<Xpetra::Vector<GO,LO,GO,Node> > > ghostQcolumns;
+    RCP<Xpetra::Vector<GO,LO,GO,Node> > ghostQrowNums;
+    ArrayRCP< ArrayRCP<SC> > ghostQvals;
+    ArrayRCP< ArrayRCP<GO> > ghostQcols;
+    ArrayRCP< GO > ghostQrows;
+
+    if (!bExpert) {
+      Array<GO> ghostGIDs;
+      for (LO j=0; j<numAggs; ++j) {
+        for (LO k=aggStart[j]; k<aggStart[j+1]; ++k) {
+          if (rowMapForPtentRef.isNodeGlobalElement(aggToRowMap[k]) == false) {
+            ghostGIDs.push_back(aggToRowMap[k]);
+          }
+        }
+      }
+      ghostQMap = MapFactory::Build(fineA.getRowMap()->lib(),
+                                    Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(),
+                                    ghostGIDs,
+                                    indexBase, fineA.getRowMap()->getComm()); //JG:Xpetra::global_size_t>?
+      //Vector to hold bits of Q that go to other processors.
+      ghostQvalues = MultiVectorFactory::Build(ghostQMap,NSDim);
+      //Note that Epetra does not support MultiVectors templated on Scalar != double.
+      //So to work around this, we allocate an array of Vectors.  This shouldn't be too
+      //expensive, as the number of Vectors is NSDim.
+      ghostQcolumns.resize(NSDim);
+      for (size_t i=0; i<NSDim; ++i)
+        ghostQcolumns[i] = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
+      ghostQrowNums = Xpetra::VectorFactory<GO,LO,GO,Node>::Build(ghostQMap);
+      if (ghostQvalues->getLocalLength() > 0) {
+        ghostQvals.resize(NSDim);
+        ghostQcols.resize(NSDim);
+        for (size_t i=0; i<NSDim; ++i) {
+          ghostQvals[i] = ghostQvalues->getDataNonConst(i);
+          ghostQcols[i] = ghostQcolumns[i]->getDataNonConst(0);
+        }
+        ghostQrows = ghostQrowNums->getDataNonConst(0);
+      }
+
+      //importer to handle moving Q
+      importer = ImportFactory::Build(ghostQMap, fineA.getRowMap());
+    } //if (!bExpert)
+
+    // Dense QR solver
+    Teuchos::SerialQRDenseSolver<LO,SC> qrSolver;
 
     //Allocate temporary storage for the tentative prolongator.
     Array<GO> globalColPtr(maxAggSize*NSDim,0);
@@ -465,8 +477,7 @@ nonUniqueMapRef.isNodeGlobalElement(aggToRowMap[aggStart[agg]+k]) << std::endl;
         LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
 
         //TODO is the use of Xpetra::global_size_t below correct?
-        if( rowMapForPtentRef.isNodeGlobalElement(globalRow) == false )
-        {
+        if ( !bExpert && rowMapForPtentRef.isNodeGlobalElement(globalRow) == false ) {
           ghostQrows[qctr] = globalRow;
           for (size_t k=0; k<NSDim; ++k) {
             ghostQcols[k][qctr] = coarseMapRef.getGlobalElement(agg*NSDim+k);

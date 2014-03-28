@@ -91,10 +91,6 @@ namespace MueLu {
 
     GetOStream(Runtime0) << "Transferring coordinates" << std::endl;
 
-    const ParameterList  & pL = GetParameterList();
-    int                 writeStart = pL.get< int >("write start");
-    int                 writeEnd   = pL.get< int >("write end");
-
     RCP<Aggregates>     aggregates = Get< RCP<Aggregates> > (fineLevel, "Aggregates");
     RCP<MultiVector>    fineCoords = Get< RCP<MultiVector> >(fineLevel, "Coordinates");
     RCP<const Map>      coarseMap  = Get< RCP<const Map> >  (fineLevel, "CoarseMap");
@@ -116,17 +112,19 @@ namespace MueLu {
     for (LO i = 0; i < Teuchos::as<LO>(numElements); i++)
       elementList[i] = (elementAList[i*blkSize]-indexBase)/blkSize + indexBase;
 
-    RCP<const Map> coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
-    RCP<MultiVector> coarseCoords = MultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
-
-    // Maps
-    RCP<const Map> uniqueMap    = fineCoords->getMap();
-    RCP<const Map> nonUniqueMap = aggregates->GetMap();
+    RCP<const Map>   uniqueMap      = fineCoords->getMap();
+    RCP<const Map>   coarseCoordMap = MapFactory        ::Build(coarseMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), elementList, indexBase, coarseMap->getComm());
+    RCP<MultiVector> coarseCoords   = MultiVectorFactory::Build(coarseCoordMap, fineCoords->getNumVectors());
 
     // Create overlapped fine coordinates to reduce global communication
-    RCP<const Import>     importer = ImportFactory     ::Build(uniqueMap, nonUniqueMap);
-    RCP<MultiVector> ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, fineCoords->getNumVectors());
-    ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
+    RCP<MultiVector> ghostedCoords = fineCoords;
+    if (aggregates->AggregatesCrossProcessors()) {
+      RCP<const Map>    nonUniqueMap = aggregates->GetMap();
+      RCP<const Import> importer     = ImportFactory::Build(uniqueMap, nonUniqueMap);
+
+      ghostedCoords = MultiVectorFactory::Build(nonUniqueMap, fineCoords->getNumVectors());
+      ghostedCoords->doImport(*fineCoords, *importer, Xpetra::INSERT);
+    }
 
     // Get some info about aggregates
     int                         myPID        = uniqueMap->getComm()->getRank();
@@ -149,6 +147,9 @@ namespace MueLu {
     }
 
     Set<RCP<MultiVector> >(coarseLevel, "Coordinates", coarseCoords);
+
+    const ParameterList& pL = GetParameterList();
+    int writeStart = pL.get<int>("write start"), writeEnd = pL.get<int>("write end");
     if (writeStart == 0 && fineLevel.GetLevelID() == 0 && writeStart <= writeEnd) {
       std::ostringstream buf;
       buf << fineLevel.GetLevelID();
@@ -161,8 +162,7 @@ namespace MueLu {
       std::string fileName = "coordinates_before_rebalance_level_" + buf.str() + ".m";
       Utils::Write(fileName,*coarseCoords);
     }
-
-  } // Build
+  }
 
 } // namespace MueLu
 

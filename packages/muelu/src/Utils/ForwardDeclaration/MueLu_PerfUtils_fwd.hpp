@@ -46,6 +46,9 @@
 #ifndef MUELU_PERFUTILS_FWD_HPP
 #define MUELU_PERFUTILS_FWD_HPP
 
+
+
+
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   class PerfUtils;
@@ -54,5 +57,7 @@ namespace MueLu {
 #ifndef MUELU_PERFUTILS_SHORT
 #define MUELU_PERFUTILS_SHORT
 #endif
+
+
 
 #endif // MUELU_PERFUTILS_FWD_HPP

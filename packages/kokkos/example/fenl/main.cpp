@@ -113,14 +113,28 @@ void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  c
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
 void run( MPI_Comm comm , const int cmd[] )
 {
-  if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
-  else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
-  else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+  int comm_rank = 0 ;
+  int comm_size = 1 ;
 
-  if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
-  else { std::cout << " , LINEAR-ELEMENT" ; }
+#if defined( KOKKOS_HAVE_MPI )
+  MPI_Comm_rank( comm , & comm_rank );
+  MPI_Comm_size( comm , & comm_size );
+#else
+  comm = 0 ;
+  (void)comm_size;
+#endif
 
-  if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+
+  if ( 0 == comm_rank ) {
+    if ( cmd[ CMD_USE_THREADS ] ) { std::cout << "THREADS , " << cmd[ CMD_USE_THREADS ] ; }
+    else if ( cmd[ CMD_USE_OPENMP ] ) { std::cout << "OPENMP , " << cmd[ CMD_USE_OPENMP ] ; }
+    else if ( cmd[ CMD_USE_CUDA ] ) { std::cout << "CUDA" ; }
+
+    if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] ) { std::cout << " , QUADRATIC-ELEMENT" ; }
+    else { std::cout << " , LINEAR-ELEMENT" ; }
+
+    if ( cmd[ CMD_USE_ATOMIC ] ) { std::cout << " , USING ATOMICS" ; }
+  }
 
   std::vector< std::pair<std::string,std::string> > headers;
 
@@ -148,16 +162,18 @@ void run( MPI_Comm comm , const int cmd[] )
     widths[i] = std::max(min_width, headers[i].first.size()+1);
 
   // print column headers
-  std::cout << std::endl ;
-  for (size_t i=0; i<headers.size(); ++i)
-    std::cout << std::setw(widths[i]) << headers[i].first << " ,";
-  std::cout << "\b\b  " << std::endl;
-  for (size_t i=0; i<headers.size(); ++i)
-    std::cout << std::setw(widths[i]) << headers[i].second << " ,";
-  std::cout << "\b\b  " << std::endl;
+  if ( 0 == comm_rank ) {
+    std::cout << std::endl ;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].first << " ,";
+    std::cout << "\b\b  " << std::endl;
+    for (size_t i=0; i<headers.size(); ++i)
+      std::cout << std::setw(widths[i]) << headers[i].second << " ,";
+    std::cout << "\b\b  " << std::endl;
 
-  std::cout << std::scientific;
-  std::cout.precision(3);
+    std::cout << std::scientific;
+    std::cout.precision(3);
+  }
 
   if ( cmd[ CMD_USE_FIXTURE_BEGIN ] ) {
     for ( int i = cmd[CMD_USE_FIXTURE_BEGIN] ; i < cmd[CMD_USE_FIXTURE_END] * 2 ; i *= 2 ) {
@@ -174,7 +190,7 @@ void run( MPI_Comm comm , const int cmd[] )
             ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
-      print_perf_value( std::cout , widths, perf );
+      if ( 0 == comm_rank ) print_perf_value( std::cout , widths, perf );
     }
   }
   else {
@@ -190,7 +206,7 @@ void run( MPI_Comm comm , const int cmd[] )
           ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
-    print_perf_value( std::cout , widths, perf );
+    if ( 0 == comm_rank ) print_perf_value( std::cout , widths, perf );
   }
 }
 
@@ -208,6 +224,7 @@ int main( int argc , char ** argv )
   MPI_Comm_size( comm , & comm_size );
 #else
   MPI_Comm comm = 0 ;
+  (void)comm_size;
 #endif
 
   int cmdline[ CMD_COUNT ] ;
@@ -267,7 +284,7 @@ int main( int argc , char ** argv )
       }
     }
 
-    if ( cmdline[ CMD_ECHO ] ) { print_cmdline( std::cout , cmdline ); }
+    if ( cmdline[ CMD_ECHO ] && 0 == comm_rank ) { print_cmdline( std::cout , cmdline ); }
   }
 
 #if defined( KOKKOS_HAVE_MPI )
@@ -314,7 +331,7 @@ int main( int argc , char ** argv )
                                      cmdline[ CMD_USE_CORE_PER_NUMA ] );
       }
       else {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_THREADS ] );
+        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
       }
 
       run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );

@@ -92,6 +92,10 @@ namespace Stokhos {
       ss::fill(coeff_, Num, x);
     }
 
+    //! Constructor for creating a view (not allowed)
+    KOKKOS_INLINE_FUNCTION
+    StaticFixedStorage(const ordinal_type& sz, pointer v, bool owned) {}
+
     //! Copy constructor
     KOKKOS_INLINE_FUNCTION
     StaticFixedStorage(const StaticFixedStorage& s) {
@@ -171,13 +175,13 @@ namespace Stokhos {
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Resize to new size (values are preserved)

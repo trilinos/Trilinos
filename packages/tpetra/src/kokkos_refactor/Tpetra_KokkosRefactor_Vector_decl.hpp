@@ -67,7 +67,17 @@ private:
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
 public:
-  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+  /// \brief The type of an inner ("dot") product result.
+  ///
+  /// This is usually the same as \c scalar_type, but may differ if
+  /// \c Scalar is e.g., an uncertainty quantification type from the
+  /// Stokhos package.
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+
+    //! The type of the magnitude (absolute value) of a \c scalar_type value.
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
   //! @name Constructor/Destructor Methods
   //@{
@@ -90,7 +100,7 @@ public:
   /// \param map [in] Map describing the distribution of rows.
   /// \param view [in] Device view to the data (shallow copy)
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const view_type view);
+          const dual_view_type view);
 
   //! Destructor.
   virtual ~Vector();
@@ -158,7 +168,7 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::dot; // overloading, not hiding
   //! Computes dot product of this Vector against input Vector x.
-  Scalar dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
+  dot_type dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &a) const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm1; // overloading, not hiding
   //! Return 1-norm of this Vector.
@@ -166,7 +176,7 @@ public:
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::norm2; // overloading, not hiding
   //! Compute 2-norm of this Vector.
-  typename Teuchos::ScalarTraits<Scalar>::magnitudeType norm2() const;
+  mag_type norm2() const;
 
   using MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::normInf; // overloading, not hiding
   //! Compute Inf-norm of this Vector.

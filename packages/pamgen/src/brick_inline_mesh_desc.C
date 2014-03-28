@@ -77,9 +77,10 @@ void Brick_Inline_Mesh_Desc::calculateSize(long long & total_el_count,
 }
 
 /*****************************************************************************/
-void Brick_Inline_Mesh_Desc::Calc_Intervals()
+  std::string  Brick_Inline_Mesh_Desc::Calc_Intervals()
 /*****************************************************************************/
 {
+  std::string error_string;
   for(long long i = 0; i < inline_bx; i ++){
     long long axis = 0;
     if((first_size[axis][i] > 0.) && (last_size[axis][i] == 0.)){
@@ -133,6 +134,7 @@ void Brick_Inline_Mesh_Desc::Calc_Intervals()
       }
     }
   }
+  return error_string;
 }
 
 /*****************************************************************************/

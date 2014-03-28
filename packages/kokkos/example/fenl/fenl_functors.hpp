@@ -137,13 +137,10 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*134ull)/100ull;
+      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
 
 
-      // Increase capacity until the (node,node) map is successfully filled.
-      do {
-        set_capacity += node_node_set.failed_inserts();
-
+      {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
@@ -153,8 +150,7 @@ public:
         set_capacity = node_node_set.capacity();
 
         Kokkos::parallel_for( elem_node_id.dimension_0() , *this );
-
-      } while ( node_node_set.failed_inserts() );
+      }
 
       device_type::fence();
       results.ratio = (double)node_node_set.size() / (double)node_node_set.capacity();
@@ -231,20 +227,17 @@ public:
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
 
-      if ( row_node < row_count.dimension_0() ) {
+      for ( unsigned col_local_node = row_local_node ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
 
-        for ( unsigned col_local_node = 0 ; col_local_node < elem_node_id.dimension_1() ; ++col_local_node ) {
+        const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-          const unsigned col_node = elem_node_id( ielem , col_local_node );
+        const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
 
-          const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
+        const typename SetType::insert_result result = node_node_set.insert( key );
 
-          const typename SetType::insert_result result = node_node_set.insert( key );
-
-          if ( result.first == Kokkos::INSERT_SUCCESS ) {
-            atomic_fetch_add( & row_count( row_node ) , 1 );
-            atomic_fetch_add( & row_count( col_node ) , 1 );
-          }
+        if ( result.success() ) {
+          if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
+          if ( col_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
         }
       }
     }
@@ -258,12 +251,12 @@ public:
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
 
-      {
+      if ( row_node < row_count.dimension_0() ) {
         const unsigned offset = graph.row_map( row_node ) + atomic_fetch_add( & row_count( row_node ) , 1 );
         graph.entries( offset ) = col_node ;
       }
 
-      {
+      if ( col_node < row_count.dimension_0() ) {
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
         graph.entries( offset ) = row_node ;
       }
@@ -1043,6 +1036,7 @@ public:
   const scalar_coord_type   bc_lower_limit ;
   const scalar_coord_type   bc_upper_limit ;
   const unsigned            bc_plane ;
+  const unsigned            node_count ;
         bool                init ;
 
 
@@ -1062,15 +1056,16 @@ public:
     , bc_lower_limit( std::numeric_limits<scalar_coord_type>::epsilon() )
     , bc_upper_limit( scalar_coord_type(1) - std::numeric_limits<scalar_coord_type>::epsilon() )
     , bc_plane(       arg_bc_plane )
+    , node_count( arg_mesh.node_count_owned() )
     , init( false )
     {
-      parallel_for( node_coords.dimension_0() , *this );
+      parallel_for( node_count , *this );
       init = true ;
     }
 
   void apply() const
   {
-    parallel_for( node_coords.dimension_0() , *this );
+    parallel_for( node_count , *this );
   }
 
   //------------------------------------

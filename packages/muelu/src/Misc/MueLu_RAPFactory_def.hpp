@@ -141,24 +141,27 @@ namespace MueLu {
 
       // If we do not modify matrix later, allow optimization of storage.
       // This is necessary for new faster Epetra MM kernels.
-      bool doOptimizedStorage = !pL.get<bool>("RepairMainDiagonal");
+      bool doOptimizeStorage = !pL.get<bool>("RepairMainDiagonal");
 
+      const bool doTranspose    = true;
+      const bool doFillComplete = true;
       if (implicitTranspose_) {
         SubFactoryMonitor m2(*this, "MxM: P' x (AP) (implicit)", coarseLevel);
-
-        Ac = Utils::Multiply(*P, true, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
+        Ac = Utils::Multiply(*P,  doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
 
       } else {
         SubFactoryMonitor m2(*this, "MxM: R x (AP) (explicit)", coarseLevel);
-
-        Ac = Utils::Multiply(*R, false, *AP, false, Ac, GetOStream(Statistics2), true, doOptimizedStorage);
+        Ac = Utils::Multiply(*R, !doTranspose, *AP, !doTranspose, Ac, GetOStream(Statistics2), doFillComplete, doOptimizeStorage);
       }
 
       CheckRepairMainDiagonal(Ac);
 
-      RCP<ParameterList> params = rcp(new ParameterList());;
-      params->set("printLoadBalancingInfo", true);
-      GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+      if (IsPrint(Statistics1)) {
+        RCP<ParameterList> params = rcp(new ParameterList());;
+        params->set("printLoadBalancingInfo", true);
+        params->set("printCommInfo",          true);
+        GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ac, "Ac", params);
+      }
 
       Set(coarseLevel, "A",           Ac);
       Set(coarseLevel, "RAP Pattern", Ac);
@@ -219,7 +222,7 @@ namespace MueLu {
     SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
 
     Teuchos::RCP<Teuchos::ParameterList> p = Teuchos::rcp(new Teuchos::ParameterList());
-    p->set("DoOptimizeStorage",true);
+    p->set("DoOptimizeStorage", true);
 
     RCP<const Map> rowMap = Ac->getRowMap();
     RCP<Vector> diagVec = VectorFactory::Build(rowMap);

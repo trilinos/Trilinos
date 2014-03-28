@@ -185,7 +185,8 @@ namespace Tpetra {
 
   template <class Scalar,
             class LocalOrdinal,
-            class GlobalOrdinal, class DeviceType>
+            class GlobalOrdinal,
+            class DeviceType>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   CrsMatrix (const RCP<const map_type>& rowMap,
              const RCP<const map_type>& colMap,
@@ -232,12 +233,86 @@ namespace Tpetra {
     }
     staticGraph_ = myGraph_;
     k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
-    values1D_    = values;
+    values1D_    = Kokkos::Compat::persistingView(k_values1D_);
     resumeFill(params);
     checkInternalState();
   }
 
+  template <class Scalar,
+            class LocalOrdinal,
+            class GlobalOrdinal, class DeviceType>
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsMatrix (const RCP<const map_type>& rowMap,
+             const RCP<const map_type>& colMap,
+             const k_local_matrix_type& lclMatrix,
+             const RCP<Teuchos::ParameterList>& params) :
+    DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
+    k_lclMatrix_(lclMatrix)
+  {
+    const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
 
+    try {
+      myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph, params));
+    }
+    catch (std::exception &e) {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
+        typeName(*this) << "::CrsMatrix(): caught exception while allocating "
+        "CrsGraph object: " << std::endl << e.what ());
+    }
+    staticGraph_ = myGraph_;
+    computeGlobalConstants();
+
+    lclMatrix_ = null;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
+      ": The local graph ({my,static}Graph_->getLocalGraph()) is null.  "
+      "Please report this bug to the Tpetra developers.");
+    lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
+    lclMatrix_->setValues (Teuchos::arcp(k_lclMatrix_.values.ptr_on_device(), 0, k_lclMatrix_.values.dimension_0(),
+        Kokkos::Compat::deallocator(k_lclMatrix_.values), false));
+
+    k_values1D_ = k_lclMatrix_.values;
+
+    values1D_ = arcp (k_lclMatrix_.values.ptr_on_device (), 0,
+                      k_lclMatrix_.values.dimension_0 (),
+                      Kokkos::Compat::deallocator (k_lclMatrix_.values), false);
+    //
+    // Set up the local sparse kernels.
+    //
+    lclMatOps_ = rcp (new sparse_ops_type (getNode ()));
+    // This is where we take the local graph and matrix, and turn them
+    // into (possibly optimized) sparse kernels.
+    lclMatOps_->setGraphAndMatrix (staticGraph_->getLocalGraph (), lclMatrix_);
+
+    // Once we've initialized the sparse kernels, we're done with the
+    // local objects.  We may now release them and their memory, since
+    // they will persist in the local sparse ops if necessary.  We
+    // keep the local graph if the parameters tell us to do so.
+    lclMatrix_ = null;
+    if (myGraph_ != null) {
+      bool preserveLocalGraph = true;
+      if (params != null) {
+        preserveLocalGraph =
+          params->get ("Preserve Local Graph", preserveLocalGraph);
+      }
+      if (! preserveLocalGraph) {
+        myGraph_->lclGraph_ = null;
+      }
+    }
+    // Now we're fill complete!
+    fillComplete_ = true;
+
+    // Sanity checks at the end.
+#ifdef HAVE_TPETRA_DEBUG
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillActive(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(! isFillComplete(), std::logic_error,
+      ": We're at the end of fillComplete(), but isFillActive() is true.  "
+      "Please report this bug to the Tpetra developers.");
+#endif // HAVE_TPETRA_DEBUG
+    checkInternalState();
+  }
 
   template<class Scalar,
            class LocalOrdinal,
@@ -257,7 +332,7 @@ namespace Tpetra {
            class GlobalOrdinal, class DeviceType>
   RCP<Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNode() const {
-    return staticGraph_->getNode ();
+    return getCrsGraph ()->getNode ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -549,6 +624,17 @@ namespace Tpetra {
     // This Function: inds ptrs lclInds1D_ lclInds2D_ row_ptrs // k_ptrs k_inds k_lclInds1D_ k_rowPtrs
 
     typedef LocalOrdinal LO;
+
+    // fillComplete() only calls fillLocalGraphAndMatrix() if the
+    // matrix owns the graph, which means myGraph_ is not null.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      myGraph_.is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "fillLocalGraphAndMatrix: The nonconst graph (myGraph_) is null.  This "
+      "means that the matrix has a const (a.k.a. \"static\") graph.  This in "
+      "turn means that fillComplete has a bug, since it should never call "
+      "fillLocalGraphAndMatrix in that case.  Please report this bug to the "
+      "Tpetra developers.");
+
     const map_type& rowMap = * (getRowMap ());
     RCP<node_type> node = rowMap.getNode ();
 
@@ -818,6 +904,11 @@ namespace Tpetra {
     // The local matrix should be null, but we delete it first so that
     // any memory can be freed before we allocate the new one.
     lclMatrix_ = null;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
+      "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: The local graph "
+      "(staticGraph_->getLocalGraph()) is null.  Please report this bug to the "
+      "Tpetra developers.");
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
@@ -1050,7 +1141,6 @@ namespace Tpetra {
       lclparams = sublist (params, "Local Matrix");
     }
 
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       staticGraph_->getLocalGraph ().is_null (), std::runtime_error,
       "Tpetra::CrsMatrix::fillLocalMatrix (called by fillComplete with a const "
@@ -1059,7 +1149,6 @@ namespace Tpetra {
       "CrsMatrix A, and A is fill complete.  You can prevent this error by "
       "setting the bool parameter \"Preserve Local Graph\" to true when "
       "calling fillComplete on the original CrsMatrix A.");
-#endif // HAVE_TPETRA_DEBUG
 
     // The local matrix should be null at this point.  Just in case it
     // isn't (future-proofing), delete it first in order to free
@@ -1097,7 +1186,8 @@ namespace Tpetra {
     // memory if multiple matrices share the same structure, and it
     // allows the graph (and therefore the storage layout of the
     // matrix's values) to be precomputed.
-    sparse_ops_type::finalizeMatrix (*staticGraph_->getLocalGraph (), *lclMatrix_, lclparams);
+    sparse_ops_type::finalizeMatrix (* (staticGraph_->getLocalGraph ()),
+                                     *lclMatrix_, lclparams);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -2263,21 +2353,56 @@ namespace Tpetra {
     return frobNorm;
   }
 
+
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   void
-  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  replaceColMap (const Teuchos::RCP<const map_type>& newColMap)
+  {
+    const char tfecfFuncName[] = "replaceColMap";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error,
+      ": This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's column Map.");
+    myGraph_->replaceColMap (newColMap);
+  }
+
+
+  /////////////////////////////////////////////////////////////////////////////
+  /////////////////////////////////////////////////////////////////////////////
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  void
+  CrsMatrix<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+    typename KokkosClassic::DefaultKernels<
+      Scalar,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   replaceDomainMapAndImporter (const Teuchos::RCP<const map_type>& newDomainMap,
                                Teuchos::RCP<const Tpetra::Import<LocalOrdinal, GlobalOrdinal, node_type> >& newImporter)
   {
     const char tfecfFuncName[] = "replaceDomainMapAndImporter";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       myGraph_.is_null (), std::runtime_error,
-      ": This method requires that the matrix have a graph.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      isStaticGraph(), std::runtime_error,
-      ": This method does not work if the matrix has a const graph.");
+      ": This method does not work if the matrix has a const graph.  The whole "
+      "idea of a const graph is that you are not allowed to change it, but this"
+      " method necessarily must modify the graph, since the graph owns the "
+      "matrix's domain Map and Import objects.");
     myGraph_->replaceDomainMapAndImporter (newDomainMap, newImporter);
   }
 
@@ -2789,9 +2914,9 @@ namespace Tpetra {
     // keep the local graph if the parameters tell us to do so.
     lclMatrix_ = null;
     if (myGraph_ != null) {
-      bool preserveLocalGraph = false;
+      bool preserveLocalGraph = true;
       if (params != null) {
-        preserveLocalGraph = params->get ("Preserve Local Graph", false);
+        preserveLocalGraph = params->get ("Preserve Local Graph", preserveLocalGraph);
       }
       if (! preserveLocalGraph) {
         myGraph_->lclGraph_ = null;
@@ -2821,7 +2946,7 @@ namespace Tpetra {
                                                                                                const RCP<const Export<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &exporter,
                                                                                                const RCP<ParameterList> &params)
   {
-  const char tfecfFuncName[] = "experStaticFillComplete()";
+  const char tfecfFuncName[] = "expertStaticFillComplete";
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Matrix fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -2845,9 +2970,9 @@ namespace Tpetra {
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
     lclMatrix_ = null;
-    bool preserveLocalGraph = false;
+    bool preserveLocalGraph = true;
     if (params != null) {
-      preserveLocalGraph = params->get ("Preserve Local Graph", false);
+      preserveLocalGraph = params->get ("Preserve Local Graph", true);
     }
     if (! preserveLocalGraph) {
       myGraph_->lclGraph_ = null;
@@ -3370,7 +3495,7 @@ namespace Tpetra {
         // to copy here because we won't be doing Import operations.
         X_colMap = getColumnMapMultiVector (X, true);
         X_domainMap = X_colMap; // Domain and column Maps are the same.
-        *X_domainMap = X; // Copy X into the domain Map view.
+        deep_copy(*X_domainMap, X); // Copy X into the domain Map view.
         copiedInput = true;
         TPETRA_EFFICIENCY_WARNING(
           ! X.isConstantStride (), std::runtime_error,
@@ -3474,7 +3599,7 @@ namespace Tpetra {
     }
 
     if (copiedInput) {
-      X = *X_domainMap; // Copy back from X_domainMap to X.
+      deep_copy(X, *X_domainMap); // Copy back from X_domainMap to X.
     }
   }
 
@@ -3832,18 +3957,39 @@ namespace Tpetra {
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(RST::zero(),Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if (mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (RST::zero (),
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else { // mode == NO_TRANS
+        Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
     else {
       // Y = alpha*op(M) + beta*Y
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if(mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (beta,
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else {
+        Kokkos::MV_Multiply (beta,
+                             Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
   }
 
@@ -3928,28 +4074,99 @@ namespace Tpetra {
   RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::convert() const
   {
-    const char tfecfFuncName[] = "convert()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(isFillComplete() == false, std::runtime_error, ": fill must be complete.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(getCrsGraph()->getLocalGraph() == null, std::runtime_error,
-        ": local graph data was deleted during fillComplete().\n"
-        "To allow convert(), set the following to fillComplete():\n"
-        "   \"Preserve Local Graph\" == true ");
-    RCP<CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> > newmat;
-    newmat = rcp(new CrsMatrix<T,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>(getCrsGraph()));
-    const map_type& rowMap = * (getRowMap ());
-    Array<T> newvals;
-    for (LocalOrdinal li=rowMap.getMinLocalIndex(); li <= rowMap.getMaxLocalIndex(); ++li)
-    {
-      ArrayView<const LocalOrdinal> rowinds;
-      ArrayView<const Scalar>       rowvals;
-      this->getLocalRowView(li,rowinds,rowvals);
-      if (rowvals.size() > 0) {
-        newvals.resize(rowvals.size());
-        std::transform( rowvals.begin(), rowvals.end(), newvals.begin(), Teuchos::asFunc<T>() );
-        newmat->replaceLocalValues(li, rowinds, newvals());
+    using Teuchos::ArrayRCP;
+    using Teuchos::as;
+    using Teuchos::RCP;
+    using Teuchos::rcp;
+    typedef typename
+      KokkosClassic::DefaultKernels<T, LocalOrdinal, node_type>::SparseOps
+      sparse_ops_type;
+    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type,
+                      sparse_ops_type> out_mat_type;
+    typedef ArrayRCP<size_t>::size_type size_type;
+    const char tfecfFuncName[] = "convert";
+
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      isFillComplete () == false, std::runtime_error,
+      ": fill must be complete.");
+
+    // mfh 27 Feb 2014: It seems reasonable that if this matrix has a
+    // const graph, then the returned matrix should also.  However, if
+    // this matrix does not have a const graph, then neither should
+    // the returned matrix.  The code below implements this strategy.
+
+    RCP<out_mat_type> newmat; // the matrix to return
+
+    if (this->isStaticGraph ()) {
+      // This matrix has a const graph, so the returned matrix should too.
+      newmat = rcp (new out_mat_type (this->getCrsGraph ()));
+
+      // Convert the values from Scalar to T, and stuff them directly
+      // into the matrix to return.
+      const size_type numVals = this->values1D_.size ();
+      ArrayRCP<T> newVals1D (numVals);
+      for (size_type k = 0; k < numVals; ++k) {
+        newVals1D[k] = Teuchos::as<T> (this->values1D_[k]);
       }
+      newmat->values1D_ = newVals1D;
+
+      // fillComplete will copy newmat->values1D_ into newmat's Kokkos
+      // Classic local sparse ops widget.
+      newmat->fillComplete (this->getDomainMap (), this->getRangeMap ());
     }
-    newmat->fillComplete(this->getDomainMap(), this->getRangeMap());
+    else {
+      // This matrix has a nonconst graph, so the returned matrix
+      // should also have a nonconst graph.  However, it's fine for
+      // the returned matrix to have static profile.  This will
+      // certainly speed up its fillComplete.
+
+      // Get this matrix's local data.
+      ArrayRCP<const size_t> ptr;
+      ArrayRCP<const LocalOrdinal> ind;
+      ArrayRCP<const Scalar> oldVal;
+      this->getAllValues (ptr, ind, oldVal);
+
+      RCP<const map_type> rowMap = this->getRowMap ();
+      RCP<const map_type> colMap = this->getColMap ();
+
+      // Get an array of the number of entries in each (locally owned)
+      // row, so that we can make the new matrix with static profile.
+      const size_type numLocalRows = as<size_type> (rowMap->getNodeNumElements ());
+      ArrayRCP<size_t> numEntriesPerRow (numLocalRows);
+      for (size_type localRow = 0; localRow < numLocalRows; ++localRow) {
+        numEntriesPerRow[localRow] = as<size_type> (getNumEntriesInLocalRow (localRow));
+      }
+
+      newmat = rcp (new out_mat_type (rowMap, colMap, numEntriesPerRow,
+                                      StaticProfile));
+
+      // Convert this matrix's values from Scalar to T.
+      const size_type numVals = this->values1D_.size ();
+      ArrayRCP<T> newVals1D (numVals);
+      for (size_type k = 0; k < numVals; ++k) {
+        newVals1D[k] = as<T> (this->values1D_[k]);
+      }
+
+      // Give this matrix all of its local data.  We can all this
+      // method because newmat was _not_ created with a const graph.
+      // The data must be passed in as nonconst, so we have to copy it
+      // first.
+      ArrayRCP<size_t> newPtr (ptr.size ());
+      std::copy (ptr.begin (), ptr.end (), newPtr.begin ());
+      ArrayRCP<LocalOrdinal> newInd (ind.size ());
+      std::copy (ind.begin (), ind.end (), newInd.begin ());
+      newmat->setAllValues (newPtr, newInd, newVals1D);
+
+      // We already have the Import and Export (if applicable) objects
+      // from the graph, so we can save a lot of time by passing them
+      // in to expertStaticFillComplete.
+      RCP<const map_type> domainMap = this->getDomainMap ();
+      RCP<const map_type> rangeMap = this->getRangeMap ();
+      RCP<const import_type> importer = this->getCrsGraph ()->getImporter ();
+      RCP<const export_type> exporter = this->getCrsGraph ()->getExporter ();
+      newmat->expertStaticFillComplete (domainMap, rangeMap, importer, exporter);
+    }
+
     return newmat;
   }
 

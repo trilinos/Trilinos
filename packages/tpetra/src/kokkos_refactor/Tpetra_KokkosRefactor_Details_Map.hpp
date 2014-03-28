@@ -87,18 +87,41 @@ namespace Tpetra {
     /// \note Structs given to functors just get copied over directly.
     template<class LO, class GO, class DeviceType>
     struct MapData {
-      GO minMyGID;
-      GO maxMyGID;
+      GO minMyGID; //!< My process' minimum GID
+      GO maxMyGID; //!< My process' maximum GID
+      /// \brief Count of failed inserts into GID->LID table.
+      ///
+      /// This should always be zero.  If not, there is a bug in the
+      /// code that called fillGlobalToLocalTable().
+      LO failedCount;
+      /// \brief Count of duplicate inserts into GID->LID table.
+      ///
+      /// This should only ever be nonzero if the GID list on the
+      /// calling process contains duplicates.  Map never supported
+      /// that case well, in either Epetra or Tpetra.  For example, it
+      /// would give those duplicate GIDs different LIDs.  If we ever
+      /// want to fix this, for example by detecting and filtering out
+      /// duplicate GIDs, we could use duplicateCount to detect that
+      /// case.  If detected, we could then reassign LIDs to GIDs by
+      /// merging duplicate GIDs, and rebuild the GID->LID table.  We
+      /// would have to do this _before_ any MPI_Allreduce or
+      /// MPI_*scan for computing the total GID count or offsets,
+      /// since it would change the number of GIDs on the affected
+      /// process(es).
+      LO duplicateCount;
+
+      //! Default constructor (to make this a proper value type).
+      MapData () :
+        minMyGID (0), maxMyGID (0), failedCount (0), duplicateCount (0)
+      {}
     };
 
     /// \class GlobalToLocalTableFiller
-    /// \brief Kokkos functor for filling GID->LID lookup table.
+    /// \brief Kokkos reduce functor for filling GID->LID table and
+    ///   computing min and max GID
     ///
     /// The functor is a reduce functor, not a for functor, because it
     /// also conveniently computes the min and max locally owned GID.
-    /// It assumes that in the input MapData struct,
-    /// firstContiguousGID and lastContiguousGID are set correctly.
-    /// Nothing else in the struct need be set correctly, or at all.
     template<class LO, class GO, class DeviceType>
     class GlobalToLocalTableFiller {
     public:
@@ -106,6 +129,16 @@ namespace Tpetra {
       typedef typename DeviceType::size_type size_type;
       typedef MapData<LO, GO, DeviceType> value_type;
 
+      /// \brief Constructor
+      ///
+      /// \param glMap [out] GID->LID table to fill; must already be
+      ///   preallocated with sufficient space.
+      /// \param entries [in] GIDs to put into GID->LID table.  These
+      ///   are only the zero or more "noncontiguous GIDs" that follow
+      ///   the initial sequence of one or more contiguous GIDs
+      ///   [firstContiguousGID, lastContiguousGID].
+      /// \param firstContiguousGID [in] The first contiguous GID.
+      /// \param lastContiguousGID [in] The last contiguous GID.
       GlobalToLocalTableFiller (const Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
                                 const Kokkos::View<const GO*, DeviceType>& entries,
                                 const GO firstContiguousGID,
@@ -129,6 +162,8 @@ namespace Tpetra {
       {
         dst.minMyGID = firstContiguousGID_;
         dst.maxMyGID = lastContiguousGID_;
+        dst.failedCount = 0;
+        dst.duplicateCount = 0;
       }
 
       /// \brief Combine two intermediate reduction results.
@@ -144,6 +179,8 @@ namespace Tpetra {
         if (src.minMyGID < dst.minMyGID) {
           dst.minMyGID = src.minMyGID;
         }
+        dst.failedCount += src.failedCount;
+        dst.duplicateCount += src.duplicateCount;
       }
 
       /// \brief Do this for every element of entries.
@@ -153,7 +190,11 @@ namespace Tpetra {
       KOKKOS_INLINE_FUNCTION void
       operator () (const size_type i, value_type& dst) const
       {
-        const LO lid = static_cast<LO> (i);
+        // [firstContiguousGID_, lastContiguousGID_] as GIDs map to
+        // [0, lastContiguousGID_ - firstContiguousGID_ + 1] as LIDs.
+        const LO lid =
+          static_cast<LO> (lastContiguousGID_ - firstContiguousGID_ + 1) +
+          static_cast<LO> (i);
         const GO gid = entries_(i);
 
         if (gid > dst.maxMyGID) {
@@ -162,66 +203,94 @@ namespace Tpetra {
         if (gid < dst.minMyGID) {
           dst.minMyGID = gid;
         }
-        // Ignore the error code.  The table should not run out of
-        // space, but if it does, the caller will try again.
-        (void) glMap_.insert (gid, lid);
+        // The table should not run out of space, but if it does, the
+        // caller will try again.
+        const Kokkos::UnorderedMapInsertResult result = glMap_.insert (gid, lid);
+
+        if (result.failed ()) {
+          dst.failedCount++;
+        }
+        else if (result.existing ()) {
+          dst.duplicateCount++;
+        }
       }
 
     private:
+      //! The GID->LID table to fill.
       Kokkos::UnorderedMap<GO, LO, DeviceType> glMap_;
+      //! The input list of GIDs (not including initial contiguous GIDs).
       Kokkos::View<const GO*, DeviceType> entries_;
+      //! First contiguous GID in initial contiguous GIDs.
       const GO firstContiguousGID_;
+      //! Last contiguous GID (inclusive) in initial contiguous GIDs.
       const GO lastContiguousGID_;
     };
 
     /// \brief Fill the GID->LID lookup table, and compute the local
     ///   min and max GID.  Return them through the returned struct.
     ///
-    /// \param glMap [in/out] The GID->LID lookup table.  We pass this
-    ///   by nonconst reference, so that the function can resize it.
+    /// The "noncontiguous" (GID list) constructor of
+    /// Tpetra::Details::Map calls this function.  It is an
+    /// implementation detail of Tpetra and not meant for users.
     ///
-    /// \param entries [in] The local list of GIDs.  It must contain
-    ///   at least one GID.
+    /// \param glMap [out] GID->LID table to fill; must already be
+    ///   preallocated with sufficient space.
+    /// \param entries [in] GIDs to put into GID->LID table.  These
+    ///   are only the zero or more "noncontiguous GIDs" that follow
+    ///   the initial sequence of one or more contiguous GIDs
+    ///   [firstContiguousGID, lastContiguousGID].
+    /// \param firstContiguousGID [in] The first contiguous GID.
+    /// \param lastContiguousGID [in] The last contiguous GID.
     ///
-    /// \param mapData [in] Struct, in which the first and last
-    ///   contiguous GIDs in entries (inclusive range; entries must
-    ///   contain at least one GID, so the minimum range is a
-    ///   singleton) are set correctly.
+    /// \return Struct containing the min and max GID on the calling
+    ///   process, and the counts of failed and duplicate inserts into
+    ///   the GID->LID table.  The count of failed inserts should
+    ///   always be zero.  The count of duplicate inserts may be
+    ///   nonzero, if the GID list on the calling process contains
+    ///   duplicates.  This is generally a bad idea, however.
     template<class LO, class GO, class DeviceType>
     MapData<LO, GO, DeviceType>
     fillGlobalToLocalTable (Kokkos::UnorderedMap<GO, LO, DeviceType>& glMap,
-                            Kokkos::View<const GO*, DeviceType> entries,
+                            const Kokkos::View<const GO*, DeviceType>& entries,
                             const GO firstContiguousGID,
                             const GO lastContiguousGID)
     {
       typedef typename DeviceType::size_type size_type;
       typedef GlobalToLocalTableFiller<LO, GO, DeviceType> functor_type;
+
+      const size_type numEnt = entries.dimension_0 ();
+      const size_type mapCap = glMap.capacity ();
+      if (mapCap < numEnt) {
+        Teuchos::ArrayView<const GO> lgMapAv (entries.ptr_on_device (), numEnt);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          mapCap < numEnt, std::logic_error, "fillGlobalToLocalTable: Input "
+          "GID->LID table to fill does not have sufficient capacity for the "
+          "given list of GIDs.  The table has capacity " << mapCap << ", but the "
+          "input list of GIDs has " << numEnt << " entr" <<
+          (numEnt != 1 ? "ies" : "y") << ".");
+      }
+
       functor_type filler (glMap, entries, firstContiguousGID, lastContiguousGID);
 
-      //const size_type numEntries = entries.dimension_0 ();
-      // if (glMap.capacity () < numEntries) {
-      //   // Leave extra space to avoid excessive collisions.
-      //   const size_type newSize =
-      //     static_cast<size_type> (1.25 * static_cast<double> (numEntries));
-      //   //glMap.rehash (newSize);
-      // }
-
       MapData<LO, GO, DeviceType> result;
-      Kokkos::parallel_reduce (entries.dimension_0 (), filler, result);
-      size_type numFailed = glMap.failed_inserts ();
-
-      // There should be no failed inserts, since we made the
-      // UnorderedMap more than big enough to hold all the GIDs.
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        numFailed != 0, std::runtime_error, "Tpetra::Details::fillGlobalTo"
-        "LocalTable: Inserting entries into GID->LID table failed.");
-
+      Kokkos::parallel_reduce (numEnt, filler, result);
       return result;
     }
 
+    /// \class Map
+    /// \brief Device implementation of Tpetra::Map
+    /// \tparam LO The local ordinal type
+    /// \tparam GO The global ordinal type
+    /// \tparam DeviceType The Kokkos device type
+    ///
     /// All methods marked \c const may be called in Kokkos parallel
     /// kernels.  No method that is not marked \c const may be called
     /// in a Kokkos parallel kernel.
+    ///
+    /// This class must <i>not</i> inherit from Teuchos::Describable,
+    /// because that class contains data (e.g., the object label) that
+    /// cannot live in CUDA device memory.  Every datum in this device
+    /// must be able to live on a CUDA device, without requiring UVM.
     template<class LO, class GO, class DeviceType>
     class Map {
     public:
@@ -254,9 +323,11 @@ namespace Tpetra {
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
         contiguous_ (false),
         distributed_ (true), // could be either false or true
-        uniform_ (false)
+        uniform_ (false),
+        initialized_ (false)
       {}
 
+      //! Contiguous uniform constructor.
       Map (const GO globalNumIndices,
            const GO indexBase,
            const Teuchos::Comm<int>& comm,
@@ -276,7 +347,8 @@ namespace Tpetra {
                     indexBase + globalNumIndices - 1), // final
         contiguous_ (true), // final
         distributed_ (true), // this may be changed below
-        uniform_ (true) // final
+        uniform_ (true), // final
+        initialized_ (true) // final
       {
         using Teuchos::as;
         using Teuchos::broadcast;
@@ -301,24 +373,24 @@ namespace Tpetra {
              std::invalid_argument,
              "Tpetra::Map constructor: All processes must provide the same number "
              "of global indices.  Process 0 set globalNumIndidces = "
-             << proc0GlobalNumIndices << ".  The calling process "
+             << proc0NumGlobalIndices << ".  The calling process "
              << comm.getRank () << " set globalNumIndices = " << globalNumIndices
              << ".  The min and max values over all processes are "
              << minGlobalNumIndices << " resp. " << maxGlobalNumIndices << ".");
 
           GO proc0IndexBase = indexBase;
-          broadcast<int, GO> (*comm, 0, outArg (proc0IndexBase));
+          broadcast<int, GO> (comm, 0, outArg (proc0IndexBase));
           GO minIndexBase = indexBase;
           GO maxIndexBase = indexBase;
-          reduceAll<int, GO> (*comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
-          reduceAll<int, GO> (*comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
+          reduceAll<int, GO> (comm, REDUCE_MIN, indexBase, outArg (minIndexBase));
+          reduceAll<int, GO> (comm, REDUCE_MAX, indexBase, outArg (maxIndexBase));
           TEUCHOS_TEST_FOR_EXCEPTION(
             minIndexBase != maxIndexBase || indexBase != minIndexBase,
           std::invalid_argument,
           "Tpetra::Map constructor: "
           "All processes must provide the same indexBase argument.  "
           "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-          "process " << comm->getRank () << " set indexBase = " << indexBase
+          "process " << comm.getRank () << " set indexBase = " << indexBase
           << ".  The min and max values over all processes are "
           << minIndexBase << " resp. " << maxIndexBase << ".");
         }
@@ -412,7 +484,7 @@ namespace Tpetra {
         lastContiguousGID_ = maxMyGID_;
       }
 
-
+      //! Contiguous but possibly nonuniform constructor.
       Map (const GO globalNumIndices,
            const LO myNumIndices,
            const GO indexBase,
@@ -428,9 +500,10 @@ namespace Tpetra {
         maxMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // set below
         minAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        contiguous_ (true), // final
+        contiguous_ (true),  // final
         distributed_ (true), // set below
-        uniform_ (false) // final (conservative; we could try to detect this)
+        uniform_ (false),    // final (conservative; we could try to detect this)
+        initialized_ (true)  // final
       {
         using Teuchos::broadcast;
         using Teuchos::outArg;
@@ -462,7 +535,7 @@ namespace Tpetra {
             "OrdinalTraits<global_size_t>::invalid() to signal that the Map should "
             "compute the global number of elements.  Process 0 set globalNumIndices"
             " = " << proc0GlobalNumIndices << ".  The calling process "
-            << comm->getRank () << " set globalNumIndices = " << globalNumIndices
+            << comm.getRank () << " set globalNumIndices = " << globalNumIndices
             << ".  The min and max values over all processes are "
             << minGlobalNumIndices << " resp. " << maxGlobalNumIndices << ".");
 
@@ -478,7 +551,7 @@ namespace Tpetra {
             "Tpetra::Map constructor: "
             "All processes must provide the same indexBase argument.  "
             "Process 0 set indexBase = " << proc0IndexBase << ".  The calling "
-            "process " << comm->getRank () << " set indexBase = " << indexBase
+            "process " << comm.getRank () << " set indexBase = " << indexBase
             << ".  The min and max values over all processes are "
             << minIndexBase << " resp. " << maxIndexBase << ".");
 
@@ -551,6 +624,7 @@ namespace Tpetra {
         distributed_ = checkIsDist (comm);
       }
 
+      //! Possibly noncontiguous constructor.
       Map (const GO globalNumIndices,
            const Kokkos::View<const GO*, DeviceType>& myGlobalIndices,
            const GO indexBase,
@@ -569,16 +643,11 @@ namespace Tpetra {
         lgMap_ (myGlobalIndices), // final (input assumed correct)
         contiguous_ (false), // final (conservative; we could try to detect this)
         distributed_ (true), // set below
-        uniform_ (false) // final (conservative; we could try to detect this)
+        uniform_ (false),    // final (conservative; we could try to detect this)
+        initialized_ (true)  // final
       {
         using Teuchos::outArg;
         using Teuchos::reduceAll;
-
-        {
-          std::ostringstream os;
-          os << "Proc " << comm.getRank () << ": Tpetra::Details::Map noncontig ctor" << std::endl;
-          std::cerr << os.str ();
-        }
 
         // FIXME (mfh 20 Feb 2013, 05 Feb 2014) The global reduction
         // is redundant, since the directory Map will have to do the
@@ -600,38 +669,82 @@ namespace Tpetra {
           // NOTE (mfh 05 Feb 2014) This assumes UVM, in that the
           // host here is reading from a device View.
           firstContiguousGID_ = lgMap_(0);
-          lastContiguousGID_ = firstContiguousGID_ + 1;
+          //lastContiguousGID_ = firstContiguousGID_ + 1;
+
+          // This is always true, as long as there is at least one
+          // GID; that is, there is always at least one entry in the
+          // sequence of contiguous GIDs, namely the first entry.
+          lastContiguousGID_ = firstContiguousGID_;
+
           // By choosing LO so that it can count the local number of
           // elements, the user asserts that it can fit any values in
           // [0, myNumIndices_-1].  Thus, it's OK for i to be LO.
           LO i = 1;
           for ( ; i < myNumIndices_; ++i) {
             const GO curGid = lgMap_(i);
-            if (lastContiguousGID_ != curGid) break;
-            ++lastContiguousGID_;
+            const GO newLastContigGID = lastContiguousGID_ + 1;
+            if (newLastContigGID != curGid) break;
+            lastContiguousGID_ = newLastContigGID;
           }
-          --lastContiguousGID_;
+          //--lastContiguousGID_;
 
           // [firstContiguousGID, lastContigousGID] is the initial
           // sequence of contiguous GIDs.  The sequence always
           // contains at least the first GID.
 
+          const size_t numContig =
+            static_cast<size_t> (lastContiguousGID_ - firstContiguousGID_ + 1);
+          const size_t numNonContig =
+            static_cast<size_t> (myNumIndices_) - numContig;
+
           // Make a view of the given GIDs, _not_ including the
           // initial sequence of contiguous GIDs.  The GID -> LID
           // table does not store this initial sequence.
-          //Kokkos::View<const GO*, DeviceType> nonContigEntries =
-          nonContigEntries =
-            Kokkos::subview<Kokkos::View<const GO*, DeviceType> > (lgMap_, std::pair<size_t, size_t> (i, myNumIndices_ - (lastContiguousGID_ - firstContiguousGID_)));
 
+          std::pair<size_t, size_t> offsetInfo (numContig, numContig + numNonContig);
+          nonContigEntries =
+            Kokkos::subview<Kokkos::View<const GO*, DeviceType> > (lgMap_, offsetInfo);
+
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            static_cast<size_t> (nonContigEntries.dimension_0 ()) != numNonContig,
+            std::logic_error, "Tpetra::Details::Map: On Process " << comm.getRank ()
+            << ", computed offset into noncontiguous entries incorrectly.  "
+            "nonContigEntries.dimension_0() = " << nonContigEntries.dimension_0 ()
+            << ", but numNonContig = " << numNonContig << ".");
+
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            numNonContig != 0 && nonContigEntries(0) != lgMap_(numContig),
+            std::logic_error, "Tpetra::Details::Map: On Process " << comm.getRank ()
+            << ", computed view of noncontiguous entries incorrectly.  "
+            "nonContigEntries(0) = " << nonContigEntries(0) << " != "
+            "lgMap_(numNonContig = " << numNonContig << ") = " <<
+            lgMap_(numNonContig) << ".");
+
+          //
           // Fill the GID -> LID table, and compute local min and max
           // GIDs, both at the same time in a single parallel kernel.
-          Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
-          MapData<LO, GO, DeviceType> mapData;
-          mapData = fillGlobalToLocalTable (glMap, nonContigEntries,
-                                            firstContiguousGID_,
-                                            lastContiguousGID_);
-          minMyGID_ = mapData.minMyGID;
-          maxMyGID_ = mapData.maxMyGID;
+          //
+
+          // Allocate space for GID -> LID table.  Leave extra space
+          // to avoid excessive collisions.
+          typedef typename DeviceType::size_type size_type;
+          const size_type tableSize =
+            static_cast<size_type> (1.25 * static_cast<double> (numNonContig));
+          Kokkos::UnorderedMap<GO, LO, DeviceType> glMap (tableSize);
+          MapData<LO, GO, DeviceType> result =
+            fillGlobalToLocalTable (glMap, nonContigEntries,
+                                    firstContiguousGID_,
+                                    lastContiguousGID_);
+
+          // There should be no failed inserts, since we made the
+          // UnorderedMap more than big enough to hold all the GIDs.
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            result.failedCount != 0, std::logic_error, "Tpetra::Details::Map: "
+            << result.failedCount << " insert(s) into GID->LID table failed "
+            "out of " << numNonContig << " total GIDs to insert.");
+
+          minMyGID_ = result.minMyGID;
+          maxMyGID_ = result.maxMyGID;
 
           // This is a shallow copy, that casts to const.  After
           // creating the UnorderedMap, we don't need to modify it, so
@@ -821,23 +934,6 @@ namespace Tpetra {
           } // if GO is signed
         }
 
-        // {
-        //   Teuchos::ArrayView<const GO> av (const_cast<const GO*> (myGlobalIndices.ptr_on_device ()),
-        //                                    myGlobalIndices.dimension_0 ());
-        //   Teuchos::ArrayView<const GO> av2 (nonContigEntries.ptr_on_device (),
-        //                                     nonContigEntries.dimension_0 ());
-        //   std::ostringstream os;
-        //   os << "Proc " << comm.getRank () << ": "
-        //      << "my first,last contig GIDs = "
-        //      << firstContiguousGID_ << "," << lastContiguousGID_
-        //      << "; my min,max = " << minMyGID_ << "," << maxMyGID_
-        //      << "; all min,max = " << minAllGID_ << "," << maxAllGID_
-        //      << "; my GIDs: " << Teuchos::toString (av)
-        //      << "; my noncontig GIDs: " << Teuchos::toString (av2)
-        //      << std::endl;
-        //   std::cerr << os.str ();
-        // }
-
         // mfh 10 Feb 2014: tpetra/test/Map/Map_UnitTests.cpp,
         // indexBaseAndAllMin test uses a different indexBase input
         // (0) than the actual min GID (1).  Other tests seem to
@@ -851,47 +947,66 @@ namespace Tpetra {
         //   "The Map has " << globalNumIndices_ << " > 0 global indices, but the "
         //   "min global index " << minAllGID_ << " over all process(es) does not "
         //   "equal the given indexBase " << indexBase_ << ".");
-
-        {
-          std::ostringstream os;
-          os << "Proc " << comm.getRank () << ": Tpetra::Details::Map noncontig ctor DONE" << std::endl;
-          std::cerr << os.str ();
-        }
       }
 
-      //! Make this Map a copy of the input Map, but for a (possibly) different device.
+      /// \brief Make this Map a copy of the input Map, but for a
+      ///   (possibly) different device.
       template<class InDeviceType>
       void
       create_copy_view (const Map<LO, GO, InDeviceType>& map)
       {
-        invalidGlobalIndex_ = map.invalidGlobalIndex_;
-        invalidLocalIndex_ = map.invalidLocalIndex_;
-        globalNumIndices_ = map.globalNumIndices_;
-        myNumIndices_ = map.myNumIndices_;
-        indexBase_ = map.indexBase_;
-        firstContiguousGID_ = map.firstContiguousGID_;
-        lastContiguousGID_ = map.lastContiguousGID_;
-        minMyGID_ = map.minMyGID_;
-        maxMyGID_ = map.maxMyGID_;
-        minAllGID_ = map.minAllGID_;
-        maxAllGID_ = map.maxAllGID_;
-
-        if (map.myNumIndices_ != 0 &&
-            ! map.contiguous_ &&
-            map.myNumIndices_ != (map.lastContiguousGID_ - map.firstContiguousGID_ + 1)) {
-          // The calling process owns one or more GIDs, and some of
-          // these GIDs are not contiguous.
-          Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
-          glMap.create_copy_view (map.glMap_);
-          glMap_ = glMap;
+        if (! map.initialized ()) {
+          invalidGlobalIndex_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          invalidLocalIndex_ = Teuchos::OrdinalTraits<LO>::invalid ();
+          globalNumIndices_ = 0;
+          myNumIndices_ = 0;
+          indexBase_ = 0;
+          firstContiguousGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          lastContiguousGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          minMyGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          maxMyGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          minAllGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          maxAllGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          contiguous_ = false;
+          distributed_ = true;
+          uniform_ = false;
+          initialized_ = false;
         }
+        else {
+          invalidGlobalIndex_ = map.invalidGlobalIndex_;
+          invalidLocalIndex_ = map.invalidLocalIndex_;
+          globalNumIndices_ = map.globalNumIndices_;
+          myNumIndices_ = map.myNumIndices_;
+          indexBase_ = map.indexBase_;
+          firstContiguousGID_ = map.firstContiguousGID_;
+          lastContiguousGID_ = map.lastContiguousGID_;
+          minMyGID_ = map.minMyGID_;
+          maxMyGID_ = map.maxMyGID_;
+          minAllGID_ = map.minAllGID_;
+          maxAllGID_ = map.maxAllGID_;
 
-        // It's OK for this to be dimension 0; that means it hasn't been initialized yet.
-        Kokkos::View<GO*, DeviceType> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
-        if (map.lgMap_.dimension_0 () != 0) {
-          Kokkos::deep_copy (lgMap, map.lgMap_);
+          if (! map.contiguous_) {
+            if (map.myNumIndices_ != 0 && map.glMap_.size () != 0) {
+              // The calling process owns one or more GIDs, and some of
+              // these GIDs are not contiguous.
+              Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
+              glMap.create_copy_view (map.glMap_);
+              glMap_ = glMap;
+            }
+
+            // It's OK for this to be dimension 0; that means it hasn't been initialized yet.
+            Kokkos::View<GO*, DeviceType> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
+            if (map.lgMap_.dimension_0 () != 0) {
+              Kokkos::deep_copy (lgMap, map.lgMap_);
+            }
+            lgMap_ = lgMap; // shallow copy and cast to const
+          }
+
+          contiguous_ = map.contiguous_;
+          distributed_ = map.distributed_;
+          uniform_ = map.uniform_;
+          initialized_ = map.initialized_;
         }
-        lgMap_ = lgMap; // shallow copy and cast to const
       }
 
       /// \brief Set the \c distributed_ state.
@@ -903,6 +1018,20 @@ namespace Tpetra {
       ///   automatically.
       void setDistributed (const bool distributed) {
         distributed_ = distributed;
+      }
+
+      /// \brief Whether this Map has been initialized.
+      ///
+      /// The default Map constructor creates an uninitialized Map.
+      /// All other Map constructors create an initialized Map.  The
+      /// create_copy_view method set the output Map (the
+      /// <tt>*this</tt> argument) as initialized.
+      ///
+      /// It is an error to use an uninitialized Map.  Results are
+      /// undefined, but the resulting Map will likely behave as if it
+      /// were empty.
+      bool initialized () const {
+        return initialized_;
       }
 
       //@}
@@ -1001,10 +1130,13 @@ namespace Tpetra {
           return static_cast<LO> (globalIndex - firstContiguousGID_);
         }
         else {
+          // This also works if this process owns no indices.
+          // In that case, glMap_ will be empty, so this branch
+          // will always return the invalid LID.
           const typename global_to_local_table_type::size_type i =
             glMap_.find (globalIndex);
           return glMap_.valid_at (i) ? // if the GID is in the map, ...
-            glMap_.value_at (i) : // ... return the corresponding LID,
+            glMap_.value_at (i) : // ... return its LID, ...
             getInvalidLocalIndex (); // ... else return the invalid LID.
         }
       }
@@ -1014,7 +1146,9 @@ namespace Tpetra {
       /// If the given local index is not valid on the calling process,
       /// return Teuchos::OrdinalTraits<GO>::invalid().
       KOKKOS_INLINE_FUNCTION GO getGlobalIndex (const LO localIndex) const {
-        if (localIndex < getMinLocalIndex () || localIndex > getMaxLocalIndex ()) {
+        if (localIndex < getMinLocalIndex () ||
+            localIndex > getMaxLocalIndex ()) {
+          // This process will always take this branch if it owns no indices.
           return getInvalidGlobalIndex ();
         }
         else if (isContiguous ()) {
@@ -1028,7 +1162,8 @@ namespace Tpetra {
       //! Whether the given local index is owned by (valid on) the calling process.
       KOKKOS_INLINE_FUNCTION bool
       isOwnedLocalIndex (const LO localIndex) const {
-        return localIndex >= getMinLocalIndex () && localIndex <= getMaxLocalIndex ();
+        return localIndex >= getMinLocalIndex () &&
+          localIndex <= getMaxLocalIndex ();
       }
 
       //! Whether the given global index is owned by the calling process.
@@ -1132,6 +1267,73 @@ namespace Tpetra {
       }
 
     private:
+      void validateLocally (const int myRank) {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          invalidGlobalIndex_ != Teuchos::OrdinalTraits<GO>::invalid (),
+          std::logic_error,
+          "Tpetra::Details::Map: On Process " << myRank << ", "
+          "invalidGlobalIndex_ was not set.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          invalidLocalIndex_ != Teuchos::OrdinalTraits<LO>::invalid (),
+          std::logic_error,
+          "Tpetra::Details::Map: On Process " << myRank << ", "
+          "invalidLocalIndex_ was not set.");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          ! contiguous_ && myNumIndices_ != lgMap_.dimension_0 (),
+          std::logic_error, "Tpetra::Details::Map: On Process " << myRank <<
+          ", this noncontiguous Map has myNumIndices_ = " << myNumIndices_ <<
+          " != lgMap_.dimension_0 () = " << lgMap_.dimension_0 () << ".");
+
+        // Test whether the Map contains all the noncontiguous indices
+        // it claims to contain.
+        if (! contiguous_ && myNumIndices_ > 0) {
+          bool bad = false;
+          Teuchos::Array<GO> badGlobals;
+          Teuchos::Array<LO> badLocalsIn;
+          Teuchos::Array<LO> badLocalsOut;
+
+          for (LO localIndexIn = 0; localIndexIn < myNumIndices_; ++localIndexIn) {
+            const GO globalIndex = this->getGlobalIndex (localIndexIn);
+            const LO localIndexOut = this->getLocalIndex (globalIndex);
+
+            if (localIndexIn != localIndexOut) {
+              bad = true;
+              badGlobals.push_back (globalIndex);
+              badLocalsIn.push_back (localIndexIn);
+              badLocalsOut.push_back (localIndexOut);
+            }
+          }
+
+          // Get the GID->LID table's keys and values as Teuchos::Array.
+          typedef typename DeviceType::size_type size_type;
+          const size_type mapSize = glMap_.size ();
+          Teuchos::Array<GO> keys;
+          Teuchos::Array<LO> vals;
+          keys.reserve (mapSize);
+          vals.reserve (mapSize);
+          for (size_type k = 0; k < mapSize; ++k) {
+            keys.push_back (glMap_.key_at (k));
+            vals.push_back (glMap_.value_at (k));
+          }
+          // Get the LID->GID table as an ArrayView for easy printing.
+          Teuchos::ArrayView<const GO> lgMapAv (lgMap_.ptr_on_device (),
+                                                lgMap_.dimension_0 ());
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            bad, std::logic_error, "Tpetra::Details::Map: On Process " <<
+            myRank << ", this noncontiguous Map's GID->LID lookup is broken.  "
+            "The following GIDs are in this process' GID list, but attempting "
+            "to look up their LIDs gives the wrong answer: " << badGlobals () <<
+            ".  The corresponding LID list should have been " << badLocalsIn ()
+            << ", but was " << badLocalsOut << " instead.  The Map's GID list "
+            "is " << lgMapAv << ".  The keys in the GID->LID table are " <<
+            keys () << " and their values are " << vals () << ".  The GID->LID "
+            "table reports its size as " << mapSize << " and its capacity as "
+            << glMap_.capacity () << ".  The initial sequence of contiguous "
+            "GIDs on this process is [" << firstContiguousGID_ << "," <<
+            lastContiguousGID_ << "].");
+        }
+      }
+
       /// \brief Whether this Map is globally distributed or locally replicated.
       ///
       /// \param comm [in] This Map's communicator.
@@ -1283,6 +1485,136 @@ namespace Tpetra {
       /// (uniform contiguous) constructor or a nonmember constructor
       /// that calls it.
       bool uniform_;
+
+      /// \brief Whether this Map has been initialized.
+      ///
+      /// Please see the documentation of initialized() for details.
+      bool initialized_;
+    };
+
+    /// \class MapMirrorer
+    /// \brief Return a mirror of either deviceMap or hostMap for a
+    ///   possibly different output device type.
+    ///
+    /// \tparam OutMapType A specialization of Map; the type of the
+    ///   return value of mirror().
+    /// \tparam DeviceMapType A specialization of Map; the type of the
+    ///   \c deviceMap input.
+    /// \tparam HostMapType A specialization of Map; the type of the
+    ///   \c hostMap input.
+    ///
+    /// MapMirrorer's mirror() method returns a "mirror copy" of
+    /// either deviceMap or hostMap.  It assumes that both Maps
+    /// represents the same distribution, just stored on possibly
+    /// different devices.  A "mirror copy" is a shallow copy if
+    /// possible, else a deep copy.  The method will favor the
+    /// initialized Map, if one of deviceMap or hostMap is not
+    /// initialized.
+    ///
+    /// The mirror() method will only compile if all three Map types
+    /// have the same first two template parameters (LO and GO).
+    ///
+    /// If mirror() had to do work (a deep copy) to create the mirror,
+    /// then we cache that work.  This is why the input arguments are
+    /// passed in as nonconst references.
+    template<class OutMapType, class DeviceMapType, class HostMapType>
+    struct MapMirrorer {
+      typedef OutMapType output_map_type;
+      typedef DeviceMapType device_map_type;
+      typedef HostMapType host_map_type;
+
+      //! Return a mirror copy of either deviceMap or hostMap.
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap);
+    };
+
+    // Partial specialization for when all three Maps have different
+    // device types.
+    template<class LO, class GO, class OutDeviceType, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, OutDeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, OutDeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        output_map_type outputMap;
+
+        // Favor the host Map, since if OutDeviceType != DeviceType,
+        // then OutDeviceType is likely not to be a CUDA device (e.g.,
+        // DeviceType = Cuda, HostDeviceType = OpenMP, and
+        // OutDeviceType = Serial).
+        if (hostMap.initialized ()) {
+          outputMap.template create_copy_view<HostDeviceType> (hostMap);
+        } else {
+          outputMap.template create_copy_view<DeviceType> (deviceMap);
+        }
+        return outputMap;
+      }
+    };
+
+    // Partial specialization for when the device and host Maps have
+    // different device types, and the output Map has the same device
+    // type as the device Map.
+    template<class LO, class GO, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, DeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        if (deviceMap.initialized ()) {
+          return deviceMap;
+        }
+        else {
+          output_map_type outMap;
+          outMap.template create_copy_view<HostDeviceType> (hostMap);
+          if (outMap.initialized () && ! deviceMap.initialized ()) {
+            deviceMap = outMap; // cache the deep copy
+          }
+          return outMap;
+        }
+      }
+    };
+
+    // Partial specialization for when the device and host Maps have
+    // different device types, and the output Map has the same device
+    // type as the host Map.
+    template<class LO, class GO, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, HostDeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, HostDeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        if (hostMap.initialized ()) {
+          return hostMap;
+        }
+        else {
+          output_map_type outMap;
+          outMap.template create_copy_view<DeviceType> (deviceMap);
+          if (outMap.initialized ()) {
+            hostMap = outMap; // cache the deep copy
+          }
+          return outMap;
+        }
+      }
+    };
+
+    // Partial specialization for when the device, host, and output
+    // Maps have the same device types.
+    template<class LO, class GO, class DeviceType>
+    struct MapMirrorer<Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType> > {
+      typedef Map<LO, GO, DeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, DeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, const host_map_type& /* hostMap */ ) {
+        return deviceMap;
+      }
     };
 
   }

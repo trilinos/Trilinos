@@ -43,6 +43,8 @@
 #define THYRA_DEFAULT_ZERO_LINEAR_OP_DECL_HPP
 
 #include "Thyra_ZeroLinearOpBase.hpp"
+#include "Thyra_RowStatLinearOpBase.hpp"
+#include "Thyra_ScaledLinearOpBase.hpp"
 #include "Teuchos_ConstNonconstObjectContainer.hpp"
 
 
@@ -66,7 +68,10 @@ namespace Thyra {
  * \ingroup Thyra_Op_Vec_ANA_Development_grp
  */
 template<class Scalar>
-class DefaultZeroLinearOp : virtual public ZeroLinearOpBase<Scalar>
+class DefaultZeroLinearOp 
+  : virtual public ZeroLinearOpBase<Scalar>
+  , virtual public RowStatLinearOpBase<Scalar>
+  , virtual public ScaledLinearOpBase<Scalar>
 {
 public:
 
@@ -162,6 +167,41 @@ protected:
 
   //@}
 
+  /** @name Overridden from RowStatLinearOpBase */
+  //@{
+
+  /** \brief . */
+  virtual bool rowStatIsSupportedImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat) const;
+ 	
+  /** \brief . */
+  virtual void getRowStatImpl(
+    const RowStatLinearOpBaseUtils::ERowStat rowStat, 
+    const Teuchos::Ptr<VectorBase< Scalar> > &rowStatVec) const;
+
+  //@}
+
+  /** @name Overridden from ScaledLinearOpBase */
+  //@{
+
+  /** \brief . */
+  virtual bool supportsScaleLeftImpl() const
+  { return true; }
+
+  /** \brief . */
+  virtual bool supportsScaleRightImpl() const
+  { return true; }
+ 
+  /** \brief . */ // Meaningless operation
+  virtual void scaleLeftImpl(const VectorBase< Scalar > &row_scaling)
+  { }
+
+  /** \brief . */ // Meaningless operation
+  virtual void scaleRightImpl(const VectorBase< Scalar > &col_scaling)
+  { }
+
+  //@}
+
 private:
 
   RCP<const VectorSpaceBase<Scalar> > range_;
@@ -181,6 +221,20 @@ private:
 template<class Scalar>
 RCP<const LinearOpBase<Scalar> >
 zero(
+  const RCP<const VectorSpaceBase<Scalar> > &range,
+  const RCP<const VectorSpaceBase<Scalar> > &domain
+  );
+
+/** \brief Create a nonconst zero linear operator with given range and domain spaces.
+ *
+ * This is to enable support for using the ScaledLinearOp interface. Which does nothing
+ * yet still requires nonconstant operators.
+ *
+ * \relates DefaultZeroLinearOp
+ */
+template<class Scalar>
+RCP<LinearOpBase<Scalar> >
+nonconstZero(
   const RCP<const VectorSpaceBase<Scalar> > &range,
   const RCP<const VectorSpaceBase<Scalar> > &domain
   );

@@ -336,4 +336,8 @@ getLocalRowCopy (local_ordinal_type localRow,
 } // namespace Details
 } // namespace Ifpack2
 
+#define IFPACK2_DETAILS_OVERLAPPINGROWGRAPH_INSTANT(LO,GO,N) \
+  template class Ifpack2::Details::OverlappingRowGraph<Tpetra::CrsGraph< LO, GO, N > >; \
+  template class Ifpack2::Details::OverlappingRowGraph<Tpetra::RowGraph< LO, GO, N > >;
+
 #endif // IFPACK2_OVERLAPPINGROWGRAPH_DEF_HPP

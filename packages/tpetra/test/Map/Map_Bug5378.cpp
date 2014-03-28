@@ -1,13 +1,13 @@
 /*
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 */
@@ -74,8 +74,8 @@ using Teuchos::RCP;
 using Teuchos::Array;
 using Teuchos::tuple;
 
-//// 
-TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDs ) 
+////
+TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDs )
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD));
   /**********************************************************************************/
@@ -84,21 +84,26 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDs )
   // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6 7 8 9
   //
   // Lookup of any valid global ID should identify with proc 0
-  // 
+  //
   RCP<const Tpetra::Map<int,long> > map = Tpetra::createContigMap<int,long>(10,10,comm);
   Array<long> lookup_gids(  tuple<long>(1,3,5) );
   Array<int> expected_ids(  tuple<int>( 0,0,0) );
   Array<int> expected_lids( tuple<int>( 1,3,5) );
-  Array<int> nodeIDs( lookup_gids.size() ), 
+  Array<int> nodeIDs( lookup_gids.size() ),
              nodeLIDs( lookup_gids.size() );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs(), nodeLIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::AllIDsPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
   TEST_COMPARE_ARRAYS( nodeLIDs(), expected_lids() );
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
-//// 
-TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDs ) 
+////
+TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDs )
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD));
   /**********************************************************************************/
@@ -107,21 +112,26 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDs )
   // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6 7 8 9
   //
   // Lookup of any valid global ID should identify with proc 0
-  // 
+  //
   RCP<const Tpetra::Map<int,long> > map = Tpetra::createContigMap<int,long>(10,10,comm);
   Array<long> lookup_gids(  tuple<long>(1,10,5) );
   Array<int> expected_ids(  tuple<int>( 0,-1,0) );
   Array<int> expected_lids( tuple<int>( 1,-1,5) );
-  Array<int> nodeIDs( lookup_gids.size() ), 
+  Array<int> nodeIDs( lookup_gids.size() ),
              nodeLIDs( lookup_gids.size() );
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs(), nodeLIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
   TEST_COMPARE_ARRAYS( nodeLIDs(), expected_lids() );
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
-//// 
-TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDsNoLIDs ) 
+////
+TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDsNoLIDs )
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD));
   /**********************************************************************************/
@@ -130,7 +140,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDsNoLIDs )
   // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6 7 8 9
   //
   // Lookup of any valid global ID should identify with proc 0
-  // 
+  //
   RCP<const Tpetra::Map<int,long> > map = Tpetra::createContigMap<int,long>(10,10,comm);
   Array<long> lookup_gids(  tuple<long>(1,3,5) );
   Array<int> expected_ids(  tuple<int>( 0,0,0) );
@@ -138,10 +148,15 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_GoodGIDsNoLIDs )
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::AllIDsPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
-//// 
-TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDsNoLIDs ) 
+////
+TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDsNoLIDs )
 {
   RCP<const Teuchos::Comm<int> > comm = Teuchos::createMpiComm<int>(Teuchos::opaqueWrapper<MPI_Comm> (MPI_COMM_WORLD));
   /**********************************************************************************/
@@ -150,7 +165,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDsNoLIDs )
   // SRC Map  Processor 0: Global IDs = 0 1 2 3 4 5 6 7 8 9
   //
   // Lookup of any valid global ID should identify with proc 0
-  // 
+  //
   RCP<const Tpetra::Map<int,long> > map = Tpetra::createContigMap<int,long>(10,10,comm);
   Array<long> lookup_gids(  tuple<long>(1,10,5) );
   Array<int> expected_ids(  tuple<int>( 0,-1,0) );
@@ -158,6 +173,11 @@ TEUCHOS_UNIT_TEST( Map, Bug5378_BadGIDsNoLIDs )
   Tpetra::LookupStatus lookup = map->getRemoteIndexList( lookup_gids(), nodeIDs() );
   TEST_EQUALITY_CONST( lookup, Tpetra::IDNotPresent )
   TEST_COMPARE_ARRAYS( nodeIDs(), expected_ids() );
+
+  // Process 0 is responsible for printing the "SUCCESS" / "PASSED"
+  // message, so without the barrier, it's possible for the test to be
+  // reported as passing, even if the other processes crashed or hung.
+  comm->barrier ();
 }
 
 #endif  //DO_COMPILATION

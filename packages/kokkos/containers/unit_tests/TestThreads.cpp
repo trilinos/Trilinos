@@ -67,17 +67,19 @@ protected:
   {
     std::cout << std::setprecision(5) << std::scientific;
 
-    unsigned team_count = 1 ;
-    unsigned threads_per_team = 4 ;
+    unsigned num_threads = 4;
 
-    if ( Kokkos::hwloc::available() ) {
-      team_count = Kokkos::hwloc::get_available_numa_count();
-      threads_per_team = Kokkos::hwloc::get_available_cores_per_numa() *
-                         Kokkos::hwloc::get_available_threads_per_core();
+    if (Kokkos::hwloc::available()) {
+      num_threads = Kokkos::hwloc::get_available_numa_count()
+                    * Kokkos::hwloc::get_available_cores_per_numa()
+                 // * Kokkos::hwloc::get_available_threads_per_core()
+                    ;
+
     }
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
-    //Kokkos::Threads::initialize( 1);
+    std::cout << "Threads: " << num_threads << std::endl;
+
+    Kokkos::Threads::initialize( num_threads );
   }
 
   static void TearDownTestCase()
@@ -120,8 +122,8 @@ protected:
       test_dualview_combinations<int,Kokkos::Threads>(size);                     \
   }
 
-THREADS_INSERT_TEST(close,100000, 90000, 100, 500)
-THREADS_INSERT_TEST(far,100000, 90000, 100, 500)
+THREADS_INSERT_TEST(close, 100000, 90000, 100, 500)
+THREADS_INSERT_TEST(far, 100000, 90000, 100, 500)
 THREADS_FAILED_INSERT_TEST( 10000, 1000 )
 THREADS_DEEP_COPY( 10000, 1 )
 

@@ -43,15 +43,6 @@
 // ***********************************************************************
 //
 // @HEADER
-/*
- * Xpetra_BlockedCrsMatrix.hpp
- *
- *  Created on: Aug 17, 2011
- *      Author: wiesner
- */
-
-// WARNING: This code is experimental. Backwards compatibility should not be expected.
-
 #ifndef XPETRA_BLOCKEDCRSMATRIX_HPP
 #define XPETRA_BLOCKEDCRSMATRIX_HPP
 
@@ -74,9 +65,6 @@
 #include "Xpetra_MapExtractor.hpp"
 
 #include "Xpetra_Matrix.hpp"
-
-#define sumAll(rcpComm, in, out)                                        \
-  Teuchos::reduceAll(*rcpComm, Teuchos::REDUCE_SUM, in, Teuchos::outArg(out));
 
 /** \file Xpetra_BlockedCrsMatrix.hpp
 
@@ -263,7 +251,6 @@ public:
   \post <tt>isFillComplete() == true<tt>
   \post if <tt>os == DoOptimizeStorage<tt>, then <tt>isStorageOptimized() == true</tt>
   */
-  //TODO : Get ride of "Tpetra"::OptimizeOption
   void fillComplete(const RCP<ParameterList> &params=null)
   {
     for (size_t r=0; r<Rows(); ++r)
@@ -276,44 +263,43 @@ public:
     }
 
     // get full row map
-    //fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getNodeNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
-    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getGlobalNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());//rangemaps_->FullMap(); //->Clone();
+    fullrowmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), rangemaps_->getFullMap()->getGlobalNumElements(), rangemaps_->getFullMap()->getNodeElementList(), rangemaps_->getFullMap()->getIndexBase(), rangemaps_->getFullMap()->getComm());
 
-    // TODO: check me, clean up, use only ArrayView instead of std::vector
     // build full col map
     fullcolmap_ = Teuchos::null; // delete old full column map
-    if (fullcolmap_ == Teuchos::null)
+
+    std::vector<GlobalOrdinal> colmapentries;
+    // loop over all block columns
+    for (size_t c=0; c<Cols(); ++c)
     {
-      std::vector<GlobalOrdinal> colmapentries;
-      for (size_t c=0; c<Cols(); ++c)
+      // copy all local column lids of all block rows to colset
+      std::set<GlobalOrdinal> colset;
+      // loop over all block rows
+      for (size_t r=0; r<Rows(); ++r)
       {
-        std::set<GlobalOrdinal> colset;
-        for (size_t r=0; r<Rows(); ++r)
-        {
-          if(getMatrix(r,c) != Teuchos::null) {
-            Teuchos::RCP<const Map> colmap = getMatrix(r,c)->getColMap();
-            copy(colmap->getNodeElementList().getRawPtr(),
-          colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
-          inserter(colset,colset.begin()));
-          }
+        if(getMatrix(r,c) != Teuchos::null) {
+          Teuchos::RCP<const Map> colmap = getMatrix(r,c)->getColMap();
+          copy(colmap->getNodeElementList().getRawPtr(),
+        colmap->getNodeElementList().getRawPtr()+colmap->getNodeNumElements(),
+        inserter(colset,colset.begin()));
         }
-        colmapentries.reserve(colmapentries.size()+colset.size());
-        copy(colset.begin(), colset.end(), back_inserter(colmapentries));
-        sort(colmapentries.begin(), colmapentries.end());
-        typename std::vector<GlobalOrdinal>::iterator gendLocation;
-        gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
-        colmapentries.erase(gendLocation,colmapentries.end());
       }
-
-      // sum up number of local elements
-      size_t numGlobalElements = 0;
-      sumAll(rangemaps_->getFullMap()->getComm(), colmapentries.size(), numGlobalElements)
-
-      const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
-      fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());
-      //fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), domainmaps_->getFullMap()->getGlobalNumElements(), aView, 0,domainmaps_->getFullMap()->getComm());
+      // remove duplicates (entries which are in column maps of more than one block row)
+      colmapentries.reserve(colmapentries.size()+colset.size());
+      copy(colset.begin(), colset.end(), back_inserter(colmapentries));
+      sort(colmapentries.begin(), colmapentries.end());
+      typename std::vector<GlobalOrdinal>::iterator gendLocation;
+      gendLocation = std::unique(colmapentries.begin(), colmapentries.end());
+      colmapentries.erase(gendLocation,colmapentries.end());
     }
 
+    // sum up number of local elements
+    size_t numGlobalElements = 0;
+    Teuchos::reduceAll(*(rangemaps_->getFullMap()->getComm()), Teuchos::REDUCE_SUM, colmapentries.size(), Teuchos::outArg(numGlobalElements));
+
+    // store global full column map
+    const Teuchos::ArrayView<const GlobalOrdinal> aView = Teuchos::ArrayView<const GlobalOrdinal>(colmapentries);
+    fullcolmap_ = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(rangemaps_->getFullMap()->lib(), numGlobalElements, aView, 0,rangemaps_->getFullMap()->getComm());
 
   }
 
@@ -571,8 +557,6 @@ public:
                      Scalar alpha = ScalarTraits<Scalar>::one(),
                      Scalar beta = ScalarTraits<Scalar>::zero()) const
   {
-    // TODO: check maps
-
     Teuchos::RCP<const MultiVector> tX   = Teuchos::rcp(&X,false);
     Teuchos::RCP<      MultiVector> tmpY = MultiVectorFactory::Build(Y.getMap(), Y.getNumVectors());
 
@@ -735,13 +719,7 @@ public:
       }
     }
 
-
-    //matrixData_->describe(out,verbLevel);
-
-    // Teuchos::OSTab tab(out);
   }
-
-  // JG: Added:
 
   //! Returns the CrsGraph associated with this matrix.
   RCP<const CrsGraph> getCrsGraph() const
@@ -772,10 +750,6 @@ public:
 
     TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
     TEUCHOS_TEST_FOR_EXCEPTION(c > Cols(), std::out_of_range, "Error, c = " << Cols() << " is too big");
-
-    // check row map
-    //if (!rangemaps_->Map(r)->isSameAs(mat->getRowMap()))
-    //  TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::RuntimeError, "Error. row maps do not fit.");
 
     // set matrix
     blocks_[r*Cols()+c] = mat;
@@ -845,8 +819,6 @@ private:
           for (size_t j=0; j<NumEntries; ++j)
             Values[j] *= scalarA;
 
-
-#if 1
         std::vector<GlobalOrdinal> tempVec;
         std::vector<Scalar> tempVal;
         for (size_t j=0; j<NumEntries; ++j)
@@ -857,22 +829,6 @@ private:
         Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempVec[0], tempVec.size());
         Teuchos::ArrayView<Scalar>        tempValue(&tempVal[0], tempVal.size());
         B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
-#else
-
-        std::vector<GlobalOrdinal> tempvecIndices(NumEntries);
-        std::copy(Indices.getRawPtr(),
-            Indices.getRawPtr()+NumEntries,
-            std::inserter(tempvecIndices,tempvecIndices.begin()));
-        std::vector<Scalar> tempvecValues(NumEntries);
-        std::copy(Values.getRawPtr(),
-            Values.getRawPtr()+NumEntries,
-            std::inserter(tempvecValues,tempvecValues.begin()));
-        Teuchos::ArrayView<GlobalOrdinal> tempIndex(&tempvecIndices[0], NumEntries);
-        Teuchos::ArrayView<Scalar>        tempValue(&tempvecValues[0],  NumEntries);
-        B->insertGlobalValues(Row, tempIndex, tempValue); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
-#endif
-
-
       }
     }
   }
@@ -892,8 +848,6 @@ private:
   }
 
 private:
-  // Teuchos::RCP<CrsMatrix> matrixData_;
-
   /// the full domain map together with all partial domain maps
   Teuchos::RCP<const MapExtractor> domainmaps_;
 

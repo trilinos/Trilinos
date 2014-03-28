@@ -1,6 +1,5 @@
 // Type definitions for templated classes (generally graph-related) that do not require a scalar.
 
-
 #include <Xpetra_UseShortNamesOrdinal.hpp>
 
 #ifdef MUELU_AGGREGATES_SHORT

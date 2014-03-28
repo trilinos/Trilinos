@@ -68,7 +68,7 @@ using Teuchos::DefaultComm;
 using std::cout;
 using std::endl;
 
-void testCoordinateModel(std::string &fname, int weightDim,
+void testCoordinateModel(std::string &fname, int nWeights,
   const RCP<const Comm<int> > &comm, bool consecutiveIds,
   bool nodeZeroHasAll, bool printInfo)
 {
@@ -76,7 +76,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   if (printInfo){
     cout << "Test: " << fname << endl;
-    cout << "Weight dim: " << weightDim;
+    cout << "Num Weights: " << nWeights;
     cout << " want consec ids: " << consecutiveIds;
     cout << " proc 0 has all: " << nodeZeroHasAll;
     cout << endl;
@@ -102,7 +102,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   RCP<mv_t> coords;
 
   try{
-    coords = uinput->getCoordinates();
+    coords = uinput->getUICoordinates();
   }
   catch(std::exception &e){
     fail=2;
@@ -143,10 +143,10 @@ void testCoordinateModel(std::string &fname, int weightDim,
     nGlobalIds = coords->getGlobalLength();
   }
 
-  Array<ArrayRCP<const scalar_t> > coordWeights(weightDim);
+  Array<ArrayRCP<const scalar_t> > coordWeights(nWeights);
 
   if (nLocalIds > 0){
-    for (int wdim=0; wdim < weightDim; wdim++){
+    for (int wdim=0; wdim < nWeights; wdim++){
       scalar_t *w = new scalar_t [nLocalIds];
       for (int i=0; i < nLocalIds; i++){
         w[i] = ((i%2) + 1) + wdim;
@@ -165,7 +165,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
 
   RCP<ia_t> ia;
 
-  if (weightDim == 0){   // use the simpler constructor
+  if (nWeights == 0){   // use the simpler constructor
     try{
       ia = rcp(new ia_t(nLocalIds, idList.getRawPtr(), x, y, z));
     }
@@ -182,7 +182,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
       if (z) 
         values.push_back(z);
     }
-    for (int wdim=0; wdim < weightDim; wdim++){
+    for (int wdim=0; wdim < nWeights; wdim++){
       weights.push_back(coordWeights[wdim].getRawPtr());
     }
 
@@ -235,7 +235,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
   if (!fail && model->getGlobalNumCoordinates() != size_t(nGlobalIds))
     fail = 8;
 
-  if (!fail && model->getCoordinateWeightDim() !=  weightDim)
+  if (!fail && model->getNumWeightsPerCoordinate() !=  nWeights)
     fail = 9;
 
   gfail = globalFail(comm, fail);
@@ -257,7 +257,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
       fail = 11;
   }
 
-  if (!fail && wgts.size() != weightDim)
+  if (!fail && wgts.size() != nWeights)
     fail = 12;
 
   const scalar_t *vals[3] = {x, y, z};
@@ -269,7 +269,7 @@ void testCoordinateModel(std::string &fname, int weightDim,
     }
   }
 
-  for (int wdim=0; !fail && wdim < weightDim; wdim++){
+  for (int wdim=0; !fail && wdim < nWeights; wdim++){
     for (int i=0; !fail && i < nLocalIds; i++){
       if (wgts[wdim][i] != coordWeights[wdim][i])
         fail = 14;

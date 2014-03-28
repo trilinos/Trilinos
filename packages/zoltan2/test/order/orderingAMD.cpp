@@ -174,7 +174,7 @@ int main(int narg, char** arg)
   else                  // Let MueLu generate a matrix
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true));
 
-  RCP<SparseMatrix> origMatrix = uinput->getTpetraCrsMatrix();
+  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 
   if (outputFile != "") {
     // Just a sanity check.

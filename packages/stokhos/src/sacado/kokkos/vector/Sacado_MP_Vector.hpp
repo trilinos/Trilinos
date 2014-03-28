@@ -119,6 +119,7 @@ namespace Sacado {
 
       typedef typename storage_type::value_type value_type;
       typedef typename storage_type::ordinal_type ordinal_type;
+      typedef typename storage_type::device_type device_type;
       typedef typename storage_type::pointer pointer;
       typedef typename storage_type::volatile_pointer volatile_pointer;
       typedef typename storage_type::const_pointer const_pointer;
@@ -128,7 +129,7 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
-      //! Typename of scalar's (which may be different from T)
+      //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
@@ -139,17 +140,6 @@ namespace Sacado {
 
       //! Number of arguments
       static const int num_args = 1;
-
-#if 0
-      // A temporary hack to allow taking the address of a temporary
-      // Vector with ViewStorage.  A better approach would be to return
-      // a VectorViewStoragePtr with overloaded * to return a new
-      // Vector<ViewStorage>
-      KOKKOS_INLINE_FUNCTION
-      Vector* operator&() { return this; }
-      KOKKOS_INLINE_FUNCTION
-      const Vector* operator&() const { return this; }
-#endif
 
       //! Default constructor
       /*!
@@ -165,9 +155,17 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       Vector(const value_type& x) : s(1) { s.init(x); }
 
-      //! Constructor with specified size \c sz
+      //! View constructor
       /*!
-       * Creates array of size \c sz and initializes coeffiencts to 0.
+       * Creates vector with pre-allocated data.  Set \c owned = true
+       * if this Vector should take over management of the data.
+       */
+      KOKKOS_INLINE_FUNCTION
+      Vector(ordinal_type sz, pointer v, bool owned) : s(sz,v,owned) {}
+
+      //! Constructor for creating a view out of pre-allocated memory
+      /*!
+       * This does not do any initialization of the coefficients.
        */
       KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, const value_type& x) : s(sz,x) {}
@@ -341,28 +339,68 @@ namespace Sacado {
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const Vector& x) {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return *this;
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       Vector& operator=(const volatile Vector& x) {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return *this;
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator=(const Vector& x) volatile {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return const_cast<Vector&>(*this);
       }
 
       //! Assignment with Vector right-hand-side
       KOKKOS_INLINE_FUNCTION
       /*volatile*/ Vector& operator=(const volatile Vector& x) volatile {
-        s = x.s;
+        if (this != &x) {
+          s = x.s;
+
+          // For DyamicStorage as a view (is_owned=false), we need to set
+          // the trailing entries when assigning a constant vector (because
+          // the copy constructor in this case doesn't reset the size of this)
+          if (s.size() > x.s.size())
+            for (ordinal_type i=x.s.size(); i<s.size(); i++)
+              s[i] = s[0];
+        }
+
         return const_cast<Vector&>(*this);
       }
 
@@ -1028,6 +1066,20 @@ namespace Sacado {
       return is;
     }
 
+    //------------------------------------------------------------------------
+    //------------------------------------------------------------------------
+
+    /**\brief  Define a partition of a View of Sacado::MP::Vector type */
+    struct VectorPartition {
+      unsigned begin ;
+      unsigned end ;
+
+      template< typename iType0 , typename iType1 >
+      KOKKOS_INLINE_FUNCTION
+      VectorPartition( const iType0 & i0 , const iType1 & i1 ) :
+        begin(i0), end(i1) {}
+    };
+
   } // namespace MP
 
   //! Trait class to determine if a scalar type is a Vector
@@ -1036,6 +1088,18 @@ namespace Sacado {
   };
   template <typename S> struct is_mp_vector< MP::Vector<S> > {
     static const bool value = true;
+  };
+  template <typename T> struct is_mp_vector< const T > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T> struct is_mp_vector< T* > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T> struct is_mp_vector< T[] > {
+    static const bool value = is_mp_vector<T>::value;
+  };
+  template <typename T, unsigned N> struct is_mp_vector< T[N] > {
+    static const bool value = is_mp_vector<T>::value;
   };
 
 } // namespace Sacado

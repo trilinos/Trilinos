@@ -73,6 +73,10 @@ ENDIF()
 # CUDA library
 IF (KokkosClassic_ENABLE_Thrust OR
     (KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda))
+  # Add MPI include directory to NVCC flags if MPI enabled
+    IF( TPL_ENABLE_MPI )
+      CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+    ENDIF()
   PACKAGE_ADD_CUDA_LIBRARY(tpetra_cuda SOURCES ${CUDA_SOURCES})
 ENDIF()
 

@@ -101,6 +101,11 @@ namespace Stokhos {
                  const ordinal_type & arg_stride = 0 ) :
       coeff_(v), size_(arg_size), stride_(arg_stride) {}
 
+    //! Constructor for creating a view
+    KOKKOS_INLINE_FUNCTION
+    ViewStorage(const ordinal_type& sz, pointer v, bool owned) :
+      coeff_(v), size_(sz) {}
+
     //! Constructor
     KOKKOS_INLINE_FUNCTION
     ViewStorage(const ViewStorage& s) :

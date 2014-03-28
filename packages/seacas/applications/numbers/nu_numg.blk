@@ -1,0 +1,17 @@
+C $Id: numg.blk,v 1.1 1991/02/21 15:44:34 gdsjaar Exp $
+C $Log: numg.blk,v $
+C Revision 1.1  1991/02/21 15:44:34  gdsjaar
+C Initial revision
+C
+      COMMON /NUMG/ NUMNP, NDIM, NUMEL, NELBLK,
+     *    NUMNPS, LNPSNL, NUMESS, LESSEL, LESSNL
+C       NUMNP   INTEGER         Number of nodal points
+C       NDIM    INTEGER         Number of sptial dimensions
+C       NUMEL   INTEGER         Total number of elements
+C       NELBLK  INTEGER         Number of element blocks
+C       NUMNPS  INTEGER         Number of nodal point side sets
+C       LNPSNL  INTEGER         Number of nodes in nodal side set
+C       NUMESS  INTEGER         Number of element side sets
+C       LESSEL  INTEGER         Number of elements in element side set
+C       LESSNL  INTEGER         Number of nodes in element side set
+C

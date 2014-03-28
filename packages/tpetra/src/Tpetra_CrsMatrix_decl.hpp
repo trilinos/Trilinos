@@ -971,14 +971,17 @@ namespace Tpetra {
                               const RCP<const Export<LocalOrdinal,GlobalOrdinal,node_type> >& exporter = Teuchos::null,
                               const RCP<ParameterList>& params = Teuchos::null);
 
-    /// \brief Replace the current colMap with the given object.
+    /// \brief Replace the matrix's column Map with the given Map.
     ///
-    /// \param newColMap [in] New colMap.  Must be nonnull.
+    /// \param newColMap [in] New column Map.  Must be nonnull.
     ///
-    /// \pre The matrix must have no entries inserted yet
+    /// \pre The matrix must have no entries inserted yet, on any
+    ///   process in the row Map's communicator.
+    ///
+    /// \pre The matrix must not have been created with a constant
+    ///   (a.k.a. "static") CrsGraph.
     void
-    replaceColMap (const Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> >& newColMap);
-
+    replaceColMap (const Teuchos::RCP<const map_type>& newColMap);
 
     /// \brief Replace the current domain Map and Import with the given objects.
     ///

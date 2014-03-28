@@ -42,7 +42,7 @@
 #ifndef STOKHOS_TPETRA_UTILITIES_MP_VECTOR_HPP
 #define STOKHOS_TPETRA_UTILITIES_MP_VECTOR_HPP
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Tpetra_Map.hpp"
 #include "Tpetra_MultiVector.hpp"
 #include "Tpetra_CrsGraph.hpp"
@@ -513,7 +513,8 @@ namespace Stokhos {
   create_flat_matrix(
     const Tpetra::CrsMatrix<Sacado::MP::Vector<Storage>,
                             LocalOrdinal,GlobalOrdinal,Node,LMO>& mat,
-    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& flat_graph) {
+    const Teuchos::RCP<const Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >& flat_graph,
+    const LocalOrdinal block_size) {
     using Teuchos::ArrayView;
     using Teuchos::Array;
     using Teuchos::RCP;
@@ -522,9 +523,6 @@ namespace Stokhos {
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
     typedef Tpetra::CrsMatrix<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatMatrix;
-
-    // MP size
-    const LocalOrdinal mp_size = Storage::static_size;
 
     // Create flat matrix
     RCP<FlatMatrix> flat_mat = rcp(new FlatMatrix(flat_graph));
@@ -538,8 +536,8 @@ namespace Stokhos {
     for (size_t row=0; row<num_rows; ++row) {
       mat.getLocalRowView(row, indices, values);
       const size_t num_col = mat.getNumEntriesInLocalRow(row);
-      for (LocalOrdinal i=0; i<mp_size; ++i) {
-        const LocalOrdinal flat_row = row*mp_size + i;
+      for (LocalOrdinal i=0; i<block_size; ++i) {
+        const LocalOrdinal flat_row = row*block_size + i;
         for (size_t j=0; j<num_col; ++j)
           flat_values[j] = values[j].coeff(i);
         flat_graph->getLocalRowView(flat_row, flat_indices);
