@@ -59,7 +59,6 @@ namespace {
     }
 
     {
-      //-BEGIN
       // ============================================================
       //+ EXAMPLE: 
       //+ Demonstrate what happens when application requests the
@@ -89,6 +88,7 @@ namespace {
       //+ This field does not exist and will not be found.
       stkIo.add_input_field(stk::io::MeshField(displacement, "disp"));
 
+      //-BEGIN
       //+ If read the fields, but don't pass in the 'missing_fields'
       //+ vector, the code will print an error message and throw an
       //+ exception if it doesn't find all of the requested fields.
