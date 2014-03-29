@@ -34,6 +34,7 @@ struct topology_data<topology::INVALID_TOPOLOGY>
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = false;
   static const unsigned dimension = 0;
   static const unsigned num_nodes = 0;
   static const unsigned num_vertices = 0;
@@ -75,6 +76,7 @@ struct topology_data<topology::NODE>
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = true;
   static const unsigned dimension = 0;
   static const unsigned num_nodes = 0;
   static const unsigned num_vertices = 0;
@@ -118,6 +120,7 @@ struct topology_data<topology::PARTICLE>
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = true;
   static const unsigned dimension = 1;
   static const unsigned num_nodes = 1;
   static const unsigned num_vertices = 1;
@@ -168,6 +171,7 @@ struct topology_data<topology::LINE_2>
   static const topology::topology_t edge_topology = topology::INVALID_TOPOLOGY;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = true;
   static const unsigned dimension = 1;
   static const unsigned num_nodes = 2;
   static const unsigned num_vertices = 2;
@@ -426,6 +430,7 @@ struct topology_data<topology::TRI_3>
   static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = true;
   static const unsigned dimension = 2;
   static const unsigned num_nodes = 3;
   static const unsigned num_vertices = 3;
@@ -754,6 +759,7 @@ struct topology_data<topology::QUAD_4>
   static const topology::topology_t edge_topology = topology::LINE_2;
   static const bool has_homogeneous_faces = false;
   static const bool is_shell = false;
+  static const bool has_all_node_permutations = true;
   static const unsigned dimension = 2;
   static const unsigned num_nodes = 4;
   static const unsigned num_vertices = 4;
@@ -1330,6 +1336,7 @@ struct topology_data<topology::WEDGE_6>
                               > spatial_dimension_vector;
 
   typedef boost::mpl::vector_c<   topology::topology_t
+
                                 , topology::QUAD_4
                                 , topology::QUAD_4
                                 , topology::QUAD_4

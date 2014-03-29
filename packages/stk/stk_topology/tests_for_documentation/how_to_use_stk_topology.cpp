@@ -495,12 +495,9 @@ TEST(stk_topology_understanding, equivalent_elements)
 
         stk::topology hex8 = stk::topology::HEX_8;
 
-        areElementsEquivalent = hex8.equivalent(hex1, hex2);
-        EXPECT_FALSE(areElementsEquivalent.first);
-
-        areElementsEquivalent = hex8.equivalent(hex1, hex3);
-        // should be true, but is not implemented
-        EXPECT_FALSE(areElementsEquivalent.first);
+        // equivalent(..) not supported on 3D non-shell elements.
+        EXPECT_ANY_THROW(areElementsEquivalent = hex8.equivalent(hex1, hex2));
+        EXPECT_ANY_THROW(areElementsEquivalent = hex8.equivalent(hex1, hex3));
     }
 
     {
