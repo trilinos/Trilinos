@@ -1044,7 +1044,8 @@ namespace Teuchos {
                           const bool writeGlobalStats,
                           const bool writeZeroTimers,
                           const ECounterSetOp setOp,
-                          const std::string& filter)
+                          const std::string& filter,
+                          const bool ignoreZeroTimers)
   {
     // The default communicator.  If Trilinos was built with MPI
     // enabled, this should be MPI_COMM_WORLD.  Otherwise, this should
@@ -1052,7 +1053,7 @@ namespace Teuchos {
     RCP<const Comm<int> > comm = getDefaultComm();
 
     summarize (comm.ptr(), out, alwaysWriteLocal,
-               writeGlobalStats, writeZeroTimers, setOp, filter);
+               writeGlobalStats, writeZeroTimers, setOp, filter, ignoreZeroTimers);
   }
 
   void
