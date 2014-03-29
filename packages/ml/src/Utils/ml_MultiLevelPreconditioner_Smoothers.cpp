@@ -119,15 +119,15 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
     // Otherwise add me to the line 
     for(int k=0; k<NumEqns; k++) 
       blockIndices[next + k] = LineID;
-
+    
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal)
     ML_az_dsort2(dist,neighbor_len,indices);
 
-    if(n > 0 && indices[1] != last && blockIndices[indices[1]] != -1 && dist[1]/dist[n-1] < tol) {
+    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[1];
     }
-    else if(n > 1 && indices[2] != last && blockIndices[indices[2]] != -1 && dist[2]/dist[n-1] < tol) {
+    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[2];
     }
@@ -161,6 +161,9 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
 
   for(int i=0; i<N; i+=NumEqns) {
     int nz=0;
+    // Short circuit if I've already been blocked
+    if(blockIndices[i] !=-1) continue;
+
     // Get neighbors and sort by distance
     ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&nz);
     double x0 = xvals[i/NumEqns];
