@@ -279,7 +279,8 @@ INCLUDE(PrintVar)
 #   ``OUTPUT_FILE <outputFile>``
 #
 #     If specified, then stdout and stderr for the test case will be sent to
-#     ``<outputFile>``.
+#     ``<outputFile>``.  By default, the contents of this file will **also**
+#     be printed to STDOUT unless ``NO_ECHO_OUT`` is passed as well.
 #
 #   ``NO_ECHO_OUTPUT``
 #

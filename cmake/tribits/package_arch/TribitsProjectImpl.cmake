@@ -181,8 +181,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Probing the environment ...")
   MESSAGE("")
   
-  TRIBITS_SETUP_ENV()
-  
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_SETUP_ENV()
+  ELSE()
+    MESSAGE("-- Skipping env setup due to"
+      " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+  ENDIF() 
+ 
   #
   # G) Go get the information for all enabled TPLS
   #
@@ -201,9 +206,13 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Setting up testing support ...")
   MESSAGE("")
   
-  INCLUDE(CTest)
-
-  TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    INCLUDE(CTest)
+    TRIBITS_CONFIGURE_CTEST_CUSTOM(${${PROJECT_NAME}_BINARY_DIR})
+  ELSE()
+    MESSAGE("-- Skipping testing support setup due to"
+      " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+  ENDIF()
   
   #
   # I) Add the 'dashboard' target
@@ -211,7 +220,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # NOTE: Must come after setting up for testing
   #
   
-  TRIBITS_ADD_DASHBOARD_TARGET()
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_ADD_DASHBOARD_TARGET()
+  ENDIF()
   
   #
   # J) Configure individual packages
@@ -221,8 +232,10 @@ MACRO(TRIBITS_PROJECT_IMPL)
   MESSAGE("Configuring individual enabled ${PROJECT_NAME} packages ...")
   MESSAGE("")
 
-  TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
-    ${${PROJECT_NAME}_ALL_REPOSITORIES})
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_REPOSITORY_CONFIGURE_ALL_VERSION_HEADER_FILES(
+      ${${PROJECT_NAME}_ALL_REPOSITORIES})
+  ENDIF()
   
   TRIBITS_CONFIGURE_ENABLED_PACKAGES()
   
@@ -234,10 +247,16 @@ MACRO(TRIBITS_PROJECT_IMPL)
     MESSAGE("")
     MESSAGE("Set up for creating a distribution ...")
     MESSAGE("")
-    TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
+    IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+      TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION()
+    ELSE()
+      MESSAGE("-- Skipping distribution setup due to"
+        " ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY=ON")
+    ENDIF()
   ELSE()
     MESSAGE("")
-    MESSAGE("Skipping setup for distribution ...")
+    MESSAGE("Skipping setup for distribution because"
+      " ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING=OFF")
     MESSAGE("")
   ENDIF()
  
@@ -245,7 +264,9 @@ MACRO(TRIBITS_PROJECT_IMPL)
   # L) Set up for installation
   #
   
-  TRIBITS_SETUP_FOR_INSTALLATION()  
+  IF (NOT ${PROJECT_NAME}_TRACE_DEPENDENCY_HANDLING_ONLY)
+    TRIBITS_SETUP_FOR_INSTALLATION()
+  ENDIF()
   
   #
   # M) Show final timing and end

@@ -27,6 +27,10 @@ Below are given genetic versions of the sections that show up in every
 project-specific build of this document.
 
 
+.. Common references to other documents
+
+.. _Package Dependencies and Enable/Disable Logic: ../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic
+
 
 Getting set up to use CMake
 ===========================
@@ -204,12 +208,28 @@ d) Using the QT CMake configuration GUI:
 Selecting the list of packages to enable
 ----------------------------------------
 
-In order to see the list of avaiable <Project> SE Packages to enable, just run
-a basic CMake configure, enabling nothing, and then grep the output to see
+The <Project> project is broken up into a set of packages that can be enabled
+(or disbled).  For details and generic examples, see `Package Dependencies and
+Enable/Disable Logic`_.
+
+See the following use cases:
+
+* `Determine the list of packages that can be enabled`_
+* `Enable a set of packages`_
+* `Enable to test all effects of changing a given package(s)`_
+* `Enable all packages with tests and examples`_
+* `Disable a package and all its dependencies`_
+* `Remove all package enables in the cache`_
+
+Determine the list of packages that can be enabled
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to see the list of available <Project> SE Packages to enable, just
+run a basic CMake configure, enabling nothing, and then grep the output to see
 what packages are avaiable to enable.  The full set of defined packages is
 contained the lines starting with ``'Final set of enabled SE packages'`` and
 ``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
-default (which is base behavior), the full list of pacakges will be listed on
+default (which is base behavior), the full list of packages will be listed on
 the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
 full list of defined packages, run::
 
@@ -219,94 +239,123 @@ Any of the packages shown on those lines can potentially be enabled using ``-D
 <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are forcabily
 disabled for some reason, see the CMake ouptut for package disable warnings).
 
-a) Configuring a package(s) along with all of the packages it can use::
+Enable a set of packages
+++++++++++++++++++++++++
 
-    $ ./do-configure \
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
-       -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-       -D <Project>_ENABLE_TESTS:BOOL=ON
+To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
+and examples), configure with::
 
-  NOTE: This set of arguments allows a user to turn on <TRIBITS_PACKAGE> as well as
-  all packages that <TRIBITS_PACKAGE> can use.  However, tests and examples will
-  only be turned on for <TRIBITS_PACKAGE> (or any other packages specifically
-  enabled).
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
+  -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D <Project>_ENABLE_TESTS:BOOL=ON \
 
-  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
-  etc.), then enabling the package is equivalent to typing::
+This set of arguments allows a user to turn on ``<TRIBITS_PACKAGE>`` as well
+as all packages that ``<TRIBITS_PACKAGE>`` can use.  All of the package's
+optional "can use" upstream dependent packages are enabled with
+``-D<Project>_ENABLE_ALL_OPTIONAL_PACKAGES=ON``.  However,
+``-D<Project>_ENABLE_TESTS=ON`` will only enable tests and examples for
+``<TRIBITS_PACKAGE>`` (or any other packages specifically enabled).
 
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
-       ...
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
+``<B>``, etc.), then enabling the package is equivalent to setting::
 
-  However, a TriBITS subpackage will only be enabled if it is not disabled
-  either explicitly or implicitly.
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
+   ...
 
-b) Configuring <Project> to test all effects of changing a given package(s)::
+However, a TriBITS subpackage will only be enabled if it is not already
+disabled either explicitly or implicitly.
 
-    $ ./do-configure \
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
-       -D <Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
-       -D <Project>_ENABLE_TESTS:BOOL=ON
+Enable to test all effects of changing a given package(s)
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-  NOTE: The above set of arguments will result in package <TRIBITS_PACKAGE>
-  and all packages that depend on <TRIBITS_PACKAGE> to be enabled and have all
-  of their tests turned on.  Tests will not be enabled in packages that do not
-  depend on <TRIBITS_PACKAGE> in this case.  This speeds up and robustifies
-  pre-checkin testing.
+To enable an SE package ``<TRIBITS_PACKAGE>`` to test it and all of its
+down-stream packages, configure with::
 
-c) Configuring to build all packages with tests and examples::
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
+  -D <Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
+  -D <Project>_ENABLE_TESTS:BOOL=ON \
 
-    $ ./do-configure \
-       -D <Project>_ENABLE_ALL_PACKAGES:BOOL=ON \
-       -D <Project>_ENABLE_TESTS:BOOL=ON
+The above set of arguments will result in package ``<TRIBITS_PACKAGE>`` and
+all packages that depend on ``<TRIBITS_PACKAGE>`` to be enabled and have all
+of their tests turned on.  Tests will not be enabled in packages that do not
+depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
+pre-push testing.
 
-  NOTE: Specific packages can be disabled with
-  <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF.  This will also disable all
-  packages that depend on <TRIBITS_PACKAGE>.
+Enable all packages with tests and examples
++++++++++++++++++++++++++++++++++++++++++++
 
-  NOTE: All examples are enabled by default when setting
-  <Project>_ENABLE_TESTS:BOOL=ON.
+To enable all SE packages (and optionally also their tests and examples), add
+the configure options::
 
-  NOTE: By default, setting <Project>_ENABLE_ALL_PACKAGES=ON only enables
-  primary tested (PT) code.  To have this also enable all secondary tested
-  (ST) code, one must also set <Project>_ENABLE_SECONDARY_TESTED_CODE=ON.
+  -D <Project>_ENABLE_ALL_PACKAGES:BOOL=ON \
+  -D <Project>_ENABLE_TESTS:BOOL=ON \
 
-d) Disable a package and all its dependencies::
+Specific packages can be disabled with
+``<Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF``.  This will also disable all
+packages that depend on ``<TRIBITS_PACKAGE>``.
 
-      $ ./do-configure \
-         -D <Project>_ENABLE_<PACKAGE_A>:BOOL=ON \
-         -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-         -D <Project>_ENABLE_<PACKAGE_B>:BOOL=OFF
+All examples are enabled by default when setting
+``<Project>_ENABLE_TESTS:BOOL=ON``.
 
-  Above, this will enable <PACKAGE_A> and all of the packages that it
-  depends on except for <PACKAGE_B> and all of its forward dependencies.
+By default, setting ``<Project>_ENABLE_ALL_PACKAGES=ON`` only enables primary
+tested (PT) code.  To have this also enable all secondary tested (ST) code,
+one must also set ``<Project>_ENABLE_SECONDARY_TESTED_CODE=ON``.
 
-  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
-  etc.), then disabling the package is equivalent to typing::
+Disable a package and all its dependencies
+++++++++++++++++++++++++++++++++++++++++++
 
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
-       -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
-       ...
+To disable an SE package and all of the packages that depend on it, add the
+configure options::
 
-  The disable of the subpackage is this case will override any enables.
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF
 
-  NOTE: If a disabled package is a required dependency of some explicitly
-  enabled downstream package, then the configure will error out if
-  <Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING
-  will be printed and the downstream package will be disabled and
-  configuration will continue.
+For example::
 
-e) Removing all package enables in the Cache
+  -D <Project>_ENABLE_<PACKAGE_A>:BOOL=ON \
+  -D <Project>_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D <Project>_ENABLE_<PACKAGE_B>:BOOL=ON \
 
-  ::
+will enable ``<PACKAGE_A>`` and all of the packages that it depends on except
+for ``<PACKAGE_B>`` and all of its forward dependencies.
 
-    $ ./-do-confiugre -D <Project>_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
+``<B>``, etc.), then disabling the package is equivalent to setting::
 
-  This option will set to empty '' all package enables, leaving all other
-  cache variables as they are.  You can then reconfigure with a new set of
-  package enables for a different set of packages.  This allows you to avoid
-  more expensive configure time checks and to preserve other cache variables
-  that you have set and don't want to loose.
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
+  -D <Project>_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
+  ...
+
+The disable of the subpackage is this case will override any enables.
+
+If a disabled package is a required dependency of some explicitly enabled
+downstream package, then the configure will error out if
+``<Project>_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF``.  Otherwise, a WARNING
+will be printed and the downstream package will be disabled and configuration
+will continue.
+
+Print package dependencies
+++++++++++++++++++++++++++
+
+The set of package dependenices in a project will be printed in the ``cmake``
+STDOUT by setting::
+
+  -D <Project>_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+
+Remove all package enables in the cache
++++++++++++++++++++++++++++++++++++++++
+
+To wipe the set of pakage enables in the CMakeCache.txt file so they can be
+reset again from scratch, configure with::
+
+  $ ./-do-confiugre -D <Project>_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+
+This option will set to empty '' all package enables, leaving all other cache
+variables as they are.  You can then reconfigure with a new set of package
+enables for a different set of packages.  This allows you to avoid more
+expensive configure time checks and to preserve other cache variables that you
+have set and don't want to loose.  For example, one would want to do this to
+avoid compiler and TPL checks.
 
 Selecting compiler and linker options
 -------------------------------------

@@ -555,6 +555,20 @@ Usage::
 
 Calls ``PRINT_VAR(<varName>)`` if ``${<varName>}`` is not empty.
 
+PRINT_NONEMPTY_VAR_WITH_SPACES()
+++++++++++++++++++++++++++++++++
+
+Print a defined variable giving its name then value printed with spaces
+instead of ';' but only if it is not empty.
+
+Usage::
+
+   PRINT_NONEMPTY_VAR_WITH_SPACES(<varName>)
+
+Prints the variable as::
+
+   <varName>: <ele0> <ele1> ...
+
 PRINT_VAR()
 +++++++++++
 

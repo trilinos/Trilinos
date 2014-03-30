@@ -39,12 +39,12 @@
 
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-    CoreLibs  src  PT  REQUIRED
-    GoodStuff  src/good_stuff  ST  OPTIONAL
-    CrazyStuff  src/crazy_stuff  EX  OPTIONAL
-    Epetra  adapters/epetra  PT  OPTIONAL
-    EpetraExt  adapters/epetraext  PT  OPTIONAL
-    Tpetra  adapters/tpetra  PT  OPTIONAL
+    CoreLibs      src                  PT  REQUIRED
+    GoodStuff     src/good_stuff       ST  OPTIONAL
+    CrazyStuff    src/crazy_stuff      EX  OPTIONAL
+    Epetra        adapters/epetra      PT  OPTIONAL
+    EpetraExt     adapters/epetraext   PT  OPTIONAL
+    Tpetra        adapters/tpetra      PT  OPTIONAL
   LIB_OPTIONAL_PACKAGES MissingPackage
   REGRESSION_EMAIL_LIST thyra-boneheads@gmail.com
   )

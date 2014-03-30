@@ -378,142 +378,148 @@ ul.auto-toc {
 <li><a class="reference internal" href="#tribitshelloworld" id="id37">4.1&nbsp;&nbsp;&nbsp;TribitsHelloWorld</a></li>
 <li><a class="reference internal" href="#tribitsexampleproject" id="id38">4.2&nbsp;&nbsp;&nbsp;TribitsExampleProject</a></li>
 <li><a class="reference internal" href="#mocktrilinos" id="id39">4.3&nbsp;&nbsp;&nbsp;MockTrilinos</a></li>
-<li><a class="reference internal" href="#the-tribits-test-package" id="id40">4.4&nbsp;&nbsp;&nbsp;The TriBITS Test Package</a></li>
+<li><a class="reference internal" href="#reducedmocktrilinos" id="id40">4.4&nbsp;&nbsp;&nbsp;ReducedMockTrilinos</a></li>
+<li><a class="reference internal" href="#the-tribits-test-package" id="id41">4.5&nbsp;&nbsp;&nbsp;The TriBITS Test Package</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#package-dependencies-and-enable-disable-logic" id="id41">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a><ul class="auto-toc">
-<li><a class="reference internal" href="#project-packagedependencies-xml" id="id42">5.1&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></li>
+<li><a class="reference internal" href="#package-dependencies-and-enable-disable-logic" id="id42">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a><ul class="auto-toc">
+<li><a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure" id="id43">5.1&nbsp;&nbsp;&nbsp;Example ReducedMockTrilinos Project Dependency Structure</a></li>
+<li><a class="reference internal" href="#tribits-dependency-handling-rules-behaviors" id="id44">5.2&nbsp;&nbsp;&nbsp;TriBITS Dependency Handling Rules/Behaviors</a></li>
+<li><a class="reference internal" href="#standard-enable-disable-use-cases" id="id45">5.3&nbsp;&nbsp;&nbsp;Standard Enable/Disable Use Cases</a></li>
+<li><a class="reference internal" href="#project-packagedependencies-xml" id="id46">5.4&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#tribits-automated-testing" id="id43">6&nbsp;&nbsp;&nbsp;TriBITS Automated Testing</a><ul class="auto-toc">
-<li><a class="reference internal" href="#testing-categories-for-repositories-packages-and-tests" id="id44">6.1&nbsp;&nbsp;&nbsp;Testing categories for Repositories, Packages, and Tests</a></li>
-<li><a class="reference internal" href="#pre-push-testing-using-checkin-test-py" id="id45">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></li>
-<li><a class="reference internal" href="#tribits-package-by-package-ctest-dash-driver" id="id46">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></li>
-<li><a class="reference internal" href="#tribits-cdash-customizations" id="id47">6.4&nbsp;&nbsp;&nbsp;TriBITS CDash Customizations</a><ul>
-<li><a class="reference internal" href="#cdash-regression-email-addresses" id="id48">CDash regression email addresses</a></li>
-</ul>
-</li>
-</ul>
-</li>
-<li><a class="reference internal" href="#multi-repository-support" id="id49">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a><ul class="auto-toc">
-<li><a class="reference internal" href="#multi-repository-almost-continuous-integration" id="id50">7.1&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#development-workflows" id="id51">8&nbsp;&nbsp;&nbsp;Development Workflows</a><ul class="auto-toc">
-<li><a class="reference internal" href="#basic-development-workflow" id="id52">8.1&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></li>
-<li><a class="reference internal" href="#multi-repository-development-workflow" id="id53">8.2&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#howtos" id="id54">9&nbsp;&nbsp;&nbsp;Howtos</a><ul class="auto-toc">
-<li><a class="reference internal" href="#how-to-add-a-new-tribits-package" id="id55">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></li>
-<li><a class="reference internal" href="#how-to-add-a-new-tribits-package-with-subpackages" id="id56">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></li>
-<li><a class="reference internal" href="#how-to-add-a-new-tribits-tpl" id="id57">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#additional-topics" id="id58">10&nbsp;&nbsp;&nbsp;Additional Topics</a><ul class="auto-toc">
-<li><a class="reference internal" href="#tribits-system-project-dependencies" id="id59">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></li>
-<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id60">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
-<li><a class="reference internal" href="#project-and-repositiory-versioning-and-release-mode" id="id61">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></li>
-<li><a class="reference internal" href="#tribits-environment-probing-and-setup" id="id62">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></li>
-<li><a class="reference internal" href="#configure-time-system-tests" id="id63">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></li>
-<li><a class="reference internal" href="#creating-source-distributions" id="id64">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
-<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id65">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
-<li><a class="reference internal" href="#wrapping-exterally-configured-built-software-as-a-tribits-package" id="id66">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software as a TriBITS Package</a></li>
-<li><a class="reference internal" href="#tribits-dashboard-driver" id="id67">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#references" id="id68">11&nbsp;&nbsp;&nbsp;References</a></li>
-<li><a class="reference internal" href="#tribits-detailed-reference-documentation" id="id69">12&nbsp;&nbsp;&nbsp;TriBITS Detailed Reference Documentation</a><ul class="auto-toc">
-<li><a class="reference internal" href="#tribits-global-project-settings" id="id70">12.1&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
-<li><a class="reference internal" href="#tribits-macros-and-functions" id="id71">12.2&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul>
-<li><a class="reference internal" href="#tribits-add-advanced-test" id="id72">TRIBITS_ADD_ADVANCED_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-debug-option" id="id73">TRIBITS_ADD_DEBUG_OPTION()</a></li>
-<li><a class="reference internal" href="#tribits-add-example-directories" id="id74">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable" id="id75">TRIBITS_ADD_EXECUTABLE()</a></li>
-<li><a class="reference internal" href="#tribits-add-executable-and-test" id="id76">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-library" id="id77">TRIBITS_ADD_LIBRARY()</a></li>
-<li><a class="reference internal" href="#tribits-add-option-and-define" id="id78">TRIBITS_ADD_OPTION_AND_DEFINE()</a></li>
-<li><a class="reference internal" href="#tribits-add-show-deprecated-warnings-option" id="id79">TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()</a></li>
-<li><a class="reference internal" href="#tribits-add-test" id="id80">TRIBITS_ADD_TEST()</a></li>
-<li><a class="reference internal" href="#tribits-add-test-directories" id="id81">TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id82">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-configure-file" id="id83">TRIBITS_CONFIGURE_FILE()</a></li>
-<li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id84">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
-<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id85">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-packages" id="id86">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id87">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
-<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id88">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
-<li><a class="reference internal" href="#tribits-include-directories" id="id89">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#id6" id="id90">TRIBITS_PACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-package-decl" id="id91">TRIBITS_PACKAGE_DECL()</a></li>
-<li><a class="reference internal" href="#tribits-package-def" id="id92">TRIBITS_PACKAGE_DEF()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id93">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
-<li><a class="reference internal" href="#tribits-process-subpackages" id="id94">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
-<li><a class="reference internal" href="#id7" id="id95">TRIBITS_PROJECT()</a></li>
-<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id96">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
-<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id97">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
-<li><a class="reference internal" href="#id8" id="id98">TRIBITS_SUBPACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-subpackage-postprocess" id="id99">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></li>
-<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id100">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
-<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id101">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
-</ul>
-</li>
-<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id102">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
-<li><a class="reference internal" href="#add-subdirectories" id="id103">ADD_SUBDIRECTORIES()</a></li>
-<li><a class="reference internal" href="#advanced-option" id="id104">ADVANCED_OPTION()</a></li>
-<li><a class="reference internal" href="#advanced-set" id="id105">ADVANCED_SET()</a></li>
-<li><a class="reference internal" href="#append-cmndline-args" id="id106">APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#append-glob" id="id107">APPEND_GLOB()</a></li>
-<li><a class="reference internal" href="#append-global-set" id="id108">APPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#append-set" id="id109">APPEND_SET()</a></li>
-<li><a class="reference internal" href="#append-string-var" id="id110">APPEND_STRING_VAR()</a></li>
-<li><a class="reference internal" href="#append-string-var-ext" id="id111">APPEND_STRING_VAR_EXT()</a></li>
-<li><a class="reference internal" href="#append-string-var-with-sep" id="id112">APPEND_STRING_VAR_WITH_SEP()</a></li>
-<li><a class="reference internal" href="#assert-defined" id="id113">ASSERT_DEFINED()</a></li>
-<li><a class="reference internal" href="#combined-option" id="id114">COMBINED_OPTION()</a></li>
-<li><a class="reference internal" href="#concat-strings" id="id115">CONCAT_STRINGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id116">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id117">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#dual-scope-set" id="id118">DUAL_SCOPE_SET()</a></li>
-<li><a class="reference internal" href="#global-null-set" id="id119">GLOBAL_NULL_SET()</a></li>
-<li><a class="reference internal" href="#global-set" id="id120">GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#join" id="id121">JOIN()</a></li>
-<li><a class="reference internal" href="#message-wrapper" id="id122">MESSAGE_WRAPPER()</a></li>
-<li><a class="reference internal" href="#multiline-set" id="id123">MULTILINE_SET()</a></li>
-<li><a class="reference internal" href="#parse-arguments" id="id124">PARSE_ARGUMENTS()</a></li>
-<li><a class="reference internal" href="#prepend-cmndline-args" id="id125">PREPEND_CMNDLINE_ARGS()</a></li>
-<li><a class="reference internal" href="#prepend-global-set" id="id126">PREPEND_GLOBAL_SET()</a></li>
-<li><a class="reference internal" href="#id9" id="id127">APPEND_SET()</a></li>
-<li><a class="reference internal" href="#print-nonempty-var" id="id128">PRINT_NONEMPTY_VAR()</a></li>
-<li><a class="reference internal" href="#print-var" id="id129">PRINT_VAR()</a></li>
-<li><a class="reference internal" href="#remove-global-duplicates" id="id130">REMOVE_GLOBAL_DUPLICATES()</a></li>
-<li><a class="reference internal" href="#set-and-inc-dirs" id="id131">SET_AND_INC_DIRS()</a></li>
-<li><a class="reference internal" href="#set-cache-on-off-empty" id="id132">SET_CACHE_ON_OFF_EMPTY()</a></li>
-<li><a class="reference internal" href="#set-default" id="id133">SET_DEFAULT()</a></li>
-<li><a class="reference internal" href="#set-default-and-from-env" id="id134">SET_DEFAULT_AND_FROM_ENV()</a></li>
-<li><a class="reference internal" href="#split" id="id135">SPLIT()</a></li>
-<li><a class="reference internal" href="#timer-get-raw-seconds" id="id136">TIMER_GET_RAW_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-get-rel-seconds" id="id137">TIMER_GET_REL_SECONDS()</a></li>
-<li><a class="reference internal" href="#timer-print-rel-time" id="id138">TIMER_PRINT_REL_TIME()</a></li>
-<li><a class="reference internal" href="#unittest-compare-const" id="id139">UNITTEST_COMPARE_CONST()</a></li>
-<li><a class="reference internal" href="#unittest-string-regex" id="id140">UNITTEST_STRING_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-file-regex" id="id141">UNITTEST_FILE_REGEX()</a></li>
-<li><a class="reference internal" href="#unittest-final-result" id="id142">UNITTEST_FINAL_RESULT()</a></li>
+<li><a class="reference internal" href="#tribits-automated-testing" id="id47">6&nbsp;&nbsp;&nbsp;TriBITS Automated Testing</a><ul class="auto-toc">
+<li><a class="reference internal" href="#testing-categories-for-repositories-packages-and-tests" id="id48">6.1&nbsp;&nbsp;&nbsp;Testing categories for Repositories, Packages, and Tests</a></li>
+<li><a class="reference internal" href="#pre-push-testing-using-checkin-test-py" id="id49">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></li>
+<li><a class="reference internal" href="#tribits-package-by-package-ctest-dash-driver" id="id50">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></li>
+<li><a class="reference internal" href="#tribits-cdash-customizations" id="id51">6.4&nbsp;&nbsp;&nbsp;TriBITS CDash Customizations</a><ul>
+<li><a class="reference internal" href="#cdash-regression-email-addresses" id="id52">CDash regression email addresses</a></li>
 </ul>
 </li>
 </ul>
 </li>
-<li><a class="reference internal" href="#appendix" id="id143">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
-<li><a class="reference internal" href="#history-of-tribits" id="id144">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
-<li><a class="reference internal" href="#design-considerations-for-tribits" id="id145">13.2&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
-<li><a class="reference internal" href="#checkin-test-py-help" id="id146">13.3&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
-<li><a class="reference internal" href="#egdist-help" id="id147">13.4&nbsp;&nbsp;&nbsp;egdist --help</a></li>
+<li><a class="reference internal" href="#multi-repository-support" id="id53">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a><ul class="auto-toc">
+<li><a class="reference internal" href="#multi-repository-almost-continuous-integration" id="id54">7.1&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#development-workflows" id="id55">8&nbsp;&nbsp;&nbsp;Development Workflows</a><ul class="auto-toc">
+<li><a class="reference internal" href="#basic-development-workflow" id="id56">8.1&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></li>
+<li><a class="reference internal" href="#multi-repository-development-workflow" id="id57">8.2&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#howtos" id="id58">9&nbsp;&nbsp;&nbsp;Howtos</a><ul class="auto-toc">
+<li><a class="reference internal" href="#how-to-add-a-new-tribits-package" id="id59">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></li>
+<li><a class="reference internal" href="#how-to-add-a-new-tribits-package-with-subpackages" id="id60">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></li>
+<li><a class="reference internal" href="#how-to-add-a-new-tribits-tpl" id="id61">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#additional-topics" id="id62">10&nbsp;&nbsp;&nbsp;Additional Topics</a><ul class="auto-toc">
+<li><a class="reference internal" href="#tribits-system-project-dependencies" id="id63">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></li>
+<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id64">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
+<li><a class="reference internal" href="#project-and-repositiory-versioning-and-release-mode" id="id65">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></li>
+<li><a class="reference internal" href="#tribits-environment-probing-and-setup" id="id66">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></li>
+<li><a class="reference internal" href="#configure-time-system-tests" id="id67">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></li>
+<li><a class="reference internal" href="#creating-source-distributions" id="id68">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
+<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id69">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
+<li><a class="reference internal" href="#wrapping-exterally-configured-built-software" id="id70">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></li>
+<li><a class="reference internal" href="#tribits-dashboard-driver" id="id71">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#references" id="id72">11&nbsp;&nbsp;&nbsp;References</a></li>
+<li><a class="reference internal" href="#tribits-detailed-reference-documentation" id="id73">12&nbsp;&nbsp;&nbsp;TriBITS Detailed Reference Documentation</a><ul class="auto-toc">
+<li><a class="reference internal" href="#tribits-global-project-settings" id="id74">12.1&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></li>
+<li><a class="reference internal" href="#tribits-macros-and-functions" id="id75">12.2&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a><ul>
+<li><a class="reference internal" href="#tribits-add-advanced-test" id="id76">TRIBITS_ADD_ADVANCED_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-debug-option" id="id77">TRIBITS_ADD_DEBUG_OPTION()</a></li>
+<li><a class="reference internal" href="#tribits-add-example-directories" id="id78">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-add-executable" id="id79">TRIBITS_ADD_EXECUTABLE()</a></li>
+<li><a class="reference internal" href="#tribits-add-executable-and-test" id="id80">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-library" id="id81">TRIBITS_ADD_LIBRARY()</a></li>
+<li><a class="reference internal" href="#tribits-add-option-and-define" id="id82">TRIBITS_ADD_OPTION_AND_DEFINE()</a></li>
+<li><a class="reference internal" href="#tribits-add-show-deprecated-warnings-option" id="id83">TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()</a></li>
+<li><a class="reference internal" href="#tribits-add-test" id="id84">TRIBITS_ADD_TEST()</a></li>
+<li><a class="reference internal" href="#tribits-add-test-directories" id="id85">TRIBITS_ADD_TEST_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#tribits-allow-missing-external-packages" id="id86">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-configure-file" id="id87">TRIBITS_CONFIGURE_FILE()</a></li>
+<li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id88">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
+<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id89">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-packages" id="id90">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id91">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
+<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id92">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
+<li><a class="reference internal" href="#tribits-include-directories" id="id93">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#id6" id="id94">TRIBITS_PACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-package-decl" id="id95">TRIBITS_PACKAGE_DECL()</a></li>
+<li><a class="reference internal" href="#tribits-package-def" id="id96">TRIBITS_PACKAGE_DEF()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id97">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-process-subpackages" id="id98">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
+<li><a class="reference internal" href="#id7" id="id99">TRIBITS_PROJECT()</a></li>
+<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id100">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
+<li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id101">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
+<li><a class="reference internal" href="#id8" id="id102">TRIBITS_SUBPACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-subpackage-postprocess" id="id103">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-tpl-declare-libraries" id="id104">TRIBITS_TPL_DECLARE_LIBRARIES()</a></li>
+<li><a class="reference internal" href="#tribits-write-flexible-package-client-export-files" id="id105">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></li>
+</ul>
+</li>
+<li><a class="reference internal" href="#general-utility-macros-and-functions" id="id106">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a><ul>
+<li><a class="reference internal" href="#add-subdirectories" id="id107">ADD_SUBDIRECTORIES()</a></li>
+<li><a class="reference internal" href="#advanced-option" id="id108">ADVANCED_OPTION()</a></li>
+<li><a class="reference internal" href="#advanced-set" id="id109">ADVANCED_SET()</a></li>
+<li><a class="reference internal" href="#append-cmndline-args" id="id110">APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#append-glob" id="id111">APPEND_GLOB()</a></li>
+<li><a class="reference internal" href="#append-global-set" id="id112">APPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#append-set" id="id113">APPEND_SET()</a></li>
+<li><a class="reference internal" href="#append-string-var" id="id114">APPEND_STRING_VAR()</a></li>
+<li><a class="reference internal" href="#append-string-var-ext" id="id115">APPEND_STRING_VAR_EXT()</a></li>
+<li><a class="reference internal" href="#append-string-var-with-sep" id="id116">APPEND_STRING_VAR_WITH_SEP()</a></li>
+<li><a class="reference internal" href="#assert-defined" id="id117">ASSERT_DEFINED()</a></li>
+<li><a class="reference internal" href="#combined-option" id="id118">COMBINED_OPTION()</a></li>
+<li><a class="reference internal" href="#concat-strings" id="id119">CONCAT_STRINGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-append-cmndline-args" id="id120">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-prepend-cmndline-args" id="id121">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#dual-scope-set" id="id122">DUAL_SCOPE_SET()</a></li>
+<li><a class="reference internal" href="#global-null-set" id="id123">GLOBAL_NULL_SET()</a></li>
+<li><a class="reference internal" href="#global-set" id="id124">GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#join" id="id125">JOIN()</a></li>
+<li><a class="reference internal" href="#message-wrapper" id="id126">MESSAGE_WRAPPER()</a></li>
+<li><a class="reference internal" href="#multiline-set" id="id127">MULTILINE_SET()</a></li>
+<li><a class="reference internal" href="#parse-arguments" id="id128">PARSE_ARGUMENTS()</a></li>
+<li><a class="reference internal" href="#prepend-cmndline-args" id="id129">PREPEND_CMNDLINE_ARGS()</a></li>
+<li><a class="reference internal" href="#prepend-global-set" id="id130">PREPEND_GLOBAL_SET()</a></li>
+<li><a class="reference internal" href="#id9" id="id131">APPEND_SET()</a></li>
+<li><a class="reference internal" href="#print-nonempty-var" id="id132">PRINT_NONEMPTY_VAR()</a></li>
+<li><a class="reference internal" href="#print-nonempty-var-with-spaces" id="id133">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></li>
+<li><a class="reference internal" href="#print-var" id="id134">PRINT_VAR()</a></li>
+<li><a class="reference internal" href="#remove-global-duplicates" id="id135">REMOVE_GLOBAL_DUPLICATES()</a></li>
+<li><a class="reference internal" href="#set-and-inc-dirs" id="id136">SET_AND_INC_DIRS()</a></li>
+<li><a class="reference internal" href="#set-cache-on-off-empty" id="id137">SET_CACHE_ON_OFF_EMPTY()</a></li>
+<li><a class="reference internal" href="#set-default" id="id138">SET_DEFAULT()</a></li>
+<li><a class="reference internal" href="#set-default-and-from-env" id="id139">SET_DEFAULT_AND_FROM_ENV()</a></li>
+<li><a class="reference internal" href="#split" id="id140">SPLIT()</a></li>
+<li><a class="reference internal" href="#timer-get-raw-seconds" id="id141">TIMER_GET_RAW_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-get-rel-seconds" id="id142">TIMER_GET_REL_SECONDS()</a></li>
+<li><a class="reference internal" href="#timer-print-rel-time" id="id143">TIMER_PRINT_REL_TIME()</a></li>
+<li><a class="reference internal" href="#unittest-compare-const" id="id144">UNITTEST_COMPARE_CONST()</a></li>
+<li><a class="reference internal" href="#unittest-string-regex" id="id145">UNITTEST_STRING_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-file-regex" id="id146">UNITTEST_FILE_REGEX()</a></li>
+<li><a class="reference internal" href="#unittest-final-result" id="id147">UNITTEST_FINAL_RESULT()</a></li>
+</ul>
+</li>
+</ul>
+</li>
+<li><a class="reference internal" href="#appendix" id="id148">13&nbsp;&nbsp;&nbsp;Appendix</a><ul class="auto-toc">
+<li><a class="reference internal" href="#history-of-tribits" id="id149">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></li>
+<li><a class="reference internal" href="#design-considerations-for-tribits" id="id150">13.2&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></li>
+<li><a class="reference internal" href="#checkin-test-py-help" id="id151">13.3&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></li>
+<li><a class="reference internal" href="#egdist-help" id="id152">13.4&nbsp;&nbsp;&nbsp;egdist --help</a></li>
 </ul>
 </li>
 </ul>
 </div>
 <!-- Common references to TribitsBuildQuickRef document -->
 <!-- Common references to the TribitsOverview document -->
+<!-- Common references to the TribitsLifecycleModel document -->
 <div class="section" id="introduction">
 <h1><a class="toc-backref" href="#id10">1&nbsp;&nbsp;&nbsp;Introduction</a></h1>
 <p>This document describes the usage of the TriBITS (Tribal Build, Integration,
@@ -860,14 +866,14 @@ specified order.  All of this processing takes place in the
 <div class="section" id="tribits-structural-units">
 <h2><a class="toc-backref" href="#id15">3.1&nbsp;&nbsp;&nbsp;TriBITS Structural Units</a></h2>
 <p>A CMake project that uses TriBITS as its build and test system is composed of
-a single <em>TriBITS Project</em>, one or more <em>TriBITS Repositories</em> and one or more
-<em>TriBITS Packages</em>.  In addition, a TriBITS Package can be broken up into
-<em>TriBITS Subpackages</em>.  Together, the collection of TriBITS Packages and
+a single <em>TriBITS Project</em>, one or more <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and one or
+more <a class="reference internal" href="#tribits-packages">TriBITS Packages</a>.  In addition, a TriBITS Package can be broken up
+into <a class="reference internal" href="#tribits-subpackages">TriBITS Subpackages</a>.  Together, the collection of TriBITS Packages and
 TriBITS Subpackages are called <em>TriBITS Software Engineering Packages</em>, or
-<em>TriBITS SE Packages</em> for short.</p>
+<a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> for short.</p>
 <p>First, to establish the basic nomenclature, the key structural TriBITS units
 are:</p>
-<ul class="simple">
+<ul class="simple" id="tribits-packages">
 <li><a class="reference internal" href="#tribits-package">TriBITS Package</a>: A collection of related software that typically includes
 one or more source files built into one or more libraries and has assoicated
 tests to help define and protect the functionality provided by the software.
@@ -878,32 +884,45 @@ multiple subpackages. Examples of TriBITS packages in
 <tt class="docutils literal">PackageWithSubpackages</tt>.  (Don't confuse a TriBTS &quot;Package&quot; with a raw
 CMake &quot;Package&quot; (see <a class="reference internal" href="#history-of-tribits">History of TriBITS</a>).  A raw CMake &quot;Package&quot; actually
 maps to a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.)</li>
-<li><a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>: A part of a parent package that also typically has
-source files built into libraries and tests but is documented and tested
-along with the other subpackages the parent package.  The primary purpose
-for supporting subpackages to provide finer-grained of control software
-dependencies.  In <tt class="docutils literal">TribitsExampleProject</tt>, <tt class="docutils literal">PackageWithSubpackages</tt> is
-an example of a package with subpackages <tt class="docutils literal">SubpackageA</tt>, <tt class="docutils literal">SubpackaeB</tt>, and
-<tt class="docutils literal">SubpackageC</tt>.  The full subpackage name has the parent package name
-prefixed the the subpackage name
+</ul>
+<ul class="simple" id="tribits-subpackages">
+<li><a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>: A part of a parent <a class="reference internal" href="#tribits-package">TriBITS Package</a> that also
+typically has source files built into libraries and tests but is documented
+and tested along with the other subpackages the parent package.  The primary
+purpose for supporting subpackages to provide finer-grained of control
+software dependencies.  In <tt class="docutils literal">TribitsExampleProject</tt>,
+<tt class="docutils literal">PackageWithSubpackages</tt> is an example of a package with subpackages
+<tt class="docutils literal">SubpackageA</tt>, <tt class="docutils literal">SubpackaeB</tt>, and <tt class="docutils literal">SubpackageC</tt>.  The full subpackage
+name has the parent package name prefixed the the subpackage name
 (e.g. <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>).  The parent package is always
 implicitly dependent on its subpackages.</li>
-<li><strong>TriBITS SE Package</strong>: The combined set of TriBITS packages and
-subpackages. SE packages are the basis for setting dependencies in the
-TriBITS system.  For example, the SE Packages provided by the example
-<tt class="docutils literal">PackageWithSubpackages</tt> is (in order of increasing dependencies)
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackaeB</tt>,
-<tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>, and <tt class="docutils literal">PackageWithSubpackages</tt>.</li>
+</ul>
+<ul class="simple" id="tribits-se-packages">
+<span id="tribits-se-package"></span><li><strong>TriBITS SE Package</strong>: The combined set of <a class="reference internal" href="#tribits-packages">TriBITS Packages</a> and <a class="reference internal" href="#tribits-subpackages">TriBITS
+Subpackages</a> that constitute the basice <em>Softare Engineering</em> packages (see
+???) of a TriBITS proejct: SE packages are the basis for setting
+dependencies in the TriBITS system.  For example, the SE Packages provided
+by the top-level example <tt class="docutils literal">PackageWithSubpackages</tt> is (in order of
+increasing dependencies) <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>,
+<tt class="docutils literal">PackageWithSubpackagesSubpackaeB</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>,
+and <tt class="docutils literal">PackageWithSubpackages</tt> (see <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>).</li>
+</ul>
+<ul class="simple" id="tribits-tpls">
 <li><a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>: The specification for a particular external dependency that
-is required or can be used in one or more TriBITS SE Packages.  A TPL (a
+is required or can be used in one or more <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a>.  A TPL (a
 Third Party Library) typically provides a list of libraries or a list
 include directories for header files but can also be manifisted in order
 ways as well.  Examples of basic TPLs include <tt class="docutils literal">BLAS</tt>, <tt class="docutils literal">LAPACK</tt>, and
 <tt class="docutils literal">Boost</tt>.</li>
-<li><a class="reference internal" href="#tribits-repository">TriBITS Repository</a>: A collection of one or more TriBITS packages
-specified in a <tt class="docutils literal">PackagesList.cmake</tt> file.</li>
-<li><a class="reference internal" href="#tribits-project">TriBITS Project</a>: A collection of TriBITS Repositories and Packages that
-defines a CMake <tt class="docutils literal">PROJECT</tt> and can be configured, built, and tested.</li>
+</ul>
+<ul class="simple" id="tribits-repositories">
+<li><a class="reference internal" href="#tribits-repository">TriBITS Repository</a>: A collection of one or more <a class="reference internal" href="#tribits-packages">TriBITS Packages</a>
+specified in a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.</li>
+</ul>
+<ul class="simple" id="tribits-projects">
+<li><a class="reference internal" href="#tribits-project">TriBITS Project</a>: A collection of <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and <a class="reference internal" href="#tribits-packages">TriBITS
+Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defining soiftware which can be
+directly configured with <tt class="docutils literal">cmake</tt> and then built, tested, and installed.</li>
 </ul>
 <p>The following subsections define the major structural units of a TriBITS
 project in more detail.  Each structural unit is described along with the
@@ -1898,13 +1917,13 @@ are defined before an SE Package's <tt class="docutils literal">CMakeLists.txt</
 <p><tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}</span></tt></p>
 <blockquote>
 Set to <tt class="docutils literal">ON</tt> if the package is to be enabled.</blockquote>
-<p><tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_PACKAGE_NAME}</span></tt></p>
+<p><tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}</span></tt></p>
 <blockquote>
 Set to <tt class="docutils literal">ON</tt> if support for the optional upstream dependent package
-<tt class="docutils literal">${OPTIONAL_DEPENDENT_PACKAGE_NAME}</tt> is enabled in package
-<tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEPENDENT_PACKAGE_NAME}</tt>
-corresponds to each optional upstream SE package listed in the
-<tt class="docutils literal">LIB_OPTIONAL_PACKAGES</tt> and <tt class="docutils literal">TEST_OPTIONAL_PACKAGES</tt> arguments to the
+<tt class="docutils literal">${OPTIONAL_DEP_PACKAGE_NAME}</tt> is enabled in package
+<tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEP_PACKAGE_NAME}</tt> corresponds to
+each optional upstream SE package listed in the <tt class="docutils literal">LIB_OPTIONAL_PACKAGES</tt>
+and <tt class="docutils literal">TEST_OPTIONAL_PACKAGES</tt> arguments to the
 <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> macro.</blockquote>
 <p><tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}</span></tt></p>
 <blockquote>
@@ -2833,9 +2852,10 @@ tribits/package_arch/UnitTests/MockTrilinos/
 </pre>
 <p>This TriBITS project is not a full TriBITS project (i.e. it does not build
 anything).  Instead, it is used to test the TriBITS system using tests defined
-in the <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>.  The <tt class="docutils literal">MockTrilinos</tt> project contains a
-subset of packages with slightly modified dependencies from a snapshot of the
-real Trilinos project from May 2009.  The list of packages in:</p>
+in the <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>.  The <tt class="docutils literal">MockTrilinos</tt> project is actually
+given the name <tt class="docutils literal">PROJECT_NAME = Trilinos</tt> and contains a subset of packages
+with slightly modified dependencies from a snapshot of the real Trilinos
+project from May 2009.  The list of packages in:</p>
 <pre class="literal-block">
 tribits/package_arch/UnitTests/MockTrilinos/PackagesList.cmake
 </pre>
@@ -2916,8 +2936,40 @@ involving <tt class="docutils literal">MockTrilinos</tt> defined in the file:</p
 tribits/package_arch/UnitTests/TribitsAdjustPackageEnables_UnitTests.cmake
 </pre>
 </div>
+<div class="section" id="reducedmocktrilinos">
+<h2><a class="toc-backref" href="#id40">4.4&nbsp;&nbsp;&nbsp;ReducedMockTrilinos</a></h2>
+<p>The TriBITS project <tt class="docutils literal">ReducedMockTrilinos</tt> is contained under the directory:</p>
+<pre class="literal-block">
+tribits/package_arch/UnitTests/ReducedMockTrilinos/
+</pre>
+<p>It is a scaled-down version of the <a class="reference internal" href="#mocktrilinos">MockTrilinos</a> test project with just a
+handful of packages and some modified dependencies.  Its primary purpose is to
+be used for examples in the section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
+Logic</a> and to test a few features of the TriBITS system not tested in other
+tests.</p>
+<p>The list of packages in:</p>
+<pre class="literal-block">
+tribits/package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
+</pre>
+<p>is:</p>
+<pre class="literal-block">
+TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+  Teuchos             packages/teuchos                PT
+  RTOp                packages/rtop                   PT
+  Epetra              packages/epetra                 PT 
+  Triutils            packages/triutils               ST
+  EpetraExt           packages/epetraext              ST
+  Thyra               packages/thyra                  PT
+  )
+
+</pre>
+<p>All of the listed packages are standard TriBITS packages except for the mock
+<tt class="docutils literal">Thyra</tt> package which is broken down into subpackages.  More details of this
+example project are described in <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
+Logic</a>.</p>
+</div>
 <div class="section" id="the-tribits-test-package">
-<h2><a class="toc-backref" href="#id40">4.4&nbsp;&nbsp;&nbsp;The TriBITS Test Package</a></h2>
+<h2><a class="toc-backref" href="#id41">4.5&nbsp;&nbsp;&nbsp;The TriBITS Test Package</a></h2>
 <p>The last TriBITS example mentioned here is the TriBITS test package named
 (appropriately) <tt class="docutils literal">TriBITS</tt> itself.  The directory for the <tt class="docutils literal">TriBITS</tt> package
 is the base TriBITS source directory <tt class="docutils literal">tribits</tt>.  This allows any TriBITS
@@ -2958,7 +3010,515 @@ these tests disagreed, believe the tests!</p>
 </div>
 </div>
 <div class="section" id="package-dependencies-and-enable-disable-logic">
-<h1><a class="toc-backref" href="#id41">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a></h1>
+<h1><a class="toc-backref" href="#id42">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a></h1>
+<p>Arguably, the more important feature/aspect of the TriBITS system is the
+partitioning of a large software project into pakages and managing the
+dependencies between these packages to support building, testing, and depoying
+different pieces as needed.  This is especially useful in incremental CI
+testing of large projects.  However, this is also a critical component in
+creating and maintaining Self Sustaining Software (see the <a class="reference external" href="../lifecycle_model/TribitsLifecycleModel.pdf">TriBITS Lifecycle
+Model</a>).  The fundamental mechanism for breaking up a large software into
+manageable pieces is to partition the software into different <a class="reference internal" href="#tribits-packages">TriBITS
+Packages</a> and then define the dependencies between these packages (which are
+defined inside of the <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files for each
+package).</p>
+<div class="section" id="example-reducedmocktrilinos-project-dependency-structure">
+<h2><a class="toc-backref" href="#id43">5.1&nbsp;&nbsp;&nbsp;Example ReducedMockTrilinos Project Dependency Structure</a></h2>
+<p>To demonstrate the TriBITS package and TPL dependency handling system, the
+small simple <a class="reference internal" href="#reducedmocktrilinos">ReducedMockTrilinos</a> project is used.  The list of packages for
+this project is defined in <tt class="docutils literal">ReducedMockTrilinos/PackagesList.cmake</tt> (see
+<a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>) which contents:</p>
+<pre class="literal-block">
+TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+  Teuchos             packages/teuchos                PT
+  RTOp                packages/rtop                   PT
+  Epetra              packages/epetra                 PT 
+  Triutils            packages/triutils               ST
+  EpetraExt           packages/epetraext              ST
+  Thyra               packages/thyra                  PT
+  )
+
+</pre>
+<p>This gives the full list of top-level packages:</p>
+<pre class="literal-block">
+Teuchos RTOp Epetra Triutils EpetraExt Thyra
+</pre>
+<p>All of the listed packages are standard TriBITS packages except for the mock
+<tt class="docutils literal">Thyra</tt> package which is broken down into subpackages as shown in
+<tt class="docutils literal">thyra/cmake/Dependnecies.cmake</tt> (see
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>) which is:</p>
+<pre class="literal-block">
+TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+  SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+    CoreLibs      src                  PT  REQUIRED
+    GoodStuff     good_stuff           ST  OPTIONAL
+    CrazyStuff    crazy_stuff          EX  OPTIONAL
+    Epetra        adapters/epetra      PT  OPTIONAL
+    EpetraExt     adapters/epetraext   ST  OPTIONAL
+  )
+
+</pre>
+<p>Adding in the subpackages defined in the top-level <tt class="docutils literal">Thyra</tt> package, the full
+set of <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> for this project is:</p>
+<pre class="literal-block">
+Teuchos RTOp Epetra Triutils EpetraExt ThyraCoreLibs ThyraGoodStuff \
+  ThyraCrazyStuff ThyraEpetra ThyraEpetraExt Thyra
+</pre>
+<p>The list of <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> for this example project given in
+<tt class="docutils literal">ReducedMockTrilinos/TPLsList.cmake</tt> (see <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a>) is:</p>
+<pre class="literal-block">
+TRIBITS_DEFINE_REPOSITORY_TPLS(
+  MPI            &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;    PT
+  BLAS           cmake/TPLs/    PT
+  LAPACK         cmake/TPLs/    PT
+  Boost          cmake/TPLs/    ST
+  UMFPACK        cmake/TPLs/    ST
+  AMD            cmake/TPLs/    EX
+  PETSC          cmake/TPLs/    ST
+  )
+
+</pre>
+<p>Take note of the testing group (i.e. <tt class="docutils literal">PT</tt>, <tt class="docutils literal">ST</tt>, or <tt class="docutils literal">EX</tt>) assigned to
+each SE package and TPL plays a signficiant role in how the TriBITS dependency
+system handles enables and disable of the SE packages and TPLs.</p>
+<p>The dependency structure of this simple TriBITS project is shown below in
+<a class="reference internal" href="#reducedmocktrilinos-dependencies">ReducedMockTrilinos Dependencies</a>.</p>
+<p id="reducedmocktrilinos-dependencies"><strong>ReducedMockTrilinos Dependencies:</strong></p>
+<pre class="literal-block">
+Printing package dependencies ...
+
+-- Teuchos_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
+-- Teuchos_LIB_OPTIONAL_DEP_TPLS: Boost MPI
+
+-- RTOp_LIB_REQUIRED_DEP_PACKAGES: Teuchos
+-- RTOp_FULL_EXPORT_DEP_PACKAGES: Teuchos
+
+-- Epetra_LIB_REQUIRED_DEP_TPLS: BLAS LAPACK
+-- Epetra_LIB_OPTIONAL_DEP_TPLS: MPI
+
+-- Triutils_LIB_REQUIRED_DEP_PACKAGES: Epetra
+
+-- EpetraExt_LIB_REQUIRED_DEP_PACKAGES: Teuchos Epetra
+-- EpetraExt_LIB_OPTIONAL_DEP_PACKAGES: Triutils
+-- EpetraExt_LIB_OPTIONAL_DEP_TPLS: UMFPACK AMD PETSC
+
+-- ThyraCoreLibs_LIB_REQUIRED_DEP_PACKAGES: Teuchos RTOp
+
+-- ThyraGoodStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
+
+-- ThyraCrazyStuff_LIB_REQUIRED_DEP_PACKAGES: ThyraGoodStuff
+
+-- ThyraEpetra_LIB_REQUIRED_DEP_PACKAGES: Epetra ThyraCoreLibs
+
+-- ThyraEpetraExt_LIB_REQUIRED_DEP_PACKAGES: ThyraEpetra EpetraExt
+
+-- Thyra_LIB_REQUIRED_DEP_PACKAGES: ThyraCoreLibs
+-- Thyra_LIB_OPTIONAL_DEP_PACKAGES: ThyraGoodStuff ThyraCrazyStuff ThyraEpetra ThyraEpetraExt
+
+
+</pre>
+<p>The above dependency structure printout is produced by configuring with
+<tt class="docutils literal">${PROJECT_NAME}_DUMP_PACKAGE_DEPENDENCIES=ON</tt> (which also results in more
+dependency information than what is shown above, e.g. like computed forward
+package dependencies).  Note that the top-level SE package <tt class="docutils literal">Thyra</tt> is shown
+to depend on its subpackages (not the other way around).  (Many people are
+confused about this the nature of the dependencies between packages and
+subpackages.)</p>
+<!-- ToDo: Show diagram with this dependency structure. -->
+<p>A number of user-setable cache variables determine what SE packages (and TPLs)
+and what tests and examples get enabled.  These cache variables are described
+in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a> and are described below.  Also,
+the assigned <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a> (i.e. <tt class="docutils literal">PT</tt>, <tt class="docutils literal">ST</tt>, and <tt class="docutils literal">EX</tt>) also
+affects what packages get enabled or disabled.</p>
+<p>Any of these SE packages can be enabled or disabled with
+<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> (the default enable is
+typically <tt class="docutils literal">&quot;&quot;</tt>, see <a class="reference internal" href="#unset-enable-disable-state-by-default">unset enable/disable state by default</a> below).  For
+<tt class="docutils literal">ReducedMockTrilinos</tt>, this gives the enable/disable cache variables (with
+the initial default values):</p>
+<pre class="literal-block">
+Trilinos_ENABLE_Teuchos=&quot;&quot;
+Trilinos_ENABLE_RTOp&quot;&quot;
+Trilinos_ENABLE_Epetra=&quot;&quot;
+Trilinos_ENABLE_Triutils=&quot;&quot;
+Trilinos_ENABLE_EpetraExt=&quot;&quot;
+Trilinos_ENABLE_ThyraCore=&quot;&quot;
+Trilinos_ENABLE_ThyraGoodStuff=&quot;&quot;
+Trilinos_ENABLE_ThyraCrazyStuff=&quot;OFF&quot;  # Because it is 'EX'
+Trilinos_ENABLE_ThyraEpetra=&quot;&quot;
+Trilinos_ENABLE_ThyraEpetraExt=&quot;&quot;
+</pre>
+<p>Every TriBITS SE package is assumed to have tests and/or examples so TriBITS
+defines the following cache varaibles as well (with the initial default
+values):</p>
+<pre class="literal-block">
+Teuchos_ENABLE_TESTS=&quot;&quot;
+RTOp_ENABLE_TESTS=&quot;&quot;
+Epetra_ENABLE_TESTS=&quot;&quot;
+Triutils_ENABLE_TESTS=&quot;&quot;
+EpetraExt_ENABLE_TESTS=&quot;&quot;
+ThyraCoreLibs_ENABLE_TESTS=&quot;&quot;
+ThyraGoodStuff_ENABLE_TESTS=&quot;&quot;
+ThyraEpetra_ENABLE_TESTS=&quot;&quot;
+ThyraEpetraExt_ENABLE_TESTS=&quot;&quot;
+Thyra_ENABLE_TESTS=&quot;&quot;
+</pre>
+<p>NOTE: TriBITS only sets the variables <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;_ENABLE_TESTS</tt> into
+the cache if the SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> becomes enabled at some
+point.  This cuts down the clutter in the CMake cache for large projects with
+lots of packages where the user only enbles a subset of the pakages.</p>
+<p>NOTE: TriBITS also defines the cache varaibles
+<tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;_ENABLE_EXAMPLES</tt> for each enabled TriBITS package which
+is handled the same way as the TEST variables.</p>
+<p>Also, every defined TPL is given its own <tt class="docutils literal">TPL_ENABLE_&lt;TRIBITS_TPL&gt;</tt>
+enable/disable cache variable.  For the TPLs in <tt class="docutils literal">ReducedMockTrilinos</tt>, this
+gives the enable/disable cache variables (with default values):</p>
+<pre class="literal-block">
+TPL_ENABLE_MPI=&quot;&quot;
+TPL_ENABLE_BLAS=&quot;&quot;
+TPL_ENABLE_LAPACK=&quot;&quot;
+TPL_ENABLE_Boost=&quot;&quot;
+TPL_ENABLE_UMFPACK=&quot;&quot;
+TPL_ENABLE_AMD=&quot;&quot;
+TPL_ENABLE_PETSC=&quot;&quot;
+</pre>
+<p>In addition, for every optional SE package and TPL dependency, TriBITS defines
+a cache variable <tt class="docutils literal">&lt;TRIBITS_PACAKGE&gt;_ENABLE_&lt;OPTIONAL_DEP&gt;</tt>.  For the
+optional dependenices shown in <a class="reference internal" href="#reducedmocktrilinos-dependencies">ReducedMockTrilinos Dependencies</a>, that gives
+the additional cache variables (with default values):</p>
+<pre class="literal-block">
+Teuchos_ENABLE_Boost=&quot;&quot;
+Teuchos_ENABLE_MPI=&quot;&quot;
+Teuchos_ENABLE_Boost=&quot;&quot;
+Epetra_ENABLE_MPI=&quot;&quot;
+EpetraExt_ENABLE_Triutils=&quot;&quot;
+EpetraExt_ENABLE_UMFPACK=&quot;&quot;
+EpetraExt_ENABLE_AMD=&quot;&quot;
+EpetraExt_ENABLE_PETSC=&quot;&quot;
+Thyra_ENABLE_ThyraGoodStuff=&quot;&quot;
+Thyra_ENABLE_ThyraCrazytuff=&quot;&quot;
+Thyra_ENABLE_ThyraEpetra=&quot;&quot;
+Thyra_ENABLE_ThyraEpetraExt=&quot;&quot;
+</pre>
+<p>The above optional package-specific cache variables allow one to control
+whether or not support for upstream dependency X is turned on in package Y
+independent of whether or not X and Y are themselves both enabled.  For
+example, if the packages <tt class="docutils literal">Triutils</tt> and <tt class="docutils literal">EpetraExt</tt> are both enabled, one
+can explicitly disable support for the optional dependency <tt class="docutils literal">Triutils</tt> in
+<tt class="docutils literal">EpetraExt</tt> by setting <tt class="docutils literal">EpetraExt_ENABLE_Triutils=OFF</tt>.  One may want to
+do this for several reasons but the bottom line is that this gives the user
+more detailed control over package dependenices.  See the <a class="reference internal" href="#tribits-dependency-handling-rules-behaviors">TriBITS Dependency
+Handling Rules/Behaviors</a> and <a class="reference internal" href="#explicit-disable-of-an-optional-package-dependency">Explicit disable of an optional package
+dependency</a> for more discussion and examples.</p>
+<p>Before getting into specific examples for some <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use
+Cases</a>, some of the <a class="reference internal" href="#tribits-dependency-handling-rules-behaviors">TriBITS Dependency Handling Rules/Behaviors</a> are
+defined below.</p>
+</div>
+<div class="section" id="tribits-dependency-handling-rules-behaviors">
+<h2><a class="toc-backref" href="#id44">5.2&nbsp;&nbsp;&nbsp;TriBITS Dependency Handling Rules/Behaviors</a></h2>
+<p>Below, some of the rules and behaviors of the TriBITS dependency management
+system are described.  Examples refer to the <a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure">Example ReducedMockTrilinos
+Project Dependency Structure</a>.  More detailed examples of these behaviors are
+given in the section <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use Cases</a>.</p>
+<ol class="arabic simple" id="unset-enable-disable-state-by-default">
+<li>An SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is
+given an <strong>unset enable/disable state by default</strong>
+(i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=&quot;&quot;</span></tt>).  For example, the
+<tt class="docutils literal">PT</tt> package <tt class="docutils literal">Teuchos</tt> is not enabled or disabled by default and is
+given the initial value <tt class="docutils literal"><span class="pre">Trilinos_ENABLE_Teuchos=&quot;&quot;</span></tt>.  This allows
+<tt class="docutils literal">PT</tt>, and <tt class="docutils literal">ST</tt> packages to be enabled or disabled using other logic
+defined by TriBITS which is described below.</li>
+</ol>
+<ol class="arabic" id="ex-se-package-disabled-by-default" start="2">
+<li><p class="first">An SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> with testing group <tt class="docutils literal">EX</tt> is <strong>disabled
+by default</strong> (i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>).  This
+results in all required downstream SE packages to be disabled by default.
+However, the user can explicitly set
+<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt> for an <tt class="docutils literal">EX</tt> package and
+it will be enabled (unless one of its required dependencies are not enabled
+for some reason).</p>
+</li>
+<li><p class="first">Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>enabled</strong> by the
+user by setting the cache variable
+<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt>
+(e.g. <tt class="docutils literal">Trilinos_ENABLE_EpetraExt=ON</tt>).  When a package is enabled in this
+way, the TriBITS system will try to enable all of the required upstream SE
+packages and TPLs defined by the package (specified in its
+<tt class="docutils literal">Dependencies.cmake</tt> file).  If an enabled SE package can't be enabled
+and has to be disabled, either a warning is printed or processing will stop
+with an error (depending on the value of
+<tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt>, see below).  In
+addition, if <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>, then
+TriBITS will try to enable all of the specified optional SE packages as
+well.</p>
+</li>
+<li><p class="first">Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>disabled</strong> by the
+user by setting the cache variable
+<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>
+(e.g. <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt>).  When an SE package is explicitly
+disabled, it will result in the disable of all downstream SE packages that
+have required dependency on it.  It will also disable optional support for
+the disabled packages in downstream packages that list it as an optional
+dependency.  For an example, see <a class="reference internal" href="#explicit-disable-of-a-package">Explicit disable of a package</a>.</p>
+</li>
+<li><p class="first">A TriBITS TPL <tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is
+given an <strong>unset enable/disable state by default</strong>
+(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=&quot;&quot;</span></tt>).  For example, the <tt class="docutils literal">PT</tt> TPL
+<tt class="docutils literal">BLAS</tt> is not enabled or disabled by default
+(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_BLAS=&quot;&quot;</span></tt>) .  This allows <tt class="docutils literal">PT</tt>, and <tt class="docutils literal">ST</tt> TPLs to be
+enabled or disabled using other logic.</p>
+</li>
+<li><p class="first">A TriBITS TPL <tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">EX</tt> (as is for <cite>PT`</cite>
+and <tt class="docutils literal">EX</tt> TPLs), is given an <strong>unset enable/disable state by default</strong>
+(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;&quot;&quot;</span></tt>).  This is different behavior than for
+<tt class="docutils literal">EX</tt> SE pakages described above which provides an initial hard disable.
+However, since TriBITS will never automatically enable an optional TPL (see
+below) and since only downstream <tt class="docutils literal">EX</tt> SE packages are allowed to have a
+required dependenices on an <tt class="docutils literal">EX</tt> TPL (see ???), there is no need to set
+the default enable for an <tt class="docutils literal">EX</tt> TPL to <tt class="docutils literal">OFF</tt>.</p>
+</li>
+<li><p class="first">All TPLs listed as required TPL dependencies for the final set of enabled
+SE packages are <strong>set to enabled</strong> (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=ON</span></tt>)
+for the final set of enabled packages (unless the listed TPLs are already
+explicit disabled).  For example, if the <tt class="docutils literal">Epetra</tt> package is enabled,
+then that will trigger the enable of its required TPLs <tt class="docutils literal">BLAS</tt> and
+<tt class="docutils literal">LAPACK</tt>.</p>
+</li>
+<li><p class="first">TPLs with testing group <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> will only be enabled if they are
+explicitly enabled by the user.  For example, just because the package
+<tt class="docutils literal">Teuchos</tt> is enabled, the optional TPLs <tt class="docutils literal">Boost</tt> and <tt class="docutils literal">MPI</tt> will
+<strong>not</strong> be enabled by default.  To enable the optional TPL <tt class="docutils literal">Boost</tt>, for
+example, and enable support for <tt class="docutils literal">Boost</tt> in the <tt class="docutils literal">Teuchos</tt> package, the
+user must explicitly set <tt class="docutils literal">TPL_ENABLE_Boost=ON</tt>.</p>
+</li>
+<li><p class="first">Any TPLs that are explicitly disabled
+(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=OFF</span></tt>) will result in the disable of all
+downstream dependent SE packages that have a required dependency on the
+TPL.  For example, if the user sets <tt class="docutils literal">TPL_ENABLE_LAPACK=OFF</tt>, then this
+will result in the disable of SE packages <tt class="docutils literal">Teuchos</tt> and <tt class="docutils literal">Epetra</tt>, and
+all of the required SE packages downstream from them (see ???).  Also, the
+explicitly disabled TPL will result in disable of optional support in all
+downstream SE packages.  For example, if the user sets
+<tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>, then TriBITS will automatically set
+<tt class="docutils literal">Teuchos_ENABLE_MPI=OFF</tt> and <tt class="docutils literal">Epetra_ENABLE_MPI=OFF</tt> (see ???).</p>
+</li>
+<li><p class="first">Disables trump enables where there is a conflicit and TriBITS will never
+override a disable in order to satisfy some dependency.  For example, if
+the user sets <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt> and
+<tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt>, then TriBITS will <strong>not</strong> override the
+disable of <tt class="docutils literal">Teuchos</tt> in order to satisfy the required dependency of
+<tt class="docutils literal">RTOp</tt>.  In cases such as this, the behavior of the TriBITS dependency
+adjustment system will depend on the setting of the top-level user cache
+variable <tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt>:</p>
+<ul class="simple" id="project-name-disable-enabled-forward-dep-packages-on">
+<li>If <tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON</tt>: TriBITS
+will disable explicit enable and continue on.  i.e., TriBITS will
+override <tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt> and set
+<tt class="docutils literal">Trilinos_ENABLE_RTOp=OFF</tt> and print a verbose warning to STDOUT (see
+???).</li>
+</ul>
+<ul class="simple" id="project-name-disable-enabled-forward-dep-packages-off">
+<li>If <tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF</tt>: TriBITS
+will generate a detailed error message and abort processing.  i.e.,
+TriBITS will report that <tt class="docutils literal">RTOp</tt> is enabled but the required SE package
+<tt class="docutils literal">Teuchos</tt> is disabled and therefore <tt class="docutils literal">RTOp</tt> can't be enabled and
+processing must stop (see ???).</li>
+</ul>
+</li>
+<li><p class="first">An explicit enable/disable of a top-level parent package with subpackages
+with <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> is equivanent
+to the explicit enable/disable of all of the parent package's subpakages.
+For example, explicitly setting <tt class="docutils literal">Trilinos_ENABLE_Thyra=ON</tt> is equivalent
+to explicitly setting:</p>
+<pre class="literal-block">
+Trilinos_ENABLE_ThyraCoreLibs=ON
+Trilinos_ENABLE_ThyraGoodStuff=ON   # Only if enabling ST code!
+Trilinos_ENABLE_ThyraEpetra=ON
+Trilinos_ENABLE_ThyraEpetraExt=ON   # Only if enabling ST code!
+</pre>
+<p>(Note that <tt class="docutils literal">Trilinos_ENABLE_ThyraCrazyStuff</tt> is <strong>not</strong> set to <tt class="docutils literal">ON</tt>
+because it is aready set to <tt class="docutils literal">OFF</tt> by default, see <a class="reference internal" href="#ex-se-package-disabled-by-default">EX SE package
+disabled by default</a>.)  Likewise, explicitly setting
+<tt class="docutils literal">Trilinos_ENABLE_Thyra=OFF</tt> is equivalent to explicitly setting all of
+the <tt class="docutils literal">Thyra</tt> subpackages to <tt class="docutils literal">OFF</tt> at the outset.  See ??? for an
+example.</p>
+</li>
+<li><p class="first">TriBITS will only enable an optional <tt class="docutils literal">ST</tt> SE package when
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt> if
+<tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt> is also set.  If an optional
+<tt class="docutils literal">ST</tt> upstream dependent SE package is not enabled due to
+<tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt>, then a one-line warning is
+printed to STDOUT.  The TriBITS default is
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>.  This helps to avoid
+problems when users try to set a permuation of enables/disables which is
+not regularly tested.</p>
+</li>
+<li><p class="first">The user cache-variable <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES</tt> will
+result in the enable of all <tt class="docutils literal">PT</tt> SE packages when
+<tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt> and all <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> SE
+packages when <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt>.  For an
+example, see ???.</p>
+</li>
+<li><p class="first">Setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_TESTS=ON</tt> will <strong>only enable tests for
+explicitly enabled SE packages</strong>.  For example, configuring with
+<tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt> and <tt class="docutils literal">Trilinos_ENABLE_TESTS=ON</tt> will only
+result in the enable of tests for <tt class="docutils literal">RTOp</tt>, not <tt class="docutils literal">Teuchos</tt> (even through
+TriBITS will enable <tt class="docutils literal">Teuchos</tt> because it is a required dependency of
+<tt class="docutils literal">RTOp</tt>).  See ?? for an example.</p>
+</li>
+<li><p class="first">TriBITS prints out (to <tt class="docutils literal">cmake</tt> STDOUT) the initial set of
+enables/disables on input, prints a line whenever it sets (or overrides)
+an enable or disable, and prints out the final set of enables/disables.
+Therefore, the user just needs to grep the <tt class="docutils literal">cmake</tt> STDOUT to find out
+why any particular SE package or TPL is enabled or disabled in the end.
+In addtion, will print out when tests/examples for a given SE package gets
+enabled and when support for optional SE packages and TPLs is enabled or
+not.  A detailed description of this output is given in all of the below
+examples but in particular see <a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package (and its
+tests)</a>.</p>
+</li>
+<li><p class="first">TriBITS setting (or overrides) of enable/disable cache variables are done
+by setting local non-cache variables at the top project-level scope.  This
+is done so they don't get set in the cache and so that the same dependency
+enable/disable logic is redone, from scratch, with each re-configure which
+results in the same enable/disable logic output as for the initial
+configure.  This is to avoid confusion by the user about why some SE
+packages and TPLs are enabled and some are not on subsequent reconfigures.</p>
+</li>
+</ol>
+<p>TriBITS prints out a lot of information about the enable/disable logic as it
+applies the above rules/behaviors.  For a large TriBITS project with lots of
+packages, this can produce a lot of output to STDOUT.  One just needs to
+understand what TriBITS is printing out and where to look in the output for
+different information.  The example <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use Cases</a> given
+below show what this output looks like for the various enable/disable
+scenarios and tries to explains in more detail the reasons for why the given
+behavior is implemented the way that it is.  Given this output, the rule
+definitions given above, and the detailed example <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use
+Cases</a> described below, one should always be able to figure out exactly why
+the final set of enables/disables is the way it is, even in the largest and
+most complex of TriBITS projects.  (NOTE: The same can <em>not</em> be said for many
+other large software configuration and depolyment systems where basic
+decisions about what to enable and disable are hidden from the user and can be
+very difficult to debug).</p>
+</div>
+<div class="section" id="standard-enable-disable-use-cases">
+<h2><a class="toc-backref" href="#id45">5.3&nbsp;&nbsp;&nbsp;Standard Enable/Disable Use Cases</a></h2>
+<p>Below, a few of the standard enable/disable use cases for a TriBITS project
+are given using the <a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure">Example ReducedMockTrilinos Project Dependency
+Structure</a>.</p>
+<ul class="simple">
+<li><a class="reference internal" href="#default-configure-with-no-packages-enabled-on-input">Default configure with no packages enabled on input</a></li>
+<li><a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package (and its tests)</a></li>
+<li><a class="reference internal" href="#explicit-disable-of-a-package">Explicit disable of a package</a></li>
+<li><a class="reference internal" href="#explicit-enable-of-an-optional-package-dependency">Explicit enable of an optional package dependency</a></li>
+<li><a class="reference internal" href="#explicit-disable-of-an-optional-package-dependency">Explicit disable of an optional package dependency</a></li>
+<li><a class="reference internal" href="#enable-all-packages">Enable all packages</a></li>
+</ul>
+<p id="default-configure-with-no-packages-enabled-on-input"><strong>Default configure with no packages enabled on input</strong></p>
+<p>ToDo: Discuss parts of the printout.</p>
+<p>ToDo: Fill in!</p>
+<p id="explicit-enable-of-a-package-and-its-tests"><strong>Explicit enable of a package (and its tests)</strong></p>
+<p>ToDo: Fill in!</p>
+<p id="explicit-disable-of-a-package"><strong>Explicit disable of a package</strong></p>
+<p>ToDo: Enable RTOp, Disable Teuchos</p>
+<p>ToDo: Show what happens when
+${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON</p>
+<p>ToDo: Show what happens when
+${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF</p>
+<p>ToDo: Fill in!</p>
+<p id="explicit-enable-of-an-optional-package-dependency"><strong>Explicit enable of an optional package dependency</strong></p>
+<p>ToDo: Fill in!</p>
+<p id="explicit-disable-of-an-optional-package-dependency"><strong>Explicit disable of an optional package dependency</strong></p>
+<p>ToDo: Fill in!</p>
+<p id="enable-all-packages"><strong>Enable all packages</strong></p>
+<p>Enabling all packages the with:</p>
+<pre class="literal-block">
+$ cmake -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+   -DTrilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON \
+   &lt;projectDir&gt;
+</pre>
+<p>produces the dependency-related output:</p>
+<pre class="literal-block">
+Explicitly enabled packages on input (by user):  0
+Explicitly enabled SE packages on input (by user):  0
+Explicitly disabled packages on input (by user or by default):  0
+Explicitly disabled SE packages on input (by user or by default):  ThyraCrazyStuff 1
+Explicitly enabled TPLs on input (by user):  0
+Explicitly disabled TPLs on input (by user or by default):  0
+
+Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON ...
+
+-- Setting Trilinos_ENABLE_Teuchos=ON
+-- Setting Trilinos_ENABLE_RTOp=ON
+-- Setting Trilinos_ENABLE_Epetra=ON
+-- Setting Trilinos_ENABLE_ThyraCoreLibs=ON
+-- Setting Trilinos_ENABLE_ThyraEpetra=ON
+-- Setting Trilinos_ENABLE_Thyra=ON
+
+Enabling all optional SE packages for current set of enabled packages because Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON ...
+
+-- WARNING: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- WARNING: Not Setting Trilinos_ENABLE_ThyraEpetraExt=ON even though Thyra has an optional dependence on ThyraEpetraExt because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+
+Enabling all optional intra-package enables &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;DEPPACKAGE&gt; that are not currently disabled if both sets of packages are enabled ...
+
+-- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetra=ON
+
+Enabling all remaining required TPLs for current set of enabled packages ...
+
+-- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
+-- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
+
+Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4
+Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6
+Final set of non-enabled packages:  Triutils EpetraExt 2
+Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5
+Final set of enabled TPLs:  BLAS LAPACK 2
+Final set of non-enabled TPLs:  MPI Boost UMFPACK AMD PETSC 5
+
+Getting information for all enabled TPLs ...
+
+-- Processing enabled TPL: BLAS
+-- Processing enabled TPL: LAPACK
+
+Configuring individual enabled Trilinos packages ...
+
+Processing enabled package: Teuchos (Libs)
+Processing enabled package: RTOp (Libs)
+Processing enabled package: Epetra (Libs)
+Processing enabled package: Thyra (CoreLibs, Epetra)
+
+</pre>
+<p>Just this one configure case provides a lot information and an oppurtunity to
+address a number of issues.</p>
+<p>1) The first thing to note is the set of initially enabled and disabled
+packages is printed.  By default, <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> packages are not
+explicitly enabled or disabled by default and therefore they don't appear in
+the list of initially enabled or disabled packages.  This allows <tt class="docutils literal">PT</tt>, and
+<tt class="docutils literal">ST</tt> packages to be enabled or disabled using other logic.  However, <tt class="docutils literal">EX</tt>
+SE packages are explicited disabled by default by TriBITS.  This explicit
+disabling of the <tt class="docutils literal">EX</tt> SE packages is shown in:</p>
+<pre class="literal-block">
+Explicitly disabled SE packages on input (by user or by default):  ThyraCrazyStuff 1
+</pre>
+<p>2) The option <tt class="docutils literal">Trilinos_ENABLE_ALL_PACKAGES=ON</tt> enables only <tt class="docutils literal">PT</tt> SE
+packages.  If <tt class="docutils literal">Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON</tt> is set, then the
+<tt class="docutils literal">ST</tt> packages would be enabled also.</p>
+<p>3) Note the warnings about not enabling the SE packages <tt class="docutils literal">ThyraGoodStuff</tt> and
+<tt class="docutils literal">ThyraEpetraExt</tt> which are optional dependencies of <tt class="docutils literal">Thyra</tt> due to
+<tt class="docutils literal">Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF</tt>.  These warnings are printed to
+avoid confusion about why these SE packages are not enabled even through
+<tt class="docutils literal">Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>.</p>
+<p>4) TriBITS will only enable required TPLs for enabled SE packages, as shown
+for the TPLs <tt class="docutils literal">`BLAS</tt> and <tt class="docutils literal">LAPACK</tt> and <em>not</em> for the optional TPLs listed.
+The reason for this is that while all optional packages are present (because
+their source exists in the project source tree) not all TPLs can expected to
+be on a given system.  Optional TPLs are only enabled if they are explicitly
+enabled.</p>
+<p>5) The final set of enabled packages and subpackages is shown on the
+configuration of the packages.</p>
+<p>As shown above, only the &quot;Primary Tested&quot; <tt class="docutils literal">PT</tt> packages are enabled by
+default.</p>
 <p>ToDo: Fill in!</p>
 <p>The following TriBITS repository-related variables alter what packages in a
 given TriBITS repository get enabled implicitly or not:</p>
@@ -2977,13 +3537,21 @@ allowed to be implicitly enabled.  Only checked if
 <tt class="docutils literal">PackageName.cmake</tt> file in order to adjust how its listed repositories are
 handled.</p>
 <p>ToDo: Fill in!</p>
+<p>The basic ideas of breaking up a large set of software into pieces, defining
+dependencies between the pieces, and then applying algorithms to manipulate
+the dependency data-structures is nothing new.  If fact, nearly every binary
+package deployment system provided in various Linux OS distributions have the
+concept of packages and dependnecies and will automatically install all of the
+necessary upstream dependencies when a downstream dependency install is
+requested.</p>
+</div>
 <div class="section" id="project-packagedependencies-xml">
-<h2><a class="toc-backref" href="#id42">5.1&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></h2>
+<h2><a class="toc-backref" href="#id46">5.4&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 </div>
 <div class="section" id="tribits-automated-testing">
-<h1><a class="toc-backref" href="#id43">6&nbsp;&nbsp;&nbsp;TriBITS Automated Testing</a></h1>
+<h1><a class="toc-backref" href="#id47">6&nbsp;&nbsp;&nbsp;TriBITS Automated Testing</a></h1>
 <p>Much of the value provided by the TriBITS system is related to the support of
 testing of a complex project.  Many different types of testing is required in
 a complex project and development effort.  In addition a large project with
@@ -2997,31 +3565,31 @@ and customizations.</p>
 <p>The following subsections describe several aspects to the TriBITS support for
 testing.  ToDo: outline the following subsections.</p>
 <div class="section" id="testing-categories-for-repositories-packages-and-tests">
-<h2><a class="toc-backref" href="#id44">6.1&nbsp;&nbsp;&nbsp;Testing categories for Repositories, Packages, and Tests</a></h2>
+<h2><a class="toc-backref" href="#id48">6.1&nbsp;&nbsp;&nbsp;Testing categories for Repositories, Packages, and Tests</a></h2>
 <p>ToDo: Define repo category Continuous, Nightly, and Experimental which also
 map to CDash tracks.</p>
-<p>ToDo: Define SE package test group PT, ST, and EX.</p>
+<p id="se-package-test-group">ToDo: Define SE package test group PT, ST, and EX.</p>
 <p>ToDo: Define test category BASIC, CONTINUOUS, NIGHTLY, WEEKLY, and PERFORMANCE.</p>
 <p>ToDo: Discuss the propery usage of these test categories and why NIGHTLY
 testing should be the default.</p>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="pre-push-testing-using-checkin-test-py">
-<h2><a class="toc-backref" href="#id45">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></h2>
+<h2><a class="toc-backref" href="#id49">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></h2>
 <p>ToDo: Describe the checkin-test.py script</p>
 <p>ToDo: Describe the system for mapping changed files to changed packages.</p>
 </div>
 <div class="section" id="tribits-package-by-package-ctest-dash-driver">
-<h2><a class="toc-backref" href="#id46">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></h2>
+<h2><a class="toc-backref" href="#id50">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></h2>
 <p>ToDo: Fill in!</p>
 <p>ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
 interact.</p>
 </div>
 <div class="section" id="tribits-cdash-customizations">
-<h2><a class="toc-backref" href="#id47">6.4&nbsp;&nbsp;&nbsp;TriBITS CDash Customizations</a></h2>
+<h2><a class="toc-backref" href="#id51">6.4&nbsp;&nbsp;&nbsp;TriBITS CDash Customizations</a></h2>
 <p>ToDo: Fill in!</p>
 <div class="section" id="cdash-regression-email-addresses">
-<h3><a class="toc-backref" href="#id48">CDash regression email addresses</a></h3>
+<h3><a class="toc-backref" href="#id52">CDash regression email addresses</a></h3>
 <p>Every TriBITS Package has a regression email address associated with it that
 gets uploaded to a CDash project on a CDash server that is used to determine
 what email address to use when a package has configure, build, or test
@@ -3145,52 +3713,52 @@ regression email lists to TriBITS packages.</p>
 </div>
 </div>
 <div class="section" id="multi-repository-support">
-<h1><a class="toc-backref" href="#id49">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></h1>
+<h1><a class="toc-backref" href="#id53">7&nbsp;&nbsp;&nbsp;Multi-Repository Support</a></h1>
 <p>ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.</p>
 <div class="section" id="multi-repository-almost-continuous-integration">
-<h2><a class="toc-backref" href="#id50">7.1&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h2>
+<h2><a class="toc-backref" href="#id54">7.1&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 </div>
 <div class="section" id="development-workflows">
-<h1><a class="toc-backref" href="#id51">8&nbsp;&nbsp;&nbsp;Development Workflows</a></h1>
+<h1><a class="toc-backref" href="#id55">8&nbsp;&nbsp;&nbsp;Development Workflows</a></h1>
 <p>In this section, the typical development workflows for a TriBITS project are
 described.  First, the <a class="reference internal" href="#basic-development-workflow">Basic Development Workflow</a> for a sinlge-repository
 TriBITS project is described.  This is followed up with a slightly more
 complex <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository Development Workflow</a>.</p>
 <div class="section" id="basic-development-workflow">
-<h2><a class="toc-backref" href="#id52">8.1&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></h2>
+<h2><a class="toc-backref" href="#id56">8.1&nbsp;&nbsp;&nbsp;Basic Development Workflow</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="multi-repository-development-workflow">
-<h2><a class="toc-backref" href="#id53">8.2&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></h2>
+<h2><a class="toc-backref" href="#id57">8.2&nbsp;&nbsp;&nbsp;Multi-Repository Development Workflow</a></h2>
 <p>ToDo: Discuss 'egdist' and the rep clone script.</p>
 </div>
 </div>
 <div class="section" id="howtos">
-<h1><a class="toc-backref" href="#id54">9&nbsp;&nbsp;&nbsp;Howtos</a></h1>
+<h1><a class="toc-backref" href="#id58">9&nbsp;&nbsp;&nbsp;Howtos</a></h1>
 <p>ToDo: Fill in!</p>
 <div class="section" id="how-to-add-a-new-tribits-package">
-<h2><a class="toc-backref" href="#id55">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></h2>
+<h2><a class="toc-backref" href="#id59">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="how-to-add-a-new-tribits-package-with-subpackages">
-<h2><a class="toc-backref" href="#id56">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></h2>
+<h2><a class="toc-backref" href="#id60">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="how-to-add-a-new-tribits-tpl">
-<h2><a class="toc-backref" href="#id57">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></h2>
+<h2><a class="toc-backref" href="#id61">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 </div>
 <div class="section" id="additional-topics">
-<h1><a class="toc-backref" href="#id58">10&nbsp;&nbsp;&nbsp;Additional Topics</a></h1>
+<h1><a class="toc-backref" href="#id62">10&nbsp;&nbsp;&nbsp;Additional Topics</a></h1>
 <p>In this section, a number of miscellaneous topics and TriBITS features are
 discussed.  These features and topics are either not considered primary
 fetures of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.</p>
 <div class="section" id="tribits-system-project-dependencies">
-<h2><a class="toc-backref" href="#id59">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></h2>
+<h2><a class="toc-backref" href="#id63">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></h2>
 <p>The basic TriBITS system itself which is used to configure, built, test,
 create tarballs, and install software that uses the TriBITS system has no
 dependencies other than a basic installation of CMake (which typically
@@ -3229,7 +3797,7 @@ functionality requires git support.  But none of this is required for doing
 the most basic building, testing, or installation of a TriBITS project.</p>
 </div>
 <div class="section" id="project-specific-build-quick-reference">
-<h2><a class="toc-backref" href="#id60">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h2>
+<h2><a class="toc-backref" href="#id64">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h2>
 <p>If a project that uses TriBITS is going to have a significnat user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
@@ -3271,7 +3839,7 @@ tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 times in this developers guide.</p>
 </div>
 <div class="section" id="project-and-repositiory-versioning-and-release-mode">
-<h2><a class="toc-backref" href="#id61">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></h2>
+<h2><a class="toc-backref" href="#id65">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></h2>
 <p>TriBITS has built-in support for project and repository versioning and release
 mode control.  When the project contains the file
 <a class="reference internal" href="#projectdir-version-cmake">&lt;projectDir&gt;/Version.cmake</a>, it is used to define the project's offical
@@ -3303,7 +3871,7 @@ directory, the <tt class="docutils literal"><span class="pre">&lt;projectDir&gt;
 files are the same file, which works just fine.</p>
 </div>
 <div class="section" id="tribits-environment-probing-and-setup">
-<h2><a class="toc-backref" href="#id62">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></h2>
+<h2><a class="toc-backref" href="#id66">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></h2>
 <p>Part of the TriBITS Framework is to probe the environment, set up the
 compilers, and get ready to compile code.  This was mentioned in the step
 &quot;Probe and set up the environment&quot; in <a class="reference internal" href="#full-processing-of-tribits-project-files">Full Processing of TriBITS Project
@@ -3324,7 +3892,7 @@ of to things this macro does are:</p>
 ready to compile code.</p>
 </div>
 <div class="section" id="configure-time-system-tests">
-<h2><a class="toc-backref" href="#id63">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></h2>
+<h2><a class="toc-backref" href="#id67">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></h2>
 <p>CMake has very nice support for defining configure-time checks of the system
 to help inconfiguring the project.  One can check for whether a header file
 exists or not, if the compiler supports a given data-type or language feature
@@ -3333,32 +3901,32 @@ done using the configured compilers, libraries, system tools, etc.</p>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="creating-source-distributions">
-<h2><a class="toc-backref" href="#id64">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h2>
+<h2><a class="toc-backref" href="#id68">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="regulated-backward-compatibility-and-deprecated-code">
-<h2><a class="toc-backref" href="#id65">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h2>
+<h2><a class="toc-backref" href="#id69">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
-<div class="section" id="wrapping-exterally-configured-built-software-as-a-tribits-package">
-<h2><a class="toc-backref" href="#id66">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software as a TriBITS Package</a></h2>
+<div class="section" id="wrapping-exterally-configured-built-software">
+<h2><a class="toc-backref" href="#id70">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="tribits-dashboard-driver">
-<h2><a class="toc-backref" href="#id67">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></h2>
+<h2><a class="toc-backref" href="#id71">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 </div>
 <div class="section" id="references">
-<h1><a class="toc-backref" href="#id68">11&nbsp;&nbsp;&nbsp;References</a></h1>
+<h1><a class="toc-backref" href="#id72">11&nbsp;&nbsp;&nbsp;References</a></h1>
 <p id="scale"><strong>SCALE</strong> <a class="reference external" href="http://scale.ornl.gov/">http://scale.ornl.gov/</a></p>
 </div>
 <div class="section" id="tribits-detailed-reference-documentation">
-<h1><a class="toc-backref" href="#id69">12&nbsp;&nbsp;&nbsp;TriBITS Detailed Reference Documentation</a></h1>
+<h1><a class="toc-backref" href="#id73">12&nbsp;&nbsp;&nbsp;TriBITS Detailed Reference Documentation</a></h1>
 <p>The following subsections contain detailed reference documentation for the
 various TriBITS variables and functions and macros that are used by TriBITS.</p>
 <div class="section" id="tribits-global-project-settings">
-<h2><a class="toc-backref" href="#id70">12.1&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></h2>
+<h2><a class="toc-backref" href="#id74">12.1&nbsp;&nbsp;&nbsp;TriBITS Global Project Settings</a></h2>
 <p>TriBITS defines a number of global project-level settings that can be set by
 the user and can have their default determined by each individual TriBITS
 project.  If a given TriBITS project does not define its own default, a
@@ -3421,12 +3989,13 @@ a given TriBITS project are:</p>
 <p>These options are described below.</p>
 <p id="project-name-disable-enabled-forward-dep-packages"><strong>${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</strong></p>
 <blockquote>
-<p>If <tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt> is <tt class="docutils literal">ON</tt> (the
-TriBITS default value), then any explicitly enabled packages that have
-disabled upstream required packages or TPLs will be disabled.  If <tt class="docutils literal">OFF</tt>,
-then an configure error will occur (for more details see
+<p>If <a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages-on">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON</a> (the TriBITS
+default value), then any explicitly enabled packages that have disabled
+upstream required packages or TPLs will be disabled.  If
+<a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages-off">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF</a>, then an
+configure error will occur.  For more details also see
 <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.*</a>).
-A project define a different default value by setting:</p>
+A project can define a different default value by setting:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
 </pre>
@@ -3630,7 +4199,7 @@ has 64 cores, a reasonble number for <tt class="docutils literal">MPI_EXEC_MAX_N
 </blockquote>
 </div>
 <div class="section" id="tribits-macros-and-functions">
-<h2><a class="toc-backref" href="#id71">12.2&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h2>
+<h2><a class="toc-backref" href="#id75">12.2&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h2>
 <p>The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
 TriBITS project developers in their <tt class="docutils literal">CMakeLists.txt</tt> and other files.  All
@@ -3645,7 +4214,7 @@ executed.</p>
 <!-- generate-dev-guide.sh.  Only the file TribitsDetailedMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
 <div class="section" id="tribits-add-advanced-test">
-<h3><a class="toc-backref" href="#id72">TRIBITS_ADD_ADVANCED_TEST()</a></h3>
+<h3><a class="toc-backref" href="#id76">TRIBITS_ADD_ADVANCED_TEST()</a></h3>
 <p>Function that creates an advanced test defined by stringing together one or
 more executables and/or commands that is run as a separate CMake -P script
 with very flixible pass/fail criteria.</p>
@@ -3852,7 +4421,8 @@ from <tt class="docutils literal">OVERALL_NUM_MPI_PROCS &lt;overallNumProcs&gt;<
 <p><tt class="docutils literal">OUTPUT_FILE &lt;outputFile&gt;</tt></p>
 <blockquote>
 If specified, then stdout and stderr for the test case will be sent to
-<tt class="docutils literal">&lt;outputFile&gt;</tt>.</blockquote>
+<tt class="docutils literal">&lt;outputFile&gt;</tt>.  By default, the contents of this file will <strong>also</strong>
+be printed to STDOUT unless <tt class="docutils literal">NO_ECHO_OUT</tt> is passed as well.</blockquote>
 <p><tt class="docutils literal">NO_ECHO_OUTPUT</tt></p>
 <blockquote>
 If specified, then the output for the test command will not be echoed to
@@ -3971,7 +4541,7 @@ current binary directory (see <a class="reference internal" href="#implementatio
 (TRIBITS_ADD_ADVANCED_TEST())</a>).</p>
 </div>
 <div class="section" id="tribits-add-debug-option">
-<h3><a class="toc-backref" href="#id73">TRIBITS_ADD_DEBUG_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id77">TRIBITS_ADD_DEBUG_OPTION()</a></h3>
 <p>Add the standard option <tt class="docutils literal">${PACKGE_NAME}_ENABLE_DEBUG</tt> for the package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -3982,7 +4552,7 @@ true, will set the variable <tt class="docutils literal"><span class="pre">HAVE_
 the package's configured header file).</p>
 </div>
 <div class="section" id="tribits-add-example-directories">
-<h3><a class="toc-backref" href="#id74">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id78">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h3>
 <p>Macro called to conditionally add a set of example directories for an SE
 package.</p>
 <p>Usage:</p>
@@ -4000,7 +4570,7 @@ be extended in the futgure in order to modify behavior related to adding
 tests and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-add-executable">
-<h3><a class="toc-backref" href="#id75">TRIBITS_ADD_EXECUTABLE()</a></h3>
+<h3><a class="toc-backref" href="#id79">TRIBITS_ADD_EXECUTABLE()</a></h3>
 <p>Function used to create an executable (typically for a test or example),
 using the built-in CMake command <tt class="docutils literal">ADD_EXECUTABLE()</tt>.</p>
 <p>Usage:</p>
@@ -4174,7 +4744,7 @@ any CMake project.</p>
 determined by <tt class="docutils literal">${PROJECT_NAME}_INSTALL_RUNTIME_DIR</tt>) .</p>
 </div>
 <div class="section" id="tribits-add-executable-and-test">
-<h3><a class="toc-backref" href="#id76">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></h3>
+<h3><a class="toc-backref" href="#id80">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></h3>
 <p>Add an executable and a test (or several tests) all in one shot.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -4229,7 +4799,7 @@ that either takes no arguments or just a simple set of arguments passed in
 through <tt class="docutils literal">ARGS</tt>.</p>
 </div>
 <div class="section" id="tribits-add-library">
-<h3><a class="toc-backref" href="#id77">TRIBITS_ADD_LIBRARY()</a></h3>
+<h3><a class="toc-backref" href="#id81">TRIBITS_ADD_LIBRARY()</a></h3>
 <p>Function used to add a CMake library and target using <tt class="docutils literal">ADD_LIBRARY()</tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -4366,7 +4936,7 @@ include these header files.  To add defines, please use a configured header
 file (see <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>).</p>
 </div>
 <div class="section" id="tribits-add-option-and-define">
-<h3><a class="toc-backref" href="#id78">TRIBITS_ADD_OPTION_AND_DEFINE()</a></h3>
+<h3><a class="toc-backref" href="#id82">TRIBITS_ADD_OPTION_AND_DEFINE()</a></h3>
 <p>Add an option and a define variable in one shot.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -4384,7 +4954,7 @@ package's configure file (see <a class="reference internal" href="#tribits-confi
 </pre>
 </div>
 <div class="section" id="tribits-add-show-deprecated-warnings-option">
-<h3><a class="toc-backref" href="#id79">TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id83">TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()</a></h3>
 <p>Add the standard option <tt class="docutils literal">${PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS</tt> for the
 package.</p>
 <p>Usage:</p>
@@ -4397,7 +4967,7 @@ looked for in <a class="reference internal" href="#tribits-configure-file">TRIBI
 warnings to deprecated parts of a package.</p>
 </div>
 <div class="section" id="tribits-add-test">
-<h3><a class="toc-backref" href="#id80">TRIBITS_ADD_TEST()</a></h3>
+<h3><a class="toc-backref" href="#id84">TRIBITS_ADD_TEST()</a></h3>
 <p>Add a test or a set of tests for a single executable or command.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -4771,7 +5341,7 @@ multiple argument sets to <tt class="docutils literal">ARGS</tt> or through mult
 <tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> must be set for each test individually.</p>
 </div>
 <div class="section" id="tribits-add-test-directories">
-<h3><a class="toc-backref" href="#id81">TRIBITS_ADD_TEST_DIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id85">TRIBITS_ADD_TEST_DIRECTORIES()</a></h3>
 <p>Macro called to add a set of test directories for an SE package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -4788,7 +5358,7 @@ extended in the futgure in order to modify behavior related to adding tests
 and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-allow-missing-external-packages">
-<h3><a class="toc-backref" href="#id82">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id86">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h3>
 <p>Macro used in Dependencies.cmake files to allow some upstream dependent packages
 to be missing.</p>
 <p>Usage:</p>
@@ -4809,7 +5379,7 @@ misspelled package names so it is important to only use it when it
 absolutely is needed.</p>
 </div>
 <div class="section" id="tribits-configure-file">
-<h3><a class="toc-backref" href="#id83">TRIBITS_CONFIGURE_FILE()</a></h3>
+<h3><a class="toc-backref" href="#id87">TRIBITS_CONFIGURE_FILE()</a></h3>
 <p>Macro that configures the package's main configured header file (typically
 called <tt class="docutils literal">${PACKAGE_NAME}_config.h</tt> but any name can be used).</p>
 <p>Usage:</p>
@@ -4857,7 +5427,7 @@ macro is defined to be empty.  See <a class="reference internal" href="#regulate
 Deprecated Code</a> for more details.</p>
 </div>
 <div class="section" id="tribits-copy-files-to-binary-dir">
-<h3><a class="toc-backref" href="#id84">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></h3>
+<h3><a class="toc-backref" href="#id88">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></h3>
 <p>Function that copies a list of files from a soruce directory to a
 destination directory at configure time, typically so that it can be used in
 one or more tests.  This sets up all of the custom CMake commands and
@@ -4964,7 +5534,7 @@ appended to the arguments in the <tt class="docutils literal">EXEDEPS</tt> list.
 </blockquote>
 </div>
 <div class="section" id="tribits-define-package-dependencies">
-<h3><a class="toc-backref" href="#id85">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h3>
+<h3><a class="toc-backref" href="#id89">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h3>
 <p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
 package or a subpackage) in the package's
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file.</p>
@@ -5105,7 +5675,7 @@ are empty.  This is a error checking property of the TriBITS system to avoid
 misspelling the names of these variables.</p>
 </div>
 <div class="section" id="tribits-define-repository-packages">
-<h3><a class="toc-backref" href="#id86">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id90">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h3>
 <p>Define the set of packages for a given TriBIT repo.  This macro is typically
 called from inside of a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file for a given
 TriBITS repo.</p>
@@ -5171,7 +5741,7 @@ misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-define-repository-tpls">
-<h3><a class="toc-backref" href="#id87">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h3>
+<h3><a class="toc-backref" href="#id91">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h3>
 <p>Define the list of TPLs, find modules, and classifications for a given
 TriBITS repository.  This macro is typically called from inside of a
 TPLsList.cmake fil for a given TriBITS repo.</p>
@@ -5230,7 +5800,7 @@ name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-disable-package-on-platforms">
-<h3><a class="toc-backref" href="#id88">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
+<h3><a class="toc-backref" href="#id92">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
 <p>Disable a package automatically for a list of platforms.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5245,7 +5815,7 @@ disabled by default.  However, an explicit enable can still enable the
 package.</p>
 </div>
 <div class="section" id="tribits-include-directories">
-<h3><a class="toc-backref" href="#id89">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id93">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
 <p>This function is to override the standard behavior of include_directories
 for a TriBITS package.</p>
 <p>Usage:</p>
@@ -5268,7 +5838,7 @@ are test only headers that are needed.  For that case we allow people to set
 directory does need to be set for instaltion testing.</p>
 </div>
 <div class="section" id="id6">
-<h3><a class="toc-backref" href="#id90">TRIBITS_PACKAGE()</a></h3>
+<h3><a class="toc-backref" href="#id94">TRIBITS_PACKAGE()</a></h3>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file.</p>
 <p>Usage:</p>
@@ -5286,7 +5856,7 @@ TRIBITS_PACKAGE(
 side-effects (and varibles set) after calling this macro.</p>
 </div>
 <div class="section" id="tribits-package-decl">
-<h3><a class="toc-backref" href="#id91">TRIBITS_PACKAGE_DECL()</a></h3>
+<h3><a class="toc-backref" href="#id95">TRIBITS_PACKAGE_DECL()</a></h3>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.</p>
 <p>If the package does not have subpackages, just call <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a>
@@ -5348,7 +5918,7 @@ the <tt class="docutils literal">*.cmake</tt> extension.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-def">
-<h3><a class="toc-backref" href="#id92">TRIBITS_PACKAGE_DEF()</a></h3>
+<h3><a class="toc-backref" href="#id96">TRIBITS_PACKAGE_DEF()</a></h3>
 <p>Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package.</p>
 <p>Usage:</p>
@@ -5366,7 +5936,7 @@ list of libraries, etc.) are initialized to emtpy.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-postprocess">
-<h3><a class="toc-backref" href="#id93">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
+<h3><a class="toc-backref" href="#id97">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
 <p>Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
 downstream packages are processed.</p>
@@ -5378,7 +5948,7 @@ TRIBITS_PACKAGE_POSTPROCESS()
 macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 <div class="section" id="tribits-process-subpackages">
-<h3><a class="toc-backref" href="#id94">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id98">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
 <p>Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.</p>
 <p>Usage:</p>
@@ -5389,7 +5959,7 @@ TRIBITS_PROCESS_SUBPACKAGES()
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.</p>
 </div>
 <div class="section" id="id7">
-<h3><a class="toc-backref" href="#id95">TRIBITS_PROJECT()</a></h3>
+<h3><a class="toc-backref" href="#id99">TRIBITS_PROJECT()</a></h3>
 <p>Defines and processes a TriBITS project.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5404,7 +5974,7 @@ then performs all processing of the TriBITS project files (see ???).</p>
 <p>ToDo: Give documentation!</p>
 </div>
 <div class="section" id="tribits-project-define-extra-repositories">
-<h3><a class="toc-backref" href="#id96">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
+<h3><a class="toc-backref" href="#id100">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
 <p>Declare a set of extra extra repositories for a project (typically in the
 project's <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file).</p>
 <p>Usage:</p>
@@ -5480,7 +6050,7 @@ you misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-set-st-for-dev-mode">
-<h3><a class="toc-backref" href="#id97">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h3>
+<h3><a class="toc-backref" href="#id101">TRIBITS_SET_ST_FOR_DEV_MODE()</a></h3>
 <p>Function that allows packages to easily make a feature <tt class="docutils literal">ST</tt> for
 development builds and <tt class="docutils literal">PT</tt> for release builds by default.</p>
 <p>Usage:</p>
@@ -5499,7 +6069,7 @@ code., while still having important functionality available to users by
 default in a release.</p>
 </div>
 <div class="section" id="id8">
-<h3><a class="toc-backref" href="#id98">TRIBITS_SUBPACKAGE()</a></h3>
+<h3><a class="toc-backref" href="#id102">TRIBITS_SUBPACKAGE()</a></h3>
 <p>Declare a subpackage.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5524,7 +6094,7 @@ Inside the subpackage, the same as <tt class="docutils literal">SUBPACKAGE_FULLN
 </blockquote>
 </div>
 <div class="section" id="tribits-subpackage-postprocess">
-<h3><a class="toc-backref" href="#id99">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></h3>
+<h3><a class="toc-backref" href="#id103">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></h3>
 <p>Postprocess after defining a subpackage.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5534,7 +6104,7 @@ TRIBITS_SUBPACKAGE_POSTPROCESS()
 this macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 <div class="section" id="tribits-tpl-declare-libraries">
-<h3><a class="toc-backref" href="#id100">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h3>
+<h3><a class="toc-backref" href="#id104">TRIBITS_TPL_DECLARE_LIBRARIES()</a></h3>
 <p>Function that sets up cache variables for users to specify where to find a
 TPL's headers and libraries.  This function is typically called inside of a
 file <tt class="docutils literal"><span class="pre">FindTPL&lt;tpl_name&gt;.cmake</span></tt> file.</p>
@@ -5603,7 +6173,7 @@ correct list of libraries to link to.</li>
 </ul>
 </div>
 <div class="section" id="tribits-write-flexible-package-client-export-files">
-<h3><a class="toc-backref" href="#id101">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h3>
+<h3><a class="toc-backref" href="#id105">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a></h3>
 <p>Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
 Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
 flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()</p>
@@ -5664,7 +6234,7 @@ for unit testing this function.</p>
 </div>
 </div>
 <div class="section" id="general-utility-macros-and-functions">
-<h2><a class="toc-backref" href="#id102">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h2>
+<h2><a class="toc-backref" href="#id106">12.3&nbsp;&nbsp;&nbsp;General Utility Macros and Functions</a></h2>
 <p>The following subsections give detailed documentation for some CMake macros
 and functions which are <em>not</em> a core part of the TriBITS system but are
 included in the TriBITS system that are used inside of the TriBITS system and
@@ -5685,7 +6255,7 @@ you can always access the original built-in command as
 <!-- generate-dev-guide.sh.  Only the file UtilsMacroFunctionDoc.rst -->
 <!-- should be directly modified! -->
 <div class="section" id="add-subdirectories">
-<h3><a class="toc-backref" href="#id103">ADD_SUBDIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id107">ADD_SUBDIRECTORIES()</a></h3>
 <p>Macro that adds a list of subdirectories all at once (removed boiler-place
 code).</p>
 <p>Usage:</p>
@@ -5694,7 +6264,7 @@ ADD_SUBDIRECTORIES(&lt;dir1&gt; &lt;dir2&gt; ...)
 </pre>
 </div>
 <div class="section" id="advanced-option">
-<h3><a class="toc-backref" href="#id104">ADVANCED_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id108">ADVANCED_OPTION()</a></h3>
 <p>Macro that sets an option and marks it as advanced (removes boiler-plate and
 duplication).</p>
 <p>Usage:</p>
@@ -5708,7 +6278,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="advanced-set">
-<h3><a class="toc-backref" href="#id105">ADVANCED_SET()</a></h3>
+<h3><a class="toc-backref" href="#id109">ADVANCED_SET()</a></h3>
 <p>Macro that sets a variable and marks it as advanced (removes boiler-plate
 and duplication).</p>
 <p>Usage:</p>
@@ -5722,7 +6292,7 @@ MARK_AS_ADVANCED(&lt;varName&gt;)
 </pre>
 </div>
 <div class="section" id="append-cmndline-args">
-<h3><a class="toc-backref" href="#id106">APPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id110">APPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that appends command-line arguments to a variable of
 command-line options.</p>
 <p>Usage:</p>
@@ -5734,7 +6304,7 @@ APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.</p>
 </div>
 <div class="section" id="append-glob">
-<h3><a class="toc-backref" href="#id107">APPEND_GLOB()</a></h3>
+<h3><a class="toc-backref" href="#id111">APPEND_GLOB()</a></h3>
 <p>Utility macro that does a <tt class="docutils literal">FILE(GLOB <span class="pre">...)</span></tt> and appends to an existing list
 (removes boiler-plate code).</p>
 <p>Usage:</p>
@@ -5744,7 +6314,7 @@ APPEND_GLOB(&lt;fileListVar&gt; &lt;glob0&gt; &lt;glob1&gt; ...)
 <p>On output, <tt class="docutils literal">&lt;fileListVar&gt;</tt> will have the list of glob files appended.</p>
 </div>
 <div class="section" id="append-global-set">
-<h3><a class="toc-backref" href="#id108">APPEND_GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id112">APPEND_GLOBAL_SET()</a></h3>
 <p>Utility macro that appends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -5755,7 +6325,7 @@ APPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 To set it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
 <div class="section" id="append-set">
-<h3><a class="toc-backref" href="#id109">APPEND_SET()</a></h3>
+<h3><a class="toc-backref" href="#id113">APPEND_SET()</a></h3>
 <p>Utility function to append elements to a varible (reduces boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -5768,7 +6338,7 @@ LIST(APPEND &lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 </pre>
 </div>
 <div class="section" id="append-string-var">
-<h3><a class="toc-backref" href="#id110">APPEND_STRING_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id114">APPEND_STRING_VAR()</a></h3>
 <p>Append strings to an existing string variable (reduces boiler-place code and
 reduces mistakes).</p>
 <p>Usage:</p>
@@ -5781,7 +6351,7 @@ taken by CMake to bypass the meaning of ';' to separate string characters.</p>
 just adding one string at a time use <a class="reference internal" href="#append-string-var-ext">APPEND_STRING_VAR_EXT()</a>.</p>
 </div>
 <div class="section" id="append-string-var-ext">
-<h3><a class="toc-backref" href="#id111">APPEND_STRING_VAR_EXT()</a></h3>
+<h3><a class="toc-backref" href="#id115">APPEND_STRING_VAR_EXT()</a></h3>
 <p>Append a single string to an existing string variable, ignoring ';' (reduces
 boiler-place code and reduces mistakes).</p>
 <p>Usage:</p>
@@ -5791,7 +6361,7 @@ APPEND_STIRNG_VAR_EXT(&lt;stringVar&gt; &quot;&lt;string&gt;&quot;)
 <p>Simply sets <tt class="docutils literal">&lt;stringVar&gt; = <span class="pre">&quot;${&lt;stringVar&gt;}&lt;string&gt;&quot;</span></tt>.</p>
 </div>
 <div class="section" id="append-string-var-with-sep">
-<h3><a class="toc-backref" href="#id112">APPEND_STRING_VAR_WITH_SEP()</a></h3>
+<h3><a class="toc-backref" href="#id116">APPEND_STRING_VAR_WITH_SEP()</a></h3>
 <p>Append strings to a given string varible, joining them using a seperator.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5801,7 +6371,7 @@ APPEND_STRING_VAR_WITH_SEP(&lt;stringVar&gt; &quot;&lt;sepStr&gt;&quot; &quot;&l
 separation string <tt class="docutils literal">&lt;sepStr&gt;</tt>.</p>
 </div>
 <div class="section" id="assert-defined">
-<h3><a class="toc-backref" href="#id113">ASSERT_DEFINED()</a></h3>
+<h3><a class="toc-backref" href="#id117">ASSERT_DEFINED()</a></h3>
 <p>Assert that a varaible is defined and if not call <tt class="docutils literal">MESSAGE(SEND_ERROR <span class="pre">...)</span></tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5834,7 +6404,7 @@ between the two statements so they are always the same.  This is the best we
 can do in CMake unfortunately.</p>
 </div>
 <div class="section" id="combined-option">
-<h3><a class="toc-backref" href="#id114">COMBINED_OPTION()</a></h3>
+<h3><a class="toc-backref" href="#id118">COMBINED_OPTION()</a></h3>
 <p>Set up a bool cache variable (i.e. an option) based on a set of dependent
 options.</p>
 <p>Usage:</p>
@@ -5855,7 +6425,7 @@ feature that requires a set of other features to also be turned on but
 allows a user to disable the feature if desired.</p>
 </div>
 <div class="section" id="concat-strings">
-<h3><a class="toc-backref" href="#id115">CONCAT_STRINGS()</a></h3>
+<h3><a class="toc-backref" href="#id119">CONCAT_STRINGS()</a></h3>
 <p>Concatenate a set of string argumnets.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5864,7 +6434,7 @@ CONCAT_STRINGS(&lt;outputVar&gt; &quot;&lt;str0&gt;&quot; &quot;&lt;str1&gt;&quo
 <p>On output, <tt class="docutils literal">&lt;outputVar&gt;</tt> is set to <tt class="docutils literal"><span class="pre">&quot;&lt;str0&gt;&lt;str1&gt;...&quot;</span></tt>.</p>
 </div>
 <div class="section" id="dual-scope-append-cmndline-args">
-<h3><a class="toc-backref" href="#id116">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id120">DUAL_SCOPE_APPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that appends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.</p>
 <p>Usage:</p>
@@ -5874,7 +6444,7 @@ DUAL_SCOPE_APPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#append-cmndline-args">APPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-prepend-cmndline-args">
-<h3><a class="toc-backref" href="#id117">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id121">DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line options and sets the result in current scope and parent scope.</p>
 <p>Usage:</p>
@@ -5884,7 +6454,7 @@ DUAL_SCOPE_PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 <p>Just calls <a class="reference internal" href="#prepend-cmndline-args">PREPEND_CMNDLINE_ARGS()</a> and then <tt class="docutils literal"><span class="pre">SET(&lt;var&gt;</span> <span class="pre">${&lt;var&gt;}</span> PARENT_SCOPE)</tt>.</p>
 </div>
 <div class="section" id="dual-scope-set">
-<h3><a class="toc-backref" href="#id118">DUAL_SCOPE_SET()</a></h3>
+<h3><a class="toc-backref" href="#id122">DUAL_SCOPE_SET()</a></h3>
 <p>Macro that sets a variable name both in the current scope and the
 parent scope.</p>
 <p>Usage:</p>
@@ -5907,7 +6477,7 @@ CACHE INTERNAL &quot;&quot;), then the value will get changed in the current
 subordinate scope and in all parent scopes all in one shot!</p>
 </div>
 <div class="section" id="global-null-set">
-<h3><a class="toc-backref" href="#id119">GLOBAL_NULL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id123">GLOBAL_NULL_SET()</a></h3>
 <p>Set a variable as a null internal global (cache) variable (removes boiler
 plate).</p>
 <p>Usage:</p>
@@ -5920,7 +6490,7 @@ SET(&lt;varName&gt; &quot;&quot; CACHE INTERNAL &quot;&quot;)
 </pre>
 </div>
 <div class="section" id="global-set">
-<h3><a class="toc-backref" href="#id120">GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id124">GLOBAL_SET()</a></h3>
 <p>Set a variable as an internal global (cache) variable (removes boiler
 plate).</p>
 <p>Usage:</p>
@@ -5933,7 +6503,7 @@ SET(&lt;varName&gt; [other args] CACHE INTERNAL &quot;&quot;)
 </pre>
 </div>
 <div class="section" id="join">
-<h3><a class="toc-backref" href="#id121">JOIN()</a></h3>
+<h3><a class="toc-backref" href="#id125">JOIN()</a></h3>
 <p>Join a set of strings into a single string using a join string.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -5973,7 +6543,7 @@ JOIN(CMND_LINE_ARGS &quot; &quot; TRUE ${CMND_LINE_ARRAY})
 interpet those ase array boundaries.</p>
 </div>
 <div class="section" id="message-wrapper">
-<h3><a class="toc-backref" href="#id122">MESSAGE_WRAPPER()</a></h3>
+<h3><a class="toc-backref" href="#id126">MESSAGE_WRAPPER()</a></h3>
 <p>Function that wraps the standard CMake/CTest <tt class="docutils literal">MESSAGE()</tt> function call in
 order to allow unit testing to intercept the call.</p>
 <p>Usage:</p>
@@ -5993,7 +6563,7 @@ CMake program.  Otherwise, this is used to capture print messages to verify
 that they say the right thing.</p>
 </div>
 <div class="section" id="multiline-set">
-<h3><a class="toc-backref" href="#id123">MULTILINE_SET()</a></h3>
+<h3><a class="toc-backref" href="#id127">MULTILINE_SET()</a></h3>
 <p>Function to set a single string by concatenating a list of separate strings</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6011,7 +6581,7 @@ MULTILINE_SET(&lt;outputStrVar&gt;
 to far to the right.</p>
 </div>
 <div class="section" id="parse-arguments">
-<h3><a class="toc-backref" href="#id124">PARSE_ARGUMENTS()</a></h3>
+<h3><a class="toc-backref" href="#id128">PARSE_ARGUMENTS()</a></h3>
 <p>Parse a set of macro/functon input arguments into different lists.  This
 allows the easy implementation of keyword-based user-defined macros and
 functions.</p>
@@ -6140,7 +6710,7 @@ O( (len(&lt;argNamesList&gt;) * len(&lt;optionNamesList&gt;)) * len(&lt;inputArg
 option names and input argument lists.</p>
 </div>
 <div class="section" id="prepend-cmndline-args">
-<h3><a class="toc-backref" href="#id125">PREPEND_CMNDLINE_ARGS()</a></h3>
+<h3><a class="toc-backref" href="#id129">PREPEND_CMNDLINE_ARGS()</a></h3>
 <p>Utility function that prepends command-line arguments to a variable of
 command-line options.</p>
 <p>Usage:</p>
@@ -6152,7 +6722,7 @@ PREPEND_CMNDLINE_ARGS(&lt;var&gt; &quot;&lt;extraArgs&gt;&quot;)
 input.</p>
 </div>
 <div class="section" id="prepend-global-set">
-<h3><a class="toc-backref" href="#id126">PREPEND_GLOBAL_SET()</a></h3>
+<h3><a class="toc-backref" href="#id130">PREPEND_GLOBAL_SET()</a></h3>
 <p>Utility macro that prepends arguments to a global variable (reduces
 boiler-plate code and mistakes).</p>
 <p>Usage:</p>
@@ -6163,7 +6733,7 @@ PREPEND_GLOBAL_SET(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 To set it empty initially use <a class="reference internal" href="#global-null-set">GLOBAL_NULL_SET()</a>.</p>
 </div>
 <div class="section" id="id9">
-<h3><a class="toc-backref" href="#id127">APPEND_SET()</a></h3>
+<h3><a class="toc-backref" href="#id131">APPEND_SET()</a></h3>
 <p>Utility function to append elements to a varible (reduces boiler-plate
 code).</p>
 <p>Usage:</p>
@@ -6176,7 +6746,7 @@ LIST(APPEND &lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 </pre>
 </div>
 <div class="section" id="print-nonempty-var">
-<h3><a class="toc-backref" href="#id128">PRINT_NONEMPTY_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id132">PRINT_NONEMPTY_VAR()</a></h3>
 <p>Print a defined variable giving its name then value only if it is not empty.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6184,8 +6754,21 @@ PRINT_NONEMPTY_VAR(&lt;varName&gt;)
 </pre>
 <p>Calls <tt class="docutils literal"><span class="pre">PRINT_VAR(&lt;varName&gt;)</span></tt> if <tt class="docutils literal"><span class="pre">${&lt;varName&gt;}</span></tt> is not empty.</p>
 </div>
+<div class="section" id="print-nonempty-var-with-spaces">
+<h3><a class="toc-backref" href="#id133">PRINT_NONEMPTY_VAR_WITH_SPACES()</a></h3>
+<p>Print a defined variable giving its name then value printed with spaces
+instead of ';' but only if it is not empty.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+PRINT_NONEMPTY_VAR_WITH_SPACES(&lt;varName&gt;)
+</pre>
+<p>Prints the variable as:</p>
+<pre class="literal-block">
+&lt;varName&gt;: &lt;ele0&gt; &lt;ele1&gt; ...
+</pre>
+</div>
 <div class="section" id="print-var">
-<h3><a class="toc-backref" href="#id129">PRINT_VAR()</a></h3>
+<h3><a class="toc-backref" href="#id134">PRINT_VAR()</a></h3>
 <p>Unconditionally print a variable giving its name then value.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6199,7 +6782,7 @@ MESSAGE(&quot;-- &quot; &quot;${VARIBLE_NAME}='${${VARIBLE_NAME}}'&quot;)
 an explicit &quot;-- &quot; line prefix so that it prints nice even on Windows CMake.</p>
 </div>
 <div class="section" id="remove-global-duplicates">
-<h3><a class="toc-backref" href="#id130">REMOVE_GLOBAL_DUPLICATES()</a></h3>
+<h3><a class="toc-backref" href="#id135">REMOVE_GLOBAL_DUPLICATES()</a></h3>
 <p>Remove duplicate elements from a global list variable.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6211,7 +6794,7 @@ create a local variable of the same name and shadow the global variable!
 That is a fun bug to track down!</p>
 </div>
 <div class="section" id="set-and-inc-dirs">
-<h3><a class="toc-backref" href="#id131">SET_AND_INC_DIRS()</a></h3>
+<h3><a class="toc-backref" href="#id136">SET_AND_INC_DIRS()</a></h3>
 <p>Set a variable to an include dir and call <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt> (removes
 boiler plate).</p>
 <p>Usage:</p>
@@ -6221,7 +6804,7 @@ SET_AND_INC_DIRS(&lt;dirVarName&gt; &lt;includeDir&gt;)</blockquote>
 scope and calls <tt class="docutils literal"><span class="pre">INCLUDE_DIRECTORIES(&lt;includeDir&gt;)</span></tt>.</p>
 </div>
 <div class="section" id="set-cache-on-off-empty">
-<h3><a class="toc-backref" href="#id132">SET_CACHE_ON_OFF_EMPTY()</a></h3>
+<h3><a class="toc-backref" href="#id137">SET_CACHE_ON_OFF_EMPTY()</a></h3>
 <p>Usage:</p>
 <pre class="literal-block">
 SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt;&quot; [FORCE])
@@ -6231,7 +6814,7 @@ SET_CACHE_ON_OFF_EMPTY(&lt;varName&gt; &lt;initialVal&gt; &quot;&lt;docString&gt
 GUIs.</p>
 </div>
 <div class="section" id="set-default">
-<h3><a class="toc-backref" href="#id133">SET_DEFAULT()</a></h3>
+<h3><a class="toc-backref" href="#id138">SET_DEFAULT()</a></h3>
 <p>Give a local variable a default if a non-empty value is not already set.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6241,7 +6824,7 @@ SET_DEFAULT(&lt;varName&gt; &lt;arg0&gt; &lt;arg1&gt; ...)
 default.  Otherwise, the existing non-empty value is preserved.</p>
 </div>
 <div class="section" id="set-default-and-from-env">
-<h3><a class="toc-backref" href="#id134">SET_DEFAULT_AND_FROM_ENV()</a></h3>
+<h3><a class="toc-backref" href="#id139">SET_DEFAULT_AND_FROM_ENV()</a></h3>
 <p>Set a default value for a local variable and override from an env var of the
 same name if it is set.</p>
 <p>Usage:</p>
@@ -6257,7 +6840,7 @@ option <tt class="docutils literal"><span class="pre">-D</span> <span class="pre
 commandline like <tt class="docutils literal">cmake</tt> always allowed.</p>
 </div>
 <div class="section" id="split">
-<h3><a class="toc-backref" href="#id135">SPLIT()</a></h3>
+<h3><a class="toc-backref" href="#id140">SPLIT()</a></h3>
 <p>Split a string varible into a string array/list variable.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6270,7 +6853,7 @@ occurrences of <tt class="docutils literal">&lt;sepStr&gt;` in <span class="pre"
 mind when considering special regex chars like <tt class="docutils literal">'*'</tt>, <tt class="docutils literal">'.'</tt>, etc!</p>
 </div>
 <div class="section" id="timer-get-raw-seconds">
-<h3><a class="toc-backref" href="#id136">TIMER_GET_RAW_SECONDS()</a></h3>
+<h3><a class="toc-backref" href="#id141">TIMER_GET_RAW_SECONDS()</a></h3>
 <p>Return the raw time in seconds since epoch, i.e., since 1970-01-01 00:00:00
 UTC.</p>
 <p>Usage:</p>
@@ -6288,7 +6871,7 @@ only be used to time very course grained operations (i.e. that take longer
 than a second).</p>
 </div>
 <div class="section" id="timer-get-rel-seconds">
-<h3><a class="toc-backref" href="#id137">TIMER_GET_REL_SECONDS()</a></h3>
+<h3><a class="toc-backref" href="#id142">TIMER_GET_REL_SECONDS()</a></h3>
 <p>Return the relative time between start and stop seconds.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6300,7 +6883,7 @@ TIMER_GET_REL_SECONDS(&lt;startSeconds&gt; &lt;endSeconds&gt; &lt;relSecondsOutV
 <tt class="docutils literal">&lt;relSecondsOutVar&gt;</tt>.</p>
 </div>
 <div class="section" id="timer-print-rel-time">
-<h3><a class="toc-backref" href="#id138">TIMER_PRINT_REL_TIME()</a></h3>
+<h3><a class="toc-backref" href="#id143">TIMER_PRINT_REL_TIME()</a></h3>
 <p>Print the relative time between start and stop timers in <tt class="docutils literal">&lt;min&gt;m&lt;sec&gt;s</tt>
 format.</p>
 <p>Usage:</p>
@@ -6331,7 +6914,7 @@ REAL_EXPENSIVE() time: 0m5s
 be recored as <tt class="docutils literal">0m0s</tt>.</p>
 </div>
 <div class="section" id="unittest-compare-const">
-<h3><a class="toc-backref" href="#id139">UNITTEST_COMPARE_CONST()</a></h3>
+<h3><a class="toc-backref" href="#id144">UNITTEST_COMPARE_CONST()</a></h3>
 <p>Perform a single unit test equality check and update overall test statistics</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6344,7 +6927,7 @@ fails.  This prints the variable name and values and shows the test result.</p>
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-string-regex">
-<h3><a class="toc-backref" href="#id140">UNITTEST_STRING_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id145">UNITTEST_STRING_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6360,7 +6943,7 @@ UNITTEST_STRING_REGEX(
 by the unit test harness system to assess overall pass/fail.</p>
 </div>
 <div class="section" id="unittest-file-regex">
-<h3><a class="toc-backref" href="#id141">UNITTEST_FILE_REGEX()</a></h3>
+<h3><a class="toc-backref" href="#id146">UNITTEST_FILE_REGEX()</a></h3>
 <p>Perform a series regexes of given strings and update overall test statistics.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6373,7 +6956,7 @@ UNITTEST_FILE_REGEX(
 to <a class="reference internal" href="#unittest-string-regex">UNITTEST_STRING_REGEX()</a> to assess pass/fail.</p>
 </div>
 <div class="section" id="unittest-final-result">
-<h3><a class="toc-backref" href="#id142">UNITTEST_FINAL_RESULT()</a></h3>
+<h3><a class="toc-backref" href="#id147">UNITTEST_FINAL_RESULT()</a></h3>
 <p>Print final statstics from all tests and assert final pass/fail</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -6398,9 +6981,9 @@ out.  CMake is a loosely typed language and it pays to be a little paranoid.</p>
 </div>
 </div>
 <div class="section" id="appendix">
-<h1><a class="toc-backref" href="#id143">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
+<h1><a class="toc-backref" href="#id148">13&nbsp;&nbsp;&nbsp;Appendix</a></h1>
 <div class="section" id="history-of-tribits">
-<h2><a class="toc-backref" href="#id144">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id149">13.1&nbsp;&nbsp;&nbsp;History of TriBITS</a></h2>
 <p>TriBITS started development in November 2007 as a set of helper macros to
 provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)
@@ -6456,13 +7039,13 @@ system and Trilinos' definition of &quot;Package&quot; (going back to 1998) pre-
 the development of CMake and therefore dictated the terminology of TriBITS</p>
 </div>
 <div class="section" id="design-considerations-for-tribits">
-<h2><a class="toc-backref" href="#id145">13.2&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
+<h2><a class="toc-backref" href="#id150">13.2&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
 <p>ToDo: Discuss design requirements.</p>
 <p>ToDo: Discuss why it is a good idea to explicitly list packages instead of
 just searching for them.</p>
 </div>
 <div class="section" id="checkin-test-py-help">
-<h2><a class="toc-backref" href="#id146">13.3&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
+<h2><a class="toc-backref" href="#id151">13.3&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">checkin-test.py</span> <span class="pre">--help</span></tt>.  This
 documentation contains a lot of information about the recommended development
 workflow (mostly related to pushing commits) and outlines a number of
@@ -7296,7 +7879,7 @@ Options:
 </pre>
 </div>
 <div class="section" id="egdist-help">
-<h2><a class="toc-backref" href="#id147">13.4&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
+<h2><a class="toc-backref" href="#id152">13.4&nbsp;&nbsp;&nbsp;egdist --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal">egdist <span class="pre">--help</span></tt>.  For more details on
 the usage of <tt class="docutils literal">egdist</tt>, see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> and <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository
 Development Workflow</a>.</p>

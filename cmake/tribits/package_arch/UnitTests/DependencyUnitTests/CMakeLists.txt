@@ -42,10 +42,15 @@ INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
-# The mock test project 
-SET(MOCK_PROJECT_NAME Trilinos)
+# Reduced MockTrilinos project
+SET(REDUCED_MOCK_PROJECT_NAME Trilinos)
+SET(REDUCED_MOCK_TRILINOS_DIR
+  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_REDUCED_MOCK_TRILINOS_DIR})
 
-SET(MOCK_TRILINOS_DIR ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
+# MockTrilinos project
+SET(MOCK_PROJECT_NAME Trilinos)
+SET(MOCK_TRILINOS_DIR
+  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
 
 #
@@ -142,7 +147,99 @@ CREATE_DEPENDENCY_XML_DUMP_TEST_CASE(
 
 
 #
-# Unit tests for full dependency handling
+# Unit tests for dependency handling for full set of packages
+#
+
+
+FUNCTION(CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
+
+  PARSE_ARGUMENTS(
+     #prefix
+     PARSE
+     #lists
+     "ARGS;PASS_REGULAR_EXPRESSION_ALL"
+     #options
+     ""
+     ${ARGN}
+     )
+
+  TRIBITS_ADD_ADVANCED_TEST( DepTestsReduced_${TEST_NAME}
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+    TEST_0 CMND ${CMAKE_COMMAND}
+      ARGS
+        ${PARSE_ARGS}
+        ${REDUCED_MOCK_TRILINOS_DIR}
+      PASS_REGULAR_EXPRESSION_ALL ${PARSE_PASS_REGULAR_EXPRESSION_ALL}
+    )
+
+ENDFUNCTION()
+
+
+FUNCTION(READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY  EXPECTED_OUTPUT_FILE
+  EXPECTED_OUTPUT_REGEX_ARRAY_OUT
+  )
+  FILE(READ ${EXPECTED_OUTPUT_FILE} EXPECTED_RAW_STR_ALL)
+  #PRINT_VAR(EXPECTED_RAW_STR_ALL)
+  SPLIT("${EXPECTED_RAW_STR_ALL}" "\n" EXPECTED_RAW_STR_ARRAY)
+  #PRINT_VAR(EXPECTED_RAW_STR_ARRAY)
+  SET(EXPECTED_REGEX_ARRAY)
+  FOREACH(EXPECTED_RAW_STR ${EXPECTED_RAW_STR_ARRAY})
+    #PRINT_VAR(EXPECTED_RAW_STR)
+    IF (NOT "${EXPECTED_RAW_STR}" STREQUAL "")
+      SET(EXPECTED_REGEX_STR "${EXPECTED_RAW_STR}")
+      STRING(REPLACE "(" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      STRING(REPLACE ")" "." EXPECTED_REGEX_STR "${EXPECTED_REGEX_STR}") 
+      LIST(APPEND EXPECTED_REGEX_ARRAY "${EXPECTED_REGEX_STR}")
+      #PRINT_VAR(EXPECTED_REGEX_ARRAY)
+    ENDIF()
+  ENDFOREACH()
+  SET(${EXPECTED_OUTPUT_REGEX_ARRAY_OUT} ${EXPECTED_REGEX_ARRAY} PARENT_SCOPE)
+ENDFUNCTION()
+
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${CMAKE_CURRENT_SOURCE_DIR}/ReducedModelTrilinos_ExpectedDependencies.txt"
+  REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY
+  )
+#PRINT_VAR(REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY)
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${CMAKE_CURRENT_SOURCE_DIR}/ReducedModelTrilinos_EnableAllPackages.txt"
+  REDUCED_EnableAllPackages_REGEX_ARRAY
+  )
+#PRINT_VAR(REDUCED_EnableAllPackages_REGEX_ARRAY)
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_DumpDependencies
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${REDUCED_EXPECTED_DEPENDENICES_REGEX_ARRAY}
+    ${REDUCED_EnableAllPackages_REGEX_ARRAY}
+    "Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6"
+    "Final set of non-enabled packages:  Triutils EpetraExt 2"
+    "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5"
+  )
+
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableAllPackages_RequiredOnly
+  ARGS
+    -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON
+    -DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=OFF
+  PASS_REGULAR_EXPRESSION_ALL
+    "Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4"
+    "Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6"
+    "Final set of non-enabled packages:  Triutils EpetraExt 2"
+    "Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt "
+  )
+
+
+#
+# Unit tests for dependency handling for full set of packages
 #
 
 

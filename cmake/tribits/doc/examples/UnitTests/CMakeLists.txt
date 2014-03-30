@@ -139,7 +139,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
       "Explicitly enabled packages on input .by user.:  0"
       "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
-      "Enabling all packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
+      "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
       "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
       "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
       "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"

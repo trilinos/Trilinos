@@ -152,7 +152,7 @@ ENDFUNCTION()
 CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllDefault
   PASS_REGULAR_EXPRESSION_ALL
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 19"
     "Final set of non-enabled packages:  Stokhos Sacado Belos Phalanx Panzer 5"
   COMPARE_DEPS_FILE
@@ -164,7 +164,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   EnableAllSecondaryTested
   ARGS Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
     "Final set of non-enabled packages:  Stokhos 1"
   )
@@ -176,7 +176,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS Trilinos_ENABLE_SECONDARY_STABLE_CODE=ON
   PASS_REGULAR_EXPRESSION_ALL
     "WARNING: Set var Trilinos_ENABLE_SECONDARY_STABLE_CODE is deprecated!  Use Trilinos_ENABLE_SECONDARY_TESTED_CODE instead!"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 23"
     "Final set of non-enabled packages:  Stokhos 1"
   )
@@ -263,7 +263,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling explicitly set package Phalanx"
     "Explicitly enabled packages on input .*  Phalanx 1"
     "Explicitly disabled packages on input .*  Stokhos 1"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen Phalanx 21"
     "Final set of non-enabled packages:  Stokhos Belos Panzer 3"
     "Processing current package Stokhos: libs='OFF', tests=''"
@@ -279,7 +279,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling explicitly set package Stokhos"
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Stratimikos RBGen 20"
     "Final set of non-enabled packages:  Sacado Belos Phalanx Panzer 4"
     "Processing current package Stokhos: libs='ON', tests='ON'"
@@ -295,7 +295,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Enabling explicitly set package Stokhos"
     "Explicitly enabled packages on input .*  Stokhos 1"
     "Explicitly disabled packages on input .*  0"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Stokhos Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer 24"
     "Final set of non-enabled packages:  0"
     "Processing current package Stokhos: libs='ON', tests='ON'"
@@ -311,7 +311,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "EXECUTE_PROCESS.+git.+preCopyrightTrilinos.+preCopyrightTrilinos.update.out"
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko 24"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
     "CONFIGURE_OPTIONS.+-DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous.+"
@@ -351,7 +351,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "Skipping reading packages and TPLs for extra repo Dakota because marked NOPACKAGES"
     "Explicitly enabled packages on input .*  Stalix 1"
     "Explicitly disabled packages on input .*  Stokhos 1"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko Stalix 25"
     "Final set of non-enabled packages:  Stokhos 1"
     "CTEST_NOTES_FILES_WO_CACHE=.*/Updates.txt"
@@ -368,7 +368,7 @@ CREATE_CTEST_DEPENDENCY_HANDLING_TEST_CASE(
     "EXECUTE_PROCESS.+git.+extraTrilinosRepo.+extraTrilinosRepo.update.out"
     "Explicitly enabled packages on input .*  0"
     "Explicitly disabled packages on input .*  Stokhos Stalix 2"
-    "Enabling all packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
+    "Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON"
     "Final set of enabled packages:  TrilinosFramework Teuchos RTOp Epetra Zoltan Shards Triutils Tpetra EpetraExt Sacado Thyra Isorropia AztecOO Galeri Amesos Intrepid Ifpack ML Belos Stratimikos RBGen Phalanx Panzer Teko ExtraPack 25"
     "Final set of non-enabled packages:  Stokhos Stalix 2"
     "Trilinos_NUM_ENABLED_PACKAGES=25:  Configuring packages!"

@@ -64,6 +64,8 @@ SET(TRIBITS_CMAKE_PACKAGE_ARCH_DIR "package_arch")
 
 SET(TRIBITS_CMAKE_INSTALLATION_FILES_DIR "installation")
 
+SET(TRIBITS_REDUCED_MOCK_TRILINOS_DIR "package_arch/UnitTests/ReducedMockTrilinos")
+
 SET(TRIBITS_MOCK_TRILINOS_DIR "package_arch/UnitTests/MockTrilinos")
 
 # Files and directories related to the specific project
