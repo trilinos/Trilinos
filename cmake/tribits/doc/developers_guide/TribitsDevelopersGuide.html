@@ -385,7 +385,7 @@ ul.auto-toc {
 <li><a class="reference internal" href="#package-dependencies-and-enable-disable-logic" id="id42">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a><ul class="auto-toc">
 <li><a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure" id="id43">5.1&nbsp;&nbsp;&nbsp;Example ReducedMockTrilinos Project Dependency Structure</a></li>
 <li><a class="reference internal" href="#tribits-dependency-handling-rules-behaviors" id="id44">5.2&nbsp;&nbsp;&nbsp;TriBITS Dependency Handling Rules/Behaviors</a></li>
-<li><a class="reference internal" href="#standard-enable-disable-use-cases" id="id45">5.3&nbsp;&nbsp;&nbsp;Standard Enable/Disable Use Cases</a></li>
+<li><a class="reference internal" href="#example-enable-disable-use-cases" id="id45">5.3&nbsp;&nbsp;&nbsp;Example Enable/Disable Use Cases</a></li>
 <li><a class="reference internal" href="#project-packagedependencies-xml" id="id46">5.4&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></li>
 </ul>
 </li>
@@ -814,6 +814,8 @@ ENDIF()
 suffix <tt class="docutils literal"><span class="pre">-NOTFOUND</span></tt>.  How about that for a true/false rule!  To be safe, use
 <tt class="docutils literal">ON/OFF</tt> and <tt class="docutils literal">TRUE/FASLE</tt> pairs for setting variables.  Look up native
 CMake documentation on <tt class="docutils literal">IF()</tt>.</p>
+<p><strong>WARNING:</strong> If you mistype <tt class="docutils literal">&quot;ON&quot;</tt> as <tt class="docutils literal">&quot;NO&quot;</tt>, it evaluates to
+<tt class="docutils literal">FALSE</tt>/<tt class="docutils literal">OFF</tt>!  (That is a fun defect to track down!)</p>
 <p>CMake langauge behavior with respect to case sensitivity is also strange:</p>
 <ul class="simple">
 <li>Calls of built-in and user-defined macros and functions is <em>case
@@ -924,6 +926,16 @@ specified in a <a class="reference internal" href="#repodir-packageslist-cmake">
 Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defining soiftware which can be
 directly configured with <tt class="docutils literal">cmake</tt> and then built, tested, and installed.</li>
 </ul>
+<p>In this document, dependenices are described as either being <em>upstream</em> or
+<em>downstream</em> as defined as:</p>
+<ul class="simple" id="upstream-dependencies">
+<span id="upstream-dependency"></span><span id="upstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;A&quot; is an
+<strong>upstream dependency</strong> of &quot;B&quot;.</li>
+</ul>
+<ul class="simple" id="downstream-dependencies">
+<span id="downstream-dependency"></span><span id="downstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;B&quot; is an
+<strong>downstream dependency</strong> of &quot;A&quot;.</li>
+</ul>
 <p>The following subsections define the major structural units of a TriBITS
 project in more detail.  Each structural unit is described along with the
 files and directories assoicated with each.  In addition, a key set of TriBITS
@@ -948,9 +960,9 @@ project's name and directories.</li>
 unit.  These include variables such as <tt class="docutils literal">${REPOSTORY_NAME}_SOURCE_DIR</tt>
 (e.g. <tt class="docutils literal">TribitsExProj_SOURCE_DIR</tt>) and <tt class="docutils literal">${PACKAGE_NAME}_BINARY_DIR</tt>
 (e.g. <tt class="docutils literal">SimpleCXX_BINARY_DIR</tt>).  They are available after processing the
-unit, for use by downstream or subordinate units.  They are part of the
+unit, for use by <a class="reference internal" href="#downstream">downstream</a> or subordinate units.  They are part of the
 TriBITS dependency system, allowing downstream units to access properties of
-their known upstream dependencies.</li>
+their known <a class="reference internal" href="#upstream-dependencies">upstream dependencies</a>.</li>
 </ul>
 <p>More information about these various files is described in section <a class="reference internal" href="#processing-of-tribits-files-ordering-and-details">Processing
 of TriBITS Files: Ordering and Details</a>.</p>
@@ -1666,7 +1678,7 @@ and/or tests with CMake build targets for building these and exports the
 list of include directories, libraries, and targets that are created (along
 with CMake dependencies).</li>
 <li>Is declared in its parent repository's <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.</li>
-<li>Defines dependencies on upstream TPLs and/or other SE packages by just
+<li>Defines dependencies on <a class="reference internal" href="#upstream">upstream</a> TPLs and/or other SE packages by just
 naming the dependencies in the file
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>..</li>
 <li>Can optionally have subpackages listed in the argument
@@ -1919,7 +1931,7 @@ are defined before an SE Package's <tt class="docutils literal">CMakeLists.txt</
 Set to <tt class="docutils literal">ON</tt> if the package is to be enabled.</blockquote>
 <p><tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}</span></tt></p>
 <blockquote>
-Set to <tt class="docutils literal">ON</tt> if support for the optional upstream dependent package
+Set to <tt class="docutils literal">ON</tt> if support for the optional <a class="reference internal" href="#upstream">upstream</a> dependent package
 <tt class="docutils literal">${OPTIONAL_DEP_PACKAGE_NAME}</tt> is enabled in package
 <tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEP_PACKAGE_NAME}</tt> corresponds to
 each optional upstream SE package listed in the <tt class="docutils literal">LIB_OPTIONAL_PACKAGES</tt>
@@ -1927,7 +1939,7 @@ and <tt class="docutils literal">TEST_OPTIONAL_PACKAGES</tt> arguments to the
 <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> macro.</blockquote>
 <p><tt class="docutils literal"><span class="pre">${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}</span></tt></p>
 <blockquote>
-Set to <tt class="docutils literal">ON</tt> if support for the optional upstream dependent TPL
+Set to <tt class="docutils literal">ON</tt> if support for the optional <a class="reference internal" href="#upstream">upstream</a> dependent TPL
 <tt class="docutils literal">${OPTIONAL_DEPENDENT_TPL_NAME}</tt> is enabled in package
 <tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEPENDENT_TPL_NAME}</tt> corresponds
 each to the optional upstream TPL listed in the <tt class="docutils literal">LIB_OPTIONAL_TPLS</tt> and
@@ -1966,7 +1978,7 @@ with CMake dependencies).</li>
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file in a call to
 <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> using the argument
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt>.</li>
-<li>Defines dependencies on upstream TPLs and/or other SE packages by just
+<li>Defines dependencies on <a class="reference internal" href="#upstream">upstream</a> TPLs and/or other SE packages by just
 naming the dependencies in the file <tt class="docutils literal">cmake/Dependencies.cmake</tt> using the
 macro <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>.</li>
 <li>Can <strong>NOT</strong> have its own subpackages defined (only top-level packages can
@@ -2009,8 +2021,8 @@ the subpackage directory listed in the
 <p id="packagedir-spkgdir-cmake-dependencies-cmake"><strong>&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</strong>: The contents of this file
 for subpackages is idential as for top-level packages.  It just contains a
 call to the macro <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> to define this SE
-package's upstream TPL and SE package dependencies.  A simple example is for
-<tt class="docutils literal">SubpackageB</tt> declared in
+package's <a class="reference internal" href="#upstream">upstream</a> TPL and SE package dependencies.  A simple example is
+for <tt class="docutils literal">SubpackageB</tt> declared in
 <a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a> shown shown in:</p>
 <blockquote>
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/B/cmake/Dependneices.cmake</tt></blockquote>
@@ -2536,7 +2548,7 @@ for the usage of TriBITS in existing TriBITS projects.</p>
 package into a single base source directory would be to support the
 stand-alone build of a TriBITS package as its own entity that uses an
 installation of the TriBITS.  If a given TriBITS package has no required
-upstream TriBITS package dependencies and minimal TPL dependencies (or only
+<a class="reference internal" href="#upstream">upstream</a> TriBITS package dependencies and minimal TPL dependencies (or only
 uses <a class="reference internal" href="#standard-tribits-tpls">Standard TriBITS TPLs</a> already defined in the <tt class="docutils literal">tribits/tpls/</tt>
 directory), then creating a stand-alone project build of a loan TriBITS
 package requires fairly little extra overhead or duplication.  However, as
@@ -2584,8 +2596,8 @@ single TriBITS meta-project.  By using a standard TPL definition, it is
 guaranteed that the TPL used will be consistent with all of the repositories.</p>
 <p>Note that just because packages in two repositories reference the same TPL
 does not necessarily mean that it needs to be a standard TriBITS TPL.  For
-example, if the TPL <tt class="docutils literal">BLAS</tt> is defined in an upstream repository
-(e.g. Trilinos), then a package in a downstream repository can list a
+example, if the TPL <tt class="docutils literal">BLAS</tt> is defined in an <a class="reference internal" href="#upstream">upstream</a> repository
+(e.g. Trilinos), then a package in a <a class="reference internal" href="#downstream">downstream</a> repository can list a
 dependency on the TPL <tt class="docutils literal">BLAS</tt> without having to define its own <tt class="docutils literal">BLAS</tt> TPL
 in its repository's <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.  For more details on
 TPLs, see <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.</p>
@@ -2774,7 +2786,7 @@ referenced in <a class="reference internal" href="#tribits-package-core-files">T
 must exist for every package directory listed in
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> and we see these files under in the directory
 <tt class="docutils literal">packages/simple_cxx/</tt>.  The package <tt class="docutils literal">SimpleCxx</tt> does not have any
-upstream SE package dependencies.</p>
+<a class="reference internal" href="#upstream">upstream</a> SE package dependencies.</p>
 <p>Now consider the example top-level package <tt class="docutils literal">PackageWithSubpackages</tt> which,
 as the name suggests, is broken down into subpackages.  The
 <tt class="docutils literal">PackageWithSubpackages</tt> dependencies file:</p>
@@ -2909,7 +2921,7 @@ TriBITS repositories like:</p>
 repository directory but is broken up into subpackages.</li>
 <li><tt class="docutils literal">extraRepoTwoPackages</tt>: Contains just two packages but provides an exmaple
 of defining multiple repositories with possible missing required and
-optional upstream packages (see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a>).</li>
+optional <a class="reference internal" href="#upstream">upstream</a> packages (see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a>).</li>
 <li><tt class="docutils literal">extraTrilinosRepo</tt>: Just a typical extra repo with add-on packages and
 new TPLs defined that depends on a few <tt class="docutils literal">MockTrilinos</tt> packages.</li>
 </ul>
@@ -2983,7 +2995,7 @@ TRIBITS_DEFINE_REPOSITORY_PACKAGES(
   ...
   )
 </pre>
-<p>No downstream packages list a dependency on <tt class="docutils literal">TriBITS</tt> in their
+<p>No <a class="reference internal" href="#downstream">downstream</a> packages list a dependency on <tt class="docutils literal">TriBITS</tt> in their
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files.  Listing the <tt class="docutils literal">TriBITS</tt>
 package in only done in the <tt class="docutils literal">PackagesList.cmake</tt> file for testing TriBITS.</p>
 <p>Other TriBITS projects/repositories that don't snapshot TriBITS but also want
@@ -3132,9 +3144,9 @@ the assigned <a class="reference internal" href="#se-package-test-group">SE Pack
 affects what packages get enabled or disabled.</p>
 <p>Any of these SE packages can be enabled or disabled with
 <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> (the default enable is
-typically <tt class="docutils literal">&quot;&quot;</tt>, see <a class="reference internal" href="#unset-enable-disable-state-by-default">unset enable/disable state by default</a> below).  For
-<tt class="docutils literal">ReducedMockTrilinos</tt>, this gives the enable/disable cache variables (with
-the initial default values):</p>
+typically <tt class="docutils literal">&quot;&quot;</tt>, see <a class="reference internal" href="#pt-st-se-packages-given-default-unset-enable-disable-state">PT/ST SE packages given default unset enable/disable
+state</a>).  For <tt class="docutils literal">ReducedMockTrilinos</tt>, this gives the enable/disable cache
+variables (with the initial default values):</p>
 <pre class="literal-block">
 Trilinos_ENABLE_Teuchos=&quot;&quot;
 Trilinos_ENABLE_RTOp&quot;&quot;
@@ -3200,7 +3212,7 @@ Thyra_ENABLE_ThyraEpetra=&quot;&quot;
 Thyra_ENABLE_ThyraEpetraExt=&quot;&quot;
 </pre>
 <p>The above optional package-specific cache variables allow one to control
-whether or not support for upstream dependency X is turned on in package Y
+whether or not support for <a class="reference internal" href="#upstream">upstream</a> dependency X is turned on in package Y
 independent of whether or not X and Y are themselves both enabled.  For
 example, if the packages <tt class="docutils literal">Triutils</tt> and <tt class="docutils literal">EpetraExt</tt> are both enabled, one
 can explicitly disable support for the optional dependency <tt class="docutils literal">Triutils</tt> in
@@ -3209,7 +3221,7 @@ do this for several reasons but the bottom line is that this gives the user
 more detailed control over package dependenices.  See the <a class="reference internal" href="#tribits-dependency-handling-rules-behaviors">TriBITS Dependency
 Handling Rules/Behaviors</a> and <a class="reference internal" href="#explicit-disable-of-an-optional-package-dependency">Explicit disable of an optional package
 dependency</a> for more discussion and examples.</p>
-<p>Before getting into specific examples for some <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use
+<p>Before getting into specific examples for some <a class="reference internal" href="#example-enable-disable-use-cases">Example Enable/Disable Use
 Cases</a>, some of the <a class="reference internal" href="#tribits-dependency-handling-rules-behaviors">TriBITS Dependency Handling Rules/Behaviors</a> are
 defined below.</p>
 </div>
@@ -3218,28 +3230,51 @@ defined below.</p>
 <p>Below, some of the rules and behaviors of the TriBITS dependency management
 system are described.  Examples refer to the <a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure">Example ReducedMockTrilinos
 Project Dependency Structure</a>.  More detailed examples of these behaviors are
-given in the section <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use Cases</a>.</p>
-<ol class="arabic simple" id="unset-enable-disable-state-by-default">
-<li>An SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is
-given an <strong>unset enable/disable state by default</strong>
+given in the section <a class="reference internal" href="#example-enable-disable-use-cases">Example Enable/Disable Use Cases</a>.</p>
+<p>In brief, these rules/behaviors are:</p>
+<ol class="arabic simple">
+<li><a class="reference internal" href="#pt-st-se-packages-given-default-unset-enable-disable-state">PT/ST SE packages given default unset enable/disable state</a></li>
+<li><a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages disabled by default</a></li>
+<li><a class="reference internal" href="#se-package-enable-triggers-auto-enables-of-upstream-dependenices">SE package enable triggers auto-enables of upstream dependenices</a></li>
+<li><a class="reference internal" href="#se-package-disable-triggers-auto-disables-of-downstream-dependencies">SE package disable triggers auto-disables of downstream dependencies</a></li>
+<li><a class="reference internal" href="#pt-st-tpls-given-default-unset-enable-disable-state">PT/ST TPLs given default unset enable/disable state</a></li>
+<li><a class="reference internal" href="#ex-tpls-given-default-unset-enable-disable-state">EX TPLs given default unset enable/disable state</a></li>
+<li><a class="reference internal" href="#required-tpls-are-auto-enabled-for-enabled-se-packages">Required TPLs are auto-enabled for enabled SE packages</a></li>
+<li><a class="reference internal" href="#optional-tpls-only-enabled-explicitly-by-the-user">Optional TPLs only enabled explicitly by the user</a></li>
+<li><a class="reference internal" href="#tpl-disable-triggers-auto-disables-of-downstream-dependencies">TPL disable triggers auto-disables of downstream dependencies</a></li>
+<li><a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflicit">Disables trump enables where there is a conflicit</a></li>
+<li><a class="reference internal" href="#enable-disable-of-parent-package-is-enable-disable-for-subpackages">Enable/disable of parent package is enable/disable for subpackages</a></li>
+<li><a class="reference internal" href="#st-se-packages-only-auto-enabled-if-st-code-is-enabled">ST SE packages only auto-enabled if ST code is enabled</a></li>
+<li><a class="reference internal" href="#project-enable-all-forward-dep-packages-dowstream-packages-tests">&lt;Project&gt;_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests</a></li>
+<li><a class="reference internal" href="#project-enable-all-packages-enables-all-pt-cond-st-se-packages">&lt;Project&gt;_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages</a></li>
+<li><a class="reference internal" href="#project-enable-tests-only-enables-explicitly-enabled-se-package-tests">&lt;Project&gt;_ENABLE_TESTS only enables explicitly enabled SE package tests</a></li>
+<li><a class="reference internal" href="#tribits-prints-all-enables-and-disables-to-stdout">TriBITS prints all enables and disables to STDOUT</a></li>
+<li><a class="reference internal" href="#tribits-auto-enables-disables-done-using-non-cache-local-variables">TriBITS auto-enables/disables done using non-cache local variables</a></li>
+</ol>
+<p>In more detail, these rules/behaviors are:</p>
+<ol class="arabic simple" id="pt-st-se-packages-given-default-unset-enable-disable-state">
+<li><strong>PT/ST SE packages given default unset enable/disable state</strong>: An SE
+package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is given
+an <strong>unset enable/disable state by default</strong>
 (i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=&quot;&quot;</span></tt>).  For example, the
 <tt class="docutils literal">PT</tt> package <tt class="docutils literal">Teuchos</tt> is not enabled or disabled by default and is
 given the initial value <tt class="docutils literal"><span class="pre">Trilinos_ENABLE_Teuchos=&quot;&quot;</span></tt>.  This allows
 <tt class="docutils literal">PT</tt>, and <tt class="docutils literal">ST</tt> packages to be enabled or disabled using other logic
 defined by TriBITS which is described below.</li>
 </ol>
-<ol class="arabic" id="ex-se-package-disabled-by-default" start="2">
-<li><p class="first">An SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> with testing group <tt class="docutils literal">EX</tt> is <strong>disabled
-by default</strong> (i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>).  This
-results in all required downstream SE packages to be disabled by default.
-However, the user can explicitly set
-<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt> for an <tt class="docutils literal">EX</tt> package and
-it will be enabled (unless one of its required dependencies are not enabled
-for some reason).</p>
-</li>
-<li><p class="first">Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>enabled</strong> by the
-user by setting the cache variable
-<tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt>
+<ol class="arabic simple" id="ex-se-packages-disabled-by-default" start="2">
+<li><strong>EX SE packages disabled by default</strong>: An SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt>
+with testing group <tt class="docutils literal">EX</tt> is <strong>disabled by default</strong>
+(i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>).  This results in
+all required <a class="reference internal" href="#downstream">downstream</a> SE packages to be disabled by default.  However,
+the user can explicitly set <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt>
+for an <tt class="docutils literal">EX</tt> package and it will be enabled (unless one of its required
+dependencies are not enabled for some reason).</li>
+</ol>
+<ol class="arabic simple" id="se-package-enable-triggers-auto-enables-of-upstream-dependenices" start="3">
+<li><strong>SE package enable triggers auto-enables of upstream dependenices</strong>: Any SE
+package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>enabled</strong> by the user by
+setting the cache variable <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt>
 (e.g. <tt class="docutils literal">Trilinos_ENABLE_EpetraExt=ON</tt>).  When a package is enabled in this
 way, the TriBITS system will try to enable all of the required upstream SE
 packages and TPLs defined by the package (specified in its
@@ -3249,61 +3284,72 @@ with an error (depending on the value of
 <tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt>, see below).  In
 addition, if <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>, then
 TriBITS will try to enable all of the specified optional SE packages as
-well.</p>
-</li>
-<li><p class="first">Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>disabled</strong> by the
+well.</li>
+</ol>
+<ol class="arabic simple" id="se-package-disable-triggers-auto-disables-of-downstream-dependencies" start="4">
+<li><strong>SE package disable triggers auto-disables of downstream dependencies</strong>:
+Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>disabled</strong> by the
 user by setting the cache variable
 <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>
 (e.g. <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt>).  When an SE package is explicitly
-disabled, it will result in the disable of all downstream SE packages that
-have required dependency on it.  It will also disable optional support for
-the disabled packages in downstream packages that list it as an optional
-dependency.  For an example, see <a class="reference internal" href="#explicit-disable-of-a-package">Explicit disable of a package</a>.</p>
-</li>
-<li><p class="first">A TriBITS TPL <tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is
-given an <strong>unset enable/disable state by default</strong>
-(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=&quot;&quot;</span></tt>).  For example, the <tt class="docutils literal">PT</tt> TPL
-<tt class="docutils literal">BLAS</tt> is not enabled or disabled by default
+disabled, it will result in the disable of all <a class="reference internal" href="#downstream">downstream</a> SE packages
+that have required dependency on it.  It will also disable optional support
+for the disabled packages in downstream packages that list it as an
+optional dependency.  For an example, see <a class="reference internal" href="#explicit-disable-of-a-package">Explicit disable of a package</a>.</li>
+</ol>
+<ol class="arabic simple" id="pt-st-tpls-given-default-unset-enable-disable-state" start="5">
+<li><strong>PT/ST TPLs given default unset enable/disable state</strong>: A TriBITS TPL
+<tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">PT</tt> or <tt class="docutils literal">ST</tt> is given an <strong>unset
+enable/disable state by default</strong> (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=&quot;&quot;</span></tt>).
+For example, the <tt class="docutils literal">PT</tt> TPL <tt class="docutils literal">BLAS</tt> is not enabled or disabled by default
 (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_BLAS=&quot;&quot;</span></tt>) .  This allows <tt class="docutils literal">PT</tt>, and <tt class="docutils literal">ST</tt> TPLs to be
-enabled or disabled using other logic.</p>
-</li>
-<li><p class="first">A TriBITS TPL <tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">EX</tt> (as is for <cite>PT`</cite>
-and <tt class="docutils literal">EX</tt> TPLs), is given an <strong>unset enable/disable state by default</strong>
+enabled or disabled using other logic.</li>
+</ol>
+<ol class="arabic simple" id="ex-tpls-given-default-unset-enable-disable-state" start="6">
+<li><strong>EX TPLs given default unset enable/disable state</strong>: A TriBITS TPL
+<tt class="docutils literal">&lt;TRIBITS_TPL&gt;</tt> with testing group <tt class="docutils literal">EX</tt> (as is for <cite>PT`</cite> and <tt class="docutils literal">EX</tt>
+TPLs), is given an <strong>unset enable/disable state by default</strong>
 (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;&quot;&quot;</span></tt>).  This is different behavior than for
 <tt class="docutils literal">EX</tt> SE pakages described above which provides an initial hard disable.
 However, since TriBITS will never automatically enable an optional TPL (see
-below) and since only downstream <tt class="docutils literal">EX</tt> SE packages are allowed to have a
-required dependenices on an <tt class="docutils literal">EX</tt> TPL (see ???), there is no need to set
-the default enable for an <tt class="docutils literal">EX</tt> TPL to <tt class="docutils literal">OFF</tt>.</p>
-</li>
-<li><p class="first">All TPLs listed as required TPL dependencies for the final set of enabled
-SE packages are <strong>set to enabled</strong> (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=ON</span></tt>)
-for the final set of enabled packages (unless the listed TPLs are already
-explicit disabled).  For example, if the <tt class="docutils literal">Epetra</tt> package is enabled,
-then that will trigger the enable of its required TPLs <tt class="docutils literal">BLAS</tt> and
-<tt class="docutils literal">LAPACK</tt>.</p>
-</li>
-<li><p class="first">TPLs with testing group <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> will only be enabled if they are
+below) and since only <a class="reference internal" href="#downstream">downstream</a> <tt class="docutils literal">EX</tt> SE packages are allowed to have
+a required dependenices on an <tt class="docutils literal">EX</tt> TPL (see ???), there is no need to set
+the default enable for an <tt class="docutils literal">EX</tt> TPL to <tt class="docutils literal">OFF</tt>.</li>
+</ol>
+<ol class="arabic simple" id="required-tpls-are-auto-enabled-for-enabled-se-packages" start="7">
+<li><strong>Required TPLs are auto-enabled for enabled SE packages</strong>: All TPLs listed as
+required TPL dependencies for the final set of enabled SE packages are
+<strong>set to enabled</strong> (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=ON</span></tt>) for the final set
+of enabled packages (unless the listed TPLs are already explicit disabled).
+For example, if the <tt class="docutils literal">Epetra</tt> package is enabled, then that will trigger
+the enable of its required TPLs <tt class="docutils literal">BLAS</tt> and <tt class="docutils literal">LAPACK</tt>.</li>
+</ol>
+<ol class="arabic simple" id="optional-tpls-only-enabled-explicitly-by-the-user" start="8">
+<li><strong>Optional TPLs only enabled explicitly by the user</strong>: Optional TPLs with
+testing group <tt class="docutils literal">PT</tt>, <tt class="docutils literal">ST</tt> or <tt class="docutils literal">EX</tt> will only be enabled if they are
 explicitly enabled by the user.  For example, just because the package
 <tt class="docutils literal">Teuchos</tt> is enabled, the optional TPLs <tt class="docutils literal">Boost</tt> and <tt class="docutils literal">MPI</tt> will
 <strong>not</strong> be enabled by default.  To enable the optional TPL <tt class="docutils literal">Boost</tt>, for
 example, and enable support for <tt class="docutils literal">Boost</tt> in the <tt class="docutils literal">Teuchos</tt> package, the
-user must explicitly set <tt class="docutils literal">TPL_ENABLE_Boost=ON</tt>.</p>
-</li>
-<li><p class="first">Any TPLs that are explicitly disabled
-(i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=OFF</span></tt>) will result in the disable of all
-downstream dependent SE packages that have a required dependency on the
-TPL.  For example, if the user sets <tt class="docutils literal">TPL_ENABLE_LAPACK=OFF</tt>, then this
-will result in the disable of SE packages <tt class="docutils literal">Teuchos</tt> and <tt class="docutils literal">Epetra</tt>, and
-all of the required SE packages downstream from them (see ???).  Also, the
-explicitly disabled TPL will result in disable of optional support in all
-downstream SE packages.  For example, if the user sets
-<tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>, then TriBITS will automatically set
-<tt class="docutils literal">Teuchos_ENABLE_MPI=OFF</tt> and <tt class="docutils literal">Epetra_ENABLE_MPI=OFF</tt> (see ???).</p>
-</li>
-<li><p class="first">Disables trump enables where there is a conflicit and TriBITS will never
-override a disable in order to satisfy some dependency.  For example, if
-the user sets <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt> and
+user must explicitly set <tt class="docutils literal">TPL_ENABLE_Boost=ON</tt>.</li>
+</ol>
+<ol class="arabic simple" id="tpl-disable-triggers-auto-disables-of-downstream-dependencies" start="9">
+<li><strong>TPL disable triggers auto-disables of downstream dependencies</strong>: Any TPLs
+that are explicitly disabled (i.e. <tt class="docutils literal"><span class="pre">TPL_ENABLE_&lt;TRIBITS_TPL&gt;=OFF</span></tt>) will
+result in the disable of all <a class="reference internal" href="#downstream">downstream</a> dependent SE packages that have
+a required dependency on the TPL.  For example, if the user sets
+<tt class="docutils literal">TPL_ENABLE_LAPACK=OFF</tt>, then this will result in the disable of SE
+packages <tt class="docutils literal">Teuchos</tt> and <tt class="docutils literal">Epetra</tt>, and all of the required SE packages
+downstream from them (see ???).  Also, the explicitly disabled TPL will
+result in disable of optional support in all downstream SE packages.  For
+example, if the user sets <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>, then TriBITS will
+automatically set <tt class="docutils literal">Teuchos_ENABLE_MPI=OFF</tt> and <tt class="docutils literal">Epetra_ENABLE_MPI=OFF</tt>
+(see ???).</li>
+</ol>
+<ol class="arabic" id="disables-trump-enables-where-there-is-a-conflicit" start="10">
+<li><p class="first"><strong>Disables trump enables where there is a conflicit</strong> and TriBITS will
+never override a disable in order to satisfy some dependency.  For
+example, if the user sets <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt> and
 <tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt>, then TriBITS will <strong>not</strong> override the
 disable of <tt class="docutils literal">Teuchos</tt> in order to satisfy the required dependency of
 <tt class="docutils literal">RTOp</tt>.  In cases such as this, the behavior of the TriBITS dependency
@@ -3324,7 +3370,10 @@ TriBITS will report that <tt class="docutils literal">RTOp</tt> is enabled but t
 processing must stop (see ???).</li>
 </ul>
 </li>
-<li><p class="first">An explicit enable/disable of a top-level parent package with subpackages
+</ol>
+<ol class="arabic" id="enable-disable-of-parent-package-is-enable-disable-for-subpackages" start="11">
+<li><p class="first"><strong>Enable/disable of parent package is enable/disable for subpackages</strong>: An
+explicit enable/disable of a top-level parent package with subpackages
 with <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> is equivanent
 to the explicit enable/disable of all of the parent package's subpakages.
 For example, explicitly setting <tt class="docutils literal">Trilinos_ENABLE_Thyra=ON</tt> is equivalent
@@ -3336,64 +3385,87 @@ Trilinos_ENABLE_ThyraEpetra=ON
 Trilinos_ENABLE_ThyraEpetraExt=ON   # Only if enabling ST code!
 </pre>
 <p>(Note that <tt class="docutils literal">Trilinos_ENABLE_ThyraCrazyStuff</tt> is <strong>not</strong> set to <tt class="docutils literal">ON</tt>
-because it is aready set to <tt class="docutils literal">OFF</tt> by default, see <a class="reference internal" href="#ex-se-package-disabled-by-default">EX SE package
+because it is aready set to <tt class="docutils literal">OFF</tt> by default, see <a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages
 disabled by default</a>.)  Likewise, explicitly setting
 <tt class="docutils literal">Trilinos_ENABLE_Thyra=OFF</tt> is equivalent to explicitly setting all of
 the <tt class="docutils literal">Thyra</tt> subpackages to <tt class="docutils literal">OFF</tt> at the outset.  See ??? for an
 example.</p>
 </li>
-<li><p class="first">TriBITS will only enable an optional <tt class="docutils literal">ST</tt> SE package when
+</ol>
+<ol class="arabic simple" id="st-se-packages-only-auto-enabled-if-st-code-is-enabled" start="12">
+<li><strong>ST SE packages only auto-enabled if ST code is enabled</strong>: TriBITS will
+only enable an optional <tt class="docutils literal">ST</tt> SE package when
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt> if
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt> is also set.  If an optional
-<tt class="docutils literal">ST</tt> upstream dependent SE package is not enabled due to
+<tt class="docutils literal">ST</tt> <a class="reference internal" href="#upstream">upstream</a> dependent SE package is not enabled due to
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt>, then a one-line warning is
 printed to STDOUT.  The TriBITS default is
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>.  This helps to avoid
 problems when users try to set a permuation of enables/disables which is
-not regularly tested.</p>
-</li>
-<li><p class="first">The user cache-variable <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES</tt> will
-result in the enable of all <tt class="docutils literal">PT</tt> SE packages when
+not regularly tested.</li>
+</ol>
+<ol class="arabic simple" id="project-enable-all-forward-dep-packages-dowstream-packages-tests" start="14">
+<li><strong>&lt;Project&gt;_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests</strong>:
+Setting the user cache-variable
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_FORWARD_PACKAGES=ON</tt> will result in the
+<a class="reference internal" href="#downstream">downstream</a> <tt class="docutils literal">PT</tt> SE packages and tests to be enabled (and all <tt class="docutils literal">PT</tt>
+and <tt class="docutils literal">ST</tt> SE packages and tests when
+<tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt>) for all explicitly enabled
+SE packages.  For example, configuring with <tt class="docutils literal">Trilinos_ENABLE_Epetra=ON</tt>,
+<tt class="docutils literal">Trilinos_ENABLE_TESTS=ON</tt>, and
+<tt class="docutils literal">Trilinos_ENABLE_ALL_FORWARD_PACKAGES=ON</tt> will result the package
+enables (and test and example enables) for the SE packages <tt class="docutils literal">Triutils</tt>,
+<tt class="docutils literal">EpetraExt</tt>, <tt class="docutils literal">ThyraCoreLibs</tt>, <tt class="docutils literal">ThyraEpetra</tt> and <tt class="docutils literal">Thyra</tt>.  See ???
+for an example.</li>
+</ol>
+<ol class="arabic simple" id="project-enable-all-packages-enables-all-pt-cond-st-se-packages" start="14">
+<li><strong>&lt;Project&gt;_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages</strong>:
+Setting the user cache-variable <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON</tt>
+will result in the enable of all <tt class="docutils literal">PT</tt> SE packages when
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt> and all <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> SE
 packages when <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON</tt>.  For an
-example, see ???.</p>
-</li>
-<li><p class="first">Setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_TESTS=ON</tt> will <strong>only enable tests for
-explicitly enabled SE packages</strong>.  For example, configuring with
+example, see ???.</li>
+</ol>
+<ol class="arabic simple" id="project-enable-tests-only-enables-explicitly-enabled-se-package-tests" start="15">
+<li><strong>&lt;Project&gt;_ENABLE_TESTS only enables explicitly enabled SE package
+tests</strong>: Setting <tt class="docutils literal">${PROJECT_NAME}_ENABLE_TESTS=ON</tt> will <strong>only enable
+tests for explicitly enabled SE packages</strong>.  For example, configuring with
 <tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt> and <tt class="docutils literal">Trilinos_ENABLE_TESTS=ON</tt> will only
 result in the enable of tests for <tt class="docutils literal">RTOp</tt>, not <tt class="docutils literal">Teuchos</tt> (even through
 TriBITS will enable <tt class="docutils literal">Teuchos</tt> because it is a required dependency of
-<tt class="docutils literal">RTOp</tt>).  See ?? for an example.</p>
-</li>
-<li><p class="first">TriBITS prints out (to <tt class="docutils literal">cmake</tt> STDOUT) the initial set of
-enables/disables on input, prints a line whenever it sets (or overrides)
-an enable or disable, and prints out the final set of enables/disables.
-Therefore, the user just needs to grep the <tt class="docutils literal">cmake</tt> STDOUT to find out
-why any particular SE package or TPL is enabled or disabled in the end.
-In addtion, will print out when tests/examples for a given SE package gets
-enabled and when support for optional SE packages and TPLs is enabled or
-not.  A detailed description of this output is given in all of the below
-examples but in particular see <a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package (and its
-tests)</a>.</p>
-</li>
-<li><p class="first">TriBITS setting (or overrides) of enable/disable cache variables are done
+<tt class="docutils literal">RTOp</tt>).  See ?? for an example.</li>
+</ol>
+<ol class="arabic simple" id="tribits-prints-all-enables-and-disables-to-stdout" start="16">
+<li><strong>TriBITS prints all enables and disables to STDOUT</strong>: TriBITS prints out
+(to <tt class="docutils literal">cmake</tt> STDOUT) the initial set of enables/disables on input, prints
+a line whenever it sets (or overrides) an enable or disable, and prints
+out the final set of enables/disables.  Therefore, the user just needs to
+grep the <tt class="docutils literal">cmake</tt> STDOUT to find out why any particular SE package or TPL
+is enabled or disabled in the end.  In addtion, will print out when
+tests/examples for a given SE package gets enabled and when support for
+optional SE packages and TPLs is enabled or not.  A detailed description
+of this output is given in all of the below examples but in particular see
+<a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package (and its tests)</a>.</li>
+</ol>
+<ol class="arabic simple" id="tribits-auto-enables-disables-done-using-non-cache-local-variables" start="17">
+<li><strong>TriBITS auto-enables/disables done using non-cache local variables</strong>:
+TriBITS setting (or overrides) of enable/disable cache variables are done
 by setting local non-cache variables at the top project-level scope.  This
 is done so they don't get set in the cache and so that the same dependency
 enable/disable logic is redone, from scratch, with each re-configure which
 results in the same enable/disable logic output as for the initial
 configure.  This is to avoid confusion by the user about why some SE
-packages and TPLs are enabled and some are not on subsequent reconfigures.</p>
-</li>
+packages and TPLs are enabled and some are not on subsequent reconfigures.</li>
 </ol>
 <p>TriBITS prints out a lot of information about the enable/disable logic as it
 applies the above rules/behaviors.  For a large TriBITS project with lots of
 packages, this can produce a lot of output to STDOUT.  One just needs to
 understand what TriBITS is printing out and where to look in the output for
-different information.  The example <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use Cases</a> given
+different information.  The example <a class="reference internal" href="#example-enable-disable-use-cases">Example Enable/Disable Use Cases</a> given
 below show what this output looks like for the various enable/disable
 scenarios and tries to explains in more detail the reasons for why the given
 behavior is implemented the way that it is.  Given this output, the rule
-definitions given above, and the detailed example <a class="reference internal" href="#standard-enable-disable-use-cases">Standard Enable/Disable Use
+definitions given above, and the detailed example <a class="reference internal" href="#example-enable-disable-use-cases">Example Enable/Disable Use
 Cases</a> described below, one should always be able to figure out exactly why
 the final set of enables/disables is the way it is, even in the largest and
 most complex of TriBITS projects.  (NOTE: The same can <em>not</em> be said for many
@@ -3401,19 +3473,23 @@ other large software configuration and depolyment systems where basic
 decisions about what to enable and disable are hidden from the user and can be
 very difficult to debug).</p>
 </div>
-<div class="section" id="standard-enable-disable-use-cases">
-<h2><a class="toc-backref" href="#id45">5.3&nbsp;&nbsp;&nbsp;Standard Enable/Disable Use Cases</a></h2>
+<div class="section" id="example-enable-disable-use-cases">
+<h2><a class="toc-backref" href="#id45">5.3&nbsp;&nbsp;&nbsp;Example Enable/Disable Use Cases</a></h2>
 <p>Below, a few of the standard enable/disable use cases for a TriBITS project
 are given using the <a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure">Example ReducedMockTrilinos Project Dependency
-Structure</a>.</p>
+Structure</a> that demonstrate the <a class="reference internal" href="#tribits-dependency-handling-rules-behaviors">TriBITS Dependency Handling
+Rules/Behaviors</a>.</p>
+<p>The use cases covered are:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#default-configure-with-no-packages-enabled-on-input">Default configure with no packages enabled on input</a></li>
 <li><a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package (and its tests)</a></li>
 <li><a class="reference internal" href="#explicit-disable-of-a-package">Explicit disable of a package</a></li>
 <li><a class="reference internal" href="#explicit-enable-of-an-optional-package-dependency">Explicit enable of an optional package dependency</a></li>
 <li><a class="reference internal" href="#explicit-disable-of-an-optional-package-dependency">Explicit disable of an optional package dependency</a></li>
+<li><a class="reference internal" href="#explicit-enable-of-a-package-and-downstream-forward-packages-and-tests">Explicit enable of a package and downstream/forward packages and tests</a></li>
 <li><a class="reference internal" href="#enable-all-packages">Enable all packages</a></li>
 </ul>
+<p>Below are the detailed use cases with example TriBITS output.</p>
 <p id="default-configure-with-no-packages-enabled-on-input"><strong>Default configure with no packages enabled on input</strong></p>
 <p>ToDo: Discuss parts of the printout.</p>
 <p>ToDo: Fill in!</p>
@@ -3429,6 +3505,8 @@ ${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF</p>
 <p id="explicit-enable-of-an-optional-package-dependency"><strong>Explicit enable of an optional package dependency</strong></p>
 <p>ToDo: Fill in!</p>
 <p id="explicit-disable-of-an-optional-package-dependency"><strong>Explicit disable of an optional package dependency</strong></p>
+<p>ToDo: Fill in!</p>
+<p id="explicit-enable-of-a-package-and-downstream-forward-packages-and-tests"><strong>Explicit enable of a package and downstream/forward packages and tests</strong></p>
 <p>ToDo: Fill in!</p>
 <p id="enable-all-packages"><strong>Enable all packages</strong></p>
 <p>Enabling all packages the with:</p>
@@ -3542,7 +3620,7 @@ dependencies between the pieces, and then applying algorithms to manipulate
 the dependency data-structures is nothing new.  If fact, nearly every binary
 package deployment system provided in various Linux OS distributions have the
 concept of packages and dependnecies and will automatically install all of the
-necessary upstream dependencies when a downstream dependency install is
+necessary <a class="reference internal" href="#upstream-dependencies">upstream dependencies</a> when a <a class="reference internal" href="#downstream-dependency">downstream dependency</a> install is
 requested.</p>
 </div>
 <div class="section" id="project-packagedependencies-xml">
@@ -3991,7 +4069,7 @@ a given TriBITS project are:</p>
 <blockquote>
 <p>If <a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages-on">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON</a> (the TriBITS
 default value), then any explicitly enabled packages that have disabled
-upstream required packages or TPLs will be disabled.  If
+<a class="reference internal" href="#upstream">upstream</a> required packages or TPLs will be disabled.  If
 <a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages-off">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF</a>, then an
 configure error will occur.  For more details also see
 <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.*</a>).
@@ -4160,9 +4238,9 @@ instead of <tt class="docutils literal">BASIC</tt> is that when someone is enabl
 on it or install it, we want them by default to be seeing the full version
 of the test suite (shy of the <tt class="docutils literal">WEEKLY</tt> tests which can be very expensive)
 for the packages they are explictly enabling.  Typically they will not be
-enabling forward (downstream) dependent packages so the cost of running the
-test suite should not be too prohibitive.  This all depends on how good of a
-job the development teams do in making their test suites run fast and
+enabling forward (<a class="reference internal" href="#downstream">downstream</a>) dependent packages so the cost of running
+the test suite should not be too prohibitive.  This all depends on how good
+of a job the development teams do in making their test suites run fast and
 keeping the cost of running the tests down.  See the section <a class="reference internal" href="#tribits-automated-testing">TriBITS
 Automated Testing</a> for a more detailed discussion.</p>
 </blockquote>
