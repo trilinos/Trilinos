@@ -42,20 +42,17 @@ INCLUDE(TribitsAddAdvancedTest)
 
 INCLUDE(ParseVariableArguments)
 
-# Reduced MockTrilinos project
-SET(REDUCED_MOCK_PROJECT_NAME Trilinos)
-SET(REDUCED_MOCK_TRILINOS_DIR
-  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_REDUCED_MOCK_TRILINOS_DIR})
-
 # MockTrilinos project
 SET(MOCK_PROJECT_NAME Trilinos)
 SET(MOCK_TRILINOS_DIR
   ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_MOCK_TRILINOS_DIR})
 
 
+#####################################################################
 #
 # Unit tests for just creating the depencency XML files
 #
+#####################################################################
 
 
 FUNCTION(CREATE_DEPENDENCY_XML_DUMP_TEST_CASE TEST_NAME)
@@ -146,9 +143,16 @@ CREATE_DEPENDENCY_XML_DUMP_TEST_CASE(
   )
 
 
+#####################################################################
 #
-# Unit tests for dependency handling for full set of packages
+# Unit tests for dependency handling for reduced set of packages
 #
+#####################################################################
+
+# Reduced MockTrilinos project
+SET(REDUCED_MOCK_PROJECT_NAME Trilinos)
+SET(REDUCED_MOCK_TRILINOS_DIR
+  ${${PROJECT_NAME}_TRIBITS_DIR}/${TRIBITS_REDUCED_MOCK_TRILINOS_DIR})
 
 # Expected output files directory
 SET(REDUCED_MOCK_TRILINOS_OUTPUT_DIR
@@ -321,6 +325,50 @@ CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
     ${EnableThyra_DisableEpetra_EnableTests_REGEX_ARRAY}
   )
 
+#
+# EnableEpetra_EnableRTOp_DisableTeuchos
+#
+
+SET(TEST_NAME "EnableEpetra_EnableRTOp_DisableTeuchos")
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/${TEST_NAME}.txt"
+  ${TEST_NAME}_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  ${TEST_NAME}
+  ARGS
+    -DTrilinos_ENABLE_Epetra:BOOL=ON
+    -DTrilinos_ENABLE_RTOp:BOOL=ON
+    -DTrilinos_ENABLE_Teuchos:BOOL=OFF
+   PASS_REGULAR_EXPRESSION_ALL
+    ${${TEST_NAME}_REGEX_ARRAY}
+  )
+
+
+#
+# EnableEpetra_EnableRTOp_DisableTeuchos_DisableEnabledFwdDepPackages
+#
+
+SET(TEST_NAME "EnableEpetra_EnableRTOp_DisableTeuchos_DisableEnabledFwdDepPackages")
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/${TEST_NAME}.txt"
+  ${TEST_NAME}_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  ${TEST_NAME}
+  ARGS
+    -DTrilinos_ENABLE_Epetra:BOOL=ON
+    -DTrilinos_ENABLE_RTOp:BOOL=ON
+    -DTrilinos_ENABLE_Teuchos:BOOL=OFF
+    -DTrilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON
+   PASS_REGULAR_EXPRESSION_ALL
+    ${${TEST_NAME}_REGEX_ARRAY}
+  )
+
 
 #
 # EnableAllPackages_DumpDependencies
@@ -370,9 +418,11 @@ CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
   )
 
 
+#####################################################################
 #
 # Unit tests for dependency handling for full set of packages
 #
+#####################################################################
 
 
 FUNCTION(CREATE_DEPENDENCY_HANDLING_TEST_CASE TEST_NAME)
