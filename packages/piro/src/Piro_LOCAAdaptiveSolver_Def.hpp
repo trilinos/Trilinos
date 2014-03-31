@@ -81,10 +81,11 @@ private:
 template <typename Scalar>
 Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy) :
-  SteadyStateSolver<Scalar>(model, model->Np() > 0), // Only one parameter supported
+  SteadyStateSolver<Scalar>(modelWithSolve, modelWithSolve->Np() > 0), // Only one parameter supported
   piroParams_(piroParams),
   saveDataStrategy_(saveDataStrategy),
   globalData_(LOCA::createGlobalData(piroParams)),
@@ -102,7 +103,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     (void) paramVector_.addParameter(paramName(k));
   }
 
-  solMgr_->initialize(model, saveDataStrategy_, globalData_, Teuchos::rcpFromRef(paramVector_), l);
+  solMgr_->initialize(modelWithSolve, model, saveDataStrategy_, globalData_, Teuchos::rcpFromRef(paramVector_), l);
 
   // TODO: Create non-trivial stopping criterion for the stepper
   locaStatusTests_ = Teuchos::null;
@@ -199,6 +200,7 @@ template <typename Scalar>
 Teuchos::RCP<Piro::LOCAAdaptiveSolver<Scalar> >
 Piro::observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer)
@@ -208,7 +210,7 @@ Piro::observedLocaSolver(
     Teuchos::rcp(new Piro::ObserverToLOCASaveDataStrategyAdapter(observer)) :
     Teuchos::null;
 
-  return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, model, solMgr, saveDataStrategy));
+  return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, modelWithSolve, model, solMgr, saveDataStrategy));
 }
 
 #endif /* PIRO_LOCAADAPTIVESOLVER_DEF_HPP */

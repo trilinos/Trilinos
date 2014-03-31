@@ -69,6 +69,7 @@ public:
   /** \brief Constructs a LOCAAdaptiveSolver instance given a model and optionally a data saving strategy . */
   LOCAAdaptiveSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
+      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy);
@@ -104,6 +105,7 @@ template <typename Scalar>
 Teuchos::RCP<LOCAAdaptiveSolver<Scalar> >
 observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
+    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer);

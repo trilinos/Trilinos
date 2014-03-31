@@ -61,8 +61,16 @@ LOCA::Thyra::AdaptiveSolutionManager::
 buildSolutionGroup()
 {
 
-  const NOX::Thyra::Vector initialGuess(*model_->getNominalValues().get_x());
-  grp_ = Teuchos::rcp(new LOCA::Thyra::Group(globalData_, initialGuess, model_, *paramVector_, p_index_));
+  const NOX::Thyra::Vector initialGuess(*modelWithSolve_->getNominalValues().get_x());
+std::cout << "Calling buildSolutionGroup(): " << modelWithSolve_->getNominalValues().get_x() << std::endl;
+
+
+std::cout << "LOCA::Thyra::AdaptiveSolutionManager : " << initialGuess.length() << " norm is: " <<
+initialGuess.norm() << std::endl;
+
+
+
+  grp_ = Teuchos::rcp(new LOCA::Thyra::GroupWrapper(globalData_, initialGuess, modelWithSolve_, *paramVector_, p_index_));
   grp_->setSaveDataStrategy(saveDataStrategy_);
 
   return grp_;
@@ -71,12 +79,14 @@ buildSolutionGroup()
 
 void
 LOCA::Thyra::AdaptiveSolutionManager::
-initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& modelWithSolve,
+           const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
            const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
            const Teuchos::RCP<LOCA::GlobalData>& global_data,
            const Teuchos::RCP<LOCA::ParameterVector>& p,
            int p_index){
 
+  modelWithSolve_ = modelWithSolve;
   model_ = model;
   saveDataStrategy_ = saveDataStrategy;
   globalData_ = global_data;
@@ -88,28 +98,6 @@ initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
 }
 
 #if 0
-void
-LOCA::Thyra::AdaptiveSolutionManager::
-projectCurrentSolution()
-{
-
-  // Epetra_Vector element copy for now
-
-  // Note that this must be called after the currentSolution vector is formed for the new mesh, but prior to
-  // building the new solution group (grp).
-
-  // currentSolution has been resized to hold the DOFs on the new mesh, but it is un-initialized.
-
-  // grp->getX() is the current solution on the old mesh
-
-  // TO provide an example, assume that the meshes are identical and we can just copy the data between them (a Copy Remesh)
-
-    TEUCHOS_TEST_FOR_EXCEPT( currentSolution->length() != grp->getX().length());
-
-    *currentSolution = grp->getX();
-
-}
-
 Teuchos::RCP<const Epetra_Vector>
 LOCA::Thyra::AdaptiveSolutionManager::updateSolution(){
 

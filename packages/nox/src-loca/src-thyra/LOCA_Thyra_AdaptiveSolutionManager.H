@@ -50,6 +50,7 @@
 
 #include "LOCA.H"
 #include "LOCA_Thyra.H"
+#include "LOCA_Thyra_GroupWrapper.H"
 
 
 namespace LOCA {
@@ -67,7 +68,8 @@ public:
            TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
   }
 
-  void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+  void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& modelWithSolve,
+                  const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
                   const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
                   const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	              const Teuchos::RCP<LOCA::ParameterVector>& p,
@@ -83,7 +85,7 @@ public:
   //! Remap "old" solution into new data structures
   virtual void projectCurrentSolution(){
            TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
-  }
+        }
 
   //! Accessor functions
 
@@ -114,28 +116,27 @@ public:
 
 protected:
  
-      //! The solution group
-      Teuchos::RCP<LOCA::Thyra::Group> grp_;
+  //! The solution group
+  Teuchos::RCP<LOCA::Thyra::GroupWrapper> grp_;
 
-      //! The adaptation parameter list
-      // These are set by the top-level adaptive solution manager
-      Teuchos::RCP<Teuchos::ParameterList> adaptParams_;
+  //! The adaptation parameter list
+  // These are set by the top-level adaptive solution manager
+  Teuchos::RCP<Teuchos::ParameterList> adaptParams_;
 
-      //! The parent of the solution parameter list
-      // These are set by the top-level adaptive solution manager
-      Teuchos::RCP<Teuchos::ParameterList> piroParams_;
+  //! The parent of the solution parameter list
+  // These are set by the top-level adaptive solution manager
+  Teuchos::RCP<Teuchos::ParameterList> piroParams_;
 
-      bool adaptiveMesh_;
+  bool adaptiveMesh_;
   double time_;
   int iter_;
 
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > modelWithSolve_;
   Teuchos::RCP< ::Thyra::ModelEvaluator<double> > model_;
   Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy_;
   Teuchos::RCP<LOCA::GlobalData> globalData_;
   Teuchos::RCP<LOCA::ParameterVector> paramVector_;
   int p_index_;
-
-
 
 };
 
