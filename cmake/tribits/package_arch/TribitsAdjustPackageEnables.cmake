@@ -1075,6 +1075,7 @@ FUNCTION(TRIBITS_PRIVATE_PRINT_DISABLE
   ENABLE_BEING_DISABLED_VAR_NAME  PACKAGE_WITH_SOMETHING_BEING_DISABLED
   DEP_TYPE_STR  THING_DISALBED_TYPE  THING_DISABLED_NAME
   )
+  #PRINT_VAR(${ENABLE_BEING_DISABLED_VAR_NAME})
   IF (${ENABLE_BEING_DISABLED_VAR_NAME})
     IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES)
       MESSAGE(
@@ -1250,12 +1251,10 @@ MACRO(TRIBITS_PRIVATE_DISABLE_OPTIONAL_PACKAGE_ENABLES
 ENDMACRO()
 
 
-
 #
 # Macro that disables all packages and optional package TPL support
 # for a disabled TPL.
 #
-
 MACRO(TRIBITS_DISABLE_TPL_DEP_PACKAGES TPL_NAME)
 
   #MESSAGE("TRIBITS_DISABLE_TPL_DEP_PACKAGES: ${TPL_NAME}")
@@ -1291,8 +1290,7 @@ ENDMACRO()
 #
 # Macro that disables all of the subpackages of a parent package.
 #
-
-MACRO(TRIBITS_ENABLE_DISABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
+MACRO(TRIBITS_DISABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
 
   #MESSAGE("TRIBITS_DISABLE_PARENTS_SUBPACKAGES: ${PARENT_PACKAGE_NAME}")
 
@@ -1321,7 +1319,21 @@ MACRO(TRIBITS_ENABLE_DISABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
     
     ENDFOREACH()
 
-  ELSEIF(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME})
+  ENDIF()
+
+ENDMACRO()
+
+
+#
+# Macro that enables all of the subpackages of a parent package.
+#
+MACRO(TRIBITS_ENABLE_PARENTS_SUBPACKAGES PARENT_PACKAGE_NAME)
+
+  #MESSAGE("TRIBITS_ENABLE_PARENTS_SUBPACKAGES: ${PARENT_PACKAGE_NAME}")
+
+  #PRINT_VAR(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME})
+
+  IF(${PROJECT_NAME}_ENABLE_${PARENT_PACKAGE_NAME})
   
     SET(SUBPACKAGE_IDX 0)
     FOREACH(TRIBITS_SUBPACKAGE ${${PARENT_PACKAGE_NAME}_SUBPACKAGES})
@@ -2063,6 +2075,10 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
       "Forced to FALSE after use" FORCE)
   ENDIF()
 
+  #
+  # A) Sweep forward through and apply all disables first!
+  #
+ 
   MESSAGE("")
   MESSAGE("Disabling all packages that have a required dependency"
     " on disabled TPLs and optional package TPL support based on TPL_ENABLE_<TPL>=OFF ...")
@@ -2072,11 +2088,11 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   ENDFOREACH()
 
   MESSAGE("")
-  MESSAGE("Enabling or disabling subpackages for hard enables/disables of parent packages"
-    " ${PROJECT_NAME}_ENABLE_<PARENT_PACKAGE>=ON/OFF ...")
+  MESSAGE("Disabling subpackages for hard disables of parent packages"
+    " due to ${PROJECT_NAME}_ENABLE_<PARENT_PACKAGE>=OFF ...")
   MESSAGE("")
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
-    TRIBITS_ENABLE_DISABLE_PARENTS_SUBPACKAGES(${TRIBITS_PACKAGE})
+    TRIBITS_DISABLE_PARENTS_SUBPACKAGES(${TRIBITS_PACKAGE})
   ENDFOREACH()
 
   MESSAGE("")
@@ -2086,6 +2102,18 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   MESSAGE("")
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
     TRIBITS_DISABLE_FORWARD_REQUIRED_DEP_PACKAGES(${TRIBITS_PACKAGE})
+  ENDFOREACH()
+
+  #
+  # B) Apply all forward enables
+  #
+
+  MESSAGE("")
+  MESSAGE("Enabling subpackages for hard enables of parent packages"
+    " due to ${PROJECT_NAME}_ENABLE_<PARENT_PACKAGE>=ON ...")
+  MESSAGE("")
+  FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
+    TRIBITS_ENABLE_PARENTS_SUBPACKAGES(${TRIBITS_PACKAGE})
   ENDFOREACH()
   
   IF (${PROJECT_NAME}_ENABLE_ALL_PACKAGES)
@@ -2119,6 +2147,10 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
     # the packages makes sure this does not happen.
     SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON)
   ENDIF()
+
+  #
+  # C) Enable tests for currently enabled SE packages
+  #
   
   IF (${PROJECT_NAME}_ENABLE_TESTS OR ${PROJECT_NAME}_ENABLE_EXAMPLES)
     MESSAGE("")
@@ -2132,6 +2164,10 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   # NOTE: Above, we enable tests and examples here, before the remaining required
   # packages so that we don't enable tests that don't need to be enabled based
   # on the use of the option ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES.
+
+  #
+  # D) Sweep backwards and enable upstream required and optional SE packages
+  #
 
   IF (${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES)
     SET(EXTRA_MSG_STR " (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON)")
@@ -2160,6 +2196,10 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
     TRIBITS_POSTPROCESS_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
 
+  #
+  # E) Enable TPLs
+  #
+
   MESSAGE("")
   MESSAGE("Enabling all remaining required TPLs for current set of"
     " enabled packages ...")
@@ -2186,12 +2226,20 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   # logic so that the TPL will be turned on for this package only as requested
   # in bug 4298.
 
+  #
+  # F) Set user cache variables for current set of enabled SE packages
+  #
+
   MESSAGE("")
   MESSAGE("Set cache entries for optional packages/TPLs and tests/examples for packages actually enabled ...")
   MESSAGE("")
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
     TRIBITS_ADD_OPTIONAL_PACKAGE_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
+
+  #
+  # G) Turn on parent packages where at least one subpackage has been enabled
+  #
   
   MESSAGE("")
   MESSAGE("Enabling all packages not yet enabled that have at least one subpackage enabled ...")
@@ -2199,6 +2247,9 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
     TRIBITS_POSTPROCESS_PACKAGE_WITH_SUBPACKAGES_ENABLES(${TRIBITS_PACKAGE})
   ENDFOREACH()
+  # NOTE: The above ensures that loops involving the parent package will
+  # process the parent package but doing this last ensures that no downstream
+  # dependencies will be enabled.
 
 ENDMACRO()
 

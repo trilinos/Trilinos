@@ -303,6 +303,26 @@ CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
 
 
 #
+# EnableThyra_DisableEpetra_EnableTests
+#
+
+READ_EXPECTED_OUTPUT_FILE_INTO_REGEX_ARRAY(
+  "${REDUCED_MOCK_TRILINOS_OUTPUT_DIR}/EnableThyra_DisableEpetra_EnableTests.txt"
+  EnableThyra_DisableEpetra_EnableTests_REGEX_ARRAY
+  )
+
+CREATE_REDUCED_DEPENDENCY_HANDLING_TEST_CASE(
+  EnableThyra_DisableEpetra_EnableTests
+  ARGS
+    -DTrilinos_ENABLE_Thyra:BOOL=ON
+    -DTrilinos_ENABLE_Epetra:BOOL=OFF
+    -DTrilinos_ENABLE_TESTS:BOOL=ON
+  PASS_REGULAR_EXPRESSION_ALL
+    ${EnableThyra_DisableEpetra_EnableTests_REGEX_ARRAY}
+  )
+
+
+#
 # EnableAllPackages_DumpDependencies
 #
 
@@ -505,7 +525,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ARGS -DTrilinos_ENABLE_Thyra:BOOL=ON -DTrilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .by user.:  Thyra 1"
-    "Enabling or disabling subpackages for hard enables/disables of parent packages Trilinos_ENABLE_<PARENT_PACKAGE>=ON/OFF ..."
+    "Enabling subpackages for hard enables of parent packages due to Trilinos_ENABLE_<PARENT_PACKAGE>=ON ..."
     "Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=ON because parent package Trilinos_ENABLE_Thyra=ON"
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=ON because parent package Trilinos_ENABLE_Thyra=ON"
     "Setting subpackage enable Trilinos_ENABLE_ThyraEpetraExt=ON because parent package Trilinos_ENABLE_Thyra=ON"
@@ -584,7 +604,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
     "Explicitly enabled packages on input .by user.:  Thyra 1"
     "Explicitly enabled SE packages on input .by user.:  ThyraEpetraExt Thyra 2"
     "Explicitly disabled packages on input .by user or by default.:  Epetra"
-    "Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=ON because parent package Trilinos_ENABLE_Thyra=ON"
+    "Setting Trilinos_ENABLE_ThyraEpetra=OFF because ThyraEpetra has a required library dependence on disabled package Epetra"
     "WARNING: Setting Trilinos_ENABLE_ThyraEpetraExt=OFF which was 'ON' because ThyraEpetraExt has a required library dependence on disabled package EpetraExt but Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=ON!"
     "Final set of enabled packages:  Teuchos RTOp Tpetra Thyra 4"
     "Final set of enabled SE packages:  Teuchos RTOp Tpetra ThyraCoreLibs ThyraTpetra Thyra 6"

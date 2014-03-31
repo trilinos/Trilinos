@@ -1,10 +1,3 @@
-Explicitly enabled packages on input (by user):  0
-Explicitly enabled SE packages on input (by user):  0
-Explicitly disabled packages on input (by user or by default):  0
-Explicitly disabled SE packages on input (by user or by default):  ThyraCrazyStuff 1
-Explicitly enabled TPLs on input (by user):  0
-Explicitly disabled TPLs on input (by user or by default):  0
-
 Enabling all SE packages that are not currently disabled because of Trilinos_ENABLE_ALL_PACKAGES=ON ...
 
 -- Setting Trilinos_ENABLE_Teuchos=ON
@@ -13,16 +6,6 @@ Enabling all SE packages that are not currently disabled because of Trilinos_ENA
 -- Setting Trilinos_ENABLE_ThyraCoreLibs=ON
 -- Setting Trilinos_ENABLE_ThyraEpetra=ON
 -- Setting Trilinos_ENABLE_Thyra=ON
-
-Enabling all required (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON) \
- upstream SE packages for current set of enabled packages ...
-
--- WARNING: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
--- WARNING: Not Setting Trilinos_ENABLE_ThyraEpetraExt=ON even though Thyra has an optional dependence on ThyraEpetraExt because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
-
-Enabling all optional intra-package enables <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE> that are not currently disabled if both sets of packages are enabled ...
-
--- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetra=ON
 
 Enabling all remaining required TPLs for current set of enabled packages ...
 
