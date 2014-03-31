@@ -17,7 +17,7 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace
 {
-
+//-BEGIN
 TEST(StkMeshHowTo, iterateConnectivityThroughBulkData)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -112,5 +112,5 @@ TEST(StkMeshHowTo, iterateConnectivityThroughBuckets)
     }
     EXPECT_GE(count, 1u);
 }
-
+//-END
 }
