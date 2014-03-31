@@ -224,7 +224,7 @@ namespace Ioss {
   private:
     void delete_database();
 
-    AliasMap aliases_; //< Stores alias mappings
+    AliasMap aliases_; ///< Stores alias mappings
 
     // Containers for all grouping entities
     NodeBlockContainer    nodeBlocks;

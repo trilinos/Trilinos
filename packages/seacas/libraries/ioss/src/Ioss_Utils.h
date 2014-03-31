@@ -60,7 +60,7 @@ namespace Ioss {
   public:
 
     Utils();
-    ~Utils() {};
+    ~Utils() {}
     
     // Assignment operator
     // Copy constructor
