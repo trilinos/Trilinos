@@ -1034,9 +1034,8 @@ CellTopology get_cell_topology(stk::topology t)
   case stk::topology::SHELL_TRI_3:
       return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<3>      >() );
   case stk::topology::SHELL_TRI_4:break;
-                                    //NOTE: shards does not define a shell topology 4
-                                    //
-                                    //      return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
+    //NOTE: shards does not define a topology for a 4-noded triangular shell
+    //return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<4>    >() );
   case stk::topology::SHELL_TRI_6:
       return CellTopology( shards::getCellTopologyData< shards::ShellTriangle<6>      >() );
   case stk::topology::SHELL_QUAD_4:
