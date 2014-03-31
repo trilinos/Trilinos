@@ -1,0 +1,2 @@
+Final set of enabled SE packages:  Teuchos RTOp Epetra Triutils EpetraExt ThyraCoreLibs ThyraGoodStuff ThyraEpetra ThyraEpetraExt Thyra 10
+Final set of non-enabled packages:  0

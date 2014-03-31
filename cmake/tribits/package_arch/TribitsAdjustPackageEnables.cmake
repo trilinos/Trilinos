@@ -1844,23 +1844,47 @@ ENDMACRO()
 # Private helper macros
 #
 
-MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
+MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME
+  OPTREQ_IN
+  )
+
+  #MESSAGE("TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE:  '${PACKAGE_NAME}'  '${DEP_PACKAGE_NAME}'  '${OPTREQ_IN}'")
 
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-  #PRINT_VAR(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE)
   #PRINT_VAR(${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
 
   IF (${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
 
-    # The package is already enabled so there is nothing to enable!
+    #MESSAGE("The package is already enabled so there is nothing to enable!")
 
   ELSEIF (${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
 
     SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE "")
 
-    # Enable the package if there is an optional dependence and we are asked
-    # to enabled optional dependencies.
-    IF (TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE)
+    IF ("${OPTREQ_IN}" STREQUAL "REQUIRED")
+
+      #MESSAGE("Always enable the upstream dependency if it is required")
+
+      MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
+        " because ${PACKAGE_NAME} has a required dependence on ${DEP_PACKAGE_NAME}")
+
+      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE ON)
+
+    ELSEIF (${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
+
+      # Enable the upstream package if the user directly specified the
+      # optional package enable reguardless if it is PT or ST or even EX.
+
+      MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
+        " because ${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON")
+
+      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE ON)
+
+    ELSEIF (${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES)
+
+      # Enable the package if there is an optional dependence and we are asked
+      # to enabled optional dependencies.
+
       TRIBITS_IMPLICIT_PACKAGE_ENABLE_IS_ALLOWED(${PACKAGE_NAME} ${DEP_PACKAGE_NAME}
         ALLOW_IMPLICIT_ENABLE)
       IF (ALLOW_IMPLICIT_ENABLE)
@@ -1868,16 +1892,10 @@ MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
           " because ${PACKAGE_NAME} has an optional dependence on ${DEP_PACKAGE_NAME}")
         SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE ON)
       ENDIF()
+
     ENDIF()
 
-    # Enable the package if the user directly specified the optional package
-    # enable reguardless if it is PT or ST or even EX.
-    IF (${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-      MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
-        " because ${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON")
-      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE ON)
-    ENDIF()
-
+    # Enable the upstream package
     IF (TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_ENABLE_PACKAGE)
       ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
       SET(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} ON)
@@ -1885,20 +1903,6 @@ MACRO(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
 
   ENDIF()
 
-ENDMACRO()
-
-
-MACRO(TRIBITS_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE  PACKAGE_NAME  DEP_PACKAGE_NAME)
-  #MESSAGE("TRIBITS_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE: ${PACKAGE_NAME} ${DEP_PACKAGE_NAME}")
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-  #PRINT_VAR(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE)
-  #PRINT_VAR(${PACKAGE_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-  IF (${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} STREQUAL "")
-    MESSAGE("-- " "Setting ${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME}=ON"
-      " because ${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON")
-    ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME})
-    SET(${PROJECT_NAME}_ENABLE_${DEP_PACKAGE_NAME} ON)
-  ENDIF()
 ENDMACRO()
 
 
@@ -1954,77 +1958,35 @@ ENDMACRO()
 
 
 #
-# Macro that sets the optional packages for given package
+# Macro that enables upstream (required and optional) SE packages given SE
+# package
 #
 # Here I have to enable the required packages too or the logic just does no
 # work as expected.
 #
+MACRO(TRIBITS_ENABLE_UPSTREAM_SE_PACKAGES PACKAGE_NAME)
 
-MACRO(TRIBITS_ENABLE_OPTIONAL_PACKAGES PACKAGE_NAME)
-
-  #MESSAGE("PACKAGE_ARCH_ENABLE_OPTIONAL_PACKAGE_ENABLES: ${PACKAGE_NAME}")
+  #MESSAGE("TRIBITS_ENABLE_UPSTREAM_SE_PACKAGES: ${PACKAGE_NAME}")
   #MESSAGE("-- " "${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=${${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}}")
 
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
-  #PRINT_VAR(TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE)
-
   IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES})
-      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE
-        ${TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE})
-      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
+      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} REQUIRED)
     ENDFOREACH()
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_LIB_OPTIONAL_DEP_PACKAGES})
-      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE
-       ${TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE})
-      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
+      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} OPTIONAL)
     ENDFOREACH()
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES})
-      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE
-        ${TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE})
-      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
+      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} REQUIRED)
     ENDFOREACH()
 
     FOREACH(DEP_PKG ${${PACKAGE_NAME}_TEST_OPTIONAL_DEP_PACKAGES})
-      SET(TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE
-        ${TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE})
-      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG})
-    ENDFOREACH()
-
-    # 2008/02/13: rabartl: Above, I had to set the varaible
-    # TRIBITS_PRIVATE_ENABLE_DEP_PACKAGES_IMPLICIT_ENABLE and then call the
-    # function because it was not being passed as an argument as was zero on
-    # the other side.  This is very strange but you have to do what you have
-    # to do!
-
-  ENDIF()
-
-ENDMACRO()
-
-
-#
-# Macro that sets the required packages for given package
-#
-
-MACRO(TRIBITS_ENABLE_REQUIRED_PACKAGES PACKAGE_NAME)
-
-  #MESSAGE("PACKAGE_ARCH_ENABLE_REQUIRED_PACKAGE_ENABLES: ${PACKAGE_NAME}")
-  #MESSAGE("-- " "${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=${${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}}")
-
-  ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-
-  IF (${PROJECT_NAME}_ENABLE_${PACKAGE_NAME})
-
-    FOREACH(DEP_PKG ${${PACKAGE_NAME}_LIB_REQUIRED_DEP_PACKAGES})
-      TRIBITS_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} ON)
-    ENDFOREACH()
-
-    FOREACH(DEP_PKG ${${PACKAGE_NAME}_TEST_REQUIRED_DEP_PACKAGES})
-      TRIBITS_PRIVATE_ENABLE_REQUIRED_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} ON)
+      TRIBITS_PRIVATE_ENABLE_DEP_PACKAGE(${PACKAGE_NAME} ${DEP_PKG} OPTIONAL)
     ENDFOREACH()
 
   ENDIF()
@@ -2172,39 +2134,23 @@ MACRO(TRIBITS_ADJUST_PACKAGE_ENABLES)
   # on the use of the option ${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES.
 
   IF (${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES)
-    MESSAGE("")
-    MESSAGE("Enabling all optional SE packages for current set of enabled"
-      " packages because ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_REVERSE_SE_PACKAGES})
-      SET(TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE ON) # Hack to get around CMake bug?
-      TRIBITS_ENABLE_OPTIONAL_PACKAGES(${TRIBITS_PACKAGE})
-    ENDFOREACH()
-    # NOTE: Above, we have to loop through the packages backward to enable all the
-    # packages that feed into these packages.
-    # NOTE Above, we don't have to enable the required packages because that will
-    # come next
+    SET(EXTRA_MSG_STR " (and optional since Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON)")
   ELSE()
-    MESSAGE("")
-    MESSAGE("Enabling all packages that are not disabled based on"
-      " <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE>=ON  ...")
-    MESSAGE("")
-    FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_REVERSE_SE_PACKAGES})
-      SET(TRIBITS_ENABLE_OPTIONAL_PACKAGES_IMPLICIT_ENABLE OFF) # Hack to get around CMake bug?
-      TRIBITS_ENABLE_OPTIONAL_PACKAGES(${TRIBITS_PACKAGE})
-    ENDFOREACH()
-    # NOTE: Aaove, we loop backwards through the packages to pick up as many
-    # package enables as we can.  Also, we do this after the tests/examples are 
-    # enabled.
+    SET(EXTRA_MSG_STR "")
   ENDIF()
-  
+
   MESSAGE("")
-  MESSAGE("Enabling all remaining required packages for the current set"
-    " of enabled packages ...")
+  MESSAGE("Enabling all required${EXTRA_MSG_STR} upstream SE packages for current set of"
+    " enabled packages ...")
   MESSAGE("")
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_REVERSE_SE_PACKAGES})
-    TRIBITS_ENABLE_REQUIRED_PACKAGES(${TRIBITS_PACKAGE})
+    TRIBITS_ENABLE_UPSTREAM_SE_PACKAGES(${TRIBITS_PACKAGE})
   ENDFOREACH()
+  # NOTE: Above, we have to loop through the packages backward to enable all
+  # the packages that feed into these packages.  This has to include *all*
+  # upstream SE package enables including required SE packages, optional SE
+  # packages (when ${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES), and SE
+  # packages
   
   MESSAGE("")
   MESSAGE("Enabling all optional intra-package enables <TRIBITS_PACKAGE>_ENABLE_<DEPPACKAGE>"

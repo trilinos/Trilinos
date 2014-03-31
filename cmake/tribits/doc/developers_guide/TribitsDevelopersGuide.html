@@ -3051,10 +3051,6 @@ TRIBITS_DEFINE_REPOSITORY_PACKAGES(
   )
 
 </pre>
-<p>This gives the full list of top-level packages:</p>
-<pre class="literal-block">
-Teuchos RTOp Epetra Triutils EpetraExt Thyra
-</pre>
 <p>All of the listed packages are standard TriBITS packages except for the mock
 <tt class="docutils literal">Thyra</tt> package which is broken down into subpackages as shown in
 <tt class="docutils literal">thyra/cmake/Dependnecies.cmake</tt> (see
@@ -3070,12 +3066,24 @@ TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
   )
 
 </pre>
+<p>This gives the full list of top-level packages:</p>
+<pre class="literal-block">
+Teuchos RTOp Epetra Triutils EpetraExt Thyra
+</pre>
 <p>Adding in the subpackages defined in the top-level <tt class="docutils literal">Thyra</tt> package, the full
 set of <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> for this project is:</p>
 <pre class="literal-block">
 Teuchos RTOp Epetra Triutils EpetraExt ThyraCoreLibs ThyraGoodStuff \
   ThyraCrazyStuff ThyraEpetra ThyraEpetraExt Thyra
 </pre>
+<p>Note that one can see this full list of top-level packages and SE packages in
+the lines starting with:</p>
+<pre class="literal-block">
+Final set of non-enabled packages:
+Final set of non-enabled SE packages:
+</pre>
+<p>respectively, when configuring with no package enables as shown in the example
+<a class="reference internal" href="#default-configure-with-no-packages-enabled-on-input">Default configure with no packages enabled on input</a>.</p>
 <p>The list of <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> for this example project given in
 <tt class="docutils literal">ReducedMockTrilinos/TPLsList.cmake</tt> (see <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a>) is:</p>
 <pre class="literal-block">
@@ -3557,14 +3565,96 @@ Final set of non-enabled TPLs:  MPI BLAS LAPACK Boost UMFPACK AMD PETSC 7
 </pre>
 <p>The above example demonstrates the following behaviors of the TriBITS
 dependency handling system:</p>
-<ul class="simple">
-<li><a class="reference internal" href="#pt-st-se-packages-given-default-unset-enable-disable-state">PT/ST SE packages given default unset enable/disable state</a></li>
-<li><a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages disabled by default</a></li>
-<li><a class="reference internal" href="#pt-st-tpls-given-default-unset-enable-disable-state">PT/ST TPLs given default unset enable/disable state</a></li>
-<li><a class="reference internal" href="#ex-tpls-given-default-unset-enable-disable-state">EX TPLs given default unset enable/disable state</a></li>
-<li><a class="reference internal" href="#if-no-se-packages-are-enabled-nothing-will-get-built">If no SE packages are enabled, nothing will get built</a></li>
+<ul>
+<li><p class="first"><a class="reference internal" href="#pt-st-se-packages-given-default-unset-enable-disable-state">PT/ST SE packages given default unset enable/disable state</a></p>
+</li>
+<li><dl class="first docutils">
+<dt><a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages disabled by default</a> (i.e., the <tt class="docutils literal">EX</tt> SE package</dt>
+<dd><p class="first last"><tt class="docutils literal">ThyraCrazyStuff</tt> is set to <tt class="docutils literal">OFF</tt> by default at the very beginning).</p>
+</dd>
+</dl>
+</li>
+<li><p class="first"><a class="reference internal" href="#pt-st-tpls-given-default-unset-enable-disable-state">PT/ST TPLs given default unset enable/disable state</a></p>
+</li>
+<li><p class="first"><a class="reference internal" href="#ex-tpls-given-default-unset-enable-disable-state">EX TPLs given default unset enable/disable state</a></p>
+</li>
+<li><p class="first"><a class="reference internal" href="#if-no-se-packages-are-enabled-nothing-will-get-built">If no SE packages are enabled, nothing will get built</a></p>
+</li>
 </ul>
 <p id="explicit-enable-of-a-package-and-its-tests"><strong>Explicit enable of a package (and its tests)</strong></p>
+<p>The of the most typical use cases if for the user to explicity enable one or
+mor more top-level packages.  Consider the configure of the
+<tt class="docutils literal">ReducedMockTrilinos</tt> project enabling the top-level <tt class="docutils literal">Thyra</tt> package and
+its tests:</p>
+<pre class="literal-block">
+$ cmake -DTrilinos_ENABLE_Thyra:BOOL=ON \
+   -DTrilinos_ENABLE_TESTS:BOOL=ON \
+   ${REDUCED_MOCK_TRILINOS}
+</pre>
+<p>which produces the relevant dependency-related output:</p>
+<pre class="literal-block">
+Explicitly enabled packages on input (by user):  Thyra 1
+Explicitly enabled SE packages on input (by user):  Thyra 1
+Explicitly disabled packages on input (by user or by default):  0
+Explicitly disabled SE packages on input (by user or by default):  ThyraCrazyStuff 1
+Explicitly enabled TPLs on input (by user):  0
+Explicitly disabled TPLs on input (by user or by default):  0
+
+Enabling or disabling subpackages for hard enables/disables of parent packages \
+ Trilinos_ENABLE_&lt;PARENT_PACKAGE&gt;=ON/OFF ...
+
+-- Setting subpackage enable Trilinos_ENABLE_ThyraCoreLibs=ON because parent \
+ package Trilinos_ENABLE_Thyra=ON
+-- Setting subpackage enable Trilinos_ENABLE_ThyraEpetra=ON because parent package \
+ Trilinos_ENABLE_Thyra=ON
+
+Disabling forward required SE packages and optional intra-package support that have a \
+ dependancy on disabled SE packages Trilinos_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF ...
+
+-- Setting Thyra_ENABLE_ThyraCrazyStuff=OFF because Thyra has an optional library \
+ dependence on disabled package ThyraCrazyStuff
+
+Enabling all tests and/or examples that have not been explicitly disabled because \
+ Trilinos_ENABLE_[TESTS,EXAMPLES]=ON ...
+
+-- Setting ThyraCoreLibs_ENABLE_TESTS=ON
+-- Setting ThyraCoreLibs_ENABLE_EXAMPLES=ON
+-- Setting ThyraEpetra_ENABLE_TESTS=ON
+-- Setting ThyraEpetra_ENABLE_EXAMPLES=ON
+-- Setting Thyra_ENABLE_TESTS=ON
+-- Setting Thyra_ENABLE_EXAMPLES=ON
+
+Enabling all optional SE packages for current set of enabled packages because \
+ Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON ...
+
+-- WARNING: Not Setting Trilinos_ENABLE_ThyraGoodStuff=ON even though Thyra \
+ has an optional dependence on ThyraGoodStuff because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- WARNING: Not Setting Trilinos_ENABLE_ThyraEpetraExt=ON even though Thyra \
+ has an optional dependence on ThyraEpetraExt because Trilinos_ENABLE_SECONDARY_TESTED_CODE=OFF
+-- Setting Trilinos_ENABLE_Epetra=ON because ThyraEpetra has an optional dependence on Epetra
+-- Setting Trilinos_ENABLE_Teuchos=ON because ThyraCoreLibs has an optional dependence on Teuchos
+-- Setting Trilinos_ENABLE_RTOp=ON because ThyraCoreLibs has an optional dependence on RTOp
+
+Enabling all optional intra-package enables &lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;DEPPACKAGE&gt; that are 
+ not currently disabled if both sets of packages are enabled ...
+
+-- Setting Thyra_ENABLE_ThyraEpetra=ON since Trilinos_ENABLE_Thyra=ON AND Trilinos_ENABLE_ThyraEpetra=ON
+
+Enabling all remaining required TPLs for current set of enabled packages ...
+
+-- Setting TPL_ENABLE_BLAS=ON because it is required by the enabled package Teuchos
+-- Setting TPL_ENABLE_LAPACK=ON because it is required by the enabled package Teuchos
+
+Final set of enabled packages:  Teuchos RTOp Epetra Thyra 4
+Final set of enabled SE packages:  Teuchos RTOp Epetra ThyraCoreLibs ThyraEpetra Thyra 6
+Final set of non-enabled packages:  Triutils EpetraExt 2
+Final set of non-enabled SE packages:  Triutils EpetraExt ThyraGoodStuff ThyraCrazyStuff ThyraEpetraExt 5
+Final set of enabled TPLs:  BLAS LAPACK 2
+Final set of non-enabled TPLs:  MPI Boost UMFPACK AMD PETSC 5
+
+</pre>
+<p>This case demonstrates a number of TriBITS dependency handling behaviors that
+are worth some discussion.</p>
 <p>ToDo: Enable Thyra and tests and show the entire output and all the logic.
 Will cover a lot of rules/behaviors.</p>
 <p id="explicit-disable-of-a-package"><strong>Explicit disable of a package</strong></p>

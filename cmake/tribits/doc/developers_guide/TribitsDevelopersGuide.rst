@@ -1440,7 +1440,14 @@ are defined before an SE Package's ``CMakeLists.txt`` file is processed:
     ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_PACKAGE_NAME}`` corresponds to
     each optional upstream SE package listed in the ``LIB_OPTIONAL_PACKAGES``
     and ``TEST_OPTIONAL_PACKAGES`` arguments to the
-    `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ macro.
+    `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ macro. **NOTE:** It is important
+    that the CMake code in the package ``${PACAKGE_NAME}`` key off of this
+    variable and **not** the global
+    ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` variable because
+    ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` can be explicitly
+    turned off by the user even through the packages ``${PACAKGE_NAME}`` and
+    ``${OPTIONAL_DEP_PACKAGE_NAME}`` are both enabled (see `Support for
+    optional SE package/TPL can be explicitly disabled`_).
 
   ``${PACKAGE_NAME}_ENABLE_${OPTIONAL_DEPENDENT_TPL_NAME}``
 
@@ -2477,10 +2484,6 @@ this project is defined in ``ReducedMockTrilinos/PackagesList.cmake`` (see
 .. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
    :literal:
 
-This gives the full list of top-level packages::
-
-  Teuchos RTOp Epetra Triutils EpetraExt Thyra
-
 All of the listed packages are standard TriBITS packages except for the mock
 ``Thyra`` package which is broken down into subpackages as shown in
 ``thyra/cmake/Dependnecies.cmake`` (see
@@ -2489,11 +2492,24 @@ All of the listed packages are standard TriBITS packages except for the mock
 .. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/packages/thyra/cmake/Dependencies.cmake
    :literal:
 
+This gives the full list of top-level packages::
+
+  Teuchos RTOp Epetra Triutils EpetraExt Thyra
+
 Adding in the subpackages defined in the top-level ``Thyra`` package, the full
 set of `TriBITS SE Packages`_ for this project is::
 
   Teuchos RTOp Epetra Triutils EpetraExt ThyraCoreLibs ThyraGoodStuff \
     ThyraCrazyStuff ThyraEpetra ThyraEpetraExt Thyra
+
+Note that one can see this full list of top-level packages and SE packages in
+the lines starting with::
+
+  Final set of non-enabled packages:
+  Final set of non-enabled SE packages:
+
+respectively, when configuring with no package enables as shown in the example
+`Default configure with no packages enabled on input`_.
 
 The list of `TriBITS TPLs`_ for this example project given in
 ``ReducedMockTrilinos/TPLsList.cmake`` (see `<repoDir>/TPLsList.cmake`_) is:
@@ -2639,13 +2655,15 @@ In brief, these rules/behaviors are:
 10) `Disables trump enables where there is a conflicit`_
 11) `Enable/disable of parent package is enable/disable for subpackages`_
 12) `Subpackage enable does not auto-enable the parent package`_
-13) `ST SE packages only auto-enabled if ST code is enabled`_
-14) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests`_
-15) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_
-16) `<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests`_
-17) `If no SE packages are enabled, nothing will get built`_
-18) `TriBITS prints all enables and disables to STDOUT`_
-19) `TriBITS auto-enables/disables done using non-cache local variables`_
+13) `Support for enabled optional SE package/TPL is enabled by default`_
+14) `Support for optional SE package/TPL can be explicitly disabled`_
+15) `ST SE packages only auto-enabled if ST code is enabled`_
+16) `<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests`_
+17) `<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages`_
+18) `<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests`_
+19) `If no SE packages are enabled, nothing will get built`_
+20) `TriBITS prints all enables and disables to STDOUT`_
+21) `TriBITS auto-enables/disables done using non-cache local variables`_
 
 In more detail, these rules/behaviors are:
 
@@ -2818,9 +2836,30 @@ In more detail, these rules/behaviors are:
     package (and its other subpackages and their dependencies) will not get
     auto-enabled.  This is a key aspect of the SE package managment system.
 
+.. _Support for enabled optional SE package/TPL is enabled by default:
+
+13) **Support for enabled optional SE package/TPL is enabled by default**: For
+    an SE package ``<TRIBITS_PACKAGE>`` with an optional dependency on an
+    `upstream`_ SE package or TPL ``<TRIBITS_DEP_PACKAGE_OR_TPL>``, TriBITS
+    will automatically set the inter-enable variable
+    ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` if
+    ``<TRIBITS_PACKAGE>`` and ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` are **both
+    enabled**.  This is obviously the logical behavior.
+
+.. _Support for optional SE package/TPL can be explicitly disabled:
+
+14) **Support for optional SE package/TPL can be explicitly disabled:** Even
+    through TriBITS will automatically set
+    ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=ON`` by default if
+    ``<TRIBITS_PACKAGE>`` and ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` are both
+    enabled (as described above) the user can explicitly set
+    ``<TRIBITS_PACKAGE>_ENABLE_<TRIBITS_DEP_PACKAGE_OR_TPL>=OFF`` which will
+    turn off optional support for the SE package or TPL
+    ``<TRIBITS_DEP_PACKAGE_OR_TPL>`` in the SE package ``<TRIBITS_PACKAGE>``.
+
 .. _ST SE packages only auto-enabled if ST code is enabled:
 
-13) **ST SE packages only auto-enabled if ST code is enabled**: TriBITS will
+15) **ST SE packages only auto-enabled if ST code is enabled**: TriBITS will
     only enable an optional ``ST`` SE package when
     ``${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON`` if
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON`` is also set.  If an optional
@@ -2833,7 +2872,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests:
 
-14) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests**:
+16) **<Project>_ENABLE_ALL_FORWARD_DEP_PACKAGES dowstream packages/tests**:
     Setting the user cache-variable
     ``${PROJECT_NAME}_ENABLE_ALL_FORWARD_PACKAGES=ON`` will result in the
     `downstream`_ ``PT`` SE packages and tests to be enabled (and all ``PT``
@@ -2848,7 +2887,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages:
 
-15) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
+17) **<Project>_ENABLE_ALL_PACKAGES enables all PT (cond. ST) SE packages**:
     Setting the user cache-variable ``${PROJECT_NAME}_ENABLE_ALL_PACKAGES=ON``
     will result in the enable of all ``PT`` SE packages when
     ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF`` and all ``PT`` and ``ST`` SE
@@ -2857,7 +2896,7 @@ In more detail, these rules/behaviors are:
 
 .. _<Project>_ENABLE_TESTS only enables explicitly enabled SE package tests:
 
-16) **<Project>_ENABLE_TESTS only enables explicitly enabled SE package
+18) **<Project>_ENABLE_TESTS only enables explicitly enabled SE package
     tests**: Setting ``${PROJECT_NAME}_ENABLE_TESTS=ON`` will **only enable
     tests for explicitly enabled SE packages**.  For example, configuring with
     ``Trilinos_ENABLE_RTOp=ON`` and ``Trilinos_ENABLE_TESTS=ON`` will only
@@ -2867,7 +2906,7 @@ In more detail, these rules/behaviors are:
 
 .. _If no SE packages are enabled, nothing will get built:
 
-17) **If no SE packages are enabled, nothing will get built**: Most TriBITS
+19) **If no SE packages are enabled, nothing will get built**: Most TriBITS
     projects are set up such that if the user does not explicitly enable at
     least one SE package in some way, then nothing will be enabled or built.
     In this case, when ``${PROJECT_NAME}_ALLOW_NO_PACKAGES=TRUE`` a warning
@@ -2881,7 +2920,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS prints all enables and disables to STDOUT:
 
-18) **TriBITS prints all enables and disables to STDOUT**: TriBITS prints out
+20) **TriBITS prints all enables and disables to STDOUT**: TriBITS prints out
     (to ``cmake`` STDOUT) the initial set of enables/disables on input, prints
     a line whenever it sets (or overrides) an enable or disable, and prints
     out the final set of enables/disables.  Therefore, the user just needs to
@@ -2894,7 +2933,7 @@ In more detail, these rules/behaviors are:
 
 .. _TriBITS auto-enables/disables done using non-cache local variables:
 
-19) **TriBITS auto-enables/disables done using non-cache local variables**:
+21) **TriBITS auto-enables/disables done using non-cache local variables**:
     TriBITS setting (or overrides) of enable/disable cache variables are done
     by setting local non-cache variables at the top project-level scope.  This
     is done so they don't get set in the cache and so that the same dependency
@@ -2959,7 +2998,8 @@ The above example demonstrates the following behaviors of the TriBITS
 dependency handling system:
 
 * `PT/ST SE packages given default unset enable/disable state`_
-* `EX SE packages disabled by default`_
+* `EX SE packages disabled by default`_ (i.e., the ``EX`` SE package
+   ``ThyraCrazyStuff`` is set to ``OFF`` by default at the very beginning).
 * `PT/ST TPLs given default unset enable/disable state`_
 * `EX TPLs given default unset enable/disable state`_
 * `If no SE packages are enabled, nothing will get built`_
@@ -2967,6 +3007,38 @@ dependency handling system:
 .. _Explicit enable of a package (and its tests):
 
 **Explicit enable of a package (and its tests)**
+
+One of the most typical use cases is for the user to explicity enable one or
+more top-level TriBITS package.  Consider the configure of the
+``ReducedMockTrilinos`` project enabling the top-level ``Thyra`` package and
+its tests with::
+
+   $ cmake -DTrilinos_ENABLE_Thyra:BOOL=ON \
+      -DTrilinos_ENABLE_TESTS:BOOL=ON \
+      ${REDUCED_MOCK_TRILINOS}
+
+which produces the relevant dependency-related output:
+
+.. include:: ReducedMockTrilinosOutput/EnableThyra_EnableTests.txt
+   :literal:
+
+This case demonstrates a number of TriBITS dependency handling behaviors that
+are worth some discussion.  First note that enabling the parent package
+``Thyra`` with ``Trilinos_ENABLE_Thyra=ON`` right away results in the
+auto-enable of its ``PT`` subpackages ``ThyraCoreLibs`` and ``ThyraEpetra``
+which demonstrates the behvior `Enable/disable of parent package is
+enable/disable for subpackages`_.  Note that the ``ST`` subpackages
+``ThyraGoodStuff`` and ``ThyraEpetraExt`` where *not* enabled because
+``${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF`` (which is off by default) which
+demonstrates the behavior `ST SE packages only auto-enabled if ST code is
+enabled`_.
+
+
+
+
+
+
+
 
 ToDo: Enable Thyra and tests and show the entire output and all the logic.
 Will cover a lot of rules/behaviors.
