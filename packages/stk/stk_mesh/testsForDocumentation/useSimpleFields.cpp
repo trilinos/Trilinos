@@ -45,7 +45,8 @@ TEST(stkMeshHowTo, useSimpleFields)
         for(size_t nodeIndex=0; nodeIndex<bucket.size(); nodeIndex++)
         {
             unsigned numValuesPerNode = stk::mesh::field_scalars_per_entity(displacementsField, bucket);
-            EXPECT_EQ(stk::mesh::Cartesian3d::Size, numValuesPerNode);
+            const unsigned cartesian_enum_size = stk::mesh::Cartesian3d::Size;
+            EXPECT_EQ(cartesian_enum_size, numValuesPerNode);
             for(unsigned i=0; i<numValuesPerNode; i++)
             {
                 EXPECT_EQ(0.0, displacementDataForBucket[nodeIndex*numValuesPerNode + i]);

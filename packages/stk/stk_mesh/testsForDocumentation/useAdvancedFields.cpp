@@ -45,7 +45,8 @@ TEST(stkMeshHowTo, useAdvancedFields)
     const unsigned tensor_scalars_per_tet = stk::mesh::field_scalars_per_entity(tensorField, tetElem);
 
     EXPECT_EQ(tensor_scalars_per_hex, tensor_scalars_per_tet);
-    EXPECT_EQ(tensor_scalars_per_hex, stk::mesh::FullTensor36::Size);
+    const unsigned tensor_enum_size = stk::mesh::FullTensor36::Size;
+    EXPECT_EQ(tensor_scalars_per_hex, tensor_enum_size);
 
     double* tensorData = stk::mesh::field_data(tensorField, hexElem);
     for(unsigned i=0; i<tensor_scalars_per_hex; i++)
