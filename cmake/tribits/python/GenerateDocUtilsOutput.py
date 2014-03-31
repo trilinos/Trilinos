@@ -75,6 +75,14 @@ def addCmndLineOptions(clp):
       " script (i.e. pdflatex) [Default 'pdflatex']",
     default="pdflatex" )
 
+  clp.add_option(
+    "--clean-temp-files", dest="cleanTempFiles", action="store_true",
+    help="Clean temporary files used in generation. [default]" )
+  clp.add_option(
+    "--no-clean-temp-files", dest="cleanTempFiles", action="store_false",
+    help="Do not delete temporary files.",
+    default=True )
+
 
 def generateDocutilsOuputFiles(options):
 
@@ -112,18 +120,24 @@ def generateDocutilsOuputFiles(options):
   # Clean the intermediate files
   #
   
-  print "Cleaning intermediate files ..."
-  
-  filesToClean.extend(
-    [
-      outputFileBase+".aux",
-      outputFileBase+".log",
-      outputFileBase+".out",
-      outputFileBase+".tex",
-      outputFileBase+".toc",
-      ]
-    )
-  
-  for tempFile in filesToClean:
-    if os.path.exists(tempFile):
-      runSysCmnd("rm "+tempFile)
+  if options.cleanTempFiles:
+
+    print "Cleaning intermediate files ..."
+    
+    filesToClean.extend(
+      [
+        outputFileBase+".aux",
+        outputFileBase+".log",
+        outputFileBase+".out",
+        outputFileBase+".tex",
+        outputFileBase+".toc",
+        ]
+      )
+    
+    for tempFile in filesToClean:
+      if os.path.exists(tempFile):
+        runSysCmnd("rm "+tempFile)
+
+  else:
+
+    print "Keeping temp files ..."
