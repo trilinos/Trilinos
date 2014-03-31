@@ -15,6 +15,7 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace
 {
+//-BEGIN
 TEST(StkMeshHowTo, betterUnderstandSelectorConstruction)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -77,4 +78,5 @@ TEST(StkMeshHowTo, makeSureYouAreNotIntersectingNothingSelector)
     selectedBuckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, preferredBoundaryNodesSelector);
     EXPECT_EQ(expectedNumberOfNodeBucketsWhenIntersectingAllSurfaces, selectedBuckets.size());
 }
+//-END
 }

@@ -19,6 +19,7 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace
 {
+//-BEGIN
 TEST(StkMeshHowTo, iterateSidesetNodesMostEfficientlyForFieldDataAccess)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -92,4 +93,5 @@ TEST(StkMeshHowTo, iterateSidesetNodesWithFieldDataAccess)
 
     testTemperatureFieldSetCorrectly(temperatureField, prescribedTemperatureValue, boundaryNodeIds);
 }
+//-END
 }
