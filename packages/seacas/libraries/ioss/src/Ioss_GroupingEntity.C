@@ -364,6 +364,13 @@ int Ioss::GroupingEntity::put_field_data(const std::string& field_name,
   return internal_put_field_data(field, TOPTR(data), data_size);
 }
 
+size_t Ioss::GroupingEntity::field_count(Ioss::Field::RoleType role) const
+{
+  Ioss::NameList names;
+  fields.describe(role, &names);
+  return names.size();
+}
+
 void Ioss::GroupingEntity::count_attributes() const
 {
   if (attributeCount > 0)

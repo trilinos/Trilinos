@@ -107,6 +107,8 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
     #TODO -- JJH 25Mar2014: need to create new suppression file for OpenMPI
     #SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS "--suppressions=${CTEST_SCRIPT_DIRECTORY}/valgrind_suppressions_typhon_mpich2_1.4.1p1.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
+    SET( CTEST_MEMORYCHECK_COMMAND_OPTIONS
+        "--gen-suppressions=all --error-limit=no --log-file=nightly_suppressions.txt" ${CTEST_MEMORYCHECK_COMMAND_OPTIONS} )
 
   ENDIF()
 

@@ -141,6 +141,7 @@ namespace Ioss {
     int field_describe(NameList* names) const;
     int field_describe(Field::RoleType role, NameList* names) const;
     size_t field_count() const;
+    size_t field_count(Field::RoleType role) const;
 
     // Put this fields data into 'data'.
     // Returns number of entities for which the field was read.
