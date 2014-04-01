@@ -52,18 +52,16 @@
 // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX, and comment out the three
 // lines below them that define that macro.
 //
-
-// #ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-// #  undef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-// #endif HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+// mfh 23 Mar 2014: I want Bug 5822 to stay fixed, so I am removing
+// all references to HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX.  I hope no
+// downstream code is using that macro, but just in case, I will leave
+// it defined.
 
 #ifndef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 #  define HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX 1
 #endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
-#  include <Tpetra_Details_FixedHashTable_decl.hpp>
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
+#include <Tpetra_Details_FixedHashTable_decl.hpp>
 
 
 namespace Tpetra {
@@ -341,10 +339,8 @@ namespace Tpetra {
           directoryMap_->template clone<Node2> (cloneMap.getNode ());
         dir->PIDs_ = PIDs_;
         dir->LIDs_ = LIDs_;
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
         dir->lidToPidTable_ = lidToPidTable_;
         dir->lidToLidTable_ = lidToLidTable_;
-#endif
         dir->useHashTables_ = useHashTables_;
 
         return dir;
@@ -411,7 +407,6 @@ namespace Tpetra {
       /// owned by the Directory Map on this process.
       Teuchos::ArrayRCP<LocalOrdinal> LIDs_;
 
-#ifdef HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
       //@}
       //! \name Second of two implementations of Directory storage
       //@{
@@ -430,7 +425,6 @@ namespace Tpetra {
       /// the GID's LID in the input Map on the GID's owning process.
       Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
       //@}
-#endif // HAVE_TPETRA_DIRECTORY_SPARSE_MAP_FIX
 
       /// \brief Whether this process is using hash tables for Directory storage.
       ///

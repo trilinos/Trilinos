@@ -131,7 +131,8 @@ namespace MueLu {
     RCP<std::vector<GlobalOrdinal> > gNodeIds_;
 
     //! @brief DOF map (really column map of A)
-    const Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > &columnMap_;
+    // keep an RCP on the column map to make sure that the map is still valid when it is used
+    Teuchos::RCP< const Xpetra::Map<LocalOrdinal, GlobalOrdinal, Node> > columnMap_;
 
     //@}
 

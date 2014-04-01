@@ -106,7 +106,7 @@ void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
   const std::vector<int>& rows = A.getGraph().rowNumbers;
   const int* rowoffs = &(A.getGraph().rowOffsets[0]);
   const std::vector<int>& colinds = A.getGraph().packedColumnIndices;
-  const double* Acoef = &(A.getPackedCoefs()[0]);
+  const double* Acoef = A.getPackedCoefs().size() > 0 ? &(A.getPackedCoefs()[0]): NULL;
 
   const std::vector<int>& xind = x.indices();
   const std::vector<double>& xcoef = x.coefs();
@@ -123,8 +123,8 @@ void multiply_CSRMat_CSVec(const CSRMat& A, const CSVec& x, CSVec& y)
   yind.resize(nrows);
   ycoef.resize(nrows);
 
-  int* yind_ptr = &yind[0];
-  double* ycoef_ptr = &ycoef[0];
+  int* yind_ptr = yind.size() > 0 ? &yind[0] : NULL;
+  double* ycoef_ptr = ycoef.size() > 0 ? &ycoef[0] : NULL;
 
   int jbeg = *rowoffs++;
   for(unsigned i=0; i<nrows; ++i) {

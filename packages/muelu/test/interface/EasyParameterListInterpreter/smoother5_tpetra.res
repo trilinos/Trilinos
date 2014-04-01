@@ -51,6 +51,7 @@ Level 1
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   
@@ -106,6 +107,7 @@ Level 2
    Build (MueLu::CoarseMapFactory)
    Striding info = {}   [default]
    Strided block id = -1   [default]
+   Domain GID offsets = {0}   [default]
    
   [empty list]
   

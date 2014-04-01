@@ -44,6 +44,7 @@
 
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
+#include "Kokkos_CrsMatrix_MP_Vector_Cuda.hpp"
 
 // For computing DeviceConfig
 #include "Kokkos_hwloc.hpp"

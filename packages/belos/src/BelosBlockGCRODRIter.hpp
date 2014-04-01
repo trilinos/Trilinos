@@ -912,7 +912,7 @@ std::cout << "After TRSM" << std::endl;
 				//workvec = Teuchos::rcp(new SDV(2*blockSize_));
 				workmatrix = Teuchos::rcp(new SDM (Teuchos::View, *Rblock, blockSize_+1, blockSize_ - i -1, lclCurcol, lclCurcol +1 ) );
 				blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix->values(), workmatrix->stride(), v_refl->values(), 1, zero, workvec->values(), 1);
-				blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.*one/nvs, v_refl->values(),1,workvec->values(),1,workmatrix->values(),workmatrix->stride());
+				blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.0*one/nvs, v_refl->values(),1,workvec->values(),1,workmatrix->values(),workmatrix->stride());
 			}
 
 
@@ -922,7 +922,7 @@ std::cout << "After TRSM" << std::endl;
 			workvec = Teuchos::rcp(new SDV(2*blockSize_));
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, House_[lclIter_ -1], blockSize_+1, 2*blockSize_, i, 0 ) );
 			blas.GEMV(Teuchos::TRANS,workmatrix->numRows(),workmatrix->numCols(),one,workmatrix->values(),workmatrix->stride(), v_refl->values(), 1,zero,workvec->values(),1);
-			blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2*one/nvs, v_refl -> values(),1,workvec->values(),1,workmatrix->values(),(*workmatrix).stride());
+			blas.GER(workmatrix->numRows(),workmatrix->numCols(), -2.0*one/nvs, v_refl -> values(),1,workvec->values(),1,workmatrix->values(),(*workmatrix).stride());
 
                         //
                         //3.
@@ -930,7 +930,7 @@ std::cout << "After TRSM" << std::endl;
 			workvec = Teuchos::rcp(new SDV(blockSize_));
 			workmatrix = Teuchos::rcp(new SDM (Teuchos::View, Z_, blockSize_+1, blockSize_, curcol, 0 ) );
 			blas.GEMV(Teuchos::TRANS, workmatrix->numRows(), workmatrix->numCols(), one, workmatrix-> values(), workmatrix->stride(), v_refl -> values(), 1, zero, workvec->values(), 1);
-                        blas.GER((*workmatrix).numRows(),(*workmatrix).numCols(), -2*one/nvs,v_refl -> values(), 1,&((*workvec)[0]),1,(*workmatrix)[0],(*workmatrix).stride());
+                        blas.GER((*workmatrix).numRows(),(*workmatrix).numCols(), -2.0*one/nvs,v_refl -> values(), 1,&((*workvec)[0]),1,(*workmatrix)[0],(*workmatrix).stride());
 
 			//
 			//4.

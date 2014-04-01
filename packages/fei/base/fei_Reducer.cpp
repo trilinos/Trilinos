@@ -36,7 +36,6 @@ Reducer::Reducer(fei::SharedPtr<FillableMat> globalSlaveDependencyMatrix,
    csrKdd(),
    fi_(),
    fd_(),
-   csfi(),
    csvec(),
    csvec_i(),
    tmpMat1_(),
@@ -562,17 +561,16 @@ Reducer::assembleReducedMatrix(fei::Matrix& matrix)
     //form tmpVec1_ = Kid_*g_
     fei::multiply_CSRMat_CSVec(csrKid, csg_, tmpVec1_);
 
-    //add tmpVec1_ to fi_
-    csfi = fi_;
-    fei::add_CSVec_CSVec(tmpVec1_, csfi);
+    //subtract tmpVec1_ from fi_
+    fi_.subtract(tmpVec1_);
 
     //we already have tmpMat1_ = D^T*Kdd which was computed above, and we need
     //to form tmpVec1_ = D^T*Kdd*g_.
     //So we can simply form tmpVec1_ = tmpMat1_*g_.
     fei::multiply_CSRMat_CSVec(tmpMat1_, csg_, tmpVec1_);
 
-    //now add tmpVec1_ to the right-hand-side fi_
-    fei::add_CSVec_CSVec(tmpVec1_, csfi);
+    //now subtract tmpVec1_ from the right-hand-side fi_
+    fi_.subtract(tmpVec1_);
   }
 
   //accumulate tmpMat2_ = D^T*Kdd_*D into the global system matrix.

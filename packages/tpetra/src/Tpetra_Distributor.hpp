@@ -2822,54 +2822,61 @@ namespace Tpetra {
     // OrdinalType elements of importIDs (along with their
     // corresponding process IDs, as int) to size_t, and does a
     // doPostsAndWaits<size_t>() to send the packed data.
-    using Teuchos::as;
     using std::endl;
+    typedef typename ArrayView<const OrdinalType>::size_type size_type;
 
     Teuchos::OSTab tab (out_);
-
-    const int myRank = comm_->getRank();
+    const int myRank = comm_->getRank ();
     if (debug_) {
       std::ostringstream os;
       os << myRank << ": computeSends" << endl;
       *out_ << os.str ();
     }
 
-    const size_t numImports = importNodeIDs.size();
-    TEUCHOS_TEST_FOR_EXCEPTION(as<size_t> (importIDs.size ()) < numImports,
-      std::invalid_argument, "Tpetra::Distributor::computeSends: importNodeIDs."
-      "size() = " << importNodeIDs.size () << " != importIDs.size() = "
-      << importIDs.size () << ".");
+    const size_type numImports = importNodeIDs.size ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      importIDs.size () != numImports, std::invalid_argument, "Tpetra::"
+      "Distributor::computeSends: On Process " << myRank << ": importNodeIDs."
+      "size() = " << importNodeIDs.size () << " != importIDs.size() = " <<
+      importIDs.size () << ".");
 
     Array<size_t> importObjs (2*numImports);
     // Pack pairs (importIDs[i], my process ID) to send into importObjs.
-    for (size_t i = 0; i < numImports; ++i ) {
-      importObjs[2*i]   = as<size_t> (importIDs[i]);
-      importObjs[2*i+1] = as<size_t> (myRank);
+    for (size_type i = 0; i < numImports; ++i) {
+      importObjs[2*i]   = static_cast<size_t> (importIDs[i]);
+      importObjs[2*i+1] = static_cast<size_t> (myRank);
     }
     //
     // Use a temporary Distributor to send the (importIDs[i], myRank)
     // pairs to importNodeIDs[i].
     //
-    size_t numExports;
     Distributor tempPlan (comm_, out_);
     if (debug_) {
       std::ostringstream os;
       os << myRank << ": computeSends: tempPlan.createFromSends" << endl;
       *out_ << os.str ();
     }
-    numExports = tempPlan.createFromSends (importNodeIDs);
-    if (numExports > 0) {
-      exportIDs.resize(numExports);
-      exportNodeIDs.resize(numExports);
-    }
 
-    {
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        static_cast<size_t> (tempPlan.getTotalReceiveLength ()) != numExports,
-        std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
-        "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
-        "Exports = " << numExports  << ".  Please report this bug to the "
-        "Tpetra developers.");
+    // mfh 20 Mar 2014: An extra-cautious cast from unsigned to
+    // signed, in order to forestall any possible causes for Bug 6069.
+    const size_t numExportsAsSizeT = tempPlan.createFromSends (importNodeIDs);
+    const size_type numExports = static_cast<size_type> (numExportsAsSizeT);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      numExports < 0, std::logic_error, "Tpetra::Distributor::computeSends: "
+      "tempPlan.createFromSends() returned numExports = " << numExportsAsSizeT
+      << " as a size_t, which overflows to " << numExports << " when cast to "
+      << Teuchos::TypeNameTraits<size_type>::name () << ".  "
+      "Please report this bug to the Tpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      static_cast<size_type> (tempPlan.getTotalReceiveLength ()) != numExports,
+      std::logic_error, "Tpetra::Distributor::computeSends: tempPlan.getTotal"
+      "ReceiveLength() = " << tempPlan.getTotalReceiveLength () << " != num"
+      "Exports = " << numExports  << ".  Please report this bug to the "
+      "Tpetra developers.");
+
+    if (numExports > 0) {
+      exportIDs.resize (numExports);
+      exportNodeIDs.resize (numExports);
     }
 
     // exportObjs: Packed receive buffer.  (exportObjs[2*i],
@@ -2889,6 +2896,13 @@ namespace Tpetra {
       "the export buffer, not Array<size_t>), but we haven't done that yet.  "
       "Please report this bug to the Tpetra developers.");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      tempPlan.getTotalReceiveLength () < static_cast<size_t> (numExports),
+      std::logic_error,
+      "Tpetra::Distributor::computeSends: tempPlan.getTotalReceiveLength() = "
+      << tempPlan.getTotalReceiveLength() << " < numExports = " << numExports
+      << ".  Please report this bug to the Tpetra developers.");
+
     Array<size_t> exportObjs (tempPlan.getTotalReceiveLength () * 2);
     if (debug_) {
       std::ostringstream os;
@@ -2898,9 +2912,9 @@ namespace Tpetra {
     tempPlan.doPostsAndWaits<size_t> (importObjs (), 2, exportObjs ());
 
     // Unpack received (GID, PID) pairs into exportIDs resp. exportNodeIDs.
-    for (size_t i = 0; i < numExports; ++i) {
-      exportIDs[i] = as<OrdinalType> (exportObjs[2*i]);
-      exportNodeIDs[i] = as<int> (exportObjs[2*i+1]);
+    for (size_type i = 0; i < numExports; ++i) {
+      exportIDs[i] = static_cast<OrdinalType> (exportObjs[2*i]);
+      exportNodeIDs[i] = static_cast<int> (exportObjs[2*i+1]);
     }
 
     if (debug_) {
@@ -2930,6 +2944,8 @@ namespace Tpetra {
     using Teuchos::outArg;
     using Teuchos::reduceAll;
 
+    // In debug mode, first test locally, then do an all-reduce to
+    // make sure that all processes passed.
     const int errProc =
       (remoteIDs.size () != remoteImageIDs.size ()) ? myRank : -1;
     int maxErrProc = -1;
@@ -2938,6 +2954,15 @@ namespace Tpetra {
       Teuchos::typeName (*this) << "::createFromRecvs(): lists of remote IDs "
       "and remote process IDs must have the same size on all participating "
       "processes.  Maximum process ID with error: " << maxErrProc << ".");
+#else // NOT HAVE_TPETRA_DEBUG
+
+    // In non-debug mode, just test locally.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      remoteIDs.size () != remoteImageIDs.size (), std::invalid_argument,
+      Teuchos::typeName (*this) << "::createFromRecvs<" <<
+      Teuchos::TypeNameTraits<OrdinalType>::name () << ">(): On Process " <<
+      myRank << ": remoteIDs.size() = " << remoteIDs.size () << " != "
+      "remoteImageIDs.size() = " << remoteImageIDs.size () << ".");
 #endif // HAVE_TPETRA_DEBUG
 
     computeSends (remoteIDs, remoteImageIDs, exportGIDs, exportNodeIDs);

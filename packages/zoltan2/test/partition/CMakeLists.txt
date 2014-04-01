@@ -12,11 +12,11 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   )
 ENDIF()
   
-# PQJagged Tests
+# MultiJagged Tests
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    pqJaggedTest
-    SOURCES PQJaggedTest.cpp
+    mjTest
+    SOURCES MultiJaggedTest.cpp
     NUM_MPI_PROCS 4
     COMM serial mpi
     ARGS 
@@ -26,8 +26,8 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   )
 
   TRIBITS_ADD_TEST(
-    pqJaggedTest
-    NAME pqJaggedTest_geomgen
+    mjTest
+    NAME mjTest_geomgen
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 
@@ -37,8 +37,8 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
   )
 
   TRIBITS_ADD_TEST(
-    pqJaggedTest
-    NAME pqJaggedTest_geomgen_noholes
+    mjTest
+    NAME mjTest_geomgen_noholes
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 
@@ -47,10 +47,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-#muelu like usecase, don't specify pqparts
+#muelu like usecase, don't specify mjparts
   TRIBITS_ADD_TEST(
-    pqJaggedTest
-    NAME pqJaggedTest_geomgen_nopqparts
+    mjTest
+    NAME mjTest_geomgen_nomjparts
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 
@@ -59,10 +59,10 @@ IF (${PACKAGE_NAME}_ENABLE_Experimental)
     FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-#muelu like usecase, don't specify pqparts, odd parts
+#muelu like usecase, don't specify mjparts, odd parts
   TRIBITS_ADD_TEST(
-    pqJaggedTest
-    NAME pqJaggedTest_geomgen_nopqparts_odd
+    mjTest
+    NAME mjTest_geomgen_nomjparts_odd
     NUM_MPI_PROCS 3
     COMM serial mpi
     ARGS 

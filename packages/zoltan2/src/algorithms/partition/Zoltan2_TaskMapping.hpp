@@ -4,7 +4,7 @@
 #include <fstream>
 #include <ctime>
 #include <vector>
-#include "Zoltan2_AlgPQJagged.hpp"
+#include "Zoltan2_AlgMultiJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
@@ -160,13 +160,13 @@ void getSolutionCenterCoordinates(
 	gno_t *global_point_counts = allocMemory<gno_t>(ntasks);
 
 
-	scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);
+	scalar_t **multiJagged_coordinates = allocMemory<scalar_t *>(coordDim);
 
 	for (int dim=0; dim < coordDim; dim++){
 		ArrayRCP<const scalar_t> ar;
 		xyz[dim].getInputArray(ar);
-		//pqJagged coordinate values assignment
-		pqJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
+		//multiJagged coordinate values assignment
+		multiJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
 		memset(partCenters[dim], 0, sizeof(scalar_t) * ntasks);
 	}
 
@@ -222,7 +222,7 @@ void getSolutionCenterCoordinates(
 		}
 		//add uo all coordinates in each part.
 		for(int j = 0; j < coordDim; ++j){
-			scalar_t c = pqJagged_coordinates[j][i];
+			scalar_t c = multiJagged_coordinates[j][i];
 			partCenters[j][p] += c;
 		}
 	}
@@ -249,7 +249,7 @@ void getSolutionCenterCoordinates(
 	freeArray<gno_t> (global_point_counts);
 
 	freeArray<scalar_t> (tmpCoords);
-	freeArray<scalar_t *>(pqJagged_coordinates);
+	freeArray<scalar_t *>(multiJagged_coordinates);
 }
 
 

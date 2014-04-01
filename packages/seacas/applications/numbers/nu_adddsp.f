@@ -1,0 +1,24 @@
+C $Id: adddsp.f,v 1.1 1991/02/21 15:42:08 gdsjaar Exp $
+C $Log: adddsp.f,v $
+C Revision 1.1  1991/02/21 15:42:08  gdsjaar
+C Initial revision
+C
+      SUBROUTINE ADDDSP (COORDS, DSP)
+      DIMENSION COORDS (NUMNP,*), DSP(NUMNP,*)
+CC
+      include 'nu_numg.blk'
+      IF (NDIM .EQ. 2) THEN
+         DO 10 J=1,NUMNP
+            DSP (J, 1) = COORDS (J, 1) + DSP (J, 1)
+            DSP (J, 2) = COORDS (J, 2) + DSP (J, 2)
+   10    CONTINUE
+      ELSE
+         DO 20 J=1,NUMNP
+            DSP (J, 1) = COORDS (J, 1) + DSP (J, 1)
+            DSP (J, 2) = COORDS (J, 2) + DSP (J, 2)
+            DSP (J, 3) = COORDS (J, 3) + DSP (J, 3)
+   20    CONTINUE
+      END IF
+CC
+      RETURN
+      END

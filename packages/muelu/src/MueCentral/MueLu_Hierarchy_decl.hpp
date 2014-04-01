@@ -112,14 +112,16 @@ namespace MueLu {
     //@{
 
     //!
-    Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
-    void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
-    void                         SetPRrebalance(bool implicitPRrebalance)              { implicitPRrebalance_ = implicitPRrebalance; }
-
     static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
     static bool                  GetDefaultPRrebalance()                               { return true;   }
     static int                   GetDefaultMaxLevels()                                 { return 10;     }
     static CycleType             GetDefaultCycle()                                     { return VCYCLE; }
+
+    Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
+
+    void                         SetMaxCoarseSize(Xpetra::global_size_t maxCoarseSize) { maxCoarseSize_ = maxCoarseSize; }
+    void                         SetPRrebalance(bool doPRrebalance)                    { doPRrebalance_ = doPRrebalance; }
+
     //@}
 
     //!
@@ -317,7 +319,7 @@ namespace MueLu {
 
     // Potential speed up of the setup by skipping rebalancing of P and R, and
     // doing extra import during solve
-    bool implicitPRrebalance_;
+    bool doPRrebalance_;
 
     // Hierarchy may be used in a standalone mode, or as a preconditioner
     bool isPreconditioner_;

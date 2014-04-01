@@ -72,9 +72,8 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::CoarseMapFactory()
-  : domainGidOffset_(0)
   {
-    //stridedBlockId_ = -1; // default: blocked map with constant blocksize "NSDim"
+    stridingInfo_.clear();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -90,6 +89,16 @@ namespace MueLu {
     validParamList->set< std::string  >("Striding info", "{}", "Striding information");
     validParamList->set< LocalOrdinal >("Strided block id", -1, "Strided block id");
 
+    // Domain GID offsets: list of offset values for domain gids (coarse gids) of tentative prolongator  (default = 0).
+    // For each multigrid level we can define a different offset value, ie for the prolongator between
+    // level 0 and level 1 we use the offset entry domainGidOffsets_[0], for the prolongator between
+    // level 1 and level 2 we use domainGidOffsets_[1]...
+    // If the vector domainGidOffsets_ is too short and does not contain a sufficient number of gid offset
+    // values for all levels, a gid offset of 0 is used for all the remaining levels!
+    // The GIDs for the domain dofs of Ptent start with domainGidOffset, are contiguous and distributed
+    // equally over the procs (unless some reordering is done).
+    validParamList->set< std::string > ("Domain GID offsets", "{0}", "vector with offsets for GIDs for each level. If no offset GID value is given for the level we use 0 as default.");
+
     return validParamList;
   }
 
@@ -97,17 +106,6 @@ namespace MueLu {
   void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "Aggregates");
     Input(currentLevel, "Nullspace");
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::setDomainMapOffset(GlobalOrdinal offset) {
-    TEUCHOS_TEST_FOR_EXCEPTION(offset < 0, Exceptions::RuntimeError, "MueLu::CoarseMapFactory::SetDomainMapOffset: domain map offset for coarse gids of tentative prolongator must not be smaller than zero. Error.");
-    domainGidOffset_ = offset;
-  }
-
-  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  GlobalOrdinal CoarseMapFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::getDomainMapOffset() const {
-    return domainGidOffset_;
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -132,9 +130,27 @@ namespace MueLu {
     const size_t                   NSDim   = nullspace->getNumVectors();
     RCP<const Teuchos::Comm<int> > comm    = aggregates->GetMap()->getComm();
 
+    // read in offset information from parameter list and fill the internal member variable
+    GlobalOrdinal domainGidOffset = 0;
+    std::vector<GlobalOrdinal> domainGidOffsets;
+    domainGidOffsets.clear();
+    const ParameterList & pL = GetParameterList();
+    if(pL.isParameter("Domain GID offsets")) {
+      std::string strDomainGIDs = pL.get<std::string>("Domain GID offsets");
+      if(strDomainGIDs.empty() == false) {
+        Teuchos::Array<GlobalOrdinal> arrayVal = Teuchos::fromStringToArray<GlobalOrdinal>(strDomainGIDs);
+        domainGidOffsets = Teuchos::createVector(arrayVal);
+        if(currentLevel.GetLevelID() < Teuchos::as<int>(domainGidOffsets.size()) ) {
+          domainGidOffset = domainGidOffsets[currentLevel.GetLevelID()];
+        }
+      }
+    }
+
+    LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
+
     // read in stridingInfo from parameter list and fill the internal member variable
     // read the data only if the parameter "Striding info" exists and is non-empty
-    const ParameterList & pL = GetParameterList();
+    //const ParameterList & pL = GetParameterList();
     if(pL.isParameter("Striding info")) {
       std::string strStridingInfo = pL.get<std::string>("Striding info");
       if(strStridingInfo.empty() == false) {
@@ -143,7 +159,6 @@ namespace MueLu {
       }
     }
 
-    LocalOrdinal stridedBlockId = pL.get<LocalOrdinal>("Strided block id");
 
     // check for consistency of striding information with NSDim and nCoarseDofs
     if (stridedBlockId== -1) {
@@ -160,7 +175,7 @@ namespace MueLu {
       TEUCHOS_TEST_FOR_EXCEPTION(stridedBlockSize != NSDim , Exceptions::RuntimeError, "MueLu::CoarseMapFactory::Build(): dimension of strided block != NSDim. error.");
     }
 
-    GetOStream(Statistics2) << "domainGIDOffset: " << domainGidOffset_ << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
+    GetOStream(Statistics2) << "domainGIDOffset: " << domainGidOffset << " block size: " << getFixedBlockSize() << " stridedBlockId: " << stridedBlockId << std::endl;
 
     // number of coarse level dofs (fixed by number of aggregates and blocksize data)
     GlobalOrdinal nCoarseDofs = numAggs * getFixedBlockSize();
@@ -173,7 +188,7 @@ namespace MueLu {
         stridingInfo_,
         comm,
         stridedBlockId,
-        domainGidOffset_);
+        domainGidOffset);
 
     Set(currentLevel, "CoarseMap", coarseMap);
   } // Build

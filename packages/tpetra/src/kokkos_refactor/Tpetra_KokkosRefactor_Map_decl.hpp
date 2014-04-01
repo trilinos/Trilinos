@@ -178,6 +178,17 @@ namespace Tpetra {
   /// product functions produce small dense matrices that are required
   /// by all images.  Replicated local objects handle these
   /// situations.
+  ///
+  /// \section Tpetra_Map_dev Host and device views
+  ///
+  /// Like all Tpetra objects that use the new Kokkos back-end, Map
+  /// has "dual view" semantics.  This means that the data live in the
+  /// preferred memory space of the \c DeviceType Kokkos device, but
+  /// are also mirrored in host memory, if host memory is a different
+  /// memory space.  Map is immutable, though, so it does not
+  /// implement the synch() or modify() methods that let users
+  /// transfer data between host and device memory, or mark either
+  /// data set as modified.
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>
@@ -198,6 +209,12 @@ namespace Tpetra {
     //! The type of the Kokkos Device (more useful than node_type).
     typedef DeviceType device_type;
 
+  private:
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
+    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_device_type> host_impl_type;
+
+  public:
 
     /** \brief Constructor with Tpetra-defined contiguous uniform distribution.
      *
@@ -380,7 +397,7 @@ namespace Tpetra {
     /// host.  If DeviceType is not a host device (e.g., if it is
     /// Kokkos::Cuda), then you must get the underlying "device Map"
     /// object out in order to call these methods in a Kokkos parallel
-    /// kernel on the device.  To do this, call getDeviceMap().
+    /// kernel on the device.  To do this, call getDeviceView().
     //@{
 
     /// \brief An invalid global index.
@@ -522,11 +539,34 @@ namespace Tpetra {
     /// You may <i>not</i> call them in a Kokkos parallel kernel.
     //@{
 
-    /// \brief Get the device-memory version of the Map's implementation.
+    /// \fn getDeviceView
+    /// \brief Get the version of the Map's implementation for the given Kokkos device.
+    /// \tparam OutDeviceType The Kokkos device type of the returned object.
     ///
-    /// The returned object has shallow-copy (handle or view) semantics.
-    Details::Map<LocalOrdinal, GlobalOrdinal, device_type> getDeviceMap () {
-      return mapDevice_;
+    /// This method will only compile if one of two conditions is met:
+    /// <ol>
+    /// <li> \c OutDeviceType is the same as \c device_type (this Map's
+    ///      original Kokkos device type) </il>
+    /// <li> \c OutDeviceType is compatible with
+    ///      <tt>device_type::host_mirror_device_type</tt> </li>
+    /// </ol>
+    ///
+    /// \return A Map implementation object of type
+    ///   <tt>Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType></tt>.
+    ///   It has shallow-copy (handle or view) semantics.
+    ///
+    /// This method has a handy side effect: if it can do so cheaply,
+    /// it initializes either the host or device Map implementation of
+    /// this object, if it is not yet initialized but the other is.
+    /// This is why the method is marked nonconst.
+    template<class OutDeviceType>
+    Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType>
+    getDeviceView () {
+      // MapMirrorer finds which of mapDevice_ or mapHost_ (if either)
+      // is initialized, and returns a mirror of that.  It's a shallow
+      // copy if the device types are the same, else it's a deep copy.
+      return Details::MapMirrorer<Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType>,
+        device_impl_type, host_impl_type>::mirror (mapDevice_, mapHost_);
     }
 
     /// \brief Return the process ranks and corresponding local
@@ -813,10 +853,6 @@ namespace Tpetra {
     /// to downstream classes such as MultiVector, Vector, CrsGraph
     /// and CrsMatrix.
     Teuchos::RCP<node_type> node_;
-
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
-    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_device_type> host_impl_type;
 
     /// \brief Device-memory version of the Map's implementation.
     ///

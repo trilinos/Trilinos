@@ -68,6 +68,8 @@
 // MueLu includes
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
+#include <MatrixMarket_Tpetra.hpp>
+
 int
 main (int argc, char *argv[])
 {
@@ -156,6 +158,15 @@ main (int argc, char *argv[])
     cmdp.setOption ("rowMapFilename", &rowMapFilename, "If nonempty, dump the "
                     "generated matrix's row Map to that file in a format that "
                     "Tpetra::MatrixMarket::Reader can read.");
+    // Option to exit after building A and b (and dumping stuff to
+    // files, if requested).
+    bool exitAfterAssembly = false;
+    cmdp.setOption ("exitAfterAssembly", "dontExitAfterAssembly",
+                    &exitAfterAssembly, "If true, exit after building the "
+                    "sparse matrix and dense right-hand side vector.  If either"
+                    " --matrixFilename or --rowMapFilename are nonempty strings"
+                    ", dump the matrix resp. row Map to their respective files "
+                    "before exiting.");
 
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
                                xmlInputParamsFile, verbose, debug);
@@ -224,8 +235,14 @@ main (int argc, char *argv[])
           writer_type::writeSparseFile (matrixFilename, A);
         }
         if (rowMapFilename != "") {
-          writer_type::writeMapFile (rowMapFilename, A->getRowMap ());
+          writer_type::writeMapFile (rowMapFilename, * (A->getRowMap ()));
         }
+      }
+
+      if (exitAfterAssembly) {
+        // Users might still be interested in assembly time.
+        Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+        return EXIT_SUCCESS;
       }
 
       const std::vector<MT> norms = exactResidualNorm (A, B, X_exact);

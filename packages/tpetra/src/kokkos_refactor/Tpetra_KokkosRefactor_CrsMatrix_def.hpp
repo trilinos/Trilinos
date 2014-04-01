@@ -3957,18 +3957,39 @@ namespace Tpetra {
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(RST::zero(),Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if (mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (RST::zero (),
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else { // mode == NO_TRANS
+        Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
     else {
       // Y = alpha*op(M) + beta*Y
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if(mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (beta,
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else {
+        Kokkos::MV_Multiply (beta,
+                             Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
   }
 

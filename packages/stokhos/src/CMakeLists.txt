@@ -580,15 +580,19 @@ IF (Stokhos_ENABLE_Sacado)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/linalg)
       INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/linalg)
       LIST(APPEND SACADO_HEADERS
+        sacado/kokkos/vector/linalg/Kokkos_MV_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_ArithTraits_MP_Vector.hpp
         sacado/kokkos/vector/linalg/Kokkos_InnerProductSpaceTraits_MP_Vector.hpp
+        sacado/kokkos/pce/linalg/Kokkos_MV_UQ_PCE.hpp
+        sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_ArithTraits_UQ_PCE.hpp
         sacado/kokkos/pce/linalg/Kokkos_InnerProductSpaceTraits_UQ_PCE.hpp
         )
       IF(Stokhos_ENABLE_CUDA AND Kokkos_ENABLE_Cuda)
         LIST(APPEND SACADO_HEADERS
           sacado/kokkos/vector/linalg/Kokkos_CrsMatrix_MP_Vector_Cuda.hpp
+          sacado/kokkos/pce/linalg/Kokkos_CrsMatrix_UQ_PCE_Cuda.hpp
           )
       ENDIF()
     ENDIF()
@@ -786,39 +790,6 @@ IF (Stokhos_ENABLE_Sacado)
         IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/vector/ifpack2/*.cpp)
           APPEND_GLOB(IFPACK2_CPP_SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/sacado/kokkos/pce/ifpack2/*.cpp)
-          SET(IFPACK2_ETI_CLASSES
-            Chebyshev
-            Diagonal
-            IdentitySolver
-            Relaxation
-            RILUK
-            Details::DenseSolver
-            DiagonalFilter
-            LocalFilter
-            ILUT
-            OverlappingRowMatrix
-            ReorderFilter
-            SingletonFilter
-            SparsityFilter
-            Details::OneLevelFactory
-            AdditiveSchwarz
-            BlockRelaxation
-            BorderedOperator
-            Details::Chebyshev
-            SparseContainer
-            Factory
-            Krylov
-            )
-          IF(Ifpack2_ENABLE_Amesos2)
-            LIST(APPEND IFPACK2_ETI_CLASSES
-              Details::Amesos2Wrapper
-              )
-          ENDIF()
-          SET(IFPACK2_ETI_LO_GO_CLASSES
-            LinearPartitioner
-            OverlappingPartitioner
-            Details::OverlappingRowGraph
-            )
           IF (Kokkos_ENABLE_Pthread)
             PROCESS_ETI_TEMPLATE(
               "${IFPACK2_ETI_CLASSES}"
@@ -830,12 +801,6 @@ IF (Stokhos_ENABLE_Sacado)
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Threads.tmpl
               "Ifpack2_CLASS_FILE_NAME_UQ_PCE_Threads.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-            PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_Threads.tmpl
-              "Ifpack2_CLASS_FILE_NAME_Threads.cpp"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
@@ -852,12 +817,6 @@ IF (Stokhos_ENABLE_Sacado)
               "Ifpack2_CLASS_FILE_NAME_UQ_PCE_OpenMP.cpp"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
-             PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_OpenMP.tmpl
-              "Ifpack2_CLASS_FILE_NAME_OpenMP.cpp"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CPP_SOURCES ${IFPACK2_SRCS})
           ENDIF()
           IF (Kokkos_ENABLE_Cuda)
             PROCESS_ETI_TEMPLATE(
@@ -870,12 +829,6 @@ IF (Stokhos_ENABLE_Sacado)
               "${IFPACK2_ETI_CLASSES}"
               sacado/kokkos/pce/ifpack2/Ifpack2_ETI_UQ_PCE_Cuda.tmpl
               "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_UQ_PCE_Cuda.cu"
-              IFPACK2_SRCS)
-            LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
-             PROCESS_ETI_TEMPLATE(
-              "${IFPACK2_ETI_LO_GO_CLASSES}"
-              sacado/kokkos/vector/ifpack2/Ifpack2_ETI_LO_GO_Cuda.tmpl
-              "${CMAKE_CURRENT_BINARY_DIR}/Ifpack2_CLASS_FILE_NAME_Cuda.cu"
               IFPACK2_SRCS)
             LIST(APPEND IFPACK2_CU_SOURCES ${IFPACK2_SRCS})
           ENDIF()

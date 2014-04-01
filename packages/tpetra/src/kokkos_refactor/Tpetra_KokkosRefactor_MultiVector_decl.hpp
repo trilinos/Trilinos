@@ -42,21 +42,11 @@
 #ifndef TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DECL_HPP
 
-/*#include <Teuchos_DataAccess.hpp>
-#include <Teuchos_Range1D.hpp>
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_ViewAccepter.hpp"
-#include <Kokkos_MultiVector.hpp>
-#include <Teuchos_BLAS_types.hpp>
-*/
 #include <Kokkos_DualView.hpp>
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_InnerProductSpaceTraits.hpp>
 #include <Kokkos_ArithTraits.hpp>
-//#include <Tpetra_MultiVector.hpp>
-
-#include "Tpetra_KokkosRefactor_DistObject.hpp"
+#include <Tpetra_KokkosRefactor_DistObject.hpp>
 
 namespace KokkosClassic {
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -331,34 +321,38 @@ namespace Tpetra {
   class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > :
     public DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   {
-    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>  Node;
+  private:
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> Node;
+    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> base_type;
+
   public:
     //! @name Typedefs to facilitate template metaprogramming.
     //@{
 
     //! The type of entries in the vector(s).
-    typedef Scalar        scalar_type;
+    typedef Scalar scalar_type;
     //! The type of local indices.
-    typedef LocalOrdinal  local_ordinal_type;
+    typedef LocalOrdinal local_ordinal_type;
     //! The type of global indices.
     typedef GlobalOrdinal global_ordinal_type;
     //! The Kokkos Node type.
-    typedef Node          node_type;
-    //! The type for inner product (dot) products
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> node_type;
+
+    /// \brief The type of an inner ("dot") product result.
+    ///
+    /// This is usually the same as \c scalar_type, but may differ if
+    /// \c Scalar is e.g., an uncertainty quantification type from the
+    /// Stokhos package.
     typedef typename Kokkos::Details::InnerProductSpaceTraits<Scalar>::dot_type dot_type;
+
+    //! The type of the magnitude (absolute value) of a \c scalar_type value.
     typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type mag_type;
 
-    typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> view_type;
+    typedef Kokkos::DualView<scalar_type**,Kokkos::LayoutLeft,typename node_type::device_type> dual_view_type;
 
-    typedef DistObject<Scalar, LocalOrdinal, GlobalOrdinal, Node> DO;
+
     typedef typename Node::device_type device_type;
 
-    template <class S, class LO, class GO, class D>
-    friend  MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
-        createCopy( const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
-    template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
-    friend void deep_copy( MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
-                    const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
     //@}
     //! @name Constructors and destructor
     //@{
@@ -422,11 +416,11 @@ namespace Tpetra {
     /// \param map [in] Map describing the distribution of rows.
     /// \param view [in] Device view to the data (shallow copy)
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const view_type view);
+                 const dual_view_type view);
 
     //! Advanced constructor for non-contiguous views.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-                 const view_type view,
+                 const dual_view_type view,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
 
     //! Return a deep copy of <tt>*this</tt>, for a different Kokkos Node type.
@@ -783,7 +777,31 @@ namespace Tpetra {
     //! Return a non-const reference to the underlying KokkosClassic::MultiVector object (advanced use only)
     KokkosClassic::MultiVector<Scalar,Node> & getLocalMVNonConst();
 
-    view_type getLocalView() const;
+    /// \brief Get the Kokkos::DualView which implements local storage.
+    ///
+    /// \warning This method is ONLY for expert developers.  Its
+    ///   interface may change or it may disappear at any time.
+    dual_view_type getDualView () const;
+
+    template<class TargetDeviceType>
+    void sync () {
+      getDualView ().template sync<TargetDeviceType> ();
+    }
+
+    template<class TargetDeviceType>
+    void modify () {
+      getDualView ().template modify<TargetDeviceType> ();
+    }
+
+    template<class TargetDeviceType>
+    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename device_type::memory_space ,
+                                                      typename TargetDeviceType::memory_space >::value,
+                                typename dual_view_type::t_dev,
+                                typename dual_view_type::t_host>::type
+    getLocalView () const {
+      return getDualView ().template view<TargetDeviceType> ();
+    }
+
     //@}
     //! @name Mathematical methods
     //@{
@@ -1045,6 +1063,14 @@ namespace Tpetra {
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
   protected:
+    template <class S, class LO, class GO, class D>
+    friend MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >
+    createCopy (const MultiVector<S,LO,GO,Kokkos::Compat::KokkosDeviceWrapperNode<D> >& src);
+
+    template <class DS, class DL, class DG, class DD, class SS, class SL, class SG, class SD>
+    friend void
+    deep_copy (MultiVector<DS,DL,DG,Kokkos::Compat::KokkosDeviceWrapperNode<DD> >& dst,
+               const MultiVector<SS,SL,SG,Kokkos::Compat::KokkosDeviceWrapperNode<SD> >& src);
 
     typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
@@ -1056,7 +1082,7 @@ namespace Tpetra {
     KMV lclMV_;
 
     //! The Kokkos::DualView containing the MultiVector's data.
-    view_type view_;
+    dual_view_type view_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
@@ -1111,23 +1137,23 @@ namespace Tpetra {
     copyAndPermuteNew (
       const SrcDistObject& sourceObj,
       size_t numSameIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteToLIDs,
-      const Kokkos::View<const LocalOrdinal*, device_type> &permuteFromLIDs);
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteToLIDs,
+      const Kokkos::View<const LocalOrdinal*, device_type>& permuteFromLIDs);
 
     virtual void
     packAndPrepareNew (
       const SrcDistObject& sourceObj,
-      const Kokkos::View<const LocalOrdinal*, device_type> &exportLIDs,
-      Kokkos::View<Scalar*, device_type> &exports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& exportLIDs,
+      Kokkos::View<Scalar*, device_type>& exports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t& constantNumPackets,
       Distributor &distor);
 
     virtual void
     unpackAndCombineNew (
-      const Kokkos::View<const LocalOrdinal*, device_type> &importLIDs,
-      const Kokkos::View<const Scalar*, device_type> &imports,
-      const Kokkos::View<size_t*, device_type> &numPacketsPerLID,
+      const Kokkos::View<const LocalOrdinal*, device_type>& importLIDs,
+      const Kokkos::View<const Scalar*, device_type>& imports,
+      const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
       size_t constantNumPackets,
       Distributor &distor,
       CombineMode CM);
@@ -1135,16 +1161,9 @@ namespace Tpetra {
     void createViews () const;
     void createViewsNonConst (KokkosClassic::ReadWriteOption rwo);
     void releaseViews () const;
-
-    //! Nonconst host view created in createViewsNonConst().
-    mutable ArrayRCP<Scalar> ncview_;
-
-    //! Const host view created in createViews().
-    mutable ArrayRCP<const Scalar> cview_;
-
     //@}
 
-    typename view_type::t_dev getKokkosView() const { return view_.d_view; }
+    typename dual_view_type::t_dev getKokkosView() const { return view_.d_view; }
 
   }; // class MultiVector
 

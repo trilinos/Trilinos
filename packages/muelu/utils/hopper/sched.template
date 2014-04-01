@@ -19,10 +19,10 @@ for ((ii=1; ii <= $num_runs; ii++)); do
     run_cmd="_SCHED_ARGS_ -n _CORES_ ./binary.exe --nx=_NX_ --ny=_NX_ --nz=_NX_ --matrixType=_MTYPE_ ${args[jj]}"
 
     # epetra
-    if [ "_EPETRA_" -eq "1" ]; then
+    if [ "_EPETRA_" -eq "1" ]; then                                     # if [ "_EPETRA_" -eq "1" ]; then
       run_cmd_epetra="${run_cmd} --linAlgebra=Epetra"
       echo ${run_cmd_epetra}
-      if [ "_UNIFIED_" == "True" ]; then
+      if [ "_UNIFIED_" == "True" ]; then                                # if [ "_UNIFIED_" == "True" ]; then
         ${run_cmd_epetra}
       else
         output_epetra="cmd${jj}_run${ii}.epetra"
@@ -32,10 +32,10 @@ for ((ii=1; ii <= $num_runs; ii++)); do
     fi
 
     # tpetra
-    if [ "_TPETRA_" -eq "2" ]; then
+    if [ "_TPETRA_" -eq "2" ]; then                                     # if [ "_TPETRA_" -eq "2" ]; then
       run_cmd_tpetra="${run_cmd} --linAlgebra=Tpetra"
       echo ${run_cmd_tpetra}
-      if [ "_UNIFIED_" == "True" ]; then
+      if [ "_UNIFIED_" == "True" ]; then                                # if [ "_UNIFIED_" == "True" ]; then
         ${run_cmd_tpetra}
       else
         output_tpetra="cmd${jj}_run${ii}.tpetra"
@@ -44,6 +44,7 @@ for ((ii=1; ii <= $num_runs; ii++)); do
       fi
     fi
 
+    # if [ "_EPETRA_" -eq "1" ] && [ "_TPETRA_" -eq "2" ] && [ "_UNIFIED_" == "False" ]; then
     if [ "_EPETRA_" -eq "1" ] && [ "_TPETRA_" -eq "2" ] && [ "_UNIFIED_" == "False" ]; then
       compareTE.sh -a ${output_epetra} ${output_tpetra} > "cmd${jj}_run${ii}.compare"
     fi

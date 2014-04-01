@@ -3201,14 +3201,24 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
   if ( (ml->Pmat[level]).NumZDir      != -1) NumZDir     = (ml->Pmat[level]).NumZDir;
   if ( (ml->Pmat[level]).Zorientation != -1) Zorientation= (ml->Pmat[level]).Zorientation;
 
-  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) { 
+  if (NumZDir == -7)  { 
+     if (ml->comm->ML_mypid == 0) {
+       printf("It appears that repartitioning has been performed and so further semicoarsening is aborted.\n");
+       printf("Any further line smoothing is going to numerically act as point smoothing .\n");
+     }
+     (ml->Pmat[level]).NumZDir = 1;
+     ml->Pmat[clevel].Zorientation = 1;
+     NumZDir = 1;
+     Zorientation= 1;
+  }
+  if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir != 1) ) {
 
      Nnodes = Amat->invec_leng/Amat->num_PDEs;
      LayerId    = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
-     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng, Amat->num_PDEs,
-                                    Zorientation, NumZDir, ml->Grid[level].Grid);
+     NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng,
+            Amat->num_PDEs, Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm->ML_mypid);
   }
   if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
      widget.nz = NumZDir;
@@ -4416,7 +4426,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 int ML_compute_line_info(int LayerId[], int VertLineId[],
                                     int Ndof, int DofsPerNode, 
                                     int MeshNumbering, int NumNodesPerVertLine, 
-                                    ML_Aggregate_Viz_Stats *grid_info)
+                                    ML_Aggregate_Viz_Stats *grid_info, int mypid)
 {
    double *xvals= NULL, *yvals = NULL, *zvals = NULL;
    int    Nnodes, NVertLines, MyNode;
@@ -4432,13 +4442,25 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
       if (grid_info != NULL) yvals = grid_info->y;
       if (grid_info != NULL) zvals = grid_info->z;
 
-      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) return -1;
+      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
+         if (mypid == 0) printf("Not semicoarsening as no mesh numbering information or coordinates are given\n");
+         return -1;
+      }
    }
    else {
-      if  (NumNodesPerVertLine == -1) return -4;
-      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) return -3;
+      if  (NumNodesPerVertLine == -1) {
+         if (mypid == 0) printf("Not semicoarsening as the number of z nodes is not given.\n");
+         return -4;
+      }
+      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) {
+         if (mypid == 0) printf("Not semicoarsening as the total number of nodes is not evenly divisible by the number of z direction nodes .\n");
+         return -3;
+      }
    }
-   if ( (Ndof%DofsPerNode) != 0) return -2;
+   if ( (Ndof%DofsPerNode) != 0) {
+         if (mypid == 0) printf("Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
+      return -2;
+   }
 
    Nnodes = Ndof/DofsPerNode;
 
