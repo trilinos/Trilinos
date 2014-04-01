@@ -105,7 +105,10 @@ In order to do a solid checkin, perform the following recommended workflow
   eg/git documentation).
 
   NOTE: If not installed on your system, the eg script can be found at
-  cmake/tribits/common_tools/git/eg.  Just add it to your path.
+  tribits/common_tools/git/eg.  Just add it to your path.
+
+  NOTE: When multiple repos are involved, use egdist instead.  It is provided
+  at tribits/common_tools/git/egdist.  See egdist --help for details.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
@@ -113,8 +116,8 @@ In order to do a solid checkin, perform the following recommended workflow
   $ eg local-stat                  # Look at the full status of local repo
   $ eg diff --name-status origin   # [Optional] Look at the files that have changed
 
-  NOTE: The command 'local-stat' is an alias that can be installed with the
-  script cmake/tribits/common_tools/git/git-config-alias.sh.  It is highly
+  NOTE: The command 'local-stat' is a git alias that can be installed with the
+  script tribits/common_tools/git/git-config-alias.sh.  It is highly
   recommended over just a raw 'eg status' or 'eg log' to review commits before
   attempting to test/push commits.
 
@@ -141,17 +144,18 @@ In order to do a solid checkin, perform the following recommended workflow
   you want.  If you create one outside of the main source dir, then
   you will not have to add the git exclude shown above.
 
-4) Do the checkin build, test, and push:
+4) Do the pull, configure, build, test, and push:
 
   $ cd $PROJECT_HOME
   $ cd CHECKIN
   $ ../checkin-test.py -j4 --do-all --push
 
-  NOTE: The above will: a) pull updates from the global repo, b) automatically
-  enable the correct packages, c) build the code, d) run the tests, e) send
-  you emails about what happened, f) do a final pull to from the global repo,
-  g) amend the last local commit with the test results, and h) finally push
-  local commits to the global repo if everything passes.
+  NOTE: The above will: a) pull updates from the global repo(s), b)
+  automatically enable the correct packages, c) configure and build the right
+  packages, d) run the tests, e) send you emails about what happened, f) do a
+  final pull from the global repo, g) optionally amend the last local commit
+  with the test results, and h) finally push local commits to the global
+  repo(s) if everything passes.
 
   NOTE: You must have installed the official versions of eg/git with the
   install-git.py script in order to run this script.  If you don't, the script
@@ -165,13 +169,13 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: You must not have any uncommitted changes or the 'eg pull && eg rebase
   --against origin' command will fail on the final pull/rebase before the push
-  and therefore the whole script will fail.  To still run the script, you will
-  may need to use 'eg stash' to stash away your unstaged/uncommitted changes
+  and therefore the whole script will fail.  To run the script, you will may
+  need to first use 'eg stash' to stash away your unstaged/uncommitted changes
   *before* running this script.
 
-  NOTE: You need to have SSH public/private keys set up to software.sandia.gov
-  for the git commands invoked in the script to work without you having to
-  type a password.
+  NOTE: You need to have SSH public/private keys set up to the remote repo
+  machines for the git commands invoked in the script to work without you
+  having to type a password.
 
   NOTE: You can do the final push in a second invocation of the script with a
   follow-up run with --push and removing --do-all (it will remember the
@@ -183,7 +187,7 @@ In order to do a solid checkin, perform the following recommended workflow
   tests passed and if the push happened or not.
 
   NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
-  befor running this script.
+  before running this script.
 
 For more details on using this script, see the detailed documentation below.
 
@@ -197,24 +201,24 @@ The following approximate steps are performed by this script:
 ----------------------------------------------------------------------------
 
 
-1) Check to see if the local repo is clean:
+1) Check to see if the local repo(s) are clean:
 
   $ eg status
 
   NOTE: If any modified or any unknown files are shown, the process will be
-  aborted.  The local repo working directory must be clean and ready to push
-  *everything* that is not stashed away.
+  aborted.  The local repo(s) working directory must be clean and ready to
+  push *everything* that is not stashed away.
 
 2) Do a 'eg pull' to update the code (done if --pull or --do-all is set):
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
-3) Select the list of packages to enable forward based on the package
-directories where there are changed files (or from a list of packages passed
-in by the user).
+3) Select the list of packages to enable forward/downstream based on the
+package directories where there are changed files (or from a list of packages
+passed in by the user).
 
   NOTE: The automatic enable behavior can be overridden or modified using the
-  options --enable-packages, --disable-packages, and/or
+  options --enable-all-packages, --enable-packages, --disable-packages, and/or
   --no-enable-fwd-packages.
 
 4) For each build/test case <BUILD_NAME> (e.g. MPI_DEBUG, SERIAL_RELEASE,
@@ -222,8 +226,8 @@ extra builds specified with --extra-builds):
 
   4.a) Configure a build directory <BUILD_NAME> in a standard way for all of
   the packages that have changed and all of the packages that depend on these
-  packages forward. You can manually select which packages get enabled (see
-  the enable options above).  (done if --configure, --do-all, or
+  packages forward/downstream. You can manually select which packages get
+  enabled (see the enable options above).  (done if --configure, --do-all, or
   --local-do-all is set.)
   
   4.b) Build all configured code with 'make' (e.g. with -jN set through
@@ -233,23 +237,24 @@ extra builds specified with --extra-builds):
   or --local-do-all is set.)
 
   4.d) Analyze the results of the update, configure, build, and tests and send
-  email about results.  (emails only sent out if --send-emails-to is not set
-  to ''.)
+  email about results.  (emails only sent out if --send-emails-to != "")
 
-5) Do final pull, append test results to last commit message, and push (done
-if --push is set)
+5) Do final pull and rebase, append test results to last commit message, and
+push (done if --push is set)
 
-  5.a) Do a final 'eg pull && eg rebase --against origin/<current_branch>'
-  (done if --pull or --do-all is set)
+  5.a) Do a final 'eg pull' (done if --pull or --do-all is set)
+
+  5.b) Do 'eg rebase --against origin/<current_branch>' (done if --pull or
+  --do-all is set and --rebase is set)
 
     NOTE: The final 'eg rebase --against origin/<current_branch>' is
-    required to avoid trival merge commits that the global get repo
+    required to avoid trivial merge commits that the global get repo
     will reject on the push.
   
-  5.b) Amend commit message of the most recent commit with the summary of the
+  5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
   
-  5.c) Push the local commits to the global repo.
+  5.d) Push the local commits to the global repo (done if --push is set)
 
 
 ----------------------------------------------------------------------------
@@ -262,7 +267,7 @@ directory apart from your standard build directories such as with:
   $ mkdir CHECKIN
   $ echo CHECKIN >> .git/info/exclude
 
-The most basic way to do the checkin test is:
+The most basic way to do pre-push testing is with:
 
   $ cd CHECKIN
   $ ../checkin-test.py --do-all [other options]
@@ -275,6 +280,8 @@ set of CMake variables that will get read in the files:
   COMMON.config
   MPI_DEBUG.config
   SERIAL_RELEASE.config
+
+(or whatever your standard --default-builds are).
 
 Actually, for built-in build/test cases, skeletons of these files will
 automatically be written out with typical CMake cache variables (commented
@@ -322,7 +329,7 @@ manually.
 Common Use Cases (examples):
 ----------------------------
 
-(*) Basic full testing with integrating with global repo without push:
+(*) Basic full testing with integrating with global repo(s) without push:
 
   ../checkin-test.py --do-all
 
@@ -341,8 +348,8 @@ Common Use Cases (examples):
   ../checkin-test.py [other options] --push
 
   NOTE: This will pick up the results for the last completed test runs with
-  [other options] and append the results of those tests to the checkin-message
-  of the most recent commit.
+  [other options] and append the results of those tests to the log of the most
+  recent commit.
 
   NOTE: Take the action options for the prior run and replace --do-all with
   --push but keep all of the rest of the options the same.  For example, if
@@ -356,7 +363,7 @@ Common Use Cases (examples):
 
   NOTE: This is a common use case when some tests are failing which aborted
   the initial push but you determine it is okay to push anyway and do so with
-  --force-push (or just --force for short).
+  --force-push.
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -369,7 +376,7 @@ Common Use Cases (examples):
   changed because every package does not follow a set pattern for
   tests and test code.
 
-(*) Run the MPI_DEBUG build/test only:
+(*) Run the the most important default (e.g. MPI_DEBUG) build/test only:
 
   ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
@@ -381,12 +388,13 @@ Common Use Cases (examples):
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
-  packages.
+  packages.  Replace "MPI_DEBUG" with whatever your most important default
+  build is.
 
 (*) Test only a specific set of packages and no others:
 
   ../checkin-test.py \
-    --enable-packages=<PACKAGEA>,<PACKAGEB>,<PACKAGEC> --no-enable-fwd-packages \
+    --enable-packages=<P0>,<P1>,<P2> --no-enable-fwd-packages \
     --do-all
   
   NOTE: This will override all logic in the script about which packages will
@@ -398,7 +406,8 @@ Common Use Cases (examples):
   do so.
 
   NOTE: Using these options is greatly preferred to not running this script at
-  all and should not be any more expensive than the testing you already do.
+  all and should not be any more expensive than the testing you would already
+  do manually before a push.
 
 (*) Test changes locally without pulling updates:
 
@@ -419,14 +428,13 @@ Common Use Cases (examples):
 (*) Adding extra build/test cases:
 
   Often you will be working on Secondary Tested (ST) Code or Experimental (EX)
-  Code and want to include the testing of this in your pre-checkin testing
-  along with the standard --default-builds build/test cases which can only
-  include Primary Tested (PT) Code.  In this case you can run with:
+  Code and want to include the testing of this in your pre-push testing
+  process along with the standard --default-builds build/test cases which can
+  only include Primary Tested (PT) Code.  In this case you can run with:
   
     ../checkin-test.py --extra-builds=<BUILD1>,<BUILD2>,... [other options]
   
-  For example, if you have a build that enables the TPL CUDA for Tpetra you
-  would do:
+  For example, if you have a build that enables the TPL CUDA you would do:
   
     echo "
     -DTPL_ENABLE_MPI:BOOL=ON
@@ -435,37 +443,44 @@ Common Use Cases (examples):
   
   and then run with:
   
-    ../checkin-test.py \
-      --enable-packages=Tpetra --extra-builds=MPI_DEBUG_CUDA --do-all
+    ../checkin-test.py --extra-builds=MPI_DEBUG_CUDA --do-all
   
-  This will do the standard MPI_DEBUG and SERIAL_RELEASE build/test cases
-  along with your non-standard MPI_DEBUG_CUDA build/test case.
+  This will do the standard --default-builds (e.g. MPI_DEBUG and
+  SERIAL_RELEASE) build/test cases along with your non-standard MPI_DEBUG_CUDA
+  build/test case.
 
-  NOTE: You can disable the default build/test cases with
-  --without-default-builds.  However, please only do this when you are not
-  going to push because we need at least one default build/test case to be
-  safe to push.
+  NOTE: You can disable the default build/test cases with --default-builds="".
+  However, please only do this when you are not going to push because you need
+  at least one default build/test case (the most important default PT case,
+  e.g. MPI_DEBUG) to do a safe push.
 
-(*) Including extra repos:
+(*) Including extra repos and extra packages:
 
-  You can also use the checkin-test.py script to continuously
-  integrate with other external extra git repos containing add-on
-  packages. To do so, just run:
+  You can also use the checkin-test.py script to continuously integrate
+  multiple git repos containing add-on packages. To do so, just run:
     
-    ../checkin-test.py --extra-builds=REPO1,REPO2,... [options]
+    ../checkin-test.py --extra-repos=<REPO1>,<REPO2>,... [options]
 
   NOTE: You have to create local commits in all of the extra repos where there
   are changes or the script will abort.
 
+  NOTE: Extra repos can be specified with more flexibility using the
+  --extra-repos-file and --extra-repos-type arguments (also see
+  --ignore-missing-extra-repos).
+
   NOTE: Each of the last local commits in each of the changed repos will get
-  amended with the appended summary of what was enabled in the build/test.
+  amended with the appended summary of what was enabled in the build/test (if
+  --append-test-results is set).
 
 (*) Performing a remote test/push:
 
   If you develop on a slow machine like your laptop, doing an appropriate
   level of testing can take a long time.  In this case, you can pull the
-  changes to another faster remote workstation and do a more complete
-  set of tests and push from there.
+  changes to another faster remote workstation and do a more complete set of
+  tests and push from there.  If you are knowledgeable with git, this will be
+  easy and natural to do, without any help from this script.  However, this
+  script can still help and automate the steps and can do so in one command
+  invocation on the part of the developer.
 
   On your slow local development machine 'mymachine', do the limited testing
   with:
@@ -475,15 +490,19 @@ Common Use Cases (examples):
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
-      --extra-pull-from=mymachine:/some/dir/to/your/src:master \
+      --extra-pull-from=<remote-name>:master \
       --do-all --push
+
+  where <remote-name> is a git repo pointing to
+  mymachine:/some/dir/to/your/src:master (see 'git help remote').
   
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
   
-  NOTE: Once you invoke the checkin-test.py script on the remote test machine,
-  you can start changing files again on your local development machine and
-  just check your email to see what happens.
+  NOTE: Once you invoke the checkin-test.py script on the remote test machine
+  and it has pulled the commits from mymachine, then you can start changing
+  files again on your local development machine and just check your email to
+  see what happens on the remote test machine.
   
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
@@ -492,11 +511,13 @@ Common Use Cases (examples):
   NOTE: If you alter the commits on the remote machine (such as squashing
   commits), you will have trouble merging back on our local machine.
   Therefore, if you have to to fix problems, make new commits and don't alter
-  the ones you pulled from your local machine.
+  the ones you pulled from your local machine (but rebasing them should be
+  okay as long as the local commits on mymachine are not pushed to other
+  repos).
 
   NOTE: Git will resolve the duplicated commits when you pull the commits
   pushed from the remote machine.  Git knows that the commits are the same and
-  will do the right thing.
+  will do the right thing when rebasing (or just merging).
   
 (*) Check push readiness status:
 
@@ -514,24 +535,25 @@ Common Use Cases (examples):
 
 Hopefully the above documentation, the example use cases, the documentation of
 the command-line arguments below, and some experimentation will be enough to
-get you going using this script for all of pre-checkin testing and pushes.  If
-that is not sufficient, send email to trilinos-framework@software.sandia.gov
-to ask for help.
+get you going using this script for all of your pre-push testing and pushes.
+If that is not sufficient, send email to your development support team to ask
+for help.
 
 
 Handling of PT, ST, and EX Code in built-in and extra builds:
 -------------------------------------------------------------
 
-This script will only process PT (Primary Tested) packages in the default
-MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid problems of
-side-effects of turning on ST packages that would impact PT packages (e.g. ST
-Phalanx getting enabled that enables ST Boost which turns on support for Boost
-in PT Teuchos producing different code which might work but the pure PT build
-without Boost of Teuchos may actually be broken and not know it).  Therefore,
-any non-PT packages that are enabled (either implicity through changed files
-or explicitly in --enable-packages) will be turned off in the MP_DEBUG and
-SERIAL_RELEASE builds.  If none of the enabled packages are PT, then they will
-all be disabled and the MPI_DEBUG and SERIAL_RELEASE builds will be skipped.
+This script will only process PT (Primary Tested) packages in the
+--default-builds (e.g. MPI_DEBUG and SERIAL_RELEASE) builds.  This is to avoid
+problems of side-effects of turning on ST packages that would impact PT
+packages (e.g. an ST package getting enabled that enables an ST TPL which
+turns on support for that TPL in a PT package producing different code which
+might work but the pure PT build without the extra TPL may actually be broken
+and not know it).  Therefore, any non-PT packages that are enabled (either
+implicitly through changed files or explicitly by listing in --enable-packages)
+will be turned off in the --default-builds builds.  If none of the enabled
+packages are PT, then they will all be disabled and the --default-builds
+builds will be skipped.
 
 In order to better support the development of ST and EX packages, this script
 allows you to define some extra builds that will be invoked and used to
@@ -544,7 +566,7 @@ the goal is to test these ST builds it is desirable to also run these builds
 because they also my impact downstream ST packages.
 
 Finally, the option --extra-builds will test all enabled packages, including
-EX packages, reguardless of their categorization.  Therefore, when using
+EX packages, regardless of their test group.  Therefore, when using
 --extra-builds, be careful that you watch what packages are enabled.  If you
 change an EX package, it will be enabled in --extra-builds builds.
 
@@ -556,9 +578,13 @@ the following input arguments specifying extra builds
 with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
 ST, and Meros is EX.
 
-Here is what packages would be enabled in each of the builds
-MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_ST, and INTEL_DEBUG and which
-builds would be skipped:
+Here is what packages would be enabled in each of the builds:
+
+  --default-builds=MPI_DEBUG,SERIAL_RELEASE \
+  --st-extra-builds=MPI_DEBUG_ST \
+  --extra-builds=INTEL_DEBUG
+
+and which packages would be excluded:
 
 A) --enable-packages=Teuchos:
    MPI_DEBUG:       [Teuchos]
@@ -590,9 +616,9 @@ E) --enable-packages=Teuchos,Phalanx,Meros:
    MPI_DEBUG_ST:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
 
-Tthe --extra-builds=INTEL_DEBUG build is always performed with all of the
-enabled packages.  This logic given above in order to understand the output
-given in the script.
+The --extra-builds=INTEL_DEBUG build is always performed with all of the
+enabled packages.  This logic given above must be understood in order to
+understand the output given in the script.
 
 
 Conventions for Command-Line Arguments:
@@ -608,10 +634,10 @@ complement.  If the action command appears, then the action will be performed.
 b) Aggregate action commands such as --do-all and --local-do-all turn on sets
 of other action commands and are shown with [AGGR ACTION] in their
 documentation.  The sub-actions that these aggregate action commands turn on
-and cannot be disabled with other arguments.
+cannot be disabled with other arguments.
 
-c) Other arguments are those that are not [ACTION] or [AGGR ACTION] arguments
-and tend to either pass in data and turn control flags on or off.
+c) Other arguments are those that are not marked with [ACTION] or [AGGR
+ACTION] tend to either pass in data and turn control flags on or off.
 
 
 Exit Code:
@@ -624,6 +650,11 @@ mean that it is okay to do a push.  A 0 return value is a necessary but not
 sufficient condition for readiness to push.
 
 """        
+
+# ToDo: Break up the above huge documention block into different "topics" and
+# then display those topics with --help-topic=<topic>.  Also provide a
+# --help-all that will combine all of the --help-topic documentation with the
+# standard documentation to produce where is there now.
 
 def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   
