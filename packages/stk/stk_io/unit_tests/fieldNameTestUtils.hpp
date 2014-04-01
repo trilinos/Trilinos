@@ -50,6 +50,7 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       {
 	std::vector<double> vec = boost::any_cast<std::vector<double> >(parameter.value);
 	std::vector<double> gvec = boost::any_cast<std::vector<double> >(gold_parameter.value);
+	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
 	}
@@ -59,6 +60,7 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       {
 	std::vector<float> vec = boost::any_cast<std::vector<float> >(parameter.value);
 	std::vector<float> gvec = boost::any_cast<std::vector<float> >(gold_parameter.value);
+	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
 	}
@@ -68,6 +70,7 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       {
 	std::vector<int> vec = boost::any_cast<std::vector<int> >(parameter.value);
 	std::vector<int> gvec = boost::any_cast<std::vector<int> >(gold_parameter.value);
+	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
 	}
@@ -77,6 +80,7 @@ inline void validate_parameters_equal_value(const stk::util::Parameter &paramete
       {
 	std::vector<int64_t> vec = boost::any_cast<std::vector<int64_t> >(parameter.value);
 	std::vector<int64_t> gvec = boost::any_cast<std::vector<int64_t> >(gold_parameter.value);
+	ASSERT_EQ(vec.size(), gvec.size());
 	for (size_t j = 0; j < vec.size(); ++j) {
 	  ASSERT_EQ(vec[j], gvec[j]);
 	}
