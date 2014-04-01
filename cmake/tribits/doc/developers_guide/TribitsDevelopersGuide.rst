@@ -4,7 +4,7 @@ TriBITS Developers Guide and Reference
 
 :Author: Roscoe A. Bartlett (bartlettra@ornl.gov)
 
-:Abstract: This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is descrided including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMkae files.  Many other topics of interest to a TriBITS project developer and archetect are discussed as well.
+:Abstract: This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.
 
 .. sectnum::
    :depth: 2
@@ -25,6 +25,8 @@ TriBITS Developers Guide and Reference
 
 
 .. Common references to TribitsBuildQuickRef document
+
+.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
 
 .. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
 
@@ -47,74 +49,86 @@ Test System) to develop software projects.  An initial overview of TriBITS is
 provided in the `TriBITS Overview`_ document which contains the big picture
 and provides a high-level road map to what TriBITS provides.  This particular
 document, however, describes the details on how to use the TriBITS system to
-create a CMake build system for a set of compiled software packages.
+create a CMake build system for a set of compiled software packages.  Also
+described are an extended set of tools and processes to create a complete
+software development, testing, and deployment environment consistent with
+modern agile software development best practices.
 
-TriBITS is a fairly extensive framework that is build on
-CMake/CTest/CPack/CDash which in of itself is a very extensive system of
-software and tools.  The most important thing to remember is that software
-project that use TriBITS are really just CMake projects.  TriBITS makes no
-attent to hide that either from the TriBITS project developers or from the
-users that need to configure and build the software.  Therefore, to make
-effective usage of TriBITS, one must learn the basics of CMake.  In
-particular, CMake is a Turning complete programming lanauge with local and
-global variables (with strange scoping rules), macros, functions, targets,
-commands, and other features.  One needs to understand how to define and use
-variables, macros, functions in CMake.  One needs to know how to debug
-CMakeLists.txt files and CMake code in general (i.e. using ``MESSAGE()`` print
-statements).  One needs to understand how CMake defines and uses targets for
-various qualities like libraries, executables, etc.  Without this basic
-understanding of CMake, one will have trouble resolving problems when they
-might occur.
+TriBITS is a fairly extensive framework that is built on top of the
+open-source CMake/CTest/CPack/CDash system (which in itself is a very
+extensive system of software and tools).  The most important thing to remember
+is that a software project that use TriBITS are really just a CMake project.
+TriBITS makes no attempt to hide that fact either from the TriBITS project
+developers or from the users that need to configure and build the software.
+Therefore, to make effective usage of TriBITS, one must learn the basics of
+CMake (both as a developer and as a user).  In particular, CMake is a
+Turning-complete programming language with local and global variables (with
+strange scoping rules), macros, functions, targets, commands, and other
+features.  One needs to understand how to define and use variables, macros,
+and functions in CMake.  One needs to know how to debug CMakeLists.txt files
+and CMake code in general (i.e. using ``MESSAGE()`` print statements).  One
+needs to understand how CMake defines and uses targets for various qualities
+like libraries, executables, etc.  Without this basic understanding of CMake,
+one will have trouble resolving problems when they might occur.
 
 The remainder of this documented is structured as follows.  First, there is
 some additional `Background`_ material provided.  Then, a detailed
-specification of `TriBITS Project Structure`_ is given.  This is followed up
-by short descriptions of `Example TriBITS Projects`_ that are provided with
-the TriBITS source tree that are used throughout this document.  The topic of
-`Package Dependencies and Enable/Disable Logic`_ is then discussed. An
-overview of the foundations for `TriBITS Automated Testing`_ is then given.
-The topic of TriBITS `Multi-Repository Support`_ is examined next.
-`Development Workflows`_ using TriBITS is then explored.  This is followed by
-a set of detailed `Howtos`_.  Later some `Additional Topics`_ are presented
-that don't fit well into other sections.  Then the main bulk of the detailed
-reference material for TriBITS is given in the section `TriBITS Detailed
-Reference Documentation`_.  Finally, several bits of information is provided
-in the `Appendix`_.
+specification of `TriBITS Project Structure`_ is given which lists and defines
+all of the files that a TriBITS project contains and how they are processed.
+This is followed up by short descriptions of `Example TriBITS Projects`_ that
+are provided with the TriBITS source tree that are used throughout this
+document.  The topic of `Package Dependencies and Enable/Disable Logic`_ is
+then discussed which is the backbone of the TriBITS system.  An overview of
+the foundations for `TriBITS Automated Testing`_ is then given.  The topic of
+TriBITS `Multi-Repository Support`_ is examined next.  `Development
+Workflows`_ using TriBITS is then explored.  This is followed by a set of
+detailed `Howtos`_.  Later some `Additional Topics`_ are presented that don't
+fit well into other sections.  Then the main bulk of the detailed reference
+material for TriBITS is given in the section `TriBITS Detailed Reference
+Documentation`_.  Finally, several bits of information are provided in the
+`Appendix`_.
 
 Background
 ==========
 
 Before diving into the details about TriBITS in the following sections, first
-some background is in order.  First, a discussion of `TriBITS Developer and
-User Roles`_ for TriBITS is provided to help the reader identify their own
-roles and to help guide the reader to the appropriate documentation.  Then,
-section `CMake Language Overview and Gotchas`_ tries to orient readers with
-little to no CMake knowledge or experience on where to start and provide some
-warnings about non-obvious CMake behavior that often trip up new users of
-TriBITS.
+some more background is in order.  First, a discussion of `TriBITS Developer
+and User Roles`_ is provided to help the reader identify their own role(s) and
+to help guide the reader to the appropriate documentation (which may or may
+not primarily be in this document).  Then, section `CMake Language Overview
+and Gotchas`_ tries to orient readers with little to no CMake knowledge or
+experience on where to start and provides some warnings about non-obvious
+CMake behavior that often trips up new users of TriBITS.
 
 
 TriBITS Developer and User Roles
 --------------------------------
 
-There are approximately five different types roles with respect to TriBITS.
-These different roles require different levels of expertise and knowlege of
-CMake and knowledge of the TriBITS system.  The primary roles are 1) *TriBITS
-Project User*, 2) *TriBITS Project Developer*, 3) *TriBITS Project Architect*,
-4) *TriBITS System Developer*, and 5) *TriBITS System Architect*.  Each of
-these roles builds on the necessary knolwege of the lower-level roles.
+There are approximately five different types roles related to TriBITS.  These
+different roles require different levels of expertise and knowledge of CMake
+and knowledge of the TriBITS system.  The primary roles are 1) `TriBITS
+Project User`_, 2) `TriBITS Project Developer`_, 3) `TriBITS Project
+Architect`_, 4) `TriBITS System Developer`_, and 5) `TriBITS System
+Architect`_.  Each of these roles builds on the necessary knowledge of the
+lower-level roles.
  
+.. _TriBITS Project User:
+
 The first role is that of a **TriBITS Project User** who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
 A person acting in this role needs to know little about CMake other than
 basics about how to run the ``cmake`` and ``ctest`` exectuables, how to set
-CMake cache variables, and the basics of building software and running tests
-with ``ctest``.  The proper reference for a TriBITS Project User is the
-`Project-Specific Build Quick Reference`_.  Also, the `TriBITS Overview`_
-document may be of some help also.  A TriBITS project user does not need to
-know anything about the CMake langauge itself or any of the TriBITS macros or
-functions described in `TriBITS Macros and Functions`_ or really anything else
-described in this current document.
+CMake cache variables, and the basics of building software by typing ``make``
+and running tests with ``ctest``.  The proper reference for a TriBITS Project
+User is the `Project-Specific Build Quick Reference`_.  The `TriBITS
+Overview`_ document may also be of some help.  A TriBITS project user does not
+need to know anything about the CMake language itself or any of the TriBITS
+macros or functions described in `TriBITS Macros and Functions`_ or really
+anything else described in this current document except for `Package
+Dependencies and Enable/Disable Logic`_.
+
+.. _TriBITS Project Developer:
+.. _TriBITS Project Developers:
 
 A **TriBITS Project Developer** is someone who contributes to a software
 project that uses TriBITS.  They will add source files, libraries and
@@ -122,55 +136,67 @@ exectuables, test executables and define tests run with ``ctest``.  They have
 to configure and build the project code in order to be able to develop and run
 tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
-typically does not need to know a lot about CMake and really only need to know
-a subset of the `TriBITS Macros and Functions`_ defined in this document in
-addition to the genertic `TriBITS Build Quick Reference
+typically does not need to know a lot about CMake and really only needs to
+know a subset of the `TriBITS Macros and Functions`_ defined in this document
+in addition to the genetic `TriBITS Build Quick Reference
 <../build_quick_ref/TribitsBuildQuickRef.html>`_ document.  A slightly more
-sophsiticated TriBITS Project Developer will also add new packages, add new
+sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
 to know and more.  Only a smaller part of this document needs to be understood
 and accessed by people assuming this role.
 
+.. _TriBITS Project Architect:
+.. _TriBITS Project Architects:
+
 The next level of roles is a **TriBITS Project Architect**.  This is someone
 (perhaps only one person on a project development team) that knows the usage
 and functioning of TriBITS in great detail.  They understand how to set up a
-TriBITS project from scrach, how to set up automated testing using the TriBITS
+TriBITS project from scratch, how to set up automated testing using the TriBITS
 system, and know how to use TriBITS to implement the overall software
 development process.  A person in this role is also likely to be the one who
-makes the initial technical decision for their project to adopt TriBITS as is
-native build and test system.  This document (along with detailed
+makes the initial technical decision for their project to adopt TriBITS for
+its native build and test system.  This document (along with detailed
 CMake/CTest/CDash documentation provided by Kitware and the larger community)
 should provide most of what a person in this role needs to know.  A person
-assuming this role is the primary audience for this document.
+assuming this role is the primary audience for a lot of the more advanced
+material in this document.
+
+.. _TriBITS System Developer:
+.. _TriBITS System Developers:
+.. _TriBITS System Architect:
+.. _TriBITS System Architects:
 
 The last two roles **TriBITS System Developer** and **TriBITS System
 Architect** are for those individuals that actually extend and modify the
 TriBITS system itself.  A TriBITS System Developer needs to know how to add
-new functionlity while maintaining backward compatibility, how to add new unit
-tests to the TriBITS system, and perform other related tasks.  Such a
-developer needs to be very knowledgeable of the basic functioning of CMake and
-know how TriBITS is implemented in the CMake language.  A TriBITS System
-Architect is someone who must be consusted on almost all non-trivial changes
-or additions to the TriBITS system.  A TriBITS System Architect in addition
-needs to know the entire TriBITS system, the design philosophy that provides
-the foundation for TriBIITS and be an expert in CMake, CTest, and CDash.
-Everything that needs to be known by a TriBITS System Developer and a TriBITS
-System Architect is not contained in this document.  Instead, the primary
-documentation will be in the TriBITS CMake source code and various unit tests
-itself.  At the time of this writing, there is currently there is only one
-TriBITS System Architect (who also happens to be the primary author of this
-document).
+new TriBITS functionality while maintaining backward compatibility, know how to
+add new unit tests for the TriBITS system (see `The TriBITS Test Package`_),
+and perform other related tasks.  Such a developer needs to be very
+knowledgeable of the basic functioning of CMake and know how TriBITS is
+implemented in the CMake language.  A TriBITS System Architect is someone who
+must be consulted on almost all non-trivial changes or additions to the
+TriBITS system.  A *TriBITS System Architect* in addition needs to know the
+entire TriBITS system, the design philosophy that provides the foundation for
+TriBITS and be an expert in CMake, CTest, and CDash.  Everything that needs to
+be known by a TriBITS System Developer and a TriBITS System Architect is not
+contained in this document.  Instead, the primary documentation will be in the
+TriBITS CMake source code and various unit tests itself defined in `The
+TriBITS Test Package`_.  At the time of this writing, there is currently there
+is only one TriBITS System Architect (who also happens to be the primary
+author of this document).
 
-An explicit goal of this document is to make new TriBITS Project System
-Archetects (i.e. those would make the decision to adopt TriBITS), and new
-TriBITS System Developers to help extend and maintain the system.  As TriBITS
-matures and its development stabilizes, the need for a TriBITS System
-Architect will be diminished.
+An explicit goal of this document is to make new `TriBITS Project Architects`_
+(i.e. those who would make the decision to adopt TriBITS for their projects),
+and new `TriBITS System Developers`_ to help extend and maintain TriBITS.  As
+TriBITS matures and its requirements further stabilize, the need for a
+`TriBITS System Architect`_ will hopefully be diminished.
 
-So depending on the particular role that a reader falls into, this documnet
-may or may not be necessary but instead the TriBITS Overview or the
-<Project>BuildQuickRef documents may be more appropriate.
+So depending on the particular role that a reader falls into, this document
+may or may not be necessary but instead the `TriBITS Overview`_ or the
+`<Project>BuildQuickRef`_ documents may be more appropriate.  Hopefully the
+above roles and discussion will help the reader select the right document to
+start with.
 
 
 CMake Language Overview and Gotchas
@@ -186,10 +212,10 @@ monkey do".  As long as nothing out of the ordinary happens, many people can
 get along just fine in this mode for a time.
 
 However, we have observed that most mistakes that people make when using
-TriBITS, and most of the problems they have when using the sytem, are due to a
-basic lack of knowlege of the CMake language.  One can find basic tutorials
+TriBITS, and most of the problems they have when using the system, are due to a
+basic lack of knowledge of the CMake language.  One can find basic tutorials
 and references on the CMake language in various locations online for free.
-One can also purchase the `offical CMake reference book`_.  Also, documenation
+One can also purchase the `official CMake reference book`_.  Also, documentation
 for any built-in CMake command is available locally by running::
 
    $ cmake --help-command <CMAKE_COMMAND>
@@ -197,32 +223,33 @@ for any built-in CMake command is available locally by running::
 Because tutorials and detailed documentation for the CMake language already
 exists, this document will not even attempt to provide a first reference to
 CMake (which is a large topic in itself).  However, what we try to provide
-below is a short overivew of the more quarky or supprising aspects of the
+below is a short overview of the more quirky or surprising aspects of the
 CMake language that an programmer experienced in another language might get
-tripped up by or surprised by.  Some of the more unique features of the
-language are described in order to help avoid some of these common mistakes
-and provide greater understanding of how TriBITS works.
+tripped up or surprised by.  Some of the more unique features of the language
+are described in order to help avoid some of these common mistakes and provide
+greater understanding of how TriBITS works.
 
-.. _Offical CMake reference book: http://www.cmake.org/cmake/help/book.html
+.. _Official CMake reference book: http://www.cmake.org/cmake/help/book.html
 
 The CMake language that is used to write CMake projects with TriBITS (and that
-core TriBITS itself is implemented in) is a fairly simply programming languge
-with fairly simple rules (for the most part).  However, compared to other
-programming lanuages, there are a few peculiar aspects to the CMake language
-like strange varible scoping rules, arguments to macros and function, that can
-make working with it difficult if you don't understand these.  Also, CMake has
-some interesting gotchas.  In order to effectively use TriBITS (or just raw
-CMake) to construct and maintain a project's CMake files, one must know the
-basic rules of CMake.  
+core TriBITS functionality itself is implemented in, see `TriBITS System
+Project Dependencies`_) is a fairly simple programming language with fairly
+simple rules (for the most part).  However, compared to other programming
+languages, there are a few peculiar aspects to the CMake language like strange
+variable scoping rules, and how arguments are passed to macros and functions,
+that can make working with it difficult if you don't understand these.  Also,
+CMake has some interesting gotchas.  In order to effectively use TriBITS (or
+just raw CMake) to construct and maintain a project's CMake files, one must
+know the basic rules of CMake and be aware of these gotchas.
 
-The first thing to understand about the CMake language is that everthing line
-of CMake code is just a command taking a string (or an array of strings) and
-functions that operate on strings.  An array argument is just a single with
-elements separated by semi-colons ``"<str0>;<str1>;..."``.  CMake is a bit odd
-in how it deals with these arrays (which just represented as a string with
-elements separated with semi-colons ``';'``).  For example, all of the
-following are equivalent and pass in a CMake array with 3 elements [``A``],
-[``B``], and [``C``]::
+The first thing to understand about the CMake language is that nearly every
+line of CMake code is just a command taking a string (or an array of strings)
+and functions that operate on strings.  An array argument is just a single
+string literal with elements separated by semi-colons ``"<str0>;<str1>;..."``.
+CMake is a bit odd in how it deals with these arrays (which are just
+represented as a string with elements separated with semi-colons ``';'``).
+For example, all of the following are equivalent and pass in a CMake array
+with 3 elements [``A``], [``B``], and [``C``]::
 
   SOME_FUNC(A B C)
   SOME_FUNC("A" "B" "C")
@@ -233,30 +260,32 @@ However, the above is *not* the same as::
   SOME_FUNC("A B C")
 
 which just passes in a single element with value [``A B C``].  Raw quotes in
-CMake basically escapes the interpetation of space characters as array element
+CMake basically escape the interpretation of space characters as array element
 boundaries.  Quotes around arguments with no spaces does nothing (as seen
-above).  In order to get a quote char [``"``] into string, you must escape it
-as::
+above, except for the interpretation as variable names in an ``IF()``
+statement).  In order to get a quote char [``"``] into string, you must escape
+it as::
 
   SOME_FUNC(\"A\")
 
 which passes an array with the single argument [``\"A\"``].
 
-Varibles are set using a built-in CMke function that just takes string
-arguments like::
+Variables are set using the built-in CMake ``SET()`` command that just takes
+string arguments like::
 
   SET(SOME_VARIABLE "some_value")
 
-In CMake, the above is idential, in every way, to::
+In CMake, the above is identical, in every way, to::
 
   SET(SOME_VARIABLE some_value)
   SET("SOME_VARIABLE;"some_value")
   SET("SOME_VARIABLE;some_value")
 
 The function ``SET()`` simply interprets the first argument to as the name of
-a varible to set in the local scope.  Many other built-in and user-defined
-CMake functions work the same way.  That is some of the string argumnets are
-interpreted as the names of variables.
+a variable to set in the local scope.  Many other built-in and user-defined
+CMake functions work the same way.  That is some of the string arguments are
+interpreted as the names of variables.  There is no special language feature
+that interprets them as variables (except in an ``IF()`` statement).
 
 However, CMake appears to parse arguments differently for built-in CMake
 control structure functions like ``FOREACH()`` and ``IF()`` and does not just
@@ -270,40 +299,43 @@ prints ```SOME_VAR='a;b;c'`` instead of printing ``SOME_VAR='a'`` followed by
 ``SOME_VAR='b'``, etc., as you would otherwise expect.  Therefore, this simple
 rule for the handling of function arguments as string arrays does not hold for
 CMake logic control commands.  Just follow the CMake documentation for these
-control structures..
+control structures (i.e. see ``cmake --help-command if`` and ``cmake
+--help-command foreach``).
 
-CMake offers a rich assortment of built-in functions for doing all sorts of
-things.  As part of these functions are the built-in ``MACRO()`` and the
-``FUNCTION()`` functions which allow you to create user-defined macros and
-functions (which is what TriBITS is built on).  All of these built-in and
-user-defined macros and functions work exactly the same way; they take in an
-array of string arguments.  Some functions take in positional arguments but
-most actually take a combination of positional and keyword arguments (see
-`PARSE_ARGUMENTS()`_).
+CMake offers a rich assortment of built-in commands for doing all sorts of
+things.  Two of these are the built-in ``MACRO()`` and the ``FUNCTION()``
+commands which allow you to create user-defined macros and functions (which is
+what TriBITS is built on).  All of these built-in and user-defined macros and
+functions work exactly the same way; they take in an array of string
+arguments.  Some functions take in positional arguments but most actually take
+a combination of positional and keyword arguments (see `PARSE_ARGUMENTS()`_).
 
-Varible names are translated into their stored values using
-``${SOME_VARIABLE}``.  The value that is extracted depends on if the varible
+Variable names are translated into their stored values using
+``${SOME_VARIABLE}``.  The value that is extracted depends on if the variable
 is set in the local or global (cache) scope.  The local scopes for CMake start
 in the base project directory in its base ``CMakeLists.txt`` file.  Any
-varibles that are created by macros in that base local scope are seen across
-an entire project but are *not* persistent across ``cmake`` configure
-invocations.
+variables that are created by macros in that base local scope are seen across
+an entire project but are *not* persistent across multiple successive
+``cmake`` configure invocations where the cache file ``CMakeCache.txt`` is not
+deleted in between.
 
 The handling of variables is one area where CMake is radically different from
-most other languages.  First, a varible that is not defined simply returns
-nothing.  What is surprising to most peoople about this is that it does not
-even return an empty string!  For example, the following set statement::
+most other languages.  First, a variable that is not defined simply returns
+nothing.  What is surprising to most people about this is that it does not
+even return an empty string that would register as an array element!  For
+example, the following set statement::
 
    SET(SOME_VAR a ${SOME_UNDEFINED_VAR} c)
 
-produces ``SOME_VAR='a;c'`` and *not* ``'a;;c'``!  The same thing occurs when
-an empty varible is dereferenced such as with::
+(where ``SOME_UNDEFINED_VAR`` is an undefined variable) produces
+``SOME_VAR='a;c'`` and *not* ``'a;;c'``!  The same thing occurs when an empty
+variable is de-references such as with::
 
    SET(EMPTY_VAR "")
    SET(SOME_VAR a ${EMPTY_VAR} c)
 
 which produces ``SOME_VAR='a;c'`` and *not* ``'a;;c'``.  In order to always
-produce an element in the array even if the varible is empty, one must quote
+produce an element in the array even if the variable is empty, one must quote
 the argument as with::
 
    SET(EMPTY_VAR "")
@@ -312,25 +344,25 @@ the argument as with::
 which produces ``SOME_VAR='a;;c'``, or three elements as one might assume.
 
 This is a common error that people make when they call CMake functions
-(built-in or TriBITS-defined) involving varibles that might be undefined or
+(built-in or TriBITS-defined) involving variables that might be undefined or
 empty.  For example, for the macro::
 
    MACRO(SOME_MACRO  A_ARG  B_ARG  C_ARG)
       ...
    ENDMACRO()
 
-if someone trys to call it with::
+if someone tries to call it with (misspelled variable?)::
 
   SOME_MACRO(a ${SOME_OHTER_VAR} c)
 
 and if ``SOME_OHTER_VAR=""`` or if it is undefined, then CMake will error out
 with the error message saying that the macro ``SOME_MACRO()`` takes 3
-arguments but only 2 were provided.  If a varible might be empty but that is
+arguments but only 2 were provided.  If a variable might be empty but that is
 still a valid argument to the command, then it must be quoted as::
 
   SOME_MACRO(a "${SOME_OHTER_VAR}" c)
 
-Related to this problem is that if you mispell the name of a variable in a
+Related to this problem is that if you misspell the name of a variable in a
 CMake ``IF()`` statement like::
 
    IF (SOME_VARBLE)
@@ -346,7 +378,7 @@ be executed!  To avoid this problem, use the utility function
      ...
    ENDIF()
 
-In this case, the mispelled variable would be caught.
+In this case, the misspelled variable would be caught.
 
 While on the subject of ``IF()`` statements, CMake has a strange convention.
 When you say::
@@ -355,59 +387,64 @@ When you say::
     DO_SOMETHING()
   ENDIF()
 
-then ``SOME_VAR` is interpreted as a variable and will be considered true and
+then ``SOME_VAR`` is interpreted as a variable and will be considered true and
 ``DO_SOMETHING()`` will be called if ``${SOME_VAR}`` does *not* evaluate to
 ``0``, ``OFF``, ``NO``, ``FALSE``, ``N``, ``IGNORE``, ``""``, or ends in the
 suffix ``-NOTFOUND``.  How about that for a true/false rule!  To be safe, use
-``ON/OFF`` and ``TRUE/FASLE`` pairs for setting variables.  Look up native
-CMake documentation on ``IF()``.
+``ON/OFF`` and ``TRUE/FALSE`` pairs for setting variables.  Look up native
+CMake documentation on ``IF()`` for all the interesting details and all the
+magical things it can do.
 
 **WARNING:** If you mistype ``"ON"`` as ``"NO"``, it evaluates to
 ``FALSE``/``OFF``!  (That is a fun defect to track down!)
 
-CMake langauge behavior with respect to case sensitivity is also strange:
+CMake language behavior with respect to case sensitivity is also strange:
 
 * Calls of built-in and user-defined macros and functions is *case
   insensitive*!  That is ``set(...)``, ``SET(...)``, ``Set()``, and all other
   combinations of upper and lower case characters for 'S', 'E', 'T' all call
-  the bulit-in `SET()`` function.  The convention in TriBITS is to use all
-  caps for functions and macros (was adopted by following the conventions used
-  in the early versions of TriBITS, see `History of TriBITS`_).  The
-  convention in CMake literature from Kitware seems to use lower-case letters
-  for functions and macros.
+  the built-in ``SET()`` function.  The convention in TriBITS is to use all
+  caps for functions and macros (which was adopted by following the
+  conventions used in the early versions of TriBITS, see the `History of
+  TriBITS`_).  The convention in CMake literature from Kitware seems to use
+  lower-case letters for functions and macros.
 
-* The names of CMake varables (local or cache/global) are *case sensitive*!
-  That is, ``SOME_VAR`` and ``some_var`` are *different* variables.  Built-in
-  CMake varibles tend use all caps with underscores
-  (e.g. ``CMAKE_CURRENT_SOURCE_DIR``) but other built-in CMake varibles tend
-  to use mixed case wtih underscores (e.g. ``CMAKE_Fortran_FLAGS``).  TriBITS
-  tends to use a similar naming convention where most varibles have mostly
-  upper-case letters except for proper nouns like the project, package or TPL
-  name (e.g. ``TribitsProj_TRIBITS_DIR``, ``TriBITS_SOURCE_DIR``,
-  ``Boost_INCLUDE_DIRS``).
+* However, the names of CMake (local or cache/global) variables are *case
+  sensitive*!  That is, ``SOME_VAR`` and ``some_var`` are *different*
+  variables.  Built-in CMake variables tend use all caps with underscores
+  (e.g. ``CMAKE_CURRENT_SOURCE_DIR``) but other built-in CMake variables tend
+  to use mixed case with underscores (e.g. ``CMAKE_Fortran_FLAGS``).  TriBITS
+  tends to use a similar naming convention where variables have mostly
+  upper-case letters except for parts that are proper nouns like the project,
+  package or TPL name (e.g. ``TribitsProj_TRIBITS_DIR``,
+  ``TriBITS_SOURCE_DIR``, ``Boost_INCLUDE_DIRS``).
 
 I don't know of any other programming language that uses different case
-senstivity rules for varibles verses functions.  However, because we must
-parse macro and function arguments when writing user-defined macros and
-functions, it is a good thing that CMake varibles are case sensitive.  Case
-insenstivity would make it much harder and more expensive to parse argument
-lists that take keyword-based arguments (see `PARSE_ARGUMENTS()`_).
+sensitivity rules for variables and functions.  However, because we must parse
+macro and function arguments when writing user-defined macros and functions,
+it is a good thing that CMake variables are case sensitive.  Case insensitivity
+would make it much harder and more expensive to parse argument lists that take
+keyword-based arguments (see `PARSE_ARGUMENTS()`_).
 
 Other mistakes that people make result from not understanding how CMake scopes
-variables and other entities.  CMake defaults a global scope (i.e. "cache"
-varibles) and several nested local scopes that are created by
+variables and other entities.  CMake defines a global scope (i.e. "cache"
+variables) and several nested local scopes that are created by
 ``ADD_SUBDIRECTORY()`` and entering FUNCTIONS.  See `DUAL_SCOPE_SET()`_ for a
-short discussion of these scoping rules.  It is not just varibles that can
-have local and global scoping rules.  Other entities, like defines set with
-the built-in command ``ADD_DEFINITIONS()`` only apply to the local scope and
-child scopes.  That means that if you call ``ADD_DEFINITIONS()`` to set a
+short discussion of these scoping rules.  And it is not just variables that
+can have local and global scoping rules.  Other entities, like defines set
+with the built-in command ``ADD_DEFINITIONS()`` only apply to the local scope
+and child scopes.  That means that if you call ``ADD_DEFINITIONS()`` to set a
 define that affects the meaning of a header-file in C or C++, for example,
 that definition will *not* carry over to a peer subdirectory and those
-definitions will not be set (see warning in `TRIBITS_ADD_LIBRARY()`_).
+definitions will not be set (see warning in `Miscellaneous Notes
+(TRIBITS_ADD_LIBRARY())`_).
 
 Now that some CMake basics and common gotchas have been reviewed, we now get
 into the meat of TriBITS starting with the overall structure of a TriBITS
-project.
+project in the next section.
+
+.. ToDo: Edited and spell-checked up to here on 4/1/2014!
+
 
 TriBITS Project Structure
 =========================
@@ -415,14 +452,16 @@ TriBITS Project Structure
 TriBITS is a framework, implemented in CMake to create CMake projects.  As a
 framework, it defines the the overall structure of a CMake build system for a
 project and processes project, repository, and package specific files in a
-specified order.  All of this processing takes place in the
-`TRIBITS_PROJECT()`_ macro.
+specified order.  Almost all of this processing takes place in the
+`TRIBITS_PROJECT()`_ macro (or macros and functions it calls).
+
+.. ToDo: Provide outline of the subsections to come.
 
 TriBITS Structural Units
 ------------------------
 
 A CMake project that uses TriBITS as its build and test system is composed of
-a single *TriBITS Project*, one or more `TriBITS Repositories`_ and one or
+a single `TriBITS Project`_, one or more `TriBITS Repositories`_ and one or
 more `TriBITS Packages`_.  In addition, a TriBITS Package can be broken up
 into `TriBITS Subpackages`_.  Together, the collection of TriBITS Packages and
 TriBITS Subpackages are called *TriBITS Software Engineering Packages*, or
@@ -491,7 +530,7 @@ are:
   directly configured with ``cmake`` and then built, tested, and installed.
 
 In this document, dependenices are described as either being *upstream* or
-*downstream* as defined as:
+*downstream/forward* as defined as:
 
 .. _upstream:
 
@@ -509,7 +548,7 @@ In this document, dependenices are described as either being *upstream* or
 .. _downstream dependencies:
 
 * If unit "B" requires (or can use, or comes before) unit "A", then "B" is an
-  **downstream dependency** of "A".
+  **downstream or forward dependency** of "A".
 
 The following subsections define the major structural units of a TriBITS
 project in more detail.  Each structural unit is described along with the
@@ -696,7 +735,7 @@ example of this file is `TribitsExampleProject`_/``CTestConfig.cmake``:
 .. include:: ../examples/TribitsExampleProject/CTestConfig.cmake
    :literal:
 
-All of the varibles set in this file are directly understood by raw ``ctest``
+All of the variables set in this file are directly understood by raw ``ctest``
 and will not be explained here further (see documentation for the standard
 CMake module ``CTest``).  The usage of the function
 `SET_DEFAULT_AND_FROM_ENV()`_ allows the varaibles to be overridded both as
@@ -3437,11 +3476,16 @@ and CDash in support of testing and where gaps exist, TriBITS provides tools
 and customizations.
 
 The following subsections describe several aspects to the TriBITS support for
-testing.  ToDo: outline the following subsections.
+testing.
+
+.. ToDo: outline the following subsections.
 
 
 Testing categories for Repositories, Packages, and Tests
 --------------------------------------------------------
+
+
+
 
 ToDo: Define repo category Continuous, Nightly, and Experimental which also
 map to CDash tracks.
@@ -3457,28 +3501,93 @@ testing should be the default.
 
 ToDo: Fill in!
 
+.. _checkin-test.py:
 
 Pre-push Testing using checkin-test.py
 --------------------------------------
 
-ToDo: Describe the checkin-test.py script
+While CMake provides the integrated tool CTest (executable ``ctest``) a lot
+goes into correctly and efficiently testing a large project and pushing
+changes to the main version control repository(s).  Things get especially
+complicated and tricky when multiple version-control (VC) repositories are
+involved.  The TriBITS system provides the tool ``checkin-test.py`` for
+automating the process of:
 
-ToDo: Describe the system for mapping changed files to changed packages.
+1) Determining if the local VC repos are ready to pull, test, and push
 
+2) Pulling and integrating the most current changes from the remote VC repos
+
+3) Figuring out what TriBITS packages need to be enabled and testing (by
+   examing VC diffs)
+
+4) Configuring only the necessary TriBITS packages and tests (and their
+   downstream dependencies) and building, running tests, and reporting results
+   (via email).
+
+5) Only if all specified builds and tests pass, then pushing local commits to
+   the remove VC repos.
+
+The ``checkin-test.py`` script is a sophisticated piece of software that is
+well tested and very robust.  The level of testing of this tool is greater
+than any of the software that it is testing.  This is needed so as to provide
+confidence in the developers that the tool will only push if everything checks
+out as it should.  There are a *lot* of details and boundray cases that one
+has to consider and a number of use cases that need to be supported.  For more
+detailed documentation, see `checkin-test.py --help`_.
+
+.. ToDo: Describe the standard workflow for using the checkin-test.py script.
+
+.. ToDo: Describe the system for mapping changed files to changed packages.
+.. Discuss how important the directory structure is.
+
+.. ToDo: Describe the local test, remote push process by pulling from the
+.. Trilinos developers webpage.
+
+.. ToDo: Describe the role that checkin-test.py plays in multi-repo ACI
+
+
+.. _TribitsCTestDriverCore.cmake:
 
 TriBITS Package-by-Package CTest/Dash Driver
 --------------------------------------------
 
-ToDo: Fill in!
+The TriBITS system uses a sophisticated and hightly customized CTest driver
+script to test TriBITS projects and submit results to a CDash server.  The
+primary code for driving this is contained in the file
+``TribitsCTestDriverCore.cmake``.  This script loops through all of the
+specified TriBITS packages for a given TriBITS project and does a configure,
+built, and test and submitts results to the specified CDash server
+incrementally.  If the configure or library build of any upstream TriBITS
+package fails, that TriBITS package is disabled in all downstream TriBITS
+package builds so as to not propoate sensless failures.  Each TriBITS
+top-level package is assigned its own CDash regression email (see `CDash
+regression email addresses`_) and each package configure/build/test is given
 
-ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
-interact.
+.. ToDo: Fill in!
+
+.. ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
+.. interact.
 
 
 TriBITS CDash Customizations
 ----------------------------
 
-ToDo: Fill in!
+CDash was not really designed to accommodate multi-package, multi-repository
+VC projects like are supported by TriBITS.  However, CDash provides some
+ability to customize a CDash project and submittals to address missing
+features.  Each TriBITS package is given a CTest/CDash "Label" with the name
+of the TriBITS package.  CDash will then aggregate the different package
+configure/build/test roles into aggregated "builds".  The commits pulled for
+each of the extra VC repo listed in the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, are shown in an
+uploaded CDash "Notes" file for each TriBITS package confgiure/build/test
+submit.  This uploaded "Notes" file also contains a cleaned up version of the
+CMakeCache.txt file.
+
+CDash offers numerous features such as the ability to construct a number of
+different types of queries and is extremely helpful in using past test data.
+
+.. ToDo: Describe more on what CDash provides and how TriBITS uses it.
 
 
 CDash regression email addresses
@@ -3557,7 +3666,7 @@ variables are set).
 
 As a general rule, repository-level settings override project-level settings
 and package-level settings override both.  Also, a project can redefine a
-reposiotry's regression email list settings by resetting the varibles in the
+reposiotry's regression email list settings by resetting the variables in the
 project's `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ file.
 
 All of the email dependency managment logic must be accessable by just running
@@ -3632,7 +3741,8 @@ ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.
 Multi-Repository Almost Continuous Integration
 ----------------------------------------------
 
-ToDo: Fill in!
+ToDo: Import the contents of HOWTO.ALMOST_CONTINUOUS_INTEGRATION and format
+for RST.
 
 
 Development Workflows
@@ -3659,13 +3769,39 @@ ToDo: Discuss 'egdist' and the rep clone script.
 Howtos
 ======
 
-ToDo: Fill in!
-
+While the rest of this document provides all of the information one would need
+to construct and maintain a TriBITS project, this section provides short,
+succinct lists of the steps to accomplish a few common tasks.
 
 How to Add a new TriBITS Package
 --------------------------------
 
-ToDo: Fill in!
+To add a new TriBITS package, it is recommended to take the template from one
+of the `TribitsExampleProject`_ packages that most closely fits the needs of
+the new package and modify it for the new package.  The files, for the
+``SimpleCxx`` package can be copied on at a time and modified.
+
+To add a new TriBITS package:
+
+1) Chose a name ``<packageName>`` for the new package (must be globally
+   unique!) and which TriBITS repository to put the package into.
+
+2) Create the package directory ``<repoDir>/<packageDir>`` in the new project
+and put in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
+`<packageDir>/CMakeLists.txt`_.  Set the desired upstream TPL and SE package
+dependenices in the new ``Dependencies.cmake`` file but comment out everything
+in the ``CMakeLists.txt`` file except for the `TRIBITS_PACKAGE()`_ and
+`TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
+
+3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
+file after all of upstream packages.
+
+3) Configure the TriBITS project enabling the new package ``<packageName>``.
+
+4) Incrementally fill in the packages ``CMakeLists.txt`` files defining
+libraries, executables, tests and examples.
+
+.. ToDo: Expand on the above bullets a lot!
 
 
 How to Add a new TriBITS Package with Subpackages
@@ -3676,6 +3812,12 @@ ToDo: Fill in!
 
 How to Add a new TriBITS TPL
 ----------------------------
+
+ToDo: Fill in!
+
+
+How to Add a new TriBITS Repository
+-----------------------------------
 
 ToDo: Fill in!
 
@@ -3846,9 +3988,14 @@ CMake has very nice support for defining configure-time checks of the system
 to help inconfiguring the project.  One can check for whether a header file
 exists or not, if the compiler supports a given data-type or language feature
 or perform almost any other type of check that one can imagine that can be
-done using the configured compilers, libraries, system tools, etc.
+done using the configured compilers, libraries, system tools, etc.  An example
+was given in `TribitsExampleProject`_.  Just following that example, looking
+at some of the built-in CMake configure-time test modules, and using provided
+online CMake documentation, one can see how to create a configure-time test
+for almost anyting.
 
-ToDo: Fill in!
+.. ToDo: Provide more detail how to integrate a configure-time test into a
+.. TriBITS project and TriBITS package.
 
 
 Creating Source Distributions
@@ -3860,7 +4007,13 @@ ToDo: Fill in!
 Regulated Backward Compatibility and Deprecated Code
 ----------------------------------------------------
 
-ToDo: Fill in!
+The motivation and ideas behind regulated backward compatibility and
+deprecated code are described in the `TriBITS Lifecycle Model`_ document.
+Here, the details of the implementation in the TriBITS system are given and
+how transitions between non-backward compatible versions is accomplished.
+
+.. ToDo: Put in the material from the document README.DEPRECATED_CODE and
+.. format for RST.
 
 
 Wrapping Exterally Configured/Built Software
@@ -3869,10 +4022,10 @@ Wrapping Exterally Configured/Built Software
 ToDo: Fill in!
 
 
-TriBITS Dashboard Driver
-------------------------
+.. TriBITS Dashboard Driver
+.. ------------------------
 
-ToDo: Fill in!
+.. ToDo: Fill in!
 
 
 References
@@ -3904,7 +4057,7 @@ CMake code file ``TribitsGlobalMacros.cmake`` which gets called inside of the
 source the options that a TriBITS project takes and what the default values
 are but we strive to document them here as well.  Many of these global options
 (i.e. cache variables) such as ``${PROJECT_NAME}_<SOME_OPTION>`` allow the
-project to define a default by setting a local varible
+project to define a default by setting a local variable
 ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` as::
 
   SET(${PROJECT_NAME}_<SOME_OPTION>_DEFAULT <someDefault>)
@@ -3928,7 +4081,7 @@ where ``<SOME_OPTION>`` is the option name like ``TEST_CATEGORIES`` and
 a default.  In this way, if the project sets the variable
 ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` before this code exeutates, then
 ``${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}`` will be used as the default for
-the cache varible ``${PROJECT_NAME}_<SOME_OPTION>`` which, of course, can be
+the cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` which, of course, can be
 overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the

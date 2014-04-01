@@ -317,7 +317,7 @@ ul.auto-toc {
 </table>
 <div class="abstract topic">
 <p class="topic-title first">Abstract</p>
-<p>This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is descrided including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMkae files.  Many other topics of interest to a TriBITS project developer and archetect are discussed as well.</p>
+<p>This document describes the usage of TriBITS to build, test, and deploy complex software.  The primary audience are those individuals who develop on a software project which uses TriBITS.  The overall structure of a TriBITS project is described including all of the various project- and package-specific files that TriBITS requires or can use and how and what order these files are processed.  It also contains detailed reference information on all of the various TriBITS macros and functions directly used in TriBITS project CMake files.  Many other topics of interest to a TriBITS project developer and architect are discussed as well.</p>
 </div>
 <!-- Above, the depth of the TOC is set to just 2 because I don't want the -->
 <!-- TriBITS function/macro names to have section numbers appearing before them. -->
@@ -412,18 +412,18 @@ ul.auto-toc {
 <li><a class="reference internal" href="#how-to-add-a-new-tribits-package" id="id59">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></li>
 <li><a class="reference internal" href="#how-to-add-a-new-tribits-package-with-subpackages" id="id60">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></li>
 <li><a class="reference internal" href="#how-to-add-a-new-tribits-tpl" id="id61">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></li>
+<li><a class="reference internal" href="#how-to-add-a-new-tribits-repository" id="id62">9.4&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Repository</a></li>
 </ul>
 </li>
-<li><a class="reference internal" href="#additional-topics" id="id62">10&nbsp;&nbsp;&nbsp;Additional Topics</a><ul class="auto-toc">
-<li><a class="reference internal" href="#tribits-system-project-dependencies" id="id63">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></li>
-<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id64">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
-<li><a class="reference internal" href="#project-and-repositiory-versioning-and-release-mode" id="id65">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></li>
-<li><a class="reference internal" href="#tribits-environment-probing-and-setup" id="id66">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></li>
-<li><a class="reference internal" href="#configure-time-system-tests" id="id67">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></li>
-<li><a class="reference internal" href="#creating-source-distributions" id="id68">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
-<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id69">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
-<li><a class="reference internal" href="#wrapping-exterally-configured-built-software" id="id70">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></li>
-<li><a class="reference internal" href="#tribits-dashboard-driver" id="id71">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></li>
+<li><a class="reference internal" href="#additional-topics" id="id63">10&nbsp;&nbsp;&nbsp;Additional Topics</a><ul class="auto-toc">
+<li><a class="reference internal" href="#tribits-system-project-dependencies" id="id64">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></li>
+<li><a class="reference internal" href="#project-specific-build-quick-reference" id="id65">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></li>
+<li><a class="reference internal" href="#project-and-repositiory-versioning-and-release-mode" id="id66">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></li>
+<li><a class="reference internal" href="#tribits-environment-probing-and-setup" id="id67">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></li>
+<li><a class="reference internal" href="#configure-time-system-tests" id="id68">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></li>
+<li><a class="reference internal" href="#creating-source-distributions" id="id69">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></li>
+<li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id70">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
+<li><a class="reference internal" href="#wrapping-exterally-configured-built-software" id="id71">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></li>
 </ul>
 </li>
 <li><a class="reference internal" href="#references" id="id72">11&nbsp;&nbsp;&nbsp;References</a></li>
@@ -527,117 +527,128 @@ Test System) to develop software projects.  An initial overview of TriBITS is
 provided in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document which contains the big picture
 and provides a high-level road map to what TriBITS provides.  This particular
 document, however, describes the details on how to use the TriBITS system to
-create a CMake build system for a set of compiled software packages.</p>
-<p>TriBITS is a fairly extensive framework that is build on
-CMake/CTest/CPack/CDash which in of itself is a very extensive system of
-software and tools.  The most important thing to remember is that software
-project that use TriBITS are really just CMake projects.  TriBITS makes no
-attent to hide that either from the TriBITS project developers or from the
-users that need to configure and build the software.  Therefore, to make
-effective usage of TriBITS, one must learn the basics of CMake.  In
-particular, CMake is a Turning complete programming lanauge with local and
-global variables (with strange scoping rules), macros, functions, targets,
-commands, and other features.  One needs to understand how to define and use
-variables, macros, functions in CMake.  One needs to know how to debug
-CMakeLists.txt files and CMake code in general (i.e. using <tt class="docutils literal">MESSAGE()</tt> print
-statements).  One needs to understand how CMake defines and uses targets for
-various qualities like libraries, executables, etc.  Without this basic
-understanding of CMake, one will have trouble resolving problems when they
-might occur.</p>
+create a CMake build system for a set of compiled software packages.  Also
+described are an extended set of tools and processes to create a complete
+software development, testing, and deployment environment consistent with
+modern agile software development best practices.</p>
+<p>TriBITS is a fairly extensive framework that is built on top of the
+open-source CMake/CTest/CPack/CDash system (which in itself is a very
+extensive system of software and tools).  The most important thing to remember
+is that a software project that use TriBITS are really just a CMake project.
+TriBITS makes no attempt to hide that fact either from the TriBITS project
+developers or from the users that need to configure and build the software.
+Therefore, to make effective usage of TriBITS, one must learn the basics of
+CMake (both as a developer and as a user).  In particular, CMake is a
+Turning-complete programming language with local and global variables (with
+strange scoping rules), macros, functions, targets, commands, and other
+features.  One needs to understand how to define and use variables, macros,
+and functions in CMake.  One needs to know how to debug CMakeLists.txt files
+and CMake code in general (i.e. using <tt class="docutils literal">MESSAGE()</tt> print statements).  One
+needs to understand how CMake defines and uses targets for various qualities
+like libraries, executables, etc.  Without this basic understanding of CMake,
+one will have trouble resolving problems when they might occur.</p>
 <p>The remainder of this documented is structured as follows.  First, there is
 some additional <a class="reference internal" href="#background">Background</a> material provided.  Then, a detailed
-specification of <a class="reference internal" href="#tribits-project-structure">TriBITS Project Structure</a> is given.  This is followed up
-by short descriptions of <a class="reference internal" href="#example-tribits-projects">Example TriBITS Projects</a> that are provided with
-the TriBITS source tree that are used throughout this document.  The topic of
-<a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a> is then discussed. An
-overview of the foundations for <a class="reference internal" href="#tribits-automated-testing">TriBITS Automated Testing</a> is then given.
-The topic of TriBITS <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> is examined next.
-<a class="reference internal" href="#development-workflows">Development Workflows</a> using TriBITS is then explored.  This is followed by
-a set of detailed <a class="reference internal" href="#howtos">Howtos</a>.  Later some <a class="reference internal" href="#additional-topics">Additional Topics</a> are presented
-that don't fit well into other sections.  Then the main bulk of the detailed
-reference material for TriBITS is given in the section <a class="reference internal" href="#tribits-detailed-reference-documentation">TriBITS Detailed
-Reference Documentation</a>.  Finally, several bits of information is provided
-in the <a class="reference internal" href="#appendix">Appendix</a>.</p>
+specification of <a class="reference internal" href="#tribits-project-structure">TriBITS Project Structure</a> is given which lists and defines
+all of the files that a TriBITS project contains and how they are processed.
+This is followed up by short descriptions of <a class="reference internal" href="#example-tribits-projects">Example TriBITS Projects</a> that
+are provided with the TriBITS source tree that are used throughout this
+document.  The topic of <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a> is
+then discussed which is the backbone of the TriBITS system.  An overview of
+the foundations for <a class="reference internal" href="#tribits-automated-testing">TriBITS Automated Testing</a> is then given.  The topic of
+TriBITS <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a> is examined next.  <a class="reference internal" href="#development-workflows">Development
+Workflows</a> using TriBITS is then explored.  This is followed by a set of
+detailed <a class="reference internal" href="#howtos">Howtos</a>.  Later some <a class="reference internal" href="#additional-topics">Additional Topics</a> are presented that don't
+fit well into other sections.  Then the main bulk of the detailed reference
+material for TriBITS is given in the section <a class="reference internal" href="#tribits-detailed-reference-documentation">TriBITS Detailed Reference
+Documentation</a>.  Finally, several bits of information are provided in the
+<a class="reference internal" href="#appendix">Appendix</a>.</p>
 </div>
 <div class="section" id="background">
 <h1><a class="toc-backref" href="#id11">2&nbsp;&nbsp;&nbsp;Background</a></h1>
 <p>Before diving into the details about TriBITS in the following sections, first
-some background is in order.  First, a discussion of <a class="reference internal" href="#tribits-developer-and-user-roles">TriBITS Developer and
-User Roles</a> for TriBITS is provided to help the reader identify their own
-roles and to help guide the reader to the appropriate documentation.  Then,
-section <a class="reference internal" href="#cmake-language-overview-and-gotchas">CMake Language Overview and Gotchas</a> tries to orient readers with
-little to no CMake knowledge or experience on where to start and provide some
-warnings about non-obvious CMake behavior that often trip up new users of
-TriBITS.</p>
+some more background is in order.  First, a discussion of <a class="reference internal" href="#tribits-developer-and-user-roles">TriBITS Developer
+and User Roles</a> is provided to help the reader identify their own role(s) and
+to help guide the reader to the appropriate documentation (which may or may
+not primarily be in this document).  Then, section <a class="reference internal" href="#cmake-language-overview-and-gotchas">CMake Language Overview
+and Gotchas</a> tries to orient readers with little to no CMake knowledge or
+experience on where to start and provides some warnings about non-obvious
+CMake behavior that often trips up new users of TriBITS.</p>
 <div class="section" id="tribits-developer-and-user-roles">
 <h2><a class="toc-backref" href="#id12">2.1&nbsp;&nbsp;&nbsp;TriBITS Developer and User Roles</a></h2>
-<p>There are approximately five different types roles with respect to TriBITS.
-These different roles require different levels of expertise and knowlege of
-CMake and knowledge of the TriBITS system.  The primary roles are 1) <em>TriBITS
-Project User</em>, 2) <em>TriBITS Project Developer</em>, 3) <em>TriBITS Project Architect</em>,
-4) <em>TriBITS System Developer</em>, and 5) <em>TriBITS System Architect</em>.  Each of
-these roles builds on the necessary knolwege of the lower-level roles.</p>
-<p>The first role is that of a <strong>TriBITS Project User</strong> who only needs to be able
+<p>There are approximately five different types roles related to TriBITS.  These
+different roles require different levels of expertise and knowledge of CMake
+and knowledge of the TriBITS system.  The primary roles are 1) <a class="reference internal" href="#tribits-project-user">TriBITS
+Project User</a>, 2) <a class="reference internal" href="#tribits-project-developer">TriBITS Project Developer</a>, 3) <a class="reference internal" href="#tribits-project-architect">TriBITS Project
+Architect</a>, 4) <a class="reference internal" href="#tribits-system-developer">TriBITS System Developer</a>, and 5) <a class="reference internal" href="#tribits-system-architect">TriBITS System
+Architect</a>.  Each of these roles builds on the necessary knowledge of the
+lower-level roles.</p>
+<p id="tribits-project-user">The first role is that of a <strong>TriBITS Project User</strong> who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
 A person acting in this role needs to know little about CMake other than
 basics about how to run the <tt class="docutils literal">cmake</tt> and <tt class="docutils literal">ctest</tt> exectuables, how to set
-CMake cache variables, and the basics of building software and running tests
-with <tt class="docutils literal">ctest</tt>.  The proper reference for a TriBITS Project User is the
-<a class="reference internal" href="#project-specific-build-quick-reference">Project-Specific Build Quick Reference</a>.  Also, the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a>
-document may be of some help also.  A TriBITS project user does not need to
-know anything about the CMake langauge itself or any of the TriBITS macros or
-functions described in <a class="reference internal" href="#tribits-macros-and-functions">TriBITS Macros and Functions</a> or really anything else
-described in this current document.</p>
-<p>A <strong>TriBITS Project Developer</strong> is someone who contributes to a software
+CMake cache variables, and the basics of building software by typing <tt class="docutils literal">make</tt>
+and running tests with <tt class="docutils literal">ctest</tt>.  The proper reference for a TriBITS Project
+User is the <a class="reference internal" href="#project-specific-build-quick-reference">Project-Specific Build Quick Reference</a>.  The <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS
+Overview</a> document may also be of some help.  A TriBITS project user does not
+need to know anything about the CMake language itself or any of the TriBITS
+macros or functions described in <a class="reference internal" href="#tribits-macros-and-functions">TriBITS Macros and Functions</a> or really
+anything else described in this current document except for <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
+Dependencies and Enable/Disable Logic</a>.</p>
+<p id="tribits-project-developers"><span id="tribits-project-developer"></span>A <strong>TriBITS Project Developer</strong> is someone who contributes to a software
 project that uses TriBITS.  They will add source files, libraries and
 exectuables, test executables and define tests run with <tt class="docutils literal">ctest</tt>.  They have
 to configure and build the project code in order to be able to develop and run
 tests and therefore this role includes all of the necessary knowledge and
 functions of a TriBITS Project User.  A casual TriBITS Project Developer
-typically does not need to know a lot about CMake and really only need to know
-a subset of the <a class="reference internal" href="#tribits-macros-and-functions">TriBITS Macros and Functions</a> defined in this document in
-addition to the genertic <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TriBITS Build Quick Reference</a> document.  A slightly more
-sophsiticated TriBITS Project Developer will also add new packages, add new
+typically does not need to know a lot about CMake and really only needs to
+know a subset of the <a class="reference internal" href="#tribits-macros-and-functions">TriBITS Macros and Functions</a> defined in this document
+in addition to the genetic <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TriBITS Build Quick Reference</a> document.  A slightly more
+sophisticated TriBITS Project Developer will also add new packages, add new
 package dependencies, and define new TPLs.  This current TriBITS Developers
 Guide and Reference document should supply everything such a developer needs
 to know and more.  Only a smaller part of this document needs to be understood
 and accessed by people assuming this role.</p>
-<p>The next level of roles is a <strong>TriBITS Project Architect</strong>.  This is someone
+<p id="tribits-project-architects"><span id="tribits-project-architect"></span>The next level of roles is a <strong>TriBITS Project Architect</strong>.  This is someone
 (perhaps only one person on a project development team) that knows the usage
 and functioning of TriBITS in great detail.  They understand how to set up a
-TriBITS project from scrach, how to set up automated testing using the TriBITS
+TriBITS project from scratch, how to set up automated testing using the TriBITS
 system, and know how to use TriBITS to implement the overall software
 development process.  A person in this role is also likely to be the one who
-makes the initial technical decision for their project to adopt TriBITS as is
-native build and test system.  This document (along with detailed
+makes the initial technical decision for their project to adopt TriBITS for
+its native build and test system.  This document (along with detailed
 CMake/CTest/CDash documentation provided by Kitware and the larger community)
 should provide most of what a person in this role needs to know.  A person
-assuming this role is the primary audience for this document.</p>
-<p>The last two roles <strong>TriBITS System Developer</strong> and <strong>TriBITS System
+assuming this role is the primary audience for a lot of the more advanced
+material in this document.</p>
+<p id="tribits-system-architects"><span id="tribits-system-architect"></span><span id="tribits-system-developers"></span><span id="tribits-system-developer"></span>The last two roles <strong>TriBITS System Developer</strong> and <strong>TriBITS System
 Architect</strong> are for those individuals that actually extend and modify the
 TriBITS system itself.  A TriBITS System Developer needs to know how to add
-new functionlity while maintaining backward compatibility, how to add new unit
-tests to the TriBITS system, and perform other related tasks.  Such a
-developer needs to be very knowledgeable of the basic functioning of CMake and
-know how TriBITS is implemented in the CMake language.  A TriBITS System
-Architect is someone who must be consusted on almost all non-trivial changes
-or additions to the TriBITS system.  A TriBITS System Architect in addition
-needs to know the entire TriBITS system, the design philosophy that provides
-the foundation for TriBIITS and be an expert in CMake, CTest, and CDash.
-Everything that needs to be known by a TriBITS System Developer and a TriBITS
-System Architect is not contained in this document.  Instead, the primary
-documentation will be in the TriBITS CMake source code and various unit tests
-itself.  At the time of this writing, there is currently there is only one
-TriBITS System Architect (who also happens to be the primary author of this
-document).</p>
-<p>An explicit goal of this document is to make new TriBITS Project System
-Archetects (i.e. those would make the decision to adopt TriBITS), and new
-TriBITS System Developers to help extend and maintain the system.  As TriBITS
-matures and its development stabilizes, the need for a TriBITS System
-Architect will be diminished.</p>
-<p>So depending on the particular role that a reader falls into, this documnet
-may or may not be necessary but instead the TriBITS Overview or the
-&lt;Project&gt;BuildQuickRef documents may be more appropriate.</p>
+new TriBITS functionality while maintaining backward compatibility, know how to
+add new unit tests for the TriBITS system (see <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>),
+and perform other related tasks.  Such a developer needs to be very
+knowledgeable of the basic functioning of CMake and know how TriBITS is
+implemented in the CMake language.  A TriBITS System Architect is someone who
+must be consulted on almost all non-trivial changes or additions to the
+TriBITS system.  A <em>TriBITS System Architect</em> in addition needs to know the
+entire TriBITS system, the design philosophy that provides the foundation for
+TriBITS and be an expert in CMake, CTest, and CDash.  Everything that needs to
+be known by a TriBITS System Developer and a TriBITS System Architect is not
+contained in this document.  Instead, the primary documentation will be in the
+TriBITS CMake source code and various unit tests itself defined in <a class="reference internal" href="#the-tribits-test-package">The
+TriBITS Test Package</a>.  At the time of this writing, there is currently there
+is only one TriBITS System Architect (who also happens to be the primary
+author of this document).</p>
+<p>An explicit goal of this document is to make new <a class="reference internal" href="#tribits-project-architects">TriBITS Project Architects</a>
+(i.e. those who would make the decision to adopt TriBITS for their projects),
+and new <a class="reference internal" href="#tribits-system-developers">TriBITS System Developers</a> to help extend and maintain TriBITS.  As
+TriBITS matures and its requirements further stabilize, the need for a
+<a class="reference internal" href="#tribits-system-architect">TriBITS System Architect</a> will hopefully be diminished.</p>
+<p>So depending on the particular role that a reader falls into, this document
+may or may not be necessary but instead the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> or the
+<a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">&lt;Project&gt;BuildQuickRef</a> documents may be more appropriate.  Hopefully the
+above roles and discussion will help the reader select the right document to
+start with.</p>
 </div>
 <div class="section" id="cmake-language-overview-and-gotchas">
 <h2><a class="toc-backref" href="#id13">2.2&nbsp;&nbsp;&nbsp;CMake Language Overview and Gotchas</a></h2>
@@ -650,10 +661,10 @@ copy-and-paste existing example CMake code and files as basically &quot;monkey s
 monkey do&quot;.  As long as nothing out of the ordinary happens, many people can
 get along just fine in this mode for a time.</p>
 <p>However, we have observed that most mistakes that people make when using
-TriBITS, and most of the problems they have when using the sytem, are due to a
-basic lack of knowlege of the CMake language.  One can find basic tutorials
+TriBITS, and most of the problems they have when using the system, are due to a
+basic lack of knowledge of the CMake language.  One can find basic tutorials
 and references on the CMake language in various locations online for free.
-One can also purchase the <a class="reference external" href="http://www.cmake.org/cmake/help/book.html">offical CMake reference book</a>.  Also, documenation
+One can also purchase the <a class="reference external" href="http://www.cmake.org/cmake/help/book.html">official CMake reference book</a>.  Also, documentation
 for any built-in CMake command is available locally by running:</p>
 <pre class="literal-block">
 $ cmake --help-command &lt;CMAKE_COMMAND&gt;
@@ -661,28 +672,29 @@ $ cmake --help-command &lt;CMAKE_COMMAND&gt;
 <p>Because tutorials and detailed documentation for the CMake language already
 exists, this document will not even attempt to provide a first reference to
 CMake (which is a large topic in itself).  However, what we try to provide
-below is a short overivew of the more quarky or supprising aspects of the
+below is a short overview of the more quirky or surprising aspects of the
 CMake language that an programmer experienced in another language might get
-tripped up by or surprised by.  Some of the more unique features of the
-language are described in order to help avoid some of these common mistakes
-and provide greater understanding of how TriBITS works.</p>
+tripped up or surprised by.  Some of the more unique features of the language
+are described in order to help avoid some of these common mistakes and provide
+greater understanding of how TriBITS works.</p>
 <p>The CMake language that is used to write CMake projects with TriBITS (and that
-core TriBITS itself is implemented in) is a fairly simply programming languge
-with fairly simple rules (for the most part).  However, compared to other
-programming lanuages, there are a few peculiar aspects to the CMake language
-like strange varible scoping rules, arguments to macros and function, that can
-make working with it difficult if you don't understand these.  Also, CMake has
-some interesting gotchas.  In order to effectively use TriBITS (or just raw
-CMake) to construct and maintain a project's CMake files, one must know the
-basic rules of CMake.</p>
-<p>The first thing to understand about the CMake language is that everthing line
-of CMake code is just a command taking a string (or an array of strings) and
-functions that operate on strings.  An array argument is just a single with
-elements separated by semi-colons <tt class="docutils literal"><span class="pre">&quot;&lt;str0&gt;;&lt;str1&gt;;...&quot;</span></tt>.  CMake is a bit odd
-in how it deals with these arrays (which just represented as a string with
-elements separated with semi-colons <tt class="docutils literal">';'</tt>).  For example, all of the
-following are equivalent and pass in a CMake array with 3 elements [<tt class="docutils literal">A</tt>],
-[<tt class="docutils literal">B</tt>], and [<tt class="docutils literal">C</tt>]:</p>
+core TriBITS functionality itself is implemented in, see <a class="reference internal" href="#tribits-system-project-dependencies">TriBITS System
+Project Dependencies</a>) is a fairly simple programming language with fairly
+simple rules (for the most part).  However, compared to other programming
+languages, there are a few peculiar aspects to the CMake language like strange
+variable scoping rules, and how arguments are passed to macros and functions,
+that can make working with it difficult if you don't understand these.  Also,
+CMake has some interesting gotchas.  In order to effectively use TriBITS (or
+just raw CMake) to construct and maintain a project's CMake files, one must
+know the basic rules of CMake and be aware of these gotchas.</p>
+<p>The first thing to understand about the CMake language is that nearly every
+line of CMake code is just a command taking a string (or an array of strings)
+and functions that operate on strings.  An array argument is just a single
+string literal with elements separated by semi-colons <tt class="docutils literal"><span class="pre">&quot;&lt;str0&gt;;&lt;str1&gt;;...&quot;</span></tt>.
+CMake is a bit odd in how it deals with these arrays (which are just
+represented as a string with elements separated with semi-colons <tt class="docutils literal">';'</tt>).
+For example, all of the following are equivalent and pass in a CMake array
+with 3 elements [<tt class="docutils literal">A</tt>], [<tt class="docutils literal">B</tt>], and [<tt class="docutils literal">C</tt>]:</p>
 <pre class="literal-block">
 SOME_FUNC(A B C)
 SOME_FUNC(&quot;A&quot; &quot;B&quot; &quot;C&quot;)
@@ -693,29 +705,31 @@ SOME_FUNC(&quot;A;B;C&quot;)
 SOME_FUNC(&quot;A B C&quot;)
 </pre>
 <p>which just passes in a single element with value [<tt class="docutils literal">A B C</tt>].  Raw quotes in
-CMake basically escapes the interpetation of space characters as array element
+CMake basically escape the interpretation of space characters as array element
 boundaries.  Quotes around arguments with no spaces does nothing (as seen
-above).  In order to get a quote char [<tt class="docutils literal">&quot;</tt>] into string, you must escape it
-as:</p>
+above, except for the interpretation as variable names in an <tt class="docutils literal">IF()</tt>
+statement).  In order to get a quote char [<tt class="docutils literal">&quot;</tt>] into string, you must escape
+it as:</p>
 <pre class="literal-block">
 SOME_FUNC(\&quot;A\&quot;)
 </pre>
 <p>which passes an array with the single argument [<tt class="docutils literal">\&quot;A\&quot;</tt>].</p>
-<p>Varibles are set using a built-in CMke function that just takes string
-arguments like:</p>
+<p>Variables are set using the built-in CMake <tt class="docutils literal">SET()</tt> command that just takes
+string arguments like:</p>
 <pre class="literal-block">
 SET(SOME_VARIABLE &quot;some_value&quot;)
 </pre>
-<p>In CMake, the above is idential, in every way, to:</p>
+<p>In CMake, the above is identical, in every way, to:</p>
 <pre class="literal-block">
 SET(SOME_VARIABLE some_value)
 SET(&quot;SOME_VARIABLE;&quot;some_value&quot;)
 SET(&quot;SOME_VARIABLE;some_value&quot;)
 </pre>
 <p>The function <tt class="docutils literal">SET()</tt> simply interprets the first argument to as the name of
-a varible to set in the local scope.  Many other built-in and user-defined
-CMake functions work the same way.  That is some of the string argumnets are
-interpreted as the names of variables.</p>
+a variable to set in the local scope.  Many other built-in and user-defined
+CMake functions work the same way.  That is some of the string arguments are
+interpreted as the names of variables.  There is no special language feature
+that interprets them as variables (except in an <tt class="docutils literal">IF()</tt> statement).</p>
 <p>However, CMake appears to parse arguments differently for built-in CMake
 control structure functions like <tt class="docutils literal">FOREACH()</tt> and <tt class="docutils literal">IF()</tt> and does not just
 interpret them as a string array.  For example:</p>
@@ -728,37 +742,40 @@ ENDFOREACH()
 <tt class="docutils literal"><span class="pre">SOME_VAR='b'</span></tt>, etc., as you would otherwise expect.  Therefore, this simple
 rule for the handling of function arguments as string arrays does not hold for
 CMake logic control commands.  Just follow the CMake documentation for these
-control structures..</p>
-<p>CMake offers a rich assortment of built-in functions for doing all sorts of
-things.  As part of these functions are the built-in <tt class="docutils literal">MACRO()</tt> and the
-<tt class="docutils literal">FUNCTION()</tt> functions which allow you to create user-defined macros and
-functions (which is what TriBITS is built on).  All of these built-in and
-user-defined macros and functions work exactly the same way; they take in an
-array of string arguments.  Some functions take in positional arguments but
-most actually take a combination of positional and keyword arguments (see
-<a class="reference internal" href="#parse-arguments">PARSE_ARGUMENTS()</a>).</p>
-<p>Varible names are translated into their stored values using
-<tt class="docutils literal">${SOME_VARIABLE}</tt>.  The value that is extracted depends on if the varible
+control structures (i.e. see <tt class="docutils literal">cmake <span class="pre">--help-command</span> if</tt> and <tt class="docutils literal">cmake
+<span class="pre">--help-command</span> foreach</tt>).</p>
+<p>CMake offers a rich assortment of built-in commands for doing all sorts of
+things.  Two of these are the built-in <tt class="docutils literal">MACRO()</tt> and the <tt class="docutils literal">FUNCTION()</tt>
+commands which allow you to create user-defined macros and functions (which is
+what TriBITS is built on).  All of these built-in and user-defined macros and
+functions work exactly the same way; they take in an array of string
+arguments.  Some functions take in positional arguments but most actually take
+a combination of positional and keyword arguments (see <a class="reference internal" href="#parse-arguments">PARSE_ARGUMENTS()</a>).</p>
+<p>Variable names are translated into their stored values using
+<tt class="docutils literal">${SOME_VARIABLE}</tt>.  The value that is extracted depends on if the variable
 is set in the local or global (cache) scope.  The local scopes for CMake start
 in the base project directory in its base <tt class="docutils literal">CMakeLists.txt</tt> file.  Any
-varibles that are created by macros in that base local scope are seen across
-an entire project but are <em>not</em> persistent across <tt class="docutils literal">cmake</tt> configure
-invocations.</p>
+variables that are created by macros in that base local scope are seen across
+an entire project but are <em>not</em> persistent across multiple successive
+<tt class="docutils literal">cmake</tt> configure invocations where the cache file <tt class="docutils literal">CMakeCache.txt</tt> is not
+deleted in between.</p>
 <p>The handling of variables is one area where CMake is radically different from
-most other languages.  First, a varible that is not defined simply returns
-nothing.  What is surprising to most peoople about this is that it does not
-even return an empty string!  For example, the following set statement:</p>
+most other languages.  First, a variable that is not defined simply returns
+nothing.  What is surprising to most people about this is that it does not
+even return an empty string that would register as an array element!  For
+example, the following set statement:</p>
 <pre class="literal-block">
 SET(SOME_VAR a ${SOME_UNDEFINED_VAR} c)
 </pre>
-<p>produces <tt class="docutils literal"><span class="pre">SOME_VAR='a;c'</span></tt> and <em>not</em> <tt class="docutils literal"><span class="pre">'a;;c'</span></tt>!  The same thing occurs when
-an empty varible is dereferenced such as with:</p>
+<p>(where <tt class="docutils literal">SOME_UNDEFINED_VAR</tt> is an undefined variable) produces
+<tt class="docutils literal"><span class="pre">SOME_VAR='a;c'</span></tt> and <em>not</em> <tt class="docutils literal"><span class="pre">'a;;c'</span></tt>!  The same thing occurs when an empty
+variable is de-references such as with:</p>
 <pre class="literal-block">
 SET(EMPTY_VAR &quot;&quot;)
 SET(SOME_VAR a ${EMPTY_VAR} c)
 </pre>
 <p>which produces <tt class="docutils literal"><span class="pre">SOME_VAR='a;c'</span></tt> and <em>not</em> <tt class="docutils literal"><span class="pre">'a;;c'</span></tt>.  In order to always
-produce an element in the array even if the varible is empty, one must quote
+produce an element in the array even if the variable is empty, one must quote
 the argument as with:</p>
 <pre class="literal-block">
 SET(EMPTY_VAR &quot;&quot;)
@@ -766,25 +783,25 @@ SET(SOME_VAR a &quot;${EMPTY_VAR}&quot; c)
 </pre>
 <p>which produces <tt class="docutils literal"><span class="pre">SOME_VAR='a;;c'</span></tt>, or three elements as one might assume.</p>
 <p>This is a common error that people make when they call CMake functions
-(built-in or TriBITS-defined) involving varibles that might be undefined or
+(built-in or TriBITS-defined) involving variables that might be undefined or
 empty.  For example, for the macro:</p>
 <pre class="literal-block">
 MACRO(SOME_MACRO  A_ARG  B_ARG  C_ARG)
    ...
 ENDMACRO()
 </pre>
-<p>if someone trys to call it with:</p>
+<p>if someone tries to call it with (misspelled variable?):</p>
 <pre class="literal-block">
 SOME_MACRO(a ${SOME_OHTER_VAR} c)
 </pre>
 <p>and if <tt class="docutils literal"><span class="pre">SOME_OHTER_VAR=&quot;&quot;</span></tt> or if it is undefined, then CMake will error out
 with the error message saying that the macro <tt class="docutils literal">SOME_MACRO()</tt> takes 3
-arguments but only 2 were provided.  If a varible might be empty but that is
+arguments but only 2 were provided.  If a variable might be empty but that is
 still a valid argument to the command, then it must be quoted as:</p>
 <pre class="literal-block">
 SOME_MACRO(a &quot;${SOME_OHTER_VAR}&quot; c)
 </pre>
-<p>Related to this problem is that if you mispell the name of a variable in a
+<p>Related to this problem is that if you misspell the name of a variable in a
 CMake <tt class="docutils literal">IF()</tt> statement like:</p>
 <pre class="literal-block">
 IF (SOME_VARBLE)
@@ -800,7 +817,7 @@ IF (SOME_VARBLE)
   ...
 ENDIF()
 </pre>
-<p>In this case, the mispelled variable would be caught.</p>
+<p>In this case, the misspelled variable would be caught.</p>
 <p>While on the subject of <tt class="docutils literal">IF()</tt> statements, CMake has a strange convention.
 When you say:</p>
 <pre class="literal-block">
@@ -808,54 +825,57 @@ IF (SOME_VAR)
   DO_SOMETHING()
 ENDIF()
 </pre>
-<p>then <tt class="docutils literal">SOME_VAR` is interpreted as a variable and will be considered true and
-``DO_SOMETHING()</tt> will be called if <tt class="docutils literal">${SOME_VAR}</tt> does <em>not</em> evaluate to
+<p>then <tt class="docutils literal">SOME_VAR</tt> is interpreted as a variable and will be considered true and
+<tt class="docutils literal">DO_SOMETHING()</tt> will be called if <tt class="docutils literal">${SOME_VAR}</tt> does <em>not</em> evaluate to
 <tt class="docutils literal">0</tt>, <tt class="docutils literal">OFF</tt>, <tt class="docutils literal">NO</tt>, <tt class="docutils literal">FALSE</tt>, <tt class="docutils literal">N</tt>, <tt class="docutils literal">IGNORE</tt>, <tt class="docutils literal">&quot;&quot;</tt>, or ends in the
 suffix <tt class="docutils literal"><span class="pre">-NOTFOUND</span></tt>.  How about that for a true/false rule!  To be safe, use
-<tt class="docutils literal">ON/OFF</tt> and <tt class="docutils literal">TRUE/FASLE</tt> pairs for setting variables.  Look up native
-CMake documentation on <tt class="docutils literal">IF()</tt>.</p>
+<tt class="docutils literal">ON/OFF</tt> and <tt class="docutils literal">TRUE/FALSE</tt> pairs for setting variables.  Look up native
+CMake documentation on <tt class="docutils literal">IF()</tt> for all the interesting details and all the
+magical things it can do.</p>
 <p><strong>WARNING:</strong> If you mistype <tt class="docutils literal">&quot;ON&quot;</tt> as <tt class="docutils literal">&quot;NO&quot;</tt>, it evaluates to
 <tt class="docutils literal">FALSE</tt>/<tt class="docutils literal">OFF</tt>!  (That is a fun defect to track down!)</p>
-<p>CMake langauge behavior with respect to case sensitivity is also strange:</p>
+<p>CMake language behavior with respect to case sensitivity is also strange:</p>
 <ul class="simple">
 <li>Calls of built-in and user-defined macros and functions is <em>case
 insensitive</em>!  That is <tt class="docutils literal"><span class="pre">set(...)</span></tt>, <tt class="docutils literal"><span class="pre">SET(...)</span></tt>, <tt class="docutils literal">Set()</tt>, and all other
 combinations of upper and lower case characters for 'S', 'E', 'T' all call
-the bulit-in <cite>SET()`</cite> function.  The convention in TriBITS is to use all
-caps for functions and macros (was adopted by following the conventions used
-in the early versions of TriBITS, see <a class="reference internal" href="#history-of-tribits">History of TriBITS</a>).  The
-convention in CMake literature from Kitware seems to use lower-case letters
-for functions and macros.</li>
-<li>The names of CMake varables (local or cache/global) are <em>case sensitive</em>!
-That is, <tt class="docutils literal">SOME_VAR</tt> and <tt class="docutils literal">some_var</tt> are <em>different</em> variables.  Built-in
-CMake varibles tend use all caps with underscores
-(e.g. <tt class="docutils literal">CMAKE_CURRENT_SOURCE_DIR</tt>) but other built-in CMake varibles tend
-to use mixed case wtih underscores (e.g. <tt class="docutils literal">CMAKE_Fortran_FLAGS</tt>).  TriBITS
-tends to use a similar naming convention where most varibles have mostly
-upper-case letters except for proper nouns like the project, package or TPL
-name (e.g. <tt class="docutils literal">TribitsProj_TRIBITS_DIR</tt>, <tt class="docutils literal">TriBITS_SOURCE_DIR</tt>,
-<tt class="docutils literal">Boost_INCLUDE_DIRS</tt>).</li>
+the built-in <tt class="docutils literal">SET()</tt> function.  The convention in TriBITS is to use all
+caps for functions and macros (which was adopted by following the
+conventions used in the early versions of TriBITS, see the <a class="reference internal" href="#history-of-tribits">History of
+TriBITS</a>).  The convention in CMake literature from Kitware seems to use
+lower-case letters for functions and macros.</li>
+<li>However, the names of CMake (local or cache/global) variables are <em>case
+sensitive</em>!  That is, <tt class="docutils literal">SOME_VAR</tt> and <tt class="docutils literal">some_var</tt> are <em>different</em>
+variables.  Built-in CMake variables tend use all caps with underscores
+(e.g. <tt class="docutils literal">CMAKE_CURRENT_SOURCE_DIR</tt>) but other built-in CMake variables tend
+to use mixed case with underscores (e.g. <tt class="docutils literal">CMAKE_Fortran_FLAGS</tt>).  TriBITS
+tends to use a similar naming convention where variables have mostly
+upper-case letters except for parts that are proper nouns like the project,
+package or TPL name (e.g. <tt class="docutils literal">TribitsProj_TRIBITS_DIR</tt>,
+<tt class="docutils literal">TriBITS_SOURCE_DIR</tt>, <tt class="docutils literal">Boost_INCLUDE_DIRS</tt>).</li>
 </ul>
 <p>I don't know of any other programming language that uses different case
-senstivity rules for varibles verses functions.  However, because we must
-parse macro and function arguments when writing user-defined macros and
-functions, it is a good thing that CMake varibles are case sensitive.  Case
-insenstivity would make it much harder and more expensive to parse argument
-lists that take keyword-based arguments (see <a class="reference internal" href="#parse-arguments">PARSE_ARGUMENTS()</a>).</p>
+sensitivity rules for variables and functions.  However, because we must parse
+macro and function arguments when writing user-defined macros and functions,
+it is a good thing that CMake variables are case sensitive.  Case insensitivity
+would make it much harder and more expensive to parse argument lists that take
+keyword-based arguments (see <a class="reference internal" href="#parse-arguments">PARSE_ARGUMENTS()</a>).</p>
 <p>Other mistakes that people make result from not understanding how CMake scopes
-variables and other entities.  CMake defaults a global scope (i.e. &quot;cache&quot;
-varibles) and several nested local scopes that are created by
+variables and other entities.  CMake defines a global scope (i.e. &quot;cache&quot;
+variables) and several nested local scopes that are created by
 <tt class="docutils literal">ADD_SUBDIRECTORY()</tt> and entering FUNCTIONS.  See <a class="reference internal" href="#dual-scope-set">DUAL_SCOPE_SET()</a> for a
-short discussion of these scoping rules.  It is not just varibles that can
-have local and global scoping rules.  Other entities, like defines set with
-the built-in command <tt class="docutils literal">ADD_DEFINITIONS()</tt> only apply to the local scope and
-child scopes.  That means that if you call <tt class="docutils literal">ADD_DEFINITIONS()</tt> to set a
+short discussion of these scoping rules.  And it is not just variables that
+can have local and global scoping rules.  Other entities, like defines set
+with the built-in command <tt class="docutils literal">ADD_DEFINITIONS()</tt> only apply to the local scope
+and child scopes.  That means that if you call <tt class="docutils literal">ADD_DEFINITIONS()</tt> to set a
 define that affects the meaning of a header-file in C or C++, for example,
 that definition will <em>not</em> carry over to a peer subdirectory and those
-definitions will not be set (see warning in <a class="reference internal" href="#tribits-add-library">TRIBITS_ADD_LIBRARY()</a>).</p>
+definitions will not be set (see warning in <a class="reference internal" href="#miscellaneous-notes-tribits-add-library">Miscellaneous Notes
+(TRIBITS_ADD_LIBRARY())</a>).</p>
 <p>Now that some CMake basics and common gotchas have been reviewed, we now get
 into the meat of TriBITS starting with the overall structure of a TriBITS
-project.</p>
+project in the next section.</p>
+<!-- ToDo: Edited and spell-checked up to here on 4/1/2014! -->
 </div>
 </div>
 <div class="section" id="tribits-project-structure">
@@ -863,12 +883,13 @@ project.</p>
 <p>TriBITS is a framework, implemented in CMake to create CMake projects.  As a
 framework, it defines the the overall structure of a CMake build system for a
 project and processes project, repository, and package specific files in a
-specified order.  All of this processing takes place in the
-<a class="reference internal" href="#id7">TRIBITS_PROJECT()</a> macro.</p>
+specified order.  Almost all of this processing takes place in the
+<a class="reference internal" href="#id7">TRIBITS_PROJECT()</a> macro (or macros and functions it calls).</p>
+<!-- ToDo: Provide outline of the subsections to come. -->
 <div class="section" id="tribits-structural-units">
 <h2><a class="toc-backref" href="#id15">3.1&nbsp;&nbsp;&nbsp;TriBITS Structural Units</a></h2>
 <p>A CMake project that uses TriBITS as its build and test system is composed of
-a single <em>TriBITS Project</em>, one or more <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and one or
+a single <a class="reference internal" href="#tribits-project">TriBITS Project</a>, one or more <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and one or
 more <a class="reference internal" href="#tribits-packages">TriBITS Packages</a>.  In addition, a TriBITS Package can be broken up
 into <a class="reference internal" href="#tribits-subpackages">TriBITS Subpackages</a>.  Together, the collection of TriBITS Packages and
 TriBITS Subpackages are called <em>TriBITS Software Engineering Packages</em>, or
@@ -927,14 +948,14 @@ Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defi
 directly configured with <tt class="docutils literal">cmake</tt> and then built, tested, and installed.</li>
 </ul>
 <p>In this document, dependenices are described as either being <em>upstream</em> or
-<em>downstream</em> as defined as:</p>
+<em>downstream/forward</em> as defined as:</p>
 <ul class="simple" id="upstream-dependencies">
 <span id="upstream-dependency"></span><span id="upstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;A&quot; is an
 <strong>upstream dependency</strong> of &quot;B&quot;.</li>
 </ul>
 <ul class="simple" id="downstream-dependencies">
 <span id="downstream-dependency"></span><span id="downstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;B&quot; is an
-<strong>downstream dependency</strong> of &quot;A&quot;.</li>
+<strong>downstream or forward dependency</strong> of &quot;A&quot;.</li>
 </ul>
 <p>The following subsections define the major structural units of a TriBITS
 project in more detail.  Each structural unit is described along with the
@@ -1157,7 +1178,7 @@ IF (CTEST_DROP_METHOD STREQUAL &quot;http&quot;)
 ENDIF()
 
 </pre>
-<p>All of the varibles set in this file are directly understood by raw <tt class="docutils literal">ctest</tt>
+<p>All of the variables set in this file are directly understood by raw <tt class="docutils literal">ctest</tt>
 and will not be explained here further (see documentation for the standard
 CMake module <tt class="docutils literal">CTest</tt>).  The usage of the function
 <a class="reference internal" href="#set-default-and-from-env">SET_DEFAULT_AND_FROM_ENV()</a> allows the varaibles to be overridded both as
@@ -4207,7 +4228,8 @@ be managed.  TriBITS takes full advantage of the features of raw CMake, CTest,
 and CDash in support of testing and where gaps exist, TriBITS provides tools
 and customizations.</p>
 <p>The following subsections describe several aspects to the TriBITS support for
-testing.  ToDo: outline the following subsections.</p>
+testing.</p>
+<!-- ToDo: outline the following subsections. -->
 <div class="section" id="testing-categories-for-repositories-packages-and-tests">
 <h2><a class="toc-backref" href="#id48">6.1&nbsp;&nbsp;&nbsp;Testing categories for Repositories, Packages, and Tests</a></h2>
 <p>ToDo: Define repo category Continuous, Nightly, and Experimental which also
@@ -4219,19 +4241,71 @@ testing should be the default.</p>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="pre-push-testing-using-checkin-test-py">
-<h2><a class="toc-backref" href="#id49">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></h2>
-<p>ToDo: Describe the checkin-test.py script</p>
-<p>ToDo: Describe the system for mapping changed files to changed packages.</p>
+<span id="checkin-test-py"></span><h2><a class="toc-backref" href="#id49">6.2&nbsp;&nbsp;&nbsp;Pre-push Testing using checkin-test.py</a></h2>
+<p>While CMake provides the integrated tool CTest (executable <tt class="docutils literal">ctest</tt>) a lot
+goes into correctly and efficiently testing a large project and pushing
+changes to the main version control repository(s).  Things get especially
+complicated and tricky when multiple version-control (VC) repositories are
+involved.  The TriBITS system provides the tool <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> for
+automating the process of:</p>
+<ol class="arabic simple">
+<li>Determining if the local VC repos are ready to pull, test, and push</li>
+<li>Pulling and integrating the most current changes from the remote VC repos</li>
+<li>Figuring out what TriBITS packages need to be enabled and testing (by
+examing VC diffs)</li>
+<li>Configuring only the necessary TriBITS packages and tests (and their
+downstream dependencies) and building, running tests, and reporting results
+(via email).</li>
+<li>Only if all specified builds and tests pass, then pushing local commits to
+the remove VC repos.</li>
+</ol>
+<p>The <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script is a sophisticated piece of software that is
+well tested and very robust.  The level of testing of this tool is greater
+than any of the software that it is testing.  This is needed so as to provide
+confidence in the developers that the tool will only push if everything checks
+out as it should.  There are a <em>lot</em> of details and boundray cases that one
+has to consider and a number of use cases that need to be supported.  For more
+detailed documentation, see <a class="reference internal" href="#checkin-test-py-help">checkin-test.py --help</a>.</p>
+<!-- ToDo: Describe the standard workflow for using the checkin-test.py script. -->
+<!-- ToDo: Describe the system for mapping changed files to changed packages. -->
+<!-- Discuss how important the directory structure is. -->
+<!-- ToDo: Describe the local test, remote push process by pulling from the -->
+<!-- Trilinos developers webpage. -->
+<!-- ToDo: Describe the role that checkin-test.py plays in multi-repo ACI -->
 </div>
 <div class="section" id="tribits-package-by-package-ctest-dash-driver">
-<h2><a class="toc-backref" href="#id50">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></h2>
-<p>ToDo: Fill in!</p>
-<p>ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
-interact.</p>
+<span id="tribitsctestdrivercore-cmake"></span><h2><a class="toc-backref" href="#id50">6.3&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></h2>
+<p>The TriBITS system uses a sophisticated and hightly customized CTest driver
+script to test TriBITS projects and submit results to a CDash server.  The
+primary code for driving this is contained in the file
+<tt class="docutils literal">TribitsCTestDriverCore.cmake</tt>.  This script loops through all of the
+specified TriBITS packages for a given TriBITS project and does a configure,
+built, and test and submitts results to the specified CDash server
+incrementally.  If the configure or library build of any upstream TriBITS
+package fails, that TriBITS package is disabled in all downstream TriBITS
+package builds so as to not propoate sensless failures.  Each TriBITS
+top-level package is assigned its own CDash regression email (see <a class="reference internal" href="#cdash-regression-email-addresses">CDash
+regression email addresses</a>) and each package configure/build/test is given</p>
+<!-- ToDo: Fill in! -->
+<!-- ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these -->
+<!-- interact. -->
 </div>
 <div class="section" id="tribits-cdash-customizations">
 <h2><a class="toc-backref" href="#id51">6.4&nbsp;&nbsp;&nbsp;TriBITS CDash Customizations</a></h2>
-<p>ToDo: Fill in!</p>
+<p>CDash was not really designed to accommodate multi-package, multi-repository
+VC projects like are supported by TriBITS.  However, CDash provides some
+ability to customize a CDash project and submittals to address missing
+features.  Each TriBITS package is given a CTest/CDash &quot;Label&quot; with the name
+of the TriBITS package.  CDash will then aggregate the different package
+configure/build/test roles into aggregated &quot;builds&quot;.  The commits pulled for
+each of the extra VC repo listed in the
+<a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file, are shown in an
+uploaded CDash &quot;Notes&quot; file for each TriBITS package confgiure/build/test
+submit.  This uploaded &quot;Notes&quot; file also contains a cleaned up version of the
+CMakeCache.txt file.</p>
+<p>CDash offers numerous features such as the ability to construct a number of
+different types of queries and is extremely helpful in using past test data.</p>
+<!-- ToDo: Describe more on what CDash provides and how TriBITS uses it. -->
 <div class="section" id="cdash-regression-email-addresses">
 <h3><a class="toc-backref" href="#id52">CDash regression email addresses</a></h3>
 <p>Every TriBITS Package has a regression email address associated with it that
@@ -4297,7 +4371,7 @@ assigned to packages at all (which will be the case if none of the above
 variables are set).</p>
 <p>As a general rule, repository-level settings override project-level settings
 and package-level settings override both.  Also, a project can redefine a
-reposiotry's regression email list settings by resetting the varibles in the
+reposiotry's regression email list settings by resetting the variables in the
 project's <a class="reference internal" href="#projectdir-cmake-projectdependenciessetup-cmake">&lt;projectDir&gt;/cmake/ProjectDependenciesSetup.cmake</a> file.</p>
 <p>All of the email dependency managment logic must be accessable by just running
 the macro:</p>
@@ -4361,7 +4435,8 @@ regression email lists to TriBITS packages.</p>
 <p>ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.</p>
 <div class="section" id="multi-repository-almost-continuous-integration">
 <h2><a class="toc-backref" href="#id54">7.1&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h2>
-<p>ToDo: Fill in!</p>
+<p>ToDo: Import the contents of HOWTO.ALMOST_CONTINUOUS_INTEGRATION and format
+for RST.</p>
 </div>
 </div>
 <div class="section" id="development-workflows">
@@ -4381,10 +4456,34 @@ complex <a class="reference internal" href="#multi-repository-development-workfl
 </div>
 <div class="section" id="howtos">
 <h1><a class="toc-backref" href="#id58">9&nbsp;&nbsp;&nbsp;Howtos</a></h1>
-<p>ToDo: Fill in!</p>
+<p>While the rest of this document provides all of the information one would need
+to construct and maintain a TriBITS project, this section provides short,
+succinct lists of the steps to accomplish a few common tasks.</p>
 <div class="section" id="how-to-add-a-new-tribits-package">
 <h2><a class="toc-backref" href="#id59">9.1&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package</a></h2>
-<p>ToDo: Fill in!</p>
+<p>To add a new TriBITS package, it is recommended to take the template from one
+of the <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> packages that most closely fits the needs of
+the new package and modify it for the new package.  The files, for the
+<tt class="docutils literal">SimpleCxx</tt> package can be copied on at a time and modified.</p>
+<p>To add a new TriBITS package:</p>
+<ol class="arabic simple">
+<li>Chose a name <tt class="docutils literal">&lt;packageName&gt;</tt> for the new package (must be globally
+unique!) and which TriBITS repository to put the package into.</li>
+</ol>
+<p>2) Create the package directory <tt class="docutils literal"><span class="pre">&lt;repoDir&gt;/&lt;packageDir&gt;</span></tt> in the new project
+and put in skeleton files for <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> and
+<a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a>.  Set the desired upstream TPL and SE package
+dependenices in the new <tt class="docutils literal">Dependencies.cmake</tt> file but comment out everything
+in the <tt class="docutils literal">CMakeLists.txt</tt> file except for the <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> and
+<a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a> commands.</p>
+<p>3) Add the line for the new package to the <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>
+file after all of upstream packages.</p>
+<ol class="arabic simple" start="3">
+<li>Configure the TriBITS project enabling the new package <tt class="docutils literal">&lt;packageName&gt;</tt>.</li>
+</ol>
+<p>4) Incrementally fill in the packages <tt class="docutils literal">CMakeLists.txt</tt> files defining
+libraries, executables, tests and examples.</p>
+<!-- ToDo: Expand on the above bullets a lot! -->
 </div>
 <div class="section" id="how-to-add-a-new-tribits-package-with-subpackages">
 <h2><a class="toc-backref" href="#id60">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></h2>
@@ -4394,15 +4493,19 @@ complex <a class="reference internal" href="#multi-repository-development-workfl
 <h2><a class="toc-backref" href="#id61">9.3&nbsp;&nbsp;&nbsp;How to Add a new TriBITS TPL</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
+<div class="section" id="how-to-add-a-new-tribits-repository">
+<h2><a class="toc-backref" href="#id62">9.4&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Repository</a></h2>
+<p>ToDo: Fill in!</p>
+</div>
 </div>
 <div class="section" id="additional-topics">
-<h1><a class="toc-backref" href="#id62">10&nbsp;&nbsp;&nbsp;Additional Topics</a></h1>
+<h1><a class="toc-backref" href="#id63">10&nbsp;&nbsp;&nbsp;Additional Topics</a></h1>
 <p>In this section, a number of miscellaneous topics and TriBITS features are
 discussed.  These features and topics are either not considered primary
 fetures of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.</p>
 <div class="section" id="tribits-system-project-dependencies">
-<h2><a class="toc-backref" href="#id63">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></h2>
+<h2><a class="toc-backref" href="#id64">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></h2>
 <p>The basic TriBITS system itself which is used to configure, built, test,
 create tarballs, and install software that uses the TriBITS system has no
 dependencies other than a basic installation of CMake (which typically
@@ -4441,7 +4544,7 @@ functionality requires git support.  But none of this is required for doing
 the most basic building, testing, or installation of a TriBITS project.</p>
 </div>
 <div class="section" id="project-specific-build-quick-reference">
-<h2><a class="toc-backref" href="#id64">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h2>
+<h2><a class="toc-backref" href="#id65">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h2>
 <p>If a project that uses TriBITS is going to have a significnat user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
@@ -4483,7 +4586,7 @@ tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 times in this developers guide.</p>
 </div>
 <div class="section" id="project-and-repositiory-versioning-and-release-mode">
-<h2><a class="toc-backref" href="#id65">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></h2>
+<h2><a class="toc-backref" href="#id66">10.3&nbsp;&nbsp;&nbsp;Project and Repositiory Versioning and Release Mode</a></h2>
 <p>TriBITS has built-in support for project and repository versioning and release
 mode control.  When the project contains the file
 <a class="reference internal" href="#projectdir-version-cmake">&lt;projectDir&gt;/Version.cmake</a>, it is used to define the project's offical
@@ -4515,7 +4618,7 @@ directory, the <tt class="docutils literal"><span class="pre">&lt;projectDir&gt;
 files are the same file, which works just fine.</p>
 </div>
 <div class="section" id="tribits-environment-probing-and-setup">
-<h2><a class="toc-backref" href="#id66">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></h2>
+<h2><a class="toc-backref" href="#id67">10.4&nbsp;&nbsp;&nbsp;TriBITS Environment Probing and Setup</a></h2>
 <p>Part of the TriBITS Framework is to probe the environment, set up the
 compilers, and get ready to compile code.  This was mentioned in the step
 &quot;Probe and set up the environment&quot; in <a class="reference internal" href="#full-processing-of-tribits-project-files">Full Processing of TriBITS Project
@@ -4536,29 +4639,38 @@ of to things this macro does are:</p>
 ready to compile code.</p>
 </div>
 <div class="section" id="configure-time-system-tests">
-<h2><a class="toc-backref" href="#id67">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></h2>
+<h2><a class="toc-backref" href="#id68">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></h2>
 <p>CMake has very nice support for defining configure-time checks of the system
 to help inconfiguring the project.  One can check for whether a header file
 exists or not, if the compiler supports a given data-type or language feature
 or perform almost any other type of check that one can imagine that can be
-done using the configured compilers, libraries, system tools, etc.</p>
-<p>ToDo: Fill in!</p>
+done using the configured compilers, libraries, system tools, etc.  An example
+was given in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.  Just following that example, looking
+at some of the built-in CMake configure-time test modules, and using provided
+online CMake documentation, one can see how to create a configure-time test
+for almost anyting.</p>
+<!-- ToDo: Provide more detail how to integrate a configure-time test into a -->
+<!-- TriBITS project and TriBITS package. -->
 </div>
 <div class="section" id="creating-source-distributions">
-<h2><a class="toc-backref" href="#id68">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h2>
+<h2><a class="toc-backref" href="#id69">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h2>
 <p>ToDo: Fill in!</p>
 </div>
 <div class="section" id="regulated-backward-compatibility-and-deprecated-code">
-<h2><a class="toc-backref" href="#id69">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h2>
-<p>ToDo: Fill in!</p>
+<h2><a class="toc-backref" href="#id70">10.7&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></h2>
+<p>The motivation and ideas behind regulated backward compatibility and
+deprecated code are described in the <a class="reference external" href="../lifecycle_model/TribitsLifecycleModel.pdf">TriBITS Lifecycle Model</a> document.
+Here, the details of the implementation in the TriBITS system are given and
+how transitions between non-backward compatible versions is accomplished.</p>
+<!-- ToDo: Put in the material from the document README.DEPRECATED_CODE and -->
+<!-- format for RST. -->
 </div>
 <div class="section" id="wrapping-exterally-configured-built-software">
-<h2><a class="toc-backref" href="#id70">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></h2>
+<h2><a class="toc-backref" href="#id71">10.8&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></h2>
 <p>ToDo: Fill in!</p>
-</div>
-<div class="section" id="tribits-dashboard-driver">
-<h2><a class="toc-backref" href="#id71">10.9&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></h2>
-<p>ToDo: Fill in!</p>
+<!-- TriBITS Dashboard Driver -->
+<!-- - - - - - - - - - - - - - - - - - - - - - - - - -->
+<!-- ToDo: Fill in! -->
 </div>
 </div>
 <div class="section" id="references">
@@ -4582,7 +4694,7 @@ CMake code file <tt class="docutils literal">TribitsGlobalMacros.cmake</tt> whic
 source the options that a TriBITS project takes and what the default values
 are but we strive to document them here as well.  Many of these global options
 (i.e. cache variables) such as <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> allow the
-project to define a default by setting a local varible
+project to define a default by setting a local variable
 <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT</tt> as:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT &lt;someDefault&gt;)
@@ -4606,7 +4718,7 @@ ADVANCED_SET( ${PROJECT_NAME}_&lt;SOME_OPTION&gt;
 a default.  In this way, if the project sets the variable
 <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT</tt> before this code exeutates, then
 <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT}</span></tt> will be used as the default for
-the cache varible <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> which, of course, can be
+the cache variable <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> which, of course, can be
 overridden by the user when calling <tt class="docutils literal">cmake</tt> in a number of ways.</p>
 <p>Most of these global options that can be overridden externally by setting the
 cache variable <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> should be documented in the
@@ -7731,7 +7843,10 @@ In order to do a solid checkin, perform the following recommended workflow
   eg/git documentation).
 
   NOTE: If not installed on your system, the eg script can be found at
-  cmake/tribits/common_tools/git/eg.  Just add it to your path.
+  tribits/common_tools/git/eg.  Just add it to your path.
+
+  NOTE: When multiple repos are involved, use egdist instead.  It is provided
+  at tribits/common_tools/git/egdist.  See egdist --help for details.
 
 2) Review the changes that you have made to make sure it is safe to push:
 
@@ -7739,8 +7854,8 @@ In order to do a solid checkin, perform the following recommended workflow
   $ eg local-stat                  # Look at the full status of local repo
   $ eg diff --name-status origin   # [Optional] Look at the files that have changed
 
-  NOTE: The command 'local-stat' is an alias that can be installed with the
-  script cmake/tribits/common_tools/git/git-config-alias.sh.  It is highly
+  NOTE: The command 'local-stat' is a git alias that can be installed with the
+  script tribits/common_tools/git/git-config-alias.sh.  It is highly
   recommended over just a raw 'eg status' or 'eg log' to review commits before
   attempting to test/push commits.
 
@@ -7767,17 +7882,18 @@ In order to do a solid checkin, perform the following recommended workflow
   you want.  If you create one outside of the main source dir, then
   you will not have to add the git exclude shown above.
 
-4) Do the checkin build, test, and push:
+4) Do the pull, configure, build, test, and push:
 
   $ cd $PROJECT_HOME
   $ cd CHECKIN
   $ ../checkin-test.py -j4 --do-all --push
 
-  NOTE: The above will: a) pull updates from the global repo, b) automatically
-  enable the correct packages, c) build the code, d) run the tests, e) send
-  you emails about what happened, f) do a final pull to from the global repo,
-  g) amend the last local commit with the test results, and h) finally push
-  local commits to the global repo if everything passes.
+  NOTE: The above will: a) pull updates from the global repo(s), b)
+  automatically enable the correct packages, c) configure and build the right
+  packages, d) run the tests, e) send you emails about what happened, f) do a
+  final pull from the global repo, g) optionally amend the last local commit
+  with the test results, and h) finally push local commits to the global
+  repo(s) if everything passes.
 
   NOTE: You must have installed the official versions of eg/git with the
   install-git.py script in order to run this script.  If you don't, the script
@@ -7791,13 +7907,13 @@ In order to do a solid checkin, perform the following recommended workflow
 
   NOTE: You must not have any uncommitted changes or the 'eg pull &amp;&amp; eg rebase
   --against origin' command will fail on the final pull/rebase before the push
-  and therefore the whole script will fail.  To still run the script, you will
-  may need to use 'eg stash' to stash away your unstaged/uncommitted changes
+  and therefore the whole script will fail.  To run the script, you will may
+  need to first use 'eg stash' to stash away your unstaged/uncommitted changes
   *before* running this script.
 
-  NOTE: You need to have SSH public/private keys set up to software.sandia.gov
-  for the git commands invoked in the script to work without you having to
-  type a password.
+  NOTE: You need to have SSH public/private keys set up to the remote repo
+  machines for the git commands invoked in the script to work without you
+  having to type a password.
 
   NOTE: You can do the final push in a second invocation of the script with a
   follow-up run with --push and removing --do-all (it will remember the
@@ -7809,7 +7925,7 @@ In order to do a solid checkin, perform the following recommended workflow
   tests passed and if the push happened or not.
 
   NOTE: The commands 'cmake', 'ctest', and 'make' must be in your default path
-  befor running this script.
+  before running this script.
 
 For more details on using this script, see the detailed documentation below.
 
@@ -7823,24 +7939,24 @@ The following approximate steps are performed by this script:
 ----------------------------------------------------------------------------
 
 
-1) Check to see if the local repo is clean:
+1) Check to see if the local repo(s) are clean:
 
   $ eg status
 
   NOTE: If any modified or any unknown files are shown, the process will be
-  aborted.  The local repo working directory must be clean and ready to push
-  *everything* that is not stashed away.
+  aborted.  The local repo(s) working directory must be clean and ready to
+  push *everything* that is not stashed away.
 
 2) Do a 'eg pull' to update the code (done if --pull or --do-all is set):
 
   NOTE: If not doing a pull, use --allow-no-pull or --local-do-all.
 
-3) Select the list of packages to enable forward based on the package
-directories where there are changed files (or from a list of packages passed
-in by the user).
+3) Select the list of packages to enable forward/downstream based on the
+package directories where there are changed files (or from a list of packages
+passed in by the user).
 
   NOTE: The automatic enable behavior can be overridden or modified using the
-  options --enable-packages, --disable-packages, and/or
+  options --enable-all-packages, --enable-packages, --disable-packages, and/or
   --no-enable-fwd-packages.
 
 4) For each build/test case &lt;BUILD_NAME&gt; (e.g. MPI_DEBUG, SERIAL_RELEASE,
@@ -7848,8 +7964,8 @@ extra builds specified with --extra-builds):
 
   4.a) Configure a build directory &lt;BUILD_NAME&gt; in a standard way for all of
   the packages that have changed and all of the packages that depend on these
-  packages forward. You can manually select which packages get enabled (see
-  the enable options above).  (done if --configure, --do-all, or
+  packages forward/downstream. You can manually select which packages get
+  enabled (see the enable options above).  (done if --configure, --do-all, or
   --local-do-all is set.)
   
   4.b) Build all configured code with 'make' (e.g. with -jN set through
@@ -7859,23 +7975,24 @@ extra builds specified with --extra-builds):
   or --local-do-all is set.)
 
   4.d) Analyze the results of the update, configure, build, and tests and send
-  email about results.  (emails only sent out if --send-emails-to is not set
-  to ''.)
+  email about results.  (emails only sent out if --send-emails-to != &quot;&quot;)
 
-5) Do final pull, append test results to last commit message, and push (done
-if --push is set)
+5) Do final pull and rebase, append test results to last commit message, and
+push (done if --push is set)
 
-  5.a) Do a final 'eg pull &amp;&amp; eg rebase --against origin/&lt;current_branch&gt;'
-  (done if --pull or --do-all is set)
+  5.a) Do a final 'eg pull' (done if --pull or --do-all is set)
+
+  5.b) Do 'eg rebase --against origin/&lt;current_branch&gt;' (done if --pull or
+  --do-all is set and --rebase is set)
 
     NOTE: The final 'eg rebase --against origin/&lt;current_branch&gt;' is
-    required to avoid trival merge commits that the global get repo
+    required to avoid trivial merge commits that the global get repo
     will reject on the push.
   
-  5.b) Amend commit message of the most recent commit with the summary of the
+  5.c) Amend commit message of the most recent commit with the summary of the
   testing performed.  (done if --append-test-results is set.)
   
-  5.c) Push the local commits to the global repo.
+  5.d) Push the local commits to the global repo (done if --push is set)
 
 
 ----------------------------------------------------------------------------
@@ -7888,7 +8005,7 @@ directory apart from your standard build directories such as with:
   $ mkdir CHECKIN
   $ echo CHECKIN &gt;&gt; .git/info/exclude
 
-The most basic way to do the checkin test is:
+The most basic way to do pre-push testing is with:
 
   $ cd CHECKIN
   $ ../checkin-test.py --do-all [other options]
@@ -7901,6 +8018,8 @@ set of CMake variables that will get read in the files:
   COMMON.config
   MPI_DEBUG.config
   SERIAL_RELEASE.config
+
+(or whatever your standard --default-builds are).
 
 Actually, for built-in build/test cases, skeletons of these files will
 automatically be written out with typical CMake cache variables (commented
@@ -7948,7 +8067,7 @@ manually.
 Common Use Cases (examples):
 ----------------------------
 
-(*) Basic full testing with integrating with global repo without push:
+(*) Basic full testing with integrating with global repo(s) without push:
 
   ../checkin-test.py --do-all
 
@@ -7967,8 +8086,8 @@ Common Use Cases (examples):
   ../checkin-test.py [other options] --push
 
   NOTE: This will pick up the results for the last completed test runs with
-  [other options] and append the results of those tests to the checkin-message
-  of the most recent commit.
+  [other options] and append the results of those tests to the log of the most
+  recent commit.
 
   NOTE: Take the action options for the prior run and replace --do-all with
   --push but keep all of the rest of the options the same.  For example, if
@@ -7982,7 +8101,7 @@ Common Use Cases (examples):
 
   NOTE: This is a common use case when some tests are failing which aborted
   the initial push but you determine it is okay to push anyway and do so with
-  --force-push (or just --force for short).
+  --force-push.
 
 (*) Test only the packages modified and not the forward dependent packages:
 
@@ -7995,7 +8114,7 @@ Common Use Cases (examples):
   changed because every package does not follow a set pattern for
   tests and test code.
 
-(*) Run the MPI_DEBUG build/test only:
+(*) Run the the most important default (e.g. MPI_DEBUG) build/test only:
 
   ../checkin-test.py --do-all --default-builds=MPI_DEBUG
 
@@ -8007,12 +8126,13 @@ Common Use Cases (examples):
 
   NOTE: This will do only an MPI DEBUG build and will only build and run the
   tests for the packages that have directly been changed and not any forward
-  packages.
+  packages.  Replace &quot;MPI_DEBUG&quot; with whatever your most important default
+  build is.
 
 (*) Test only a specific set of packages and no others:
 
   ../checkin-test.py \
-    --enable-packages=&lt;PACKAGEA&gt;,&lt;PACKAGEB&gt;,&lt;PACKAGEC&gt; --no-enable-fwd-packages \
+    --enable-packages=&lt;P0&gt;,&lt;P1&gt;,&lt;P2&gt; --no-enable-fwd-packages \
     --do-all
   
   NOTE: This will override all logic in the script about which packages will
@@ -8024,7 +8144,8 @@ Common Use Cases (examples):
   do so.
 
   NOTE: Using these options is greatly preferred to not running this script at
-  all and should not be any more expensive than the testing you already do.
+  all and should not be any more expensive than the testing you would already
+  do manually before a push.
 
 (*) Test changes locally without pulling updates:
 
@@ -8045,14 +8166,13 @@ Common Use Cases (examples):
 (*) Adding extra build/test cases:
 
   Often you will be working on Secondary Tested (ST) Code or Experimental (EX)
-  Code and want to include the testing of this in your pre-checkin testing
-  along with the standard --default-builds build/test cases which can only
-  include Primary Tested (PT) Code.  In this case you can run with:
+  Code and want to include the testing of this in your pre-push testing
+  process along with the standard --default-builds build/test cases which can
+  only include Primary Tested (PT) Code.  In this case you can run with:
   
     ../checkin-test.py --extra-builds=&lt;BUILD1&gt;,&lt;BUILD2&gt;,... [other options]
   
-  For example, if you have a build that enables the TPL CUDA for Tpetra you
-  would do:
+  For example, if you have a build that enables the TPL CUDA you would do:
   
     echo &quot;
     -DTPL_ENABLE_MPI:BOOL=ON
@@ -8061,37 +8181,44 @@ Common Use Cases (examples):
   
   and then run with:
   
-    ../checkin-test.py \
-      --enable-packages=Tpetra --extra-builds=MPI_DEBUG_CUDA --do-all
+    ../checkin-test.py --extra-builds=MPI_DEBUG_CUDA --do-all
   
-  This will do the standard MPI_DEBUG and SERIAL_RELEASE build/test cases
-  along with your non-standard MPI_DEBUG_CUDA build/test case.
+  This will do the standard --default-builds (e.g. MPI_DEBUG and
+  SERIAL_RELEASE) build/test cases along with your non-standard MPI_DEBUG_CUDA
+  build/test case.
 
-  NOTE: You can disable the default build/test cases with
-  --without-default-builds.  However, please only do this when you are not
-  going to push because we need at least one default build/test case to be
-  safe to push.
+  NOTE: You can disable the default build/test cases with --default-builds=&quot;&quot;.
+  However, please only do this when you are not going to push because you need
+  at least one default build/test case (the most important default PT case,
+  e.g. MPI_DEBUG) to do a safe push.
 
-(*) Including extra repos:
+(*) Including extra repos and extra packages:
 
-  You can also use the checkin-test.py script to continuously
-  integrate with other external extra git repos containing add-on
-  packages. To do so, just run:
+  You can also use the checkin-test.py script to continuously integrate
+  multiple git repos containing add-on packages. To do so, just run:
     
-    ../checkin-test.py --extra-builds=REPO1,REPO2,... [options]
+    ../checkin-test.py --extra-repos=&lt;REPO1&gt;,&lt;REPO2&gt;,... [options]
 
   NOTE: You have to create local commits in all of the extra repos where there
   are changes or the script will abort.
 
+  NOTE: Extra repos can be specified with more flexibility using the
+  --extra-repos-file and --extra-repos-type arguments (also see
+  --ignore-missing-extra-repos).
+
   NOTE: Each of the last local commits in each of the changed repos will get
-  amended with the appended summary of what was enabled in the build/test.
+  amended with the appended summary of what was enabled in the build/test (if
+  --append-test-results is set).
 
 (*) Performing a remote test/push:
 
   If you develop on a slow machine like your laptop, doing an appropriate
   level of testing can take a long time.  In this case, you can pull the
-  changes to another faster remote workstation and do a more complete
-  set of tests and push from there.
+  changes to another faster remote workstation and do a more complete set of
+  tests and push from there.  If you are knowledgeable with git, this will be
+  easy and natural to do, without any help from this script.  However, this
+  script can still help and automate the steps and can do so in one command
+  invocation on the part of the developer.
 
   On your slow local development machine 'mymachine', do the limited testing
   with:
@@ -8101,15 +8228,19 @@ Common Use Cases (examples):
   On your fast remote test machine, do a full test and push with:
   
     ../checkin-test.py \
-      --extra-pull-from=mymachine:/some/dir/to/your/src:master \
+      --extra-pull-from=&lt;remote-name&gt;:master \
       --do-all --push
+
+  where &lt;remote-name&gt; is a git repo pointing to
+  mymachine:/some/dir/to/your/src:master (see 'git help remote').
   
   NOTE: You can of course adjust the packages and/or build/test cases that get
   enabled on the different machines.
   
-  NOTE: Once you invoke the checkin-test.py script on the remote test machine,
-  you can start changing files again on your local development machine and
-  just check your email to see what happens.
+  NOTE: Once you invoke the checkin-test.py script on the remote test machine
+  and it has pulled the commits from mymachine, then you can start changing
+  files again on your local development machine and just check your email to
+  see what happens on the remote test machine.
   
   NOTE: If something goes wrong on the remote test machine, you can either
   work on fixing the problem there or you can fix the problem on your local
@@ -8118,11 +8249,13 @@ Common Use Cases (examples):
   NOTE: If you alter the commits on the remote machine (such as squashing
   commits), you will have trouble merging back on our local machine.
   Therefore, if you have to to fix problems, make new commits and don't alter
-  the ones you pulled from your local machine.
+  the ones you pulled from your local machine (but rebasing them should be
+  okay as long as the local commits on mymachine are not pushed to other
+  repos).
 
   NOTE: Git will resolve the duplicated commits when you pull the commits
   pushed from the remote machine.  Git knows that the commits are the same and
-  will do the right thing.
+  will do the right thing when rebasing (or just merging).
   
 (*) Check push readiness status:
 
@@ -8140,24 +8273,25 @@ Common Use Cases (examples):
 
 Hopefully the above documentation, the example use cases, the documentation of
 the command-line arguments below, and some experimentation will be enough to
-get you going using this script for all of pre-checkin testing and pushes.  If
-that is not sufficient, send email to trilinos-framework&#64;software.sandia.gov
-to ask for help.
+get you going using this script for all of your pre-push testing and pushes.
+If that is not sufficient, send email to your development support team to ask
+for help.
 
 
 Handling of PT, ST, and EX Code in built-in and extra builds:
 -------------------------------------------------------------
 
-This script will only process PT (Primary Tested) packages in the default
-MPI_DEBUG and SERIAL_RELEASE builds.  This is to avoid problems of
-side-effects of turning on ST packages that would impact PT packages (e.g. ST
-Phalanx getting enabled that enables ST Boost which turns on support for Boost
-in PT Teuchos producing different code which might work but the pure PT build
-without Boost of Teuchos may actually be broken and not know it).  Therefore,
-any non-PT packages that are enabled (either implicity through changed files
-or explicitly in --enable-packages) will be turned off in the MP_DEBUG and
-SERIAL_RELEASE builds.  If none of the enabled packages are PT, then they will
-all be disabled and the MPI_DEBUG and SERIAL_RELEASE builds will be skipped.
+This script will only process PT (Primary Tested) packages in the
+--default-builds (e.g. MPI_DEBUG and SERIAL_RELEASE) builds.  This is to avoid
+problems of side-effects of turning on ST packages that would impact PT
+packages (e.g. an ST package getting enabled that enables an ST TPL which
+turns on support for that TPL in a PT package producing different code which
+might work but the pure PT build without the extra TPL may actually be broken
+and not know it).  Therefore, any non-PT packages that are enabled (either
+implicitly through changed files or explicitly by listing in --enable-packages)
+will be turned off in the --default-builds builds.  If none of the enabled
+packages are PT, then they will all be disabled and the --default-builds
+builds will be skipped.
 
 In order to better support the development of ST and EX packages, this script
 allows you to define some extra builds that will be invoked and used to
@@ -8170,7 +8304,7 @@ the goal is to test these ST builds it is desirable to also run these builds
 because they also my impact downstream ST packages.
 
 Finally, the option --extra-builds will test all enabled packages, including
-EX packages, reguardless of their categorization.  Therefore, when using
+EX packages, regardless of their test group.  Therefore, when using
 --extra-builds, be careful that you watch what packages are enabled.  If you
 change an EX package, it will be enabled in --extra-builds builds.
 
@@ -8182,9 +8316,13 @@ the following input arguments specifying extra builds
 with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
 ST, and Meros is EX.
 
-Here is what packages would be enabled in each of the builds
-MPI_DEBUG, SERIAL_RELEASE, MPI_DEBUG_ST, and INTEL_DEBUG and which
-builds would be skipped:
+Here is what packages would be enabled in each of the builds:
+
+  --default-builds=MPI_DEBUG,SERIAL_RELEASE \
+  --st-extra-builds=MPI_DEBUG_ST \
+  --extra-builds=INTEL_DEBUG
+
+and which packages would be excluded:
 
 A) --enable-packages=Teuchos:
    MPI_DEBUG:       [Teuchos]
@@ -8216,9 +8354,9 @@ E) --enable-packages=Teuchos,Phalanx,Meros:
    MPI_DEBUG_ST:    [Teuchos,Phalanx]
    INTEL_DEBUG:     [Teuchos,Phalanx,Meros]
 
-Tthe --extra-builds=INTEL_DEBUG build is always performed with all of the
-enabled packages.  This logic given above in order to understand the output
-given in the script.
+The --extra-builds=INTEL_DEBUG build is always performed with all of the
+enabled packages.  This logic given above must be understood in order to
+understand the output given in the script.
 
 
 Conventions for Command-Line Arguments:
@@ -8234,10 +8372,10 @@ complement.  If the action command appears, then the action will be performed.
 b) Aggregate action commands such as --do-all and --local-do-all turn on sets
 of other action commands and are shown with [AGGR ACTION] in their
 documentation.  The sub-actions that these aggregate action commands turn on
-and cannot be disabled with other arguments.
+cannot be disabled with other arguments.
 
-c) Other arguments are those that are not [ACTION] or [AGGR ACTION] arguments
-and tend to either pass in data and turn control flags on or off.
+c) Other arguments are those that are not marked with [ACTION] or [AGGR
+ACTION] tend to either pass in data and turn control flags on or off.
 
 
 Exit Code:
