@@ -3,6 +3,8 @@
 namespace stk {
   namespace util {
 
+    Parameter ParameterList::invalid;
+    
     void ParameterList::write_parameter_list(std::ostream & stream)
     {
       ParameterMapType::iterator i = parameterData.begin();

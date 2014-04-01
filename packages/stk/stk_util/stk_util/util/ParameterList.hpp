@@ -94,6 +94,8 @@ namespace stk {
 
     class ParameterList {
     public:
+      static Parameter invalid;
+      
       template <typename T> void set_param (const std::string &name,
 					    const T value,
 					    bool toOutput = false,
@@ -123,6 +125,7 @@ namespace stk {
         ParameterMapType::iterator it = parameterData.find(name);
         if(it == parameterData.end() ) {
 	  std::cerr << "ERROR: Parameter named '" << name << "' not found\n";
+	  return invalid;
         }
         return (*it).second;
       }
