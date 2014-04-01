@@ -91,6 +91,55 @@ namespace
     int new_answer = params.get_value<int>("Answer");
     EXPECT_EQ(new_answer, 21);
     
+    {
+      //+ Access a variable of unknown type...
+      //+ The parameter uses boost::any to store the actual value.
+      stk::util::Parameter &param = params.get_param("Answer");
+      double value_as_double = 0.0;
+      switch (param.type) {
+      case stk::util::ParameterType::DOUBLE:
+	value_as_double = boost::any_cast<double>(param.value);
+	break;
+      case stk::util::ParameterType::FLOAT:
+	value_as_double = static_cast<double>(boost::any_cast<float>(param.value));
+	break;
+      case stk::util::ParameterType::INTEGER:
+	value_as_double = static_cast<double>(boost::any_cast<int>(param.value));
+	break;
+      case stk::util::ParameterType::INT64:
+	value_as_double = static_cast<double>(boost::any_cast<int64_t>(param.value));
+	break;
+      default:
+	std::cerr << "ERROR: I can not convert 'Answers' value to a double\n";
+	break;
+      }
+      EXPECT_EQ(static_cast<double>(new_answer), value_as_double);
+    }
+
+    {
+      //+ Access a variable of unknown type without using boost::any_cast
+      stk::util::Parameter &param = params.get_param("Answer");
+      double value_as_double = 0.0;
+      switch (param.type) {
+      case stk::util::ParameterType::DOUBLE:
+	value_as_double = params.get_value<double>("Answer");
+	break;
+      case stk::util::ParameterType::FLOAT:
+	value_as_double = static_cast<double>(params.get_value<float>("Answer"));
+	break;
+      case stk::util::ParameterType::INTEGER:
+	value_as_double = static_cast<double>(params.get_value<int>("Answer"));
+	break;
+      case stk::util::ParameterType::INT64:
+	value_as_double = static_cast<double>(params.get_value<int64_t>("Answer"));
+	break;
+      default:
+	std::cerr << "ERROR: I can not convert 'Answers' value to a double\n";
+	break;
+      }
+      EXPECT_EQ(static_cast<double>(new_answer), value_as_double);
+    }
+    
     //-END-access
 
     //-BEGIN-error
@@ -98,7 +147,7 @@ namespace
     //+ an error message is printed to stderr and an invalid
     //+ parameter object is returned
     stk::util::Parameter no_exist = params.get_param("DoesNotExist");
-    EXPECT_EQ(no_exist.type, stk::util::ParameterType::INVALID);
+    EXPECT_EQ(stk::util::ParameterType::INVALID, no_exist.type);
     
     //+ In this method of requesting a parameter, no error
     //+ message is printed if the parameter doesn't exist and
@@ -107,17 +156,26 @@ namespace
     stk::util::ParameterMapType::iterator it = params.find("DoesNotExist");
     EXPECT_TRUE(it == params.end());
     
+    //+ If the value of a non-existant parameter is requested,
+    //+ an error message is printed and the value 0 is returned.
+    double invalid_value = params.get_value<double>("DoesNotExist");
+    EXPECT_EQ(0.0, invalid_value);
+
     //+ If the parameter types do not match, an error message is
     //+ printed and the value 0 of the requested type is returned.
     int invalid = params.get_value<int>("PI");
-    EXPECT_EQ(invalid, 0);
+    EXPECT_EQ(0, invalid);
     
     //+ If the parameter types do not match, an error message is
     //+ printed and an empty vector of the requested type is returned.
     std::vector<double> pies = params.get_value<std::vector<double> >("PI");
-    EXPECT_EQ(pies.size(), 0u);
+    EXPECT_EQ(0u, pies.size());
     //-END-error
 
+    //+ The parameter query by name is case-sensitive
+    double not_found = params.get_value<double>("pi");
+    EXPECT_EQ(0.0, not_found);
+    
     //-BEGIN-usertype
     //+ Adding a parameter of "unsupported" type...
     stk::util::ParameterList more_params;
