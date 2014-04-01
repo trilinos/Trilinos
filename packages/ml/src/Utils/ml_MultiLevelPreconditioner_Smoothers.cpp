@@ -75,6 +75,7 @@ using namespace Teuchos;
 // ============================================================================
 inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, int * blockIndices, int last, int next, int LineID, double tol, int *itemp, double * dtemp) {
   double *xvals= NULL, *yvals = NULL, *zvals = NULL;
+  int N = ml->Amat[currentLevel].outvec_leng;
   ML_Aggregate_Viz_Stats *grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[currentLevel].Grid;
   if (grid_info != NULL) xvals = grid_info->x;
   if (grid_info != NULL) yvals = grid_info->y;
@@ -93,21 +94,23 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
     int n=0;
     int neighbors_in_line=0;
     ML_Operator_Getrow(Amat,1,&next,allocated_space, cols,vals,&n);
-    
     double x0 = xvals[next/NumEqns];
     double y0 = yvals[next/NumEqns];
     double z0 = zvals[next/NumEqns];
 
     // Calculate neighbor distances & sort
+    int neighbor_len=0;
     for(int i=0; i<n; i+=NumEqns) {
       double mydist = 0.0;
+      if(cols[i] >=N) continue; // Check for off-proc entries
       int nn = cols[i] / NumEqns;
       if(blockIndices[nn]==LineID) neighbors_in_line++;
       if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
       if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
       if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
-      dist[i/NumEqns] = sqrt(mydist);
-      indices[i/NumEqns]=cols[i];
+      dist[neighbor_len] = sqrt(mydist);
+      indices[neighbor_len]=cols[i];
+      neighbor_len++;
     }
     // If more than one of my neighbors is already in this line.  I
     // can't be because I'd create a cycle
@@ -116,15 +119,15 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
     // Otherwise add me to the line 
     for(int k=0; k<NumEqns; k++) 
       blockIndices[next + k] = LineID;
-
+    
     // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal)
-    ML_az_dsort2(dist,n/NumEqns,indices);
+    ML_az_dsort2(dist,neighbor_len,indices);
 
-    if(n > 0 && indices[1] != last && blockIndices[indices[1]] != -1 && dist[1]/dist[n-1] < tol) {
+    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[1];
     }
-    else if(n > 1 && indices[2] != last && blockIndices[indices[2]] != -1 && dist[2]/dist[n-1] < tol) {
+    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
       last=next;
       next=indices[2];
     }
@@ -158,33 +161,39 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
 
   for(int i=0; i<N; i+=NumEqns) {
     int nz=0;
+    // Short circuit if I've already been blocked
+    if(blockIndices[i] !=-1) continue;
+
     // Get neighbors and sort by distance
     ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&nz);
     double x0 = xvals[i/NumEqns];
     double y0 = yvals[i/NumEqns];
     double z0 = zvals[i/NumEqns];
 
+    int neighbor_len=0;
     for(int j=0; j<nz; j+=NumEqns) {
       double mydist = 0.0;
       int nn = cols[j] / NumEqns;
+      if(cols[j] >=N) continue; // Check for off-proc entries
       if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
       if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
       if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
-      dist[j/NumEqns] = sqrt(mydist);
-      indices[j/NumEqns]=cols[j];
+      dist[neighbor_len] = sqrt(mydist);
+      indices[neighbor_len]=cols[j];
+      neighbor_len++;
     }
-    ML_az_dsort2(dist,nz/NumEqns,indices);
+    ML_az_dsort2(dist,neighbor_len,indices);
 
     // Number myself
     for(int k=0; k<NumEqns; k++)
       blockIndices[i + k] = num_lines;
 
     // Fire off a neighbor line search (nearest neighbor)
-    if(nz > 0 && dist[1]/dist[nz-1] < tol) {
+    if(neighbor_len > 2 && dist[1]/dist[neighbor_len-1] < tol) {
       local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
     }
     // Fire off a neighbor line search (second nearest neighbor)
-    if(nz > 1 && dist[2]/dist[nz-1] < tol) {
+    if(neighbor_len > 3 && dist[2]/dist[neighbor_len-1] < tol) {
       local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
     }
 
@@ -723,8 +732,11 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
        if(MyLineDetectionThreshold > 0.0) {
 	 // Use Mavriplis-inspired line detection
-	 if( verbose_ ) std::cout << msg << MySmoother << ": using automatic line detection "<<std::endl;
 	 NumBlocks = ML_Compute_Blocks_AutoLine(ml_,currentLevel,NumPDEEqns_,MyLineDetectionThreshold,blockIndices);
+	 int GlobalBlocks=0;
+	 Comm().SumAll(&NumBlocks,&GlobalBlocks,1);
+	 if( verbose_ ) std::cout << msg << MySmoother << ": using automatic line detection ("<<GlobalBlocks<<" blocks found)"<<std::endl;
+
        }
        else {
 	 // Use Tuminaro's line detection

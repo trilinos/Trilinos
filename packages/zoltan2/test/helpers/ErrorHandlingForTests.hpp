@@ -111,7 +111,7 @@ if (gval){ \
 #else
 
 #define TEST_FAIL_AND_THROW(comm, ok, s) \
-if ((!ok)){ \
+if (!(ok)){ \
   throw std::runtime_error(std::string(s)); \
 } 
 

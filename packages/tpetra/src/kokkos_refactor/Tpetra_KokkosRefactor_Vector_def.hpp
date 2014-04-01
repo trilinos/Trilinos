@@ -317,6 +317,89 @@ namespace Tpetra {
     // directly, rather than through RCP, only does a shallow copy.
     return dst;
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Teuchos::RCP<const Vector<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  Vector<Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& subMap,
+              size_t offset) const
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using Teuchos::rcp;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > vec_type;
+
+    const size_t newNumRows = subMap->getNodeNumElements ();
+    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (this->lclMV_),
+        std::runtime_error,
+        "Tpetra::Vector::offsetView: Invalid input Map.  The Map owns "
+        << subMap->getNodeNumElements () << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the Vector contains only "
+        << this->lclMV_.getOrigNumRows () << " on this process.");
+    }
+
+    const std::pair<size_t, size_t> rowRange (offset, newNumRows);
+    dual_view_type localVec =
+      subview<dual_view_type> (this->view_, rowRange, ALL ());
+    return rcp (new vec_type (subMap, localVec));
+
+    // FIXME (mfh 31 Mar 2014) What about whichVectors_ ???
+    // The "classic" version of this method didn't deal with that either.
+  }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Teuchos::RCP<Vector<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >
+  Vector<Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& subMap,
+                      size_t offset)
+  {
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    using Teuchos::rcp;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > vec_type;
+
+    const size_t newNumRows = subMap->getNodeNumElements ();
+    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
+    if (tooManyElts) {
+      const int myRank = this->getMap ()->getComm ()->getRank ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        newNumRows + offset > MVT::getNumRows (this->lclMV_),
+        std::runtime_error,
+        "Tpetra::Vector::offsetViewNonConst: Invalid input Map.  The Map owns "
+        << subMap->getNodeNumElements () << " elements on process " << myRank
+        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
+        << this->lclMV_.getOrigNumRows () << " on this process.");
+    }
+
+    const std::pair<size_t, size_t> rowRange (offset, newNumRows);
+    dual_view_type localVec =
+      subview<dual_view_type> (this->view_, rowRange, ALL ());
+    return rcp (new vec_type (subMap, localVec));
+
+    // FIXME (mfh 31 Mar 2014) What about whichVectors_ ???
+    // The "classic" version of this method didn't deal with that either.
+  }
+
 } // namespace Tpetra
 
 

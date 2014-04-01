@@ -270,17 +270,6 @@ namespace Details {
     }
   };
 
-  // Solver which has different implementations for real and complex scalar types
-  template<class ScalarType,
-           class MV,
-           class OP,
-           const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex>
-  class NewSolverManager : public SolverManager<ScalarType, MV, OP> {
-  public:
-    NewSolverManager () {}
-    virtual ~NewSolverManager () {}
-  };
-
 } // namespace Details
 
 

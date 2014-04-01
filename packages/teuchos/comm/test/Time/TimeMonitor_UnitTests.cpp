@@ -995,6 +995,11 @@ namespace Teuchos {
     }
     }
 
+    //////////////////////////////////////////////////////////////
+    // test two versions of summarize with default behavior
+    //////////////////////////////////////////////////////////////
+
+    //version 1, comm provided
     const bool alwaysWriteLocal = false;
     const bool writeGlobalStats = true;
     const bool writeZeroTimers = false;
@@ -1014,14 +1019,38 @@ namespace Teuchos {
       TEST_INEQUALITY(substr_i, std::string::npos);
     }
 
-    ignoreMissingTimers = true;              // NOT the default
+    //version 2, no comm provided
     std::ostringstream oss2;
-    TimeMonitor::summarize (comm.ptr(), oss2, alwaysWriteLocal, writeGlobalStats,
+    TimeMonitor::summarize (oss2, alwaysWriteLocal, writeGlobalStats,
                             writeZeroTimers, Union, filter, ignoreMissingTimers);
     out << oss2.str() << std::endl;
+    if (comm->getSize() > 1) {
+      // The min should be 0
+      size_t substr_i = oss2.str().find ("0 (0)");
+      TEST_INEQUALITY(substr_i, std::string::npos);
+    }
+
+    //////////////////////////////////////////////////////////////
+    // test two versions of summarize with *non* default behavior
+    //////////////////////////////////////////////////////////////
+    //version 1, comm provided
+    ignoreMissingTimers = true;              // NOT the default
+    std::ostringstream oss3;
+    TimeMonitor::summarize (comm.ptr(), oss3, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+    out << oss3.str() << std::endl;
 
     // The min should be different from 0
-    size_t substr_i = oss2.str().find ("0 (0)");
+    size_t substr_i = oss3.str().find ("0 (0)");
+    TEST_EQUALITY(substr_i, std::string::npos);
+
+    //version 2, no comm provided
+    std::ostringstream oss4;
+    TimeMonitor::summarize (oss4, alwaysWriteLocal, writeGlobalStats,
+                            writeZeroTimers, Union, filter, ignoreMissingTimers);
+    out << oss4.str() << std::endl;
+    // The min should be different from 0
+    substr_i = oss4.str().find ("0 (0)");
     TEST_EQUALITY(substr_i, std::string::npos);
 
     // This sets up for the next unit test (if there is one).

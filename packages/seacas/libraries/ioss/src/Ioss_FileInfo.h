@@ -119,8 +119,8 @@ namespace Ioss {
     
   private:
     std::string filename_;
-    bool exists_;   //<! this is used frequently, check on creation
-    bool readable_; //<! this is used frequently, check on creation
+    bool exists_;   ///< this is used frequently, check on creation
+    bool readable_; ///< this is used frequently, check on creation
   };
 }
 #endif // IOSS_Ioss_FileInfo_h

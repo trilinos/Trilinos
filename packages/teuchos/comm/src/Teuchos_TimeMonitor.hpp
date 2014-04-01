@@ -480,7 +480,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Report timer statistics to the given output stream.
   ///
