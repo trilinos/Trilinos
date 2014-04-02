@@ -42,7 +42,6 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #ifndef _ZOLTAN2_ALGFIRSTFIT_HPP_
 #define _ZOLTAN2_ALGFIRSTFIT_HPP_
 
@@ -113,4 +112,3 @@ class AlgFirstFit
 };
 }
 #endif
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
