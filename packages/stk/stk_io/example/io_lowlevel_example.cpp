@@ -9,7 +9,9 @@
 #include <iostream>
 #include <assert.h>
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <boost/program_options.hpp>
+#include <boost/program_options/cmdline.hpp>
+
 #include <init/Ionit_Initializer.h>
 #include <Ioss_SubSystem.h>
 
@@ -171,8 +173,7 @@ namespace stk_example_io {
   /// helper functions to bridge between the Ioss and the stk::mesh.
   /// It is hoped that this paradigm will result in more functionality
   /// for the application with less complication and overhead.
-  void io_example( stk::ParallelMachine comm,
-		   const std::string& in_filename,
+  void io_example( const std::string& in_filename,
 		   const std::string& out_filename,
 		   const std::string& decomp_method)
   {
@@ -190,7 +191,7 @@ namespace stk_example_io {
       properties.add(Ioss::Property("DECOMPOSITION_METHOD", Ioss::Utils::uppercase(decomp_method)));
     }
     Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(dbtype, in_filename, Ioss::READ_MODEL,
-						    comm, properties);
+						    MPI_COMM_WORLD, properties);
     if (dbi == NULL || !dbi->ok()) {
       std::cerr  << "ERROR: Could not open database '" << in_filename
 		 << "' of type '" << dbtype << "'\n";
@@ -255,7 +256,7 @@ namespace stk_example_io {
 
     //----------------------------------
     // Process Bulkdata for all Entity Types. Subsetting is possible.
-    stk::mesh::BulkData bulk_data(fem_meta_data, comm);
+    stk::mesh::BulkData bulk_data(fem_meta_data, MPI_COMM_WORLD);
 
     bulk_data.modification_begin();
     process_elementblocks(in_region, bulk_data);
@@ -270,7 +271,7 @@ namespace stk_example_io {
     std::cout << "Creating output file: " << out_filename << "\n";
     Ioss::DatabaseIO *dbo = Ioss::IOFactory::create(dbtype, out_filename,
 						    Ioss::WRITE_RESULTS,
-						    comm);
+						    MPI_COMM_WORLD);
     if (dbo == NULL || !dbo->ok()) {
       std::cerr << "ERROR: Could not open results database '" << out_filename
 		<< "' of type '" << dbtype << "'\n";
@@ -416,7 +417,7 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	ThrowRequire(part != NULL);
+	STKIORequire(part != NULL);
 
       const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
 
@@ -464,8 +465,8 @@ namespace stk_example_io {
 
       if (stk::io::include_entity(entity)) {
 	stk::mesh::Part* const part = meta.get_part(entity->name());
-	ThrowRequire(part != NULL);
-	ThrowRequire(entity->field_exists("distribution_factors"));
+	STKIORequire(part != NULL);
+	STKIORequire(entity->field_exists("distribution_factors"));
 
 	stk::mesh::put_field(distribution_factors_field, *part);
 
@@ -491,7 +492,7 @@ namespace stk_example_io {
     stk::io::default_part_processing(blocks, meta, sset_rank);
 
     stk::mesh::Part* const fs_part = meta.get_part(sset->name());
-    ThrowRequire(fs_part != NULL);
+    STKIORequire(fs_part != NULL);
 
     stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
@@ -502,7 +503,7 @@ namespace stk_example_io {
       Ioss::SideBlock *side_block = sset->get_block(i);
       if (stk::io::include_entity(side_block)) {
 	stk::mesh::Part * const side_block_part = meta.get_part(side_block->name());
-	ThrowRequire(side_block_part != NULL);
+	STKIORequire(side_block_part != NULL);
 	meta.declare_part_subset(*fs_part, *side_block_part);
 
         const stk::mesh::EntityRank part_rank = side_block_part->primary_entity_rank();
@@ -592,7 +593,7 @@ namespace stk_example_io {
         const std::string &name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        ThrowRequire(part != NULL);
+        STKIORequire(part != NULL);
 
         const stk::topology topo = part->topology();
         if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -651,7 +652,7 @@ namespace stk_example_io {
         const std::string & name = entity->name();
         const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
         stk::mesh::Part* const part = meta.get_part(name);
-        ThrowRequire(part != NULL);
+        STKIORequire(part != NULL);
         stk::mesh::PartVector add_parts( 1 , part );
 
         std::vector<int> node_ids ;
@@ -904,21 +905,10 @@ namespace stk_example_io {
 // ========================================================================
 #include <boost/program_options.hpp>
 
-#include <stk_util/parallel/BroadcastArg.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
-
   namespace bopt = boost::program_options;
   int main(int argc, char** argv)
   {
-    //----------------------------------
-    // Broadcast argc and argv to all processors.
-
-    stk::ParallelMachine comm = stk::parallel_machine_init(&argc, &argv);
-
-    stk::BroadcastArg b_arg(comm, argc, argv);
-
-    //----------------------------------
-    // Process the broadcast command line arguments
+    MPI_Init(&argc, &argv);
 
     bopt::options_description desc("options");
 
@@ -930,11 +920,9 @@ namespace stk_example_io {
       ("output-log,o", bopt::value<std::string>(), "output log path" )
       ("runtest,r",    bopt::value<std::string>(), "runtest pid file" );
 
-    stk::get_options_description().add(desc);
-
-    bopt::variables_map &vm = stk::get_variables_map();
+    bopt::variables_map vm;
     try {
-      bopt::store(bopt::parse_command_line(b_arg.m_argc, b_arg.m_argv, desc), vm);
+      bopt::store(bopt::parse_command_line(argc, argv, desc), vm);
       bopt::notify(vm);
     }
     catch (std::exception & /* x */) {
@@ -955,12 +943,12 @@ namespace stk_example_io {
       if (vm.count("decomposition")) {
 	decomp_method = boost::any_cast<std::string>(vm["decomposition"].value());
       }
-      stk_example_io::io_example(comm, in_filename, out_filename, decomp_method );
+      stk_example_io::io_example(in_filename, out_filename, decomp_method );
     } else {
       std::cout << "OPTION ERROR: The '--mesh <filename>' option is required!\n";
       std::exit(EXIT_FAILURE);
     }
-    stk::parallel_machine_finalize();
+    MPI_Finalize();
 
     return 0;
   }

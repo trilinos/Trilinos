@@ -13,7 +13,6 @@
 #include <limits>
 #include <stdexcept>
 
-#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_io/IossBridge.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>

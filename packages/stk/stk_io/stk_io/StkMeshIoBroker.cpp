@@ -359,7 +359,7 @@ namespace {
     const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
     stk::io::default_part_processing(blocks, meta);
     stk::mesh::Part* const ss_part = meta.get_part(sset->name());
-    ThrowRequire(ss_part != NULL);
+    STKIORequire(ss_part != NULL);
 
     stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
     bool surface_df_defined = false; // Has the surface df field been defined yet?
@@ -369,7 +369,7 @@ namespace {
       Ioss::SideBlock *sb = sset->get_block(i);
       if (stk::io::include_entity(sb)) {
         stk::mesh::Part * const sb_part = meta.get_part(sb->name());
-        ThrowRequire(sb_part != NULL);
+        STKIORequire(sb_part != NULL);
         meta.declare_part_subset(*ss_part, *sb_part);
 
         if (sb->field_exists("distribution_factors")) {
@@ -693,7 +693,7 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      ThrowRequire(part != NULL);
+      STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
       if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -738,7 +738,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
     if (stk::io::include_entity(entity)) {
       const std::string &name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      ThrowRequire(part != NULL);
+      STKIORequire(part != NULL);
 
       stk::topology topo = part->topology();
       if (topo == stk::topology::INVALID_TOPOLOGY) {
@@ -829,8 +829,8 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* const part = meta.get_part(entity->name());
 
-      ThrowRequire(part != NULL);
-      ThrowRequire(entity->field_exists("distribution_factors"));
+      STKIORequire(part != NULL);
+      STKIORequire(entity->field_exists("distribution_factors"));
 
       stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
       stk::mesh::put_field(distribution_factors_field, *part);
@@ -844,8 +844,8 @@ void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
     if (stk::io::include_entity(entity)) {
       stk::mesh::Part* const part = meta.get_part(entity->name());
 
-      ThrowRequire(part != NULL);
-      ThrowRequire(entity->field_exists("distribution_factors"));
+      STKIORequire(part != NULL);
+      STKIORequire(entity->field_exists("distribution_factors"));
 
       std::string nodesetName = part->name();
       std::string nodesetDistFieldName = "distribution_factors_" + nodesetName;
@@ -891,7 +891,7 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
     if (stk::io::include_entity(entity)) {
       const std::string & name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      ThrowRequire(part != NULL);
+      STKIORequire(part != NULL);
       stk::mesh::PartVector add_parts( 1 , part );
 
       std::vector<INT> node_ids ;
@@ -927,7 +927,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
     if (stk::io::include_entity(entity)) {
       const std::string & name = entity->name();
       stk::mesh::Part* const part = meta.get_part(name);
-      ThrowRequire(part != NULL);
+      STKIORequire(part != NULL);
       stk::mesh::PartVector add_parts( 1 , part );
 
       std::vector<INT> node_ids ;
@@ -1087,7 +1087,7 @@ namespace stk {
     stk::mesh::FieldBase const& StkMeshIoBroker::get_coordinate_field()
     {
       stk::mesh::FieldBase const* coord_field = meta_data().coordinate_field();
-      ThrowRequire( coord_field != NULL);
+      STKIORequire( coord_field != NULL);
       return * coord_field;
     }
 
@@ -1732,7 +1732,7 @@ namespace stk {
 	  if (!fieldAlreadyExists) {
 	    if (m_db_purpose == stk::io::WRITE_RESTART) {
 	      int state_count = field.number_of_states();
-	      ThrowRequire(state_count < 7);
+	      STKIORequire(state_count < 7);
 	      int num_states_to_write = std::max(state_count-1, 1);
 	      for(int state=0; state < num_states_to_write; state++) {
 		stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);

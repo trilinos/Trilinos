@@ -22,7 +22,6 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
-#include <stk_util/util/tokenize.hpp>   // for tokenize
 #include "Ioss_CommSet.h"               // for CommSet
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
 #include "Ioss_ElementBlock.h"          // for ElementBlock
@@ -48,12 +47,20 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator&, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
-#include "stk_util/diag/StringUtil.hpp"  // for make_lower
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
 #include "stk_util/util/PairIter.hpp"   // for PairIter
+#include <stk_util/util/tokenize.hpp>   // for tokenize
 
 
+void STKIORequire(bool cond)
+{
+  if (!cond) throw std::runtime_error("");
+}
 
+void STKIORequireMsg(bool cond, const std::string &msg)
+{
+  if (!cond)
+    throw std::runtime_error(msg);
+}
 
 namespace {
 
@@ -545,8 +552,7 @@ stk::topology map_ioss_topology_to_stk( const Ioss::ElementTopology *topology)
       return topo;
     }
   }
-  std::string tmpCopy = topology->name().substr(0,5);
-  sierra::make_lower(tmpCopy);
+  std::string tmpCopy = Ioss::Utils::lowercase(topology->name().substr(0,5));
   if (tmpCopy=="super")
   {
       return stk::create_superelement_topology(topology->number_nodes());
@@ -835,7 +841,9 @@ const std::string get_suffix_for_field_at_state(enum stk::mesh::FieldState field
         case stk::mesh::StateNP1:
             break;
         default:
-            ThrowRequireMsg(false, "Internal Error: Unsupported stk::mesh::FieldState: " << field_state << ".");
+	  std::stringstream str;
+	  str <<"Internal Error: Unsupported stk::mesh::FieldState: " << field_state << "."; 
+	  STKIORequireMsg(false,str.str());
     }
     return suffix;
 }
@@ -858,7 +866,7 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
         stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
         std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
         stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
-        ThrowRequire(io_entity->field_exists(field_name_with_suffix));
+        STKIORequire(io_entity->field_exists(field_name_with_suffix));
         stk::io::field_data_from_ioss(mesh, stated_field, entity_list, io_entity, field_name_with_suffix);
     }
 }
@@ -906,7 +914,7 @@ void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
         stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
         std::string field_name_with_suffix = get_stated_field_name(io_fld_name, state_identifier);
         stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
-        //ThrowRequire(io_entity->field_exists(field_name_with_suffix));
+        //STKIORequire(io_entity->field_exists(field_name_with_suffix));
         stk::io::field_data_to_ioss(mesh, stated_field, entities, io_entity, field_name_with_suffix, filter_role);
     }
 }
@@ -970,7 +978,7 @@ void define_side_block(const stk::mesh::BulkData &bulk,
   stk::mesh::EntityRank type = part.primary_entity_rank();
   const stk::mesh::EntityRank siderank = stk::mesh::MetaData::get(part).side_rank();
   const stk::mesh::EntityRank edgerank = stk::topology::EDGE_RANK;
-  ThrowRequire(type == siderank || type == edgerank);
+  STKIORequire(type == siderank || type == edgerank);
 
   stk::topology side_topology = part.topology();
   std::string io_topo = map_stk_topology_to_ioss(side_topology);
@@ -1024,7 +1032,7 @@ void define_side_blocks(stk::mesh::Part &part,
                         const stk::mesh::Selector *subset_selector)
 {
   mesh::MetaData & meta = mesh::MetaData::get(part);
-  ThrowRequire(type == stk::topology::FACE_RANK || stk::topology::EDGE_RANK);
+  STKIORequire(type == stk::topology::FACE_RANK || stk::topology::EDGE_RANK);
 
   const stk::mesh::PartVector &blocks = part.subsets();
   if (blocks.size() > 0) {
@@ -1079,8 +1087,6 @@ void define_node_block(stk::mesh::Part &part,
 
   const int spatial_dim = meta.spatial_dimension();
   io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
-
-  ThrowAssertMsg(field_has_expected_size(meta.coordinate_field(), spatial_dim), "IossBridge define_node_block ERROR, coordinate field doesn't have the correct size. (Should match spatial-dimension.)");
 
   //--------------------------------
   // Create the special universal node block:
@@ -1663,7 +1669,7 @@ void output_communication_maps(Ioss::Region &io_region,
 
     const std::string cs_name("node_symm_comm_spec");
     Ioss::CommSet * io_cs = io_region.get_commset(cs_name);
-    ThrowRequire(io_cs != NULL);
+    STKIORequire(io_cs != NULL);
 
     // Allocate data space to store <id, processor> pair
     assert(io_cs->field_exists("entity_processor"));

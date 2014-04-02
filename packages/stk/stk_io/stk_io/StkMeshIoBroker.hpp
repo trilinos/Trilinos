@@ -28,7 +28,6 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 
 #include <stk_util/util/ParameterList.hpp>  // for Type
-#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire, etc
 
 namespace Ioss { class DatabaseIO; }
 namespace Ioss { class Property; }
@@ -620,13 +619,13 @@ namespace stk {
 						      const boost::any *value,
 						      stk::util::ParameterType::Type type)
     {
-      ThrowRequire(index < m_heartbeat.size());
+      STKIORequire(index < m_heartbeat.size());
       m_heartbeat[index]->add_global_ref(name, value, type);
     }
   
     inline void StkMeshIoBroker::process_heartbeat_output(size_t index, int step, double time)
     {
-      ThrowRequire(index < m_heartbeat.size());
+      STKIORequire(index < m_heartbeat.size());
       m_heartbeat[index]->process_output(step, time);
     }
   

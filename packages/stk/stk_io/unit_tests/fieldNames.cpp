@@ -1,5 +1,4 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_util/diag/StringUtil.hpp>
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
@@ -92,8 +91,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
 
     Ioss::DatabaseIO *iossDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);
     Ioss::Region iossRegion(iossDb);
-    std::string goldFieldName = internalClientFieldName;
-    sierra::make_lower(goldFieldName);
+    std::string goldFieldName = Ioss::Utils::lowercase(internalClientFieldName);
     testFieldNamedCorrectly(iossRegion, communicator, goldFieldName);
 
     unlink(restartFilename.c_str());
@@ -135,8 +133,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
     }
     Ioss::DatabaseIO *iossResultDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_MODEL, communicator);
     Ioss::Region resultRegion(iossResultDb);
-    std::string goldFieldName = internalClientFieldName;
-    sierra::make_lower(goldFieldName);
+    std::string goldFieldName = Ioss::Utils::lowercase(internalClientFieldName);
     testFieldNamedCorrectly(resultRegion, communicator, goldFieldName);
 
     Ioss::DatabaseIO *iossRestartDb = Ioss::IOFactory::create("exodus", restartFilename, Ioss::READ_RESTART, communicator);

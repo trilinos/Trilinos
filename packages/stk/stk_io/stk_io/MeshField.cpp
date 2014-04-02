@@ -115,7 +115,7 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       DBStepTimeInterval sti2(sti.region, m_timeToRead);
       step = sti2.get_closest_step();
     }
-    ThrowRequire(step > 0);
+    STKIORequire(step > 0);
     
     sti.region->begin_state(step);
 
@@ -155,7 +155,7 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       stk::mesh::FieldState state = m_field->state();
 
       // Interpolation only handles single-state fields currently.
-      ThrowRequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
+      STKIORequire(m_singleState || state_count == 1 || state != stk::mesh::StateNew);
 
       Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
       const Ioss::Field &io_field = io_entity->get_fieldref(m_dbName);

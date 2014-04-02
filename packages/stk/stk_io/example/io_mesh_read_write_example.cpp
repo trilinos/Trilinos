@@ -13,10 +13,6 @@
 #include <boost/program_options/cmdline.hpp>
 
 #include <stk_util/util/ParameterList.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/parallel/BroadcastArg.hpp>
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Comm.hpp>
@@ -102,7 +98,7 @@ namespace {
     }
 
     Teuchos::RCP<Ioss::Region> io_region = mesh_data.get_input_io_region();
-    ThrowRequire(!Teuchos::is_null(io_region));
+    STKIORequire(!Teuchos::is_null(io_region));
       
     for (size_t i=0; i < global_fields.size(); i++) {
       const Ioss::Field &input_field = io_region->get_fieldref(global_fields[i]);
@@ -187,8 +183,7 @@ namespace {
     }
   }
 
-  void driver(stk::ParallelMachine  comm,
-	      const std::string &parallel_io,
+  void driver(const std::string &parallel_io,
 	      const std::string &working_directory,
 	      const std::string &filename,
 	      const std::string &type,
@@ -200,7 +195,7 @@ namespace {
 	      stk::io::HeartbeatType hb_type,
 	      int interpolation_intervals)
   {
-    stk::io::StkMeshIoBroker mesh_data(comm);
+    stk::io::StkMeshIoBroker mesh_data(MPI_COMM_WORLD);
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
@@ -254,8 +249,8 @@ int main(int argc, char** argv)
   // Process the broadcast command line arguments
   bopt::options_description desc("options");
 
-  // NOTE: Options --directory --output-log --runtest are handled/defined in UseCaseEnvironment
   desc.add_options()
+    ("help,h", "produce help message")
     ("directory,d",   bopt::value<std::string>(&working_directory),
      "working directory with trailing '/'" )
     ("decomposition,D", bopt::value<std::string>(&decomp_method),
@@ -273,9 +268,11 @@ int main(int argc, char** argv)
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
 
-  stk::get_options_description().add(desc);
+  MPI_Init(&argc, &argv);
 
-  use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
+  bopt::variables_map vm;
+  bopt::store(bopt::command_line_parser(argc, argv).options(desc).allow_unregistered().run(), vm);
+  bopt::notify(vm);
 
   if (mesh.empty()) {
     std::cerr << "\nERROR: The --mesh option is required\n";
@@ -305,11 +302,12 @@ int main(int argc, char** argv)
   else if (heartbeat_format == "spyhis")
     hb_type = stk::io::SPYHIS;
 
-  driver(use_case_environment.m_comm, parallel_io,
+  driver(parallel_io,
 	 working_directory, mesh, type, decomp_method, compose_output, 
 	 compression_level, compression_shuffle, db_integer_size, hb_type,
 	 interpolation_intervals);
 
+  MPI_Finalize();
   return 0;
 }
 

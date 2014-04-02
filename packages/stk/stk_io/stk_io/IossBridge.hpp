@@ -35,6 +35,9 @@ class SideSet;
 class Field;
 }
 
+void STKIORequire(bool cond);
+void STKIORequireMsg(bool cond, const std::string &msg);
+
 namespace stk {
   namespace mesh {
   }
