@@ -1,20 +1,5 @@
 #include <gtest/gtest.h>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <Ioss_SubSystem.h>
 #include <stk_util/util/ParameterList.hpp>
-
-inline bool fieldWithNameChangedIsOutput(stk::io::StkMeshIoBroker &stkIo, MPI_Comm communicator, const size_t resultsOutputIndex, const std::string &goldFieldName)
-{
-    double dummyTime = 0;
-    stkIo.process_output_request(resultsOutputIndex, dummyTime);
-    Ioss::Region *outputRegion = stkIo.get_output_io_region(resultsOutputIndex).get();
-    Ioss::NodeBlock *nodeBlockAssociatedWithDisplacementField = outputRegion->get_node_blocks()[0];
-    Ioss::NameList fieldNames;
-    nodeBlockAssociatedWithDisplacementField->field_describe(Ioss::Field::TRANSIENT, &fieldNames);
-
-    return (goldFieldName == fieldNames[0]);
-}
 
 inline void validate_parameters_equal_value(const stk::util::Parameter &parameter,
 					    const stk::util::Parameter &gold_parameter)
