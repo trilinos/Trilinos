@@ -217,7 +217,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
       analysis_run_string += ".tpetra"
 
     print(analysis_run_string)
-    header = "                    :"
+    header = "                    |"
     for name in labels:
         if has_epetra:
             header = header + "  " + name + "-etime      eff"
@@ -226,6 +226,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
         if has_ml:
             header = header + "  " + name + "-mltime     eff"
     print(header)
+    separator = '-' * len(header)
 
     # initialize lists
     time_epetra     = list2dict(timelines)
@@ -239,12 +240,14 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
     basetime_ml     = list2dict(timelines)
 
     for analysis_run in analysis_runs:
+        print(separator)
+
         for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
             os.chdir(dir)
 
             nnodes = dir.replace(DIR_PREFIX, '')
 
-            fullstr = "%20s:" % dir
+            fullstr = "%19s |" % dir
 
             # test if there is anything to analyze
             if len(glob.glob("screen.out.*")) == 0:
