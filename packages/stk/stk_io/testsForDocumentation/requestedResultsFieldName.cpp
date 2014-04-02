@@ -4,9 +4,10 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/Field.hpp>
 #include <stk_mesh/base/Types.hpp>
-#include <fieldNameTestUtils.hpp>
-#include <restartTestUtils.hpp>
+#include <Ioss_SubSystem.h>
 
 namespace {
 
@@ -46,7 +47,9 @@ namespace {
       //+ NOTE: Fields must be declared before "populate_bulk_data()" is called
       //+       since it commits the meta data.
       const std::string fieldName = "disp";
-      stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, fieldName, 1);
+      stk::mesh::Field<double> &field =
+	stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK,
+								   fieldName, 1);
       stk::mesh::put_field(field, stkIo.meta_data().universal_part());
 
       //+ commit the meta data and create the bulk data.  
@@ -87,8 +90,10 @@ namespace {
 
       // ============================================================
       //+ VERIFICATION
-      EXPECT_TRUE( fieldWithNameChangedIsOutput(stkIo, communicator, fh,
-						alternateFieldName));
+      Ioss::Region *io_region = stkIo.get_output_io_region(fh).get();
+      Ioss::NodeBlock *nb = io_region->get_node_blocks()[0];
+      ASSERT_TRUE(nb->field_exists(alternateFieldName));
+      ASSERT_FALSE(nb->field_exists(fieldName));
     }
 
     // ============================================================
@@ -96,3 +101,4 @@ namespace {
     unlink(results_name.c_str());
   }
 }
+

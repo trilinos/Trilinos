@@ -4,7 +4,7 @@
 #include <mpi.h>
 #include <stk_util/util/ParameterList.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <fieldNameTestUtils.hpp>
+#include <Ioss_SubSystem.h>
 
 namespace
 {

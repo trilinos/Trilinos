@@ -2,11 +2,12 @@
 #include <string>
 #include <mpi.h>
 #include <stk_io/StkMeshIoBroker.hpp>
-#include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-#include <fieldNameTestUtils.hpp>
-#include <restartTestUtils.hpp>
+#include <stk_mesh/base/GetEntities.hpp>
+#include <stk_mesh/base/Field.hpp>
+#include <stk_mesh/base/Types.hpp>
+#include <Ioss_SubSystem.h>
 
 namespace {
   TEST(StkMeshIoBrokerHowTo, singleStepOnRestart)
@@ -22,11 +23,10 @@ namespace {
     stkIo.add_mesh_database(exodusFileName, stk::io::READ_MESH);
     stkIo.create_input_mesh();
       
-    stk::mesh::MetaData &meta = stkIo.meta_data();
-    stk::mesh::FieldBase *field = declareTriStateNodalField(meta, "disp");
-    stkIo.populate_bulk_data();
+    stk::mesh::Field<double> &field = stkIo.meta_data().declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "disp", 3);
+    stk::mesh::put_field(field, stkIo.meta_data().universal_part());
 
-    putDataOnTriStateField(stkIo.bulk_data(), field, 1.0, 2.0, 3.0);
+    stkIo.populate_bulk_data();
 
     {
       //-BEGIN
@@ -36,7 +36,7 @@ namespace {
       // Create a restart file,
       size_t fh = stkIo.create_output_mesh(filename,
 					   stk::io::WRITE_RESTART);
-      stkIo.add_field(fh, *field);
+      stkIo.add_field(fh, field);
 
       //+ Set the cycle count to 1.  This will result in a maximum
       //+ of one step on the output database -- when a new step is

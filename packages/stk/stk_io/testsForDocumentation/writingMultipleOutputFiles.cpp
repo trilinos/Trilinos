@@ -4,7 +4,6 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <Ioss_SubSystem.h>
 #include <stk_mesh/base/MetaData.hpp>
-#include <fieldNameTestUtils.hpp>
 #include <restartTestUtils.hpp>
 
 namespace {
