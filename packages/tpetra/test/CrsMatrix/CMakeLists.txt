@@ -42,7 +42,8 @@ IF(Kokkos_ENABLE_Cuda)
   CUDA_COMPILE(CRSMATRIX_NLSII_OBJECTS_CUDA CrsMatrix_NonlocalSumInto_Ignore_CU.cu)
   CUDA_COMPILE(CRSMATRIX_GS_OBJECTS_CUDA CrsMatrix_gaussSeidel_CU.cu)
   CUDA_COMPILE(CRSMATRIX_B5978_OBJECTS_CUDA bug5978_CU.cu)
-  CUDA_COMPILE(CRSMATRIX_B6069_OBJECTS_CUDA Bug6069_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B6069_1_OBJECTS_CUDA Bug6069_1_CU.cu)
+  CUDA_COMPILE(CRSMATRIX_B6069_2_OBJECTS_CUDA Bug6069_2_CU.cu)
 ENDIF()
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -238,16 +239,29 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# Test for Bug 6069.  This test only makes sense for exactly 3 MPI
-# processes.  Run under Valgrind for best results.
+# First test for Bug 6069.  This test only makes sense for exactly 3
+# MPI processes.  Run under Valgrind for best results.
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  CrsMatrix_Bug6069
+  CrsMatrix_Bug6069_1
   SOURCES
-    Bug6069
-    ${CRSMATRIX_B6069_OBJECTS_CUDA}
+    Bug6069_1
+    ${CRSMATRIX_B6069_1_OBJECTS_CUDA}
   ARGS
   COMM mpi
   NUM_MPI_PROCS 3
+  STANDARD_PASS_OUTPUT
+  )
+
+# Second test for Bug 6069.  This test only makes sense for exactly 2
+# MPI processes.  Run under Valgrind for best results.
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  CrsMatrix_Bug6069_2
+  SOURCES
+    Bug6069_2
+    ${CRSMATRIX_B6069_2_OBJECTS_CUDA}
+  ARGS
+  COMM mpi
+  NUM_MPI_PROCS 2
   STANDARD_PASS_OUTPUT
   )
 
