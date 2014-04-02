@@ -5,7 +5,7 @@
 #include <KokkosCore_config.h>
 #ifdef KOKKOS_HAVE_CUDA
 #define KOKKOS_USE_CUDA_BUILD
-#include "CrsMatrix/Bug6069.cpp"
+#include "CrsMatrix/Bug6069_2.cpp"
 #undef KOKKOS_USE_CUDA_BUILD
 #endif
 #endif
