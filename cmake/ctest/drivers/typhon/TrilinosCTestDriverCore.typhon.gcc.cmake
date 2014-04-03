@@ -99,10 +99,15 @@ MACRO(TRILINOS_SYSTEM_SPECIFIC_CTEST_DRIVER)
 
   #Ensuring that MPI is on for all parallel builds that might be run.
   IF(COMM_TYPE STREQUAL MPI)
+    #SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
+    #     ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
+    #     "-DTPL_ENABLE_MPI:BOOL=ON"
+    #     "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
+    #   )
     SET( EXTRA_SYSTEM_CONFIGURE_OPTIONS
          ${EXTRA_SYSTEM_CONFIGURE_OPTIONS}
          "-DTPL_ENABLE_MPI:BOOL=ON"
-         "-DMPI_BASE_DIR:PATH=/usr/lib64/openmpi"
+         "-DMPI_BASE_DIR:PATH=/usr/local/mpich2/1.4.1p1_gcc_4.4.7"
        )
 
     #TODO -- JJH 25Mar2014: need to create new suppression file for OpenMPI
