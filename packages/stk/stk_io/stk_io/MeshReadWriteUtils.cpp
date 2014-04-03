@@ -585,7 +585,8 @@ void create_input_mesh(const std::string &mesh_type,
                        const std::string &mesh_filename,
                        stk::ParallelMachine comm,
                        stk::mesh::fem::FEMMetaData &fem_meta,
-                       stk::io::MeshData &mesh_data)
+                       stk::io::MeshData &mesh_data,
+                       bool lower_case_variable_names)
 {
   Ioss::Region *in_region = mesh_data.m_input_region;
   if (in_region == NULL) {
@@ -595,6 +596,10 @@ void create_input_mesh(const std::string &mesh_type,
 	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                     Ioss::READ_MODEL, comm,
                                                     mesh_data.m_property_manager);
+
+        // set up the casing for variable names
+        dbi->set_lower_case_variable_names(lower_case_variable_names);
+
 	if (dbi == NULL || !dbi->ok()) {
 	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
                  << "' of type '" << mesh_type << "'\n";
@@ -626,7 +631,8 @@ void create_input_mesh(const std::string &mesh_type,
                        stk::ParallelMachine comm,
                        stk::mesh::fem::FEMMetaData &fem_meta,
                        stk::io::MeshData &mesh_data,
-                       const std::vector<std::string>& names_to_add)
+                       const std::vector<std::string>& names_to_add,
+                       bool lower_case_variable_names)
 {
   Ioss::Region *in_region = mesh_data.m_input_region;
   if (in_region == NULL) {
@@ -636,6 +642,10 @@ void create_input_mesh(const std::string &mesh_type,
 	Ioss::DatabaseIO *dbi = Ioss::IOFactory::create(mesh_type, mesh_filename,
                                                     Ioss::READ_MODEL, comm,
                                                     mesh_data.m_property_manager);
+
+        // set up the casing for variable names
+        dbi->set_lower_case_variable_names(lower_case_variable_names);
+
 	if (dbi == NULL || !dbi->ok()) {
 	  std::cerr  << "ERROR: Could not open database '" << mesh_filename
                  << "' of type '" << mesh_type << "'\n";
@@ -672,7 +682,8 @@ void create_input_mesh(const std::string &mesh_type,
 void create_output_mesh(const std::string &filename,
                         stk::ParallelMachine comm,
                         stk::mesh::BulkData &bulk_data,
-                        MeshData &mesh_data)
+                        MeshData &mesh_data,
+                       bool lower_case_variable_names)
 {
   Ioss::Region *out_region = NULL;
 
@@ -691,6 +702,9 @@ void create_output_mesh(const std::string &filename,
   Ioss::DatabaseIO *dbo = Ioss::IOFactory::create("exodusII", out_filename,
                                                   Ioss::WRITE_RESULTS,
                                                   comm, mesh_data.m_property_manager);
+  // set up the casing for variable names
+  dbo->set_lower_case_variable_names(lower_case_variable_names);
+
   if (dbo == NULL || !dbo->ok()) {
 	std::cerr << "ERROR: Could not open results database '" << out_filename
               << "' of type 'exodusII'\n";

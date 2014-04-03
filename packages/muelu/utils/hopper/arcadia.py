@@ -217,7 +217,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
       analysis_run_string += ".tpetra"
 
     print(analysis_run_string)
-    header = "                    :"
+    header = "                    |"
     for name in labels:
         if has_epetra:
             header = header + "  " + name + "-etime      eff"
@@ -226,6 +226,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
         if has_ml:
             header = header + "  " + name + "-mltime     eff"
     print(header)
+    separator = '-' * len(header)
 
     # initialize lists
     time_epetra     = list2dict(timelines)
@@ -239,12 +240,14 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
     basetime_ml     = list2dict(timelines)
 
     for analysis_run in analysis_runs:
+        print(separator)
+
         for dir in sort_nicely(glob.glob(DIR_PREFIX + "*")):
             os.chdir(dir)
 
             nnodes = dir.replace(DIR_PREFIX, '')
 
-            fullstr = "%20s:" % dir
+            fullstr = "%19s |" % dir
 
             # test if there is anything to analyze
             if len(glob.glob("screen.out.*")) == 0:
@@ -260,20 +263,45 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
 
             for s in timelines:
                 if has_epetra:
-                    epetra_file = analysis_run + ".epetra"
-
-                    r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                    if r[0] != 0:
-                        return "Error reading \"" + analysis_run + ".epetra"
-
                     try:
-                        time_epetra[s] = float(r[1])
+                        rtime_epetra = []
+                        for epetra_file in sort_nicely(glob.glob(analysis_run + "*.epetra")):
+                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                            if r[0] != 0:
+                                return "Error reading \"" + analysis_run + ".epetra"
+
+                            rtime_epetra.append(float(r[1]))
+
+                        time_epetra[s] = stat_time(rtime_epetra)
+
                         if nnodes == str(BASECASE):
                             basetime_epetra[s] = time_epetra[s]
                         eff_epetra[s] = 100 * basetime_epetra[s] / time_epetra[s]
                         fullstr += "%13.2f %7.2f%%" % (time_epetra[s], eff_epetra[s])
+
                     except (RuntimeError, ValueError):
                         # print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, epetra_file))
+                        fullstr += "           -   -"
+
+                if has_tpetra:
+                    try:
+                        rtime_tpetra = []
+                        for tpetra_file in sort_nicely(glob.glob(analysis_run + "*.tpetra")):
+                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                            if r[0] != 0:
+                                return "Error reading \"" + analysis_run + ".tpetra"
+
+                            rtime_tpetra.append(float(r[1]))
+
+                        time_tpetra[s] = stat_time(rtime_tpetra)
+
+                        if nnodes == str(BASECASE):
+                            basetime_tpetra[s] = time_tpetra[s]
+                        eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
+                        fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
+
+                    except (RuntimeError, ValueError):
+                        # print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, tpetra_file))
                         fullstr += "           -   -"
 
                 if has_ml:
@@ -292,23 +320,6 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                         basetime_ml[s] = time_ml[s]
                     eff_ml[s] = 100 * basetime_ml[s] / time_ml[s]
                     fullstr += "%13.2f %7.2f%%" % (time_ml[s], eff_ml[s])
-
-                if has_tpetra:
-                    tpetra_file = analysis_run + ".tpetra"
-
-                    r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
-                    if r[0] != 0:
-                        return "Error reading \"" + analysis_run + ".tpetra"
-
-                    try:
-                        time_tpetra[s] = float(r[1])
-                        if nnodes == str(BASECASE):
-                            basetime_tpetra[s] = time_tpetra[s]
-                        eff_tpetra[s] = 100 * basetime_tpetra[s] / time_tpetra[s]
-                        fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
-                    except (RuntimeError, ValueError):
-                        print("Problem converting \"%s\" to float for timeline \"%s\" in %s" % (r[1], s, tpetra_file))
-                        fullstr += "           -   -"
 
             print(fullstr)
 
@@ -402,6 +413,9 @@ def list2dict(l):
 def import_from(module, name):
     module = __import__(module, fromlist=[name])
     return getattr(module, name)
+
+def stat_time(times):
+    return min(times)
 
 # ========================= main =========================
 def main():

@@ -39,6 +39,16 @@ function [mesh] = RectGrid(xmin, xmax, ymin, ymax, nx, ny)
 %                    e(i,3) = 1  Dirichlet bdry conds are imposed on edge i
 %                    e(i,3) = 2  Neumann bdry conds are imposed on edge i
 %                    e(i,3) = 3  Robin bdry conds are imposed on edge i
+%
+%         mesh.sidesPerCell  Integer = 3 (triangle)
+%
+%         mesh.elem_ss{i}    = global element IDs on sideset (boundary) i
+%
+%         mesh.side_ss{i}    = local side (subcell) IDs on sideset (boundary) i
+%
+%         mesh.cellType      = string for cell type (= 'Triangle')
+%
+%         mesh.sideType      = string for side subcell type (= 'Line')
 %     
 %
 %  Vertical ordering:
@@ -64,11 +74,13 @@ function [mesh] = RectGrid(xmin, xmax, ymin, ymax, nx, ny)
 %  number of triangles: 2*nx*ny,
 %  number of vertices:  (nx+1)*(ny+1), 
 %
-%  AUTHOR:  Matthias Heinkenschloss
-%           Department of Computational and Applied Mathematics
-%           Rice University
-%           November 23, 2005
-
+%  AUTHORS:  Matthias Heinkenschloss and Denis Ridzal
+%            Department of Computational and Applied Mathematics
+%            Rice University
+%            November 23, 2005
+%
+%            Denis Ridzal
+%            Sandia National Laboratories
 
 
 nt = 2*nx*ny;
@@ -154,3 +166,27 @@ mesh.e(nx+ny+1:nx+2*ny,2) = (np-ny+1:np)';
 % edges on lower boundary
 mesh.e(nx+2*ny+1:2*(nx+ny),1) = (1:ny+1:np-2*ny-1)';
 mesh.e(nx+2*ny+1:2*(nx+ny),2) = (ny+2:ny+1:np-ny)';
+
+% sides per cell
+mesh.sidesPerCell = 3;
+
+% cell type
+mesh.cellType     = 'Triangle';
+
+% side type
+mesh.sideType     = 'Line';
+
+% sidesets
+xvec = [1:nx]';
+yvec = [1:ny]';
+mesh.elem_ss{1}   = 2*ny*(xvec-1) + 1;             % bottom
+mesh.elem_ss{2}   = 2*ny*(nx-1) + 2*(yvec-1) + 1;  % right
+mesh.elem_ss{3}   = 2*ny*xvec;                     % top
+mesh.elem_ss{4}   = 2*yvec;                        % left
+
+% local side ids for sidesets
+mesh.side_ss{1}   = 0*ones(nx,1);  % bottom 
+mesh.side_ss{2}   = 1*ones(ny,1);  % right 
+mesh.side_ss{3}   = 1*ones(nx,1);  % top 
+mesh.side_ss{4}   = 2*ones(ny,1);  % left
+

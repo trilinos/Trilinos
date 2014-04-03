@@ -906,7 +906,11 @@ namespace Tpetra {
 
     // Teuchos::Comm treats a negative process ID as MPI_ANY_SOURCE
     // (receive data from any process).
+#ifdef HAVE_MPI
+    const int anySourceProc = MPI_ANY_SOURCE;
+#else
     const int anySourceProc = -1;
+#endif
 
     if (debug_) {
       std::ostringstream os;

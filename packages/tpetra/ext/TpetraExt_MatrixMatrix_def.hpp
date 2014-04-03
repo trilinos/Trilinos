@@ -332,21 +332,27 @@ void Jacobi(Scalar omega,
     MMdetails::jacobi_A_B_newmatrix(omega,Dinv,Aview, Bview, C);
   }
   else {
-    throw std::runtime_error("jacobi_A_B_general not implemented");
-#ifdef ENABLE_MMM_TIMINGS
-    MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: Jacobi FillComplete")));
-#endif
-    if (call_FillComplete_on_result) {
-      //We'll call FillComplete on the C matrix before we exit, and give
-      //it a domain-map and a range-map.
-      //The domain-map will be the domain-map of B, unless
-      //op(B)==transpose(B), in which case the range-map of B will be used.
-      //The range-map will be the range-map of A, unless
-      //op(A)==transpose(A), in which case the domain-map of A will be used.
-      if (!C.isFillComplete()) {
-        C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
-      }
-    }
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::runtime_error,
+      "jacobi_A_B_general not implemented");
+    // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
+    // commenting it out.
+// #ifdef ENABLE_MMM_TIMINGS
+//     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: Jacobi FillComplete")));
+// #endif
+    // FIXME (mfh 03 Apr 2014) This statement is unreachable, so I'm
+    // commenting it out.
+    // if (call_FillComplete_on_result) {
+    //   //We'll call FillComplete on the C matrix before we exit, and give
+    //   //it a domain-map and a range-map.
+    //   //The domain-map will be the domain-map of B, unless
+    //   //op(B)==transpose(B), in which case the range-map of B will be used.
+    //   //The range-map will be the range-map of A, unless
+    //   //op(A)==transpose(A), in which case the domain-map of A will be used.
+    //   if (!C.isFillComplete()) {
+    //     C.fillComplete(Bprime->getDomainMap(), Aprime->getRangeMap());
+    //   }
+    // }
   }
 }
 

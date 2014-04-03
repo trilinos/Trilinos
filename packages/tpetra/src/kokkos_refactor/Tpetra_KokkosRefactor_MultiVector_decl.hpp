@@ -783,21 +783,77 @@ namespace Tpetra {
     ///   interface may change or it may disappear at any time.
     dual_view_type getDualView () const;
 
+    /// \brief Update data on device or host only if data in the other
+    ///   space has been marked as modified.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then copy data from host to device.  Otherwise,
+    /// copy data from device to host.  In either case, only copy if
+    /// the source of the copy has been modified.
+    ///
+    /// This is a one-way synchronization only.  If the target of the
+    /// copy has been modified, this operation will discard those
+    /// modifications.  It will also reset both device and host modified
+    /// flags.
+    ///
+    /// \note This method doesn't know on its own whether you modified
+    ///   the data in either memory space.  You must manually mark the
+    ///   MultiVector as modified in the space in which you modified
+    ///   it, by calling the modify() method with the appropriate
+    ///   template parameter.
     template<class TargetDeviceType>
     void sync () {
       getDualView ().template sync<TargetDeviceType> ();
     }
 
+    /// \brief Mark data as modified on the given device \c TargetDeviceType.
+    ///
+    /// If \c TargetDeviceType is the same as this MultiVector's
+    /// device type, then mark the device's data as modified.
+    /// Otherwise, mark the host's data as modified.
     template<class TargetDeviceType>
     void modify () {
       getDualView ().template modify<TargetDeviceType> ();
     }
 
+    /// \brief Return a view of the local data on a specific device.
+    /// \tparam TargetDeviceType The Kokkos Device type whose data to return.
+    ///
+    /// Please don't be afraid of the if_c expression in the return
+    /// value's type.  That just tells the method what the return type
+    /// should be: dual_view_type::t_dev if the \c TargetDeviceType
+    /// template parameter matches this Tpetra object's device type,
+    /// else dual_view_type::t_host.
+    ///
+    /// For example, suppose you create a Tpetra::MultiVector for the
+    /// Kokkos::Cuda device, like this:
+    /// \code
+    /// typedef Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> > node_type;
+    /// typedef Tpetra::Map<int, int, node_type> map_type;
+    /// typedef Tpetra::MultiVector<float, int, int, node_type> mv_type;
+    ///
+    /// RCP<const map_type> map = ...;
+    /// mv_type DV (map, 3);
+    /// \endcode
+    /// If you want to get the CUDA device Kokkos::View, do this:
+    /// \code
+    /// typedef typename mv_type::dual_view_type dual_view_type;
+    /// typedef typename dual_view_type::t_dev device_view_type;
+    /// device_view_type cudaView = DV.getLocalView<Kokkos::Cuda> ();
+    /// \endcode
+    /// and if you want to get the host mirror of that View, do this:
+    /// \code
+    /// typedef typename dual_view_type::host_mirror_device_type host_device_type;
+    /// typedef typename dual_view_type::t_host host_view_type;
+    /// host_view_type hostView = DV.getLocalView<host_device_type> ();
+    /// \endcode
     template<class TargetDeviceType>
-    typename Kokkos::Impl::if_c<Kokkos::Impl::is_same<typename device_type::memory_space ,
-                                                      typename TargetDeviceType::memory_space >::value,
-                                typename dual_view_type::t_dev,
-                                typename dual_view_type::t_host>::type
+    typename Kokkos::Impl::if_c<
+      Kokkos::Impl::is_same<
+        typename device_type::memory_space,
+        typename TargetDeviceType::memory_space>::value,
+      typename dual_view_type::t_dev,
+      typename dual_view_type::t_host>::type
     getLocalView () const {
       return getDualView ().template view<TargetDeviceType> ();
     }

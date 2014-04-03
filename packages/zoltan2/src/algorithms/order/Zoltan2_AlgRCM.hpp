@@ -80,14 +80,8 @@ class AlgRCM
   )
   {
     int ierr= 0;
-  
+
     HELLO;
-  
-    // Check size of communicator: serial only.
-    // TODO: Remove this test when RCM works on local graph.
-    //if (comm->getSize() > 1){
-    //  throw std::runtime_error("RCM currently only works in serial.");
-    //}
   
     // Get local graph.
     ArrayView<const lno_t> edgeIds;
@@ -96,6 +90,10 @@ class AlgRCM
   
     const size_t nVtx = model->getLocalNumVertices();
     model->getLocalEdgeList(edgeIds, offsets, wgts); 
+    const int numWeightsPerEdge = model->getNumWeightsPerEdge();
+    if (numWeightsPerEdge > 1){
+      throw runtime_error("Multiple weights not supported.");
+    }
   
 #if 0
     // Debug

@@ -67,7 +67,8 @@ namespace MueLuTests {
   TEUCHOS_UNIT_TEST(CoarseMap, StandardCase)
   {
     out << "version: " << MueLu::Version() << std::endl;
-    Level myLevel; // attention: level id == -1
+    Level myLevel;
+    myLevel.SetLevelID(0);
     RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(15);
     myLevel.Set("A", A);
 

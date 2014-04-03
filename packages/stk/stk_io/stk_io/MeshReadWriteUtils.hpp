@@ -123,12 +123,16 @@ namespace stk {
      * \param[in,out] mesh_data A small class used for maintaining
      * some state used by the stk_io routines.
      *
+     * \param[in] lower_case_variable_names Sets the case for any varaible
+     * names. If true then characters are forced to be lower case.
+     *
      */
     void create_input_mesh(const std::string &type,
 			   const std::string &filename,
 			   MPI_Comm comm,
 			   stk::mesh::fem::FEMMetaData &metadata,
-			   MeshData &mesh_data);
+			   MeshData &mesh_data,
+                           bool lower_case_variable_names=true);
 
     /**
      * Read/Generate the metadata for mesh of the specified type. By
@@ -178,13 +182,17 @@ namespace stk {
      * \param[in] names_to_add to the entity_rank_names array prior
      * to reading the mesh.
      *
+     * \param[in] lower_case_variable_names Sets the case for any varaible
+     * names. If true then characters are forced to be lower case.
+     *
      */
     void create_input_mesh(const std::string &type,
 			   const std::string &filename,
 			   MPI_Comm comm,
 			   stk::mesh::fem::FEMMetaData &metadata,
 			   MeshData &mesh_data,
-               const std::vector<std::string>& names_to_add);
+                           const std::vector<std::string>& names_to_add,
+                           bool lower_case_variable_names=true);
 
     /**
      * Read/Generate the bulk data for the mesh.  The bulk_data must
@@ -300,11 +308,15 @@ namespace stk {
      * \param[in,out] mesh_data A small class used for maintaining
      * some state used by the stk_io routines.
      *
+     * \param[in] lower_case_variable_names Sets the case for any varaible
+     * names. If true then characters are forced to be lower case.
+     *
      */
     void create_output_mesh(const std::string &filename,
 			    MPI_Comm comm,
 			    stk::mesh::BulkData &bulk_data,
-			    MeshData &mesh_data);
+			    MeshData &mesh_data,
+                            bool lower_case_variable_names=true);
 
     /**
      * Iterate over all stk fields and for each transient field

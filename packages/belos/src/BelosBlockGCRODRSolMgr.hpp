@@ -204,6 +204,11 @@ public:
   //! Get a parameter list containing the current parameters for this object.
   Teuchos::RCP<const Teuchos::ParameterList> getCurrentParameters() const { return params_; }
 
+  //! Get the residual for the most recent call to solve().
+  MagnitudeType achievedTol() const {
+    return achievedTol_;
+  }
+
   //! Get the iteration count for the most recent call to \c solve().
   int getNumIters() const { return numIters_; }
 
@@ -364,7 +369,7 @@ private:
   static const std::string recycleMethod_default_;
 
   //Current Solver Values
-  MagnitudeType convTol_, orthoKappa_;
+  MagnitudeType convTol_, orthoKappa_, achievedTol_;
   int blockSize_, maxRestarts_, maxIters_, numIters_;
   int verbosity_, outputStyle_, outputFreq_;
   bool adaptiveBlockSize_;
@@ -2313,6 +2318,22 @@ ReturnType BlockGCRODRSolMgr<ScalarType,MV,OP>::solve() {
   #endif
   // get iteration information for this solve
   numIters_ = maxIterTest_->getNumIters();
+
+  // get residual information for this solve
+  const std::vector<MagnitudeType>* pTestValues = NULL;
+  pTestValues = impConvTest_->getTestValue();
+  TEUCHOS_TEST_FOR_EXCEPTION(pTestValues == NULL, std::logic_error,
+			     "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
+			     "getTestValue() method returned NULL.  Please report this bug to the "
+			     "Belos developers.");
+  TEUCHOS_TEST_FOR_EXCEPTION(pTestValues->size() < 1, std::logic_error,
+			     "Belos::BlockGCRODRSolMgr::solve(): The implicit convergence test's "
+			     "getTestValue() method returned a vector of length zero.  Please report "
+			     "this bug to the Belos developers.");
+  // FIXME (mfh 12 Dec 2011) Does pTestValues really contain the
+  // achieved tolerances for all vectors in the current solve(), or
+  // just for the vectors from the last deflation?
+  achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
 
   if (!isConverged) return Unconverged; // return from BlockGCRODRSolMgr::solve()
     return Converged; // return from BlockGCRODRSolMgr::solve()

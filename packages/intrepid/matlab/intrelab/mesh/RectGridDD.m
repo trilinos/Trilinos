@@ -1,7 +1,7 @@
 
 function [mesh] = RectGridDD(nsdx, nsdy, t, p, e)
 %
-%  AUTHOR:  Matthias Heinkenschloss
+%  AUTHOR:  Matthias Heinkenschloss and Denis Ridzal
 %           Department of Computational and Applied Mathematics
 %           Rice University
 %           November 23, 2005
