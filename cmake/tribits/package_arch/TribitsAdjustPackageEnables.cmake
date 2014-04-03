@@ -440,7 +440,7 @@ ENDMACRO()
 #     software when mapping modified files to SE packages that need to be
 #     tested.
 #
-#   * **CLASSIFICATIONS***: The test group PT, ST, EX and the maturity level
+#   * **CLASSIFICATIONS**: The test group PT, ST, EX and the maturity level
 #     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
 #     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
 #     as for full packages (see

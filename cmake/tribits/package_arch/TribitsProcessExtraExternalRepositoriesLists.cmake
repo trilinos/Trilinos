@@ -89,15 +89,14 @@ INCLUDE(TribitsSortListAccordingToMasterList)
 #    as the empty quoted string ``""``, then this repository is considered to
 #    be a `TriBITS Repository`_ and must therefore contain the files described
 #    in `TriBITS Repository Core Files`_.  If the listed repository is **not**
-#    a TriBITS repository, and just provideds directories and packages, then
-#    this field is set as ``NOPACKAGES``.
+#    a TriBITS repository, and just provides directories and files, then this
+#    field is set as ``NOPACKAGES``.
 #
 # 5. **REPO_CLASSIFICATION** (``<repoi_classif>``): Gives the testing
 #    classification of the repository which also happens to be the CTest/CDash
 #    testing mode and the default dashboard track.  The valid values are
-#    ``Continuous``, ``Nightly``, and ``Experimental``.  See `TriBITS
-#    Package-by-Package CTest/Dash Driver`_ for a detailed description of
-#    repository classifications.
+#    ``Continuous``, ``Nightly``, and ``Experimental``.  See `Repository Test
+#    Classification`_ for a detailed description.
 #
 # This command is used to put together one or more VC and/or TriBITS
 # repositories to construct a larger project.  Files that contain this macro
@@ -107,7 +106,11 @@ INCLUDE(TribitsSortListAccordingToMasterList)
 # the a TriBITS project.  They are only listed in this file so that they can
 # be used in the version control logic for tools that perform version control
 # with the repositories (such as cloning, updating, looking for changed files,
-# etc.).
+# etc.).  For example, a non-TriBITS repo can be used to grab a set of
+# directories and files that fill in the definition of a package in an
+# upstream repository (see `How to insert a package into an upstream repo`_).
+# Also, non-TriBITS repos can be used to provide extra test data for a given
+# pakage or a set of packages so that extra tests can be run.
 #
 # **NOTE**: These repositories must be listed in the order of package
 # dependencies.  That is, all of the packages listed in repository ``i`` must
@@ -311,11 +314,13 @@ MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
 
     # B.2) Determine the match of the classification
 
-    SET(ADD_EXTRAREPO FALSE)
     #ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE)
     IF (TRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG)
       PRINT_VAR(${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE)
     ENDIF()
+
+    SET(ADD_EXTRAREPO FALSE)
+
     IF (${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE STREQUAL "Continuous" AND
         EXTRAREPO_CLASSIFICATION STREQUAL "Continuous"
       )
@@ -325,6 +330,7 @@ MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
       )
       SET(ADD_EXTRAREPO TRUE)
     ENDIF()
+
     IF (TRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG)
       PRINT_VAR(ADD_EXTRAREPO)
     ENDIF()
@@ -552,9 +558,7 @@ ENDMACRO()
 # On output, the following varaibles are set:
 #
 #   ???
-#   
 #
-
 MACRO(TRIBITS_GET_AND_PROCESS_EXTRA_REPOSITORIES_LISTS)
 
   #
