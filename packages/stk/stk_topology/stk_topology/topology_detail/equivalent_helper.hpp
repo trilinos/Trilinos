@@ -2,7 +2,6 @@
 #define STKTOPOLOGY_DETAIL_EQUIVALENT_HELPER_HPP
 
 #include <algorithm>
-#include <stdexcept>
 
 #include <boost/utility.hpp>
 
@@ -13,10 +12,6 @@ BOOST_GPU_ENABLED inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), std::pair<bool,unsigned> >::type
 equivalent_helper(Topology, const NodeArrayA &a, const NodeArrayB &b, Node)
 {
-  if (!Topology::has_all_node_permutations) {
-    throw std::runtime_error("Topology::equivalent(..) not supported on non-shell 3D elements");
-  }
-
   Node permutation[Topology::num_nodes];
 
   for (unsigned i=0; i<Topology::num_permutations; ++i) {
@@ -43,10 +38,6 @@ BOOST_GPU_ENABLED inline
 typename boost::enable_if_c< (Topology::num_permutations > 0u), unsigned >::type
 lexicographical_smallest_permutation_helper(Topology, const NodeArray &nodes, bool only_positive_permutations, Node)
 {
-  if (!Topology::has_all_node_permutations) {
-    throw std::runtime_error("Topology::lexicographical_smallest_permutation(..) not supported on non-shell 3D elements");
-  }
-
   Node permutation[Topology::num_nodes];
 
   const Node * nbegin = &nodes[0];

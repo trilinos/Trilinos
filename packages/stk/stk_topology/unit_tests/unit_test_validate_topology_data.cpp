@@ -1,6 +1,8 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_topology/topology.hpp>
 
+#include <map>
+#include <vector>
 
 #include <boost/mpl/assert.hpp>
 #include <boost/mpl/size.hpp>
@@ -145,6 +147,61 @@ STKUNIT_UNIT_TEST( stk_topology, validate_topology)
   STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_20        > >::value );
   STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_27        > >::value );
 
+  // check that the permutations define the same sides
+  for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {
+
+    if (topo.num_permutations() > 1u && topo.side_rank() > stk::topology::NODE_RANK ) {
+      const unsigned num_permutations = topo.num_permutations();
+      const unsigned num_sides = topo.num_sides();
+
+      std::map< std::vector<unsigned>, unsigned> side_map;
+      for (unsigned side=0; side < num_sides; ++side) {
+        stk::topology side_topo = topo.side_topology(side);
+        std::vector<unsigned> tmp_side_nodes(side_topo.num_nodes());
+        std::vector<unsigned> side_nodes(tmp_side_nodes.size());
+
+        topo.side_node_ordinals(side, tmp_side_nodes.begin());
+        unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes);
+        side_topo.permutation_nodes(tmp_side_nodes, side_perm, side_nodes.begin());
+
+        side_map[side_nodes] = 0;
+      }
+
+      std::vector<unsigned> nodes(topo.num_nodes());
+      for (unsigned perm = 0; perm < num_permutations; ++perm) {
+        topo.permutation_node_ordinals(perm, nodes.begin());
+
+        for (unsigned side=0; side < num_sides; ++side) {
+          stk::topology side_topo = topo.side_topology(side);
+          std::vector<unsigned> tmp_side_nodes(side_topo.num_nodes());
+          std::vector<unsigned> side_nodes(tmp_side_nodes.size());
+
+          topo.side_nodes(nodes, side, tmp_side_nodes.begin());
+          unsigned side_perm = side_topo.lexicographical_smallest_permutation(tmp_side_nodes);
+          side_topo.permutation_nodes(tmp_side_nodes, side_perm, side_nodes.begin());
+
+          side_map[side_nodes] += 1;
+        }
+      }
+
+      if (!topo.is_shell()) {
+        EXPECT_EQ(side_map.size(), num_sides);
+      }
+      else {
+        EXPECT_EQ(side_map.size(), num_sides/2u);
+      }
+
+      for (std::map< std::vector<unsigned>, unsigned>::const_iterator itr = side_map.begin(); itr != side_map.end(); ++itr) {
+        // Expect that the side has been touched for each permutation
+        if (!topo.is_shell()) {
+          EXPECT_EQ( itr->second, num_permutations);
+        }
+        else {
+          EXPECT_EQ( itr->second/2u, num_permutations);
+        }
+      }
+    }
+  }
 }
 
 

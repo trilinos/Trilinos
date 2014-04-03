@@ -83,7 +83,6 @@ struct topology::topology_type
   static const topology_t edge_topology       = data::edge_topology;
   static const bool has_homogeneous_faces     = data::has_homogeneous_faces;
   static const bool is_shell                  = data::is_shell;
-  static const bool has_all_node_permutations = data::has_all_node_permutations;
   static const unsigned dimension                  = data::dimension;
   static const unsigned num_nodes                  = data::num_nodes;
   static const unsigned num_vertices               = data::num_vertices;
