@@ -414,10 +414,12 @@ TEST(stk_topology_understanding, three_dim_linear_element)
     EXPECT_EQ(12u, hex8.num_edges());
     EXPECT_EQ(6u, hex8.num_faces());
 
-    // permutations are the number of ways the number of vertices can be permuted
-    EXPECT_EQ(24u, hex8.num_permutations());
-    // positive permutations are ones that the normal is maintained
-    EXPECT_EQ(24u, hex8.num_positive_permutations());
+    if (stk::topology::topology_type<stk::topology::HEX_8>::num_permutations > 1) {
+        // permutations are the number of ways the number of vertices can be permuted
+        EXPECT_EQ(24u, hex8.num_permutations());
+        // positive permutations are ones that the normal is maintained
+        EXPECT_EQ(24u, hex8.num_positive_permutations());
+    }
 
     EXPECT_FALSE(hex8.defined_on_spatial_dimension(0));
     EXPECT_FALSE(hex8.defined_on_spatial_dimension(1));
@@ -481,19 +483,21 @@ TEST(stk_topology_understanding, equivalent_elements)
 {
     std::pair<bool, unsigned> areElementsEquivalent;
 
-#if 0
     {
-        unsigned hex1[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
-        unsigned hex2[8] = { 0, 1, 2, 3, 4, 7, 6, 5 };
-        unsigned hex3[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
+        if (stk::topology::topology_type<stk::topology::HEX_8>::num_permutations > 1) {
+            unsigned hex1[8] = { 0, 1, 2, 3, 4, 5, 6, 7 };
+            unsigned hex2[8] = { 4, 7, 6, 5, 0, 3, 2, 1 };
+            unsigned hex3[8] = { 4, 5, 6, 7, 0, 1, 2, 3 };
 
-        stk::topology hex8 = stk::topology::HEX_8;
+            stk::topology hex8 = stk::topology::HEX_8;
 
-        // equivalent(..) not supported on 3D non-shell elements.
-        EXPECT_THROW(areElementsEquivalent = hex8.equivalent(hex1, hex2), std::runtime_error);
-        EXPECT_THROW(areElementsEquivalent = hex8.equivalent(hex1, hex3), std::runtime_error);
+            // equivalent(..) not supported on 3D non-shell elements.
+            areElementsEquivalent = hex8.equivalent(hex1, hex2);
+            EXPECT_TRUE(areElementsEquivalent.first);
+            areElementsEquivalent = hex8.equivalent(hex1, hex3);
+            EXPECT_FALSE(areElementsEquivalent.first);
+        }
     }
-#endif
 
     {
         unsigned triangle_1[3] = {0, 1, 2};
