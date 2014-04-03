@@ -41,6 +41,10 @@ TriBITS Developers Guide and Reference
 
 .. _TriBITS Lifecycle Model: ../lifecycle_model/TribitsLifecycleModel.pdf
 
+..  OTher common references
+
+.. _CTest documentation: http://www.cmake.org/Wiki/CMake/Testing_With_CTest
+
 Introduction
 =============
 
@@ -822,10 +826,16 @@ directories under ``<projectDir>`` of the same names from the URLs
 
   <projectDir>/packages/SomePackage/Blah
 
-However, the code in the tools ``checkin-test.py`` and
+However, the code in the tools `checkin-test.py`_ and
 ``TribitsCTetsDriverCore.cmake`` will consider this repository and directory
 and any changes to this repository will be listed as changes to
 ``somePackage``.
+
+.. ToDO: I am not really sure what repos get cloned the first time based on
+.. the list of extra repos.  From looking at TribitsCTestDriverCore.cmake, it
+.. looks like only the selected repos will be cloned.  I need to add some unit
+.. tests that really show what the real behavior is.
+
 
 .. _<projectDir>/cmake/ProjectDependenciesSetup.cmake:
 
@@ -893,8 +903,7 @@ the TriBITS source tree into this directory.
 **<projectDir>/cmake/ctest/CTestCustom.cmake.in**: [Optional] If this file
 exists, it is processed using a ``CONFIGURE_FILE()`` command to write the file
 ``CTestCustom.cmake`` in the project base build tree.  This file is picked up
-automatically by ``ctest`` (see `CTest documentation
-<http://www.cmake.org/Wiki/CMake/Testing_With_CTest>`_).  This file is
+automatically by ``ctest`` (see `CTest documentation`_).  This file is
 typically used to change the maximum size of test output.  For example, the
 `TribitsExampleProject`_/cmake/ctest/CTestCustom.cmake.in`` looks like:
 
@@ -1090,6 +1099,10 @@ from `TribitsExampleProject`_/``TPLsList.cmake`` which shows:
 
 .. include:: ../examples/TribitsExampleProject/TPLsList.cmake
    :literal:
+
+Once processed, each listed TPL ``TPL_NAME`` is given global non-cache
+variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` test group
+``${TPL_NAME}_TESTGROUP`` (see `SE Package Test Group`_).
 
 It is perfectly fine to specify no TPLs for a repository with::
 
@@ -1463,6 +1476,14 @@ defined:
     the variable ``${${PACKAGE_NAME}_PARENT_REPOSITORY}_SOURCE_DIR`` can be
     dereferenced.
 
+  .. _${PACKAGE_NAME}_TESTGROUP:
+
+  ``${PACKAGE_NAME}_TESTGROUP``
+
+    Defines the `SE Package Test Group`_ for the package.  This determines in
+    what contexts the package is enbled or not for testing-related purposes
+    (see `Nested Layers of TriBITS Project Testing`_)
+
 .. _TriBITS Package Cache Variables:
 
 In addition, the following user-settable **TriBITS Package Cache Variables**
@@ -1747,8 +1768,8 @@ file fragment exist that once included, will define the varaibles
 user friendly, such a CMake file should respond to the same variables as
 accepted by the standard `TRIBITS_TPL_DECLARE_LIBRARIES()`_ funtion.
 
-The only core variables related to an enabled TPL ``${TPL_NAME}_LIBRARIES``
-and ``${TPL_NAME}_INCLUDE_DIRS`` as defined in
+The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
+``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
 `TRIBITS_DEFINE_REPOSITORY_TPLS()`_.
 
@@ -1954,7 +1975,6 @@ looks something like::
   -- File Trace: PROJECT    CONFIGURE  [...]/cmake/ctest/CTestCustom.cmake.in
   -- File Trace: REPOSITORY READ       [...]/Copyright.txt
   -- File Trace: REPOSITORY INCLUDE    [...]/Version.cmake
-      "${TPL_MPI_FILE_TRACE}
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/simple_cxx/test/CMakeLists.txt
   -- File Trace: PACKAGE    ADD_SUBDIR [...]/packages/mixed_language/CMakeLists.txt
@@ -2595,7 +2615,7 @@ subpackages.)
 A number of user-setable cache variables determine what SE packages (and TPLs)
 and what tests and examples get enabled.  These cache variables are described
 in `Selecting the list of packages to enable`_ and are described below.  Also,
-the assigned `SE Package Test Group`_ (i.e. ``PT``, ``ST``, and ``EX``) also
+the assigned `SE Package Test Group`_ (i.e. `PT`_, `ST`_, and `EX`_) also
 affects what packages get enabled or disabled.
 
 Any of these SE packages can be enabled or disabled with
@@ -2685,7 +2705,7 @@ Cases`_, some of the `TriBITS Dependency Handling Behaviors`_ are
 defined below.
 
 TriBITS Dependency Handling Behaviors
--------------------------------------------
+-------------------------------------
 
 Below, some of the rules and behaviors of the TriBITS dependency management
 system are described.  Examples refer to the `Example ReducedMockTrilinos
@@ -2756,9 +2776,11 @@ In more detail, these rules/behaviors are:
    with an error (depending on the value of
    ``${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES``, see below).  In
    addition, if ``${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON``, then
-   TriBITS will try to enable all of the specified optional SE packages as
-   well.  For an example, see `Explicit enable of a package, its tests, an
-   optional TPL, with ST enabled`_.
+   TriBITS will try to enable all of the specified optional `PT`_ SE packages
+   as well (and also optional upstream `ST`_ SE packages as well if
+   ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON``).  For an example, see
+   `Explicit enable of a package, its tests, an optional TPL, with ST
+   enabled`_.
 
 .. _SE package disable triggers auto-disables of downstream dependencies:
 
@@ -3465,11 +3487,11 @@ TriBITS Automated Testing
 =========================
 
 Much of the value provided by the TriBITS system is related to the support of
-testing of a complex project.  Many different types of testing is required in
+testing of a complex project.  Many different types of testing are required in
 a complex project and development effort.  In addition a large project with
-lots of repositories and packages provides a number of testing and developmetn
-challanges but also provides a number of opportunities to do testing in an
-efficient way; expecially pre-push and post-push continuous integration (CI)
+lots of repositories and packages provides a number of testing and development
+challenges but also provides a number of opportunities to do testing in an
+efficient way; especially pre-push and post-push continuous integration (CI)
 testing.  In addition, a number of post-push automated nightly test cases must
 be managed.  TriBITS takes full advantage of the features of raw CMake, CTest,
 and CDash in support of testing and where gaps exist, TriBITS provides tools
@@ -3481,25 +3503,337 @@ testing.
 .. ToDo: outline the following subsections.
 
 
-Testing categories for Repositories, Packages, and Tests
---------------------------------------------------------
+Test Classifications for Repositories, Packages, and Tests
+----------------------------------------------------------
 
+TriBITS defines a few different testing-related classifications for a TriBITS
+project.  These different classifications are used to select subsets of the
+project's repositories, packages (and code within these packages), and tests
+to be included in a given project build and test definition.  These different
+classification are:
 
+* `Repository Test Classification`_
+* `SE Package Test Group`_
+* `Test Test Category`_
 
+These different test-related classifications are used to defined several
+different `Nested Layers of TriBITS Project Testing`_.  First, the `Repository
+Test Classification`_ determines what SE packages are defined to even consider
+being enabled.  Second, if a repository is selected, then the `SE Package Test
+Group`_ determines what SE packages (and optional code in those packages) are
+even enabled such that their `<packageDir>/CMakeLists.txt`_ files are even
+processed.  Lastly, if an SE package gets enabled, then the `Test Test
+Category`_ determines what test exectuables and test cases get defined using
+the functions `TRIBITS_ADD_EXECUTABLE()`_, `TRIBITS_ADD_TEST()`_ and
+`TRIBITS_ADD_ADVANCED_TEST()`_.
 
-ToDo: Define repo category Continuous, Nightly, and Experimental which also
-map to CDash tracks.
+More detailed descriptions of `Repository Test Classifications`_ , `SE Package
+Test Groups`_, and `Test Test Categories`_ are given in the following
+subsections.
+
+.. _Repository Test Classification:
+.. _Repository Test Classifications:
+
+**Repository Test Classification**
+
+The first type of test-related classification is for extra repositories
+defined in the file `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ using
+the ``REPO_CLASSIFICATION`` field in the macro call
+`TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()`_.  These classifications map to
+the standard CTest dashboard types ``Continuous``, ``Nightly``, and
+``Experimental`` (see `CTest documentation`_ and `TriBITS Package-by-Package
+CTest/Dash Driver`_ for details).
+
+.. _Repository Test Continuous:
+
+* Repositories marked **Continuous** match the standard CTest dashboard type
+  ``Continuous``.  These repositories are pulled in when
+  ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Continuous``, or
+  ``Nightly``.  Repositories marked as ``Continuous`` are cloned, updated, and
+  processed by default in all project automated testing described in `Nested
+  Layers of TriBITS Project Testing`_.  NOTE: One should not confuse this with
+  the `Test Test Category CONTINUOUS`_.
+
+.. _Repository Test Nightly:
+
+* Repositories marked **Nightly** match the standard CTest dashboard type
+  ``Nightly``.  These repositories are pulled in by default when
+  ``${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Nightly``.  Repositories
+  marked as ``Nightly`` are not processed by default as part of either
+  `Pre-Push CI Testing`_ or `Post-Push CI Testing`_.  One would mark a
+  repository as ``Nightly`` for few reasons.  First, an extra repo may be
+  marked as ``Nightly`` if it may not be available to all developers to clone
+  and only the the nightly testing processes and machines may have access.
+  Also, an extra repo may also be marked as ``Nightly`` if it does not contain
+  any packages that the project wants to pay the cost to include in even
+  `Post-Push CI Testing`_.  NOTE: One should not confuse this with the `Test
+  Test Category NIGHTLY`_.
+
+.. _Repository Test Experimental:
+
+* Repositories marked **Experimental** match the standard CTest dashboard type
+  ``Experimental``.  Repositories marked as ``Experimental`` are not processed
+  by default as part on any automated testing described in `Nested Layers of
+  TriBITS Project Testing`_ (except for perhaps some experimental builds).  The
+  main reason that an extra repo may be marked as ``Experimental`` is that it
+  may only contain ``EX`` SE packages and therefore none of these packages
+  would be enabled by default anyway.  Also, a repo may be marked as
+  ``Experimental`` if it is developed in a very sloppy way such that one
+  cannot even assume that the repository's `<repoDir>/PackagesList.cmake`_,
+  `<repoDir>/TPlsList.cmake`_, and `<packageDir>/cmake/Dependencies.cmake`_
+  files are not without errors.  Since these files are always processed if the
+  repository is included, then any errors in these files will cause the entire
+  configure to fail!
+
+.. ToDo: Determine, add unit tests for, and document exactly how
+.. 'Experimental' repos are handled
+.. w.r.t. ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE.  Currently it
+.. looks like there are not processed if
+.. ${PROJECT_NAME}_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE=Experimental.  I am not
+.. sure why we bother with Experimental repos other than to just ignore them.
+.. However, it does seem they get cloned no matter what their classification
+.. in the TribitsCTestDriverCore.cmake script.
 
 .. _SE Package Test Group:
+.. _SE Package Test Groups:
 
-ToDo: Define SE package test group PT, ST, and EX.
+**SE Package Test Group**
 
-ToDo: Define test category BASIC, CONTINUOUS, NIGHTLY, WEEKLY, and PERFORMANCE.
+Once a set of TriBITS repositories are selected in accordance with their
+`Repository Test Classification`_, that determines the set of SE packages and
+TPLs defined for the TriBITS project.  Given the set of defined SE packages
+and TPLs, the set of SE packages that get enabled is determined by the **SE
+Package Test Group** which is defined and described here.
 
-ToDo: Discuss the propery usage of these test categories and why NIGHTLY
-testing should be the default.
+Every `TriBITS SE Package`_ and `TriBITS TPL`_ is assigned a test group. These
+test groups are for *Primary Tested* (`PT`_) code, *Secondary Tested* (`ST`_)
+code, and *Experimental* (`EX`_) code.  The test group defines *what* SE
+packages and TPL get selected (or are excluded from being selected) to include
+in a given build for testing-related purposes.  SE packages may also
+conditionally build in additional code based on the testing group.  The
+detailed rules for when an SE package or TPL are selected or excluded from the
+build based on the test group is given in `TriBITS Dependency Handling
+Behaviors`_.  We only summarize those rules here.
+
+More detailed descriptions of the test groups are given below.
+
+.. _PT:
+
+* **Primary Tested (PT)** Code is of the highest priority to keep working for
+  the current development effort.  SE packages and TPLs are selected to be
+  ``PT`` for one of a number of reasons.  First, if the capability provided by
+  the code is mature and if a regression would cause major harm to a customer,
+  the code should likely be marked as ``PT``.  Also, if the build and correct
+  functioning of the code is needed by other development team members to
+  support their day-to-day development activities, then the code should be
+  marked as ``PT`` as well.  A TPL, on the other hand, is marked as ``PT`` if
+  it is required by a ``PT`` SE package.  Every project developer is expected
+  to have every ``PT`` TPL installed on every machine where they do
+  development on and from which they push to the global repo (see
+  `checkin-test.py`_ script).  ``PT`` SE packages and TPLs are the the
+  foundation for `Pre-Push CI Testing`_.
+
+.. _ST:
+
+* **Secondary Tested (PT)** Code is still very important code for the project
+  and represents important capability to maintain but is excluded from the
+  ``PT`` set of code for one of a couple of possible reasons.  First, code may
+  be marked as ``ST`` if is not critical to drive most day-to-day development
+  activities.  If ``ST`` code breaks, it usually will not cause immediate and
+  major harm to most developers.  Also, code may be marked as ``ST`` if it has
+  required dependencies on ``ST`` TPLs which are either hard to install or may
+  not be available on all platforms where developers do their development and
+  where they push changes to the global repo .  In addition, code my be marked
+  as ``ST`` if the project is just too big and developers can't be expected to
+  build and test all of this code with every push.  ``ST`` code can be
+  included in the TriBITS auto-enable algorithms by setting the variable
+  ``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON`` (see `TriBITS Dependency
+  Handling Behaviors`_).  Otherwise, ``ST`` code is not enabled by auto-enable
+  algorithms.  Typically, ``ST`` code is excluded from the default builds in
+  `Pre-Push CI Testing`_ but `ST`` code is typically tested in `Post-Push CI
+  Testing`_, `Nightly Testing`_ as well as in other non-CI testing cases.
+
+.. _EX:
+
+* **Experimental (EX)** Code is usually too unstable, buggy, or non-portable
+  to be maintained as part of the projects automated testing processes.  Or
+  the code just may not be important enough to the project to bother paying
+  the cost to test it in the project's automated testing processes.  The
+  ability to mark some code as ``EX`` allows the developers of that code to
+  include their code in the VC repos with the rest of the project's code and
+  be able to take advantage of all of the development tools provided by
+  TriBITS while not having to "sign up" for all of the responsibilities of
+  maintaining working software that every developer has to take a part in
+  helping to keep working.
+
+The test group for each type of entity is assigned in the following places:
+
+* The top-level `TriBITS Package`_'s test group is assigned using the
+  ``CLASSIFICATION`` field in the the macro call
+  `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ in its parent repository's
+  `<repoDir>/PackagesList.cmake`_ file.
+
+* A `TriBITS Subpackage`_'s test group is assigned using the
+  ``CLASSIFICATIONS`` field of the
+  ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` argument in the macro call
+  `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ in its parent's
+  `<packageDir>/cmake/Dependencies.cmake`_ file.
+
+* A `TriBITS TPLs`_'s test group is assigned using the ``CLASSIFICATION``
+  field in the macro call `TRIBITS_DEFINE_REPOSITORY_TPLS()`_ in its parent
+  repository's `<repoDir>/TPLsList.cmake`_ file.
+
+After these files are processed, the variable `${PACKAGE_NAME}_TESTGROUP`_
+gives the test group for each defined SE Package while the variable
+``${TPL_NAME}_TESTGROUP`` gives the test group for each defined TPL.
+
+Note that the test group classification ``PT``/``ST``/``EX`` is *not* to be
+confused with the *maturity level* of the SE package as discussed in the
+`TriBITS Lifecycle Model`_.  test group classification in no way implies the
+maturity of the given TriBITS SE Package or piece of code.  Instead, the test
+group is just used to sub-select packages (and pieces of code within those
+packages) that are the most important to sustain for the various current
+development group's activities.  While more mature code would typically never
+be classified as Experimental ``EX``, there are cases were immature packages
+may be classified as ``PT``.  For example, a very important research
+project may be driving the development of a very new algorithm with *maturity
+level* *Research Stable* ```RS`` or even *Exploratory* ``EP`` because keeping
+that code working may be critical to keeping the research project on track.
+
+In addition to just selecting ``PT`` and ``ST`` SE packages as a whole, a
+TriBITS ``PT`` SE package can also contain conditional code and test
+directories that get enabled when
+``${PROJECT_NAME}_SECONDARY_TESTED_CODE=ON``.  The package's
+`<packageDir>/CMakeLists.txt`_ files can contain simple if statements and can
+use the `TRIBITS_SET_ST_FOR_DEV_MODE()`_ function to automatically select
+extra code to enable when ``ST`` is enabled or when the project is in release
+mode.
+
+.. ToDo: Provide examples in TribitsExampleProject of ST and EX SE packages
+.. and of conditional ST and EX code in an PT SE package.  This is important
+.. to round out the examples.
+
+.. _Test Test Category:
+.. _Test Test Categories:
+
+**Test Test Category**
+
+Once a package is even defined due to its parent repository's `Repository Test
+Classification`_ and is enabled consistent with its `SE Package Test Group`_,
+then the set of individual test executables and test cases that are included
+or not depends on the ``CATEGORIES`` argument in the functions
+`TRIBITS_ADD_EXECUTABLE()`_, `TRIBITS_ADD_TEST()`_ and
+`TRIBITS_ADD_ADVANCED_TEST()`_ .  This **Test Test Category** defines the last
+"knob" that the development team has in selecting what tests get run in a
+particular test scenario described in the section `Nested Layers of TriBITS
+Project Testing`_.  Each of the currently allowed test test categories are
+described below.
+
+The currently allowed values for the *Test Test Category* are ``BASIC``,
+``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``, and ``PERFORMANCE``.  The test test
+categories ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY`` are subsets
+of each other.  That is, a ``BASIC`` test automatically is included in the set
+of ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY`` tests.  Tests are enabled based
+on their assigned test test category matching the categories set in the CMake
+cache variable `${PROJECT_NAME}_TEST_CATEGORIES`_.
+
+.. _Test Test Category BASIC:
+
+* Tests marked **BASIC** represent key functionality that is needed by nearly
+  every developer that works on the project and so must be protected at all
+  times and are therefore included in `Pre-Push CI Testing`_.  Tests marked as
+  ``BASIC`` are enabled for the values of ``${PROJECT_NAME}_TEST_CATEGORIES``
+  of ``BASIC``, ``CONTINUOUS``, ``NIGHT``, and ``WEEKLY``.  The category
+  ``BASIC`` is the default test test category given to all test executables
+  and tests that don't specify the ``CATEGORIES`` argument.
+
+.. _Test Test Category CONTINUOUS:
+
+* Tests marked **CONTINUOUS** also represent importantly functionality but are
+  typically not run in `Pre-Push CI Testing`_ testing but instead are run in
+  `Post-Push CI Testing`_ and `Nightly Testing`_.  Tests marked as
+  ``CONTINUOUS`` are enabled for the values of
+  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``CONTINUOUS``, ``NIGHT``,
+  and ``WEEKLY``.  A test may be marked ``CONTINUOUS`` and not ``BASIC`` for a
+  few different reasons.  For example, the code needed to run the test may
+  take too long to build or the test itself may take too long to run in order
+  to afford including it in `Pre-Push CI Testing`_.
+
+.. _Test Test Category NIGHTLY:
+
+* Tests marked **NIGHTLY** usually take even longer to build and/or run than
+  ``CONTINUOUS`` tests and therefore are too expensive to include in
+  `Post-Push CI Testing`_.  Tests may also be marked as ``NIGHTLY`` even if
+  they might run relatively fast if there is a desire to not cause the CI
+  server to fail if these tests fail.  In this case, the decision is to take
+  the testing and maintenance of these tests and the capabilities they
+  represent "offline" so that they don't influence the daily development cycle
+  for the project but instead are addressed in a "secondary feedback loop".
+  Tests marked as ``NIGHTLY`` are enabled for the values of
+  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``NIGHT``, and ``WEEKLY``.
+
+.. _Test Test Category WEEKLY:
+
+* Tests marked **WEEKLY** are usually reserved for very expensive tests that
+  are too expensive to run nightly.  ``WEEKLY`` tests may only be run once a
+  week (see `Weekly Testing`_) but may be run on shorter or longer time
+  intervals depending on circumstances (e.g. the availability of test machines
+  and free processes, just how expensive all of the tests actually are, etc.).
+  Tests marked as ``WEEKLY`` are enabled only for the value of
+  ``${PROJECT_NAME}_TEST_CATEGORIES`` equal ``WEEKLY``.
+
+.. _Test Test Category PERFORMANCE:
+
+* Tests marked **PERFORMANCE** are a special category of tests that are
+  specially designed to measure the run-time performance of parts of the
+  software (see `Performance Testing`_).  Tests marked as ``PERFORMANCE`` are
+  enabled only for the value of ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
+  ``PERFORMANCE``.
+
+Every TriBITS project has a default setting for
+``${PROJECT_NAME}_TEST_CATEGORIES`` that is set for a basic ``cmake``
+configure of the project (see `${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT`_ for
+more details).  In addition, the different testing processes described in the
+section `Nested Layers of TriBITS Project Testing`_ set this to different
+values.
+
+
+Nested Layers of TriBITS Project Testing
+----------------------------------------
+
+ToDo: Discuss the pre-push CI builds/tests, post-push CI builds/tests, nightly
+builds/tests, and weekly builds/tests.
+
+.. _Pre-Push CI Testing:
+
+**Pre-Push CI Testing**
 
 ToDo: Fill in!
+
+.. _Post-Push CI Testing:
+
+**Post-Push CI Testing**
+
+ToDo: Fill in!
+
+.. _Nightly Testing:
+
+**Nightly Testing**
+
+ToDo: Fill in!
+
+.. _Weekly Testing:
+
+**Weekly Testing**
+
+ToDo: Fill in!
+
+.. _Performance Testing:
+
+**Performance Testing** 
+
+ToDo: Fill in!
+
 
 .. _checkin-test.py:
 
@@ -3562,6 +3896,11 @@ package fails, that TriBITS package is disabled in all downstream TriBITS
 package builds so as to not propoate sensless failures.  Each TriBITS
 top-level package is assigned its own CDash regression email (see `CDash
 regression email addresses`_) and each package configure/build/test is given
+
+.. ToDo: Discuss the behavior of Continuous, Nightly, and Experiental
+.. CTest/CDash tracks and what that means in terms of sending out CDash error
+.. emails and allowing for multiple builds of the same name in a single test
+.. day.
 
 .. ToDo: Fill in!
 
@@ -3737,6 +4076,8 @@ Multi-Repository Support
 
 ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.
 
+ToDo: Discuss how to handle missing pakages in upstream repos.
+
 
 Multi-Repository Almost Continuous Integration
 ----------------------------------------------
@@ -3786,20 +4127,20 @@ To add a new TriBITS package:
 1) Chose a name ``<packageName>`` for the new package (must be globally
    unique!) and which TriBITS repository to put the package into.
 
-2) Create the package directory ``<repoDir>/<packageDir>`` in the new project
-and put in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
-`<packageDir>/CMakeLists.txt`_.  Set the desired upstream TPL and SE package
-dependenices in the new ``Dependencies.cmake`` file but comment out everything
-in the ``CMakeLists.txt`` file except for the `TRIBITS_PACKAGE()`_ and
-`TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
+2) Create the directory ``<repoDir>/<packageDir>`` for the new package and put
+   in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
+   `<packageDir>/CMakeLists.txt`_.  Set the desired upstream TPL and SE
+   package dependenices in the new ``Dependencies.cmake`` file but initially
+   comment out everything in the ``CMakeLists.txt`` file except for the
+   `TRIBITS_PACKAGE()`_ and `TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
 
 3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
-file after all of upstream packages.
+   file after all of upstream packages.
 
-3) Configure the TriBITS project enabling the new package ``<packageName>``.
+4) Configure the TriBITS project enabling the new package ``<packageName>``.
 
-4) Incrementally fill in the packages ``CMakeLists.txt`` files defining
-libraries, executables, tests and examples.
+5) Incrementally fill in the packages ``CMakeLists.txt`` files defining
+   libraries, executables, tests and examples.
 
 .. ToDo: Expand on the above bullets a lot!
 
@@ -3820,6 +4161,12 @@ How to Add a new TriBITS Repository
 -----------------------------------
 
 ToDo: Fill in!
+
+How to insert a package into an upstream repo
+---------------------------------------------
+
+ToDo: Describe how to insert a package into an upstream repo's list of
+packages like is done for TriKota/Dakota in Trilinos.
 
 
 Additional Topics
@@ -4004,6 +4351,18 @@ Creating Source Distributions
 ToDo: Fill in!
 
 
+Wrapping Exterally Configured/Built Software
+--------------------------------------------
+
+ToDo: Fill in!
+
+
+TriBITS Dashboard Driver
+------------------------
+
+ToDo: Fill in!
+
+
 Regulated Backward Compatibility and Deprecated Code
 ----------------------------------------------------
 
@@ -4014,18 +4373,6 @@ how transitions between non-backward compatible versions is accomplished.
 
 .. ToDo: Put in the material from the document README.DEPRECATED_CODE and
 .. format for RST.
-
-
-Wrapping Exterally Configured/Built Software
---------------------------------------------
-
-ToDo: Fill in!
-
-
-.. TriBITS Dashboard Driver
-.. ------------------------
-
-.. ToDo: Fill in!
 
 
 References
@@ -4289,28 +4636,29 @@ These options are described below.
 
 .. _${PROJECT_NAME}_TEST_CATEGORIES:
 
+.. _${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT:
+
 **${PROJECT_NAME}_TEST_CATEGORIES**
 
   The cache varaible ``${PROJECT_NAME}_TEST_CATEGORIES`` detemines what tests
   defined using `TRIBITS_ADD_TEST()`_ and `TRIBITS_ADD_ADVANCED_TEST()`_ will
-  be added for ``ctest`` to run (see `TriBITS Automated Testing`) for
-  discussion of test categories).  The TriBITS default is ``NIGHTLY`` for a
-  standard local build.  The ``checkin-test.py`` script sets this to
-  ``BASIC``.  A TriBITS project can override the default for a basic configure
-  using, for example::
+  be added for ``ctest`` to run (see `Test Test Category`_).  The TriBITS
+  default is ``NIGHTLY`` for a standard local build.  The `checkin-test.py`_
+  script sets this to ``BASIC`` by default.  A TriBITS project can override
+  the default for a basic configure using, for example::
 
-    SET(${PROJECT_NAME}_TEST_CATEGORIES BASIC)
+    SET(${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT BASIC)
 
   The justification for having the default test category be ``NIGHTLY``
   instead of ``BASIC`` is that when someone is enabling a package to develop
   on it or install it, we want them by default to be seeing the full version
-  of the test suite (shy of the ``WEEKLY`` tests which can be very expensive)
-  for the packages they are explictly enabling.  Typically they will not be
-  enabling forward (`downstream`_) dependent packages so the cost of running
-  the test suite should not be too prohibitive.  This all depends on how good
-  of a job the development teams do in making their test suites run fast and
-  keeping the cost of running the tests down.  See the section `TriBITS
-  Automated Testing`_ for a more detailed discussion.
+  of the test suite (shy of the `Test Test Category WEEKLY`_ tests which can
+  be very expensive) for the packages they are explictly enabling.  Typically
+  they will not be enabling forward/`downstream`_ dependent packages so the
+  cost of running the test suite should not be too prohibitive.  This all
+  depends on how good of a job the development teams do in making their test
+  suites run fast and keeping the cost of running the tests down.  See the
+  section `TriBITS Automated Testing`_ for a more detailed discussion.
 
 .. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
 

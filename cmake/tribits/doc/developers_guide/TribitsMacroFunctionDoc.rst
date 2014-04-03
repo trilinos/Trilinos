@@ -1666,7 +1666,7 @@ varible must be set:
     software when mapping modified files to SE packages that need to be
     tested.
 
-  * **CLASSIFICATIONS***: The test group PT, ST, EX and the maturity level
+  * **CLASSIFICATIONS**: The test group PT, ST, EX and the maturity level
     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
     as for full packages (see
@@ -2081,15 +2081,14 @@ extra repository.  The 6 columns (ordered 0-5) are:
    as the empty quoted string ``""``, then this repository is considered to
    be a `TriBITS Repository`_ and must therefore contain the files described
    in `TriBITS Repository Core Files`_.  If the listed repository is **not**
-   a TriBITS repository, and just provideds directories and packages, then
-   this field is set as ``NOPACKAGES``.
+   a TriBITS repository, and just provides directories and files, then this
+   field is set as ``NOPACKAGES``.
 
 5. **REPO_CLASSIFICATION** (``<repoi_classif>``): Gives the testing
    classification of the repository which also happens to be the CTest/CDash
    testing mode and the default dashboard track.  The valid values are
-   ``Continuous``, ``Nightly``, and ``Experimental``.  See `TriBITS
-   Package-by-Package CTest/Dash Driver`_ for a detailed description of
-   repository classifications.
+   ``Continuous``, ``Nightly``, and ``Experimental``.  See `Repository Test
+   Classification`_ for a detailed description.
 
 This command is used to put together one or more VC and/or TriBITS
 repositories to construct a larger project.  Files that contain this macro
@@ -2099,7 +2098,11 @@ and are technically not considered at all during the basic configuration of
 the a TriBITS project.  They are only listed in this file so that they can
 be used in the version control logic for tools that perform version control
 with the repositories (such as cloning, updating, looking for changed files,
-etc.).
+etc.).  For example, a non-TriBITS repo can be used to grab a set of
+directories and files that fill in the definition of a package in an
+upstream repository (see `How to insert a package into an upstream repo`_).
+Also, non-TriBITS repos can be used to provide extra test data for a given
+pakage or a set of packages so that extra tests can be run.
 
 **NOTE**: These repositories must be listed in the order of package
 dependencies.  That is, all of the packages listed in repository ``i`` must
