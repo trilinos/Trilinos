@@ -42,6 +42,7 @@ struct find_pred {
   const std::string     m_;
 };
   
+namespace {
 // Copy_if was dropped from the standard library by accident.
 template<typename In, typename Out, typename Pred>
 Out copy_if(In first, In last, Out res, Pred Pr)
@@ -53,6 +54,7 @@ Out copy_if(In first, In last, Out res, Pred Pr)
   }
 
   return res;
+}
 }
 
 
