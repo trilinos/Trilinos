@@ -1406,14 +1406,15 @@ Python is enabled.</li>
 <h2><a class="toc-backref" href="#id34">4.19&nbsp;&nbsp;&nbsp;Enabling different test categories</a></h2>
 <p>To turn on a set a given set of tests by test category, set:</p>
 <pre class="literal-block">
--D &lt;Project&gt;_TEST_CATEGORIES:STRING=&quot;&lt;CATEGORY1&gt;;&lt;CATEGORY2&gt;;...&quot;
+-D &lt;Project&gt;_TEST_CATEGORIES:STRING=&quot;&lt;CATEGORY0&gt;;&lt;CATEGORY1&gt;;...&quot;
 </pre>
-<p>Valid categories include BASIC, CONTINUOUS, NIGHTLY, WEEKLY and PERFORMANCE.
-BASIC tests get built and run for pre-push testing, CI testing, and nightly
-testing.  CONTINUOUS tests are for post-posh testing and nightly testing.
-NIGHTLY tests are for nightly testing only.  WEEKLY tests are for more
-expensive tests that are run approximately weekly.  PERFORMANCE tests are for
-performance testing only.</p>
+<p>Valid categories include <tt class="docutils literal">BASIC</tt>, <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, <tt class="docutils literal">WEEKLY</tt>
+and <tt class="docutils literal">PERFORMANCE</tt>.  <tt class="docutils literal">BASIC</tt> tests get built and run for pre-push testing,
+CI testing, and nightly testing.  <tt class="docutils literal">CONTINUOUS</tt> tests are for post-push
+testing and nightly testing.  <tt class="docutils literal">NIGHTLY</tt> tests are for nightly testing only.
+<tt class="docutils literal">WEEKLY</tt> tests are for more expensive tests that are run approximately
+weekly.  <tt class="docutils literal">PERFORMANCE</tt> tests a special category used only for performance
+testing.</p>
 </div>
 <div class="section" id="disabling-specific-tests">
 <h2><a class="toc-backref" href="#id35">4.20&nbsp;&nbsp;&nbsp;Disabling specific tests</a></h2>
