@@ -3,7 +3,8 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/util/human_bytes.hpp>
 
 #include <stk_performance_test_includes/calculate_centroid.hpp>
 

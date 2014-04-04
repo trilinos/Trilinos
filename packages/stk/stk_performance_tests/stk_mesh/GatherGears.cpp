@@ -8,7 +8,7 @@
 
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <stk_mesh/fixtures/Gear.hpp>
 #include <stk_mesh/fixtures/GearsFixture.hpp>

@@ -10,12 +10,13 @@
 #include <iostream>
 
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/util/memory_util.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <boost/program_options.hpp>
 #include <boost/program_options/cmdline.hpp>
 
+#include <stk_util/util/human_bytes.hpp>
 #include <stk_util/util/ParameterList.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>

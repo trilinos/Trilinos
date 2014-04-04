@@ -15,6 +15,7 @@
 #include <mpi.h>
 
 #include <stk_util/environment/ProgramOptions.hpp> // TSC:  We tried to remove this, but a conchas2 test diffs if we take this out.  ?
+#include <stk_util/environment/EnvData.hpp> 
 
 
 namespace sierra {
@@ -52,31 +53,6 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
   };
 
   GeminiSCIVersion GetGeminiVersion(GeminiSCIVersion ver=GEMINI_SCI_UNKNOWN);
-
-
-/**
- * @brief Enumeration ExecutableType defines the known types of coordinated executables that operate
- * with a sierra application.  Unfortunately, this scheme for coordination is currently defined by
- * Gemini whose implementation forces a limit of two executables, namely it and a fluid code.  The
- * startup_multi_exec() function handles the creation of groups which are contiguous processor
- * groups, each with lead processor being the least ranked processor in the group.
- *
- * Modification of the startup_multi_exec() function would need to be made to enable more than the
- * two executable types.
- */
-enum ExecType {
-  EXEC_TYPE_WORLD = 0,            ///< Generic application using entire communicator (MPI_COMM_WORLD)
-  EXEC_TYPE_FLUID = 1,            ///< Gemini Euler application
-  EXEC_TYPE_LAG   = 2,            ///< Sierra Lagrangian application
-  EXEC_TYPE_PEER  = 3             ///< Split communicator application; non-Gemini
-};
-
-struct ExecInfo
-{
-  MPI_Comm              m_groupComm;
-  int                   m_master;
-  MPI_Comm              m_worldComm;
-};
 
 
 

@@ -5,7 +5,7 @@
 #include <unistd.h>
 #include <iomanip>
 #include <vector>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 #if defined(__APPLE__)
 #include<mach/task.h>
@@ -226,28 +226,4 @@ void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, si
 
   get_max_min_avg(comm, avail, avail_max, avail_min, avail_avg);
 }
-
-std::string human_bytes(size_t arg_bytes)
-{
-  double bytes = arg_bytes;
-  const double K = 1024;
-  const double M = K*1024;
-  const double G = M*1024;
-
-  std::ostringstream out;
-  if (bytes < K) {
-    out << std::setprecision(4) << bytes << " B";
-  } else if (bytes < M) {
-    bytes /= K;
-    out << std::setprecision(4) << bytes << " K";
-  } else if (bytes < G) {
-    bytes /= M;
-    out << std::setprecision(4) << bytes << " M";
-  } else {
-    bytes /= G;
-    out << std::setprecision(4) << bytes << " G";
-  }
-  return out.str();
-}
-
 } // namespace stk

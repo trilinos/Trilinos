@@ -10,8 +10,8 @@
 #define STK_UTIL_DIAG_SignalHandler_hpp
 
 #include <map>
+#include <string>
 
-#include <stk_util/diag/String.hpp>
 #include <stk_util/util/Callback.hpp>
 
 struct sigaction;
@@ -38,7 +38,7 @@ public:
    */
   static SignalHandler &instance();
 
-  static bool check_signal_name(const sierra::String& signal);
+  static bool check_signal_name(const std::string &signal);
 
   /**
    * @brief Member function <b>handle_signal</b> ...
@@ -61,7 +61,7 @@ public:
    * @param signal_name	a <b>String</b> variable ...
    * @param callback	a <b>CallbackBase</b> variable ...
    */
-  void add_handler(const String &signal_name, CallbackBase &callback);
+  void add_handler(const std::string &signal_name, CallbackBase &callback);
 
   /**
    * @brief Member function <b>remove_handler</b> ...
@@ -77,7 +77,7 @@ public:
    * @param signal_name	a <b>String</b> variable ...
    * @param callback	a <b>CallbackBase</b> variable ...
    */
-  void remove_handler(const String &signal_name, CallbackBase &callback);
+  void remove_handler(const std::string &signal_name, CallbackBase &callback);
 
   /**
    * @brief Member function <b>remove_all_handlers</b> ...

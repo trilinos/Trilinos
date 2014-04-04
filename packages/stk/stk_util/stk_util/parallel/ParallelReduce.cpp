@@ -7,8 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
 
+#include <boost/static_assert.hpp> 
 #include <stdlib.h>
 #include <stdexcept>
 #include <sstream>
@@ -156,7 +156,7 @@ void all_reduce_sum( ParallelMachine comm ,
                      const int64_t * local , int64_t * global , unsigned count )
 {
   int64_t * tmp = const_cast<int64_t*>( local );
-  ThrowAssert(sizeof(long long) == sizeof(int64_t));
+  BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
   MPI_Allreduce( tmp , global , count , MPI_LONG_LONG , MPI_SUM , comm );
 }
 
@@ -217,7 +217,7 @@ void all_reduce_max( ParallelMachine comm ,
                      const int64_t * local , int64_t * global , unsigned count )
 {
   int64_t * tmp = const_cast<int64_t*>( local );
-  ThrowAssert(sizeof(long long) == sizeof(int64_t));
+  BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(int64_t));
   MPI_Allreduce( tmp , global , count , MPI_LONG_LONG , MPI_MAX , comm );
 }
 

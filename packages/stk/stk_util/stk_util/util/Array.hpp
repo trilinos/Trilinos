@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <stk_util/util/TypeList.hpp>
-#include <stk_util/diag/FArray.hpp>
+#include <stk_util/util/FArray.hpp>
 
 namespace sierra {
 

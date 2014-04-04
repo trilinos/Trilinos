@@ -1,5 +1,5 @@
 #include <gtest/gtest.h>
-#include <stk_util/util/Scheduler.hpp>
+#include <stk_util/environment/Scheduler.hpp>
 
 namespace
 {

@@ -5,6 +5,7 @@
 #include <boost/range/algorithm/equal.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 #include <stk_performance_test_includes/cpu_time.hpp>
 #include <stk_performance_test_includes/memory_size.hpp>

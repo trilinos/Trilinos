@@ -10,8 +10,8 @@
 #include <gtest/gtest.h>
 
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/util/memory_util.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
 #include <stk_performance_test_includes/calculate_centroid.hpp>

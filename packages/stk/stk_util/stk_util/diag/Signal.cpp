@@ -15,7 +15,7 @@
 #include <stk_util/diag/Signal.hpp>
 #include <stk_util/util/Callback.hpp>
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/SignalHandler.hpp>
+#include <stk_util/util/SignalHandler.hpp>
 
 namespace sierra {
 namespace Env {

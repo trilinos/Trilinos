@@ -27,7 +27,6 @@
 #include <stk_util/diag/Exception.hpp>
 #include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
-#include <stk_util/diag/mpih.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 
 #include <stk_util/diag/Writer.hpp>

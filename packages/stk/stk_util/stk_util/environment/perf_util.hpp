@@ -8,7 +8,8 @@
 #include <mpi.h>
 #include <iomanip>
 
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/util/human_bytes.hpp>
 
 namespace stk {
 

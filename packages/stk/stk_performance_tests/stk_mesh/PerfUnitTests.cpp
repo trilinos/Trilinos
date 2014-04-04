@@ -2,9 +2,9 @@
 #include <stk_util/unit_test_support/perf_unit_util.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>

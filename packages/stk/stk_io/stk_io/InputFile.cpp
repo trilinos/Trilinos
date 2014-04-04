@@ -8,7 +8,8 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 
-#include <stk_util/diag/FileUtils.hpp>  // for filename_substitution
+#include <stk_util/environment/FileUtils.hpp>  // for filename_substitution
+#include <stk_util/environment/ReportHandler.hpp>
 
 #include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
 #include "Ioss_PropertyManager.h"       // for PropertyManager

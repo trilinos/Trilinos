@@ -1,7 +1,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/util/TrackingAllocator.hpp>
 #include <stk_util/util/CacheAlignedAllocator.hpp>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 #include <stk_util/util/BlockVector.hpp>
 #include <stk_util/util/RadixSort2.hpp>

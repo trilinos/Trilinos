@@ -10,8 +10,9 @@
 #include <gtest/gtest.h>
 
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/util/memory_util.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/util/human_bytes.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
 

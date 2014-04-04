@@ -30,7 +30,7 @@
 
 #include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/util/Array.hpp>
-#include <stk_util/util/FArrayPrint.hpp>
+#include <stk_util/diag/FArrayPrint.hpp>
 #include <stk_util/parallel/MPI.hpp>
 #include <stk_util/diag/Mapv.hpp>
 #include <stk_util/diag/Option.hpp>

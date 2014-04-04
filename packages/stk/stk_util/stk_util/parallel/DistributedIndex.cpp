@@ -14,8 +14,6 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_util/util/RadixSort.hpp>
 
 namespace stk {
@@ -429,7 +427,9 @@ void DistributedIndex::update_keys(
   KeyTypeVector::const_iterator remove_existing_keys_begin,
   KeyTypeVector::const_iterator remove_existing_keys_end )
 {
-  ThrowAssert(m_removed_keys.empty()); // do not mix
+  if (!m_removed_keys.empty()) {
+    throw std::runtime_error("");
+  }
 
   UnsignedVector count_remove( m_comm_size , 0 );
   UnsignedVector count_add(    m_comm_size , 0 );
@@ -599,8 +599,11 @@ void DistributedIndex::update_keys(
                     m_key_usage.end() );
 
   // Check invariant that m_key_usage is sorted
-  ThrowAssertMsg(is_sorted_and_unique(m_key_usage),
-                 "Sorted&unique invariant violated!");
+#ifndef NDEBUG
+  if (!is_sorted_and_unique(m_key_usage)) {
+    throw std::runtime_error("Sorted&unique invariant violated!");
+  }
+#endif
 }
 
 //----------------------------------------------------------------------

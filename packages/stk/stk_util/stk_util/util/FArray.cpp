@@ -2,8 +2,7 @@
 #include <stdexcept>
 #include <sstream>
 
-#include <stk_util/diag/FArray.hpp>
-#include <stk_util/diag/StringUtil.hpp>
+#include <stk_util/util/FArray.hpp>
 
 namespace sierra {
 
@@ -30,7 +29,7 @@ array_dimension_error(
   unsigned			upper)
 {
   std::ostringstream os ;
-  os << demangle(type.name()) << " ";
+  os << type.name() << " ";
   if (dimension >= sizeof(ordinal)/sizeof(ordinal[0]))
     os << dimension;
   else

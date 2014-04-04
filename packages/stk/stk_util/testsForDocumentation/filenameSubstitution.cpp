@@ -2,8 +2,8 @@
 #include <string>
 #include <mpi.h>
 #include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/diag/FileUtils.hpp>
+#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/environment/FileUtils.hpp>
 
 namespace
 {
@@ -22,7 +22,7 @@ namespace
   {
     boost::program_options::variables_map &command_line_options = stk::get_variables_map();
     command_line_options.insert(std::make_pair("input-deck", boost::program_options::variable_value(filename, false)));
-    sierra::Env::setInputFileName(filename);
+    stk::EnvData::instance().m_inputFile = filename;
   }
   TEST(StkUtilHowTo, useFilenameSubstitutionWithFileComingFromCommandLineOptions)
   {

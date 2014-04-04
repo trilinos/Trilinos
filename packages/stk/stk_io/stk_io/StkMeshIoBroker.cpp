@@ -23,7 +23,7 @@
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
-#include <stk_util/diag/FileUtils.hpp>  // for filename_substitution
+#include <stk_util/environment/FileUtils.hpp>  // for filename_substitution
 #include <utility>                      // for pair, make_pair
 #include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
@@ -59,6 +59,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/ParameterList.hpp"  // for Type, Type::DOUBLE, etc
+#include <stk_util/environment/ReportHandler.hpp>
 
 namespace {
 

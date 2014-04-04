@@ -11,7 +11,7 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_mesh/base/BulkModification.hpp>

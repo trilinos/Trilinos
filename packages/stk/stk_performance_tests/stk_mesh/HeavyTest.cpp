@@ -8,7 +8,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/util/perf_util.hpp>
+#include <stk_util/environment/perf_util.hpp>
 
 #include <Teuchos_ParameterList.hpp>
 

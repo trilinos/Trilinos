@@ -6,7 +6,7 @@
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequire
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
-#include <stk_util/util/memory_util.hpp>  // for human_bytes
+#include <stk_util/util/human_bytes.hpp>  // for human_bytes
 #include <string>                       // for string, operator<<
 #include "mpi.h"                        // for MPI_Gather, MPI_LONG_LONG, etc
 namespace stk { namespace parallel { class DistributedIndex; } }

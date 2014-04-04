@@ -11,7 +11,7 @@
 #include <vector>
 #include <iostream>
 
-#include <stk_util/diag/SignalHandler.hpp>
+#include <stk_util/util/SignalHandler.hpp>
 
 #include <signal.h>
 #include <time.h>
@@ -31,7 +31,7 @@ namespace {
 
 int
 convert_name_to_signal(
-  const String &	signal)
+  const std::string &	signal)
 {
   if (signal == "SIGABRT" || signal == "SIGKILL") {
     return -1;
@@ -110,7 +110,7 @@ SignalHandler::handle_signal(
 
 bool
 SignalHandler::check_signal_name(
-  const String &	signal)
+  const std::string &	signal)
 {
   int isignal = convert_name_to_signal(signal);
   return (isignal >= 0);
@@ -119,7 +119,7 @@ SignalHandler::check_signal_name(
 
 void
 SignalHandler::add_handler(
-  const String &	signal,
+  const std::string &	signal,
   CallbackBase &	callback)
 {
   int isignal = convert_name_to_signal(signal);
@@ -185,7 +185,7 @@ SignalHandler::remove_handler(
 
 void
 SignalHandler::remove_handler(
-  const String &	signal,
+  const std::string &	signal,
   CallbackBase &	callback)
 {
   int isignal = convert_name_to_signal(signal);

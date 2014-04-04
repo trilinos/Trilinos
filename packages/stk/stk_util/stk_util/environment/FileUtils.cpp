@@ -1,8 +1,9 @@
-#include <stk_util/diag/FileUtils.hpp>
+#include <stk_util/environment/FileUtils.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
+#include <stk_util/environment/EnvData.hpp>
+
 #include <stk_util/parallel/ParallelComm.hpp>
 
-#include <stk_util/diag/Env.hpp>
 #include <stk_util/util/tokenize.hpp>
 
 #include <Ioss_Utils.h>
@@ -18,7 +19,7 @@ namespace {
     
     std::string input_file_name = "stdin";
     if (stk::get_variables_map().count("input-deck")) {
-      input_file_name = sierra::Env::getInputFileName();
+      input_file_name = stk::EnvData::instance().m_inputFile;
     }
 
     Ioss::FileInfo input_file(input_file_name);
@@ -46,7 +47,7 @@ namespace stk {
       size_t pos = filename.find("%P");
       if (pos != std::string::npos) {
 	// Found the characters...  Replace with the processor count...
-	int num_proc = std::max(1, sierra::Env::parallel_size());
+	int num_proc = std::max(1, EnvData::instance().m_parallelSize);
 	std::string tmp(filename, 0, pos);
 	tmp += Ioss::Utils::to_string(num_proc);
 	tmp += filename.substr(pos+2);

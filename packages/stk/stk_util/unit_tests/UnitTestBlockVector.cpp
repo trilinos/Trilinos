@@ -3,7 +3,8 @@
 #include <stk_util/util/PageAlignedAllocator.hpp>
 #include <stk_util/util/CacheAlignedAllocator.hpp>
 #include <stk_util/util/BlockVector.hpp>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/util/human_bytes.hpp>
 
 #include <boost/timer.hpp>
 

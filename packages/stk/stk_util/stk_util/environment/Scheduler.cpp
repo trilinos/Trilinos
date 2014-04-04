@@ -1,16 +1,16 @@
-#include <stk_util/util/Scheduler.hpp>
+#include <stk_util/environment/Scheduler.hpp>
 #ifdef SIERRA_PARALLEL_MPI
 #include <mpi.h>
 #endif
-#include <stk_util/diag/SignalHandler.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
+#include <stk_util/environment/EnvData.hpp>
+#include <stk_util/util/SignalHandler.hpp>
 #include <stk_util/util/Callback.hpp>
 #include <float.h>
 #include <math.h>
 #include <assert.h>
 #include <iostream>
 #include <algorithm>
+#include <exception>
 
 #ifndef Real_MAX
 #define Real_MAX DBL_MAX
@@ -301,14 +301,16 @@ bool Scheduler::force_schedule()
   // It is possible that the forceSchedule_flag has been set on only one
   // processor so we need to see if it is true on any processor...
   bool result = forceSchedule_;
-  if (sierra::Env::parallel_size() > 1) {
+  if (EnvData::parallel_size() > 1) {
     static int inbuf[1], outbuf[1];
     inbuf[0] = forceSchedule_ ? 1 : 0;
     const int success = MPI_Allreduce(inbuf, outbuf, 1,
         MPI_INT,
         MPI_MAX,
-        sierra::Env::parallel_comm());
-    ThrowRequireMsg(success ==  MPI_SUCCESS, "Scheduler::force_write - MPI_Allreduce failed");
+        EnvData::parallel_comm());
+    if (success !=  MPI_SUCCESS) {
+      throw std::runtime_error("Scheduler::force_write - MPI_Allreduce failed");
+    }
 
     result = outbuf[0] > 0;
   }

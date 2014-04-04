@@ -2,7 +2,8 @@
 #define samba_performance_memory_size_hpp
 
 #include <iostream>
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/util/human_bytes.hpp>
+#include <stk_util/environment/memory_util.hpp>
 
 namespace samba { namespace detail {
 

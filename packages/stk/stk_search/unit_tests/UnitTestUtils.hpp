@@ -1,7 +1,7 @@
 #ifndef STK_SEARCH_UNITTESTUTILS_HPP
 #define STK_SEARCH_UNITTESTUTILS_HPP
 
-#include <stk_util/util/memory_util.hpp>
+#include <stk_util/environment/memory_util.hpp>
 #include <stk_util/environment/WallTime.hpp>
 
 #include <stk_search/BoundingBox.hpp>

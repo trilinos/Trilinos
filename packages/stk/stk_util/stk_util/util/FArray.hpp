@@ -12,8 +12,8 @@
  * @date   August 2005
  */
 
-#ifndef STK_UTIL_DIAG_FArray_h
-#define STK_UTIL_DIAG_FArray_h
+#ifndef STK_UTIL_UTIL_FArray_h
+#define STK_UTIL_UTIL_FArray_h
 
 #include <cstddef>
 #include <utility>
@@ -1420,4 +1420,4 @@ private:
 
 } // namespace sierra
 
-#endif // STK_UTIL_DIAG_FArray_h
+#endif // STK_UTIL_UTIL_FArray_h

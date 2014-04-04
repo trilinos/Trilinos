@@ -12,9 +12,9 @@
 #include <iostream>
 #include <vector>
 
+#include <boost/static_assert.hpp> 
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
 
 namespace stk {
 
@@ -915,7 +915,7 @@ bool comm_sizes( ParallelMachine comm ,
     send_buf[p_size]   = max_msg ;
     send_buf[p_size+1] = local_flag ;
 
-    ThrowRequire(sizeof(size_t) == sizeof(long long));
+    BOOST_STATIC_ASSERT(sizeof(long long) == sizeof(size_t));
     result = MPI_Allreduce(p_send,p_recv,p_size,MPI_LONG_LONG,MPI_SUM,comm);
 
     if ( result != MPI_SUCCESS ) {
@@ -1029,7 +1029,9 @@ bool comm_sizes( ParallelMachine comm ,
       }
 
       const size_t r_size = buf[i] ;
-      ThrowRequireMsg(r_size < 2140000000, "r_size > 2.1B");
+      if (r_size > 2140000000) {
+	throw std::overflow_error("r_size > 2.1B");
+      }
       recv_size[ recv_proc ] = r_size ;
     }
   }

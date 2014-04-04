@@ -42,6 +42,7 @@
 #include <stk_util/diag/mpih.hpp>
 #include <stk_util/diag/PreParse.hpp>
 
+#include <stk_util/environment/EnvData.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <stk_util/parallel/BroadcastArg.hpp>
@@ -93,109 +94,19 @@ void sierra_bootstrap()
   stk::get_options_description().add(desc);
 }
 
-struct EnvData
-{
-  typedef std::map<ExecType, ExecInfo>    ExecMap;
-
-  static EnvData &instance() {
-    static EnvData s_env;
-
-    return s_env;
-  }
-
-  EnvData()
-    : m_productName("not specified"),
-      m_vm(stk::get_variables_map()),
-      m_nullBuf(),
-      m_outputNull(&m_nullBuf),
-      m_outputP0(&std::cout),
-      m_output(),
-      m_startTime((double) ::time(NULL)),
-      m_executablePath(),
-      m_shutdownRequested(false),
-      m_inputFileRequired(true),
-      m_checkSubCycle(false),
-      m_isZapotec(false),
-      m_worldComm(MPI_COMM_NULL),
-      m_parallelComm(MPI_COMM_NULL),
-      m_parallelSize(-1),
-      m_parallelRank(-1),
-      m_emptyString(),
-      m_onString(PARAM_ON),
-      m_inputFile("")
-  {
-    m_execMap[EXEC_TYPE_LAG].m_master      = -1;
-    m_execMap[EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
-    m_execMap[EXEC_TYPE_FLUID].m_master    = -1;
-    m_execMap[EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
-    stk::register_log_ostream(std::cout, "cout");
-    stk::register_log_ostream(std::cerr, "cerr");
-
-    stk::register_ostream(sierra::out(), "out");
-    stk::register_ostream(sierra::pout(), "pout");
-    stk::register_ostream(sierra::dout(), "dout");
-    stk::register_ostream(sierra::tout(), "tout");
-
-    static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
-  }
-
-  ~EnvData()
-  {
-    static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(std::cout.rdbuf());
-
-    stk::unregister_ostream(tout());
-    stk::unregister_ostream(dout());
-    stk::unregister_ostream(pout());
-    stk::unregister_ostream(out());
-
-    stk::unregister_log_ostream(std::cerr);
-    stk::unregister_log_ostream(std::cout);
-  }
-
-  std::string           m_productName;
-
-  boost::program_options::variables_map & m_vm;
-
-  null_streambuf	m_nullBuf;
-  std::ostream		m_outputNull;
-  std::ostream *	m_outputP0;
-  std::ostringstream	m_output;
-
-  double		m_startTime;
-  std::string		m_executablePath;
-
-  bool			m_shutdownRequested;
-  bool                  m_inputFileRequired;
-  bool                  m_checkSubCycle;
-  bool                  m_isZapotec;
-
-  MPI_Comm		m_worldComm;
-
-  MPI_Comm		m_parallelComm;
-  int			m_parallelSize;
-  int			m_parallelRank;
-
-  ExecMap               m_execMap;
-
-  const std::string	m_emptyString;
-  const std::string	m_onString;
-
-  std::string           m_inputFile;
-};
-
 } // namespace <unnamed>
 
 const std::string &
 product_name()
 {
-  return EnvData::instance().m_productName;
+  return stk::EnvData::instance().m_productName;
 }
 
 
 const std::string &
 executable_file()
 {
-  return EnvData::instance().m_executablePath;
+  return stk::EnvData::instance().m_executablePath;
 }
 
 
@@ -205,7 +116,7 @@ executable_date()
   static std::string executable_date;
 
   if (executable_date.empty())
-    executable_date = ProductRegistry::instance().getProductAttribute(EnvData::instance().m_productName, ProductRegistry::BUILD_TIME);
+    executable_date = ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, ProductRegistry::BUILD_TIME);
 
   return executable_date;
 }
@@ -217,7 +128,7 @@ startup_date()
   static std::string startup_date;
 
   if (startup_date.empty())
-    startup_date = format_time(EnvData::instance().m_startTime).c_str();
+    startup_date = format_time(stk::EnvData::instance().m_startTime).c_str();
 
   return startup_date;
 }
@@ -226,7 +137,7 @@ startup_date()
 double
 start_time()
 {
-  return EnvData::instance().m_startTime;
+  return stk::EnvData::instance().m_startTime;
 }
 
 
@@ -238,31 +149,31 @@ developer_mode()
 
 
 void setInputFileName(std::string name) {
-  EnvData::instance().m_inputFile = name;
+  stk::EnvData::instance().m_inputFile = name;
 }
 
 std::string getInputFileName() {
-  return EnvData::instance().m_inputFile;
+  return stk::EnvData::instance().m_inputFile;
 }
 
 void set_input_file_required(bool value)
 {
-    EnvData::instance().m_inputFileRequired = value;
+    stk::EnvData::instance().m_inputFileRequired = value;
 }
 
 void set_check_subcycle(bool value)
 {
-    EnvData::instance().m_checkSubCycle = value;
+    stk::EnvData::instance().m_checkSubCycle = value;
 }
 
 void set_zapotec(bool value)
 {
-    EnvData::instance().m_isZapotec = value;
+    stk::EnvData::instance().m_isZapotec = value;
 }
 
 bool is_zapotec()
 {
-    return EnvData::instance().m_isZapotec;
+    return stk::EnvData::instance().m_isZapotec;
 }
 
 
@@ -288,20 +199,20 @@ working_directory() {
 std::ostream &
 output()
 {
-  return EnvData::instance().m_output;
+  return stk::EnvData::instance().m_output;
 }
 
 
 std::ostream &
 outputP0()
 {
-  return *EnvData::instance().m_outputP0;
+  return *stk::EnvData::instance().m_outputP0;
 }
 
 
 std::ostream &
 outputNull() {
-  return EnvData::instance().m_outputNull;
+  return stk::EnvData::instance().m_outputNull;
 }
 
 
@@ -337,35 +248,35 @@ section_title(
 
 
 int parallel_size() {
-  return EnvData::instance().m_parallelSize;
+  return stk::EnvData::instance().m_parallelSize;
 }
 
 int parallel_rank() {
-  return EnvData::instance().m_parallelRank;
+  return stk::EnvData::instance().m_parallelRank;
 }
 
 MPI_Comm
 parallel_comm()
 {
-  return EnvData::instance().m_parallelComm;
+  return stk::EnvData::instance().m_parallelComm;
 }
 
 MPI_Comm
 parallel_world_comm()
 {
-  return EnvData::instance().m_worldComm;
+  return stk::EnvData::instance().m_worldComm;
 }
 
 int parallel_lag_master() {
-  return EnvData::instance().m_execMap[EXEC_TYPE_LAG].m_master;
+  return stk::EnvData::instance().m_execMap[EXEC_TYPE_LAG].m_master;
 }
 
 int parallel_fluid_master() {
-  return EnvData::instance().m_execMap[EXEC_TYPE_FLUID].m_master;
+  return stk::EnvData::instance().m_execMap[EXEC_TYPE_FLUID].m_master;
 }
 
 int peer_group() {
-  return EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
+  return stk::EnvData::instance().m_execMap[EXEC_TYPE_PEER].m_master;
 }
 
 std::string
@@ -431,7 +342,7 @@ bool StartupSierra(int *			  argc,
   stk::Bootstrap::bootstrap();
   sierra_bootstrap();
 
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
 
   env_data.m_executablePath = get_program_path(*argv[0]);
   env_data.m_productName = product_name;
@@ -841,7 +752,7 @@ void ShutDownSierra(bool mpiInitFlag) {
     mpih::Delete_Handles();
 
 
-    EnvData &env_data = EnvData::instance();
+    stk::EnvData &env_data = stk::EnvData::instance();
     mpih::Keyval_delete(env_data.m_parallelComm);
 
     reset(MPI_COMM_NULL);
@@ -919,7 +830,7 @@ startup_multi_exec(MPI_Comm                world_comm,
                    const std::vector<int> *peer_sizes)  // can be NULL.
 {
 
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
 
   // MPI interface construction
   int world_size = -1 ;
@@ -1124,7 +1035,7 @@ startup_multi_exec(MPI_Comm                world_comm,
 bool
 is_comm_valid()
 {
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
   if (env_data.m_parallelComm == MPI_COMM_NULL) {
     return false;
   } else {
@@ -1136,7 +1047,7 @@ void
 reset(
   MPI_Comm		new_comm)
 {
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
 
   // Destroy old comm
   if (env_data.m_parallelComm != MPI_COMM_NULL) {
@@ -1155,7 +1066,7 @@ reset(
 
 void setMpiCommunicator(MPI_Comm communicator)
 {
-    EnvData &env_data = EnvData::instance();
+    stk::EnvData &env_data = stk::EnvData::instance();
     if(communicator != MPI_COMM_NULL)
     {
         env_data.m_parallelComm = communicator;
@@ -1173,7 +1084,7 @@ void setMpiCommunicator(MPI_Comm communicator)
 void
 output_flush()
 {
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
 
   stk::report_deferred_messages(Env::parallel_comm());
 
@@ -1185,14 +1096,14 @@ output_flush()
 void
 request_shutdown(bool shutdown)
 {
-  EnvData::instance().m_shutdownRequested = shutdown;
+  stk::EnvData::instance().m_shutdownRequested = shutdown;
 }
 
 
 bool
 is_shutdown_requested()
 {
-  int shutdown_requested_in = EnvData::instance().m_shutdownRequested || Env::HUP_received();
+  int shutdown_requested_in = stk::EnvData::instance().m_shutdownRequested || Env::HUP_received();
   int shutdown_requested = -1;
 
   MPI_Allreduce(&shutdown_requested_in, &shutdown_requested, 1, MPI_INT, MPI_SUM, Env::parallel_comm());
@@ -1202,12 +1113,12 @@ is_shutdown_requested()
 
 
 void abort() {
-  EnvData &env_data = EnvData::instance();
+  stk::EnvData &env_data = stk::EnvData::instance();
 
   // Cannot be sure of parallel synchronization status; therefore, no communications can
   // occur.  Grab and dump all pending output buffers to 'std::cerr'.
   std::cerr << std::endl
-            << "*** SIERRA ABORT on P" << EnvData::instance().m_parallelRank << " ***"
+            << "*** SIERRA ABORT on P" << stk::EnvData::instance().m_parallelRank << " ***"
             << std::endl
             << "*** check " << get_param("output-log")
             << " file for more information ***"
@@ -1233,14 +1144,14 @@ const std::string &
 get_param(
   const char * const	option)
 {
-  if (EnvData::instance().m_vm.count(option)) {
-    if (EnvData::instance().m_vm[option].as<std::string>().empty())
-      return EnvData::instance().m_onString;
+  if (stk::EnvData::instance().m_vm.count(option)) {
+    if (stk::EnvData::instance().m_vm[option].as<std::string>().empty())
+      return stk::EnvData::instance().m_onString;
     else
-      return EnvData::instance().m_vm[option].as<std::string>();
+      return stk::EnvData::instance().m_vm[option].as<std::string>();
   }
   else
-    return EnvData::instance().m_emptyString;
+    return stk::EnvData::instance().m_emptyString;
 }
 
 
