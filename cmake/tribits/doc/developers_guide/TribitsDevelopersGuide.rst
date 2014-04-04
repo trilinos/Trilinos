@@ -3801,38 +3801,192 @@ values.
 Nested Layers of TriBITS Project Testing
 ----------------------------------------
 
-ToDo: Discuss the pre-push CI builds/tests, post-push CI builds/tests, nightly
-builds/tests, and weekly builds/tests.
+Now that the different types of `Test Classifications for Repositories,
+Packages, and Tests`_ have been defined, this section describes how these
+different test-related classifications are used to select repositories,
+packages (and code) and tests to run in the standard project testing
+processes.  More than any other section in this document, this section will
+describe and assume a cetain class of software development processes (namely
+agile processes) where testing and *continuous integraiton* (CI) are citical
+components.  However, detailed descriptions of these processes are defered to
+the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
+Package-by-Package CTest/Dash Driver`_.
+
+The standard TriBITS project testing processes are:
+
+* `Pre-Push CI Testing`_
+* `Post-Push CI Testing`_
+* `Nightly Testing`_
+* `Weekly Testing`_
+* `Performance Testing`_
+
+.. ToDo: Discuss why we would want to create standardized test cases?  The
+.. answer is that it standadizied how testing is done across multiple TriBITS
+.. projects so that larger meta-projects and run tests in a consistent way.
+
+These standard testing processes are outlined in more detail below and show
+how the different test-related categories are used to define each of these.
 
 .. _Pre-Push CI Testing:
 
 **Pre-Push CI Testing**
 
-ToDo: Fill in!
+The first level of testing is *Pre-Push CI Testing* that is performed before
+changes to the project are pushed to the master branch(es) in the global
+repository(s).  With TriBITS, this type of testing and push is typically done
+using the `checkin-test.py`_ script and this category of testing is described
+in much more detail in `Pre-push Testing using checkin-test.py`_.  All of the
+"default builds" used with the ``checkin-test.py`` script select repositories,
+SE packages and code, and individual tests using the following test-related
+classifications:
+
+=========================  ==================  ========================================
+   Classification Type        Classification           (See Reference)
+=========================  ==================  ========================================
+Repository Test Classif.   ``Continuous``      (`Repository Test Continuous`_)
+SE Package Test Group      ``PT``              (`PT`_)
+Test Test Category         ``BASIC``           (see `Test Test Category BASIC`_)
+=========================  ==================  ========================================
+
+Typically a TriBITS project will define a "standard development environment"
+which is comprised of a standard development compiler (e.g. GCC 4.6.1), TPL
+versions (e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake
+2.8.5, git 1.8.2, etc.).  This standard development environment is expected to
+be used to test changes to the project's code before any push.  By usign a
+standard development environment, if the code builds and all the tests pass
+for the "default" pre-push builds for one developer, then that maximizes the
+probability that the code will also build and all tests will pass for every
+other developer.  This is crticial to keep the development team maximally
+productive.  Portability is also important for most projects but portability
+testing is best done in a secondary feedback look using `Nightly Testing`_
+builds.  TriBITS has some support for helping to set up a standard software
+development environment as described in section `TriBITS Development
+Toolset`_.
+
+The basic assumption of all CI processes (includign the one described here) is
+that if anyone pulls the project's development soruces at any time, then all
+of the code will build and all of the tests will pass for the "defaut"
+pre-push build cases.  For a TriBITS project, that means that the project's
+--default-builds (see above) will all pass for every package.  All of these
+software development processes make that basic assumption and agile software
+development methods fall apart if this is not true.
 
 .. _Post-Push CI Testing:
 
 **Post-Push CI Testing**
 
-ToDo: Fill in!
+After changes are pushed to the master branch(es) in the global repository(s),
+*Post-Push CI Testing* is performed where a CI server detects the changes and
+immediately fires off a CI build using CTest to test the changes and the
+results are posted to a CDash server (in the "Continuous" section on the
+project's dashboard page).  This process is driven by code in the
+`TribitsCTestDriverCore.cmake`_ file as described in the section `TriBITS
+Package-by-Package CTest/Dash Driver`_.  Various types of specific CI builds
+can be constructed and run (see `CTest/CDash CI Server`_) but these post-push
+CI builds typically select repositories, SE packages and code, and individual
+tests using the following test-related classifications:
+
+=========================  ==================  ========================================
+   Classification Type        Classification           (See Reference)
+=========================  ==================  ========================================
+Repository Test Classif.   ``Continuous``      (`Repository Test Continuous`_)
+SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
+Test Test Category         ``CONTINUOUS``      (see `Test Test Category CONTINUOUS`_)
+=========================  ==================  ========================================
+
+Post-push CI testing would assume to use the same standard development
+environment as used for `Pre-Push CI Testing`_.  Also, the project may also
+choose to run additional automated post-push CI builds that exactly match the
+pre-push CI default builds to help check on the health of these builds
+continuously and not just rely on the develpment team to always perform the
+pre-push CI builds correctly before pushing.
 
 .. _Nightly Testing:
 
 **Nightly Testing**
 
-ToDo: Fill in!
+In addition to pre-push and post-push CI testing, a typical TriBITS project
+will set up multiple *Nightly Testing* builds (or once-a-day builds, they
+don't need to only run at night).  These builds are also driven by code in the
+`TribitsCTestDriverCore.cmake`_ script as described in the section `TriBITS
+Package-by-Package CTest/Dash Driver`_ and post results to the project's CDash
+server (in the "Nightly" section on the project's dashboard page).  Nightly
+builds don't run in a continuous loop but instead are run once a day
+(e.g. driven by a cron job) and there tends to be many different nightly build
+cases that test the project using different compilers (e.g.  GCC, Intel,
+Microsoft, etc., and different versions of each), different TPL versions
+(e.g. different OpenMPI versions, different MPICH versions, etc.), different
+platforms (e.g. Linux, Windows, etc.), and varying many other options and
+settings on many different platforms.  What all nightly builds have in common
+is that they tend to select repositories, SE packages and code, and individual
+tests using the following test-related classifications:
+
+=========================  ==================  ========================================
+   Classification Type        Classification           (See Reference)
+=========================  ==================  ========================================
+Repository Test Classif.   ``Nightly``         (`Repository Test Nightly`_)
+SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
+Test Test Category         ``NIGHTLY``         (see `Test Test Category NIGHTLY`_)
+=========================  ==================  ========================================
+
+The nightly builds comprise the basic "heart beat" for the project.
 
 .. _Weekly Testing:
 
 **Weekly Testing**
 
-ToDo: Fill in!
+*Weekly Testing* builds are just an extension to the `Nightly Testing`_ builds
+that add on more expensive tests marked using the `Test Test Category
+WEEKLY`_.  For projects that define weekly tests and weekly builds, individual
+test cases can typically take 24 hours or longer to run so they can't even be
+run every day in nighlty testing.  What standard weekly builds have in common
+is that they tend to select repositories, SE packages and code, and individual
+tests using the following test-related classifications:
+
+=========================  ==================  ========================================
+   Classification Type        Classification           (See Reference)
+=========================  ==================  ========================================
+Repository Test Classif.   ``Nightly``         (`Repository Test Nightly`_)
+SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
+Test Test Category         ``WEEKLY``          (see `Test Test Category WEEKLY`_)
+=========================  ==================  ========================================
+
+Project developer teams should strive to limit the number of test cases that
+are maked as ``WEEKLY`` since these tests will *not* get run nightly and
+developers will tend to never enable them when doing more extensive testing
+using ``--st-extra-builds`` with the the `checkin-test.py`_ script in extended
+pre-push testing.
 
 .. _Performance Testing:
 
 **Performance Testing** 
 
-ToDo: Fill in!
+*Performance Testing* builds are a special class of builds that have tests
+that are specifically designed to test the runtime performance of a particular
+piece of code or algorithm.  These tests tend to be sensitive to loads on the
+machine and therefore typically need to be run on an unloaded machine for
+reliable results.  Details on how to write good performance tests with hard
+pass/fail time limits is beyond the scope of this document.  All TriBITS does
+is to define the special `Test Test Category PERFORMANCE`_ to allow TriBITS
+packages to declare these tests in a consistent way so that they can be run
+along with performance tests defined in other TriBITS packages.  From a
+TriBITS standpoint, all performance testing builds would tend to select
+repositories, SE packages and code, and individual tests using the following
+test-related classifications:
+
+=========================  ==================  ========================================
+   Classification Type        Classification           (See Reference)
+=========================  ==================  ========================================
+Repository Test Classif.   ``Nightly``         (`Repository Test Nightly`_)
+SE Package Test Group      ``PT`` & ``ST``     (`PT`_ and `ST`_)
+Test Test Category         ``PERFORMANCE``     (see `Test Test Category PERFORMANCE`_)
+=========================  ==================  ========================================
+
+.. ToDo: I need to set up automated testing for TriBITSProj to use as the
+.. example for all of these types of testing.  There is no better example that
+.. one that actually works.  It would also be nice t have a snapshot repo of
+.. TribitsExampleProject that also had this testing enabled for it but I am
+.. not sure that really makes sense.
 
 
 .. _checkin-test.py:
@@ -3860,6 +4014,11 @@ automating the process of:
 
 5) Only if all specified builds and tests pass, then pushing local commits to
    the remove VC repos.
+
+Every TriBITS project defines one or more "default builds" for pre-push CI
+tesitng that form the criteria for if it is okay to push code changes or not.
+The "default builds" select repositories, SE packages and code, and individual
+test as described in `Pre-Push CI Testing`_.
 
 The ``checkin-test.py`` script is a sophisticated piece of software that is
 well tested and very robust.  The level of testing of this tool is greater
@@ -3906,6 +4065,18 @@ regression email addresses`_) and each package configure/build/test is given
 
 .. ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
 .. interact.
+
+
+CTest/CDash CI Server
++++++++++++++++++++++
+
+ToDo: Fill in!
+
+
+CTest/CDash Nightly Testing
++++++++++++++++++++++++++++
+
+ToDo: Fill in!
 
 
 TriBITS CDash Customizations
@@ -4373,6 +4544,12 @@ how transitions between non-backward compatible versions is accomplished.
 
 .. ToDo: Put in the material from the document README.DEPRECATED_CODE and
 .. format for RST.
+
+TriBITS Development Toolset
+---------------------------
+
+ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI,
+CMake, etc.
 
 
 References
