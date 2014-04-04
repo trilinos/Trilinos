@@ -77,6 +77,7 @@ public:
   ~LOCAAdaptiveSolver();
   //@}
 
+
 private:
   /** \name Overridden from Thyra::ModelEvaluatorDefaultBase . */
   //@{

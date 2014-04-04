@@ -105,7 +105,7 @@ namespace LOCA {
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Access the solution
-      const Teuchos::RCP<const NOX::Thyra::Vector> getX(){ return x_vec_; }
+      const Teuchos::RCP<const NOX::Thyra::Vector> getNOXThyraVecRCPX(){ return x_vec_; }
 
     };
 

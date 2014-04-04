@@ -72,6 +72,8 @@ void PerformSolveImpl(
   {
     for (int j = 0; j < responseCount; ++j) {
       if (computeResponses[j]) {
+// GAH g isn't big enough!!!
+std::cerr << " In PerformSolveImpl line 76 : j : " << j << " g_space size is : " << model.get_g_space(j)->dim() << std::endl;
         const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(*model.get_g_space(j));
         outArgs.set_g(j, g);
         responses[j] = g;

@@ -76,9 +76,9 @@ public:
 	              int p_index);
 
   //! Build the LOCA solution group
-  Teuchos::RCP<LOCA::Thyra::Group> 
-       buildSolutionGroup();
+  void buildSolutionGroup();
 
+  //! Accessor for the LOCA solution group
   Teuchos::RCP<LOCA::Thyra::Group> 
        getSolutionGroup(){ return grp_; }
 

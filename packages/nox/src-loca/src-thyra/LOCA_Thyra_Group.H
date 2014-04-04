@@ -118,6 +118,13 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType 
       computeJacobian();
 
+// GAH Temporary debugging
+const NOX::Abstract::Vector& getX() const 
+{
+  std::cerr << "In LOCA_THYRA_GROUP - getX(): X length : " << x_vec_->length() << " : norm : " << x_vec_->norm() << std::endl;
+  return *x_vec_;
+}
+
       //@}
 
       /*! 

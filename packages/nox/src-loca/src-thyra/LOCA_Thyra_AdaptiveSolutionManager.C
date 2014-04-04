@@ -56,10 +56,9 @@ LOCA::Thyra::AdaptiveSolutionManager::AdaptiveSolutionManager() :
 {
 }
 
-Teuchos::RCP<LOCA::Thyra::Group>
+void
 LOCA::Thyra::AdaptiveSolutionManager::
-buildSolutionGroup()
-{
+buildSolutionGroup() {
 
   const NOX::Thyra::Vector initialGuess(*modelWithSolve_->getNominalValues().get_x());
 std::cout << "Calling buildSolutionGroup(): " << modelWithSolve_->getNominalValues().get_x() << std::endl;
@@ -72,8 +71,6 @@ initialGuess.norm() << std::endl;
 
   grp_ = Teuchos::rcp(new LOCA::Thyra::GroupWrapper(globalData_, initialGuess, modelWithSolve_, *paramVector_, p_index_));
   grp_->setSaveDataStrategy(saveDataStrategy_);
-
-  return grp_;
 
 }
 

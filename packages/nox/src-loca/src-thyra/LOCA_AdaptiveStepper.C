@@ -110,20 +110,6 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
   return_failed_on_max_steps(true),
   max_steps_exceeded(false)
 {
-  reset(pList, solnManager_, global_data, nt);
-}
-
-void
-LOCA::AdaptiveStepper::reset(
-          const Teuchos::RCP<Teuchos::ParameterList>& pList,
-          const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager>& solnManager_,
-          const Teuchos::RCP<LOCA::GlobalData>& global_data,
-          const Teuchos::RCP<NOX::StatusTest::Generic>& nt){
-
-  globalData = global_data;
-  paramListPtr = pList;
-  noxStatusTestPtr = nt;
-  mgr = solnManager_;
 
   // Parse parameter list
   parsedParams = Teuchos::rcp(new LOCA::Parameter::SublistParser(globalData));
@@ -203,7 +189,7 @@ LOCA::AdaptiveStepper::reset(
   bifurcationParams =
     parsedParams->getSublist("Bifurcation");
 
-  setSolutionGroup(mgr->buildSolutionGroup(), startValue);
+  setSolutionGroup(mgr->getSolutionGroup(), startValue);
 
   printInitializationInfo();
 
@@ -308,7 +294,7 @@ LOCA::AdaptiveStepper::eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & 
 LOCA::Abstract::Iterator::IteratorStatus
 LOCA::AdaptiveStepper::start() {
 
-  // This is the relaxation (equilibration) step
+  // This is the initial LOCA step at the beginning of the problem
 
   NOX::StatusTest::StatusType solverStatus;
   std::string callingFunction = "LOCA_AdaptiveStepper::start()";
@@ -359,10 +345,6 @@ LOCA::AdaptiveStepper::start() {
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(
 	curGroupPtr->clone());
 
-  // If the equilibration nonlinear solve failed, return failure, as it makes little sense to proceed.
-  //  (this must be done after continuation
-  // groups are created so AdaptiveStepper::getSolutionGroup() functions correctly.)
-
   if (solverStatus != NOX::StatusTest::Converged)
 
     return LOCA::Abstract::Iterator::Failed;
@@ -389,6 +371,7 @@ LOCA::AdaptiveStepper::start() {
 
   globalData->locaErrorCheck->checkReturnType(predictorStatus,
 					      callingFunction);
+
   curPredictorPtr =
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(
       curGroupPtr->getPredictorTangent()[0].clone(NOX::DeepCopy));
@@ -525,19 +508,22 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
 
   NOX::StatusTest::StatusType solverStatus;
+  std::string callingFunction = "LOCA_AdaptiveStepper::adapt()";
 
   // get current value of continuation parameter
   double value = curGroupPtr->getContinuationParameter();
 
+// Note: this should be removed GAH
 // Project the current solution into the solution vector corresponding to the new mesh
 // This must be called prior to the call of buildSolutionGroup() below, or the current
 // solution will be lost.
 
   mgr->projectCurrentSolution();
 
-// The new solution group is created by the solution manager, using the current discretization
+// The new solution group is created by the solution manager, using the new adapted discretization
+// Get a pointer to it
 
-  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> newSolnGroup = mgr->buildSolutionGroup();
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> newSolnGroup = mgr->getSolutionGroup();
 
 // Re-build the LOCA factory that creates the stepping criteria for the adapted problem
 
@@ -547,9 +533,16 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   setSolutionGroup(newSolnGroup, value);
 
+/*
+   Here, we begin the post adaptation equilibration step. It is almost identical to the initial (0th) continuation
+   step performed by LOCA at the beginning of stepping, except it works on the adapted mesh and the solution that
+   has been transferred to it by the solution transfer mechanism.
+*/
+
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(LOCA::Abstract::Iterator::Successful);
 
+// GAH begin equilibration
   printRelaxationStep();
 
   // Perform solve of newSolnGroup conditions - this is the "relaxation" (equilibration) solve
@@ -577,14 +570,14 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 							conParamIDs);
 
   // Do printing (relaxation case) after continuation group set up
+// GAH end equilibration
   if (solverStatus == NOX::StatusTest::Failed)
     printRelaxationEndStep(LOCA::Abstract::Iterator::Unsuccessful);
   else
     printRelaxationEndStep(LOCA::Abstract::Iterator::Successful);
 
   prevGroupPtr =
-    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(
-	curGroupPtr->clone());
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(curGroupPtr->clone());
 
   // If relaxation solve failed, return (this must be done after continuation
   // groups are created so AdaptiveStepper::getSolutionGroup() functions correctly.
@@ -592,26 +585,59 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
   if (solverStatus != NOX::StatusTest::Converged)
     return LOCA::Abstract::Iterator::Unsuccessful;
 
+  // If the user requested it, print the solution at the end of the relaxation step
   if(mgr->getAdaptParamsNonConst()->get<bool>("Print Relaxation Solution", false)){
+
+    globalData->locaUtils->out()
+      << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+
+    globalData->locaUtils->out()
+      << "Writing Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl
+      << "to mesh output file, as requested" << std::endl;
 
     // Save relaxation solution to the output file
     curGroupPtr->printSolution();
 
-    // Compute eigenvalues/eigenvectors if requested
-    if (calcEigenvalues) {
-      Teuchos::RCP< std::vector<double> > evals_r;
-      Teuchos::RCP< std::vector<double> > evals_i;
-      Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
-      Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
-      eigensolver->computeEigenvalues(
-  				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-  				 evals_r, evals_i, evecs_r, evecs_i);
+    globalData->locaUtils->out()
+      << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
 
-      saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
-    }
+  }
+
+  // Compute eigenvalues/eigenvectors if requested
+  if (calcEigenvalues) {
+    Teuchos::RCP< std::vector<double> > evals_r;
+    Teuchos::RCP< std::vector<double> > evals_i;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
+    Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
+    eigensolver->computeEigenvalues(
+  		 *curGroupPtr->getBaseLevelUnderlyingGroup(),
+  		 evals_r, evals_i, evecs_r, evecs_i);
+
+    saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
 
   // We have successfully relaxed the solution from the remesh, now prepare to resume stepping
+
+// Begin new way
+ // Compute predictor direction
+  NOX::Abstract::Group::ReturnType predictorStatus =
+    curGroupPtr->computePredictor();
+
+  globalData->locaErrorCheck->checkReturnType(predictorStatus,
+                          callingFunction);
+
+  curPredictorPtr =
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(
+      curGroupPtr->getPredictorTangent()[0].clone(NOX::DeepCopy));
+
+  prevPredictorPtr =
+    Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(
+      curGroupPtr->getPredictorTangent()[0].clone(NOX::ShapeCopy));
+
+   // Save previous successful step information
+    prevGroupPtr->copy(*curGroupPtr);
+
+// end new way
 
   // Compute step size
   stepStatus = computeStepSize(stepStatus, stepSize);
@@ -619,6 +645,7 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
   // Set step size in current solution group
   curGroupPtr->setStepSize(stepSize);
 
+/* Old Way */
   // Set previous solution vector in current solution group
   curGroupPtr->setPrevX(prevGroupPtr->getX());
 
@@ -627,10 +654,17 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(stepStatus);
+/**/
 
   // Reset solver to compute new solution
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
+
+/* In start()
+ stepNumber++;
+  mgr->setIteration(stepNumber);
+  mgr->setTime(getContinuationParameter());
+*/
 
   return stepStatus;
 
@@ -1165,7 +1199,7 @@ LOCA::AdaptiveStepper::printRelaxationStep()
       << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
 
     globalData->locaUtils->out()
-      << "Start of Continuation Step " << stepNumber << " : ";
+      << "Start of Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl;
 
     globalData->locaUtils->out()
 	<< "Attempting to converge the remeshed solution at current parameter "
@@ -1233,7 +1267,7 @@ LOCA::AdaptiveStepper::printRelaxationEndStep(LOCA::Abstract::Iterator::StepStat
       globalData->locaUtils->out()
 	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
       globalData->locaUtils->out()
-	<< "End of Relaxation Step " << stepNumber << " : "
+	<< "End of Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl
 	<< "Parameter: " << conParamName << " = "
 	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
 

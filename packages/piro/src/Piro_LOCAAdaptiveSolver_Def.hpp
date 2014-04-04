@@ -154,13 +154,13 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   LOCA::Abstract::Iterator::IteratorStatus status;
 
   if(solMgr_->isAdaptive()){
-    adaptivestepper_->reset(piroParams_, solMgr_, globalData_, noxStatusTests_);
-    adaptivestepper_->run();
+//    adaptivestepper_->reset(piroParams_, solMgr_, globalData_, noxStatusTests_);
+    status = adaptivestepper_->run();
   }
   else {
     stepper_->reset(globalData_, solMgr_->getSolutionGroup(), locaStatusTests_, 
                     noxStatusTests_, piroParams_);
-    stepper_->run();
+    status = stepper_->run();
   }
 
   if (status == LOCA::Abstract::Iterator::Finished) {
@@ -172,14 +172,97 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
     outArgs.setFailed();
   }
 
+  // The time spent
+  globalData_->locaUtils->out() << std::endl <<
+    "#### Statistics ########" << std::endl;
+
+  // Check number of steps
+  int numSteps = adaptivestepper_->getStepNumber();
+  globalData_->locaUtils->out() << std::endl <<
+    " Number of continuation Steps = " << numSteps << std::endl;
+
+  // Check number of failed steps
+  int numFailedSteps = adaptivestepper_->getNumFailedSteps();
+  globalData_->locaUtils->out() << std::endl <<
+    " Number of failed continuation Steps = " << numFailedSteps << std::endl;
+
+  globalData_->locaUtils->out() << std::endl;
+
+
+  // Note: the last g is used to store the final solution. It can be null - if it is just
+  // skip the store. If adaptation has occurred, g is not the correct size. 
+
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(this->num_g());
-  const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final =
-    Teuchos::nonnull(x_outargs) ? x_outargs : Thyra::createMember(this->get_g_space(this->num_g()));
+  Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final;
+
+  int x_args_dim = 0;
+  int f_sol_dim = 0;
+
+  // Pardon the nasty cast to resize the last g in outArgs - need to fit the solution
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>* mutable_outArgsPtr = 
+    const_cast<Thyra::ModelEvaluatorBase::OutArgs<Scalar>* >(&outArgs);
+
+  if(Teuchos::nonnull(x_outargs)){ // g has been allocated, calculate the sizes of g and the solution
+
+    x_args_dim = x_outargs->space()->dim();
+    f_sol_dim = solMgr_->getSolutionGroup()->getX().length();
+
+  }
+
+  if(Teuchos::is_null(x_outargs) || (x_args_dim < f_sol_dim)){ // g is not large enough to store the solution
+
+      x_final = Thyra::createMember(this->get_g_space(this->num_g()));
+
+      mutable_outArgsPtr->set_g(this->num_g(), x_final);
+
+  }
+  else { // g is OK, use it
+    x_final = x_outargs;
+  }
 
   {
     // Deep copy final solution from LOCA group
     NOX::Thyra::Vector finalSolution(x_final);
     finalSolution = solMgr_->getSolutionGroup()->getX();
+  }
+
+  // If the arrays need resizing
+  if(x_args_dim < f_sol_dim){ 
+
+    const int responseCount = this->Ng();
+    const int parameterCount = this->Np();
+
+    for (int j = 0; j < responseCount; ++j) {
+
+//      if (computeResponses[j]) {
+std::cerr << " In Piro_LOCAAdaptiveSolver_Def line 238 : j : " << j << " g_space size is : " << this->get_g_space(j)->dim() << std::endl;
+        const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(this->get_g_space(j));
+        mutable_outArgsPtr->set_g(j, g);
+//        responses[j] = g;
+
+/*
+        if(Teuchos::nonnull(observer))
+           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs),
+                Teuchos::rcpFromRef(responses), g);
+*/
+
+//       if (computeSensitivities) {
+          for (int l = 0; l < parameterCount; ++l) {
+            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+              outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
+            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
+              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
+            if (dgdp_support.supports(dgdp_orient)) {
+              const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
+                Thyra::create_DgDp_mv(*this, j, l, dgdp_orient);
+              mutable_outArgsPtr->set_DgDp(j, l, dgdp);
+//              sensitivities[j][l] = dgdp.getMultiVector();
+            }
+          }
+//        }
+//      }
+      }
+
   }
 
   // Compute responses for the final solution
