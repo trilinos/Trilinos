@@ -102,9 +102,9 @@ namespace Galeri {
 	RBy_   = Dy_-PMLy_right*hy_;
 	LBz_   = PMLz_left*hz_;
 	RBz_   = Dz_-PMLz_right*hz_;
-	PMLwidthx_ = max(LBx_,Dx_-RBx_); if(PMLwidthx_==0) {  PMLwidthx_=1.0; }
-	PMLwidthy_ = max(LBy_,Dy_-RBy_); if(PMLwidthy_==0) {  PMLwidthy_=1.0; }
-	PMLwidthz_ = max(LBz_,Dz_-RBz_); if(PMLwidthz_==0) {  PMLwidthz_=1.0; }
+	PMLwidthx_ = std::max(LBx_,Dx_-RBx_); if(PMLwidthx_==0) {  PMLwidthx_=1.0; }
+	PMLwidthy_ = std::max(LBy_,Dy_-RBy_); if(PMLwidthy_==0) {  PMLwidthy_=1.0; }
+	PMLwidthz_ = std::max(LBz_,Dz_-RBz_); if(PMLwidthz_==0) {  PMLwidthz_=1.0; }
         nDim = 3;
 
 	// velocity model
@@ -184,7 +184,7 @@ namespace Galeri {
       BuildPoints(quadPoints, quadWeights);
 
       // Compute basis function values and derivatives at each quadrature point
-      std::vector< vector<double> > vals, dxs, dys, dzs;
+      std::vector< std::vector<double> > vals, dxs, dys, dzs;
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
@@ -268,7 +268,7 @@ namespace Galeri {
       BuildPoints(quadPoints, quadWeights);
 
       // Compute basis function values and derivatives at each quadrature point
-      std::vector< vector<double> > vals, dxs, dys, dzs;
+      std::vector< std::vector<double> > vals, dxs, dys, dzs;
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());

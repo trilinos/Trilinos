@@ -115,7 +115,7 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
     else {
       typedef VectorAdapter<userCoord_t> vectorAdapter_t;
       vectorAdapter_t *va = ia->getCoordinateInput();
@@ -135,7 +135,7 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
     else {
       typedef VectorAdapter<userCoord_t> vectorAdapter_t;
       vectorAdapter_t *va = ia->getCoordinateInput();
@@ -149,7 +149,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags)
   {
-    throw logic_error(
+    throw std::logic_error(
       "A coordinate model can not be build from an IdentifierAdapter");
   }
 

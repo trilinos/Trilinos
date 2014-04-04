@@ -79,7 +79,7 @@ private:
     values_ = arcp(tmp, 0, evalNumMetrics, true);
   }
   ArrayRCP<scalar_t> values_;
-  string metricName_;
+  std::string metricName_;
   multiCriteriaNorm mcnorm_;   // store "actualNorm + 1"
 
 public:
@@ -110,13 +110,13 @@ enum metricOffset{
   are set in order to decide what header to print.  So it would
   be a member method instead of static.
  */
-static void printHeader(ostream &os);
+static void printHeader(std::ostream &os);
 
 /*! \brief Print a standard line of data that fits under the header. */
-void printLine(ostream &os) const;
+void printLine(std::ostream &os) const;
 
 /*! \brief Constructor */
-MetricValues(string mname) : 
+MetricValues(std::string mname) : 
   values_(), metricName_(mname), mcnorm_(multiCriteriaNorm(0)) { 
     resetValues();}
 
@@ -126,7 +126,7 @@ MetricValues() :
     resetValues();}
 
 /*! \brief Set or reset the name.  */
-void setName(string name) { metricName_ = name;}
+void setName(std::string name) { metricName_ = name;}
 
 /*! \brief Set or reset the norm.  */
 void setNorm(multiCriteriaNorm normVal) { 
@@ -159,7 +159,7 @@ void setMaxImbalance(scalar_t x) { values_[evalMaxImbalance] = x;}
 void setAvgImbalance(scalar_t x) { values_[evalAvgImbalance] = x;}
 
 /*! \brief Get the name of the item measured. */
-const string &getName() const { return metricName_; }
+const std::string &getName() const { return metricName_; }
 
 /*! \brief Get the norm.  */
 multiCriteriaNorm getNorm() { return multiCriteriaNorm(mcnorm_-1);}
@@ -194,12 +194,12 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
 
 template <typename scalar_t>
-  void MetricValues<scalar_t>::printLine(ostream &os) const
+  void MetricValues<scalar_t>::printLine(std::ostream &os) const
 {
-  string label(metricName_);
+  std::string label(metricName_);
   if (mcnorm_ > 0){
     multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm_ - 1);
-    ostringstream oss;
+    std::ostringstream oss;
     switch (realNorm){
       case normMinimizeTotalWeight:   // 1-norm = Manhattan norm 
         oss << metricName_ << " (1)";
@@ -218,31 +218,31 @@ template <typename scalar_t>
     label = oss.str();
   }
 
-  os << setw(20) << label;
-  os << setw(12) << setprecision(4) << values_[evalGlobalMin];
-  os << setw(12) << setprecision(4) << values_[evalGlobalMax];
-  os << setw(12) << setprecision(4) << values_[evalGlobalAvg];
-  os << setw(2) << " ";
-  os << setw(6) << setprecision(4) << values_[evalMinImbalance];
-  os << setw(6) << setprecision(4) << values_[evalMaxImbalance];
-  os << setw(6) << setprecision(4) << values_[evalAvgImbalance];
-  os << endl;
+  os << std::setw(20) << label;
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMin];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMax];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalAvg];
+  os << std::setw(2) << " ";
+  os << std::setw(6) << std::setprecision(4) << values_[evalMinImbalance];
+  os << std::setw(6) << std::setprecision(4) << values_[evalMaxImbalance];
+  os << std::setw(6) << std::setprecision(4) << values_[evalAvgImbalance];
+  os << std::endl;
 }
 
 template <typename scalar_t>
-  void MetricValues<scalar_t>::printHeader(ostream &os)
+  void MetricValues<scalar_t>::printHeader(std::ostream &os)
 {
-  os << setw(20) << " ";
-  os << setw(36) << "------------SUM PER PART-----------";
-  os << setw(2) << " ";
-  os << setw(18) << "IMBALANCE PER PART";
-  os << endl;
+  os << std::setw(20) << " ";
+  os << std::setw(36) << "------------SUM PER PART-----------";
+  os << std::setw(2) << " ";
+  os << std::setw(18) << "IMBALANCE PER PART";
+  os << std::endl;
 
-  os << setw(20) << " ";
-  os << setw(12) << "min" << setw(12) << "max" << setw(12) << "avg";
-  os << setw(2) << " ";
-  os << setw(6) << "min" << setw(6) << "max" << setw(6) << "avg";
-  os << endl;
+  os << std::setw(20) << " ";
+  os << std::setw(12) << "min" << std::setw(12) << "max" << std::setw(12) << "avg";
+  os << std::setw(2) << " ";
+  os << std::setw(6) << "min" << std::setw(6) << "max" << std::setw(6) << "avg";
+  os << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -584,7 +584,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
           total += wgt[p];
         }
 
-        ostringstream oss;
+        std::ostringstream oss;
         oss << "weight " << vdim+1;
 
         metrics[next].setName(oss.str());
@@ -1069,18 +1069,18 @@ template <typename Adapter>
  */
 
 template <typename scalar_t>
-  void printMetrics( ostream &os,
+  void printMetrics( std::ostream &os,
     partId_t targetNumParts, partId_t numParts, partId_t numNonemptyParts, 
     const ArrayView<MetricValues<scalar_t> > &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   if (numNonemptyParts < numParts)
     os << " (" << numNonemptyParts << " of which are non-empty)";
-  os << endl;
+  os << std::endl;
   if (targetNumParts != numParts)
     os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
 
-  string unset("unset");
+  std::string unset("unset");
 
   MetricValues<scalar_t>::printHeader(os);
 
@@ -1088,14 +1088,14 @@ template <typename scalar_t>
     if (infoList[i].getName() != unset)
       infoList[i].printLine(os);
 
-  os << endl;
+  os << std::endl;
 }
 
 /*! \brief Print out a header and the values for a single metric.
  */
 
 template <typename scalar_t>
-  void printMetrics( ostream &os,
+  void printMetrics( std::ostream &os,
     partId_t targetNumParts, partId_t numParts, partId_t numNonemptyParts, 
     const MetricValues<scalar_t> &info)
 {

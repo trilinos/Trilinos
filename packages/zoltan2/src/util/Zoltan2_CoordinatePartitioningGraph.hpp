@@ -58,7 +58,6 @@
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Teuchos_RCPDecl.hpp"
 
-using namespace std;
 namespace Zoltan2{
 
 
@@ -327,7 +326,7 @@ public:
         */
         void print(){
             for(int i = 0; i < this->dim; ++i){
-                cout << "\tbox:" << this->pID << " dim:" << i << " min:" << lmins[i] << " max:" << lmaxs[i] << endl;
+                std::cout << "\tbox:" << this->pID << " dim:" << i << " min:" << lmins[i] << " max:" << lmaxs[i] << std::endl;
             }
         }
 

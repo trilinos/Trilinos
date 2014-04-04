@@ -93,7 +93,7 @@ TimerManager::~TimerManager()
   }
 }
 
-void TimerManager::stop(TimerType tt, const string &name)
+void TimerManager::stop(TimerType tt, const std::string &name)
 {
   if (!typeSelector_[tt])
     return;
@@ -104,7 +104,7 @@ void TimerManager::stop(TimerType tt, const string &name)
     return;
   }
 
-  std::map<string, int>::iterator curr = timerMap_.find(name);
+  std::map<std::string, int>::iterator curr = timerMap_.find(name);
   if (curr != timerMap_.end()){
     timers_[curr->second]->stop();
   }
@@ -113,16 +113,16 @@ void TimerManager::stop(TimerType tt, const string &name)
     newTimer->reset();     // reset to zero
     timerMap_[name] = timers_.size();
     timers_.push_back(newTimer);
-    cerr << comm_->getRank() << ": warning, stop with no start" << endl;
+    std::cerr << comm_->getRank() << ": warning, stop with no start" << std::endl;
   }
 }
 
-void TimerManager::start(TimerType tt, const string &name)
+void TimerManager::start(TimerType tt, const std::string &name)
 {
   if (!typeSelector_[tt])
     return;
 
-  std::map<string, int>::iterator curr = timerMap_.find(name);
+  std::map<std::string, int>::iterator curr = timerMap_.find(name);
   int index = -1;
   if (curr == timerMap_.end()){
     RCP<Teuchos::Time> newTimer = Teuchos::TimeMonitor::getNewTimer(name);

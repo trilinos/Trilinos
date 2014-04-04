@@ -65,7 +65,6 @@
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
-using namespace std;
 
 namespace Zoltan2{
 

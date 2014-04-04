@@ -278,7 +278,7 @@ int main(int argc, char *argv[]) {
     //////////////////
 
     fancyout << "========================================================\nExport results.\n========================================================" << std::endl;
-    ofstream myfile;
+    std::ofstream myfile;
     std::stringstream ss; ss << "example" << MyPID << ".txt";
     myfile.open (ss.str().c_str());
 

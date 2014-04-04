@@ -380,7 +380,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr)
+  void setPrimaryEntityType(std::string typestr)
   {
     if (typestr == "row") {
       this->primaryEntityType = MATRIX_ROW;

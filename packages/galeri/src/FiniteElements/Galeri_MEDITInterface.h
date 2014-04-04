@@ -72,8 +72,8 @@ public:
              const Epetra_MultiVector& Field)
   {
     ///int zzz = data.NumMyVertices();
-    vector<double> coord(3);
-    vector<int>    vertices(data.NumVerticesPerElement());
+    std::vector<double> coord(3);
+    std::vector<int>    vertices(data.NumVerticesPerElement());
 
     const Epetra_Map& RowMap = data.RowMap();
     const Epetra_Map& VertexMap = data.VertexMap();
@@ -114,17 +114,17 @@ public:
       switch (data.NumDimensions()) {
       case 2:
         for (int i = 0 ; i < SingleProcCoord.MyLength() ; ++i) {
-          medit << setw(12) << setiosflags(ios::showpoint) 
-            << setw(12) << SingleProcCoord[0][i] << " "
-            << setw(12) << SingleProcCoord[1][i] << " 0.0 1" << endl;
+          medit << std::setw(12) << setiosflags(std::ios::showpoint) 
+            << std::setw(12) << SingleProcCoord[0][i] << " "
+            << std::setw(12) << SingleProcCoord[1][i] << " 0.0 1" << std::endl;
         }
         break;
       case 3:
         for (int i = 0 ; i < SingleProcCoord.MyLength() ; ++i) {
-          medit << setw(12) << setiosflags(ios::showpoint) 
-            << setw(12) << SingleProcCoord[0][i] << " "
-            << setw(12) << SingleProcCoord[1][i] << " "
-            << setw(12) << SingleProcCoord[2][i] << " 1" << endl;
+          medit << std::setw(12) << setiosflags(std::ios::showpoint) 
+            << std::setw(12) << SingleProcCoord[0][i] << " "
+            << std::setw(12) << SingleProcCoord[1][i] << " "
+            << std::setw(12) << SingleProcCoord[2][i] << " 1" << std::endl;
         }
         break;
       default:
@@ -140,7 +140,7 @@ public:
       if (Comm().MyPID() == ProcID) {
 
         string FileName = BaseName + ".mesh";
-        std::ofstream medit(FileName.c_str(),ios::app);
+        std::ofstream medit(FileName.c_str(),std::ios::app);
 
         if (ProcID == 0) {
           string type = data.ElementType();
@@ -190,7 +190,7 @@ public:
         bb << "3 1 " << data.NumGlobalVertices() << " 2" << endl;
 
       for (int i = 0 ; i < SingleProcField.MyLength() ; ++i)
-        bb << setiosflags(ios::showpoint) << SingleProcField[0][i] << endl;
+        bb << setiosflags(std::ios::showpoint) << SingleProcField[0][i] << endl;
 
       bb.close();
 
