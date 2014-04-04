@@ -85,6 +85,10 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
     basis_type = "HCurl";
     basis_order = 1;
   }
+  else if(basis_type == "Const") {
+    basis_type = "Const";
+    basis_order = 0;
+  }
   // End deprecated basis support
 
   intrepid_basis_ = panzer::createIntrepidBasis<double,Intrepid::FieldContainer<double> >(basis_type, basis_order, topology_);
@@ -105,11 +109,16 @@ void panzer::PureBasis::initialize(const std::string & in_basis_type,const int i
     element_space_ = HCURL;
   else if(basis_type_=="HDiv")
     element_space_ = HDIV;
+  else if(basis_type_=="Const")
+    element_space_ = CONST;
   else { TEUCHOS_TEST_FOR_EXCEPTION(true,std::invalid_argument,
 				    "PureBasis::initializeIntrospection - Invalid basis name \"" 
 				    << basis_type_ << "\""); }
   
   switch(getElementSpace()) {
+  case CONST:
+     basis_rank_ = 0;
+     break;
   case HGRAD:
      basis_rank_ = 0;
      break;

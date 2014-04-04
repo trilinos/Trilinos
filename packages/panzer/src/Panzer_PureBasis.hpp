@@ -60,7 +60,7 @@ namespace panzer {
   class PureBasis { 
 
   public:
-    typedef enum { HGRAD=0, HCURL=1, HDIV=2 } EElementSpace;
+    typedef enum { HGRAD=0, HCURL=1, HDIV=2, CONST=3 } EElementSpace;
     
     /** Build a basis given a type, order and CellData object
       \param[in] basis_type String name that describes the type of basis
@@ -128,7 +128,7 @@ namespace panzer {
     { return getElementSpace()==HCURL || getElementSpace()==HDIV; }
 
     bool isScalarBasis() const
-    { return getElementSpace()==HGRAD; }
+    { return getElementSpace()==HGRAD || getElementSpace()==CONST; }
 
     int getBasisRank() const
     { return basis_rank_; }

@@ -113,7 +113,20 @@ namespace panzer {
     intrepid_basis->getValues(basis_ref, cub_points, 
 			      Intrepid::OPERATOR_VALUE);
 
-    if(elmtspace==PureBasis::HGRAD) {
+    if(elmtspace==PureBasis::CONST) {
+
+       Intrepid::FunctionSpaceTools::
+         HGRADtransformVALUE<Scalar>(basis,
+   				  basis_ref);
+
+       if(buildWeighted) {
+          Intrepid::FunctionSpaceTools::
+            multiplyMeasure<Scalar>(weighted_basis, 
+      			         weighted_measure, 
+   			         basis);
+       }
+    }
+    else if(elmtspace==PureBasis::HGRAD) {
        intrepid_basis->getValues(grad_basis_ref, cub_points, 
    			         Intrepid::OPERATOR_GRAD);
     

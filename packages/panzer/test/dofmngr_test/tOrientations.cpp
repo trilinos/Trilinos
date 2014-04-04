@@ -58,10 +58,16 @@
 #include "Intrepid_HGRAD_TRI_C1_FEM.hpp"
 #include "Intrepid_HGRAD_TRI_C2_FEM.hpp"
 #include "Intrepid_HCURL_TRI_I1_FEM.hpp"
+#include "Intrepid_HDIV_TRI_I1_FEM.hpp"
 
 #include "Intrepid_HGRAD_QUAD_C1_FEM.hpp"
 #include "Intrepid_HGRAD_QUAD_C2_FEM.hpp"
 #include "Intrepid_HCURL_QUAD_I1_FEM.hpp"
+#include "Intrepid_HDIV_QUAD_I1_FEM.hpp"
+
+#include "Intrepid_HDIV_TET_I1_FEM.hpp"
+#include "Intrepid_HGRAD_TET_C1_FEM.hpp"
+#include "Intrepid_HGRAD_TET_C2_FEM.hpp"
 
 using Teuchos::rcp;
 using Teuchos::rcp_dynamic_cast;
@@ -298,6 +304,261 @@ TEUCHOS_UNIT_TEST(tOrientation, testEdgeBasis_quad)
       for(std::size_t s=0;s<edgeIndices.size();s++)
          TEST_EQUALITY(orientations[edgeIndices[s]],tests[e]);
    }       
+}
+
+/////////////////////////////////////////////
+// 2D tests - face basis
+/////////////////////////////////////////////
+
+TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tri)
+{
+   out << note << std::endl;
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HGRAD_TRI_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisB = rcp(new Intrepid::Basis_HDIV_TRI_I1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisC = rcp(new Intrepid::Basis_HGRAD_TRI_C2_FEM<double,FieldContainer>); // used further down
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+   RCP<const FieldPattern> patternB = rcp(new IntrepidFieldPattern(basisB));
+   RCP<const FieldPattern> patternC = rcp(new IntrepidFieldPattern(basisC)); // used further down
+
+   TEST_EQUALITY(patternA->numberIds(),3);
+   TEST_EQUALITY(patternB->numberIds(),3);
+
+   std::vector<std::vector<int> > topFaceIndices;
+   orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
+
+   TEST_EQUALITY(topFaceIndices.size(),3);
+   TEST_EQUALITY(topFaceIndices[0].size(),2); TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1);
+   TEST_EQUALITY(topFaceIndices[1].size(),2); TEST_EQUALITY(topFaceIndices[1][0],1); TEST_EQUALITY(topFaceIndices[1][1],2);
+   TEST_EQUALITY(topFaceIndices[2].size(),2); TEST_EQUALITY(topFaceIndices[2][0],2); TEST_EQUALITY(topFaceIndices[2][1],0);
+
+   std::vector<std::vector<long> > connectivity(4);
+   connectivity[0].resize(patternA->numberIds());
+   connectivity[1].resize(patternA->numberIds());
+   connectivity[2].resize(patternA->numberIds());
+   connectivity[3].resize(patternA->numberIds());
+
+   // Topologocally the four elements look like:
+   //
+   //    3-----1
+   //    |\   /|
+   //    | \ / |
+   //    |  6  |
+   //    | / \ |
+   //    |/   \|
+   //    5-----0
+   //
+   // all that matters is the global
+   // node numbering and the local ordering
+   // The local ordering is defined by the following connectivity
+   connectivity[0][0] = 0; connectivity[0][1] = 6; connectivity[0][2] = 5; 
+   connectivity[1][0] = 6; connectivity[1][1] = 0; connectivity[1][2] = 1; 
+   connectivity[2][0] = 1; connectivity[2][1] = 3; connectivity[2][2] = 6; 
+   connectivity[3][0] = 3; connectivity[3][1] = 5; connectivity[3][2] = 6; 
+
+   // LOCAL element orientations are always set so that they flow in the positive
+   // direction away from the cell center from node 0 to node 1. As a result if the GID of
+   // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
+   // otherwise. The local definition of the face direction is defined by 
+   // the shards cell topology.
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(-1));
+      TEST_EQUALITY(orientations[2],char(-1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[1], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(-1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[2], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(-1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[3], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(-1));
+   }
+
+   // lets now test an aggregate basis
+   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_pair(0,patternB));
+   patterns.push_back(std::make_pair(1,patternC));
+   patterns.push_back(std::make_pair(2,patternA));
+   Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
+
+   std::vector<char> orientations(aggPattern->numberIds(),0);
+   orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[2], *aggPattern, orientations);
+   int nonzeroCount = 0;
+   for(std::size_t s=0;s<orientations.size();s++)
+      nonzeroCount += orientations[s]*orientations[s]; // should be +1 only if it is an face
+   TEST_EQUALITY(nonzeroCount,6);
+
+   // loop over faces
+   char tests[] = { 1,1,-1}; // for element 2
+   for(std::size_t e=0;e<3;e++) {
+      const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
+      for(std::size_t s=0;s<faceIndices.size();s++)
+         TEST_EQUALITY(orientations[faceIndices[s]],tests[e]);
+   }       
+}
+
+TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_quad)
+{
+   out << note << std::endl;
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HGRAD_QUAD_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisB = rcp(new Intrepid::Basis_HDIV_QUAD_I1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisC = rcp(new Intrepid::Basis_HGRAD_QUAD_C2_FEM<double,FieldContainer>); // used further down
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+   RCP<const FieldPattern> patternB = rcp(new IntrepidFieldPattern(basisB));
+   RCP<const FieldPattern> patternC = rcp(new IntrepidFieldPattern(basisC)); // used further down
+
+   TEST_EQUALITY(patternA->numberIds(),4);
+   TEST_EQUALITY(patternB->numberIds(),4);
+
+   std::vector<std::vector<int> > topFaceIndices;
+   orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
+
+   TEST_EQUALITY(topFaceIndices.size(),4);
+   TEST_EQUALITY(topFaceIndices[0].size(),2); TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1);
+   TEST_EQUALITY(topFaceIndices[1].size(),2); TEST_EQUALITY(topFaceIndices[1][0],1); TEST_EQUALITY(topFaceIndices[1][1],2);
+   TEST_EQUALITY(topFaceIndices[2].size(),2); TEST_EQUALITY(topFaceIndices[2][0],2); TEST_EQUALITY(topFaceIndices[2][1],3);
+   TEST_EQUALITY(topFaceIndices[3].size(),2); TEST_EQUALITY(topFaceIndices[3][0],3); TEST_EQUALITY(topFaceIndices[3][1],0);
+
+   std::vector<std::vector<long> > connectivity(4);
+   connectivity[0].resize(patternA->numberIds());
+   connectivity[1].resize(patternA->numberIds());
+   connectivity[2].resize(patternA->numberIds());
+   connectivity[3].resize(patternA->numberIds());
+
+   // Topologocally the four elements look like:
+   //
+   //    7-----6-----8
+   //    |     |     |
+   //    |     |     |
+   //    3-----4-----5
+   //    |     |     |
+   //    |     |     |
+   //    0-----1-----2
+   //
+   // all that matters is the global
+   // node numbering and the local ordering
+   // The local ordering is defined by the following connectivity
+   connectivity[0][0] = 0; connectivity[0][1] = 1; connectivity[0][2] = 4; connectivity[0][3] = 3; 
+   connectivity[1][0] = 1; connectivity[1][1] = 2; connectivity[1][2] = 5; connectivity[1][3] = 4; 
+   connectivity[2][0] = 3; connectivity[2][1] = 4; connectivity[2][2] = 6; connectivity[2][3] = 7; 
+   connectivity[3][0] = 4; connectivity[3][1] = 5; connectivity[3][2] = 8; connectivity[3][3] = 6; 
+
+   // LOCAL element orientations are always set so that they flow in the positive
+   // direction along an face from node 0 to node 1. As a result if the GID of
+   // node 0 is larger then node 1 then the GLOBAL orientation is -1 (and positive
+   // otherwise. The local definition of the face direction is defined by 
+   // the shards cell topology.
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[0], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[3],char(-1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[1], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[3],char(-1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[2], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(1));
+      TEST_EQUALITY(orientations[3],char(-1));
+   }
+
+   {
+      std::vector<char> orientations(patternB->numberIds(),0);
+      orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[3], *patternB, orientations);
+      TEST_EQUALITY(orientations[0],char(1));
+      TEST_EQUALITY(orientations[1],char(1));
+      TEST_EQUALITY(orientations[2],char(-1));
+      TEST_EQUALITY(orientations[3],char(-1));
+   }
+
+   // lets now test an aggregate basis
+   std::vector<std::pair<int,Teuchos::RCP<const FieldPattern> > > patterns;
+   patterns.push_back(std::make_pair(0,patternB));
+   patterns.push_back(std::make_pair(1,patternC));
+   patterns.push_back(std::make_pair(2,patternA));
+   Teuchos::RCP<const FieldPattern> aggPattern = Teuchos::rcp(new FieldAggPattern(patterns));
+
+   std::vector<char> orientations(aggPattern->numberIds(),0);
+   orientation_helpers::computeCellFaceOrientations(topFaceIndices, connectivity[2], *aggPattern, orientations);
+   int nonzeroCount = 0;
+   for(std::size_t s=0;s<orientations.size();s++)
+      nonzeroCount += orientations[s]*orientations[s]; // should be +1 only if it is an face
+   TEST_EQUALITY(nonzeroCount,8);
+
+   // loop over faces
+   char tests[] = { 1,1,1,-1}; // for element 2
+   for(std::size_t e=0;e<4;e++) {
+      const std::vector<int> & faceIndices = aggPattern->getSubcellIndices(1,e);
+      for(std::size_t s=0;s<faceIndices.size();s++)
+         TEST_EQUALITY(orientations[faceIndices[s]],tests[e]);
+   }       
+}
+
+/////////////////////////////////////////////
+// 3D tests - face basis
+/////////////////////////////////////////////
+
+TEUCHOS_UNIT_TEST(tOrientation, testFaceBasis_tet)
+{
+   out << note << std::endl;
+
+   // basis to build patterns from
+   RCP<Intrepid::Basis<double,FieldContainer> > basisA = rcp(new Intrepid::Basis_HGRAD_TET_C1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisB = rcp(new Intrepid::Basis_HDIV_TET_I1_FEM<double,FieldContainer>);
+   RCP<Intrepid::Basis<double,FieldContainer> > basisC = rcp(new Intrepid::Basis_HGRAD_TET_C2_FEM<double,FieldContainer>); // used further down
+
+   RCP<const FieldPattern> patternA = rcp(new IntrepidFieldPattern(basisA));
+   RCP<const FieldPattern> patternB = rcp(new IntrepidFieldPattern(basisB));
+   RCP<const FieldPattern> patternC = rcp(new IntrepidFieldPattern(basisC)); // used further down
+
+   TEST_EQUALITY(patternA->numberIds(),4);
+   TEST_EQUALITY(patternB->numberIds(),4);
+
+   std::vector<std::vector<int> > topFaceIndices;
+   orientation_helpers::computePatternFaceIndices(*patternA,topFaceIndices);
+
+   TEST_EQUALITY(topFaceIndices.size(),4);
+   TEST_EQUALITY(topFaceIndices[0].size(),3); TEST_EQUALITY(topFaceIndices[0][0],0); TEST_EQUALITY(topFaceIndices[0][1],1); TEST_EQUALITY(topFaceIndices[0][2],3);
+   TEST_EQUALITY(topFaceIndices[1].size(),3); TEST_EQUALITY(topFaceIndices[1][0],1); TEST_EQUALITY(topFaceIndices[1][1],2); TEST_EQUALITY(topFaceIndices[1][2],3);
+   TEST_EQUALITY(topFaceIndices[2].size(),3); TEST_EQUALITY(topFaceIndices[2][0],0); TEST_EQUALITY(topFaceIndices[2][1],3); TEST_EQUALITY(topFaceIndices[2][2],2);
+   TEST_EQUALITY(topFaceIndices[3].size(),3); TEST_EQUALITY(topFaceIndices[3][0],0); TEST_EQUALITY(topFaceIndices[3][1],2); TEST_EQUALITY(topFaceIndices[3][2],1);
 }
 
 }
