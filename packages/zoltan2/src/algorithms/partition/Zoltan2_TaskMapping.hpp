@@ -1898,7 +1898,13 @@ void coordinateTaskMapperInterface(
 	typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, KokkosClassic::DefaultNode::DefaultNodeType> tMVector_t;
 
 	Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_comm_xadj, 0, num_tasks, false);
-	Teuchos::ArrayRCP<procId_t> task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+
+	Teuchos::ArrayRCP<procId_t> task_communication_adj;
+	if (task_comm_xadj){
+		Teuchos::ArrayRCP<procId_t> tmp_task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+		task_communication_adj = tmp_task_communication_adj;
+	}
+
 
 	CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t>(
 			envConst_,
