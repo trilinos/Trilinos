@@ -228,7 +228,7 @@ namespace Belos {
         using Teuchos::tuple;
 
         RCP<sparse_matrix_type> A = rcp (new sparse_matrix_type (rowMap, 0));
-        const global_size_t numRows = rangeMap->getGlobalNumElements ();
+        //const global_size_t numRows = rangeMap->getGlobalNumElements (); // unused
         const global_size_t numCols = domainMap->getGlobalNumElements ();
         const int myRank = comm_->getRank ();
         if (myRank == 0) {
