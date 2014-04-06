@@ -229,7 +229,7 @@ int SparseMatrix_generate(OrdinalType nrows, OrdinalType ncols, OrdinalType &nnz
 
 template<typename Scalar>
 int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, LocalOrdinalType nnz, LocalOrdinalType numVecs, LocalOrdinalType test, const char* filename,const bool binaryfile) {
-        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type> matrix_type ;
+        typedef Kokkos::CrsMatrix<Scalar,LocalOrdinalType,device_type,void,int> matrix_type ;
         typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::type mv_type;
         typedef typename Kokkos::MultiVectorDynamic<Scalar,device_type>::random_read_type mv_random_read_type;
         typedef typename mv_type::HostMirror h_mv_type;
@@ -327,7 +327,7 @@ int test_crs_matrix_test(LocalOrdinalType numRows, LocalOrdinalType numCols, Loc
         double vector_readwrite = (nnz+numCols)*numVecs*sizeof(Scalar)/1024/1024;
 
         double problem_size = matrix_size+vector_size;
-    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf GFlop/s %6.3lf ms %i\n",nnz, numRows,numCols,numVecs,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, 2.0*nnz*loop/time/1e9,time/loop*1000, num_errors);
+    printf("%i %i %i %i %6.2lf MB %6.2lf GB/s %6.2lf GFlop/s %6.3lf ms %i\n",nnz, numRows,numCols,numVecs,problem_size,(matrix_size+vector_readwrite)/time*loop/1024, 2.0*nnz*numVecs*loop/time/1e9,time/loop*1000, num_errors);
         return (int)total_error;
 }
 
