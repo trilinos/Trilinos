@@ -105,6 +105,19 @@ namespace Tpetra {
 
 
     template<class LO, class GO, class NT>
+    bool
+    Directory<LO, GO, NT>::
+    isOneToOne (const Teuchos::Comm<int>& comm) const
+    {
+      const int lcl121 = isLocallyOneToOne () ? 1 : 0;
+      int gbl121 = 0;
+      Teuchos::reduceAll<int, int> (comm, Teuchos::REDUCE_MIN, lcl121,
+                                    Teuchos::outArg (gbl121));
+      return (gbl121 == 1);
+    }
+
+
+    template<class LO, class GO, class NT>
     ReplicatedDirectory<LO, GO, NT>::
     ReplicatedDirectory (const map_type& map) :
       numProcs_ (map.getComm ()->getSize ())
@@ -121,7 +134,7 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     bool
     ReplicatedDirectory<LO, GO, NT>::
-    isLocallyOneToOne ()
+    isLocallyOneToOne () const
     {
       // A locally replicated Map is one-to-one only if there is no
       // replication, that is, only if the Map's communicator only has

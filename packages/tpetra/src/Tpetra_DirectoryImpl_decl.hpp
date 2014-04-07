@@ -135,13 +135,12 @@ namespace Tpetra {
                   const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                   const bool computeLIDs) const;
 
-      /// \brief Whether the Directory is "locally" one to one.
+      /// \brief Whether the Directory's input Map is (globally) one to one.
       ///
-      /// This means that the calling process' Directory does not own
-      /// GIDs with multiple ownership on different processes.  If
-      /// this method returns true on all processes in the Directory's
-      /// communicator, then the Directory's input Map is one-to-one.
-      virtual bool isLocallyOneToOne () = 0;
+      /// This is a collective on all processes in the given
+      /// communicator, which must be the same as the input Map's
+      /// communicator.
+      bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
     protected:
       //! Actually do the work of getEntries(), with no input validation.
@@ -151,6 +150,20 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const = 0;
+
+      /// \brief Whether the Directory is "locally" one to one.
+      ///
+      /// This means that the calling process' Directory does not own
+      /// GIDs with multiple ownership on different processes.  If
+      /// this method returns true on all processes in the Directory's
+      /// communicator, then the Directory's input Map is one to one.
+      /// If it returns false on at least one process in the
+      /// Directory's communicator, then the Directory's input Map is
+      /// <i>not</i> one to one.
+      ///
+      /// This method is protected because it is an implementation
+      /// detail of isOneToOne().
+      virtual bool isLocallyOneToOne () const = 0;
     };
 
     /// \class ReplicatedDirectory
@@ -168,7 +181,7 @@ namespace Tpetra {
       //! Constructor (that takes no arguments).
       ReplicatedDirectory ();
 
-      virtual bool isLocallyOneToOne ();
+      virtual bool isLocallyOneToOne () const;
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -224,7 +237,7 @@ namespace Tpetra {
       //! Constructor.
       ContiguousUniformDirectory (const map_type& map);
 
-      virtual bool isLocallyOneToOne () {
+      virtual bool isLocallyOneToOne () const {
         return true;
       }
 
@@ -272,7 +285,7 @@ namespace Tpetra {
       //! Constructor.
       DistributedContiguousDirectory (const map_type& map);
 
-      virtual bool isLocallyOneToOne () {
+      virtual bool isLocallyOneToOne () const {
         return true;
       }
 
@@ -350,7 +363,7 @@ namespace Tpetra {
       DistributedNoncontiguousDirectory (const map_type& map,
                                          const tie_break_type& tie_break);
 
-      virtual bool isLocallyOneToOne () {
+      virtual bool isLocallyOneToOne () const {
         return locallyOneToOne_;
       }
 
