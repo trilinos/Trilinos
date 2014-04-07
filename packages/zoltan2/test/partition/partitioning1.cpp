@@ -229,14 +229,15 @@ int main(int narg, char** arg)
     // Test edge weights with stride 1.
     size_t nnz = origMatrix->getNodeNumEntries();
     size_t nrows = origMatrix->getNodeNumRows();
+    size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
     ewgts = new scalar_t[nEwgts * nnz];
     size_t cnt = 0;
+    Array<z2TestGO> egids(maxnzrow);
+    Array<scalar_t> evals(maxnzrow);
     for (size_t i = 0; i < nrows; i++) {
+      size_t nnzinrow;
       z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
-      ArrayView<const z2TestGO> egids;
-      ArrayView<const scalar_t> evals;
-      origMatrix->getGlobalRowView(gid, egids, evals);
-      size_t nnzinrow = egids.size();
+      origMatrix->getGlobalRowCopy(gid, egids(), evals(), nnzinrow);
       for (size_t k = 0; k < nnzinrow; k++) {
         ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
         if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);

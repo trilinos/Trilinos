@@ -143,7 +143,7 @@ size_t removeUndesiredEdges(
 
   newWeights = NULL;
   int eDim = edgeWeights.size();
-  std::vector<bool> uniformWeight;
+  std::vector<bool> uniformWeight(eDim);
   if (eDim > 0){
     for (int i=0; i < eDim; i++)
       uniformWeight[i] = (edgeWeights[i].size() == 0);
@@ -1010,8 +1010,8 @@ void GraphModel<Adapter>::shared_constructor(
         const scalar_t *weights=NULL;
         int stride=0;
         ia->getWeightsView(weights, stride, idx);
-        // If weights is NULL, user wants to use uniform weights
         if (weights != NULL){
+          // If weights is non-NULL, user provided weights
           ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
                                                    stride*numLocalVertices_,
                                                    false);
@@ -1030,6 +1030,7 @@ void GraphModel<Adapter>::shared_constructor(
 
     vWeights_ = arcp<input_t>(weightInfo, 0, numWeightsPerVertex_, true);
   }
+
 
   // Vertex coordinates
 

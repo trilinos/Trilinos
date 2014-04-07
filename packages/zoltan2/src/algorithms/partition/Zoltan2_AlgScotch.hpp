@@ -146,12 +146,14 @@ namespace Zoltan2{
 // Based on Zoltan's scale_round_weights, mode 1.
 
 template <typename lno_t, typename scalar_t>
-static void scale_weights(StridedData<lno_t, scalar_t> &fwgts, SCOTCH_Num *iwgts,
-                  const RCP<const Comm<int> > &problemComm)
+static void scale_weights(
+  size_t n,
+  StridedData<lno_t, scalar_t> &fwgts,
+  SCOTCH_Num *iwgts,
+  const RCP<const Comm<int> > &problemComm
+)
 {
   const double INT_EPSILON = 1e-5;
-
-  size_t n = fwgts.size();
 
   SCOTCH_Num nonint, nonint_local = 0;
   double sum_wgt, sum_wgt_local = 0.;
@@ -191,8 +193,8 @@ static void scale_weights(StridedData<lno_t, scalar_t> &fwgts, SCOTCH_Num *iwgts
   for (size_t i = 0; i < n; i++)
     iwgts[i] = (SCOTCH_Num) ceil(double(fwgts[i])*scale);
 
-printf("KDDKDD SCALE %f\n", scale);
 }
+
 /////////////////////////////////////////////////////////////////////////////
 //  Traits struct to handle conversions between gno_t/lno_t and SCOTCH_Num.
 /////////////////////////////////////////////////////////////////////////////
@@ -371,30 +373,26 @@ void AlgPTScotch(
   if (nVwgts > 1 && me == 0) {
     std::cerr << "Warning:  NumWeightsPerVertex is " << nVwgts 
               << " but Scotch allows only one weight. "
-              << " Zoltan2 will use only the first weight per vertex." << std::endl;
+              << " Zoltan2 will use only the first weight per vertex."
+              << std::endl;
   }
   if (nEwgts > 1 && me == 0) {
     std::cerr << "Warning:  NumWeightsPerEdge is " << nEwgts 
               << " but Scotch allows only one weight. "
-              << " Zoltan2 will use only the first weight per edge." << std::endl;
+              << " Zoltan2 will use only the first weight per edge."
+              << std::endl;
   }
 
   if (nVwgts) {
     velotab = new SCOTCH_Num[nVtx+1];  // +1 since Scotch wants all procs 
                                        // to have non-NULL arrays
-    scale_weights<lno_t, scalar_t>(vwgts[0], velotab, problemComm);
-cout << me << " KDDKDD VTX WGTS ";
-for (size_t i = 0; i < nVtx; i++) cout << velotab[i] << " ";
-cout << endl;
+    scale_weights<lno_t, scalar_t>(nVtx, vwgts[0], velotab, problemComm);
   }
 
   if (nEwgts) {
     edlotab = new SCOTCH_Num[nEdge+1];  // +1 since Scotch wants all procs 
                                          // to have non-NULL arrays
-    scale_weights<lno_t, scalar_t>(ewgts[0], edlotab, problemComm);
-cout << me << " KDDKDD EDGE WGTS ";
-for (size_t i = 0; i < nEdge; i++) cout << edlotab[i] << " ";
-cout << endl;
+    scale_weights<lno_t, scalar_t>(nEdge, ewgts[0], edlotab, problemComm);
   }
 
   // Build PTScotch distributed data structure

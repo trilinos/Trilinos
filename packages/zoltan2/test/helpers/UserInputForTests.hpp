@@ -713,13 +713,13 @@ void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim,
 
   if (verbose_ && tcomm_->getRank() == 0){
     std::cout << "UserInputForTests, Create matrix with " << problemType;
-    std::cout << " (and" << xdim;
+    std::cout << " (and " << xdim;
     if (zdim > 0)
-      std::cout << " x " << ydim << " x " << zdim << std::endl;
+      std::cout << " x " << ydim << " x " << zdim;
     else if (ydim > 0)
-      std::cout << " x"  << ydim << " x 1" << std::endl;
+      std::cout << " x"  << ydim << " x 1";
     else
-      std::cout << "x 1 x 1" << std::endl;
+      std::cout << "x 1 x 1";
 
     std::cout << " mesh)" << std::endl;
   }
