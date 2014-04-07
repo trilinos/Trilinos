@@ -237,6 +237,13 @@ public:
     return part;
   }
 
+  /** \brief  Declare a part with a given cell topology
+   */
+  template< class Top >
+  Part &declare_part(const std::string &name, bool arg_force_no_induce = false) {
+    return declare_part(name, shards::getCellTopologyData<Top>(), arg_force_no_induce);
+  }
+
   void force_no_induce(Part& part)
   {
     if (part.primary_entity_rank() != InvalidEntityRank) {
