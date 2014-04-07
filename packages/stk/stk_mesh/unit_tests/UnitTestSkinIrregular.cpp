@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
 #include <algorithm>                    // for max
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData

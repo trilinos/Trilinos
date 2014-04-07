@@ -21,12 +21,8 @@
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-namespace shards { struct Node; }
+
 namespace stk { namespace mesh { class Part; } }
-
-
-
-
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;

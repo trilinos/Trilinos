@@ -7,7 +7,6 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_mesh/fixtures/GridFixture.hpp>
-#include <Shards_BasicTopologies.hpp>   // for Quadrilateral
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part

@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <Shards_BasicTopologies.hpp>   // for getCellTopologyData, etc
 #include <algorithm>                    // for sort
 #include <stk_mesh/base/BoundaryAnalysis.hpp>  // for EntitySideComponent, etc
 #include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData

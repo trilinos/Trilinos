@@ -2,8 +2,6 @@
 
 #include <mesh/UseCase_Skinning.hpp>
 
-#include <Shards_BasicTopologies.hpp>
-
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
 #include <stk_mesh/base/BulkModification.hpp>
