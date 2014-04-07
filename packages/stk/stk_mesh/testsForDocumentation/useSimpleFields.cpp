@@ -8,6 +8,7 @@
 
 namespace {
 
+//BEGIN
 TEST(stkMeshHowTo, useSimpleFields)
 {
     const unsigned spatialDimension = 3;
@@ -61,5 +62,6 @@ TEST(stkMeshHowTo, useSimpleFields)
     double* pressureFieldDataForElem2 = stk::mesh::field_data(pressureField, elem2);
     EXPECT_EQ(initialPressureValue, *pressureFieldDataForElem2);
 }
+//END
 
 }

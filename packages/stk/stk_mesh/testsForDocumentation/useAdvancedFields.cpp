@@ -8,6 +8,7 @@
 
 namespace {
 
+//BEGIN
 TEST(stkMeshHowTo, useAdvancedFields)
 {
     const unsigned spatialDimension = 3;
@@ -72,5 +73,6 @@ TEST(stkMeshHowTo, useAdvancedFields)
         EXPECT_EQ(initialVectorValue[i], vectorTetData[i]);
     }
 }
+//END
 
 }
