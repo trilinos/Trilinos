@@ -148,9 +148,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  Part & partLeft_1 = meta.declare_part_with_topology("block_left_1", stk::topology::TET_4 );
+  Part & partLeft_1 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
 
-  Part & partLeft_2 = meta.declare_part_with_topology("block_left_2", stk::topology::TET_4 );
+  Part & partLeft_2 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_2" );
 
   meta.commit();
 
@@ -235,7 +235,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   Part & partLeft_1 = meta.declare_part("block_left_1", element_rank);
 
-  Part & partLeft_3 = meta.declare_part_with_topology("block_left_3", stk::topology::TET_4 );
+  Part & partLeft_3 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_3" );
 
   meta.commit();
 
@@ -350,7 +350,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
   BulkData bulk ( meta , pm , 100 );
   std::vector<Part *>  add_part4;
 
-  Part & partLeft_1 = meta.declare_part_with_topology( "block_left_1", stk::topology::TET_4 );
+  Part & partLeft_1 = stk::mesh::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
   meta.commit();
 
   add_part4.push_back ( &partLeft_1 );

@@ -42,12 +42,12 @@ void heterogeneous_mesh_meta_data(
   VectorFieldType & node_coord )
 {
   stk::mesh::Part & universal        = meta_data.universal_part();
-  meta_data.declare_part_with_topology("hexes", stk::topology::HEX_8);
-  meta_data.declare_part_with_topology("wedges", stk::topology::WEDGE_6);
-  meta_data.declare_part_with_topology("tets", stk::topology::TET_4);
-  meta_data.declare_part_with_topology("pyramids", stk::topology::PYRAMID_5);
-  meta_data.declare_part_with_topology("quad_shells", stk::topology::SHELL_QUAD_4);
-  meta_data.declare_part_with_topology("tri_shells", stk::topology::SHELL_TRI_3);
+  declare_part<shards::Hexahedron<8> >(meta_data, "hexes");
+  declare_part<shards::Wedge<6> >(meta_data, "wedges");
+  declare_part<shards::Tetrahedron<4> >(meta_data, "tets");
+  declare_part<shards::Pyramid<5> >(meta_data, "pyramids");
+  declare_part<shards::ShellQuadrilateral<4> >(meta_data, "quad_shells");
+  declare_part<shards::ShellTriangle<3> >(meta_data, "tri_shells");
   
   const stk::mesh::FieldBase::Restriction & res =
     stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );

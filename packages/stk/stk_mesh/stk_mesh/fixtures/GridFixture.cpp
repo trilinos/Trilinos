@@ -47,7 +47,7 @@ GridFixture::GridFixture(stk::ParallelMachine pm)
   : m_spatial_dimension(2)
   , m_fem_meta( m_spatial_dimension )
   , m_bulk_data( m_fem_meta, pm )
-  , m_quad_part( m_fem_meta.declare_part_with_topology("quad_part", stk::topology::QUAD_4) )
+  , m_quad_part( declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
   , m_dead_part( m_fem_meta.declare_part("dead_part"))
 {}
 
