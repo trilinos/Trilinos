@@ -242,7 +242,7 @@ namespace Tpetra {
     ///   this method throws std::runtime_error.
     LookupStatus
     getDirectoryEntries (const map_type& map,
-			 const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
 
     /// \brief Given a global ID list, return a list of their owning
@@ -282,7 +282,7 @@ namespace Tpetra {
     ///   this method throws std::runtime_error.
     LookupStatus
     getDirectoryEntries (const map_type& map,
-			 const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
     //@}
@@ -297,7 +297,7 @@ namespace Tpetra {
     typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
     //! Implementation of this object.
-    Teuchos::RCP<const base_type> impl_;
+    const base_type* impl_;
 
     //! Copy constructor: declared private but not defined on purpose.
     Directory (const Directory<LocalOrdinal, GlobalOrdinal, Node>& directory);

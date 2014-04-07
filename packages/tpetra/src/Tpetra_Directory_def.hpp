@@ -56,27 +56,28 @@
 namespace Tpetra {
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::Directory (const Map<LO, GO, NT>& map)
+  Directory<LO, GO, NT>::Directory (const Map<LO, GO, NT>& map) :
+    impl_ (NULL)
   {
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
     // contiguous or noncontiguous.
-    RCP<const Details::Directory<LO, GO, NT> > dir;
+    const Details::Directory<LO, GO, NT>* dir = NULL;
     if (map.isDistributed ()) {
       if (map.isUniform ()) {
-        dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+        dir = new Details::ContiguousUniformDirectory<LO, GO, NT> (map);
       }
       else if (map.isContiguous ()) {
-        dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
+        dir = new Details::DistributedContiguousDirectory<LO, GO, NT> (map);
       }
       else {
-        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map));
+        dir = new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map);
       }
     }
     else {
-      dir = rcp (new Details::ReplicatedDirectory<LO, GO, NT> (map));
+      dir = new Details::ReplicatedDirectory<LO, GO, NT> (map);
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(dir.is_null (), std::logic_error, "Tpetra::"
+    TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, std::logic_error, "Tpetra::"
       "Directory constructor failed to create Directory implementation.  "
       "Please report this bug to the Tpetra developers.");
     impl_ = dir;
@@ -85,7 +86,8 @@ namespace Tpetra {
   template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::
   Directory (const Map<LO, GO, NT>& map,
-             const Tpetra::Details::TieBreak<LO,GO>& tieBreak)
+             const Tpetra::Details::TieBreak<LO,GO>& tieBreak) :
+    impl_ (NULL)
   {
     // Create an implementation object of the appropriate type,
     // depending on whether the Map is distributed or replicated, and
@@ -108,22 +110,22 @@ namespace Tpetra {
     // (PID,LID) pairs that the Directory owns on the calling process,
     // and interface of TieBreak allows side effects.  Users may wish
     // to exploit them regardless of the kind of Map they pass in.
-    RCP<const Details::Directory<LO, GO, NT> > dir;
+    const Details::Directory<LO, GO, NT>* dir = NULL;
     bool usedTieBreak = false;
     if (map.isDistributed ()) {
       if (map.isUniform ()) {
-        dir = rcp (new Details::ContiguousUniformDirectory<LO, GO, NT> (map));
+        dir = new Details::ContiguousUniformDirectory<LO, GO, NT> (map);
       }
       else if (map.isContiguous ()) {
-        dir = rcp (new Details::DistributedContiguousDirectory<LO, GO, NT> (map));
+        dir = new Details::DistributedContiguousDirectory<LO, GO, NT> (map);
       }
       else {
-        dir = rcp (new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak));
+        dir = new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map, tieBreak);
         usedTieBreak = true;
       }
     }
     else {
-      dir = rcp (new Details::ReplicatedDirectory<LO, GO, NT> (map));
+      dir = new Details::ReplicatedDirectory<LO, GO, NT> (map);
 
       if (tieBreak.mayHaveSideEffects () && map.getNodeNumElements () != 0) {
         // We need the second clause in the above test because Map's
@@ -147,7 +149,7 @@ namespace Tpetra {
       }
       usedTieBreak = true;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(dir.is_null (), std::logic_error, "Tpetra::"
+    TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, std::logic_error, "Tpetra::"
       "Directory constructor failed to create Directory implementation.  "
       "Please report this bug to the Tpetra developers.");
 
@@ -172,10 +174,15 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::Directory () {}
+  Directory<LO, GO, NT>::Directory () : impl_ (NULL) {}
 
   template<class LO, class GO, class NT>
-  Directory<LO, GO, NT>::~Directory () {}
+  Directory<LO, GO, NT>::~Directory () {
+    if (impl_ != NULL) {
+      delete impl_;
+      impl_ = NULL;
+    }
+  }
 
   template<class LO, class GO, class NT>
   LookupStatus
