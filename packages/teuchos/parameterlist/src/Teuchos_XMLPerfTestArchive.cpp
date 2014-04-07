@@ -90,7 +90,7 @@ bool ValueTolerance::operator ==(ValueTolerance& rhs) {
          (tolerance == rhs.tolerance) &&
          (lower == rhs.lower) &&
          (upper == rhs.upper) &&
-         (use_tolerance == use_tolerance);
+         (use_tolerance == rhs.use_tolerance);
 }
 
 std::string ValueTolerance::as_string(){

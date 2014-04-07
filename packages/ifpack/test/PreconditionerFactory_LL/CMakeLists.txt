@@ -11,6 +11,7 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   PreconditionerFactory_LL
   SOURCES cxx_main.cpp
   ARGS "-v"
+  XHOST zan.srn.sandia.gov
   NUM_MPI_PROCS 1-4
   COMM serial mpi
   )

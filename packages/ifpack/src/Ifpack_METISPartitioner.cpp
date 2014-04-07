@@ -89,16 +89,16 @@ int Ifpack_METISPartitioner::ComputePartitions()
 
   int Length = 2 * MaxNumEntries();
   int NumIndices;
-  vector<int> Indices;
+  std::vector<int> Indices;
   Indices.resize(Length);
 
   /* construct the CSR graph information of the LOCAL matrix
      using the get_row function */
 
-  vector<idxtype> wgtflag;
+  std::vector<idxtype> wgtflag;
   wgtflag.resize(4);
 
-  vector<int> options;
+  std::vector<int> options;
   options.resize(4);
   
   int numflag;
@@ -167,10 +167,10 @@ int Ifpack_METISPartitioner::ComputePartitions()
   numflag    = 0;    /* C style */
   options[0] = 0;    /* default options */
    
-  vector<idxtype> xadj;
+  std::vector<idxtype> xadj;
   xadj.resize(NumMyRows() + 1);
 
-  vector<idxtype> adjncy;
+  std::vector<idxtype> adjncy;
   adjncy.resize(NumMyNonzeros());
    
   int count = 0; 
@@ -194,7 +194,7 @@ int Ifpack_METISPartitioner::ComputePartitions()
     count2++;
   }
 
-  vector<idxtype> NodesInSubgraph;
+  std::vector<idxtype> NodesInSubgraph;
   NodesInSubgraph.resize(NumLocalParts_);
 
   // some cases can be handled separately

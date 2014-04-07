@@ -67,8 +67,16 @@ private:
   friend class MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>;
 
 public:
-  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::view_type view_type;
+  typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dual_view_type dual_view_type;
+
+  /// \brief The type of an inner ("dot") product result.
+  ///
+  /// This is usually the same as \c scalar_type, but may differ if
+  /// \c Scalar is e.g., an uncertainty quantification type from the
+  /// Stokhos package.
   typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::dot_type dot_type;
+
+    //! The type of the magnitude (absolute value) of a \c scalar_type value.
   typedef typename MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>::mag_type mag_type;
 
   //! @name Constructor/Destructor Methods
@@ -92,7 +100,7 @@ public:
   /// \param map [in] Map describing the distribution of rows.
   /// \param view [in] Device view to the data (shallow copy)
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const view_type view);
+          const dual_view_type view);
 
   //! Destructor.
   virtual ~Vector();
@@ -153,8 +161,15 @@ public:
   //! Const view of the local values of this vector.
   Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
 
-  //@}
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+              size_t offset) const;
 
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
+                      size_t offset);
+
+  //@}
   //! @name Mathematical methods
   //@{
 

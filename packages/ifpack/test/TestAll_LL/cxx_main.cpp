@@ -107,7 +107,7 @@ bool Test(const Teuchos::RefCountPtr<Epetra_RowMatrix>& Matrix, Teuchos::Paramet
 
   cout << *Prec;
   
-  vector<double> Norm(NumVectors);
+  std::vector<double> Norm(NumVectors);
   LHS.Update(1.0,LHSexact,-1.0);
   LHS.Norm2(&Norm[0]);
   for (int i = 0 ; i < NumVectors ; ++i) {

@@ -72,7 +72,7 @@
 
 namespace Galeri {
 
-Epetra_CrsMatrix* 
+Epetra_CrsMatrix*
 CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
                 Teuchos::ParameterList& List)
 {
@@ -211,19 +211,19 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     int nx = List.get("nx", -1);
     int ny = List.get("ny", -1);
 
-    double a = List.get("a", 20.0);
-    double b = List.get("b", -8.0);
-    double c = List.get("c", -8.0);
-    double d = List.get("d", -8.0);
-    double e = List.get("e", -8.0);
-    double z1 = List.get("z1", 2.0);
-    double z2 = List.get("z2", 2.0);
-    double z3 = List.get("z3", 2.0);
-    double z4 = List.get("z4", 2.0);
-    double bb = List.get("bb", 1.0);
-    double cc = List.get("cc", 1.0);
-    double dd = List.get("dd", 1.0);
-    double ee = List.get("ee", 1.0);
+    // double a = List.get("a", 20.0); // unused
+    // double b = List.get("b", -8.0);
+    // double c = List.get("c", -8.0);
+    // double d = List.get("d", -8.0);
+    // double e = List.get("e", -8.0);
+    // double z1 = List.get("z1", 2.0);
+    // double z2 = List.get("z2", 2.0);
+    // double z3 = List.get("z3", 2.0);
+    // double z4 = List.get("z4", 2.0);
+    // double bb = List.get("bb", 1.0);
+    // double cc = List.get("cc", 1.0);
+    // double dd = List.get("dd", 1.0);
+    // double ee = List.get("ee", 1.0);
 
     return(Matrices::BigStar2D(Map, nx, ny, 20, -8, -8, -8, -8,
                                2, 2, 2, 2, 1, 1, 1, 1));
@@ -318,8 +318,8 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     }
 
     double epsilon = List.get("epsilon", 0.1);
-    double lx = List.get("lx", 1.0);
-    double ly = List.get("ly", 1.0);
+    // double lx = List.get("lx", 1.0); // unused
+    // double ly = List.get("ly", 1.0);
 
     return(Matrices::Stretched2D(Map, nx, ny, epsilon));
   }
@@ -343,7 +343,7 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     double lx = List.get("lx", 1.0);
     double ly = List.get("ly", 1.0);
 
-    return(Matrices::UniFlow2D(Map, nx, ny, lx, ly, conv, diff, alpha)); 
+    return(Matrices::UniFlow2D(Map, nx, ny, lx, ly, conv, diff, alpha));
   }
   else if (MatrixType == "Recirc2D")
   {
@@ -352,7 +352,7 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     if (nx == -1 || ny == -1)
     {
       long long n = Map->NumGlobalElements64();
-      nx = (int)sqrt((double)n); 
+      nx = (int)sqrt((double)n);
       ny = nx;
       if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
@@ -364,7 +364,7 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     double lx = List.get("lx", 1.0);
     double ly = List.get("ly", 1.0);
 
-    return(Matrices::Recirc2D(Map, nx, ny, lx, ly, conv, diff)); 
+    return(Matrices::Recirc2D(Map, nx, ny, lx, ly, conv, diff));
   }
   else if (MatrixType == "BentPipe2D")
   {
@@ -381,7 +381,7 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     if (nx == -1 || ny == -1)
     {
       long long n = Map->NumGlobalElements64();
-      nx = (int)sqrt((double)n); 
+      nx = (int)sqrt((double)n);
       ny = nx;
       if (((long long) nx) * ny != n)
         throw(Exception(__FILE__, __LINE__,
@@ -393,7 +393,7 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     double lx = List.get("lx", 1.0);
     double ly = List.get("ly", 1.0);
 
-    return(Matrices::BentPipe2D(Map, nx, ny, lx, ly, conv, diff)); 
+    return(Matrices::BentPipe2D(Map, nx, ny, lx, ly, conv, diff));
   }
   else if (MatrixType == "Laplace3D")
   {
@@ -411,10 +411,10 @@ CreateCrsMatrix(const string MatrixType, const Epetra_Map* Map,
     }
 
 
-    return(Matrices::Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0, 
+    return(Matrices::Cross3D(Map, nx, ny, nz, 6.0, -1.0, -1.0,
                              -1.0, -1.0, -1.0, -1.0));
   }
-  else 
+  else
   {
     throw(Exception(__FILE__, __LINE__,
                     "`MatrixType' has incorrect value (" + MatrixType + ")",

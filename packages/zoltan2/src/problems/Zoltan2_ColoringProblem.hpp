@@ -43,6 +43,8 @@
 //
 // @HEADER
 
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
+
 /*! \file Zoltan2_ColoringProblem.hpp
     \brief Defines the ColoringProblem class.
 */
@@ -63,7 +65,6 @@
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
-using namespace std;
 
 namespace Zoltan2{
 
@@ -318,3 +319,4 @@ void ColoringProblem<Adapter>::createColoringProblem()
 }
 } //namespace Zoltan2
 #endif
+#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL

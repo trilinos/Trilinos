@@ -56,7 +56,6 @@
 #include "Galeri_Workspace.h"
 #include <vector>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {

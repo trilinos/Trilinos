@@ -290,9 +290,9 @@ int Ifpack_PrintResidual(const int iter, const Epetra_RowMatrix& A,
 void Ifpack_PrintSparsity_Simple(const Epetra_RowMatrix& A)
 {
   int MaxEntries = A.MaxNumEntries();
-  vector<int> Indices(MaxEntries);
-  vector<double> Values(MaxEntries);
-  vector<bool> FullRow(A.NumMyRows());
+  std::vector<int> Indices(MaxEntries);
+  std::vector<double> Values(MaxEntries);
+  std::vector<bool> FullRow(A.NumMyRows());
 
   cout << "+-";
   for (int j = 0 ; j < A.NumMyRows() ; ++j)
@@ -335,8 +335,8 @@ double Ifpack_FrobeniusNorm(const Epetra_RowMatrix& A)
 {
   double MyNorm = 0.0, GlobalNorm;
 
-  vector<int> colInd(A.MaxNumEntries());
-  vector<double> colVal(A.MaxNumEntries());
+  std::vector<int> colInd(A.MaxNumEntries());
+  std::vector<double> colVal(A.MaxNumEntries());
 
   for (int i = 0 ; i < A.NumMyRows() ; ++i) {
 
@@ -363,37 +363,37 @@ static void print()
 template<class T>
 static void print(const char str[], T val)
 {
-  cout.width(30); cout.setf(ios::left);
-  cout << str;
-  cout << " = " << val << endl;
+  std::cout.width(30); std::cout.setf(std::ios::left);
+  std::cout << str;
+  std::cout << " = " << val << std::endl;
 }
 
 template<class T>
 static void print(const char str[], T val, double percentage)
 {
-  cout.width(30); cout.setf(ios::left);
-  cout << str;
-  cout << " = ";
-  cout.width(20); cout.setf(ios::left);
-  cout << val;
-  cout << " ( " << percentage << " %)" << endl;
+  std::cout.width(30); std::cout.setf(std::ios::left);
+  std::cout << str;
+  std::cout << " = ";
+  std::cout.width(20); std::cout.setf(std::ios::left);
+  std::cout << val;
+  std::cout << " ( " << percentage << " %)" << std::endl;
 }
 template<class T>
 static void print(const char str[], T one, T two, T three, bool equal = true)
 {
-  cout.width(30); cout.setf(ios::left);
-  cout << str;
+  std::cout.width(30); std::cout.setf(std::ios::left);
+  std::cout << str;
   if (equal)
-    cout << " = ";
+    std::cout << " = ";
   else
-    cout << "   ";
-  cout.width(15); cout.setf(ios::left);
-  cout << one;
-  cout.width(15); cout.setf(ios::left);
-  cout << two;
-  cout.width(15); cout.setf(ios::left);
-  cout << three;
-  cout << endl;
+    std::cout << "   ";
+  std::cout.width(15); std::cout.setf(std::ios::left);
+  std::cout << one;
+  std::cout.width(15); std::cout.setf(std::ios::left);
+  std::cout << two;
+  std::cout.width(15); std::cout.setf(std::ios::left);
+  std::cout << three;
+  std::cout << endl;
 }
 
 //============================================================================
@@ -438,8 +438,8 @@ int Ifpack_Analyze(const Epetra_RowMatrix& A, const bool Cheap,
   long long NumMyEmptyRows = 0, NumGlobalEmptyRows;
   long long NumMyDirichletRows = 0, NumGlobalDirichletRows;
 
-  vector<int> colInd(A.MaxNumEntries());
-  vector<double> colVal(A.MaxNumEntries());
+  std::vector<int> colInd(A.MaxNumEntries());
+  std::vector<double> colVal(A.MaxNumEntries());
 
   Epetra_Vector Diag(A.RowMatrixRowMap());
   Epetra_Vector RowSum(A.RowMatrixRowMap());
@@ -889,8 +889,8 @@ int Ifpack_AnalyzeMatrixElements(const Epetra_RowMatrix& A,
   double min_val =  DBL_MAX;
   double max_val = -DBL_MAX;
 
-  vector<int>    colInd(A.MaxNumEntries());
-  vector<double> colVal(A.MaxNumEntries());
+  std::vector<int>    colInd(A.MaxNumEntries());
+  std::vector<double> colVal(A.MaxNumEntries());
 
   for (int i = 0 ; i < A.NumMyRows() ; ++i) {
 
@@ -1137,8 +1137,8 @@ int Ifpack_PrintSparsity(const Epetra_RowMatrix& A, const char* InputFileName,
   }
 
   int MaxEntries = A.MaxNumEntries();
-  vector<int> Indices(MaxEntries);
-  vector<double> Values(MaxEntries);
+  std::vector<int> Indices(MaxEntries);
+  std::vector<double> Values(MaxEntries);
 
   for (int pid = 0 ; pid < NumProc ; ++pid) {
 

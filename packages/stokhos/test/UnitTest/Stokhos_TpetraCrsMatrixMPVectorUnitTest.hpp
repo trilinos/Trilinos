@@ -182,11 +182,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Add
-  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (LocalOrdinal i=0; i<VectorSize; ++i) {
-    alpha.fastAccessCoeff(i) = 1.0 + i;
-    beta.fastAccessCoeff(i) = 2.0 * i;
-  }
+  Scalar alpha = 2.1;
+  Scalar beta = 3.7;
   RCP<Tpetra_Vector> y = Tpetra::createVector<Scalar>(map);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
 
@@ -361,11 +358,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL(
   x2_view = Teuchos::null;
 
   // Add
-  Scalar alpha(VectorSize, BaseScalar(0.0)), beta(VectorSize, BaseScalar(0.0));
-  for (LocalOrdinal i=0; i<VectorSize; ++i) {
-    alpha.fastAccessCoeff(i) = 1.678 + i;
-    beta.fastAccessCoeff(i)  = 2.234 * i;
-  }
+  Scalar alpha = 2.1;
+  Scalar beta = 3.7;
   RCP<Tpetra_MultiVector> y = Tpetra::createMultiVector<Scalar>(map, ncol);
   y->update(alpha, *x1, beta, *x2, Scalar(0.0));
 

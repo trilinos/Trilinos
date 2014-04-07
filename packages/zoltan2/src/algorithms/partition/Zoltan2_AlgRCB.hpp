@@ -120,7 +120,7 @@ void AlgRCB(
 
   env->debug(DETAILED_STATUS, "Accessing parameters");
   multiCriteriaNorm mcnorm = normBalanceTotalMaximum;
-  string obj;
+  std::string obj;
 
   const Teuchos::ParameterEntry *pe = pl.getEntryPtr("partitioning_objective");
   if (pe)
@@ -130,18 +130,18 @@ void AlgRCB(
     params.set(rcb_balanceWeight);
     mcnorm = normBalanceTotalMaximum;
   }
-  else if (obj == string("balance_object_count")){
+  else if (obj == std::string("balance_object_count")){
     params.set(rcb_balanceCount);
   }
-  else if (obj == string("multicriteria_minimize_total_weight")){
+  else if (obj == std::string("multicriteria_minimize_total_weight")){
     params.set(rcb_minTotalWeight);
     mcnorm = normMinimizeTotalWeight;
   }
-  else if (obj == string("multicriteria_minimize_maximum_weight")){
+  else if (obj == std::string("multicriteria_minimize_maximum_weight")){
     params.set(rcb_minMaximumWeight);
     mcnorm = normMinimizeMaximumWeight;
   }
-  else if (obj == string("multicriteria_balance_total_maximum")){
+  else if (obj == std::string("multicriteria_balance_total_maximum")){
     params.set(rcb_balanceTotalMaximum);
     mcnorm = normBalanceTotalMaximum;
   }
@@ -230,7 +230,7 @@ void AlgRCB(
   }
 
   if (env->doStatus() && (numGlobalCoords < 500)){
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "Problem: ";
     for (size_t i=0; i < numLocalCoords; i++){
       oss << gnos[i] << " (";
@@ -538,7 +538,7 @@ void AlgRCB(
 
   if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && 
      (numGlobalCoords < 500)){
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "Solution: ";
     for (gno_t i=0; i < gnoList.size(); i++)
       oss << gnoList[i] << " (" << partId[i] << ") ";

@@ -68,7 +68,6 @@
 #include "Panzer_BlockedEpetraLinearObjFactory.hpp"
 #include "Panzer_BlockedTpetraLinearObjFactory.hpp"
 #include "Panzer_InitialCondition_Builder.hpp"
-#include "Panzer_ResponseUtilities.hpp"
 #include "Panzer_ModelEvaluator_Epetra.hpp"
 #include "Panzer_ModelEvaluator.hpp"
 #include "Panzer_ElementBlockIdToPhysicsIdMap.hpp"
@@ -544,10 +543,6 @@ namespace panzer_stk {
        Teuchos::ParameterList user_data(p.sublist("User Data"));
        user_data.set<int>("Workset Size",workset_size);
 
-       m_response_library->buildVolumeFieldManagersFromResponses(physicsBlocks,
-  					                         user_cm_factory,
-                                                                 p.sublist("Closure Models"),
-  					                         user_data,write_dot_files,prefix);
     }
 
     // build solvers
@@ -1271,38 +1266,6 @@ namespace panzer_stk {
         if(globalIndexer.fieldInBlock(fieldName,blockId))
            fieldPatterns[blockId] =
               Teuchos::rcp_dynamic_cast<const panzer::IntrepidFieldPattern>(globalIndexer.getFieldPattern(blockId,fieldName),true);
-     }
-  }
-
-  template<typename ScalarT>
-  void ModelEvaluatorFactory<ScalarT>::addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
-                                                                 const panzer_stk::STK_Interface & mesh,
-                                                                 const Teuchos::ParameterList & pl) const
-  {
-     typedef std::map<std::string,std::pair<panzer::ResponseId,std::pair<std::list<std::string>,std::list<std::string> > > > ResponseMap;
-
-     std::vector<std::string> validEBlocks;
-     mesh.getElementBlockNames(validEBlocks);
-
-     // build a map of all responses
-     ResponseMap responses;
-     panzer::buildResponseMap(pl,responses);
-
-     // reserve each response for every evaluation type
-     for(typename ResponseMap::const_iterator respItr=responses.begin();
-         respItr!=responses.end();++respItr) {
-        const std::string & label = respItr->first;
-        const panzer::ResponseId & rid = respItr->second.first;
-        const std::list<std::string> & eBlocks = respItr->second.second.first;
-        const std::list <std::string> & eTypes = respItr->second.second.second;
-
-        // sanity check for valid element blocks
-        for(std::list<std::string>::const_iterator itr=eBlocks.begin();itr!=eBlocks.end();itr++) {
-           TEUCHOS_TEST_FOR_EXCEPTION(std::find(validEBlocks.begin(),validEBlocks.end(),*itr)==validEBlocks.end(),Teuchos::Exceptions::InvalidParameterValue,
-                              "Invalid element block \""+(*itr)+"\" specified for response labeled \""+label+"\".");
-        }
-
-        rLibrary.reserveLabeledBlockAggregatedVolumeResponse(label,rid,eBlocks,eTypes);
      }
   }
 

@@ -42,11 +42,12 @@
 #ifndef KOKKOS_CRSMATRIX_MP_VECTOR_CUDA_HPP
 #define KOKKOS_CRSMATRIX_MP_VECTOR_CUDA_HPP
 
+#if defined( __CUDACC__)
+
 #include "Kokkos_CrsMatrix_MP_Vector.hpp"
 #include "Kokkos_Cuda.hpp"
 #include "Cuda/Kokkos_Cuda_Parallel.hpp"
 #include "Stokhos_Cuda_DeviceProp.hpp"
-#include "Teuchos_TestForException.hpp"
 
 //----------------------------------------------------------------------------
 // Specializations of Kokkos::CrsMatrix for Sacado::MP::Vector scalar type
@@ -64,11 +65,14 @@ template <typename MatrixType,
           typename InputVectorType,
           typename OutputVectorType,
           unsigned NumPerThread,
-          bool UseShared>
+          bool UseShared,
+          unsigned Rank = InputVectorType::Rank,
+          typename Layout = typename InputVectorType::array_layout>
 struct EnsembleMultiplyKernel {};
 
 // Specialization that uses shared memory for coalesced access of sparse
 // graph row offsets and column indices
+// Rank-1 and LayoutRight vectors (note matrix is always LayoutRight)
 template <typename MatrixType,
           typename InputVectorType,
           typename OutputVectorType,
@@ -76,7 +80,7 @@ template <typename MatrixType,
 struct EnsembleMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
-                              NumPerThread, true> {
+                              NumPerThread, true, 1, Kokkos::LayoutRight> {
   typedef MatrixType matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -91,12 +95,12 @@ struct EnsembleMultiplyKernel<MatrixType,
   const matrix_graph_type  m_Agraph;
   const typename matrix_values_type::array_type m_Avals;
   const typename input_vector_type::array_type  m_x;
-  typename output_vector_type::array_type  m_y;
+  const typename output_vector_type::array_type m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
     : m_Agraph( A.graph )
     , m_Avals( A.values )
     , m_x( x )
@@ -165,14 +169,16 @@ struct EnsembleMultiplyKernel<MatrixType,
 };
 
 // Specialization that uses shared memory for coalesced access of sparse
-// graph row offsets and column indices and a single ensemble value per thread
+// graph row offsets and column indices
+// Rank-1 and LayoutLeft vectors (note matrix is always LayoutRight)
 template <typename MatrixType,
           typename InputVectorType,
-          typename OutputVectorType>
+          typename OutputVectorType,
+          unsigned NumPerThread>
 struct EnsembleMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
-                              1, true> {
+                              NumPerThread, true, 1, Kokkos::LayoutLeft> {
   typedef MatrixType matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -187,12 +193,109 @@ struct EnsembleMultiplyKernel<MatrixType,
   const matrix_graph_type  m_Agraph;
   const typename matrix_values_type::array_type m_Avals;
   const typename input_vector_type::array_type  m_x;
-  typename output_vector_type::array_type  m_y;
+  const typename output_vector_type::array_type m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
+    , m_x( x )
+    , m_y( y )
+    , m_row_count( A.graph.row_map.dimension_0()-1 )
+    {}
+
+  __device__
+  inline void operator()(void) const
+  {
+    volatile size_type * const sh_row =
+      kokkos_impl_cuda_shared_memory<size_type>();
+    volatile size_type * const sh_col = sh_row + blockDim.y+1;
+
+    const size_type tid = blockDim.x*threadIdx.y + threadIdx.x;
+    const size_type nid = blockDim.x*blockDim.y;
+
+    const size_type block_row = blockDim.y*blockIdx.x;
+
+    // Read blockDim.y+1 row offsets in coalesced manner
+    const size_type num_row =
+      block_row+blockDim.y+1 <= m_row_count+1 ? blockDim.y+1 :
+      m_row_count+1 - block_row;
+    for (size_type i=tid; i<num_row; i+=nid)
+      sh_row[i] = m_Agraph.row_map[block_row+i];
+    __syncthreads();
+
+    const size_type iRow = block_row + threadIdx.y;
+    if (iRow < m_row_count) {
+      scalar_type sum[NumPerThread];
+      const size_type iEntryBegin = sh_row[threadIdx.y];
+      const size_type iEntryEnd =   sh_row[threadIdx.y+1];
+
+      for (size_type e=0; e<NumPerThread; ++e)
+        sum[e] = 0;
+
+      for (size_type col_block=iEntryBegin; col_block<iEntryEnd;
+           col_block+=blockDim.x) {
+        const size_type num_col =
+          col_block+blockDim.x <= iEntryEnd ? blockDim.x : iEntryEnd-col_block;
+
+        // Read blockDim.x entries column indices at a time to maintain
+        // coalesced accesses (don't need __syncthreads() assuming
+        // blockDim.x <= warp_size
+        // Note:  it might be a little faster if we ensured aligned access
+        // to m_A.graph.entries() and m_A.values() below.
+        if (threadIdx.x < num_col)
+          sh_col[tid] = m_Agraph.entries(col_block+threadIdx.x);
+
+        for ( size_type col = 0; col < num_col; ++col ) {
+          size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
+
+          for (size_type e=0, ee=threadIdx.x; e<NumPerThread;
+               ++e, ee+=blockDim.x) {
+            sum[e] += m_Avals(col_block+col, ee) * m_x(ee, iCol);
+          }
+        }
+
+      }
+
+      for (size_type e=0, ee=threadIdx.x; e<NumPerThread; ++e, ee+=blockDim.x) {
+        m_y(ee, iRow) = sum[e];
+      }
+    }
+  } // operator()
+};
+
+// Specialization that uses shared memory for coalesced access of sparse
+// graph row offsets and column indices and a single ensemble value per thread
+// Rank-1 and LayoutRight vectors (note matrix is always LayoutRight)
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType>
+struct EnsembleMultiplyKernel<MatrixType,
+                              InputVectorType,
+                              OutputVectorType,
+                              1, true, 1, Kokkos::LayoutRight> {
+  typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef InputVectorType input_vector_type;
+  typedef OutputVectorType output_vector_type;
+  typedef typename OutputVectorType::value_type OutputVectorValue;
+  typedef typename OutputVectorValue::value_type scalar_type;
+
+  typedef typename Kokkos::Cuda device_type;
+  typedef typename device_type::size_type size_type;
+
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  const typename output_vector_type::array_type m_y;
+  const size_type m_row_count;
+
+  EnsembleMultiplyKernel( const matrix_type & A,
+                          const input_vector_type & x,
+                          const output_vector_type & y )
     : m_Agraph( A.graph )
     , m_Avals( A.values )
     , m_x( x )
@@ -253,16 +356,16 @@ struct EnsembleMultiplyKernel<MatrixType,
   } // operator()
 };
 
-// Specialization that doesn't use shared memory for loading the sparse graph.
-// This is simpler, but slightly slower
+// Specialization that uses shared memory for coalesced access of sparse
+// graph row offsets and column indices and a single ensemble value per thread
+// Rank-1 and LayoutLeft vectors (note matrix is always LayoutRight)
 template <typename MatrixType,
           typename InputVectorType,
-          typename OutputVectorType,
-          unsigned NumPerThread>
+          typename OutputVectorType>
 struct EnsembleMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
-                              NumPerThread, false> {
+                              1, true, 1, Kokkos::LayoutLeft> {
   typedef MatrixType matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -277,12 +380,102 @@ struct EnsembleMultiplyKernel<MatrixType,
   const matrix_graph_type  m_Agraph;
   const typename matrix_values_type::array_type m_Avals;
   const typename input_vector_type::array_type  m_x;
-  typename output_vector_type::array_type  m_y;
+  const typename output_vector_type::array_type m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
+    : m_Agraph( A.graph )
+    , m_Avals( A.values )
+    , m_x( x )
+    , m_y( y )
+    , m_row_count( A.graph.row_map.dimension_0()-1 )
+    {}
+
+  __device__
+  inline void operator()(void) const
+  {
+    volatile size_type * const sh_row =
+      kokkos_impl_cuda_shared_memory<size_type>();
+    volatile size_type * const sh_col = sh_row + blockDim.y+1;
+
+    const size_type tid = blockDim.x*threadIdx.y + threadIdx.x;
+    const size_type nid = blockDim.x*blockDim.y;
+
+    const size_type block_row = blockDim.y*blockIdx.x;
+
+    // Read blockDim.y+1 row offsets in coalesced manner
+    const size_type num_row =
+      block_row+blockDim.y+1 <= m_row_count+1 ? blockDim.y+1 :
+      m_row_count+1 - block_row;
+    for (size_type i=tid; i<num_row; i+=nid)
+      sh_row[i] = m_Agraph.row_map[block_row+i];
+    __syncthreads();
+
+    const size_type iRow = block_row + threadIdx.y;
+    if (iRow < m_row_count) {
+      const size_type iEntryBegin = sh_row[threadIdx.y];
+      const size_type iEntryEnd =   sh_row[threadIdx.y+1];
+
+      scalar_type sum = 0;
+
+      for (size_type col_block=iEntryBegin; col_block<iEntryEnd;
+           col_block+=blockDim.x) {
+        const size_type num_col =
+          col_block+blockDim.x <= iEntryEnd ? blockDim.x : iEntryEnd-col_block;
+
+        // Read blockDim.x entries column indices at a time to maintain
+        // coalesced accesses (don't need __syncthreads() assuming
+        // blockDim.x <= warp_size
+        // Note:  it might be a little faster if we ensured aligned access
+        // to m_A.graph.entries() and m_A.values() below.
+        if (threadIdx.x < num_col)
+          sh_col[tid] = m_Agraph.entries(col_block+threadIdx.x);
+
+        for ( size_type col = 0; col < num_col; ++col ) {
+          size_type iCol = sh_col[blockDim.x*threadIdx.y + col];
+
+          sum += m_Avals(col_block+col, threadIdx.x) * m_x(threadIdx.x, iCol);
+        }
+
+      }
+
+      m_y(threadIdx.x, iRow) = sum;
+    }
+  } // operator()
+};
+
+// Specialization that doesn't use shared memory for loading the sparse graph.
+// This is simpler, but slightly slower
+template <typename MatrixType,
+          typename InputVectorType,
+          typename OutputVectorType,
+          unsigned NumPerThread>
+struct EnsembleMultiplyKernel<MatrixType,
+                              InputVectorType,
+                              OutputVectorType,
+                              NumPerThread, false, 1, Kokkos::LayoutRight> {
+  typedef MatrixType matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
+  typedef InputVectorType input_vector_type;
+  typedef OutputVectorType output_vector_type;
+  typedef typename OutputVectorType::value_type OutputVectorValue;
+  typedef typename OutputVectorValue::value_type scalar_type;
+
+  typedef typename Kokkos::Cuda device_type;
+  typedef typename device_type::size_type size_type;
+
+  const matrix_graph_type  m_Agraph;
+  const typename matrix_values_type::array_type m_Avals;
+  const typename input_vector_type::array_type  m_x;
+  const typename output_vector_type::array_type m_y;
+  const size_type m_row_count;
+
+  EnsembleMultiplyKernel( const matrix_type & A,
+                          const input_vector_type & x,
+                          const output_vector_type & y )
     : m_Agraph( A.graph )
     , m_Avals( A.values )
     , m_x( x )
@@ -325,7 +518,7 @@ template <typename MatrixType,
 struct EnsembleMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
-                              1, false> {
+                              1, false, 1, Kokkos::LayoutRight> {
   typedef MatrixType matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef typename matrix_type::StaticCrsGraphType matrix_graph_type;
@@ -340,12 +533,12 @@ struct EnsembleMultiplyKernel<MatrixType,
   const matrix_graph_type  m_Agraph;
   const typename matrix_values_type::array_type m_Avals;
   const typename input_vector_type::array_type  m_x;
-  typename output_vector_type::array_type  m_y;
+  const typename output_vector_type::array_type m_y;
   const size_type m_row_count;
 
   EnsembleMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
     : m_Agraph( A.graph )
     , m_Avals( A.values )
     , m_x( x )
@@ -378,7 +571,8 @@ template <typename MatrixType,
           typename InputVectorType,
           typename OutputVectorType,
           unsigned NumPerThread,
-          bool UseShared>
+          bool UseShared,
+          unsigned Rank = InputVectorType::Rank>
 struct MPVectorMultiplyKernel {};
 
 // Specialization that uses shared memory for coalesced access of sparse
@@ -391,7 +585,7 @@ struct MPVectorMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
                               NumPerThread,
-                              true> {
+                              true, 1> {
   typedef MatrixType matrix_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
@@ -413,12 +607,12 @@ struct MPVectorMultiplyKernel<MatrixType,
 
   const matrix_type  m_A;
   const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const output_vector_type m_y;
   const size_type m_row_count;
 
   MPVectorMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
     : m_A( A )
     , m_x( x )
     , m_y( y )
@@ -496,7 +690,7 @@ struct MPVectorMultiplyKernel<MatrixType,
                               InputVectorType,
                               OutputVectorType,
                               NumPerThread,
-                              false> {
+                              false, 1> {
   typedef MatrixType matrix_type;
   typedef InputVectorType input_vector_type;
   typedef OutputVectorType output_vector_type;
@@ -518,12 +712,12 @@ struct MPVectorMultiplyKernel<MatrixType,
 
   const matrix_type  m_A;
   const input_vector_type  m_x;
-  output_vector_type  m_y;
+  const output_vector_type m_y;
   const size_type m_row_count;
 
   MPVectorMultiplyKernel( const matrix_type & A,
                           const input_vector_type & x,
-                          output_vector_type & y )
+                          const output_vector_type & y )
     : m_A( A )
     , m_x( x )
     , m_y( y )
@@ -583,8 +777,10 @@ template <typename MatrixStorage,
           typename MatrixMemory,
           typename MatrixSize,
           typename InputStorage,
+          typename InputLayout,
           typename InputMemory,
           typename OutputStorage,
+          typename OutputLayout,
           typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixOrdinal,
@@ -592,11 +788,11 @@ class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixMemory,
                                   MatrixSize>,
                 Kokkos::View< Sacado::MP::Vector<InputStorage>*,
-                              Kokkos::LayoutRight,
+                              InputLayout,
                               Kokkos::Cuda,
                               InputMemory >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
-                              Kokkos::LayoutRight,
+                              OutputLayout,
                               Kokkos::Cuda,
                               OutputMemory >,
                 void,
@@ -620,17 +816,17 @@ public:
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef Kokkos::View< InputVectorValue*,
-                        Kokkos::LayoutRight,
+                        InputLayout,
                         Device,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
-                        Kokkos::LayoutRight,
+                        OutputLayout,
                         Device,
                         OutputMemory > output_vector_type;
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
-                     output_vector_type & y )
+                     const output_vector_type & y )
   {
     // Compute CUDA block and grid sizes.
     //
@@ -687,7 +883,7 @@ private:
   template <unsigned num_per_thread, bool use_shared>
   static void launch_impl( const matrix_type & A,
                            const input_vector_type & x,
-                           output_vector_type & y,
+                           const output_vector_type & y,
                            dim3 block,
                            dim3 grid)
   {
@@ -741,8 +937,10 @@ template <typename MatrixStorage,
           typename MatrixMemory,
           typename MatrixSize,
           typename InputStorage,
+          typename InputLayout,
           typename InputMemory,
           typename OutputStorage,
+          typename OutputLayout,
           typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixOrdinal,
@@ -750,11 +948,11 @@ class Multiply< Kokkos::CrsMatrix<Sacado::MP::Vector<MatrixStorage>,
                                   MatrixMemory,
                                   MatrixSize>,
                 Kokkos::View< Sacado::MP::Vector<InputStorage>*,
-                              Kokkos::LayoutRight,
+                              InputLayout,
                               Kokkos::Cuda,
                               InputMemory >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
-                              Kokkos::LayoutRight,
+                              OutputLayout,
                               Kokkos::Cuda,
                               OutputMemory >
                 >
@@ -776,17 +974,17 @@ public:
                             MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef Kokkos::View< InputVectorValue*,
-                        Kokkos::LayoutRight,
+                        InputLayout,
                         Device,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
-                        Kokkos::LayoutRight,
+                        OutputLayout,
                         Device,
                         OutputMemory > output_vector_type;
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
-                     output_vector_type & y )
+                     const output_vector_type & y )
   {
     // Compute CUDA block and grid sizes.
     //
@@ -843,7 +1041,7 @@ private:
   template <unsigned num_per_thread, bool use_shared>
   static void launch_impl( const matrix_type & A,
                            const input_vector_type & x,
-                           output_vector_type & y,
+                           const output_vector_type & y,
                            dim3 block,
                            dim3 grid)
   {
@@ -877,5 +1075,94 @@ private:
 };
 
 }
+
+namespace Kokkos {
+
+// Overload of Kokkos::MV_Multiply for Sacado::MP::Vector scalar types
+template <typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputLayout,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputLayout,
+          typename OutputMemory>
+void
+MV_Multiply(
+  const Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
+                                          OutputLayout,
+                                          Kokkos::Cuda,
+                                          OutputMemory >& y,
+  const Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                           MatrixOrdinal,
+                           Kokkos::Cuda,
+                           MatrixMemory,
+                           MatrixSize>& A,
+  const Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                      InputLayout,
+                      Kokkos::Cuda,
+                      InputMemory >& x)
+{
+  typedef Kokkos::Cuda Device;
+  typedef Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
+    OutputLayout, Device, OutputMemory > OutputVectorType;
+  typedef Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+    MatrixOrdinal, Device, MatrixMemory, MatrixSize> MatrixType;
+  typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+    InputLayout, Device, InputMemory > InputVectorType;
+  typedef Stokhos::Multiply<MatrixType,InputVectorType,
+    OutputVectorType, void, Stokhos::IntegralRank<1>,
+    Stokhos::EnsembleMultiply> multiply_type;
+
+  multiply_type::apply( A, x, y );
+
+  //typedef Stokhos::DefaultMultiply Tag;
+  //typedef Stokhos::EnsembleMultiply Tag;
+  //Stokhos::multiply(A, x, y, Tag());
+}
+
+template <typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputLayout,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputLayout,
+          typename OutputMemory>
+void
+MV_Multiply(
+  const Kokkos::View< Sacado::MP::Vector< OutputStorage>**,
+                      OutputLayout,
+                      Kokkos::Cuda,
+                      OutputMemory >& y,
+  const Sacado::MP::Vector<InputStorage>& a,
+  const Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                           MatrixOrdinal,
+                           Kokkos::Cuda,
+                           MatrixMemory,
+                           MatrixSize>& A,
+  const Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                      InputLayout,
+                      Kokkos::Cuda,
+                      InputMemory >& x)
+{
+  typedef Kokkos::View< Sacado::MP::Vector< OutputStorage>*, OutputLayout,
+    Kokkos::Cuda,OutputMemory > OutputView1D;
+  typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*, InputLayout,
+    Kokkos::Cuda, InputMemory > InputView1D;
+  const size_t num_col = y.dimension_1();
+  for (size_t col=0; col<num_col; ++col) {
+    MV_Multiply(Kokkos::subview<OutputView1D>(y, Kokkos::ALL(), col), a, A,
+                Kokkos::subview<InputView1D>( x, Kokkos::ALL(), col) );
+  }
+}
+
+} // namespace Kokkos
+
+#endif /* #if defined( __CUDACC__) */
 
 #endif /* #ifndef KOKKOS_CRSMATRIX_MP_VECTOR_CUDA_HPP */

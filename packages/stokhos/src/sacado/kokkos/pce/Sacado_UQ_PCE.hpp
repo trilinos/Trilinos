@@ -1089,6 +1089,26 @@ namespace Sacado {
 
   } // namespace PCE
 
+  //! Trait class to determine if a scalar type is a PCE
+  template <typename T> struct is_uq_pce {
+    static const bool value = false;
+  };
+  template <typename S> struct is_uq_pce< UQ::PCE<S> > {
+    static const bool value = true;
+  };
+  template <typename T> struct is_uq_pce< const T > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T> struct is_uq_pce< T* > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T> struct is_uq_pce< T[] > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+  template <typename T, unsigned N> struct is_uq_pce< T[N] > {
+    static const bool value = is_uq_pce<T>::value;
+  };
+
 } // namespace Sacado
 
 #include "Sacado_UQ_PCE_Traits.hpp"

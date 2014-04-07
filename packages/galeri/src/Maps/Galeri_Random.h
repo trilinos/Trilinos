@@ -65,7 +65,7 @@ TRandom(const Epetra_Comm& Comm, const int_type n)
   // This is the idea: I create the map on proc 0, then I broadcast
   // it to all procs. This is not very efficient, but saves some MPI calls.
       
-  vector<int> part(n);
+  std::vector<int> part(n);
       
   if (Comm.MyPID() == 0) 
   {
@@ -86,7 +86,7 @@ TRandom(const Epetra_Comm& Comm, const int_type n)
     if (part[i] == Comm.MyPID()) NumMyElements++;
 
   // get the loc2global list
-  vector<int_type> MyGlobalElements(NumMyElements);
+  std::vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
   for (int_type i = 0 ; i < n ; ++i)
     if (part[i] == Comm.MyPID()) 

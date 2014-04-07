@@ -44,8 +44,19 @@
 #ifndef KOKKOS_VIEWOFFSET_HPP
 #define KOKKOS_VIEWOFFSET_HPP
 
+#include <Kokkos_Pair.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_Shape.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+struct ALL ;
+} // namespace Kokkos
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 namespace Kokkos { namespace Impl {
 
@@ -999,6 +1010,54 @@ struct ViewOffset< ShapeType , LayoutStride
     {
       return i0 * S[0] + i1 * S[1] + i2 * S[2] + i3 * S[3] + i4 * S[4] + i5 * S[5] + i6 * S[6] + i7 * S[7] ;
     }
+};
+
+//----------------------------------------------------------------------------
+
+template< class T /* assume an integral type */ >
+struct ViewOffsetRange {
+  enum { is_range = false };
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t dimension( size_t const , T const & ) { return 0 ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t begin( T const & i ) { return size_t(i) ; }
+};
+
+template<>
+struct ViewOffsetRange<ALL> {
+  enum { is_range = true };
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t dimension( size_t const n , ALL const & ) { return n ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t begin( ALL const & ) { return 0 ; }
+};
+
+template< typename iType >
+struct ViewOffsetRange< std::pair<iType,iType> > {
+  enum { is_range = true };
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t dimension( size_t const n , std::pair<iType,iType> const & r )
+    { return ( 0 <= int(r.first) && r.first < r.second && size_t(r.second) < n ) ? r.second - r.first : 0 ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t begin( std::pair<iType,iType> const & r ) { return r.first ; }
+};
+
+template< typename iType >
+struct ViewOffsetRange< Kokkos::pair<iType,iType> > {
+  enum { is_range = true };
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t dimension( size_t const n , Kokkos::pair<iType,iType> const & r )
+    { return ( 0 <= int(r.first) && r.first < r.second && size_t(r.second) < n ) ? r.second - r.first : 0 ; }
+
+  KOKKOS_INLINE_FUNCTION static
+  size_t begin( Kokkos::pair<iType,iType> const & r ) { return r.first ; }
 };
 
 }} // namespace Kokkos::Impl

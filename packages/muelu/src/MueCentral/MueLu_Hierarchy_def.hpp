@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp(new Level));
@@ -75,7 +75,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     lib_ = A->getRowMap()->lib();
@@ -534,7 +534,7 @@ namespace MueLu {
         if (Coarse->IsAvailable("Importer"))
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
-        if (!implicitPRrebalance_ || importer.is_null()) {
+        if (doPRrebalance_ || importer.is_null()) {
           coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
 
         } else {
@@ -571,7 +571,7 @@ namespace MueLu {
           coarseX->replaceMap(origXMap);
         }
 
-        if (implicitPRrebalance_ && !importer.is_null()) {
+        if (!doPRrebalance_ && !importer.is_null()) {
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      , Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix, Timings0));
 

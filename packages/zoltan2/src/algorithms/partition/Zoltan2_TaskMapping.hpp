@@ -4,7 +4,7 @@
 #include <fstream>
 #include <ctime>
 #include <vector>
-#include "Zoltan2_AlgPQJagged.hpp"
+#include "Zoltan2_AlgMultiJagged.hpp"
 #include "Teuchos_ArrayViewDecl.hpp"
 #include "Zoltan2_PartitionMapping.hpp"
 #include "Zoltan2_MachineRepresentation.hpp"
@@ -160,13 +160,13 @@ void getSolutionCenterCoordinates(
 	gno_t *global_point_counts = allocMemory<gno_t>(ntasks);
 
 
-	scalar_t **pqJagged_coordinates = allocMemory<scalar_t *>(coordDim);
+	scalar_t **multiJagged_coordinates = allocMemory<scalar_t *>(coordDim);
 
 	for (int dim=0; dim < coordDim; dim++){
 		ArrayRCP<const scalar_t> ar;
 		xyz[dim].getInputArray(ar);
-		//pqJagged coordinate values assignment
-		pqJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
+		//multiJagged coordinate values assignment
+		multiJagged_coordinates[dim] =  (scalar_t *)ar.getRawPtr();
 		memset(partCenters[dim], 0, sizeof(scalar_t) * ntasks);
 	}
 
@@ -218,11 +218,11 @@ void getSolutionCenterCoordinates(
 			}
 		}
 		if(p == -1) {
-			cerr << "ERROR AT HASHING FOR GNO:"<< g << " LNO:" << i << endl;
+			std::cerr << "ERROR AT HASHING FOR GNO:"<< g << " LNO:" << i << std::endl;
 		}
 		//add uo all coordinates in each part.
 		for(int j = 0; j < coordDim; ++j){
-			scalar_t c = pqJagged_coordinates[j][i];
+			scalar_t c = multiJagged_coordinates[j][i];
 			partCenters[j][p] += c;
 		}
 	}
@@ -249,7 +249,7 @@ void getSolutionCenterCoordinates(
 	freeArray<gno_t> (global_point_counts);
 
 	freeArray<scalar_t> (tmpCoords);
-	freeArray<scalar_t *>(pqJagged_coordinates);
+	freeArray<scalar_t *>(multiJagged_coordinates);
 }
 
 
@@ -268,7 +268,7 @@ public:
 		this->heapSize = heapsize_;
 		this->indices = allocMemory<IT>(heapsize_ );
 		this->values = allocMemory<WT>(heapsize_ );
-		this->_EPSILON = numeric_limits<WT>::epsilon();
+		this->_EPSILON = std::numeric_limits<WT>::epsilon();
 	}
 
 	~KmeansHeap(){
@@ -324,7 +324,7 @@ public:
 	}
 
 	void initValues(){
-		WT MAXVAL = numeric_limits<WT>::max();
+		WT MAXVAL = std::numeric_limits<WT>::max();
 		for(IT i = 0; i < this->heapSize; ++i){
 			this->values[i] = MAXVAL;
 			this->indices[i] = -1;
@@ -717,7 +717,7 @@ public:
 		CommunicationModel<procId_t, pcoord_t>(no_procs_, no_tasks_),
 		proc_coord_dim(pcoord_dim_), proc_coords(pcoords_),
 		task_coord_dim(tcoord_dim_), task_coords(tcoords_),
-		partArraySize(min(tcoord_dim_, pcoord_dim_)),
+		partArraySize(std::min(tcoord_dim_, pcoord_dim_)),
 		partNoArray(NULL){
 	}
 
@@ -974,8 +974,8 @@ public:
 
 
 			if(proc_index_end - proc_index_begin != 1){
-				cerr << "Error at partitioning of processors" << endl;
-				cerr << "PART:" << i << " is assigned to " << proc_index_end - proc_index_begin << " processors." << std::endl;
+				std::cerr << "Error at partitioning of processors" << std::endl;
+				std::cerr << "PART:" << i << " is assigned to " << proc_index_end - proc_index_begin << " processors." << std::endl;
 				exit(1);
 			}
 			procId_t assigned_proc = proc_adjList[proc_index_begin];
@@ -1059,7 +1059,7 @@ protected:
 			);
 		}
 		else {
-			std::cerr << "communicationModel is not specified in the Mapper" << endl;
+			std::cerr << "communicationModel is not specified in the Mapper" << std::endl;
 			exit(1);
 		}
 	}
@@ -1143,7 +1143,7 @@ protected:
 		std::ofstream gnuPlotCode ("gnuPlot.plot", std::ofstream::out);
 
 		int mindim = MINOF(proc_task_comm->proc_coord_dim, proc_task_comm->task_coord_dim);
-		string ss = "";
+		std::string ss = "";
 		for(procId_t i = 0; i < this->nprocs; ++i){
 
 			std::string procFile = toString<int>(i) + "_mapping.txt";
@@ -1156,7 +1156,7 @@ protected:
 
 			std::ofstream inpFile (procFile.c_str(), std::ofstream::out);
 
-			string gnuPlotArrow = "set arrow from ";
+			std::string gnuPlotArrow = "set arrow from ";
 			for(int j = 0; j <  mindim; ++j){
 				if (j == mindim - 1){
 					inpFile << proc_task_comm->proc_coords[j][i];
@@ -1176,7 +1176,7 @@ protected:
 			for(int k = 0; k <  a.size(); ++k){
 				int j = a[k];
 				//cout << "i:" << i << " j:"
-				string gnuPlotArrow2 = gnuPlotArrow;
+				std::string gnuPlotArrow2 = gnuPlotArrow;
 				for(int z = 0; z <  mindim; ++z){
 					if(z == mindim - 1){
 
@@ -1213,8 +1213,8 @@ protected:
 		CoordinateCommunicationModel<pcoord_t, tcoord_t, procId_t> *tmpproc_task_comm =
 				static_cast <CoordinateCommunicationModel<pcoord_t, tcoord_t, procId_t> * > (proc_task_comm);
 		int mindim = MINOF(tmpproc_task_comm->proc_coord_dim, tmpproc_task_comm->task_coord_dim);
-		string ss = "";
-		string procs = "", parts = "";
+		std::string ss = "";
+		std::string procs = "", parts = "";
 		for(procId_t i = 0; i < this->nprocs; ++i){
 
 			//inpFile << std::endl;
@@ -1225,7 +1225,7 @@ protected:
 
 			//std::ofstream inpFile (procFile.c_str(), std::ofstream::out);
 
-			string gnuPlotArrow = "set arrow from ";
+			std::string gnuPlotArrow = "set arrow from ";
 			for(int j = 0; j <  mindim; ++j){
 				if (j == mindim - 1){
 					//inpFile << proc_task_comm->proc_coords[j][i];
@@ -1247,7 +1247,7 @@ protected:
 			for(int k = 0; k <  a.size(); ++k){
 				int j = a[k];
 				//cout << "i:" << i << " j:"
-				string gnuPlotArrow2 = gnuPlotArrow;
+				std::string gnuPlotArrow2 = gnuPlotArrow;
 				for(int z = 0; z <  mindim; ++z){
 					if(z == mindim - 1){
 
@@ -1285,7 +1285,7 @@ protected:
 			for(int i = 0; i <  mindim; ++i){
 				extraProcFile << tmpproc_task_comm->proc_coords[i][j] <<  " ";
 			}
-			extraProcFile << endl;
+			extraProcFile << std::endl;
 		}
 
 		extraProcFile.close();
@@ -1312,7 +1312,7 @@ protected:
 	){
 		std::string file = "gggnuPlot";
 		std::string exten = ".plot";
-		ofstream mm("2d.txt");
+		std::ofstream mm("2d.txt");
 		file += toString<int>(comm_->getRank()) + exten;
 		std::ofstream ff(file.c_str());
 		//ff.seekg (0, ff.end);
@@ -1322,16 +1322,16 @@ protected:
 			(*outPartBoxes)[i].writeGnuPlot(ff, mm);
 		}
 		if (coordDim == 2){
-			ff << "plot \"2d.txt\"" << endl;
+			ff << "plot \"2d.txt\"" << std::endl;
 			//ff << "\n pause -1" << endl;
 		}
 		else {
-			ff << "splot \"2d.txt\"" << endl;
+			ff << "splot \"2d.txt\"" << std::endl;
 			//ff << "\n pause -1" << endl;
 		}
 		mm.close();
 
-		ff << "set style arrow 5 nohead size screen 0.03,15,135 ls 1" << endl;
+		ff << "set style arrow 5 nohead size screen 0.03,15,135 ls 1" << std::endl;
 		for (partId_t i = 0; i < this->ntasks;++i){
 			procId_t pb = 0;
 			if (i > 0) pb = task_communication_xadj[i -1];
@@ -1357,7 +1357,7 @@ protected:
 			}
 		}
 
-		ff << "replot\n pause -1" << endl;
+		ff << "replot\n pause -1" << std::endl;
 		ff.close();
 	}
 
@@ -1898,7 +1898,13 @@ void coordinateTaskMapperInterface(
 	typedef Tpetra::MultiVector<tcoord_t, procId_t,procId_t, KokkosClassic::DefaultNode::DefaultNodeType> tMVector_t;
 
 	Teuchos::ArrayRCP<procId_t> task_communication_xadj (task_comm_xadj, 0, num_tasks, false);
-	Teuchos::ArrayRCP<procId_t> task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+
+	Teuchos::ArrayRCP<procId_t> task_communication_adj;
+	if (task_comm_xadj){
+		Teuchos::ArrayRCP<procId_t> tmp_task_communication_adj (task_comm_adj, 0, task_comm_xadj[num_tasks -1 /* KDDKDD OK for MEHMET's ODD LAYOUT; WRONG FOR TRADITIONAL */], false);
+		task_communication_adj = tmp_task_communication_adj;
+	}
+
 
 	CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t> *ctm = new CoordinateTaskMapper<XpetraMultiVectorAdapter <tMVector_t>, procId_t>(
 			envConst_,

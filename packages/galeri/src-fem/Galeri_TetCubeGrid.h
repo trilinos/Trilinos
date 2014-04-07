@@ -55,7 +55,6 @@
 #include "Galeri_AbstractGrid.h"
 #include <vector>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {

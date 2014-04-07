@@ -258,7 +258,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->primaryEntityType = GRAPH_VERTEX;
       this->adjacencyEntityType = GRAPH_EDGE;
@@ -289,7 +289,7 @@ public:
    *  Also sets to primaryEntityType to something reasonable:  opposite of
    *  adjacencyEntityType.
    */
-  void setAdjacencyEntityType(string typestr) {
+  void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->adjacencyEntityType = GRAPH_VERTEX;
       this->primaryEntityType = GRAPH_EDGE;

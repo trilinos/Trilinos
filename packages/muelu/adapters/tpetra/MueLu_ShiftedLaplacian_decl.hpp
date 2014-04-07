@@ -72,6 +72,7 @@
 #include <BelosLinearProblem.hpp>
 #include <BelosBlockCGSolMgr.hpp>
 #include <BelosBlockGmresSolMgr.hpp>
+#include <BelosBlockGCRODRSolMgr.hpp>
 
 namespace MueLu {
 
@@ -95,6 +96,7 @@ namespace MueLu {
     typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
     typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
     typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
+    typedef Belos::BlockGCRODRSolMgr<SC,TMV,OP>          BelosGCRODR;
 
   public:
 
@@ -102,7 +104,7 @@ namespace MueLu {
     ShiftedLaplacian()
       : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
-	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
+	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1), restart_size_(100), recycle_size_(25),
 	smoother_sweeps_(4), smoother_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5), krylov_preconditioner_(1),
 	ilu_leveloffill_(5.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_diagpivotthresh_(0.1), ilu_drop_tol_(0.01), ilu_fill_tol_(0.01), ilu_relax_val_(1.0),
 	ilu_rowperm_("LargeDiag"), ilu_colperm_("COLAMD"), ilu_drop_rule_("DROP_BASIC"), ilu_normtype_("INF_NORM"), ilu_milutype_("SILU"),
@@ -188,6 +190,7 @@ namespace MueLu {
     double tol_;
     int    nsweeps_, ncycles_;
     int    cycles_, subiters_, option_, nproblems_, solverType_;
+    int    restart_size_, recycle_size_;
 
     // Smoother parameters
     int    smoother_sweeps_;

@@ -145,6 +145,8 @@ APPEND_SET(SOURCES
 # configuration options.  In Amesos2, each solver interface should be
 # added only if that solver has been enabled by the user.
 
+SET(AMESOS2_CU_SOURCES "")
+
 IF (${PACKAGE_NAME}_ENABLE_LAPACK)
   APPEND_SET(HEADERS
     Amesos2_Lapack.hpp
@@ -166,10 +168,19 @@ IF (${PACKAGE_NAME}_ENABLE_SuperLU)
     Amesos2_Superlu_TypeMap.hpp
     )
 
-  APPEND_SET(SOURCES
-    Amesos2_Superlu.cpp
-    Amesos2_Superlu_TypeMap.cpp
-    )
+   APPEND_SET(SOURCES
+     Amesos2_Superlu_TypeMap.cpp
+     )
+
+  IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+    APPEND_SET(AMESOS2_CU_SOURCES
+      Amesos2_Superlu.cu
+      )
+  ELSE()
+    APPEND_SET(SOURCES
+      Amesos2_Superlu.cpp
+      )
+  ENDIF()
 ENDIF()
 
 IF (${PACKAGE_NAME}_ENABLE_SuperLUMT)
@@ -273,3 +284,14 @@ TRIBITS_ADD_LIBRARY(
   HEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )
+
+IF(KokkosClassic_ENABLE_KokkosCompat AND Kokkos_ENABLE_Cuda)
+  IF( TPL_ENABLE_MPI )
+    CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
+  ENDIF()
+  TRIBITS_ADD_LIBRARY(
+    amesos2_cuda
+    SOURCES ${AMESOS2_CU_SOURCES}
+    CUDALIBRARY
+    )
+ENDIF()

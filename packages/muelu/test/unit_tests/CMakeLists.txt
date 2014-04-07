@@ -22,6 +22,7 @@ APPEND_SET(SOURCES
   Aggregates.cpp
   BlockedPFactory.cpp
   CoalesceDropFactory.cpp
+  CoarseMapFactory.cpp
 # CoupledAggregationFactory.cpp
   GenericRFactory.cpp
   Hierarchy.cpp

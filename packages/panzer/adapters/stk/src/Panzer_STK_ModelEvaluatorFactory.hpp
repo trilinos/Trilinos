@@ -214,9 +214,6 @@ namespace panzer_stk {
                              const Teuchos::ParameterList& user_data,
                              bool writeGraph,const std::string & graphPrefix) const;
 
-    void addVolumeResponses(panzer::ResponseLibrary<panzer::Traits> & rLibrary,
-                            const panzer_stk::STK_Interface & mesh,const Teuchos::ParameterList & pl) const;
-
     //! build STK mesh factory from a mesh parameter list
     Teuchos::RCP<STK_MeshFactory> buildSTKMeshFactory(const Teuchos::ParameterList & mesh_params) const;
 

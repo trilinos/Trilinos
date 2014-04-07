@@ -93,8 +93,8 @@ namespace Galeri {
 	RBx_   = Dx_-PMLx_right*hx_;
 	LBy_   = PMLy_left*hy_;
 	RBy_   = Dy_-PMLy_right*hy_;
-	PMLwidthx_ = max(LBx_,Dx_-RBx_); if(PMLwidthx_==0) {  PMLwidthx_=1.0; }
-	PMLwidthy_ = max(LBy_,Dy_-RBy_); if(PMLwidthy_==0) {  PMLwidthy_=1.0; }
+	PMLwidthx_ = std::max(LBx_,Dx_-RBx_); if(PMLwidthx_==0) {  PMLwidthx_=1.0; }
+	PMLwidthy_ = std::max(LBy_,Dy_-RBy_); if(PMLwidthy_==0) {  PMLwidthy_=1.0; }
         nDim = 2;
 
 	// velocity model
@@ -173,7 +173,7 @@ namespace Galeri {
       BuildPoints(quadPoints, quadWeights);
 
       // Compute basis function values and derivatives at each quadrature point
-      std::vector< vector<double> > vals, dxs, dys;
+      std::vector< std::vector<double> > vals, dxs, dys;
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());
@@ -255,7 +255,7 @@ namespace Galeri {
       BuildPoints(quadPoints, quadWeights);
 
       // Compute basis function values and derivatives at each quadrature point
-      std::vector< vector<double> > vals, dxs, dys;
+      std::vector< std::vector<double> > vals, dxs, dys;
       vals.resize(quadPoints.size());
       dxs.resize(quadPoints.size());
       dys.resize(quadPoints.size());

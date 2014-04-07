@@ -78,6 +78,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   ncycles_             = paramList->get("MueLu: cycles",         1);
   iters_               = paramList->get("MueLu: iterations",   500);
   solverType_          = paramList->get("MueLu: solver type",    1);
+  restart_size_        = paramList->get("MueLu: restart size", 100);
+  recycle_size_        = paramList->get("MueLu: recycle size",  25);
   isSymmetric_         = paramList->get("MueLu: symmetric",   true);
   ilu_leveloffill_     = paramList->get("MueLu: level-of-fill",  5);
   ilu_abs_thresh_      = paramList->get("MueLu: abs thresh",   0.0);
@@ -272,7 +274,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -319,7 +321,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
@@ -403,6 +405,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   BelosList_ -> set("Output Frequency",1);
   BelosList_ -> set("Output Style",Belos::Brief);
+  BelosList_ -> set("Num Blocks",restart_size_);
+  BelosList_ -> set("Num Recycled Blocks",recycle_size_);
 
 }
 
@@ -421,18 +425,24 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     // Define Preconditioner and Operator
     MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
     // Belos Linear Problem
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    if(BelosLinearProblem_==Teuchos::null)
+      BelosLinearProblem_ = rcp( new BelosLinearProblem );
     BelosLinearProblem_ -> setOperator (  TpetraA_  );
     BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(BelosSolverManager_==Teuchos::null) {
+      if(solverType_==0) {
+	BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==1) {
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==2) {
+	BelosSolverManager_ = rcp( new BelosGCRODR(BelosLinearProblem_, BelosList_) );
+      }
+      else {
+	BelosList_ -> set("Flexible Gmres", true);
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
     }
   }
 
@@ -460,18 +470,24 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     // Define Preconditioner and Operator
     MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
     // Belos Linear Problem
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    if(BelosLinearProblem_==Teuchos::null)
+      BelosLinearProblem_ = rcp( new BelosLinearProblem );
     BelosLinearProblem_ -> setOperator (  TpetraA_  );
     BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(BelosSolverManager_==Teuchos::null) {
+      if(solverType_==0) {
+	BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==1) {
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==2) {
+	BelosSolverManager_ = rcp( new BelosGCRODR(BelosLinearProblem_, BelosList_) );
+      }
+      else {
+	BelosList_ -> set("Flexible Gmres", true);
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
     }
   }
 
@@ -499,7 +515,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -544,7 +560,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
@@ -626,19 +642,27 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     BelosList_ -> set("Output Frequency",1);
     BelosList_ -> set("Output Style",Belos::Brief);
+    BelosList_ -> set("Num Blocks",restart_size_);
+    BelosList_ -> set("Num Recycled Blocks",recycle_size_);
     // Belos Linear Problem and Solver Manager
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
+    if(BelosLinearProblem_==Teuchos::null)
+      BelosLinearProblem_ = rcp( new BelosLinearProblem );
     BelosLinearProblem_ -> setOperator (  TpetraA_  );
     BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(BelosSolverManager_==Teuchos::null) {
+      if(solverType_==0) {
+	BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==1) {
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
+      else if(solverType_==2) {
+	BelosSolverManager_ = rcp( new BelosGCRODR(BelosLinearProblem_, BelosList_) );
+      }
+      else {
+	BelosList_ -> set("Flexible Gmres", true);
+	BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+      }
     }
   }
 

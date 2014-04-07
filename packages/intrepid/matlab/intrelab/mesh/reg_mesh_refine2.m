@@ -41,7 +41,7 @@ function [mesh1,I1]=reg_mesh_refine2(mesh)
 %    
 %  reg_mesh_refine2 is based on a modification of refinemesh.m in the Matlab PDEToolbox. 
 %
-%  AUTHOR:  Matthias Heinkenschloss
+%  AUTHOR:  Matthias Heinkenschloss and Denis Ridzal
 %           Department of Computational and Applied Mathematics
 %           Rice University
 %           December 1, 2005

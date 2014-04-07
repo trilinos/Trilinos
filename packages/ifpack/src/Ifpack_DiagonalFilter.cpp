@@ -62,8 +62,8 @@ Ifpack_DiagonalFilter::Ifpack_DiagonalFilter(const Teuchos::RefCountPtr<Epetra_R
   pos_.resize(NumMyRows());
   val_.resize(NumMyRows());
   
-  vector<int> Indices(MaxNumEntries());
-  vector<double> Values(MaxNumEntries());
+  std::vector<int> Indices(MaxNumEntries());
+  std::vector<double> Values(MaxNumEntries());
   int NumEntries;
   
   for (int MyRow = 0 ; MyRow < NumMyRows() ; ++MyRow) {

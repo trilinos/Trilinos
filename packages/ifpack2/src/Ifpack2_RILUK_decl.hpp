@@ -595,19 +595,30 @@ private:
   void allocate_L_and_U();
   void initAllValues (const row_matrix_type& A);
 
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! The ILU(k) graph.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type> > > Graph_;
   /// \brief The matrix used to to compute ILU(k).
   ///
-  /// If A_ (the original input matrix) is a Tpetra::CrsMatrix, then
-  /// this is just A_.  Otherwise, this class reserves the right for
-  /// A_crs_ to be a copy of A_.  This is because the current
-  /// implementation of ILU(k) only knows how to factor a
-  /// Tpetra::CrsMatrix.  That may change in the future.
-  Teuchos::RCP<const crs_matrix_type> A_crs_;
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current implementation of ILU(k)
+  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;

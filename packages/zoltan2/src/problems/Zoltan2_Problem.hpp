@@ -220,11 +220,11 @@ template <typename Adapter>
 
   TimerType tt = static_cast<TimerType>(choice);
 
-  string fname;
+  std::string fname;
   pe = pl.getEntryPtr("timer_output_file");
   if (pe){
     haveFile = true;
-    fname = pe->getValue<string>(&fname);
+    fname = pe->getValue<std::string>(&fname);
     std::ofstream *dbgFile = new std::ofstream;
     if (comm_->getRank()==0){
       // Using Teuchos::TimeMonitor, node 0 prints global timing info.
@@ -249,9 +249,9 @@ template <typename Adapter>
 
     if (haveStream || haveType){
       if (outputStream == COUT_STREAM)
-        timer_ = rcp(new TimerManager(comm_, &cout, tt));
+        timer_ = rcp(new TimerManager(comm_, &std::cout, tt));
       else if (outputStream == CERR_STREAM)
-        timer_ = rcp(new TimerManager(comm_, &cerr, tt));
+        timer_ = rcp(new TimerManager(comm_, &std::cerr, tt));
       else if (outputStream == NULL_STREAM){
         std::ofstream *of = NULL;
         timer_ = rcp(new TimerManager(comm_, of, tt));

@@ -1,0 +1,28 @@
+
+CODE = numbers
+
+SRCS = \
+nu_adddsp.f nu_cavity.f nu_cgcal2.f nu_cgcal3.f nu_command.f \
+nu_con2d.f  nu_con3d.f  nu_cull2.f  nu_cull3.f  nu_donrm2.f nu_donrm3.f  \
+nu_dvol2d.f nu_dvol3d.f nu_elcent.f nu_elvol.f  nu_estime.f nu_prvol.f   \
+nu_fnddis.f nu_gapini.f nu_gapout.f nu_getcav.f nu_getden.f nu_getdsp.f  \
+nu_getwav.f nu_gmdis2.f nu_gmdis3.f nu_gmtch2.f nu_gmtch3.f nu_header.f  \
+nu_limits.f nu_line2.f  nu_line3.f  nu_lissel.f  \
+nu_locout.f nu_locrl.f  nu_loctol.f nu_logerr.f nu_mass.f   numbers.f \
+nu_output.f nu_ovrlap.f nu_ovrmx2.f nu_ovrmx3.f nu_pendis.f nu_plane3.f  \
+nu_point2.f nu_point3.f nu_quad.f   nu_range.f  nu_selbox.f nu_selelm.f  \
+nu_selinv.f nu_selnod.f nu_selssn.f nu_seltim.f nu_showfl.f nu_shwblk.f  \
+nu_sorblk.f nu_stimes.f nu_sumelm.f nu_summry.f nu_sumnod.f nu_traniq.f  \
+nu_trblk.f  nu_unique.f nu_vol2d.f  nu_vol3d.f  nu_jacob.f  nu_prnvol.f  \
+nu_dbielb.f nu_dbieb1.f nu_dbpnam.f nu_dbptim.f nu_dbpini.f
+
+OBJS = ${SRCS:.f=.o}
+
+LIBS = $(EXOIIV2FOR) $(EXOIIV2C) $(NETCDF) $(SUPLIB) $(SUPES)
+
+NormalFortranTarget($(CODE),$(OBJS),NullParameter,NullParameter,$(LIBS))
+
+InstallProgram($(CODE),$(BINDIR))
+
+DependTarget()
+

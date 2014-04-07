@@ -87,6 +87,10 @@ public:
      */
    void scaleField(const std::string & fieldName,double fieldScalar);
 
+   /** Add an additional (solution) field to write out that is not in the physics blocks.
+     */
+   void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis);
+
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
                                  int baseDimension,
@@ -96,6 +100,8 @@ private:
 
    boost::unordered_map<std::string,double> fieldToScalar_;
    boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
+
+   std::vector<panzer::StrPureBasisPair> additionalFields_;
 };
 
 /** A simple builder for this the SolutionWriter response factory, simply set the mesh 
@@ -107,11 +113,18 @@ struct RespFactorySolnWriter_Builder {
   void scaleField(const std::string & fieldName,double fieldScalar)
   { fieldToScalar_[fieldName] = fieldScalar; }
 
+  void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
+  { additionalFields_.push_back(std::make_pair(fieldName,basis)); }
+
   template <typename T>
   Teuchos::RCP<panzer::ResponseEvaluatorFactoryBase> build() const
   { 
     Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
         Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+
+    // add all additional fields
+    for(std::size_t i=0;i<additionalFields_.size();i++)
+      ref->addAdditionalField(additionalFields_[i].first,additionalFields_[i].second);
 
     // set all scaled field values
     for(boost::unordered_map<std::string,double>::const_iterator itr=fieldToScalar_.begin();
@@ -123,6 +136,7 @@ struct RespFactorySolnWriter_Builder {
 
 private:
   boost::unordered_map<std::string,double> fieldToScalar_;
+  std::vector<panzer::StrPureBasisPair> additionalFields_;
 };
 
 }

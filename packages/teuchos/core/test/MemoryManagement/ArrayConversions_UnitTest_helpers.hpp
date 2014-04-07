@@ -97,14 +97,13 @@ T testArrayViewInput(const ArrayView<const Ptr<const T> >& a_in)
 template<class T>
 void testArrayViewOutput(const ArrayView<const Ptr<T> >& a_out)
 {
-  typedef Teuchos::ScalarTraits<T> ST;
   for (Teuchos_Ordinal i=0 ; i<a_out.size() ; ++i) {
     *a_out[i] = as<T>(i);
   }
 }
 
 
-} // namespace ArrayConversionsUnitTestHelpers 
+} // namespace ArrayConversionsUnitTestHelpers
 
 
 #endif // ARRAY_CONVERSIONS_UNIT_TEST_HELPERS

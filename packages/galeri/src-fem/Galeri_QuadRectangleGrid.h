@@ -55,7 +55,6 @@
 #include <vector>
 #include <algorithm>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {

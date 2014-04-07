@@ -508,14 +508,14 @@ DefaultBlockedLinearOp<Scalar>::rowStatIsSupportedImpl(
   using Teuchos::rcpFromRef;
   using Teuchos::rcp_dynamic_cast;
   using Teuchos::dyn_cast;
-  typedef Teuchos::ScalarTraits<Scalar> ST;
+  //typedef Teuchos::ScalarTraits<Scalar> ST; // unused
   typedef RowStatLinearOpBase<Scalar> RowStatOp;
   typedef RCP<const LinearOpBase<Scalar> > ConstLinearOpPtr;
   typedef const LinearOpBase<Scalar> ConstLinearOp;
 
   // Figure out what needs to be check for each sub block to compute
   // the require row stat
-  RowStatLinearOpBaseUtils::ERowStat 
+  RowStatLinearOpBaseUtils::ERowStat
     subblk_stat = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
     subblk_trans_stat = RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM;
   switch (row_stat) {
@@ -583,7 +583,7 @@ DefaultBlockedLinearOp<Scalar>::getRowStatImpl(
 
   // Figure out what needs to be check for each sub block to compute
   // the require row stat
-  RowStatLinearOpBaseUtils::ERowStat 
+  RowStatLinearOpBaseUtils::ERowStat
     subblk_stat = RowStatLinearOpBaseUtils::ROW_STAT_ROW_SUM,
     subblk_trans_stat = RowStatLinearOpBaseUtils::ROW_STAT_COL_SUM;
   switch (row_stat) {
@@ -754,7 +754,7 @@ DefaultBlockedLinearOp<Scalar>::scaleLeftImpl(
         EOpTransp transp = NOTRANS;
 
         {
-          RCP<ScaledAdjointLinearOpBase<Scalar> > saOp 
+          RCP<ScaledAdjointLinearOpBase<Scalar> > saOp
               = rcp_dynamic_cast<ScaledAdjointLinearOpBase<Scalar> >(Op_i_j);
           if(nonnull(saOp)) {
             transp = saOp->overallTransp();
@@ -807,7 +807,7 @@ DefaultBlockedLinearOp<Scalar>::scaleRightImpl(
         EOpTransp transp = NOTRANS;
 
         {
-          RCP<ScaledAdjointLinearOpBase<Scalar> > saOp 
+          RCP<ScaledAdjointLinearOpBase<Scalar> > saOp
               = rcp_dynamic_cast<ScaledAdjointLinearOpBase<Scalar> >(Op_i_j);
           if(nonnull(saOp)) {
             transp = saOp->overallTransp();
