@@ -285,8 +285,16 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
-    //@}
 
+    /// \brief Whether the Directory's input Map is (globally) one to one.
+    ///
+    /// This method should always be treated as a collective on all
+    /// processes in the given communicator, which must be the same
+    /// as the input Map's communicator.  Not all implementations
+    /// necessarily communicate.
+    bool isOneToOne (const Teuchos::Comm<int>& comm) const;
+
+    //@}
   private:
     /// \brief Type of the (base class) implementation of this object.
     ///
