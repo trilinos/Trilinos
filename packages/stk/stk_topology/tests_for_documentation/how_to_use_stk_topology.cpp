@@ -13,13 +13,9 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     std::vector<stk::topology> node_rank_topologies;
     node_rank_topologies.push_back(stk::topology::NODE);
 
-    ASSERT_EQ(1u, node_rank_topologies.size());
-
     std::vector<stk::topology> edge_rank_topologies;
     edge_rank_topologies.push_back(stk::topology::LINE_2);
     edge_rank_topologies.push_back(stk::topology::LINE_3);
-
-    ASSERT_EQ(2u, edge_rank_topologies.size());
 
     std::vector<stk::topology> face_rank_topologies;
     face_rank_topologies.push_back(stk::topology::TRI_3);
@@ -34,8 +30,6 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     face_rank_topologies.push_back(stk::topology::QUADRILATERAL_8);
     face_rank_topologies.push_back(stk::topology::QUAD_9);
     face_rank_topologies.push_back(stk::topology::QUADRILATERAL_9);
-
-    ASSERT_EQ(12u, face_rank_topologies.size());
 
     std::vector<stk::topology> element_rank_topologies;
     element_rank_topologies.push_back(stk::topology::PARTICLE);
@@ -98,7 +92,6 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     element_rank_topologies.push_back(stk::topology::HEX_27);
     element_rank_topologies.push_back(stk::topology::HEXAHEDRON_27);
 
-    // zero noded super element
     unsigned num_nodes_in_super_element = 10;
     element_rank_topologies.
       push_back(stk::create_superelement_topology(num_nodes_in_super_element));
@@ -107,6 +100,11 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     unsigned zeroNodes = 0;
     element_rank_topologies.push_back(stk::create_superelement_topology(zeroNodes));
 
+//END-MAPPING
+
+    ASSERT_EQ(1u, node_rank_topologies.size());
+    ASSERT_EQ(2u, edge_rank_topologies.size());
+    ASSERT_EQ(12u, face_rank_topologies.size());
     ASSERT_EQ(55u, element_rank_topologies.size());
 
     for (size_t i=0;i<node_rank_topologies.size();i++)
