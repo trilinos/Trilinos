@@ -55,11 +55,13 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
 
   std::string input_base_filename = "unit_test.g";
 
+  bool ok = false;
   try {
     // Initialize meta data from exodus file
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
     fixture.create_input_mesh();
-
+    ok = true;
+    
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Commit meta_data
@@ -77,7 +79,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
     fixture.process_output_request(output_index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(1==0 && "Could not open unit test file");
+    ASSERT_TRUE(ok && "Could not open unit test file");
   }
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
@@ -92,11 +94,13 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
 
   std::string input_base_filename = "unit_test.g";
 
+  bool ok = false;
   try {
     // Initialize meta data from exodus file
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
 
     fixture.create_input_mesh();
+    ok = true;
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Add an "active" part...
@@ -123,7 +127,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
     fixture.process_output_request(index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(1==0 && "Could not open unit test file");
+    ASSERT_TRUE(ok && "Could not open unit test file");
   }
 
 
@@ -139,10 +143,11 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
 
   std::string input_base_filename = "unit_test.g";
 
+  bool ok = false;
   try {
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
-  
     fixture.create_input_mesh();
+    ok = true;
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Add an "active" part...
@@ -183,7 +188,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
     fixture.process_output_request(universal_index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(1==0 && "Could not open unit test file");
+    ASSERT_TRUE(ok && "Could not open unit test file");
   }
 
   // Since correctness can only be established by running SEACAS tools, correctness
@@ -198,11 +203,13 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
 
   std::string input_base_filename = "1mCube_20x20x20.g";
 
+  bool ok = false;
   try {
     // Initialize meta data from exodus file
     fixture.add_mesh_database(input_base_filename, stk::io::READ_MESH);
-
     fixture.create_input_mesh();
+    ok = true;
+    
     stk::mesh::MetaData & meta_data = fixture.meta_data();
 
     // Commit
@@ -229,6 +236,6 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
     }
   }
   catch(...) {
-    ASSERT_TRUE(1==0 && "Could not open unit test file");
+    ASSERT_TRUE(ok && "Could not open unit test file");
   }
 }
