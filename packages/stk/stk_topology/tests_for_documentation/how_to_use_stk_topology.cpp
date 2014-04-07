@@ -188,11 +188,11 @@ void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* tri
     }
 }
 
-void checkForValidOffsets(const unsigned numNodes, const unsigned *offsets, const unsigned *goldValuesOffsets)
+void checkForValidOffsets(const unsigned numNodes, const unsigned *offsets, const unsigned *expectedNodeOffsets)
 {
     for (unsigned i=0;i<numNodes;i++)
     {
-        EXPECT_EQ(goldValuesOffsets[i], offsets[i]);
+        EXPECT_EQ(expectedNodeOffsets[i], offsets[i]);
     }
 }
 
@@ -204,7 +204,7 @@ void checkPermutedNodeIds(const unsigned numNodes, const unsigned *offsets, cons
     }
 }
 
-void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const unsigned *elementNodes, const unsigned *goldValuesOffsets)
+void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const unsigned *elementNodes, const unsigned *expectedNodeOffsets)
 {
     ASSERT_TRUE(element.has_homogeneous_faces());
     unsigned numNodesPerFace = element.face_topology(0).num_nodes();
@@ -217,7 +217,7 @@ void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const uns
         element.face_node_ordinals(index, offsets);
         element.face_nodes(elementNodes, index, nodeIds);
 
-        checkForValidOffsets(numNodesPerFace, offsets, &goldValuesOffsets[numNodesPerFace*index]);
+        checkForValidOffsets(numNodesPerFace, offsets, &expectedNodeOffsets[numNodesPerFace*index]);
         checkPermutedNodeIds(numNodesPerFace, offsets, nodeIds, elementNodes);
     }
 
@@ -225,7 +225,7 @@ void checkNodeOrderingAndOffsetsForFaces(const stk::topology &element, const uns
     delete [] offsets; offsets = 0;
 }
 
-void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const unsigned *elementNodes, const unsigned *goldValuesOffsets)
+void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const unsigned *elementNodes, const unsigned *expectedNodeOffsets)
 {
     unsigned numNodesPerEdge = element.edge_topology().num_nodes();
     unsigned *offsets = new unsigned[numNodesPerEdge];
@@ -236,7 +236,7 @@ void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const uns
         element.edge_node_ordinals(index, offsets);
         element.edge_nodes(elementNodes, index, nodeIds);
 
-        checkForValidOffsets(numNodesPerEdge, offsets, &goldValuesOffsets[numNodesPerEdge*index]);
+        checkForValidOffsets(numNodesPerEdge, offsets, &expectedNodeOffsets[numNodesPerEdge*index]);
         checkPermutedNodeIds(numNodesPerEdge, offsets, nodeIds, elementNodes);
     }
 
@@ -244,7 +244,7 @@ void checkNodeOrderingAndOffsetsForEdges(const stk::topology &element, const uns
     delete [] offsets; offsets = 0;
 }
 
-void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, const unsigned *elementNodes, const unsigned *goldValuesOffsets)
+void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, const unsigned *elementNodes, const unsigned *expectedNodeOffsets)
 {
     unsigned numNodes = element.num_nodes();
     unsigned *offsets = new unsigned[numNodes];
@@ -255,7 +255,7 @@ void checkNodeOrderingAndOffsetsForPermutations(const stk::topology &element, co
         element.permutation_node_ordinals(index, offsets);
         element.permutation_nodes(elementNodes, index, nodeIds);
 
-        checkForValidOffsets(numNodes, offsets, &goldValuesOffsets[numNodes*index]);
+        checkForValidOffsets(numNodes, offsets, &expectedNodeOffsets[numNodes*index]);
         checkPermutedNodeIds(numNodes, offsets, nodeIds, elementNodes);
     }
 
@@ -300,17 +300,19 @@ TEST(stk_topology_understanding, one_dim_higher_order_element)
     unsigned beamNodes[3] = { 10, 20, 14 }; // 10 *-------*-------* 20
                                             //            14
     {
-        unsigned goldValuesOffsets[3] = { 0, 1, 2 };
-        checkNodeOrderingAndOffsetsForEdges(secondOrderBeam, beamNodes, goldValuesOffsets);
+        unsigned expectedNodeOffsets[3] = { 0, 1, 2 };
+        //unit-test checking utility:
+        checkNodeOrderingAndOffsetsForEdges(secondOrderBeam, beamNodes, expectedNodeOffsets);
     }
 
     {
-        unsigned goldValuesOffsets[6] = {
+        unsigned expectedNodeOffsets[6] = {
                 0, 1, 2,
                 1, 0, 2
         };
 
-        checkNodeOrderingAndOffsetsForPermutations(secondOrderBeam, beamNodes, goldValuesOffsets);
+        //unit-test checking utility:
+        checkNodeOrderingAndOffsetsForPermutations(secondOrderBeam, beamNodes, expectedNodeOffsets);
     }
 }
 
@@ -361,6 +363,7 @@ TEST(stk_topology_understanding, two_dim_higher_order_element)
                 2, 0, 5
         };
 
+        //unit-test checking utility:
         checkNodeOrderingAndOffsetsForEdges(secondOrderTriShell, shellNodes, goldValuesEdgeOffsets);
     }
 
@@ -370,6 +373,7 @@ TEST(stk_topology_understanding, two_dim_higher_order_element)
                 0, 2, 1, 5, 4, 3
         };
 
+        //unit-test checking utility:
         checkNodeOrderingAndOffsetsForFaces(secondOrderTriShell, shellNodes, goldValuesFaceNodeOffsets);
     }
 
@@ -383,6 +387,7 @@ TEST(stk_topology_understanding, two_dim_higher_order_element)
                 1, 0, 2, 3, 5, 4
         };
 
+        //unit-test checking utility:
         checkNodeOrderingAndOffsetsForPermutations(secondOrderTriShell, shellNodes, goldValueOffsetsPerm);
     }
 }
@@ -450,6 +455,7 @@ TEST(stk_topology_understanding, three_dim_linear_element)
                 3, 7
         };
 
+        //unit-test checking utility:
         checkNodeOrderingAndOffsetsForEdges(hex8, hex8Nodes, goldValuesEdgeOffsets);
     }
 
@@ -471,6 +477,7 @@ TEST(stk_topology_understanding, three_dim_linear_element)
                 4, 5, 6, 7
         };
 
+        //unit-test checking utility:
         checkNodeOrderingAndOffsetsForFaces(hex8, hex8Nodes, goldValuesFaceOffsets);
     }
 

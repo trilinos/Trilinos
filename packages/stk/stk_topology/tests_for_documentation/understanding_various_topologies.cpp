@@ -36,37 +36,37 @@ void setUpMappingsToTest(std::vector<TopologyMapper>& topologyMappings)
 {
     std::string exodusName;
     int exodusNumNodes=-1;
-    std::string iossTopology;
+    std::string iossTopologyName;
     stk::topology stkTopology;
     stk::mesh::CellTopology shardsTopology;
 
     exodusName="sphere";
     exodusNumNodes=1;
-    iossTopology="sphere";
+    iossTopologyName="sphere";
     stkTopology=stk::topology::PARTICLE;
     shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Particle >());
-    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopology, stkTopology, shardsTopology));
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="BEam";
     exodusNumNodes=3;
-    iossTopology="bar3";
+    iossTopologyName="bar3";
     stkTopology=stk::topology::BEAM_3;
     shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Beam<3> >());
-    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopology, stkTopology, shardsTopology));
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="Tri";
     exodusNumNodes=3;
-    iossTopology="trishell3";
+    iossTopologyName="trishell3";
     stkTopology=stk::topology::SHELL_TRIANGLE_3;
     shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::ShellTriangle<3> >());
-    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopology, stkTopology, shardsTopology));
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 
     exodusName="hex";
     exodusNumNodes=20;
-    iossTopology="hex20";
+    iossTopologyName="hex20";
     stkTopology=stk::topology::HEXAHEDRON_20;
     shardsTopology=stk::mesh::CellTopology(shards::getCellTopologyData< shards::Hexahedron<20> >());
-    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopology, stkTopology, shardsTopology));
+    topologyMappings.push_back(TopologyMapper(exodusName, exodusNumNodes, iossTopologyName, stkTopology, shardsTopology));
 }
 
 TEST(Understanding, sierra_topologies)
