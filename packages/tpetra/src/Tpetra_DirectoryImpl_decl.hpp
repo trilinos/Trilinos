@@ -135,6 +135,14 @@ namespace Tpetra {
                   const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                   const bool computeLIDs) const;
 
+      /// \brief Whether the Directory is "locally" one to one.
+      ///
+      /// This means that the calling process' Directory does not own
+      /// GIDs with multiple ownership on different processes.  If
+      /// this method returns true on all processes in the Directory's
+      /// communicator, then the Directory's input Map is one-to-one.
+      virtual bool isLocallyOneToOne () = 0;
+
     protected:
       //! Actually do the work of getEntries(), with no input validation.
       virtual LookupStatus
@@ -160,6 +168,8 @@ namespace Tpetra {
       //! Constructor (that takes no arguments).
       ReplicatedDirectory ();
 
+      virtual bool isLocallyOneToOne ();
+
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
       clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
@@ -182,6 +192,10 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
+
+    private:
+      //! The number of process(es) in the input Map's communicator.
+      const int numProcs_;
     };
 
 
@@ -209,6 +223,10 @@ namespace Tpetra {
 
       //! Constructor.
       ContiguousUniformDirectory (const map_type& map);
+
+      virtual bool isLocallyOneToOne () {
+        return true;
+      }
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -253,6 +271,10 @@ namespace Tpetra {
 
       //! Constructor.
       DistributedContiguousDirectory (const map_type& map);
+
+      virtual bool isLocallyOneToOne () {
+        return true;
+      }
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -314,7 +336,7 @@ namespace Tpetra {
     private:
       template <class LO, class GO, class N> friend class DistributedNoncontiguousDirectory;
       //! Private constructor for post-contruction initialization in clone()
-      DistributedNoncontiguousDirectory() {}
+      DistributedNoncontiguousDirectory () {}
 
     public:
       typedef Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal> tie_break_type;
@@ -327,6 +349,10 @@ namespace Tpetra {
       //! Constructor.
       DistributedNoncontiguousDirectory (const map_type& map,
                                          const tie_break_type& tie_break);
+
+      virtual bool isLocallyOneToOne () {
+        return locallyOneToOne_;
+      }
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -425,6 +451,9 @@ namespace Tpetra {
       /// the GID's LID in the input Map on the GID's owning process.
       Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
       //@}
+
+      /// \brief Whether this process is locally one-to-one.
+      bool locallyOneToOne_;
 
       /// \brief Whether this process is using hash tables for Directory storage.
       ///
