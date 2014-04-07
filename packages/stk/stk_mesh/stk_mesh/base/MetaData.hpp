@@ -225,32 +225,16 @@ public:
    */
   Part & declare_part( const std::string & p_name);
 
-  /** \brief  Declare a part with a given cell topology
-   * This will be deprecated, please use declare_part_with_topology instead.
-   */
-  Part &declare_part( const std::string &name, CellTopology cell_topology, bool arg_force_no_induce = false )
-  {
-    ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
-    Part &root_part = get_cell_topology_root_part(cell_topology);
-    EntityRank primary_entity_rank = root_part.primary_entity_rank();
-    Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
-    declare_part_subset(root_part, part);
-    return part;
-  }
-
   /** \brief  Declare a part with a given stk topology
    */
   Part &declare_part_with_topology( const std::string &name, stk::topology::topology_t topology, bool arg_force_no_induce = false )
   {
     ThrowRequireMsg(is_initialized(),"MetaData::declare_part: initialize() must be called before this function");
-    return declare_part(name, stk::mesh::get_cell_topology(topology), arg_force_no_induce);
-  }
-
-  /** \brief  Declare a part with a given cell topology
-   */
-  template< class Top >
-  Part &declare_part(const std::string &name, bool arg_force_no_induce = false) {
-    return declare_part(name, shards::getCellTopologyData<Top>(), arg_force_no_induce);
+    Part &root_part = get_cell_topology_root_part(stk::mesh::get_cell_topology(topology));
+    EntityRank primary_entity_rank = root_part.primary_entity_rank();
+    Part & part = declare_part(name, primary_entity_rank, arg_force_no_induce);
+    declare_part_subset(root_part, part);
+    return part;
   }
 
   void force_no_induce(Part& part)

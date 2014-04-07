@@ -743,7 +743,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, parallel_sum )
     stk::mesh::put_field(*fields[i], meta.universal_part());
   }
 
-  PartVector hex_topo(1, &meta.declare_part<shards::Hexahedron<8> >("hex_part"));
+  PartVector hex_topo(1, &meta.declare_part_with_topology("hex_part", stk::topology::HEX_8));
 
   fixture.commit();
   BulkData& bulk = fixture.getBulkData();

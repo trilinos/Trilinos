@@ -153,7 +153,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   const double initial_value[stk::mesh::Cartesian2d::Size] = { 50.0, 99.0 };
 
-  Part& node_part = meta_data.declare_part<shards::Node>("node_part");
+  Part& node_part = meta_data.declare_part_with_topology("node_part", stk::topology::NODE);
 
   stk::mesh::put_field(vfield, node_part, stk::mesh::Cartesian2d::Size, initial_value);
 

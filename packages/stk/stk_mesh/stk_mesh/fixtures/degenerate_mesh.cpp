@@ -42,8 +42,8 @@ namespace stk {
 				     VectorFieldType & node_coord )
       {
 	stk::mesh::Part & universal        = meta_data.universal_part();
-	declare_part<shards::Hexahedron<8> >(meta_data, "hexes");
-  
+	meta_data.declare_part_with_topology( "hexes", stk::topology::HEX_8);
+
 	const stk::mesh::FieldBase::Restriction & res =
 	  stk::mesh::find_restriction(node_coord, stk::topology::NODE_RANK , universal );
 
