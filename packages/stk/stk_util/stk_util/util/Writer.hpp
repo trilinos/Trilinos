@@ -15,7 +15,7 @@
 #include <utility>
 #include <stdint.h>
 
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/util/Writer_fwd.hpp>
 
 namespace stk {
 namespace diag {
@@ -787,7 +787,7 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 } // namespace diag
 } // namespace stk
 
-#include <stk_util/diag/WriterManip.hpp>
+#include <stk_util/util/WriterManip.hpp>
 
 namespace sierra {
 

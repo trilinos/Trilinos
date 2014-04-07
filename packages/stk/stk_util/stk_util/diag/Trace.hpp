@@ -7,7 +7,7 @@
 #include <string>
 #include <functional>
 
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/util/Writer_fwd.hpp>
 
 #include <ostream>
 

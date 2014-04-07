@@ -21,8 +21,8 @@
 #include <memory>
 
 #include <stk_util/util/IndentStreambuf.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterManip.hpp>
+#include <stk_util/util/Writer.hpp>
+#include <stk_util/util/WriterManip.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>

@@ -22,7 +22,7 @@
 #include <stk_util/util/VecMap.hpp>
 #include <stk_util/util/VecSet.hpp>
 
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 
 
 #include <stk_util/diag/String.hpp>

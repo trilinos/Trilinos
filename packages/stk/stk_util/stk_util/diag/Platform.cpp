@@ -29,7 +29,7 @@
 #include <stk_util/parallel/MPI.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/SlibDiagWriter.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/Trace.hpp>

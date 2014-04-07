@@ -15,7 +15,7 @@
 
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 

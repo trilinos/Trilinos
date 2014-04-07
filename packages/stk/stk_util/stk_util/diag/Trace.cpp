@@ -14,9 +14,8 @@
 #include <exception>
 
 #include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/environment/FormatTime.hpp>
-#include <stk_util/diag/Platform.hpp>
 
 namespace stk {
 namespace diag {

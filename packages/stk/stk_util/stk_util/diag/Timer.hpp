@@ -19,7 +19,7 @@
 #include <stk_util/diag/TimerMetricTraits.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/FormatTime.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/util/Writer_fwd.hpp>
 
 #include <stk_util/diag/String.hpp>
 #include <stk_util/diag/WriterParser.hpp>

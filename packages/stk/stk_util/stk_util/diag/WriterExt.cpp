@@ -15,7 +15,7 @@
 #include <list>
 
 #include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/environment/Demangle.hpp>
 #include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/Option.hpp>

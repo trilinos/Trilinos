@@ -17,8 +17,8 @@
 #include <algorithm>
 #include <limits>
 
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterManip.hpp>
+#include <stk_util/util/Writer.hpp>
+#include <stk_util/util/WriterManip.hpp>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_util/util/string_case_compare.hpp>
 #include <stk_util/util/Marshal.hpp>

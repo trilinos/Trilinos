@@ -6,7 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/diag/WriterManip.hpp>
+#include <stk_util/util/WriterManip.hpp>
 
 namespace stk {
 namespace diag {

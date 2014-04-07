@@ -9,7 +9,7 @@
 #include <iostream>
 #include <iomanip>
 
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/PrintTimer.hpp>
 
 #include <stk_util/util/Bootstrap.hpp>

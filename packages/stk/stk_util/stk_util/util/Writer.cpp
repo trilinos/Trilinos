@@ -13,7 +13,7 @@
 #include <list>
 
 #include <stk_util/util/IndentStreambuf.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 
 namespace stk {
 namespace diag {

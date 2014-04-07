@@ -8,9 +8,9 @@
 
 #ifdef STK_MESH_TRACE_ENABLED
 #include <stk_mesh/base/DiagWriter_fwd.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/WriterParser.hpp>
+#include <stk_util/util/WriterParser.hpp>
 #endif
 
 namespace stk { namespace diag { class Writer; } }

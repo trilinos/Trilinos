@@ -42,7 +42,7 @@
 
 #include <boost/shared_ptr.hpp>
 
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/diag/PrintTable.hpp>
 #include <stk_util/diag/Env.hpp>

@@ -27,7 +27,7 @@
 #include <stk_util/parallel/mpi_filebuf.hpp>
 
 #include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/WriterRegistry.hpp>
 #include <stk_util/diag/Env.hpp>
 #include <stk_util/diag/Platform.hpp>

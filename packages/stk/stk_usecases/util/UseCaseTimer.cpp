@@ -16,7 +16,7 @@
 
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 

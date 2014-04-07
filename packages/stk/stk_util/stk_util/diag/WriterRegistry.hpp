@@ -6,10 +6,10 @@
 #include <vector>
 
 #include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/diag/Writer.hpp>
+#include <stk_util/util/Writer.hpp>
 
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/util/Writer_fwd.hpp>
 #include <stk_util/diag/WriterParser.hpp>
 
 namespace sierra {
