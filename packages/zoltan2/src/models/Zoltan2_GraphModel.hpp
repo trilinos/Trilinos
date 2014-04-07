@@ -1010,21 +1010,10 @@ void GraphModel<Adapter>::shared_constructor(
         const scalar_t *weights=NULL;
         int stride=0;
         ia->getWeightsView(weights, stride, idx);
-        if (weights != NULL){
-          // If weights is non-NULL, user provided weights
-          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
-                                                   stride*numLocalVertices_,
-                                                   false);
-          weightInfo[idx] = input_t(wgtArray, stride);
-        }
-        else {
-          // User did not provide weights for this idx; create uniform weights.
-          scalar_t *uniwgts = new scalar_t[numLocalVertices_];
-          for (size_t i = 0; i < numLocalVertices_; i++)
-            uniwgts[i] = scalar_t(1);
-          ArrayRCP<const scalar_t> wgtArray(uniwgts, 0,numLocalVertices_, true);
-          weightInfo[idx] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
 

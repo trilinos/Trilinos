@@ -174,9 +174,7 @@ public:
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
       \param weights is the list of weights of the given index for
-           the vertices returned in getVertexIDsView().  If weights for
-           this index are to be uniform for all vertices in the
-           global problem, the \c weights should be a NULL pointer.
+           the vertices returned in getVertexIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
