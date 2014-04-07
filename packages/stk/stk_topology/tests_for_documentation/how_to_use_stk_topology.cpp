@@ -489,7 +489,6 @@ TEST(stk_topology_understanding, equivalent_elements)
 
             stk::topology hex8 = stk::topology::HEX_8;
 
-            // equivalent(..) not supported on 3D non-shell elements.
             areElementsEquivalent = hex8.equivalent(hex1, hex2);
             EXPECT_TRUE(areElementsEquivalent.first);
             areElementsEquivalent = hex8.equivalent(hex1, hex3);
