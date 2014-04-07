@@ -96,11 +96,11 @@ TEST(stk_topology_how_to, map_topologies_to_ranks )
     element_rank_topologies.
       push_back(stk::create_superelement_topology(num_nodes_in_super_element));
 
+//END-MAPPING
+
     // add a topology of invalid_rank
     unsigned zeroNodes = 0;
     element_rank_topologies.push_back(stk::create_superelement_topology(zeroNodes));
-
-//END-MAPPING
 
     ASSERT_EQ(1u, node_rank_topologies.size());
     ASSERT_EQ(2u, edge_rank_topologies.size());
