@@ -18,8 +18,9 @@ IF (NOT TriBITS_PROCESSED_BASE_PROJECT AND NOT PACKAGE_NAME STREQUAL "TriBITS")
   
   CMAKE_MINIMUM_REQUIRED(VERSION ${TRIBITS_CMAKE_MINIMUM_REQUIRED})
 
-  # TriBITS is the only package so just enable it!
+  # TriBITS is the only package so just enable it and test it!
   SET(${PROJECT_NAME}_ENABLE_TriBITS ON)
+  SET(${PROJECT_NAME}_ENABLE_TESTS ON CACHE BOOL "Enable test by default.")
 
   SET(TriBITS_PROCESSED_BASE_PROJECT ON)
 
