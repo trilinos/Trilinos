@@ -1,5 +1,3 @@
-#include <valgrind/callgrind.h>
-
 #include <mpi.h>
 #include <gtest/gtest.h>
 #include <vector>
@@ -10,25 +8,10 @@
 
 #include <exodusMeshInterface.h>
 
+#include <stk_util/unit_test_support/perf_unit_util.hpp>
+
 namespace
 {
-
-void check_valgrind_version()
-{
-    ASSERT_EQ(__VALGRIND_MAJOR__, 3);
-    ASSERT_EQ(__VALGRIND_MINOR__, 8);
-}
-
-void print_debug_skip(stk::ParallelMachine pm)
-{
-#ifndef NDEBUG
-  // We're in debug; need to tell test script not to validate cycle count
-  const size_t p_rank = stk::parallel_machine_rank(pm);
-  if (p_rank == 0) {
-    std::cout << "\nSTKPERF SKIP VALIDATION" << std::endl;
-  }
-#endif
-}
 
 void runStkSearchTestUsingStkAABoxes(stk::search::SearchMethod search);
 void runStkSearchTestUsingGtkAABoxes(stk::search::SearchMethod search);
@@ -188,7 +171,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
   // and normal tests; therefore, they need to work regardless of whether we have
   // callgrind available or not.
 #if __VALGRIND_MAJOR__
-    check_valgrind_version();
+    stk::check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
@@ -261,7 +244,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
 #endif
 
     printPeformanceStats(elapsedTime, comm);
-    print_debug_skip(comm);
+    stk::print_debug_skip(comm);
 
     EXPECT_EQ(domainBoxes.size(), first_interaction.size());
     EXPECT_EQ(domainBoxes.size(), last_interaction.size());
@@ -311,7 +294,7 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
 #if __VALGRIND_MAJOR__
-    check_valgrind_version();
+    stk::check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
@@ -341,7 +324,7 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 #endif
 
     printPeformanceStats(elapsedTime, comm);
-    print_debug_skip(comm);
+    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();
@@ -362,7 +345,7 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
         stk::search::SearchMethod searchMethod, SearchResults boxIdPairResults)
 {
 #if __VALGRIND_MAJOR__
-    check_valgrind_version();
+    stk::check_valgrind_version();
     CALLGRIND_START_INSTRUMENTATION;
 #endif
 
@@ -396,7 +379,7 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
 #endif
 
     printPeformanceStats(elapsedTime, comm);
-    print_debug_skip(comm);
+    stk::print_debug_skip(comm);
 
     gatherResultstoProcZero(comm, boxIdPairResults);
     size_t goldValueNumber=getGoldValueForTest();
