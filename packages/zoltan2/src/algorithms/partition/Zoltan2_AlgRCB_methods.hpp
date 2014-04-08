@@ -1297,7 +1297,7 @@ template <typename mvector_t, typename Adapter>
       ArrayRCP<scalar_t> weightSums;
     
       globalSumsByPart<scalar_t, unsigned char, lno_t>(
-        env, comm, lrflags, 
+        env, comm, lrflags, nWeightsPerCoord,
         wgts.view(0, nWeightsPerCoord), mcnorm,
         numParts, numNonemptyParts, metrics, weightSums);
 

@@ -143,11 +143,6 @@ size_t removeUndesiredEdges(
 
   newWeights = NULL;
   int eDim = edgeWeights.size();
-  std::vector<bool> uniformWeight(eDim);
-  if (eDim > 0){
-    for (int i=0; i < eDim; i++)
-      uniformWeight[i] = (edgeWeights[i].size() == 0);
-  }
 
   // count desired edges
 
@@ -216,12 +211,8 @@ size_t removeUndesiredEdges(
     env->localMemoryAssertion(__FILE__, __LINE__, eDim, newWeights);
 
     for (int w=0; w < eDim; w++){
-      if (uniformWeight[w])
-        newWeights[w] = NULL;  // implies uniform
-      else{
-        newWeights[w] = new scalar_t [numKeep];
-        env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
-      }
+      newWeights[w] = new scalar_t [numKeep];
+      env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
     }
   }
 
@@ -236,11 +227,8 @@ size_t removeUndesiredEdges(
 
       if (keep){
         newGids[next] = allIds[j];
-        if (eDim > 0){
-          for (int w=0; w < eDim; w++){
-            if (!uniformWeight[w])
-              newWeights[w][next] = edgeWeights[w][j];
-          }
+        for (int w=0; w < eDim; w++){
+          newWeights[w][next] = edgeWeights[w][j];
         }
         next++;
         if (next == numKeep)

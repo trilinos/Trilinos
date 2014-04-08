@@ -310,17 +310,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   if (numObjects == 0)
     return;
 
-  bool haveUniform = false;
-  bool haveNonUniform = false;
-
-  for (int wdim=0; wdim < vwgtDim; wdim++){
-    if (vwgts[wdim].size() > 0)
-      haveNonUniform = true;
-    if (vwgts[wdim].size() == 0)
-      haveUniform = true;
-  }
-
-  if (!haveNonUniform){
+  if (vwgtDim == 0) {
     for (lno_t i=0; i < numObjects; i++){
       weights[parts[i]]++;
     }
@@ -333,69 +323,29 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   else{
     switch (mcNorm){
       case normMinimizeTotalWeight:   /*!< 1-norm = Manhattan norm */
-
         for (int wdim=0; wdim < vwgtDim; wdim++){
-          if (vwgts[wdim].size() == 0){
-            for (lno_t i=0; i < numObjects; i++){
-              weights[parts[i]]++;
-            }
-          }
-          else{
-            for (lno_t i=0; i < numObjects; i++){
-              weights[parts[i]] += vwgts[wdim][i];
-            }
+          for (lno_t i=0; i < numObjects; i++){
+            weights[parts[i]] += vwgts[wdim][i];
           }
         }  // next weight index
         break;
        
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
-        if (!haveUniform){
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t ssum = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
-            weights[parts[i]] += sqrt(ssum);
-          }
-        }
-        else{
-          scalar_t uniformFactor = 0;
+        for (lno_t i=0; i < numObjects; i++){
+          scalar_t ssum = 0;
           for (int wdim=0; wdim < vwgtDim; wdim++)
-            if (vwgts[wdim].size() == 0)
-              uniformFactor++;
-              
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t ssum = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++){
-              if (vwgts[wdim].size() > 0)
-                ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
-            }
-            ssum += uniformFactor;
-            weights[parts[i]] += sqrt(ssum);
-          }
+            ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
+          weights[parts[i]] += sqrt(ssum);
         }
         break;
 
       case normMinimizeMaximumWeight: /*!< inf-norm = maximum norm */
-
-        if (!haveUniform){
-
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t max = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              if (vwgts[wdim][i] > max)
-                max = vwgts[wdim][i];
-            weights[parts[i]] += max;
-          }
-        }
-        else{
-
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t max = 1.0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              if (vwgts[wdim].size() > 0 && vwgts[wdim][i] > max)
-                max = vwgts[wdim][i];
-            weights[parts[i]] += max;
-          }
+        for (lno_t i=0; i < numObjects; i++){
+          scalar_t max = 0;
+          for (int wdim=0; wdim < vwgtDim; wdim++)
+            if (vwgts[wdim][i] > max)
+              max = vwgts[wdim][i];
+          weights[parts[i]] += max;
         }
         break;
 
@@ -453,6 +403,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
     const ArrayView<const pnum_t> &part, 
+    int vwgtDim,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     partId_t &numParts, 
@@ -466,13 +417,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   numParts = numNonemptyParts = 0;
 
-  int vwgtDim = vwgts.size();
-
-  int numMetrics = 1;        // "object count"
-  if (vwgts[0].size() > 0)
-    numMetrics++;            // "normed weight" or "weight 1"
-  if (vwgtDim > 1)
-    numMetrics += vwgtDim;   // "weight n"
+  int numMetrics = 1;                       // "object count"
+  if (vwgtDim) numMetrics++;                // "normed weight" or "weight 1"
+  if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
   typedef MetricValues<scalar_t> mv_t;
   mv_t *newMetrics = new mv_t [numMetrics];
@@ -499,9 +446,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->globalBugAssertion(__FILE__,__LINE__, "inconsistent number of vertex weights",
-    globalNum[0] > 0 && globalNum[0] == localNum[0], 
-    DEBUG_MODE_ASSERTION, comm);
+  env->globalBugAssertion(__FILE__,__LINE__,
+    "inconsistent number of vertex weights",
+    globalNum[0] == localNum[0], DEBUG_MODE_ASSERTION, comm);
 
   partId_t nparts = globalNum[1] + 1;
 
@@ -539,14 +486,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     if (vwgtDim > 1){
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
-        if (vwgts[vdim].size()){
-         for (lno_t i=0; i < localNumObj; i++)
-           wgt[part[i]] += vwgts[vdim][i];
-        }
-        else{  // uniform weights
-          for (int p=0; p < nparts; p++)
-            wgt[p] = obj[p];
-        }
+        for (lno_t i=0; i < localNumObj; i++)
+          wgt[part[i]] += vwgts[vdim][i];
         wgt += nparts;
       }
     }
@@ -997,7 +938,7 @@ template <typename Adapter>
 
   try{
     globalSumsByPart<scalar_t, partId_t, lno_t>(env, comm, 
-      partArray, weights.view(0, numCriteria), mcNorm,
+      partArray, nWeights, weights.view(0, numCriteria), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
