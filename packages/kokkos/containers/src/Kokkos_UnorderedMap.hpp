@@ -79,6 +79,8 @@
 
 namespace Kokkos {
 
+enum { UnorderedMapInvalidIndex = ~0u };
+
 /// \brief First element of the return value of UnorderedMap::insert().
 ///
 /// Inserting an element into an UnorderedMap is not guaranteed to
@@ -93,27 +95,72 @@ namespace Kokkos {
 ///      ignored and the old value was left in place. </li>
 /// </ol>
 
-struct UnorderedMapInsertResult
+class UnorderedMapInsertResult
 {
-  enum Status { FAILED, EXISTING, SUCCESS };
+private:
+  enum Status{
+     SUCCESS = 1u << 31
+   , EXISTING = 1u << 30
+   , FREED_EXISTING = 1u << 29
+   , LOOP_COUNT_MASK = ~(SUCCESS | EXISTING | FREED_EXISTING)
+  };
+
+public:
+  /// Did the map successful insert the key/value pair
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool success() const { return (m_status & SUCCESS); }
+
+  /// Was the key already present in the map
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool existing() const { return (m_status & EXISTING); }
+
+  /// Did the map fail to insert the key due to insufficent capacity
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool failed() const { return m_index == UnorderedMapInvalidIndex; }
+
+  /// Did the map lose a race condition to insert a dupulicate key/value pair
+  /// where an index was claimed that needed to be released
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool freed_existing() const { return (m_status & FREED_EXISTING); }
+
+  /// How many iterations through the insert loop did it take before the
+  /// map returned
+  KOKKOS_FORCEINLINE_FUNCTION
+  uint32_t loop_iterations() const { return (m_status & LOOP_COUNT_MASK); }
+
+  /// Index where the key can be found as long as the insert did not fail
+  KOKKOS_FORCEINLINE_FUNCTION
+  uint32_t index() const { return m_index; }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  bool success() const { return status == SUCCESS; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool existing() const { return status == EXISTING; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool failed() const { return status == FAILED; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  UnorderedMapInsertResult( uint32_t i = ~0u, Status s = FAILED )
-    : index(i)
-    , status(s)
+  UnorderedMapInsertResult()
+    : m_index(UnorderedMapInvalidIndex)
+    , m_status(0)
   {}
 
-  uint32_t index;
-  int32_t status;
+  KOKKOS_FORCEINLINE_FUNCTION
+  void increment_loop_counter()
+  {
+    m_status += (loop_iterations() < LOOP_COUNT_MASK) ? 1u : 0u;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_existing(uint32_t i, bool arg_freed_existing)
+  {
+    m_index = i;
+    m_status = EXISTING | (arg_freed_existing ? FREED_EXISTING : 0u) | loop_iterations();
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_success(uint32_t i)
+  {
+    m_index = i;
+    m_status = SUCCESS | loop_iterations();
+  }
+
+private:
+  uint32_t m_index;
+  uint32_t m_status;
 };
 
 /// \class UnorderedMap
@@ -222,7 +269,7 @@ public:
   //@}
 
 private:
-  enum{ invalid_index = 0xFFFFFFFFu} ;
+  enum{ invalid_index = UnorderedMapInvalidIndex } ;
   static const size_type block_size = 32u;
 
 
@@ -456,7 +503,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   insert_result insert(key_type const& k, impl_value_type const&v = impl_value_type()) const
   {
-    insert_result result(invalid_index, insert_result::FAILED);
+    insert_result result;
 
     if ( is_insertable_map && 0u < m_capacity && ! m_scalars().erasable ) {
 
@@ -482,6 +529,7 @@ public:
       #pragma noprefetch
 #endif
       while ( not_done ) {
+        result.increment_loop_counter();
 
         // Continue searching the unordered list for this key,
         // list will only be appended during insert phase.
@@ -502,13 +550,14 @@ public:
         // If key already present then return that index.
         if ( curr != invalid_index ) {
 
-          if ( new_index != invalid_index ) {
+          const bool free_existing = new_index != invalid_index;
+          if ( free_existing ) {
             // Previously claimed an unused entry that was not inserted.
             // Release this unused entry immediately.
             atomic_fetch_or( block_ptr , new_bit_mask );
           }
 
-          result = insert_result(curr, insert_result::EXISTING);
+          result.set_existing(curr, free_existing);
           not_done = false ;
         }
         //------------------------------------------------------------
@@ -523,7 +572,7 @@ public:
           // Succeeded in appending
           if ( curr == invalid_index ) {
             if ( ! m_scalars().modified ) { m_scalars().modified = true ; }
-            result = insert_result(new_index, insert_result::SUCCESS);
+            result.set_success(new_index);
             not_done = false ;
           }
         }
