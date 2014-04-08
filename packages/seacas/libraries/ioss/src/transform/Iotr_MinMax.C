@@ -81,6 +81,9 @@ namespace Iotr {
     } else if (type == "absolute_maximum") {
       doMin = false;
       doAbs = true;
+    } else {
+      doMin = false;
+      doAbs = false;
     }
   }
 

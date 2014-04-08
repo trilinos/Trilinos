@@ -91,8 +91,8 @@ extern "C" {
    *@{
    */
   /* Modes for ex_open */
-#define EX_READ                 0x0000 /**< ex_open(): open file for reading (default) */
-#define EX_WRITE                0x0001 /**< ex_open(): open existing file for appending. */
+#define EX_READ                 0x0001 /**< ex_open(): open file for reading (default) */
+#define EX_WRITE                0x0002 /**< ex_open(): open existing file for appending. */
 
 #define EX_NOCLOBBER            0x0004 /**< Don't overwrite existing database, default */
 #define EX_CLOBBER              0x0008 /**< Overwrite existing database if it exists */
