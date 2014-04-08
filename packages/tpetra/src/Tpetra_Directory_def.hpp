@@ -208,6 +208,11 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
+  bool Directory<LO, GO, NT>::isOneToOne (const Teuchos::Comm<int>& comm) const {
+    return impl_->isOneToOne (comm);
+  }
+
+  template<class LO, class GO, class NT>
   std::string
   Directory<LO, GO, NT>::description () const
   {

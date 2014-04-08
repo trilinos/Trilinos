@@ -105,19 +105,6 @@ namespace Tpetra {
 
 
     template<class LO, class GO, class NT>
-    bool
-    Directory<LO, GO, NT>::
-    isOneToOne (const Teuchos::Comm<int>& comm) const
-    {
-      const int lcl121 = isLocallyOneToOne () ? 1 : 0;
-      int gbl121 = 0;
-      Teuchos::reduceAll<int, int> (comm, Teuchos::REDUCE_MIN, lcl121,
-                                    Teuchos::outArg (gbl121));
-      return (gbl121 == 1);
-    }
-
-
-    template<class LO, class GO, class NT>
     ReplicatedDirectory<LO, GO, NT>::
     ReplicatedDirectory (const map_type& map) :
       numProcs_ (map.getComm ()->getSize ())
@@ -134,7 +121,7 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     bool
     ReplicatedDirectory<LO, GO, NT>::
-    isLocallyOneToOne () const
+    isOneToOne (const Teuchos::Comm<int>& comm) const
     {
       // A locally replicated Map is one-to-one only if there is no
       // replication, that is, only if the Map's communicator only has
@@ -507,6 +494,7 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     DistributedNoncontiguousDirectory<LO, GO, NT>::
     DistributedNoncontiguousDirectory (const map_type& map) :
+      oneToOneResult_ (ONE_TO_ONE_NOT_CALLED_YET), // to be revised below
       locallyOneToOne_ (true), // to be revised below
       useHashTables_ (false) // to be revised below
     {
@@ -517,6 +505,7 @@ namespace Tpetra {
     DistributedNoncontiguousDirectory<LO, GO, NT>::
     DistributedNoncontiguousDirectory (const map_type& map,
                                        const tie_break_type& tie_break) :
+      oneToOneResult_ (ONE_TO_ONE_NOT_CALLED_YET), // to be revised below
       locallyOneToOne_ (true), // to be revised below
       useHashTables_ (false) // to be revised below
     {
@@ -1162,6 +1151,22 @@ namespace Tpetra {
         "the Tpetra developers.");
 
       return res;
+    }
+
+
+    template<class LO, class GO, class NT>
+    bool
+    DistributedNoncontiguousDirectory<LO, GO, NT>::
+    isOneToOne (const Teuchos::Comm<int>& comm) const
+    {
+      if (oneToOneResult_ == ONE_TO_ONE_NOT_CALLED_YET) {
+        const int lcl121 = isLocallyOneToOne () ? 1 : 0;
+        int gbl121 = 0;
+        Teuchos::reduceAll<int, int> (comm, Teuchos::REDUCE_MIN, lcl121,
+                                      Teuchos::outArg (gbl121));
+        oneToOneResult_ = (gbl121 == 1) ? ONE_TO_ONE_TRUE : ONE_TO_ONE_FALSE;
+      }
+      return (oneToOneResult_ == ONE_TO_ONE_TRUE);
     }
   } // namespace Details
 } // namespace Tpetra
