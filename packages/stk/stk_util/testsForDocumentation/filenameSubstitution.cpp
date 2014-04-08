@@ -1,9 +1,10 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_util/environment/ProgramOptions.hpp>
-#include <stk_util/environment/EnvData.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stk_util/environment/EnvData.hpp>  // for EnvData
 #include <stk_util/environment/FileUtils.hpp>
+#include <stk_util/environment/ProgramOptions.hpp>
+#include <string>                       // for string, allocator, etc
+#include <utility>                      // for make_pair
+#include "boost/program_options/variables_map.hpp"  // for variable_value, etc
 
 namespace
 {

@@ -9,21 +9,23 @@
 #ifndef STK_UTIL_DIAG_Timer_hpp
 #define STK_UTIL_DIAG_Timer_hpp
 
-#include <iosfwd>
-#include <vector>
-#include <list>
-#include <string>
+#include <mpi.h>                        // for ompi_communicator_t
+#include <stddef.h>                     // for size_t
+#include <list>                         // for list
+#include <stk_util/diag/Option.hpp>     // for OptionMask, etc
+#include <stk_util/diag/TimerMetricTraits.hpp>  // for MetricTraits, etc
+#include <stk_util/environment/FormatTime.hpp>  // for TimeFormat
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace sierra { namespace Diag { class TimerParser; } }
+namespace stk { namespace diag { class Timer; } }
+namespace stk { namespace diag { class TimerImpl; } }
+namespace stk { namespace diag { class TimerSet; } }
+namespace stk { namespace diag { class Writer; } }
 
-#include <mpi.h>
 
-#include <stk_util/diag/TimerMetricTraits.hpp>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_util/environment/FormatTime.hpp>
-#include <stk_util/util/Writer_fwd.hpp>
 
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/WriterParser.hpp>
-#include <stk_util/diag/Option.hpp>
 
 
 ///
@@ -34,9 +36,6 @@
 namespace stk {
 namespace diag {
 
-class Timer;
-class TimerSet;
-class TimerImpl;
 
 typedef unsigned TimerMask;        ///< Timer classification mask
 
@@ -703,7 +702,6 @@ Timer &sierraTimer();
 
 void sierraTimerDestroy();
 
-class TimerParser;
 
 /**
  * @brief Class <b>Timer</b> implements a diagnostic timer and timer container for the

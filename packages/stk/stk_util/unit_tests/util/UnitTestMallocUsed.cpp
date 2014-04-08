@@ -6,11 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/environment/CPUTime.hpp>
-
-#include <stk_util/util/MallocUsed.h>
-
+#include <stddef.h>                     // for size_t, ptrdiff_t
+#include <stdlib.h>                     // for free, malloc, rand, realloc
+#include <string.h>                     // for memset
+#include <unistd.h>                     // for sbrk
+#include <iomanip>                      // for operator<<, setw
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
+
 
 STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
 {

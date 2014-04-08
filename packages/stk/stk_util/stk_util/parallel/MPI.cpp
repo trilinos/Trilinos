@@ -7,10 +7,10 @@
  *    ------------------------------------------------------------
  */
 
-#include <sstream>
-
-#include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/parallel/MPI.hpp>
+#include <sstream>                      // for ostringstream, etc
+#include "mpi.h"                        // for MPI_Datatype, etc
+
 
 namespace sierra {
 namespace MPI {

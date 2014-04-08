@@ -6,26 +6,27 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <boost/regex.hpp>
-
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-
-#include <utility>
-#include <vector>
-#include <map>
-#include <set>
-#include <list>
-#include <bitset>
-#include <memory>
-
-#include <stk_util/util/IndentStreambuf.hpp>
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/util/WriterManip.hpp>
-#include <stk_util/diag/WriterExt.hpp>
-
+#include <bitset>                       // for bitset, bitset<>::reference
+#include <functional>                   // for less
+#include <list>                         // for list, _List_iterator, etc
+#include <map>                          // for multimap, map, etc
+#include <memory>                       // for auto_ptr
+#include <set>                          // for multiset, set, etc
+#include <sstream>                      // for ostringstream, ostream, ios, etc
+#include <stk_util/diag/WriterExt.hpp>  // for operator<<
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <stk_util/util/WriterManip.hpp>  // for operator<<, setw, etc
+#include <string>                       // for operator==, string, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector, vector<>::iterator
+#include "gtest/gtest.h"                // for AssertHelper
+#include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_ALWAYS, etc
+
+
+
+
 
 using namespace stk::diag;
 

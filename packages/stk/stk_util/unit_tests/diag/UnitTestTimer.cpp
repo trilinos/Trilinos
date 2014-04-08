@@ -6,18 +6,19 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <cmath>
-#include <unistd.h>
-
-#include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/util/Writer.hpp>
-
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for sleep
+#include <cmath>                        // for sin
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/diag/PrintTimer.hpp>  // for printTimersTable
+#include <stk_util/diag/Timer.hpp>      // for Timer, TimeBlock, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string, operator<<, etc
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper
+#include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), etc
+
+
 
 enum {
   TIMER_DOMAIN		= 0x00001000,		///< Enable domain timers

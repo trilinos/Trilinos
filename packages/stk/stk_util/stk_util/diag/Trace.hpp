@@ -1,15 +1,16 @@
 #ifndef STK_UTIL_SIERRA_TRACE_HPP
 #define STK_UTIL_SIERRA_TRACE_HPP
 
-#include <cstring>
-#include <vector>
-#include <map>
-#include <string>
-#include <functional>
-
-#include <stk_util/util/Writer_fwd.hpp>
-
-#include <ostream>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for copy
+#include <cstring>                      // for strcpy
+#include <exception>                    // for uncaught_exception
+#include <map>                          // for map, map<>::value_compare
+#include <ostream>                      // for ostream
+#include <stk_util/util/Writer_fwd.hpp>  // for LogMask::LOG_TRACE, etc
+#include <string>                       // for string
+#include <vector>                       // for vector, vector<>::iterator
+namespace stk { namespace diag { class Writer; } }
 
 #define SLIB_TRACE_COVERAGE
 

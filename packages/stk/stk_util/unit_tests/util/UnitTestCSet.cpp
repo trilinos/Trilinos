@@ -6,9 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/util/CSet.hpp>
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/CSet.hpp>       // for CSet
+#include "gtest/gtest.h"                // for AssertHelper
+
 
 namespace stk {
 namespace cset_unit {

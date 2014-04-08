@@ -18,12 +18,19 @@
     Oct 2002
 */
 
-#include <MPIH_Include.h>
 #include <stk_util/diag/mpih.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/diag/ExceptionReport.hpp>
+#include <MPIH_Include.h>               // for MPIH_Has_Exception_Flag, etc
+#include <map>                          // for map<>::mapped_type
+#include <ostream>                      // for endl, operator<<, etc
+#include <stk_util/diag/Env.hpp>        // for parallel_comm, output
+#include <stk_util/diag/ExceptionReport.hpp>  // for RuntimeWarning
+#include <stk_util/diag/Trace.hpp>      // for Traceback
 #include <stk_util/environment/ProductRegistry.hpp>
-#include <stk_util/diag/Trace.hpp>
+#include <string>                       // for basic_string
+#include "mpi.h"                        // for MPI_SUCCESS, MPI_Datatype, etc
+#include "stk_util/diag/Exception.hpp"  // for ExTemp1, RuntimeError, etc
+#include "stk_util/environment/ReportHandler.hpp"  // for StackTrace
+#include "stk_util/environment/RuntimeWarning.hpp"
 
 using sierra::Diag::Traceback;
 

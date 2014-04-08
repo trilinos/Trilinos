@@ -1,15 +1,17 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
-#include <algorithm>
-#include <functional>
-#include <string>
-#include <cctype>
-#include <limits>
-#include <vector>
-
+#include <stddef.h>                     // for size_t, NULL
+#include <algorithm>                    // for transform
+#include <cctype>                       // for tolower, isspace, toupper
+#include <functional>                   // for binary_function
+#include <iosfwd>                       // for ostream, istream
+#include <limits>                       // for numeric_limits, etc
+#include <stk_util/diag/String.hpp>     // for String
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/String.hpp>
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
+
 
 namespace sierra {
 

@@ -6,23 +6,26 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <utility>
-#include <iostream>
-#include <iomanip>
-#include <cstring>
-#include <string>
+#include <ctype.h>                      // for tolower
+#include <algorithm>                    // for max
+#include <functional>                   // for equal_to
+#include <iostream>                     // for ostream, size_t, cout, endl
+#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/ci_string.hpp>  // for ci_string, operator<<
+#include <string>                       // for basic_string, operator==, etc
+#include <utility>                      // for pair
+#include "boost/functional/hash/hash.hpp"  // for hash
+#include "boost/smart_ptr/shared_array.hpp"  // for shared_array
+#include "boost/smart_ptr/shared_ptr.hpp"  // for shared_ptr
+#include "boost/unordered/unordered_set.hpp"  // for unordered_set, etc
+#include "gtest/gtest.h"                // for AssertHelper
+namespace boost { template <class T> struct hash; }
 
 //boost tr1 headers...
 //On the sun, couldn't get '#include <memory>' to work, so we're using the boost
 //form instead...
-#include <boost/tr1/memory.hpp>
-#include <boost/unordered_set.hpp>
-#include <boost/shared_array.hpp>
-#include <boost/shared_ptr.hpp>
 
-#include <stk_util/util/ci_string.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 namespace boost {
 

@@ -7,17 +7,20 @@
  *    ------------------------------------------------------------
  */
 
-#include <vector>
-#include <iostream>
-#include <fstream>
-#include <string>
-
-#include <mpi.h>
-
-#include <stk_util/diag/StringUtil.hpp>
-#include <stk_util/diag/Trace.hpp>
 #include <stk_util/diag/ExceptionReport.hpp>
-#include <stk_util/diag/Env.hpp>
+#include <mpi.h>                        // for MPI_Finalize
+#include <stdlib.h>                     // for exit, NULL
+#include <fstream>                      // for basic_ostream, operator<<, etc
+#include <stk_util/diag/Env.hpp>        // for outputP0
+#include <stk_util/diag/StringUtil.hpp>  // for word_wrap
+#include <string>                       // for string, allocator, etc
+#include <vector>                       // for vector
+#include "stk_util/diag/Exception.hpp"  // for ExTemp1, RuntimeError
+#include "stk_util/environment/ReportHandler.hpp"
+#include "stk_util/environment/RuntimeWarning.hpp"
+#include "stk_util/util/Fortran.hpp"    // for SIERRA_FORTRAN
+
+
 
 namespace sierra {
 

@@ -1,6 +1,11 @@
 #include <stk_util/diag/PreParse.hpp>
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/diag/Exception.hpp>
+#include <fstream>                      // for basic_ostream, operator<<, etc
+#include <stk_util/diag/Env.hpp>        // for parallel_comm, etc
+#include <stk_util/diag/Exception.hpp>  // for RuntimeError
+#include "boost/regex/v4/cpp_regex_traits.hpp"
+#include "boost/regex/v4/regex_format.hpp"
+#include "boost/regex/v4/regex_replace.hpp"  // for regex_replace
+#include "mpi.h"                        // for MPI_Barrier
 
 //----------------------------------------------------------------------
 

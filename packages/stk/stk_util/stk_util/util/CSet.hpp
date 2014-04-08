@@ -9,8 +9,9 @@
 #ifndef stk_util_util_CSet_hpp
 #define stk_util_util_CSet_hpp
 
-#include <typeinfo>
-#include <vector>
+#include <typeinfo>                     // for type_info
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace stk {
 

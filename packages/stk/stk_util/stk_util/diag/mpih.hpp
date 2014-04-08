@@ -18,12 +18,13 @@
 #ifndef STK_UTIL_PARALLEL_mpih_h
 #define STK_UTIL_PARALLEL_mpih_h
 
-#include <vector>
-#include <mpi.h>
+#include <MPIH_Include.h>               // for MPIH_Map, etc
+#include <mpi.h>                        // for MPI_Datatype, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <vector>                       // for vector
+namespace sierra { class ExParallel; }
 
-#include <stk_util/diag/Exception.hpp>
 
-#include <MPIH_Include.h>
 
 namespace sierra {
 namespace mpih {

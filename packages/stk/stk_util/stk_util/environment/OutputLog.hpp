@@ -9,15 +9,15 @@
 #ifndef STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 #define STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 
-#include <iosfwd>
-#include <string>
+#include <iosfwd>                       // for ostream
+#include <streambuf>                    // for basic_streambuf<>::int_type
+#include <string>                       // for string, char_traits, etc
+namespace stk { template <class Ch, class Tr> class basic_tee_streambuf; }
 
 // #include <stk_util/util/TeeStreambuf.hpp>
 
 namespace stk {
 
-template<class Ch, class Tr>
-class basic_tee_streambuf;
 
 /// Tee stream buffer for char
 typedef stk::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;

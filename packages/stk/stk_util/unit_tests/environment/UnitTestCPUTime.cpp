@@ -6,11 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-
-#include <stk_util/environment/CPUTime.hpp>
-
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "gtest/gtest.h"                // for AssertHelper
+
+
 
 STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
 {

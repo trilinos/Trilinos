@@ -6,13 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <utility>
-#include <map>
-#include <iostream>
-
-#include <stk_util/util/Identifier.hpp>
-
+#include <iostream>                     // for ostream, cout, endl
+#include <map>                          // for map, map<>::value_compare
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/Identifier.hpp>  // for IdentifierA, IdentifierB, etc
+#include <string>                       // for string, basic_string
+#include "gtest/gtest.h"                // for AssertHelper
+
+
 
 STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
 {

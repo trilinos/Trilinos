@@ -60,23 +60,22 @@
  * MyException::registerException() during application initialization.
  */
 
-#include <stdexcept>
-#include <exception>
-#include <new>
-#include <typeinfo>
-#include <string>
-#include <vector>
+#include <mpi.h>                        // for MPI_Comm
+#include <stddef.h>                     // for NULL
+#include <exception>                    // for exception, bad_exception
+#include <new>                          // for bad_alloc
+#include <sstream>                      // for ostringstream, ostream, etc
+#include <stdexcept>                    // for runtime_error, logic_error, etc
+#include <stk_util/diag/Trace.hpp>      // for Trace
+#include <string>                       // for string, operator<<
+#include <typeinfo>                     // for bad_cast, bad_typeid, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+namespace sierra { class ExParallel; }
 // #include <iostream> // for std::cerr
-#include <sstream>
 
-#include <mpi.h>
 
-#include <stk_util/environment/ReportHandler.hpp>
 
-#include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-#include <stk_util/diag/Trace.hpp>
 
 namespace sierra {
 
@@ -85,7 +84,6 @@ namespace sierra {
 /// @{
 ///
 
-class ExParallel;
 
 /**
  * @brief Member function <b>register_stl_parallel_exceptions</b> registers the stl

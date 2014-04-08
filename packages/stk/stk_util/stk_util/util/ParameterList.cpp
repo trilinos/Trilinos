@@ -1,4 +1,6 @@
 #include <stk_util/util/ParameterList.hpp>
+#include <stddef.h>                     // for size_t
+#include "boost/any.hpp"                // for any_cast
 
 namespace stk {
   namespace util {

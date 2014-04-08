@@ -6,14 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <iomanip>
-#include <list>
-
-#include <stk_util/util/IndentStreambuf.hpp>
 #include <stk_util/util/Writer.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>  // for pop, push
+#include <string>                       // for string
+#include "stk_util/util/Writer_fwd.hpp"  // for PrintMask
+
 
 namespace stk {
 namespace diag {
@@ -324,33 +321,4 @@ operator<<(
 
 } // namespace diag
 } // namespace stk
-
-namespace sierra {
-namespace Diag {
-
-Writer &
-operator<<(
-  Writer &	        dout,
-  const String &        str)
-{
-  if (dout.shouldPrint())
-    dout.getStream() << str;
-
-  return dout;
-}
-
-
-Writer &
-operator<<(
-  Writer &                      dout,
-  const sierra::Identifier &    s)
-{
-  if (dout.shouldPrint())
-    dout.getStream() << '\'' << s << '\'';
-
-  return dout;
-}
-
-} // namespace Diag
-} // namespace sierra
 

@@ -1,4 +1,5 @@
 #include <stk_util/util/concat_variable_name.hpp>
+#include <stddef.h>                     // for size_t
 
 namespace stk {
   namespace util {

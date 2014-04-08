@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <map>
-#include <cstring>
-
 #include <stk_util/util/Marshal.hpp>
-#include <iostream>
+#include <stdint.h>                     // for uint32_t
+#include <algorithm>                    // for fill
+#include <cstring>                      // for strlen
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <stdexcept>                    // for runtime_error
+#include <utility>                      // for make_pair, pair
+
 
 namespace stk {
 

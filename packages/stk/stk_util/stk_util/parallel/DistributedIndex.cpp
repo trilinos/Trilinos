@@ -6,15 +6,17 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <sstream>
-#include <algorithm>
-#include <limits>
-#include <stdint.h>
-
-#include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/DistributedIndex.hpp>
-#include <stk_util/util/RadixSort.hpp>
+#include <algorithm>                    // for sort, lower_bound, min, etc
+#include <iterator>                     // for distance
+#include <limits>                       // for numeric_limits
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
+#include <stk_util/util/RadixSort.hpp>  // for radix_sort_unsigned
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+
 
 namespace stk {
 namespace parallel {

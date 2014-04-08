@@ -1,9 +1,8 @@
-#include <stk_util/util/human_bytes.hpp>
 
-#include <string>
-#include <sstream>
-#include <unistd.h>
-#include <iomanip>
+#include <stk_util/util/human_bytes.hpp>
+#include <iomanip>                      // for operator<<, setprecision
+#include <sstream>                      // for basic_ostream, operator<<, etc
+#include <string>                       // for string
 
 namespace stk
 {

@@ -5,11 +5,11 @@
 #ifndef STK_UTIL_PARALLEL_mpi_filebuf_hpp
 #define STK_UTIL_PARALLEL_mpi_filebuf_hpp
 
-#include <ios>
-#include <iostream>
-#include <cstdio>
-#include <string>
-#include <mpi.h>
+#include <mpi.h>                        // for MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <cstdio>                       // for NULL, EOF, FILE
+#include <ios>                          // for streambuf, ios_base, etc
+#include <string>                       // for string, streamsize
 
 //: Specialize the ANSI Standard C++ streambuf class
 //: for a parallel file buffer.  The actual file is

@@ -7,26 +7,18 @@
  *    ------------------------------------------------------------
  */
 
-#include <stdexcept>
-#include <exception>
-#include <new>
-#include <typeinfo>
-#include <ios>
-#include <string>
-#include <sstream>
-#include <iostream>
-
-#include <assert.h>
-
-#include <stk_util/diag/Env.hpp>
-#include <stk_util/diag/Platform.hpp>
 #include <stk_util/diag/Exception.hpp>
-#include <stk_util/diag/ExceptionReport.hpp>
-#include <stk_util/diag/ExceptionIos.hpp>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/Trace.hpp>
+#include <exception>                    // for exception
+#include <sstream>                      // for ostringstream
+#include <stk_util/diag/Trace.hpp>      // for Traceback
+#include <stk_util/diag/mpih.hpp>       // for Set_Local_Handle, etc
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include "MPIH_Include.h"               // for MPIH_Handler_compete, etc
+#include "mpi.h"                        // for MPI_Bcast, MPI_CHAR, etc
 
-#include <stk_util/diag/mpih.hpp>
+
+
 
 namespace sierra {
 

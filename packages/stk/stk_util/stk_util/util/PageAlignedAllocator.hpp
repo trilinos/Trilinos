@@ -1,12 +1,14 @@
 #ifndef STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 #define STK_UTIL_STK_UTIL_UTIL_PAGE_ALIGNED_ALLOCATOR_HPP
 
+#include <boost/type_traits/is_same.hpp>  // for is_same
+#include <cstddef>                      // for size_t, ptrdiff_t
+#include <cstdlib>                      // for malloc, free
+#include <limits>                       // for numeric_limits
+#include <new>                          // for operator new
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
 
-#include <cstdlib>
-#include <limits>
 
-#include <boost/type_traits/is_same.hpp>
 
 namespace stk {
 

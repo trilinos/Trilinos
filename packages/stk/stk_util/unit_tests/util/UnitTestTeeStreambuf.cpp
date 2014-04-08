@@ -6,11 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <string>
-#include <stk_util/util/TeeStreambuf.hpp>
-
+#include <sstream>                      // for ostringstream, ostream
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/TeeStreambuf.hpp>  // for tee_streambuf
+#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"                // for AssertHelper
+
 
 STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
 {

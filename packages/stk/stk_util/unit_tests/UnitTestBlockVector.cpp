@@ -1,19 +1,21 @@
+
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for equal
+#include <boost/timer.hpp>              // for timer
+#include <cstdlib>                      // for rand, srand, RAND_MAX
+#include <deque>                        // for deque, operator!=
+#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_util/util/TrackingAllocator.hpp>
-#include <stk_util/util/PageAlignedAllocator.hpp>
-#include <stk_util/util/CacheAlignedAllocator.hpp>
 #include <stk_util/util/BlockVector.hpp>
-#include <stk_util/environment/memory_util.hpp>
-#include <stk_util/util/human_bytes.hpp>
+#include <stk_util/util/CacheAlignedAllocator.hpp>
+#include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
+#include <stk_util/util/human_bytes.hpp>  // for human_bytes
+#include <string>                       // for operator<<, string
+#include <utility>                      // for pair, operator==, make_pair
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper, ASSERT_EQ, etc
+#include "stk_util/util/AllocatorMemoryUsage.hpp"
 
-#include <boost/timer.hpp>
-
-#include <cstdlib>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <vector>
-#include <deque>
 
 STKUNIT_UNIT_TEST( block_vector, basic )
 {

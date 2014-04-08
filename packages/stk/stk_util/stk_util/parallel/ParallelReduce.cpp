@@ -7,12 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/parallel/ParallelReduce.hpp>
+#include <boost/static_assert.hpp>      // for BOOST_STATIC_ASSERT
+#include <sstream>                      // for basic_ostream::operator<<, etc
+#include <stdexcept>                    // for runtime_error
+#include <vector>                       // for vector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
-#include <boost/static_assert.hpp> 
-#include <stdlib.h>
-#include <stdexcept>
-#include <sstream>
-#include <vector>
 
 namespace stk {
 

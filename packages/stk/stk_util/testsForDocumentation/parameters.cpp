@@ -1,9 +1,14 @@
-#include <gtest/gtest.h>
-#include <complex>
-#include <vector>
-#include <string>
-#include <mpi.h>
-#include <stk_util/util/ParameterList.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stddef.h>                     // for size_t
+#include <sys/types.h>                  // for int64_t
+#include <complex>                      // for complex, operator<<, etc
+#include <exception>                    // for exception
+#include <iostream>                     // for basic_ostream::operator<<, etc
+#include <map>                          // for operator==, etc
+#include <stk_util/util/ParameterList.hpp>  // for ParameterList, Type, etc
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
+#include "boost/any.hpp"                // for any_cast
 
 namespace
 {

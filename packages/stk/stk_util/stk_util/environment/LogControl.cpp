@@ -6,9 +6,11 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <map>
-
 #include <stk_util/environment/LogControl.hpp>
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <ostream>                      // for basic_ostream
+
 
 namespace stk {
 

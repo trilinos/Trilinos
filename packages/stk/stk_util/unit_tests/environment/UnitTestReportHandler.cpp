@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-#include <stdexcept>
-
+#include <iostream>                     // for operator<<, ostringstream, etc
+#include <stdexcept>                    // for runtime_error
 #include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"                // for AssertHelper
+
+
 
 namespace {
 

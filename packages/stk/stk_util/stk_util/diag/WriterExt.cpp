@@ -6,22 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstdlib>
-#include <cstring>
-#include <string>
-#include <iomanip>
-#include <sstream>
-#include <fstream>
-#include <list>
-
 #include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/environment/Demangle.hpp>
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Option.hpp>
-#include <stk_util/diag/String.hpp>
-#include <stk_util/diag/StringUtil.hpp>
-#include <stk_util/util/Null_Streambuf.hpp>
+#include <stk_util/diag/String.hpp>     // for Identifier, String
+#include <stk_util/environment/Demangle.hpp>  // for demangle
+#include <stk_util/util/Writer.hpp>     // for operator<<, Writer
+#include "stk_util/parallel/MPI.hpp"    // for Loc, TempLoc
+
 
 
 namespace stk {

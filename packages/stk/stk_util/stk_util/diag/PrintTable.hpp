@@ -9,11 +9,12 @@
 #ifndef STK_UTIL_DIAG_PrintTable_hpp
 #define STK_UTIL_DIAG_PrintTable_hpp
 
-#include <vector>
-#include <string>
-#include <sstream>
+#include <stddef.h>                     // for size_t
+#include <sstream>                      // for ostream, ostringstream, etc
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace stk { namespace diag { class Writer; } }
 
-#include <stk_util/util/Writer_fwd.hpp>
 
 namespace stk {
 

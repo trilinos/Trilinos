@@ -1,11 +1,13 @@
+
 #include <stk_util/environment/EnvData.hpp>
-#include <stk_util/environment/OutputLog.hpp>
+#include <mpi.h>                        // for MPI_COMM_NULL, MPI_Comm, etc
+#include <time.h>                       // for time, NULL
+#include <iostream>                     // for cout, cerr
+#include <stk_util/environment/OutputLog.hpp>  // for register_ostream, etc
 #include <stk_util/environment/ProgramOptions.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
+#include "stk_util/util/Null_Streambuf.hpp"  // for null_streambuf
 
-#include <stk_util/util/IndentStreambuf.hpp>
-
-#include <mpi.h>
-#include <ostream>
 
 namespace stk {
 
@@ -84,9 +86,5 @@ namespace stk {
   {
     return instance().m_parallelComm;
   }
-
-  MPI_Comm parallel_comm();
-  int EnvData::parallel_size();
-  int EnvData::parallel_rank();
 }
 

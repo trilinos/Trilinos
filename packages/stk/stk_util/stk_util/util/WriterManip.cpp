@@ -7,6 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/util/WriterManip.hpp>
+#include <iosfwd>                       // for ostream
+#include "stk_util/util/Writer.hpp"     // for Writer
 
 namespace stk {
 namespace diag {

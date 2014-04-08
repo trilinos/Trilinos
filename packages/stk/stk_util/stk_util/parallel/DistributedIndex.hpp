@@ -9,12 +9,13 @@
 #ifndef stk_util_parallel_DistributedIndex_hpp
 #define stk_util_parallel_DistributedIndex_hpp
 
-#include <stdint.h>
-#include <utility>
-#include <vector>
-#include <cstddef>
-#include <stk_util/parallel/Parallel.hpp>
+#include <stdint.h>                     // for uint64_t
+#include <cstddef>                      // for size_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/util/TrackingAllocator.hpp>
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t
 
 
 class UnitTestSTKParallelDistributedIndex ;

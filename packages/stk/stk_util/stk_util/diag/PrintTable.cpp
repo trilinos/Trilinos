@@ -6,14 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <string>
-#include <vector>
-#include <sstream>
-#include <iomanip>
-
 #include <stk_util/diag/PrintTable.hpp>
-#include <stk_util/util/Writer.hpp>
-#include <iostream>
+#include <algorithm>                    // for max
+#include <iomanip>                      // for operator<<, setw, setfill
+#include <sstream>                      // for ostream, operator<<, etc
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl
+#include <string>                       // for operator<<, allocator, etc
+#include <vector>                       // for vector, etc
+
 
 namespace stk {
 

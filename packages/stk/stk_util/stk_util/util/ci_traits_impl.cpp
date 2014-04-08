@@ -6,7 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/util/ci_traits.hpp>
+#include <cstddef>                      // for size_t
+#include <stk_util/util/ci_traits.hpp>  // for ignorecase_traits
 
 int
 ignorecase_traits::compare(

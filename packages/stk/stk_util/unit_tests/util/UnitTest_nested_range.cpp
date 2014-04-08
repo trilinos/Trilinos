@@ -1,11 +1,11 @@
+
+#include <stddef.h>                     // for NULL
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/nested_range.hpp>  // for nested_range
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "boost/optional/optional.hpp"  // for operator!=
 
-#include <stk_util/util/nested_range.hpp>
-#include <boost/foreach.hpp>
-
-#include <vector>
-#include <list>
-#include <iostream>
 
 namespace vector_vector_int {
 

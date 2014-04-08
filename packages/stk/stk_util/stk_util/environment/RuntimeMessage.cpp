@@ -6,17 +6,24 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <list>
-#include <string>
-#include <sstream>
-#include <utility>
-#include <vector>
-#include <boost/unordered_map.hpp>
-
 #include <stk_util/environment/RuntimeMessage.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/util/Bootstrap.hpp>
-#include <stk_util/util/Marshal.hpp>
+#include <algorithm>                    // for max, stable_sort
+#include <functional>                   // for equal_to, binary_function
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/environment/ReportHandler.hpp>  // for report
+#include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair, operator==
+#include <vector>                       // for vector, etc
+#include "boost/functional/hash/extensions.hpp"  // for hash
+#include "boost/functional/hash/hash.hpp"  // for hash
+#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
+#include "boost/unordered/unordered_map.hpp"
+#include "mpi.h"                        // for MPI_CHAR, MPI_Comm_rank, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+
 
 namespace stk {
 

@@ -7,19 +7,17 @@
  *    ------------------------------------------------------------
  */
 
-#include <iostream>
-#include <iomanip>
-#include <sstream>
-#include <stdexcept>
-#include <string>
-#include <cstring>
-#include <vector>
-#include <typeinfo>
-
-#include <float.h>
-#include <time.h>
-
 #include <stk_util/diag/StringUtil.hpp>
+#include <time.h>                       // for localtime, strftime, time_t
+#include <cstring>                      // for NULL
+#include <iomanip>                      // for operator<<, setprecision
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <string>                       // for basic_string, string, etc
+#include <typeinfo>                     // for type_info
+#include "stk_util/diag/String.hpp"     // for String, operator<<
+
+
 
 //----------------------------------------------------------------------
 

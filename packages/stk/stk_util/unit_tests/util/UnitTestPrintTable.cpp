@@ -6,13 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <utility>
-#include <map>
-#include <iostream>
-
-#include <stk_util/diag/PrintTable.hpp>
-
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/diag/PrintTable.hpp>  // for operator<<, PrintTable, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"                // for AssertHelper
+
+
 
 STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
 {

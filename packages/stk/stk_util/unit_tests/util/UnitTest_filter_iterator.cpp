@@ -1,9 +1,11 @@
+
+#include <stddef.h>                     // for size_t
+#include <boost/iterator/filter_iterator.hpp>  // for filter_iterator
+#include <iostream>                     // for basic_ostream::operator<<, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <vector>                       // for vector, vector<>::iterator
+#include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
 
-#include <boost/iterator/filter_iterator.hpp>
-
-#include <vector>
-#include <iostream>
 
 namespace vector_vector_int {
 

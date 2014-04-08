@@ -1,11 +1,14 @@
 #ifndef STK_UTIL_PARALLEL_MPI_hpp
 #define STK_UTIL_PARALLEL_MPI_hpp
 
-#include <mpi.h>
-#include <vector>
-#include <iterator>
-#include <stdexcept>
-#include <complex>
+#include <mpi.h>                        // for MPI_Datatype, etc
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for min, max
+#include <complex>                      // for complex
+#include <iterator>                     // for iterator_traits, etc
+#include <stdexcept>                    // for runtime_error
+#include <vector>                       // for vector
+namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
 namespace MPI {
@@ -143,8 +146,6 @@ struct TempLoc
  * The <b>type()</b> function returns the MPI data type.
  *
  */
-template <typename T>
-struct Datatype;
 
 template <>
 struct Datatype<char>

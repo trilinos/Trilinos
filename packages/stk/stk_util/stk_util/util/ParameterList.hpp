@@ -8,11 +8,13 @@
 #ifndef PARAMETERLIST_H_
 #define PARAMETERLIST_H_
 
-#include <boost/any.hpp>
-#include <map>
-#include <vector>
-#include <string>
-#include <iostream>
+#include <sys/types.h>                  // for int64_t
+#include <boost/any.hpp>                // for any, any_cast
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <map>                          // for _Rb_tree_iterator, etc
+#include <string>                       // for string, operator<<, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace stk {
   namespace util {

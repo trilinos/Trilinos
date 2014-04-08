@@ -1,8 +1,7 @@
-#include <iostream>
-#include <stdexcept>
-#include <sstream>
 
 #include <stk_util/util/FArray.hpp>
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for range_error
 
 namespace sierra {
 

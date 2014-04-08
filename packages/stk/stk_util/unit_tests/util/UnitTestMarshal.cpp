@@ -6,12 +6,16 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
-#include <stdexcept>
-
-#include <stk_util/util/Marshal.hpp>
-
+#include <iostream>                     // for basic_ostream::operator<<
+#include <list>                         // for list
+#include <stdexcept>                    // for runtime_error
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#include <string>                       // for operator==, string, etc
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper
+
+
 
 struct S1
 {

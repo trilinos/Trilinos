@@ -7,15 +7,16 @@
  *    ------------------------------------------------------------
  */
 
-#include <string>
-#include <cstring>
-#include <sstream>
-#include <list>
-#include <exception>
-
 #include <stk_util/diag/Trace.hpp>
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/environment/FormatTime.hpp>
+#include <cstring>                      // for strcmp
+#include <exception>                    // for uncaught_exception
+#include <stk_util/diag/Env.hpp>        // for cpu_now
+#include <stk_util/diag/Platform.hpp>   // for get_heap_usage
+#include <stk_util/environment/FormatTime.hpp>  // for formatTime
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <string>                       // for basic_string, string, etc
+#include <utility>                      // for pair
+#include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_TRACE_STATS
 
 namespace stk {
 namespace diag {

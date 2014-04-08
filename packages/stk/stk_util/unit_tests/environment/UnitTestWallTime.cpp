@@ -6,13 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <unistd.h>
-
-#include <iostream>
-
-#include <stk_util/environment/WallTime.hpp>
-
+#include <unistd.h>                     // for sleep
+#include <stk_util/environment/WallTime.hpp>  // for wall_time, wall_dtime
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "gtest/gtest.h"                // for AssertHelper
+
+
+
 
 STKUNIT_UNIT_TEST(UnitTestWallTime, UnitTest)
 {

@@ -7,26 +7,33 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/diag/PrintTable.hpp>
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for find_if, max, min
+#include <functional>                   // for unary_function
+#include <iomanip>                      // for setw, operator<<, _Setw, etc
+#include <limits>                       // for numeric_limits
+#include <list>                         // for _List_iterator, list, etc
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/diag/PrintTable.hpp>  // for operator<<, PrintTable, etc
+#include <stk_util/diag/WriterExt.hpp>  // for operator<<
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator>>, etc
+#include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
+#include <stk_util/util/WriterManip.hpp>  // for hex
+#include <stk_util/util/string_case_compare.hpp>  // for equal_case
+#include <string>                       // for basic_string, string, etc
+#include <vector>                       // for vector
+#include "mpi.h"                        // for ompi_communicator_t, etc
+#include "stk_util/diag/Timer.hpp"      // for getEnabledTimerMetricsMask, etc
+#include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+namespace stk { namespace diag { namespace { struct ParallelTimer; } } }
 
-#include <iomanip>
-#include <ostream>
-#include <stdexcept>
-#include <typeinfo>
-#include <utility>
-#include <algorithm>
-#include <limits>
 
-#include <stk_util/util/Writer.hpp>
-#include <stk_util/util/WriterManip.hpp>
-#include <stk_util/diag/WriterExt.hpp>
-#include <stk_util/util/string_case_compare.hpp>
-#include <stk_util/util/Marshal.hpp>
 
 namespace stk {
 namespace diag {
 namespace {
-struct ParallelTimer;
 }}
 
 template <class T>

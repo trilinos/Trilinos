@@ -6,11 +6,12 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <string>
-#include <stk_util/util/IndentStreambuf.hpp>
-
+#include <sstream>                      // for operator<<, endl, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf, etc
+#include <string>                       // for operator==, basic_string, etc
+#include "gtest/gtest.h"                // for AssertHelper
+
 
 using stk::push;
 using stk::pop;

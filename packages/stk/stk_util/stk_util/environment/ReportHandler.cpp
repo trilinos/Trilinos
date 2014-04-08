@@ -7,9 +7,10 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/environment/ReportHandler.hpp>
+#include <iostream>                     // for cout
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error, logic_error, etc
 
-#include <iostream>
-#include <stdexcept>
 
 namespace stk {
 

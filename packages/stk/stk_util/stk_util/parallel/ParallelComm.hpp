@@ -9,9 +9,10 @@
 #ifndef stk_util_parallel_ParallelComm_hpp
 #define stk_util_parallel_ParallelComm_hpp
 
-#include <cstddef>
-#include <iosfwd>
-#include <stk_util/parallel/Parallel.hpp>
+#include <cstddef>                      // for size_t, ptrdiff_t
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include "mpi.h"                        // for ompi_communicator_t
+namespace stk { template <unsigned int N> struct CommBufferAlign; }
 
 //------------------------------------------------------------------------
 
@@ -318,7 +319,6 @@ private:
 
 namespace stk {
 
-template<unsigned N> struct CommBufferAlign ;
 
 template<>
 struct CommBufferAlign<1> {
