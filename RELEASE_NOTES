@@ -1,5 +1,46 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.6 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+Galeri
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+Ifpack
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+Zoltan2
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.6 Release Notes                                         #
 #                                                                             #
 ###############################################################################

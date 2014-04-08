@@ -1,3 +1,12 @@
+Trilinos 11.7:
+--------------
+
+Removed some instances of "using namespace std;" User code that inadvertantly
+depended on symbols in std being in the global namespace may now have errors.
+
+Trilinos 11.0:
+--------------
+
 Trilinos v11 is the initial release of Zoltan2.  Zoltan2 is a redesign of the
 Zoltan combinatorial scientific computing toolkit that uses templating and
 Trilinos classes for tighter integration with Trilinos.  Zoltan2 supports

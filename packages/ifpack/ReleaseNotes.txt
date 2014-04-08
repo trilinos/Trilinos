@@ -1,0 +1,10 @@
+------------------------------------------
+Release Notes for Trilinos Package Ifpack
+------------------------------------------
+
+
+Trilinos 11.7:
+--------------
+
+Removed some instances of "using namespace std;" User code that inadvertantly
+depended on symbols in std being in the global namespace may now have errors.
