@@ -232,8 +232,8 @@ INCLUDE(TribitsAddTestHelpers)
 #     If specified, gives the names of the host system type (given by
 #     ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
 #     confgiure output in the section ``Probing the environment``) to include
-#     the test.  Typical host system type names include ``Linux``, ``Darwain``
-#     etc.
+#     the test.  Typical host system type names include ``Linux``,
+#     ``Darwain``, ``Windows``, etc.
 #
 #   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 #
