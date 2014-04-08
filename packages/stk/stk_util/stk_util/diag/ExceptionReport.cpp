@@ -11,7 +11,7 @@
 #include <mpi.h>                        // for MPI_Finalize
 #include <stdlib.h>                     // for exit, NULL
 #include <fstream>                      // for basic_ostream, operator<<, etc
-#include <stk_util/diag/Env.hpp>        // for outputP0
+#include <stk_util/environment/Env.hpp>        // for outputP0
 #include <stk_util/diag/StringUtil.hpp>  // for word_wrap
 #include <string>                       // for string, allocator, etc
 #include <vector>                       // for vector

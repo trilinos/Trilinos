@@ -22,7 +22,7 @@
 #include <MPIH_Include.h>               // for MPIH_Has_Exception_Flag, etc
 #include <map>                          // for map<>::mapped_type
 #include <ostream>                      // for endl, operator<<, etc
-#include <stk_util/diag/Env.hpp>        // for parallel_comm, output
+#include <stk_util/environment/Env.hpp>        // for parallel_comm, output
 #include <stk_util/diag/ExceptionReport.hpp>  // for RuntimeWarning
 #include <stk_util/diag/Trace.hpp>      // for Traceback
 #include <stk_util/environment/ProductRegistry.hpp>

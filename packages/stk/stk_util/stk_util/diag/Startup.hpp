@@ -49,6 +49,8 @@ namespace Env {
  void ShutDownSierra(bool mpiInitFlag);
 
 
+  void setMpiCommunicator(MPI_Comm communicator);
+
 /**
  * @ingroup EnvMPIDetail EnvOutputDetail EnvCommandLineDetail
  * @brief Class <b>Startup</b> is a sentry class for starting the application.  It

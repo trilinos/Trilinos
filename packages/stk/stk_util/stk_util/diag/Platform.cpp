@@ -22,7 +22,7 @@
 #include <locale>
 
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
 #include <stk_util/diag/Exception.hpp>
 #include <stk_util/diag/ExceptionReport.hpp>

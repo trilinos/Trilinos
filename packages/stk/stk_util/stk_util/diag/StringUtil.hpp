@@ -340,18 +340,6 @@ const char *demangle(const char *symbol);
 #endif
 
 /**
- * @brief Function <b>format_time</b> encodes the time using the format specified.
- * The format is described in <b>stdftime</b>.
- *
- * @param t		a <b>time_t</b> value of the time to format.
- *
- * @param format	a <b>char</b> const pointer to the format.
- *
- * @return		a <b>String</b> value of the encoded time.
- */
-std::string format_time(double t, const char *format = "%b %e %Y %H:%M:%S");
-
-/**
  * @brief Function <b>word_wrap</b> reformats a string into multiple lines, none longer
  * that <b>line_length</b>, the first line prefixed with <b>prefix_first_line</b> and the
  * remaining lines prefixed with <b>prefix</b>.
@@ -855,11 +843,6 @@ struct hash_nocase<String>
 ///
 /// @}
 ///
-
-template <class T>
-T convert_cast(const String &s);
-
-
 
 inline
 void convertCharArrayToStringVector(int numArgs, const char** charArray, std::vector<std::string> &stringVector)

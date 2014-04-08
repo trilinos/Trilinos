@@ -163,19 +163,6 @@ to_string(
 }
 
 
-std::string
-format_time(
-  double	t,
-  const char *	format)
-{
-  time_t	time = static_cast<time_t>(t);
-  char s[128];
-
-  ::strftime(s, sizeof(s), format, ::localtime(&time));
-
-  return std::string(s);
-}
-
 
 std::ostream &
 object_phrase::print(
@@ -283,60 +270,4 @@ word_wrap(
 
   return t;
 }
-
-
-template <class T>
-T convert_cast(const String &s)
-{
-  /* %TRACE% */  /* %TRACE% */
-  std::istringstream is(s.c_str());
-  T t = 0;
-
-  is >> t;
-
-  if (!is) {
-    std::ostringstream msg;
-    msg << "Unable to convert \"" << s << "\" to type " << typeid(T).name();
-    throw std::runtime_error(msg.str().c_str());
-  }
-  
-
-  return t;
-}
-
-template double convert_cast<double>(const String &);
-template float convert_cast<float>(const String &);
-template int convert_cast<int>(const String &);
-template unsigned convert_cast<unsigned>(const String &);
-template long convert_cast<long>(const String &);
-template unsigned long convert_cast<unsigned long>(const String &);
-
-
-// void
-// get_function_spec_parts(
-//   const std::string &		spec,
-//   std::string &			namespace_name,
-//   std::string &			class_name,
-//   std::string &			function_name,
-//   std::vector<std::string> &	arglist)
-// {
-//   namespace_name.erase(namespace_name.begin(), namespace_name.end());
-//   class_name.erase(class_name.begin(), class_name.end());
-//   function_name.erase(function_name.begin(), function_name.end());
-//   arglist.erase(arglist.begin(), arglist.end());
-
-//   std::string::const_iterator it_paren = find_next_open_paren(spec.begin(), spec.end());
-//   std::string::const_iterator it_func_name = find_prev_double_colon(spec.begin(), it_paren);
-//   function_name = std::string(it_func_name, it_paren);
-//   if (it_func_name != spec.begin()) {
-//     it_func_name -= 2;
-//     std::string::const_iterator it_class_name = find_prev_double_colon(spec.begin(), it_func_name);
-//     class_name = std::string(it_class_name, it_func_name);
-//     if (it_class_name != spec.begin()) {
-//       it_class_name -= 2;
-//       namespace_name = std::string(spec.begin(), it_class_name);
-//     }
-//   }
-// }
-
 } // namespace sierra

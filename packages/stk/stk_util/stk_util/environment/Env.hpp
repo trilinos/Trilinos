@@ -17,6 +17,18 @@
 
 namespace sierra {
 
+/**
+ * @brief Function <b>format_time</b> encodes the time using the format specified.
+ * The format is described in <b>stdftime</b>.
+ *
+ * @param t		a <b>time_t</b> value of the time to format.
+ *
+ * @param format	a <b>char</b> const pointer to the format.
+ *
+ * @return		a <b>String</b> value of the encoded time.
+ */
+std::string format_time(double t, const char *format = "%b %e %Y %H:%M:%S");
+
 /// @brief Namespace <b>Env</b> contains the runtime environment bootstrap for the
 /// MPI, logging, command line argument parsing, runtime information and signal handling.
 ///
@@ -53,7 +65,6 @@ static const std::string PARAM_ON = "on";  ///< Option value when command line o
 
 
 
-void setMpiCommunicator(MPI_Comm communicator);
 bool is_comm_valid();
 
 

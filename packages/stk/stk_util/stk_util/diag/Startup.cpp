@@ -9,7 +9,7 @@
 
 #include <stk_util/diag/Startup.hpp>
 #include "mpih.hpp"
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <pwd.h>
 #include <unistd.h>
 
@@ -32,9 +32,9 @@
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/WriterRegistry.hpp>
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
-#include <stk_util/diag/Signal.hpp>
+#include <stk_util/util/Signal.hpp>
 #include <stk_util/diag/Exception.hpp>
 #include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
@@ -84,6 +84,7 @@ void sierra_bootstrap()
 
   stk::get_options_description().add(desc);
 }
+
 
 std::string
 get_program_path(const char *program)
@@ -839,6 +840,44 @@ Startup::~Startup() {
   ShutDownSierra(m_mpiInitFlag);
 }
 
+void
+reset(
+  MPI_Comm		new_comm)
+{
+  stk::EnvData &env_data = stk::EnvData::instance();
+
+  // Destroy old comm
+  if (env_data.m_parallelComm != MPI_COMM_NULL) {
+
+    if (new_comm != MPI_COMM_NULL) {
+      mpih::Sub_Communicator(env_data.m_parallelComm, new_comm);
+    }
+
+    env_data.m_parallelComm = MPI_COMM_NULL ;
+    env_data.m_parallelSize = -1;
+    env_data.m_parallelRank = -1 ;
+  }
+
+  setMpiCommunicator(new_comm);
+}
+
+void setMpiCommunicator(MPI_Comm communicator)
+{
+  stk::EnvData &env_data = stk::EnvData::instance();
+  if(communicator != MPI_COMM_NULL)
+    {
+      env_data.m_parallelComm = communicator;
+
+      if(MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize) != MPI_SUCCESS
+	 || MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank) != MPI_SUCCESS
+	 || env_data.m_parallelSize == -1
+	 || env_data.m_parallelRank == -1)
+	{
+	  throw RuntimeError() << "reset given bad MPI communicator";
+	}
+    }
+}
 
 }
 }
+

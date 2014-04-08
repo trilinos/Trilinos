@@ -4,8 +4,6 @@
 #include <map>
 
 #include <stk_util/diag/Option.hpp>
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/util/Writer_fwd.hpp>
 #include <iostream>
 
 namespace stk {

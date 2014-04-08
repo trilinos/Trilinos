@@ -7,7 +7,7 @@
  *    ------------------------------------------------------------
  */
 
-#include <stk_util/diag/Signal.hpp>
+#include <stk_util/util/Signal.hpp>
 #include <signal.h>                     // for SIGBUS, SIGILL, SIGSEGV, etc
 #include <stk_util/util/Callback.hpp>   // for Callback
 #include <stk_util/util/FeatureTest.hpp>  // for SIERRA_MPI_ABORT_SIGNAL, etc

@@ -813,6 +813,4 @@ using stk::diag::c_ptr_func_;
 
 } // namespace sierra
 
-#include <stk_util/diag/WriterExt.hpp>
-
 #endif // STK_UTIL_DIAG_WRITER_HPP

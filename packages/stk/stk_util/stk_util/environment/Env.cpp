@@ -7,7 +7,8 @@
  *    ------------------------------------------------------------
  */
 
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
+#include <time.h>                       // for localtime, strftime, time_t
 #include <limits.h>                     // for PATH_MAX
 #include <stddef.h>                     // for size_t
 #include <unistd.h>                     // for getcwd, sleep
@@ -17,10 +18,7 @@
 #include <iostream>                     // for cerr, cout
 #include <map>                          // for map<>::mapped_type
 #include <sstream>                      // for basic_ostream, operator<<, etc
-#include <stk_util/diag/Exception.hpp>  // for RuntimeError
-#include <stk_util/diag/Signal.hpp>     // for HUP_received
-#include <stk_util/diag/StringUtil.hpp>  // for format_time
-#include <stk_util/diag/mpih.hpp>       // for Sub_Communicator
+#include <stk_util/util/Signal.hpp>     // for HUP_received
 #include <stk_util/environment/EnvData.hpp>  // for EnvData, etc
 #include <stk_util/environment/ProductRegistry.hpp>
 #include <stk_util/environment/ProgramOptions.hpp>
@@ -41,6 +39,20 @@ namespace boost { namespace program_options { class options_description; } }
 using namespace std;
 
 namespace sierra {
+
+std::string
+format_time(
+  double	t,
+  const char *	format)
+{
+  time_t	time = static_cast<time_t>(t);
+  char s[128];
+
+  ::strftime(s, sizeof(s), format, ::localtime(&time));
+
+  return std::string(s);
+}
+
 namespace Env {
 
   //
@@ -249,44 +261,6 @@ is_comm_valid()
   } else {
     return true;
   }
-}
-
-void
-reset(
-  MPI_Comm		new_comm)
-{
-  stk::EnvData &env_data = stk::EnvData::instance();
-
-  // Destroy old comm
-  if (env_data.m_parallelComm != MPI_COMM_NULL) {
-
-    if (new_comm != MPI_COMM_NULL) {
-      mpih::Sub_Communicator(env_data.m_parallelComm, new_comm);
-    }
-
-    env_data.m_parallelComm = MPI_COMM_NULL ;
-    env_data.m_parallelSize = -1;
-    env_data.m_parallelRank = -1 ;
-  }
-
-  setMpiCommunicator(new_comm);
-}
-
-void setMpiCommunicator(MPI_Comm communicator)
-{
-    stk::EnvData &env_data = stk::EnvData::instance();
-    if(communicator != MPI_COMM_NULL)
-    {
-        env_data.m_parallelComm = communicator;
-
-        if(MPI_Comm_size(env_data.m_parallelComm, &env_data.m_parallelSize) != MPI_SUCCESS
-           || MPI_Comm_rank(env_data.m_parallelComm, &env_data.m_parallelRank) != MPI_SUCCESS
-           || env_data.m_parallelSize == -1
-           || env_data.m_parallelRank == -1)
-        {
-            throw RuntimeError() << "reset given bad MPI communicator";
-        }
-    }
 }
 
 void
