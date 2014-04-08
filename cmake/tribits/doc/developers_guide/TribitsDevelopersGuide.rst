@@ -3806,9 +3806,9 @@ Packages, and Tests`_ have been defined, this section describes how these
 different test-related classifications are used to select repositories,
 packages (and code) and tests to run in the standard project testing
 processes.  More than any other section in this document, this section will
-describe and assume a cetain class of software development processes (namely
-agile processes) where testing and *continuous integraiton* (CI) are citical
-components.  However, detailed descriptions of these processes are defered to
+describe and assume a certain class of software development processes (namely
+agile processes) where testing and *continuous integration* (CI) are critical
+components.  However, detailed descriptions of these processes are deferred to
 the later sections `Pre-push Testing using checkin-test.py`_ and `TriBITS
 Package-by-Package CTest/Dash Driver`_.
 
@@ -3821,7 +3821,7 @@ The standard TriBITS project testing processes are:
 * `Performance Testing`_
 
 .. ToDo: Discuss why we would want to create standardized test cases?  The
-.. answer is that it standadizied how testing is done across multiple TriBITS
+.. answer is that it standardized how testing is done across multiple TriBITS
 .. projects so that larger meta-projects and run tests in a consistent way.
 
 These standard testing processes are outlined in more detail below and show
@@ -3852,20 +3852,20 @@ Typically a TriBITS project will define a "standard development environment"
 which is comprised of a standard development compiler (e.g. GCC 4.6.1), TPL
 versions (e.g. OpenMPI 1.4.2, Boost 4.9, etc.), and other tools (e.g. cmake
 2.8.5, git 1.8.2, etc.).  This standard development environment is expected to
-be used to test changes to the project's code before any push.  By usign a
+be used to test changes to the project's code before any push.  By using a
 standard development environment, if the code builds and all the tests pass
 for the "default" pre-push builds for one developer, then that maximizes the
 probability that the code will also build and all tests will pass for every
-other developer.  This is crticial to keep the development team maximally
+other developer.  This is critical to keep the development team maximally
 productive.  Portability is also important for most projects but portability
 testing is best done in a secondary feedback look using `Nightly Testing`_
 builds.  TriBITS has some support for helping to set up a standard software
 development environment as described in section `TriBITS Development
 Toolset`_.
 
-The basic assumption of all CI processes (includign the one described here) is
-that if anyone pulls the project's development soruces at any time, then all
-of the code will build and all of the tests will pass for the "defaut"
+The basic assumption of all CI processes (including the one described here) is
+that if anyone pulls the project's development sources at any time, then all
+of the code will build and all of the tests will pass for the "default"
 pre-push build cases.  For a TriBITS project, that means that the project's
 --default-builds (see above) will all pass for every package.  All of these
 software development processes make that basic assumption and agile software
@@ -3898,7 +3898,7 @@ Post-push CI testing would assume to use the same standard development
 environment as used for `Pre-Push CI Testing`_.  Also, the project may also
 choose to run additional automated post-push CI builds that exactly match the
 pre-push CI default builds to help check on the health of these builds
-continuously and not just rely on the develpment team to always perform the
+continuously and not just rely on the development team to always perform the
 pre-push CI builds correctly before pushing.
 
 .. _Nightly Testing:
@@ -3939,7 +3939,7 @@ The nightly builds comprise the basic "heart beat" for the project.
 that add on more expensive tests marked using the `Test Test Category
 WEEKLY`_.  For projects that define weekly tests and weekly builds, individual
 test cases can typically take 24 hours or longer to run so they can't even be
-run every day in nighlty testing.  What standard weekly builds have in common
+run every day in nightly testing.  What standard weekly builds have in common
 is that they tend to select repositories, SE packages and code, and individual
 tests using the following test-related classifications:
 
@@ -3952,7 +3952,7 @@ Test Test Category         ``WEEKLY``          (see `Test Test Category WEEKLY`_
 =========================  ==================  ========================================
 
 Project developer teams should strive to limit the number of test cases that
-are maked as ``WEEKLY`` since these tests will *not* get run nightly and
+are marked as ``WEEKLY`` since these tests will *not* get run nightly and
 developers will tend to never enable them when doing more extensive testing
 using ``--st-extra-builds`` with the the `checkin-test.py`_ script in extended
 pre-push testing.
