@@ -706,7 +706,9 @@ def extractPackageEnablesFromChangeStatus(changedFileDiffOutputStr, inOptions_in
   for modifiedFileFullPath in modifiedFilesList:
 
     # Only look for global rebuild files in the master repo (not in extra repos)
-    if gitRepo.repoName == '' and isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath):
+    if gitRepo.repoName == '' and \
+      isGlobalBuildFileRequiringGlobalRebuild(modifiedFileFullPath) \
+      :
       if inOptions_inout.enableAllPackages == 'auto':
         if verbose:
           print "\nModifed file: '"+modifiedFileFullPath+"'\n" \
