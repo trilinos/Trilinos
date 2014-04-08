@@ -1549,6 +1549,24 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
   PRINT_VAR(CMAKE_BUILD_TYPE)
 
+  # Override the silly CMAKE_CONFIGURATION_TYPES variable.  This is needed for
+  # MSVS!  Later, we Override CMAKE_CONFIGURATION_TYPES to just one
+  # configuration after the compiler checks (see below).
+  IF (CMAKE_CONFIGURATION_TYPES)
+    IF (CMAKE_BUILD_TYPE STREQUAL "DEBUG")
+      SET(CMAKE_CONFIGURATION_TYPE "Debug")
+    ELSEIF(CMAKE_BUILD_TYPE STREQUAL "RELEASE")
+      SET(CMAKE_CONFIGURATION_TYPE "Release")
+    ELSE()
+      SET(CMAKE_CONFIGURATION_TYPE "Release")
+    ENDIF()
+  ELSE()
+    SET(CMAKE_CONFIGURATION_TYPE "")
+  ENDIF()
+  IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
+    PRINT_VAR(CMAKE_CONFIGURATION_TYPE)
+  ENDIF()
+
   # Set up MPI if MPI is being used
 
   ASSERT_DEFINED(TPL_ENABLE_MPI)
@@ -1725,6 +1743,14 @@ MACRO(TRIBITS_SETUP_ENV)
       ${SETUP_ENV_TIME_STOP_SECONDS}
       "\nTotal time to probe and setup the environment")
   ENDIF()
+
+  # You have to override the configuration types for MSVS after the compiler
+  # checks!
+  SET(CMAKE_CONFIGURATION_TYPES  ${CMAKE_CONFIGURATION_TYPE}
+    CACHE STRING
+    "Override by TriBITS (see TribitsDevelopersGuilde.*)"
+    FORCE)
+  PRINT_VAR(CMAKE_CONFIGURATION_TYPES)
 
 ENDMACRO()
 

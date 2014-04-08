@@ -553,8 +553,8 @@ FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
   TRIBITS_ADD_TEST_GET_EXE_BINARY_NAME( "${EXE_NAME}"
     ${PARSE_NOEXEPREFIX} ${PARSE_NOEXESUFFIX} ${PARSE_ADD_DIR_TO_NAME} EXE_BINARY_NAME )
   
-  #If requested create a modifier for the name that will be inserted between the package name 
-  #and the given name or exe_name for the test
+  # If requested create a modifier for the name that will be inserted between
+  # the package name and the given name or exe_name for the test
   SET(DIRECTORY_NAME "")
   IF(PARSE_ADD_DIR_TO_NAME)
     TRIBITS_CREATE_NAME_FROM_CURRENT_SOURCE_DIRECTORY(DIRECTORY_NAME)
