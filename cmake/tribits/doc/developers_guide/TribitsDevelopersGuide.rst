@@ -30,7 +30,11 @@ TriBITS Developers Guide and Reference
 
 .. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
 
+.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+
 .. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+
+.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
 
 .. Common references to the TribitsOverview document
 
@@ -501,7 +505,6 @@ are:
   implicitly dependent on its subpackages.
 
 .. _TriBITS SE Package:
-
 .. _TriBITS SE Packages:
 
 * **TriBITS SE Package**: The combined set of `TriBITS Packages`_ and `TriBITS
@@ -532,6 +535,13 @@ are:
 * `TriBITS Project`_: A collection of `TriBITS Repositories`_ and `TriBITS
   Packages`_ that defines a CMake ``PROJECT`` defining soiftware which can be
   directly configured with ``cmake`` and then built, tested, and installed.
+
+.. _TriBITS Meta-Project:
+.. _TriBITS Meta-Projects:
+
+* **TriBITS Meta-Project**: A `TriBITS Project`_ that contains no `TriBITS
+  packages`_ or `TriBITS TPLs`_ but is composed out of other `TriBITS
+  Repositories`_.
 
 In this document, dependenices are described as either being *upstream* or
 *downstream/forward* as defined as:
@@ -621,6 +631,7 @@ ${PROJECT_SOURCE_DIR}``) are::
      CMakeLists.txt       # Base project CMakeLists.txt file
      CTestConfig.cmake    # [Optional] Needed for CDash submits
      Version.cmake        # [Optional] Dev mode, Project version, VC branch
+     project-checkin-test-config.py # [Optional] checkin-test.py default builds
      cmake/
        NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
        ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
@@ -636,6 +647,7 @@ These TriBITS Project files are documented in more detail below:
 * `<projectDir>/CMakeLists.txt`_
 * `<projectDir>/CTestConfig.cmake`_
 * `<projectDir>/Version.cmake`_
+* `<projectDir>/project-checkin-test-config.py`_
 * `<projectDir>/cmake/NativeRepositoriesList.cmake`_
 * `<projectDir>/cmake/ExtraRepositoriesList.cmake`_
 * `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_
@@ -728,10 +740,9 @@ version of CMake required by TriBITS is given at in `TribitsBuildQuickRef
 .. _<projectDir>/CTestConfig.cmake:
 
 **<projectDir>/CTestConfig.cmake**: [Optional] Specifies the CDash site and
-project to submit results to when doing an automated build driven by CTest (it
-is read by the scripting code in ``TribitsCTestDriverCore.cmake``).  This file
-only needs to be present when the CTest driver code in
-``TribitsCTestDriverCore.cmake`` is used.  This file is also required to use
+project to submit results to when doing an automated build driven by the CTest
+driver code in `TRIBITS_CTEST_DRIVER()`_ is used (see `TriBITS
+Package-by-Package CTest/Dash Driver`_).  This file is also required to use
 the TriBITS-generated ``dashboard`` target (see `Dashboard Submissions
 <../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions>`_).  An
 example of this file is `TribitsExampleProject`_/``CTestConfig.cmake``:
@@ -773,6 +784,24 @@ project needs to define the variable
 ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` at the global project
 scope (perhaps in ``<projectDir>/ProjectName.cmake``) to get right development
 mode of behavior (see `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_).
+
+.. _<projectDir>/project-checkin-test-config.py:
+
+**<projectDir>/project-checkin-test-config.py**: [Optional] Used to define the
+``--default-builds`` and other project-level configuration options for the
+project's usage of the `checkin-test.py`_ script.  Machine or package-specific
+options should **not** be placed in this file.  An example of this file for
+`TribitsExampleProject`_/``project-checkin-test-config.py`` is shown below:
+
+.. include:: ../examples/TribitsExampleProject/project-checkin-test-config.py
+   :literal:
+
+The contents of the file ``project-checkin-test-config.py`` show above are
+pretty self explanatory.  This file defines a single python dictionary
+data-structure called ``configuration`` which gives some default arguments in
+``defaults``, and then cmake options that define the projects
+``--default-builds``.  For more details, see the section `Pre-push Testing
+using checkin-test.py`_.
 
 .. _<projectDir>/cmake/NativeRepositoriesList.cmake:
 
@@ -1168,8 +1197,8 @@ define the macro ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()`` which is then
 called by the TriBITS system.  This file is only processed when doing a basic
 configuration of the project and **not** when it is just building up the
 dependency data-structures as part of other tools (like ``checkin-test.py``,
-``TribitsCTestDriverCore.cmake``, etc.).  Any local variables set in this file
-or macro have project-wide scope.
+`TRIBITS_CTEST_DRIVER()`_, etc.).  Any local variables set in this file or
+macro have project-wide scope.
 
 A few additional variables are defined by the time this file is procesed and
 can be ued in the logic in these files.  The variables that should already be
@@ -1268,14 +1297,20 @@ A TriBITS Package:
   ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` to
   `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.
 * Is the fundamental unit of software partitioning and aggregation and must
-  have a unique packae name that is globally unique, not only within its
-  defined repository, but cross all possible repositories that might be
-  coupled together some day using TriBITS.
-* Is the unit of testing as drived by ``TribitsCTestDriverCore.cmake`` and
-  displayed on CDash.
+  have a unique packae name that is globally unique (see `Globally unique
+  TriBITS package names`_).
+* Is the unit of testing as drived by `TRIBITS_CTEST_DRIVER()`_ and displayed
+  on CDash.
+
+.. _Globally unique TriBITS package names:
 
 **WARNING:** As noted above, one must be very careful to pick package names
-that will be globally unique
+that will be globally unique not only within its defined repository but also
+across all SE packages in all TriBITS repositories that ever might be cobbled
+together into a single Tribits (meta) project!  Choosing the package name is
+the single most important decision when it comes to defining TriBITS packages.
+Do not pick names like "Debug" or "StandardUtils" that have a high chance of
+clashing with other sloppy project development teams.
 
 For more details on the definition of a TriBITS Package (or subpackage), see:
 
@@ -1300,8 +1335,8 @@ tests should strictly be contained under the package's base source directory
 ``<packageDir>/`` if at all possible.  While this is not a requirement for the
 basic TriBITS build system, the approach for automatically detecting when a
 package has changed by looking at what files have changed (which is used in
-``checkin-test.py`` and ``TribitsCTestDriverCore.cmake``) requires that the
-package's files be listed under ``<packageDir>/`` (see `Pre-push Testing using
+``checkin-test.py`` and `TRIBITS_CTEST_DRIVER()`_) requires that the package's
+files be listed under ``<packageDir>/`` (see `Pre-push Testing using
 checkin-test.py`_).  Without this, these development tetsing tools will not be
 able to effectively determine what needs to be rebuilt and retested which can
 clean to pushing broken software.
@@ -1427,9 +1462,8 @@ are being processed:
 
     The name of the current TriBITS SE package.  This is set automatically by
     TriBITS before the packages's ``CMakeLists.txt`` file is processed.
-    **WARNING:** The TriBITS packae name must be globally unique cross all
-    possible repositories that might be coupled together at some point using
-    TriBITS!
+    **WARNING:** This name must be globally unique across the entire project
+    (see `Globally unique TriBITS package names`_).
 
   ``PACKAGE_SOURCE_DIR``
 
@@ -1613,7 +1647,7 @@ which is:
 
 What this shows is that subpackages must list their dependenices on each other
 (if such dependencies exist) using the full SE package name
-``${PARENT_PACKAGE_NAME}${SUBPACKGE_NAME}`` or in this case
+``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}`` or in this case
 ``PackageWithSubpackages`` + ``SubpackageA`` =
 ``PackageWithSubpackagesSubpackageA``.
 
@@ -1735,9 +1769,19 @@ A TriBITS TPL:
   and/or some other resoruces used by one or more TriBITS Packages and
   publishes the list of include directories and/or libraries and/or
   executables provided by the TPL to the TriBITS project.
-* Is declared in a `<repoDir>/TPLsList.cmake` file.  
+* Is given a globally unique name (see `Globally unique TriBITS TPL names`_)
+  and is declared in a `<repoDir>/TPLsList.cmake`_ file.
 * Is listed as an explicit optional or required dependency in one or more
   TriBITS SE package's `<packageDir>/cmake/Dependencies.cmake`_ files.
+
+.. _Globally unique TriBITS TPL names:
+
+**WARNING:** One must be very careful to pick TPL names that will be globally
+unique across all packages in all TriBITS repositories that ever might be
+cobbled together into a single TriBITS (meta) project!  However, choose TPL
+names is usually much easier and less risky than choosing `Globally unique
+TriBITS package names`_ because the native TPLs themselves tend to be uniquely
+named.
 
 Using a TriBITS TPL is to be preferred over using a raw CMake
 ``FIND_PACKAGE(<someCMakePackage>)`` because the TriBITS system guarantees
@@ -1889,12 +1933,11 @@ subset of project's file.  This reduced processing is performed in order to
 build up the project's package dependenices data-structure (see `TriBITS
 Environment Probing and Setup`_) and to write the file
 `<Project>PackageDependencies.xml`_.  For example, the tool ``checkn-test.py``
-and the script ``TribitsCTestDriverCore.cmake`` both drive this type of
-processing.  In particular, the CMake -P script
-``TribitsDumpDepsXmlScript.cmake`` reads all of the project's
-dependency-related files and dumps out the `<Project>PackageDependencies.xml`_
-file a defined set of native and extra repositories defined for the project.
-This reduced processing is given below.
+and the script `TRIBITS_CTEST_DRIVER()`_ both drive this type of processing.
+In particular, the CMake -P script ``TribitsDumpDepsXmlScript.cmake`` reads
+all of the project's dependency-related files and dumps out the
+`<Project>PackageDependencies.xml`_ file a defined set of native and extra
+repositories defined for the project.  This reduced processing is given below.
 
 .. _Reduced Dependency Processing of TriBITS Project Files:
 
@@ -2095,7 +2138,7 @@ TriBITS contains find modules for a few standard TPLs that are either integral
 to the TriBITS system or are likely to be used across many independent TriBITS
 repositories.  The goal of maintaining a few of these in the later case under
 TriBITS is to enforce conformity in case these independent repositories are
-combined into a single metra-project.
+combined into a single meta-project.
 
 The standard TriBITS TPLs are contained under the directory::
 
@@ -2207,7 +2250,7 @@ testing file::
   tribits/doc/examples/UnitTests/CMakeLists.txt
 
 Note that this little example is a fully functional `TriBITS Repository`_ and
-can be embedded in to a larger TriBITS metra-project and be seamlessly built
+can be embedded in to a larger TriBITS meta-project and be seamlessly built
 along with any other such TriBITS-based software.
 
 .. ToDo: Put in reference to the example meta-project.
@@ -2253,6 +2296,7 @@ this partial list of **TribitsExampleProject Files and Directories**::
     Copyright.txt
     PackagesList.cmake
     ProjectName.cmake
+    project-checkin-test-config.py
     TPLsList.cmake
     Version.cmake
     ...
@@ -2521,7 +2565,7 @@ Package Dependencies and Enable/Disable Logic
 =============================================
 
 Arguably, the more important feature/aspect of the TriBITS system is the
-partitioning of a large software project into pakages and managing the
+partitioning of a large software project into packages and managing the
 dependencies between these packages to support building, testing, and depoying
 different pieces as needed.  This is especially useful in incremental CI
 testing of large projects.  However, this is also a critical component in
@@ -2653,7 +2697,7 @@ values)::
 NOTE: TriBITS only sets the variables ``<TRIBITS_PACKAGE>_ENABLE_TESTS`` into
 the cache if the SE package ``<TRIBITS_PACKAGE>`` becomes enabled at some
 point.  This cuts down the clutter in the CMake cache for large projects with
-lots of packages where the user only enbles a subset of the pakages.
+lots of packages where the user only enbles a subset of the packages.
 
 NOTE: TriBITS also defines the cache varaibles
 ``<TRIBITS_PACKAGE>_ENABLE_EXAMPLES`` for each enabled TriBITS package which
@@ -2810,7 +2854,7 @@ In more detail, these rules/behaviors are:
    ``<TRIBITS_TPL>`` with testing group ``EX`` (as is for `PT`` and ``EX``
    TPLs), is given an **unset enable/disable state by default**
    (i.e. ``TPL_ENABLE_<TRIBITS_TPL>""``).  This is different behavior than for
-   ``EX`` SE pakages described above which provides an initial hard disable.
+   ``EX`` SE packages described above which provides an initial hard disable.
    However, since TriBITS will never automatically enable an optional TPL (see
    below) and since only `downstream`_ ``EX`` SE packages are allowed to have
    a required dependenices on an ``EX`` TPL, there is no need to set the
@@ -2886,7 +2930,7 @@ In more detail, these rules/behaviors are:
 11) **Enable/disable of parent package is enable/disable for subpackages**: An
     explicit enable/disable of a top-level parent package with subpackages
     with ``${PROJECT_NAME}_ENABLE_<TRIBITS_PACKAGE>=(ON|OFF)`` is equivanent
-    to the explicit enable/disable of all of the parent package's subpakages.
+    to the explicit enable/disable of all of the parent package's subpackages.
     For example, explicitly setting ``Trilinos_ENABLE_Thyra=ON`` is equivalent
     to explicitly setting::
 
@@ -3225,7 +3269,7 @@ have subpackages just show if the ``Libs`` or also the ``Tests`` and
 
 **Explicit enable of a package, its tests, an optional TPL, with ST enabled**
 
-An extended use case shown here is for the explicit enable of a pakage and its
+An extended use case shown here is for the explicit enable of a package and its
 tests along with the enable of an optional TPL and with ``ST`` code enabled.
 This is a configuration that would be used to support the local development of
 a TriBITS package that involves modifying ``ST`` software.
@@ -3306,7 +3350,7 @@ enabling a set of packages they want and is trying to weed out as some of
 (what they think) are optional dependencies they don't need and accidentally
 disables a package that is an indirect required dependency of one of the
 packages they want.  The other use case where conflicting enables/disables can
-occur is in the ``TribitsCTestDriverCore.cmake`` script where an upstream
+occur is in CTest drivers using `TRIBITS_CTEST_DRIVER()`_ where an upstream
 package has failed and is explicitly disabled.  TriBITS can either be set up
 to have the disable override the explicit enable or stop the configure and
 depending on the value of the cache variable
@@ -3378,7 +3422,7 @@ ToDo: Set Trilinos_ENABLE_Epetra=ON and Trilinos_ENABLE_BLAS=OFF
 **Explicit enable of a subpackage**
 
 ToDo: Enable ThyraEpetra and show how it enables other SE packages and at the
-end, enables the Thyra packge (just for show).
+end, enables the Thyra package (just for show).
 
 .. _Explicit enable of an optional package dependency:
 
@@ -3879,8 +3923,8 @@ After changes are pushed to the master branch(es) in the global repository(s),
 *Post-Push CI Testing* is performed where a CI server detects the changes and
 immediately fires off a CI build using CTest to test the changes and the
 results are posted to a CDash server (in the "Continuous" section on the
-project's dashboard page).  This process is driven by code in the
-`TribitsCTestDriverCore.cmake`_ file as described in the section `TriBITS
+project's dashboard page).  This process is driven by CTest driver code that
+calls `TRIBITS_CTEST_DRIVER()`_ as described in the section `TriBITS
 Package-by-Package CTest/Dash Driver`_.  Various types of specific CI builds
 can be constructed and run (see `CTest/CDash CI Server`_) but these post-push
 CI builds typically select repositories, SE packages and code, and individual
@@ -3907,19 +3951,19 @@ pre-push CI builds correctly before pushing.
 
 In addition to pre-push and post-push CI testing, a typical TriBITS project
 will set up multiple *Nightly Testing* builds (or once-a-day builds, they
-don't need to only run at night).  These builds are also driven by code in the
-`TribitsCTestDriverCore.cmake`_ script as described in the section `TriBITS
-Package-by-Package CTest/Dash Driver`_ and post results to the project's CDash
-server (in the "Nightly" section on the project's dashboard page).  Nightly
-builds don't run in a continuous loop but instead are run once a day
-(e.g. driven by a cron job) and there tends to be many different nightly build
-cases that test the project using different compilers (e.g.  GCC, Intel,
-Microsoft, etc., and different versions of each), different TPL versions
-(e.g. different OpenMPI versions, different MPICH versions, etc.), different
-platforms (e.g. Linux, Windows, etc.), and varying many other options and
-settings on many different platforms.  What all nightly builds have in common
-is that they tend to select repositories, SE packages and code, and individual
-tests using the following test-related classifications:
+don't need to only run at night).  These builds are also driven by code CTest
+driver scripts described in the section `TriBITS Package-by-Package CTest/Dash
+Driver`_ and post results to the project's CDash server (in the "Nightly"
+section on the project's dashboard page).  Nightly builds don't run in a
+continuous loop but instead are run once a day (e.g. driven by a cron job) and
+there tends to be many different nightly build cases that test the project
+using different compilers (e.g.  GCC, Intel, Microsoft, etc., and different
+versions of each), different TPL versions (e.g. different OpenMPI versions,
+different MPICH versions, etc.), different platforms (e.g. Linux, Windows,
+etc.), and varying many other options and settings on many different
+platforms.  What all nightly builds have in common is that they tend to select
+repositories, SE packages and code, and individual tests using the following
+test-related classifications:
 
 =========================  ==================  ========================================
    Classification Type        Classification           (See Reference)
@@ -3994,31 +4038,66 @@ Test Test Category         ``PERFORMANCE``     (see `Test Test Category PERFORMA
 Pre-push Testing using checkin-test.py
 --------------------------------------
 
-While CMake provides the integrated tool CTest (executable ``ctest``) a lot
-goes into correctly and efficiently testing a large project and pushing
-changes to the main version control repository(s).  Things get especially
-complicated and tricky when multiple version-control (VC) repositories are
-involved.  The TriBITS system provides the tool ``checkin-test.py`` for
-automating the process of:
+CMake provides the integrated tool CTest (executable ``ctest``) which is used
+to define and run different tests.  However, a lot more needs to be done to
+effectively test changes for a large project before pushing to the master
+branch(es) in the main repository(s).  Things get especially complicated and
+tricky when multiple version-control (VC) repositories are involved.  The
+TriBITS system provides the tool ``checkin-test.py`` for automating the
+process of:
 
-1) Determining if the local VC repos are ready to pull, test, and push
+1) Determining if the local VC repo(s) are ready to integrate with the remote
+   master branch(es)
 
-2) Pulling and integrating the most current changes from the remote VC repos
+2) Pulling and integrating the most current changes from the remote VC repo(s)
 
 3) Figuring out what TriBITS packages need to be enabled and testing (by
-   examing VC diffs)
+   examining VC diffs)
 
 4) Configuring only the necessary TriBITS packages and tests (and their
-   downstream dependencies) and building, running tests, and reporting results
-   (via email).
+   downstream dependencies by default) and building, running tests, and
+   reporting results (via email).
 
-5) Only if all specified builds and tests pass, then pushing local commits to
-   the remove VC repos.
+5) Only if all specified builds and tests pass, amending the last commit with
+   the test results, then pushing local commits to the remove VC repos and
+   sending out summary emails.
 
-Every TriBITS project defines one or more "default builds" for pre-push CI
-tesitng that form the criteria for if it is okay to push code changes or not.
-The "default builds" select repositories, SE packages and code, and individual
-test as described in `Pre-Push CI Testing`_.
+Every TriBITS project defines one or more "default builds" (specified through
+the ``--defualt-builds`` argument) for pre-push CI testing that form the
+criteria for if it is okay to push code changes or not.  The "default builds"
+select repositories, SE packages and code, and individual test as described in
+`Pre-Push CI Testing`_.  A TriBITS project defines its default pre-push builds
+using the file `<projectDir>/project-checkin-test-config.py`_.  For an
+example, the file `TribitsExampleProject`_/``project-checkin-test-config.py``
+is shown below:
+
+.. include:: ../examples/TribitsExampleProject/project-checkin-test-config.py
+   :literal:
+
+This gives the default builds ``--default-builds=MPI_DEBUG,SERIAL_RELEASE``.
+As shown, typically two default builds are defined so that various options can
+be toggled between the two builds.  Typical options to toggle include
+enabling/disabling MPI and enabling/disabling runtime debug mode checking
+(i.e. toggle ``${PROJECT_NAME}_ENABLE_DEBUG``).  Typically, other important
+options will also be toggled between these two builds.  For example, Trilinos
+toggles the enable/disable of C++ explicit template instantiation support.
+
+Note that both of the default builds shown, including the ``MPI_DEBUG`` build,
+actually set optimized compiler flags with
+``-DCMAKE_BUILD_TYPE:STRING=RELEASE``.  What makes this a "debug" build is
+turning on optional runtime debug-mode checking, not disabling optimized code.
+This is important so that the defined tests run fast.  These
+``checkin-test.py`` builds are **not** designed to support debugging efforts.
+Instead, they are designed to test changes to the project's code efficiently
+before pushing changes.  A development team should not have to test the
+compiler's ability to generate non-optimized debug code.
+
+Note that turning on ``-DTribitsExProj_ENABLE_CHECKED_STL=ON`` as shown above
+can only be used when the TPLs have no C++ code using the C++ STL or if that
+particular build points to C++ TPLs compiled checked STL enabled.  The
+TribitsExampleProject default builds do not depend on any C++ TPLs that might
+use the C++ STL so enabling this option adds additional debug-mode checking
+for C++ code.
 
 The ``checkin-test.py`` script is a sophisticated piece of software that is
 well tested and very robust.  The level of testing of this tool is greater
@@ -4030,6 +4109,11 @@ detailed documentation, see `checkin-test.py --help`_.
 
 .. ToDo: Describe the standard workflow for using the checkin-test.py script.
 
+.. ToDo: Describe why the --default-builds must only include PT code and not
+.. ST due to changing the behavior of the PT software.  As an example, discuss
+.. Boost usage in Teuchos and how that changes behavior of a few things.
+.. Another example is BinUtils.
+
 .. ToDo: Describe the system for mapping changed files to changed packages.
 .. Discuss how important the directory structure is.
 
@@ -4039,14 +4123,13 @@ detailed documentation, see `checkin-test.py --help`_.
 .. ToDo: Describe the role that checkin-test.py plays in multi-repo ACI
 
 
-.. _TribitsCTestDriverCore.cmake:
-
 TriBITS Package-by-Package CTest/Dash Driver
 --------------------------------------------
 
 The TriBITS system uses a sophisticated and hightly customized CTest driver
 script to test TriBITS projects and submit results to a CDash server.  The
-primary code for driving this is contained in the file
+primary code for driving this is contained in the CTest function
+`TRIBITS_CTEST_DRIVER()`_ contained in the file
 ``TribitsCTestDriverCore.cmake``.  This script loops through all of the
 specified TriBITS packages for a given TriBITS project and does a configure,
 built, and test and submitts results to the specified CDash server
@@ -4055,28 +4138,50 @@ package fails, that TriBITS package is disabled in all downstream TriBITS
 package builds so as to not propoate sensless failures.  Each TriBITS
 top-level package is assigned its own CDash regression email (see `CDash
 regression email addresses`_) and each package configure/build/test is given
+its own row in the CDash build.  A CTest script using
+`TRIBITS_CTEST_DRIVER()`_ run in one of two modes.  First, it can run standard
+daily from-scratch builds as described in `CTest/CDash Nightly Testing`_.
+Second, it can run as a CI server as described in `CTest/CDash CI Server`_.
+Third, it can run in experimental mode testing a local repository.
 
 .. ToDo: Discuss the behavior of Continuous, Nightly, and Experiental
 .. CTest/CDash tracks and what that means in terms of sending out CDash error
 .. emails and allowing for multiple builds of the same name in a single test
 .. day.
 
-.. ToDo: Fill in!
-
 .. ToDo: Document CTEST_TEST_TIMEOUT and DART_TESTING_TIMEOUT and how these
 .. interact.
 
-
-CTest/CDash CI Server
-+++++++++++++++++++++
-
-ToDo: Fill in!
+.. ToDo: Import and format the contents of tribits/ctest/README related to
+.. this topic.
 
 
 CTest/CDash Nightly Testing
 +++++++++++++++++++++++++++
 
-ToDo: Fill in!
+When a TriBITS CTest script using `TRIBITS_CTEST_DRIVER()`_ is run in
+"Nightly" testing mode, it builds the project from scratch package-by-package
+and submits results to the TriBITS project's CDash project on the designated
+CDash server.
+
+.. ToDo: Give example of the package-by-package build.
+
+CTest/CDash CI Server
++++++++++++++++++++++
+
+When a TriBITS ctest driver script is used in continuous integration (CI)
+mode, it starts every day with a clean from-scratch build and then performs
+incremental rebuilds as new commits are pulled from the master branch in the
+main repository.  In this mode, a continuous loop is performed after the
+initial baseline build constantly pulling commits from the master git
+repository(s).  If any package changes are detected (looking at git diffs),
+then the tests and examples for those packages and all downstream packages are
+performed using a reconfigure/rebuild.  Since all of the upstream package
+libraries are already built, this rebuild and retest can take place in a
+fraction of the time of a complete from-scratch build and test of the project.
+
+.. ToDo: Give some examples from ReducedMockTrilinos of how file changes
+.. result in package enables and rebuilds.
 
 
 TriBITS CDash Customizations
@@ -4205,8 +4310,8 @@ single repository or project email address.
 4) If none of the above are selected, then no email address is assigned.
 
 What the above setup does is it results in the TriBITS system (in the
-``TribitsCTestDriverCore.cmake`` file called under ``ctest``) creating a file
-called ``CDashSubprojectDependencies.xml`` that gets sent to the CDash
+`TRIBITS_CTEST_DRIVER()`_ function called in ``ctest -S`` script) creating a
+file called ``CDashSubprojectDependencies.xml`` that gets sent to the CDash
 server. CDash then takes this file and creates, or updates, a set of CDash
 users and sets up a mapping of Labels (which are used for TriBITS package
 names) to CDash user emails addresses. CDash is automatically set up to
@@ -4231,12 +4336,11 @@ are being removed (i.e. no longer associated with a TriBITS package).  This is
 needed since CDash seems to be unable to remove labels from an existing CDash
 user (however this might be fixed in a current version of CDash).
 
-3) The next time a CDash submit is performed by the
-``TribitsCTestDriverCore.cmake`` script, the CDash user associated with the
-mail list with labels being removed will get automatically recreated with the
-right list of labels (according to the current
-``CDashSubprojectDependencies.xml`` file).  Also, any new CDash users for new
-email addresses will be created.
+3) The next time a CDash submit is performed by a CTest driver script calling
+`TRIBITS_CTEST_DRIVER()`_, the CDash user associated with the mail list with
+labels being removed will get automatically recreated with the right list of
+labels (according to the current ``CDashSubprojectDependencies.xml`` file).
+Also, any new CDash users for new email addresses will be created.
 
 Hopefully that should be enough clues to manage the mapping of CDash
 regression email lists to TriBITS packages.
@@ -4245,16 +4349,105 @@ regression email lists to TriBITS packages.
 Multi-Repository Support
 ========================
 
-ToDo: Discuss 'egdist', ExtraRepositoriesList.cmake, and the rep clone script.
+TriBITS has built-in support for projects involving multiple `TriBITS
+Repositories`_ which contain multiple `TriBITS Packages`_.  The basic
+configuration, build, and test of such projects requires only raw CMake/CTest,
+just like any other CMake project (see `TriBITS System Project
+Dependencies`_).  Every TriBITS project automatically supports tacking on
+add-on TriBITS packages and TPL through the
+``${PROJECT_NAME}_EXTRA_REPOSITORIES`` cmake cache variable as described in
+`Enabling extra repositories with add-on packages`_.  In addition, a TriBITS
+project can be set up from the start to pull in other TriBITS Repositories
+using the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special
+form of this is a `TriBITS Meta-Project`_ that contains no TPLs or packages of
+its own.  The ability to create meta-projects is what allows TriBITS to be
+used to provide the build of large aggregations of software.
 
-ToDo: Discuss how to handle missing pakages in upstream repos.
+To help set up a development environment for multi-repository TriBITS
+projects, TriBITS provides some extra development tools based on Python.  The
+primary tools supporting multi-repostory project are the `checkin-test.py`_
+tool and the `egdist`_ tool.
 
+For projects with a standard set of extra repositories defined in the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
+``checkin-test.py`` script only requires passing in the option
+``--extra-repos-file=projec`` and ``--extra-repos-type=Continuous`` (or
+``Nightly``, see `Repository Test Classification`_) and it will automatically
+perform all of the various actions for all of the selected repositories.  See
+`checkin-test.py`_ and `checkin-test.py --help`_ for more details.
 
-Multi-Repository Almost Continuous Integration
-----------------------------------------------
+.. _egdist:
 
-ToDo: Import the contents of HOWTO.ALMOST_CONTINUOUS_INTEGRATION and format
-for RST.
+The tool **egdist** is a simple Python script that just distributes the listed
+eg/git command across a set of git repos.  It is not specific to TriBITS at
+all.  It ony requires that a base git repo and a set of zero or more git repos
+cloned under it.  For example, consider the TriBITS meta-project given in the
+ExtraRepositoriesList.cmake file:
+
+.. include:: ../../python/UnitTests/ExtraReposList.cmake
+   :literal:
+
+This would be layed out a directories as::
+
+  BaseRepo/
+    .git/
+    .gitignore
+    ExtraRepo1/
+      .git/
+    packages/SomePackage/Blah/
+      .git/
+    ExtraRepo3/
+      .git/
+    ExtraRepo4/
+      .git/
+
+to use ``egdist`` with this aggregate project, one would first set up the file
+``BaseRepo/.egdist`` to contain just::
+
+  ExtraRepo1
+  packages/SomePackage/Blah
+  ExtraRepo3
+  ExtraRepo4
+
+and one would set up the tracked ignore file ``BaseRepo/.gitignore`` which
+contains the lines::
+
+  /ExtraRepo1/
+  /packages/SomePackage/Blah/
+  /ExtraRepo3/
+  /ExtraRepo4/
+
+Common aggregate commands then run under the ``BaseRepo/`` directory are::
+
+  # See status of all repos at once
+  egdist status
+
+  # Pull updates to all
+  egdist pull
+
+  # Push local commits to tracking branches
+  egdist push
+
+See `egdist --help` for more details.
+
+The TriBITS approach to managing multiple VC repos described above works well
+for order 10 or so VC repos but will not scale well to order 30 or more.  For
+larger numbers of VC repos, one should consider nested integration creating
+snapshot git repos that aggregate several related repositories.  Another
+approach might be to use git submodules.  However, note that these tools and
+processes described here are currently **not** set up to support aggregate VC
+repos that use git submodules.  The design decision with TriBITS was to
+explicitly handle the different git VC repos.  There are advantages and
+disadvantages to use git submodules verses the approach currently supported in
+TriBITS using `egdist`_ and `<projectDir>/cmake/ExtraRepositoriesList.cmake`_.
+It is possible that TriBITS will add support for aggregate git repos that use
+git submodules but only if there are important projects that choose to use
+them.  The discussion of these various approaches and strategies to dealing
+with aggregate repos is beyond the scope of this document.
+
+.. ToDo: Discuss a repo clone script.
+
+.. ToDo: Discuss how to handle missing packages in upstream repos.
 
 
 Development Workflows
@@ -4269,13 +4462,29 @@ complex `Multi-Repository Development Workflow`_.
 Basic Development Workflow
 --------------------------
 
-ToDo: Fill in!
-
+The basic development workflow of a TriBITS project is not much different than
+with any CMake project that uses CTest to define and run tests.  One pulls
+updates from the master VC repo then configures with ``cmake``, and
+iteratively builds, runs tests, adds files, changes files, etc.  The major
+difference is that a well constructed development process will use the
+`checkin-test.py`_ script to test and push all changes that affect the build
+or the tests.  The basic steps in configuring, building, running tests, etc.,
+are given in the project's `<Project>BuildQuickRef`_. file (see
+`Project-Specific Build Quick Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
 
-ToDo: Discuss 'egdist' and the rep clone script.
+The development workflow for a project with multiple VC repos is very similar
+to a project with just a single VC repo if the project provides a standard
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  The major difference
+is in making changes, creating commits, etc.  The `egdist`_ tool makes these
+steps easier and has been shown to work fairly well for up to 20 extra VC
+repos (as used in the CASL VERA project).  The `checkin-test.py`_ script
+automatically handles all of the details of pulling, diffing, pushing etc. to
+all the VC repos.
+
+.. ToDo: Discuss usage of 'egdist' and the rep clone script.
 
 
 Howtos
@@ -4290,13 +4499,16 @@ How to Add a new TriBITS Package
 
 To add a new TriBITS package, it is recommended to take the template from one
 of the `TribitsExampleProject`_ packages that most closely fits the needs of
-the new package and modify it for the new package.  The files, for the
-``SimpleCxx`` package can be copied on at a time and modified.
+the new package and modify it for the new package.  For example, the files for
+the ``SimpleCxx`` package can be copied one at a time and modified for the new
+package.
 
-To add a new TriBITS package:
+To add a new TriBITS package (with no subpackages), do the following:
 
-1) Chose a name ``<packageName>`` for the new package (must be globally
-   unique!) and which TriBITS repository to put the package into.
+1) Chose a name ``<packageName>`` for the new package and which TriBITS
+   repository (``<repoDir>``) to put the package into.  **WARNING!** The
+   choosen name ``<packageName>`` must be unique across all TriBITS
+   repositories (see `Globally unique TriBITS package names`_).
 
 2) Create the directory ``<repoDir>/<packageDir>`` for the new package and put
    in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
@@ -4306,12 +4518,19 @@ To add a new TriBITS package:
    `TRIBITS_PACKAGE()`_ and `TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
 
 3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
-   file after all of upstream packages.
+   file after all of its upstream dependent packages.  If a mistake is made
+   and it is listed before one of its upstream dependent packages, the TriBITS
+   CMake code will catch this and issue an error.
 
-4) Configure the TriBITS project enabling the new package ``<packageName>``.
+4) Configure the TriBITS project enabling the new empty package
+``<packageName>``.  This will enabled the listed dependencies.
 
-5) Incrementally fill in the packages ``CMakeLists.txt`` files defining
-   libraries, executables, tests and examples.
+5) Incrementally fill in the package's ``CMakeLists.txt`` files defining
+   libraries, executables, tests and examples.  The project should be built
+   and tests run as new pieces are added.
+
+Once the new package is defined, downstream SE packages can define
+dependencies on this new package.
 
 .. ToDo: Expand on the above bullets a lot!
 
@@ -4319,25 +4538,177 @@ To add a new TriBITS package:
 How to Add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
-ToDo: Fill in!
+Adding a new package with subpackages is similary to adding a new regular
+packages described in `How to Add a new TriBITS Package`_.  Again, it is
+recommended that one copies an example package from `TribitsExampleProject`_;
+this time the ``PackageWithSubpackages`` package files and directories.
+
+To add a new TriBITS package with packages, do the following:
+
+1) Chose a name ``<packageName>`` for the new package and which TriBITS
+   repository (``<repoDir>``) to put the package into.  **WARNING!** The
+   choosen name ``<packageName>`` must be unique across all TriBITS
+   repositories (see `Globally unique TriBITS package names`_).
+
+2) Create the directory ``<repoDir>/<packageDir>`` for the new package and put
+   in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
+   `<packageDir>/CMakeLists.txt`_.  Initially don't define any subpackages yet
+   and comment out everything in the ``CMakeLists.txt`` file except for the
+   `TRIBITS_PACKAGE()`_ and `TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
+
+3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
+   file after all of the upstream dependencies of its to-be-defined
+   subpackages.
+
+4) Configure the TriBITS project enabling the new empty package
+``<packageName>``.
+
+5) Incrementally add the subpackages as described in `How to Add a new TriBITS
+   Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
+   libraries, executables, tests and examples.
+
+Once the new SE packages are defined, downstream SE packages can define
+dependencies on these.
+
+How to Add a new TriBITS Subpackage
+-----------------------------------
+
+Given an existing top-level TriBITS package that is already broken down into
+subpackages, adding a new subpackage does not require changing any project- or
+repository-level files.  One only needs to add the declaration for the new
+subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
+fill out the pieces of the new subpackage defined in the section `TriBITS
+Subpackage Core Files`_.  It is recommended to copy files from one of the
+`TribitsExampleProject`_ subpackages in the ``PackagesWithSubpackages``
+package.
+
+To add a new TriBITS subpackage to a top-level package that already has
+subpackages, do the following:
+
+1) Chose a name ``<spkgName>`` for the new subpackage which only has to be
+   different than the other subpackages in the parent package.  This name gets
+   appended to the parent package's name ``<packageName>`` to form the SE
+   package name ``<packageName><spkgName>``.
+
+2) Create the directory `<packageDir><spkgDir>`` for the new package and put
+   in skeleton files for `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_
+   and `<packageDir>/<spkgDir>/CMakeLists.txt`_.  Set the desired upstream TPL
+   and SE package dependenices in the new ``Dependencies.cmake`` file but
+   initially comment out everything in the ``CMakeLists.txt`` file except for
+   the `TRIBITS_SUBPACKAGE()`_ and `TRIBITS_SUBPACKAGE_POSTPROCESS()`_
+   commands.
+
+3) Add the line for the new subpackage to the argument
+``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` in the macro call
+`TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ in the parent package's
+`<packageDir>/cmake/Dependencies.cmake`_ file after all of its upstream
+dependent subpackages.  If a mistake is made and it is listed before one of
+its upstream dependent subpackages, the TriBITS CMake code will catch this and
+issue an error.
+
+4) Configure the TriBITS project enabling the new empty subpackage
+``<packageName><spkgName>``.  This will enabled the listed dependencies.
+
+5) Incrementally fill in the subpackage's ``CMakeLists.txt`` files defining
+   libraries, executables, tests and examples.  The project should be built
+   and tests run as new pieces are added.
 
 
 How to Add a new TriBITS TPL
 ----------------------------
 
-ToDo: Fill in!
+In order for an SE package to define a dependency on a new TPL (i.e. one that
+has not already been declared in the current repo's or an upstream repo's
+`<repoDir>/TPLsList.cmake`_ file), one must add and modify a few
+repository-level files.
+
+To add a new TriBITS TPL, do the following:
+
+1) Chose a name ``<tplName>`` for the new TPL (must be globally unique across
+   all TriBITS repos, see `Globally unique TriBITS TPL names`_) and which
+   TriBITS repository (``<repoDir>``) to define the new TPL in.  The right
+   repo is usually the one where the package exists that needs the new TPL
+   dependnecy.
+
+2) Create the TPL find module for the new,
+   e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake`` (see `TriBITS TPL`_ and
+   `TRIBITS_TPL_DECLARE_LIBRARIES()`_ for details).  List the default required
+   header files and/or libraries that must be provided by the TPL.
+
+3) Add the line for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after
+   any TPLs that this new TPL may depend on.
+
+4) Configure the TriBITS project enabling the new TPL with
+   ``TPL_ENABLE_<tplName>=ON`` and see that TriBITS finds the TPL correctly.
+
+5) List the new TPL in the package(s) that need this dependency in the
+   package's `<packageDir>/cmake/Dependencies.cmake`_ file.
+
+6) If the TPL is an optional TPL for the package, then::
+
+    #cmakedefine HAVE_<PACKAGE_NAME_UC>_<TPLN_AME_UC>
+
+   should be added to the package's ``<packageName>_config.h.in`` file (see
+   `TRIBITS_CONFIGURE_FILE()`) so that the code knows if the TPL is defined or
+   not.
+
+7) Use the TPL in the package's that define the dependnecy on the new TPL,
+   configure, test, etc.
+
+.. ToDo: Provide more details on various things.
+
+.. ToDo: Add an example of an optional TPL to some TribitsExampleProject
+.. package and refere to it here.
 
 
 How to Add a new TriBITS Repository
 -----------------------------------
 
-ToDo: Fill in!
+To add a new TriBITS and/ git VC repository to a TriBITS project that already
+contains other extra repositories, do the following:
+
+1) Add a row for the new git repo to
+   `<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  Commit this file.
+
+2) Add an ignore for the extra repo name to the base project's git repo's
+   ``.gitignore`` file.  Commit this file.
+
+3) Set up the new package dependencies in the existing packages for the new
+   packages in the new repo.
+
+4) Consider the potential for missing upstream repos and packages by using
+   `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
+
+See `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ for more details and
+links.
+
+.. ToDo: Provide more detail!
+
 
 How to insert a package into an upstream repo
 ---------------------------------------------
 
-ToDo: Describe how to insert a package into an upstream repo's list of
-packages like is done for TriKota/Dakota in Trilinos.
+Sometimes it is desired to insert a package into an upstream repo that is
+defined in a downstream VC repo for for package in that repo to define a
+dependency on that package.  While TriBITS does not provide direct support for
+doing this, it is easy to set up.  For example, say you want to add the
+package ``PackageFromDownstreamRepo`` who's source is provided in a downstream
+repo (i.e. listed later in the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).  This is done in
+several different TriBITS projects such as Trilinos (with Dakota wrapped in
+the TriKota package) and in the MPACT project (with one of their sensitive
+packages).  There are a few different ways to accomplish this that depend on a
+few details.  One issue is if the downstream repo and the extra package is
+allowed to be missing.  If it is, then all of the packages that define a
+dependency on the package must declare that the package might be missing by
+calling `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ in the package's
+`<packageDir>/cmake/Dependencies.cmake`_ file.
+
+.. ToDo: Create an example where a package is inserted into
+.. TribitsExampleProject and is listed as an extra repo in an
+.. ExtraRepositoriesList.cmake file.  To test and demonstrate this example we
+.. would have to copy the TribitsExampleProject source into the build tree,
+.. then copy in the extra package source, then configure the project.
 
 
 Additional Topics
@@ -4386,11 +4757,11 @@ While the core TriBITS functionality is just written using raw CMake, the more
 sophisticated development tools needed to implement the full TriBITS
 development environment requires Python 2.4 (or higher, but not Python 3.x).
 Python is needed for tools like ``checkin-test.py`` and ``egdist``.  In
-addition, these python tools are used in ``TribitsCTestDriverCore.cmake`` to
-drive automated testing and submittals to CDash.  In addition, git is the
-chosen version control tool for TriBITS and all of the VC related
-functionality requires git support.  But none of this is required for doing
-the most basic building, testing, or installation of a TriBITS project.
+addition, these python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive
+automated testing and submittals to CDash.  In addition, git is the chosen
+version control tool for TriBITS and all of the VC related functionality
+requires git support.  But none of this is required for doing the most basic
+building, testing, or installation of a TriBITS project.
 
 
 Project-Specific Build Quick Reference
@@ -4519,19 +4890,473 @@ for almost anyting.
 Creating Source Distributions
 -----------------------------
 
-ToDo: Fill in!
+The TriBITS system uses CMake's built-in CPack support to create source
+distributions in a varity of zipped and tarred formats.  TriBITS will
+automatically add support for CPack when the variable
+`${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`_ is set to ``ON``.  The commands for
+creating a source distribution are described in `Creating a tarball of the
+source tree`_ using the built-in ``package_source`` build target. The value
+added by TriBITS is that TriBITS will automatically exclude the source for any
+pakcages that are not enabled.  In addition, the source for non-enabled
+subpackages can also be excluded depending on the value of
+`${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_.    This
+allows one to create distributions for subsets of a larger project (even a
+single package in some cases).  
+
+Unlike other build systems (like autotools), CMake will put *everything* in
+the source distribution that it sitting in the source tree by default.
+Therefore, setting up for a source distribution usually means deciding what
+extra files and directories should be excluded.  Further files can be selected
+to excluded on a package-by-package based and at the repository level.
+
+Packages can list additional files to be excluded from the source tree using a
+call to `TRIBITS_EXCLUDE_FILES()`_ in their `<packageDir>/CMakeLists.txt`_
+file.
+
+Files can be excluded at the repostory level in the
+`<repoDir>/cmake/CallbackDefineRepositoryPackaging.cmake`_ which typically
+just appends the built-in CMake variable ``CPACK_SOURCE_IGNORE_FILES``.
+
+There are a number of project-level settings that need to be defined and these
+are defined in the file
+`<projectDir>/cmake/CallbackDefineProjectPackaging.cmake`_.
+
+The `TribitsExampleProject`_ is set up for creating source distributions and
+this is demonstrated in one of the tests defined in::
+
+  tribits/doc/examples/UnitTests/CMakeLists.txt
 
 
-Wrapping Exterally Configured/Built Software
---------------------------------------------
+Multi-Repository Almost Continuous Integration
+----------------------------------------------
 
-ToDo: Fill in!
+The `checkin-test.py`_ script can be used to implement stagged integration of
+the various repositories in a multi-repo TriBITS project.  This is referred to
+here as Almost Continuous Integration (ACI).  The basic concept of Almost
+Continuous Integration (ACI) is defined and described in the paper:
+
+|  Bartlett, Roscoe. Integration Strategies for Computational Science &
+|  Engineering Software.  2009-0655, Second International Workshop on Software
+|  Engineering for Computational Science and Engineering, 2009
+
+which can be found here:
+
+  https://cfwebprod.sandia.gov/cfdocs/CCIM/docs/CSE_SoftwareIntegration_Strategies%5B2%5D.pdf
+
+See:
+
+* `ACI Multi-Git/TriBITS Repo Integration Example`_
+* `ACI Local Sync Git Repo Setup`_
+* `ACI Integration Build Directory Setup`_
+* `ACI Sync Driver Script`_
+* `ACI Cron Job Setup`_
+* `Addressing ACI Failures and Summary`_
+
+
+ACI Introduction
+++++++++++++++++
+
+The TriBITS system allows for setting up composite meta-builds of large
+collections of software pulled in from many different git/TriBITS code
+repositories.  The `checkin-test.py`_ script is a key tool to enable the
+testing of a set of packages in different git/TriBITS repos before pushing to
+a master 'origin' set of git repos; all in one robust command invocation.
+
+While the ``checkin-test.py`` script was originally designed and its default
+behavior is to test a set of local commits created by a developer before
+pushing changes to one or more (public) git repos, it can also be used to set
+up an Almost Continuous Integration (ACI) process to keep these various
+git/TriBITS repos in sync thereby integrating the work of various disconnected
+development teams and projects.  To use the checkin-test.py for ACI requires
+some setup and changing what the script does a little by passing in additional
+options that a developer typically never uses.
+
+This section describes how to use the ``checkin-test.py`` script to implement
+an ACI process for a given set of git/TriBITS repositories and also provides a
+little background and context behind ACI.
+
+
+ACI Multi-Git/TriBITS Repo Integration Example
+++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to set up the context for the ACI process, let's take, for example, a
+simple TriBITS project with two extra repositories::
+
+  BaseProj/
+      ExtraRepo1
+      ExtraRepo2
+
+Here, ``BaseProj`` is the base TriBITS project/repository and ``ExtraRepo1``
+and ``ExtraRepo2`` are extra repositories that supply additional TriBITS
+packages that are appended to the TriBITS packages defined in ``BaseProj``
+(see `<projectDir>/cmake/ExtraRepositoriesList.cmake`_).  Also, let's assume
+that ``BaseProj``, ``ExtraRepo1``, and ``ExtraRepo2`` are developed by three
+different development teams that all have different funding sources and
+priorities so they tend not to work together or consider the other efforts too
+much when developing the software.  However, in this example, there is great
+value in combining all of this software into a single integrated TriBITS
+meta-project.  This combined meta-build is driven by a 4th
+integration/development team.  In this case, the core developers for each of
+these three different git/TriBITS repos do not test compatibility with the
+other git/TriBITS repos when pushing commits to their own git/TriBITS repos.
+This gives three different git repos on three different machines:
+
+* ``BaseProj`` main repo:  Pushed to by the core BaseProj team::
+
+    url1.gov:/git/BaseProj
+
+* ``ExtraRepo1`` main repo:  Pushed to by the core ExtraRepo1 team::
+
+    url2.gov:/git/ExtraRepo1
+
+* ``ExtraRepo2`` main repo:  Pushed to by the core ExtraRepo2 team::
+
+    url3.gov:/git/ExtraRepo2
+
+Because of the independent development processes of these three teams, unless
+these development teams maintain 100% backward compatibility w.r.t. the
+interfaces and behavior of the combined software, one cannot expect at any
+time to be able to pull the code from these three different git repos and be
+able to successfully build all of the code and have all of the tests pass.
+Therefore, how does the 4th integration team expect to be able to build, test,
+and possibly extend the combined software?  In this case, the integration team
+would set up their own clones of all three git/TriBITS repos on their own
+machine such as:
+
+**Integration project mirrored git repos**::
+
+  url4.gov:/git/BaseProj
+  url4.gov:/git/ExtraRepo1
+  url4.gov:/git/ExtraRepo2
+
+Once an initial collaboration effort between the integration team and the
+three other development teams is able to get a version of all three
+git/TriBITS repos to work correctly in the combined meta-project, these
+versions (assume the master branches) would be pushed to the git repos on the
+git integration server ``url4.gov``.  The state where the TriBITS packages in
+the three different git/TriBITS repos in the master branch on ``url4.gov`` all
+work together correctly constitutes the initial condition for the ACI process
+described below.  From that initial condition, the ACI processes ensures that
+updates of the git/TriBITS repos on ``url4.gov`` do not break any builds or
+tests of the integrated software.
+
+We will use the update of the git/TriBITS ``ExtraRepo1`` repo keeping the
+other two git/TriBITS repos ``BaseProj`` and ``ExtraRepo2`` constant as the
+ACI use case in order to describe how to set up an ACI process using the
+``checkin-test.py`` script.
+
+
+ACI Local Sync Git Repo Setup
++++++++++++++++++++++++++++++
+
+In order to set up an ACI process for the multi-git/TriBITS repo example
+outlined above, first local repos are created by cloning the repos on the
+integration server url4.gov as follows (all of which become 'origin')::
+
+  $ cd $SYNC_BASE_DIR
+  $ git clone url4.gov:/git/BaseProj
+  $ cd BaseProj
+  $ git clone url4.gov:/git/ExtraRepo1
+  $ git clone url4.gov:/git/ExtraRepo2
+
+where, ``SYNC_BASE_DIR=~/sync_base_dir`` for example, which must already be
+created.
+
+An ``.egdist`` file can be created to aid in multi-repo git commands using the
+tool `egdist`_.  This file is located in the ``BaseProj`` directory and can be
+created as::
+
+  $ cd $SYNC_BASE_DIR/BaseProj
+  $ echo ExtraRepo1 > .egdist
+  $ echo ExtraRepo2 >> .egdist
+  $ cat .egdist
+  ExtraRepo1
+  ExtraRepo2
+
+Next, the remotes that define the integration pattern are created as follows::
+
+  $ cd $SYNC_BASE_DIR/BaseProj
+  $ git remote add integrate-from url4.gov:/git/BaseProj
+  $ cd ExtraRep1
+  $ git remote add integrate-from url2.gov:/git/ExtraRepo1
+  $ cd ..
+  $ cd ExtraRepo2
+  $ git remote add integrate-from url4.gov:/git/ExtraRepo2
+  $ cd ..
+
+This gives the remotes::
+
+  $ cd $SYNC_BASE_DIR/BaseProj
+  $ egdist remote -v | grep -v push | grep -v "^$"
+  *** Base Git Repo: BaseProj
+  origin	url4.gov:/git/BaseProj (fetch)
+  integrate-from	url4.gov:/git/BaseProj (fetch)
+  *** Git Repo: ExtraRepo1
+  origin	url4.gov:/git/ExtraRepo1 (fetch)
+  integrate-from	url2.gov:/git/ExtraRepo1 (fetch)
+  *** Git Repo: ExtraRepo2
+  origin	url4.gov:/git/ExtraRepo2 (fetch)
+  integrate-from	url4.gov:/git/ExtraRepo2 (fetch)
+
+Above, the remote ``integrate-from`` is used by the ``checkin-test.py``
+wrapper script (see below) to pull and merge in additional changes that will
+be tested and pushed to the 'origin' repos on ``url4.gov``.  In this case, the
+``BaseProj`` and ``ExtraRepo2`` repos have the remote ``integrate-from`` that
+points to the same repos as 'origin' (and will therefore not result in any
+merging) but the ExtraRepo1 remote ``integrate-from`` will result in updates
+being pulled from the main development repo on ``url2.gov``, thereby
+facilitating the update of ExtraRepo1 in the integrated project.
+
+
+ACI Integration Build Directory Setup
++++++++++++++++++++++++++++++++++++++
+
+After the git repos are cloned and the remotes are set up, a build base
+directory is set up as::
+
+  $ cd $SYNC_BASE_DIR
+  $ mkdir BUILDS
+  $ mkdir BUILDS/CHECKIN
+
+An ACI wrapper script for ``checkin-test.py`` is created to drive the clones.
+It is assumed that this script would be called only once a day and not
+continuously in a loop (but that is possible as well but is not documented
+here).
+
+NOTE: Other build directory structures are possible, it all depends how one
+writes the the ``checkin-test.py`` wrapper scripts but the above directory
+structure is fairly standard in the usage of the ``checkin-test.py`` script.
+
+
+ACI Sync Driver Script
+++++++++++++++++++++++
+
+The sync driver script for this example should be called something like
+``sync_ExtraRepo1.sh``, placed under version control, and would look something
+like::
+
+  #!/bin/bash -e
+ 
+  EXTRA_ARGS=$@ 
+  
+  # Set up the environment (i.e. PATH; needed for cron jobs)
+  ...
+
+  SYNC_BASE_DIR=~/sync_base_dir
+  CHECKIN_TEST_WRAPPER=$SYNC_BASE_DIR/BaseProj/sampleScripts/checkin-test-foo.sh
+
+  cd $SYNC_BASE_DIR/BUILDS/CHECKIN
+
+  $CHECKIN_TEST_WRAPPER \
+    --extra-pull-from=integrate-from:master \
+    --abort-gracefully-if-no-changes-to-push \
+    --send-email-to=base-proj-integrators@url4.gov \
+    --send-email-to-on-push=base-proj-integrators@url4.gov \
+    --no-append-test-results --no-rebase \
+    --do-all --push \
+    -j16 \
+    --wipe-clean \
+    $EXTRA_ARGS
+
+NOTE, in the above example ``sync_ExtraRepo1.sh`` script, the variable
+``CHECKIN_TEST_WRAPPER`` is set to a wrapper script
+
+   BaseProj/sampleScripts/checkin-test-foo.sh
+
+which would be set up to call the ``checkin-test.py`` script with configure
+options for the specific machine.  The location and the nature of the wrapper
+script will vary project to project.  In some simple cases,
+``CHECKIN_TEST_WRAPPER`` might just be set to be the raw machine-independent
+``checkin-test.py`` script for the project.
+
+A description of each option passed into this invocation of the
+`checkin-test.py`_ script is given below (see `checkin-test.py --help`_):
+
+  ``--extra-pull-from=integrate-from:master``
+  
+    This option instructs the ``checkin-test.py`` script to pull and merge in
+    commits that define the integration.  This sasme remote name and remote
+    branch name has to be the same in all git repos (todo: remove this
+    requirement).  If it is not, then this option can't be used and instead
+    the wrapper script should do the pulls up front manually before calling
+    the checkin-test.py script.  The disadvantage of doing the pulls manually
+    is that if they fail for some reason, they will not be seen by the
+    ``checkin-test.py`` script and no notification email would go out.
+    However, integrating 'master' branches in different git repos is a very
+    common use case when good Lean/Agile CI practices are used by all of the
+    projects.
+  
+  ``--abort-gracefully-if-no-changes-to-push``
+  
+    The option ``--abort-gracefully-if-no-changes-to-push`` makes the
+    ``checkin-test.py`` script gracefully terminate without sending out any
+    emails if after all the pulls, there are no local changes to push to the
+    'origin' repos.  This can happen, for example, if no commits were pushed
+    to the main development git repo for ``ExtraRepo1`` at
+    ``url2.gov:/git/ExtraRepo1`` since the last time this sync process was
+    run.  This avoids getting confusing and annoying emails like ``"PUSH
+    FAILED"``.  The reason this option is not generally needed for local
+    developer usage of the checkin-test.py script is that in general a
+    developer will not run the ``checkin-test.py`` script with ``--push``
+    unless they have made local changes; it just does not make any sense at
+    all to do that and if they do by accident, they should get an error email.
+    However, for an automated CI sync process, there is no easy way to know a
+    priori if changes needs to be synced so the script supports this option to
+    deal with that case gracefully.
+  
+  ``--send-email-to=base-proj-integrators@url4.gov``
+ 
+    The results of the builds will be sent this email address.  If you only
+    want an email sent when a push actually happens, you can set
+    ``--send-email-to=''`` and rely on ``--send-email-to-on-push``.
+  
+  ``--send-email-to-on-push=base-proj-integrators@url4.gov``
+  
+    A confirmation and summary email will be sent to this address if the push
+    happens.  This can be a different email address than set by the
+    ``--send-email-to`` option.  It is highly recommended that a mail list be
+    used for this email address since this will be the only more permanent
+    logging of the ACI process.
+  
+  ``--no-append-test-results --no-rebase``
+  
+    These options are needed to stop the ``checkin-test.py`` script from
+    modifying the commits being tested and pushed from one public git repo to
+    another.  The option ``--no-append-test-results`` is needed to instruct
+    the ``checkin-test.py`` script to *NOT* amend the last commit with the
+    test results.  The option ``--no-rebase`` is needed to avoid rebasing the
+    new commits pulled from being rebased.  While the default behavior of the
+    ``checkin-test.py`` script is to amend the last commit message and rebase
+    the local commits (which is considered best practice when testing local
+    commits), this is a very bad thing to do when a ACI sync server is only
+    testing and moving commits between public repos.  Amending the last commit
+    would change the SHA1 of the commit (just as a rebase would) and would
+    fork the history and mess up a number of workflows that otherwise should
+    work smoothly.  Since an email logging what was tested will go out if a
+    push happens due to the ``--send-email-to-on-push`` argument, there is no
+    value in appending the test results to the last commit pulled and merged
+    (which will generally not be a merge commit but just a fast-forward).
+    There are cases, however, where appending the test results in an ACI
+    process might be acceptable but they are not discussed here.
+  
+  ``--do-all --push -j16``
+  
+    These are standard options that always get used when invoking the
+    ``checkin-test.py`` script and need no further explanation.
+  
+  ``--wipe-clean``
+  
+    This option is added if you want to make the sync server more robust to
+    changes that might require a clean configure from script.  If you care
+    more about using less computer resources and rebuild, remove this option.
+
+Note that the option ``--enable-packages`` is not set in the above invocation
+of the ``checkin-test.py`` script, and therefore the ``checkin-test.py``
+script will decide on its own what packages to test just based on what
+packages have changed files in the ``ExtraRepo1`` git/TriBITS extra
+repository.  This is the preferred way to go since any affected packages will
+automatically be enabled as determined by the TriBITS package dependency
+structure and therefore this driver script will require no modifications if
+the the dependency structure changes over time.  However, there are cases and
+various reasons where the exact list of packages to be tested (or not tested)
+should be specified using the ``--enable-packages`` option (or the
+``--disable-packages`` option, respectively).  However, these should not be
+needed with well structured portable TriBITS repos and packages.
+
+The sync script can be created and tested locally to ensure that it works
+correctly first, before setting it as a cron job as described next.
+
+Note, if using this in a continuous sync server that runs many times in a day
+in a loop, you also want to set the option
+``--abort-gracefully-if-no-updates`` in addition to the option
+``--abort-gracefully-if-no-changes-to-push``.  That is because if the updated
+repos are in a broken state such that there are always local changes at every
+CI iteration (becuase they have not been pushed to origin), you don't want to
+do a new CI build unless something has changed that would otherwise perhaps
+make the error go away.  That allows the CI server to sit ready to try out any
+change that gets pulled that might allow the integrated build to work and then
+push the updates.
+
+
+ACI Cron Job Setup
+++++++++++++++++++
+
+Once the sync script ``sync_ExtraRepo1.sh`` has been locally tested, then it
+should be committed to a version control git repo and then run automatically
+as a cron job.  For example, the cron script shown below would fire off the
+daily ACI process at 8pm every night::
+
+  # ----------------- minute (0 - 59)
+  # |  -------------- hour (0 - 23)
+  # |  |  ----------- day of month (1 - 31)
+  # |  |  |  -------- month (1 - 12)
+  # |  |  |  |  ----- day of week (0 - 7) (Sunday=0 or 7)
+  # |  |  |  |  |
+  # *  *  *  *  *  command to be executed
+   00 20  *  *  *  ~/sync_base_dir/sync_ExtraRepo1.sh &> ~/sync_base_dir/sync_ExtraRepo1.out
+  
+In the above crontab file (set with ``'crontab -e'`` or ``'crontab
+my-crontab-file.txt'``), the script::
+
+  ~/sync_base_dir/sync_ExtraRepo1.sh
+ 
+is assumed to be a soft symbolic link to some version controlled copy of the
+ACI sync script.  For example, it might make sense for this script to be
+version controlled in the ``BaseProj`` repo and therefore the symbolic link
+would be created with something like::
+
+  $ cd ~/sync_base_dir/
+  $ ln -s BaseProj/sampleScripts/sync_ExtraRepo1.sh .
+
+Such a setup would ensure that sync scripts would always be up-to-date due to
+the git pulls part of the ACI process.
+
+
+Addressing ACI Failures and Summary
++++++++++++++++++++++++++++++++++++
+
+After the above cron job starts running, it will send out emails to the email
+addresses passed into the underlying ``checkin-test.py`` script.  If the
+emails report an update, configure, build, or test failure, then someone will
+need to log onto the machine where the ACI sync server is running and
+investigate what went wrong, just like they would if the were running the
+``checkin-test.py`` script for testing locally modified changes before
+pushing.
+
+In the above example, only a single git/TriBITS repo is integrated in this ACI
+sync scripts.  For a complete system, other ACI sync scripts would be written
+to sync the two other git/TriBITS repos in order to maintain some
+independence.  Or, a single ACI sync script that tries to update all three
+git/TriBITS repos at once would be written and used.  The pattern of
+integrations chosen will depend many different factors.
+
+In summary, the ``checkin-test.py`` script can be used to set up robust and
+effective Almost Continuous Integration (ACI) sync servers that can be used to
+integrate large collections of software in logical pieces at any logical
+frequency.  Such an approach, together with the practice of `Regulated
+Backward Compatibility and Deprecated Code`_, can allow very large collections
+of software to be kept integrated in short time intervals using ACI.
 
 
 TriBITS Dashboard Driver
 ------------------------
 
-ToDo: Fill in!
+TriBITS also includes a system based on CMake/CTest/CDash to drive the builds
+of a TriBITS project and post results to another CDash project.  This system is contained under the directory::
+
+  tribits/ctest/tdd/
+
+If the TriBITS project name is ``<projectName>``, the TDD driver CDash project
+is typically called ``<projectName>Driver``.  Using CTest to drive the Nightly
+builds of a TriBITS project makes sense because CTest can run different builds
+in parallel, can time-out builds that are taking too long, and will report
+results to a dashboard and submit notification emails when things fail.
+However, this is the most confusing and immature part of the TriBITS system
+and is completely independent from the TriBITS `TriBITS Package-by-Package
+CTest/Dash Driver`_ using the `TRIBITS_CTEST_DRIVER()`_.
+
+.. ToDo: Import and format the contents of tribits/ctest/README related to
+.. this topic into this section.
 
 
 Regulated Backward Compatibility and Deprecated Code
@@ -4545,11 +5370,54 @@ how transitions between non-backward compatible versions is accomplished.
 .. ToDo: Put in the material from the document README.DEPRECATED_CODE and
 .. format for RST.
 
+
+Wrapping Exterally Configured/Built Software
+--------------------------------------------
+
+It is possible to take an external piece of software that uses an uses any
+arbitrary builds system and wrap it as a TriBITS package and have it integrate
+in with the package dependency infrastructure.  The `TribitsExampleProject`_
+package ``WrapExternal`` shows how this can be done.
+
+While it is possible to wrap an exteranlly configured and built piece of
+software as a TriBITS package, is is usually must better to just go ahead and
+create a TriBITS build system for the software.  For projects that use a raw
+CMake build system, a TriBITS build build can be created side by side using a
+number of approaches. The common approach that is not too invasive is to
+create a ``CMakeLists.tribits.txt`` file along side every native
+``CMakeLists.txt`` file and have the native ``CMakeList.txt`` file defined
+like::
+
+  IF (DOING_A_TRIBITS_BUILD)
+    INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.tribits.txt")
+    RETURN()
+  ENDIF()
+
+  # Rest of native CMakeLists.txt file ...
+
+Experience from the CASL VERA project shows that, overall, there is less
+hassell and less work and better portability when creating a native TriBITS
+build, even it it is a secondary build system for a given piece of software.
+
+
 TriBITS Development Toolset
 ---------------------------
 
-ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI,
-CMake, etc.
+Most TriBITS projects need a git, a compiler (e.g. GCC), MPI, and a number of
+otehr standard TPLs and tools in order to develop on the project sources.  To
+this end, TriBITS contains some helper scripts for downloading, configuring,
+building, and installing packages like git, cmake, GCC, OpenMPI, and others
+needed to set up a development environment.  These tools are used to set up
+development environments on new machines for projects like Trilinos and CASL
+VERA.  Scrits with names like ``install-gcc.py`` are defined which pull
+sources from public git repos then configure, build, and install into
+specified installation directories.
+
+.. ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI,
+.. CMake, etc.
+
+.. ToDo: Move install scripts to tribits/dev_toolset/ and document specific
+.. scripts here and even a top-level driver install script.
 
 
 References
@@ -4983,7 +5851,7 @@ Design Considerations for TriBITS
 ToDo: Discuss design requirements.
 
 ToDo: Discuss why it is a good idea to explicitly list packages instead of
-just searching for them.
+just searching for them.  Hint: Think performance and circular dependencies!
 
 
 checkin-test.py --help

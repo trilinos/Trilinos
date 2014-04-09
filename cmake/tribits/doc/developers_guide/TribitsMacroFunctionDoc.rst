@@ -1075,8 +1075,8 @@ Usage::
     If specified, gives the names of the host system type (given by
     ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
     confgiure output in the section ``Probing the environment``) to include
-    the test.  Typical host system type names include ``Linux``, ``Darwain``
-    etc.
+    the test.  Typical host system type names include ``Linux``,
+    ``Darwain``, ``Windows``, etc.
 
   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 
@@ -1543,6 +1543,81 @@ The individual arguments are:
     Option that determines if the prefix ``${PACKAGE_NAME}_`` will be
     appended to the arguments in the ``EXEDEPS`` list.
 
+TRIBITS_CTEST_DRIVER()
+++++++++++++++++++++++
+
+Platform-independent package-by-package CTest/CDash driver (run by ``ctest``
+**NOT** ``cmake``).
+
+Usage::
+
+  TRIBITS_CTEST_DRIVER()
+
+This is the driver code that is platform independent.  This script drives
+the testing process by doing an update and then configuring and building the
+top-level TriBITS packages one at a time.  This function gets called from
+inside of a platform and build-specific ``ctest -S`` driver  script.
+
+To understand this script, one must understand that it gets run in several
+different modes:
+
+**Mode 1**: Run where there are already existing source and binary
+directories (i.e. ``CTEST_DASHBOARD_ROOT`` is set empty before call).  This
+is for when the ctest driver script is run on an existing source and binary
+tree.  In this case, there is one project source tree and
+``CTEST_SOURCE_DIRECTORY`` and ``CTEST_BINARY_DIRECTORY`` must be set by the
+user before calling this function.
+
+**Mode 2**: A new binary directory is created and new sources are cloned (or
+updated) in a driver directory (``CTEST_DASHBOARD_ROOT`` is set is *not*
+empty before call).  In this case, there are always two (partial) project
+source tree's, i) a "driver" skeleton source tree (typically embedded with
+TriBITS directory) that bootstraps the testing process, and ii) a true full
+"source" that is (optionally) cloned and/or updated.
+
+There are a few different directory locations are significant for this
+script:
+
+  ``TRIBITS_PROJECT_ROOT``
+
+    The root directory to an existing source tree where the project's
+     ProjectName.cmake (defining PROJECT_NAME variable) and Version.cmake
+     file's can be found.
+
+  ``${PROJECT_NAME}_TRIBITS_DIR``
+
+    The base directory for the TriBITS system's various CMake modules,
+    python scripts, and other files.  By default this is assumed to be in
+    the source tree under ${TRIBITS_PROJECT_ROOT} (see below) but it can be
+    overridden to point to any location.
+
+  ``CTEST_DASHBOARD_ROOT``
+
+    If set, this is the base directory where this script runs that clones
+    the sources for the project.  If this directory does not exist, it will
+    be created.  If empty, then has no effect on the script.
+
+  ``CTEST_SOURCE_DIRECTORY``
+
+    Determines the location of the sources that are used to define packages,
+    dependencies and configure and build the software.  This is a varaible
+    that CTest directly reads and must therefore be set. This is used to set
+    PROJECT_SOURCE_DIR which is used by the TriBITS system.  If
+    CTEST_DASHBOARD_ROOT is set, then this is hard-coded to
+    ${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}.
+
+  ``CTEST_BINARY_DIRECTORY``
+
+    Determines the location of the binary tree where output from CMake/CTest
+    is put.  This is used to set to PROJECT_BINARY_DIR which is used by the
+    TriBITS system.  If CTEST_DASHBOARD_ROOT is set, then this is hard-coded
+    to ${CTEST_DASHBOARD_ROOT}/BUILD.
+
+ToDo: Document input variables that have defaults, be be set before, and can
+be overridden from the env.
+
+ToDo: Finish Documentation!
+
 TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
 +++++++++++++++++++++++++++++++++++++
 
@@ -1853,6 +1928,23 @@ the package test group classification to ``EX`` results in the package being
 disabled by default.  However, an explicit enable can still enable the
 package.
 
+TRIBITS_EXCLUDE_FILES()
++++++++++++++++++++++++
+
+Exclude package files/dirs from the source distribution by appending
+``CPACK_SOURCE_IGNORE_FILES``.
+
+Usage::
+
+ TRIBITS_EXCLUDE_FILES(<file0> <file1> ...)
+
+This is called in the package's top-level `<packageDir>/CMakeLists.txt`_
+file and each file or directory name ``<filei>`` is actually interpreted by
+CMake/CPack as a regex that is prefixed by the project's and packages source
+directory names so as to not exclude files and directories of the same name
+and path from other packages.  If ``<filei>`` is an absolute path it it not
+prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES`` unmodified.
+   
 TRIBITS_INCLUDE_DIRECTORIES()
 +++++++++++++++++++++++++++++
 

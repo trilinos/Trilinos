@@ -2510,7 +2510,25 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
 ENDMACRO()
 
 
+#
+# @MACRO: TRIBITS_EXCLUDE_FILES()
+#
+# Exclude package files/dirs from the source distribution by appending
+# ``CPACK_SOURCE_IGNORE_FILES``.
+#
+# Usage::
+#
+#  TRIBITS_EXCLUDE_FILES(<file0> <file1> ...)
+#
+# This is called in the package's top-level `<packageDir>/CMakeLists.txt`_
+# file and each file or directory name ``<filei>`` is actually interpreted by
+# CMake/CPack as a regex that is prefixed by the project's and packages source
+# directory names so as to not exclude files and directories of the same name
+# and path from other packages.  If ``<filei>`` is an absolute path it it not
+# prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES`` unmodified.
+#    
 MACRO(TRIBITS_EXCLUDE_FILES)
+
   SET(FILES_TO_EXCLUDE ${ARGN})
   
   #need to add "/<project source dir>/<package dir>/" to each file this is to prevent
@@ -2552,8 +2570,8 @@ ENDMACRO()
 #  Macro for helping set up exclude files only for the packages that will not
 #  be supporting autotools.
 #
-
 MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
+
   SET(AUTOTOOLS_FILES 
     configure.ac$
     configure$
