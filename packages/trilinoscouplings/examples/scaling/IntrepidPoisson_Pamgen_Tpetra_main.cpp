@@ -99,8 +99,10 @@ main (int argc, char *argv[])
   using std::endl;
   // Pull in typedefs from the example's namespace.
   typedef TpetraIntrepidPoissonExample::ST ST;
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::LO LO;
   typedef TpetraIntrepidPoissonExample::GO GO;
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;

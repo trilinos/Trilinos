@@ -626,8 +626,8 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
       //"WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
-	TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	  "Build matrix graph: 1-Insert global indices", graph_insert);
+        TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+          "Build matrix graph: 1-Insert global indices", graph_insert);
 
         // Compute cell ordinal relative to the current workset
         //int worksetCellOrdinal = cell - worksetBegin;
@@ -649,7 +649,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
             ArrayView<int> globalColAV = arrayView (&globalCol, 1);
 
             //Update Tpetra overlap Graph
-	    overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);
+            overlappedGraph->insertGlobalIndices (globalRowT, globalColAV);
           }// *** cell col loop ***
         }// *** cell row loop ***
       }// *** workset cell loop **
@@ -658,20 +658,20 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
     // Fill-complete overlapping distribution Graph.
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 2-Overlapped fill complete", 
-	overlapped_fill_complete);
+        "Build matrix graph: 2-Overlapped fill complete",
+        overlapped_fill_complete);
       overlappedGraph->fillComplete ();
     }
 
     // Export to owned distribution Graph, and fill-complete the latter.
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 3-Owned graph export", graph_export);
+        "Build matrix graph: 3-Owned graph export", graph_export);
       ownedGraph->doExport (*overlappedGraph, *exporter, Tpetra::INSERT);
     }
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Build matrix graph: 4-Owned fill complete", owned_fill_complete);
+        "Build matrix graph: 4-Owned fill complete", owned_fill_complete);
       ownedGraph->fillComplete ();
     }
   }
@@ -911,7 +911,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
 
     {
       TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	"Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
+        "Matrix/RHS fill:  2-Element assembly", elem_assembly_total);
 
       // "WORKSET CELL" loop: local cell ordinal is relative to numElems
       for (int cell = worksetBegin; cell < worksetEnd; ++cell) {
@@ -925,27 +925,27 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
           int localRow  = elemToNode (cell, cellRow);
           ST sourceTermContribution = worksetRHS (worksetCellOrdinal, cellRow);
 
-	  {
-	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	    //   "Matrix/RHS fill:  2a-RHS sum into local values", 
-	    //   elem_rhs);
-	    rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
-	  }
+          {
+            // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+            //   "Matrix/RHS fill:  2a-RHS sum into local values",
+            //   elem_rhs);
+            rhsVector->sumIntoLocalValue (localRow, sourceTermContribution);
+          }
 
           // "CELL VARIABLE" loop for the workset cell: sum entire element
-	  // stiff matrix contribution in one function call
-	  ArrayView<int> localColAV = 
-	    arrayView<int> (&elemToNode(cell,0), numFieldsG);
-	  ArrayView<ST> operatorMatrixContributionAV =
-	    arrayView<ST> (&worksetStiffMatrix(worksetCellOrdinal,cellRow,0), 
-			   numFieldsG);
-	  {
-	    // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
-	    //   "Matrix/RHS fill:  2b-Matrix sum into local values", 
-	    //   elem_matrix);
-	    StiffMatrix->sumIntoLocalValues (localRow, localColAV,
-					     operatorMatrixContributionAV);
-	  }
+          // stiff matrix contribution in one function call
+          ArrayView<int> localColAV =
+            arrayView<int> (&elemToNode(cell,0), numFieldsG);
+          ArrayView<ST> operatorMatrixContributionAV =
+            arrayView<ST> (&worksetStiffMatrix(worksetCellOrdinal,cellRow,0),
+                           numFieldsG);
+          {
+            // TEUCHOS_FUNC_TIME_MONITOR_DIFF(
+            //   "Matrix/RHS fill:  2b-Matrix sum into local values",
+            //   elem_matrix);
+            StiffMatrix->sumIntoLocalValues (localRow, localColAV,
+                                             operatorMatrixContributionAV);
+          }
         }// *** cell row loop ***
       }// *** workset cell loop **
     } // *** stop timer ***
@@ -1164,42 +1164,27 @@ materialTensor (Scalar material[][3],
 {
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
+  const Scalar zero = STS::zero ();
+  const Scalar one = STS::one ();
+  const Scalar two = one + one;
+  const Scalar four = two + two;
+  const Scalar eight = four + four;
+  (void) four;
+  (void) eight;
+
   const bool illConditioned = false;
   if (illConditioned) {
-    const Scalar zero = STS::zero ();
-    const Scalar one = STS::one ();
-    const Scalar two = one + one;
-    const Scalar four = two + two;
-    const Scalar eight = four + four;
-    (void) four;
-    (void) eight;
+    material[0][0] = one;
+    material[0][1] = one - one / two;
+    material[0][2] = zero;
 
-    if (false) {
-      material[0][0] = one;
-      material[0][1] = one;
-      material[0][2] = zero;
+    material[1][0] = one;
+    material[1][1] = one - one / two;
+    material[1][2] = one;
 
-      material[1][0] = one;
-      material[1][1] = one;
-      material[1][2] = one;
-
-      material[2][0] = one;
-      material[2][1] = one;
-      material[2][2] = zero;
-    }
-    else {
-      material[0][0] = one;
-      material[0][1] = one - one / two;
-      material[0][2] = zero;
-
-      material[1][0] = one;
-      material[1][1] = one - one / two;
-      material[1][2] = one;
-
-      material[2][0] = one;
-      material[2][1] = one - one / two;
-      material[2][2] = zero;
-    }
+    material[2][0] = one;
+    material[2][1] = one - one / two;
+    material[2][2] = zero;
   }
   else {
     material[0][0] = STS::one();
