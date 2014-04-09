@@ -60,6 +60,23 @@
 namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
+  Map () :
+    indexBase_ (0),
+    numGlobalElements_ (0),
+    numLocalElements_ (0),
+    minMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxMyGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    minAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    maxAllGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    firstContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    lastContiguousGID_ (Teuchos::OrdinalTraits<GlobalOrdinal>::invalid ()),
+    uniform_ (false), // trivially
+    contiguous_ (false),
+    distributed_ (false) // no communicator yet
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map (global_size_t numGlobalElements,
        GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
@@ -596,6 +613,18 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::~Map ()
   {}
+
+
+  template <class LocalOrdinal, class GlobalOrdinal, class Node>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Node>::isOneToOne () const
+  {
+    // This is a collective operation, if it hasn't been called before.
+    setupDirectory ();
+
+    return directory_->isOneToOne (* (getComm ()));
+  }
+
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   LocalOrdinal
