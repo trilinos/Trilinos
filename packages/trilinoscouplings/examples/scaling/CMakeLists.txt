@@ -153,12 +153,11 @@ ENDIF()
 # Intrepid has required dependencies on Teuchos, Shards, and Sacado,
 # so we don't have to name those packages explicitly here.
 # Belos and Tpetra also both have required dependencies on Teuchos.
+# The executable may use MueLu only if the MueLu package is enabled.
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Tpetra AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_MueLu)
+   Trilinos_ENABLE_Tpetra)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Tpetra
     SOURCES IntrepidPoisson_Pamgen_Tpetra_main.cpp

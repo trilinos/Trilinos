@@ -1,7 +1,8 @@
-/** \file  example_IntrepidPoisson_Pamgen_Tpetra.cpp
-    \brief Example setup of a discretization of a Poisson equation on
-           a hexahedral mesh using nodal (Hgrad) elements.  The
-           system is assembled but not solved.
+/** \file  IntrepidPoisson_Pamgen_Tpetra_main.cpp
+    \brief Example: Discretize Poisson's equation with Dirichlet
+           boundary conditions on a hexahedral mesh using nodal
+           (Hgrad) elements.  The system is assembled into Tpetra data
+           structures, and optionally solved.
 
            This example uses the following Trilinos packages:
     \li    Pamgen to generate a Hexahedral mesh.
@@ -62,11 +63,13 @@
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
+#include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
-// MueLu includes
-#include "MueLu_CreateTpetraPreconditioner.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#  include "MueLu_CreateTpetraPreconditioner.hpp"
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #include <MatrixMarket_Tpetra.hpp>
 
@@ -133,6 +136,8 @@ main (int argc, char *argv[])
     Teuchos::CommandLineProcessor cmdp (false, true);
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
                                verbose, debug);
+
+    // Additional command-line arguments for GPU experimentation.
     bool gpu = false;
     cmdp.setOption ("gpu", "no-gpu", &gpu,
                     "Run example using GPU node (if supported)");
@@ -145,6 +150,12 @@ main (int argc, char *argv[])
     int device_offset = 0;
     cmdp.setOption ("device_offset", &device_offset,
                     "Offset for attaching MPI ranks to CUDA devices");
+
+    // Additional command-line arguments for dumping the generated
+    // matrix or its row Map to output files.
+    //
+    // FIXME (mfh 09 Apr 2014) Need to port these command-line
+    // arguments to the Epetra version.
 
     // If matrixFilename is nonempty, dump the matrix to that file
     // in MatrixMarket format.
@@ -260,14 +271,21 @@ main (int argc, char *argv[])
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "MueLu") {
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
           if (inputList.isSublist("MueLu")) {
             ParameterList mueluParams = inputList.sublist("MueLu");
             M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A,mueluParams);
           } else {
             M = MueLu::CreateTpetraPreconditioner<ST,LO,GO,Node>(A);
           }
+#else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            prec_type == "MueLu", std::runtime_error, "Tpetra scaling example: "
+            "In order to precondition with MueLu, you must have built Trilinos "
+            "with the MueLu package enabled.");
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
         }
-      }
+      } // setup preconditioner
 
       bool converged = false;
       int numItersPerformed = 0;
@@ -288,11 +306,11 @@ main (int argc, char *argv[])
       }
 
       // Compute ||X-X_exact||_2
-      MT norm_x = X_exact->norm2 ();
+      const MT norm_x = X_exact->norm2 ();
       X_exact->update (-1.0, *X, 1.0);
-      MT norm_error = X_exact->norm2 ();
+      const MT norm_error = X_exact->norm2 ();
       *out << endl
-           << "||X-X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
+           << "||X - X_exact||_2 / ||X_exact||_2 = " << norm_error / norm_x
            << endl;
     } // total time block
 
@@ -301,7 +319,9 @@ main (int argc, char *argv[])
   } // try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
-  if (success)
+  if (success) {
     return EXIT_SUCCESS;
-  return EXIT_FAILURE;
+  } else {
+    return EXIT_FAILURE;
+  }
 }
