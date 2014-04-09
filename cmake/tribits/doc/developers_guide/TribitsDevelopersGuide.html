@@ -894,17 +894,27 @@ definitions will not be set (see warning in <a class="reference internal" href="
 <p>Now that some CMake basics and common gotchas have been reviewed, we now get
 into the meat of TriBITS starting with the overall structure of a TriBITS
 project in the next section.</p>
-<!-- ToDo: Edited and spell-checked up to here on 4/1/2014! -->
 </div>
 </div>
 <div class="section" id="tribits-project-structure">
 <h1><a class="toc-backref" href="#id15">3&nbsp;&nbsp;&nbsp;TriBITS Project Structure</a></h1>
-<p>TriBITS is a framework, implemented in CMake to create CMake projects.  As a
-framework, it defines the the overall structure of a CMake build system for a
-project and processes project, repository, and package specific files in a
-specified order.  Almost all of this processing takes place in the
-<a class="reference internal" href="#id8">TRIBITS_PROJECT()</a> macro (or macros and functions it calls).</p>
-<!-- ToDo: Provide outline of the subsections to come. -->
+<p>TriBITS is a Framework, implemented in CMake, to create CMake projects.  As a
+Framework (with a capital &quot;F&quot;), TriBITS defines the the overall structure of a
+CMake build system for a project and it processes the various project-,
+repository-, and package-specific files in a specified order.  Almost all of
+this processing takes place in the <a class="reference internal" href="#id8">TRIBITS_PROJECT()</a> macro (or macros and
+functions it calls).  The following subsections define the essence of the
+TriBITS framework in some detail.  Later sections cover specific topics and
+the various sections link to each other.  Within this section, the subsection
+<a class="reference internal" href="#tribits-structural-units">TriBITS Structural Units</a> defines the basic units <a class="reference internal" href="#tribits-project">TriBITS Project</a>,
+<a class="reference internal" href="#tribits-repository">TriBITS Repository</a>, <a class="reference internal" href="#tribits-package">TriBITS Package</a>, <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a> and other related
+structural units.  The subsection <a class="reference internal" href="#processing-of-tribits-files-ordering-and-details">Processing of TriBITS Files: Ordering and
+Details</a> defines exactly what files TriBITS processes and in what order.  It
+also shows how to get TriBITS to show exactly what files it is processing to
+help in debugging issues.  The subsection <a class="reference internal" href="#coexisting-projects-repositories-and-packages">Coexisting Projects, Repositories,
+and Packages</a> gives some of the rules and constrains for how the different
+structure units can co-exist in the same directories.  The last subsection in
+this section covers the <a class="reference internal" href="#standard-tribits-tpls">Standard TriBITS TPLs</a>.</p>
 <div class="section" id="tribits-structural-units">
 <h2><a class="toc-backref" href="#id16">3.1&nbsp;&nbsp;&nbsp;TriBITS Structural Units</a></h2>
 <p>A CMake project that uses TriBITS as its build and test system is composed of
@@ -913,26 +923,26 @@ more <a class="reference internal" href="#tribits-packages">TriBITS Packages</a>
 into <a class="reference internal" href="#tribits-subpackages">TriBITS Subpackages</a>.  Together, the collection of TriBITS Packages and
 TriBITS Subpackages are called <em>TriBITS Software Engineering Packages</em>, or
 <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> for short.</p>
-<p>First, to establish the basic nomenclature, the key structural TriBITS units
-are:</p>
+<p>First, to better establish the basic nomenclature, the key structural TriBITS
+units are:</p>
 <ul class="simple" id="tribits-packages">
 <li><a class="reference internal" href="#tribits-package">TriBITS Package</a>: A collection of related software that typically includes
-one or more source files built into one or more libraries and has assoicated
+one or more source files built into one or more libraries and has associated
 tests to help define and protect the functionality provided by the software.
-A package also typically defines a unit of documentation and testing (see
-<a class="reference internal" href="#tribits-automated-testing">TriBITS Automated Testing</a>).  A TriBITS package may or may not be broken down into
-multiple subpackages. Examples of TriBITS packages in
-<tt class="docutils literal">TribitsExampleProject</tt> include <tt class="docutils literal">SimpleCXX</tt>, <tt class="docutils literal">MixedLanguage</tt> and
-<tt class="docutils literal">PackageWithSubpackages</tt>.  (Don't confuse a TriBTS &quot;Package&quot; with a raw
-CMake &quot;Package&quot; (see <a class="reference internal" href="#history-of-tribits">History of TriBITS</a>).  A raw CMake &quot;Package&quot; actually
-maps to a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.)</li>
+A package also typically defines a single integrated unit of documentation
+and testing (see <a class="reference internal" href="#tribits-automated-testing">TriBITS Automated Testing</a>).  A TriBITS package may or
+may not be broken down into multiple subpackages. Examples of TriBITS
+packages in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> include <tt class="docutils literal">SimpleCXX</tt>,
+<tt class="docutils literal">MixedLanguage</tt> and <tt class="docutils literal">PackageWithSubpackages</tt>.  (Don't confuse a TriBITS
+&quot;Package&quot; with a raw CMake &quot;Package&quot;. A raw CMake &quot;Package&quot; actually maps to
+a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>; see <a class="reference internal" href="#why-a-tribits-package-is-not-a-cmake-package">Why a TriBITS Package is not a CMake Package</a>.)</li>
 </ul>
 <ul class="simple" id="tribits-subpackages">
 <li><a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>: A part of a parent <a class="reference internal" href="#tribits-package">TriBITS Package</a> that also
 typically has source files built into libraries and tests but is documented
 and tested along with the other subpackages the parent package.  The primary
-purpose for supporting subpackages to provide finer-grained of control
-software dependencies.  In <tt class="docutils literal">TribitsExampleProject</tt>,
+purpose for supporting subpackages is to provide finer-grained control of
+software dependencies.  In <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>,
 <tt class="docutils literal">PackageWithSubpackages</tt> is an example of a package with subpackages
 <tt class="docutils literal">SubpackageA</tt>, <tt class="docutils literal">SubpackaeB</tt>, and <tt class="docutils literal">SubpackageC</tt>.  The full subpackage
 name has the parent package name prefixed the the subpackage name
@@ -941,68 +951,75 @@ implicitly dependent on its subpackages.</li>
 </ul>
 <ul class="simple" id="tribits-se-packages">
 <span id="tribits-se-package"></span><li><strong>TriBITS SE Package</strong>: The combined set of <a class="reference internal" href="#tribits-packages">TriBITS Packages</a> and <a class="reference internal" href="#tribits-subpackages">TriBITS
-Subpackages</a> that constitute the basice <em>Softare Engineering</em> packages (see
-???) of a TriBITS proejct: SE packages are the basis for setting
-dependencies in the TriBITS system.  For example, the SE Packages provided
-by the top-level example <tt class="docutils literal">PackageWithSubpackages</tt> is (in order of
-increasing dependencies) <tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>,
-<tt class="docutils literal">PackageWithSubpackagesSubpackaeB</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>,
-and <tt class="docutils literal">PackageWithSubpackages</tt> (see <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>).</li>
+Subpackages</a> that constitute the basic <em>Software Engineering</em> packages (see
+<a class="reference internal" href="#software-engineering-packaging-principles">Software Engineering Packaging Principles</a>) of a TriBITS project: SE
+packages are the basis for setting dependencies in the TriBITS system.  For
+example, the SE Packages provided by the top-level example
+<tt class="docutils literal">PackageWithSubpackages</tt> is (in order of increasing dependencies)
+<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackaeB</tt>,
+<tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>, and <tt class="docutils literal">PackageWithSubpackages</tt> (see
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>).</li>
 </ul>
 <ul class="simple" id="tribits-tpls">
 <li><a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>: The specification for a particular external dependency that
 is required or can be used in one or more <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a>.  A TPL (a
 Third Party Library) typically provides a list of libraries or a list
-include directories for header files but can also be manifisted in order
+include directories for header files but can also be manifested in order
 ways as well.  Examples of basic TPLs include <tt class="docutils literal">BLAS</tt>, <tt class="docutils literal">LAPACK</tt>, and
 <tt class="docutils literal">Boost</tt>.</li>
 </ul>
 <ul class="simple" id="tribits-repositories">
 <li><a class="reference internal" href="#tribits-repository">TriBITS Repository</a>: A collection of one or more <a class="reference internal" href="#tribits-packages">TriBITS Packages</a>
-specified in a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.</li>
+specified in a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file and zero or more TPL
+declarations specified in a <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.</li>
 </ul>
 <ul class="simple" id="tribits-projects">
 <li><a class="reference internal" href="#tribits-project">TriBITS Project</a>: A collection of <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> and <a class="reference internal" href="#tribits-packages">TriBITS
-Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defining soiftware which can be
-directly configured with <tt class="docutils literal">cmake</tt> and then built, tested, and installed.</li>
+Packages</a> that defines a CMake <tt class="docutils literal">PROJECT</tt> defining software which can be
+directly configured with <tt class="docutils literal">cmake</tt> and then be built, tested, installed,
+etc..</li>
 </ul>
 <ul class="simple" id="tribits-meta-projects">
-<span id="tribits-meta-project"></span><li><strong>TriBITS Meta-Project</strong>: A <a class="reference internal" href="#tribits-project">TriBITS Project</a> that contains no <a class="reference internal" href="#tribits-packages">TriBITS
-packages</a> or <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> but is composed out of other <a class="reference internal" href="#tribits-repositories">TriBITS
-Repositories</a>.</li>
+<span id="tribits-meta-project"></span><li><strong>TriBITS Meta-Project</strong>: A <a class="reference internal" href="#tribits-project">TriBITS Project</a> that contains no native
+<a class="reference internal" href="#tribits-packages">TriBITS packages</a> or <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> but is composed out packages from
+other other <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a>.</li>
 </ul>
-<p>In this document, dependenices are described as either being <em>upstream</em> or
-<em>downstream/forward</em> as defined as:</p>
+<p>In this document, dependencies are described as either being <em>upstream</em> or
+<em>downstream/forward</em> defined as:</p>
 <ul class="simple" id="upstream-dependencies">
 <span id="upstream-dependency"></span><span id="upstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;A&quot; is an
 <strong>upstream dependency</strong> of &quot;B&quot;.</li>
 </ul>
 <ul class="simple" id="downstream-dependencies">
-<span id="downstream-dependency"></span><span id="downstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;B&quot; is an
-<strong>downstream or forward dependency</strong> of &quot;A&quot;.</li>
+<span id="downstream-dependency"></span><span id="downstream"></span><li>If unit &quot;B&quot; requires (or can use, or comes before) unit &quot;A&quot;, then &quot;B&quot; is a
+<strong>downstream dependency</strong> or a <strong>forward dependency</strong> of &quot;A&quot;.</li>
 </ul>
 <p>The following subsections define the major structural units of a TriBITS
 project in more detail.  Each structural unit is described along with the
-files and directories assoicated with each.  In addition, a key set of TriBITS
+files and directories associated with each.  In addition, a key set of TriBITS
 CMake variables for each are defined as well.</p>
 <p>In the next major section following this one, some <a class="reference internal" href="#example-tribits-projects">Example TriBITS Projects</a>
 are described.  For those who just want to jump in and learn best by example,
-these exmaple projects are a good way to start.  These example projects will
+these example projects are a good way to start.  These example projects will
 be referenced in the more detailed descriptions given in this document.</p>
-<p>The CMake varaibles defined by TriBITS described in the structural using below
-below fall into one of two types:</p>
+<p>The last issue to touch on before getting into the detailed descriptions of
+the different TriBITS structural units is the issue of how CMake variables are
+defined and used by TriBITS. The CMake variables described in the TriBITS
+structural units below fall into one of two major types:</p>
 <ul class="simple">
 <li><em>Local Fixed-Name Variables</em> are used temporarily in the processing of a
 TriBITS unit.  These include variables such as <tt class="docutils literal">PROJECT_NAME</tt>,
-<tt class="docutils literal">REPOSITORY_NAME</tt>, <tt class="docutils literal">PACKAGE_NAME</tt>, and <tt class="docutils literal">PARENT_PACKAGE_NAME</tt> These are
-distinguished by having a fixed/constant name.  They are typically part of
-TriBITS reflection system, allowing subordinate units to determine the
-encapsulating unit in which they are participating.  For, example, a TriBITS
-subpackage can determine its name, its parent package's name and
-directories, its parent repository name and directories, and the enclosing
-project's name and directories.</li>
-<li><em>Namespaced Variables</em> are used to refer to properties of a named TriBITS
-unit.  These include variables such as <tt class="docutils literal">${REPOSTORY_NAME}_SOURCE_DIR</tt>
+<tt class="docutils literal">REPOSITORY_NAME</tt>, <tt class="docutils literal">PACKAGE_NAME</tt>, and <tt class="docutils literal">PARENT_PACKAGE_NAME</tt>.  These
+are distinguished by having a non-namespaced fixed/constant name.  They are
+typically part of TriBITS reflection system, allowing subordinate units to
+determine the encapsulating unit in which they are participating.  For,
+example, a TriBITS subpackage can determine its name, its parent package's
+name and directories, its parent repository name and directories, and the
+enclosing project's name and directories without having to refer to any
+specific names.</li>
+<li><em>Globally Scoped Namespaced Variables</em> are used to refer to properties of a
+named TriBITS unit that are seen globally by the entire TriBITS project.
+These include variables such as <tt class="docutils literal">${REPOSITORY_NAME}_SOURCE_DIR</tt>
 (e.g. <tt class="docutils literal">TribitsExProj_SOURCE_DIR</tt>) and <tt class="docutils literal">${PACKAGE_NAME}_BINARY_DIR</tt>
 (e.g. <tt class="docutils literal">SimpleCXX_BINARY_DIR</tt>).  They are available after processing the
 unit, for use by <a class="reference internal" href="#downstream">downstream</a> or subordinate units.  They are part of the
@@ -1011,12 +1028,15 @@ their known <a class="reference internal" href="#upstream-dependencies">upstream
 </ul>
 <p>More information about these various files is described in section <a class="reference internal" href="#processing-of-tribits-files-ordering-and-details">Processing
 of TriBITS Files: Ordering and Details</a>.</p>
+<!-- ToDo: Edited and spell-checked up to here on 4/9/2014! -->
 <div class="section" id="tribits-project">
 <h3><a class="toc-backref" href="#id17">TriBITS Project</a></h3>
 <p>A TriBITS Project:</p>
 <ul class="simple">
-<li>Defines a complete CMake project and calls <tt class="docutils literal"><span class="pre">PROJECT(${PROJECT_NAME}</span> <span class="pre">...)</span></tt>.</li>
-<li>Consists of one or more TriBITS Repositories (see <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>).</li>
+<li>Defines a complete CMake project which calls <tt class="docutils literal"><span class="pre">PROJECT(${PROJECT_NAME}</span>
+<span class="pre">...)</span></tt> and can be directly configured, built, tested, etc.</li>
+<li>Consists of one or more <a class="reference internal" href="#tribits-repositories">TriBITS Repositories</a> (and may itself be a
+<a class="reference internal" href="#tribits-repository">TriBITS Repository</a>)</li>
 <li>Defines the <tt class="docutils literal">PROJECT_NAME</tt> CMake variable (defined in
 <a class="reference internal" href="#projectdir-projectname-cmake">&lt;projectDir&gt;/ProjectName.cmake</a>)</li>
 <li>Defines a set of native Repositories (see below) that define packages and
@@ -1453,7 +1473,7 @@ prcessed by TriBITS:</p>
 <blockquote>
 <p><tt class="docutils literal">PROJECT_NAME</tt></p>
 <blockquote>
-The name of the TriBTS Project.  This exists to support, among other
+The name of the TriBITS Project.  This exists to support, among other
 things, the ability for subordinate units (Repositories and Packages) to
 determine the Project in which is participating.  This is typically read
 from a <tt class="docutils literal">SET()</tt> statement in the project's
@@ -2277,14 +2297,47 @@ Packages and therefore can both be enabled/disabled by the user or in
 automatica dependnecy logic.  The primary difference is that a subpackage is
 meant to involve less overhead in defining and is to be used to partition the
 parent package's software into chunks according to software engineering
-packaging principles.  Also, the dependency logic treats a parent package's
-subpackages as part of itself so when the parent package is explicitly enabled
-or disabled, it is identical to explicitly enabling or disabling all of its
-subpackages.  Other differences and issues between packages as subpackages are
-discussed throughout this guide.</p>
-<!-- ToDo: List out the basic SE packaging design principles from "Agile
-Software Design". -->
-<!-- ToDo: Finish this section! -->
+packaging principles (see below).  Also, the dependency logic treats a parent
+package's subpackages as part of itself so when the parent package is
+explicitly enabled or disabled, it is identical to explicitly enabling or
+disabling all of its subpackages.  Other differences and issues between
+packages as subpackages are discussed throughout this guide.</p>
+<p id="software-engineering-packaging-principles"><strong>Software Engineering Packaging Principles</strong></p>
+<p>The term &quot;software engineering&quot; package was adopted in order to highlight and
+the role of defining and managing &quot;Package&quot; according to standard software
+engineering packages.  In his book &quot;Agil Software Development&quot;, Robert Martin
+defines several object-oriented (OO) software engineering principles related
+to packging software which are listed below:</p>
+<ul class="simple">
+<li><em>Package Cohesion OO Principles</em>:<ol class="arabic">
+<li><em>REP (Release-Reuse Equivalency Principle)</em>: The granule of reuse is the
+granule of release.</li>
+<li><em>CCP (Common Closure Principle)</em>: The classes in a package should be
+closed together against the same kinds of changes.  A change that affects
+a closed package affects all the classes in that package and no other
+packages.</li>
+<li><em>CRP (Common Reuse Principle)</em>: The classes in a package are used
+together.  If you reuse one of the classes in a package, you reuse them
+all.</li>
+</ol>
+</li>
+<li><em>Package Coupling OO Principles</em>:<ol class="arabic" start="4">
+<li><em>ADP (Acyclic Dependencies Principle)</em>: Allow no cycles in the package
+dependency graph.</li>
+<li><em>SDP (Stable Dependencies Principle)</em>: Depend in the direction of
+stability.</li>
+<li>SAP (Stable Abstractions Principle): A package should be as abstract as
+it is stable.</li>
+</ol>
+</li>
+</ul>
+<p>Any of these six OO packaging principles (and other issues) may be considered
+when deciding how to partition software into different TriBITS SE packages.</p>
+<p>This purpose of this document will not teach basic software engineering so
+these various principles will not be expanded on further here.  However,
+interested readers are strongly encouraged to read &quot;Agile Software
+Development&quot; as one of the better software engineering books out there (see
+<a class="reference external" href="http://web.ornl.gov/~8vt/readingList.html#Most_Recommended_SE_Books">http://web.ornl.gov/~8vt/readingList.html#Most_Recommended_SE_Books</a>).</p>
 </div>
 </div>
 <div class="section" id="tribits-tpl">
@@ -9303,18 +9356,22 @@ VERA development and expansion.  Independently, an early version of TriBITS
 from 2012 was adopted by the LiveV
 projectfootnote{<a class="reference external" href="https://github.com/lifev/cmake">https://github.com/lifev/cmake</a>} which was forked and extended
 independently.</p>
-<p>Note that a TriBITS &quot;Package&quot; is not the same thing as a &quot;Package&quot; in raw
-CMake terminology.  In raw CMake, a &quot;Package&quot; is some externally provided bit
-of software or other utiltiy for which the current CMake project has an
-optional or required dependency.  Therefore, a raw CMake &quot;Package&quot; actually
-maps to a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.  A raw CMake &quot;Package&quot; (e.g. Boost, CUDA, etc.)  can
-be found using a standard CMake find module <tt class="docutils literal"><span class="pre">Find&lt;rawPackageName&gt;.cmake</span></tt>
-using the built-in command <tt class="docutils literal"><span class="pre">FIND_PACKAGE(&lt;rawPackageName&gt;)</span></tt>.  It is
-unfortunate that the TriBITS and the raw CMake defintions of the term
-&quot;Package&quot; are not the same.  However, the term &quot;Package&quot; was coined by the
-Trilinos project long ago before CMake was adopted as the Trilinos build
-system and Trilinos' definition of &quot;Package&quot; (going back to 1998) pre-dates
-the development of CMake and therefore dictated the terminology of TriBITS</p>
+<p id="why-a-tribits-package-is-not-a-cmake-package"><strong>Why a TriBITS Package is not a CMake Package</strong>: Note that a <a class="reference internal" href="#tribits-package">TriBITS
+Package</a> is not the same thing as a &quot;Package&quot; in raw CMake terminology.  In
+raw CMake, a &quot;Package&quot; is some externally provided bit of software or other
+utiltiy for which the current CMake project has an optional or required
+dependency (see <a class="reference external" href="http://www.cmake.org/Wiki/CMake:How_To_Find_Libraries">CMake: How to Find Libraries</a>).  Therefore, a raw
+CMake &quot;Package&quot; actually maps to a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.  A raw CMake &quot;Package&quot;
+(e.g. Boost, CUDA, etc.)  can be found using a standard CMake find module
+<tt class="docutils literal"><span class="pre">Find&lt;rawPackageName&gt;.cmake</span></tt> using the built-in CMake command
+<tt class="docutils literal"><span class="pre">FIND_PACKAGE(&lt;rawPackageName&gt;)</span></tt>.  It is unfortunate that the TriBITS and
+the raw CMake defintions of the term &quot;Package&quot; are not exactly the same.
+However, the term &quot;Package&quot; was coined by the Trilinos project long ago before
+CMake was adopted as the Trilinos build system and Trilinos' definition of
+&quot;Package&quot; (going back to 1998) pre-dates the development of CMake (see
+<a class="reference external" href="http://en.wikipedia.org/wiki/CMake#History">History of CMake</a>) and
+therefore Trilinos dictated the terminology of TriBITS and the definition of
+the term &quot;Package&quot; in the TriBITS system.</p>
 </div>
 <div class="section" id="design-considerations-for-tribits">
 <h2><a class="toc-backref" href="#id167">13.2&nbsp;&nbsp;&nbsp;Design Considerations for TriBITS</a></h2>
