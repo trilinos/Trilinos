@@ -11,7 +11,7 @@ typedef int LO;
 typedef int GO;
 
 typedef Teuchos::ScalarTraits<scalar_type> STS;
-typedef typename STS::magnitudeType magnitude_type;
+typedef STS::magnitudeType magnitude_type;
 typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
 typedef Kokkos::DefaultNode::DefaultNodeType node_type;
