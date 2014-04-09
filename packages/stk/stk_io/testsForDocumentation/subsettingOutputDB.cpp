@@ -1,9 +1,21 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <Ioss_SubSystem.h>
-#include <stk_mesh/base/MetaData.hpp>
+#include <gtest/gtest.h>                // for ASSERT_EQ, AssertHelper, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <string>                       // for allocator, operator+, etc
+#include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region
+#include "Ioss_Utils.h"                 // for Utils
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace Ioss { class DatabaseIO; }
 
 namespace {
 

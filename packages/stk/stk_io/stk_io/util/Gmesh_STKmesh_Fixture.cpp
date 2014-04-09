@@ -1,13 +1,20 @@
+
 #include "Gmesh_STKmesh_Fixture.hpp"
+#include <Ioss_Property.h>              // for Property
+#include <Ioss_Region.h>                // for Region
+#include <generated/Iogn_DatabaseIO.h>  // for DatabaseIO
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Teuchos_RCP.hpp"              // for RCP::operator->
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "mpi.h"                        // for ompi_communicator_t
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/StkMeshIoBroker.hpp"   // for StkMeshIoBroker
+#include "stk_mesh/base/Types.hpp"      // for PartVector
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/base/MetaData.hpp>
 
-#include <generated/Iogn_DatabaseIO.h>
-#include <generated/Iogn_GeneratedMesh.h>
-
-#include <Ioss_Region.h>
-#include <Ioss_Property.h>
 
 namespace stk {
 namespace io {

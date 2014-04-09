@@ -1,10 +1,15 @@
-#include <iostream>
-#include <iomanip>
-#include <stk_topology/topology.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <Ioss_Initializer.h>
-#include <Ioss_ElementTopology.h>
-#include <Ioss_ConcreteVariableType.h>
+#include <Ioss_ConcreteVariableType.h>  // for StorageInitializer
+#include <Ioss_ElementTopology.h>       // for ElementTopology
+#include <Ioss_Initializer.h>           // for Initializer
+#include <stdlib.h>                     // for NULL, EXIT_FAILURE, etc
+#include <iomanip>                      // for operator<<, setw
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
+#include <stk_topology/topology.hpp>    // for topology, operator++, etc
+#include <string>                       // for operator<<, operator!=, etc
+#include "Ioss_CodeTypes.h"             // for HAVE_MPI
+#include "Ioss_VariableType.h"          // for NameList
+#include "mpi.h"                        // for MPI_Finalize, MPI_Init
 
 #define OUTPUT std::cerr
 

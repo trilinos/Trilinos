@@ -1,13 +1,23 @@
+#include <mpi.h>                        // for MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
-#include <Ioss_SubSystem.h>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Field.hpp>
+#include <string>                       // for string, basic_string
+#include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL, etc
+#include "Ioss_ElementTopology.h"       // for NameList
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_Region.h"                // for Region, NodeBlockContainer
+#include "Ioss_Utils.h"                 // for Utils
+#include "gtest/gtest.h"                // for AssertHelper, ASSERT_EQ, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace Ioss { class DatabaseIO; }
+namespace stk { namespace mesh { class FieldBase; } }
 namespace {
 
 void createNamedFieldOnMesh(stk::mesh::MetaData &stkMeshMetaData, const std::string &internalClientFieldName)

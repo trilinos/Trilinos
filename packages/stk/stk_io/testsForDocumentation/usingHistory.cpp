@@ -1,10 +1,21 @@
-#include <gtest/gtest.h>
-#include <vector>
-#include <string>
-#include <mpi.h>
-#include <stk_util/util/ParameterList.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <Ioss_SubSystem.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker, etc
+#include <stk_util/util/ParameterList.hpp>  // for ParameterList, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
+#include "Ioss_ElementTopology.h"       // for NameList
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region
+namespace Ioss { class DatabaseIO; }
 
 namespace
 {

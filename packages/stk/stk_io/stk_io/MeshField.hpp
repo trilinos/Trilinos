@@ -9,22 +9,24 @@
 #ifndef STK_IO_MeshField_h
 #define STK_IO_MeshField_h
 
-#include <string>
-#include "stk_mesh/base/Types.hpp"
-#include "stk_mesh/base/Part.hpp"  
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string, basic_string
+#include <vector>                       // for vector
+#include "stk_mesh/base/Types.hpp"      // for EntityRank
+namespace Ioss { class GroupingEntity; }
+namespace stk { namespace io { class DBStepTimeInterval; } }
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class FieldBase; } }
 
 namespace Ioss {
-  class GroupingEntity;
   class Region;
 }
 
 namespace stk {
   namespace mesh {
-    class FieldBase;
   }
   
   namespace io {
-    class DBStepTimeInterval;
     
     class MeshFieldPart {
     public:

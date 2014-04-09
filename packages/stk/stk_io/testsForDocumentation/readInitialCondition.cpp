@@ -1,12 +1,19 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <iomanip>                      // for operator<<
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/GetEntities.hpp>  // for get_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_io/MeshField.hpp"         // for MeshField
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_topology/topology.hpp"    // for topology, etc
 namespace {
 
   TEST(StkMeshIoBrokerHowTo, readInitialCondition)

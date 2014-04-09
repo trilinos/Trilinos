@@ -5,17 +5,22 @@
 /*  Export of this program may require a license from the                 */
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
+#include <Ioss_Utils.h>                 // for Utils
+#include <stddef.h>                     // for size_t
+#include <iosfwd>                       // for ostream
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for allocator, operator+, etc
+#include <vector>                       // for vector
+#include "gtest/gtest.h"                // for AssertHelper
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/Types.hpp"      // for PartVector
 
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
 
-#include <Ioss_Utils.h>
 
-#include <assert.h>
 
 enum { SpaceDim = 3 };
 

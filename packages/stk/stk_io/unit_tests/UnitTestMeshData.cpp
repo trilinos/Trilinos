@@ -1,13 +1,25 @@
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_io/IossBridge.hpp>
 
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for rand, srand, RAND_MAX
+#include <stk_io/IossBridge.hpp>        // for is_part_io_part
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <string>                       // for string
+#include <vector>                       // for vector, etc
+#include "gtest/gtest.h"                // for AssertHelper, ASSERT_TRUE
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Selector.hpp"   // for Selector, operator&
+#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+#include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
-#include <string>
-#include <stdlib.h>
 
 namespace {
 

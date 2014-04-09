@@ -1,25 +1,40 @@
+
 #include <stk_io/InputFile.hpp>
-#include <stk_io/MeshField.hpp>
-#include <stk_io/IossBridge.hpp>  
-#include <stk_io/DbStepTimeInterval.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/FieldBase.hpp> 
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
+#include <math.h>                       // for fmod
+#include <stddef.h>                     // for NULL, size_t
+#include <algorithm>                    // for sort, swap
+#include <limits>                       // for numeric_limits
+#include <ostream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_io/DbStepTimeInterval.hpp>  // for DBStepTimeInterval
+#include <stk_io/IossBridge.hpp>        // for get_field_role, etc
+#include <stk_io/MeshField.hpp>         // for MeshField, etc
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
-
-#include <stk_util/environment/FileUtils.hpp>  // for filename_substitution
-#include <stk_util/environment/ReportHandler.hpp>
-
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/environment/FileUtils.hpp>
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsgIf, etc
+#include <utility>                      // for pair
 #include "Ioss_DBUsage.h"               // for DatabaseUsage, etc
-#include "Ioss_PropertyManager.h"       // for PropertyManager
-#include "Ioss_IOFactory.h"             // for IOFactory
-#include "Ioss_Field.h"                 // for Field, Field::BasicType, etc
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_EntityType.h"            // for EntityType::SIDESET
+#include "Ioss_Field.h"                 // for Field, etc
 #include "Ioss_GroupingEntity.h"        // for GroupingEntity
-#include "Ioss_NodeBlock.h"
-#include "Ioss_Region.h"                // for Region, NodeSetContainer, etc
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region, NodeBlockContainer
+#include "Teuchos_Ptr.hpp"              // for Ptr::get
+#include "Teuchos_PtrDecl.hpp"          // for Ptr
+#include "Teuchos_RCP.hpp"              // for is_null, RCP::operator->, etc
+#include "stk_io/DatabasePurpose.hpp"
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
-#include <limits>
+
+
 
 namespace {
   bool meshFieldSort(const stk::io::MeshField& f1, const stk::io::MeshField &f2) {

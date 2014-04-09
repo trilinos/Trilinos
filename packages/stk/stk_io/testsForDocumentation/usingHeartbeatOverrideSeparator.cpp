@@ -1,9 +1,16 @@
-#include <gtest/gtest.h>
-#include <vector>
-#include <string>
-#include <mpi.h>
-#include <stk_util/util/ParameterList.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_STREQ, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <istream>                      // for basic_istream, ifstream
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker, etc
+#include <stk_util/util/ParameterList.hpp>  // for ParameterList, etc
+#include <string>                       // for string, getline
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_PropertyManager.h"       // for PropertyManager
 
 namespace
 {

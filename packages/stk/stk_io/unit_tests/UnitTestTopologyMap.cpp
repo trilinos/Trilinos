@@ -6,20 +6,21 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <Ioss_ConcreteVariableType.h>  // for StorageInitializer
+#include <Ioss_ElementTopology.h>       // for ElementTopology, NameList
+#include <Ioss_Initializer.h>           // for Initializer
+#include <stddef.h>                     // for NULL
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
+#include <stk_topology/topology.hpp>    // for topology, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_util/parallel/Parallel.hpp>
+#include <string>                       // for operator<<, operator!=, etc
+#include "gtest/gtest.h"                // for AssertHelper
+#include "stk_topology/topology.hpp"    // for topology::num_edges, etc
 
-#include <Ioss_ConcreteVariableType.h>
-#include <Ioss_Initializer.h>
-#include <Ioss_VariableType.h>
-#include <Ioss_Utils.h>
 
-#include <Ioss_ElementTopology.h>
 
-#include <stk_io/IossBridge.hpp>
-#include <stk_topology/topology.hpp>
 
-#include <assert.h>
 
 namespace {
 template<typename T, typename U>

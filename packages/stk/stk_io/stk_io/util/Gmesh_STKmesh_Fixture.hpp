@@ -1,14 +1,16 @@
 #ifndef stk_io_util_Gmesh_STKmesh_Fixture_hpp
 #define stk_io_util_Gmesh_STKmesh_Fixture_hpp
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_io/StkMeshIoBroker.hpp>
+#include <stddef.h>                     // for NULL
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { struct ConnectivityMap; } }
 
-#include <vector>
-#include <string>
 
 namespace stk {
 namespace io {

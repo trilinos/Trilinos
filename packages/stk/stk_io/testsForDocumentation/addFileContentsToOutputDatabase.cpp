@@ -1,8 +1,19 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <Ioss_SubSystem.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_STREQ, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
+#include <ostream>                      // for basic_ostream, operator<<, etc
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <string>                       // for string, basic_string, etc
+#include <vector>                       // for vector
+#include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_Region.h"                // for Region
+#include "Teuchos_RCP.hpp"              // for RCP::get
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+namespace Ioss { class DatabaseIO; }
 
 namespace {
 

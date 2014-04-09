@@ -22,6 +22,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
+#include <stk_util/util/tokenize.hpp>   // for tokenize
 #include "Ioss_CommSet.h"               // for CommSet
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
 #include "Ioss_ElementBlock.h"          // for ElementBlock
@@ -48,7 +49,6 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_topology/topology.hpp"    // for topology::num_nodes
 #include "stk_util/util/PairIter.hpp"   // for PairIter
-#include <stk_util/util/tokenize.hpp>   // for tokenize
 
 
 void STKIORequire(bool cond)

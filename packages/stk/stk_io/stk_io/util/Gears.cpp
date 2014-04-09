@@ -7,19 +7,19 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_io/util/Gears.hpp>
+#include <math.h>                       // for acos, cos, sin
+#include <stk_io/IossBridge.hpp>        // for put_io_part_attribute
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
+#include "stk_mesh/base/MetaData.hpp"   // for MetaData, put_field, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank
+namespace stk { namespace mesh { class Part; } }
 
-#include <math.h>
-#include <iostream>
-#include <limits>
-#include <stdexcept>
 
-#include <stk_io/IossBridge.hpp>
 
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/Stencils.hpp>
 
-#include <stk_topology/topology.hpp>
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

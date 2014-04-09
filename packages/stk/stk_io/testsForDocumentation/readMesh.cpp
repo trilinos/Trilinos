@@ -1,9 +1,12 @@
-#include <gtest/gtest.h>
-#include <string>
-#include <mpi.h>
-#include <stk_io/StkMeshIoBroker.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_NE, etc
+#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <unistd.h>                     // for unlink
+#include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <string>                       // for string
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
+namespace stk { namespace mesh { class Part; } }
 namespace {
 
   TEST(StkMeshIoBrokerHowTo, readMesh)
