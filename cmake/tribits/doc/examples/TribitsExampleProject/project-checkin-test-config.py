@@ -1,46 +1,38 @@
-# This file allows project-level configuration of the checkin-test system to
-# set project options that are required for all developers. Machine or package
-# specific options should not be placed in this file.
+#
+# Define project-specific options for the checkin-test script for
+# TribitsExampleProject.
+#
 
-# This is a dictionary that specifies project-specific options for the
-# checkin-test script that should be used by all developers. This
-# includes default command line arguments that must be passed to
-# checkin-test as well as settings for specific builds.
 configuration = {
 
-    # The default command line arguments that should be used by all
-    # developers.
+    # Default command line arguments
     'defaults': {
         '--send-email-to-on-push': 'trilinos-checkin-tests@software.sandia.gov',
         },
 
-    # CMake options for various build configurations. All entries in
-    # this dictionary should be Python lists of -D arguments to cmake.
+    # CMake options (-DVAR:TYPE=VAL) cache variables.
     'cmake': {
         
         # Options that are common to all builds.
         'common': [],
 
-        # Setup for the builds that should be run by default for a
-        # standard checkin. This is a list of tuples so a preference
-        # for build order can be expressed (e.g. if a project's
-        # developers prefer one case to fail earlier than another).
+        # Defines --default-builds, in order.
         'default-builds': [
-
             # Options for the MPI_DEBUG build.
             ('MPI_DEBUG', [
                 '-DTPL_ENABLE_MPI:BOOL=ON',
-                '-DCMAKE_BUILD_TYPE:STRING=DEBUG',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=ON',
+                '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
+                '-DTribitsExProj_ENABLE_DEBUG:BOOL=ON',
+                '-DTribitsExProj_ENABLE_CHECKED_STL:BOOL=ON',
+                '-DTribitsExProj_ENABLE_DEBUG_SYMBOLS:BOOL=ON',
                 ]),
-
             # Options for the SERIAL_RELEASE build.
             ('SERIAL_RELEASE', [
                 '-DTPL_ENABLE_MPI:BOOL=OFF',
                 '-DCMAKE_BUILD_TYPE:STRING=RELEASE',
-                '-DTrilinos_ENABLE_CHECKED_STL:BOOL=OFF',
+                '-DTribitsExProj_ENABLE_DEBUG:BOOL=OFF',
+                '-DTribitsExProj_ENABLE_CHECKED_STL:BOOL=OFF',
                 ]),
-
             ], # default-builds
 
         }, # cmake
