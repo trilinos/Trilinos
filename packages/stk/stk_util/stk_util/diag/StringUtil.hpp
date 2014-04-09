@@ -3,6 +3,9 @@
 
 #include <stddef.h>                     // for size_t, NULL
 #include <algorithm>                    // for transform
+#include <stdexcept>
+#include <sstream>
+#include <typeinfo>
 #include <cctype>                       // for tolower, isspace, toupper
 #include <functional>                   // for binary_function
 #include <iosfwd>                       // for ostream, istream
@@ -12,6 +15,7 @@
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
 
+#include <stk_util/diag/WriterOStream.hpp>
 
 namespace sierra {
 
@@ -257,6 +261,23 @@ trim(
   while (it1 != it0 && std::isspace(*(it1 - 1)))
     --it1;
   return name = T(it0, it1);
+}
+
+template <class T>
+T convert_cast(const String &s)
+{
+  /* %TRACE% */  /* %TRACE% */
+  std::istringstream is(s.c_str());
+  T t = 0;
+
+  is >> t;
+
+  if (!is) {
+    std::ostringstream msg;
+    msg << "Unable to convert \"" << s << "\" to type " << typeid(T).name();
+    throw std::runtime_error(msg.str().c_str());
+  }
+  return t;
 }
 
 /**

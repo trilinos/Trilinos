@@ -21,6 +21,7 @@
 #ifdef STK_MESH_TRACE_ENABLED
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #endif
+#include <stk_util/diag/Startup.hpp>
 
 //
 //This file is kind of like a unit-test abstraction layer:
