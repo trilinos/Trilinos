@@ -5,12 +5,11 @@
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, Bucket::iterator
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator&, etc
-#include <stk_mesh/base/Types.hpp>      // for PartOrdinal, EntityId, etc
+#include <stk_mesh/base/Types.hpp>      // for PartOrdinal, BucketVector, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector, vector<>::iterator, etc
-#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Field.hpp"      // for Field

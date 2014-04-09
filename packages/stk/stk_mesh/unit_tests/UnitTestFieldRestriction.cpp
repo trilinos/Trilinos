@@ -7,11 +7,9 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
 namespace stk { namespace mesh { class Part; } }
 

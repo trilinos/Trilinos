@@ -5,15 +5,15 @@
 #include <stk_mesh/baseImpl/Partition.hpp>
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for EntityLess, BulkData
-#include <stk_topology/topology.hpp>    // for operator<<, topology, etc
+#include <stk_topology/topology.hpp>    // for topology, operator<<, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Trace.hpp"      // for DiagIf, DiagIfWatching, etc
-#include "stk_mesh/base/DiagWriter.hpp" // for DiagIf, DiagIfWatching, etc
-#include "stk_mesh/base/Types.hpp"      // for PartOrdinal, etc
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, PartOrdinal, etc
 #include "stk_mesh/baseImpl/BucketRepository.hpp"  // for BucketRepository
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { namespace mesh { class FieldBase; } }

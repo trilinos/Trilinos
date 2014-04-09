@@ -9,7 +9,6 @@
 #include <stk_mesh/fixtures/GridFixture.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <vector>                       // for vector

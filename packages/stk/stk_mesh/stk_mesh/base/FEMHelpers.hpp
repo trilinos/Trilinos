@@ -13,7 +13,6 @@
 #include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
-#include <string>                       // for string
 #include <vector>                       // for vector, etc
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
 #include "Shards_CellTopologyTraits.hpp"  // for getCellTopologyData

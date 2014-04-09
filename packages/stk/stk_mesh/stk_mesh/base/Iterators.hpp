@@ -6,6 +6,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <utility>                      // for pair
 #include <vector>                       // for vector<>::const_iterator, etc
+#include "stk_mesh/base/Types.hpp"      // for BucketVector
 
 
 

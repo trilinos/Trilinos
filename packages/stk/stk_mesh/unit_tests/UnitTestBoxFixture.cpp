@@ -16,7 +16,6 @@
 #include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture::BOX, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector, etc
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Relation.hpp"
 #include "stk_mesh/base/Types.hpp"      // for EntityId, etc

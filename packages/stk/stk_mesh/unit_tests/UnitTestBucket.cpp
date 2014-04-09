@@ -11,7 +11,6 @@
 #include <sstream>                      // for ostringstream, etc
 #include <stk_mesh/base/Bucket.hpp>     // for has_superset, Bucket, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetBuckets.hpp>  // for get_involved_parts
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
@@ -20,15 +19,14 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector, etc
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
-#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityRank, etc
+#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class FieldBase; } }
 namespace stk { namespace mesh { class Part; } }
-namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { class Part; } }
 
 using stk::mesh::MetaData;
 using stk::mesh::BulkData;

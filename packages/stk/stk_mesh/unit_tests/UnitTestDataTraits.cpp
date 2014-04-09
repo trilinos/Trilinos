@@ -8,7 +8,7 @@
 
 
 #include <stddef.h>                     // for NULL, size_t
-#include <iostream>                     // for basic_ostream::operator<<, etc
+#include <iostream>                     // for ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/DataTraits.hpp>  // for DataTraits, etc
 #include <stk_mesh/base/DataTraitsClass.hpp>  // for data_traits, etc
@@ -18,7 +18,6 @@
 #include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommAll
 

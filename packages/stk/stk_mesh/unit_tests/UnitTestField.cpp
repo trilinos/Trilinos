@@ -8,7 +8,7 @@
 
 
 #include <boost/foreach.hpp>            // for auto_any_base, etc
-#include <iostream>                     // for operator<<, ostream, etc
+#include <iostream>                     // for ostream, operator<<, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian, etc
@@ -19,7 +19,6 @@
 #include <string>                       // for operator==, string, etc
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_SELF, etc
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_bytes_per_entity, etc

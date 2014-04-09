@@ -14,10 +14,10 @@
 
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <vector>                       // for vector
-#include "stk_mesh/base/Types.hpp"      // for EntityRank
-namespace stk { namespace mesh { class Bucket; } }
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { struct Entity; } }
+namespace stk { namespace mesh { class Bucket; } }
 
 //----------------------------------------------------------------------
 

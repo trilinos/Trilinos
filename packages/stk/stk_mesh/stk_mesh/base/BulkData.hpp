@@ -13,7 +13,8 @@
 
 #include <stddef.h>                     // for size_t, NULL
 #include <stdint.h>                     // for uint16_t
-#include <functional>                   // for less
+#include <algorithm>                    // for max
+#include <functional>                   // for less, equal_to
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <list>                         // for list
 #include <map>                          // for map, map<>::value_compare
@@ -32,11 +33,14 @@
 #include <utility>                      // for pair
 #include <vector>                       // for vector
 #include "Shards_CellTopologyData.h"    // for CellTopologyData, etc
+#include "boost/functional/hash/extensions.hpp"  // for hash
+#include "boost/tuple/detail/tuple_basic.hpp"  // for get
+#include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
-#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
+#include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
 #include "stk_mesh/base/FieldDataManager.hpp"
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc
 #include "stk_topology/topology.hpp"    // for topology, etc

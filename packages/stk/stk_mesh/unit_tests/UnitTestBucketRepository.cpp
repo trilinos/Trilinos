@@ -10,7 +10,8 @@
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
-#include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector, etc
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, OrdinalVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 TEST(BucketRepositoryTest, createBuckets)

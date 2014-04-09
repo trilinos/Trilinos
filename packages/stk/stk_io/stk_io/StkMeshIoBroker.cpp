@@ -9,8 +9,8 @@
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <assert.h>                     // for assert
 #include <init/Ionit_Initializer.h>     // for Initializer
+#include <stdint.h>                     // for int64_t
 #include <stdlib.h>                     // for exit, EXIT_FAILURE
-#include <sys/types.h>                  // for int64_t
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <iterator>                     // for back_insert_iterator, etc
 #include <stdexcept>                    // for runtime_error

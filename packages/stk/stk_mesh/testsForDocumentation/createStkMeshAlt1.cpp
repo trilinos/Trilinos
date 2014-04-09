@@ -1,6 +1,8 @@
 //-BEGIN
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
 #include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for unlink
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
@@ -9,7 +11,7 @@
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
+#include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH, etc
 
 namespace
 {

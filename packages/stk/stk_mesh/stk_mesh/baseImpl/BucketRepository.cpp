@@ -19,8 +19,7 @@
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/FieldBase.hpp"  // for FieldBase
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
-#include "stk_mesh/base/Part.hpp"       // for Part
-#include "stk_mesh/base/Types.hpp"      // for EntityRank, etc
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, EntityRank, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 

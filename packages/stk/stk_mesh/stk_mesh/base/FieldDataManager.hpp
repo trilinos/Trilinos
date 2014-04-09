@@ -8,14 +8,16 @@
 #ifndef stk_mesh_FieldDataManager_hpp
 #define stk_mesh_FieldDataManager_hpp
 
-#include <stk_mesh/base/Types.hpp>      // for MeshIndex, EntityRank, etc
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/Types.hpp>      // for EntityRank, PartVector
 #include <stk_util/util/PageAlignedAllocator.hpp>
-#include <vector>
+#include <vector>                       // for vector
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type
+namespace stk { namespace mesh { class FieldBase; } }
 
 namespace stk {
 namespace mesh {
 
-class FieldBase;
 
 class FieldDataManager
 {

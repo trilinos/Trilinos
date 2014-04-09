@@ -13,18 +13,17 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData, entity_rank_names
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
 namespace stk { namespace mesh { struct EntityKey; } }
+
 
 using stk::mesh::Part;
 using stk::mesh::Bucket;

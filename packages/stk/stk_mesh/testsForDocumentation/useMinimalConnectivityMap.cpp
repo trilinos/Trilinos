@@ -1,8 +1,12 @@
-#include <gtest/gtest.h>
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/ConnectivityMap.hpp>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData, get_connectivity
+#include <stk_mesh/base/ConnectivityMap.hpp>  // for ConnectivityMap
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for EntityId, EntityVector
+#include "stk_topology/topology.hpp"    // for topology, etc
 
 namespace {
 

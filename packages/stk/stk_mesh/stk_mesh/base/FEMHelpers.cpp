@@ -3,6 +3,7 @@
 #include <sstream>                      // for operator<<, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Types.hpp>      // for PartVector, EntityId, etc
+#include <string>                       // for char_traits, operator<<
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/MetaData.hpp"   // for get_cell_topology, etc
 #include "stk_mesh/base/Part.hpp"       // for Part

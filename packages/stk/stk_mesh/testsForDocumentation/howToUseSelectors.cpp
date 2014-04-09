@@ -8,9 +8,8 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator<<, etc
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <string>                       // for string
-#include <vector>                       // for vector
 #include "stk_io/DatabasePurpose.hpp"   // for DatabasePurpose::READ_MESH
-#include "stk_mesh/base/Types.hpp"      // for PartVector, BucketVector
+#include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector
 namespace stk { namespace mesh { class Part; } }
 
 namespace

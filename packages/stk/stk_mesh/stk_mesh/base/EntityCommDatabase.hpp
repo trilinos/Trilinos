@@ -11,22 +11,20 @@
 
 //----------------------------------------------------------------------
 
-#include <algorithm>                    // for lower_bound, max
+#include <algorithm>                    // for max
 #include <functional>                   // for equal_to
 #include <iosfwd>                       // for ostream
-#include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
-#include <stk_mesh/base/Types.hpp>      // for EntityCommInfoVector, etc
-#include <utility>                      // for make_pair, pair
-#include <vector>                       // for vector, etc
+#include <stk_mesh/base/Types.hpp>      // for PairIterEntityComm, etc
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 #include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
-#include "boost/unordered/unordered_map.hpp"
+#include "boost/unordered/unordered_map.hpp"  // for unordered_map
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, hash_value
-#include "stk_mesh/base/Trace.hpp"      // for TraceIfWatching, etc
 #include "stk_util/util/NamedPair.hpp"
 #include "stk_util/util/TrackingAllocator.hpp"  // for tracking_allocator
 namespace stk { class CommBuffer; }
 namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class Ghosting; } }
 namespace stk { namespace mesh { class Relation; } }
 namespace stk { namespace mesh { struct Entity; } }
 

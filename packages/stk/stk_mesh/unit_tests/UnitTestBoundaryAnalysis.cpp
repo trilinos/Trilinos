@@ -18,9 +18,7 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Types.hpp"      // for EntityId, Ordinal, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }

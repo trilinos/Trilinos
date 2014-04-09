@@ -10,13 +10,13 @@
 
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
+#include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 namespace stk { namespace mesh { class Part; } }
 

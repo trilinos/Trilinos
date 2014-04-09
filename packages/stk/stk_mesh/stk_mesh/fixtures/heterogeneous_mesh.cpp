@@ -6,25 +6,23 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <vector>
-#include <stdexcept>
-#include <sstream>
-
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <Shards_BasicTopologies.hpp>   // for Hexahedron, Pyramid, etc
+#include <sstream>                      // for ostringstream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
+#include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include "Shards_CellTopologyTraits.hpp"
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase::Restriction, etc
+#include "stk_mesh/base/Types.hpp"      // for EntityId
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/FindRestriction.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/Stencils.hpp>
-#include <stk_mesh/base/TopologyDimensions.hpp>
-#include <stk_mesh/base/FEMHelpers.hpp>
+
 
 namespace stk {
 namespace mesh {

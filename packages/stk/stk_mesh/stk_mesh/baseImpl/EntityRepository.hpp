@@ -9,6 +9,7 @@
 #ifndef stk_mesh_baseImpl_EntityRepository_hpp
 #define stk_mesh_baseImpl_EntityRepository_hpp
 
+#include <stddef.h>                     // for size_t
 #include <map>                          // for map, map<>::value_compare
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <utility>                      // for pair

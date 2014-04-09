@@ -7,8 +7,11 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include "gtest/gtest.h"                // for AssertHelper
+#include "mpi.h"                        // for MPI_Comm_rank, etc
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
 STKUNIT_UNIT_TEST(UnitTestTemplate, testUnit)
 {

@@ -18,15 +18,16 @@
 #include <stk_mesh/base/Types.hpp>      // for FieldTraits, EntityRank, etc
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>  // for FieldBaseImpl
 #include <string>                       // for string
+#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_topology/topology.hpp"    // for topology, topology::rank_t, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowAssert, etc
 #include "stk_util/util/TrackingAllocator.hpp"
 namespace shards { class ArrayDimTag; }
-namespace stk { namespace mesh { class DataTraits; } }
 namespace stk { namespace mesh { class MetaData; } }
 namespace stk { namespace mesh { class UnitTestFieldImpl; } }
 namespace stk { namespace mesh { namespace impl { class FieldRepository; } } }
+namespace stk { namespace mesh { class DataTraits; } }
 
 namespace stk { namespace mesh { class BulkData; } }
 

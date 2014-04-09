@@ -1,15 +1,24 @@
-#include <gtest/gtest.h>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldBase.hpp>
-#include <stk_mesh/base/FieldDataManager.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_topology/topology.hpp>
-#include <stk_mesh/base/CoordinateSystems.hpp>
-#include <stk_util/environment/CPUTime.hpp>
 
-#include <vector>
-#include <string>
-#include <mpi.h>
+#include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
+#include <mpi.h>                        // for MPI_Comm_size, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <string.h>                     // for memcpy, memmove
+#include <algorithm>                    // for binary_search, sort
+#include <iostream>                     // for basic_ostream::operator<<, etc
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/FieldBase.hpp>  // for FieldMetaDataVector, etc
+#include <stk_mesh/base/FieldDataManager.hpp>
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
+#include <stk_topology/topology.hpp>    // for topology, etc
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
+#include <vector>                       // for vector, vector<>::iterator
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/BulkData.hpp"   // for BulkData
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
+#include "stk_mesh/baseImpl/FieldRepository.hpp"  // for FieldVector
+namespace stk { namespace mesh { class Part; } }
 
 namespace
 {

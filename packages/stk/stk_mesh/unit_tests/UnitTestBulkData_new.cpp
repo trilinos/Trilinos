@@ -12,28 +12,28 @@
 #include <set>                          // for set, etc
 #include <stdexcept>                    // for runtime_error, logic_error
 #include <stk_mesh/base/EntityCommDatabase.hpp>  // for pack_entity_info, etc
-#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
 #include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture, etc
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector, etc
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, EntityLess, etc
-#include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Field.hpp"      // for Field
+#include "stk_mesh/base/FieldBase.hpp"  // for field_data
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting, operator<<
 #include "stk_mesh/base/Types.hpp"      // for EntityProc, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_size, etc
 #include "stk_util/parallel/ParallelComm.hpp"  // for CommAll, CommBuffer
-
 namespace stk { namespace mesh { class Part; } }
+
 
 using namespace stk::mesh;
 

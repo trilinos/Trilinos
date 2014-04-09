@@ -12,14 +12,13 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 #include <stddef.h>                     // for size_t, NULL
-#include <string.h>                     // for memcpy, memset, strcmp
+#include <string.h>                     // for memcpy, strcmp
 #include <algorithm>                    // for sort, lower_bound, unique, etc
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <iterator>                     // for back_insert_iterator, etc
 #include <set>                          // for set, set<>::iterator, etc
 #include <stk_mesh/base/Bucket.hpp>     // for Bucket, BucketIdComparator, etc
-#include <stk_mesh/base/FindRestriction.hpp>
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, print_entity_key, etc
 #include <stk_mesh/baseImpl/EntityRepository.hpp>  // for EntityRepository, etc
@@ -33,14 +32,14 @@
 #include <vector>                       // for vector, etc
 #include "boost/mpl/bool.hpp"           // for bool_
 #include "boost/mpl/bool_fwd.hpp"       // for false_
+#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
-#include "stk_mesh/base/DataTraits.hpp"  // for DataTraits
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey, etc
-#include "stk_mesh/base/FieldBase.hpp"  // for FieldMetaData, FieldBase, etc
-#include "stk_mesh/base/FieldDataManager.hpp"
+#include "stk_mesh/base/FieldBase.hpp"  // for FieldBase, FieldMetaData, etc
+#include "stk_mesh/base/FieldDataManager.hpp"  // for FieldDataManager, etc
 #include "stk_mesh/base/Ghosting.hpp"   // for Ghosting
 #include "stk_mesh/base/Part.hpp"       // for Part, remove, etc
 #include "stk_mesh/base/Relation.hpp"   // for Relation, etc

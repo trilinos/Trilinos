@@ -14,7 +14,6 @@
 #include <set>                          // for set
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Entity.hpp>     // for Entity
-#include <stk_mesh/base/FEMHelpers.hpp>  // for declare_part
 #include <stk_mesh/base/FieldParallel.hpp>  // for communicate_field_data
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/base/Selector.hpp>   // for Selector

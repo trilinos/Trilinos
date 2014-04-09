@@ -13,7 +13,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for operator!=
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -21,8 +20,8 @@
 #include "stk_mesh/base/FieldState.hpp"  // for FieldState::StateNew, etc
 #include "stk_mesh/base/Types.hpp"      // for PartVector, EntityId, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
-
 namespace stk { namespace mesh { class Part; } }
+
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;

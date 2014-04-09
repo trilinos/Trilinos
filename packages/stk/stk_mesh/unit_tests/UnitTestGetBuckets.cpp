@@ -13,7 +13,6 @@
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
 namespace stk { namespace mesh { struct Entity; } }

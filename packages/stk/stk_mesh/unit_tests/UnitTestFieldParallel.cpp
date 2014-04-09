@@ -16,7 +16,7 @@
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ
+#include "gtest/gtest.h"                // for EXPECT_EQ
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/CoordinateSystems.hpp"  // for Cartesian
