@@ -1,6 +1,8 @@
 #ifndef stk_perf_callgrind_h
 #define stk_perf_callgrind_h
 
+#include <stk_util/environment/ReportHandler.hpp>
+
 // A dummy file used so that performance unit tests will compile even if the
 // current system does not have valgrind
 
