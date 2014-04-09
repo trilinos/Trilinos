@@ -494,7 +494,7 @@ def createAndGetProjectDependencies(inOptions, baseTestDir, tribitsGitRepos):
       cmakeScopedDefine(inOptions.projectName, "EXTRA_REPOSITORIES", "\""+\
         ';'.join(tribitsGitRepos.tribitsExtraRepoNamesList())+"\""),
       cmakeScopedDefine(inOptions.projectName, "DEPS_XML_OUTPUT_FILE", projectDepsXmlFile),
-      "-P %s/cmake/tribits/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.srcDir,
+      "-P %s/package_arch/TribitsDumpDepsXmlScript.cmake" % inOptions.tribitsDir,
       ]
     cmnd = ' '.join(cmakeArgumentList)
     echoRunSysCmnd(cmnd,
@@ -578,6 +578,8 @@ def writeDefaultBuildSpecificConfigFile(buildTestCaseName):
     print "\nThe file "+buildSpecificConfigFileName+" already exists!"
 
   else:
+
+   # ToDo: Get rid fo these!  These are too specific!
 
     print "\nCreating a default skeleton file "+buildSpecificConfigFileName+" ..."
 
@@ -1274,6 +1276,8 @@ def runBuildTestCase(inOptions, tribitsGitRepos, buildTestCase, timings):
     if inOptions.extraCmakeOptions:
       cmakeBaseOptions.extend(commandLineOptionsToList(inOptions.extraCmakeOptions))
   
+    cmakeBaseOptions.append(cmakeScopedDefine(projectName,
+      "TRIBITS_DIR:PATH", inOptions.tribitsDir))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
       "ENABLE_TESTS:BOOL", "ON"))
     cmakeBaseOptions.append(cmakeScopedDefine(projectName,
