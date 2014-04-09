@@ -65,7 +65,7 @@ void cuda_test_insert_close(  uint32_t num_nodes
                             , uint32_t num_duplicates
                            )
 {
-  test_insert_close< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, true);
 }
 
 void cuda_test_insert_far(  uint32_t num_nodes
@@ -73,7 +73,7 @@ void cuda_test_insert_far(  uint32_t num_nodes
                           , uint32_t num_duplicates
                          )
 {
-  test_insert_far< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates);
+  test_insert< Kokkos::Cuda >( num_nodes, num_inserts, num_duplicates, false);
 }
 
 void cuda_test_failed_insert(  uint32_t num_nodes )

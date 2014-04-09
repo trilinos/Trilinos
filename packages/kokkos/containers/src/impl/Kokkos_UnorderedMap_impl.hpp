@@ -54,6 +54,22 @@
 
 namespace Kokkos { namespace Impl {
 
+KOKKOS_FORCEINLINE_FUNCTION
+uint32_t rotate_right(uint32_t i, int r)
+{
+  return r ?
+         ((i >> r) | (i << (32-r))) :
+         i ;
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+uint64_t rotate_right(uint64_t i, int r)
+{
+  return r ?
+         ((i >> r) | (i << (64-r))) :
+         i ;
+}
+
 uint32_t find_hash_size( uint32_t size );
 
 KOKKOS_FORCEINLINE_FUNCTION
@@ -174,9 +190,8 @@ struct UnorderedMapScalars
 {
   bool modified;
   bool erasable;
-  bool has_failed_inserts;
+  bool failed_insert;
   uint32_t size;
-  uint32_t failed_inserts;
 };
 
 
