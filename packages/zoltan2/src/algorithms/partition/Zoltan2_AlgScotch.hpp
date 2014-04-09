@@ -470,7 +470,7 @@ void AlgPTScotch(
 
   // Clean up PTScotch
   SCOTCH_dgraphExit(gr);
-  delete gr;
+  free(gr);
   SCOTCH_stratExit(&stratstr);
 
   // Load answer into the solution.

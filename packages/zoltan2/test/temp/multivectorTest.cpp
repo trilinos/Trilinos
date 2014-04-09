@@ -723,9 +723,12 @@ void timeZoltan(ZGO numGlobalCoords,
   MPI_Comm_group(MPI_COMM_WORLD, &group);
   MPI_Group_incl(group, groupSize, myHalfProcs, &subGroup);
   MPI_Comm_create(MPI_COMM_WORLD, subGroup, &subComm);
+  MPI_Group_free(&subGroup);
+
+  delete [] myHalfProcs;
 
   // Create global data directories for our sub groups. 
-  // (Analygous to creating the new MultiVectors in Tpetra.)
+  // (Analogous to creating the new MultiVectors in Tpetra.)
 
   ztnBuildN->start();
   ztnBuildN->incrementNumCalls();

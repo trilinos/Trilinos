@@ -376,8 +376,15 @@ int main(int argc, char *argv[]){
         delete cm;
         delete env;
         */
-        delete []proc_to_task_xadj_;
+        delete [] proc_to_task_xadj_;
         delete [] proc_to_task_adj_;
+        delete [] task_communication_xadj_;
+        delete [] task_communication_adj_;
+
+        for (int i = 0; i < coordDim; i++) delete [] partCenters[i];
+        delete [] partCenters;
+        for (int i = 0; i < procDim; i++) delete [] procCoordinates[i];
+        delete [] procCoordinates;
     }
     catch(std::string &s){
         cerr << s << endl;

@@ -210,9 +210,15 @@ size_t removeUndesiredEdges(
     newWeights = new scalar_t * [eDim];
     env->localMemoryAssertion(__FILE__, __LINE__, eDim, newWeights);
 
-    for (int w=0; w < eDim; w++){
-      newWeights[w] = new scalar_t [numKeep];
-      env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
+    if (numKeep) {
+      for (int w=0; w < eDim; w++){
+        newWeights[w] = new scalar_t [numKeep];
+        env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
+      }
+    }
+    else {
+      for (int w=0; w < eDim; w++)
+        newWeights[w] = NULL;
     }
   }
 
@@ -327,13 +333,11 @@ size_t computeLocalEdgeList(
     if (nWeightsPerEdge > 0){
       input_t *wgts = new input_t [nWeightsPerEdge];
       for (int w=0; w < nWeightsPerEdge; w++){
-        if (newWeights[w]){
-          ArrayRCP<const scalar_t> wgtArray(
-            newWeights[w], 0, numLocalGraphEdges, true);
-          wgts[w] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numLocalGraphEdges,true);
+        wgts[w] = input_t(wgtArray, 1);
       }
       eWeights = arcp(wgts, 0, nWeightsPerEdge);
+      delete [] newWeights;
     }
 
     // Create local ID array.  First translate gid to gno.
@@ -886,13 +890,11 @@ void GraphModel<Adapter>::shared_constructor(
       numLocalEdges_ = numNewEdges;
 
       for (int w=0; w < nWeightsPerEdge_; w++){
-        if (newWeights[w] != NULL){   // non-uniform weights
-          ArrayRCP<const scalar_t> wgtArray(newWeights[w],
-            0, numNewEdges, true);
-          eWeights_[w] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numNewEdges, true);
+        eWeights_[w] = input_t(wgtArray, 1);
       }
     }
+    delete [] newWeights;
   }
 
   // Create an IdentifierMap, which maps the user's global IDs to

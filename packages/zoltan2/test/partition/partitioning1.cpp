@@ -128,7 +128,6 @@ int main(int narg, char** arg)
   cmdp.setOption("verbose", "quiet", &verbose,
                  "Print messages and results.");
   cmdp.setOption("distribute", "no-distribute", &distributeInput,
-                "for Zoltan input files only, "
                 "indicate whether or not to distribute "
                 "input across the communicator");
 
@@ -212,40 +211,44 @@ int main(int narg, char** arg)
   if (nVwgts) {
     // Test vertex weights with stride nVwgts.
     size_t nrows = origMatrix->getNodeNumRows();
-    vwgts = new scalar_t[nVwgts * nrows];
-    for (size_t i = 0; i < nrows; i++) {
-      size_t idx = i * nVwgts;
-      vwgts[idx] = scalar_t(origMatrix->getRowMap()->getGlobalElement(i))
-;//                 + scalar_t(0.5);
-      for (int j = 2; j < nVwgts; j++) vwgts[idx+j] = 1.;
+    if (nrows) {
+      vwgts = new scalar_t[nVwgts * nrows];
+      for (size_t i = 0; i < nrows; i++) {
+        size_t idx = i * nVwgts;
+        vwgts[idx] = scalar_t(origMatrix->getRowMap()->getGlobalElement(i))
+  ;//                 + scalar_t(0.5);
+        for (int j = 2; j < nVwgts; j++) vwgts[idx+j] = 1.;
+      }
+      adapter.setVertexWeights(&vwgts[0], nVwgts, 0);
+      for (int j = 2; j < nVwgts; j++)
+        adapter.setVertexWeights(&vwgts[j], nVwgts, j);
     }
-    adapter.setVertexWeights(&vwgts[0], nVwgts, 0);
     if (nVwgts > 1) adapter.setVertexWeightIsDegree(1);
-    for (int j = 2; j < nVwgts; j++)
-      adapter.setVertexWeights(&vwgts[j], nVwgts, j);
   }
 
   if (nEwgts) {
     // Test edge weights with stride 1.
     size_t nnz = origMatrix->getNodeNumEntries();
-    size_t nrows = origMatrix->getNodeNumRows();
-    size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
-    ewgts = new scalar_t[nEwgts * nnz];
-    size_t cnt = 0;
-    Array<z2TestGO> egids(maxnzrow);
-    Array<scalar_t> evals(maxnzrow);
-    for (size_t i = 0; i < nrows; i++) {
-      size_t nnzinrow;
-      z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
-      origMatrix->getGlobalRowCopy(gid, egids(), evals(), nnzinrow);
-      for (size_t k = 0; k < nnzinrow; k++) {
-        ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
-        if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
-        for (int j = 2; j < nEwgts; j++) ewgts[cnt+nnz*j] = 1.;
+    if (nnz) {
+      size_t nrows = origMatrix->getNodeNumRows();
+      size_t maxnzrow = origMatrix->getNodeMaxNumRowEntries();
+      ewgts = new scalar_t[nEwgts * nnz];
+      size_t cnt = 0;
+      Array<z2TestGO> egids(maxnzrow);
+      Array<scalar_t> evals(maxnzrow);
+      for (size_t i = 0; i < nrows; i++) {
+        size_t nnzinrow;
+        z2TestGO gid = origMatrix->getRowMap()->getGlobalElement(i);
+        origMatrix->getGlobalRowCopy(gid, egids(), evals(), nnzinrow);
+        for (size_t k = 0; k < nnzinrow; k++) {
+          ewgts[cnt] = (gid < egids[k] ? gid : egids[k]);
+          if (nEwgts > 1) ewgts[cnt+nnz] = (gid < egids[k] ? egids[k] : gid);
+          for (int j = 2; j < nEwgts; j++) ewgts[cnt+nnz*j] = 1.;
+        }
       }
-    }
-    for (int j = 0; j < nEwgts; j++) {
-      adapter.setEdgeWeights(&ewgts[j*nnz], 1, j);
+      for (int j = 0; j < nEwgts; j++) {
+        adapter.setEdgeWeights(&ewgts[j*nnz], 1, j);
+      }
     }
   }
 
@@ -261,6 +264,8 @@ int main(int narg, char** arg)
     if (me == 0) cout << "Done solve() " << endl;
   }
   catch (std::runtime_error &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Runtime exception returned from solve(): " << e.what();
     if (!strncmp(e.what(), "BUILD ERROR", 11)) {
       // Catching build errors as exceptions is OK in the tests
@@ -274,16 +279,22 @@ int main(int narg, char** arg)
     }
   }
   catch (std::logic_error &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Logic exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
   catch (std::bad_alloc &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Bad_alloc exception returned from solve(): " << e.what()
          << " FAIL" << endl;
     return -1;
   }
   catch (std::exception &e) {
+    delete [] vwgts;
+    delete [] ewgts;
     cout << "Unknown exception returned from solve(). " << e.what()
          << " FAIL" << endl;
     return -1;
@@ -365,6 +376,8 @@ int main(int narg, char** arg)
   delete [] wtPerPart;
   delete [] globalCountPerPart;
   delete [] globalWtPerPart;
+  delete [] vwgts;
+  delete [] ewgts;
 
 
   ////// Redistribute matrix and vector into new matrix and vector.
