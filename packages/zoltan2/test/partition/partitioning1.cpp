@@ -91,6 +91,7 @@ typedef Zoltan2::XpetraCrsGraphAdapter<SparseGraph> SparseGraphAdapter;
 typedef Zoltan2::XpetraMultiVectorAdapter<Vector> MultiVectorAdapter;
 
 #define epsilon 0.00000001
+#define NNZ_IDX 1
 
 /////////////////////////////////////////////////////////////////////////////
 int main(int narg, char** arg)
@@ -217,13 +218,13 @@ int main(int narg, char** arg)
         size_t idx = i * nVwgts;
         vwgts[idx] = scalar_t(origMatrix->getRowMap()->getGlobalElement(i))
   ;//                 + scalar_t(0.5);
-        for (int j = 2; j < nVwgts; j++) vwgts[idx+j] = 1.;
+        for (int j = 1; j < nVwgts; j++) vwgts[idx+j] = 1.;
       }
-      adapter.setVertexWeights(&vwgts[0], nVwgts, 0);
-      for (int j = 2; j < nVwgts; j++)
-        adapter.setVertexWeights(&vwgts[j], nVwgts, j);
+      for (int j = 0; j < nVwgts; j++) {
+        if (j != NNZ_IDX) adapter.setVertexWeights(&vwgts[j], nVwgts, j);
+        else              adapter.setVertexWeightIsDegree(NNZ_IDX);
+      }
     }
-    if (nVwgts > 1) adapter.setVertexWeightIsDegree(1);
   }
 
   if (nEwgts) {
@@ -319,8 +320,12 @@ int main(int narg, char** arg)
     if (size_t(checkParts[i]) >= checkNparts) 
       cout << "Invalid Part:  FAIL" << endl;
     countPerPart[checkParts[i]]++;
-    for (int j = 0; j < nVwgts; j++)
-      wtPerPart[checkParts[i]*nVwgts+j] += vwgts[i*nVwgts+j];
+    for (int j = 0; j < nVwgts; j++) {
+      if (j != NNZ_IDX)
+        wtPerPart[checkParts[i]*nVwgts+j] += vwgts[i*nVwgts+j];
+      else
+        wtPerPart[checkParts[i]*nVwgts+j] += origMatrix->getNumEntriesInLocalRow(i);
+    }
   }
   Teuchos::reduceAll<int, size_t>(*comm, Teuchos::REDUCE_SUM, checkNparts,
                                   countPerPart, globalCountPerPart);
