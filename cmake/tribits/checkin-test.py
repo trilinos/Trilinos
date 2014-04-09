@@ -325,6 +325,9 @@ affect the build or the tests.  For example, if all you have changed are
 documentation files, then you don't need to run this script before pushing
 manually.
 
+NOTE: To see detailed debug-level information, set
+TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON in the env before running this script.
+
 
 Common Use Cases (examples):
 ----------------------------
@@ -1248,10 +1251,9 @@ def locateAndLoadConfiguration(path_hints = []):
   file. Returns a configuration dictionary. If the module is not
   found, this dictionary will be empty.
   """
-  CONFIG_MODULE = 'project-checkin-test-config'
-  CONFIG_FILE = CONFIG_MODULE + ".py"
   for path in path_hints:
-    candidate = os.path.join(path, CONFIG_FILE)
+    candidate = os.path.join(path, "project-checkin-test-config.py")
+    if debugDump: print "Looking for candidate configuration file '%s'" % candidate
     if os.path.exists(candidate):
       return loadConfigurationFile(candidate)
   return {}
@@ -1290,6 +1292,8 @@ def main(cmndLineArgs):
         if arg.startswith('--project-configuration='):
           print "Found configuration override %s..." % arg
           configuration = loadConfigurationFile(arg.split('=')[1])
+        elif not configuration and arg.startswith('--src-dir='):
+          configuration = locateAndLoadConfiguration([arg.split('=')[1]])
       if not configuration:
         configuration = locateAndLoadConfiguration(getConfigurationSearchPaths())
       success = runProjectTestsWithCommandLineArgs(cmndLineArgs, configuration)

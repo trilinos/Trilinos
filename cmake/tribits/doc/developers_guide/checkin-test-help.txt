@@ -254,6 +254,9 @@ affect the build or the tests.  For example, if all you have changed are
 documentation files, then you don't need to run this script before pushing
 manually.
 
+NOTE: To see detailed debug-level information, set
+TRIBITS_CHECKIN_TEST_DEBUG_DUMP=ON in the env before running this script.
+
 
 Common Use Cases (examples):
 ----------------------------
