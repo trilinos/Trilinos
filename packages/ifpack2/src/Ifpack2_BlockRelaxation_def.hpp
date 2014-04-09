@@ -624,11 +624,11 @@ DoGaussSeidel (MV& X, MV& Y) const
   MV Correction(X.getMap(),NumVectors,true);
   MV TmpResidual(X.getMap(),NumVectors,false);
 
-  ArrayRCP<ArrayRCP<scalar_type> >           x_ptr = X.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >           y_ptr = Y.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >          y2_ptr = Y2->get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
+  ArrayView<ArrayRCP<scalar_type> >           x_ptr = X.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >           y_ptr = Y.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >          y2_ptr = Y2->get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst()();
 
   // data exchange is here, once per sweep
   if (IsParallel_)  Y2->doImport(Y,*Importer_,Tpetra::INSERT);
@@ -654,14 +654,17 @@ DoGaussSeidel (MV& X, MV& Y) const
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk)
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
+      for (size_t m = 0; m < NumVectors; ++m) {
+	ArrayView<const scalar_type> x_local = x_ptr[m]();
+	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<scalar_type>       t_local = tmpresidual_ptr[m]();
+	ArrayView<scalar_type>       c_local = correction_ptr[m]();
 
-      for (size_t k = 0; k < NumEntries; ++k) {
-        const local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk)
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
+	t_local[LID] = x_local[LID];	
+	for (size_t k = 0; k < NumEntries; ++k) {
+	  const local_ordinal_type col = Indices[k];
+	  t_local[LID] -= Values[k] * c_local[col];
+	}
       }
     }
     // solve with this block
@@ -685,8 +688,10 @@ DoGaussSeidel (MV& X, MV& Y) const
   // of Y2 and Y will always work (tough for ML it should be ok)
   if (IsParallel_) {
     for (size_t m = 0; m < NumVectors; ++m) {
+      ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+      ArrayView<scalar_type>      y_local  = y_ptr[m]();
       for (size_t i = 0; i < NumMyRows_; ++i) {
-        y_ptr[m][i] = y2_ptr[m][i];
+        y_local[i] = y2_local[i];
       }
     }
   }
@@ -745,12 +750,11 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   MV Correction(X.getMap(),NumVectors,true);
   MV TmpResidual(X.getMap(),NumVectors,false);
 
-  ArrayRCP<ArrayRCP<scalar_type> > x_ptr       = X.get2dViewNonConst();
-  //ArrayRCP<ArrayRCP<scalar_type> >       xcopy_ptr   = Xcopy.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >       y_ptr       = Y.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >       y2_ptr      = Y2->get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst();
+  ArrayView<ArrayRCP<scalar_type> >     x_ptr       = X.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >     y_ptr       = Y.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >     y2_ptr      = Y2->get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> >  correction_ptr = Correction.get2dViewNonConst()();
+  ArrayView<ArrayRCP<scalar_type> > tmpresidual_ptr = TmpResidual.get2dViewNonConst()();
 
   // data exchange is here, once per sweep
   if (IsParallel_) {
@@ -776,16 +780,17 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk) {
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
-      }
-
       //set tmpresid = initresid - A*correction
-      for (size_t k = 0 ; k < NumEntries ; k++) {
-        local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk) {
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
+      for (size_t m = 0; m < NumVectors; ++m) {
+	ArrayView<const scalar_type> x_local = x_ptr[m]();
+	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<scalar_type>       t_local = tmpresidual_ptr[m]();
+	ArrayView<scalar_type>       c_local = correction_ptr[m]();
+        t_local[LID] = x_local[LID];
+
+	for (size_t k = 0 ; k < NumEntries ; k++) {
+	  local_ordinal_type col = Indices[k];
+          t_local[LID] -= Values[k] * c_local[col];
         }
       }
     }
@@ -821,19 +826,21 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
       size_t NumEntries;
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
-      //Set tmpresid = initresid
-      for (size_t kk = 0; kk < NumVectors; ++kk) {
-        tmpresidual_ptr[kk][LID] = x_ptr[kk][LID];
-      }
-
       //set tmpresid = initresid - A*correction
-      for (size_t k = 0; k < NumEntries; ++k) {
-        local_ordinal_type col = Indices[k];
-        for (size_t kk = 0; kk < NumVectors; ++kk)
-          tmpresidual_ptr[kk][LID] -= Values[k] * correction_ptr[kk][col];
+      for (size_t m = 0; m < NumVectors; ++m) {
+	ArrayView<const scalar_type> x_local = x_ptr[m]();
+	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<scalar_type>       t_local = tmpresidual_ptr[m]();
+	ArrayView<scalar_type>       c_local = correction_ptr[m]();
+        t_local [LID] = x_local[LID];
+
+	for (size_t k = 0; k < NumEntries; ++k)  {
+	  local_ordinal_type col = Indices[k];       
+          t_local[LID] -= Values[k] * c_local[col];
+	}
       }
     }
-
+    
     // solve with this block
     //
     // Note: I'm abusing the ordering information, knowing that X/Y
@@ -855,8 +862,10 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   // of Y2 and Y will always work (though for ML it should be ok)
   if (IsParallel_) {
     for (size_t m = 0; m < NumVectors; ++m) {
+      ArrayView<scalar_type>      y_local = y_ptr[m]();
+      ArrayView<scalar_type>      y2_local = y2_ptr[m]();
       for (size_t i = 0 ; i < NumMyRows_ ; ++i) {
-        y_ptr[m][i] = y2_ptr[m][i];
+        y_local[i] = y2_local[i];
       }
     }
   }

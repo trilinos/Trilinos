@@ -1277,8 +1277,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
 
       for (size_t m = 0; m < NumVectors; ++m) {
         scalar_type dtemp = STS::zero ();
-	  ArrayView<const scalar_type> x_local = x_ptr[m]();
-	  ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<const scalar_type> x_local = x_ptr[m]();
+	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
 
         for (size_t k = 0; k < NumEntries; ++k) {
           const local_ordinal_type col = Indices[k];
