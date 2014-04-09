@@ -1269,7 +1269,6 @@ def checkin_test_run_case(testObject, testName, optionsStr, cmndInterceptsStr, \
   try:
 
     # B) Create the command to run the checkin-test.py script
-
     
     cmndArgs = [
       scriptsDir + "/../checkin-test.py",
