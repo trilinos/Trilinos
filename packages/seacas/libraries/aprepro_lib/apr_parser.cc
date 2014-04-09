@@ -1262,8 +1262,14 @@ namespace SEAMS {
                                     array *arr = (yysemantic_stack_[(8) - (1)].tptr)->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-                                    if ((yysemantic_stack_[(8) - (3)].val) < rows && (yysemantic_stack_[(8) - (5)].val) < cols) {
-                                      int offset = (yysemantic_stack_[(8) - (3)].val)*cols+(yysemantic_stack_[(8) - (5)].val);
+				    int row = (yysemantic_stack_[(8) - (3)].val);
+				    int col = (yysemantic_stack_[(8) - (5)].val);
+				    if (aprepro.ap_options.one_based_index) {
+				      row--;
+				      col--;
+				    }
+				    if (row < rows && col < cols) {
+                                      int offset = row*cols+col;
                                       (yysemantic_stack_[(8) - (1)].tptr)->value.avar->data[offset] = (yysemantic_stack_[(8) - (8)].val);
                                     }
                                     else {
@@ -1275,7 +1281,7 @@ namespace SEAMS {
 
 
 /* Line 664 of lalr1.cc  */
-#line 1279 "apr_parser.cc"
+#line 1285 "apr_parser.cc"
       default:
         break;
       }
@@ -2177,9 +2183,9 @@ namespace SEAMS {
 
 } // SEAMS
 /* Line 1135 of lalr1.cc  */
-#line 2181 "apr_parser.cc"
+#line 2187 "apr_parser.cc"
 /* Line 1136 of lalr1.cc  */
-#line 344 "aprepro.yy"
+#line 350 "aprepro.yy"
 
 
 void SEAMS::Parser::error(const Parser::location_type&, const std::string& m)
