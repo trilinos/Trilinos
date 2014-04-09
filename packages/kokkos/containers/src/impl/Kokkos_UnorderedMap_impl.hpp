@@ -56,16 +56,15 @@ namespace Kokkos { namespace Impl {
 
 uint32_t find_hash_size( uint32_t size );
 
-// find the first set bit of the integer
 KOKKOS_FORCEINLINE_FUNCTION
 int bit_scan_forward(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
   return __ffs(i) - 1;
-#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return _bit_scan_forward(i);
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
   return __builtin_ffs(i) - 1;
+#elif defined( __INTEL_COMPILER )
+  return _bit_scan_forward(i);
 #else
 
   uint32_t t = 1;
@@ -79,18 +78,55 @@ int bit_scan_forward(uint32_t i)
 #endif
 }
 
-// find the first set bit of the integer
+KOKKOS_FORCEINLINE_FUNCTION
+int bit_scan_forward(uint64_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return __ffsll(i) - 1;
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return __builtin_ffsll(i) - 1;
+#else
+  uint64_t t = 1;
+  int r = 0;
+  while (i && (i & t == 0))
+  {
+    t = t << 1;
+    ++r;
+  }
+  return r;
+#endif
+}
+
 KOKKOS_FORCEINLINE_FUNCTION
 int bit_scan_reverse(uint32_t i)
 {
 #if defined( __CUDA_ARCH__ )
   return 31 - __clz(i);
-#elif defined( __INTEL_COMPILER ) && not defined(__CUDACC__)
-  return _bit_scan_reverse(i);
 #elif defined( __GNUC__ ) || defined( __GNUG__ )
   return 31 - __builtin_clz(i);
+#elif defined( __INTEL_COMPILER )
+  return _bit_scan_reverse(i);
 #else
   uint32_t t = 1 << 31;
+  int r = 0;
+  while (i && (i & t == 0))
+  {
+    t = t >> 1;
+    ++r;
+  }
+  return r;
+#endif
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int bit_scan_reverse(uint64_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return 63 - __clzll(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return 63 - __builtin_clzll(i);
+#else
+  uint64_t t = 1 << 63;
   int r = 0;
   while (i && (i & t == 0))
   {
@@ -106,10 +142,32 @@ int bit_scan_reverse(uint32_t i)
 KOKKOS_FORCEINLINE_FUNCTION
 int popcount(uint32_t i)
 {
+#if defined( __CUDA_ARCH__ )
+  return __popc(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return __builtin_popcount(i);
+#elif defined ( __INTEL_COMPILER )
+  return _popcnt32(i);
+#else
   i = i - ((i >> 1) & (uint32_t)~(uint32_t)0/3);                                     // temp
   i = (i & (uint32_t)~(uint32_t)0/15*3) + ((i >> 2) & (uint32_t)~(uint32_t)0/15*3);  // temp
   i = (i + (i >> 4)) & (uint32_t)~(uint32_t)0/255*15;                                // temp
   return (int)((uint32_t)(i * ((uint32_t)~(uint32_t)0/255)) >> (sizeof(uint32_t) - 1) * CHAR_BIT); // count
+#endif
+}
+
+KOKKOS_FORCEINLINE_FUNCTION
+int popcount(uint64_t i)
+{
+#if defined( __CUDA_ARCH__ )
+  return __popcll(i);
+#elif defined( __GNUC__ ) || defined( __GNUG__ )
+  return __builtin_popcountll(i);
+#elif defined ( __INTEL_COMPILER )
+  return _popcnt64(i);
+#else
+  return popcount( static_cast<uint32_t>(i >> 32) ) + popcount( static_cast<uint32_t>(i & ( ~0u )) );
+#endif
 }
 
 struct UnorderedMapScalars
