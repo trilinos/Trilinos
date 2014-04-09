@@ -58,6 +58,7 @@ BlockRelaxation (const Teuchos::RCP<const row_matrix_type>& A)
   OverlapLevel_ (0),
   PartitionerType_ ("linear"),
   NumSweeps_ (1),
+  NumLocalBlocks_(0),
   PrecType_ (Ifpack2::Details::JACOBI),
   MinDiagonalValue_ (STS::zero ()),
   DampingFactor_ (STS::one ()),
