@@ -46,13 +46,27 @@
 #ifndef MUELU_LEVEL_HPP
 #define MUELU_LEVEL_HPP
 
+#include <algorithm>                    // for swap
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <ostream>                      // for basic_ostream, etc
+#include <string>                       // for char_traits, string, etc
+#include <utility>                      // for pair
+
+#include "Teuchos_Describable.hpp"      // for operator<<
+#include "Teuchos_FancyOStream.hpp"     // for FancyOStream
+#include "Teuchos_ParameterEntry.hpp"   // for ParameterEntry, getValue
+#include "Teuchos_RCPDecl.hpp"          // for RCP
+#include "Teuchos_RCP.hpp"              // for RCP::operator->, etc
+#include "Teuchos_TestForException.hpp" // for TEUCHOS_TEST_FOR_EXCEPTION
+
 #include <Xpetra_Map.hpp>               // for UnderlyingLib definition
 
 #include "MueLu_BoostGraphviz.hpp"
 
+#include "MueLu_Exceptions.hpp"         // for RuntimeError
+#include "MueLu_VerbosityLevel.hpp"     // for MsgType::Default, VerbLevel
 #include "MueLu_KeepType.hpp"
 #include "MueLu_VariableContainer.hpp"
-#include "MueLu_BaseClass.hpp"
 #include "MueLu_NoFactory.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
 
