@@ -41,7 +41,7 @@ def addCmndLineOptions(clp):
   rst2latex = "rst2latex"
   rst2htmlWhich = getCmndOutput("which rst2html", True, False)
   if rst2htmlWhich == "" or re.match(".+no rst2html.+", rst2htmlWhich):
-    rst2thml = rst2thml+".py"
+    rst2html = rst2html+".py"
     rst2latex = rst2latex+".py"
 
   clp.add_option(
