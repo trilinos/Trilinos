@@ -31,7 +31,7 @@ namespace stk {
   stk::print_debug_skip(pm)
 
 
-void print_memory_sum_all_procs(stk::ParallelMachine pm)
+inline void print_memory_sum_all_procs(stk::ParallelMachine pm)
 {
   const size_t p_rank = stk::parallel_machine_rank(pm);
   size_t my_peak = stk::allocator_memory_usage<void>::peak_memory();
@@ -44,13 +44,13 @@ void print_memory_sum_all_procs(stk::ParallelMachine pm)
   }
 }
 
-void check_valgrind_version()
+inline void check_valgrind_version()
 {
   STKUNIT_ASSERT_EQ(__VALGRIND_MAJOR__, 3);
   STKUNIT_ASSERT_EQ(__VALGRIND_MINOR__, 8);
 }
 
-void print_debug_skip(stk::ParallelMachine pm)
+inline void print_debug_skip(stk::ParallelMachine pm)
 {
 #ifndef NDEBUG
   // We're in debug; need to tell test script not to validate cycle count
