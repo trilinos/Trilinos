@@ -90,6 +90,8 @@ makeMeshInput (const int nx, const int ny, const int nz);
 /// \param nz [out] Number of elements along the z dimension.
 /// \param xmlInputParamsFile [out] Name of XML file encoding
 ///   an input ParameterList for the Poisson test problem.
+/// \param solverName [out] Name of Belos solver; anything that
+///   Belos::SolverFactory understands is valid here.
 /// \param verbose [out] Whether to print verbose status output.
 /// \param debug [out] Whether to print debugging output.
 void
@@ -97,6 +99,7 @@ setCommandLineArgumentDefaults (int& nx,
                                 int& ny,
                                 int& nz,
                                 std::string& xmlInputParamsFile,
+                                std::string& solverName,
                                 bool& verbose,
                                 bool& debug);
 
@@ -114,6 +117,8 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
+                           int& maxNumIters,
                            bool& verbose,
                            bool& debug);
 
@@ -135,6 +140,7 @@ parseCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
                            bool& verbose,
                            bool& debug);
 

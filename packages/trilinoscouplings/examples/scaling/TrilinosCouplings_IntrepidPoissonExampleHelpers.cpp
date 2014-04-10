@@ -73,6 +73,7 @@ setCommandLineArgumentDefaults (int& nx,
                                 int& ny,
                                 int& nz,
                                 std::string& xmlInputParamsFile,
+                                std::string& solverName,
                                 bool& verbose,
                                 bool& debug)
 {
@@ -80,6 +81,7 @@ setCommandLineArgumentDefaults (int& nx,
   ny = 20;
   nz = 20;
   xmlInputParamsFile = "";
+  solverName = "GMRES";
   verbose = false;
   debug = false;
 }
@@ -90,6 +92,8 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
+                           int& maxNumIters,
                            bool& verbose,
                            bool& debug)
 {
@@ -102,6 +106,15 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                   "std::string value as the Pamgen mesh specification.  "
                   "Otherwise, we tell Pamgen to make a cube, using "
                   "nx, ny, and nz.");
+  cmdp.setOption ("solverName", &solverName, "Name of iterative linear solver "
+                  "to use for solving the linear system.  You may use any name "
+                  "that Belos::SolverFactory understands.  Examples include "
+                  "\"GMRES\" and \"CG\".");
+  cmdp.setOption ("maxNumIters", &maxNumIters, "Maximum number of iterations "
+                  "in the linear solve.  If not specified, this is read from "
+                  "the input ParameterList (read from the XML file).  If "
+                  "specified, this overrides any value in the input "
+                  "ParameterList.");
   cmdp.setOption ("verbose", "quiet", &verbose,
                   "Whether to print verbose status output.");
   cmdp.setOption ("debug", "release", &debug,
@@ -117,6 +130,7 @@ parseCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& ny,
                            int& nz,
                            std::string& xmlInputParamsFile,
+                           std::string& solverName,
                            bool& verbose,
                            bool& debug)
 {

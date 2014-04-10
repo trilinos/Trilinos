@@ -43,6 +43,7 @@ namespace TpetraIntrepidPoissonExample {
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
                 const int num_steps,
@@ -56,7 +57,7 @@ solveWithBelos (bool& converged,
   typedef operator_type OP;
 
   // Invoke the generic solve routine.
-  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, tol, maxNumIters, num_steps, X, A, B, M_left, M_right);
+  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, solverName, tol, maxNumIters, num_steps, X, A, B, M_left, M_right);
 }
 
 /// \brief Solve the linear system(s) AX=B with Belos by cloning to a new

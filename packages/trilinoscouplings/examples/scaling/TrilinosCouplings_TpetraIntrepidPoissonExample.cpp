@@ -78,22 +78,6 @@ template<typename Scalar>
 const Scalar
 exactSolution (const Scalar& x, const Scalar& y, const Scalar& z);
 
-/** \brief  User-defined material tensor.
-
-    \param  material    [out]   3 x 3 material tensor evaluated at (x,y,z)
-    \param  x           [in]    x-coordinate of the evaluation point
-    \param  y           [in]    y-coordinate of the evaluation point
-    \param  z           [in]    z-coordinate of the evaluation point
-
-    \warning Symmetric and positive definite tensor is required for every (x,y,z).
-*/
-template<typename Scalar>
-void
-materialTensor (Scalar material[][3],
-                const Scalar& x,
-                const Scalar& y,
-                const Scalar& z);
-
 /** \brief  Computes gradient of the exact solution. Requires user-defined exact solution.
 
     \param  gradExact  [out]   gradient of the exact solution evaluated at (x,y,z)
@@ -213,7 +197,7 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
   using std::endl;
-  typedef Teuchos::ArrayView<LO>::size_type size_type;
+  //typedef Teuchos::ArrayView<LO>::size_type size_type; // unused
   typedef Teuchos::ScalarTraits<ST> STS;
 
   (void) verbose;
@@ -226,13 +210,13 @@ makeMatrixAndRightHandSide (Teuchos::RCP<sparse_matrix_type>& A,
   //
   typedef Tpetra::Map<LO, GO, Node>         map_type;
   typedef Tpetra::Export<LO, GO, Node>      export_type;
-  typedef Tpetra::Import<LO, GO, Node>      import_type;
+  //typedef Tpetra::Import<LO, GO, Node>      import_type; // unused
   typedef Tpetra::CrsGraph<LO, GO, Node>    sparse_graph_type;
 
   // Number of independent variables fixed at 3
-  typedef Sacado::Fad::SFad<ST, 3>     Fad3;
+  //typedef Sacado::Fad::SFad<ST, 3>     Fad3; // unused
   typedef Intrepid::FunctionSpaceTools IntrepidFSTools;
-  typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools;
+  //typedef Intrepid::RealSpaceTools<ST> IntrepidRSTools; // unused
   typedef Intrepid::CellTools<ST>      IntrepidCTools;
 
   const int numProcs = comm->getSize ();
@@ -1154,52 +1138,84 @@ exactSolution (const Scalar& x, const Scalar& y, const Scalar& z)
   // return exp(x + y + z)/(1. + x*y + y*z + x*y*z);
 }
 
+namespace { // anonymous
+  ST materialTensorOffDiagonalValue_;
+} // namespace (anonymous)
 
-template<typename Scalar>
-void
-materialTensor (Scalar material[][3],
-                const Scalar& x,
-                const Scalar& y,
-                const Scalar& z)
-{
-  typedef Teuchos::ScalarTraits<Scalar> STS;
-
-  const Scalar zero = STS::zero ();
-  const Scalar one = STS::one ();
-  const Scalar two = one + one;
-  const Scalar four = two + two;
-  const Scalar eight = four + four;
-  (void) four;
-  (void) eight;
-
-  const bool illConditioned = false;
-  if (illConditioned) {
-    material[0][0] = one;
-    material[0][1] = one - one / two;
-    material[0][2] = zero;
-
-    material[1][0] = one;
-    material[1][1] = one - one / two;
-    material[1][2] = one;
-
-    material[2][0] = one;
-    material[2][1] = one - one / two;
-    material[2][2] = zero;
-  }
-  else {
-    material[0][0] = STS::one();
-    material[0][1] = STS::zero();
-    material[0][2] = STS::zero();
-
-    material[1][0] = STS::zero();
-    material[1][1] = STS::one();
-    material[1][2] = STS::zero();
-
-    material[2][0] = STS::zero();
-    material[2][1] = STS::zero();
-    material[2][2] = STS::one();
-  }
+ST getMaterialTensorOffDiagonalValue () {
+  return materialTensorOffDiagonalValue_;
 }
+void setMaterialTensorOffDiagonalValue (const ST newVal) {
+  materialTensorOffDiagonalValue_ = newVal;
+}
+
+/** \brief  User-defined material tensor.
+
+    Evaluate the tensor using operator().  Its arguments are:
+
+    \param  material    [out]   3 x 3 material tensor evaluated at (x,y,z)
+    \param  x           [in]    x-coordinate of the evaluation point
+    \param  y           [in]    y-coordinate of the evaluation point
+    \param  z           [in]    z-coordinate of the evaluation point
+
+    \warning Symmetric and positive definite tensor is required for every (x,y,z).
+*/
+template<typename Scalar>
+class MaterialTensor {
+public:
+  MaterialTensor (const double offDiagVal) :
+    offDiagVal_ (Scalar (offDiagVal))
+  {}
+
+  void
+  operator () (Scalar material[][3],
+               const Scalar& x,
+               const Scalar& y,
+               const Scalar& z) const
+  {
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    // We go through this trouble to make numbers, because Scalar
+    // isn't necessarily double.  It could be some automatic
+    // differentiation type.
+    const Scalar zero = STS::zero ();
+    const Scalar one = STS::one ();
+
+    // You can use the value of offDiagVal_ to control the iteration
+    // count.  The iteration counts below are for Belos' GMRES with no
+    // preconditioning, using the default problem size.
+    // setMaterialTensorOffDiagonalValue() sets the value of this
+    // parameter.
+    //
+    // Classical elasticity assumes a symmetric material tensor.  I
+    // suppose one could solve Poisson's equation with an unsymmetric
+    // material tensor, but I'm not sure what that would mean.
+
+    // offDiagVal_ = -5/4: 209 iterations (CG breaks!)
+    // offDiagVal_ = -1/2: 47 iterations
+    // offDiagVal_ = 0: 40 iterations (CG works)
+    // offDiagVal_ = 1/2: 46 iterations
+    // offDiagVal_ = 3/4: 47 iterations
+    // offDiagVal_ = 1: 59 iterations
+    // offDiagVal_ = 5/4: 183 iterations
+    // offDiagVal_ = 3/2: 491 iterations
+    // offDiagVal_ = 2: 939 iterations (CG breaks!)
+    material[0][0] = one;
+    material[0][1] = zero;
+    material[0][2] = offDiagVal_;
+
+    material[1][0] = zero;
+    material[1][1] = one;
+    material[1][2] = zero;
+
+    material[2][0] = offDiagVal_;
+    material[2][1] = zero;
+    material[2][2] = one;
+  }
+
+private:
+  const Scalar offDiagVal_;
+};
 
 /**********************************************************************************/
 /************** AUXILIARY FUNCTIONS FROM EXACT SOLUTION ***************************/
@@ -1262,7 +1278,8 @@ sourceTerm (Scalar& x, Scalar& y, Scalar& z)
   exactSolutionGrad (grad_u, x, y, z);
 
   // Get material tensor
-  materialTensor<Scalar> (material, x, y, z);
+  MaterialTensor<Scalar> matTens (getMaterialTensorOffDiagonalValue ());
+  matTens (material, x, y, z);
 
   // Compute total flux = (A.grad u)
   for (int i = 0; i < 3; ++i) {
@@ -1296,13 +1313,14 @@ evaluateMaterialTensor (ArrayOut&      matTensorValues,
 
   scalar_type material[3][3];
 
+  MaterialTensor<scalar_type> matTens (getMaterialTensorOffDiagonalValue ());
   for (int cell = 0; cell < numWorksetCells; ++cell) {
     for (int pt = 0; pt < numPoints; ++pt) {
       scalar_type x = evaluationPoints(cell, pt, 0);
       scalar_type y = evaluationPoints(cell, pt, 1);
       scalar_type z = evaluationPoints(cell, pt, 2);
 
-      materialTensor<scalar_type> (material, x, y, z);
+      matTens (material, x, y, z);
 
       for (int row = 0; row < spaceDim; ++row) {
         for(int col = 0; col < spaceDim; ++col) {
