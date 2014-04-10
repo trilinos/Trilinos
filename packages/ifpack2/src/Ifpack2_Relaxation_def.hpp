@@ -192,6 +192,7 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   globalNumSmallDiagEntries_ (0),
   globalNumZeroDiagEntries_ (0),
   globalNumNegDiagEntries_ (0),
+  globalDiagNormDiff_(Teuchos::as<magnitude_type>::zero()),
   savedDiagOffsets_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
@@ -1232,7 +1233,7 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
   const local_ordinal_type * rowInd  = 0;
   size_t numActive                   = numMyRows;
   bool do_local = localSmoothingIndices_.is_null();
-  if(!do_local) {
+  if(do_local) {
     rowInd    = localSmoothingIndices_.getRawPtr();
     numActive = localSmoothingIndices_.size();
   }
