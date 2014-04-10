@@ -1583,10 +1583,9 @@ unit of integration, versioning and reuse.</li>
 <li><a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a></li>
 <li><a class="reference internal" href="#tribits-repository-core-variables">TriBITS Repository Core Variables</a></li>
 </ul>
-<!-- ToDo: Edited and spell-checked up to here on 4/10/2014! -->
 <div class="section" id="tribits-repository-core-files">
 <h4><a class="toc-backref" href="#id20">TriBITS Repository Core Files</a></h4>
-<p>The core files making up a TriBITS Repository (where <tt class="docutils literal">&lt;reposDir&gt; =
+<p>The core files making up a TriBITS Repository (where <tt class="docutils literal">&lt;repoDir&gt; =
 <span class="pre">${${REPOSITORY_NAME}_SOURCE_DIR}</span></tt>) are:</p>
 <pre class="literal-block">
 &lt;repoDir&gt;/
@@ -1595,9 +1594,9 @@ unit of integration, versioning and reuse.</li>
   Copyright.txt  # [Optional] Only needed if creating version header file
   Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
   cmake/
-     RepositoryDependenciesSetup.cmake # [Optional]
-     CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
-     CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
+     RepositoryDependenciesSetup.cmake # [Optional] CDash email addresses?
+     CallbackSetupExtraOptions.cmake # [Optional] Called after main options
+     CallbackDefineRepositoryPackaging.cmake # [Optional] CPack packaging
 </pre>
 <p>These TriBITS Repository files are documented in more detail below:</p>
 <ul class="simple">
@@ -1625,7 +1624,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
 
 </pre>
-<p>Other comamnds that are appropriate to use in this file include
+<p>Other commands that are appropriate to use in this file include
 <a class="reference internal" href="#tribits-disable-package-on-platforms">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a>.  Also, if the binary directory for
 any package <tt class="docutils literal">&lt;packageName&gt;</tt> needs to be changed from the default, then the
 variable <tt class="docutils literal">&lt;packageName&gt;_SPECIFIED_BINARY_DIR</tt> can be set.  One can see an
@@ -1641,7 +1640,7 @@ SET(TriBITS_SPECIFIED_BINARY_DIR tribits)
 </pre>
 <p>(see <a class="reference internal" href="#tribits-package-tribits-repository-tribits-package-sharing-the-same-source-directory">TriBITS Package, TriBITS Repository, TriBITS Package sharing the same
 source directory</a>).</p>
-<p>It is perfectly legal for a TriBITS repjository to define no packages at all
+<p>It is perfectly legal for a TriBITS repository to define no packages at all
 with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES()
@@ -1650,35 +1649,85 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 packages, only extra repositories.</p>
 <!-- ToDo: Point to example meta-project. -->
 <p id="repodir-tplslist-cmake"><strong>&lt;repoDir&gt;/TPLsList.cmake</strong>: [Required] Provides the list of TPLs that are
-listed as TPLs in the repository's SE packages
-<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files (see <cite>TriBITS TPL</cite>).  This file
-typically just calls the macro <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> to define
-the TPLs along with their find modules and other properties.  See an example
-from <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">TPLsList.cmake</tt> which shows:</p>
+referenced as TPL dependencies in the repository's SE package's
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files (see <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>).  This
+file typically just calls the macro <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> to
+define the TPLs along with their find modules and other properties.  An
+example is <a class="reference internal" href="#reducedmocktrilinos">ReducedMockTrilinos</a>/<tt class="docutils literal">TPLsList.cmake</tt> which shows:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_TPLS(
-  MPI  &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/FindTPLMPI.cmake&quot;   PT
+  MPI            &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;    PT
+  BLAS           cmake/TPLs/    PT
+  LAPACK         cmake/TPLs/    PT
+  Boost          cmake/TPLs/    ST
+  UMFPACK        cmake/TPLs/    ST
+  AMD            cmake/TPLs/    EX
+  PETSC          cmake/TPLs/    ST
   )
 
 </pre>
-<p>Once processed, each listed TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
-variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FINDMOD</tt> test group
-<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
-<p>It is perfectly fine to specify no TPLs for a repository with:</p>
+<p>See <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a> for details on what gets defined for each TriBITS TPL once
+this file is processed.</p>
+<p>It is perfectly fine to specify no TPLs at all for a repository with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_TPLS()
 </pre>
 <p>but the macro <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_TPLS()</tt> has to be called, even if
 there are no TPLs.  See <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> for further
-details.</p>
+details and constraints.</p>
 <p id="repodir-copyright-txt"><strong>&lt;repoDir&gt;/Copyright.txt</strong>: [Optional] Gives the default copyright and
 license declaration for all of the software in the TriBITS repository
-<tt class="docutils literal">&lt;repoDir&gt;</tt>.  This file is read into a string and then used to configure the
-repository's version file (see <a class="reference internal" href="#project-and-repository-versioning-and-release-mode">Project and Repository Versioning and Release
-Mode</a>).</p>
-<p id="repodir-version-cmake"><strong>&lt;repoDir&gt;/Version.cmake</strong>: Contains version information for the repository
-(and the project also if this is also the base project).  For example,
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">Version.cmake</tt>, this looks like:</p>
+directory <tt class="docutils literal">&lt;repoDir&gt;/</tt>.  This file is read into a string and then used to
+configure the repository's version header file (see <a class="reference internal" href="#project-and-repository-versioning-and-release-mode">Project and Repository
+Versioning and Release Mode</a>).  Even if a repository version header file is
+not produced, it is a good idea for every TriBITS repository to define this
+file, just for legal purposes.  For a good open-source license, one should
+consider copying the <tt class="docutils literal">tribits/Copyright.txt</tt> file which is a simple 3-clause
+BSD-like license like:</p>
+<pre class="literal-block">
+# &#64;HEADER
+# ************************************************************************
+#
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION &quot;AS IS&quot; AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# ************************************************************************
+# &#64;HEADER
+
+</pre>
+<p id="repodir-version-cmake"><strong>&lt;repoDir&gt;/Version.cmake</strong>: [Optional] Contains version information for the
+repository (and the project also if this is also the base project).  For
+example, <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">Version.cmake</tt>, this looks like:</p>
 <pre class="literal-block">
 SET(${REPOSITORY_NAME}_VERSION 1.1)
 SET(${REPOSITORY_NAME}_MAJOR_VERSION 01)
@@ -1694,7 +1743,8 @@ given TriBITS repository.</p>
 directory's local scope and are therefore seen by the entire CMake project.
 When this file is read in repository mode, the variable
 <tt class="docutils literal">${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT</tt> is ignored.</p>
-<p id="repodir-cmake-repositorydependenciessetup-cmake"><strong>&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</strong>: [Optional] If present,
+<span class="target" id="repodir-cmake-repositorydependenciessetup-cmake"></span><!-- ToDo: Edited and spell-checked up to here on 4/10/2014! -->
+<p><strong>&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</strong>: [Optional] If present,
 this file is included a single time as part of the generation of the project
 dependency data-structure (see <a class="reference internal" href="#reduced-package-dependency-processing">Reduced Package Dependency Processing</a>).  It
 gets included at the top project level scope in order with the other
@@ -2408,6 +2458,9 @@ TRIBITS_TPL_DECLARE_LIBRARIES( PETSC
 <p>Some concrete <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files actually do use
 <tt class="docutils literal">FIND_PACKAGE()</tt> and a standard CMake package find modulue to fill in the
 guts of finding at TPL.</p>
+<p>Once processed, each defined TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
+variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FINDMOD</tt> and test group
+<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
 <p>Note that the TriBITS system does not require the usage of of the function
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> and does not even care about the TPL module
 name <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>.  All that is required is that some CMake

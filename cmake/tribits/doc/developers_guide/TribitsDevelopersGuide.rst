@@ -1092,12 +1092,10 @@ For more details on the definition of a TriBITS Repository, see:
 * `TriBITS Repository Core Files`_
 * `TriBITS Repository Core Variables`_
 
-.. ToDo: Edited and spell-checked up to here on 4/10/2014!
-
 TriBITS Repository Core Files
 .............................
 
-The core files making up a TriBITS Repository (where ``<reposDir> =
+The core files making up a TriBITS Repository (where ``<repoDir> =
 ${${REPOSITORY_NAME}_SOURCE_DIR}``) are::
 
   <repoDir>/
@@ -1106,9 +1104,9 @@ ${${REPOSITORY_NAME}_SOURCE_DIR}``) are::
     Copyright.txt  # [Optional] Only needed if creating version header file
     Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
     cmake/
-       RepositoryDependenciesSetup.cmake # [Optional]
-       CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
-       CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
+       RepositoryDependenciesSetup.cmake # [Optional] CDash email addresses?
+       CallbackSetupExtraOptions.cmake # [Optional] Called after main options
+       CallbackDefineRepositoryPackaging.cmake # [Optional] CPack packaging
 
 These TriBITS Repository files are documented in more detail below:
 
@@ -1131,7 +1129,7 @@ with their directories and other properties.  For example, the file
 .. include:: ../examples/TribitsExampleProject/PackagesList.cmake
    :literal:
 
-Other comamnds that are appropriate to use in this file include
+Other commands that are appropriate to use in this file include
 `TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()`_.  Also, if the binary directory for
 any package ``<packageName>`` needs to be changed from the default, then the
 variable ``<packageName>_SPECIFIED_BINARY_DIR`` can be set.  One can see an
@@ -1143,7 +1141,7 @@ example of this in the file ``tribits/PackageList.cmake`` which shows
 (see `TriBITS Package, TriBITS Repository, TriBITS Package sharing the same
 source directory`_).
 
-It is perfectly legal for a TriBITS repjository to define no packages at all
+It is perfectly legal for a TriBITS repository to define no packages at all
 with::
 
   TRIBITS_REPOSITORY_DEFINE_PACKAGES()
@@ -1156,40 +1154,46 @@ packages, only extra repositories.
 .. _<repoDir>/TPLsList.cmake:
 
 **<repoDir>/TPLsList.cmake**: [Required] Provides the list of TPLs that are
-listed as TPLs in the repository's SE packages
-`<packageDir>/cmake/Dependencies.cmake`_ files (see `TriBITS TPL`).  This file
-typically just calls the macro `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ to define
-the TPLs along with their find modules and other properties.  See an example
-from `TribitsExampleProject`_/``TPLsList.cmake`` which shows:
+referenced as TPL dependencies in the repository's SE package's
+`<packageDir>/cmake/Dependencies.cmake`_ files (see `TriBITS TPL`_).  This
+file typically just calls the macro `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ to
+define the TPLs along with their find modules and other properties.  An
+example is `ReducedMockTrilinos`_/``TPLsList.cmake`` which shows:
 
-.. include:: ../examples/TribitsExampleProject/TPLsList.cmake
+.. include:: ../../package_arch/UnitTests/ReducedMockTrilinos/TPLsList.cmake
    :literal:
 
-Once processed, each listed TPL ``TPL_NAME`` is given global non-cache
-variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` test group
-``${TPL_NAME}_TESTGROUP`` (see `SE Package Test Group`_).
+See `TriBITS TPL`_ for details on what gets defined for each TriBITS TPL once
+this file is processed.
 
-It is perfectly fine to specify no TPLs for a repository with::
+It is perfectly fine to specify no TPLs at all for a repository with::
 
   TRIBITS_REPOSITORY_DEFINE_TPLS()
 
 but the macro ``TRIBITS_REPOSITORY_DEFINE_TPLS()`` has to be called, even if
 there are no TPLs.  See `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ for further
-details.
+details and constraints.
 
 .. _<repoDir>/Copyright.txt:
 
 **<repoDir>/Copyright.txt**: [Optional] Gives the default copyright and
 license declaration for all of the software in the TriBITS repository
-``<repoDir>``.  This file is read into a string and then used to configure the
-repository's version file (see `Project and Repository Versioning and Release
-Mode`_).
+directory ``<repoDir>/``.  This file is read into a string and then used to
+configure the repository's version header file (see `Project and Repository
+Versioning and Release Mode`_).  Even if a repository version header file is
+not produced, it is a good idea for every TriBITS repository to define this
+file, just for legal purposes.  For a good open-source license, one should
+consider copying the ``tribits/Copyright.txt`` file which is a simple 3-clause
+BSD-like license like:
+
+.. include:: ../../Copyright.txt
+   :literal:
 
 .. _<repoDir>/Version.cmake:
 
-**<repoDir>/Version.cmake**: Contains version information for the repository
-(and the project also if this is also the base project).  For example,
-`TribitsExampleProject`_/``Version.cmake``, this looks like:
+**<repoDir>/Version.cmake**: [Optional] Contains version information for the
+repository (and the project also if this is also the base project).  For
+example, `TribitsExampleProject`_/``Version.cmake``, this looks like:
 
 .. include:: ../examples/TribitsExampleProject/Version.cmake
    :literal:
@@ -1204,6 +1208,8 @@ When this file is read in repository mode, the variable
 ``${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` is ignored.
 
 .. _<repoDir>/cmake/RepositoryDependenciesSetup.cmake:
+
+.. ToDo: Edited and spell-checked up to here on 4/10/2014!
 
 **<repoDir>/cmake/RepositoryDependenciesSetup.cmake**: [Optional] If present,
 this file is included a single time as part of the generation of the project
@@ -1879,6 +1885,10 @@ example of such a file is the standard ``FindTPLPETSC.cmake`` module which is:
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find modulue to fill in the
 guts of finding at TPL.
+
+Once processed, each defined TPL ``TPL_NAME`` is given global non-cache
+variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` and test group
+``${TPL_NAME}_TESTGROUP`` (see `SE Package Test Group`_).
 
 Note that the TriBITS system does not require the usage of of the function
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ and does not even care about the TPL module
