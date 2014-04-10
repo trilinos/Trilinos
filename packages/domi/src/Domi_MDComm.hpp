@@ -192,7 +192,7 @@ public:
    *        <tt>commDims</tt> is less than <tt>numDims</tt>, then the
    *        missing values are treated as unspecified.  Negative
    *        values will also be treated as unspecified.  Unspecified
-   *        vlaues will be converted to positive such that the product
+   *        values will be converted to positive such that the product
    *        of the resulting axis sizes will equal the number of
    *        processors in the Teuchos communicator.
    *
