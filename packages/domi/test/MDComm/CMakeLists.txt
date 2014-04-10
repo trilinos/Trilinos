@@ -10,7 +10,7 @@ TRIBITS_ADD_EXECUTABLE(
   MDComm_UnitTests
   SOURCES
     MDComm_UnitTests.cpp
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
   COMM serial mpi
   )
 
@@ -95,15 +95,6 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_1_8
-#   COMM mpi
-#   NUM_MPI_PROCS 8
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=1"
-#   STANDARD_PASS_OUTPUT
-#   )
-
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_2D_2_4
@@ -122,33 +113,6 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_8_1
-#   COMM mpi
-#   NUM_MPI_PROCS 8
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=8"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_1_16
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=1"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_2_8
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=2"
-#   STANDARD_PASS_OUTPUT
-#   )
-
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_2D_4_4
@@ -157,24 +121,6 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=4"
   STANDARD_PASS_OUTPUT
   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_8_2
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=8"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_2D_16_1
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=16"
-#   STANDARD_PASS_OUTPUT
-#   )
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
@@ -266,15 +212,6 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_1_8
-#   COMM mpi
-#   NUM_MPI_PROCS 8
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,1"
-#   STANDARD_PASS_OUTPUT
-#   )
-
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_3D_1_2_4
@@ -292,15 +229,6 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,4"
   STANDARD_PASS_OUTPUT
   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_8_1
-#   COMM mpi
-#   NUM_MPI_PROCS 8
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,8"
-#   STANDARD_PASS_OUTPUT
-#   )
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
@@ -347,33 +275,6 @@ TRIBITS_ADD_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_8_1_1
-#   COMM mpi
-#   NUM_MPI_PROCS 8
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=8"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_1_16
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,1"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_2_8
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,2"
-#   STANDARD_PASS_OUTPUT
-#   )
-
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
   NAME MDComm_UnitTests_3D_1_4_4
@@ -382,33 +283,6 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,4"
   STANDARD_PASS_OUTPUT
   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_8_2
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,8"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_1_16_1
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,16"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_2_1_8
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,1"
-#   STANDARD_PASS_OUTPUT
-#   )
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
@@ -427,15 +301,6 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,4"
   STANDARD_PASS_OUTPUT
   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_2_8_1
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,8"
-#   STANDARD_PASS_OUTPUT
-#   )
 
 TRIBITS_ADD_TEST(
   MDComm_UnitTests
@@ -463,30 +328,3 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=4,4"
   STANDARD_PASS_OUTPUT
   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_8_1_2
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=8,1"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_8_2_1
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=8,2"
-#   STANDARD_PASS_OUTPUT
-#   )
-
-# TRIBITS_ADD_TEST(
-#   MDComm_UnitTests
-#   NAME MDComm_UnitTests_3D_16_1_1
-#   COMM mpi
-#   NUM_MPI_PROCS 16
-#   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=16"
-#   STANDARD_PASS_OUTPUT
-#   )

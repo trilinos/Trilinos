@@ -244,7 +244,6 @@ TEUCHOS_UNIT_TEST( MDComm, pListConstructorBad )
 
 TEUCHOS_UNIT_TEST( MDComm, numDimsConstructor )
 {
-  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims);
 
@@ -348,37 +347,31 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighbor )
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
-  // Get the final commDims and compute the strides
+
+  // Get the final commDims, compute the commStrides, commIndex and
+  // lower neighbor ranks
   commDims.resize(numDims);
-  Array< int > strides(numDims);
+  Array< int > commStrides(numDims);
+  Array< int > commIndex(numDims);
+  Array< int > lowerNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
     commDims[axis] = mdComm.getCommDim(axis);
     if (axis == 0)
-      strides[axis] = 1;
+      commStrides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * commDims[axis-1];
-  }
-  // Get the axis ranks for this processor
-  Array< int > commIndex(numDims);
-  for (int axis = numDims-1; axis > 0; --axis)
+      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
     commIndex[axis] = mdComm.getCommIndex(axis);
-  // Compute the ranks of the lower neighbors
-  Array< int > lowerNeighborRanks(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    lowerNeighborRanks[axis] = comm->getRank() - strides[axis];
+    if (commIndex[axis] == 0)
+      lowerNeighborRanks[axis] = -1;
+    else
+      lowerNeighborRanks[axis] = comm->getRank() - commStrides[axis];
+  }
 
   // Test the lower neighbor
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (commIndex[axis] == 0)
-    {
-      TEST_EQUALITY(mdComm.getLowerNeighbor(axis), -1);
-    }
-    else
-    {
-      TEST_EQUALITY(mdComm.getLowerNeighbor(axis), lowerNeighborRanks[axis]);
-    }
+    TEST_EQUALITY(mdComm.getLowerNeighbor(axis), lowerNeighborRanks[axis]);
   }
 }
 
@@ -386,46 +379,41 @@ TEUCHOS_UNIT_TEST( MDComm, getLowerNeighborPeriodic )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
   periodic[0] = 1;
+
   // Construct MDComm
   MDComm mdComm(comm, numDims, commDims, periodic);
-  // Get the final commDims and compute the strides
+
+  // Get the final commDims, compute the commStrides, commIndex, and
+  // lower neighbor ranks
   commDims.resize(numDims);
-  Array< int > strides(numDims);
+  Array< int > commStrides(numDims);
+  Array< int > commIndex(numDims);
+  Array< int > lowerNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
     commDims[axis] = mdComm.getCommDim(axis);
     if (axis == 0)
-      strides[axis] = 1;
+      commStrides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * commDims[axis-1];
-  }
-  // Get the axis ranks for this processor
-  Array< int > commIndex(numDims);
-  for (int axis = numDims-1; axis > 0; --axis)
+      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
     commIndex[axis] = mdComm.getCommIndex(axis);
-  // Compute the ranks of the lower neighbors
-  Array< int > lowerNeighborRanks(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    if ((axis == 0) && (commIndex[axis] == 0))
-      lowerNeighborRanks[axis] = comm->getRank() +
-        (commDims[axis]-1)*strides[axis];
+    if (periodic[axis] && commIndex[axis] == 0)
+      lowerNeighborRanks[axis] = comm->getRank() + (commDims[axis]-1) *
+        commStrides[axis];
+    else if (commIndex[axis] == 0)
+      lowerNeighborRanks[axis] = -1;
     else
-      lowerNeighborRanks[axis] = comm->getRank() - strides[axis];
+      lowerNeighborRanks[axis] = comm->getRank() - commStrides[axis];
+  }
 
   // Test the lower neighbor
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if ((axis != 0) && (commIndex[axis] == 0))
-    {
-      TEST_EQUALITY(mdComm.getLowerNeighbor(axis), -1);
-    }
-    else
-    {
-      TEST_EQUALITY(mdComm.getLowerNeighbor(axis), lowerNeighborRanks[axis]);
-    }
+    TEST_EQUALITY(mdComm.getLowerNeighbor(axis), lowerNeighborRanks[axis]);
   }
 }
 
@@ -434,37 +422,31 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighbor )
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   MDComm mdComm(comm, numDims, commDims);
-  // Get the final commDims and compute the strides
+
+  // Get the final commDims, compute the commStrides, commIndex and
+  // upper neighbor ranks
   commDims.resize(numDims);
-  Array< int > strides(numDims);
+  Array< int > commStrides(numDims);
+  Array< int > commIndex(numDims);
+  Array< int > upperNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
     commDims[axis] = mdComm.getCommDim(axis);
     if (axis == 0)
-      strides[axis] = 1;
+      commStrides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * commDims[axis-1];
-  }
-  // Get the axis ranks for this processor
-  Array< int > commIndex(numDims);
-  for (int axis = numDims-1; axis > 0; --axis)
+      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
     commIndex[axis] = mdComm.getCommIndex(axis);
-  // Compute the ranks of the upper neighbors
-  Array< int > upperNeighborRanks(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    upperNeighborRanks[axis] = comm->getRank() + strides[axis];
+    if (commIndex[axis] == commDims[axis]-1)
+      upperNeighborRanks[axis] = -1;
+    else
+      upperNeighborRanks[axis] = comm->getRank() + commStrides[axis];
+  }
 
   // Test the upper neighbor
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if (commIndex[axis] == mdComm.getCommDim(axis)-1)
-    {
-      TEST_EQUALITY(mdComm.getUpperNeighbor(axis), -1);
-    }
-    else
-    {
-      TEST_EQUALITY(mdComm.getUpperNeighbor(axis), upperNeighborRanks[axis]);
-    }
+    TEST_EQUALITY(mdComm.getUpperNeighbor(axis), upperNeighborRanks[axis]);
   }
 }
 
@@ -472,46 +454,41 @@ TEUCHOS_UNIT_TEST( MDComm, getUpperNeighborPeriodic )
 {
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+
   // Construct periodic flags
   Array< int > periodic(numDims, 0);
   periodic[numDims-1] = 1;
+
   // Construct MDComm
   MDComm mdComm(comm, numDims, commDims, periodic);
-  // Get the final commDims and compute the strides
+
+  // Get the final commDims, and compute the commStrides, commIndex,
+  // and upper neighbor ranks
   commDims.resize(numDims);
-  Array< int > strides(numDims);
+  Array< int > commStrides(numDims);
+  Array< int > commIndex(numDims);
+  Array< int > upperNeighborRanks(numDims);
   for (int axis = 0; axis < numDims; ++axis)
   {
     commDims[axis] = mdComm.getCommDim(axis);
     if (axis == 0)
-      strides[axis] = 1;
+      commStrides[axis] = 1;
     else
-      strides[axis] = strides[axis-1] * commDims[axis-1];
-  }
-  // Get the axis ranks for this processor
-  Array< int > commIndex(numDims);
-  for (int axis = numDims-1; axis > 0; --axis)
+      commStrides[axis] = commStrides[axis-1] * commDims[axis-1];
     commIndex[axis] = mdComm.getCommIndex(axis);
-  // Compute the ranks of the upper neighbors
-  Array< int > upperNeighborRanks(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    if ((axis == numDims-1) && (commIndex[axis] == commDims[axis]-1))
-      upperNeighborRanks[axis] = comm->getRank() -
-        (commDims[axis]-1)*strides[axis];
+    if (periodic[axis] && commIndex[axis] == commDims[axis]-1)
+      upperNeighborRanks[axis] = comm->getRank() - (commDims[axis]-1) *
+        commStrides[axis];
+    else if (commIndex[axis] == commDims[axis]-1)
+      upperNeighborRanks[axis] = -1;
     else
-      upperNeighborRanks[axis] = comm->getRank() + strides[axis];
+      upperNeighborRanks[axis] = comm->getRank() + commStrides[axis];
+  }
 
   // Test the upper neighbor
   for (int axis = 0; axis < numDims; ++axis)
   {
-    if ((axis != numDims-1) && (commIndex[axis] == commDims[axis]-1))
-    {
-      TEST_EQUALITY(mdComm.getUpperNeighbor(axis), -1);
-    }
-    else
-    {
-      TEST_EQUALITY(mdComm.getUpperNeighbor(axis), upperNeighborRanks[axis]);
-    }
+    TEST_EQUALITY(mdComm.getUpperNeighbor(axis), upperNeighborRanks[axis]);
   }
 }
 
@@ -878,34 +855,49 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
   for (int axis = 0; axis < numDims; ++axis)
     finalCommDims[axis] = mdComm.getCommDim(axis);
 
-  // Compute the axis strides
+  // Compute the axis commStrides
   Array< int > commStrides(numDims);
-  Array< int > newAxisStrides;
   commStrides[0] = 1;
   for (int axis = 1; axis < numDims; ++axis)
     commStrides[axis] = commStrides[axis-1] * finalCommDims[axis-1];
 
   // We will reduce this MDComm several times by using the comm index
   // constructor along each dimension
+  Array< int > newCommDims;
+  Array< int > newAxisStrides;
   for (int axis = 0; axis < numDims; ++axis)
   {
-    // Compute the new axis strides
+    // Compute the new comm dimensions and comm strides
+    int newNumDims = (numDims > 1) ? numDims - 1 : numDims;
+    newCommDims.clear();
     newAxisStrides.clear();
     for (int newAxis = 0; newAxis < numDims; ++newAxis)
+    {
       if (newAxis != axis)
-        newAxisStrides.push_back(commStrides[newAxis]);
+      {
+        newCommDims.push_back(finalCommDims[newAxis]);
+        int i = newAxisStrides.size();
+        if (i == 0)
+          newAxisStrides.push_back(1);
+        else
+          newAxisStrides.push_back(newAxisStrides[i-1]*newCommDims[i-1]);
+      }
+    }
 
     int redAxisRank = finalCommDims[axis] / 2;
-    int newDims = (numDims > 1) ? numDims - 1 : numDims;
     bool partOfSubComm = true;
     if (mdComm.getCommIndex(axis) != redAxisRank)
       partOfSubComm = false;
+
+    // Construct the reduced MDComm
     MDComm reducedMdComm(mdComm, axis, redAxisRank);
+
+    // Test the reduced MDComm
     if (partOfSubComm)
     {
       TEST_ASSERT(reducedMdComm.onSubcommunicator());
-      TEST_EQUALITY(reducedMdComm.numDims(), newDims);
-      for (int newAxis = 0; newAxis < newDims; ++newAxis)
+      TEST_EQUALITY(reducedMdComm.numDims(), newNumDims);
+      for (int newAxis = 0; newAxis < newNumDims; ++newAxis)
       {
         int axisRank = reducedMdComm.getCommIndex(newAxis);
         if (numDims == 1)
@@ -930,7 +922,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
           else
           {
             int lowerNeighbor = 0;
-            for (int i = 0; i < newDims; ++i)
+            for (int i = 0; i < newNumDims; ++i)
               lowerNeighbor += reducedMdComm.getCommIndex(i) * newAxisStrides[i];
             lowerNeighbor -= newAxisStrides[newAxis];
             TEST_EQUALITY(reducedMdComm.getLowerNeighbor(newAxis),
@@ -943,7 +935,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
           else
           {
             int upperNeighbor = 0;
-            for (int i = 0; i < newDims; ++i)
+            for (int i = 0; i < newNumDims; ++i)
               upperNeighbor += reducedMdComm.getCommIndex(i) * newAxisStrides[i];
             upperNeighbor += newAxisStrides[newAxis];
             TEST_EQUALITY(reducedMdComm.getUpperNeighbor(newAxis),
@@ -964,7 +956,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
           else
           {
             int lowerNeighbor = 0;
-            for (int i = 0; i < newDims; ++i)
+            for (int i = 0; i < newNumDims; ++i)
               lowerNeighbor += reducedMdComm.getCommIndex(i) * newAxisStrides[i];
             lowerNeighbor -= newAxisStrides[newAxis];
             TEST_EQUALITY(reducedMdComm.getLowerNeighbor(newAxis),
@@ -977,7 +969,7 @@ TEUCHOS_UNIT_TEST( MDComm, subCommReduce )
           else
           {
             int upperNeighbor = 0;
-            for (int i = 0; i < newDims; ++i)
+            for (int i = 0; i < newNumDims; ++i)
               upperNeighbor += reducedMdComm.getCommIndex(i) * newAxisStrides[i];
             upperNeighbor += newAxisStrides[newAxis];
             TEST_EQUALITY(reducedMdComm.getUpperNeighbor(newAxis),
@@ -998,7 +990,8 @@ TEUCHOS_UNIT_TEST( MDComm, subCommPeriodic )
   // Construct the MDComm from command-line arguments
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
   commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
-  // Construct the periodic flags
+
+  // Construct the periodic flags and the MDComm
   Array< int > periodic(numDims, 0);
   periodic[0] = 1;
   MDComm mdComm(comm, numDims, commDims, periodic);
