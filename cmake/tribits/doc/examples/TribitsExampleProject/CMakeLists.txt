@@ -23,14 +23,12 @@ INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/ProjectName.cmake")
 # not in an include file :-(
 PROJECT(${PROJECT_NAME} NONE)
 
-# Turn on export depenency generation for WrapExteranl package
-SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
-
 #
 # B) Pull in the TriBITS system and execute
 #
 
-SET(${PROJECT_NAME}_TRIBITS_DIR  ""  CACHE  STRING "TriBITS base directory (required!)")
+SET(${PROJECT_NAME}_TRIBITS_DIR  ""  CACHE  STRING
+  "TriBITS base directory (required!)")
 INCLUDE("${${PROJECT_NAME}_TRIBITS_DIR}/TriBITS.cmake")
 
 # CMake requires this be in the top file and not in an include file :-(
