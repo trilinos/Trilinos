@@ -866,7 +866,7 @@ ENDMACRO()
 #
 # Read in the Project's native repositories.,
 #
-# On output, the variable ${PRJECT_NAME}_NATIVE_REPOSITORES is set.
+# On output, the variable ${PRJOECT_NAME}_NATIVE_REPOSITORIES is set.
 #
 MACRO(TRIBITS_READ_IN_NATIVE_REPOSITORIES)
   SET(NATIVE_REPO_FILE ${PROJECT_SOURCE_DIR}/cmake/NativeRepositoriesList.cmake)
