@@ -66,6 +66,34 @@ namespace TrilinosCouplings {
 /// specification.
 namespace IntrepidPoissonExample {
 
+/// \brief Get off-diagonal value for material tensor.
+///
+/// You can use this value to control the iteration count.  See the
+/// documentation of setMaterialTensorOffDiagonalValue() below for
+/// examples.
+///
+/// This value has to be a double, because we read it from the command
+/// line; Teuchos' facility for this stores floating-point values as
+/// double.
+double getMaterialTensorOffDiagonalValue ();
+
+/// \brief Set off-diagonal value for material tensor.
+///
+/// You can use this value to control the iteration count.  The
+/// iteration counts below are for Belos' GMRES with no
+/// preconditioning, using the default problem size.
+///
+/// newVal = -5/4: 209 iterations (CG breaks!)
+/// newVal = -1/2: 47 iterations
+/// newVal = 0: 40 iterations (CG works)
+/// newVal = 1/2: 46 iterations
+/// newVal = 3/4: 47 iterations
+/// newVal = 1: 59 iterations
+/// newVal = 5/4: 183 iterations
+/// newVal = 3/2: 491 iterations
+/// newVal = 2: 939 iterations (CG breaks!)
+void setMaterialTensorOffDiagonalValue (const double newVal);
+
 /// \brief Make a Pamgen mesh specification for the Poisson test problem.
 ///
 /// Pamgen accepts mesh descriptions as human-readable strings in a

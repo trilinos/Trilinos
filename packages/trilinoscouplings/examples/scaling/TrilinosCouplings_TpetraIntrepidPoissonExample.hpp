@@ -206,6 +206,9 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 /// \param numItersPerformed [out] Number of iterations that the Belos
 ///   solver performed.
 ///
+/// \param solverName [in] Which iterative linear solver to use.
+///   Any name that Belos::SolverFactory knows will work here.
+///
 /// \param tol [in] Convergence tolerance for the iterative method.
 ///   The meaning of this depends on the particular iterative method.
 ///
@@ -279,24 +282,6 @@ solveWithBelosGPU (
   const Teuchos::RCP<const multivector_type>& B,
   const Teuchos::RCP<const operator_type>& M_left=Teuchos::null,
   const Teuchos::RCP<const operator_type>& M_right=Teuchos::null);
-
-  // Get off-diagonal value for material tensor.
-  ST getMaterialTensorOffDiagonalValue ();
-  // Set off-diagonal value for material tensor.  You can use this
-  // value to control the iteration count.  The iteration counts below
-  // are for Belos' GMRES with no preconditioning, using the default
-  // problem size.
-  //
-  // newVal = -5/4: 209 iterations (CG breaks!)
-  // newVal = -1/2: 47 iterations
-  // newVal = 0: 40 iterations (CG works)
-  // newVal = 1/2: 46 iterations
-  // newVal = 3/4: 47 iterations
-  // newVal = 1: 59 iterations
-  // newVal = 5/4: 183 iterations
-  // newVal = 3/2: 491 iterations
-  // newVal = 2: 939 iterations (CG breaks!)
-  void setMaterialTensorOffDiagonalValue (const ST newVal);
 
 } // namespace TpetraIntrepidPoissonExample
 } // namespace TrilinosCouplings

@@ -36,6 +36,19 @@
 namespace TrilinosCouplings {
 namespace IntrepidPoissonExample {
 
+
+namespace { // anonymous
+  double materialTensorOffDiagonalValue_;
+} // namespace (anonymous)
+
+double getMaterialTensorOffDiagonalValue () {
+  return materialTensorOffDiagonalValue_;
+}
+void setMaterialTensorOffDiagonalValue (const double newVal) {
+  materialTensorOffDiagonalValue_ = newVal;
+}
+
+
 std::string
 makeMeshInput (const int nx, const int ny, const int nz)
 {

@@ -179,9 +179,7 @@ ENDIF()
 IF(Trilinos_ENABLE_Belos AND
    Trilinos_ENABLE_Intrepid AND
    Trilinos_ENABLE_Pamgen AND
-   Trilinos_ENABLE_Epetra AND
-   Trilinos_ENABLE_ML AND
-   Trilinos_ENABLE_MueLu)
+   Trilinos_ENABLE_Epetra)
   TRIBITS_ADD_EXECUTABLE(
     IntrepidPoisson_Pamgen_Epetra
     SOURCES IntrepidPoisson_Pamgen_Epetra_main.cpp

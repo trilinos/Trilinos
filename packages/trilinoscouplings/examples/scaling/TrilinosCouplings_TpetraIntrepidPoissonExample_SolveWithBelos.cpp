@@ -57,7 +57,10 @@ solveWithBelos (bool& converged,
   typedef operator_type OP;
 
   // Invoke the generic solve routine.
-  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, solverName, tol, maxNumIters, num_steps, X, A, B, M_left, M_right);
+  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed,
+                                                      solverName, tol, maxNumIters,
+                                                      num_steps,
+                                                      X, A, B, M_left, M_right);
 }
 
 /// \brief Solve the linear system(s) AX=B with Belos by cloning to a new

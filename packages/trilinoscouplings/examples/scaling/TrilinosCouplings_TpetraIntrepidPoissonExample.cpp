@@ -57,7 +57,7 @@
 
 // My includes
 #include "TrilinosCouplings_TpetraIntrepidPoissonExample.hpp"
-
+#include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
 namespace TrilinosCouplings {
 namespace TpetraIntrepidPoissonExample {
@@ -1138,16 +1138,8 @@ exactSolution (const Scalar& x, const Scalar& y, const Scalar& z)
   // return exp(x + y + z)/(1. + x*y + y*z + x*y*z);
 }
 
-namespace { // anonymous
-  ST materialTensorOffDiagonalValue_;
-} // namespace (anonymous)
 
-ST getMaterialTensorOffDiagonalValue () {
-  return materialTensorOffDiagonalValue_;
-}
-void setMaterialTensorOffDiagonalValue (const ST newVal) {
-  materialTensorOffDiagonalValue_ = newVal;
-}
+using ::TrilinosCouplings::IntrepidPoissonExample::getMaterialTensorOffDiagonalValue;
 
 /** \brief  User-defined material tensor.
 

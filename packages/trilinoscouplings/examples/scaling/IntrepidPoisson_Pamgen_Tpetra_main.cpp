@@ -82,11 +82,11 @@ main (int argc, char *argv[])
   using TpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using TpetraIntrepidPoissonExample::solveWithBelos;
   using TpetraIntrepidPoissonExample::solveWithBelosGPU;
-  using TpetraIntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
   using IntrepidPoissonExample::makeMeshInput;
-  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
-  using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
+  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
+  using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
+  using IntrepidPoissonExample::setUpCommandLineArguments;
   using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
@@ -143,7 +143,6 @@ main (int argc, char *argv[])
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
                                solverName, maxNumItersFromCmdLine,
                                verbose, debug);
-
     cmdp.setOption ("materialTensorOffDiagonalValue",
                     &materialTensorOffDiagonalValue, "Off-diagonal value in "
                     "the material tensor.  This controls the iteration count.  "
@@ -280,7 +279,7 @@ main (int argc, char *argv[])
            << "||A||_F = " << norms[2] << endl;
 
       // Setup preconditioner
-      std::string prec_type = inputList.get("Preconditioner", "None");
+      std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
@@ -302,19 +301,27 @@ main (int argc, char *argv[])
         }
       } // setup preconditioner
 
-      bool converged = false;
-      int numItersPerformed = 0;
-      const MT tol = inputList.get("Convergence Tolerance",
-                                   STM::squareroot (STM::eps ()));
+      // Get the convergence tolerance for each linear solve.
+      const MT tol = inputList.get ("Convergence Tolerance",
+                                    STM::squareroot (STM::eps ()));
 
+      // Get the maximum number of iterations for each linear solve.
+      // If the user provided a value other than -1 at the command
+      // line, it overrides any value in the input ParameterList.
       int maxNumIters = 200; // default value
       if (maxNumItersFromCmdLine == -1) {
-        maxNumIters = inputList.get ("Maximum Iterations", 200);
+        maxNumIters = inputList.get ("Maximum Iterations", maxNumIters);
       } else {
         maxNumIters = maxNumItersFromCmdLine;
       }
 
-      const int num_steps = inputList.get("Number of Time Steps", 1);
+      // Get the number of "time steps."  We imitate a time-dependent
+      // PDE by doing this many linear solves.
+      const int num_steps = inputList.get ("Number of Time Steps", 1);
+
+      // Do the linear solve(s).
+      bool converged = false;
+      int numItersPerformed = 0;
       if (gpu) {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
         solveWithBelosGPU (converged, numItersPerformed, tol, maxNumIters,
