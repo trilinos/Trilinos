@@ -70,7 +70,7 @@ void communicate_field_data(
         send_size[ ec->proc ] += e_size ;
       }
       else {
-        recv_size[ ec->proc ] += e_size ;
+        recv_size[ is_shared ? i->owner : ec->proc ] += e_size ;
         if (is_shared) break;
       }
     }
@@ -114,7 +114,7 @@ void communicate_field_data(
                 b.pack<unsigned char>( ptr , size );
               }
               else { //recv
-                CommBuffer & b = sparse.recv_buffer( ec->proc );
+                CommBuffer & b = sparse.recv_buffer( is_shared ? i->owner : ec->proc );
                 b.unpack<unsigned char>( ptr , size );
                 if (is_shared) break;
               }
