@@ -86,9 +86,9 @@ void parallel_print_time_without_output_and_hwm(MPI_Comm comm, double time_on_th
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg High-water memory usage " << hwm_avg / bytes_in_MB << " MB" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Max High-water memory usage " << hwm_max / bytes_in_MB << " MB\n" << std::endl;
 
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min Available memory " << avail_min / bytes_in_MB << " MB" << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg Available memory " << avail_avg / bytes_in_MB << " MB" << std::endl;
-    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max Available memory " << avail_max / bytes_in_MB << " MB\n" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Min Available memory per processor " << avail_min / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg Available memory per processor " << avail_avg / bytes_in_MB << " MB" << std::endl;
+    out << std::setw(6) << std::fixed << std::setprecision(1) << "Max Available memory per processor " << avail_max / bytes_in_MB << " MB\n" << std::endl;
 
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Min No-output time " << min_time << " sec" << std::endl;
     out << std::setw(6) << std::fixed << std::setprecision(1) << "Avg No-output time " << avg_time << " sec" << std::endl;

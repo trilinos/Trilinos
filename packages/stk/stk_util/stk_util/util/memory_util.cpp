@@ -4,6 +4,7 @@
 #include <fstream>
 #include <unistd.h>
 #include <iomanip>
+#include <vector>
 #include <stk_util/util/memory_util.hpp>
 
 #if defined(__APPLE__)
@@ -114,6 +115,63 @@ void get_memory_usage(size_t & now, size_t & hwm)
 #endif
 }
 
+void get_processor_count(std::vector<int> &procinfo)
+{
+  procinfo.clear();
+
+#if defined (PROCFS)
+  std::string proc_string;
+  std::string core_string;
+  std::string line(128,'\0');
+
+  /* Read available cpu data from /proc/cpuinfo
+   */
+  std::ifstream proc_cpuinfo("/proc/cpuinfo");
+  if (!proc_cpuinfo)
+  {
+    procinfo.push_back(1);
+    return;
+  }
+
+  bool have_processor = false;
+  bool have_cores     = false;
+
+  int  proc, cores;
+
+  while (1)
+  {
+    if(!std::getline(proc_cpuinfo, line))
+      return;
+    else if (line.substr(0, 11) == "processor	:")
+    {
+      proc_string = line.substr(12);
+      std::istringstream iss(proc_string);
+      iss >> proc;
+      have_processor = true;
+    }
+    else if (line.substr(0, 11) == "cpu cores	:")
+    {
+      core_string = line.substr(12);
+      std::istringstream iss(core_string);
+      iss >> cores;
+      have_cores = true;
+    }
+
+    if(have_cores && have_processor)
+    {
+      if((size_t) proc == procinfo.size())
+	procinfo.push_back(cores);
+
+      have_cores     = false;
+      have_processor = false;
+    }
+  }
+  proc_cpuinfo.close();
+#else
+  procinfo.push_back(1);
+#endif
+}
+
 // return memory available
 void get_memory_available(size_t & avail)
 {
@@ -158,7 +216,12 @@ void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max
 void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg)
 {
   size_t avail = 0;
+  std::vector<int> coreinfo;
+
   stk::get_memory_available(avail);
+  stk::get_processor_count(coreinfo);
+
+  avail /= coreinfo.size();
 
   get_max_min_avg(comm, avail, avail_max, avail_min, avail_avg);
 }

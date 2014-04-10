@@ -1,6 +1,7 @@
 #ifndef STK_MEMORY_UTIL_H
 #define STK_MEMORY_UTIL_H
 
+#include <vector>
 #include <string>
 #include <mpi.h>
 
@@ -27,7 +28,7 @@ std::string human_bytes(size_t bytes);
  */
 void get_memory_usage(size_t & now, size_t & hwm);
 void get_memory_available(size_t & avail);
-  
+void get_processor_count(std::vector<int> &procinfo);
 void get_memory_high_water_mark_across_processors(MPI_Comm comm, size_t& hwm_max, size_t& hwm_min, size_t& hwm_avg);
 void get_memory_available_across_processors(MPI_Comm comm, size_t& avail_max, size_t& avail_min, size_t& avail_avg);
 
