@@ -132,6 +132,7 @@ main (int argc, char *argv[])
     std::string xmlInputParamsFile;
     bool verbose, debug;
     int maxNumItersFromCmdLine = -1; // -1 means "read from XML file"
+    double tolFromCmdLine = -1.0; // -1 means "read from XML file"
     std::string solverName = "GMRES";
     ST materialTensorOffDiagonalValue = 0.0;
 
@@ -141,7 +142,8 @@ main (int argc, char *argv[])
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
-                               solverName, maxNumItersFromCmdLine,
+                               solverName, tolFromCmdLine,
+                               maxNumItersFromCmdLine,
                                verbose, debug);
     cmdp.setOption ("materialTensorOffDiagonalValue",
                     &materialTensorOffDiagonalValue, "Off-diagonal value in "
@@ -302,8 +304,14 @@ main (int argc, char *argv[])
       } // setup preconditioner
 
       // Get the convergence tolerance for each linear solve.
-      const MT tol = inputList.get ("Convergence Tolerance",
-                                    STM::squareroot (STM::eps ()));
+      // If the user provided a nonnegative value at the command
+      // line, it overrides any value in the input ParameterList.
+      MT tol = STM::squareroot (STM::eps ()); // default value
+      if (tolFromCmdLine < STM::zero ()) {
+        tol = inputList.get ("Convergence Tolerance", tol);
+      } else {
+        tol = tolFromCmdLine;
+      }
 
       // Get the maximum number of iterations for each linear solve.
       // If the user provided a value other than -1 at the command

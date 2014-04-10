@@ -106,6 +106,7 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& nz,
                            std::string& xmlInputParamsFile,
                            std::string& solverName,
+                           double& tol,
                            int& maxNumIters,
                            bool& verbose,
                            bool& debug)
@@ -123,6 +124,10 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                   "to use for solving the linear system.  You may use any name "
                   "that Belos::SolverFactory understands.  Examples include "
                   "\"GMRES\" and \"CG\".");
+  cmdp.setOption ("tol", &tol, "Tolerance for the linear solve.  If not "
+                  "specified, this is read from the input ParameterList (read "
+                  "from the XML file).  If specified, this overrides any value "
+                  "in the input ParameterList.");
   cmdp.setOption ("maxNumIters", &maxNumIters, "Maximum number of iterations "
                   "in the linear solve.  If not specified, this is read from "
                   "the input ParameterList (read from the XML file).  If "

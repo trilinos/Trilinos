@@ -146,6 +146,7 @@ setUpCommandLineArguments (Teuchos::CommandLineProcessor& cmdp,
                            int& nz,
                            std::string& xmlInputParamsFile,
                            std::string& solverName,
+                           double& tol,
                            int& maxNumIters,
                            bool& verbose,
                            bool& debug);
