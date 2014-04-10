@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     SP1  sp1  PT  REQUIRED
     SP2  sp2  ST  OPTIONAL

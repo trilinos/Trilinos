@@ -45,7 +45,7 @@ INCLUDE(PrintVar)
 INCLUDE(Split)
 
 #
-# @MACRO: TRIBITS_DEFINE_REPOSITORY_TPLS()
+# @MACRO: TRIBITS_REPOSITORY_DEFINE_TPLS()
 #
 # Define the list of TPLs, find modules, and classifications for a given
 # TriBITS repository.  This macro is typically called from inside of a
@@ -53,7 +53,7 @@ INCLUDE(Split)
 #
 # Usage::
 #
-#   TRIBITS_DEFINE_REPOSITORY_TPLS(
+#   TRIBITS_REPOSITORY_DEFINE_TPLS(
 #     <tpl0_name>   <tpl0_findmod>  <tpl0_classif>
 #     <tpl1_name>   <tpl1_findmod>  <tpl1_classif>
 #     ...
@@ -107,7 +107,7 @@ INCLUDE(Split)
 #   ``${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS``.  If you misspell the
 #   name of the macro, it is an immediate error in CMake.
 #
-MACRO(TRIBITS_DEFINE_REPOSITORY_TPLS)
+MACRO(TRIBITS_REPOSITORY_DEFINE_TPLS)
   ASSERT_DEFINED(REPOSITORY_NAME)
   SET(${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS "${ARGN}")
 ENDMACRO()

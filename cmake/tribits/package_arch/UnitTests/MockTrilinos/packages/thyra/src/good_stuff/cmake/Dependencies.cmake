@@ -37,6 +37,6 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES ThyraCoreLibs
   )

@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     CoreLibs      src                  PT  REQUIRED
     GoodStuff     src/good_stuff       ST  OPTIONAL

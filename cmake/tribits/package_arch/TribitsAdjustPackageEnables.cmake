@@ -318,7 +318,7 @@ ENDMACRO()
 
 
 #
-# @MACRO: TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()
+# @MACRO: TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()
 #
 # Define the dependenices for a given TriBITS SE package (i.e. a top-level
 # package or a subpackage) in the package's
@@ -326,7 +326,7 @@ ENDMACRO()
 #
 # Usage::
 #
-#   TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+#   TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
 #      [LIB_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
 #      [LIB_OPTIONAL_PACKAGES <pkg1> <pkg2> ...]
 #      [TEST_REQUIRED_PACKAGES <pkg1> <pkg2> ...]
@@ -388,7 +388,7 @@ ENDMACRO()
 #   integration testing of some type.
 #
 # Only upstream SE packages can be listed (as defined by the order the
-# packages are listed in `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ in the
+# packages are listed in `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in the
 # `<repoDir>/PackagesList.cmake`_ file).  Otherwise an error will occur and
 # processing will stop.  Also, mispelled SE package names are caught as well.
 #
@@ -444,7 +444,7 @@ ENDMACRO()
 #     EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
 #     spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
 #     as for full packages (see
-#     `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_).
+#     `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
 #
 #   * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
 #     REQUIRED dependence on this subpackage.
@@ -475,7 +475,7 @@ ENDMACRO()
 # are empty.  This is a error checking property of the TriBITS system to avoid
 # misspelling the names of these variables.
 # 
-MACRO(TRIBITS_DEFINE_PACKAGE_DEPENDENCIES)
+MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
 
   PARSE_ARGUMENTS(
      #prefix

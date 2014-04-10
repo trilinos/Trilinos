@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES ThyraEpetraExt ThyraCoreLibs
   LIB_OPTIONAL_PACKAGES Amesos AztecOO Belos Ifpack ML
   TEST_OPTIONAL_PACKAGES Triutils

@@ -1124,7 +1124,7 @@ These TriBITS Repository files are documented in more detail below:
 
 **<repoDir>/PackagesList.cmake**: [Required] Provides the list of top-level
 packages defined by the repository.  This file typically just calls the macro
-`TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ to define the list of packages along
+`TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ to define the list of packages along
 with their directories and other properties.  For example, the file
 `TribitsExampleProject`_/``PackagesList.cmake`` looks like:
 
@@ -1146,7 +1146,7 @@ source directory`_).
 It is perfectly legal for a TriBITS repjository to define no packages at all
 with::
 
-  TRIBITS_DEFINE_REPOSITORY_PACKAGES()
+  TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 
 and this would be the case for a TriBITS meta-project that has no native
 packages, only extra repositories.
@@ -1158,7 +1158,7 @@ packages, only extra repositories.
 **<repoDir>/TPLsList.cmake**: [Required] Provides the list of TPLs that are
 listed as TPLs in the repository's SE packages
 `<packageDir>/cmake/Dependencies.cmake`_ files (see `TriBITS TPL`).  This file
-typically just calls the macro `TRIBITS_DEFINE_REPOSITORY_TPLS()`_ to define
+typically just calls the macro `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ to define
 the TPLs along with their find modules and other properties.  See an example
 from `TribitsExampleProject`_/``TPLsList.cmake`` which shows:
 
@@ -1171,10 +1171,10 @@ variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` test group
 
 It is perfectly fine to specify no TPLs for a repository with::
 
-  TRIBITS_DEFINE_REPOSITORY_TPLS()
+  TRIBITS_REPOSITORY_DEFINE_TPLS()
 
-but the macro ``TRIBITS_DEFINE_REPOSITORY_TPLS()`` has to be called, even if
-there are no TPLs.  See `TRIBITS_DEFINE_REPOSITORY_TPLS()`_ for further
+but the macro ``TRIBITS_REPOSITORY_DEFINE_TPLS()`` has to be called, even if
+there are no TPLs.  See `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ for further
 details.
 
 .. _<repoDir>/Copyright.txt:
@@ -1331,7 +1331,7 @@ A TriBITS Package:
   `<packageDir>/cmake/Dependencies.cmake`_..
 * Can optionally have subpackages listed in the argument
   ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` to
-  `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_.
 * Is the fundamental unit of software partitioning and aggregation and must
   have a unique packae name that is globally unique (see `Globally unique
   TriBITS package names`_).
@@ -1386,7 +1386,7 @@ These TriBITS Package files are documented in more detail below:
 
 **<packageDir>/cmake/Dependencies.cmake**: [Required] Defines the dependencies
 of a given SE package using the macro
-`TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.  This file is processed at the
+`TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_.  This file is processed at the
 top-level project scope (using an ``INCLUDE()``) so any local variables set
 will be seen by the entire project.  This file is always processed, including
 when just building the project's `<Project>PackageDependencies.xml`_ file.
@@ -1570,7 +1570,7 @@ are defined before an SE Package's ``CMakeLists.txt`` file is processed:
     ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEP_PACKAGE_NAME}`` corresponds to
     each optional upstream SE package listed in the ``LIB_OPTIONAL_PACKAGES``
     and ``TEST_OPTIONAL_PACKAGES`` arguments to the
-    `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ macro. **NOTE:** It is important
+    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro. **NOTE:** It is important
     that the CMake code in the package ``${PACKAGE_NAME}`` key off of this
     variable and **not** the global
     ``${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}`` variable because
@@ -1586,7 +1586,7 @@ are defined before an SE Package's ``CMakeLists.txt`` file is processed:
     ``${PACKAGE_NAME}``.  Here ``${OPTIONAL_DEPENDENT_TPL_NAME}`` corresponds
     each to the optional upstream TPL listed in the ``LIB_OPTIONAL_TPLS`` and
     ``TEST_OPTIONAL_TPLS`` arguments to the
-    `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ macro.
+    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ macro.
 
   ``${PACKAGE_NAME}_ENABLE_TESTS``
 
@@ -1621,11 +1621,11 @@ A TriBITS Subpackage:
   with CMake dependencies).
 * Is declared in its parent packages's
   `<packageDir>/cmake/Dependencies.cmake`_ file in a call to
-  `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ using the argument
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ using the argument
   ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS``.
 * Defines dependencies on `upstream`_ TPLs and/or other SE packages by just
   naming the dependencies in the file ``cmake/Dependencies.cmake`` using the
-  macro `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.
+  macro `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_.
 * Can **NOT** have its own subpackages defined (only top-level packages can
   have subpackages).
 * Is enabled or disabled along with all other subpackages in the parent
@@ -1651,7 +1651,7 @@ Core Files`_.  The core files that make up a TriBITS Subpackage (where
 ``<packageDir> = ${${PARENT_PACKAGE_NAME}_SOURCE_DIR}`` and ``<spkgDir>`` is
 the subpackage directory listed in the
 ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` to
-`TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_) are::
+`TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_) are::
 
   <packageDir>/<spkgDir>/
     CMakeLists.txt  # Only processed if this subpackage is enabled
@@ -1669,7 +1669,7 @@ These TriBITS Subpackage files are documented in more detail below:
 
 **<packageDir>/<spkgDir>/cmake/Dependencies.cmake**: The contents of this file
 for subpackages is idential as for top-level packages.  It just contains a
-call to the macro `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ to define this SE
+call to the macro `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ to define this SE
 package's `upstream`_ TPL and SE package dependencies.  A simple example is
 for ``SubpackageB`` declared in
 `package_with_subpackages/cmake/Dependencies.cmake`_ shown shown in:
@@ -1708,7 +1708,7 @@ package's `<packageDir>/cmake/Dependencies.cmake`_ file are **NOT**
 dependencies of its subpackages.  For example, if
 `package_with_subpackages/cmake/Dependencies.cmake`_ where changed to be::
 
-  TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+  TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
     LIB_REQUIRED_TPLS Boost
     SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
       SubpackageA   A   PT  REQUIRED
@@ -1866,7 +1866,7 @@ by declaring a TPL using TriBITS, automatical enable/disable logic will be
 applied as described in `Package Dependencies and Enable/Disable Logic`_.
 
 For each TPL referenced in a ``TPLsList.cmake`` file using the macro
-`TRIBITS_DEFINE_REPOSITORY_TPLS()`_, there should exist a file, typically
+`TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there should exist a file, typically
 called ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the
 variables ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the the function
@@ -1891,7 +1891,7 @@ accepted by the standard `TRIBITS_TPL_DECLARE_LIBRARIES()`_ funtion.
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
-`TRIBITS_DEFINE_REPOSITORY_TPLS()`_.
+`TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -2232,7 +2232,7 @@ and other commands.
 
 These standard TPLs are used in a `<repoDir>/TPLsList.cmake`_ file as::
 
-  TRIBITS_DEFINE_REPOSITORY_TPLS(
+  TRIBITS_REPOSITORY_DEFINE_TPLS(
     MPI   "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  PT
     CUDA  "${${PROJECT_NAME}_TRIBITS_DIR}/tpls/"  ST
     ...
@@ -2605,7 +2605,7 @@ its directory in its repository's `<repoDir>/PackagesList.cmake`_ file.  For
 example, the Trilinos repository which currently snaphsots the TriBITS source
 tree lists the ``TriBITS`` package with::
 
-  TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
     TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
     ...
     )
@@ -2619,7 +2619,7 @@ to test TriBITS (perhaps just to mine the running tests for examples) can do
 so by including the ``TriBITS`` test package in their ``PackagesList.cmake``
 file using::
 
-  TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+  TRIBITS_REPOSITORY_DEFINE_PACKAGES(
     TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
     ...
     )
@@ -3790,17 +3790,17 @@ The test group for each type of entity is assigned in the following places:
 
 * The top-level `TriBITS Package`_'s test group is assigned using the
   ``CLASSIFICATION`` field in the the macro call
-  `TRIBITS_DEFINE_REPOSITORY_PACKAGES()`_ in its parent repository's
+  `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in its parent repository's
   `<repoDir>/PackagesList.cmake`_ file.
 
 * A `TriBITS Subpackage`_'s test group is assigned using the
   ``CLASSIFICATIONS`` field of the
   ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` argument in the macro call
-  `TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ in its parent's
+  `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ in its parent's
   `<packageDir>/cmake/Dependencies.cmake`_ file.
 
 * A `TriBITS TPLs`_'s test group is assigned using the ``CLASSIFICATION``
-  field in the macro call `TRIBITS_DEFINE_REPOSITORY_TPLS()`_ in its parent
+  field in the macro call `TRIBITS_REPOSITORY_DEFINE_TPLS()`_ in its parent
   repository's `<repoDir>/TPLsList.cmake`_ file.
 
 After these files are processed, the variable `${PACKAGE_NAME}_TESTGROUP`_
@@ -4307,7 +4307,7 @@ developed repository.
 2) **REGRESSION_EMAIL_LIST** (defined in
 `<packageDir>/cmake/Dependencies.cmake`_): Package-specific email address
 specified in the packages's ``Dependencies.cmake`` file using
-`TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_.
+`TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_.
 
 .. _${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESS_BASE:
 
@@ -4689,7 +4689,7 @@ subpackages, do the following:
 
 3) Add the line for the new subpackage to the argument
 ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`` in the macro call
-`TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()`_ in the parent package's
+`TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ in the parent package's
 `<packageDir>/cmake/Dependencies.cmake`_ file after all of its upstream
 dependent subpackages.  If a mistake is made and it is listed before one of
 its upstream dependent subpackages, the TriBITS CMake code will catch this and

@@ -37,7 +37,7 @@
 # ************************************************************************
 # @HEADER
 
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES Teuchos Shards
   LIB_OPTIONAL_PACKAGES Sacado
   TEST_OPTIONAL_PACKAGES Epetra EpetraExt Amesos

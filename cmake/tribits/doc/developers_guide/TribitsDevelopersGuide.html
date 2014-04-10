@@ -3,14 +3,14 @@
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en">
 <head>
 <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
-<meta name="generator" content="Docutils 0.10: http://docutils.sourceforge.net/" />
+<meta name="generator" content="Docutils 0.6: http://docutils.sourceforge.net/" />
 <title>TriBITS Developers Guide and Reference</title>
 <meta name="author" content="Roscoe A. Bartlett (bartlettra&#64;ornl.gov)" />
 <style type="text/css">
 
 /*
 :Author: David Goodger (goodger@python.org)
-:Id: $Id: html4css1.css 7514 2012-09-14 14:27:12Z milde $
+:Id: $Id: html4css1.css 5951 2009-05-18 18:03:10Z milde $
 :Copyright: This stylesheet has been placed in the public domain.
 
 Default cascading style sheet for the HTML output of Docutils.
@@ -48,10 +48,6 @@ blockquote.epigraph {
 dl.docutils dd {
   margin-bottom: 0.5em }
 
-object[type="image/svg+xml"], object[type="application/x-shockwave-flash"] {
-  overflow: hidden;
-}
-
 /* Uncomment (and remove this text!) to get bold-faced definition list terms
 dl.docutils dt {
   font-weight: bold }
@@ -78,7 +74,7 @@ div.tip p.admonition-title {
 
 div.attention p.admonition-title, div.caution p.admonition-title,
 div.danger p.admonition-title, div.error p.admonition-title,
-div.warning p.admonition-title, .code .error {
+div.warning p.admonition-title {
   color: red ;
   font-weight: bold ;
   font-family: sans-serif }
@@ -162,21 +158,15 @@ h2.subtitle {
 hr.docutils {
   width: 75% }
 
-img.align-left, .figure.align-left, object.align-left {
+img.align-left, .figure.align-left{
   clear: left ;
   float: left ;
   margin-right: 1em }
 
-img.align-right, .figure.align-right, object.align-right {
+img.align-right, .figure.align-right {
   clear: right ;
   float: right ;
   margin-left: 1em }
-
-img.align-center, .figure.align-center, object.align-center {
-  display: block;
-  margin-left: auto;
-  margin-right: auto;
-}
 
 .align-left {
   text-align: left }
@@ -190,7 +180,7 @@ img.align-center, .figure.align-center, object.align-center {
 
 /* reset inner alignment in figures */
 div.align-right {
-  text-align: inherit }
+  text-align: left }
 
 /* div.align-center * { */
 /*   text-align: left } */
@@ -250,18 +240,9 @@ pre.address {
   margin-top: 0 ;
   font: inherit }
 
-pre.literal-block, pre.doctest-block, pre.math, pre.code {
+pre.literal-block, pre.doctest-block {
   margin-left: 2em ;
   margin-right: 2em }
-
-pre.code .ln { color: grey; } /* line numbers */
-pre.code, code { background-color: #eeeeee }
-pre.code .comment, code .comment { color: #5C6576 }
-pre.code .keyword, code .keyword { color: #3B0D06; font-weight: bold }
-pre.code .literal.string, code .literal.string { color: #0C5404 }
-pre.code .name.builtin, code .name.builtin { color: #352B84 }
-pre.code .deleted, code .deleted { background-color: #DEB0A1}
-pre.code .inserted, code .inserted { background-color: #A3D289}
 
 span.classifier {
   font-family: sans-serif ;
@@ -480,19 +461,19 @@ ul.auto-toc {
 <li><a class="reference internal" href="#tribits-configure-file" id="id102">TRIBITS_CONFIGURE_FILE()</a></li>
 <li><a class="reference internal" href="#tribits-copy-files-to-binary-dir" id="id103">TRIBITS_COPY_FILES_TO_BINARY_DIR()</a></li>
 <li><a class="reference internal" href="#tribits-ctest-driver" id="id104">TRIBITS_CTEST_DRIVER()</a></li>
-<li><a class="reference internal" href="#tribits-define-package-dependencies" id="id105">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-packages" id="id106">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></li>
-<li><a class="reference internal" href="#tribits-define-repository-tpls" id="id107">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></li>
-<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id108">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
-<li><a class="reference internal" href="#tribits-exclude-files" id="id109">TRIBITS_EXCLUDE_FILES()</a></li>
-<li><a class="reference internal" href="#tribits-include-directories" id="id110">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
-<li><a class="reference internal" href="#id6" id="id111">TRIBITS_PACKAGE()</a></li>
-<li><a class="reference internal" href="#tribits-package-decl" id="id112">TRIBITS_PACKAGE_DECL()</a></li>
-<li><a class="reference internal" href="#tribits-package-def" id="id113">TRIBITS_PACKAGE_DEF()</a></li>
-<li><a class="reference internal" href="#tribits-package-postprocess" id="id114">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
-<li><a class="reference internal" href="#tribits-process-subpackages" id="id115">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
-<li><a class="reference internal" href="#id7" id="id116">TRIBITS_PROJECT()</a></li>
-<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id117">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
+<li><a class="reference internal" href="#tribits-disable-package-on-platforms" id="id105">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></li>
+<li><a class="reference internal" href="#tribits-exclude-files" id="id106">TRIBITS_EXCLUDE_FILES()</a></li>
+<li><a class="reference internal" href="#tribits-include-directories" id="id107">TRIBITS_INCLUDE_DIRECTORIES()</a></li>
+<li><a class="reference internal" href="#id6" id="id108">TRIBITS_PACKAGE()</a></li>
+<li><a class="reference internal" href="#tribits-package-decl" id="id109">TRIBITS_PACKAGE_DECL()</a></li>
+<li><a class="reference internal" href="#tribits-package-def" id="id110">TRIBITS_PACKAGE_DEF()</a></li>
+<li><a class="reference internal" href="#tribits-package-define-dependencies" id="id111">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></li>
+<li><a class="reference internal" href="#tribits-package-postprocess" id="id112">TRIBITS_PACKAGE_POSTPROCESS()</a></li>
+<li><a class="reference internal" href="#tribits-process-subpackages" id="id113">TRIBITS_PROCESS_SUBPACKAGES()</a></li>
+<li><a class="reference internal" href="#id7" id="id114">TRIBITS_PROJECT()</a></li>
+<li><a class="reference internal" href="#tribits-project-define-extra-repositories" id="id115">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></li>
+<li><a class="reference internal" href="#tribits-repository-define-packages" id="id116">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></li>
+<li><a class="reference internal" href="#tribits-repository-define-tpls" id="id117">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></li>
 <li><a class="reference internal" href="#tribits-set-st-for-dev-mode" id="id118">TRIBITS_SET_ST_FOR_DEV_MODE()</a></li>
 <li><a class="reference internal" href="#id8" id="id119">TRIBITS_SUBPACKAGE()</a></li>
 <li><a class="reference internal" href="#tribits-subpackage-postprocess" id="id120">TRIBITS_SUBPACKAGE_POSTPROCESS()</a></li>
@@ -1630,11 +1611,11 @@ unit of integration, versioning and reuse.</li>
 </ul>
 <p id="repodir-packageslist-cmake"><strong>&lt;repoDir&gt;/PackagesList.cmake</strong>: [Required] Provides the list of top-level
 packages defined by the repository.  This file typically just calls the macro
-<a class="reference internal" href="#tribits-define-repository-packages">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a> to define the list of packages along
+<a class="reference internal" href="#tribits-repository-define-packages">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a> to define the list of packages along
 with their directories and other properties.  For example, the file
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">PackagesList.cmake</tt> looks like:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SimpleCxx               packages/simple_cxx                 PT
   MixedLanguage           packages/mixed_language             PT
   PackageWithSubpackages  packages/package_with_subpackages   PT
@@ -1650,7 +1631,7 @@ any package <tt class="docutils literal">&lt;packageName&gt;</tt> needs to be ch
 variable <tt class="docutils literal">&lt;packageName&gt;_SPECIFIED_BINARY_DIR</tt> can be set.  One can see an
 example of this in the file <tt class="docutils literal">tribits/PackageList.cmake</tt> which shows</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS  .    PT
   )
 
@@ -1663,7 +1644,7 @@ source directory</a>).</p>
 <p>It is perfectly legal for a TriBITS repjository to define no packages at all
 with:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES()
+TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 </pre>
 <p>and this would be the case for a TriBITS meta-project that has no native
 packages, only extra repositories.</p>
@@ -1671,11 +1652,11 @@ packages, only extra repositories.</p>
 <p id="repodir-tplslist-cmake"><strong>&lt;repoDir&gt;/TPLsList.cmake</strong>: [Required] Provides the list of TPLs that are
 listed as TPLs in the repository's SE packages
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files (see <cite>TriBITS TPL</cite>).  This file
-typically just calls the macro <a class="reference internal" href="#tribits-define-repository-tpls">TRIBITS_DEFINE_REPOSITORY_TPLS()</a> to define
+typically just calls the macro <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> to define
 the TPLs along with their find modules and other properties.  See an example
 from <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">TPLsList.cmake</tt> which shows:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS(
+TRIBITS_REPOSITORY_DEFINE_TPLS(
   MPI  &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/FindTPLMPI.cmake&quot;   PT
   )
 
@@ -1685,10 +1666,10 @@ variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FIN
 <tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
 <p>It is perfectly fine to specify no TPLs for a repository with:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS()
+TRIBITS_REPOSITORY_DEFINE_TPLS()
 </pre>
-<p>but the macro <tt class="docutils literal">TRIBITS_DEFINE_REPOSITORY_TPLS()</tt> has to be called, even if
-there are no TPLs.  See <a class="reference internal" href="#tribits-define-repository-tpls">TRIBITS_DEFINE_REPOSITORY_TPLS()</a> for further
+<p>but the macro <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_TPLS()</tt> has to be called, even if
+there are no TPLs.  See <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> for further
 details.</p>
 <p id="repodir-copyright-txt"><strong>&lt;repoDir&gt;/Copyright.txt</strong>: [Optional] Gives the default copyright and
 license declaration for all of the software in the TriBITS repository
@@ -1854,7 +1835,7 @@ naming the dependencies in the file
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>..</li>
 <li>Can optionally have subpackages listed in the argument
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt> to
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>.</li>
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>.</li>
 <li>Is the fundamental unit of software partitioning and aggregation and must
 have a unique packae name that is globally unique (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique
 TriBITS package names</a>).</li>
@@ -1902,14 +1883,14 @@ clean to pushing broken software.</p>
 </ul>
 <p id="packagedir-cmake-dependencies-cmake"><strong>&lt;packageDir&gt;/cmake/Dependencies.cmake</strong>: [Required] Defines the dependencies
 of a given SE package using the macro
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>.  This file is processed at the
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>.  This file is processed at the
 top-level project scope (using an <tt class="docutils literal">INCLUDE()</tt>) so any local variables set
 will be seen by the entire project.  This file is always processed, including
 when just building the project's <a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a> file.</p>
 <p>An example of a <tt class="docutils literal">Dependencies.cmake</tt> file for a package with optional and
 required dependencies is for the mock <tt class="docutils literal">Panzer</tt> package in <a class="reference internal" href="#mocktrilinos">MockTrilinos</a>:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES Teuchos Sacado Phalanx Intrepid Thyra
     Tpetra Epetra EpetraExt
   LIB_OPTIONAL_PACKAGES Stokhos
@@ -1921,7 +1902,7 @@ TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
 <p>An example of a package with subpackages is <tt class="docutils literal">PackageWithSubpackages</tt> in
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> with the <tt class="docutils literal">Dependencies.cmake</tt> file:</p>
 <pre class="literal-block" id="package-with-subpackages-cmake-dependencies-cmake">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     SubpackageA   A   PT  REQUIRED
     SubpackageB   B   PT  REQUIRED
@@ -2115,7 +2096,7 @@ Set to <tt class="docutils literal">ON</tt> if support for the optional <a class
 <tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEP_PACKAGE_NAME}</tt> corresponds to
 each optional upstream SE package listed in the <tt class="docutils literal">LIB_OPTIONAL_PACKAGES</tt>
 and <tt class="docutils literal">TEST_OPTIONAL_PACKAGES</tt> arguments to the
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> macro. <strong>NOTE:</strong> It is important
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> macro. <strong>NOTE:</strong> It is important
 that the CMake code in the package <tt class="docutils literal">${PACKAGE_NAME}</tt> key off of this
 variable and <strong>not</strong> the global
 <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_${OPTIONAL_DEP_PACKAGE_NAME}</span></tt> variable because
@@ -2130,7 +2111,7 @@ Set to <tt class="docutils literal">ON</tt> if support for the optional <a class
 <tt class="docutils literal">${PACKAGE_NAME}</tt>.  Here <tt class="docutils literal">${OPTIONAL_DEPENDENT_TPL_NAME}</tt> corresponds
 each to the optional upstream TPL listed in the <tt class="docutils literal">LIB_OPTIONAL_TPLS</tt> and
 <tt class="docutils literal">TEST_OPTIONAL_TPLS</tt> arguments to the
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> macro.</blockquote>
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> macro.</blockquote>
 <p><tt class="docutils literal">${PACKAGE_NAME}_ENABLE_TESTS</tt></p>
 <blockquote>
 Set to <tt class="docutils literal">ON</tt> if the package's tests are to be enabled.  This will enable
@@ -2162,11 +2143,11 @@ list of include directories, libraries, and targets that are created (along
 with CMake dependencies).</li>
 <li>Is declared in its parent packages's
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file in a call to
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> using the argument
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> using the argument
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt>.</li>
 <li>Defines dependencies on <a class="reference internal" href="#upstream">upstream</a> TPLs and/or other SE packages by just
 naming the dependencies in the file <tt class="docutils literal">cmake/Dependencies.cmake</tt> using the
-macro <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>.</li>
+macro <a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>.</li>
 <li>Can <strong>NOT</strong> have its own subpackages defined (only top-level packages can
 have subpackages).</li>
 <li>Is enabled or disabled along with all other subpackages in the parent
@@ -2190,7 +2171,7 @@ Core Files</a>.  The core files that make up a TriBITS Subpackage (where
 <tt class="docutils literal">&lt;packageDir&gt; = <span class="pre">${${PARENT_PACKAGE_NAME}_SOURCE_DIR}</span></tt> and <tt class="docutils literal">&lt;spkgDir&gt;</tt> is
 the subpackage directory listed in the
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt> to
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>) are:</p>
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>) are:</p>
 <pre class="literal-block">
 &lt;packageDir&gt;/&lt;spkgDir&gt;/
   CMakeLists.txt  # Only processed if this subpackage is enabled
@@ -2206,7 +2187,7 @@ the subpackage directory listed in the
 </ul>
 <p id="packagedir-spkgdir-cmake-dependencies-cmake"><strong>&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</strong>: The contents of this file
 for subpackages is idential as for top-level packages.  It just contains a
-call to the macro <a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> to define this SE
+call to the macro <a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> to define this SE
 package's <a class="reference internal" href="#upstream">upstream</a> TPL and SE package dependencies.  A simple example is
 for <tt class="docutils literal">SubpackageB</tt> declared in
 <a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a> shown shown in:</p>
@@ -2214,7 +2195,7 @@ for <tt class="docutils literal">SubpackageB</tt> declared in
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/B/cmake/Dependneices.cmake</tt></blockquote>
 <p>which is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES PackageWithSubpackagesSubpackageA
   )
 
@@ -2236,7 +2217,7 @@ the <tt class="docutils literal">SimpleCxx</tt> package and is declared as such 
 <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">packages/package_with_subpackages/A/cmake/Dependneices.cmake</tt></blockquote>
 <p>which is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_PACKAGES SimpleCxx
   )
 
@@ -2246,7 +2227,7 @@ package's <a class="reference internal" href="#packagedir-cmake-dependencies-cma
 dependencies of its subpackages.  For example, if
 <a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a> where changed to be:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   LIB_REQUIRED_TPLS Boost
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     SubpackageA   A   PT  REQUIRED
@@ -2409,7 +2390,7 @@ that only a single unique version of TPL will be used by multiple packages and
 by declaring a TPL using TriBITS, automatical enable/disable logic will be
 applied as described in <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a>.</p>
 <p>For each TPL referenced in a <tt class="docutils literal">TPLsList.cmake</tt> file using the macro
-<a class="reference internal" href="#tribits-define-repository-tpls">TRIBITS_DEFINE_REPOSITORY_TPLS()</a>, there should exist a file, typically
+<a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>, there should exist a file, typically
 called <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>, that once processed, produces the
 variables <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  Most
 <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files just use the the function
@@ -2437,7 +2418,7 @@ accepted by the standard <a class="reference internal" href="#tribits-tpl-declar
 <p>The core variables related to an enabled TPL are <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt>,
 <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>, and <tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> as defined in
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> need to be defined.  For more details, see
-<a class="reference internal" href="#tribits-define-repository-tpls">TRIBITS_DEFINE_REPOSITORY_TPLS()</a>.</p>
+<a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>.</p>
 </div>
 </div>
 <div class="section" id="processing-of-tribits-files-ordering-and-details">
@@ -2729,7 +2710,7 @@ TriBITS test project <tt class="docutils literal">MockTrilinos</tt>, the reposto
 <tt class="docutils literal">extraRepoOnePackage</tt> are one in the same.  In this case, the file
 <tt class="docutils literal">extraRepoOnePackage/PackagesList.cmake</tt> looks like:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   extraRepoOnePackage   .     ST
   )
 
@@ -2807,7 +2788,7 @@ they define compilers and other special tools that are used in
 and other commands.</p>
 <p>These standard TPLs are used in a <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file as:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS(
+TRIBITS_REPOSITORY_DEFINE_TPLS(
   MPI   &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;  PT
   CUDA  &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;  ST
   ...
@@ -2991,7 +2972,7 @@ TribitsExampleProject/
 <p>Above, the subdirectoires under <tt class="docutils literal">packages/</tt> are sorted according to the
 order listed in the <tt class="docutils literal">TribitsExampleProject/PackagesList.cmake</tt> file:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   SimpleCxx               packages/simple_cxx                 PT
   MixedLanguage           packages/mixed_language             PT
   PackageWithSubpackages  packages/package_with_subpackages   PT
@@ -3023,7 +3004,7 @@ TribitsExampleProject/packages/package_with_subpackages/cmake/Dependencies.cmake
 </pre>
 <p>with contents:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     SubpackageA   A   PT  REQUIRED
     SubpackageB   B   PT  REQUIRED
@@ -3101,7 +3082,7 @@ tribits/package_arch/UnitTests/MockTrilinos/PackagesList.cmake
 </pre>
 <p>is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TrilinosFramework   cmake                           PT
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
@@ -3193,7 +3174,7 @@ tribits/package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
 </pre>
 <p>is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
   Epetra              packages/epetra                 PT 
@@ -3218,7 +3199,7 @@ its directory in its repository's <a class="reference internal" href="#repodir-p
 example, the Trilinos repository which currently snaphsots the TriBITS source
 tree lists the <tt class="docutils literal">TriBITS</tt> package with:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
   ...
   )
@@ -3231,7 +3212,7 @@ to test TriBITS (perhaps just to mine the running tests for examples) can do
 so by including the <tt class="docutils literal">TriBITS</tt> test package in their <tt class="docutils literal">PackagesList.cmake</tt>
 file using:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
   ...
   )
@@ -3280,7 +3261,7 @@ small simple <a class="reference internal" href="#reducedmocktrilinos">ReducedMo
 this project is defined in <tt class="docutils literal">ReducedMockTrilinos/PackagesList.cmake</tt> (see
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>) which contents:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   Teuchos             packages/teuchos                PT
   RTOp                packages/rtop                   PT
   Epetra              packages/epetra                 PT 
@@ -3295,7 +3276,7 @@ TRIBITS_DEFINE_REPOSITORY_PACKAGES(
 <tt class="docutils literal">thyra/cmake/Dependnecies.cmake</tt> (see
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>) which is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
     CoreLibs      src                  PT  REQUIRED
     GoodStuff     good_stuff           ST  OPTIONAL
@@ -3326,7 +3307,7 @@ Final set of non-enabled SE packages:
 <p>The list of <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a> for this example project given in
 <tt class="docutils literal">ReducedMockTrilinos/TPLsList.cmake</tt> (see <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a>) is:</p>
 <pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS(
+TRIBITS_REPOSITORY_DEFINE_TPLS(
   MPI            &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;    PT
   BLAS           cmake/TPLs/    PT
   LAPACK         cmake/TPLs/    PT
@@ -4576,15 +4557,15 @@ helping to keep working.</li>
 <ul class="simple">
 <li>The top-level <a class="reference internal" href="#tribits-package">TriBITS Package</a>'s test group is assigned using the
 <tt class="docutils literal">CLASSIFICATION</tt> field in the the macro call
-<a class="reference internal" href="#tribits-define-repository-packages">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a> in its parent repository's
+<a class="reference internal" href="#tribits-repository-define-packages">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a> in its parent repository's
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.</li>
 <li>A <a class="reference internal" href="#tribits-subpackage">TriBITS Subpackage</a>'s test group is assigned using the
 <tt class="docutils literal">CLASSIFICATIONS</tt> field of the
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt> argument in the macro call
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> in its parent's
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> in its parent's
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file.</li>
 <li>A <a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a>'s test group is assigned using the <tt class="docutils literal">CLASSIFICATION</tt>
-field in the macro call <a class="reference internal" href="#tribits-define-repository-tpls">TRIBITS_DEFINE_REPOSITORY_TPLS()</a> in its parent
+field in the macro call <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> in its parent
 repository's <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.</li>
 </ul>
 <p>After these files are processed, the variable <a class="reference internal" href="#package-name-testgroup">${PACKAGE_NAME}_TESTGROUP</a>
@@ -5142,7 +5123,7 @@ developed repository.</p>
 <p>2) <strong>REGRESSION_EMAIL_LIST</strong> (defined in
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>): Package-specific email address
 specified in the packages's <tt class="docutils literal">Dependencies.cmake</tt> file using
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a>.</p>
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>.</p>
 <p id="repository-name-repository-email-url-address-base">3) <strong>${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESS_BASE</strong> (set in
 <a class="reference internal" href="#repodir-cmake-repositorydependenciessetup-cmake">&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</a>): A base email address
 specified at the Repository level creating package-specific email addresses
@@ -5477,7 +5458,7 @@ commands.</li>
 </ol>
 <p>3) Add the line for the new subpackage to the argument
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt> in the macro call
-<a class="reference internal" href="#tribits-define-package-dependencies">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a> in the parent package's
+<a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> in the parent package's
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file after all of its upstream
 dependent subpackages.  If a mistake is made and it is listed before one of
 its upstream dependent subpackages, the TriBITS CMake code will catch this and
@@ -7928,274 +7909,8 @@ to ${CTEST_DASHBOARD_ROOT}/BUILD.</blockquote>
 be overridden from the env.</p>
 <p>ToDo: Finish Documentation!</p>
 </div>
-<div class="section" id="tribits-define-package-dependencies">
-<h3><a class="toc-backref" href="#id105">TRIBITS_DEFINE_PACKAGE_DEPENDENCIES()</a></h3>
-<p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
-package or a subpackage) in the package's
-<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file.</p>
-<p>Usage:</p>
-<pre class="literal-block">
-TRIBITS_DEFINE_PACKAGE_DEPENDENCIES(
-   [LIB_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
-   [LIB_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
-   [TEST_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
-   [TEST_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
-   [LIB_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
-   [LIB_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
-   [TEST_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
-   [TEST_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
-   [REGRESSION_EMAIL_LIST  &lt;regression-email-address&gt;
-   [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
-     &lt;spkg1_name&gt;  &lt;spkg1_dir&gt;  &lt;spkg1_classifications&gt;  &lt;spkg1_optreq&gt;
-     &lt;spkg2_name&gt;  &lt;spkg2_dir&gt;  &lt;spkg2_classifications&gt;  &lt;spkg2_optreq&gt;
-     ...
-     ]
-   )
-</pre>
-<p>Every argument in this macro is optional.  The arguments that apply a package
-itself are:</p>
-<ul class="simple">
-<li><strong>LIB_REQUIRED_PACKAGES:</strong> List of upstream packages that must be enabled
-in order to build and use the libraries (or capabilities) in this
-package.</li>
-<li><strong>LIB_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
-that can be used in this package if enabled.  These upstream packages need
-not be enabled in order to use this package but not enabling one or more
-of these optional upstream packages will result in diminished capabilities
-of this package.</li>
-<li><strong>TEST_REQUIRED_PACKAGES:</strong> List of additional upstream packages that must
-be enabled in order to build and/or run the tests and/or examples in this
-packages.  If any of these upstream packages is not enabled, then there
-will be no tests or examples defined or run for this package.</li>
-<li><strong>TEST_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
-that can be used by the tests in this package.  These upstream packages
-need not be enabled in order to run basic tests for this package.
-Typically, extra tests that depend on optional test packages involve
-integration testing of some type.</li>
-<li><strong>LIB_REQUIRED_TPLS:</strong> List of upstream TPLs that must be enabled in order
-to build and use the libraries (or capabilities) in this package.</li>
-<li><strong>LIB_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs that can
-be used in this package if enabled.  These upstream TPLs need not be
-enabled in order to use this package but not enabling one or more of these
-optional upstream TPLs will result in diminished capabilities of this
-package.</li>
-<li><strong>TEST_REQUIRED_TPLS:</strong> List of additional upstream TPLs that must
-be enabled in order to build and/or run the tests and/or examples in this
-packages.  If any of these upstream TPLs is not enabled, then there
-will be no tests or examples defined or run for this package.</li>
-<li><strong>TEST_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs
-that can be used by the tests in this package.  These upstream TPLs
-need not be enabled in order to run basic tests for this package.
-Typically, extra tests that depend on optional test TPLs involve
-integration testing of some type.</li>
-</ul>
-<p>Only upstream SE packages can be listed (as defined by the order the
-packages are listed in <a class="reference internal" href="#tribits-define-repository-packages">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a> in the
-<a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file).  Otherwise an error will occur and
-processing will stop.  Also, mispelled SE package names are caught as well.</p>
-<p>Only direct package dependenices need to be listed.  Indirect package
-dependencies are automatically handled.  For example, if this SE package
-directly depends on PKG2 which depends on PKG1 (but this SE package does not
-directly depend on anything in PKG1) then this package only needs to list a
-dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
-automatically by the TriBITS dependency tracking system.</p>
-<p>However, currently, all TPL dependendies must be listed, even the indirect
-ones.  This is a requirement that will be dropped in a future version of
-TriBITS.</p>
-<p>The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
-dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
-implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
-dependencies.</p>
-<p>The upstream dependencies within a single list do not need to be listed in
-any order.  For example if <tt class="docutils literal">PKG2</tt> depends on <tt class="docutils literal">PKG1</tt>, and this given SE
-package depends on both, one can list:</p>
-<pre class="literal-block">
-LIB_REQUIRED_PACKAGES PKG2 PKG1
-</pre>
-<p>or:</p>
-<pre class="literal-block">
-&quot;LIB_REQUIRED_PACKAGES PKG1 PKG2
-</pre>
-<p>Likewise the listing of TPLs order is not important.</p>
-<p>If some upstream packages are allowed to be missing, this can be specified
-by calling the macro <a class="reference internal" href="#tribits-allow-missing-external-packages">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a>.</p>
-<p>A top-level package can also have subpackages.  In this case, the following
-varible must be set:</p>
-<ul class="simple">
-<li><strong>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:</strong> 2D array with rows listing
-the subpackages and the columns:<ul>
-<li><strong>SUBPACKAGE:</strong> The name of the subpackage &lt;spkg_name&gt;.  The full SE
-package name is &quot;${PARENT_PACKAGE_NAME}&lt;spkg_name&gt;&quot;.  The full SE
-package name is what is used in listing dependenices in other SE
-packages.</li>
-<li><strong>DIRS:</strong> The subdirectory &lt;spkg_dir&gt; relative to the parent package's
-base directory.  All of the contents of the subpackage should be under
-this subdirectory.  This is assumed by the TriBITS testing support
-software when mapping modified files to SE packages that need to be
-tested.</li>
-<li><strong>CLASSIFICATIONS</strong>: The test group PT, ST, EX and the maturity level
-EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
-spaces in between (e.g. &quot;PT,GPM&quot;).  These have exactly the name meaning
-as for full packages (see
-<a class="reference internal" href="#tribits-define-repository-packages">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a>).</li>
-<li><strong>OPTREQ:</strong> Determines if the outer parent package has an OPTIONAL or
-REQUIRED dependence on this subpackage.</li>
-</ul>
-</li>
-</ul>
-<p>Other variables that this macro handles:</p>
-<ul class="simple">
-<li><strong>REGRESSION_EMAIL_LIST:</strong> The email list that is used to send CDash error
-messages.  If this is missing, then the email list that CDash errors go to
-is determined by other means (see <a class="reference internal" href="#cdash-regression-email-addresses">CDash regression email addresses</a>).</li>
-</ul>
-<p>NOTE: All this macro really does is to just define the variables:</p>
-<ul class="simple">
-<li>LIB_REQUIRED_DEP_PACKAGES</li>
-<li>LIB_OPTIONAL_DEP_PACKAGES</li>
-<li>TEST_REQUIRED_DEP_PACKAGES</li>
-<li>TEST_OPTIONAL_DEP_PACKAGES</li>
-<li>LIB_REQUIRED_DEP_TPLS</li>
-<li>LIB_OPTIONAL_DEP_TPLS</li>
-<li>TEST_REQUIRED_DEP_TPLS</li>
-<li>TEST_OPTIONAL_DEP_TPLS</li>
-<li>REGRESSION_EMAIL_LIST</li>
-<li>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</li>
-</ul>
-<p>which are then read by the TriBITS cmake code to build the package
-dependency graph.  The advantage of using this macro instead of just
-directly setting the varibles is that you only need to list the dependencies
-you have.  Otherwise, you need to set all of these varibles, even those that
-are empty.  This is a error checking property of the TriBITS system to avoid
-misspelling the names of these variables.</p>
-</div>
-<div class="section" id="tribits-define-repository-packages">
-<h3><a class="toc-backref" href="#id106">TRIBITS_DEFINE_REPOSITORY_PACKAGES()</a></h3>
-<p>Define the set of packages for a given TriBIT repo.  This macro is typically
-called from inside of a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file for a given
-TriBITS repo.</p>
-<p>Usage:</p>
-<pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_PACKAGES(
-   &lt;pkg0&gt;  &lt;pkg0_dir&gt;  &lt;pkg0_classif&gt;
-   &lt;pkg1&gt;  &lt;pkg1_dir&gt;  &lt;pkg1_classif&gt;
-   ...
-   )
-</pre>
-<p>This macro sets up a 2D array of NumPackages by NumColumns listing out the
-packages for a TriBITS repository.  Each row (with 3 entries) specifies a
-package which contains the 3 columns (ordered 0-2):</p>
-<ol class="arabic simple" start="0">
-<li><strong>PACKAGE</strong> (<tt class="docutils literal">&lt;pkgi&gt;</tt>): The name of the TriBITS package.  This name
-must be unique across all other TriBITS packages in this or any other
-TriBITS repo that might be combined into a single TriBITS project
-meta-build.  The name should be a valid identifier (e.g. matches the
-regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
-<li><strong>DIR</strong> (<tt class="docutils literal">&lt;pkgi_dir&gt;</tt>)): The relative directory for the package.  This
-is relative to the TriBITS repository base directory.  Under this
-directory will be a package-specific 'cmake/' directory with file
-'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
-entire contents of the package including all of the source code and all
-of the tests should be contained under this directory.  The TriBITS
-testing infrastructure relies on the mapping of changed files to these
-base directories when deciding what packages are modified and need to be
-retested (along with downstream packages).</li>
-<li><strong>CLASSIFICATION</strong> (<tt class="docutils literal">&lt;pkgi_classif&gt;</tt>)): Gives the testing group PT, ST,
-EX and the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are
-seprated by a coma with no space in between such as &quot;RS,PT&quot; for a
-&quot;Research Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so
-that CMake treats this a one field in the array.  The maturity level can
-be left off in which case it is assumed to be UM for &quot;Unspecified
-Maturity&quot;.  This classification for individual packages can be changed to
-<tt class="docutils literal">EX</tt> for specific platforms by calling
-<a class="reference internal" href="#tribits-disable-package-on-platforms">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a>.</li>
-</ol>
-<p><strong>IMPORTANT:</strong> The packages must be listed in increasing order of package
-dependencies; there are no cyclic package dependencies allowed.  That is,
-package <tt class="docutils literal">i</tt> can only list dependencies (in
-<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>) for packages listed before this
-package in this list (or in upstream TriBITS repositories).  This avoids an
-expensive package sorting algorithm and makes it easy to flag packages with
-circular dependencies or misspelling of package names.</p>
-<p>NOTE: This macro just sets the varaible:</p>
-<pre class="literal-block">
-${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
-</pre>
-<p>in the current
-scope.  The advantages of using this macro instead of directly setting this
-varible include:</p>
-<ul class="simple">
-<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
-<li>Avoids having to hard-code the assumed repository name
-<tt class="docutils literal">${REPOSITORY_NAME}</tt>.  This provides more flexibility for how other
-TriBITS project name a given TriBITS repo (i.e. the name of repo
-subdirs).</li>
-<li>Avoid mispelling the name of the varible
-<tt class="docutils literal">${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS</tt>.  If you
-misspell the name of the macro, it is an immediate error in CMake.</li>
-</ul>
-</div>
-<div class="section" id="tribits-define-repository-tpls">
-<h3><a class="toc-backref" href="#id107">TRIBITS_DEFINE_REPOSITORY_TPLS()</a></h3>
-<p>Define the list of TPLs, find modules, and classifications for a given
-TriBITS repository.  This macro is typically called from inside of a
-TPLsList.cmake fil for a given TriBITS repo.</p>
-<p>Usage:</p>
-<pre class="literal-block">
-TRIBITS_DEFINE_REPOSITORY_TPLS(
-  &lt;tpl0_name&gt;   &lt;tpl0_findmod&gt;  &lt;tpl0_classif&gt;
-  &lt;tpl1_name&gt;   &lt;tpl1_findmod&gt;  &lt;tpl1_classif&gt;
-  ...
-  )
-</pre>
-<p>This macro sets up a 2D array of NumTPLS by NumColumns listing out the TPLs
-for a TriBITS repository.  Each row (with 3 entries) specifies a package
-which contains the 3 columns (ordered 0-2):</p>
-<ol class="arabic simple" start="0">
-<li><strong>TPL</strong> (<tt class="docutils literal">&lt;tpli_name&gt;</tt>)): The name of the TriBITS TPL <tt class="docutils literal">&lt;TPL_NAME&gt;</tt>.
-This name must be unique across all other TriBITS TPLs in this or any
-other TriBITS repo that might be combined into a single TriBITS project
-meta-build.  However, a TPL can be redefined (see below).  The name should
-be a valid identifier (e.g. matches the regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
-<li><strong>FINDMOD</strong> (<tt class="docutils literal">&lt;tpli_findmod&gt;</tt>): The relative path for the find module,
-usually with the name <tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>.  This path is relative
-to the repository base directory.  If just the base path for the find
-module is given, ending with <tt class="docutils literal">&quot;/&quot;</tt> (e.g. <tt class="docutils literal">&quot;cmake/tpls/&quot;</tt>) then the
-find module will be assumed to be under that this directory with the
-standard name (e.g. <tt class="docutils literal"><span class="pre">cmake/tpls/FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>).  A standard
-way to write a <tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt> module is to use the function
-<a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a>.</li>
-<li><strong>CLASSIFICATION</strong> (<tt class="docutils literal">&lt;tpl0_classif&gt;</tt>): Gives the testing group <tt class="docutils literal">PT</tt>,
-<tt class="docutils literal">ST</tt>, <tt class="docutils literal">EX</tt> and the maturity level <tt class="docutils literal">EP</tt>, <tt class="docutils literal">RS</tt>, <tt class="docutils literal">PG</tt>, <tt class="docutils literal">PM</tt>,
-<tt class="docutils literal">GRS</tt>, <tt class="docutils literal">GPG</tt>, <tt class="docutils literal">GPM</tt>, <tt class="docutils literal">UM</tt>.  These are seprated by a coma with no
-space in between such as <tt class="docutils literal">&quot;RS,PT&quot;</tt> for a &quot;Research Stable&quot;, &quot;Primary
-Tested&quot; package.  No spaces are allowed so that CMake treats this a one
-field in the array.  The maturity level can be left off in which case it
-is assumed by default to be <tt class="docutils literal">UM</tt> for &quot;Unspecified Maturity&quot;.</li>
-</ol>
-<p>A TPL defined in a upstream repo can listed again, which allows redefining
-the find module that is used to specificy the TPL.  This allows downstream
-repos to add additional requirements on a given TPL.  However, the
-downstream repo's find module file must find the TPL components that are
-fully compatible with the upstream's find module.</p>
-<p>This macro just sets the varaible:</p>
-<pre class="literal-block">
-${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
-</pre>
-<p>in the current scope.  The advantages of using this macro instead of
-directly setting this varible include:</p>
-<ul class="simple">
-<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
-<li>Avoids having to hard-code the assumed repository name <tt class="docutils literal">${REPOSITORY_NAME}</tt>.
-This provides more flexibility for how other TriBITS project name a given
-TriBITS repo (i.e. the name of repo subdirs).</li>
-<li>Avoid mispelling the name of the varible
-<tt class="docutils literal">${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS</tt>.  If you misspell the
-name of the macro, it is an immediate error in CMake.</li>
-</ul>
-</div>
 <div class="section" id="tribits-disable-package-on-platforms">
-<h3><a class="toc-backref" href="#id108">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
+<h3><a class="toc-backref" href="#id105">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a></h3>
 <p>Disable a package automatically for a list of platforms.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -8210,7 +7925,7 @@ disabled by default.  However, an explicit enable can still enable the
 package.</p>
 </div>
 <div class="section" id="tribits-exclude-files">
-<h3><a class="toc-backref" href="#id109">TRIBITS_EXCLUDE_FILES()</a></h3>
+<h3><a class="toc-backref" href="#id106">TRIBITS_EXCLUDE_FILES()</a></h3>
 <p>Exclude package files/dirs from the source distribution by appending
 <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt>.</p>
 <p>Usage:</p>
@@ -8225,7 +7940,7 @@ and path from other packages.  If <tt class="docutils literal">&lt;filei&gt;</tt
 prefixed but is appended to <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt> unmodified.</p>
 </div>
 <div class="section" id="tribits-include-directories">
-<h3><a class="toc-backref" href="#id110">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
+<h3><a class="toc-backref" href="#id107">TRIBITS_INCLUDE_DIRECTORIES()</a></h3>
 <p>This function is to override the standard behavior of include_directories
 for a TriBITS package.</p>
 <p>Usage:</p>
@@ -8248,7 +7963,7 @@ are test only headers that are needed.  For that case we allow people to set
 directory does need to be set for instaltion testing.</p>
 </div>
 <div class="section" id="id6">
-<h3><a class="toc-backref" href="#id111">TRIBITS_PACKAGE()</a></h3>
+<h3><a class="toc-backref" href="#id108">TRIBITS_PACKAGE()</a></h3>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file.</p>
 <p>Usage:</p>
@@ -8266,7 +7981,7 @@ TRIBITS_PACKAGE(
 side-effects (and varibles set) after calling this macro.</p>
 </div>
 <div class="section" id="tribits-package-decl">
-<h3><a class="toc-backref" href="#id112">TRIBITS_PACKAGE_DECL()</a></h3>
+<h3><a class="toc-backref" href="#id109">TRIBITS_PACKAGE_DECL()</a></h3>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.</p>
 <p>If the package does not have subpackages, just call <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a>
@@ -8328,7 +8043,7 @@ the <tt class="docutils literal">*.cmake</tt> extension.</li>
 </ul>
 </div>
 <div class="section" id="tribits-package-def">
-<h3><a class="toc-backref" href="#id113">TRIBITS_PACKAGE_DEF()</a></h3>
+<h3><a class="toc-backref" href="#id110">TRIBITS_PACKAGE_DEF()</a></h3>
 <p>Macro called after subpackages are processed in order to
 handle the libraries, tests, and examples of the final package.</p>
 <p>Usage:</p>
@@ -8345,8 +8060,149 @@ package's CMakeLists.txt files.</li>
 list of libraries, etc.) are initialized to emtpy.</li>
 </ul>
 </div>
+<div class="section" id="tribits-package-define-dependencies">
+<h3><a class="toc-backref" href="#id111">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a></h3>
+<p>Define the dependenices for a given TriBITS SE package (i.e. a top-level
+package or a subpackage) in the package's
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
+   [LIB_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [LIB_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [TEST_REQUIRED_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [TEST_OPTIONAL_PACKAGES &lt;pkg1&gt; &lt;pkg2&gt; ...]
+   [LIB_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [LIB_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [TEST_REQUIRED_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [TEST_OPTIONAL_TPLS &lt;tpl1&gt; &lt;tpl2&gt; ...]
+   [REGRESSION_EMAIL_LIST  &lt;regression-email-address&gt;
+   [SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+     &lt;spkg1_name&gt;  &lt;spkg1_dir&gt;  &lt;spkg1_classifications&gt;  &lt;spkg1_optreq&gt;
+     &lt;spkg2_name&gt;  &lt;spkg2_dir&gt;  &lt;spkg2_classifications&gt;  &lt;spkg2_optreq&gt;
+     ...
+     ]
+   )
+</pre>
+<p>Every argument in this macro is optional.  The arguments that apply a package
+itself are:</p>
+<ul class="simple">
+<li><strong>LIB_REQUIRED_PACKAGES:</strong> List of upstream packages that must be enabled
+in order to build and use the libraries (or capabilities) in this
+package.</li>
+<li><strong>LIB_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
+that can be used in this package if enabled.  These upstream packages need
+not be enabled in order to use this package but not enabling one or more
+of these optional upstream packages will result in diminished capabilities
+of this package.</li>
+<li><strong>TEST_REQUIRED_PACKAGES:</strong> List of additional upstream packages that must
+be enabled in order to build and/or run the tests and/or examples in this
+packages.  If any of these upstream packages is not enabled, then there
+will be no tests or examples defined or run for this package.</li>
+<li><strong>TEST_OPTIONAL_PACKAGES:</strong> List of additional optional upstream packages
+that can be used by the tests in this package.  These upstream packages
+need not be enabled in order to run basic tests for this package.
+Typically, extra tests that depend on optional test packages involve
+integration testing of some type.</li>
+<li><strong>LIB_REQUIRED_TPLS:</strong> List of upstream TPLs that must be enabled in order
+to build and use the libraries (or capabilities) in this package.</li>
+<li><strong>LIB_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs that can
+be used in this package if enabled.  These upstream TPLs need not be
+enabled in order to use this package but not enabling one or more of these
+optional upstream TPLs will result in diminished capabilities of this
+package.</li>
+<li><strong>TEST_REQUIRED_TPLS:</strong> List of additional upstream TPLs that must
+be enabled in order to build and/or run the tests and/or examples in this
+packages.  If any of these upstream TPLs is not enabled, then there
+will be no tests or examples defined or run for this package.</li>
+<li><strong>TEST_OPTIONAL_TPLS:</strong> List of additional optional upstream TPLs
+that can be used by the tests in this package.  These upstream TPLs
+need not be enabled in order to run basic tests for this package.
+Typically, extra tests that depend on optional test TPLs involve
+integration testing of some type.</li>
+</ul>
+<p>Only upstream SE packages can be listed (as defined by the order the
+packages are listed in <a class="reference internal" href="#tribits-repository-define-packages">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a> in the
+<a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file).  Otherwise an error will occur and
+processing will stop.  Also, mispelled SE package names are caught as well.</p>
+<p>Only direct package dependenices need to be listed.  Indirect package
+dependencies are automatically handled.  For example, if this SE package
+directly depends on PKG2 which depends on PKG1 (but this SE package does not
+directly depend on anything in PKG1) then this package only needs to list a
+dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
+automatically by the TriBITS dependency tracking system.</p>
+<p>However, currently, all TPL dependendies must be listed, even the indirect
+ones.  This is a requirement that will be dropped in a future version of
+TriBITS.</p>
+<p>The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
+dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
+implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
+dependencies.</p>
+<p>The upstream dependencies within a single list do not need to be listed in
+any order.  For example if <tt class="docutils literal">PKG2</tt> depends on <tt class="docutils literal">PKG1</tt>, and this given SE
+package depends on both, one can list:</p>
+<pre class="literal-block">
+LIB_REQUIRED_PACKAGES PKG2 PKG1
+</pre>
+<p>or:</p>
+<pre class="literal-block">
+&quot;LIB_REQUIRED_PACKAGES PKG1 PKG2
+</pre>
+<p>Likewise the listing of TPLs order is not important.</p>
+<p>If some upstream packages are allowed to be missing, this can be specified
+by calling the macro <a class="reference internal" href="#tribits-allow-missing-external-packages">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a>.</p>
+<p>A top-level package can also have subpackages.  In this case, the following
+varible must be set:</p>
+<ul class="simple">
+<li><strong>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:</strong> 2D array with rows listing
+the subpackages and the columns:<ul>
+<li><strong>SUBPACKAGE:</strong> The name of the subpackage &lt;spkg_name&gt;.  The full SE
+package name is &quot;${PARENT_PACKAGE_NAME}&lt;spkg_name&gt;&quot;.  The full SE
+package name is what is used in listing dependenices in other SE
+packages.</li>
+<li><strong>DIRS:</strong> The subdirectory &lt;spkg_dir&gt; relative to the parent package's
+base directory.  All of the contents of the subpackage should be under
+this subdirectory.  This is assumed by the TriBITS testing support
+software when mapping modified files to SE packages that need to be
+tested.</li>
+<li><strong>CLASSIFICATIONS</strong>: The test group PT, ST, EX and the maturity level
+EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
+spaces in between (e.g. &quot;PT,GPM&quot;).  These have exactly the name meaning
+as for full packages (see
+<a class="reference internal" href="#tribits-repository-define-packages">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a>).</li>
+<li><strong>OPTREQ:</strong> Determines if the outer parent package has an OPTIONAL or
+REQUIRED dependence on this subpackage.</li>
+</ul>
+</li>
+</ul>
+<p>Other variables that this macro handles:</p>
+<ul class="simple">
+<li><strong>REGRESSION_EMAIL_LIST:</strong> The email list that is used to send CDash error
+messages.  If this is missing, then the email list that CDash errors go to
+is determined by other means (see <a class="reference internal" href="#cdash-regression-email-addresses">CDash regression email addresses</a>).</li>
+</ul>
+<p>NOTE: All this macro really does is to just define the variables:</p>
+<ul class="simple">
+<li>LIB_REQUIRED_DEP_PACKAGES</li>
+<li>LIB_OPTIONAL_DEP_PACKAGES</li>
+<li>TEST_REQUIRED_DEP_PACKAGES</li>
+<li>TEST_OPTIONAL_DEP_PACKAGES</li>
+<li>LIB_REQUIRED_DEP_TPLS</li>
+<li>LIB_OPTIONAL_DEP_TPLS</li>
+<li>TEST_REQUIRED_DEP_TPLS</li>
+<li>TEST_OPTIONAL_DEP_TPLS</li>
+<li>REGRESSION_EMAIL_LIST</li>
+<li>SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</li>
+</ul>
+<p>which are then read by the TriBITS cmake code to build the package
+dependency graph.  The advantage of using this macro instead of just
+directly setting the varibles is that you only need to list the dependencies
+you have.  Otherwise, you need to set all of these varibles, even those that
+are empty.  This is a error checking property of the TriBITS system to avoid
+misspelling the names of these variables.</p>
+</div>
 <div class="section" id="tribits-package-postprocess">
-<h3><a class="toc-backref" href="#id114">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
+<h3><a class="toc-backref" href="#id112">TRIBITS_PACKAGE_POSTPROCESS()</a></h3>
 <p>Macro called at the very end of a package's top-level CMakeLists.txt file.
 This macro performs some critical post-processing activities before
 downstream packages are processed.</p>
@@ -8358,7 +8214,7 @@ TRIBITS_PACKAGE_POSTPROCESS()
 macro but limitations of the CMake language make it necessary to do so.</p>
 </div>
 <div class="section" id="tribits-process-subpackages">
-<h3><a class="toc-backref" href="#id115">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
+<h3><a class="toc-backref" href="#id113">TRIBITS_PROCESS_SUBPACKAGES()</a></h3>
 <p>Macro that processes subpackages for packages that have them.  This is
 called in the parent packages top-level CMakeLists.txt file.</p>
 <p>Usage:</p>
@@ -8369,7 +8225,7 @@ TRIBITS_PROCESS_SUBPACKAGES()
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.</p>
 </div>
 <div class="section" id="id7">
-<h3><a class="toc-backref" href="#id116">TRIBITS_PROJECT()</a></h3>
+<h3><a class="toc-backref" href="#id114">TRIBITS_PROJECT()</a></h3>
 <p>Defines and processes a TriBITS project.</p>
 <p>Usage:</p>
 <pre class="literal-block">
@@ -8384,7 +8240,7 @@ then performs all processing of the TriBITS project files (see ???).</p>
 <p>ToDo: Give documentation!</p>
 </div>
 <div class="section" id="tribits-project-define-extra-repositories">
-<h3><a class="toc-backref" href="#id117">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
+<h3><a class="toc-backref" href="#id115">TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES()</a></h3>
 <p>Declare a set of extra extra repositories for a project (typically in the
 project's <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file).</p>
 <p>Usage:</p>
@@ -8460,6 +8316,131 @@ TriBITS repo (i.e. the name of repo subdirs).</li>
 <li>Avoid mispelling the name of the varible
 <tt class="docutils literal">${PROJECT_NAME}_EXTRAREPOS_DIR_REPOTYPE_REPOURL_PACKSTAT_CATEGORY</tt>.  If
 you misspell the name of the macro, it is an immediate error in CMake.</li>
+</ul>
+</div>
+<div class="section" id="tribits-repository-define-packages">
+<h3><a class="toc-backref" href="#id116">TRIBITS_REPOSITORY_DEFINE_PACKAGES()</a></h3>
+<p>Define the set of packages for a given TriBIT repo.  This macro is typically
+called from inside of a <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file for a given
+TriBITS repo.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_REPOSITORY_DEFINE_PACKAGES(
+   &lt;pkg0&gt;  &lt;pkg0_dir&gt;  &lt;pkg0_classif&gt;
+   &lt;pkg1&gt;  &lt;pkg1_dir&gt;  &lt;pkg1_classif&gt;
+   ...
+   )
+</pre>
+<p>This macro sets up a 2D array of NumPackages by NumColumns listing out the
+packages for a TriBITS repository.  Each row (with 3 entries) specifies a
+package which contains the 3 columns (ordered 0-2):</p>
+<ol class="arabic simple" start="0">
+<li><strong>PACKAGE</strong> (<tt class="docutils literal">&lt;pkgi&gt;</tt>): The name of the TriBITS package.  This name
+must be unique across all other TriBITS packages in this or any other
+TriBITS repo that might be combined into a single TriBITS project
+meta-build.  The name should be a valid identifier (e.g. matches the
+regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
+<li><strong>DIR</strong> (<tt class="docutils literal">&lt;pkgi_dir&gt;</tt>)): The relative directory for the package.  This
+is relative to the TriBITS repository base directory.  Under this
+directory will be a package-specific 'cmake/' directory with file
+'cmake/Dependencies.cmake' and a base-level CMakeLists.txt file.  The
+entire contents of the package including all of the source code and all
+of the tests should be contained under this directory.  The TriBITS
+testing infrastructure relies on the mapping of changed files to these
+base directories when deciding what packages are modified and need to be
+retested (along with downstream packages).</li>
+<li><strong>CLASSIFICATION</strong> (<tt class="docutils literal">&lt;pkgi_classif&gt;</tt>)): Gives the testing group PT, ST,
+EX and the maturity level EP, RS, PG, PM, GRS, GPG, GPM, UM.  These are
+seprated by a coma with no space in between such as &quot;RS,PT&quot; for a
+&quot;Research Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so
+that CMake treats this a one field in the array.  The maturity level can
+be left off in which case it is assumed to be UM for &quot;Unspecified
+Maturity&quot;.  This classification for individual packages can be changed to
+<tt class="docutils literal">EX</tt> for specific platforms by calling
+<a class="reference internal" href="#tribits-disable-package-on-platforms">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a>.</li>
+</ol>
+<p><strong>IMPORTANT:</strong> The packages must be listed in increasing order of package
+dependencies; there are no cyclic package dependencies allowed.  That is,
+package <tt class="docutils literal">i</tt> can only list dependencies (in
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>) for packages listed before this
+package in this list (or in upstream TriBITS repositories).  This avoids an
+expensive package sorting algorithm and makes it easy to flag packages with
+circular dependencies or misspelling of package names.</p>
+<p>NOTE: This macro just sets the varaible:</p>
+<pre class="literal-block">
+${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
+</pre>
+<p>in the current
+scope.  The advantages of using this macro instead of directly setting this
+varible include:</p>
+<ul class="simple">
+<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
+<li>Avoids having to hard-code the assumed repository name
+<tt class="docutils literal">${REPOSITORY_NAME}</tt>.  This provides more flexibility for how other
+TriBITS project name a given TriBITS repo (i.e. the name of repo
+subdirs).</li>
+<li>Avoid mispelling the name of the varible
+<tt class="docutils literal">${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS</tt>.  If you
+misspell the name of the macro, it is an immediate error in CMake.</li>
+</ul>
+</div>
+<div class="section" id="tribits-repository-define-tpls">
+<h3><a class="toc-backref" href="#id117">TRIBITS_REPOSITORY_DEFINE_TPLS()</a></h3>
+<p>Define the list of TPLs, find modules, and classifications for a given
+TriBITS repository.  This macro is typically called from inside of a
+TPLsList.cmake fil for a given TriBITS repo.</p>
+<p>Usage:</p>
+<pre class="literal-block">
+TRIBITS_REPOSITORY_DEFINE_TPLS(
+  &lt;tpl0_name&gt;   &lt;tpl0_findmod&gt;  &lt;tpl0_classif&gt;
+  &lt;tpl1_name&gt;   &lt;tpl1_findmod&gt;  &lt;tpl1_classif&gt;
+  ...
+  )
+</pre>
+<p>This macro sets up a 2D array of NumTPLS by NumColumns listing out the TPLs
+for a TriBITS repository.  Each row (with 3 entries) specifies a package
+which contains the 3 columns (ordered 0-2):</p>
+<ol class="arabic simple" start="0">
+<li><strong>TPL</strong> (<tt class="docutils literal">&lt;tpli_name&gt;</tt>)): The name of the TriBITS TPL <tt class="docutils literal">&lt;TPL_NAME&gt;</tt>.
+This name must be unique across all other TriBITS TPLs in this or any
+other TriBITS repo that might be combined into a single TriBITS project
+meta-build.  However, a TPL can be redefined (see below).  The name should
+be a valid identifier (e.g. matches the regex <tt class="docutils literal"><span class="pre">[a-zA-Z_][a-zA-Z0-9_]*</span></tt>).</li>
+<li><strong>FINDMOD</strong> (<tt class="docutils literal">&lt;tpli_findmod&gt;</tt>): The relative path for the find module,
+usually with the name <tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>.  This path is relative
+to the repository base directory.  If just the base path for the find
+module is given, ending with <tt class="docutils literal">&quot;/&quot;</tt> (e.g. <tt class="docutils literal">&quot;cmake/tpls/&quot;</tt>) then the
+find module will be assumed to be under that this directory with the
+standard name (e.g. <tt class="docutils literal"><span class="pre">cmake/tpls/FindTPL&lt;TPL_NAME&gt;.cmake</span></tt>).  A standard
+way to write a <tt class="docutils literal"><span class="pre">FindTPL&lt;TPL_NAME&gt;.cmake</span></tt> module is to use the function
+<a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a>.</li>
+<li><strong>CLASSIFICATION</strong> (<tt class="docutils literal">&lt;tpl0_classif&gt;</tt>): Gives the testing group <tt class="docutils literal">PT</tt>,
+<tt class="docutils literal">ST</tt>, <tt class="docutils literal">EX</tt> and the maturity level <tt class="docutils literal">EP</tt>, <tt class="docutils literal">RS</tt>, <tt class="docutils literal">PG</tt>, <tt class="docutils literal">PM</tt>,
+<tt class="docutils literal">GRS</tt>, <tt class="docutils literal">GPG</tt>, <tt class="docutils literal">GPM</tt>, <tt class="docutils literal">UM</tt>.  These are seprated by a coma with no
+space in between such as <tt class="docutils literal">&quot;RS,PT&quot;</tt> for a &quot;Research Stable&quot;, &quot;Primary
+Tested&quot; package.  No spaces are allowed so that CMake treats this a one
+field in the array.  The maturity level can be left off in which case it
+is assumed by default to be <tt class="docutils literal">UM</tt> for &quot;Unspecified Maturity&quot;.</li>
+</ol>
+<p>A TPL defined in a upstream repo can listed again, which allows redefining
+the find module that is used to specificy the TPL.  This allows downstream
+repos to add additional requirements on a given TPL.  However, the
+downstream repo's find module file must find the TPL components that are
+fully compatible with the upstream's find module.</p>
+<p>This macro just sets the varaible:</p>
+<pre class="literal-block">
+${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS
+</pre>
+<p>in the current scope.  The advantages of using this macro instead of
+directly setting this varible include:</p>
+<ul class="simple">
+<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
+<li>Avoids having to hard-code the assumed repository name <tt class="docutils literal">${REPOSITORY_NAME}</tt>.
+This provides more flexibility for how other TriBITS project name a given
+TriBITS repo (i.e. the name of repo subdirs).</li>
+<li>Avoid mispelling the name of the varible
+<tt class="docutils literal">${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS</tt>.  If you misspell the
+name of the macro, it is an immediate error in CMake.</li>
 </ul>
 </div>
 <div class="section" id="tribits-set-st-for-dev-mode">
@@ -10590,14 +10571,12 @@ Options:
                         snapshoted directory.  Note that it is important to
                         add a final /' to the directory name.  The default is
                         the directory where this script lives (or is
-                        softlinked).  [default: '/home/8vt/PROJECTS/Trilinos.b
-                        ase/Trilinos/cmake/tribits/']
+                        softlinked).  [default: '&lt;orig-dir&gt;']
   --dest-dir=DESTDIR    Destination directory that is the target for the
                         snapshoted directory.  Note that a final '/' just be
                         added or the origin will be added as subdir.  The
                         default dest-dir is current working directory.
-                        [default: '/home/8vt/PROJECTS/Trilinos.base/Trilinos/c
-                        make/tribits/doc/developers_guide/']
+                        [default: '&lt;dest-dir&gt;']
   --assert-clean-orig-dir
                         Check that orig-dir is committed and clean. [default]
   --allow-dirty-orig-dir
