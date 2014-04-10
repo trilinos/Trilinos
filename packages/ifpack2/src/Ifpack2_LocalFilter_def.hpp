@@ -684,6 +684,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type beta) const
 {
   using Teuchos::as;
+  using Teuchos::ArrayView;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -714,19 +715,28 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     // Use this class's getrow to make the below code simpler
     getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
     if (mode == Teuchos::NO_TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][i] += alpha * Values_[j] * x_ptr[k][Indices_[j]];
+      for (size_t k = 0 ; k < NumVectors ; ++k) {
+	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	for (size_t j = 0 ; j < Nnz ; ++j) 
+          y_local[i] += alpha * Values_[j] * x_local[Indices_[j]];
+	}
     }
     else if (mode == Teuchos::TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += alpha * Values_[j] * x_ptr[k][i];
+      for (size_t k = 0 ; k < NumVectors ; ++k) {
+	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	for (size_t j = 0 ; j < Nnz ; ++j)
+          y_local[Indices_[j]] += alpha * Values_[j] * x_local[i];
+      }
     }
     else { //mode==Teuchos::CONJ_TRANS
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_ptr[k][i];
+      for (size_t k = 0 ; k < NumVectors ; ++k) {
+	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	for (size_t j = 0 ; j < Nnz ; ++j)
+          y_local[Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_local[i];
+      }
     }
   }
 }
