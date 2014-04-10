@@ -95,7 +95,7 @@ if [ "$TRIBITS_DEV_GUIDE_SKIP_OTHER_EXTRACTION" == "" ] ; then
   echo
   echo "Generating output for 'snapshot-dir.py --help' ..."
   echo
-  ../../snapshot-dir.py --help &> snapshot-dir-help.txt
+  env SNAPSHOT_DIR_DUMMY_DEFAULTS=1 ../../snapshot-dir.py --help &> snapshot-dir-help.txt
 
 fi
 

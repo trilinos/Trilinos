@@ -98,14 +98,12 @@ Options:
                         snapshoted directory.  Note that it is important to
                         add a final /' to the directory name.  The default is
                         the directory where this script lives (or is
-                        softlinked).  [default: '/home/8vt/PROJECTS/Trilinos.b
-                        ase/Trilinos/cmake/tribits/']
+                        softlinked).  [default: '<orig-dir>']
   --dest-dir=DESTDIR    Destination directory that is the target for the
                         snapshoted directory.  Note that a final '/' just be
                         added or the origin will be added as subdir.  The
                         default dest-dir is current working directory.
-                        [default: '/home/8vt/PROJECTS/Trilinos.base/Trilinos/c
-                        make/tribits/doc/developers_guide/']
+                        [default: '<dest-dir>']
   --assert-clean-orig-dir
                         Check that orig-dir is committed and clean. [default]
   --allow-dirty-orig-dir
