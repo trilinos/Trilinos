@@ -1066,10 +1066,10 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
   }
 
   // extract views (for nicer and faster code)
-  ArrayView<ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst()();
-  ArrayView<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst()();
-  ArrayView<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView()();
-  ArrayView<const scalar_type> d_ptr = Diagonal_->get1dView()();
+  ArrayRCP<ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst();
+  ArrayRCP<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst();
+  ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView();
+  ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView();
 
   for (int j = 0; j < NumSweeps_; j++) {
     // data exchange is here, once per sweep
@@ -1089,8 +1089,8 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
         for (size_t m = 0; m < NumVectors; ++m) {
           scalar_type dtemp = STS::zero ();
-	  ArrayView<const scalar_type> x_local = x_ptr[m]();
-	  ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
 
           for (size_t k = 0; k < NumEntries; ++k) {
             const local_ordinal_type col = Indices[k];
@@ -1111,8 +1111,8 @@ void Relaxation<MatrixType>::ApplyInverseGS_RowMatrix(
 
         for (size_t m = 0; m < NumVectors; ++m) {
           scalar_type dtemp = STS::zero ();
-	  ArrayView<const scalar_type> x_local = x_ptr[m]();
-	  ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	  ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+	  ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
 
           for (size_t k = 0; k < NumEntries; ++k) {
             const local_ordinal_type col = Indices[k];
@@ -1254,10 +1254,10 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
     Y2 = rcpFromRef (Y);
   }
 
-  ArrayView<ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst ()();
-  ArrayView<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst ()();
-  ArrayView<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView ()();
-  ArrayView<const scalar_type> d_ptr = Diagonal_->get1dView ()();
+  ArrayRCP<ArrayRCP<scalar_type> > y_ptr = Y.get2dViewNonConst ();
+  ArrayRCP<ArrayRCP<scalar_type> > y2_ptr = Y2->get2dViewNonConst ();
+  ArrayRCP<ArrayRCP<const scalar_type> > x_ptr =  X.get2dView ();
+  ArrayRCP<const scalar_type> d_ptr = Diagonal_->get1dView ();
 
   for (int iter = 0; iter < NumSweeps_; ++iter) {
     // only one data exchange per sweep
@@ -1277,8 +1277,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
 
       for (size_t m = 0; m < NumVectors; ++m) {
         scalar_type dtemp = STS::zero ();
-	ArrayView<const scalar_type> x_local = x_ptr[m]();
-	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+	ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
 
         for (size_t k = 0; k < NumEntries; ++k) {
           const local_ordinal_type col = Indices[k];
@@ -1298,8 +1298,8 @@ ApplyInverseSGS_RowMatrix (const Tpetra::MultiVector<scalar_type,local_ordinal_t
 
       for (size_t m = 0; m < NumVectors; ++m) {
         scalar_type dtemp = STS::zero ();
-	ArrayView<const scalar_type> x_local = x_ptr[m]();
-	ArrayView<scalar_type>      y2_local = y2_ptr[m]();
+	ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+	ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
 
         for (size_t k = 0; k < NumEntries; ++k) {
           const local_ordinal_type col = Indices[k];
