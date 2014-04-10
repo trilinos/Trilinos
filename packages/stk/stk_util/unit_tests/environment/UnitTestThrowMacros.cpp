@@ -11,7 +11,6 @@
 #include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

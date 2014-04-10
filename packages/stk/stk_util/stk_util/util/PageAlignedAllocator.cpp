@@ -1,9 +1,7 @@
 
 #include <stk_util/util/PageAlignedAllocator.hpp>
-#include <stddef.h>                     // for size_t
 #include <sys/mman.h>                   // for mmap, munmap, MAP_ANON, etc
 #include <unistd.h>                     // for sysconf, _SC_PAGE_SIZE
-#include <cstdlib>                      // for NULL
 #include <new>                          // for bad_alloc
 
 namespace stk { namespace detail {

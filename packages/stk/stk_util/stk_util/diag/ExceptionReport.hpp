@@ -1,12 +1,15 @@
 #ifndef STK_UTIL_PARALLEL_ExceptionReport_hpp
 #define STK_UTIL_PARALLEL_ExceptionReport_hpp
 
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/environment/RuntimeWarning.hpp>
+#include <iosfwd>                       // for ofstream
+#include <stk_util/environment/ReportHandler.hpp>  // for STK_STR_TRACE, etc
 #include <stk_util/environment/RuntimeDoomed.hpp>
+#include <stk_util/environment/RuntimeWarning.hpp>
+#include <stk_util/util/Fortran.hpp>    // for SIERRA_FORTRAN
+#include <string>                       // for string, operator+
+#include <vector>                       // for vector
+#include "stk_util/environment/RuntimeMessage.hpp"  // for MessageCode
 
-#include <stk_util/util/Fortran.hpp>
-#include <stk_util/diag/Exception.hpp>
 
 
 /**

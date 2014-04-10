@@ -9,9 +9,8 @@
 #ifndef STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 #define STK_UTIL_ENVIRONMENT_REPORTHANDLER_HPP
 
-#include <iosfwd>
-#include <string>
-#include <sstream>
+#include <sstream>                      // for ostringstream
+#include <string>                       // for string
 
 namespace stk {
 

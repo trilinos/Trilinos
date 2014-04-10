@@ -11,7 +11,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/util/Identifier.hpp>  // for IdentifierA, IdentifierB, etc
 #include <string>                       // for string, basic_string
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

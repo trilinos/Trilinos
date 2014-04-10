@@ -9,7 +9,6 @@
 #include <stk_util/environment/FormatTime.hpp>  // for formatTime, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for operator==, basic_string, etc
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

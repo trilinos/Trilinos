@@ -6,7 +6,6 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <ostream>                      // for basic_ostream::operator<<
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/util/Foreach.hpp>    // for stk_foreach
 #include <utility>                      // for pair, make_pair
@@ -15,7 +14,6 @@
 #include "boost/range/iterator_range_core.hpp"  // for operator==, etc
 #include "boost/range/iterator_range_io.hpp"  // for operator<<
 #include "boost/range/sub_range.hpp"    // for sub_range, operator==
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

@@ -1,9 +1,7 @@
 
-#include <iostream>                     // for basic_ostream::operator<<
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/util/random_access_iterator_wrapper.hpp>
 #include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
-#include "gtest/gtest.h"                // for AssertHelper
 
 STKUNIT_UNIT_TEST( random_access_iterator_wrapper, basic )
 {

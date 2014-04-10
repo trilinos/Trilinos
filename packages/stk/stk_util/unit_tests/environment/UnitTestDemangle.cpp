@@ -8,10 +8,9 @@
 
 #include <stk_util/environment/Demangle.hpp>  // for demangle
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <string>                       // for basic_string, operator==, etc
+#include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

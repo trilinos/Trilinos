@@ -12,7 +12,7 @@
 #include <map>                          // for multimap, map, etc
 #include <memory>                       // for auto_ptr
 #include <set>                          // for multiset, set, etc
-#include <sstream>                      // for ostringstream, ostream, ios, etc
+#include <sstream>                      // for ostringstream, ostream, etc
 #include <stk_util/diag/WriterExt.hpp>  // for operator<<
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <stk_util/util/IndentStreambuf.hpp>  // for indent_streambuf
@@ -21,7 +21,7 @@
 #include <string>                       // for operator==, string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, vector<>::iterator
-#include "gtest/gtest.h"                // for AssertHelper
+#include "stk_util/diag/WriterOStream.hpp"  // for operator<<
 #include "stk_util/util/Writer_fwd.hpp"  // for LogMask::LOG_ALWAYS, etc
 
 

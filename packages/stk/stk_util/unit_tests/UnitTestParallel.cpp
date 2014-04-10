@@ -8,13 +8,12 @@
 
 
 #include <stddef.h>                     // for size_t
-#include <iostream>                     // for basic_ostream::operator<<, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_write_string
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string
-#include "gtest/gtest.h"                // for AssertHelper
 #include "mpi.h"                        // for MPI_COMM_WORLD
 
 

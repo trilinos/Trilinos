@@ -1,5 +1,4 @@
 
-#include <iostream>                     // for basic_ostream::operator<<
 #include <iterator>                     // for distance
 #include <list>                         // for list
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
@@ -8,7 +7,6 @@
 #include <vector>                       // for vector
 #include "boost/iterator/iterator_facade.hpp"  // for iterator_facade, etc
 #include "boost/optional/optional.hpp"  // for operator==, operator!=
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 namespace vector_vector_int {

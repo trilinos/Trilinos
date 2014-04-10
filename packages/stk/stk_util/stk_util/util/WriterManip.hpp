@@ -9,10 +9,9 @@
 #ifndef STK_UTIL_DIAG_MANIP_HPP
 #define STK_UTIL_DIAG_MANIP_HPP
 
-#include <iomanip>
+#include <iomanip>                      // for ios_base, etc
+namespace stk { namespace diag { class Writer; } }
 
-#include <stk_util/util/Writer_fwd.hpp>
-#include <stk_util/util/Writer.hpp>
 
 namespace stk {
 namespace diag {

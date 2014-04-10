@@ -3,19 +3,17 @@
 
 #include <stddef.h>                     // for size_t, NULL
 #include <algorithm>                    // for transform
-#include <stdexcept>
-#include <sstream>
-#include <typeinfo>
 #include <cctype>                       // for tolower, isspace, toupper
 #include <functional>                   // for binary_function
-#include <iosfwd>                       // for ostream, istream
 #include <limits>                       // for numeric_limits, etc
-#include <stk_util/diag/String.hpp>     // for String
+#include <sstream>                      // for operator<<, ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/diag/String.hpp>     // for String, operator<<
 #include <stk_util/util/FeatureTest.hpp>
-#include <string>                       // for string, basic_string
+#include <string>                       // for string, char_traits, etc
+#include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
 
-#include <stk_util/diag/WriterOStream.hpp>
 
 namespace sierra {
 

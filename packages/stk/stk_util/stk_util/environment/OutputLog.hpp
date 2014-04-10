@@ -9,8 +9,7 @@
 #ifndef STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 #define STK_UTIL_ENVIRONMENT_OUTPUTLOG_HPP
 
-#include <iosfwd>                       // for ostream
-#include <streambuf>                    // for basic_streambuf<>::int_type
+#include <streambuf>                    // for ostream, etc
 #include <string>                       // for string, char_traits, etc
 namespace stk { template <class Ch, class Tr> class basic_tee_streambuf; }
 

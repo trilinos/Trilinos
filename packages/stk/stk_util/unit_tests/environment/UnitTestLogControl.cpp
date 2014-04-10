@@ -9,8 +9,7 @@
 #include <iostream>                     // for ostringstream, etc
 #include <stk_util/environment/LogControl.hpp>  // for LogControl, RuleMap, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <string>                       // for operator==, basic_string, etc
-#include "gtest/gtest.h"                // for AssertHelper
+#include <string>                       // for operator==, char_traits, etc
 
 
 

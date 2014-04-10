@@ -18,7 +18,6 @@
 #include "boost/smart_ptr/shared_array.hpp"  // for shared_array
 #include "boost/smart_ptr/shared_ptr.hpp"  // for shared_ptr
 #include "boost/unordered/unordered_set.hpp"  // for unordered_set, etc
-#include "gtest/gtest.h"                // for AssertHelper
 namespace boost { template <class T> struct hash; }
 
 //boost tr1 headers...

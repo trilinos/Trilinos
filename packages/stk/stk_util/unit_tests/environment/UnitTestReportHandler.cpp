@@ -11,7 +11,6 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for operator==, basic_string, etc
-#include "gtest/gtest.h"                // for AssertHelper
 
 
 

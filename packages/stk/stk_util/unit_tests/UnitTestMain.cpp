@@ -6,11 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <cstdlib>
-#include <iostream>
-#include <string>
-#include <utility>
-
+#include <iostream>                     // for ostream, basic_ostream
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
+
 
 STKUNIT_MAIN(argc,argv)

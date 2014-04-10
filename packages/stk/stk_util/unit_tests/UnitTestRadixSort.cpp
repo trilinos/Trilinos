@@ -1,20 +1,18 @@
+
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for swap, sort, equal
+#include <boost/timer.hpp>              // for timer
+#include <cstdlib>                      // for rand, srand, RAND_MAX
+#include <deque>                        // for _Deque_iterator, operator-, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <stk_util/util/TrackingAllocator.hpp>
-#include <stk_util/util/CacheAlignedAllocator.hpp>
-#include <stk_util/environment/memory_util.hpp>
+#include <stk_util/util/BlockVector.hpp>  // for block_vector<>::iterator, etc
+#include <stk_util/util/RadixSort.hpp>  // for radix_sort_unsigned
+#include <stk_util/util/RadixSort2.hpp>  // for radix_sort
+#include <vector>                       // for vector, swap
+#include "gtest/gtest.h"                // for AssertHelper, ASSERT_EQ, etc
 
-#include <stk_util/util/BlockVector.hpp>
-#include <stk_util/util/RadixSort2.hpp>
-#include <stk_util/util/RadixSort.hpp>
 
-#include <boost/timer.hpp>
-
-#include <cstdlib>
-#include <iostream>
-#include <iomanip>
-#include <algorithm>
-#include <vector>
-#include <deque>
 
 STKUNIT_UNIT_TEST( radix_sort, sort_unsigned )
 {

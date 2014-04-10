@@ -9,13 +9,13 @@
 #ifndef STK_UTIL_UTIL_MARSHAL_HPP
 #define STK_UTIL_UTIL_MARSHAL_HPP
 
-#include <stdint.h>
+#include <stddef.h>                     // for size_t
+#include <list>                         // for list
+#include <sstream>                      // for stringstream
+#include <string>                       // for string
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
 
-#include <string>
-#include <sstream>
-#include <vector>
-#include <list>
-#include <typeinfo>
 
 namespace stk {
 

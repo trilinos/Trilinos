@@ -3,7 +3,6 @@
 
 #include <stk_util/diag/Trace.hpp>      // for Trace, Traceback, Tracespec
 #include <stk_util/util/Writer.hpp>     // for dendl, pop, push
-#include <stk_util/diag/WriterExt.hpp>
 
 namespace sierra {
 namespace Slib {

@@ -15,7 +15,6 @@
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include <string>                       // for string, operator<<, etc
 #include <vector>                       // for vector
-#include "gtest/gtest.h"                // for AssertHelper
 #include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), etc
 
 
