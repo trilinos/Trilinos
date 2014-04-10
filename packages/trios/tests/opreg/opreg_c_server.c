@@ -157,24 +157,24 @@ int opreg_c_server_main(nssi_rpc_transport transport, MPI_Comm server_comm)
         return -1;
     }
 
-    // register callbacks for the service methods
+    /* register callbacks for the service methods */
     NSSI_REGISTER_SERVER_STUB(OPREG_REQUEST_OP, opreg_request_processor, opreg_args, void);
 
 
-    // Get the Server URL
+    /* Get the Server URL */
     char url[NSSI_URL_LEN];
     nssi_get_url(transport, &url[0], NSSI_URL_LEN);
 
 
-    // Set the maxumum number of requests to handle (-1 == infinite)
+    /* Set the maxumum number of requests to handle (-1 == infinite) */
     opreg_svc.max_reqs = -1;
 
     log_debug(opreg_debug_level, "Starting Server: url = %s", url);
 
-    // Tell the NSSI server to output log data
-    //rpc_debug_level = opreg_debug_level;
+    /* Tell the NSSI server to output log data */
+    /* rpc_debug_level = opreg_debug_level; */
 
-    // start processing requests, the client will send a request to exit when done
+    /* start processing requests, the client will send a request to exit when done */
     rc = nssi_service_start(&opreg_svc);
     if (rc != NSSI_OK) {
         log_info(opreg_debug_level, "exited opreg_svc: %s",
