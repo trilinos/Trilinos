@@ -192,7 +192,7 @@ Relaxation (const Teuchos::RCP<const row_matrix_type>& A)
   globalNumSmallDiagEntries_ (0),
   globalNumZeroDiagEntries_ (0),
   globalNumNegDiagEntries_ (0),
-  globalDiagNormDiff_(Teuchos::as<magnitude_type>::zero()),
+  globalDiagNormDiff_(Teuchos::ScalarTraits<magnitude_type>::zero()),
   savedDiagOffsets_ (false)
 {
   this->setObjectLabel ("Ifpack2::Relaxation");
