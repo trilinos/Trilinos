@@ -79,7 +79,7 @@ SET( CMAKE_MODULE_PATH
 INCLUDE(TribitsCMakePolicies)
 INCLUDE(Split)
 INCLUDE(AppendStringVar)
-INCLUDE(TribitsProcessExtraExternalRepositoriesLists)
+INCLUDE(TribitsProcessExtraRepositoriesList)
 
 # Need to split this argument
 SPLIT("${${PROJECT_NAME}_EXTRA_REPOSITORIES}"  ","

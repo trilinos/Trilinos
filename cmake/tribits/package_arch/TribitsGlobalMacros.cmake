@@ -39,7 +39,7 @@
 
 
 INCLUDE(TribitsConstants)
-INCLUDE(TribitsProcessExtraExternalRepositoriesLists)
+INCLUDE(TribitsProcessExtraRepositoriesList)
 INCLUDE(TribitsProcessPackagesAndDirsLists)
 INCLUDE(TribitsProcessTplsLists)
 INCLUDE(TribitsAdjustPackageEnables)
