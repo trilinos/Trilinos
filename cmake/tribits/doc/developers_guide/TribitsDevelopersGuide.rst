@@ -617,19 +617,19 @@ TriBITS Project
 
 A TriBITS Project:
 
-* Defines a complete CMake project which calls ``PROJECT(${PROJECT_NAME}
-  ...)`` and can be directly configured, built, tested, etc.
-* Consists of one or more `TriBITS Repositories`_ (and may itself be a
-  `TriBITS Repository`_)
 * Defines the ``PROJECT_NAME`` CMake variable (defined in
   `<projectDir>/ProjectName.cmake`_)
-* Defines a set of native Repositories (see below) that define packages and
-  TPLs.
+* Defines a complete CMake project which calls ``PROJECT(${PROJECT_NAME}
+  ...)`` and can be directly configured, built, tested, installed, etc.
+* Consists of one or more `TriBITS Repositories`_ (and may itself be a
+  `TriBITS Repository`_) which can include native and extra repositories.
 * Allows for extra Repositories to be added on before or after the set of
   native Repositories (specified in
-  `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ or by CMake variables)
+  `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ or by CMake cache
+  variables)
 * Defines a default CDash server and default project name on the server (the
   project name on the CDash server must be the same as ``${PROJECT_NAME}``).
+* Defines pre-push testing standard builds (using `checkin-test.py`_)
 
 For more details on the definition of a TriBITS Project, see:
 
@@ -647,9 +647,9 @@ ${PROJECT_SOURCE_DIR}``) are::
      CMakeLists.txt       # Base project CMakeLists.txt file
      CTestConfig.cmake    # [Optional] Needed for CDash submits
      Version.cmake        # [Optional] Dev mode, Project version, VC branch
-     project-checkin-test-config.py # [Optional] checkin-test.py default builds
+     project-checkin-test-config.py # [Optional] checkin-test.py config
      cmake/
-       NativeRepositoriesList.cmake    # [Optional] Used for some meta-projects
+       NativeRepositoriesList.cmake    # [Optional] Rarely used
        ExtraRepositoriesList.cmake     # [Optional] Lists repos and VC URLs 
        ProjectDependenciesSetup.cmake  # [Optional] Project deps overrides
        CallbackDefineProjectPackaging.cmake  # [Optional] CPack settings
@@ -733,8 +733,8 @@ With the ``TriBITS.cmake`` file included, the configuration of the project
 using TriBITS occurs with a single call to `TRIBITS_PROJECT()`_.
 
 Some projects, like Trilinos, actually snapshot the ``tribits`` directory into
-their source tree and therefore don't need to have this variable set.  In
-Trilinos, the include line is just::
+their source tree `<projectDir>/cmake/tribits/`_ and therefore don't need to
+have this variable set.  In Trilinos, the include line is just::
 
   INCLUDE(${CMAKE_CURRENT_SOURCE_DIR}/cmake/tribits/TriBITS.cmake)
 
@@ -941,7 +941,10 @@ files to exclude from the tarball) should be set at the in the file
 **<projectDir>/cmake/tribits/**: [Optional] The typical location of the
 ``tribits`` soruce tree for projects that choose to snapshot or checkout
 TriBITS into their source tree.  Trilinos, for example, currently snapshots
-the TriBITS source tree into this directory.
+the TriBITS source tree into this directory.  In fact, TriBITS assumes this is
+the default location for the TriBITS source tree if
+``${PROJECT_NAME}_TRIBITS_DIR`` is not otherwise specified.  See `TriBITS
+directory snapshotting`_ for more details.
 
 .. _<projectDir>/cmake/ctest/CTestCustom.cmake.in:
 
@@ -4489,17 +4492,20 @@ See `egdist --help` for more details.
 The TriBITS approach to managing multiple VC repos described above works well
 for order 10 or so VC repos but will not scale well to order 30 or more.  For
 larger numbers of VC repos, one should consider nested integration creating
-snapshot git repos that aggregate several related repositories.  Another
-approach might be to use git submodules.  However, note that these tools and
-processes described here are currently **not** set up to support aggregate VC
-repos that use git submodules.  The design decision with TriBITS was to
-explicitly handle the different git VC repos.  There are advantages and
-disadvantages to use git submodules verses the approach currently supported in
-TriBITS using `egdist`_ and `<projectDir>/cmake/ExtraRepositoriesList.cmake`_.
-It is possible that TriBITS will add support for aggregate git repos that use
-git submodules but only if there are important projects that choose to use
-them.  The discussion of these various approaches and strategies to dealing
-with aggregate repos is beyond the scope of this document.
+snapshot git repos (e.g. using the tool `snapshot-dir.py`_) that aggregate
+several related repositories into a single git repo.  Another approach might
+be to use git submodules.  However, note that the TriBITS tools and processes
+described here are currently **not** set up to support aggregate VC repos that
+use git submodules.  The design decision with TriBITS was to explicitly handle
+the different git VC repos using `egdist`_ and
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  There are advantages and
+disadvantages to using git submodules verses the approach currently supported
+in TriBITS using `egdist`_ and
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  It is possible that
+TriBITS will add support for aggregate git repos that use git submodules but
+only if there are important projects that choose to use them.  The discussion
+of these various approaches and strategies to dealing with aggregate repos is
+beyond the scope of this document.
 
 .. ToDo: Discuss a repo clone script.
 
@@ -5456,6 +5462,40 @@ hassell and less work and better portability when creating a native TriBITS
 build, even it it is a secondary build system for a given piece of software.
 
 
+TriBITS directory snapshotting
+------------------------------
+
+Some TriBITS projects choose to snapshot the ``tribits`` directory source tree
+into their project's source tree, typically under
+`<projectDir>/cmake/tribits/`_.  The ``tribits`` git source tree contains a
+symbolic link to the the tool ``snapshot-dir.py`` that allows one to update
+the snapshot of the TriBITS source tree as simply as::
+
+  $ cd <projectDir>/cmake/tribits/
+  $ <some-base-dir>/tribits/snapshot-dir.py
+
+This will create a git commit in the local ``<projectDir>/`` git repo that
+looks like::
+
+    Automatic snapshot commit
+    
+    origin: '<some-url-base>/tribits'
+    
+    At commit:
+    
+    a2e0ab8 Removing bad global cache var messing up multiple configures
+    Author: Roscoe A. Bartlett <some-email-address>
+    Date: Wed Mar 26 18:22:08 2014 -0400
+
+This, of course, assumes that ``<projectDir>/`` is a local git repo (or is in
+local git repo).  If that is not the case, then one cannot use the script
+``snapshot-dir.py``.
+
+See `snapshot-dir.py --help`_ for more details.  Note the guidance on using a
+different branch for the snapshot sync followed by a merge.  This allows for
+one to maintain local changes to TriBITS and use git to manage the merges.
+
+
 TriBITS Development Toolset
 ---------------------------
 
@@ -5939,3 +5979,15 @@ Development Workflow`_.
 .. include:: egdist-help.txt
    :literal:
 
+.. _snapshot-dir.py:
+
+snapshot-dir.py --help
+----------------------
+
+Below is a snapshot of the output from ``snapshot-dir.py --help``.  For more
+details on the usage of ``snapshot-dir.py``, specifically for snapshotting the
+`<projectDir>/cmake/tribits/`_ directory, see `TriBITS directory
+snapshotting`_.
+
+.. include:: snapshot-dir-help.txt
+   :literal:
