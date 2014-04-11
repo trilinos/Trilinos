@@ -438,7 +438,7 @@ ul.auto-toc {
 </li>
 <li><a class="reference internal" href="#tribits-dashboard-driver" id="id82">10.8&nbsp;&nbsp;&nbsp;TriBITS Dashboard Driver</a></li>
 <li><a class="reference internal" href="#regulated-backward-compatibility-and-deprecated-code" id="id83">10.9&nbsp;&nbsp;&nbsp;Regulated Backward Compatibility and Deprecated Code</a></li>
-<li><a class="reference internal" href="#wrapping-exterally-configured-built-software" id="id84">10.10&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></li>
+<li><a class="reference internal" href="#wrapping-externally-configured-built-software" id="id84">10.10&nbsp;&nbsp;&nbsp;Wrapping Externally Configured/Built Software</a></li>
 <li><a class="reference internal" href="#tribits-directory-snapshotting" id="id85">10.11&nbsp;&nbsp;&nbsp;TriBITS directory snapshotting</a></li>
 <li><a class="reference internal" href="#tribits-development-toolset" id="id86">10.12&nbsp;&nbsp;&nbsp;TriBITS Development Toolset</a></li>
 </ul>
@@ -1554,7 +1554,7 @@ This list of repositories either comes from processing the project's
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file or comes from the
 CMake cache variable <tt class="docutils literal">${PROJECT_NAME}_EXTRA_REPOSITORIES</tt>.  See
 <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages">Enabling extra repositories with add-on packages</a> for details.</blockquote>
-<p><tt class="docutils literal">${PROJECT_NAME}_ALL_REPOSITORIES</tt></p>
+<p id="project-name-all-repositories"><tt class="docutils literal">${PROJECT_NAME}_ALL_REPOSITORIES</tt></p>
 <blockquote>
 Concatenation of all the repos listed in
 <tt class="docutils literal">${PROJECT_NAME}_NATIVE_REPOSITORIES</tt> and
@@ -1583,10 +1583,9 @@ unit of integration, versioning and reuse.</li>
 <li><a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a></li>
 <li><a class="reference internal" href="#tribits-repository-core-variables">TriBITS Repository Core Variables</a></li>
 </ul>
-<!-- ToDo: Edited and spell-checked up to here on 4/10/2014! -->
 <div class="section" id="tribits-repository-core-files">
 <h4><a class="toc-backref" href="#id20">TriBITS Repository Core Files</a></h4>
-<p>The core files making up a TriBITS Repository (where <tt class="docutils literal">&lt;reposDir&gt; =
+<p>The core files making up a TriBITS Repository (where <tt class="docutils literal">&lt;repoDir&gt; =
 <span class="pre">${${REPOSITORY_NAME}_SOURCE_DIR}</span></tt>) are:</p>
 <pre class="literal-block">
 &lt;repoDir&gt;/
@@ -1595,9 +1594,9 @@ unit of integration, versioning and reuse.</li>
   Copyright.txt  # [Optional] Only needed if creating version header file
   Version.cmake  # [Optional] Info inserted into ${REPO_NAME}_version.h
   cmake/
-     RepositoryDependenciesSetup.cmake # [Optional]
-     CallbackSetupExtraOptions.cmake # [Optional] Called after tribits options
-     CallbackDefineRepositoryPackaging.cmake # [Optioinal] CPack packaging
+     RepositoryDependenciesSetup.cmake # [Optional] CDash email addresses?
+     CallbackSetupExtraOptions.cmake # [Optional] Called after main options
+     CallbackDefineRepositoryPackaging.cmake # [Optional] CPack packaging
 </pre>
 <p>These TriBITS Repository files are documented in more detail below:</p>
 <ul class="simple">
@@ -1625,7 +1624,7 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
 
 </pre>
-<p>Other comamnds that are appropriate to use in this file include
+<p>Other commands that are appropriate to use in this file include
 <a class="reference internal" href="#tribits-disable-package-on-platforms">TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS()</a>.  Also, if the binary directory for
 any package <tt class="docutils literal">&lt;packageName&gt;</tt> needs to be changed from the default, then the
 variable <tt class="docutils literal">&lt;packageName&gt;_SPECIFIED_BINARY_DIR</tt> can be set.  One can see an
@@ -1641,7 +1640,7 @@ SET(TriBITS_SPECIFIED_BINARY_DIR tribits)
 </pre>
 <p>(see <a class="reference internal" href="#tribits-package-tribits-repository-tribits-package-sharing-the-same-source-directory">TriBITS Package, TriBITS Repository, TriBITS Package sharing the same
 source directory</a>).</p>
-<p>It is perfectly legal for a TriBITS repjository to define no packages at all
+<p>It is perfectly legal for a TriBITS repository to define no packages at all
 with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES()
@@ -1650,35 +1649,85 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES()
 packages, only extra repositories.</p>
 <!-- ToDo: Point to example meta-project. -->
 <p id="repodir-tplslist-cmake"><strong>&lt;repoDir&gt;/TPLsList.cmake</strong>: [Required] Provides the list of TPLs that are
-listed as TPLs in the repository's SE packages
-<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files (see <cite>TriBITS TPL</cite>).  This file
-typically just calls the macro <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> to define
-the TPLs along with their find modules and other properties.  See an example
-from <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">TPLsList.cmake</tt> which shows:</p>
+referenced as TPL dependencies in the repository's SE package's
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files (see <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>).  This
+file typically just calls the macro <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> to
+define the TPLs along with their find modules and other properties.  An
+example is <a class="reference internal" href="#reducedmocktrilinos">ReducedMockTrilinos</a>/<tt class="docutils literal">TPLsList.cmake</tt> which shows:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_TPLS(
-  MPI  &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/FindTPLMPI.cmake&quot;   PT
+  MPI            &quot;${${PROJECT_NAME}_TRIBITS_DIR}/tpls/&quot;    PT
+  BLAS           cmake/TPLs/    PT
+  LAPACK         cmake/TPLs/    PT
+  Boost          cmake/TPLs/    ST
+  UMFPACK        cmake/TPLs/    ST
+  AMD            cmake/TPLs/    EX
+  PETSC          cmake/TPLs/    ST
   )
 
 </pre>
-<p>Once processed, each listed TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
-variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FINDMOD</tt> test group
-<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
-<p>It is perfectly fine to specify no TPLs for a repository with:</p>
+<p>See <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a> for details on what gets defined for each TriBITS TPL once
+this file is processed.</p>
+<p>It is perfectly fine to specify no TPLs at all for a repository with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_TPLS()
 </pre>
 <p>but the macro <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_TPLS()</tt> has to be called, even if
 there are no TPLs.  See <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a> for further
-details.</p>
+details and constraints.</p>
 <p id="repodir-copyright-txt"><strong>&lt;repoDir&gt;/Copyright.txt</strong>: [Optional] Gives the default copyright and
 license declaration for all of the software in the TriBITS repository
-<tt class="docutils literal">&lt;repoDir&gt;</tt>.  This file is read into a string and then used to configure the
-repository's version file (see <a class="reference internal" href="#project-and-repository-versioning-and-release-mode">Project and Repository Versioning and Release
-Mode</a>).</p>
-<p id="repodir-version-cmake"><strong>&lt;repoDir&gt;/Version.cmake</strong>: Contains version information for the repository
-(and the project also if this is also the base project).  For example,
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">Version.cmake</tt>, this looks like:</p>
+directory <tt class="docutils literal">&lt;repoDir&gt;/</tt>.  This file is read into a string and then used to
+configure the repository's version header file (see <a class="reference internal" href="#project-and-repository-versioning-and-release-mode">Project and Repository
+Versioning and Release Mode</a>).  Even if a repository version header file is
+not produced, it is a good idea for every TriBITS repository to define this
+file, just for legal purposes.  For a good open-source license, one should
+consider copying the <tt class="docutils literal">tribits/Copyright.txt</tt> file which is a simple 3-clause
+BSD-like license like:</p>
+<pre class="literal-block">
+# &#64;HEADER
+# ************************************************************************
+#
+#            TriBITS: Tribial Build, Integrate, and Test System
+#                    Copyright 2013 Sandia Corporation
+#
+# Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
+# the U.S. Government retains certain rights in this software.
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are
+# met:
+#
+# 1. Redistributions of source code must retain the above copyright
+# notice, this list of conditions and the following disclaimer.
+#
+# 2. Redistributions in binary form must reproduce the above copyright
+# notice, this list of conditions and the following disclaimer in the
+# documentation and/or other materials provided with the distribution.
+#
+# 3. Neither the name of the Corporation nor the names of the
+# contributors may be used to endorse or promote products derived from
+# this software without specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY SANDIA CORPORATION &quot;AS IS&quot; AND ANY
+# EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
+# PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL SANDIA CORPORATION OR THE
+# CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL,
+# EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO,
+# PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR
+# PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF
+# LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING
+# NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
+# SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+#
+# ************************************************************************
+# &#64;HEADER
+
+</pre>
+<p id="repodir-version-cmake"><strong>&lt;repoDir&gt;/Version.cmake</strong>: [Optional] Contains version information for the
+repository (and the project also if this is also the base project).  For
+example, <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>/<tt class="docutils literal">Version.cmake</tt>, this looks like:</p>
 <pre class="literal-block">
 SET(${REPOSITORY_NAME}_VERSION 1.1)
 SET(${REPOSITORY_NAME}_MAJOR_VERSION 01)
@@ -1694,11 +1743,12 @@ given TriBITS repository.</p>
 directory's local scope and are therefore seen by the entire CMake project.
 When this file is read in repository mode, the variable
 <tt class="docutils literal">${REPOSITORY_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT</tt> is ignored.</p>
-<p id="repodir-cmake-repositorydependenciessetup-cmake"><strong>&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</strong>: [Optional] If present,
+<span class="target" id="repodir-cmake-repositorydependenciessetup-cmake"></span><!-- ToDo: Edited and spell-checked up to here on 4/10/2014! -->
+<p><strong>&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</strong>: [Optional] If present,
 this file is included a single time as part of the generation of the project
 dependency data-structure (see <a class="reference internal" href="#reduced-package-dependency-processing">Reduced Package Dependency Processing</a>).  It
 gets included at the top project level scope in order with the other
-repositories listed in <tt class="docutils literal">${PROJECT_NAME}_ALL_REPOSITORIES</tt>.  Any local
+repositories listed in <a class="reference internal" href="#project-name-all-repositories">${PROJECT_NAME}_ALL_REPOSITORIES</a>.  Any local
 variables set in this file have project-wide scope.  The primary purpose for
 this file is to set variables that will impact the processing of project's
 package's <tt class="docutils literal">Dependencies.cmake</tt> files and take care of other enable/disable
@@ -1721,15 +1771,15 @@ configuration of the project and <strong>not</strong> when it is just building u
 dependency data-structures as part of other tools (like <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt>,
 <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a>, etc.).  Any local variables set in this file or
 macro have project-wide scope.</p>
-<p>A few additional variables are defined by the time this file is procesed and
-can be ued in the logic in these files.  The variables that should already be
+<p>A few additional variables are defined by the time this file is processed and
+can be used in the logic in these files.  The variables that should already be
 defined, in addition to all of the basic user TriBITS cache variables, include
 <tt class="docutils literal">CMAKE_HOST_SYSTEM_NAME</tt>, <tt class="docutils literal">${PROJECT_NAME}_HOSTNAME</tt>, and
 <tt class="docutils literal">PYTHON_EXECUTABLE</tt>.  The types of logic to put in this file includes:</p>
 <ul class="simple">
 <li>Setting additional user cache variable options that are used by multiple
 packages into the TriBITS Repository.  For example, Trilinos defines a
-<tt class="docutils literal">Trilinos_DATA_DIR</tt> user cache varaible that several Trilinos packages
+<tt class="docutils literal">Trilinos_DATA_DIR</tt> user cache variable that several Trilinos packages
 use.</li>
 <li>Disabling packages in the TriBITS Repository when conditions will not allow
 them to be enabled.  For example, Trilinos disables the package ForTrilinos
@@ -1766,7 +1816,7 @@ ENDMACRO()
 this file exists, then this file defines extra CPack-related options that are
 specific to the TriBITS Repository.  This file must define the macro
 <tt class="docutils literal">TRIBITS_REPOSITORY_DEFINE_PACKAGING()</tt> which is called by TriBITS.  This
-file is procdessed as the top project-level scope so any local variables set
+file is processed as the top project-level scope so any local variables set
 have project-wide effect.  This file is processed before the project's
 <a class="reference internal" href="#projectdir-cmake-callbackdefineprojectpackaging-cmake">&lt;projectDir&gt;/cmake/CallbackDefineProjectPackaging.cmake</a> so any options
 defined in the repositories file are overridden by the project.  This file
@@ -1837,9 +1887,9 @@ naming the dependencies in the file
 <tt class="docutils literal">SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS</tt> to
 <a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a>.</li>
 <li>Is the fundamental unit of software partitioning and aggregation and must
-have a unique packae name that is globally unique (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique
+have a unique package name that is globally unique (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique
 TriBITS package names</a>).</li>
-<li>Is the unit of testing as drived by <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a> and displayed
+<li>Is the unit of testing as driven by <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a> and displayed
 on CDash.</li>
 </ul>
 <p id="globally-unique-tribits-package-names"><strong>WARNING:</strong> As noted above, one must be very careful to pick package names
@@ -1873,7 +1923,7 @@ basic TriBITS build system, the approach for automatically detecting when a
 package has changed by looking at what files have changed (which is used in
 <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> and <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a>) requires that the package's
 files be listed under <tt class="docutils literal">&lt;packageDir&gt;/</tt> (see <a class="reference internal" href="#pre-push-testing-using-checkin-test-py">Pre-push Testing using
-checkin-test.py</a>).  Without this, these development tetsing tools will not be
+checkin-test.py</a>).  Without this, these development testing tools will not be
 able to effectively determine what needs to be rebuilt and retested which can
 clean to pushing broken software.</p>
 <p>These TriBITS Package files are documented in more detail below:</p>
@@ -1956,9 +2006,9 @@ TRIBITS_PACKAGE_POSTPROCESS()
 <p>The first command at the top of the file in <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> where the
 package name is passed in in addition to a few other options.  TriBITS
 obviously already knows the package name.  The purpose for repeating it is as
-documentation for the developer's sake.  Then a set of platform confgiure-time
+documentation for the developer's sake.  Then a set of platform configure-time
 tests is typically performed (if there are any).  In this example, the
-existance of the C++ <tt class="docutils literal">__int64</tt> data-type is checked using the module
+existence of the C++ <tt class="docutils literal">__int64</tt> data-type is checked using the module
 <cite>CheckFor__int64.cmake`</cite> (which is in the <tt class="docutils literal">cmake/</tt> directory of this
 package.  (CMake has great support for configure-time tests, see
 <a class="reference internal" href="#configure-time-system-tests">Configure-time System Tests</a>.)  This is followed by package-specific
@@ -1967,7 +2017,7 @@ deprecated warnings are added using the standard macros
 <a class="reference internal" href="#tribits-add-debug-option">TRIBITS_ADD_DEBUG_OPTION()</a> and
 <a class="reference internal" href="#tribits-add-show-deprecated-warnings-option">TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()</a>.  After all of this up front
 stuff (which will be present in any moderately complex CMake-configured
-project) the source and the test subdirectories are added that actually define
+project) the source and the test sub-directories are added that actually define
 the library and the tests.  In this case, the standard
 <a class="reference internal" href="#tribits-add-test-directories">TRIBITS_ADD_TEST_DIRECTORIES()</a> macro is used which only conditionally adds
 the tests for the package.</p>
@@ -2011,8 +2061,8 @@ TRIBITS_PACKAGE_POSTPROCESS()
 <p>What is different about <tt class="docutils literal">CMakeLists.txt</tt> files for packages without
 subpackages is that the <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> command is broken up into two
 parts <a class="reference internal" href="#tribits-package-decl">TRIBITS_PACKAGE_DECL()</a> and <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>.  In between
-these two comamnds, the parent package can define the common package options
-and then calls the commnand <a class="reference internal" href="#tribits-process-subpackages">TRIBITS_PROCESS_SUBPACKAGES()</a> which fully
+these two commands, the parent package can define the common package options
+and then calls the command <a class="reference internal" href="#tribits-process-subpackages">TRIBITS_PROCESS_SUBPACKAGES()</a> which fully
 processes the packages.  If the parent package has libraries and/or
 tests/example of its own, it can define those after calling
 <a class="reference internal" href="#tribits-package-def">TRIBITS_PACKAGE_DEF()</a>, just like with a regular package.  However, it is
@@ -2022,15 +2072,15 @@ tests and examples.  As always, the final command called inside of the
 <p>NOTE: The package's <tt class="docutils literal">CMakeLists.txt</tt> file only gets processed if the package
 is actually enabled with <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_${PACKAGE_NAME}=ON</span></tt>.  This
 is an important design feature of TriBITS is that the contents of non-enabled
-package's can't damnage the configure, build, and test of the enabled packages
+package's can't damage the configure, build, and test of the enabled packages
 based on errors in non-enabled packages.  This is critical to allow
 experimental <tt class="docutils literal">EX</tt> test packages and lower-maturity packages to exist in the
-same soruce repositories safely.</p>
+same source repositories safely.</p>
 </div>
 <div class="section" id="tribits-package-core-variables">
 <h4><a class="toc-backref" href="#id24">TriBITS Package Core Variables</a></h4>
 <p id="tribits-package-local-variables">The following locally scoped <strong>TriBITS Package Local Variables</strong> are defined
-when the files for a given TriBITS Package (or any SE packaeg for that matter)
+when the files for a given TriBITS Package (or any SE package for that matter)
 are being processed:</p>
 <blockquote>
 <p><tt class="docutils literal">PACKAGE_NAME</tt></p>
@@ -2049,7 +2099,7 @@ The absolute path to the base package's base binary/build directory.  This
 is set automatically by TriBITS in the macro <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a>.</blockquote>
 <p><tt class="docutils literal">PACKAGE_NAME_UC</tt></p>
 <blockquote>
-This is set to the upper-case versionof <tt class="docutils literal">${PACKAGE_NAME}</tt>.  This is set
+This is set to the upper-case version of <tt class="docutils literal">${PACKAGE_NAME}</tt>.  This is set
 automatically by TriBITS in the macro <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a>.</blockquote>
 </blockquote>
 <p id="tribits-package-top-level-local-variables">Once all of the TriBITS SE package's <tt class="docutils literal">Dependencies.cmake</tt> files have been
@@ -2080,7 +2130,7 @@ dereferenced.</blockquote>
 <p id="package-name-testgroup"><tt class="docutils literal">${PACKAGE_NAME}_TESTGROUP</tt></p>
 <blockquote>
 Defines the <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a> for the package.  This determines in
-what contexts the package is enbled or not for testing-related purposes
+what contexts the package is enabled or not for testing-related purposes
 (see <a class="reference internal" href="#nested-layers-of-tribits-project-testing">Nested Layers of TriBITS Project Testing</a>)</blockquote>
 </blockquote>
 <p id="tribits-package-cache-variables">In addition, the following user-settable <strong>TriBITS Package Cache Variables</strong>
@@ -2157,7 +2207,7 @@ respectively.</li>
 <li>Has tests turned on automatically if
 <tt class="docutils literal"><span class="pre">${PARENT_PACKAGE_NAME}_ENABLE_TESTS==ON</span></tt>.</li>
 </ul>
-<p>The contents of a TriBITS Subpackage are almost idential to those of a TriBITS
+<p>The contents of a TriBITS Subpackage are almost identical to those of a TriBITS
 Package.  The differences are described below.</p>
 <p>For more details on the definition of a TriBITS Package (or subpackage), see:</p>
 <ul class="simple">
@@ -2186,7 +2236,7 @@ the subpackage directory listed in the
 <li><a class="reference internal" href="#how-is-tribits-subpackage-is-different-from-a-tribits-package">How is TriBITS Subpackage is different from a TriBITS Package?</a></li>
 </ul>
 <p id="packagedir-spkgdir-cmake-dependencies-cmake"><strong>&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</strong>: The contents of this file
-for subpackages is idential as for top-level packages.  It just contains a
+for subpackages is identical as for top-level packages.  It just contains a
 call to the macro <a class="reference internal" href="#tribits-package-define-dependencies">TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()</a> to define this SE
 package's <a class="reference internal" href="#upstream">upstream</a> TPL and SE package dependencies.  A simple example is
 for <tt class="docutils literal">SubpackageB</tt> declared in
@@ -2200,7 +2250,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   )
 
 </pre>
-<p>What this shows is that subpackages must list their dependenices on each other
+<p>What this shows is that subpackages must list their dependencies on each other
 (if such dependencies exist) using the full SE package name
 <tt class="docutils literal"><span class="pre">${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}</span></tt> or in this case
 <tt class="docutils literal">PackageWithSubpackages</tt> + <tt class="docutils literal">SubpackageA</tt> =
@@ -2222,7 +2272,7 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   )
 
 </pre>
-<p>What this means is that any TPL or library depencenices listed in the parent
+<p>What this means is that any TPL or library dependencies listed in the parent
 package's <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file are <strong>NOT</strong>
 dependencies of its subpackages.  For example, if
 <a class="reference internal" href="#package-with-subpackages-cmake-dependencies-cmake">package_with_subpackages/cmake/Dependencies.cmake</a> where changed to be:</p>
@@ -2242,10 +2292,10 @@ case, this TPL dependency is pretty worthless since the SE package
 own.)</p>
 <p id="packagedir-spkgdir-cmakelists-txt"><strong>&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</strong>: [Required] The subpackage's
 top-level <tt class="docutils literal">CMakeLists.txt</tt> file that defines the libraries, include
-directoies, and contains the tests for the subpackage.  The contents of a
-subpackage's top-level <tt class="docutils literal">CMakeLists.txt</tt> is almost indentical to a top-level
+directories, and contains the tests for the subpackage.  The contents of a
+subpackage's top-level <tt class="docutils literal">CMakeLists.txt</tt> is almost identical to a top-level
 package's <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file.  The primary difference is that
-the commmands <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> and <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a> and
+the commands <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> and <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a> and
 replaced with <a class="reference internal" href="#id8">TRIBITS_SUBPACKAGE()</a> and <a class="reference internal" href="#tribits-subpackage-postprocess">TRIBITS_SUBPACKAGE_POSTPROCESS()</a>
 as shown in the file:</p>
 <blockquote>
@@ -2285,15 +2335,15 @@ TRIBITS_SUBPACKAGE_POSTPROCESS()
 <p>Unlike <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a>, <a class="reference internal" href="#id8">TRIBITS_SUBPACKAGE()</a> does not take any extra
 arguments.  Those extra settings are assumed to be defined by the top-level
 parent package.  Like top-level packages, subpackages are free to define
-user-setable options and configure-time tests but typically don't.  The idea
-is that subpackages should be lighter weight than top-level packages.  OTher
+user-settable options and configure-time tests but typically don't.  The idea
+is that subpackages should be lighter weight than top-level packages.  Other
 than using <a class="reference internal" href="#id8">TRIBITS_SUBPACKAGE()</a> and <a class="reference internal" href="#tribits-subpackage-postprocess">TRIBITS_SUBPACKAGE_POSTPROCESS()</a>, a
-subpackage can be layed out just like any other package and can call on any
+subpackage can be laid out just like any other package and can call on any
 other commands to add libraries, add executables, add test, etc.</p>
 </div>
 <div class="section" id="tribits-subpackage-core-variables">
 <h4><a class="toc-backref" href="#id27">TriBITS Subpackage Core Variables</a></h4>
-<p>The core variables assoicated with a subpackage are identicial to the <a class="reference internal" href="#tribits-package-core-variables">TriBITS
+<p>The core variables associated with a subpackage are identical to the <a class="reference internal" href="#tribits-package-core-variables">TriBITS
 Package Core Variables</a>.  The only difference is that a subpackage may need
 to refer to its parent package where a top-level package does not have a
 parent package.  The extra variables that are defined when processing a
@@ -2316,10 +2366,10 @@ only defined for a subpackage.</blockquote>
 <h4><a class="toc-backref" href="#id28">How is TriBITS Subpackage is different from a TriBITS Package?</a></h4>
 <p>A common question this is natural to ask is how a TriBITS Subpackage is
 different from a TriBITS Package?  They contain the same basic files (i.e. a
-<tt class="docutils literal">cmake/Dependencies.cmake</tt>, a top-level <tt class="docutils literal">CMakeList.txt</tt> file, source
+<tt class="docutils literal">cmake/Dependencies.cmake</tt>, a top-level <tt class="docutils literal">CMakeLists.txt</tt> file, source
 files, test files, etc.).  They both are included in the list of TriBITS SE
 Packages and therefore can both be enabled/disabled by the user or in
-automatica dependnecy logic.  The primary difference is that a subpackage is
+automatic dependency logic.  The primary difference is that a subpackage is
 meant to involve less overhead in defining and is to be used to partition the
 parent package's software into chunks according to software engineering
 packaging principles (see below).  Also, the dependency logic treats a parent
@@ -2330,9 +2380,9 @@ packages as subpackages are discussed throughout this guide.</p>
 <p id="software-engineering-packaging-principles"><strong>Software Engineering Packaging Principles</strong></p>
 <p>The term &quot;software engineering&quot; package was adopted in order to highlight and
 the role of defining and managing &quot;Package&quot; according to standard software
-engineering packages.  In his book &quot;Agil Software Development&quot;, Robert Martin
+engineering packages.  In his book &quot;Agile Software Development&quot;, Robert Martin
 defines several object-oriented (OO) software engineering principles related
-to packging software which are listed below:</p>
+to packaging software which are listed below:</p>
 <ul class="simple">
 <li><em>Package Cohesion OO Principles</em>:<ol class="arabic">
 <li><em>REP (Release-Reuse Equivalency Principle)</em>: The granule of reuse is the
@@ -2370,7 +2420,7 @@ Development&quot; as one of the better software engineering books out there (see
 <p>A TriBITS TPL:</p>
 <ul class="simple">
 <li>Defines a set of pre-built libraries and/or header files and/or executables
-and/or some other resoruces used by one or more TriBITS Packages and
+and/or some other resources used by one or more TriBITS Packages and
 publishes the list of include directories and/or libraries and/or
 executables provided by the TPL to the TriBITS project.</li>
 <li>Is given a globally unique name (see <a class="reference internal" href="#globally-unique-tribits-tpl-names">Globally unique TriBITS TPL names</a>)
@@ -2387,7 +2437,7 @@ named.</p>
 <p>Using a TriBITS TPL is to be preferred over using a raw CMake
 <tt class="docutils literal"><span class="pre">FIND_PACKAGE(&lt;someCMakePackage&gt;)</span></tt> because the TriBITS system guarantees
 that only a single unique version of TPL will be used by multiple packages and
-by declaring a TPL using TriBITS, automatical enable/disable logic will be
+by declaring a TPL using TriBITS, automatic enable/disable logic will be
 applied as described in <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a>.</p>
 <p>For each TPL referenced in a <tt class="docutils literal">TPLsList.cmake</tt> file using the macro
 <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>, there should exist a file, typically
@@ -2406,15 +2456,18 @@ TRIBITS_TPL_DECLARE_LIBRARIES( PETSC
 
 </pre>
 <p>Some concrete <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files actually do use
-<tt class="docutils literal">FIND_PACKAGE()</tt> and a standard CMake package find modulue to fill in the
+<tt class="docutils literal">FIND_PACKAGE()</tt> and a standard CMake package find module to fill in the
 guts of finding at TPL.</p>
+<p>Once processed, each defined TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
+variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FINDMOD</tt> and test group
+<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
 <p>Note that the TriBITS system does not require the usage of of the function
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> and does not even care about the TPL module
 name <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>.  All that is required is that some CMake
 file fragment exist that once included, will define the variables
 <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  However, to be
 user friendly, such a CMake file should respond to the same variables as
-accepted by the standard <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> funtion.</p>
+accepted by the standard <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> function.</p>
 <p>The core variables related to an enabled TPL are <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt>,
 <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>, and <tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> as defined in
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> need to be defined.  For more details, see
@@ -2426,7 +2479,7 @@ accepted by the standard <a class="reference internal" href="#tribits-tpl-declar
 <p>One of the most important things to know about TriBITS is what files it
 processes, in what order, and in what context.  This is critical to being able
 to understand what impact (if any) setting a variable or otherwise changing
-the CMake runtime state will have on configuring a CMake project which uses
+the CMake run-time state will have on configuring a CMake project which uses
 TriBITS.  While the different files that make up a <a class="reference internal" href="#tribits-project">TriBITS Project</a>,
 <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>, <a class="reference internal" href="#tribits-package">TriBITS Package</a>, and <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a> were defined in
 the section <a class="reference internal" href="#tribits-project-structure">TriBITS Project Structure</a>, that material did not fully describe
@@ -2437,7 +2490,7 @@ first use case is in the basic configuration of the project with a standard
 <tt class="docutils literal">cmake</tt> command invocation in order to set up the build files in the binary
 directory (see <a class="reference internal" href="#full-tribits-project-configuration">Full TriBITS Project Configuration</a>).  The second use case is
 in reading the project's dependency-related files in order to build a package
-dependency datastructure (e.g. the <a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a> file,
+dependency data-structure (e.g. the <a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a> file,
 see <a class="reference internal" href="#reduced-package-dependency-processing">Reduced Package Dependency Processing</a>)).  The second use case of
 reading the project's dependency files is largely a subset of the first.</p>
 <p>Another factor that is important to understand is the scoping in which the
@@ -2446,7 +2499,7 @@ This scoping has a large impact on the configuration of the project and what
 effect the processing of files and setting variables have on the project as a
 whole.  Some of the strange scoping rules for CMake are discussed in <a class="reference internal" href="#cmake-language-overview-and-gotchas">CMake
 Language Overview and Gotchas</a> and should be understood before trying to
-debug issues with processesing.  Many of the basic files are processed
+debug issues with processing.  Many of the basic files are processed
 (included) in the base project <a class="reference internal" href="#projectdir-cmakelists-txt">&lt;projectDir&gt;/CMakeLists.txt</a> scope and
 therefore any local variables set in these files are accessible to the entire
 CMake project (after the file is processed, of course).  Other files get
@@ -2520,7 +2573,7 @@ through the call to <a class="reference internal" href="#id7">TRIBITS_PROJECT()<
 </div>
 </div>
 </div>
-<div class="line">10) Adjust SE packae and TPLs enable/disable</div>
+<div class="line">10) Adjust SE package and TPLs enable/disable</div>
 <div class="line-block">
 <div class="line">(see <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a>)</div>
 </div>
@@ -2565,9 +2618,9 @@ Tracing</a>.</p>
 <p>In addition to the full processing that occurs as part of the <a class="reference internal" href="#full-tribits-project-configuration">Full TriBITS
 Project Configuration</a>, there are also TriBITS tools that only process as
 subset of project's file.  This reduced processing is performed in order to
-build up the project's package dependenices data-structure (see <a class="reference internal" href="#tribits-environment-probing-and-setup">TriBITS
+build up the project's package dependencies data-structure (see <a class="reference internal" href="#tribits-environment-probing-and-setup">TriBITS
 Environment Probing and Setup</a>) and to write the file
-<a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a>.  For example, the tool <tt class="docutils literal"><span class="pre">checkn-test.py</span></tt>
+<a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a>.  For example, the tool <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt>
 and the script <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a> both drive this type of processing.
 In particular, the CMake -P script <tt class="docutils literal">TribitsDumpDepsXmlScript.cmake</tt> reads
 all of the project's dependency-related files and dumps out the
@@ -2678,7 +2731,7 @@ $ cmake \
 <p>However, every file that TriBITS processes is not printed in this file trace
 if it should be obvious that the file is being processed.  For example, the
 package's configured header file created using <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>
-does not result in a file trace print statment because this is an
+does not result in a file trace print statement because this is an
 unconditional command that is explicitly called in one of the the package's
 <tt class="docutils literal">CMakeLists.txt</tt> files so it should be clear that this file is being
 processed.</p>
@@ -2706,7 +2759,7 @@ Repository to have only one package and to have that package be the base
 repository directory.  The TriBITS Repository and the single TriBITS Package
 would typically have the same name in this case (but that is actually not
 required but it is confusing if they are not the same).  For example, in the
-TriBITS test project <tt class="docutils literal">MockTrilinos</tt>, the repostory and package
+TriBITS test project <tt class="docutils literal">MockTrilinos</tt>, the repository and package
 <tt class="docutils literal">extraRepoOnePackage</tt> are one in the same.  In this case, the file
 <tt class="docutils literal">extraRepoOnePackage/PackagesList.cmake</tt> looks like:</p>
 <pre class="literal-block">
@@ -2719,13 +2772,13 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 <p>However, to maximize flexibility, it is recommended that a TriBITS package and
 TriBITS repository not share the same directory.</p>
 <p id="tribits-package-tribits-repository-tribits-package-sharing-the-same-source-directory"><strong>TriBITS Package, TriBITS Repository, TriBITS Package sharing the same source
-directory</strong>: In the extreme, it is posisble to collapase a single TriBITS
+directory</strong>: In the extreme, it is possible to collapse a single TriBITS
 package, repository, and project into the same base source directory.
 However, in this case, the TriBITS Project name and the TriBITS Package name
 cannot be the same and some modifications and tricks are needed to allow this
 to work.  One example of this is the TriBITS project and <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test
 Package</a> themselves, which are both rooted in the base <tt class="docutils literal">tribits</tt> source
-directory.  There are a few restructions and modifications needed to get this
+directory.  There are a few restrictions and modifications needed to get this
 to work:</p>
 <ul class="simple">
 <li>The Project and Package names cannot be the same: In the case of the TriBITS
@@ -2795,7 +2848,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
   )
 </pre>
 <p>Other than the special TPLs <tt class="docutils literal">MPI</tt> and <tt class="docutils literal">CUDA</tt>, other TPLs that are
-candidates to put into TriBITS are those that are likley to be used by
+candidates to put into TriBITS are those that are likely to be used by
 different stand-alone TriBITS repositories that need to be combined into a
 single TriBITS meta-project.  By using a standard TPL definition, it is
 guaranteed that the TPL used will be consistent with all of the repositories.</p>
@@ -2835,7 +2888,7 @@ tested and installed from any TriBITS project that lists it, including the
 <tt class="docutils literal">TriBITSProj</tt> project itself (see <a class="reference internal" href="#coexisting-projects-repositories-and-packages">Coexisting Projects, Repositories, and
 Packages</a>).</p>
 <p>The directory <tt class="docutils literal">tribits/doc/examples/</tt> contains some other example TriBITS
-projects and repositories as well that are refered to in this and other
+projects and repositories as well that are referred to in this and other
 documents.</p>
 <div class="section" id="tribitshelloworld">
 <h2><a class="toc-backref" href="#id37">4.1&nbsp;&nbsp;&nbsp;TribitsHelloWorld</a></h2>
@@ -2848,7 +2901,7 @@ tribits/doc/examples/TribitsHelloWorld/
 support MPI or Fortran).  However, it does show how minimal a <a class="reference internal" href="#tribits-project">TriBITS
 Project</a> (which is also a <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>) and a <a class="reference internal" href="#tribits-package">TriBITS Package</a> can
 be and still show the value of TriBITS over raw CMake.  The simple
-<cite>HelloWorld</cite> package is used to compare with the raw CMakeList.txt file in the
+<cite>HelloWorld</cite> package is used to compare with the raw CMakeLists.txt file in the
 <tt class="docutils literal">RawHeloWorld</tt> example project in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document.</p>
 <p>The directory structure for this examples shows what is necessary for a
 minimal TriBITS project:</p>
@@ -2871,7 +2924,7 @@ minimal TriBITS project:</p>
 </pre>
 <p>This has all of the required <a class="reference internal" href="#tribits-project-core-files">TriBITS Project Core Files</a>, <a class="reference internal" href="#tribits-repository-core-files">TriBITS
 Repository Core Files</a>, and <a class="reference internal" href="#tribits-package-core-files">TriBITS Package Core Files</a>.  It just build a
-simle library, a simple exectuable, a test exectuable, and the tests them as
+simple library, a simple executable, a test executable, and the tests them as
 shown by the file <tt class="docutils literal">TribitsHelloWorld/hello_world/CMakeLists.txt</tt> which is:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE(HelloWorld)
@@ -2902,7 +2955,7 @@ Repository</a> contained in the TriBITS source tree under:</p>
 <pre class="literal-block">
 tribits/doc/examples/TribitsExampleProject/
 </pre>
-<p>When this used as the base TriBITS project, this is the directory coresponds
+<p>When this used as the base TriBITS project, this is the directory corresponds
 to <tt class="docutils literal">&lt;projectDir&gt;</tt> and <tt class="docutils literal">&lt;repoDir&gt;</tt> referenced in <a class="reference internal" href="#tribits-project-core-files">TriBITS Project Core
 Files</a> and <a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a>, respectively.</p>
 <p>Several files from this project were used as examples in the section <a class="reference internal" href="#tribits-project-structure">TriBITS
@@ -2969,7 +3022,7 @@ TribitsExampleProject/
       C/ ...
     wrap_external/ ...
 </pre>
-<p>Above, the subdirectoires under <tt class="docutils literal">packages/</tt> are sorted according to the
+<p>Above, the sub-directories under <tt class="docutils literal">packages/</tt> are sorted according to the
 order listed in the <tt class="docutils literal">TribitsExampleProject/PackagesList.cmake</tt> file:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
@@ -3038,10 +3091,10 @@ format that the SE packages are printed by TriBITS in the <tt class="docutils li
 the line starting with <tt class="docutils literal">&quot;Final set of <span class="pre">non-enabled</span> SE packages:&quot;</tt> when no
 packages are enabled (see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>).
 TriBITS defines enable/disable cache variables for each of the defined SE
-packages like <tt class="docutils literal">TribitsExProj_ENBLE_SimpleCxx</tt>,
-<tt class="docutils literal">TribitsExProj_ENBLE_PackageWithSubpackagesSubpackageA</tt>, and defines all the
+packages like <tt class="docutils literal">TribitsExProj_ENABLE_SimpleCxx</tt>,
+<tt class="docutils literal">TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA</tt>, and defines all the
 variables listed in <a class="reference internal" href="#tribits-package-cache-variables">TriBITS Package Cache Variables</a> that are settable by
-the users or by the dependnecy logic described in section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
+the users or by the dependency logic described in section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
 Dependencies and Enable/Disable Logic</a>.</p>
 <p>Hopefully this simple project shows how what is listed in files:</p>
 <ul class="simple">
@@ -3128,13 +3181,13 @@ TriBITS repositories like:</p>
 <li><tt class="docutils literal">extraRepoOnePackageThreeSubpackages</tt>: Contains just the single package
 <tt class="docutils literal">extraRepoOnePackageThreeSubpackages</tt> which is defined in the base
 repository directory but is broken up into subpackages.</li>
-<li><tt class="docutils literal">extraRepoTwoPackages</tt>: Contains just two packages but provides an exmaple
+<li><tt class="docutils literal">extraRepoTwoPackages</tt>: Contains just two packages but provides an example
 of defining multiple repositories with possible missing required and
 optional <a class="reference internal" href="#upstream">upstream</a> packages (see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a>).</li>
 <li><tt class="docutils literal">extraTrilinosRepo</tt>: Just a typical extra repo with add-on packages and
 new TPLs defined that depends on a few <tt class="docutils literal">MockTrilinos</tt> packages.</li>
 </ul>
-<p>New test extra repostories are added when new types of tests are needed that
+<p>New test extra repositories are added when new types of tests are needed that
 would require new package and TPL dependency structures since existing
 dependency tests based on <tt class="docutils literal">MockTrilinos</tt> are expensive to change by their
 very nature.</p>
@@ -3196,7 +3249,7 @@ Logic</a>.</p>
 is the base TriBITS source directory <tt class="docutils literal">tribits</tt>.  This allows any TriBITS
 project to add testing for the TriBITS system by just listing this package and
 its directory in its repository's <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.  For
-example, the Trilinos repository which currently snaphsots the TriBITS source
+example, the Trilinos repository which currently snapshots the TriBITS source
 tree lists the <tt class="docutils literal">TriBITS</tt> package with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
@@ -3234,7 +3287,7 @@ these tests disagreed, believe the tests!</p>
 <h1><a class="toc-backref" href="#id42">5&nbsp;&nbsp;&nbsp;Package Dependencies and Enable/Disable Logic</a></h1>
 <p>Arguably, the more important feature/aspect of the TriBITS system is the
 partitioning of a large software project into packages and managing the
-dependencies between these packages to support building, testing, and depoying
+dependencies between these packages to support building, testing, and deploying
 different pieces as needed.  This is especially useful in incremental CI
 testing of large projects.  However, this is also a critical component in
 creating and maintaining Self Sustaining Software (see the <a class="reference external" href="../lifecycle_model/TribitsLifecycleModel.pdf">TriBITS Lifecycle
@@ -3247,13 +3300,13 @@ package).</p>
 defining dependencies between the pieces, and then applying algorithms to
 manipulate the dependency data-structures is nothing new.  If fact, nearly
 every binary package deployment system provided in various Linux OS
-distributions have the concept of packages and dependnecies and will
+distributions have the concept of packages and dependencies and will
 automatically install all of the necessary <a class="reference internal" href="#upstream-dependencies">upstream dependencies</a> when a
 <a class="reference internal" href="#downstream-dependency">downstream dependency</a> install is requested.  The main difference (and the
 added complexity) with TriBITS is that it can handle both required and
-optional dependenices since it can build from source.  A binary package
+optional dependencies since it can build from source.  A binary package
 installation system, however, typically can't support optional dependencies
-because only pre-built binary libraries and tools are aviable to install.</p>
+because only pre-built binary libraries and tools are available to install.</p>
 <div class="section" id="example-reducedmocktrilinos-project-dependency-structure">
 <h2><a class="toc-backref" href="#id43">5.1&nbsp;&nbsp;&nbsp;Example ReducedMockTrilinos Project Dependency Structure</a></h2>
 <p>To demonstrate the TriBITS package and TPL dependency handling system, the
@@ -3319,7 +3372,7 @@ TRIBITS_REPOSITORY_DEFINE_TPLS(
 
 </pre>
 <p>Take note of the testing group (i.e. <tt class="docutils literal">PT</tt>, <tt class="docutils literal">ST</tt>, or <tt class="docutils literal">EX</tt>) assigned to
-each SE package and TPL plays a signficiant role in how the TriBITS dependency
+each SE package and TPL plays a significant role in how the TriBITS dependency
 system handles enables and disable of the SE packages and TPLs.</p>
 <p>The dependency structure of this simple TriBITS project is shown below in
 <a class="reference internal" href="#reducedmocktrilinos-dependencies">ReducedMockTrilinos Dependencies</a>.</p>
@@ -3364,7 +3417,7 @@ to depend on its subpackages (not the other way around).  (Many people are
 confused about this the nature of the dependencies between packages and
 subpackages.)</p>
 <!-- ToDo: Show diagram with this dependency structure. -->
-<p>A number of user-setable cache variables determine what SE packages (and TPLs)
+<p>A number of user-settable cache variables determine what SE packages (and TPLs)
 and what tests and examples get enabled.  These cache variables are described
 in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a> and are described below.  Also,
 the assigned <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a> (i.e. <a class="reference internal" href="#pt">PT</a>, <a class="reference internal" href="#st">ST</a>, and <a class="reference internal" href="#ex">EX</a>) also
@@ -3404,7 +3457,7 @@ Thyra_ENABLE_TESTS=&quot;&quot;
 <p>NOTE: TriBITS only sets the variables <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;_ENABLE_TESTS</tt> into
 the cache if the SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> becomes enabled at some
 point.  This cuts down the clutter in the CMake cache for large projects with
-lots of packages where the user only enbles a subset of the packages.</p>
+lots of packages where the user only enables a subset of the packages.</p>
 <p>NOTE: TriBITS also defines the cache variables
 <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;_ENABLE_EXAMPLES</tt> for each enabled TriBITS package which
 is handled the same way as the TEST variables.</p>
@@ -3422,7 +3475,7 @@ TPL_ENABLE_PETSC=&quot;&quot;
 </pre>
 <p>In addition, for every optional SE package and TPL dependency, TriBITS defines
 a cache variable <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;OPTIONAL_DEP&gt;</tt>.  For the
-optional dependenices shown in <a class="reference internal" href="#reducedmocktrilinos-dependencies">ReducedMockTrilinos Dependencies</a>, that gives
+optional dependencies shown in <a class="reference internal" href="#reducedmocktrilinos-dependencies">ReducedMockTrilinos Dependencies</a>, that gives
 the additional cache variables (with default values):</p>
 <pre class="literal-block">
 Teuchos_ENABLE_Boost=&quot;&quot;
@@ -3445,7 +3498,7 @@ example, if the packages <tt class="docutils literal">Triutils</tt> and <tt clas
 can explicitly disable support for the optional dependency <tt class="docutils literal">Triutils</tt> in
 <tt class="docutils literal">EpetraExt</tt> by setting <tt class="docutils literal">EpetraExt_ENABLE_Triutils=OFF</tt>.  One may want to
 do this for several reasons but the bottom line is that this gives the user
-more detailed control over package dependenices.  See the <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency
+more detailed control over package dependencies.  See the <a class="reference internal" href="#tribits-dependency-handling-behaviors">TriBITS Dependency
 Handling Behaviors</a> and <a class="reference internal" href="#explicit-disable-of-an-optional-package-dependency">Explicit disable of an optional package
 dependency</a> for more discussion and examples.</p>
 <p>Before getting into specific examples for some <a class="reference internal" href="#example-enable-disable-use-cases">Example Enable/Disable Use
@@ -3462,14 +3515,14 @@ given in the section <a class="reference internal" href="#example-enable-disable
 <ol class="arabic simple">
 <li><a class="reference internal" href="#pt-st-se-packages-given-default-unset-enable-disable-state">PT/ST SE packages given default unset enable/disable state</a></li>
 <li><a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages disabled by default</a></li>
-<li><a class="reference internal" href="#se-package-enable-triggers-auto-enables-of-upstream-dependenices">SE package enable triggers auto-enables of upstream dependenices</a></li>
+<li><a class="reference internal" href="#se-package-enable-triggers-auto-enables-of-upstream-dependencies">SE package enable triggers auto-enables of upstream dependencies</a></li>
 <li><a class="reference internal" href="#se-package-disable-triggers-auto-disables-of-downstream-dependencies">SE package disable triggers auto-disables of downstream dependencies</a></li>
 <li><a class="reference internal" href="#pt-st-tpls-given-default-unset-enable-disable-state">PT/ST TPLs given default unset enable/disable state</a></li>
 <li><a class="reference internal" href="#ex-tpls-given-default-unset-enable-disable-state">EX TPLs given default unset enable/disable state</a></li>
 <li><a class="reference internal" href="#required-tpls-are-auto-enabled-for-enabled-se-packages">Required TPLs are auto-enabled for enabled SE packages</a></li>
 <li><a class="reference internal" href="#optional-tpls-only-enabled-explicitly-by-the-user">Optional TPLs only enabled explicitly by the user</a></li>
 <li><a class="reference internal" href="#tpl-disable-triggers-auto-disables-of-downstream-dependencies">TPL disable triggers auto-disables of downstream dependencies</a></li>
-<li><a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflicit">Disables trump enables where there is a conflicit</a></li>
+<li><a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflict">Disables trump enables where there is a conflict</a></li>
 <li><a class="reference internal" href="#enable-disable-of-parent-package-is-enable-disable-for-subpackages">Enable/disable of parent package is enable/disable for subpackages</a></li>
 <li><a class="reference internal" href="#subpackage-enable-does-not-auto-enable-the-parent-package">Subpackage enable does not auto-enable the parent package</a></li>
 <li><a class="reference internal" href="#support-for-enabled-optional-se-package-tpl-is-enabled-by-default">Support for enabled optional SE package/TPL is enabled by default</a></li>
@@ -3505,9 +3558,9 @@ for an <tt class="docutils literal">EX</tt> package and it will be enabled (unle
 dependencies are not enabled for some reason).  For an example, see
 <a class="reference internal" href="#default-configure-with-no-packages-enabled-on-input">Default configure with no packages enabled on input</a>.</li>
 </ol>
-<ol class="arabic simple" id="se-package-enable-triggers-auto-enables-of-upstream-dependenices" start="3">
-<li><strong>SE package enable triggers auto-enables of upstream dependenices</strong>: Any
-SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>enabled</strong> by the user
+<ol class="arabic simple" id="se-package-enable-triggers-auto-enables-of-upstream-dependencies" start="3">
+<li><strong>SE package enable triggers auto-enables of upstream dependencies</strong>: Any
+SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explicitly <strong>enabled</strong> by the user
 by setting the cache variable
 <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=ON</span></tt>
 (e.g. <tt class="docutils literal">Trilinos_ENABLE_EpetraExt=ON</tt>).  When a package is enabled in this
@@ -3526,7 +3579,7 @@ enabled</a>.</li>
 </ol>
 <ol class="arabic simple" id="se-package-disable-triggers-auto-disables-of-downstream-dependencies" start="4">
 <li><strong>SE package disable triggers auto-disables of downstream dependencies</strong>:
-Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explictly <strong>disabled</strong> by the
+Any SE package <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> can be explicitly <strong>disabled</strong> by the
 user by setting the cache variable
 <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=OFF</span></tt>
 (e.g. <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt>).  When an SE package is explicitly
@@ -3552,7 +3605,7 @@ TPLs), is given an <strong>unset enable/disable state by default</strong>
 <tt class="docutils literal">EX</tt> SE packages described above which provides an initial hard disable.
 However, since TriBITS will never automatically enable an optional TPL (see
 below) and since only <a class="reference internal" href="#downstream">downstream</a> <tt class="docutils literal">EX</tt> SE packages are allowed to have
-a required dependenices on an <tt class="docutils literal">EX</tt> TPL, there is no need to set the
+a required dependencies on an <tt class="docutils literal">EX</tt> TPL, there is no need to set the
 default enable for an <tt class="docutils literal">EX</tt> TPL to <tt class="docutils literal">OFF</tt>.  For an example, see <a class="reference internal" href="#default-configure-with-no-packages-enabled-on-input">Default
 configure with no packages enabled on input</a>.</li>
 </ol>
@@ -3589,8 +3642,8 @@ automatically set <tt class="docutils literal">Teuchos_ENABLE_MPI=OFF</tt> and <
 For examples, see <a class="reference internal" href="#explicit-disable-of-an-optional-tpl">Explicit disable of an optional TPL</a> and <a class="reference internal" href="#explicit-disable-of-a-required-tpl">Explicit
 disable of a required TPL</a>.</li>
 </ol>
-<ol class="arabic" id="disables-trump-enables-where-there-is-a-conflicit" start="10">
-<li><p class="first"><strong>Disables trump enables where there is a conflicit</strong> and TriBITS will
+<ol class="arabic" id="disables-trump-enables-where-there-is-a-conflict" start="10">
+<li><p class="first"><strong>Disables trump enables where there is a conflict</strong> and TriBITS will
 never override a disable in order to satisfy some dependency.  For
 example, if the user sets <tt class="docutils literal">Trilinos_ENABLE_Teuchos=OFF</tt> and
 <tt class="docutils literal">Trilinos_ENABLE_RTOp=ON</tt>, then TriBITS will <strong>not</strong> override the
@@ -3617,7 +3670,7 @@ processing must stop.</li>
 <ol class="arabic" id="enable-disable-of-parent-package-is-enable-disable-for-subpackages" start="11">
 <li><p class="first"><strong>Enable/disable of parent package is enable/disable for subpackages</strong>: An
 explicit enable/disable of a top-level parent package with subpackages
-with <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> is equivanent
+with <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_&lt;TRIBITS_PACKAGE&gt;=(ON|OFF)</span></tt> is equivalent
 to the explicit enable/disable of all of the parent package's subpackages.
 For example, explicitly setting <tt class="docutils literal">Trilinos_ENABLE_Thyra=ON</tt> is equivalent
 to explicitly setting:</p>
@@ -3628,10 +3681,10 @@ Trilinos_ENABLE_ThyraEpetra=ON
 Trilinos_ENABLE_ThyraEpetraExt=ON   # Only if enabling ST code!
 </pre>
 <p>(Note that <tt class="docutils literal">Trilinos_ENABLE_ThyraCrazyStuff</tt> is <strong>not</strong> set to <tt class="docutils literal">ON</tt>
-because it is aready set to <tt class="docutils literal">OFF</tt> by default, see <a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages
+because it is already set to <tt class="docutils literal">OFF</tt> by default, see <a class="reference internal" href="#ex-se-packages-disabled-by-default">EX SE packages
 disabled by default</a>.)  Likewise, explicitly setting
 <tt class="docutils literal">Trilinos_ENABLE_Thyra=OFF</tt> is equivalent to explicitly setting all of
-the <tt class="docutils literal">Thyra</tt> subpackages to <tt class="docutils literal">OFF</tt> at the outset.  See an exmaple, see
+the <tt class="docutils literal">Thyra</tt> subpackages to <tt class="docutils literal">OFF</tt> at the outset.  See an example, see
 <a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package and its tests</a>.</p>
 </li>
 </ol>
@@ -3641,12 +3694,12 @@ SE package that is a subpackage does <strong>not</strong> automatically enable t
 parent package (except for at the very end, mostly just for show).  For
 example, enabling the SE package <tt class="docutils literal">ThyraEpetra</tt> does not result in enable
 of the parent <tt class="docutils literal">Thyra</tt> package, (except when
-<tt class="docutils literal">${PROJEC_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON</tt> for course).  For an
+<tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES=ON</tt> for course).  For an
 example, see <a class="reference internal" href="#explicit-enable-of-a-subpackage">Explicit enable of a subpackage</a>. This means that if a
 <a class="reference internal" href="#downstream">downstream</a> package declares a dependency on the SE package
 <tt class="docutils literal">ThyraEpetra</tt>, but not the parent package <tt class="docutils literal">Thyra</tt>, then the <tt class="docutils literal">Thyra</tt>
 package (and its other subpackages and their dependencies) will not get
-auto-enabled.  This is a key aspect of the SE package managment system.
+auto-enabled.  This is a key aspect of the SE package management system.
 For an example, see <a class="reference internal" href="#explicit-enable-of-a-subpackage">Explicit enable of a subpackage</a>.</li>
 </ol>
 <ol class="arabic simple" id="support-for-enabled-optional-se-package-tpl-is-enabled-by-default" start="13">
@@ -3677,17 +3730,17 @@ package/TPL</strong>: If the user explicitly enabled TriBITS SE package
 <tt class="docutils literal">&lt;TRIBITS_PACKAGE&gt;</tt> and explicitly sets
 <tt class="docutils literal"><span class="pre">&lt;TRIBITS_PACKAGE&gt;_ENABLE_&lt;TRIBITS_DEP_PACKAGE_OR_TPL&gt;=ON</span></tt> on input,
 then that will automatically enable the SE package or TPL
-<tt class="docutils literal"><span class="pre">&lt;TRIBITS_DEP_PACKAGE_OR_TPL&gt;``(and</span> all of its upstream dependneices
+<tt class="docutils literal"><span class="pre">&lt;TRIBITS_DEP_PACKAGE_OR_TPL&gt;``(and</span> all of its upstream dependencies
 accordingly).&nbsp; For example, if the user sets
 ``Trilinos_ENABLE_EpetraExt=ON</tt> and <tt class="docutils literal">EpetraExt_ENABLE_Triutils=ON</tt>,
 then that will result in the auto-enable of
-<tt class="docutils literal">Trilinos_ENABLE_Triutils=ON</tt> reguardless of the value of
+<tt class="docutils literal">Trilinos_ENABLE_Triutils=ON</tt> regardless of the value of
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES</tt> or
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE</tt>. This true even if the optional
 SE package or TPL is <tt class="docutils literal">EX</tt>.  For example, setting
 <tt class="docutils literal">Thyra_ENABLE_ThyraCrazyStuff=ON</tt> will result in the enabling of the
 <tt class="docutils literal">EX</tt> package <tt class="docutils literal">ThyraCrazyStuff</tt>.  However, always remember that
-<a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflicit">Disables trump enables where there is a conflicit</a>.  For examples, see
+<a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflict">Disables trump enables where there is a conflict</a>.  For examples, see
 <a class="reference internal" href="#explicit-enable-of-an-optional-package-dependency">Explicit enable of an optional package dependency</a> and <a class="reference internal" href="#explicit-disable-of-an-optional-tpl-dependency">Explicit disable
 of an optional TPL dependency</a>.</li>
 </ol>
@@ -3700,7 +3753,7 @@ only enable an optional <tt class="docutils literal">ST</tt> SE package when
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt>, then a one-line warning is
 printed to STDOUT.  The TriBITS default is
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt>.  This helps to avoid
-problems when users try to set a permuation of enables/disables which is
+problems when users try to set a permutation of enables/disables which is
 not regularly tested.  For examples, see <a class="reference internal" href="#explicit-enable-of-a-package-and-its-tests">Explicit enable of a package and
 its tests</a> and <a class="reference internal" href="#explicit-enable-of-a-package-its-tests-an-optional-tpl-with-st-enabled">Explicit enable of a package, its tests, an optional TPL,
 with ST enabled</a>.</li>
@@ -3757,7 +3810,7 @@ input</a>.</li>
 a line whenever it sets (or overrides) an enable or disable, and prints
 out the final set of enables/disables.  Therefore, the user just needs to
 grep the <tt class="docutils literal">cmake</tt> STDOUT to find out why any particular SE package or TPL
-is enabled or disabled in the end.  In addtion, will print out when
+is enabled or disabled in the end.  In addition, will print out when
 tests/examples for a given SE package gets enabled and when support for
 optional SE packages and TPLs is enabled or not.  A detailed description
 of this output is given in all of the below examples but in particular see
@@ -3785,12 +3838,12 @@ definitions given above, and the detailed example <a class="reference internal" 
 Cases</a> described below, one should always be able to figure out exactly why
 the final set of enables/disables is the way it is, even in the largest and
 most complex of TriBITS projects.  (NOTE: The same can <em>not</em> be said for many
-other large software configuration and depolyment systems where basic
+other large software configuration and deployment systems where basic
 decisions about what to enable and disable are hidden from the user and can be
 very difficult to debug).</p>
 <p>The above behaviors address the majority of the TriBITS dependency management
 system.  However, when dealing with TriBITS projects with multiple
-repositories, some other behaviors are supported through the defintion of a
+repositories, some other behaviors are supported through the definition of a
 few more variables.  The following TriBITS repository-related variables alter
 what packages in a given TriBITS repository get enabled implicitly or not:</p>
 <blockquote>
@@ -3811,7 +3864,7 @@ project to turn off the enable of optional SE packages in a given TriBITS
 repository to provide more detailed control of what gets used from a given
 TriBITS repository.  This, for example, is used in the CASL VERA project to
 mange some of its extra repositories and packages to further auto-reduce the
-number of qpckages that get enabled.</p>
+number of packages that get enabled.</p>
 </div>
 <div class="section" id="example-enable-disable-use-cases">
 <h2><a class="toc-backref" href="#id45">5.3&nbsp;&nbsp;&nbsp;Example Enable/Disable Use Cases</a></h2>
@@ -3899,7 +3952,7 @@ dependency handling system:</p>
 </li>
 </ul>
 <p id="explicit-enable-of-a-package-and-its-tests"><strong>Explicit enable of a package and its tests</strong></p>
-<p>One of the most typical use cases is for the user to explicity enable one or
+<p>One of the most typical use cases is for the user to explicitly enable one or
 more top-level TriBITS package and enabled its tests.  This configuration
 would be used to drive local development on a specific set of packages.</p>
 <p>Consider the configure of the <tt class="docutils literal">ReducedMockTrilinos</tt> project enabling the
@@ -3992,7 +4045,7 @@ are worth some discussion.</p>
 <p>First, note that enabling the parent package <tt class="docutils literal">Thyra</tt> with
 <tt class="docutils literal">Trilinos_ENABLE_Thyra=ON</tt> right away results in the auto-enable of its
 <tt class="docutils literal">PT</tt> subpackages <tt class="docutils literal">ThyraCoreLibs</tt> and <tt class="docutils literal">ThyraEpetra</tt> which demonstrates
-the behvior <a class="reference internal" href="#enable-disable-of-parent-package-is-enable-disable-for-subpackages">Enable/disable of parent package is enable/disable for
+the behavior <a class="reference internal" href="#enable-disable-of-parent-package-is-enable-disable-for-subpackages">Enable/disable of parent package is enable/disable for
 subpackages</a>.  Note that the <tt class="docutils literal">ST</tt> subpackages <tt class="docutils literal">ThyraGoodStuff</tt> and
 <tt class="docutils literal">ThyraEpetraExt</tt> where <em>not</em> enabled because
 <tt class="docutils literal">${PROJECT_NAME}_SECONDARY_TESTED_CODE=OFF</tt> (which is off by default) which
@@ -4020,7 +4073,7 @@ Processing enabled package: Epetra (Libs)
 Processing enabled package: Thyra (CoreLibs, Epetra, Tests, Examples)
 </pre>
 <p>Note that subpackage enables are listed with their parent packages along with
-if the tests and/or exmaples are enabled.  Top-level level packages that don't
+if the tests and/or examples are enabled.  Top-level level packages that don't
 have subpackages just show if the <tt class="docutils literal">Libs</tt> or also the <tt class="docutils literal">Tests</tt> and
 <tt class="docutils literal">Examples</tt> have been enabled as well.</p>
 <p id="explicit-enable-of-a-package-its-tests-an-optional-tpl-with-st-enabled"><strong>Explicit enable of a package, its tests, an optional TPL, with ST enabled</strong></p>
@@ -4148,7 +4201,7 @@ line:</p>
 <p id="explicit-disable-of-a-package"><strong>Explicit disable of a package</strong></p>
 <p>Another common use case is to enable a package but to disable an optional
 upstream package.  This type of configuration would be used a part of a &quot;black
-list&quot; appraoch to enabling only a subset of packages and optional support.
+list&quot; approach to enabling only a subset of packages and optional support.
 The &quot;black list&quot; approach is to enable a package with
 <tt class="docutils literal">${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES=ON</tt> (the TriBITS default) but
 then to turn off a specific set of packages that you don't want.  This is
@@ -4200,7 +4253,7 @@ Processing enabled package: Thyra (CoreLibs, Tests, Examples)
 </pre>
 <p>Note how the disable of <tt class="docutils literal">Epetra</tt> wipes out all of the required and optional
 SE packages that depend on <tt class="docutils literal">Epetra</tt>.  What is left is only the
-<tt class="docutils literal">ThyracoreLibs</tt> and its upstream dependencies that don't depend on
+<tt class="docutils literal">ThyraCoreLibs</tt> and its upstream dependencies that don't depend on
 <tt class="docutils literal">Epetra</tt> (which is only <tt class="docutils literal">RTOp</tt> and <tt class="docutils literal">Teuchos</tt>).</p>
 <p id="conflicting-explicit-disable-of-a-package"><strong>Conflicting explicit disable of a package</strong></p>
 <p>One use case that occasionally comes up is when a set of inconsistent enables
@@ -4215,8 +4268,8 @@ occur is in CTest drivers using <a class="reference internal" href="#tribits-cte
 package has failed and is explicitly disabled.  TriBITS can either be set up
 to have the disable override the explicit enable or stop the configure and
 depending on the value of the cache variable
-<tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt> (see <a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflicit">Disables trump
-enables where there is a conflicit</a>).</p>
+<tt class="docutils literal">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</tt> (see <a class="reference internal" href="#disables-trump-enables-where-there-is-a-conflict">Disables trump
+enables where there is a conflict</a>).</p>
 <p>For example, consider what happens with the <tt class="docutils literal">ReducedMockTrilinos</tt> project
 (see <a class="reference internal" href="#example-reducedmocktrilinos-project-dependency-structure">Example ReducedMockTrilinos Project Dependency Structure</a>) if someone
 tries to enable the <tt class="docutils literal">RTOp</tt> package and disable the <tt class="docutils literal">Teuchos</tt> package.
@@ -4317,7 +4370,7 @@ the checkin-test.py script for PT enabled code.</p>
 <p id="enable-all-packages"><strong>Enable all packages</strong></p>
 <p>The last use case to consider is enabling all defined packages.  This
 configuration would be used for either doing a full test of all of the
-packages defined or to creating a distrubtion of the project.</p>
+packages defined or to creating a distribution of the project.</p>
 <p>Enabling all packages the with:</p>
 <pre class="literal-block">
 $ cmake -DTrilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
@@ -4365,7 +4418,7 @@ Processing enabled package: Thyra (CoreLibs, Epetra)
 <div class="section" id="project-packagedependencies-xml">
 <h2><a class="toc-backref" href="#id46">5.4&nbsp;&nbsp;&nbsp;&lt;Project&gt;PackageDependencies.xml</a></h2>
 <p>The TriBITS CMake configure system can write out the project's package
-dependenices into a file <tt class="docutils literal">&lt;Project&gt;Dependnecies.xml</tt>.  This file is used by
+dependencies into a file <tt class="docutils literal">&lt;Project&gt;Dependencies.xml</tt>.  This file is used by
 a number of the SE tools.  The structure of this file, showing one of the more
 interesting mock packages from the <a class="reference internal" href="#mocktrilinos">MockTrilinos</a> project is shown below:</p>
 <pre class="literal-block">
@@ -4431,7 +4484,7 @@ being enabled.  Second, if a repository is selected, then the <a class="referenc
 Group</a> determines what SE packages (and optional code in those packages) are
 even enabled such that their <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> files are even
 processed.  Lastly, if an SE package gets enabled, then the <a class="reference internal" href="#test-test-category">Test Test
-Category</a> determines what test exectuables and test cases get defined using
+Category</a> determines what test executables and test cases get defined using
 the functions <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>, <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> and
 <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a>.</p>
 <p>More detailed descriptions of <a class="reference internal" href="#repository-test-classifications">Repository Test Classifications</a> , <a class="reference internal" href="#se-package-test-groups">SE Package
@@ -4879,7 +4932,7 @@ using <tt class="docutils literal"><span class="pre">--st-extra-builds</span></t
 pre-push testing.</p>
 <p id="performance-testing"><strong>Performance Testing</strong></p>
 <p><em>Performance Testing</em> builds are a special class of builds that have tests
-that are specifically designed to test the runtime performance of a particular
+that are specifically designed to test the run-time performance of a particular
 piece of code or algorithm.  These tests tend to be sensitive to loads on the
 machine and therefore typically need to be run on an unloaded machine for
 reliable results.  Details on how to write good performance tests with hard
@@ -4946,7 +4999,7 @@ the test results, then pushing local commits to the remove VC repos and
 sending out summary emails.</li>
 </ol>
 <p>Every TriBITS project defines one or more &quot;default builds&quot; (specified through
-the <tt class="docutils literal"><span class="pre">--defualt-builds</span></tt> argument) for pre-push CI testing that form the
+the <tt class="docutils literal"><span class="pre">--default-builds</span></tt> argument) for pre-push CI testing that form the
 criteria for if it is okay to push code changes or not.  The &quot;default builds&quot;
 select repositories, SE packages and code, and individual test as described in
 <a class="reference internal" href="#pre-push-ci-testing">Pre-Push CI Testing</a>.  A TriBITS project defines its default pre-push builds
@@ -4999,14 +5052,14 @@ configuration = {
 <p>This gives the default builds <tt class="docutils literal"><span class="pre">--default-builds=MPI_DEBUG,SERIAL_RELEASE</span></tt>.
 As shown, typically two default builds are defined so that various options can
 be toggled between the two builds.  Typical options to toggle include
-enabling/disabling MPI and enabling/disabling runtime debug mode checking
+enabling/disabling MPI and enabling/disabling run-time debug mode checking
 (i.e. toggle <tt class="docutils literal">${PROJECT_NAME}_ENABLE_DEBUG</tt>).  Typically, other important
 options will also be toggled between these two builds.  For example, Trilinos
 toggles the enable/disable of C++ explicit template instantiation support.</p>
 <p>Note that both of the default builds shown, including the <tt class="docutils literal">MPI_DEBUG</tt> build,
 actually set optimized compiler flags with
 <tt class="docutils literal"><span class="pre">-DCMAKE_BUILD_TYPE:STRING=RELEASE</span></tt>.  What makes this a &quot;debug&quot; build is
-turning on optional runtime debug-mode checking, not disabling optimized code.
+turning on optional run-time debug-mode checking, not disabling optimized code.
 This is important so that the defined tests run fast.  These
 <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> builds are <strong>not</strong> designed to support debugging efforts.
 Instead, they are designed to test changes to the project's code efficiently
@@ -5022,7 +5075,7 @@ for C++ code.</p>
 well tested and very robust.  The level of testing of this tool is greater
 than any of the software that it is testing.  This is needed so as to provide
 confidence in the developers that the tool will only push if everything checks
-out as it should.  There are a <em>lot</em> of details and boundray cases that one
+out as it should.  There are a <em>lot</em> of details and boundary cases that one
 has to consider and a number of use cases that need to be supported.  For more
 detailed documentation, see <a class="reference internal" href="#checkin-test-py-help">checkin-test.py --help</a>.</p>
 <!-- ToDo: Describe the standard workflow for using the checkin-test.py script. -->
@@ -5038,16 +5091,16 @@ detailed documentation, see <a class="reference internal" href="#checkin-test-py
 </div>
 <div class="section" id="tribits-package-by-package-ctest-dash-driver">
 <h2><a class="toc-backref" href="#id51">6.4&nbsp;&nbsp;&nbsp;TriBITS Package-by-Package CTest/Dash Driver</a></h2>
-<p>The TriBITS system uses a sophisticated and hightly customized CTest driver
+<p>The TriBITS system uses a sophisticated and highly customized CTest driver
 script to test TriBITS projects and submit results to a CDash server.  The
 primary code for driving this is contained in the CTest function
 <a class="reference internal" href="#tribits-ctest-driver">TRIBITS_CTEST_DRIVER()</a> contained in the file
 <tt class="docutils literal">TribitsCTestDriverCore.cmake</tt>.  This script loops through all of the
 specified TriBITS packages for a given TriBITS project and does a configure,
-built, and test and submitts results to the specified CDash server
+built, and test and then submits results to the specified CDash server
 incrementally.  If the configure or library build of any upstream TriBITS
 package fails, that TriBITS package is disabled in all downstream TriBITS
-package builds so as to not propoate sensless failures.  Each TriBITS
+package builds so as to not propagate senseless failures.  Each TriBITS
 top-level package is assigned its own CDash regression email (see <a class="reference internal" href="#cdash-regression-email-addresses">CDash
 regression email addresses</a>) and each package configure/build/test is given
 its own row in the CDash build.  A CTest script using
@@ -5055,7 +5108,7 @@ its own row in the CDash build.  A CTest script using
 daily from-scratch builds as described in <a class="reference internal" href="#ctest-cdash-nightly-testing">CTest/CDash Nightly Testing</a>.
 Second, it can run as a CI server as described in <a class="reference internal" href="#ctest-cdash-ci-server">CTest/CDash CI Server</a>.
 Third, it can run in experimental mode testing a local repository.</p>
-<!-- ToDo: Discuss the behavior of Continuous, Nightly, and Experiental -->
+<!-- ToDo: Discuss the behavior of Continuous, Nightly, and Experimental -->
 <!-- CTest/CDash tracks and what that means in terms of sending out CDash error -->
 <!-- emails and allowing for multiple builds of the same name in a single test -->
 <!-- day. -->
@@ -5097,7 +5150,7 @@ of the TriBITS package.  CDash will then aggregate the different package
 configure/build/test roles into aggregated &quot;builds&quot;.  The commits pulled for
 each of the extra VC repo listed in the
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file, are shown in an
-uploaded CDash &quot;Notes&quot; file for each TriBITS package confgiure/build/test
+uploaded CDash &quot;Notes&quot; file for each TriBITS package configure/build/test
 submit.  This uploaded &quot;Notes&quot; file also contains a cleaned up version of the
 CMakeCache.txt file.</p>
 <p>CDash offers numerous features such as the ability to construct a number of
@@ -5134,7 +5187,7 @@ automatic regression email addresses for packages.</p>
 <p id="repository-name-repository-master-email-address">4) <strong>${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESS</strong> (set in
 <a class="reference internal" href="#repodir-cmake-repositorydependenciessetup-cmake">&lt;repoDir&gt;/cmake/RepositoryDependenciesSetup.cmake</a>): A single email address
 for all packages specified at the Repository level
-(e.g. <tt class="docutils literal"><span class="pre">my-repo-regression&#64;some.repo.gov</span></tt>).  This varaible is used for
+(e.g. <tt class="docutils literal"><span class="pre">my-repo-regression&#64;some.repo.gov</span></tt>).  This variable is used for
 smaller repositories with smaller development groups who just want all
 regression emails for the repository's packages going to a single email
 address.  This reduces the overhead of managing a bunch of individual package
@@ -5147,7 +5200,7 @@ specified at the Project level creating package-specific email addresses
 <tt class="docutils literal">${PROJECT_NAME}_PROJECT_EMAIL_URL_ADDRESS_BASE=some.project.gov</tt>).  If not
 already set, this variable will be set to
 <tt class="docutils literal">${REPOSITORY_NAME}_REPOSITORY_EMAIL_URL_ADDRESS_BASE</tt> for the first
-repostory processed that has this set. This behavior is used, for example by
+repository processed that has this set. This behavior is used, for example by
 the Trilinos project to automatically assign email addresses for add-on
 packages and was added to maintain backward compatibility.</p>
 <p id="project-name-project-master-email-address">6) <strong>${PROJECT_NAME}_PROJECT_MASTER_EMAIL_ADDRESS</strong> (set in
@@ -5156,21 +5209,21 @@ address for all packages specified at the Project level
 (e.g. <tt class="docutils literal"><span class="pre">my-project-regression&#64;some.project.gov</span></tt>).  If not already set, this
 variable will be set to
 <tt class="docutils literal">${REPOSITORY_NAME}_REPOSITORY_MASTER_EMAIL_ADDRESS</tt> for the first
-repostory processed that has this set.  Every meta-project should set this
-varaible so that it will be the defualt email address for any new package
+repository processed that has this set.  Every meta-project should set this
+variable so that it will be the default email address for any new package
 added.</p>
 <p>WARNING: If any of the email lists or URL string variables listed above are
-set to <tt class="docutils literal">&quot;OFF&quot;</tt> or <tt class="docutils literal">&quot;FALSE&quot;</tt> (or some other value that CMake interprests as
-false, see <tt class="docutils literal">CMake Language Overivew and Gotchas</tt>) then the variables are
+set to <tt class="docutils literal">&quot;OFF&quot;</tt> or <tt class="docutils literal">&quot;FALSE&quot;</tt> (or some other value that CMake interprets as
+false, see <tt class="docutils literal">CMake Language Overview and Gotchas</tt>) then the variables are
 treated as empty and not set.</p>
 <p>If a TriBITS project does not use CDash, then no email address needed to be
 assigned to packages at all (which will be the case if none of the above
 variables are set).</p>
 <p>As a general rule, repository-level settings override project-level settings
 and package-level settings override both.  Also, a project can redefine a
-reposiotry's regression email list settings by resetting the variables in the
+repository's regression email list settings by resetting the variables in the
 project's <a class="reference internal" href="#projectdir-cmake-projectdependenciessetup-cmake">&lt;projectDir&gt;/cmake/ProjectDependenciesSetup.cmake</a> file.</p>
-<p>All of the email dependency managment logic must be accessable by just running
+<p>All of the email dependency management logic must be accessible by just running
 the macro:</p>
 <pre class="literal-block">
 TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()
@@ -5207,7 +5260,7 @@ the old email address.  CDash will not remove them for you.</p>
 <p>Therefore, to change the mapping of CDash regression email addresses to
 TriBITS packages, you must perform the actions:</p>
 <p>1) Change the TriBITS CMake files as described above that will result in the
-desired email addresses in the <tt class="docutils literal">CDashSubprojectDependeinces.xml</tt> file. You
+desired email addresses in the <tt class="docutils literal">CDashSubprojectDependencies.xml</tt> file. You
 can debug this by running the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script and seeing what gets
 written in the generated <a class="reference internal" href="#project-packagedependencies-xml">&lt;Project&gt;PackageDependencies.xml</a> file in the
 <tt class="docutils literal">CHECKIN</tt> directory.</p>
@@ -5243,18 +5296,18 @@ its own.  The ability to create meta-projects is what allows TriBITS to be
 used to provide the build of large aggregations of software.</p>
 <p>To help set up a development environment for multi-repository TriBITS
 projects, TriBITS provides some extra development tools based on Python.  The
-primary tools supporting multi-repostory project are the <a class="reference internal" href="#checkin-test-py">checkin-test.py</a>
+primary tools supporting multi-repository project are the <a class="reference internal" href="#checkin-test-py">checkin-test.py</a>
 tool and the <a class="reference internal" href="#egdist">egdist</a> tool.</p>
 <p>For projects with a standard set of extra repositories defined in the
 <a class="reference internal" href="#projectdir-cmake-extrarepositorieslist-cmake">&lt;projectDir&gt;/cmake/ExtraRepositoriesList.cmake</a> file, the
 <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script only requires passing in the option
-<tt class="docutils literal"><span class="pre">--extra-repos-file=projec</span></tt> and <tt class="docutils literal"><span class="pre">--extra-repos-type=Continuous</span></tt> (or
+<tt class="docutils literal"><span class="pre">--extra-repos-file=project</span></tt> and <tt class="docutils literal"><span class="pre">--extra-repos-type=Continuous</span></tt> (or
 <tt class="docutils literal">Nightly</tt>, see <a class="reference internal" href="#repository-test-classification">Repository Test Classification</a>) and it will automatically
 perform all of the various actions for all of the selected repositories.  See
 <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> and <a class="reference internal" href="#checkin-test-py-help">checkin-test.py --help</a> for more details.</p>
 <p id="egdist">The tool <strong>egdist</strong> is a simple Python script that just distributes the listed
 eg/git command across a set of git repos.  It is not specific to TriBITS at
-all.  It ony requires that a base git repo and a set of zero or more git repos
+all.  It only requires that a base git repo and a set of zero or more git repos
 cloned under it.  For example, consider the TriBITS meta-project given in the
 ExtraRepositoriesList.cmake file:</p>
 <pre class="literal-block">
@@ -5267,7 +5320,7 @@ TRIBITS_PROJECT_DEFINE_EXTRA_REPOSITORIES(
   )
 
 </pre>
-<p>This would be layed out a directories as:</p>
+<p>This would be laid out a directories as:</p>
 <pre class="literal-block">
 BaseRepo/
   .git/
@@ -5332,7 +5385,7 @@ beyond the scope of this document.</p>
 <div class="section" id="development-workflows">
 <h1><a class="toc-backref" href="#id57">8&nbsp;&nbsp;&nbsp;Development Workflows</a></h1>
 <p>In this section, the typical development workflows for a TriBITS project are
-described.  First, the <a class="reference internal" href="#basic-development-workflow">Basic Development Workflow</a> for a sinlge-repository
+described.  First, the <a class="reference internal" href="#basic-development-workflow">Basic Development Workflow</a> for a single-repository
 TriBITS project is described.  This is followed up with a slightly more
 complex <a class="reference internal" href="#multi-repository-development-workflow">Multi-Repository Development Workflow</a>.</p>
 <div class="section" id="basic-development-workflow">
@@ -5376,12 +5429,12 @@ package.</p>
 <ol class="arabic simple">
 <li>Chose a name <tt class="docutils literal">&lt;packageName&gt;</tt> for the new package and which TriBITS
 repository (<tt class="docutils literal">&lt;repoDir&gt;</tt>) to put the package into.  <strong>WARNING!</strong> The
-choosen name <tt class="docutils literal">&lt;packageName&gt;</tt> must be unique across all TriBITS
+chosen name <tt class="docutils literal">&lt;packageName&gt;</tt> must be unique across all TriBITS
 repositories (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique TriBITS package names</a>).</li>
 <li>Create the directory <tt class="docutils literal"><span class="pre">&lt;repoDir&gt;/&lt;packageDir&gt;</span></tt> for the new package and put
 in skeleton files for <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> and
 <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a>.  Set the desired upstream TPL and SE
-package dependenices in the new <tt class="docutils literal">Dependencies.cmake</tt> file but initially
+package dependencies in the new <tt class="docutils literal">Dependencies.cmake</tt> file but initially
 comment out everything in the <tt class="docutils literal">CMakeLists.txt</tt> file except for the
 <a class="reference internal" href="#id6">TRIBITS_PACKAGE()</a> and <a class="reference internal" href="#tribits-package-postprocess">TRIBITS_PACKAGE_POSTPROCESS()</a> commands.</li>
 <li>Add the line for the new package to the <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>
@@ -5402,7 +5455,7 @@ dependencies on this new package.</p>
 </div>
 <div class="section" id="how-to-add-a-new-tribits-package-with-subpackages">
 <h2><a class="toc-backref" href="#id62">9.2&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Package with Subpackages</a></h2>
-<p>Adding a new package with subpackages is similary to adding a new regular
+<p>Adding a new package with subpackages is similarly to adding a new regular
 packages described in <a class="reference internal" href="#how-to-add-a-new-tribits-package">How to Add a new TriBITS Package</a>.  Again, it is
 recommended that one copies an example package from <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>;
 this time the <tt class="docutils literal">PackageWithSubpackages</tt> package files and directories.</p>
@@ -5410,7 +5463,7 @@ this time the <tt class="docutils literal">PackageWithSubpackages</tt> package f
 <ol class="arabic simple">
 <li>Chose a name <tt class="docutils literal">&lt;packageName&gt;</tt> for the new package and which TriBITS
 repository (<tt class="docutils literal">&lt;repoDir&gt;</tt>) to put the package into.  <strong>WARNING!</strong> The
-choosen name <tt class="docutils literal">&lt;packageName&gt;</tt> must be unique across all TriBITS
+chosen name <tt class="docutils literal">&lt;packageName&gt;</tt> must be unique across all TriBITS
 repositories (see <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique TriBITS package names</a>).</li>
 <li>Create the directory <tt class="docutils literal"><span class="pre">&lt;repoDir&gt;/&lt;packageDir&gt;</span></tt> for the new package and put
 in skeleton files for <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> and
@@ -5439,7 +5492,7 @@ repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> file then
 fill out the pieces of the new subpackage defined in the section <a class="reference internal" href="#tribits-subpackage-core-files">TriBITS
 Subpackage Core Files</a>.  It is recommended to copy files from one of the
-<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> subpackages in the <tt class="docutils literal">PackagesWithSubpackages</tt>
+<a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a> subpackages in the <tt class="docutils literal">PackageWithSubpackages</tt>
 package.</p>
 <p>To add a new TriBITS subpackage to a top-level package that already has
 subpackages, do the following:</p>
@@ -5451,7 +5504,7 @@ package name <tt class="docutils literal"><span class="pre">&lt;packageName&gt;&
 <li>Create the directory <cite>&lt;packageDir&gt;&lt;spkgDir&gt;`</cite> for the new package and put
 in skeleton files for <a class="reference internal" href="#packagedir-spkgdir-cmake-dependencies-cmake">&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</a>
 and <a class="reference internal" href="#packagedir-spkgdir-cmakelists-txt">&lt;packageDir&gt;/&lt;spkgDir&gt;/CMakeLists.txt</a>.  Set the desired upstream TPL
-and SE package dependenices in the new <tt class="docutils literal">Dependencies.cmake</tt> file but
+and SE package dependencies in the new <tt class="docutils literal">Dependencies.cmake</tt> file but
 initially comment out everything in the <tt class="docutils literal">CMakeLists.txt</tt> file except for
 the <a class="reference internal" href="#id8">TRIBITS_SUBPACKAGE()</a> and <a class="reference internal" href="#tribits-subpackage-postprocess">TRIBITS_SUBPACKAGE_POSTPROCESS()</a>
 commands.</li>
@@ -5483,7 +5536,7 @@ repository-level files.</p>
 all TriBITS repos, see <a class="reference internal" href="#globally-unique-tribits-tpl-names">Globally unique TriBITS TPL names</a>) and which
 TriBITS repository (<tt class="docutils literal">&lt;repoDir&gt;</tt>) to define the new TPL in.  The right
 repo is usually the one where the package exists that needs the new TPL
-dependnecy.</p>
+dependency.</p>
 </li>
 <li><p class="first">Create the TPL find module for the new,
 e.g. <tt class="docutils literal"><span class="pre">&lt;repoDir&gt;/tpls/FindTPL&lt;tplName&gt;.cmake</span></tt> (see <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a> and
@@ -5507,13 +5560,13 @@ package's <a class="reference internal" href="#packagedir-cmake-dependencies-cma
 <cite>TRIBITS_CONFIGURE_FILE()</cite>) so that the code knows if the TPL is defined or
 not.</p>
 </li>
-<li><p class="first">Use the TPL in the package's that define the dependnecy on the new TPL,
+<li><p class="first">Use the TPL in the package's that define the dependency on the new TPL,
 configure, test, etc.</p>
 </li>
 </ol>
 <!-- ToDo: Provide more details on various things. -->
 <!-- ToDo: Add an example of an optional TPL to some TribitsExampleProject -->
-<!-- package and refere to it here. -->
+<!-- package and refer to it here. -->
 </div>
 <div class="section" id="how-to-add-a-new-tribits-repository">
 <h2><a class="toc-backref" href="#id65">9.5&nbsp;&nbsp;&nbsp;How to Add a new TriBITS Repository</a></h2>
@@ -5561,20 +5614,20 @@ calling <a class="reference internal" href="#tribits-allow-missing-external-pack
 <h1><a class="toc-backref" href="#id67">10&nbsp;&nbsp;&nbsp;Additional Topics</a></h1>
 <p>In this section, a number of miscellaneous topics and TriBITS features are
 discussed.  These features and topics are either not considered primary
-fetures of TriBITS (but can be very useful in many situations) or don't neatly
+features of TriBITS (but can be very useful in many situations) or don't neatly
 fit into one of the other sections.</p>
 <div class="section" id="tribits-system-project-dependencies">
 <h2><a class="toc-backref" href="#id68">10.1&nbsp;&nbsp;&nbsp;TriBITS System Project Dependencies</a></h2>
 <p>The basic TriBITS system itself which is used to configure, built, test,
 create tarballs, and install software that uses the TriBITS system has no
 dependencies other than a basic installation of CMake (which typically
-includes the exectuables <tt class="docutils literal">cmake</tt>, <tt class="docutils literal">ctest</tt>, and <tt class="docutils literal">cpack</tt>).  Great effort
+includes the executables <tt class="docutils literal">cmake</tt>, <tt class="docutils literal">ctest</tt>, and <tt class="docutils literal">cpack</tt>).  Great effort
 has been expended to implement all of the core functionality of TriBITS just
 using raw CMake.  That means that anyone who needs to configure, build, and
-install the software just needs a compable CMake implementation.  TriBITS is
-purposfully maintained to require an older version of CMake.  At the time of
-this writing, the mimimum required version of CMake needed to use TriBITS is
-CMake 2.8.1 (relasesed in March 2010, see <a class="reference external" href="http://www.cmake.org/Wiki/CMake_Released_Versions">CMake Release Wiki</a>).  CMake is becoming
+install the software just needs a compatible CMake implementation.  TriBITS is
+purposefully maintained to require an older version of CMake.  At the time of
+this writing, the minimum required version of CMake needed to use TriBITS is
+CMake 2.8.1 (released in March 2010, see <a class="reference external" href="http://www.cmake.org/Wiki/CMake_Released_Versions">CMake Release Wiki</a>).  CMake is becoming
 iniquitous enough that many clients will already have a current-enough version
 of CMake installed by default on their systems and will therefore not need to
 download or install any extra software when building and installing a project
@@ -5589,7 +5642,7 @@ CMake than what is required by TriBITS (see discussion of
 note that specific TriBITS projects and packages will also require additional
 tools like compilers, Python, Perl, or many other such dependencies.  It is
 just that TriBITS itself does not require any of these.  The goal of TriBITS
-is not to amke the portability of software that uses it any worse than it
+is not to make the portability of software that uses it any worse than it
 already is but instead to make it easier in most cases (that after all is the
 whole goal of CMake).</p>
 <p>While the core TriBITS functionality is just written using raw CMake, the more
@@ -5604,7 +5657,7 @@ building, testing, or installation of a TriBITS project.</p>
 </div>
 <div class="section" id="project-specific-build-quick-reference">
 <h2><a class="toc-backref" href="#id69">10.2&nbsp;&nbsp;&nbsp;Project-Specific Build Quick Reference</a></h2>
-<p>If a project that uses TriBITS is going to have a significnat user base that
+<p>If a project that uses TriBITS is going to have a significant user base that
 will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
 provides a mechanism to quickly create a project-specific build quick
@@ -5619,9 +5672,9 @@ tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
 for the for the real project name.  The second part is a project-specific
 template file:</p>
 <pre class="literal-block">
-&lt;projectBaseDir&gt;/cmake/&lt;Project&gt;BuildQuickRefTemplate.rst
+&lt;projectDir&gt;/cmake/&lt;Project&gt;BuildQuickRefTemplate.rst
 </pre>
-<p>which provides the outer RST doucment (with title, authors, abstract,
+<p>which provides the outer RST document (with title, authors, abstract,
 introduction, other introductory sections).  From these two files, the
 script:</p>
 <pre class="literal-block">
@@ -5631,7 +5684,7 @@ tribits/doc/build_quick_ref/create-project-build-quickref.py
 with the real project name (read from the project's <tt class="docutils literal">ProjectName.cmake</tt> file
 by default) and then generates the read-only files:</p>
 <pre class="literal-block">
-&lt;projectBaseDir&gt;/
+&lt;projectDir&gt;/
   &lt;Project&gt;BuildQuickRef.rst
   &lt;Project&gt;BuildQuickRef.html
   &lt;Project&gt;BuildQuickRef.pdf
@@ -5640,15 +5693,15 @@ by default) and then generates the read-only files:</p>
 <pre class="literal-block">
 tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 </pre>
-<p>A project-indepenent version of this file is provided in the
-<a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.[rsts,html,pdf]</a> which is referred to many
+<p>A project-independent version of this file is provided in the
+<a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.[rst,html,pdf]</a> which is referred to many
 times in this developers guide.</p>
 </div>
 <div class="section" id="project-and-repository-versioning-and-release-mode">
 <h2><a class="toc-backref" href="#id70">10.3&nbsp;&nbsp;&nbsp;Project and Repository Versioning and Release Mode</a></h2>
 <p>TriBITS has built-in support for project and repository versioning and release
 mode control.  When the project contains the file
-<a class="reference internal" href="#projectdir-version-cmake">&lt;projectDir&gt;/Version.cmake</a>, it is used to define the project's offical
+<a class="reference internal" href="#projectdir-version-cmake">&lt;projectDir&gt;/Version.cmake</a>, it is used to define the project's official
 version.  The idea is that when it is time to branch for a release, the only
 file that needs to be changed is the file is <a class="reference internal" href="#projectdir-version-cmake">&lt;projectDir&gt;/Version.cmake</a></p>
 <p>Each TriBITS repository can also contain a <a class="reference internal" href="#repodir-version-cmake">&lt;repoDir&gt;/Version.cmake</a> file
@@ -5681,7 +5734,7 @@ files are the same file, which works just fine.</p>
 <p>Part of the TriBITS Framework is to probe the environment, set up the
 compilers, and get ready to compile code.  This was mentioned in the step
 &quot;Probe and set up the environment&quot; in <a class="reference internal" href="#full-processing-of-tribits-project-files">Full Processing of TriBITS Project
-Files</a>.  This is exectued by the TriBITS macro <tt class="docutils literal">TRIBITS_SETUP_ENV()</tt>.  Some
+Files</a>.  This is executed by the TriBITS macro <tt class="docutils literal">TRIBITS_SETUP_ENV()</tt>.  Some
 of to things this macro does are:</p>
 <p id="probe-and-set-up-the-environment"><strong>Probe and set up the environment:</strong></p>
 <ul class="simple">
@@ -5689,7 +5742,7 @@ of to things this macro does are:</p>
 <li>Set up for MPI (MPI compilers, etc.)</li>
 <li>Set up C, C++, and Fortran compiler</li>
 <li>Find Perl (sets <tt class="docutils literal">PERL_EXECUTABLE</tt>)</li>
-<li>Determine mixed langauge C/Fortran linking</li>
+<li>Determine mixed language C/Fortran linking</li>
 <li>Set up C++11, OpenMP, and Windows issues</li>
 <li>Find Doxygen</li>
 <li>Perform some other configure-time tests (see output)</li>
@@ -5700,21 +5753,21 @@ ready to compile code.</p>
 <div class="section" id="configure-time-system-tests">
 <h2><a class="toc-backref" href="#id72">10.5&nbsp;&nbsp;&nbsp;Configure-time System Tests</a></h2>
 <p>CMake has very nice support for defining configure-time checks of the system
-to help inconfiguring the project.  One can check for whether a header file
+to help in configuring the project.  One can check for whether a header file
 exists or not, if the compiler supports a given data-type or language feature
 or perform almost any other type of check that one can imagine that can be
 done using the configured compilers, libraries, system tools, etc.  An example
 was given in <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.  Just following that example, looking
 at some of the built-in CMake configure-time test modules, and using provided
-online CMake documentation, one can see how to create a configure-time test
-for almost anyting.</p>
+on-line CMake documentation, one can see how to create a configure-time test
+for almost anything.</p>
 <!-- ToDo: Provide more detail how to integrate a configure-time test into a -->
 <!-- TriBITS project and TriBITS package. -->
 </div>
 <div class="section" id="creating-source-distributions">
 <h2><a class="toc-backref" href="#id73">10.6&nbsp;&nbsp;&nbsp;Creating Source Distributions</a></h2>
 <p>The TriBITS system uses CMake's built-in CPack support to create source
-distributions in a varity of zipped and tarred formats.  TriBITS will
+distributions in a variety of zipped and tarred formats.  TriBITS will
 automatically add support for CPack when the variable
 <a class="reference internal" href="#project-name-enable-cpack-packaging">${PROJECT_NAME}_ENABLE_CPACK_PACKAGING</a> is set to <tt class="docutils literal">ON</tt>.  The commands for
 creating a source distribution are described in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree">Creating a tarball of the
@@ -5733,7 +5786,7 @@ to excluded on a package-by-package based and at the repository level.</p>
 <p>Packages can list additional files to be excluded from the source tree using a
 call to <a class="reference internal" href="#tribits-exclude-files">TRIBITS_EXCLUDE_FILES()</a> in their <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a>
 file.</p>
-<p>Files can be excluded at the repostory level in the
+<p>Files can be excluded at the repository level in the
 <a class="reference internal" href="#repodir-cmake-callbackdefinerepositorypackaging-cmake">&lt;repoDir&gt;/cmake/CallbackDefineRepositoryPackaging.cmake</a> which typically
 just appends the built-in CMake variable <tt class="docutils literal">CPACK_SOURCE_IGNORE_FILES</tt>.</p>
 <p>There are a number of project-level settings that need to be defined and these
@@ -5747,7 +5800,7 @@ tribits/doc/examples/UnitTests/CMakeLists.txt
 </div>
 <div class="section" id="multi-repository-almost-continuous-integration">
 <h2><a class="toc-backref" href="#id74">10.7&nbsp;&nbsp;&nbsp;Multi-Repository Almost Continuous Integration</a></h2>
-<p>The <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script can be used to implement stagged integration of
+<p>The <a class="reference internal" href="#checkin-test-py">checkin-test.py</a> script can be used to implement staged integration of
 the various repositories in a multi-repo TriBITS project.  This is referred to
 here as Almost Continuous Integration (ACI).  The basic concept of Almost
 Continuous Integration (ACI) is defined and described in the paper:</p>
@@ -5977,7 +6030,7 @@ script will vary project to project.  In some simple cases,
 <p><tt class="docutils literal"><span class="pre">--extra-pull-from=integrate-from:master</span></tt></p>
 <blockquote>
 This option instructs the <tt class="docutils literal"><span class="pre">checkin-test.py</span></tt> script to pull and merge in
-commits that define the integration.  This sasme remote name and remote
+commits that define the integration.  This same remote name and remote
 branch name has to be the same in all git repos (todo: remove this
 requirement).  If it is not, then this option can't be used and instead
 the wrapper script should do the pulls up front manually before calling
@@ -6065,7 +6118,7 @@ in a loop, you also want to set the option
 <tt class="docutils literal"><span class="pre">--abort-gracefully-if-no-updates</span></tt> in addition to the option
 <tt class="docutils literal"><span class="pre">--abort-gracefully-if-no-changes-to-push</span></tt>.  That is because if the updated
 repos are in a broken state such that there are always local changes at every
-CI iteration (becuase they have not been pushed to origin), you don't want to
+CI iteration (because they have not been pushed to origin), you don't want to
 do a new CI build unless something has changed that would otherwise perhaps
 make the error go away.  That allows the CI server to sit ready to try out any
 change that gets pulled that might allow the integrated build to work and then
@@ -6153,19 +6206,19 @@ how transitions between non-backward compatible versions is accomplished.</p>
 <!-- ToDo: Put in the material from the document README.DEPRECATED_CODE and -->
 <!-- format for RST. -->
 </div>
-<div class="section" id="wrapping-exterally-configured-built-software">
-<h2><a class="toc-backref" href="#id84">10.10&nbsp;&nbsp;&nbsp;Wrapping Exterally Configured/Built Software</a></h2>
+<div class="section" id="wrapping-externally-configured-built-software">
+<h2><a class="toc-backref" href="#id84">10.10&nbsp;&nbsp;&nbsp;Wrapping Externally Configured/Built Software</a></h2>
 <p>It is possible to take an external piece of software that uses an uses any
 arbitrary builds system and wrap it as a TriBITS package and have it integrate
 in with the package dependency infrastructure.  The <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>
 package <tt class="docutils literal">WrapExternal</tt> shows how this can be done.</p>
-<p>While it is possible to wrap an exteranlly configured and built piece of
+<p>While it is possible to wrap an externally configured and built piece of
 software as a TriBITS package, is is usually must better to just go ahead and
 create a TriBITS build system for the software.  For projects that use a raw
 CMake build system, a TriBITS build build can be created side by side using a
 number of approaches. The common approach that is not too invasive is to
 create a <tt class="docutils literal">CMakeLists.tribits.txt</tt> file along side every native
-<tt class="docutils literal">CMakeLists.txt</tt> file and have the native <tt class="docutils literal">CMakeList.txt</tt> file defined
+<tt class="docutils literal">CMakeLists.txt</tt> file and have the native <tt class="docutils literal">CMakeLists.txt</tt> file defined
 like:</p>
 <pre class="literal-block">
 IF (DOING_A_TRIBITS_BUILD)
@@ -6176,7 +6229,7 @@ ENDIF()
 # Rest of native CMakeLists.txt file ...
 </pre>
 <p>Experience from the CASL VERA project shows that, overall, there is less
-hassell and less work and better portability when creating a native TriBITS
+hassle and less work and better portability when creating a native TriBITS
 build, even it it is a secondary build system for a given piece of software.</p>
 </div>
 <div class="section" id="tribits-directory-snapshotting">
@@ -6213,12 +6266,12 @@ one to maintain local changes to TriBITS and use git to manage the merges.</p>
 <div class="section" id="tribits-development-toolset">
 <h2><a class="toc-backref" href="#id86">10.12&nbsp;&nbsp;&nbsp;TriBITS Development Toolset</a></h2>
 <p>Most TriBITS projects need a git, a compiler (e.g. GCC), MPI, and a number of
-otehr standard TPLs and tools in order to develop on the project sources.  To
+other standard TPLs and tools in order to develop on the project sources.  To
 this end, TriBITS contains some helper scripts for downloading, configuring,
 building, and installing packages like git, cmake, GCC, OpenMPI, and others
 needed to set up a development environment.  These tools are used to set up
 development environments on new machines for projects like Trilinos and CASL
-VERA.  Scrits with names like <tt class="docutils literal"><span class="pre">install-gcc.py</span></tt> are defined which pull
+VERA.  Scripts with names like <tt class="docutils literal"><span class="pre">install-gcc.py</span></tt> are defined which pull
 sources from public git repos then configure, build, and install into
 specified installation directories.</p>
 <!-- ToDo: Discuss the installation scripts and github repos for GCC, OpenMPI, -->
@@ -6240,7 +6293,7 @@ various TriBITS variables and functions and macros that are used by TriBITS.</p>
 <p>TriBITS defines a number of global project-level settings that can be set by
 the user and can have their default determined by each individual TriBITS
 project.  If a given TriBITS project does not define its own default, a
-reasonble default is set by the TriBITS system automatically.  These options
+reasonable default is set by the TriBITS system automatically.  These options
 are defined and are set, for the most part, in the internal TriBITS function
 <tt class="docutils literal">TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()</tt> in the TriBITS
 CMake code file <tt class="docutils literal">TribitsGlobalMacros.cmake</tt> which gets called inside of the
@@ -6270,14 +6323,14 @@ ADVANCED_SET( ${PROJECT_NAME}_&lt;SOME_OPTION&gt;
 <p>where <tt class="docutils literal">&lt;SOME_OPTION&gt;</tt> is the option name like <tt class="docutils literal">TEST_CATEGORIES</tt> and
 <tt class="docutils literal">&lt;someDefault&gt;</tt> is the default set by TriBITS if the project does not define
 a default.  In this way, if the project sets the variable
-<tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT</tt> before this code exeutates, then
+<tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT</tt> before this code executes, then
 <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_&lt;SOME_OPTION&gt;_DEFAULT}</span></tt> will be used as the default for
 the cache variable <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> which, of course, can be
 overridden by the user when calling <tt class="docutils literal">cmake</tt> in a number of ways.</p>
 <p>Most of these global options that can be overridden externally by setting the
 cache variable <tt class="docutils literal">${PROJECT_NAME}_&lt;SOME_OPTION&gt;</tt> should be documented in the
 <a class="reference internal" href="#project-specific-build-quick-reference">Project-Specific Build Quick Reference</a> document.  A generic version of this
-document is found in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.[rsts,html,pdf]</a>.  Some of the more unusual
+document is found in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.[rst,html,pdf]</a>.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
 be documented in <tt class="docutils literal"><span class="pre">&lt;Project&gt;BuildQuickRef.[rst,html,pdf]</span></tt>.</p>
 <p>The global project-level TriBITS options for which defaults can be provided by
@@ -6336,7 +6389,7 @@ should be sufficient.</p>
 any defined libraries or header files that are listed in calls to
 <a class="reference internal" href="#tribits-add-library">TRIBITS_ADD_LIBRARY()</a> will be installed (unless options are passed into
 <a class="reference internal" href="#tribits-add-library">TRIBITS_ADD_LIBRARY()</a> that disable installs).  If set to <tt class="docutils literal">OFF</tt>, then
-headers and librareis will be installed by default and only <tt class="docutils literal">INSTALLABLE</tt>
+headers and libraries will be installed by default and only <tt class="docutils literal">INSTALLABLE</tt>
 executables added with <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> will be installed.
 However, as described in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html">TribitsBuildQuickRef.*</a>, shared libraries will
 still be always be installed if enabled since they are needed by the
@@ -6346,7 +6399,7 @@ then it makes sense to leave the TriBITS default or explicitly set:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
 </pre>
-<p>For a TriBITS project that is primarily delivering executablers (e.g. VERA),
+<p>For a TriBITS project that is primarily delivering executables (e.g. VERA),
 then it makes sense to set the default to:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT OFF)
@@ -6364,7 +6417,7 @@ SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
 </pre>
 <p>A project might want to disable the generation of export makefiles by default
 if its main purpose is to provide executables.  There is no reason to provide
-an export makefile if libraies and headers are not actaully installed (see
+an export makefile if libraries and headers are not actually installed (see
 <a class="reference internal" href="#project-name-install-libraries-and-headers">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS</a>)</p>
 </blockquote>
 <p id="project-name-enable-install-cmake-config-files"><strong>${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES</strong></p>
@@ -6372,7 +6425,7 @@ an export makefile if libraies and headers are not actaully installed (see
 <p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES</tt> is set to <tt class="docutils literal">ON</tt>,
 then <tt class="docutils literal">&lt;PACKAGE_NAME&gt;Config.cmake</tt> files are created at configure time in
 the build tree and installed into the install tree.  These files are used by
-external CMkae projects to pull in the list of compilers, compiler options,
+external CMake projects to pull in the list of compilers, compiler options,
 include directories and libraries.  The TriBITS default is <tt class="docutils literal">ON</tt>.  A
 project can change the default by setting, for example:</p>
 <pre class="literal-block">
@@ -6386,7 +6439,7 @@ executables. See <a class="reference external" href="../build_quick_ref/TribitsB
 <blockquote>
 <p>If <tt class="docutils literal">${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES</tt> is <tt class="docutils literal">ON</tt>, then the
 data-structures needed to generate <tt class="docutils literal"><span class="pre">Makefile.export.&lt;PACKAGE_NAME&gt;</span></tt> and
-<tt class="docutils literal">&lt;PACKAGE_NAEM&gt;Config.cmake</tt> are created.  These data structures are also
+<tt class="docutils literal">&lt;PACKAGE_NAME&gt;Config.cmake</tt> are created.  These data structures are also
 needed in order to generate export makefiles on demand using the function
 <a class="reference internal" href="#tribits-write-flexible-package-client-export-files">TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()</a>.  The default in
 TriBITS is to turn this <tt class="docutils literal">ON</tt> automatically by default if
@@ -6407,7 +6460,7 @@ obviously <tt class="docutils literal">OFF</tt>.  The default can be changed by 
 <pre class="literal-block">
 SET(${PROJECT_NAME}_ELEVATE_ST_TO_PT_DEFAULT ON)
 </pre>
-<p>There are projects, especially meta-projects, where the distiction between
+<p>There are projects, especially meta-projects, where the distinction between
 <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt> code is not helpful or the assignment of <tt class="docutils literal">PT</tt> and <tt class="docutils literal">ST</tt>
 packages in a repository is not appropriate.  An example project like this
 CASL VERA.  Changing the default to <tt class="docutils literal">ON</tt> allows any packages to be
@@ -6442,7 +6495,7 @@ SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT FALSE
 <p>The variable <tt class="docutils literal">${PROJECT_NAME}_CPACK_SOURCE_GENERATOR</tt> determines the CPack
 source generation types that are created when the <tt class="docutils literal">package_source</tt> target
 is run.  The TriBITS default is set to <tt class="docutils literal">TGZ</tt>.  However, this default can
-be overridded by setting, for example:</p>
+be overridden by setting, for example:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_CPACK_SOURCE_GENERATOR_DEFAULT &quot;TGZ;TBZ2&quot;)
 </pre>
@@ -6455,7 +6508,7 @@ with rest of the project-specific CPack packaging options.</p>
 </blockquote>
 <p id="project-name-test-categories-default"><span id="project-name-test-categories"></span><strong>${PROJECT_NAME}_TEST_CATEGORIES</strong></p>
 <blockquote>
-<p>The cache varaible <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> detemines what tests
+<p>The cache variable <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> determines what tests
 defined using <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> and <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a> will
 be added for <tt class="docutils literal">ctest</tt> to run (see <a class="reference internal" href="#test-test-category">Test Test Category</a>).  The TriBITS
 default is <tt class="docutils literal">NIGHTLY</tt> for a standard local build.  The <a class="reference internal" href="#checkin-test-py">checkin-test.py</a>
@@ -6468,7 +6521,7 @@ SET(${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT BASIC)
 instead of <tt class="docutils literal">BASIC</tt> is that when someone is enabling a package to develop
 on it or install it, we want them by default to be seeing the full version
 of the test suite (shy of the <a class="reference internal" href="#test-test-category-weekly">Test Test Category WEEKLY</a> tests which can
-be very expensive) for the packages they are explictly enabling.  Typically
+be very expensive) for the packages they are explicitly enabling.  Typically
 they will not be enabling forward/<a class="reference internal" href="#downstream">downstream</a> dependent packages so the
 cost of running the test suite should not be too prohibitive.  This all
 depends on how good of a job the development teams do in making their test
@@ -6487,11 +6540,11 @@ several other variables are given defaults appropriate for development mode.
 For example, <tt class="docutils literal">${PROJECT_NAME}_ASSERT_MISSING_PACKAGES</tt> is set to <tt class="docutils literal">ON</tt> by
 default in development mode but is set to <tt class="docutils literal">OFF</tt> by default in release
 mode.  In addition, strong compiler warnings are enabled by default in
-development mode but are disabled by default in release mode.  Thsi variable
+development mode but are disabled by default in release mode.  This variable
 also affects the behavior of <a class="reference internal" href="#tribits-set-st-for-dev-mode">TRIBITS_SET_ST_FOR_DEV_MODE()</a>.</blockquote>
 <p id="mpi-exec-max-numprocs"><strong>MPI_EXEC_MAX_NUMPROCS</strong></p>
 <blockquote>
-<p>The varaible <tt class="docutils literal">MPI_EXEC_MAX_NUMPROCS</tt> gives the maximum number of processes
+<p>The variable <tt class="docutils literal">MPI_EXEC_MAX_NUMPROCS</tt> gives the maximum number of processes
 for an MPI test that will be allowed as defined by <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> and
 <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a>.  The TriBITS default is set to be <tt class="docutils literal">4</tt> (for
 no good reason really but it needs to stay that way for backward
@@ -6501,9 +6554,9 @@ SET(MPI_EXEC_MAX_NUMPROCS_DEFAULT &lt;newDefaultMax&gt;)
 </pre>
 <p>While this default can be changed for the project as a whole on all
 platforms, it is likely better to change this default on a
-machine-by-machine basis to correspond to the loat that can be accomidated
+machine-by-machine basis to correspond to the load that can be accommodated
 by a given machine (or class of machines).  For example if a given machine
-has 64 cores, a reasonble number for <tt class="docutils literal">MPI_EXEC_MAX_NUMPROCS_DEFAULT</tt> is
+has 64 cores, a reasonable number for <tt class="docutils literal">MPI_EXEC_MAX_NUMPROCS_DEFAULT</tt> is
 64.</p>
 </blockquote>
 </div>
@@ -8640,8 +8693,8 @@ TriBITS.</p>
 really not a large risk to defining and using these non-namespaces utility
 functions and macros.  It turns out that CMake allows you to redefine any
 macro or function, even built-in ones, inside of your project so even if CMake
-did add new comamnds that clashed with these names, there would be no
-conflicit.  When overridding a built-in command <tt class="docutils literal">some_builtin_command()</tt>,
+did add new commands that clashed with these names, there would be no
+conflict.  When overridding a built-in command <tt class="docutils literal">some_builtin_command()</tt>,
 you can always access the original built-in command as
 <tt class="docutils literal">_some_builtin_command()</tt>.</p>
 <!-- WARNING: The file UtilsMacroFunctionDoc.rst is autogenerated from -->
@@ -9422,13 +9475,13 @@ independently.</p>
 <p id="why-a-tribits-package-is-not-a-cmake-package"><strong>Why a TriBITS Package is not a CMake Package</strong>: Note that a <a class="reference internal" href="#tribits-package">TriBITS
 Package</a> is not the same thing as a &quot;Package&quot; in raw CMake terminology.  In
 raw CMake, a &quot;Package&quot; is some externally provided bit of software or other
-utiltiy for which the current CMake project has an optional or required
+utility for which the current CMake project has an optional or required
 dependency (see <a class="reference external" href="http://www.cmake.org/Wiki/CMake:How_To_Find_Libraries">CMake: How to Find Libraries</a>).  Therefore, a raw
 CMake &quot;Package&quot; actually maps to a <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.  A raw CMake &quot;Package&quot;
 (e.g. Boost, CUDA, etc.)  can be found using a standard CMake find module
 <tt class="docutils literal"><span class="pre">Find&lt;rawPackageName&gt;.cmake</span></tt> using the built-in CMake command
 <tt class="docutils literal"><span class="pre">FIND_PACKAGE(&lt;rawPackageName&gt;)</span></tt>.  It is unfortunate that the TriBITS and
-the raw CMake defintions of the term &quot;Package&quot; are not exactly the same.
+the raw CMake definitions of the term &quot;Package&quot; are not exactly the same.
 However, the term &quot;Package&quot; was coined by the Trilinos project long ago before
 CMake was adopted as the Trilinos build system and Trilinos' definition of
 &quot;Package&quot; (going back to 1998) pre-dates the development of CMake (see
