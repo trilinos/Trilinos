@@ -182,7 +182,7 @@ namespace MueLu {
       ifpack1List.set("relaxation: type", "symmetric Gauss-Seidel");
 
     if (ifpack2List.isParameter("fact: iluk level-of-fill"))
-      ifpack1List.remove("fact: level-of-fill", ifpack2List.get<int>("fact: iluk level-of-fill"));
+      ifpack1List.set("fact: level-of-fill", ifpack2List.get<int>("fact: iluk level-of-fill"));
 
     return ifpack1List;
   }
