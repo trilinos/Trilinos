@@ -644,7 +644,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of dist fact for "ST_ZU"'th node set in file id %d",
+		    "Error: failed to locate number of dist fact for %"ST_ZU"'th node set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -654,7 +654,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of nodes in "ST_ZU"'th node set in file id %d",
+		    "Error: failed to locate number of nodes in %"ST_ZU"'th node set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -663,7 +663,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to get number of nodes in "ST_ZU"'th node set in file id %d",
+		    "Error: failed to get number of nodes in %"ST_ZU"'th node set in file id %d",
 		    i,exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -827,7 +827,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to locate number of dist fact for "ST_ZU"'th side set in file id %d",
+		    "Error: failed to locate number of dist fact for %"ST_ZU"'th side set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);
@@ -837,7 +837,7 @@ static int ex_inquire_internal (int      exoid,
 	    *ret_int = 0;
 	    exerrval = status;
 	    sprintf(errmsg,
-		    "Error: failed to get number of dist factors in "ST_ZU"'th side set in file id %d",
+		    "Error: failed to get number of dist factors in %"ST_ZU"'th side set in file id %d",
 		    i, exoid);
 	    ex_err("ex_inquire",errmsg,exerrval);
 	    return (EX_FATAL);

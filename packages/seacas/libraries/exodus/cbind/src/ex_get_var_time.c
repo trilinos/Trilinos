@@ -198,7 +198,7 @@ int ex_get_var_time( int   exoid,
     if ((status = nc_inq_dimid(exoid, ex_dim_num_entries_in_object(var_type,i+1), &dimid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to locate number of entries in "ST_ZU"th %s in file id %d",
+	      "Error: failed to locate number of entries in %"ST_ZU"th %s in file id %d",
 	      i, ex_name_of_object(var_type), exoid);
       ex_err("ex_get_var_time",errmsg,exerrval);
       free(stat_vals);
@@ -208,7 +208,7 @@ int ex_get_var_time( int   exoid,
     if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-	      "Error: failed to get number of entries in "ST_ZU"th %s in file id %d",
+	      "Error: failed to get number of entries in %"ST_ZU"th %s in file id %d",
 	      i, ex_name_of_object(var_type), exoid);
       ex_err("ex_get_var_time",errmsg,exerrval);
       free(stat_vals);
@@ -223,7 +223,7 @@ int ex_get_var_time( int   exoid,
       if ((status = nc_inq_dimid(exoid,ex_dim_num_entries_in_object(var_type,i+1), &dimid)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to locate number of entries in "ST_ZU"th %s in file id %d",
+		"Error: failed to locate number of entries in %"ST_ZU"th %s in file id %d",
 		i, ex_name_of_object(var_type), exoid);
 	ex_err("ex_get_var_time",errmsg,exerrval);
 	free(stat_vals);
@@ -233,7 +233,7 @@ int ex_get_var_time( int   exoid,
       if ((status = nc_inq_dimlen(exoid, dimid, &num_entries_this_obj)) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get number of entries in "ST_ZU"th %s in file id %d",
+		"Error: failed to get number of entries in %"ST_ZU"th %s in file id %d",
 		i, ex_name_of_object(var_type), exoid);
 	ex_err("ex_get_var_time",errmsg,exerrval);
 	free(stat_vals);
@@ -248,7 +248,7 @@ int ex_get_var_time( int   exoid,
   if ((status = nc_inq_varid(exoid,ex_name_var_of_object(var_type,var_index,i+1), &varid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
-	    "Error: failed to locate variable "ST_ZU" for %dth %s in file id %d",
+	    "Error: failed to locate variable %"ST_ZU" for %dth %s in file id %d",
 	    i, var_index,ex_name_of_object(var_type),exoid);
     ex_err("ex_get_var_time",errmsg,exerrval);
     free(stat_vals);

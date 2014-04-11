@@ -42,7 +42,12 @@
 #define EXODUS_II_INT_HDR
 
 #include "netcdf.h"
+
+#ifdef _WIN32
+#define PRId64 "I64d"
+#else
 #include <inttypes.h>
+#endif
 
 #ifndef __APPLE__
 #if defined __STDC__ || defined __cplusplus
@@ -63,14 +68,15 @@
 
 #include <stdio.h>
 
+/* A format string for outputting size_t ... */
 #if defined(__STDC_VERSION__)
 #  if (__STDC_VERSION__ >= 199901L)
-#    define ST_ZU   "%zu"
+#    define ST_ZU   "zu"
 #  else
-#    define ST_ZU   "%lu"
+#    define ST_ZU   "lu"
 #  endif
 #else
-#  define ST_ZU   "%lu"
+#  define ST_ZU   "lu"
 #endif
 
 #define MAX_VAR_NAME_LENGTH     32   /**< Internal use only */

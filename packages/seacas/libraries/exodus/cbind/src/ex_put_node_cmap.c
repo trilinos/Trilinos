@@ -178,7 +178,7 @@ int ex_put_node_cmap(int  exoid,
     status = nc_put_vara_int(exoid, varid, start, count, node_ids);
   }
   if (status != NC_NOERR) {
-    fprintf(stderr, "Start, Count = "ST_ZU"\t"ST_ZU"\n", start[0], count[0]);
+    fprintf(stderr, "Start, Count = %"ST_ZU"\t%"ST_ZU"\n", start[0], count[0]);
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to output vector \"%s\" in file ID %d",

@@ -368,7 +368,7 @@ int ex_put_concat_sets (int   exoid,
 	if (num_df != num_entry) {
 	  exerrval = EX_FATAL;
 	  sprintf(errmsg,
-		  "Error: # dist fact ("ST_ZU") not equal to # nodes ("ST_ZU") in node set %"PRId64" file id %d",
+		  "Error: # dist fact (%"ST_ZU") not equal to # nodes (%"ST_ZU") in node set %"PRId64" file id %d",
 		  num_df, num_entry, set_id,exoid);
 	  ex_err("ex_put_concat_sets",errmsg,exerrval);
 	  goto error_ret;          /* exit define mode and return */

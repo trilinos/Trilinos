@@ -154,7 +154,7 @@ int ex_put_partial_num_map (int exoid,
     if (cur_num_maps >= (int)num_maps) {
       exerrval = EX_FATAL;
       sprintf(errmsg,
-	      "Error: exceeded number of %ss ("ST_ZU") specified in file id %d",
+	      "Error: exceeded number of %ss (%"ST_ZU") specified in file id %d",
 	      ex_name_of_object(map_type),num_maps,exoid);
       ex_err("ex_put_num_map",errmsg,exerrval);
       return (EX_FATAL);

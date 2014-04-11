@@ -482,7 +482,7 @@ int ex_get_side_set_node_list_len(int exoid,
     {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-             "Error: Invalid element number "ST_ZU" found in side set %"PRId64" in file %d",
+             "Error: Invalid element number %"ST_ZU" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
       safe_free(elem_blk_parms);
       safe_free(elem_blk_ids);

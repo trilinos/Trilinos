@@ -173,7 +173,7 @@ int ex_get_partial_one_attr( int   exoid,
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities ("ST_ZU") in file id %d",
+	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities (%"ST_ZU") in file id %d",
 	    start_num, num_ent, num_entries_this_obj, exoid);
     ex_err("ex_get_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);

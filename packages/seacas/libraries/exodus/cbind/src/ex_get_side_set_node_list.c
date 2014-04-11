@@ -742,7 +742,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid triangle edge number "ST_ZU" in file id %d",
+		      "Error: Invalid triangle edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -798,7 +798,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid quad edge number "ST_ZU" in file id %d",
+		      "Error: Invalid quad edge number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -821,7 +821,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid shell face number "ST_ZU" in file id %d",
+		      "Error: Invalid shell face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -864,7 +864,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid tetra face number "ST_ZU" in file id %d",
+		      "Error: Invalid tetra face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -895,7 +895,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid wedge face number "ST_ZU" in file id %d",
+		      "Error: Invalid wedge face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -938,7 +938,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid pyramid face number "ST_ZU" in file id %d",
+		      "Error: Invalid pyramid face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;
@@ -981,7 +981,7 @@ int ex_get_side_set_node_list(int exoid,
 	    {
 	      exerrval = EX_BADPARAM;
 	      sprintf(errmsg,
-		      "Error: Invalid hex face number "ST_ZU" in file id %d",
+		      "Error: Invalid hex face number %"ST_ZU" in file id %d",
 		      side_num+1, exoid);
 	      ex_err("ex_get_side_set_node_list",errmsg,exerrval);
 	      err_stat = EX_FATAL;

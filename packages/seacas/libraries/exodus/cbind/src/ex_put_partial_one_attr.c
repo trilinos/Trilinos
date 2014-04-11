@@ -165,7 +165,7 @@ int ex_put_partial_one_attr( int   exoid,
   if (start_num + num_ent -1 > num_entries_this_obj) {
     exerrval = EX_BADPARAM;
     sprintf(errmsg,
-	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities ("ST_ZU") in file id %d",
+	    "Error: start index (%"PRId64") + count (%"PRId64") is larger than total number of entities (%"ST_ZU") in file id %d",
 	    start_num, num_ent, num_entries_this_obj, exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);
@@ -177,7 +177,7 @@ int ex_put_partial_one_attr( int   exoid,
   if (attrib_index < 1 || attrib_index > (int)num_attr) {
     exerrval = EX_FATAL;
     sprintf(errmsg,
-            "Error: Invalid attribute index specified: %d.  Valid range is 1 to "ST_ZU" for %s %"PRId64" in file id %d",
+            "Error: Invalid attribute index specified: %d.  Valid range is 1 to %"ST_ZU" for %s %"PRId64" in file id %d",
             attrib_index, num_attr, ex_name_of_object(obj_type), obj_id, exoid);
     ex_err("ex_put_partial_one_attr",errmsg,exerrval);
     return (EX_FATAL);
