@@ -86,14 +86,12 @@ namespace Teuchos {
       template<class Scalar, class Ordinal>
       class Element {
       public:
-        /// \brief Default constructor: an invalid entry of the matrix.
-        ///
-        /// FIXME (mfh 31 May 2012) This currently only works for
-        /// signed Ordinal types to which -1 can be assigned.  It
-        /// would be better to use
-        /// Teuchos::OrdinalTraits<Ordinal>::invalid() as the default
-        /// invalid value.
-        Element () : rowIndex_ (-1), colIndex_ (-1), value_ (0) {}
+        //! Default constructor: an invalid entry of the matrix.
+        Element () :
+          rowIndex_ (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+          colIndex_ (Teuchos::OrdinalTraits<Ordinal>::invalid ()),
+          value_ (Teuchos::ScalarTraits<Scalar>::zero ())
+        {}
 
         //! Create a sparse matrix entry at (i,j) with value Aij.
         Element (const Ordinal i, const Ordinal j, const Scalar& Aij) :

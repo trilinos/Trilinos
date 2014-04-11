@@ -282,15 +282,15 @@ template <typename mvector_t>
     }
     else{
       for (int dim=0; dim < coordDim; dim++){
-        spans[next++] = numeric_limits<scalar_t>::max();
-        spans[next++] = numeric_limits<scalar_t>::min() * -1.0;
+        spans[next++] = std::numeric_limits<scalar_t>::max();
+        spans[next++] = std::numeric_limits<scalar_t>::min() * -1.0;
       }
     }
   }
   else{
     for (int dim=0; dim < coordDim; dim++){
       const scalar_t *val = vectors->getData(dim).getRawPtr();
-      pair<scalar_t, scalar_t> minMax = 
+      std::pair<scalar_t, scalar_t> minMax = 
         z2LocalMinMax<scalar_t>(val, numLocalCoords);
       spans[next++] = minMax.first;
       spans[next++] = minMax.second * -1.0;
@@ -757,14 +757,14 @@ template <typename mvector_t>
   int nVecs = fractionLeft.size();
 
   if (env->getDebugLevel() >= DETAILED_STATUS){
-    ostringstream info;
+    std::ostringstream info;
     info << "Num weights " << nWeightsPerCoord << ", Fraction left:";
     for (int i=0; i < nVecs; i++)
       info << " " << fractionLeft[i];
     info << endl << "Dimension " << cutDim << " [";
     info << coordGlobalMin << ", " << coordGlobalMax << "]";
     info << endl << "# test cuts " << numTestCuts;
-    info << ", tolerance " << tolerance << endl;
+    info << ", tolerance " << tolerance << std::endl;
     env->debug(DETAILED_STATUS, info.str());
   }
 
@@ -804,8 +804,8 @@ template <typename mvector_t>
   int numRegions = numTestCuts + 1;
   int numBoundaries = numTestCuts + 2;
   int endBoundary = numBoundaries - 1;
-  vector<scalar_t> boundaries(numBoundaries);
-  vector<scalar_t> searchBoundaries(numBoundaries);
+  std::vector<scalar_t> boundaries(numBoundaries);
+  std::vector<scalar_t> searchBoundaries(numBoundaries);
 
   int numSums = numBoundaries+numRegions;
 
@@ -924,9 +924,9 @@ template <typename mvector_t>
     regionMax = regionMin + numRegions;
 
     if (env->getDebugLevel() >= DETAILED_STATUS){
-      ostringstream info;
-      info << "  Region " << min << " - " << max << endl;
-      info << "  Remaining to classify: " << numRemaining << endl;
+      std::ostringstream info;
+      info << "  Region " << min << " - " << max << std::endl;
+      info << "  Remaining to classify: " << numRemaining << std::endl;
       info << "  Boundaries: ";
       for (int i=0; i < numBoundaries; i++)
         info << boundaries[i] << " ";
@@ -1041,10 +1041,10 @@ template <typename mvector_t>
     bool cutLocIsBoundary = !cutLocIsRegion;
 
     if (env->getDebugLevel() >= DETAILED_STATUS){
-      ostringstream info;
+      std::ostringstream info;
       info << "  Best cut location: " << cutLocation;
-      if (cutLocIsRegion) info << " just after a region." << endl;
-      else info << " just after a boundary." << endl;
+      if (cutLocIsRegion) info << " just after a region." << std::endl;
+      else info << " just after a boundary." << std::endl;
       env->debug(DETAILED_STATUS, info.str());
     }
 
@@ -1135,8 +1135,8 @@ template <typename mvector_t>
     if (env->getDebugLevel() >= VERBOSE_DETAILED_STATUS && numCoords < 100){
       // For large numCoords, building this message
       // takes an extraordinarily long time.
-      ostringstream ossLeft;
-      ostringstream ossRight;
+      std::ostringstream ossLeft;
+      std::ostringstream ossRight;
       ossLeft << "left: ";
       ossRight << "right: ";
       for (lno_t i=0; i < numCoords; i++){
@@ -1152,8 +1152,8 @@ template <typename mvector_t>
           env->localBugAssertion(__FILE__, __LINE__, 
             "left/right flags", false, BASIC_ASSERTION);
       }
-      ostringstream msg;
-      msg << ossLeft.str() << endl << ossRight.str() << endl;
+      std::ostringstream msg;
+      msg << ossLeft.str() << endl << ossRight.str() << std::endl;
       env->debug(VERBOSE_DETAILED_STATUS, msg.str());
     }
 
@@ -1173,7 +1173,7 @@ template <typename mvector_t>
   env->memory("End of bisection");
 
   if (env->getDebugLevel() >= DETAILED_STATUS){
-    ostringstream oss;
+    std::ostringstream oss;
     oss << "Exiting BSPfindCut, ";
     oss << "# iterations: " << numGlobalPoints - sanityCheck;    
     env->debug(DETAILED_STATUS, oss.str());
@@ -1297,7 +1297,7 @@ template <typename mvector_t, typename Adapter>
       ArrayRCP<scalar_t> weightSums;
     
       globalSumsByPart<scalar_t, unsigned char, lno_t>(
-        env, comm, lrflags, 
+        env, comm, lrflags, nWeightsPerCoord,
         wgts.view(0, nWeightsPerCoord), mcnorm,
         numParts, numNonemptyParts, metrics, weightSums);
 
@@ -1402,9 +1402,9 @@ template <typename mvector_t, typename Adapter>
   }
 
   if (env->getDebugLevel() >= DETAILED_STATUS){
-    ostringstream info;
-    info << "  Number of coordinates: " << numLocalCoords << endl;
-    info << "  Use index: " << useIndices << endl;
+    std::ostringstream info;
+    info << "  Number of coordinates: " << numLocalCoords << std::endl;
+    info << "  Use index: " << useIndices << std::endl;
     env->debug(DETAILED_STATUS, info.str());
   }
 

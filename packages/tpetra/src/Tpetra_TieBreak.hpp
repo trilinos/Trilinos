@@ -50,7 +50,7 @@
 namespace Tpetra {
 namespace Details {
 
-  /// \class TieBreak 
+  /// \class TieBreak
   /// \brief Interface for breaking ties in ownership.
   /// \tparam LocalOrdinal The type of local indices.
   /// \tparam GlobalOrdinal The type of global indices.
@@ -85,6 +85,19 @@ namespace Details {
       int PID;
     };
 
+    /// \brief Whether selectedIndex() may have side effects.
+    ///
+    /// If you are defining your own implementation (i.e., subclass)
+    /// of this class, and if you know that your implementation of
+    /// selectedIndex() does <i>not</i> have side effects, then you
+    /// may redefine this method to return false.  This may skip using
+    /// the TieBreak object in certain cases, to save local work.
+    /// Otherwise, we must use the TieBreak object in case the
+    /// implementation has desired side effects.
+    virtual bool mayHaveSideEffects () const {
+      return true;
+    }
+
     //! Virtual destructor (for memory safety of derived classes).
     virtual ~TieBreak () {}
 
@@ -109,8 +122,8 @@ namespace Details {
     /// method.  We should call it something more indicative of its
     /// function, like "arbitrateOwnership" or "breakTie".
     virtual std::size_t
-    selectedIndex (GlobalOrdinal GID, 
-		   const std::vector<std::pair<int, LocalOrdinal> >& pid_and_lid) const = 0;
+    selectedIndex (GlobalOrdinal GID,
+                   const std::vector<std::pair<int, LocalOrdinal> >& pid_and_lid) const = 0;
   };
 
 } // namespace Tpetra

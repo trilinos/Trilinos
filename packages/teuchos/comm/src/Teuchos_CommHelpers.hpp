@@ -83,22 +83,7 @@ enum EReductionType {
  *
  * \relates EReductionType
  */
-inline
-const char* toString( const EReductionType reductType )
-{
-  switch (reductType) {
-    case REDUCE_SUM: return "REDUCE_SUM";
-    case REDUCE_MIN: return "REDUCE_MIN";
-    case REDUCE_MAX: return "REDUCE_MAX";
-    case REDUCE_AND: return "REDUCE_AND";
-    default:
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        true, std::invalid_argument, "Teuchos::toString(EReductionType): "
-        "Invalid EReductionType value " << reductType << ".  Valid values "
-        "include REDUCE_SUM, REDUCE_MIN, REDUCE_MAX, and REDUCE_AND.");
-  }
-  return "ERROR"; /* Will not reach here; eliminate compiler warning */
-}
+const char* toString (const EReductionType reductType);
 
 /** \brief Get the process rank.
  *

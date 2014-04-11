@@ -768,7 +768,7 @@ namespace Tpetra {
   setupDirectory () const
   {
     using Teuchos::rcp;
-    typedef Directory<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > directory_type;
+    typedef Directory<LocalOrdinal, GlobalOrdinal, node_type> directory_type;
     // Only create the Directory if it hasn't been created yet.
     // This is a collective operation.
     if (directory_.is_null ()) {
@@ -866,6 +866,17 @@ namespace Tpetra {
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getNode () const {
     return node_;
+  }
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  bool
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  isOneToOne () const
+  {
+    // This is a collective operation, if it hasn't been called before.
+    setupDirectory ();
+
+    return directory_->isOneToOne (* (getComm ()));
   }
 
 } // namespace Tpetra

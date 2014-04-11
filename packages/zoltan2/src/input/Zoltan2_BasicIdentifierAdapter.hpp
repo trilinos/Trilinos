@@ -108,7 +108,7 @@ public:
    */
 
   BasicIdentifierAdapter( lno_t numIds, const gid_t *idPtr, 
-    vector<const scalar_t *> &weights, vector<int> &weightStrides);
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   ////////////////////////////////////////////////////////////////
   // The Adapter interface.
@@ -146,7 +146,7 @@ private:
 template <typename User>
   BasicIdentifierAdapter<User>::BasicIdentifierAdapter(
     lno_t numIds, const gid_t *idPtr,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(idPtr), weights_()
 {
   typedef StridedData<lno_t,scalar_t> input_t;

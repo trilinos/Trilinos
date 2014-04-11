@@ -134,7 +134,12 @@ PHX_EVALUATOR_CTOR(DOF,p) :
   this->addDependentField(dof_basis);
 
   if(requires_orientation) {
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(p.get<std::string>("Name")+" Orientation", 
+     // unless otherwise specified (with "Orientation Field Name") use the default
+     std::string orientationFieldName = p.get<std::string>("Name")+" Orientation";
+     if(p.isType<std::string>("Orientation Field Name"))
+       orientationFieldName = p.get<std::string>("Orientation Field Name");
+     
+     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
 	                                                basis->functional);
      
      this->addDependentField(dof_orientation);
@@ -200,7 +205,12 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
   this->addDependentField(dof_basis);
 
   if(requires_orientation) {
-     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(fieldName+" Orientation", 
+     // unless otherwise specified (with "Orientation Field Name") use the default
+     std::string orientationFieldName = fieldName+" Orientation";
+     if(p.isType<std::string>("Orientation Field Name"))
+       orientationFieldName = p.get<std::string>("Orientation Field Name");
+
+     dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
 	                                                basis->functional);
      
      this->addDependentField(dof_orientation);

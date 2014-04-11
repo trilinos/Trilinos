@@ -201,7 +201,7 @@ struct InputTraits {
 
   /*! \brief  The name of the user's input object.
    */
-  static inline string name() {return "InputAdapter";}
+  static inline std::string name() {return "InputAdapter";}
 };
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -217,7 +217,7 @@ struct InputTraits<BasicUserTypes<Scalar, GID, LNO, GNO> >
   typedef GNO gno_t;
   typedef GID gid_t;
   typedef Zoltan2::default_node_t node_t;
-  static inline string name() {return "BasicUserTypes";}
+  static inline std::string name() {return "BasicUserTypes";}
 };
 
 template <typename Scalar,
@@ -231,7 +231,7 @@ struct InputTraits<Xpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Xpetra::CrsMatrix";}
+  static inline std::string name() {return "Xpetra::CrsMatrix";}
 };
 
 template <typename Scalar,
@@ -245,7 +245,7 @@ struct InputTraits<Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Tpetra::CrsMatrix";}
+  static inline std::string name() {return "Tpetra::CrsMatrix";}
 };
 
 template < >
@@ -256,7 +256,7 @@ struct InputTraits<Epetra_CrsMatrix>
   typedef int gno_t;
   typedef int gid_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
-  static inline string name() {return "Epetra_CrsMatrix";}
+  static inline std::string name() {return "Epetra_CrsMatrix";}
 };
 
 template <typename Scalar,
@@ -270,7 +270,7 @@ struct InputTraits<Xpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Xpetra::RowMatrix";}
+  static inline std::string name() {return "Xpetra::RowMatrix";}
 };
 
 template <typename Scalar,
@@ -284,7 +284,7 @@ struct InputTraits<Tpetra::RowMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Tpetra::RowMatrix";}
+  static inline std::string name() {return "Tpetra::RowMatrix";}
 };
 
 template <typename LocalOrdinal,
@@ -297,7 +297,7 @@ struct InputTraits<Xpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Xpetra::CrsGraph";}
+  static inline std::string name() {return "Xpetra::CrsGraph";}
 };
 
 template <typename LocalOrdinal,
@@ -310,7 +310,7 @@ struct InputTraits<Tpetra::CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Tpetra::CrsGraph";}
+  static inline std::string name() {return "Tpetra::CrsGraph";}
 };
 
 template < >
@@ -321,7 +321,7 @@ struct InputTraits<Epetra_CrsGraph>
   typedef int   gno_t;
   typedef int   gid_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
-  static inline string name() {return "Epetra_CrsGraph";}
+  static inline std::string name() {return "Epetra_CrsGraph";}
 };
 
 template <typename Scalar,
@@ -335,7 +335,7 @@ struct InputTraits<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Xpetra::Vector";}
+  static inline std::string name() {return "Xpetra::Vector";}
 };
 
  /*! \todo A Tpetra::Vector is a Tpetra::MultiVector - can we just
@@ -352,7 +352,7 @@ struct InputTraits<Tpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Tpetra::Vector";}
+  static inline std::string name() {return "Tpetra::Vector";}
 };
 
 template < >
@@ -363,7 +363,7 @@ struct InputTraits<Epetra_Vector>
   typedef int   gno_t;
   typedef int   gid_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
-  static inline string name() {return "Epetra_Vector";}
+  static inline std::string name() {return "Epetra_Vector";}
 };
 
 template <typename Scalar,
@@ -377,7 +377,7 @@ struct InputTraits<Xpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Xpetra::MultiVector";}
+  static inline std::string name() {return "Xpetra::MultiVector";}
 };
 
 template <typename Scalar,
@@ -391,7 +391,7 @@ struct InputTraits<Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
   typedef GlobalOrdinal gno_t;
   typedef GlobalOrdinal gid_t;
   typedef Node          node_t;
-  static inline string name() {return "Tpetra::MultiVector";}
+  static inline std::string name() {return "Tpetra::MultiVector";}
 };
 
 template < >
@@ -402,7 +402,7 @@ struct InputTraits<Epetra_MultiVector>
   typedef int   gno_t;
   typedef int   gid_t;
   typedef KokkosClassic::DefaultNode::DefaultNodeType node_t;
-  static inline string name() {return "Epetra_MultiVector";}
+  static inline std::string name() {return "Epetra_MultiVector";}
 };
 
 #endif // DOXYGEN_SHOULD_SKIP_THIS

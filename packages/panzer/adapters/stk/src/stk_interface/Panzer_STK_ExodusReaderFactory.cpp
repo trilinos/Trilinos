@@ -60,11 +60,11 @@
 namespace panzer_stk {
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory()
-   : fileName_(""), restartIndex_(0)
+   : fileName_(""), restartIndex_(0), useLowerCase_(false)
 { }
 
 STK_ExodusReaderFactory::STK_ExodusReaderFactory(const std::string & fileName,int restartIndex)
-   : fileName_(fileName), restartIndex_(restartIndex)
+   : fileName_(fileName), restartIndex_(restartIndex), useLowerCase_(false)
 { }
 
 Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildMesh(stk::ParallelMachine parallelMach) const
@@ -100,6 +100,10 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    using Teuchos::rcp;
 
    RCP<STK_Interface> mesh = rcp(new STK_Interface());
+ 
+   // immediately setup lower case usage
+   mesh->setUseLowerCaseForIO(useLowerCase_);
+
    RCP<stk::mesh::fem::FEMMetaData> femMetaData = mesh->getMetaData();
    stk::mesh::MetaData & metaData = stk::mesh::fem::FEMMetaData::get_meta_data(*femMetaData);
 
@@ -107,7 +111,7 @@ Teuchos::RCP<STK_Interface> STK_ExodusReaderFactory::buildUncommitedMesh(stk::Pa
    Ioss::Init::Initializer io;
    stk::io::MeshData * meshData = new stk::io::MeshData;
    stk::io::create_input_mesh("exodusii", fileName_, parallelMach,
-                                    *femMetaData, *meshData); 
+                                    *femMetaData, *meshData,useLowerCase_); // don't use lower case 
 
    // add in "FAMILY_TREE" entity for doing refinement
    std::size_t dimension = femMetaData->spatial_dimension();
@@ -207,6 +211,8 @@ void STK_ExodusReaderFactory::setParameterList(const Teuchos::RCP<Teuchos::Param
 
    restartIndex_ = paramList->get<int>("Restart Index");
 
+   useLowerCase_ = paramList->get<bool>("Use Lower Case");
+
    // read in periodic boundary conditions
    parsePeriodicBCList(Teuchos::rcpFromRef(paramList->sublist("Periodic BCs")),periodicBCVec_);
 }
@@ -223,6 +229,8 @@ Teuchos::RCP<const Teuchos::ParameterList> STK_ExodusReaderFactory::getValidPara
       
       validParams->set<int>("Restart Index",-1,"Index of solution to read in", 
 			    Teuchos::rcp(new Teuchos::AnyNumberParameterEntryValidator(Teuchos::AnyNumberParameterEntryValidator::PREFER_INT,Teuchos::AnyNumberParameterEntryValidator::AcceptedTypes(true))));
+
+      validParams->set<bool>("Use Lower Case",false,"Convert fields to lower case for Exodus I/O.");
 
       Teuchos::ParameterList & bcs = validParams->sublist("Periodic BCs");
       bcs.set<int>("Count",0); // no default periodic boundary conditions

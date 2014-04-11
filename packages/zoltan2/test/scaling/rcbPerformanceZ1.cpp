@@ -437,6 +437,7 @@ tMVector_t* makeMeshCoordinates(
   ArrayView<const scalar_t> xArray(x, numLocalCoords*3);
   tMVector_t *dots = new tMVector_t(idMap, xArray, numLocalCoords, 3);
 
+  delete [] x;
   return dots;
 }
 

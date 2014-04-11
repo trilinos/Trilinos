@@ -478,8 +478,16 @@ public:
       Kokkos::parallel_for( config, MultiplyKernel<12>(AA,x,y) );
     else if (num_per_thread == 16)
       Kokkos::parallel_for( config, MultiplyKernel<16>(AA,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(AA,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(AA,x,y) );
     else if (num_per_thread == 32)
       Kokkos::parallel_for( config, MultiplyKernel<32>(AA,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(AA,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(AA,x,y) );
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
@@ -749,8 +757,16 @@ public:
       Kokkos::parallel_for( config, MultiplyKernel<12>(AA,x,y) );
     else if (num_per_thread == 16)
       Kokkos::parallel_for( config, MultiplyKernel<16>(AA,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(AA,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(AA,x,y) );
     else if (num_per_thread == 32)
       Kokkos::parallel_for( config, MultiplyKernel<32>(AA,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(AA,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(AA,x,y) );
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
@@ -997,8 +1013,16 @@ public:
       Kokkos::parallel_for( config, MultiplyKernel<12>(A,x,y) );
     else if (num_per_thread == 16)
       Kokkos::parallel_for( config, MultiplyKernel<16>(A,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(A,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(A,x,y) );
     else if (num_per_thread == 32)
       Kokkos::parallel_for( config, MultiplyKernel<32>(A,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(A,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(A,x,y) );
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);

@@ -137,7 +137,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, defaultConstruct )
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, basic_set_get )
 {
 
-  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  //typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB; // unused
   //typedef SIOVOCB::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
 
@@ -170,7 +170,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, set_two_keep_ref )
 {
   // Test test makes sure that objects keep the same address when adding new
   // objects.
-  typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
+  //typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB; // unused
   //typedef SIOVOCB::Ordinal Ordinal;
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(const Ordinal my_int_1_idx = oc.setObj("my_int_1", 3));
@@ -442,7 +442,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_key_last 
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getNonconstObjPtr_idx_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getNonconstObjPtr(0), 4);
@@ -456,7 +456,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getNonconstObjPtr_i
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjPtr_idx_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getObjPtr(0), 4);
@@ -470,7 +470,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjPtr_idx_inval
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_idx_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getObjPtr(0), 4);
@@ -486,7 +486,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_idx_inval
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getNonconstObjPtr_key_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getNonconstObjPtr("a"), 4);
@@ -499,7 +499,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getNonconstObjPtr_k
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjPtr_key_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getObjPtr("a"), 4);
@@ -512,7 +512,7 @@ TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, getObjPtr_key_inval
 TEUCHOS_UNIT_TEST( StringIndexedOrderedValueObjectContainer, removeObj_key_invalid )
 {
   typedef StringIndexedOrderedValueObjectContainerBase SIOVOCB;
-  typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator;
+  //typedef StringIndexedOrderedValueObjectContainer<int>::Iterator Iterator; // unused
   ECHO(StringIndexedOrderedValueObjectContainer<int> oc);
   ECHO(oc.setObj("a", 4));
   TEST_EQUALITY_CONST(*oc.getObjPtr("a"), 4);

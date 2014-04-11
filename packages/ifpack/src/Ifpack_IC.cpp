@@ -155,10 +155,10 @@ int Ifpack_IC::ComputeSetup()
   // Get Maximun Row length
   int MaxNumEntries = Matrix().MaxNumEntries();
 
-  vector<int> InI(MaxNumEntries); // Allocate temp space
-  vector<int> UI(MaxNumEntries);
-  vector<double> InV(MaxNumEntries);
-  vector<double> UV(MaxNumEntries);
+  std::vector<int> InI(MaxNumEntries); // Allocate temp space
+  std::vector<int> UI(MaxNumEntries);
+  std::vector<double> InV(MaxNumEntries);
+  std::vector<double> UV(MaxNumEntries);
 
   double *DV;
   ierr = D_->ExtractView(&DV); // Get view of diagonal

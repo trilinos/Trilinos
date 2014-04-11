@@ -763,18 +763,18 @@ template <typename Integral>
   Integral minValue=0, maxValue=0;
   bool unsorted=false, hasMin=false, hasMax=false;
 
-  if (xmlObj.hasAttribute(string("min"))) {
-    minValue = xmlObj.getRequired<Integral>(string("min"));
+  if (xmlObj.hasAttribute(std::string("min"))) {
+    minValue = xmlObj.getRequired<Integral>(std::string("min"));
     hasMin = true;
   }
 
-  if (xmlObj.hasAttribute(string("max"))) {
-    maxValue = xmlObj.getRequired<Integral>(string("max"));
+  if (xmlObj.hasAttribute(std::string("max"))) {
+    maxValue = xmlObj.getRequired<Integral>(std::string("max"));
     hasMax = true;
   }
 
-  if (xmlObj.hasAttribute(string("unsorted"))) 
-    unsorted = xmlObj.getRequired<bool>(string("unsorted"));
+  if (xmlObj.hasAttribute(std::string("unsorted"))) 
+    unsorted = xmlObj.getRequired<bool>(std::string("unsorted"));
 
   RCP<Teuchos::ParameterEntryValidator> toReturn;
 
@@ -803,11 +803,11 @@ void IntegerRangeListValidatorXMLConverter<Integral>::convertValidator(
   bool unsorted = castedValidator->inputListWillBeSorted();
 
   if (minValue < maxValue){
-    xmlObj.addAttribute<Integral>(string("min"), minValue);
-    xmlObj.addAttribute<Integral>(string("max"), maxValue);
+    xmlObj.addAttribute<Integral>(std::string("min"), minValue);
+    xmlObj.addAttribute<Integral>(std::string("max"), maxValue);
   }
 
-  xmlObj.addAttribute<bool>(string("unsorted"), unsorted);
+  xmlObj.addAttribute<bool>(std::string("unsorted"), unsorted);
 }
 
 }

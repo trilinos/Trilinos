@@ -1,12 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,20 +34,20 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+//
 // ***********************************************************************
 // @HEADER
 
-#include "Panzer_config.hpp"
+// Tests
+#include "TestSpMM.hpp"
 
-#ifdef HAVE_PANZER_EXPLICIT_INSTANTIATION
+// Devices
+#include "KokkosCore_config.h"
+#include "Kokkos_Threads.hpp"
 
-#include "Panzer_ExplicitTemplateInstantiation.hpp"
-
-#include "Panzer_IPCoordinates_decl.hpp"
-#include "Panzer_IPCoordinates_impl.hpp"
-
-PANZER_INSTANTIATE_TEMPLATE_CLASS_TWO_T(panzer::IPCoordinates)
-
+#ifdef KOKKOS_HAVE_PTHREAD
+template void performance_test_driver< double, int, Kokkos::Threads>(
+  const int nGrid, const int nIter,  const int ensemble_min,
+  const int ensemble_max, const int ensemble_step);
 #endif

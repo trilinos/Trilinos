@@ -190,18 +190,9 @@ template <typename Adapter>
 
     if (nUserWeights_ > 0){
       for (int idx=0; idx < nUserWeights_; idx++){
-        if (wgts[idx] != NULL){
-          ArrayRCP<const scalar_t> wgtArray(wgts[idx], 0,
-                                            nLocalIds*wgtStrides[idx], false);
-          weights_[idx] = input_t(wgtArray, wgtStrides[idx]);
-        }
-        else {
-          // User did not provide weights for this idx; create uniform weights.
-          scalar_t *uniwgts = new scalar_t[nLocalIds];
-          for (size_t i = 0; i < nLocalIds; i++) uniwgts[i] = scalar_t(1);
-          ArrayRCP<const scalar_t> wgtArray(uniwgts, 0, nLocalIds, true);
-          weights_[idx] = input_t(wgtArray, 1);
-        }
+        ArrayRCP<const scalar_t> wgtArray(wgts[idx], 0,
+                                          nLocalIds*wgtStrides[idx], false);
+        weights_[idx] = input_t(wgtArray, wgtStrides[idx]);
       }
     }
   }

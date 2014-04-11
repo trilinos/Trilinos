@@ -115,7 +115,7 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
     else {
       typedef VectorAdapter<userCoord_t> vectorAdapter_t;
       vectorAdapter_t *va = ia->getCoordinateInput();
@@ -135,7 +135,7 @@ public:
                   gnos_(), gnosConst_()
   {
     if (!(ia->coordinatesAvailable()))
-      throw logic_error("No coordinate info was provided to MatrixAdapter.");
+      throw std::logic_error("No coordinate info was provided to MatrixAdapter.");
     else {
       typedef VectorAdapter<userCoord_t> vectorAdapter_t;
       vectorAdapter_t *va = ia->getCoordinateInput();
@@ -149,7 +149,7 @@ public:
                   const RCP<const Comm<int> > &comm,
                   modelFlag_t &flags)
   {
-    throw logic_error(
+    throw std::logic_error(
       "A coordinate model can not be build from an IdentifierAdapter");
   }
 
@@ -309,17 +309,8 @@ void CoordinateModel<Adapter>::sharedConstructor(
       }
       Z2_FORWARD_EXCEPTIONS;
 
-      if (weights){
-        ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
-        weightArray[idx] = input_t(wArray, stride);
-      }
-      else {
-        // User did not provide weights for this idx; create uniform weights.
-        scalar_t *uniwgts = new scalar_t[nLocalIds];
-        for (size_t i = 0; i < nLocalIds; i++) uniwgts[i] = scalar_t(1);
-        ArrayRCP<const scalar_t> wArray(uniwgts, 0, nLocalIds, true);
-        weightArray[idx] = input_t(wArray, 1);
-      }
+      ArrayRCP<const scalar_t> wArray(weights, 0, nLocalIds*stride, false);
+      weightArray[idx] = input_t(wArray, stride);
     }
   }
 

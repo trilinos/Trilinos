@@ -283,9 +283,5 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   Teuchos::TimeMonitor::summarize();
 }
 
-
-
-
-
 #endif  //DO_COMPILATION
 

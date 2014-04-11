@@ -1,12 +1,11 @@
 // @HEADER
 // ***********************************************************************
 //
-//           Panzer: A partial differential equation assembly
-//       engine for strongly coupled complex multiphysics systems
-//                 Copyright (2011) Sandia Corporation
+//                           Stokhos Package
+//                 Copyright (2009) Sandia Corporation
 //
-// Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
-// the U.S. Government retains certain rights in this software.
+// Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
+// license for use of this work by or on behalf of the U.S. Government.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
@@ -35,48 +34,18 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger P. Pawlowski (rppawlo@sandia.gov) and
-// Eric C. Cyr (eccyr@sandia.gov)
+// Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
+//
 // ***********************************************************************
 // @HEADER
 
-#ifndef __Panzer_ResponseData_Action_hpp__
-#define __Panzer_ResponseData_Action_hpp__
+// Tests
+#include "TestSpMM.hpp"
 
-#include "Panzer_config.hpp"
+// Devices
+#include "KokkosCore_config.h"
+#include "Kokkos_Cuda.hpp"
 
-#include <string>
-#include <vector>
-
-#include "Panzer_ResponseAggregatorBase.hpp"
-
-namespace panzer {
-
-/** A data object that is really only useful as a place holder
-  * for a response that is primarily action (not data). This would
-  * be the case for instance when writing data to a mesh, or file.
-  */
-template <typename TraitsT>
-class ResponseData_Action : public ResponseDataDefault<TraitsT> {
-public:
-   ResponseData_Action() {}
-   ResponseData_Action(const ResponseData_Action &) {}
-
-   virtual ~ResponseData_Action() {}
-
-   //! Allocate and initialize required storage based on the fields passed in
-   virtual void allocateAndInitializeData(const std::vector<std::string> & fields) { }
-
-   /** Reinitialize the data based on the fields original requested by
-     * <code>allocateAndInitializeData</code>.
-     */
-   virtual void reinitializeData() {} 
-
-   /** Fill a response object with data from a particular field.
-     */
-   virtual void fillResponse(const std::string & field,Response<TraitsT> & response) const {}
-};
-
-}
-
-#endif
+template void performance_test_driver< double, int, Kokkos::Cuda>(
+  const int nGrid, const int nIter,  const int ensemble_min,
+  const int ensemble_max, const int ensemble_step);

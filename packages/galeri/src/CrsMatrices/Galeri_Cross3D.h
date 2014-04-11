@@ -67,8 +67,8 @@ Cross3D(const Epetra_Map* Map,
   Map->MyGlobalElementsPtr(MyGlobalElements);
 
   int left, right, lower, upper, below, above;
-  vector<double> Values(6);
-  vector<int_type> Indices(6);
+  std::vector<double> Values(6);
+  std::vector<int_type> Indices(6);
 
   //    e
   //  b a c

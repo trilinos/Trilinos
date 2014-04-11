@@ -516,8 +516,8 @@ ApplyInverseGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) con
   int NumVectors = X.NumVectors();
 
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_)
@@ -961,8 +961,8 @@ ApplyInverseSGS_RowMatrix(const Epetra_MultiVector& X, Epetra_MultiVector& Y) co
 {
   int NumVectors = X.NumVectors();
   int Length = Matrix().MaxNumEntries();
-  vector<int> Indices(Length);
-  vector<double> Values(Length);
+  std::vector<int> Indices(Length);
+  std::vector<double> Values(Length);
 
   Teuchos::RefCountPtr< Epetra_MultiVector > Y2;
   if (IsParallel_) {

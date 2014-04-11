@@ -5,7 +5,7 @@ MACRO(TRIBITS_REPOSITORY_DEFINE_PACKAGING)
   # We need to make sure that these excludes only apply to Trilinos, not the global
   # project.
   IF (PROJECT_NAME STREQUAL Trilinos)
-    SET(Trilinos_SOURCE_EXCLUDE_DIR "")
+    GET_FILENAME_COMPONENT(Trilinos_SOURCE_EXCLUDE_DIR ${Trilinos_SOURCE_DIR} PATH)
   ELSE()
     SET(Trilinos_SOURCE_EXCLUDE_DIR ${Trilinos_SOURCE_DIR})
   ENDIF()

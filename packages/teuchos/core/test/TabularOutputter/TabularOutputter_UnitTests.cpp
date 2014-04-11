@@ -235,8 +235,7 @@ TEUCHOS_UNIT_TEST( TabularOutputter, perfTiming )
 
 TEUCHOS_UNIT_TEST( TabularOutputter, nullOStream )
 {
-
-  typedef Teuchos::TabularOutputter TO;
+  //typedef Teuchos::TabularOutputter TO; // unused
 
   TabularOutputter outputter(out);
 
@@ -244,7 +243,6 @@ TEUCHOS_UNIT_TEST( TabularOutputter, nullOStream )
     outputter.setOStream(Teuchos::null),
     Teuchos::NullReferenceError
     );
-
 }
 
 
@@ -332,7 +330,7 @@ TEUCHOS_UNIT_TEST( TabularOutputter, missingFieldOutputError )
   outputter.outputField("s13");
 
   // Missing a call to outputField(...);
-  
+
   out << "\n\n";
 
   TEST_THROW(outputter.nextRow(), TO::InvalidFieldOutputError);

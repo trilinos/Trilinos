@@ -117,7 +117,7 @@ namespace Galeri {
         if ( zpid < NBigZDir) endz++;
 
         size_t NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
-        vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
+        std::vector<GlobalOrdinal> MyGlobalElements(NumMyElements);
         size_t count = 0;
 
         for (GlobalOrdinal i = startx ; i < endx ; ++i)

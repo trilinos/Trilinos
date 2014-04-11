@@ -70,6 +70,146 @@ double ML_Smoother_ChebyshevAlpha(double, ML*, int, int);
 
 using namespace Teuchos;
 
+
+
+// ============================================================================
+inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, int * blockIndices, int last, int next, int LineID, double tol, int *itemp, double * dtemp) {
+  double *xvals= NULL, *yvals = NULL, *zvals = NULL;
+  int N = ml->Amat[currentLevel].outvec_leng;
+  ML_Aggregate_Viz_Stats *grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[currentLevel].Grid;
+  if (grid_info != NULL) xvals = grid_info->x;
+  if (grid_info != NULL) yvals = grid_info->y;
+  if (grid_info != NULL) zvals = grid_info->z;
+
+  ML_Operator * Amat = &(ml->Amat[currentLevel]);
+  int allocated_space = Amat->max_nz_per_row+2;
+  int * cols    = itemp;
+  int * indices = &itemp[allocated_space];
+  double * vals = dtemp;
+  double * dist = &dtemp[allocated_space];
+
+
+  while (blockIndices[next] == -1) {
+    // Get the next row
+    int n=0;
+    int neighbors_in_line=0;
+    ML_Operator_Getrow(Amat,1,&next,allocated_space, cols,vals,&n);
+    double x0 = xvals[next/NumEqns];
+    double y0 = yvals[next/NumEqns];
+    double z0 = zvals[next/NumEqns];
+
+    // Calculate neighbor distances & sort
+    int neighbor_len=0;
+    for(int i=0; i<n; i+=NumEqns) {
+      double mydist = 0.0;
+      if(cols[i] >=N) continue; // Check for off-proc entries
+      int nn = cols[i] / NumEqns;
+      if(blockIndices[nn]==LineID) neighbors_in_line++;
+      if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
+      if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
+      if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
+      dist[neighbor_len] = sqrt(mydist);
+      indices[neighbor_len]=cols[i];
+      neighbor_len++;
+    }
+    // If more than one of my neighbors is already in this line.  I
+    // can't be because I'd create a cycle
+    if(neighbors_in_line > 1) break;
+
+    // Otherwise add me to the line 
+    for(int k=0; k<NumEqns; k++) 
+      blockIndices[next + k] = LineID;
+    
+    // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal)
+    ML_az_dsort2(dist,neighbor_len,indices);
+
+    if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
+      last=next;
+      next=indices[1];
+    }
+    else if(neighbor_len > 3 && indices[2] != last && blockIndices[indices[2]] == -1 && dist[2]/dist[neighbor_len-1] < tol) {
+      last=next;
+      next=indices[2];
+    }
+    else {
+      // I have no further neighbors in this line
+      break;
+    }
+  }
+}
+
+// ============================================================================
+int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double tol,  int * blockIndices) {
+  ML_Operator * Amat = &(ml->Amat[currentLevel]);
+  int N = ml->Amat[currentLevel].outvec_leng;
+  int allocated_space = (Amat->max_nz_per_row+2);
+  double *xvals= NULL, *yvals = NULL, *zvals = NULL;
+  ML_Aggregate_Viz_Stats *grid_info = (ML_Aggregate_Viz_Stats *) ml->Grid[currentLevel].Grid;
+  if (grid_info != NULL) xvals = grid_info->x;
+  if (grid_info != NULL) yvals = grid_info->y;
+  if (grid_info != NULL) zvals = grid_info->z;
+
+  int * cols    = (int    *) ML_allocate(2*allocated_space*sizeof(int   ));
+  int * indices = &cols[allocated_space];
+  double * vals = (double *) ML_allocate(2*allocated_space*sizeof(double));
+  double * dist = &vals[allocated_space];
+
+  int * itemp   = (int    *) ML_allocate(2*allocated_space*sizeof(int   ));
+  double *dtemp = (double *) ML_allocate(2*allocated_space*sizeof(double));
+
+  int num_lines = 0;
+
+  for(int i=0; i<N; i+=NumEqns) {
+    int nz=0;
+    // Short circuit if I've already been blocked
+    if(blockIndices[i] !=-1) continue;
+
+    // Get neighbors and sort by distance
+    ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&nz);
+    double x0 = xvals[i/NumEqns];
+    double y0 = yvals[i/NumEqns];
+    double z0 = zvals[i/NumEqns];
+
+    int neighbor_len=0;
+    for(int j=0; j<nz; j+=NumEqns) {
+      double mydist = 0.0;
+      int nn = cols[j] / NumEqns;
+      if(cols[j] >=N) continue; // Check for off-proc entries
+      if(xvals!=NULL) mydist += (x0 - xvals[nn]) * (x0 - xvals[nn]);
+      if(yvals!=NULL) mydist += (y0 - yvals[nn]) * (y0 - yvals[nn]);
+      if(zvals!=NULL) mydist += (z0 - zvals[nn]) * (z0 - zvals[nn]);
+      dist[neighbor_len] = sqrt(mydist);
+      indices[neighbor_len]=cols[j];
+      neighbor_len++;
+    }
+    ML_az_dsort2(dist,neighbor_len,indices);
+
+    // Number myself
+    for(int k=0; k<NumEqns; k++)
+      blockIndices[i + k] = num_lines;
+
+    // Fire off a neighbor line search (nearest neighbor)
+    if(neighbor_len > 2 && dist[1]/dist[neighbor_len-1] < tol) {
+      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[1],num_lines,tol,itemp,dtemp);
+    }
+    // Fire off a neighbor line search (second nearest neighbor)
+    if(neighbor_len > 3 && dist[2]/dist[neighbor_len-1] < tol) {
+      local_automatic_line_search(ml,currentLevel,NumEqns,blockIndices,i,indices[2],num_lines,tol,itemp,dtemp);
+    }
+
+    num_lines++;
+  }
+
+  // Cleanup
+  ML_free(cols);
+  ML_free(vals);
+  ML_free(itemp);
+  ML_free(dtemp);
+
+  return num_lines;
+}
+
+
 // ============================================================================
 /*! Values for \c "smoother: type"
  * - \c Jacobi
@@ -138,7 +278,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
   std::string MeshNumbering = List_.get("smoother: line orientation","use coordinates");
   std::string GroupDofsString= List_.get("smoother: line group dofs","separate");
   std::string GSType   = List_.get("smoother: line GS Type","symmetric");
-
+  double LineDetectionThreshold = List_.get("smoother: line detection threshold",-1.0);
                                   /* 1: group all dofs per node within a line */
                                   /*    into a single block. Current version  */
                                   /*    is not efficient.                     */
@@ -508,6 +648,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
 
        int nnn = ml_->Amat[currentLevel].outvec_leng;
        int MyNumVerticalNodes = smList.get("smoother: line direction nodes",NumVerticalNodes);
+       double MyLineDetectionThreshold = List_.get("smoother: line detection threshold",LineDetectionThreshold);
        std::string MyMeshNumbering = smList.get("smoother: line orientation",MeshNumbering);
        std::string MyGSType = smList.get("smoother: line GS Type",GSType);
        std::string MyGroupDofsString= List_.get("smoother: line group dofs",GroupDofsString);
@@ -587,125 +728,137 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        for (int i = 0; i < nnn;  i++) blockIndices[i] = -1;
 
        int tempi;
+       int NumBlocks;
 
-       if (MyMeshNumbering == "vertical") { /* vertical numbering for nodes */
-          if (MyGroupDofsInLine == 1) { /*  one line for all dofs */
-            for (int dof = 0; dof < NumPDEEqns_; dof++) {
-              for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
-                tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
+       if(MyLineDetectionThreshold > 0.0) {
+	 // Use Mavriplis-inspired line detection
+	 NumBlocks = ML_Compute_Blocks_AutoLine(ml_,currentLevel,NumPDEEqns_,MyLineDetectionThreshold,blockIndices);
+	 int GlobalBlocks=0;
+	 Comm().SumAll(&NumBlocks,&GlobalBlocks,1);
+	 if( verbose_ ) std::cout << msg << MySmoother << ": using automatic line detection ("<<GlobalBlocks<<" blocks found)"<<std::endl;
+
+       }
+       else {
+	 // Use Tuminaro's line detection
+
+	 if (MyMeshNumbering == "vertical") { /* vertical numbering for nodes */
+	   if (MyGroupDofsInLine == 1) { /*  one line for all dofs */
+	     for (int dof = 0; dof < NumPDEEqns_; dof++) {
+	       for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
+		 tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
                 blockIndices[iii] = tempi;
-              }
-            }
-          }
-         else { /*  different lines for each dof */
-            for (int dof = 0; dof < NumPDEEqns_; dof++) {
-              for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
+	       }
+	     }
+	   }
+	   else { /*  different lines for each dof */
+	     for (int dof = 0; dof < NumPDEEqns_; dof++) {
+	       for (int iii = dof; iii < nnn; iii+= NumPDEEqns_) {
                 tempi = iii/(NumPDEEqns_*MyNumVerticalNodes);
                 blockIndices[iii] = NumPDEEqns_*tempi+dof;
-              }
-            }
-          }
-       }
-       else if (MyMeshNumbering == "horizontal") {/* horizontal numbering for nodes */
+	       }
+	     }
+	   }
+	 }
+	 else if (MyMeshNumbering == "horizontal") {/* horizontal numbering for nodes */
           tempi = nnn/MyNumVerticalNodes;
           if (MyGroupDofsInLine == 1) {/*  one line for all dofs */
             for (int iii = 0; iii < nnn; iii++)
-               blockIndices[iii] = (int) floor(((double)(iii%tempi))/
-                                               ((double) NumPDEEqns_)+.00001);
+	      blockIndices[iii] = (int) floor(((double)(iii%tempi))/
+					      ((double) NumPDEEqns_)+.00001);
           }
           else { /* different lines for each dof */
             for (int iii = 0; iii < nnn; iii++) blockIndices[iii] = (iii%tempi);
           }
-       }
-       else {
-
-          blockOffset = (int *) ML_allocate(sizeof(int)*(nnn+1));
-          for (int i = 0; i < nnn;  i++) blockOffset[i] = 0;
-
-          int    NumCoords, NumBlocks, index, next, subindex, subnext;
-          double xfirst, yfirst;
-
-          NumCoords = nnn/NumPDEEqns_;
-
-          /* sort coordinates so that we can order things according to lines */
-
-          double *xtemp, *ytemp, *ztemp;
-          int    *OrigLoc;
-
-          OrigLoc = (int    *) ML_allocate(sizeof(int   )*(NumCoords+1));
-          xtemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
-          ytemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
-          ztemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
-
-          if (ztemp == NULL) {
+	 }
+	 else {
+	   
+	   blockOffset = (int *) ML_allocate(sizeof(int)*(nnn+1));
+	   for (int i = 0; i < nnn;  i++) blockOffset[i] = 0;
+	   
+	   int    NumCoords, index, next, subindex, subnext;
+	   double xfirst, yfirst;
+	   
+	   NumCoords = nnn/NumPDEEqns_;
+	   
+	   /* sort coordinates so that we can order things according to lines */
+	   
+	   double *xtemp, *ytemp, *ztemp;
+	   int    *OrigLoc;
+	   
+	   OrigLoc = (int    *) ML_allocate(sizeof(int   )*(NumCoords+1));
+	   xtemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
+	   ytemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
+	   ztemp   = (double *) ML_allocate(sizeof(double)*(NumCoords+1));
+	   
+	   if (ztemp == NULL) {
              printf("Not enough memory for line smoothers\n");
              exit(EXIT_FAILURE);
-          }
-          for (int i = 0; i < NumCoords; i++) xtemp[i]= xvals[i];
-          for (int i = 0; i < NumCoords; i++) OrigLoc[i]= i;
+	   }
+	   for (int i = 0; i < NumCoords; i++) xtemp[i]= xvals[i];
+	   for (int i = 0; i < NumCoords; i++) OrigLoc[i]= i;
+	   
+	   ML_az_dsort2(xtemp,NumCoords,OrigLoc);
+	   for (int i = 0; i < NumCoords; i++) ytemp[i]= yvals[OrigLoc[i]];
 
-          ML_az_dsort2(xtemp,NumCoords,OrigLoc);
-          for (int i = 0; i < NumCoords; i++) ytemp[i]= yvals[OrigLoc[i]];
-
-          index = 0;
-
-          while ( index < NumCoords ) {
+	   index = 0;
+	   
+	   while ( index < NumCoords ) {
              xfirst = xtemp[index];
              next   = index+1;
              while ( (next != NumCoords) && (xtemp[next] == xfirst))
-             next++;
+	       next++;
              ML_az_dsort2(&(ytemp[index]),next-index,&(OrigLoc[index]));
              for (int i = index; i < next; i++) ztemp[i]= zvals[OrigLoc[i]];
              /* One final sort so that the ztemps are in order */
              subindex = index;
              while (subindex != next) {
-                yfirst = ytemp[subindex]; subnext = subindex+1;
-                while ( (subnext != next) && (ytemp[subnext] == yfirst)) subnext++;
-                ML_az_dsort2(&(ztemp[subindex]),subnext-subindex,&(OrigLoc[subindex]));
-                subindex = subnext;
+	       yfirst = ytemp[subindex]; subnext = subindex+1;
+	       while ( (subnext != next) && (ytemp[subnext] == yfirst)) subnext++;
+	       ML_az_dsort2(&(ztemp[subindex]),subnext-subindex,&(OrigLoc[subindex]));
+	       subindex = subnext;
              }
              index = next;
-          }
-
-         /* go through each vertical line and populate blockIndices so all   */
-         /* dofs within a PDE within a vertical line correspond to one block.*/
-
-         NumBlocks = 0;
-         index = 0;
-         int   count, NotGrouped;
-
-         NotGrouped = 1 - MyGroupDofsInLine;
-         while ( index < NumCoords ) {
-            xfirst = xtemp[index];  yfirst = ytemp[index];
-            next = index+1;
-            while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
-                    (ytemp[next] == yfirst))
+	   }
+	   
+	   /* go through each vertical line and populate blockIndices so all   */
+	   /* dofs within a PDE within a vertical line correspond to one block.*/
+	   
+	   NumBlocks = 0;
+	   index = 0;
+	   int  NotGrouped;
+	   
+	   NotGrouped = 1 - MyGroupDofsInLine;
+	   while ( index < NumCoords ) {
+	     xfirst = xtemp[index];  yfirst = ytemp[index];
+	     next = index+1;
+	     while ( (next != NumCoords) && (xtemp[next] == xfirst) &&
+		     (ytemp[next] == yfirst))
                next++;
-            if (NumBlocks == 0) MyNumVerticalNodes = next-index;
-            if (next-index != MyNumVerticalNodes) {
+	     if (NumBlocks == 0) MyNumVerticalNodes = next-index;
+	     if (next-index != MyNumVerticalNodes) {
                printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,MyNumVerticalNodes);
                exit(EXIT_FAILURE);
-            }
-            int count = 0;
-            for (int i = 0; i < NumPDEEqns_; i++) {
+	     }
+	     int count = 0;
+	     for (int i = 0; i < NumPDEEqns_; i++) {
                if (MyGroupDofsInLine != 1) count = 0;
                for (int j= index; j < next; j++) {
-                  blockIndices[NumPDEEqns_*OrigLoc[j]+i] = NumBlocks;
-                  blockOffset[NumPDEEqns_*OrigLoc[j]+i] = count++;
+		 blockIndices[NumPDEEqns_*OrigLoc[j]+i] = NumBlocks;
+		 blockOffset[NumPDEEqns_*OrigLoc[j]+i] = count++;
                }
                NumBlocks += NotGrouped;
-            }
-            NumBlocks += MyGroupDofsInLine;
-            index = next;
-         }
-         ML_free(ztemp);
-         ML_free(ytemp);
-         ML_free(xtemp);
-         ML_free(OrigLoc);
-       }
-
-       /* check that everyone was assigned to one block */
-
+	     }
+	     NumBlocks += MyGroupDofsInLine;
+	     index = next;
+	   }
+	   ML_free(ztemp);
+	   ML_free(ytemp);
+	   ML_free(xtemp);
+	   ML_free(OrigLoc);
+	 }
+       }// end line detection
+	 
+      /* check that everyone was assigned to one block */
        for (int i = 0; i < nnn;  i++) {
           int BadCount = 0;
           if (blockIndices[i] == -1) {
@@ -715,11 +868,15 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
        }
 
        int nBlocks;
-       if (MyGroupDofsInLine == 1) nBlocks = nnn/(MyNumVerticalNodes*NumPDEEqns_);
-       else                      nBlocks = nnn/MyNumVerticalNodes;
+       if(MyLineDetectionThreshold > 0.0) 
+	 nBlocks = NumBlocks; 
+       else {
+	 if (MyGroupDofsInLine == 1) nBlocks = nnn/(MyNumVerticalNodes*NumPDEEqns_);
+	 else                        nBlocks = nnn/MyNumVerticalNodes;
+       }
 
        if (MySmoother == "line Jacobi") {
-           if (MyGroupDofsInLine == 0)
+           if (MyGroupDofsInLine == 0 && MyLineDetectionThreshold < 0.0 )
              ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
                              Mynum_smoother_steps,Myomega,nBlocks,blockIndices,
                              blockOffset, ML_Smoother_LineJacobi, GS_type);
@@ -728,7 +885,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
                              Mynum_smoother_steps,Myomega,nBlocks,blockIndices);
 
        } else {
-           if (MyGroupDofsInLine == 0)
+           if (MyGroupDofsInLine == 0 && MyLineDetectionThreshold < 0.0 )
              ML_Gen_Smoother_LineSmoother(ml_ , currentLevel, pre_or_post,
                              Mynum_smoother_steps,Myomega,nBlocks,blockIndices,
                              blockOffset, ML_Smoother_LineGS, GS_type);

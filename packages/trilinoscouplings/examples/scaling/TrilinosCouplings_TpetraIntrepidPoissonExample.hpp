@@ -36,9 +36,11 @@
 #include "Tpetra_Vector.hpp"
 #include "Teuchos_FancyOStream.hpp"
 #include "Teuchos_ScalarTraits.hpp"
+#include "TrilinosCouplings_config.h"
 
-// MueLu includes
-#include "MueLu_TpetraOperator.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#  include "MueLu_TpetraOperator.hpp"
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 #include "TrilinosCouplings_IntrepidPoissonExample_SolveWithBelos.hpp"
 

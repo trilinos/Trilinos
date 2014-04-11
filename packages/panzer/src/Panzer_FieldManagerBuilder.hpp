@@ -146,7 +146,8 @@ namespace panzer {
 				  const Teuchos::ParameterList& closure_models,
                                   const LinearObjFactory<panzer::Traits> & lo_factory,
 				  const Teuchos::ParameterList& user_data,
-                                  const GenericEvaluatorFactory & gEvalFact);
+                                  const GenericEvaluatorFactory & gEvalFact,
+                                  bool closureModelByEBlock=false);
 
     /** Build the BC field managers.
       */

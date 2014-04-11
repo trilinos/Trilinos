@@ -2294,10 +2294,12 @@ ML_Operator** ML_repartition_Acoarse(ML *ml, int fine, int coarse,
       if ((ml->comm->ML_mypid == 0) && (ML_Get_PrintLevel() > 0))
         printf("ML*WRN* ML_repartition_Acoarse: problem dimension was not previously set.\nML*WRN* Now setting dimension to %d.\n",N_dimensions);
     }
-    if (ag->N_dimensions != N_dimensions) {
-       N_dimensions = ag->N_dimensions;
-       if  (N_dimensions < 3)  zcoord = NULL;
-       if  (N_dimensions < 2)  ycoord = NULL;
+    if(ag != NULL){
+      if (ag->N_dimensions != N_dimensions) {
+	N_dimensions = ag->N_dimensions;
+	if  (N_dimensions < 3)  zcoord = NULL;
+	if  (N_dimensions < 2)  ycoord = NULL;
+      }
     }
   }
 

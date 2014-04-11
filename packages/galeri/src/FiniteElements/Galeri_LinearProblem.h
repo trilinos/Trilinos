@@ -126,14 +126,14 @@ public:
     int size = Grid().NumVerticesPerElement();
 
     // allocate elemental matrices and RHS
-    vector<double> ElementMatrix(size * size);
-    vector<double> ElementRHS(size);
+    std::vector<double> ElementMatrix(size * size);
+    std::vector<double> ElementRHS(size);
 
-    vector<double> x(size);
-    vector<double> y(size);
-    vector<double> z(size);
-    vector<int>    LVID(size);
-    vector<int>    GVID(size);
+    std::vector<double> x(size);
+    std::vector<double> y(size);
+    std::vector<double> z(size);
+    std::vector<int>    LVID(size);
+    std::vector<int>    GVID(size);
 
     // ==================== //
     // Fill matrix elements //
@@ -264,11 +264,11 @@ public:
     }
 
     int size = Grid().NumVerticesPerElement();
-    vector<double> x(size);
-    vector<double> y(size);
-    vector<double> z(size);
-    vector<double> LocalSol(size);
-    vector<int>    Vertices(size);
+    std::vector<double> x(size);
+    std::vector<double> y(size);
+    std::vector<double> z(size);
+    std::vector<double> LocalSol(size);
+    std::vector<int>    Vertices(size);
 
     for (int i = 0 ; i < size ; ++i) 
     {
