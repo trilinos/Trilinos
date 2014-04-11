@@ -685,6 +685,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
 {
   using Teuchos::as;
   using Teuchos::ArrayView;
+  using Teuchos::ArrayRCP;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -694,8 +695,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     << Y.getNumVectors () << " columns.");
 
   const scalar_type zero = STS::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
 
   if (beta == zero) {
     Y.putScalar (zero);
@@ -705,43 +704,85 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
   }
 
   const size_t NumVectors = Y.getNumVectors();
+  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
 
   // FIXME (mfh 12 July 2013) This would be a good candidate for
   // parallelization via Kokkos.
+  
+  // Constant stride check
+  bool constant_stride = X.isConstantStride() && Y.isConstantStride();
 
-  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
-  for (size_t i = 0; i < numRows; ++i) {
-    size_t Nnz;
-    // Use this class's getrow to make the below code simpler
-    getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
-    if (mode == Teuchos::NO_TRANS){
-      for (size_t k = 0 ; k < NumVectors ; ++k) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
-	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
-	for (size_t j = 0 ; j < Nnz ; ++j) 
-          y_local[i] += alpha * Values_[j] * x_local[Indices_[j]];
+  if(constant_stride) {
+    // extract 1D RCPs
+    size_t                    x_stride = X.getStride();
+    size_t                    y_stride = Y.getStride();
+    ArrayRCP<scalar_type>        y_rcp = Y.get1dViewNonConst();
+    ArrayRCP<const scalar_type>  x_rcp = X.get1dView();
+    ArrayView<scalar_type>       y_ptr = y_rcp();
+    ArrayView<const scalar_type> x_ptr = x_rcp();
+    for (size_t i = 0; i < numRows; ++i) {
+      size_t Nnz;
+      // Use this class's getrow to make the below code simpler
+      getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
+      if (mode == Teuchos::NO_TRANS){
+	for (size_t j = 0 ; j < Nnz ; ++j) {
+	  const LocalOrdinal col = Indices_[j];
+	  for (size_t k = 0 ; k < NumVectors ; ++k) 
+	    y_ptr[i + y_stride*k] += alpha * Values_[j] * x_ptr[col + x_stride*k];
 	}
-    }
-    else if (mode == Teuchos::TRANS){
-      for (size_t k = 0 ; k < NumVectors ; ++k) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
-	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
-	for (size_t j = 0 ; j < Nnz ; ++j)
-          y_local[Indices_[j]] += alpha * Values_[j] * x_local[i];
       }
-    }
-    else { //mode==Teuchos::CONJ_TRANS
-      for (size_t k = 0 ; k < NumVectors ; ++k) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[k]();
-	ArrayView<scalar_type>       y_local = (y_ptr())[k]();
-	for (size_t j = 0 ; j < Nnz ; ++j)
-          y_local[Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_local[i];
+      else if (mode == Teuchos::TRANS){
+	for (size_t j = 0 ; j < Nnz ; ++j) {
+	  const LocalOrdinal col = Indices_[j];
+	  for (size_t k = 0 ; k < NumVectors ; ++k) 
+	    y_ptr[col + y_stride*k] += alpha * Values_[j] * x_ptr[i + x_stride*k];
+	}
+      }
+      else { //mode==Teuchos::CONJ_TRANS
+	for (size_t j = 0 ; j < Nnz ; ++j) {
+	  const LocalOrdinal col = Indices_[j];
+	  for (size_t k = 0 ; k < NumVectors ; ++k) 
+	    y_ptr[col + y_stride*k] += alpha * STS::conjugate(Values_[j]) * x_ptr[i + x_stride*k];
+	}
       }
     }
   }
+  else { 
+    // 2D arrayrcps
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
+    Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
+
+    for (size_t i = 0; i < numRows; ++i) {
+      size_t Nnz;
+      // Use this class's getrow to make the below code simpler
+      getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
+      if (mode == Teuchos::NO_TRANS){
+	for (size_t k = 0 ; k < NumVectors ; ++k) {
+	  ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	  ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	  for (size_t j = 0 ; j < Nnz ; ++j) 
+	    y_local[i] += alpha * Values_[j] * x_local[Indices_[j]];
+	}
+      }
+      else if (mode == Teuchos::TRANS){
+	for (size_t k = 0 ; k < NumVectors ; ++k) {
+	  ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	  ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	  for (size_t j = 0 ; j < Nnz ; ++j)
+	    y_local[Indices_[j]] += alpha * Values_[j] * x_local[i];
+	}
+      }
+      else { //mode==Teuchos::CONJ_TRANS
+	for (size_t k = 0 ; k < NumVectors ; ++k) {
+	  ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+	  ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+	  for (size_t j = 0 ; j < Nnz ; ++j)
+	    y_local[Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_local[i];
+	}
+      }
+    }
+  }  
 }
-
-
 
 template<class MatrixType>
 bool LocalFilter<MatrixType>::hasTransposeApply () const
