@@ -69,9 +69,11 @@ static struct ex_file_item* file_list = NULL;
 
 struct ex_file_item* ex_find_file_item(int exoid)
 {
+  /* Find base filename in case exoid refers to a group */
+  int base_exoid = (unsigned)exoid & EX_FILE_ID_MASK;
   struct ex_file_item *ptr = file_list;
   while (ptr) {						\
-    if( ptr->file_id == exoid ) break;				\
+    if( ptr->file_id == base_exoid ) break;				\
     ptr = ptr->next;						\
   }								\
   return ptr;

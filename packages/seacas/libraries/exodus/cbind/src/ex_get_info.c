@@ -80,23 +80,25 @@ int ex_get_info (int    exoid,
   size_t num_info, start[2], count[2];
   char  errmsg[MAX_ERR_LENGTH];
 
+  int rootid = exoid & EX_FILE_ID_MASK;
+
   exerrval = 0; /* clear error code */
 
   /* inquire previously defined dimensions and variables  */
-  if ((status = nc_inq_dimid (exoid, DIM_NUM_INFO, &dimid)) != NC_NOERR) {
+  if ((status = nc_inq_dimid (rootid, DIM_NUM_INFO, &dimid)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Warning: failed to locate number of info records in file id %d",
-	    exoid);
+	    rootid);
     ex_err("ex_get_info",errmsg,exerrval);
     return (EX_WARN);
   }
 
-  if ((status = nc_inq_dimlen(exoid, dimid, &num_info)) != NC_NOERR) {
+  if ((status = nc_inq_dimlen(rootid, dimid, &num_info)) != NC_NOERR) {
     exerrval = status;
     sprintf(errmsg,
             "Error: failed to get number of info records in file id %d",
-	    exoid);
+	    rootid);
     ex_err("ex_get_info",errmsg,exerrval);
     return (EX_FATAL);
   }
@@ -104,10 +106,10 @@ int ex_get_info (int    exoid,
 
   /* do this only if there are any information records */
   if (num_info > 0) {
-    if ((status = nc_inq_varid(exoid, VAR_INFO, &varid)) != NC_NOERR) {
+    if ((status = nc_inq_varid(rootid, VAR_INFO, &varid)) != NC_NOERR) {
       exerrval = status;
       sprintf(errmsg,
-              "Error: failed to locate info record data in file id %d", exoid);
+              "Error: failed to locate info record data in file id %d", rootid);
       ex_err("ex_get_info",errmsg,exerrval);
       return (EX_FATAL);
     }
@@ -117,10 +119,10 @@ int ex_get_info (int    exoid,
       start[0] = i; count[0] = 1;
       start[1] = 0; count[1] = MAX_LINE_LENGTH+1;
 
-      if ((status = nc_get_vara_text(exoid, varid, start, count, info[i])) != NC_NOERR) {
+      if ((status = nc_get_vara_text(rootid, varid, start, count, info[i])) != NC_NOERR) {
 	exerrval = status;
 	sprintf(errmsg,
-		"Error: failed to get info record data in file id %d", exoid);
+		"Error: failed to get info record data in file id %d", rootid);
 	ex_err("ex_get_info",errmsg,exerrval);
 	return (EX_FATAL);
       }
