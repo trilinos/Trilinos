@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006 Sandia Corporation. Under the terms of Contract
+ * Copyright (c) 2014 Sandia Corporation. Under the terms of Contract
  * DE-AC04-94AL85000 with Sandia Corporation, the U.S. Governement
  * retains certain rights in this software.
  * 
@@ -32,20 +32,19 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-
 #include "exodusII.h"
 #include "exodusII_int.h"
-#include <string.h>
 
-/*!
- * writes the parameters used to describe an element/face/edge block
- * \param   exoid                   exodus file id
- * \param   block                   ex_block structure describing block counts
- */
-
-int ex_put_block_param( int         exoid,
-			const ex_block block)
+int ex_get_block_params(int exoid,
+			size_t block_count,
+			struct ex_block **blocks)
 {
-  return ex_put_block_params(exoid, 1, &block);
+  size_t i;
+  for (i=0; i < block_count; i++) {
+    int status = ex_get_block_param(exoid, blocks[i]);
+    if (status != EX_NOERR) {
+      return status;
+    }
+  }
+  return (EX_NOERR);
 }
-

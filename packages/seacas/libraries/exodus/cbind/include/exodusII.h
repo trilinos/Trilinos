@@ -544,6 +544,11 @@ extern "C" {
 				 int   *io_ws,
 				 float *version, int my_version);
   
+  EXODUS_EXPORT int ex_add_attr(int exoid,
+				ex_entity_type obj_type,
+				ex_entity_id   obj_id,
+				int64_t     num_attr_per_entry);
+  
   EXODUS_EXPORT int ex_put_attr_param (int   exoid,
 				       ex_entity_type obj_type,
 				       ex_entity_id   obj_id,
@@ -775,6 +780,14 @@ extern "C" {
 
   EXODUS_EXPORT int ex_put_block_param(int exoid,
 				       const ex_block block);
+
+  EXODUS_EXPORT int ex_get_block_params(int exoid,
+					size_t block_count,
+					struct ex_block **blocks);
+
+  EXODUS_EXPORT int ex_put_block_params(int exoid,
+					size_t block_count,
+					const struct ex_block *blocks);
 
   /*  Write All Edge Face and Element Block Parameters */
   EXODUS_EXPORT int ex_put_concat_all_blocks(int exoid,

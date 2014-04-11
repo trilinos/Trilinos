@@ -202,6 +202,8 @@ SRCS =	ex_close.c \
 	ex_put_attr_param.c \
 	ex_put_block.c \
 	ex_put_block_param.c \
+	ex_get_block_params.c \
+	ex_put_block_params.c \
 	ex_put_cmap_params.c \
 	ex_put_cmap_params_cc.c \
 	ex_put_concat_all_blocks.c \
@@ -310,6 +312,7 @@ SRCS =	ex_close.c \
 	ex_put_var_param.c \
 	ex_put_var_tab.c \
 	ex_update.c \
+	ex_add_attr.c \
 	ex_utils.c
 
 OBJS   = ${SRCS:.c=.o}
