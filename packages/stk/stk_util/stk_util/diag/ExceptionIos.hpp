@@ -19,6 +19,6 @@
 
 /* Standard Library Classes containing Exceptions */
 #include <ios>
-#include <stk_util/diag/Exception.hpp>
+#include <Slib_Exception.h>
 
 #endif // STK_UTIL_PARALLEL_ExceptionIos_hpp

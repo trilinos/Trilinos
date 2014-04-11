@@ -24,15 +24,13 @@
 #include <stk_util/util/FeatureTest.hpp>
 #include <stk_util/environment/Env.hpp>
 #include <stk_util/diag/Platform.hpp>
-#include <stk_util/diag/Exception.hpp>
-#include <stk_util/diag/ExceptionReport.hpp>
 #include <stk_util/parallel/MPI.hpp>
 #include <stk_util/environment/ProductRegistry.hpp>
 
 #include <stk_util/util/Writer.hpp>
 #include <stk_util/diag/SlibDiagWriter.hpp>
 #include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/Trace.hpp>
+#include <stk_util/environment/Trace.hpp>
 
 #include <fcntl.h>
 

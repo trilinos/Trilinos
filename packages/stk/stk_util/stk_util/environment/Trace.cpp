@@ -7,12 +7,12 @@
  *    ------------------------------------------------------------
  */
 
-#include <stk_util/diag/Trace.hpp>
+#include <stk_util/environment/Trace.hpp>
 #include <cstring>                      // for strcmp
 #include <exception>                    // for uncaught_exception
 #include <stk_util/environment/Env.hpp>        // for cpu_now
-#include <stk_util/diag/Platform.hpp>   // for get_heap_usage
 #include <stk_util/environment/FormatTime.hpp>  // for formatTime
+#include <stk_util/util/heap_usage.hpp>   // for get_heap_info
 #include <stk_util/util/Writer.hpp>     // for Writer, operator<<, dendl, etc
 #include <string>                       // for basic_string, string, etc
 #include <utility>                      // for pair
@@ -82,12 +82,6 @@ prefix_find(
   return false;
 }
 
-
-size_t
-get_heap_used()
-{
-  return sierra::Env::get_heap_usage();
-}
 
 std::string::const_iterator
 find_next_char(
@@ -311,7 +305,7 @@ Trace::Trace(
 
     if (dout.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now();
-      m_startMemAlloc = get_heap_used();
+      m_startMemAlloc = stk::get_heap_used();
     }
   }
 }
@@ -322,7 +316,7 @@ Trace::~Trace()
   if (m_do_trace && (m_flags & IN_TRACE_LIST)) {
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
       m_startCpuTime = sierra::Env::cpu_now() - m_startCpuTime;
-      m_startMemAlloc = get_heap_used() - m_startMemAlloc;
+      m_startMemAlloc = stk::get_heap_used() - m_startMemAlloc;
     }
 
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {

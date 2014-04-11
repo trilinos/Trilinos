@@ -38,6 +38,8 @@
 #ifndef STK_UTIL_UTIL_RADIXSORT_HPP
 #define STK_UTIL_UTIL_RADIXSORT_HPP
 
+#include <stdexcept>
+
 //
 // Internal implementation
 //

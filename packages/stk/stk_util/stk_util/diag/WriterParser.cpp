@@ -4,7 +4,7 @@
 #include <map>
 
 #include <stk_util/diag/WriterParser.hpp>
-#include <stk_util/diag/Trace.hpp>
+#include <stk_util/environment/Trace.hpp>
 #include <stk_util/util/Writer_fwd.hpp>
 #include <iostream>
 
