@@ -618,7 +618,6 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // We have successfully relaxed the solution from the remesh, now prepare to resume stepping
 
-// Begin new way
  // Compute predictor direction
   NOX::Abstract::Group::ReturnType predictorStatus =
     curGroupPtr->computePredictor();
@@ -637,15 +636,12 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
    // Save previous successful step information
     prevGroupPtr->copy(*curGroupPtr);
 
-// end new way
-
   // Compute step size
   stepStatus = computeStepSize(stepStatus, stepSize);
 
   // Set step size in current solution group
   curGroupPtr->setStepSize(stepSize);
 
-/* Old Way */
   // Set previous solution vector in current solution group
   curGroupPtr->setPrevX(prevGroupPtr->getX());
 
@@ -654,17 +650,10 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Allow continuation group to preprocess the step
   curGroupPtr->preProcessContinuationStep(stepStatus);
-/**/
 
   // Reset solver to compute new solution
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
 				       parsedParams->getSublist("NOX"));
-
-/* In start()
- stepNumber++;
-  mgr->setIteration(stepNumber);
-  mgr->setTime(getContinuationParameter());
-*/
 
   return stepStatus;
 

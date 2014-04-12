@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -52,7 +52,7 @@
 
 namespace Piro {
 
-/*! \brief Factory for creating Thyra-based %Piro solvers
+/*! \brief Factory for creating adaptive Thyra-based %Piro solvers
  *
  *  Piro::Epetra::SolverFactory is the counterpart for Epetra-based models.
  */
@@ -73,7 +73,6 @@ public:
   template <typename Scalar>
   Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > createSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer = Teuchos::null);

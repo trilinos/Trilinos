@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2012) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact 
+// Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,7 +56,7 @@
 namespace LOCA {
 namespace Thyra {
 
-class AdaptiveSolutionManager 
+class AdaptiveSolutionManager
 {
 public:
 
@@ -68,8 +68,7 @@ public:
            TEUCHOS_TEST_FOR_EXCEPT_MSG(true, "Not implemented");
   }
 
-  void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& modelWithSolve,
-                  const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+  void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
                   const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
                   const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	              const Teuchos::RCP<LOCA::ParameterVector>& p,
@@ -79,7 +78,7 @@ public:
   void buildSolutionGroup();
 
   //! Accessor for the LOCA solution group
-  Teuchos::RCP<LOCA::Thyra::Group> 
+  Teuchos::RCP<LOCA::Thyra::Group>
        getSolutionGroup(){ return grp_; }
 
   //! Remap "old" solution into new data structures
@@ -88,8 +87,6 @@ public:
         }
 
   //! Accessor functions
-
-//  virtual void getConvergenceData(int& KrylovIters, int& lastSolveKrylocIters, int& linSolves, double& tolAchieved) const;
 
   virtual Teuchos::RCP<Teuchos::ParameterList> getAdaptParamsNonConst() { return adaptParams_; }
 
@@ -115,7 +112,7 @@ public:
         }
 
 protected:
- 
+
   //! The solution group
   Teuchos::RCP<LOCA::Thyra::GroupWrapper> grp_;
 
@@ -131,7 +128,6 @@ protected:
   double time_;
   int iter_;
 
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > modelWithSolve_;
   Teuchos::RCP< ::Thyra::ModelEvaluator<double> > model_;
   Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> saveDataStrategy_;
   Teuchos::RCP<LOCA::GlobalData> globalData_;

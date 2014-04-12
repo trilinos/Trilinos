@@ -107,7 +107,6 @@ Piro::SteadyStateSolver<Scalar>::get_g_space(int j) const
     return model_->get_g_space(j);
   } else {
     // j == num_g_, corresponding to the state by convention
-std::cerr << "Calling model_->get_x_space and it is of size : " << model_->get_x_space()->dim() << std::endl;
     return model_->get_x_space();
   }
 }
@@ -231,7 +230,6 @@ template <typename Scalar>
 int
 Piro::SteadyStateSolver<Scalar>::num_g() const
 {
-std::cerr << "Calling Piro_SteadyStateSOlver num_g" << std::endl;
   return num_g_;
 }
 
@@ -249,7 +247,6 @@ void Piro::SteadyStateSolver<Scalar>::evalConvergedModel(
     const RCP<Thyra::VectorBase<Scalar> > gx_out = outArgs.get_g(num_g_);
     if (Teuchos::nonnull(gx_out)) {
       g_size = gx_out->space()->dim();
-std::cerr << " Piro_SteadyStateSolver_Def.hpp line 249 size of gx_out : " << g_size << std::endl;
       Thyra::copy(*modelInArgs.get_x(), gx_out.ptr());
     }
   }
@@ -274,7 +271,6 @@ std::cerr << " Piro_SteadyStateSolver_Def.hpp line 249 size of gx_out : " << g_s
           if (!dgdp_support.none()) {
             const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
               outArgs.get_DgDp(j, l);
-std::cerr << " Piro_SteadyStateSolver_Def.hpp line 276 size of dgdp_deriv : " << dgdp_deriv.getMultiVector()->range()->dim() << std::endl;
             if (!dgdp_deriv.isEmpty()) {
               jacobianRequired = true;
             }
@@ -297,7 +293,6 @@ std::cerr << " Piro_SteadyStateSolver_Def.hpp line 276 size of dgdp_deriv : " <<
         if (!dgdp_support.none()) {
           const Thyra::ModelEvaluatorBase::Derivative<Scalar> dgdp_deriv =
             outArgs.get_DgDp(j, l);
-std::cerr << " Piro_SteadyStateSolver_Def.hpp line 299 size of dgdp_deriv : " << dgdp_deriv.getMultiVector()->range()->dim() << std::endl;
           if (Teuchos::nonnull(dgdp_deriv.getLinearOp())) {
             dfdp_request.plus(Thyra::ModelEvaluatorBase::DERIV_LINEAR_OP);
           } else if (Teuchos::nonnull(dgdp_deriv.getMultiVector())) {
@@ -397,7 +392,6 @@ std::cerr << " Piro_SteadyStateSolver_Def.hpp line 299 size of dgdp_deriv : " <<
 
           const Thyra::ModelEvaluatorBase::Derivative<Scalar> dxdp_deriv =
             outArgs.get_DgDp(num_g_, l);
-std::cerr << " Piro_SteadyStateSolver_Def.hpp line 399 size of dxdp_deriv : " << dxdp_deriv.getMultiVector()->range()->dim() << std::endl;
           const RCP<Thyra::LinearOpBase<Scalar> > dxdp_op =
             dxdp_deriv.getLinearOp();
           const RCP<Thyra::MultiVectorBase<Scalar> > dxdp_mv =
@@ -408,9 +402,7 @@ std::cerr << " Piro_SteadyStateSolver_Def.hpp line 399 size of dxdp_deriv : " <<
           if (Teuchos::nonnull(dfdp_mv)) {
             if (Teuchos::nonnull(dxdp_mv)) {
               minus_dxdp_mv = dxdp_mv; // Use user-provided object as temporary
-std::cerr << "dxdp_mv : " << dxdp_mv->range()->dim() << std::endl;
             } else {
-std::cerr << "get_x_space : " << model_->get_x_space()->dim() << " get_p_space " << model_->get_p_space(l)->dim() << std::endl;
               minus_dxdp_mv =
                 Thyra::createMembers(model_->get_x_space(), model_->get_p_space(l));
               minus_dxdp_op = minus_dxdp_mv;
@@ -426,7 +418,6 @@ std::cerr << "get_x_space : " << model_->get_x_space()->dim() << " get_p_space "
           if (Teuchos::nonnull(minus_dxdp_mv)) {
             Thyra::assign(minus_dxdp_mv.ptr(), Teuchos::ScalarTraits<Scalar>::zero());
 
-std::cerr << "dfdp_mv : " << dfdp_mv->range()->dim() << " minus " << minus_dxdp_mv->range()->dim() << std::endl;
             const Thyra::SolveCriteria<Scalar> defaultSolveCriteria;
             const Thyra::SolveStatus<Scalar> solveStatus =
               Thyra::solve(

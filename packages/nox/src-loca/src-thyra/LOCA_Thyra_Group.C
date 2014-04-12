@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -78,7 +78,7 @@ LOCA::Thyra::Group::Group(
   updateThyraXDot();
 }
 
-LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source, 
+LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
 			   NOX::CopyType type) :
   NOX::Thyra::Group(source, type),
   LOCA::Abstract::Group(source, type),
@@ -92,11 +92,11 @@ LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
   updateThyraXDot();
 }
 
-LOCA::Thyra::Group::~Group() 
+LOCA::Thyra::Group::~Group()
 {
 }
 
-LOCA::Thyra::Group& 
+LOCA::Thyra::Group&
 LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
 {
   if (this != &source) {
@@ -111,14 +111,14 @@ LOCA::Thyra::Group::operator=(const LOCA::Thyra::Group& source)
   return *this;
 }
 
-NOX::Abstract::Group& 
+NOX::Abstract::Group&
 LOCA::Thyra::Group::operator=(const NOX::Abstract::Group& source)
 {
   operator=(dynamic_cast<const Group&> (source));
   return *this;
 }
 
-NOX::Abstract::Group& 
+NOX::Abstract::Group&
 LOCA::Thyra::Group::operator=(const NOX::Thyra::Group& source)
 {
   operator=(dynamic_cast<const Group&> (source));
@@ -126,13 +126,13 @@ LOCA::Thyra::Group::operator=(const NOX::Thyra::Group& source)
 }
 
 Teuchos::RCP<NOX::Abstract::Group>
-LOCA::Thyra::Group::clone(NOX::CopyType type) const 
+LOCA::Thyra::Group::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new LOCA::Thyra::Group(*this, type));
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Thyra::Group::computeF() 
+LOCA::Thyra::Group::computeF()
 {
   if (this->isF())
     return NOX::Abstract::Group::Ok;
@@ -153,12 +153,12 @@ LOCA::Thyra::Group::computeF()
 
   if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
-  
+
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::Thyra::Group::computeJacobian() 
+NOX::Abstract::Group::ReturnType
+LOCA::Thyra::Group::computeJacobian()
 {
   if (this->isJacobian())
     return NOX::Abstract::Group::Ok;
@@ -195,7 +195,7 @@ LOCA::Thyra::Group::copy(const NOX::Abstract::Group& source)
   *this = source;
 }
 
-void 
+void
 LOCA::Thyra::Group::setParams(const LOCA::ParameterVector& p)
 {
   this->resetIsValidFlags();
@@ -219,8 +219,8 @@ LOCA::Thyra::Group::setParam(std::string paramID, double val)
   updateThyraParamView();
 }
 
-const LOCA::ParameterVector& 
-LOCA::Thyra::Group::getParams() const 
+const LOCA::ParameterVector&
+LOCA::Thyra::Group::getParams() const
 {
   return params;
 }
@@ -238,21 +238,21 @@ LOCA::Thyra::Group::getParam(std::string paramID) const
 }
 
 NOX::Abstract::Group::ReturnType
-LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs, 
-				     NOX::Abstract::MultiVector& fdfdp, 
+LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
+				     NOX::Abstract::MultiVector& fdfdp,
 				     bool isValidF)
 {
   // Currently this does not work because the thyra modelevaluator is not
-  // setting the parameter names correctly in the epetraext modelevalator, 
+  // setting the parameter names correctly in the epetraext modelevalator,
   // so we are disabling this for now
   implement_dfdp = false;
 
   // Use default implementation if we don't want to use model evaluator, or
   // it doesn't support it
-  if (!implement_dfdp || 
+  if (!implement_dfdp ||
       !out_args_.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
 			  param_index).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
-    NOX::Abstract::Group::ReturnType res = 
+    NOX::Abstract::Group::ReturnType res =
       LOCA::Abstract::Group::computeDfDpMulti(paramIDs, fdfdp, isValidF);
     return res;
   }
@@ -296,12 +296,12 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   in_args_.set_x(Teuchos::null);
   in_args_.set_p(param_index, Teuchos::null);
   out_args_.set_f(Teuchos::null);
-  out_args_.set_DfDp(param_index, 
+  out_args_.set_DfDp(param_index,
 		     ::Thyra::ModelEvaluatorBase::Derivative<double>());
 
   if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
-  
+
   return NOX::Abstract::Group::Ok;
 }
 
@@ -369,7 +369,7 @@ NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::computeShiftedMatrix(double alpha, double beta)
 {
   shared_jacobian_->getObject(this);
-  
+
   in_args_.set_x(x_vec_->getThyraRCPVector());
   if (in_args_.supports(::Thyra::ModelEvaluatorBase::IN_ARG_x_dot))
     in_args_.set_x_dot(x_dot_vec);
@@ -399,9 +399,9 @@ NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
                                         NOX::Abstract::Vector& result) const
 {
-  const NOX::Thyra::Vector& thyra_input = 
+  const NOX::Thyra::Vector& thyra_input =
     dynamic_cast<const NOX::Thyra::Vector&>(input);
-  NOX::Thyra::Vector& thyra_result = 
+  NOX::Thyra::Vector& thyra_result =
     dynamic_cast<NOX::Thyra::Vector&>(result);
 
   ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
@@ -415,14 +415,14 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
 				     const NOX::Abstract::MultiVector& input,
 				     NOX::Abstract::MultiVector& result) const
 {
-  const NOX::Thyra::MultiVector& nt_input = 
+  const NOX::Thyra::MultiVector& nt_input =
     Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
-  NOX::Thyra::MultiVector& nt_result = 
+  NOX::Thyra::MultiVector& nt_result =
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
-  ::Thyra::apply(*lop_, 
+  ::Thyra::apply(*lop_,
 		 ::Thyra::NOTRANS,
-		 *nt_input.getThyraMultiVector(), 
+		 *nt_input.getThyraMultiVector(),
 		 nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
@@ -430,7 +430,7 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
 
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::applyShiftedMatrixInverseMultiVector(
-			        Teuchos::ParameterList& lsParams, 
+			        Teuchos::ParameterList& lsParams,
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const
 {

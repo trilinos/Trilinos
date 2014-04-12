@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2012) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact 
+// Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,30 +60,21 @@ void
 LOCA::Thyra::AdaptiveSolutionManager::
 buildSolutionGroup() {
 
-  const NOX::Thyra::Vector initialGuess(*modelWithSolve_->getNominalValues().get_x());
-std::cout << "Calling buildSolutionGroup(): " << modelWithSolve_->getNominalValues().get_x() << std::endl;
+  const NOX::Thyra::Vector initialGuess(*model_->getNominalValues().get_x());
 
-
-std::cout << "LOCA::Thyra::AdaptiveSolutionManager : " << initialGuess.length() << " norm is: " <<
-initialGuess.norm() << std::endl;
-
-
-
-  grp_ = Teuchos::rcp(new LOCA::Thyra::GroupWrapper(globalData_, initialGuess, modelWithSolve_, *paramVector_, p_index_));
+  grp_ = Teuchos::rcp(new LOCA::Thyra::GroupWrapper(globalData_, initialGuess, model_, *paramVector_, p_index_));
   grp_->setSaveDataStrategy(saveDataStrategy_);
 
 }
 
 void
 LOCA::Thyra::AdaptiveSolutionManager::
-initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& modelWithSolve,
-           const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
            const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
            const Teuchos::RCP<LOCA::GlobalData>& global_data,
            const Teuchos::RCP<LOCA::ParameterVector>& p,
            int p_index){
 
-  modelWithSolve_ = modelWithSolve;
   model_ = model;
   saveDataStrategy_ = saveDataStrategy;
   globalData_ = global_data;
@@ -93,29 +84,4 @@ initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& modelWithSolve
   buildSolutionGroup();
 
 }
-
-#if 0
-Teuchos::RCP<const Epetra_Vector>
-LOCA::Thyra::AdaptiveSolutionManager::updateSolution(){
-
-  // Copy new solution from group into current solution
-  *currentSolution = grp->getX();
-
-  return Teuchos::rcpFromRef(currentSolution->getEpetraVector());
-
-}
-
-void
-LOCA::Thyra::AdaptiveSolutionManager::
-getConvergenceData(int& KrylovIters, int& lastSolveKrylovIters, int& linSolves, double& tolAchieved) const {
-
-    KrylovIters = linsys->getLinearItersTotal();
-    lastSolveKrylovIters = linsys->getLinearItersLastSolve();
-    linSolves = linsys->getNumLinearSolves();
-    tolAchieved = linsys->getAchievedTol();
-
-}
-#endif
-
-
 

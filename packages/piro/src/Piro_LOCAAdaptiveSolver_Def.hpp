@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -48,6 +48,7 @@
 #include "Piro_ObserverToLOCASaveDataStrategyAdapter.hpp"
 
 #include "Thyra_DetachedVectorView.hpp"
+#include "Thyra_ModelEvaluatorDelegatorBase.hpp"
 
 #include "NOX_StatusTest_Factory.H"
 
@@ -57,7 +58,6 @@
 
 #include <stdexcept>
 #include <ostream>
-
 
 namespace Piro {
 
@@ -81,11 +81,10 @@ private:
 template <typename Scalar>
 Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy) :
-  SteadyStateSolver<Scalar>(modelWithSolve, modelWithSolve->Np() > 0), // Only one parameter supported
+  SteadyStateSolver<Scalar>(model, model->Np() > 0), // Only one parameter supported
   piroParams_(piroParams),
   saveDataStrategy_(saveDataStrategy),
   globalData_(LOCA::createGlobalData(piroParams)),
@@ -93,7 +92,6 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
   solMgr_(solMgr),
   locaStatusTests_(),
   noxStatusTests_(),
-  adaptivestepper_(),
   stepper_()
 {
   const int l = 0; // TODO: Allow user to select parameter index
@@ -103,7 +101,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     (void) paramVector_.addParameter(paramName(k));
   }
 
-  solMgr_->initialize(modelWithSolve, model, saveDataStrategy_, globalData_, Teuchos::rcpFromRef(paramVector_), l);
+  solMgr_->initialize(model, saveDataStrategy_, globalData_, Teuchos::rcpFromRef(paramVector_), l);
 
   // TODO: Create non-trivial stopping criterion for the stepper
   locaStatusTests_ = Teuchos::null;
@@ -113,11 +111,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::LOCAAdaptiveSolver(
     Teuchos::sublist(Teuchos::sublist(piroParams_, "NOX"), "Status Tests");
   noxStatusTests_ = NOX::StatusTest::buildStatusTests(*noxStatusParams, *(globalData_->locaUtils));
 
-  if(solMgr_->isAdaptive())
-    adaptivestepper_ = Teuchos::rcp(new LOCA::AdaptiveStepper(piroParams_, solMgr_, globalData_, noxStatusTests_));
-  else
-    stepper_ = Teuchos::rcp(new LOCA::Stepper(globalData_, solMgr_->getSolutionGroup(), locaStatusTests_, 
-                            noxStatusTests_, piroParams_));
+  stepper_ = Teuchos::rcp(new LOCA::AdaptiveStepper(piroParams_, solMgr_, globalData_, noxStatusTests_));
 
 }
 
@@ -153,15 +147,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
 
   LOCA::Abstract::Iterator::IteratorStatus status;
 
-  if(solMgr_->isAdaptive()){
-//    adaptivestepper_->reset(piroParams_, solMgr_, globalData_, noxStatusTests_);
-    status = adaptivestepper_->run();
-  }
-  else {
-    stepper_->reset(globalData_, solMgr_->getSolutionGroup(), locaStatusTests_, 
-                    noxStatusTests_, piroParams_);
-    status = stepper_->run();
-  }
+  status = stepper_->run();
 
   if (status == LOCA::Abstract::Iterator::Finished) {
     std::cerr << "Continuation Stepper Finished.\n";
@@ -177,12 +163,12 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
     "#### Statistics ########" << std::endl;
 
   // Check number of steps
-  int numSteps = adaptivestepper_->getStepNumber();
+  int numSteps = stepper_->getStepNumber();
   globalData_->locaUtils->out() << std::endl <<
     " Number of continuation Steps = " << numSteps << std::endl;
 
   // Check number of failed steps
-  int numFailedSteps = adaptivestepper_->getNumFailedSteps();
+  int numFailedSteps = stepper_->getNumFailedSteps();
   globalData_->locaUtils->out() << std::endl <<
     " Number of failed continuation Steps = " << numFailedSteps << std::endl;
 
@@ -190,7 +176,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
 
 
   // Note: the last g is used to store the final solution. It can be null - if it is just
-  // skip the store. If adaptation has occurred, g is not the correct size. 
+  // skip the store. If adaptation has occurred, g is not the correct size.
 
   const Teuchos::RCP<Thyra::VectorBase<Scalar> > x_outargs = outArgs.get_g(this->num_g());
   Teuchos::RCP<Thyra::VectorBase<Scalar> > x_final;
@@ -199,7 +185,7 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   int f_sol_dim = 0;
 
   // Pardon the nasty cast to resize the last g in outArgs - need to fit the solution
-  Thyra::ModelEvaluatorBase::OutArgs<Scalar>* mutable_outArgsPtr = 
+  Thyra::ModelEvaluatorBase::OutArgs<Scalar>* mutable_outArgsPtr =
     const_cast<Thyra::ModelEvaluatorBase::OutArgs<Scalar>* >(&outArgs);
 
   if(Teuchos::nonnull(x_outargs)){ // g has been allocated, calculate the sizes of g and the solution
@@ -227,42 +213,21 @@ Piro::LOCAAdaptiveSolver<Scalar>::evalModelImpl(
   }
 
   // If the arrays need resizing
-  if(x_args_dim < f_sol_dim){ 
+  if(x_args_dim < f_sol_dim){
 
-    const int responseCount = this->Ng();
     const int parameterCount = this->Np();
 
-    for (int j = 0; j < responseCount; ++j) {
-
-//      if (computeResponses[j]) {
-std::cerr << " In Piro_LOCAAdaptiveSolver_Def line 238 : j : " << j << " g_space size is : " << this->get_g_space(j)->dim() << std::endl;
-        const Teuchos::RCP<Thyra::VectorBase<Scalar> > g = Thyra::createMember(this->get_g_space(j));
-        mutable_outArgsPtr->set_g(j, g);
-//        responses[j] = g;
-
-/*
-        if(Teuchos::nonnull(observer))
-           observer->observeResponse(j, Teuchos::rcpFromRef(outArgs),
-                Teuchos::rcpFromRef(responses), g);
-*/
-
-//       if (computeSensitivities) {
-          for (int l = 0; l < parameterCount; ++l) {
-            const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
-              outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, j, l);
-            const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
-              Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
-            if (dgdp_support.supports(dgdp_orient)) {
-              const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
-                Thyra::create_DgDp_mv(*this, j, l, dgdp_orient);
-              mutable_outArgsPtr->set_DgDp(j, l, dgdp);
-//              sensitivities[j][l] = dgdp.getMultiVector();
-            }
-          }
-//        }
-//      }
+    for (int pc = 0; pc < parameterCount; ++pc) {
+      const Thyra::ModelEvaluatorBase::DerivativeSupport dgdp_support =
+        outArgs.supports(Thyra::ModelEvaluatorBase::OUT_ARG_DgDp, this->num_g(), pc);
+      const Thyra::ModelEvaluatorBase::EDerivativeMultiVectorOrientation dgdp_orient =
+        Thyra::ModelEvaluatorBase::DERIV_MV_JACOBIAN_FORM;
+      if (dgdp_support.supports(dgdp_orient)) {
+        const Thyra::ModelEvaluatorBase::DerivativeMultiVector<Scalar> dgdp =
+          Thyra::create_DgDp_mv(*this, this->num_g(), pc, dgdp_orient);
+        mutable_outArgsPtr->set_DgDp(this->num_g(), pc, dgdp);
       }
-
+    }
   }
 
   // Compute responses for the final solution
@@ -275,6 +240,16 @@ std::cerr << " In Piro_LOCAAdaptiveSolver_Def line 238 : j : " << j << " g_space
     }
 
     this->evalConvergedModel(modelInArgs, outArgs);
+
+    // Save the final solution TODO: this needs to be redone
+
+    Teuchos::RCP<Thyra::ModelEvaluatorBase::InArgs<Scalar> > fp
+         = Teuchos::rcp_const_cast<Thyra::ModelEvaluatorBase::InArgs<Scalar> >(finalPoint_);
+    Thyra::ModelEvaluatorBase::InArgsSetup<Scalar> ia;
+    ia.setSupports(Thyra::ModelEvaluatorBase::IN_ARG_x, true);
+    *fp = ia;
+    fp->set_x(x_final);
+
   }
 }
 
@@ -283,7 +258,6 @@ template <typename Scalar>
 Teuchos::RCP<Piro::LOCAAdaptiveSolver<Scalar> >
 Piro::observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &appParams,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer)
@@ -293,7 +267,7 @@ Piro::observedLocaSolver(
     Teuchos::rcp(new Piro::ObserverToLOCASaveDataStrategyAdapter(observer)) :
     Teuchos::null;
 
-  return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, modelWithSolve, model, solMgr, saveDataStrategy));
+  return Teuchos::rcp(new Piro::LOCAAdaptiveSolver<Scalar>(appParams, model, solMgr, saveDataStrategy));
 }
 
 #endif /* PIRO_LOCAADAPTIVESOLVER_DEF_HPP */

@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -61,7 +61,6 @@ namespace Piro {
 template <typename Scalar>
 Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > AdaptiveSolverFactory::createSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer)
@@ -72,15 +71,15 @@ Teuchos::RCP<Thyra::ResponseOnlyModelEvaluatorBase<Scalar> > AdaptiveSolverFacto
 
 #ifdef Piro_ENABLE_NOX
   if (solverType == "NOX") {
-    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, modelWithSolve, observer));
+    result = Teuchos::rcp(new NOXSolver<Scalar>(piroParams, model, observer));
   } else
   if (solverType == "LOCA") {
-    result = observedLocaSolver(piroParams, modelWithSolve, model, solMgr, observer);
+    result = observedLocaSolver(piroParams, model, solMgr, observer);
   } else
 #endif /* Piro_ENABLE_NOX */
 #ifdef Piro_ENABLE_Rythmos
   if (solverType == "Rythmos") {
-    result = rythmosSolver(piroParams, modelWithSolve, observer);
+    result = rythmosSolver(piroParams, model, observer);
   } else
 #endif /* Piro_ENABLE_Rythmos */
   {

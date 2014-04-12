@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -66,7 +66,7 @@ namespace LOCA {
     class GroupWrapper : public LOCA::Thyra::Group {
 
     public:
-      
+
       //! Constructor
       GroupWrapper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    const NOX::Thyra::Vector& initial_guess,
@@ -75,9 +75,9 @@ namespace LOCA {
 	    int p_index,
 	    bool implement_dfdp = false);
 
-      /*! 
+      /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
-       * valid shared Jacobian. 
+       * valid shared Jacobian.
        */
       GroupWrapper(const GroupWrapper& source, NOX::CopyType type = NOX::DeepCopy);
 
@@ -87,17 +87,17 @@ namespace LOCA {
       //! Assignment operator
       virtual GroupWrapper& operator=(const GroupWrapper& source);
 
-      /*! 
+      /*!
        * @name Overloaded NOX::Thyra::Group  methods.
        */
       //@{
 
       //! Assignment operator.
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Assignment operator.
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Thyra::Group& source);
 
       //! Cloning function

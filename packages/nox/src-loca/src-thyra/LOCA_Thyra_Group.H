@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,12 +67,12 @@ namespace LOCA {
   //! %LOCA %Thyra support
   namespace Thyra {
 
-    //! Extension of the NOX::Thyra::Group to %LOCA.  
-    class Group : public virtual NOX::Thyra::Group, 
+    //! Extension of the NOX::Thyra::Group to %LOCA.
+    class Group : public virtual NOX::Thyra::Group,
 		  public virtual LOCA::Abstract::Group {
 
     public:
-      
+
       //! Constructor
       Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
 	    const NOX::Thyra::Vector& initial_guess,
@@ -81,9 +81,9 @@ namespace LOCA {
 	    int p_index,
 	    bool implement_dfdp = false);
 
-      /*! 
+      /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
-       * valid shared Jacobian. 
+       * valid shared Jacobian.
        */
       Group(const Group& source, NOX::CopyType type = NOX::DeepCopy);
 
@@ -93,17 +93,17 @@ namespace LOCA {
       //! Assignment operator
       virtual Group& operator=(const Group& source);
 
-      /*! 
+      /*!
        * @name Overloaded NOX::Thyra::Group  methods.
        */
       //@{
 
       //! Assignment operator.
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Assignment operator.
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Thyra::Group& source);
 
       //! Cloning function
@@ -111,23 +111,16 @@ namespace LOCA {
       clone(NOX::CopyType type = NOX::DeepCopy) const;
 
       //! Overloaded computeF()
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computeF();
 
       //! Overloaded computeJacobian()
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computeJacobian();
-
-// GAH Temporary debugging
-const NOX::Abstract::Vector& getX() const 
-{
-  std::cerr << "In LOCA_THYRA_GROUP - getX(): X length : " << x_vec_->length() << " : norm : " << x_vec_->norm() << std::endl;
-  return *x_vec_;
-}
 
       //@}
 
-      /*! 
+      /*!
        * @name Implementation of LOCA::MultiContinuation::AbstractGroup virtual methods.
        */
       //@{
@@ -140,11 +133,11 @@ const NOX::Abstract::Vector& getX() const
 
       //! Set parameter indexed by paramID
       virtual void setParam(int paramID, double val);
-  
+
       //! Set parameter indexed by paramID
       virtual void setParam(std::string paramID, double val);
 
-      //! Return a const reference to the ParameterVector owned by the group. 
+      //! Return a const reference to the ParameterVector owned by the group.
       const LOCA::ParameterVector& getParams() const;
 
       //! Return copy of parameter indexed by paramID
@@ -153,24 +146,24 @@ const NOX::Abstract::Vector& getX() const
       //! Return copy of parameter indexed by paramID
       virtual double getParam(std::string paramID) const;
 
-      /*! 
-       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
+      /*!
+       * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
        * indexed by paramIDs.  The first column of \em dfdp holds F,
        * which is valid if \em isValidF is true.  Otherwise F must be
        * computed.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDfDpMulti(const std::vector<int>& paramIDs, 
-		       NOX::Abstract::MultiVector& dfdp, 
+      computeDfDpMulti(const std::vector<int>& paramIDs,
+		       NOX::Abstract::MultiVector& dfdp,
 		       bool isValidF);
 
       //! Perform any preprocessing before a continuation step starts.
-      virtual void 
+      virtual void
       preProcessContinuationStep(
 			     LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Perform any postprocessing after a continuation step finishes.
-      virtual void 
+      virtual void
       postProcessContinuationStep(
 			     LOCA::Abstract::Iterator::StepStatus stepStatus);
 
@@ -182,7 +175,7 @@ const NOX::Abstract::Vector& getX() const
       virtual int projectToDrawDimension() const;
 
       //! Compute a scaled dot product
-      /*! 
+      /*!
        * The implementation here uses the standard dot product divided
        * by the length of the vectors.
        */
@@ -198,8 +191,8 @@ const NOX::Abstract::Vector& getX() const
                                  const double conParam) const;
 
       //! Scales a vector using scaling vector
-      /*! 
-       * The implementation here rescales the vector by the square root of 
+      /*!
+       * The implementation here rescales the vector by the square root of
        * its length.
        */
       virtual void
@@ -207,7 +200,7 @@ const NOX::Abstract::Vector& getX() const
 
       //@}
 
-      /*! 
+      /*!
        * @name Implementation of LOCA::TimeDependent::AbstractGroup virtual methods.
        */
       //@{
@@ -226,14 +219,14 @@ const NOX::Abstract::Vector& getX() const
       applyShiftedMatrixMultiVector(
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const;
-      
-      /*! 
-       * \brief Apply the inverse of the shifted matrix by a multi-vector, as 
+
+      /*!
+       * \brief Apply the inverse of the shifted matrix by a multi-vector, as
        * needed by the shift-and-invert and generalized Cayley transformations.
        */
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrixInverseMultiVector(
-			        Teuchos::ParameterList& params, 
+			        Teuchos::ParameterList& params,
 				const NOX::Abstract::MultiVector& input,
 				NOX::Abstract::MultiVector& result) const;
       //@}

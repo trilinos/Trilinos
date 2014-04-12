@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Andy Salinger (agsalin@sandia.gov), Sandia
+// Questions? Contact Glen Hansen (gahanse@sandia.gov), Sandia
 // National Laboratories.
 //
 // ************************************************************************
@@ -69,13 +69,16 @@ public:
   /** \brief Constructs a LOCAAdaptiveSolver instance given a model and optionally a data saving strategy . */
   LOCAAdaptiveSolver(
       const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-      const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
       const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
       const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
       const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy);
 
   ~LOCAAdaptiveSolver();
   //@}
+
+  //! Update the final solution to the main solver
+  void reportFinalPoint(const Thyra::ModelEvaluatorBase::InArgs<Scalar>& finalPoint, const bool wasSolved)
+       { finalPoint_ = Teuchos::rcpFromRef(finalPoint); }
 
 
 private:
@@ -92,13 +95,15 @@ private:
 
   Teuchos::RCP<LOCA::GlobalData> globalData_;
   mutable LOCA::ParameterVector paramVector_;
-//  Teuchos::RCP<LOCA::Thyra::Group> group_;
   const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> solMgr_;
   Teuchos::RCP<LOCA::StatusTest::Abstract> locaStatusTests_;
   Teuchos::RCP<NOX::StatusTest::Generic> noxStatusTests_;
 
-  Teuchos::RCP<LOCA::AdaptiveStepper> adaptivestepper_;
-  Teuchos::RCP<LOCA::Stepper> stepper_;
+  Teuchos::RCP<LOCA::AdaptiveStepper> stepper_;
+
+  //! Holds the final solution
+  Teuchos::RCP<const Thyra::ModelEvaluatorBase::InArgs<Scalar> > finalPoint_;
+
 };
 
 
@@ -106,7 +111,6 @@ template <typename Scalar>
 Teuchos::RCP<LOCAAdaptiveSolver<Scalar> >
 observedLocaSolver(
     const Teuchos::RCP<Teuchos::ParameterList> &piroParams,
-    const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &modelWithSolve,
     const Teuchos::RCP<Thyra::ModelEvaluator<Scalar> > &model,
     const Teuchos::RCP<LOCA::Thyra::AdaptiveSolutionManager> &solMgr,
     const Teuchos::RCP<Piro::ObserverBase<Scalar> > &observer);

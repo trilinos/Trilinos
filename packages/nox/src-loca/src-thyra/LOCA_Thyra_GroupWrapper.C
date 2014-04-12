@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -62,7 +62,7 @@ LOCA::Thyra::GroupWrapper::GroupWrapper(
 {
 }
 
-LOCA::Thyra::GroupWrapper::GroupWrapper(const LOCA::Thyra::GroupWrapper& source, 
+LOCA::Thyra::GroupWrapper::GroupWrapper(const LOCA::Thyra::GroupWrapper& source,
 			   NOX::CopyType type) :
   NOX::Thyra::Group(source, type),
   LOCA::Abstract::Group(source, type),
@@ -70,11 +70,11 @@ LOCA::Thyra::GroupWrapper::GroupWrapper(const LOCA::Thyra::GroupWrapper& source,
 {
 }
 
-LOCA::Thyra::GroupWrapper::~GroupWrapper() 
+LOCA::Thyra::GroupWrapper::~GroupWrapper()
 {
 }
 
-LOCA::Thyra::GroupWrapper& 
+LOCA::Thyra::GroupWrapper&
 LOCA::Thyra::GroupWrapper::operator=(const LOCA::Thyra::GroupWrapper& source)
 {
   if (this != &source) {
@@ -83,14 +83,14 @@ LOCA::Thyra::GroupWrapper::operator=(const LOCA::Thyra::GroupWrapper& source)
   return *this;
 }
 
-NOX::Abstract::Group& 
+NOX::Abstract::Group&
 LOCA::Thyra::GroupWrapper::operator=(const NOX::Abstract::Group& source)
 {
   operator=(dynamic_cast<const GroupWrapper&> (source));
   return *this;
 }
 
-NOX::Abstract::Group& 
+NOX::Abstract::Group&
 LOCA::Thyra::GroupWrapper::operator=(const NOX::Thyra::Group& source)
 {
   operator=(dynamic_cast<const GroupWrapper&> (source));
@@ -98,7 +98,7 @@ LOCA::Thyra::GroupWrapper::operator=(const NOX::Thyra::Group& source)
 }
 
 Teuchos::RCP<NOX::Abstract::Group>
-LOCA::Thyra::GroupWrapper::clone(NOX::CopyType type) const 
+LOCA::Thyra::GroupWrapper::clone(NOX::CopyType type) const
 {
   return Teuchos::rcp(new LOCA::Thyra::GroupWrapper(*this, type));
 }
