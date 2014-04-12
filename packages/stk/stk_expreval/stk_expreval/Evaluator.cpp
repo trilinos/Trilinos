@@ -937,8 +937,9 @@ double
 Eval::evaluate() const
 {
   /* Make sure it was parsed successfully */
-  if (!m_parseStatus)
+  if (!m_parseStatus) {
     throw std::runtime_error(std::string("Expression '") + m_expression + "' did not parse successfully");
+  }
 
   double returnValue;
   try
