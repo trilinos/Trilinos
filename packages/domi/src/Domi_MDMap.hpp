@@ -103,8 +103,8 @@ namespace Domi
  * performed relative to the dimensions only, and not influenced by
  * the size of the boundary padding.
  *
- * From a global perspective, the only points that are visible are
- * boundary padding.  Communication padding is internal and
+ * From a global perspective, the only padding points that are visible
+ * are boundary padding points.  Communication padding is internal and
  * essentially invisible from this perspective.  From a local
  * perspective, a local buffer can have padding on all sides.  Some of
  * this padding could be boundary padding, some could be communication
@@ -1403,6 +1403,7 @@ MDMap(const MDMap< Node > & parent,
       RangeError,
       "Slice along axis " << axis << " is " << bounds << " but must be within "
       << parent.getGlobalBounds(axis));
+
     // Adjust _globalRankBounds
     for (int axisRank = 0; axisRank < parent.getCommDim(axis);
          ++axisRank)
@@ -1413,6 +1414,7 @@ MDMap(const MDMap< Node > & parent,
       if (stop  > bounds.stop() ) stop  = bounds.stop();
       _globalRankBounds[axis][axisRank] = ConcreteSlice(start, stop);
     }
+
     // Alter _bndryPad if necessary
     dim_type start = bounds.start() - _bndryPadSizes[axis];
     if (start < 0)
@@ -1427,12 +1429,13 @@ MDMap(const MDMap< Node > & parent,
         bounds.stop();
       stop = parent.getGlobalBounds(axis,true).stop();
     }
+
     // Compute _globalBounds, _globalDims, _globalMax, and _globalMin
     _globalBounds[axis] = ConcreteSlice(start,stop);
     _globalDims[axis]   = stop - start;
     _globalMin         += start * _globalStrides[axis];
     _globalMax         -= (parent.getGlobalDim(axis,true) - stop) *
-                          _globalStrides[axis];
+                           _globalStrides[axis];
 
     // Build the slice for the MDComm sub-communicator constructor
     int pStart = -1;
@@ -1456,6 +1459,7 @@ MDMap(const MDMap< Node > & parent,
       InvalidArgument,
       "error computing axis rank slice");
     Slice axisRankSlice = ConcreteSlice(pStart,pStop);
+
     // Construct the MDComm sub-communicator
     _mdComm = Teuchos::rcp(new MDComm(*(parent._mdComm), axis, axisRankSlice));
 
@@ -1464,7 +1468,7 @@ MDMap(const MDMap< Node > & parent,
     // communicator, then we clear many of the data members.
     if (_mdComm->onSubcommunicator())
     {
-      int axisRank = getCommIndex(axis);
+      int axisRank = parent.getCommIndex(axis);
       if (axisRank == 0)
         _pad[axis][0] = _bndryPad[axis][0];
       if (axisRank == _mdComm->getCommDim(axis)-1)
@@ -1505,7 +1509,7 @@ MDMap(const MDMap< Node > & parent,
       _localDims[axis]   = stop - start;
       _localMin         += start * _localStrides[axis];
       _localMax         -= (parent.getLocalBounds(axis,true).stop() - stop) *
-                           _localStrides[axis];
+                            _localStrides[axis];
       // The new sub-communicator may have fewer processors than the
       // parent communicator, so we need to fix _globalRankBounds
       Teuchos::Array< Slice > newRankBounds;
