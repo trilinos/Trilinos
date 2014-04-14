@@ -381,7 +381,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::convtol_default_ = 1e-8;
 template<class ScalarType, class MV, class OP>
 const typename GmresPolySolMgr<ScalarType,MV,OP>::MagnitudeType
 GmresPolySolMgr<ScalarType,MV,OP>::orthoKappa_default_ =
-  -Teuchos::ScalarTraits<ScalarType>::one ();
+  -Teuchos::ScalarTraits<MagnitudeType>::one();
 
 template<class ScalarType, class MV, class OP>
 const int GmresPolySolMgr<ScalarType,MV,OP>::maxDegree_default_ = 25;
