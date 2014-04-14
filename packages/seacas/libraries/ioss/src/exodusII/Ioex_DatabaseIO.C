@@ -364,7 +364,7 @@ namespace Ioex {
 
     if (!is_input()) {
       // Check whether appending to existing file...
-      if (open_create_behavior() == Ioss::DB_APPEND) {
+      if (open_create_behavior() == Ioss::DB_APPEND || open_create_behavior() == Ioss::DB_APPEND_GROUP) {
         // Append to file if it already exists -- See if the file exists.
         std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
         Ioss::FileInfo file = Ioss::FileInfo(decoded_filename);
@@ -398,6 +398,11 @@ namespace Ioex {
       if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
         exodusMode |= EX_NETCDF4;
       }
+    }
+
+    if (properties.exists("ENABLE_FILE_GROUPS")) {
+        exodusMode |= EX_NETCDF4;
+        exodusMode |= EX_NOCLASSIC;
     }
 
     if (properties.exists("MAXIMUM_NAME_LENGTH")) {
@@ -642,6 +647,9 @@ namespace Ioex {
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
 
+      if (!m_groupName.empty()) {
+       ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
+      }
     }
     assert(exodusFilePtr >= 0);
     fileExists = true;
@@ -655,6 +663,59 @@ namespace Ioex {
     exodusFilePtr = -1;
 
     return exodusFilePtr;
+  }
+
+  bool DatabaseIO::open_group(const std::string &group_name)
+  {
+    // Get existing file pointer...
+    bool success = false;
+
+    int exoid = get_file_pointer();
+
+    m_groupName = group_name;
+    ex_get_group_id(exoid, m_groupName.c_str(), &exodusFilePtr);
+
+    if (exodusFilePtr < 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not open group named '" << m_groupName
+            << "' in file '" << get_filename() << "'.\n";
+      IOSS_ERROR(errmsg);
+    } else {
+      success = true;
+    }
+    return success;
+  }
+
+  bool DatabaseIO::create_subgroup(const std::string &group_name)
+  {
+    bool success = false;
+    if (!is_input()) {
+      // Get existing file pointer...
+      int exoid = get_file_pointer();
+
+      // Check name for '/' which is not allowed since it is the
+      // separator character in a full group path
+      if (group_name.find('/') != std::string::npos) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Invalid group name '" << m_groupName
+              << "' contains a '/' which is not allowed.\n";
+       IOSS_ERROR(errmsg);
+      }
+
+      m_groupName = group_name;
+      exoid = ex_create_group(exoid, m_groupName.c_str());
+      if (exoid < 0) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Could not create group named '" << m_groupName
+              << "' in file '" << get_filename() << "'.\n";
+       IOSS_ERROR(errmsg);
+      }
+      else {
+       exodusFilePtr = exoid;
+       success = true;
+      }
+    }
+    return success;
   }
 
   void DatabaseIO::put_qa()

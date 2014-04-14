@@ -118,6 +118,9 @@ namespace Ioex {
       // database supports that type (e.g. return_value & Ioss::FACESET)
       unsigned entity_field_support() const;
 
+      bool open_group(const std::string &group_name);
+      bool create_subgroup(const std::string &group_name);
+
       bool begin(Ioss::State state);
       bool   end(Ioss::State state);
 
@@ -354,6 +357,8 @@ namespace Ioex {
 
       // Private member data...
       mutable int exodusFilePtr;
+      mutable std::string m_groupName;
+      
       mutable EntityIdSet ids_;
 
       std::string databaseTitle;

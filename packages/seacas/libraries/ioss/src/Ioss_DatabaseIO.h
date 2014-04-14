@@ -118,6 +118,21 @@ namespace Ioss {
     virtual void openDatabase() const {}
     virtual void closeDatabase() const {}
 
+    //! If a database type supports groups and if the database
+    // contains groups, open the specified group.  If the group_name
+    // begins with '/', it specifies the absolute path name from the root with '/'
+    // separating groups.  Otherwise, the group_name
+    // specifies a child group of the currently active group.  If
+    // group_name == "/" then the root group is opened.
+    virtual bool open_group(const std::string &group_name) {return false;}
+
+    //! If a database type supports groups, create the specified
+    // group as a child of the current group. The name of the 
+    // group must not contain a '/' character. If the command
+    // is successful, then the group will be the active group
+    // for all subsequent writes to the database.
+    virtual bool create_subgroup(const std::string &group_name) {return false;}
+			   
     virtual bool begin(Ioss::State state) = 0;
     virtual bool   end(Ioss::State state) = 0;
 

@@ -74,6 +74,11 @@ void IOShell::Interface::enroll_options()
 		  "Database type for output file: exodus. exodus is the default.",
 		  "exodus");
 
+  options_.enroll("extract_group", Ioss::GetLongOption::MandatoryValue,
+		  "Write the data from the specified group to the output file.\n"
+		  "\t\tUse 'ALL' to extract all groups in the file to separate output files.",
+		  NULL);
+
   options_.enroll("64-bit", Ioss::GetLongOption::NoValue,
 		  "Use 64-bit integers on output database",
 		  NULL);
@@ -283,6 +288,13 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
     const char *temp = options_.retrieve("compose");
     if (temp != NULL) {
       compose_output = Ioss::Utils::lowercase(temp);
+    }
+  }
+
+  {
+    const char *temp = options_.retrieve("extract_group");
+    if (temp != NULL) {
+      groupName = temp;
     }
   }
 
