@@ -23,32 +23,6 @@ TriBITS Developers Guide and Reference
 
 .. contents::
 
-
-.. Common references to TribitsBuildQuickRef document
-
-.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
-
-.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
-
-.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
-
-.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
-
-.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
-
-.. Common references to the TribitsOverview document
-
-.. _TriBITS Overview: ../overview/TribitsOverview.pdf
-
-
-.. Common references to the TribitsLifecycleModel document
-
-.. _TriBITS Lifecycle Model: ../lifecycle_model/TribitsLifecycleModel.pdf
-
-..  OTher common references
-
-.. _CTest documentation: http://www.cmake.org/Wiki/CMake/Testing_With_CTest
-
 Introduction
 =============
 
@@ -6031,3 +6005,33 @@ snapshotting`_.
 
 .. include:: snapshot-dir-help.txt
    :literal:
+
+.. ***
+.. *** Common references
+.. **
+
+.. Common references to TribitsBuildQuickRef document
+
+.. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
+
+.. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
+
+.. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+
+.. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
+
+.. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+
+.. Common references to the TribitsOverview document
+
+.. _TriBITS Overview: ../overview/TribitsOverview.pdf
+
+
+.. Common references to the TribitsLifecycleModel document
+
+.. _TriBITS Lifecycle Model: ../lifecycle_model/TribitsLifecycleModel.pdf
+
+..  OTher common references
+
+.. _CTest documentation: http://www.cmake.org/Wiki/CMake/Testing_With_CTest
+
