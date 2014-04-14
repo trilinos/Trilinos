@@ -85,8 +85,6 @@ TEUCHOS_STATIC_SETUP()
 // Unit Tests
 //
 
-#if 1
-
 TEUCHOS_UNIT_TEST( MDMap, dimensionsConstructor )
 {
   TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
@@ -1787,8 +1785,6 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeft )
   }
 }
 
-#endif
-
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
 {
   // Construct the MDComm from command-line arguments
@@ -1918,8 +1914,6 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperLeftPadding )
     TEST_THROW(subMDMap.getUpperNeighbor(0), Domi::SubcommunicatorError);
   }
 }
-
-#if 1
 
 TEUCHOS_UNIT_TEST( MDMap, subMapUpperRight )
 {
@@ -2625,7 +2619,5 @@ TEUCHOS_UNIT_TEST( MDMap, contiguous )
   if (slicedMap.onSubcommunicator())
     TEST_EQUALITY(slicedMap.isContiguous(), (num_dims==1));
 }
-
-#endif
 
 }  // namespace
