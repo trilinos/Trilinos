@@ -33,9 +33,14 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_set, ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
 /*!
  * writes the set parameters and optionally set data for 1 or more sets

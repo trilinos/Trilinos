@@ -33,10 +33,11 @@
  *
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_compress_variable, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-#include <ctype.h>
 
 /*! \cond INTERNAL */
 int ex_prepare_result_var(int exoid, int num_vars,

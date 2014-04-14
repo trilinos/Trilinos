@@ -33,9 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strlen, NULL
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_INFO, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_enddef, etc
 
 /*!
 The function ex_put_info() writes information records to the
@@ -60,7 +63,6 @@ The following code will write out three information records
 to an open exodus file -
 
 \code
-#include "exodusII.h"
 int error, exoid, num_info;
 char *info[3];
 
@@ -78,7 +80,6 @@ The following code will first tell the database that there are three
 information records, and then later actually output those records.
 
 \code
-#include "exodusII.h"
 int error, exoid, num_info;
 char *info[3];
 

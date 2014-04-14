@@ -48,12 +48,16 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 /* Generic error message for element type/node count mapping...*/
 static int el_node_count_error(struct elem_blk_parm elem_blk_parms)

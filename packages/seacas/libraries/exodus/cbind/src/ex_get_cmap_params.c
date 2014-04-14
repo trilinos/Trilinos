@@ -59,13 +59,15 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <exodusII.h>                   // for ex_err, exerrval, etc
+#include <exodusII_int.h>               // for EX_FATAL, VAR_E_COMM_IDS, etc
+#include <inttypes.h>                   // for PRId64
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_dimid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <sys/types.h>                  // for int64_t
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_get_cmap_params(int  exoid,
                        void_int *node_cmap_ids,

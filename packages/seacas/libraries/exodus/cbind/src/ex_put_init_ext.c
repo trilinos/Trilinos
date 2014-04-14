@@ -49,11 +49,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
-#include <string.h>
-#include <assert.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include <string.h>                     // for strlen
+#include "exodusII.h"                   // for ex_init_params, ex_err, etc
+#include "exodusII_int.h"               // for nc_flt_code, EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_dim, etc
 
 static void write_dummy_names(int exoid, ex_entity_type obj_type)
 {

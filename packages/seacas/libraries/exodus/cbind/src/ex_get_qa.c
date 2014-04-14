@@ -33,8 +33,11 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_trim_internal, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_vara_text, etc
 
 /*!
 The function ex_get_qa() reads the QA records from the database. Each
@@ -62,7 +65,6 @@ The following will determine the number of QA records and
 read them from the open exodus file:
 
 \code
-#include "exodusII.h"
 int num_qa_rec, error, exoid
 char *qa_record[MAX_QA_REC][4];
 

@@ -51,9 +51,12 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, NULL, malloc
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_dimension, EX_FATAL, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
 
 /*!
  * writes the EXODUS II variable truth table to the database; also,

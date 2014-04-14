@@ -50,8 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_get_variable_name, etc
 
 /*!
  * reads the name of a particular results variable from the database

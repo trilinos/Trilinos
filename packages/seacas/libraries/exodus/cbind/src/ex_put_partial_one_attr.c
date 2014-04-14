@@ -49,8 +49,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t, ptrdiff_t
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_get_dimension, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*!
  * writes the specified attribute for a block

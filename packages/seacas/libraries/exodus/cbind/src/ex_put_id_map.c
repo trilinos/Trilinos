@@ -49,9 +49,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_enddef, etc
 
 /*!
  * writes out the entity numbering map to the database; this allows

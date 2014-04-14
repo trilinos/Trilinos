@@ -45,9 +45,11 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL, free, malloc
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_file_item, EX_FATAL, etc
+#include "netcdf.h"                     // for nc_inq_format, nc_type, etc
 
 
 /*! \file

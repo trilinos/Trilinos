@@ -33,8 +33,11 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_trim_internal, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_vara_text, etc
 
 /*!
 
@@ -57,7 +60,6 @@ The following code segment will determine the number of information
 records and read them from an open exodus file :
 
 \code
-#include "exodusII.h"
 int error, exoid, num_info;
 char *info[MAXINFO];
 

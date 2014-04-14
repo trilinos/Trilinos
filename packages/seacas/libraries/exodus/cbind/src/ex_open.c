@@ -52,9 +52,11 @@
 *
 *****************************************************************************/
 
-#include <stdio.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, NC_GLOBAL, etc
 
 /*!  
 
@@ -98,7 +100,6 @@ The following opens an exodus file named \file{test.exo} for read
 only, using default settings for compute and I/O word sizes:
 
 \code
-#include "exodusII.h"
 int CPU_word_size,IO_word_size, exoid;
 float version;
 

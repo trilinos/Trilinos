@@ -1,6 +1,11 @@
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, EX_WARN, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
 int ex_add_attr(int exoid,
 		     ex_entity_type obj_type,

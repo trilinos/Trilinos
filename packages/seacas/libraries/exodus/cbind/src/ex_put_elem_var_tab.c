@@ -52,8 +52,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_truth_table, etc
 
 /*!
 \deprecated Use ex_put_truth_table()(exoid, EX_ELEM_BLOCK, num_elem_blk, num_elem_var, elem_var_tab)

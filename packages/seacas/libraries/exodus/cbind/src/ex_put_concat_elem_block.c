@@ -47,10 +47,15 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
 /*!
  * writes the parameters used to describe an element block

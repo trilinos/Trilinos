@@ -33,10 +33,10 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
-#include <assert.h>
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL
+#include "netcdf.h"                     // for NC_NOERR, nc_def_grp, etc
 
 int ex_create_group (int parent_id, const char *group_name)
 {

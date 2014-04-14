@@ -48,10 +48,14 @@
  *
  *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
-#include <string.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strncpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_init_params, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_att_text, etc
 
 /* Used to reduce repeated code below */
 static int64_t ex_get_dim_value(int exoid, const char *name, const char *dimension_name,

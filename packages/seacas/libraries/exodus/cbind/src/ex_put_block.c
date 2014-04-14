@@ -53,9 +53,9 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <string.h>                     // for strcpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_block, etc
 
 /*!
  * writes the parameters used to describe an element/face/edge block

@@ -47,8 +47,10 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_counter_list, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_close, etc
 
 extern char *ret_string;      /* cf ex_utils.c */
 

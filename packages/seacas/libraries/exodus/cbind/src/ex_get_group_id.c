@@ -33,10 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
-#include <string.h>
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL
+#include <string.h>                     // for strchr
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_FILE_ID_MASK, etc
+#include "netcdf.h"                     // for NC_NOERR, etc
 
 /**
  * Given an exoid and group name (NULL gets root group), return id of that group.

@@ -33,8 +33,8 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_var, ex_entity_id, etc
 
 /*!
 \deprecated Use ex_get_var()(exoid, time_step, EX_ELEM_BLOCK, elem_var_index, elem_blk_id, num_elem_this_blk, elem_var_vals) instead

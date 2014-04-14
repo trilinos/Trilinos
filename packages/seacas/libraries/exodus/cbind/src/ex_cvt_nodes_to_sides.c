@@ -33,11 +33,15 @@
  *
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 static void *safe_free(void *array)
 {

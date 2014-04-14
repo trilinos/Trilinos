@@ -45,11 +45,15 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_dimension, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-#include <ctype.h>
 static void *safe_free(void *array);
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label, int *dimid);
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,

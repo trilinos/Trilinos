@@ -69,9 +69,12 @@
 * 
 *****************************************************************************/
 
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /* -------------------- local defines --------------------------- */
 #define PROCNAME "ex_get_coordinate_frames"

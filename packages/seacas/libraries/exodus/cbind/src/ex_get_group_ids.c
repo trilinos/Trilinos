@@ -33,9 +33,10 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h>
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR
+#include "netcdf.h"                     // for nc_inq_grps, NC_NOERR
 
 /**
  * Given a file or group 'parent' id, return the number of child groups and the ids

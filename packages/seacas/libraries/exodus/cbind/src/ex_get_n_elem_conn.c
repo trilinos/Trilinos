@@ -53,7 +53,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include "exodusII.h"
+#include <stddef.h>                     // for NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_get_partial_conn, etc
 
 /*!
  * \deprecated use ex_get_partial_conn()

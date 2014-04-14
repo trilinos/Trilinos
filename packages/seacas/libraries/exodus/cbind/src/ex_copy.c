@@ -33,11 +33,14 @@
  * 
  */
 
-#include <assert.h>
-#include <stdlib.h>
-#include <string.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for malloc, free
+#include <string.h>                     // for strcmp, strncmp, NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_large_model, etc
+#include "exodusII_int.h"               // for ex_get_counter_list, etc
+#include "netcdf.h"                     // for nc_inq_varid, etc
 
 /*! \cond INTERNAL */
 struct ncdim {                  /* dimension */

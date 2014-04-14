@@ -33,9 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strlen, NULL
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_QA, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*!
 
@@ -66,7 +69,6 @@ strings. The character strings are:
 The following code segment will write out two QA records:
 
 \code
-#include "exodusII.h"
 int num_qa_rec, error, exoid;
 char *qa_record[2][4];
 

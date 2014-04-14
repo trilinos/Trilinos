@@ -50,8 +50,11 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_WARN, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_var_double, etc
 
 /*!
  * \undoc reads the attributes for an edge, face, or element block
