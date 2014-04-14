@@ -61,10 +61,10 @@ namespace Amesos2 {
       return A->getLocalValuesView().cijk();
     }
     else if (X != Teuchos::null) {
-      return X->getLocalView().d_view.cijk();
+      return X->template getLocalView<D>().cijk();
     }
     else if (B != Teuchos::null) {
-      return B->getLocalView().d_view.cijk();
+      return B->template getLocalView<D>().cijk();
     }
     return Stokhos::CrsProductTensor<typename S::value_type,D>();
   }
