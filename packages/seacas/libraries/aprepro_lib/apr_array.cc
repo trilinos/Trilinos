@@ -1,4 +1,5 @@
-#include "aprepro.h"
+#include <vector>                       // for vector
+#include "aprepro.h"                    // for array, Aprepro, etc
 
 namespace SEAMS {
   extern SEAMS::Aprepro *aprepro;
