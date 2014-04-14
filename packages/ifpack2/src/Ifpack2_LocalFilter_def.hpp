@@ -726,21 +726,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
       if (mode == Teuchos::NO_TRANS){
 	for (size_t j = 0 ; j < Nnz ; ++j) {
-	  const LocalOrdinal col = Indices_[j];
+	  const local_ordinal_type col = Indices_[j];
 	  for (size_t k = 0 ; k < NumVectors ; ++k) 
 	    y_ptr[i + y_stride*k] += alpha * Values_[j] * x_ptr[col + x_stride*k];
 	}
       }
       else if (mode == Teuchos::TRANS){
 	for (size_t j = 0 ; j < Nnz ; ++j) {
-	  const LocalOrdinal col = Indices_[j];
+	  const local_ordinal_type col = Indices_[j];
 	  for (size_t k = 0 ; k < NumVectors ; ++k) 
 	    y_ptr[col + y_stride*k] += alpha * Values_[j] * x_ptr[i + x_stride*k];
 	}
       }
       else { //mode==Teuchos::CONJ_TRANS
 	for (size_t j = 0 ; j < Nnz ; ++j) {
-	  const LocalOrdinal col = Indices_[j];
+	  const local_ordinal_type col = Indices_[j];
 	  for (size_t k = 0 ; k < NumVectors ; ++k) 
 	    y_ptr[col + y_stride*k] += alpha * STS::conjugate(Values_[j]) * x_ptr[i + x_stride*k];
 	}
