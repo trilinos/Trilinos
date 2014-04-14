@@ -12,6 +12,8 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 #include "stk_topology/topology.hpp"    // for topology, etc
+#include <stdexcept>
+
 namespace stk { namespace mesh { class Bucket; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class MetaData; } }
