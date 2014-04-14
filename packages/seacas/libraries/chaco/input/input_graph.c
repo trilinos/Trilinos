@@ -2,10 +2,9 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	<string.h>
-#include	"defs.h"
-#include "smalloc.h"
+#include <stdio.h>                      // for printf, fprintf, NULL, etc
+#include "defs.h"                       // for TRUE, FALSE
+#include "smalloc.h"                    // for smalloc, sfree
 
 
 int       input_graph(FILE *fin, char *inname, int **start, int **adjacency, int *nvtxs, int **vweights, float **eweights)

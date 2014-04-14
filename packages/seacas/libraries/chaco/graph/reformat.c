@@ -2,10 +2,9 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include "defs.h"
-#include "structs.h"
-#include "smalloc.h"
+#include <stdio.h>                      // for NULL, fprintf, printf, FILE
+#include "smalloc.h"                    // for smalloc_ret
+#include "structs.h"                    // for vtx_data
 
 
 /* Change from a FORTRAN graph style to our graph data structure. */

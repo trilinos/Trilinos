@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include        <string.h>
-#include        "defs.h"
+#include <stdio.h>                      // for printf, fclose, fprintf, etc
+#include "defs.h"                       // for FALSE, TRUE
 
 static int input_assign_normal(FILE *finassign, char *inassignname, int nvtxs, int *assignment);
 static int input_assign_inv();

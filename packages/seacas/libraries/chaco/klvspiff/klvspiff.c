@@ -2,11 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"structs.h"
-#include	"params.h"
-#include	"defs.h"
-#include        "smalloc.h"
+#include <stdio.h>                      // for printf, fprintf, FILE, NULL
+#include "defs.h"                       // for FALSE
+#include "smalloc.h"                    // for sfree
+#include "structs.h"                    // for vtx_data
 
 /* Improve (weighted) vertex separator.  Two sets are 0/1; separator = 2. */
 
