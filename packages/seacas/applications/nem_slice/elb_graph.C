@@ -39,17 +39,18 @@
  *	find_surnd_elems()
  *	find_adjacency()
  *+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++*/
-#include <sstream>
-#include <assert.h>                     // for assert
-#include <stdio.h>                      // for sprintf, printf, NULL
-#include <stdlib.h>                     // for realloc, malloc, free
-#include <string.h>                     // for strcat, strcpy
 #include "elb_graph.h"
-#include "elb.h"                  // for Graph_Description<INT>, etc
-#include "elb_elem.h"             // for E_Type, get_elem_info, etc
-#include "elb_err.h"              // for Gen_Error
-#include "elb_util.h"             // for in_list, find_inter
-#include "elb_format.h"
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, printf, NULL
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strcat, strcpy
+#include <sstream>                      // for operator<<, ostringstream, etc
+#include "elb.h"                        // for Problem_Description, etc
+#include "elb_elem.h"                   // for get_elem_info, E_Type, etc
+#include "elb_err.h"                    // for Gen_Error
+#include "elb_format.h"                 // for ST_ZU
+#include "elb_util.h"                   // for in_list, find_inter
 
 extern int is_hex(E_Type etype);
 extern int is_tet(E_Type etype);

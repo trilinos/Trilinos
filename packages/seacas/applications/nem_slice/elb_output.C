@@ -33,20 +33,21 @@
  *
  */
 
-#include <exodusII.h>                   // for ex_close, MAX_LINE_LENGTH, etc
-
-#include <stddef.h>                     // for size_t
-#include <stdio.h>                      // for NULL, printf, sprintf, etc
-#include <stdlib.h>                     // for free, malloc, etc
+#include "elb_output.h"
+#include <exodusII.h>                   // for ex_close, ex_opts, etc
+#include <stddef.h>                     // for size_t, NULL
+#include <stdio.h>                      // for printf, sprintf, fprintf, etc
+#include <stdlib.h>                     // for free, malloc, realloc
 #include <string.h>                     // for strcat, strcpy, strlen, etc
 #include <time.h>                       // for asctime, localtime, time, etc
+#include <vector>                       // for vector
+#include "elb.h"                        // for Machine_Description, TOPTR, etc
+#include "elb_allo.h"                   // for array_alloc
+#include "elb_elem.h"                   // for NNODES, get_elem_info
+#include "elb_err.h"                    // for Gen_Error, error_lev
+#include "elb_util.h"                   // for gds_qsort, qsort2, in_list, etc
 
-#include "elb_output.h"
-#include "elb_allo.h"             // for array_alloc
-#include "elb.h"                  // for LB_Description<INT>, etc
-#include "elb_elem.h"             // for get_elem_info, E_Type, etc
-#include "elb_err.h"              // for Gen_Error, error_lev
-#include "elb_util.h"             // for qsort2, in_list, etc
+
 
 namespace {
   const std::string remove_extension(const std::string &filename)

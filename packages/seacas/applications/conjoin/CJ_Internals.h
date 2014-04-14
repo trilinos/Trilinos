@@ -32,8 +32,12 @@
 #ifndef SEACAS_Internals_h
 #define SEACAS_Internals_h
 
-#include <vector>
-#include <CJ_ExodusEntity.h>
+#include <vector>                       // for vector
+namespace Excn { struct Block; }
+namespace Excn { struct CommunicationMetaData; }
+namespace Excn { template <typename INT> struct Mesh; }
+namespace Excn { template <typename INT> struct NodeSet; }
+namespace Excn { template <typename INT> struct SideSet; }
 
   /*!
    * This set of classes provides a thin wrapper around the exodusII
