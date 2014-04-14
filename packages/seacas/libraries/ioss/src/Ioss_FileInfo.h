@@ -33,11 +33,11 @@
 #ifndef IOSS_Ioss_FileInfo_h
 #define IOSS_Ioss_FileInfo_h
 
-#include <Ioss_CodeTypes.h>
+#include <sys/types.h>                  // for off_t
+#include <time.h>                       // for time_t
+#include <string>                       // for string, operator!=, etc
+#include "mpi.h"                        // for MPI_Comm
 
-#include <string>
-#include <iosfwd>
-#include <sys/types.h>
 
 namespace Ioss {
 

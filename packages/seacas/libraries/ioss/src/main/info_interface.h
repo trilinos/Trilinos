@@ -35,11 +35,10 @@
 #ifndef info_SystemInterface_h
 #define info_SystemInterface_h
 
-#include "Ioss_GetLongOpt.h"
+#include <iosfwd>                       // for ostream
+#include <string>                       // for string
+#include "Ioss_GetLongOpt.h"            // for GetLongOption
 
-#include <string>
-#include <iosfwd>
-#include <vector>
 
 namespace Info {
   class Interface

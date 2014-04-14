@@ -33,42 +33,44 @@
 #ifndef IOSS_Ioss_DatabaseIO_h
 #define IOSS_Ioss_DatabaseIO_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
-#include <stdint.h>
+#include <Ioss_BoundingBox.h>           // for AxisAlignedBoundingBox
+#include <Ioss_DBUsage.h>               // for DatabaseUsage, etc
+#include <Ioss_DataSize.h>              // for DataSize
+#include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_ParallelUtils.h>         // for ParallelUtils
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <Ioss_State.h>                 // for State, State::STATE_INVALID
+#include <Ioss_SurfaceSplit.h>          // for SurfaceSplitType
+#include <stddef.h>                     // for size_t, NULL
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_Comm
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class GroupingEntity; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class Region; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 
 // Defines the Ioss_State enum...
-#include <Ioss_State.h>
-#include <Ioss_ParallelUtils.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_DataSize.h>
-#include <Ioss_SurfaceSplit.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_EntityType.h>
-#include <Ioss_BoundingBox.h>
 
-#include <vector>
-#include <set>
 
 namespace Ioss {
-  class GroupingEntity;
-  class ElementTopology;
   class EntityBlock;
-  class ElementBlock;
-  class FaceBlock;
-  class EdgeBlock;
-  class NodeBlock;
-  class SideBlock;
 
-  class ElementSet;
-  class FaceSet;
-  class EdgeSet;
-  class NodeSet;
-  class SideSet;
 
-  class CommSet;
-  class Region;
-  class Field;
 
   // Contains (parent_element, side) topology pairs
   typedef std::vector<std::pair<const ElementTopology*, const ElementTopology*> > TopoContainer;

@@ -33,7 +33,13 @@
 #ifndef IOSS_Iogn_DashSurfaceMesh_h
 #define IOSS_Iogn_DashSurfaceMesh_h
 
-#include <generated/Iogn_GeneratedMesh.h>
+#include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <exception>                    // for exception
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace Iogn
 {

@@ -31,8 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_DashSurfaceMesh.h>
+#include <algorithm>                    // for copy
+#include <vector>                       // for vector
+#include "generated/Iogn_GeneratedMesh.h"  // for MapVector, IntVector, etc
 
-#include <vector>
 
 namespace Iogn
 {

@@ -33,20 +33,14 @@
  * 
  */
 #include "info_interface.h"
+#include <stddef.h>                     // for NULL
+#include <cstdlib>                      // for exit, EXIT_SUCCESS, getenv
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for char_traits, string
+#include "Ioss_GetLongOpt.h"            // for GetLongOption, etc
 
-#include "Ioss_GetLongOpt.h"                 // for GetLongOption, etc
 
-#include <ctype.h>                      // for tolower
-#include <stddef.h>                     // for size_t
-#include <string>                       // for string, basic_string, etc
-#include <utility>                      // for pair, make_pair
-#include <iostream>
-#include <algorithm>
-#include <vector>
 
-#include <limits.h>
-#include <cstdlib>
-#include <cstring>
 
 Info::Interface::Interface()
   : checkNodeStatus_(false), computeVolume_(false), adjacencies_(false),ints64Bit_(false),

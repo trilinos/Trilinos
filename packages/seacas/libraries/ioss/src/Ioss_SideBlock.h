@@ -33,14 +33,20 @@
 #ifndef IOSS_Ioss_SideBlock_h
 #define IOSS_Ioss_SideBlock_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Property.h>
-#include <Ioss_EntityBlock.h>
-#include <string>
+#include <Ioss_EntityBlock.h>           // for EntityBlock
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_EntityType.h"            // for EntityType, etc
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementTopology; }
+namespace Ioss { class Field; }
+namespace Ioss { class SideSet; }
 
 namespace Ioss {
-  class DatabaseIO;
-  class SideSet;
 
   class SideBlock : public EntityBlock {
   public:

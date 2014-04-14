@@ -33,12 +33,13 @@
 #ifndef IOSS_Iogn_GeneratedMesh_h
 #define IOSS_Iogn_GeneratedMesh_h
 
-#include <string>
-#include <map>
-#include <vector>
-#include <stdint.h>
-#include <iostream>
-#include <Ioss_EntityType.h>
+#include <Ioss_EntityType.h>            // for EntityType
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <map>                          // for map, etc
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
 
 namespace Iogn {
   typedef std::vector<int64_t> MapVector;

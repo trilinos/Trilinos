@@ -33,14 +33,14 @@
 #ifndef IOSS_Ioss_FieldManager_h
 #define IOSS_Ioss_FieldManager_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Utils.h>
-#include <map>
-#include <vector>
-#include <utility>
+#include <Ioss_Field.h>                 // for Field, Field::RoleType
+#include <Ioss_Utils.h>                 // for Utils
+#include <stddef.h>                     // for size_t
+#include <functional>                   // for binary_function
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string
+#include <vector>                       // for vector
 
-#include <Ioss_Field.h>
-#include <string>
 
 namespace Ioss {
   typedef std::vector<std::string> NameList;
