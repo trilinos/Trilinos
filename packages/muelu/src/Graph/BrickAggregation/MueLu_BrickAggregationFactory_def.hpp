@@ -52,6 +52,7 @@
 #endif
 
 #include "MueLu_BrickAggregationFactory_decl.hpp"
+#ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -369,4 +370,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif //ifdef HAVE_MPI
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_ */
