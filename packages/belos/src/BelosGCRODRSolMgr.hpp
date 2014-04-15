@@ -2042,17 +2042,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   // Construct magnitude of each harmonic Ritz value
   this->sort(w, m, iperm);
 
-  // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[recycledBlocks_-1]] != 0.0) {
-    int countImag = 0;
-    for ( i=0; i<recycledBlocks_; ++i ) {
-      if (wi[iperm[i]] != 0.0)
-        countImag++;
-    }
-    // Check to see if this count is even or odd:
-    if (countImag % 2)
-      xtraVec = true;
-  }
+  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
   for( i=0; i<recycledBlocks_; ++i ) {
@@ -2060,25 +2050,44 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
       PP(j,i) = vr(j,iperm[i]);
     }
   }
+  
+  if(scalarTypeIsComplex==false) {
 
-  if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
-      for( j=0; j<m; ++j ) {   // so get the "imag" component
-        PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+    // Determine exact size for PP (i.e., determine if we need to store an additional vector)
+    if (wi[iperm[recycledBlocks_-1]] != 0.0) {
+      int countImag = 0;
+      for ( i=0; i<recycledBlocks_; ++i ) {
+	if (wi[iperm[i]] != 0.0)
+	  countImag++;
+      }
+      // Check to see if this count is even or odd:
+      if (countImag % 2)
+	xtraVec = true;
+    }
+
+    if (xtraVec) { // we need to store one more vector
+      if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
+	for( j=0; j<m; ++j ) {   // so get the "imag" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+	}
+      }
+      else { //  I picked the "imag" component
+	for( j=0; j<m; ++j ) {   // so get the "real" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
+	}
       }
     }
-    else { //  I picked the "imag" component
-      for( j=0; j<m; ++j ) {   // so get the "real" component
-        PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
-      }
-    }
+
   }
 
   // Return whether we needed to store an additional vector
   if (xtraVec) {
     return recycledBlocks_+1;
   }
-  return recycledBlocks_;
+  else {
+    return recycledBlocks_;
+  }
+
 }
 
 //  Compute the harmonic eigenpairs of the projected, dense system.
@@ -2181,17 +2190,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
   // Construct magnitude of each harmonic Ritz value
   this->sort(w,ld,iperm);
 
-  // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
-    int countImag = 0;
-    for ( i=ld-recycledBlocks_; i<ld; i++ ) {
-      if (wi[iperm[i]] != 0.0)
-        countImag++;
-    }
-    // Check to see if this count is even or odd:
-    if (countImag % 2)
-      xtraVec = true;
-  }
+  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
   for( i=0; i<recycledBlocks_; i++ ) {
@@ -2199,25 +2198,44 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
       PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
     }
   }
-
-  if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
-      for( j=0; j<ld; j++ ) {   // so get the "imag" component
-        PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+  
+  if(scalarTypeIsComplex==false) {
+    
+    // Determine exact size for PP (i.e., determine if we need to store an additional vector)
+    if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
+      int countImag = 0;
+      for ( i=ld-recycledBlocks_; i<ld; i++ ) {
+	if (wi[iperm[i]] != 0.0)
+	  countImag++;
+      }
+      // Check to see if this count is even or odd:
+      if (countImag % 2)
+	xtraVec = true;
+    }
+    
+    if (xtraVec) { // we need to store one more vector
+      if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
+	for( j=0; j<ld; j++ ) {   // so get the "imag" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+	}
+      }
+      else { // I picked the "imag" component
+	for( j=0; j<ld; j++ ) {   // so get the "real" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
+	}
       }
     }
-    else { // I picked the "imag" component
-      for( j=0; j<ld; j++ ) {   // so get the "real" component
-        PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
-      }
-    }
+    
   }
-
+  
   // Return whether we needed to store an additional vector
   if (xtraVec) {
     return recycledBlocks_+1;
   }
-  return recycledBlocks_;
+  else {
+    return recycledBlocks_;
+  }
+
 }
 
 
