@@ -107,9 +107,9 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     unsigned long       x6 = 7;
     long long           x7 = 7;
     unsigned long long  x8 = 7;
-    char                x9 = '\x7';
-    signed char         x10 = '\x7';
-    unsigned char       x11 = '\x7';
+    char                x9 = '7';
+    signed char         x10 = '7';
+    unsigned char       x11 = '7';
     
     dw() << x1 << dendl;
     dw() << x2 << dendl;
@@ -128,6 +128,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
     dw() << "This is a test" << dendl;
     dw() << std::string("This is a test") << dendl;    
   }
+  std::string actual = oss().str();
   STKUNIT_ASSERT_EQUAL((std::string("7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\n7\nThis is a test\nThis is a test\n") == oss().str()), true);
   
   oss().str("");
