@@ -64,7 +64,7 @@ namespace MueLu {
     @ingroup MueLuTransferClasses
     */
 
-  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::sparseOps>
+  template<class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class EminPFactory : public PFactory {
 #undef MUELU_EMINPFACTORY_SHORT
 #include "MueLu_UseShortNames.hpp"
