@@ -433,7 +433,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       std::string solverName;
       SolverFactory_= rcp( new SolverFactory() );
       if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="GMRES";            }
+      else if(solverType_==1) { solverName="Block GMRES";      }
       else if(solverType_==2) { solverName="Recycling GMRES";  }
       else                    { solverName="Flexible GMRES";   }
       SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
@@ -473,7 +473,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       std::string solverName;
       SolverFactory_= rcp( new SolverFactory() );
       if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="GMRES";            }
+      else if(solverType_==1) { solverName="Block GMRES";      }
       else if(solverType_==2) { solverName="Recycling GMRES";  }
       else                    { solverName="Flexible GMRES";   }
       SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
@@ -643,7 +643,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
       std::string solverName;
       SolverFactory_= rcp( new SolverFactory() );
       if(solverType_==0)      { solverName="CG";               }
-      else if(solverType_==1) { solverName="GMRES";            }
+      else if(solverType_==1) { solverName="Block GMRES";      }
       else if(solverType_==2) { solverName="Recycling GMRES";  }
       else                    { solverName="Flexible GMRES";   }
       SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
