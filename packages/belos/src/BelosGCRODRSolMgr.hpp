@@ -428,7 +428,7 @@ or complex.
                          Teuchos::SerialDenseMatrix<int,ScalarType>& PP);
 
     // Sort list of n floating-point numbers and return permutation vector
-    void sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm);
+    void sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm);
 
     // Lapack interface
     Teuchos::LAPACK<int,ScalarType> lapack;
@@ -1602,8 +1602,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP,false>::solve() {
           // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff );
           for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
-          lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+          //lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+	  lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
 
           // Now we have [Q,R] = qr(H*P)
 
@@ -1966,8 +1967,9 @@ void GCRODRSolMgr<ScalarType,MV,OP,false>::buildRecycleSpace2(Teuchos::RCP<GCROD
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
   Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Rtmp(i,j) = HPtmp(i,j); }
-  lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _ORGQR failed to construct the Q factor.");
+  //lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+  lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
+  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
   // C = [C V] * Q;
@@ -2037,7 +2039,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs1(int m,
   int i, j;
   bool xtraVec = false;
   ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
-  ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
+  //ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   // Real and imaginary eigenvalue components
   std::vector<MagnitudeType> wr(m), wi(m);
@@ -2084,16 +2086,16 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs1(int m,
 
   // Construct magnitude of each harmonic Ritz value
   for( i=0; i<m; ++i )
-    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] );
+    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] );
 
   // Construct magnitude of each harmonic Ritz value
   this->sort(w, m, iperm);
 
   // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[recycledBlocks_-1]] != zero) {
+  if (wi[iperm[recycledBlocks_-1]] != 0.0) {
     int countImag = 0;
     for ( i=0; i<recycledBlocks_; ++i ) {
-      if (wi[iperm[i]] != zero)
+      if (wi[iperm[i]] != 0.0)
         countImag++;
     }
     // Check to see if this count is even or odd:
@@ -2109,7 +2111,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs1(int m,
   }
 
   if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[recycledBlocks_-1]] > 0) { // I picked the "real" component
+    if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
       for( j=0; j<m; ++j ) {   // so get the "imag" component
         PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
       }
@@ -2142,7 +2144,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs2(int keffloc, int m,
   std::vector<int> index;
 
   // Real and imaginary eigenvalue components
-  std::vector<ScalarType> wr(m2), wi(m2);
+  std::vector<MagnitudeType> wr(m2), wi(m2);
 
   // Magnitude of harmonic Ritz values
   std::vector<MagnitudeType> w(m2);
@@ -2201,7 +2203,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs2(int keffloc, int m,
   int lwork = 6*ld;
   int ldvl = ld, ldvr = ld;
   int info = 0,ilo = 0,ihi = 0;
-  ScalarType abnrm = zero, bbnrm = zero;
+  MagnitudeType abnrm = 0.0, bbnrm = 0.0;
   ScalarType *vl = 0; // This is never referenced by dggevx if jobvl == 'N'
   std::vector<ScalarType> beta(ld);
   std::vector<ScalarType> work(lwork);
@@ -2217,17 +2219,17 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs2(int keffloc, int m,
   // Construct magnitude of each harmonic Ritz value
   // NOTE : Forming alpha/beta *should* be okay here, given assumptions on construction of matrix pencil above
   for( i=0; i<ld; i++ ) {
-    w[i] = Teuchos::ScalarTraits<ScalarType>::squareroot( (wr[i]/beta[i])*(wr[i]/beta[i]) + (wi[i]/beta[i])*(wi[i]/beta[i]) );
+    w[i] = Teuchos::ScalarTraits<MagnitudeType>::squareroot( wr[i]*wr[i] + wi[i]*wi[i] ) / std::abs( beta[i] );
   }
 
   // Construct magnitude of each harmonic Ritz value
   this->sort(w,ld,iperm);
 
   // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[ld-recycledBlocks_]] != zero) {
+  if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
     int countImag = 0;
     for ( i=ld-recycledBlocks_; i<ld; i++ ) {
-      if (wi[iperm[i]] != zero)
+      if (wi[iperm[i]] != 0.0)
         countImag++;
     }
     // Check to see if this count is even or odd:
@@ -2243,7 +2245,7 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs2(int keffloc, int m,
   }
 
   if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[ld-recycledBlocks_]] > 0) { // I picked the "real" component
+    if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
       for( j=0; j<ld; j++ ) {   // so get the "imag" component
         PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
       }
@@ -2265,10 +2267,10 @@ int GCRODRSolMgr<ScalarType,MV,OP,false>::getHarmonicVecs2(int keffloc, int m,
 
 // This method sorts list of n floating-point numbers and return permutation vector
 template<class ScalarType, class MV, class OP>
-void GCRODRSolMgr<ScalarType,MV,OP,false>::sort(std::vector<ScalarType>& dlist, int n, std::vector<int>& iperm) {
+void GCRODRSolMgr<ScalarType,MV,OP,false>::sort(std::vector<MagnitudeType>& dlist, int n, std::vector<int>& iperm) {
   int l, r, j, i, flag;
   int    RR2;
-  double dRR, dK;
+  MagnitudeType dRR, dK;
 
   // Initialize the permutation vector.
   for(j=0;j<n;j++)
