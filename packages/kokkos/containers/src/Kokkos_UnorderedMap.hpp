@@ -308,7 +308,7 @@ public:
   //@{
 
   UnorderedMap()
-    : m_quick_search()
+    : m_bounded_insert()
     , m_hasher()
     , m_equal_to()
     , m_capacity()
@@ -322,15 +322,14 @@ public:
 
   /// \brief Constructor
   ///
-  /// \param requested_capacity [in] Initial requested maximum number of
-  ///   entries in the hash table.
+  /// \param capacity_hint [in] Initial guess of how many unique keys will be inserted into the map
   /// \param hash [in] Hasher function for \c Key instances.  The
   ///   default value usually suffices.
-  UnorderedMap(  size_type requested_capacity, hasher_type hasher = hasher_type(), equal_to_type equal_to = equal_to_type() )
-    : m_quick_search(true)
+  UnorderedMap(  size_type capacity_hint, hasher_type hasher = hasher_type(), equal_to_type equal_to = equal_to_type() )
+    : m_bounded_insert(true)
     , m_hasher(hasher)
     , m_equal_to(equal_to)
-    , m_capacity( (((requested_capacity + block_size - 1) >> block_shift) << block_shift) )
+    , m_capacity( calculate_capacity(capacity_hint) )
     , m_available_indexes(AllocateWithoutInitializing(), "UnorderedMap available indexes", (m_capacity >> block_shift))
     , m_hash_lists(AllocateWithoutInitializing(), "UnorderedMap hash list", Impl::find_hash_size(m_capacity))
     , m_next_index(AllocateWithoutInitializing(), "UnorderedMap next index", m_capacity+1) // +1 so that the *_at functions can always return a valid reference
@@ -345,21 +344,6 @@ public:
     Kokkos::deep_copy(m_available_indexes, intial_block);
     Kokkos::deep_copy(m_hash_lists,invalid_index);
     Kokkos::deep_copy(m_next_index,invalid_index);
-  }
-
-  /// Search only a limited number of blocks for a potential free index
-  void set_quick_search()
-  {
-    m_quick_search = true;
-  }
-
-  /// Search all blocks for a potential free index
-  void set_full_search()
-  {
-    if (m_quick_search) {
-      reset_failed_insert_flag();
-      m_quick_search = false;
-    }
   }
 
   void reset_failed_insert_flag()
@@ -377,6 +361,8 @@ public:
   //! Clear all entries in the table.
   void clear()
   {
+    m_bounded_insert = true;
+
     if (m_capacity == 0) return;
 
     Kokkos::deep_copy(m_available_indexes, intial_block);
@@ -394,7 +380,6 @@ public:
       const Impl::UnorderedMapScalars tmp = Impl::UnorderedMapScalars();
       Kokkos::deep_copy(m_scalars,tmp);
     }
-
   }
 
   /// \brief Change the capacity of the the map
@@ -407,32 +392,29 @@ public:
   ///
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.
-  bool rehash(size_type new_capacity = 0)
+  bool rehash(size_type requested_capacity = 0)
   {
-    return rehash(new_capacity, m_hasher);
+    const bool bounded_insert = (m_capacity == 0) || (size() == 0u);
+    return rehash(requested_capacity, bounded_insert );
   }
 
-  bool rehash(size_type new_capacity, hasher_type hasher)
+  bool rehash(size_type requested_capacity, bool bounded_insert)
   {
     if(!is_insertable_map) return false;
 
     const size_type curr_size = size();
-    new_capacity = new_capacity < curr_size ? curr_size : new_capacity;
+    requested_capacity = (requested_capacity < curr_size) ? curr_size : requested_capacity;
 
-    if (new_capacity != m_capacity){
-      insertable_map_type tmp(new_capacity, m_hasher);
-      if (curr_size) {
-        tmp.set_full_search();
-        Impl::UnorderedMapRehash<insertable_map_type> f(tmp,*this);
-        f.apply();
-      }
-      if (m_quick_search) tmp.set_quick_search();
+    insertable_map_type tmp(requested_capacity, m_hasher, m_equal_to);
 
-      *this = tmp;
+    if (curr_size) {
+      tmp.m_bounded_insert = false;
+      Impl::UnorderedMapRehash<insertable_map_type> f(tmp,*this);
+      f.apply();
     }
-    else {
-      reset_failed_insert_flag();
-    }
+    tmp.m_bounded_insert = bounded_insert;
+
+    *this = tmp;
 
     return true;
   }
@@ -558,7 +540,7 @@ public:
       size_type block_idx = static_cast<size_type>((hash_list * num_blocks) / m_hash_lists.size());
       size_type search_blocks = 0;
 
-      const size_type max_search_blocks = (m_quick_search && (fast_num_search_blocks < num_blocks)) ? fast_num_search_blocks : num_blocks;
+      const size_type max_search_blocks = (m_bounded_insert && (fast_num_search_blocks < num_blocks)) ? fast_num_search_blocks : num_blocks;
 
       block_type * block_ptr    = & m_available_indexes[ block_idx ];
 
@@ -765,7 +747,7 @@ public:
   UnorderedMap( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src,
                 typename Impl::enable_if< Impl::UnorderedMapCanAssign<declared_key_type,declared_value_type,SKey,SValue>::value,int>::type = 0
               )
-    : m_quick_search(src.m_quick_search)
+    : m_bounded_insert(src.m_bounded_insert)
     , m_hasher(src.m_hasher)
     , m_equal_to(src.m_equal_to)
     , m_capacity(src.m_capacity)
@@ -783,7 +765,7 @@ public:
                            ,declared_map_type & >::type
   operator=( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src)
   {
-    m_quick_search = src.m_quick_search;
+    m_bounded_insert = src.m_bounded_insert;
     m_hasher = src.m_hasher;
     m_equal_to = src.m_equal_to;
     m_capacity = src.m_capacity;
@@ -805,16 +787,31 @@ public:
     if (m_available_indexes.ptr_on_device() != src.m_available_indexes.ptr_on_device()) {
       typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, typename SDevice::memory_space > deep_copy_pointer;
 
-      src.sync_scalars();
-      *this = insertable_map_type(src.capacity(), src.m_hasher);
-      this->m_quick_search = src.m_quick_search;
+      insertable_map_type tmp;
 
-      deep_copy_pointer(m_available_indexes.ptr_on_device(), src.m_available_indexes.ptr_on_device(), sizeof(block_type) * src.m_available_indexes.size());
-      deep_copy_pointer(m_hash_lists.ptr_on_device(), src.m_hash_lists.ptr_on_device(), sizeof(size_type) * src.m_hash_lists.size());
-      deep_copy_pointer(m_next_index.ptr_on_device(), src.m_next_index.ptr_on_device(), sizeof(size_type) * src.m_next_index.size());
-      deep_copy_pointer(m_keys.ptr_on_device(), src.m_keys.ptr_on_device(), sizeof(key_type) * src.m_keys.size());
-      if (!is_set) deep_copy_pointer(m_values.ptr_on_device(), src.m_values.ptr_on_device(), sizeof(value_type) * src.m_values.size());
-      deep_copy_pointer(m_scalars.ptr_on_device(), src.m_scalars.ptr_on_device(), sizeof(Impl::UnorderedMapScalars));
+      src.sync_scalars();
+
+      tmp.m_bounded_insert = src.m_bounded_insert;
+      tmp.m_hasher = src.m_hasher;
+      tmp.m_equal_to = src.m_equal_to;
+      tmp.m_capacity = src.m_capacity;
+      tmp.m_available_indexes = block_type_view( AllocateWithoutInitializing(), "UnorderedMap available indexes", src.m_available_indexes.size() );
+      tmp.m_hash_lists        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap hash list", src.m_hash_lists.size() );
+      tmp.m_next_index        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap next index", src.m_next_index.size() );
+      tmp.m_keys              = key_type_view( AllocateWithoutInitializing(), "UnorderedMap keys", src.m_keys.size() );
+      tmp.m_values            = value_type_view( AllocateWithoutInitializing(), "UnorderedMap values", src.m_values.size() );
+      tmp.m_scalars           = scalars_view("UnorderedMap scalars");
+
+      deep_copy_pointer(tmp.m_available_indexes.ptr_on_device(), src.m_available_indexes.ptr_on_device(), sizeof(block_type) * src.m_available_indexes.size());
+      deep_copy_pointer(tmp.m_hash_lists.ptr_on_device(), src.m_hash_lists.ptr_on_device(), sizeof(size_type) * src.m_hash_lists.size());
+      deep_copy_pointer(tmp.m_next_index.ptr_on_device(), src.m_next_index.ptr_on_device(), sizeof(size_type) * src.m_next_index.size());
+      deep_copy_pointer(tmp.m_keys.ptr_on_device(), src.m_keys.ptr_on_device(), sizeof(key_type) * src.m_keys.size());
+      if (!is_set) {
+        deep_copy_pointer(tmp.m_values.ptr_on_device(), src.m_values.ptr_on_device(), sizeof(value_type) * src.m_values.size());
+      }
+      deep_copy_pointer(tmp.m_scalars.ptr_on_device(), src.m_scalars.ptr_on_device(), sizeof(Impl::UnorderedMapScalars));
+
+      *this = tmp;
     }
   }
 
@@ -860,8 +857,18 @@ private: // private member functions
     }
   }
 
+  uint32_t calculate_capacity(uint32_t capacity_hint) const
+  {
+    capacity_hint = capacity_hint ? capacity_hint : block_size;
+
+    uint32_t num_blocks = (capacity_hint + block_size -1) >> block_shift;
+    // inflate by 15%
+    num_blocks = static_cast<uint32_t>((23ull*num_blocks)/20u);
+    return (num_blocks << block_shift);
+  }
+
 private: // private members
-  bool             m_quick_search;
+  bool             m_bounded_insert;
   hasher_type      m_hasher;
   equal_to_type    m_equal_to;
   size_type        m_capacity;

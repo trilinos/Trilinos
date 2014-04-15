@@ -3,7 +3,6 @@
 
 #include <gtest/gtest.h>
 #include <iostream>
-#include <impl/Kokkos_Timer.hpp>
 
 
 namespace Test {
@@ -29,23 +28,20 @@ struct TestInsert
 
   void apply( bool rehash_on_fail = true )
   {
-    Kokkos::Impl::Timer wall_clock ;
-    wall_clock.reset();
+    device_type::fence();
 
     uint32_t failed_count = 0;
-    int loop_count = 0;
     do {
-      ++loop_count;
-
       failed_count = 0;
       Kokkos::parallel_reduce(inserts, *this, failed_count);
 
       if (rehash_on_fail && failed_count > 0u) {
         const uint32_t new_capacity = map.capacity() + ((map.capacity()*3ull)/20u) + failed_count/collisions ;
         map.rehash( new_capacity );
-        map.set_full_search();
       }
     } while (rehash_on_fail && failed_count > 0u);
+
+    device_type::fence();
   }
 
 
@@ -81,8 +77,13 @@ struct TestInsert
       : m_map(map)
       , m_num_erase(num_erases)
       , m_num_duplicates(num_duplicates)
+    {}
+
+    void apply()
     {
-      Kokkos::parallel_for(num_erases, *this);
+      device_type::fence();
+      Kokkos::parallel_for(m_num_erase, *this);
+      device_type::fence();
     }
 
     KOKKOS_INLINE_FUNCTION
@@ -108,13 +109,19 @@ struct TestInsert
     map_type m_map;
     uint32_t m_num_insert;
     uint32_t m_num_duplicates;
+    uint32_t m_max_key;
 
-    TestFind(map_type map, uint32_t num_inserts, uint32_t num_duplicates, value_type & errors)
+    TestFind(map_type map, uint32_t num_inserts, uint32_t num_duplicates)
       : m_map(map)
       , m_num_insert(num_inserts)
       , m_num_duplicates(num_duplicates)
+      , m_max_key( ((num_inserts + num_duplicates) - 1)/num_duplicates )
+    {}
+
+    void apply(value_type &errors)
     {
-      Kokkos::parallel_reduce(num_inserts, *this, errors);
+      device_type::fence();
+      Kokkos::parallel_reduce(m_map.capacity(), *this, errors);
       device_type::fence();
     }
 
@@ -131,8 +138,7 @@ struct TestInsert
     KOKKOS_INLINE_FUNCTION
     void operator()(typename device_type::size_type i, value_type & errors) const
     {
-      const uint32_t max_i = (m_num_insert + m_num_duplicates -1u) / m_num_duplicates;
-      const bool expect_to_find_i = (i < max_i);
+      const bool expect_to_find_i = (i < m_max_key);
 
       const bool exists = m_map.exists(i);
 
@@ -153,9 +159,8 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
 
   const uint32_t expected_inserts = (num_inserts + num_duplicates -1u) / num_duplicates;
 
-  map_type map(num_nodes);
-  map.set_full_search();
-  Device::fence();
+  map_type map;
+  map.rehash(num_nodes,false);
 
   if (near) {
     Impl::TestInsert<map_type,true> test_insert(map, num_inserts, num_duplicates);
@@ -165,7 +170,6 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
     Impl::TestInsert<map_type,false> test_insert(map, num_inserts, num_duplicates);
     test_insert.apply();
   }
-  Device::fence();
 
   const uint32_t map_size = map.size();
 
@@ -175,12 +179,14 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
 
     {
       uint32_t find_errors = 0;
-      Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates, find_errors);
+      Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates);
+      test_find.apply(find_errors);
       EXPECT_EQ( find_errors, 0u);
     }
 
     map.begin_erase();
-    Impl::TestErase<map_type,false> erase_far(map, num_inserts, num_duplicates);
+    Impl::TestErase<map_type,false> test_erase(map, num_inserts, num_duplicates);
+    test_erase.apply();
     map.end_erase();
     EXPECT_EQ(map.size(), 0u);
   }
@@ -211,19 +217,34 @@ void test_deep_copy( uint32_t num_nodes )
 
   typedef Kokkos::UnorderedMap<uint32_t, uint32_t, host_type> host_map_type;
 
-  map_type map((num_nodes*5ull)/4u);
-  map.set_full_search();
-  Device::fence();
+  map_type map;
+  map.rehash(num_nodes,false);
 
   {
     Impl::TestInsert<map_type> test_insert(map, num_nodes, 1);
     test_insert.apply();
-    Device::fence();
-    EXPECT_EQ( map.size(), num_nodes);
+    ASSERT_EQ( map.size(), num_nodes);
+    ASSERT_FALSE( map.failed_insert() );
+    {
+      uint32_t find_errors = 0;
+      Impl::TestFind<map_type> test_find(map, num_nodes, 1);
+      test_find.apply(find_errors);
+      EXPECT_EQ( find_errors, 0u);
+    }
+
   }
 
   host_map_type hmap;
   Kokkos::deep_copy(hmap, map);
+
+  ASSERT_EQ( map.size(), hmap.size());
+  ASSERT_EQ( map.capacity(), hmap.capacity());
+  {
+    uint32_t find_errors = 0;
+    Impl::TestFind<host_map_type> test_find(hmap, num_nodes, 1);
+    test_find.apply(find_errors);
+    EXPECT_EQ( find_errors, 0u);
+  }
 
   map_type mmap;
   Kokkos::deep_copy(mmap, hmap);
@@ -232,9 +253,12 @@ void test_deep_copy( uint32_t num_nodes )
 
   EXPECT_EQ( cmap.size(), num_nodes);
 
-  uint32_t find_errors = 0;
-  Impl::TestFind<const_map_type> test_find(cmap, num_nodes/2u, 1, find_errors);
-  EXPECT_EQ( find_errors, 0u);
+  {
+    uint32_t find_errors = 0;
+    Impl::TestFind<const_map_type> test_find(cmap, num_nodes, 1);
+    test_find.apply(find_errors);
+    EXPECT_EQ( find_errors, 0u);
+  }
 
 }
 
