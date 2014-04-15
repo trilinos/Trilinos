@@ -390,6 +390,52 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_DeviceArray, Storag
   success = checkPCEView(v, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, Unmanaged, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename host_view_type::array_type host_array_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows = 11;
+  const size_type num_cols = cijk.dimension();
+  ViewType v("view", cijk, num_rows, num_cols);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  host_array_type h_a = h_v;
+
+  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+                                         Kokkos::LayoutRight >::value;
+  if (is_right || !ViewType::is_contiguous) {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(i,j) = generate_pce_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  else {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(j,i) = generate_pce_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Create unmanaged view
+  ViewType v2(Kokkos::view_without_managing, v.ptr_on_device(), cijk,
+              num_rows, num_cols);
+
+  success = checkPCEView(v2, out);
+}
+
+
 namespace Test {
 
 template< class ViewType >
@@ -452,7 +498,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy_ConstantScalar, STORAGE, LAYOUT )         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_PCE, DeepCopy_ConstantPCE, STORAGE, LAYOUT )
+    Kokkos_View_PCE, DeepCopy_ConstantPCE, STORAGE, LAYOUT )            \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_PCE, Unmanaged, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 
