@@ -88,7 +88,7 @@ public:
     // Update objective function, get value, and get gradient
     obj.update(x,true,algo_state.iter);
     algo_state.value = obj.value(x,tol);
-    algo_state.nfval = 1;
+    algo_state.nfval++;
     obj.gradient(*(state_->gradientVec),x,tol);
     if ( con.isActivated() ) {
       Teuchos::RCP<Vector<Real> > xnew = x.clone();
@@ -101,7 +101,7 @@ public:
     else {
       algo_state.gnorm = (state_->gradientVec)->norm();
     }
-    algo_state.ngrad = 1;
+    algo_state.ngrad++;
   }
 
   /** \brief Compute step.
