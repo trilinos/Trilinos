@@ -44,7 +44,6 @@ IF(${PACKAGE_NAME}_ENABLE_Galeri AND ${PACKAGE_NAME}_ENABLE_Tpetra AND
     COMM mpi
     )
 
-  MESSAGE("just before copy")
   TRIBITS_COPY_FILES_TO_BINARY_DIR(TwoBillion_cp
     MESSAGE("doing copy")
     SOURCE_FILES TwoBillion.xml
