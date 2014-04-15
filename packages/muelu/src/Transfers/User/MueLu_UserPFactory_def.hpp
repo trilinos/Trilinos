@@ -52,6 +52,7 @@
 #endif
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_Monitor.hpp"
 #include "MueLu_PerfUtils.hpp"
