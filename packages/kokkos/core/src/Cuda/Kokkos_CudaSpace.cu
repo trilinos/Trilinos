@@ -177,7 +177,7 @@ void * CudaSpace::allocate(
       CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );
 #endif
 
-      CUDA_SAFE_CALL( cudaThreadSynchronize() );
+      Kokkos::Impl::cuda_device_synchronize();
     }
     catch( std::runtime_error & err) {
       std::ostringstream msg ;

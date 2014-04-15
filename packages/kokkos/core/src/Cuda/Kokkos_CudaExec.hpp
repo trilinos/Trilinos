@@ -48,6 +48,7 @@
 
 #include <string>
 #include <Kokkos_Parallel.hpp>
+#include <impl/Kokkos_Error.hpp>
 #include <Cuda/Kokkos_Cuda_abort.hpp>
 
 /*--------------------------------------------------------------------------*/
