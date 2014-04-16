@@ -120,7 +120,7 @@ ELSE()
 ENDIF()
 
 
-TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
+TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT_NoFortran
   OVERALL_WORKING_DIRECTORY TEST_NAME
   OVERALL_NUM_MPI_PROCS 1
   CATEGORIES CONTINUOUS
@@ -129,6 +129,7 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
     ARGS
       ${COMMON_ENV_ARGS_PASSTHROUGH}
       -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+      -DTribitsExProj_ENABLE_Fortran=OFF
       -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
       -DTribitsExProj_ENABLE_TESTS=ON
       -DTribitsExProj_TRACE_FILE_PROCESSING=ON
@@ -137,19 +138,19 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
     PASS_REGULAR_EXPRESSION_ALL
       "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
+      "Warning: Setting TribitsExProj_ENABLE_MixedLanguage=OFF because "
       "Explicitly enabled packages on input .by user.:  0"
-      "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
+      "Explicitly disabled packages on input .by user or by default.:  MixedLanguage WrapExternal 2"
       "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
       "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
-      "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
       "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
-      "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
-      "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
-      "Final set of non-enabled packages:  WrapExternal 1"
+      "Final set of enabled packages:  SimpleCxx PackageWithSubpackages 2"
+      "Final set of enabled SE packages:  SimpleCxx PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 5"
+      "Final set of non-enabled packages:  MixedLanguage WrapExternal 2"
       "Performing Test HAVE_SIMPLECXX___INT64"
       "Configuring done"
       "Generating done"
-      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
+      "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran"
       "-- File Trace: PROJECT    INCLUDE    .*/TribitsExampleProject/Version.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/cmake/CallbackSetupExtraOptions.cmake"
       "-- File Trace: REPOSITORY INCLUDE    .*/TribitsExampleProject/PackagesList.cmake"
@@ -167,8 +168,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "${TPL_MPI_FILE_TRACE}"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/simple_cxx/test/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/mixed_language/CMakeLists.txt"
-      "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/mixed_language/test/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/CMakeLists.txt"
       "-- File Trace: PACKAGE    ADD_SUBDIR .*/TribitsExampleProject/packages/package_with_subpackages/A/tests/CMakeLists.txt"
@@ -183,7 +182,6 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
     ARGS ${CTEST_BUILD_FLAGS}
     PASS_REGULAR_EXPRESSION_ALL
       "Built target simplecxx"
-      "Built target mixedlanguage"
       "Built target pws_a"
       "Built target pws_b"
       "Built target pws_c"
@@ -191,11 +189,10 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
     MESSAGE "Run all the tests with raw 'ctest'"
     PASS_REGULAR_EXPRESSION_ALL
       "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
-      "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
       "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
       "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
       "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
-      "100% tests passed, 0 tests failed out of 5"
+      "100% tests passed, 0 tests failed out of 4"
   TEST_3 CMND make ARGS package_source
     MESSAGE "Create the tarball"
     PASS_REGULAR_EXPRESSION_ALL
@@ -204,12 +201,12 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
       "CPack: Install projects"
       "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
       "CPack: Create package"
-      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT/tribitsexproj-1.1-Source.tar.gz generated."
+      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran/tribitsexproj-1.1-Source.tar.gz generated."
       "CPack: Create package using TBZ2"
       "CPack: Install projects"
       "CPack: - Install directory: .*/doc/examples/TribitsExampleProject"
       "CPack: Create package"
-      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT/tribitsexproj-1.1-Source.tar.bz2 generated."
+      "CPack: - package: .*/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT_NoFortran/tribitsexproj-1.1-Source.tar.bz2 generated."
   TEST_4 CMND tar ARGS -xzf tribitsexproj-1.1-Source.tar.gz
     MESSAGE "Untar the tarball"
   TEST_5 CMND diff ARGS -qr ${CMAKE_CURRENT_SOURCE_DIR}/../TribitsExampleProject tribitsexproj-1.1-Source
@@ -217,8 +214,59 @@ TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
     PASS_REGULAR_EXPRESSION_ALL
       "Only in .*/TribitsExampleProject/cmake: ctest"
       "Only in .*/TribitsExampleProject: .gitignore"
+      "Only in .*/TribitsExampleProject/packages: mixed_language"
       "Only in .*/TribitsExampleProject/packages: wrap_external"
   )
+
+
+ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
+IF (${PROJECT_NAME}_ENABLE_Fortran)
+  TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_ALL_PT
+    OVERALL_WORKING_DIRECTORY TEST_NAME
+    OVERALL_NUM_MPI_PROCS 1
+    CATEGORIES CONTINUOUS
+    TEST_0 CMND ${CMAKE_COMMAND}
+      MESSAGE "Do the initial configure"
+      ARGS
+        ${COMMON_ENV_ARGS_PASSTHROUGH}
+        -DTribitsExProj_TRIBITS_DIR=${${PROJECT_NAME}_TRIBITS_DIR}
+        -DTribitsExProj_ENABLE_ALL_PACKAGES=ON
+        -DTribitsExProj_ENABLE_TESTS=ON
+        ${${PROJECT_NAME}_TRIBITS_DIR}/doc/examples/TribitsExampleProject
+      PASS_REGULAR_EXPRESSION_ALL
+        "Warning: Setting TribitsExProj_ENABLE_WrapExternal=OFF because "
+        "Explicitly enabled packages on input .by user.:  0"
+        "Explicitly disabled packages on input .by user or by default.:  WrapExternal 1"
+        "Enabling all SE packages that are not currently disabled because of TribitsExProj_ENABLE_ALL_PACKAGES=ON "
+        "Setting TribitsExProj_ENABLE_SimpleCxx=ON"
+        "Setting TribitsExProj_ENABLE_MixedLanguage=ON"
+        "Setting TribitsExProj_ENABLE_PackageWithSubpackages=ON"
+        "Final set of enabled packages:  SimpleCxx MixedLanguage PackageWithSubpackages 3"
+        "Final set of enabled SE packages:  SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA PackageWithSubpackagesSubpackageB PackageWithSubpackagesSubpackageC PackageWithSubpackages 6"
+        "Final set of non-enabled packages:  WrapExternal 1"
+        "Configuring done"
+        "Generating done"
+        "Build files have been written to: .*tribits/doc/examples/UnitTests/TriBITS_TribitsExampleProject_ALL_PT"
+    TEST_1 CMND make
+      MESSAGE "Build the default 'all' target using raw 'make'"
+      ARGS ${CTEST_BUILD_FLAGS}
+      PASS_REGULAR_EXPRESSION_ALL
+        "Built target simplecxx"
+        "Built target mixedlanguage"
+        "Built target pws_a"
+        "Built target pws_b"
+        "Built target pws_c"
+    TEST_2 CMND ${CMAKE_CTEST_COMMAND}
+      MESSAGE "Run all the tests with raw 'ctest'"
+      PASS_REGULAR_EXPRESSION_ALL
+        "SimpleCxx_HelloWorldTests${TEST_MPI_1_SUFFIX} .* Passed"
+        "MixedLanguage_RayTracerTests${TEST_MPI_1_SUFFIX} .* Passed"
+        "PackageWithSubpackagesSubpackageA_test_of_a .* Passed"
+        "PackageWithSubpackagesSubpackageB_test_of_b .* Passed"
+        "PackageWithSubpackagesSubpackageC_test_of_c .* Passed"
+        "100% tests passed, 0 tests failed out of 5"
+    )
+ENDIF()
 
 
 TRIBITS_ADD_ADVANCED_TEST( TribitsExampleProject_SimpleCxx_DEBUG_int64

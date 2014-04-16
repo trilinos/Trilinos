@@ -16,4 +16,14 @@ MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
     SET(${PROJECT_NAME}_ENABLE_WrapExternal OFF)
   ENDIF()
 
+  IF (NOT ${PROJECT_NAME}_ENABLE_Fortran)
+    MESSAGE(
+      "\n***"
+      "\n*** Warning: Setting ${PROJECT_NAME}_ENABLE_MixedLanguage=OFF"
+      " because ${PROJECT_NAME}_ENABLE_Fortran=OFF!"
+      "\n***\n"
+      )
+    SET(${PROJECT_NAME}_ENABLE_MixedLanguage OFF)
+  ENDIF()
+
 ENDMACRO()
