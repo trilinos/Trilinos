@@ -4078,11 +4078,7 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename
-      KokkosClassic::DefaultKernels<T, LocalOrdinal, node_type>::SparseOps
-      sparse_ops_type;
-    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type,
-                      sparse_ops_type> out_mat_type;
+    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type, typename KokkosClassic::DefaultKernels<T, LocalOrdinal, node_type>::SparseOps> out_mat_type;
     typedef ArrayRCP<size_t>::size_type size_type;
     const char tfecfFuncName[] = "convert";
 
