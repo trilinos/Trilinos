@@ -455,6 +455,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TimeMonitor timeMon (*timer);
 
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
+    const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! IsComputed_, std::runtime_error,
@@ -479,10 +480,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       "Ifpack2::AdditiveSchwarz::apply: "
       "X and Y must have the same number of columns.  X has "
       << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      alpha != ONE, std::logic_error,
+      "Ifpack2::AdditiveSchwarz::apply: Not implemented for alpha != 1.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      beta != ZERO, std::logic_error,
+      "Ifpack2::AdditiveSchwarz::apply: Not implemented for beta != 0.");
 
     const size_t numVectors = X.getNumVectors ();
 
-    RCP<MV> OverlappingX,OverlappingY,Xtmp;
+    RCP<MV> OverlappingX,OverlappingY;
 
     if (IsOverlapping_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -500,17 +507,23 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
-      Xtmp = rcp (new MV (createCopy(X)));
-
       TEUCHOS_TEST_FOR_EXCEPTION(
         localMap_.is_null (), std::logic_error,
         "Ifpack2::AdditiveSchwarz::apply: localMap_ is null.");
 
       // MV's constructor fills with zeros.
+      //
+      // localMap_ has the same number of indices on each process that
+      // Matrix_->getRowMap() does on that process.  Thus, we can do
+      // the Import step without creating a new MV, just by viewing
+      // OverlappingX using Matrix_->getRowMap ().
       OverlappingX = rcp (new MV (localMap_, numVectors));
       OverlappingY = rcp (new MV (localMap_, numVectors));
 
-      MV Distributed (Matrix_->getRowMap (), numVectors);
+      RCP<MV> globalOverlappingX =
+        OverlappingX->offsetViewNonConst (Matrix_->getRowMap (),
+                                          static_cast<size_t> (0));
+
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
         // FIXME (mfh 15 Apr 2014) Why can't we just ask the Matrix
@@ -519,20 +532,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         DistributedImporter_ =
           rcp (new import_type (Matrix_->getRowMap (), Matrix_->getDomainMap ()));
       }
-      Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
-
-      // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
-      // for every entry.  It's important to understand how MultiVector
-      // views work.
-      Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
-      size_t index = 0;
-
-      for (size_t v = 0; v < numVectors; v++) {
-        for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
-          OverlappingX->replaceLocalValue(i, v, values[index]);
-          index++;
-        }
-      }
+      globalOverlappingX->doImport (X, *DistributedImporter_, Tpetra::INSERT);
     }
 
     if (FilterSingletons_) {
