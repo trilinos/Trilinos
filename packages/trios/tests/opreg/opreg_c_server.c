@@ -102,7 +102,7 @@ int opreg_request_processor(
         const NNTI_buffer_t       *data_addr,
         const NNTI_buffer_t       *res_addr)
 {
-    int rc;
+    int rc=NNTI_OK;
     log_level debug_level = opreg_debug_level;
 
     /* process array (nothing to do) */
