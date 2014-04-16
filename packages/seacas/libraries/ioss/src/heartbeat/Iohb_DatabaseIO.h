@@ -41,7 +41,7 @@
 #include <iostream>                     // for ostream
 #include <string>                       // for string
 #include "Ioss_State.h"                 // for State
-#include "mpi.h"                        // for MPI_Comm
+#include <Ioss_CodeTypes.h>
 namespace Iohb { class Layout; }
 namespace Ioss { class CommSet; }
 namespace Ioss { class EdgeBlock; }

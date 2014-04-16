@@ -37,7 +37,6 @@
 #include <stddef.h>                     // for size_t
 #include <string>                       // for string
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Comm, etc
 
 namespace Ioss {
 

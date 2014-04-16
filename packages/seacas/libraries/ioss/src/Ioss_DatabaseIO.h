@@ -34,6 +34,7 @@
 #define IOSS_Ioss_DatabaseIO_h
 
 #include <Ioss_BoundingBox.h>           // for AxisAlignedBoundingBox
+#include <Ioss_CodeTypes.h>
 #include <Ioss_DBUsage.h>               // for DatabaseUsage, etc
 #include <Ioss_DataSize.h>              // for DataSize
 #include <Ioss_EntityType.h>            // for EntityType
@@ -47,7 +48,6 @@
 #include <string>                       // for string
 #include <utility>                      // for pair
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Comm
 namespace Ioss { class CommSet; }
 namespace Ioss { class EdgeBlock; }
 namespace Ioss { class EdgeSet; }

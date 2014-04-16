@@ -37,7 +37,7 @@
 #include <Ioss_IOFactory.h>             // for IOFactory
 #include <string>                       // for string
 #include "Ioss_DatabaseIO.h"            // for DatabaseIO
-#include "mpi.h"                        // for MPI_Comm
+#include <Ioss_CodeTypes.h>
 namespace Ioss { class PropertyManager; }
 
 namespace Ioex {

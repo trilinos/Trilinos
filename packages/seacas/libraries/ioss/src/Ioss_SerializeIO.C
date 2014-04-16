@@ -36,7 +36,6 @@
 #include <ostream>                      // for operator<<, etc
 #include <string>                       // for char_traits
 #include "Ioss_CodeTypes.h"             // for HAVE_MPI
-#include "mpi.h"                        // for MPI_Barrier
 
 namespace Ioss {
 

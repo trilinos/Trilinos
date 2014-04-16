@@ -42,7 +42,8 @@
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "Ioss_State.h"                 // for State
-#include "mpi.h"                        // for MPI_Comm
+#include <Ioss_CodeTypes.h>
+
 namespace Ioss { class CommSet; }
 namespace Ioss { class EdgeBlock; }
 namespace Ioss { class EdgeSet; }
