@@ -8,7 +8,7 @@ Trilinos_Util::CommandLineParser: A class for managing the input
 arguments and variables.
 
 Using Trilinos_Util::CommandLineParser, it is easy to handle input
-line arguments and shell varibles. For instance, the user can write  $
+line arguments and shell variables. For instance, the user can write  $
 ./a.out -nx 10 -tol 1e-6 -solver=cg and then easily retrive the value
 of nx, tol, and solver.
 

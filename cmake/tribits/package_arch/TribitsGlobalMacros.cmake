@@ -65,7 +65,7 @@ INCLUDE(CheckIncludeFileCXX)
 
 
 #
-# Assert and setup project binary directory and other project varibles.
+# Assert and setup project binary directory and other project variables.
 #
 
 MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
@@ -1085,7 +1085,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(NATIVE_REPO_DIR)
 
     # Need to make sure this gets set because logic in Dependencies.cmake files
-    # looks for the presents of this varible.
+    # looks for the presents of this variable.
     SET(${NATIVE_REPO_NAME}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${NATIVE_REPO_DIR}")
     #PRINT_VAR(${NATIVE_REPO_NAME}_SOURCE_DIR)
 
@@ -1137,7 +1137,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #PRINT_VAR(${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
 
     # Need to make sure this gets set because logic in Dependencies.cmake files
-    # looks for the presents of this varible.
+    # looks for the presents of this variable.
     SET(${EXTRA_REPO}_SOURCE_DIR "${PROJECT_SOURCE_DIR}/${EXTRA_REPO}")
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${EXTRA_REPO}_SOURCE_DIR)
@@ -1945,7 +1945,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   ENDIF()
 
   #
-  # E) Process the global varibles and other cleanup
+  # E) Process the global variables and other cleanup
   #
   
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_INCLUDE_DIRS)

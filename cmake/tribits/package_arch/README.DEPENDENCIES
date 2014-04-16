@@ -297,7 +297,7 @@ link against a given package's capabilities.
 D) Notes on dependency logic
 --------------------------------------------------------------------------------
 
-The logic used to define the intra-package linkage varibles is complex due to
+The logic used to define the intra-package linkage variables is complex due to
 a number of factors:
 
 1) Packages can have libraries or no libraries.  

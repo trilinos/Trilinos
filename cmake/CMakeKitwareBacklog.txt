@@ -212,7 +212,7 @@ option (e.g. --validate-cache-variables) or if an internal cache variable
 could be set (like CMAKE_VALIDATE_INPUT_CACHE_VARIABLES) that would force the
 validation of all user-set cache variables to make sure that they had a
 matching internally defined cache variable.  At the very least, CMake could
-just print out all of the user-set cache varibles that never got used.  This
+just print out all of the user-set cache variables that never got used.  This
 would be easy to implement and go a long way to helping users catch spelling
 errors.  Workaround: I am not sure there is any robust workaround for this
 problem.  Only a built-in capability to CMake can address this issue fully.

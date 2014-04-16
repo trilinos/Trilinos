@@ -43,7 +43,7 @@ INCLUDE(TribitsPackageMacros)
 #
 # Define a subpackage.
 #
-# Once called, the following varibles are in scope:
+# Once called, the following variables are in scope:
 #
 #   PARENT_PACKAGE_NAME: The name of the parent package
 #
@@ -74,7 +74,7 @@ MACRO(TRIBITS_SUBPACKAGE SUBPACKAGE_NAME_IN)
   SET(PARENT_PACKAGE_SOURCE_DIR "${PACKAGE_SOURCE_DIR}")
   SET(PARENT_PACKAGE_BINARY_DIR "${PACKAGE_BINARY_DIR}")
 
-  # Now override the package-like varibles
+  # Now override the package-like variables
   TRIBITS_SET_COMMON_VARS(${SUBPACKAGE_FULLNAME})
   TRIBITS_DEFINE_LINKAGE_VARS(${SUBPACKAGE_FULLNAME})
 

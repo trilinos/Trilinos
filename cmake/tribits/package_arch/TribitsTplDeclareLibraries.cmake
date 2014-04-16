@@ -85,18 +85,18 @@ INCLUDE(ParseVariableArguments)
 #   ${TPL_NAME}_LIBRARY_NAMES:STIRNG: List of library names to be looked for
 #      instead of what is specified in REQUIRED_LIBS_NAMES.
 #
-# This function only sets global varibles as a way to return state so it can
+# This function only sets global variables as a way to return state so it can
 # be called from anywhere in the call stack.  The following cache variables
 # defined that are intended for the user to set and/or use:
 #
 #   TPL_${TPL_NAME}_INCLUDE_DIRS:  A list of common-separated full directory paths
-#     that contain the TPLs headers.  If this varible is set before calling
+#     that contain the TPLs headers.  If this variable is set before calling
 #     this function, then no headers are searched for and this variable will
 #     be assumed to have the correct list of header paths.
 #
 #   TPL_${TPL_NAME}_LIBRARIES:  A list of commons-seprated full library
 #     names (output from FIND_LIBRARY(...)) for all of the libraries found
-#     for the TPL.  IF this varible is set before calling this function,
+#     for the TPL.  IF this variable is set before calling this function,
 #     no libraries are searched for and this varaible will be assumed to
 #     have the correct list of libraries to link to.
 #
