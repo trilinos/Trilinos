@@ -521,8 +521,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       OverlappingY = rcp (new MV (localMap_, numVectors));
 
       RCP<MV> globalOverlappingX =
-        OverlappingX->offsetViewNonConst (Matrix_->getRowMap (),
-                                          static_cast<size_t> (0));
+        OverlappingX->offsetViewNonConst (Matrix_->getRowMap (), 0);
 
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
@@ -576,18 +575,14 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       OverlappingMatrix_->exportMultiVector (*OverlappingY, Y, CombineMode_);
     }
     else {
-      Teuchos::ArrayRCP<const scalar_type> values = OverlappingY->get1dView();
-      size_t index = 0;
-
-      // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
-      // for every entry.  It's important to understand how MultiVector
-      // views work.
-      for (size_t v = 0; v < numVectors; v++) {
-        for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
-          Y.replaceLocalValue(i, v, values[index]);
-          index++;
-        }
-      }
+      // mfh 16 Apr 2014: Make a view of Y with the same Map as
+      // OverlappingY, so that we can copy OverlappingY into Y.  This
+      // replaces code that iterates over all entries of OverlappingY,
+      // copying them one at a time into Y.  That code assumed that
+      // the rows of Y and the rows of OverlappingY have the same
+      // global indices in the same order; see Bug 5992.
+      RCP<MV> Y_view = Y.offsetViewNonConst (OverlappingY->getMap (), 0);
+      Tpetra::deep_copy (*Y_view, *OverlappingY);
     }
   } // Stop timing here.
 
@@ -1276,9 +1271,9 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::setup ()
     // FIXME (mfh 18 Nov 2013) Shouldn't this come from the Zoltan2 sublist?
     ReorderingAlgorithm_ = List_.get<std::string> ("order_method", "rcm");
     XpetraTpetraMatrixType XpetraMatrix (ActiveMatrix);
-    Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> Zoltan2Matrix (rcpFromRef (XpetraMatrix));
-
-    typedef Zoltan2::OrderingProblem<Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> > ordering_problem_type;
+    typedef Zoltan2::XpetraRowMatrixAdapter<XpetraMatrixType> z2_adapter_type;
+    z2_adapter_type Zoltan2Matrix (rcpFromRef (XpetraMatrix));
+    typedef Zoltan2::OrderingProblem<z2_adapter_type> ordering_problem_type;
 #ifdef HAVE_MPI
     // Grab the MPI Communicator and build the ordering problem with that
     MPI_Comm myRawComm;
