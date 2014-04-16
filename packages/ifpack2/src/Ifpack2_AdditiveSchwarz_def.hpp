@@ -512,17 +512,6 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         DistributedMap_.is_null (), std::logic_error,
         "Ifpack2::AdditiveSchwarz::apply: "
         "DistributedMap_ is null.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        SerialMap_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
-        "SerialMap_ is null.");
-
-      MV Serial (SerialMap_, numVectors);
-      // Create Import object on demand, if necessary.
-      if (SerialImporter_.is_null ()) {
-        SerialImporter_ =
-          rcp (new import_type (SerialMap_, Matrix_->getDomainMap ()));
-      }
-      Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
 
       OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
       OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
@@ -890,15 +879,6 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
     if (OverlapLevel_ == 0) {
       const global_ordinal_type indexBase = rowMap->getIndexBase ();
 
-      // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
-      // "serial Map."  It's the same Map as the input matrix's row Map!
-      // It's also the same Map as "distributed Map"!  I would change it
-      // myself, but I don't want to break anything, so I just
-      // reformatted the code to comply better with Ifpack2 standards
-      // and left the names alone.
-      SerialMap_ =
-        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                           indexBase, comm, node));
       DistributedMap_ =
         rcp (new map_type (INVALID, rowMap->getNodeElementList (),
                            indexBase, comm, node));
@@ -1511,10 +1491,8 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     ReorderedLocalizedMatrix_ = Teuchos::null;
     innerMatrix_ = Teuchos::null;
     SingletonMatrix_ = Teuchos::null;
-    SerialMap_ = Teuchos::null;
     DistributedMap_ = Teuchos::null;
     LocalDistributedMap_ = Teuchos::null;
-    SerialImporter_ = Teuchos::null;
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
