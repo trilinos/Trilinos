@@ -90,7 +90,7 @@ namespace MueLu {
 
     //! @name Constructors / Destructors
 
-    Level() : levelID_(-1) { }
+    Level() : lib_(Xpetra::NotSpecified), levelID_(-1) { }
 
     Level(RCP<FactoryManagerBase>& factoryManager) : lib_(Xpetra::UseTpetra), levelID_(-1), factoryManager_(factoryManager) { }
 

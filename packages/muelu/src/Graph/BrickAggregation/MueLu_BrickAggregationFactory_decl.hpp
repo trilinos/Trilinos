@@ -101,7 +101,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    BrickAggregationFactory() { };
+    BrickAggregationFactory() : nDim_(-1), nx_(-1), ny_(-1), nz_(-1), bx_(-1), by_(-1), bz_(-1) { };
 
     //! Destructor.
     virtual ~BrickAggregationFactory() { }

@@ -78,7 +78,7 @@ RCP<const ParameterList> UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Nod
 }
 
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
 }
 
 /**
@@ -88,10 +88,10 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Dec
  *  * line 2+: <aggregate size> <node 1 (root node) GID> <node 2 GID> ... <node last GID>
  */
 template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level &currentLevel) const {
+void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Build(Level& currentLevel) const {
   FactoryMonitor m(*this, "Build", currentLevel);
 
-  const ParameterList & pL = GetParameterList();
+  const ParameterList& pL = GetParameterList();
 
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
   const int myRank = comm->getRank();
@@ -103,6 +103,8 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
 
   LO numVertices, numAggregates;
   ifs >> numVertices >> numAggregates;
+  TEUCHOS_TEST_FOR_EXCEPTION(numVertices   > 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
+  TEUCHOS_TEST_FOR_EXCEPTION(numAggregates > 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
 
   // FIXME: what is the map?
   Xpetra::UnderlyingLib  lib       = Xpetra::UseEpetra;
@@ -120,6 +122,7 @@ void UserAggregationFactory<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Bui
   for (LO i = 0; i < numAggregates; i++) {
     int aggSize = 0;
     ifs >> aggSize;
+    TEUCHOS_TEST_FOR_EXCEPTION(aggSize > 0 && aggSize <= numVertices, Exceptions::InvalidArgument, "Incorrect #" << i << " aggregate size: " << aggSize);
 
     std::vector<LO> list(aggSize);
     for (int k = 0; k < aggSize; k++) {
