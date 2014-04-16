@@ -8,6 +8,15 @@
 
 namespace {
 
+class DistributedIndexTester : public stk::parallel::DistributedIndex
+{
+public:
+    DistributedIndexTester( stk::ParallelMachine comm ,const KeySpanVector & partition_spans ) :
+        DistributedIndex(comm, partition_spans)  {}
+
+    KeyProcVector getKeys() const { return m_key_usage ; }
+};
+
 class StkMeshCreator
 {
 
@@ -118,7 +127,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
         stk::parallel::DistributedIndex::KeySpanVector spans = stk::mesh::convert_entity_keys_to_spans(stkMeshMetaData);
-        stk::parallel::DistributedIndex distributedIndex(communicator, spans);
+        DistributedIndexTester distributedIndex(communicator, spans);
 
         updateDistributedIndexUsingStkMesh(stkMeshBulkData, myProc, distributedIndex);
 

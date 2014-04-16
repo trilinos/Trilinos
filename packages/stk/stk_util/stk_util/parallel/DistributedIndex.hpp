@@ -170,13 +170,16 @@ private:
   ProcType             m_comm_size ; ///< The number of processes
   size_t               m_span_count ;///< Number of spans of keys
   KeySpanVector m_key_span ;  ///< (min,max) for N span
-  KeyProcVector m_key_usage ; ///< Index for all key usage
   KeyTypeVector m_removed_keys;
 
   /*  Unit testing of internal methods requires the unit test to have
    *  access to those internal methods.
    */
   friend class ::UnitTestSTKParallelDistributedIndex ;
+
+protected:
+  KeyProcVector m_key_usage ; ///< Index for all key usage
+
 };
 
 //----------------------------------------------------------------------

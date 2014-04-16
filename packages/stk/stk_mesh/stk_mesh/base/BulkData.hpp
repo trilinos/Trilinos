@@ -68,6 +68,8 @@ class EntityRepository;
 
 }
 
+parallel::DistributedIndex::KeySpanVector convert_entity_keys_to_spans( const MetaData & meta );
+
 struct EntityCommListInfo
 {
   EntityKey key;
@@ -424,9 +426,9 @@ public:
    *
    * \paragraph destroy_locally_owned  Destroy Locally Owned
    *
-   *  Destrunction of entities in the 'locally_owned_part' schedules
+   *  Destruction of entities in the 'locally_owned_part' schedules
    *  all ghost copies of that entity for destruction during
-   *  modification_end.  If the entity ia shared with
+   *  modification_end.  If the entity is shared with
    *  another process and that process does not also destroy the
    *  entity then ownership of the entity will be transfered to
    *  a sharing process during modification_end.
@@ -1122,6 +1124,8 @@ public:
 private:
 
   void update_deleted_entities_container();
+  void addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
+         const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities);
 
 #ifndef DOXYGEN_COMPILE
 

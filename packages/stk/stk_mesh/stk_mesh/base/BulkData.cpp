@@ -67,8 +67,6 @@ std::vector<DynConnData> DynConnMetrics::m_data;
 #endif
 }
 
-namespace {
-
 parallel::DistributedIndex::KeySpanVector
 convert_entity_keys_to_spans( const MetaData & meta )
 {
@@ -96,8 +94,6 @@ convert_entity_keys_to_spans( const MetaData & meta )
   }
 
   return spans ;
-}
-
 }
 
 //----------------------------------------------------------------------
@@ -962,64 +958,77 @@ bool BulkData::destroy_entity( Entity entity, bool was_ghost )
 
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
                                  std::vector<Entity>& requested_entities)
+// requests = number of nodes needed, number of elements needed, etc.
 {
-  Trace_("stk::mesh::BulkData::generate_new_entities");
+    Trace_("stk::mesh::BulkData::generate_new_entities");
 
-  typedef stk::parallel::DistributedIndex::KeyType       KeyType;
-  typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
-  typedef std::vector< KeyTypeVector > RequestKeyVector;
+    typedef stk::parallel::DistributedIndex::KeyType KeyType;
+    typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
+    typedef std::vector<KeyTypeVector> RequestKeyVector;
 
-  RequestKeyVector requested_key_types;
+    RequestKeyVector requested_key_types;
 
-  m_entities_index.generate_new_keys(requests, requested_key_types);
+    m_entities_index.generate_new_keys(requests, requested_key_types);
 
-  //generating 'owned' entities
-  Part * const owns = & m_mesh_meta_data.locally_owned_part();
+    //generating 'owned' entities
+    Part * const owns = &m_mesh_meta_data.locally_owned_part();
 
-  std::vector<Part*> rem ;
-  std::vector<Part*> add;
-  add.push_back( owns );
+    std::vector<Part*> rem;
+    std::vector<Part*> add;
+    add.push_back(owns);
 
-  requested_entities.clear();
-  unsigned cnt=0;
-  for (RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
-    const KeyTypeVector& key_types = *itr;
-    for (KeyTypeVector::const_iterator
-        kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
-      ++cnt;
+    requested_entities.clear();
+    unsigned total_number_of_key_types_requested = 0;
+    for(RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr)
+    {
+        const KeyTypeVector& key_types = *itr;
+        for(KeyTypeVector::const_iterator kitr = key_types.begin(); kitr != key_types.end(); ++kitr)
+        {
+            ++total_number_of_key_types_requested;
+        }
     }
-  }
-  requested_entities.reserve(cnt);
-
-  for (RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr) {
-    const KeyTypeVector & key_types = *itr;
-    for ( KeyTypeVector::const_iterator
-        kitr = key_types.begin(); kitr != key_types.end(); ++kitr) {
-      EntityKey key( static_cast<EntityKey::entity_key_t>((*kitr) ));
-      require_good_rank_and_id(key.rank(), key.id());
-      std::pair<Entity , bool> result = m_entity_repo.internal_create_entity(key);
-
-      //if an entity is declared with the declare_entity function in
-      //the same modification cycle as the generate_new_entities
-      //function, and it happens to generate a key that was declared
-      //previously in the same cycle it is an error
-      ThrowErrorMsgIf( ! result.second,
-                       "Generated id " << key.id() <<
-                       " which was already used in this modification cycle.");
-
-      // A new application-created entity
-
-      Entity new_entity = result.first;
-
-      //add entity to 'owned' part
-      change_entity_parts( new_entity , add , rem );
-      requested_entities.push_back(new_entity);
-
-      this->set_parallel_owner_rank( new_entity, m_parallel_rank);
-      set_synchronized_count( new_entity, m_sync_count);
-    }
-  }
+    requested_entities.reserve(total_number_of_key_types_requested);
+    addMeshEntities(requested_key_types, rem, add, requested_entities);
 }
+
+void BulkData::addMeshEntities(const std::vector< stk::parallel::DistributedIndex::KeyTypeVector >& requested_key_types,
+       const std::vector<Part*> &rem, const std::vector<Part*> &add, std::vector<Entity>& requested_entities)
+{
+    typedef stk::parallel::DistributedIndex::KeyType       KeyType;
+    typedef stk::parallel::DistributedIndex::KeyTypeVector KeyTypeVector;
+    typedef std::vector< KeyTypeVector > RequestKeyVector;
+
+    for(RequestKeyVector::const_iterator itr = requested_key_types.begin(); itr != requested_key_types.end(); ++itr)
+    {
+        const KeyTypeVector & key_types = *itr;
+        for(KeyTypeVector::const_iterator kitr = key_types.begin(); kitr != key_types.end(); ++kitr)
+        {
+            EntityKey key(static_cast<EntityKey::entity_key_t>((*kitr)));
+            require_good_rank_and_id(key.rank(), key.id());
+            std::pair<Entity, bool> result = m_entity_repo.internal_create_entity(key);
+
+            //if an entity is declared with the declare_entity function in
+            //the same modification cycle as the generate_new_entities
+            //function, and it happens to generate a key that was declared
+            //previously in the same cycle it is an error
+            ThrowErrorMsgIf( ! result.second,
+                    "Generated id " << key.id() <<
+                    " which was already used in this modification cycle.");
+
+            // A new application-created entity
+
+            Entity new_entity = result.first;
+
+            //add entity to 'owned' part
+            change_entity_parts(new_entity, add, rem);
+            requested_entities.push_back(new_entity);
+
+            this->set_parallel_owner_rank(new_entity, m_parallel_rank);
+            set_synchronized_count(new_entity, m_sync_count);
+        }
+    }
+}
+
 
 bool BulkData::in_shared(EntityKey key, int proc) const
 {
@@ -4277,8 +4286,7 @@ void BulkData::internal_update_distributed_index(
   if (parallel_size() > 1) {
     // Retrieve data regarding which processes use the local_created_or_modified
     // including this process.
-    parallel::DistributedIndex::KeyProcVector
-      global_created_or_modified ;
+    parallel::DistributedIndex::KeyProcVector global_created_or_modified ;
     m_entities_index.query_to_usage( local_created_or_modified ,
                                      global_created_or_modified );
 

@@ -122,8 +122,8 @@ DistributedIndex::DistributedIndex (
     m_comm_size( parallel_machine_size( comm ) ),
     m_span_count(0),
     m_key_span(),
-    m_key_usage(),
-    m_removed_keys()
+    m_removed_keys(),
+    m_key_usage()
 {
   unsigned info[2] ;
   info[0] = partition_bounds.size();
