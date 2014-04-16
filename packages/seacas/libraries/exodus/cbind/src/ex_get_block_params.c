@@ -36,6 +36,16 @@
 #include "exodusII.h"                   // for ex_get_block_param, etc
 #include "exodusII_int.h"               // for EX_NOERR
 
+/*!
+ * Reads the parameters describing element/face/edge blocks
+ * \param   exoid                   exodus file id
+ * \param   block_count             number of blocks being queried
+ * \param   block                   array of ex_block structures describing block counts
+ *
+ * the id and type fields of the block(s) must be defined to specify which blocks to access;
+ *  all other fileds will be filled in based on data from the file
+ */
+
 int ex_get_block_params(int exoid,
 			size_t block_count,
 			struct ex_block **blocks)

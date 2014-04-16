@@ -32,26 +32,6 @@
  * OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  * 
  */
-/*****************************************************************************
-*
-* expblk - ex_put_block: write edge, face, or element block parameters
-*
-* entry conditions - 
-*   input parameters:
-*       int     idexo                   exodus file id
-*       int     blk_type                type of block (edge, face, or element)
-*       int     blk_id                  block identifer
-*       char*   entry_descrip           string describing shape of entries in the block
-*       int     num_entries_this_blk    number of entries(records) in the block
-*       int     num_nodes_per_entry     number of nodes per block entry
-*       int     block.num_edges_per_entry     number of edges per block entry
-*       int     block.num_faces_per_entry     number of faces per block entry
-*       int     num_attribute      number of attributes per block entry
-*
-* exit conditions - 
-*
-*
-*****************************************************************************/
 
 #include <inttypes.h>                   // for PRId64
 #include <stddef.h>                     // for size_t
@@ -65,7 +45,8 @@
 /*!
  * writes the parameters used to describe an element/face/edge block
  * \param   exoid                   exodus file id
- * \param   block                   ex_block structure describing block counts
+ * \param   block_count             number of blocks being defined
+ * \param   block                   array of ex_block structures describing block counts
  */
 
 int ex_put_block_params( int         exoid,
