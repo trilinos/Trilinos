@@ -453,6 +453,12 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(element);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
+
+            int nodeConnectedToGhostedElement = 37;
+            stk::mesh::Entity node = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeConnectedToGhostedElement);
+            stk::mesh::Bucket& nodeBucket = stkMeshBulkData.bucket(node);
+            isGhosted = !nodeBucket.shared() && !nodeBucket.owned();
+            EXPECT_TRUE(isGhosted);
         }
         //END_DOC_FOR_GHOSTING_AN_ELEMENT
 
