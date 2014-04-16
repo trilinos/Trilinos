@@ -81,6 +81,8 @@ static void *do_wait(void *args)
     /* the client sends a message here */
     NNTI_wait(&queue_mr, NNTI_RECV_QUEUE, -1, &queue_status);
 
+    pthread_barrier_wait(&barrier);
+
     return(NULL);
 }
 
@@ -141,10 +143,14 @@ int main(int argc, char *argv[])
     rc=NNTI_send(&server_hdl, &send_mr, NULL);
     rc=NNTI_wait(&send_mr, NNTI_SEND_SRC, 5000, &send_status);
 
+    pthread_barrier_wait(&barrier);
+
     NNTI_unregister_memory(&send_mr);
     free(send_buf);
 
     join_wait_thread();
+
+    NNTI_fini(&trans_hdl);
 
     return 0;
 }
