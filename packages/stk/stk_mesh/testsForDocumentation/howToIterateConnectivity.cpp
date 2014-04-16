@@ -56,9 +56,9 @@ TEST(StkMeshHowTo, iterateConnectivityThroughBulkData)
               elementNodeCoords[inode][0] = coords[0];
               elementNodeCoords[inode][1] = coords[1];
               elementNodeCoords[inode][2] = coords[2];
-              EXPECT_NE(coords[0], std::numeric_limits<double>::max());
-              EXPECT_NE(coords[1], std::numeric_limits<double>::max());
-              EXPECT_NE(coords[2], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
               ++count;
             }
         }
@@ -103,9 +103,9 @@ TEST(StkMeshHowTo, iterateConnectivityThroughBuckets)
               elementNodeCoords[inode][0] = coords[0];
               elementNodeCoords[inode][1] = coords[1];
               elementNodeCoords[inode][2] = coords[2];
-              EXPECT_NE(coords[0], std::numeric_limits<double>::max());
-              EXPECT_NE(coords[1], std::numeric_limits<double>::max());
-              EXPECT_NE(coords[2], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][0], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][1], std::numeric_limits<double>::max());
+              EXPECT_NE(elementNodeCoords[inode][2], std::numeric_limits<double>::max());
               ++count;
             }
         }
