@@ -83,15 +83,12 @@ ENDIF()
 
 
 SET(TESTNAMES
-   c-test
-   cpp-test)
-
+   c-stub
+   cpp-obj)
 
 foreach (testname ${TESTNAMES})
 
-  SET(DEFAULT_ARGS "--io-method=${testname} ")
-  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file=${testname}-result.out ")
-  SET(DEFAULT_ARGS "${DEFAULT_ARGS} --result-file-mode=a ")
+  SET(DEFAULT_ARGS "--opreg-type=${testname} ")
 
   TRIBITS_ADD_TEST(
     OpRegTest
