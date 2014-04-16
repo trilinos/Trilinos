@@ -317,7 +317,7 @@ struct ViewOffset< ShapeType , LayoutLeft
                                     &&
                                     int(ShapeRHS::rank_dynamic) <= int(shape_type::rank_dynamic)
                                     &&
-                                    int(ShapeRHS::rank_dynamic) <= 1
+                                    int(ShapeRHS::rank_dynamic) == 0
                                   )>::type * = 0 )
     {
       shape_type::assign( *this , rhs.N0, rhs.N1, rhs.N2, rhs.N3, rhs.N4, rhs.N5, rhs.N6, rhs.N7 );
@@ -331,7 +331,7 @@ struct ViewOffset< ShapeType , LayoutLeft
                                     &&
                                     int(ShapeRHS::rank_dynamic) <= int(shape_type::rank_dynamic)
                                     &&
-                                    int(ShapeRHS::rank_dynamic) > 1
+                                    int(ShapeRHS::rank_dynamic) > 0
                                   )>::type * = 0 )
     {
       shape_type::assign( *this , rhs.N0, rhs.N1, rhs.N2, rhs.N3, rhs.N4, rhs.N5, rhs.N6, rhs.N7 );
