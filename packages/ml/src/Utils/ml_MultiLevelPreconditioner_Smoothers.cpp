@@ -94,9 +94,9 @@ inline void local_automatic_line_search(ML * ml, int currentLevel, int NumEqns, 
     int n=0;
     int neighbors_in_line=0;
     ML_Operator_Getrow(Amat,1,&next,allocated_space, cols,vals,&n);
-    double x0 = xvals[next/NumEqns];
-    double y0 = yvals[next/NumEqns];
-    double z0 = zvals[next/NumEqns];
+    double x0 = (xvals) ? xvals[next/NumEqns] : 0.0;
+    double y0 = (yvals) ? yvals[next/NumEqns] : 0.0;
+    double z0 = (zvals) ? zvals[next/NumEqns] : 0.0;
 
     // Calculate neighbor distances & sort
     int neighbor_len=0;
@@ -166,9 +166,9 @@ int ML_Compute_Blocks_AutoLine(ML * ml, int currentLevel, int NumEqns, double to
 
     // Get neighbors and sort by distance
     ML_Operator_Getrow(Amat,1,&i,allocated_space,cols,vals,&nz);
-    double x0 = xvals[i/NumEqns];
-    double y0 = yvals[i/NumEqns];
-    double z0 = zvals[i/NumEqns];
+    double x0 = (xvals) ? xvals[i/NumEqns] : 0.0;
+    double y0 = (yvals) ? yvals[i/NumEqns] : 0.0;
+    double z0 = (zvals) ? zvals[i/NumEqns] : 0.0;
 
     int neighbor_len=0;
     for(int j=0; j<nz; j+=NumEqns) {
