@@ -148,13 +148,13 @@ namespace Belos {
   {
     static const bool isComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
     typedef Details::RealSolverManager<ScalarType, MV, OP, isComplex> base_type;
-    
+
   public:
     PCPGSolMgr () :
       base_type ()
     {}
     PCPGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-		const Teuchos::RCP<Teuchos::ParameterList> &pl) :
+                const Teuchos::RCP<Teuchos::ParameterList> &pl) :
       base_type ()
     {}
     virtual ~PCPGSolMgr () {}
@@ -169,7 +169,7 @@ namespace Belos {
     typedef Teuchos::ScalarTraits<ScalarType> SCT;
     typedef typename Teuchos::ScalarTraits<ScalarType>::magnitudeType MagnitudeType;
     typedef Teuchos::ScalarTraits<MagnitudeType> MT;
-    
+
   public:
 
     //! @name Constructors/Destructor
@@ -1153,11 +1153,11 @@ int PCPGSolMgr<ScalarType,MV,OP,false>::ARRQR(int p, int q, const Teuchos::Seria
   std::vector<int> curind(1);
   std::vector<int> ipiv(p - q); // RRQR Pivot indices
   std::vector<ScalarType> Pivots(p); // RRQR Pivots
-  int i, imax, j, k, l;
+  int i, imax, j, l;
   ScalarType rteps = 1.5e-8;
 
   // Scale such that diag( U'C) = I
-  for( int i = q ; i < p ; i++ ){
+  for( i = q ; i < p ; i++ ){
     ipiv[i-q] = i;
     curind[0] = i;
     RCP<MV> P = MVT::CloneViewNonConst(*U_,curind);
@@ -1173,7 +1173,7 @@ int PCPGSolMgr<ScalarType,MV,OP,false>::ARRQR(int p, int q, const Teuchos::Seria
       imax = i;
       l = ipiv[imax-q];
       for( j = i+1 ; j < p ; j++ ){
-         k = ipiv[j-q];
+         const int k = ipiv[j-q];
          if( Pivots[k] > Pivots[l] ){
            imax = j;
            l = k;
