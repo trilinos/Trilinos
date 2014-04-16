@@ -177,6 +177,18 @@ void Epetra_Util::Sort(bool SortAscending, int NumKeys, long long * Keys,
            NumLongLongCompanions, LongLongCompanions);
 }
 
+void Epetra_Util::Sort(bool SortAscending, int NumKeys, double * Keys, 
+           int NumDoubleCompanions,double ** DoubleCompanions, 
+           int NumIntCompanions, int ** IntCompanions,
+           int NumLongLongCompanions, long long ** LongLongCompanions)
+{
+  Sort<double>(SortAscending, NumKeys, Keys, 
+	       NumDoubleCompanions, DoubleCompanions, 
+	       NumIntCompanions, IntCompanions,
+	       NumLongLongCompanions, LongLongCompanions);
+}
+
+
 void Epetra_Util::Sort(bool SortAscending, int NumKeys, int * Keys, 
            int NumDoubleCompanions,double ** DoubleCompanions, 
            int NumIntCompanions, int ** IntCompanions)
