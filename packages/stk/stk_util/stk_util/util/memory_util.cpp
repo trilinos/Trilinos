@@ -140,8 +140,10 @@ void get_processor_count(std::vector<int> &procinfo)
 
   while (1)
   {
-    if(!std::getline(proc_cpuinfo, line))
+    if(!std::getline(proc_cpuinfo, line)) {
+      proc_cpuinfo.close();
       return;
+    }
     else if (line.substr(0, 11) == "processor	:")
     {
       proc_string = line.substr(12);
@@ -166,7 +168,6 @@ void get_processor_count(std::vector<int> &procinfo)
       have_processor = false;
     }
   }
-  proc_cpuinfo.close();
 #else
   procinfo.push_back(1);
 #endif
