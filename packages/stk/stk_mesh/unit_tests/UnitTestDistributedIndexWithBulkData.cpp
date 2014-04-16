@@ -430,28 +430,35 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
         // 9-12 are ghosted on proc 0
 
         // proc 1 needs to ghost element 13 to proc 0
+
+        //BEGIN_DOC_FOR_GHOSTING_AN_ELEMENT
         int ghostedElementId = 13;
-        int fromProc = 1;
-        int toProc = 0;
+        int processorThatOwnsElement13 = 1;
+        int processorThatReceivesGhostedElement13 = 0;
 
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting = stkMeshBulkData.create_ghosting("Ghost Element 13");
         std::vector< std::pair<stk::mesh::Entity, int> > ghostingStruct;
-        if ( myProc == fromProc )
+        if ( myProc == processorThatOwnsElement13 )
         {
             stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ghostedElementId);
-            ghostingStruct.push_back(std::make_pair(element, toProc));
+            ghostingStruct.push_back(std::make_pair(element, processorThatReceivesGhostedElement13));
         }
         stkMeshBulkData.change_ghosting(ghosting, ghostingStruct);
         stkMeshBulkData.modification_end();
 
-        if ( myProc == toProc )
+        if ( myProc == processorThatReceivesGhostedElement13 )
         {
             stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ghostedElementId);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(element);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
+        }
+        //END_DOC_FOR_GHOSTING_AN_ELEMENT
 
+        if ( myProc == processorThatReceivesGhostedElement13 )
+        {
+            stk::mesh::Entity element = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, ghostedElementId);
             stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(element));
             size_t numProcsToCommunicateWithForEntity = 1;
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
@@ -611,7 +618,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
 
 void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, stk::mesh::BulkData &stkMeshBulkData)
 {
-    //BEGIN DOC FOR ELEMENT MOVE
+    //BEGIN_DOC_FOR_ELEMENT_MOVE
     stk::mesh::Entity elementToMove = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementToMoveId);
 
     std::vector<std::pair<stk::mesh::Entity, int> > entityProcPairs;
@@ -622,7 +629,7 @@ void testElementMove(int fromProc, int toProc, int myProc, int elementToMoveId, 
     }
     stkMeshBulkData.change_entity_owner(entityProcPairs);
     stkMeshBulkData.modification_end();
-    //END DOC FOR ELEMENT MOVE
+    //END_DOC_FOR_ELEMENT_MOVE
 }
 
 TEST(UnderstandingDistributedIndex, MoveAnElement)
@@ -747,13 +754,13 @@ TEST(UnderstandingDistributedIndex, GhostANode)
         // 5-8 are ghosted on proc 1
         // 9-12 are ghosted on proc 0
 
-        int ghostedNodeId = 45;
-        int fromProc = 1;
-        int toProc = 0;
+        int node45 = 45;
+        int procThatOwnsNode45 = 1;
+        int procThatReceivesGhostedNode45 = 0;
 
-        if (myProc == fromProc)
+        if (myProc == procThatOwnsNode45)
         {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, ghostedNodeId);
+            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, node45);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isGhosted);
@@ -763,20 +770,29 @@ TEST(UnderstandingDistributedIndex, GhostANode)
             EXPECT_TRUE(commStuff.size() == numProcsToCommunicateWithForEntity);
         }
 
+        //BEGIN_DOC_FOR_GHOSTED_NODE
         stkMeshBulkData.modification_begin();
         stk::mesh::Ghosting &ghosting = stkMeshBulkData.create_ghosting("Ghost Node 45");
         std::vector< std::pair<stk::mesh::Entity, int> > ghostingStruct;
-        if ( myProc == fromProc )
+        if ( myProc == procThatOwnsNode45 )
         {
-            stk::mesh::Entity nodeToGhost = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, ghostedNodeId);
-            ghostingStruct.push_back(std::make_pair(nodeToGhost, toProc));
+            stk::mesh::Entity nodeToGhost = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, node45);
+            ghostingStruct.push_back(std::make_pair(nodeToGhost, procThatReceivesGhostedNode45));
         }
         stkMeshBulkData.change_ghosting(ghosting, ghostingStruct);
         stkMeshBulkData.modification_end();
 
-        if ( myProc == toProc )
+        if ( myProc == procThatReceivesGhostedNode45 )
         {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, ghostedNodeId);
+            int elementIdConnectedToGhostedNode45 = 16;
+            stk::mesh::Entity ghostedElement = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementIdConnectedToGhostedNode45);
+            EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedElement));
+        }
+        //END_DOC_FOR_GHOSTED_NODE
+
+        if ( myProc == procThatReceivesGhostedNode45 )
+        {
+            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, node45);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
             bool isGhosted = !bucket.shared() && !bucket.owned();
             EXPECT_TRUE(isGhosted);
@@ -788,14 +804,10 @@ TEST(UnderstandingDistributedIndex, GhostANode)
 
             size_t customGhosting = ghosting.ordinal();
             EXPECT_TRUE((*commStuff.first).ghost_id == customGhosting);
-
-            int elementIdConnectedToGhostedNode = 16;
-            stk::mesh::Entity ghostedElement = stkMeshBulkData.get_entity(stk::topology::ELEMENT_RANK, elementIdConnectedToGhostedNode);
-            EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedElement));
         }
         else
         {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, ghostedNodeId);
+            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, node45);
             stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
             bool isThisAGhostOnThisProc = !bucket.shared() && !bucket.owned();
             EXPECT_FALSE(isThisAGhostOnThisProc);
