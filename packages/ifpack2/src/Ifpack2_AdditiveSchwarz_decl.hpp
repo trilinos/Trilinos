@@ -885,10 +885,8 @@ private:
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<prec_type> Inverse_;
-  //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> LocalDistributedMap_;
+  Teuchos::RCP<const map_type> localMap_;
 
   /// \brief Import object used in apply().
   ///

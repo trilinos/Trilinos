@@ -492,12 +492,10 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         "Please report this bug to the Ifpack2 developers.");
 
       // Setup if we're overlapping
+      //
+      // MV's constructor fills with zeros.
       OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
       OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-      // FIXME (mfh 28 Sep 2013) MV's constructor fills with zeros by default,
-      // so there is no need to call putScalar().
-      OverlappingY->putScalar (ZERO);
-      OverlappingX->putScalar (ZERO);
       OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
       // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
@@ -505,25 +503,21 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       Xtmp = rcp (new MV (createCopy(X)));
 
       TEUCHOS_TEST_FOR_EXCEPTION(
-        LocalDistributedMap_.is_null (), std::logic_error,
-        "Ifpack2::AdditiveSchwarz::apply: "
-        "LocalDistributedMap_ is null.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        DistributedMap_.is_null (), std::logic_error,
-        "Ifpack2::AdditiveSchwarz::apply: "
-        "DistributedMap_ is null.");
+        localMap_.is_null (), std::logic_error,
+        "Ifpack2::AdditiveSchwarz::apply: localMap_ is null.");
 
-      OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
-      OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
+      // MV's constructor fills with zeros.
+      OverlappingX = rcp (new MV (localMap_, numVectors));
+      OverlappingY = rcp (new MV (localMap_, numVectors));
 
-      //OverlappingX->putScalar(0.0);
-      //OverlappingY->putScalar(0.0);
-
-      MV Distributed (DistributedMap_, numVectors);
+      MV Distributed (Matrix_->getRowMap (), numVectors);
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
+        // FIXME (mfh 15 Apr 2014) Why can't we just ask the Matrix
+        // for its Import object?  Of course a general RowMatrix might
+        // not necessarily have one.
         DistributedImporter_ =
-          rcp (new import_type (DistributedMap_, Matrix_->getDomainMap ()));
+          rcp (new import_type (Matrix_->getRowMap (), Matrix_->getDomainMap ()));
       }
       Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
 
@@ -878,14 +872,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     if (OverlapLevel_ == 0) {
       const global_ordinal_type indexBase = rowMap->getIndexBase ();
-
-      DistributedMap_ =
-        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                           indexBase, comm, node));
-
       RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
-
-      LocalDistributedMap_ =
+      // FIXME (mfh 15 Apr 2014) What if indexBase isn't the least
+      // global index in the list of GIDs on this process?
+      localMap_ =
         rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
                            indexBase, localComm, node));
     }
@@ -1491,8 +1481,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     ReorderedLocalizedMatrix_ = Teuchos::null;
     innerMatrix_ = Teuchos::null;
     SingletonMatrix_ = Teuchos::null;
-    DistributedMap_ = Teuchos::null;
-    LocalDistributedMap_ = Teuchos::null;
+    localMap_ = Teuchos::null;
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
