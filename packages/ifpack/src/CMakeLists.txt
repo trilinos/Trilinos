@@ -64,6 +64,7 @@ SET(HEADERS ${HEADERS}
   Ifpack_Graph_Epetra_CrsGraph.h
   Ifpack_Partitioner.h
   Ifpack_OverlappingPartitioner.h
+  Ifpack_LinePartitioner.h
   Ifpack_LinearPartitioner.h
   Ifpack_GreedyPartitioner.h
   Ifpack_METISPartitioner.h
@@ -121,6 +122,7 @@ SET(SOURCES ${SOURCES}
   Ifpack_Polynomial.cpp
   Ifpack_Krylov.cpp
   Ifpack_OverlappingPartitioner.cpp
+  Ifpack_LinePartitioner.cpp
   Ifpack_LinearPartitioner.cpp
   Ifpack_GreedyPartitioner.cpp
   Ifpack_METISPartitioner.cpp
