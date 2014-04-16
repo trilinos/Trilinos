@@ -455,6 +455,7 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
     TimeMonitor timeMon (*timer);
 
     const scalar_type ZERO = Teuchos::ScalarTraits<scalar_type>::zero ();
+    const scalar_type ONE = Teuchos::ScalarTraits<scalar_type>::one ();
 
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! IsComputed_, std::runtime_error,
@@ -479,10 +480,16 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
       "Ifpack2::AdditiveSchwarz::apply: "
       "X and Y must have the same number of columns.  X has "
       << X.getNumVectors() << " columns, but Y has " << Y.getNumVectors() << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      alpha != ONE, std::logic_error,
+      "Ifpack2::AdditiveSchwarz::apply: Not implemented for alpha != 1.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      beta != ZERO, std::logic_error,
+      "Ifpack2::AdditiveSchwarz::apply: Not implemented for beta != 0.");
 
     const size_t numVectors = X.getNumVectors ();
 
-    RCP<MV> OverlappingX,OverlappingY,Xtmp;
+    RCP<MV> OverlappingX,OverlappingY;
 
     if (IsOverlapping_) {
       TEUCHOS_TEST_FOR_EXCEPTION(
@@ -492,64 +499,40 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
         "Please report this bug to the Ifpack2 developers.");
 
       // Setup if we're overlapping
+      //
+      // MV's constructor fills with zeros.
       OverlappingX = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
       OverlappingY = rcp (new MV (OverlappingMatrix_->getRowMap (), numVectors));
-      // FIXME (mfh 28 Sep 2013) MV's constructor fills with zeros by default,
-      // so there is no need to call putScalar().
-      OverlappingY->putScalar (ZERO);
-      OverlappingX->putScalar (ZERO);
       OverlappingMatrix_->importMultiVector (X, *OverlappingX, Tpetra::INSERT);
       // FIXME from Ifpack1: Will not work with non-zero starting solutions.
     }
     else {
-      Xtmp = rcp (new MV (createCopy(X)));
-
       TEUCHOS_TEST_FOR_EXCEPTION(
-        LocalDistributedMap_.is_null (), std::logic_error,
-        "Ifpack2::AdditiveSchwarz::apply: "
-        "LocalDistributedMap_ is null.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        DistributedMap_.is_null (), std::logic_error,
-        "Ifpack2::AdditiveSchwarz::apply: "
-        "DistributedMap_ is null.");
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        SerialMap_.is_null (), std::logic_error, "Ifpack2::AdditiveSchwarz::apply: "
-        "SerialMap_ is null.");
+        localMap_.is_null (), std::logic_error,
+        "Ifpack2::AdditiveSchwarz::apply: localMap_ is null.");
 
-      MV Serial (SerialMap_, numVectors);
-      // Create Import object on demand, if necessary.
-      if (SerialImporter_.is_null ()) {
-        SerialImporter_ =
-          rcp (new import_type (SerialMap_, Matrix_->getDomainMap ()));
-      }
-      Serial.doImport (*Xtmp, *SerialImporter_, Tpetra::INSERT);
+      // MV's constructor fills with zeros.
+      //
+      // localMap_ has the same number of indices on each process that
+      // Matrix_->getRowMap() does on that process.  Thus, we can do
+      // the Import step without creating a new MV, just by viewing
+      // OverlappingX using Matrix_->getRowMap ().
+      OverlappingX = rcp (new MV (localMap_, numVectors));
+      OverlappingY = rcp (new MV (localMap_, numVectors));
 
-      OverlappingX = rcp (new MV (LocalDistributedMap_, numVectors));
-      OverlappingY = rcp (new MV (LocalDistributedMap_, numVectors));
+      RCP<MV> globalOverlappingX =
+        OverlappingX->offsetViewNonConst (Matrix_->getRowMap (),
+                                          static_cast<size_t> (0));
 
-      //OverlappingX->putScalar(0.0);
-      //OverlappingY->putScalar(0.0);
-
-      MV Distributed (DistributedMap_, numVectors);
       // Create Import object on demand, if necessary.
       if (DistributedImporter_.is_null ()) {
+        // FIXME (mfh 15 Apr 2014) Why can't we just ask the Matrix
+        // for its Import object?  Of course a general RowMatrix might
+        // not necessarily have one.
         DistributedImporter_ =
-          rcp (new import_type (DistributedMap_, Matrix_->getDomainMap ()));
+          rcp (new import_type (Matrix_->getRowMap (), Matrix_->getDomainMap ()));
       }
-      Distributed.doImport (*Xtmp, *DistributedImporter_, Tpetra::INSERT);
-
-      // FIXME (mfh 28 Sep 2013) Please don't call replaceLocalValue()
-      // for every entry.  It's important to understand how MultiVector
-      // views work.
-      Teuchos::ArrayRCP<const scalar_type> values = Distributed.get1dView();
-      size_t index = 0;
-
-      for (size_t v = 0; v < numVectors; v++) {
-        for (size_t i = 0; i < Matrix_->getRowMap()->getNodeNumElements(); i++) {
-          OverlappingX->replaceLocalValue(i, v, values[index]);
-          index++;
-        }
-      }
+      globalOverlappingX->doImport (X, *DistributedImporter_, Tpetra::INSERT);
     }
 
     if (FilterSingletons_) {
@@ -889,23 +872,10 @@ void AdditiveSchwarz<MatrixType,LocalInverseType>::initialize ()
 
     if (OverlapLevel_ == 0) {
       const global_ordinal_type indexBase = rowMap->getIndexBase ();
-
-      // FIXME (mfh 28 Sep 2013) I don't understand why this is called a
-      // "serial Map."  It's the same Map as the input matrix's row Map!
-      // It's also the same Map as "distributed Map"!  I would change it
-      // myself, but I don't want to break anything, so I just
-      // reformatted the code to comply better with Ifpack2 standards
-      // and left the names alone.
-      SerialMap_ =
-        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                           indexBase, comm, node));
-      DistributedMap_ =
-        rcp (new map_type (INVALID, rowMap->getNodeElementList (),
-                           indexBase, comm, node));
-
       RCP<const SerialComm<int> > localComm (new SerialComm<int> ());
-
-      LocalDistributedMap_ =
+      // FIXME (mfh 15 Apr 2014) What if indexBase isn't the least
+      // global index in the list of GIDs on this process?
+      localMap_ =
         rcp (new map_type (INVALID, rowMap->getNodeNumElements (),
                            indexBase, localComm, node));
     }
@@ -1511,10 +1481,7 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
     ReorderedLocalizedMatrix_ = Teuchos::null;
     innerMatrix_ = Teuchos::null;
     SingletonMatrix_ = Teuchos::null;
-    SerialMap_ = Teuchos::null;
-    DistributedMap_ = Teuchos::null;
-    LocalDistributedMap_ = Teuchos::null;
-    SerialImporter_ = Teuchos::null;
+    localMap_ = Teuchos::null;
     DistributedImporter_ = Teuchos::null;
 
     Matrix_ = A;
