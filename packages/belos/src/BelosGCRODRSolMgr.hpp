@@ -1544,7 +1544,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
           // Step #2: Compute QR factorization of HP
           //
-          // NOTE (mfh 16 Apr 2014) LAPACK promises that the value of
+          // NOTE (mfh 17 Apr 2014) LAPACK promises that the value of
           // work_[0] after the workspace query will fit in int.  This
           // justifies the cast.  We call real() first because
           // static_cast from std::complex to int doesn't work.
@@ -1564,7 +1564,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
               Rtmp(ii,jj) = HPtmp(ii,jj);
             }
           }
-          // NOTE (mfh 16 Apr 2014): Teuchos::LAPACK's wrapper for
+          // NOTE (mfh 17 Apr 2014): Teuchos::LAPACK's wrapper for
           // UNGQR dispatches to the correct Scalar-specific routine.
           // It calls {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if
           // Scalar is complex.
@@ -1596,7 +1596,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
             "LAPACK's _GETRF failed to compute an LU factorization.");
 
-          // FIXME (mfh 16 Apr 2014) We have to compute the explicit
+          // FIXME (mfh 17 Apr 2014) We have to compute the explicit
           // inverse of R here because Belos::MultiVecTraits doesn't
           // have a triangular solve (where the triangular matrix is
           // globally replicated and the "right-hand side" is the

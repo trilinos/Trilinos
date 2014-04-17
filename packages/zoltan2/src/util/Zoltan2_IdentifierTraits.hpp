@@ -659,7 +659,7 @@ struct IdentifierTraits<std::pair<T1, T2> > {
       char *cy = cx + nbytes;
       T1 *xpos = reinterpret_cast<T1 *>(cx + nbytes-sizeof(T1));
       T2 *ypos = reinterpret_cast<T2 *>(cy + nbytes-sizeof(T2));
-      // mfh 16 Apr 2014: Must do a memcpy here rather than an
+      // mfh 17 Apr 2014: Must do a memcpy here rather than an
       // assignment, in order to avoid breaking strict ANSI aliasing
       // rules (which compilers expect in order to optimize
       // correctly).
