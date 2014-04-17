@@ -266,7 +266,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_epetra = []
                         for epetra_file in sort_nicely(glob.glob(analysis_run + "*.epetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('")
                             if r[0] != 0:
                                 return "Error reading \"" + analysis_run + ".epetra"
 
@@ -287,7 +287,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_tpetra = []
                         for tpetra_file in sort_nicely(glob.glob(analysis_run + "*.tpetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | cut -f3 -d')' | cut -f1 -d'('")
+                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('")
                             if r[0] != 0:
                                 return "Error reading \"" + analysis_run + ".tpetra"
 
