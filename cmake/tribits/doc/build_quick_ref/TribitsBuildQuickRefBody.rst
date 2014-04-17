@@ -131,6 +131,8 @@ a) Create a 'do-configure' script such as [Recommended]::
   CASL and other CMake-generated files before configuring again (see
   `Reconfiguring completely from scratch`_).
 
+.. _<Project>_CONFIGURE_OPTIONS_FILE:
+
 b) Create a CMake file fragment and point to it [Recommended].
 
   Create a do-configure script like::
@@ -173,8 +175,8 @@ d) Using the QT CMake configuration GUI:
   On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
   can be a nice way to configure <Project> if you are a user.  To make your
   configuration easily repeatable, you might want to create a fragment file
-  and just load it by setting <Project>_CONFIGURE_OPTIONS_FILE (see above) in
-  the GUI.
+  and just load it by setting `<Project>_CONFIGURE_OPTIONS_FILE`_ (see above)
+  in the GUI.
 
 Selecting the list of packages to enable
 ----------------------------------------
@@ -918,6 +920,8 @@ Generating verbose output
 There are several different ways to generate verbose output to debug problems
 when they occur:
 
+.. _<Project>_TRACE_FILE_PROCESSING:
+
 a) **Trace file processing during configure:**
 
   ::
@@ -932,8 +936,8 @@ a) **Trace file processing during configure:**
   helpful in debugging configure problems without generating too much extra
   output.
 
-  This is set to ``ON`` automatically when
-  ``<Project>_VERBOSE_CONFIGURE:BOOL=ON``.
+  Note that `<Project>_TRACE_FILE_PROCESSING`_ is set to ``ON`` automatically
+  when ``<Project>_VERBOSE_CONFIGURE:BOOL=ON``.
 
 b) **Getting verbose output from TriBITS configure:**
 

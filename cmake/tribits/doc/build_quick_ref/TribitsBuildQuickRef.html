@@ -536,7 +536,7 @@ compilers, other types of changes) then one will want to delete the local
 CASL and other CMake-generated files before configuring again (see
 <a class="reference internal" href="#reconfiguring-completely-from-scratch">Reconfiguring completely from scratch</a>).</p>
 </blockquote>
-<ol class="loweralpha simple" start="2">
+<ol class="loweralpha simple" id="project-configure-options-file" start="2">
 <li>Create a CMake file fragment and point to it [Recommended].</li>
 </ol>
 <blockquote>
@@ -582,8 +582,8 @@ $ ccmake $SOURCE_BASE
 On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
 can be a nice way to configure &lt;Project&gt; if you are a user.  To make your
 configuration easily repeatable, you might want to create a fragment file
-and just load it by setting &lt;Project&gt;_CONFIGURE_OPTIONS_FILE (see above) in
-the GUI.</blockquote>
+and just load it by setting <a class="reference internal" href="#project-configure-options-file">&lt;Project&gt;_CONFIGURE_OPTIONS_FILE</a> (see above)
+in the GUI.</blockquote>
 </div>
 <div class="section" id="selecting-the-list-of-packages-to-enable">
 <h2><a class="toc-backref" href="#id11">4.3&nbsp;&nbsp;&nbsp;Selecting the list of packages to enable</a></h2>
@@ -1288,7 +1288,7 @@ also want to explicitly disable the TPL as shown above.</p>
 <h2><a class="toc-backref" href="#id30">4.15&nbsp;&nbsp;&nbsp;Generating verbose output</a></h2>
 <p>There are several different ways to generate verbose output to debug problems
 when they occur:</p>
-<ol class="loweralpha simple">
+<ol class="loweralpha simple" id="project-trace-file-processing">
 <li><strong>Trace file processing during configure:</strong></li>
 </ol>
 <blockquote>
@@ -1302,8 +1302,8 @@ get processed.  To get a clean listing of all the files processed by TriBITS
 just grep out the lines starting with <tt class="docutils literal"><span class="pre">--</span> File Trace:</tt>.  This can be
 helpful in debugging configure problems without generating too much extra
 output.</p>
-<p>This is set to <tt class="docutils literal">ON</tt> automatically when
-<tt class="docutils literal">&lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON</tt>.</p>
+<p>Note that <a class="reference internal" href="#project-trace-file-processing">&lt;Project&gt;_TRACE_FILE_PROCESSING</a> is set to <tt class="docutils literal">ON</tt> automatically
+when <tt class="docutils literal">&lt;Project&gt;_VERBOSE_CONFIGURE:BOOL=ON</tt>.</p>
 </blockquote>
 <ol class="loweralpha simple" start="2">
 <li><strong>Getting verbose output from TriBITS configure:</strong></li>
