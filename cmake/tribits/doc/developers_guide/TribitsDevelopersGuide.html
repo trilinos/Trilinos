@@ -2262,7 +2262,6 @@ repository for a different use.  However, a package can indirectly refer to
 its own repository without loss of generality by reading the variable
 <tt class="docutils literal">${PACKAGE_NAME}_PARENT_REPOSITORY</tt>.  The problem is referring to other
 TriBITS repositories explicitly.</p>
-<!-- ToDo: Edited and spell-checked up to here on 4/16/2014! -->
 </div>
 </div>
 <div class="section" id="tribits-subpackage">
@@ -2470,40 +2469,44 @@ one&quot; when it comes to the relationship between the subpackages within a sin
 parent package.  These are some of the issues to consider when breaking up
 software into packages and subpackages that will be mentioned in other
 sections as well.</p>
-<!-- ToDo: Edited and spell-checked up to here on 4/17/2014! -->
 </div>
 </div>
 <div class="section" id="tribits-tpl">
 <h3><a class="toc-backref" href="#id30">TriBITS TPL</a></h3>
-<p>A TriBITS TPL:</p>
+<p>A <em>TriBITS TPL</em>:</p>
 <ul class="simple">
 <li>Defines a set of pre-built libraries and/or header files and/or executables
-and/or some other resources used by one or more TriBITS Packages and
-publishes the list of include directories and/or libraries and/or
+and/or some other resources used by one or more TriBITS Packages for which
+TriBITS publishes the list of include directories and/or libraries and/or
 executables provided by the TPL to the TriBITS project.</li>
-<li>Is given a globally unique name (see <a class="reference internal" href="#globally-unique-tribits-tpl-names">Globally unique TriBITS TPL names</a>)
-and is declared in a <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.</li>
+<li>Has a globally unique name (see <a class="reference internal" href="#globally-unique-tribits-tpl-names">Globally unique TriBITS TPL names</a>) that
+is declared in a <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.</li>
 <li>Is listed as an explicit optional or required dependency in one or more
 TriBITS SE package's <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files.</li>
 </ul>
-<p id="globally-unique-tribits-tpl-names"><strong>WARNING:</strong> One must be very careful to pick TPL names that will be globally
-unique across all packages in all TriBITS repositories that ever might be
-cobbled together into a single TriBITS (meta) project!  However, choose TPL
-names is usually much easier and less risky than choosing <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique
-TriBITS package names</a> because the native TPLs themselves tend to be uniquely
-named.</p>
-<p>Using a TriBITS TPL is to be preferred over using a raw CMake
+<p id="globally-unique-tribits-tpl-names"><strong>WARNING:</strong> One must be very careful to pick <strong>Globally unique TriBITS TPL
+names</strong> across all TPLs in all TriBITS repositories that ever might be cobbled
+together into a single TriBITS (meta) project!  However, choosing TPL names is
+usually much easier and less risky than choosing <a class="reference internal" href="#globally-unique-tribits-package-names">Globally unique TriBITS
+package names</a> because the native TPLs themselves tend to be uniquely named.
+For example, the TPL names <tt class="docutils literal">BLAS</tt> and <tt class="docutils literal">LAPACK</tt> are well defined in the
+applied math and computational science community and are not likely to clash.</p>
+<p>Using a TriBITS TPL is to be preferred over using raw CMake
 <tt class="docutils literal"><span class="pre">FIND_PACKAGE(&lt;someCMakePackage&gt;)</span></tt> because the TriBITS system guarantees
-that only a single unique version of TPL will be used by multiple packages and
-by declaring a TPL using TriBITS, automatic enable/disable logic will be
-applied as described in <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a>.</p>
-<p>For each TPL referenced in a <tt class="docutils literal">TPLsList.cmake</tt> file using the macro
-<a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>, there should exist a file, typically
-called <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>, that once processed, produces the
-variables <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  Most
+that only a single unique version of TPL of the same version will be used by
+multiple packages.  Also, by defining a TriBITS TPL, automatic enable/disable
+logic will be applied as described in <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
+Logic</a>.  For example, if a TPL is explicitly disabled, all of the downstream
+packages that depend on that TPL will be automatically disabled as well (see
+<a class="reference internal" href="#tpl-disable-triggers-auto-disables-of-downstream-dependencies">TPL disable triggers auto-disables of downstream dependencies</a>).</p>
+<p>For each TPL referenced in a <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file using the macro
+<a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>, there must exist a file, typically called
+<tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>, that once processed, produces the variables
+<tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  Most
 <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files just use the the function
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> the define the TriBITS TPL.  A simple
-example of such a file is the standard <tt class="docutils literal">FindTPLPETSC.cmake</tt> module which is:</p>
+example of such a file is the standard TriBITS <tt class="docutils literal">FindTPLPETSC.cmake</tt> module
+which is currently:</p>
 <pre class="literal-block">
 INCLUDE(TribitsTplDeclareLibraries)
 
@@ -2515,21 +2518,26 @@ TRIBITS_TPL_DECLARE_LIBRARIES( PETSC
 </pre>
 <p>Some concrete <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files actually do use
 <tt class="docutils literal">FIND_PACKAGE()</tt> and a standard CMake package find module to fill in the
-guts of finding at TPL.</p>
+guts of finding at TPL which is perfectly fine.</p>
 <p>Once processed, each defined TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
 variables for the TPL's find module <tt class="docutils literal">${TPL_NAME}_FINDMOD</tt> and test group
 <tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
-<p>Note that the TriBITS system does not require the usage of of the function
-<a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> and does not even care about the TPL module
-name <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>.  All that is required is that some CMake
-file fragment exist that once included, will define the variables
+<p>The specification given in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl">Enabling support for an optional Third-Party
+Library (TPL)</a> and <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> describes how the a
+<tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> module should behave and allow users to override
+and specialize how a TPL is determined.  However, note that the TriBITS system
+does not require the usage of of the function
+<tt class="docutils literal">TRIBITS_TPL_DECLARE_LIBRARIES()</tt> and does not even care about the TPL
+module name <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt>.  All that is required is that some
+CMake file fragment exist that once included, will define the variables
 <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt> and <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>.  However, to be
 user friendly, such a CMake file should respond to the same variables as
-accepted by the standard <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> function.</p>
+accepted by the standard <tt class="docutils literal">TRIBITS_TPL_DECLARE_LIBRARIES()</tt> function.</p>
 <p>The core variables related to an enabled TPL are <tt class="docutils literal">${TPL_NAME}_LIBRARIES</tt>,
 <tt class="docutils literal">${TPL_NAME}_INCLUDE_DIRS</tt>, and <tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> as defined in
 <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> need to be defined.  For more details, see
 <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>.</p>
+<!-- ToDo: Edited and spell-checked up to here on 4/17/2014! -->
 </div>
 </div>
 <div class="section" id="processing-of-tribits-files-ordering-and-details">
@@ -3695,8 +3703,8 @@ a required dependency on the TPL.  For example, if the user sets
 <tt class="docutils literal">TPL_ENABLE_LAPACK=OFF</tt>, then this will result in the disable of SE
 packages <tt class="docutils literal">Teuchos</tt> and <tt class="docutils literal">Epetra</tt>, and all of the required SE packages
 downstream from them (see ???).  Also, the explicitly disabled TPL will
-result in disable of optional support in all downstream SE packages.  For
-example, if the user sets <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>, then TriBITS will
+result in the disable of optional support in all downstream SE packages.
+For example, if the user sets <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>, then TriBITS will
 automatically set <tt class="docutils literal">Teuchos_ENABLE_MPI=OFF</tt> and <tt class="docutils literal">Epetra_ENABLE_MPI=OFF</tt>.
 For examples, see <a class="reference internal" href="#explicit-disable-of-an-optional-tpl">Explicit disable of an optional TPL</a> and <a class="reference internal" href="#explicit-disable-of-a-required-tpl">Explicit
 disable of a required TPL</a>.</li>

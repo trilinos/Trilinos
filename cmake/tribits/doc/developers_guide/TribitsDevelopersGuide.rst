@@ -1678,8 +1678,6 @@ its own repository without loss of generality by reading the variable
 ``${PACKAGE_NAME}_PARENT_REPOSITORY``.  The problem is referring to other
 TriBITS repositories explicitly.
 
-.. ToDo: Edited and spell-checked up to here on 4/16/2014!
-
 TriBITS Subpackage
 ++++++++++++++++++
 
@@ -1876,69 +1874,77 @@ parent package.  These are some of the issues to consider when breaking up
 software into packages and subpackages that will be mentioned in other
 sections as well.
 
-.. ToDo: Edited and spell-checked up to here on 4/17/2014!
-
-
 TriBITS TPL
 +++++++++++
 
-A TriBITS TPL:
+A *TriBITS TPL*:
 
 * Defines a set of pre-built libraries and/or header files and/or executables
-  and/or some other resources used by one or more TriBITS Packages and
-  publishes the list of include directories and/or libraries and/or
+  and/or some other resources used by one or more TriBITS Packages for which
+  TriBITS publishes the list of include directories and/or libraries and/or
   executables provided by the TPL to the TriBITS project.
-* Is given a globally unique name (see `Globally unique TriBITS TPL names`_)
-  and is declared in a `<repoDir>/TPLsList.cmake`_ file.
+* Has a globally unique name (see `Globally unique TriBITS TPL names`_) that
+  is declared in a `<repoDir>/TPLsList.cmake`_ file.
 * Is listed as an explicit optional or required dependency in one or more
   TriBITS SE package's `<packageDir>/cmake/Dependencies.cmake`_ files.
 
 .. _Globally unique TriBITS TPL names:
 
-**WARNING:** One must be very careful to pick TPL names that will be globally
-unique across all packages in all TriBITS repositories that ever might be
-cobbled together into a single TriBITS (meta) project!  However, choose TPL
-names is usually much easier and less risky than choosing `Globally unique
-TriBITS package names`_ because the native TPLs themselves tend to be uniquely
-named.
+**WARNING:** One must be very careful to pick **Globally unique TriBITS TPL
+names** across all TPLs in all TriBITS repositories that ever might be cobbled
+together into a single TriBITS (meta) project!  However, choosing TPL names is
+usually much easier and less risky than choosing `Globally unique TriBITS
+package names`_ because the native TPLs themselves tend to be uniquely named.
+For example, the TPL names ``BLAS`` and ``LAPACK`` are well defined in the
+applied math and computational science community and are not likely to clash.
 
-Using a TriBITS TPL is to be preferred over using a raw CMake
+Using a TriBITS TPL is to be preferred over using raw CMake
 ``FIND_PACKAGE(<someCMakePackage>)`` because the TriBITS system guarantees
-that only a single unique version of TPL will be used by multiple packages and
-by declaring a TPL using TriBITS, automatic enable/disable logic will be
-applied as described in `Package Dependencies and Enable/Disable Logic`_.
+that only a single unique version of TPL of the same version will be used by
+multiple packages.  Also, by defining a TriBITS TPL, automatic enable/disable
+logic will be applied as described in `Package Dependencies and Enable/Disable
+Logic`_.  For example, if a TPL is explicitly disabled, all of the downstream
+packages that depend on that TPL will be automatically disabled as well (see
+`TPL disable triggers auto-disables of downstream dependencies`_).
 
-For each TPL referenced in a ``TPLsList.cmake`` file using the macro
-`TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there should exist a file, typically
-called ``FindTPL${TPL_NAME}.cmake``, that once processed, produces the
-variables ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
+For each TPL referenced in a `<repoDir>/TPLsList.cmake`_ file using the macro
+`TRIBITS_REPOSITORY_DEFINE_TPLS()`_, there must exist a file, typically called
+``FindTPL${TPL_NAME}.cmake``, that once processed, produces the variables
+``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  Most
 ``FindTPL${TPL_NAME}.cmake`` files just use the the function
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ the define the TriBITS TPL.  A simple
-example of such a file is the standard ``FindTPLPETSC.cmake`` module which is:
+example of such a file is the standard TriBITS ``FindTPLPETSC.cmake`` module
+which is currently:
 
 .. include:: ../../tpls/FindTPLPETSC.cmake
    :literal:
 
 Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
-guts of finding at TPL.
+guts of finding at TPL which is perfectly fine.
 
 Once processed, each defined TPL ``TPL_NAME`` is given global non-cache
 variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` and test group
 ``${TPL_NAME}_TESTGROUP`` (see `SE Package Test Group`_).
 
-Note that the TriBITS system does not require the usage of of the function
-`TRIBITS_TPL_DECLARE_LIBRARIES()`_ and does not even care about the TPL module
-name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some CMake
-file fragment exist that once included, will define the variables
+The specification given in `Enabling support for an optional Third-Party
+Library (TPL)`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ describes how the a
+``FindTPL${TPL_NAME}.cmake`` module should behave and allow users to override
+and specialize how a TPL is determined.  However, note that the TriBITS system
+does not require the usage of of the function
+``TRIBITS_TPL_DECLARE_LIBRARIES()`` and does not even care about the TPL
+module name ``FindTPL${TPL_NAME}.cmake``.  All that is required is that some
+CMake file fragment exist that once included, will define the variables
 ``${TPL_NAME}_LIBRARIES`` and ``${TPL_NAME}_INCLUDE_DIRS``.  However, to be
 user friendly, such a CMake file should respond to the same variables as
-accepted by the standard `TRIBITS_TPL_DECLARE_LIBRARIES()`_ function.
+accepted by the standard ``TRIBITS_TPL_DECLARE_LIBRARIES()`` function.
 
 The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 ``${TPL_NAME}_INCLUDE_DIRS``, and ``${TPL_NAME}_TESTGROUP`` as defined in
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
+
+.. ToDo: Edited and spell-checked up to here on 4/17/2014!
 
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
@@ -3015,8 +3021,8 @@ In more detail, these rules/behaviors are:
    ``TPL_ENABLE_LAPACK=OFF``, then this will result in the disable of SE
    packages ``Teuchos`` and ``Epetra``, and all of the required SE packages
    downstream from them (see ???).  Also, the explicitly disabled TPL will
-   result in disable of optional support in all downstream SE packages.  For
-   example, if the user sets ``TPL_ENABLE_MPI=OFF``, then TriBITS will
+   result in the disable of optional support in all downstream SE packages.
+   For example, if the user sets ``TPL_ENABLE_MPI=OFF``, then TriBITS will
    automatically set ``Teuchos_ENABLE_MPI=OFF`` and ``Epetra_ENABLE_MPI=OFF``.
    For examples, see `Explicit disable of an optional TPL`_ and `Explicit
    disable of a required TPL`_.
@@ -6093,6 +6099,8 @@ snapshotting`_.
 .. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
 
 .. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
+
+.. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
 
 .. Common references to the TribitsOverview document
 
