@@ -1012,6 +1012,8 @@ The following local variables are defined in the top-level Project
 ``CMakeLists.txt`` file scope and are therefore accessible by all files
 processed by TriBITS:
 
+  .. _PROJECT_NAME:
+
   ``PROJECT_NAME``
 
     The name of the TriBITS Project.  This exists to support, among other
@@ -1020,11 +1022,15 @@ processed by TriBITS:
     from a ``SET()`` statement in the project's
     `<projectDir>/ProjectName.cmake`_ file.
 
+  .. _PROJECT_SOURCE_DIR:
+
   ``PROJECT_SOURCE_DIR``
 
     The absolute path to the base Project source directory.  This is set
     automatically by TriBITS given the directory passed into ``cmake`` at
     configure time at the beginning of the `TRIBITS_PROJECT()`_ macro.
+
+  .. _PROJECT_BINARY_DIR:
 
   ``PROJECT_BINARY_DIR``
 
@@ -1047,6 +1053,8 @@ processed by TriBITS:
     Set to the same directory as ``${PROJECT_BINARY_DIR}`` automatically by
     the built-in ``PROJECT()`` command called in the top-level
     `<projectDir>/CMakeLists.txt`_ file..
+
+  .. _${PACKAGE_NAME}_ENABLE_TESTS:
 
   ``${PACKAGE_NAME}_ENABLE_TESTS``
 
@@ -1169,8 +1177,7 @@ example of this in the file ``tribits/PackageList.cmake`` which shows
 .. include:: ../../PackagesList.cmake
    :literal:
 
-(see `TriBITS Package, TriBITS Repository, TriBITS Package sharing the same
-source directory`_).
+(see `TriBITS Package == TriBITS Repository == TriBITS Project`_).
 
 It is perfectly legal for a TriBITS repository to define no packages at all
 with::
@@ -1327,6 +1334,8 @@ TriBITS Repository Core Variables
 The following temporary local variables are defined automatically by TriBITS
 before processing a given TriBITS repository's files
 (e.g. ``PackagesList.cmake``, ``TPLsList.cmake``, etc.):
+
+  .. _REPOSITORY_NAME:
 
   ``REPOSITORY_NAME``
 
@@ -1924,8 +1933,8 @@ Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 guts of finding at TPL which is perfectly fine.
 
 Once processed, each defined TPL ``TPL_NAME`` is given global non-cache
-variables for the TPL's find module ``${TPL_NAME}_FINDMOD`` and test group
-``${TPL_NAME}_TESTGROUP`` (see `SE Package Test Group`_).
+variables for the TPL's find module _`${TPL_NAME}_FINDMOD` and test group
+_`${TPL_NAME}_TESTGROUP` (see `SE Package Test Group`_).
 
 The specification given in `Enabling support for an optional Third-Party
 Library (TPL)`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ describes how the a
@@ -1944,8 +1953,6 @@ The core variables related to an enabled TPL are ``${TPL_NAME}_LIBRARIES``,
 `TRIBITS_TPL_DECLARE_LIBRARIES()`_ need to be defined.  For more details, see
 `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.
 
-.. ToDo: Edited and spell-checked up to here on 4/17/2014!
-
 Processing of TriBITS Files: Ordering and Details
 --------------------------------------------------
 
@@ -1954,19 +1961,20 @@ processes, in what order, and in what context.  This is critical to being able
 to understand what impact (if any) setting a variable or otherwise changing
 the CMake run-time state will have on configuring a CMake project which uses
 TriBITS.  While the different files that make up a `TriBITS Project`_,
-`TriBITS Repository`_, `TriBITS Package`_, and `TriBITS TPL`_ were defined in
-the section `TriBITS Project Structure`_, that material did not fully describe
-the context and in what order these files are processed by the TriBITS
-framework.
+`TriBITS Repository`_, `TriBITS Package`_, `TriBITS Subpackage`_, and `TriBITS
+TPL`_ were defined in the section `TriBITS Structural Units`_, that material
+did not fully describe the context and in what order these files are processed
+by the TriBITS framework.
 
-The TriBITS system processes the project's files in one of two use cases.  The
-first use case is in the basic configuration of the project with a standard
-``cmake`` command invocation in order to set up the build files in the binary
-directory (see `Full TriBITS Project Configuration`_).  The second use case is
-in reading the project's dependency-related files in order to build a package
-dependency data-structure (e.g. the `<Project>PackageDependencies.xml`_ file,
-see `Reduced Package Dependency Processing`_)).  The second use case of
-reading the project's dependency files is largely a subset of the first.
+The TriBITS system processes the project's files in one of two general use
+cases.  The first use case is in the basic configuration of the project with a
+standard ``cmake`` command invocation in order to set up the build files in
+the binary directory (see `Full TriBITS Project Configuration`_).  The second
+use case is in reading the project's dependency-related files in order to
+build the package dependency data-structure (e.g. the
+`<Project>PackageDependencies.xml`_ file, see `Reduced Package Dependency
+Processing`_).  The second use case of reading the project's dependency files
+is largely a subset of the first.
 
 Another factor that is important to understand is the scoping in which the
 various files are processed (with ``INCLUDE()`` or ``ADD_SUBDIRECTORY()``).
@@ -1979,14 +1987,18 @@ debug issues with processing.  Many of the basic files are processed
 therefore any local variables set in these files are accessible to the entire
 CMake project (after the file is processed, of course).  Other files get
 processed inside of functions which have their own local scope and therefore
-only impact the rest of the project in more purposeful ways.
+only impact the rest of the project in more purposeful ways.  And of course
+all of the package `<packageDir>/CMakeLists.txt`_ files that are processed
+using ``ADD_SUBDIRECTORY()`` create a new local scope for that given package.
+
 
 Full TriBITS Project Configuration
 ++++++++++++++++++++++++++++++++++
 
 The first use case to describe is the full processing of all of the TriBITS
 project's files starting with the base `<projectDir>/CMakeLists.txt`_ file.
-This begins with the invocation of the command::
+This begins with the invocation of the following CMake command to generate the
+project's build files::
 
   $ cmake [options] <projectDir>
 
@@ -1998,13 +2010,13 @@ through the call to `TRIBITS_PROJECT()`_.
 
 **Full Processing of TriBITS Project Files:**
 
-| 1.  Read `<projectDir>/ProjectName.cmake`_ (sets ``PROJECT_NAME``)
-| 2.  Call ``PROJECT(${PROJECT_NAME} NONE)`` (sets ``${PROJECT_NAME}_SOURCE_DIR``
-|     and ``${PROJECT_NAME}_BINARY_DIR``)
+| 1.  Read `<projectDir>/ProjectName.cmake`_ (sets `PROJECT_NAME`_)
+| 2.  Call ``PROJECT(${PROJECT_NAME} NONE)`` (sets `${PROJECT_NAME}_SOURCE_DIR`_
+|     and `${PROJECT_NAME}_BINARY_DIR`_)
 | 3.  Execute `TRIBITS_PROJECT()`_:
-|   1)  Set ``PROJECT_SOURCE_DIR`` and ``PROJECT_BINARY_DIR``
-|   2)  For each ``<optFilei>`` in ``${${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE}``:
-|       * ``INCLUDE(<optFilei>)``
+|   1)  Set `PROJECT_SOURCE_DIR`_ and `PROJECT_BINARY_DIR`_
+|   2)  For each ``<optFile>`` in ${`${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE`_}:
+|       * ``INCLUDE(<optFile>)``
 |   3)  Set variables ``CMAKE_HOST_SYSTEM_NAME`` and ``${PROJECT_NAME}_HOSTNAME``
 |       (both of these can be overridden in the cache by the user)
 |   4)  Find Python (sets ``PYTHON_EXECUTABLE``)
@@ -2014,11 +2026,11 @@ through the call to `TRIBITS_PROJECT()`_.
 |       * ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``      
 |   7)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_ ``)``
-|       * Call ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()``
+|       * Call macro ``TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS()``
 |   9)  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
 |     a)  For each ``<repoDir>`` in all defined TriBITS repositories:
-|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
-|         * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)``
+|         * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)`` and process list
+|         * ``INCLUDE(`` `<repoDir>/TPLsList.cmake`_ ``)`` and process list
 |     b)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |         * ``INCLUDE(`` `<repoDir>/cmake/RepositoryDependenciesSetup.cmake`_ ``)``
 |     c)  ``INCLUDE(`` `<projectDir>/cmake/ProjectDependenciesSetup.cmake`_ ``)``
@@ -2028,11 +2040,12 @@ through the call to `TRIBITS_PROJECT()`_.
 |         * For each ``<spkgDir>`` in all subpackages for this package:
 |           * ``INCLUDE(`` `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ ``)``
 |             - Sets all subpackage-specific options
-|   10) Adjust SE package and TPLs enable/disable
+|   10) Adjust SE package and TPLs enables and disables
 |       (see `Package Dependencies and Enable/Disable Logic`_)
 |   11) `Probe and set up the environment`_ (finds MPI, compilers, etc.)
 |       (see `TriBITS Environment Probing and Setup`_)
-|   12) For each enabled TPL, ``INCLUDE(FindTPL<tplName>.cmake`` (see `TriBITS TPL`_)
+|   12) For ``<tplName>`` in the set of enabled TPLs:
+|       * ``INCLUDE(${<tplName>_FINDMOD})`` (see `TriBITS TPL`_)
 |   13) For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * Read `<repoDir>/Copyright.txt`_
 |       * ``INCLUDE(`` `<repoDir>/Version.cmake`_ ``)``
@@ -2058,22 +2071,22 @@ Reduced Package Dependency Processing
 
 In addition to the full processing that occurs as part of the `Full TriBITS
 Project Configuration`_, there are also TriBITS tools that only process as
-subset of project's file.  This reduced processing is performed in order to
-build up the project's package dependencies data-structure (see `TriBITS
-Environment Probing and Setup`_) and to write the file
-`<Project>PackageDependencies.xml`_.  For example, the tool ``checkin-test.py``
-and the script `TRIBITS_CTEST_DRIVER()`_ both drive this type of processing.
-In particular, the CMake -P script ``TribitsDumpDepsXmlScript.cmake`` reads
-all of the project's dependency-related files and dumps out the
-`<Project>PackageDependencies.xml`_ file a defined set of native and extra
-repositories defined for the project.  This reduced processing is given below.
+subset of project's files.  This reduced processing is performed in order to
+build up the project's package dependencies data-structure and to write the
+file `<Project>PackageDependencies.xml`_.  For example, the script
+`checkin-test.py`_ and the function `TRIBITS_CTEST_DRIVER()`_ both drive this
+type of processing.  In particular, the CMake -P script
+``TribitsDumpDepsXmlScript.cmake`` reads all of the project's
+dependency-related files and dumps out the `<Project>PackageDependencies.xml`_
+file.  This reduced processing (as executed in ``cmake -P
+TribitsDumpDepsXmlScript.cmake``) is described below.
 
 .. _Reduced Dependency Processing of TriBITS Project Files:
 
 **Reduced Dependency Processing of TriBITS Project:**
 
-| 1.  Read `<projectDir>/ProjectName.cmake`_ (sets ``PROJECT_NAME``)
-| 2. ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``      
+| 1.  Read `<projectDir>/ProjectName.cmake`_ (sets `PROJECT_NAME`_)
+| 2. ``INCLUDE(`` `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ ``)``
 | 3.  Call ``TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML()``:
 |   a)  For each ``<repoDir>`` in all defined TriBITS repositories:
 |       * ``INCLUDE(`` `<repoDir>/PackagesList.cmake`_ ``)``
@@ -2087,35 +2100,40 @@ repositories defined for the project.  This reduced processing is given below.
 |       * For each ``<spkgDir>`` in all subpackages for this package:
 |         * ``INCLUDE(`` `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ ``)``
 |           - Sets all subpackage-specific options
+|   e) Write the file `<Project>PackageDependencies.xml`_
+|      (specified using `${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE`_)
 
 When comparing the above reduced dependency processing to the `Full Processing
 of TriBITS Project Files`_ it is important to note that that several files are
-**not** processed in these cases.  The files that are not processed include
-`<projectDir>/Version.cmake`_, `<repoDir>/Version.cmake`_ and
-`<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_.  Therefore, you can't put
-anything in these files that would impact the definition of TriBITS
-repositories, packages, TPLs, etc.  Anything that would affect the
-dependencies data-structure that gets written out as
+**not** processed in the reduced algorithm shown above.  The files that are
+**not** processed include `<projectDir>/Version.cmake`_,
+`<repoDir>/Version.cmake`_ and
+`<repoDir>/cmake/CallbackSetupExtraOptions.cmake`_ (in addition to not
+processing any of the ``CMakeLists.txt`` files obviously).  Therefore, one
+cannot put anything in these non-processed files that would impact the
+definition of TriBITS repositories, packages, TPLs, etc.  Anything that would
+affect the dependencies data-structure that gets written out as
 `<Project>PackageDependencies.xml`_ must be contained in the files that are
-processed shown above.
+processed shown in the reduced processing above.
 
-Debugging issues with `Reduced Dependency Processing of TriBITS Project Files`
-is more difficult because one can not easily turn on `File Processing Tracing`
-like they can when doing the full CMake configure.  However, options may be
-added to the various tools to show this file processing and help debug
+Debugging issues with `Reduced Dependency Processing of TriBITS Project
+Files`_ is more difficult because one cannot easily turn on `File Processing
+Tracing`_ like one can when doing the full CMake configure.  However, options
+may be added to the various tools to show this file processing and help debug
 problems.
 
 File Processing Tracing
 +++++++++++++++++++++++
 
-In order to aid in debugging problems with configuration, TriBITS defines the
-CMake cache option ``${PROJECT_NAME}_TRACE_FILE_PROCESSING``.  When enabled,
-TriBITS will print out when any of the project-related, repository-related, or
-package-related file is being processed by TriBITS.  When
-``${PROJECT_NAME}_TRACE_FILE_PROCESSING=ON``, lines starting with ``"-- File
-Trace:"`` are printed in the ``cmake`` STDOUT for files that TriBITS
+In order to aid in debugging problems with `Full TriBITS Project
+Configuration`_ and `Reduced Package Dependency Processing`_, TriBITS defines
+the CMake cache option `${PROJECT_NAME}_TRACE_FILE_PROCESSING`_.  When
+enabled, TriBITS will print out when any of the project-related,
+repository-related, or package-related file is being processed by TriBITS.
+When ``${PROJECT_NAME}_TRACE_FILE_PROCESSING=ON``, lines starting with ``"--
+File Trace:"`` are printed to ``cmake`` STDOUT for files that TriBITS
 automatically processes where there may be any confusion about what files are
-processed and when. 
+processed and when.
 
 For example, for `TribitsExampleProject`_, the configure file trace for the
 configure command::
@@ -2167,7 +2185,7 @@ package's configured header file created using `TRIBITS_CONFIGURE_FILE()`_
 does not result in a file trace print statement because this is an
 unconditional command that is explicitly called in one of the the package's
 ``CMakeLists.txt`` files so it should be clear that this file is being
-processed.
+processed and exactly when it is processed.
 
 
 Coexisting Projects, Repositories, and Packages
@@ -2181,57 +2199,61 @@ below.
 and a TriBITS Repository to be the same source directory and in fact this is
 the default for every TriBITS project (unless the the
 `<projectDir>/cmake/NativeRepositoriesList.cmake`_ is defined).  In this case,
-the repository name and the project name are the same as well.  This is quite
-common and is in fact the default that every TriBITS Project is also a TriBITS
-repository (and therefore must contain `<repoDir>/PackagesList.cmake`_ and
-`<repoDir>/TPLsList.cmake`_ files).  This is the case, for example, with the
-the Trilinos and the `TribitsExampleProject`_ projects and repositories.  In
-this case, the Project's and the Repository's ``Version.cmake`` and
-``Copyright.txt`` files are one and the same, as they should be (see `Project
-and Repository Versioning and Release Mode`_).
+the repository name `REPOSITORY_NAME`_ and the project name `PROJECT_NAME`_
+are the same as well.  This is quite common and is in fact the default that
+every TriBITS Project is also a TriBITS repository (and therefore must contain
+`<repoDir>/PackagesList.cmake`_ and `<repoDir>/TPLsList.cmake`_ files).  This
+is the case, for example, with the `Trilinos`_ and the
+`TribitsExampleProject`_ projects and repositories.  In this case, the
+Project's and the Repository's ``Version.cmake`` and ``Copyright.txt`` files
+are also one and the same, as they should be (see `Project and Repository
+Versioning and Release Mode`_).
 
 **TriBITS Package == TriBITS Repository**: It is also allowed for a TriBITS
 Repository to have only one package and to have that package be the base
 repository directory.  The TriBITS Repository and the single TriBITS Package
 would typically have the same name in this case (but that is actually not
 required but it is confusing if they are not the same).  For example, in the
-TriBITS test project ``MockTrilinos``, the repository and package
+TriBITS test project `MockTrilinos`_, the repository and package
 ``extraRepoOnePackage`` are one in the same.  In this case, the file
 ``extraRepoOnePackage/PackagesList.cmake`` looks like:
 
 .. include:: ../../package_arch/UnitTests/MockTrilinos/extraRepoOnePackage/PackagesList.cmake
    :literal:
 
-This is used in the real TriBITS repository `DataTransferKit`_.
+(Note the dot ``'.'`` for the package directory.)
+
+This is show the real TriBITS repository and package `DataTransferKit`_ is set
+up (at least that is the way it was when this document was first written).
 
 .. _DataTransferKit: https://github.com/CNERG/DataTransferKit
 
 However, to maximize flexibility, it is recommended that a TriBITS package and
-TriBITS repository not share the same directory.
+its TriBITS repository **not** share the same directory or the same name.
+This allows a TriBITS repository to define more packages later.
 
-.. _TriBITS Package, TriBITS Repository, TriBITS Package sharing the same source directory:
+.. _TriBITS Package == TriBITS Repository == TriBITS Project:
 
-**TriBITS Package, TriBITS Repository, TriBITS Package sharing the same source
-directory**: In the extreme, it is possible to collapse a single TriBITS
-package, repository, and project into the same base source directory.
-However, in this case, the TriBITS Project name and the TriBITS Package name
-cannot be the same and some modifications and tricks are needed to allow this
-to work.  One example of this is the TriBITS project and `The TriBITS Test
-Package`_ themselves, which are both rooted in the base ``tribits`` source
-directory.  There are a few restrictions and modifications needed to get this
-to work:
+**TriBITS Package == TriBITS Repository == TriBITS Project**: In the extreme,
+it is possible to collapse a single TriBITS package, repository, and project
+into the same base source directory.  However, in this case, the TriBITS
+Project name and the TriBITS Package name cannot be the same and some
+modifications and tricks are needed to allow this to work.  One example of
+this is the ``TriBITSProj`` project and `The TriBITS Test Package`_
+themselves, which are both rooted in the base ``tribits`` source directory.
+There are a few restrictions and modifications needed to get this to work:
 
-* The Project and Package names cannot be the same: In the case of the TriBITS
-  project, the project name is ``TriBITSProj`` (as defined in
+* The Project and Package names cannot be the same.  In the case of the
+  TriBITS project, the project name is ``TriBITSProj`` (as defined in
   ``tribits/ProjectName.cmake``) and the package name is ``TriBITS`` (as
   defined in ``tribits/PackagesList.cmake``).
 * The base ``CMakeLists.txt`` file must be modified to allow it to be
   processed both as the base project ``CMakeLists.txt`` file and as the
-  package's base ``CMakeLists.txt`` file: In the case of
+  package's base ``CMakeLists.txt`` file.  In the case of
   ``tribits/CMakeLists.txt``, a big if statement is used.
 * An extra subdirectory must be created for TriBITS package's binary
-  directory: Because of directory-level targets like ``${PROJECT_NAME}_libs``
-  and ``${PACKAGE_NAME}_libs``, a subdirectory for package's the binary
+  directory.  Because of directory-level targets like ``${PROJECT_NAME}_libs``
+  and ``${PACKAGE_NAME}_libs``, a subdirectory for the package's binary
   directory must be created.  This is simply done by overriding the binary
   directory name ``${PACKAGE_NAME}_SPECIFIED_BINARY_DIR``.  In the case of
   TriBITS, this is set to ``tribits`` in the ``tribits/PackagesList.cmake``
@@ -2240,18 +2262,19 @@ to work:
 Other than those modifications, a TriBITS project, repository, and package can
 all be rooted in the same source directory.  However, as one can see above, to
 do so is a little messy and is not recommended.  It was only done this way
-with the base TriBITS directory in order to maintain backward compatibility
-for the usage of TriBITS in existing TriBITS projects.
+with the base TriBITS directory ``tribits`` in order to maintain backward
+compatibility for the usage of TriBITS in existing TriBITS projects.
 
 However, one possible use case for collapsing a project, repository, and
 package into a single base source directory would be to support the
 stand-alone build of a TriBITS package as its own entity that uses an
-installation of the TriBITS.  If a given TriBITS package has no required
-`upstream`_ TriBITS package dependencies and minimal TPL dependencies (or only
-uses `Standard TriBITS TPLs`_ already defined in the ``tribits/tpls/``
-directory), then creating a stand-alone project build of a loan TriBITS
-package requires fairly little extra overhead or duplication.  However, as
-mentioned above, one cannot use the same name for the package and the project.
+independent installation of the TriBITS.  If a given TriBITS package has no
+required `upstream`_ TriBITS package dependencies and minimal TPL dependencies
+(or only uses `Standard TriBITS TPLs`_ already defined in the
+``tribits/tpls/`` directory), then creating a stand-alone project build of a
+loan TriBITS package requires fairly little extra overhead or duplication.
+However, as mentioned above, one cannot use the same name for the package and
+the project.
 
 .. NOTE: We could modify the TriBITS system to allow having the project and
 .. package names be the same if we disable one of the sets of XXX_libs and
@@ -2302,8 +2325,10 @@ does not necessarily mean that it needs to be a standard TriBITS TPL.  For
 example, if the TPL ``BLAS`` is defined in an `upstream`_ repository
 (e.g. Trilinos), then a package in a `downstream`_ repository can list a
 dependency on the TPL ``BLAS`` without having to define its own ``BLAS`` TPL
-in its repository's `<repoDir>/TPLsList.cmake`_ file.  For more details on
-TPLs, see `TriBITS TPL`_.
+in its repository's `<repoDir>/TPLsList.cmake`_ file.  For more details, see
+`TriBITS TPL`_.
+
+.. ToDo: Edited and spell-checked up to here on 4/17/2014!
 
 
 .. Where to set variables?
@@ -2331,9 +2356,13 @@ TriBITS Test Package`_).
 The first example covered is the bare bones `TribitsHelloWorld`_ example
 project.  The second example covered in detail is `TribitsExampleProject`_.
 This example covers all the basics for setting up a simple multi-package
-TriBITS project.  The third example outlined is `MockTrilinos` which mostly
+TriBITS project.  The third example outlined is `MockTrilinos`_ which mostly
 exists to test the TriBITS system itself but use contains some nice examples
-of a few different TriBITS features and behaviors.  The last example mentioned
+of a few different TriBITS features and behaviors.  The forth example is the
+`ReducedMockTrilinos`_ project which is used to dmeonstrate TriBITS behavior
+in this document.  Also mentioned is the `Trilinos`_ project itself which can
+be a useful example of the usage of TriBITS (see disclamers in the section
+`Trilinos`_).  The last example mentioned
 is `The TriBITS Test Package`_ itself which allows the TriBITS system to be
 tested and installed from any TriBITS project that lists it, including the
 ``TriBITSProj`` project itself (see `Coexisting Projects, Repositories, and
@@ -2645,6 +2674,18 @@ All of the listed packages are standard TriBITS packages except for the mock
 ``Thyra`` package which is broken down into subpackages.  More details of this
 example project are described in `Package Dependencies and Enable/Disable
 Logic`_.
+
+Trilinos
+--------
+
+The real Trilinos project and repository itself is an advanced example for the
+usage of TriBITS.  Almost every single-repository use case for TriBITS is
+demonstrated somewhere in Trilinos.  While some of the usage of TriBITS in
+Trilinos may not be not examplary (e.g., because it represents old usage, or
+was written by CMake/TriBITS beginners) it does represent real working usage.
+Given that Trilinos is a widely avaiable software repository, anyone should be
+able to access a newer version of Trilinos and mine it for CMake and TriBITS
+examples.
 
 
 The TriBITS Test Package
@@ -6101,6 +6142,12 @@ snapshotting`_.
 .. _Creating a tarball of the source tree: ../build_quick_ref/TribitsBuildQuickRef.html#creating-a-tarball-of-the-source-tree
 
 .. _Enabling support for an optional Third-Party Library (TPL): ../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl
+
+.. _${PROJECT_NAME}_CONFIGURE_OPTIONS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-configure-options-file
+
+.. _${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#outputting-package-dependency-information
+
+.. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
 
 .. Common references to the TribitsOverview document
 
