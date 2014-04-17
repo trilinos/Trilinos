@@ -221,12 +221,19 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
     IFPACKList.set("relaxation: zero starting solution",false);
+    bool use_line=false;
+    if(List.isParameter("smoother: line detection threshold")) {
+      use_line = true;
+      IFPACKList.set("relaxation: line detection threshold",List.get("smoother: line detection threshold",-1.0));
+    }
 
     if(verbose && !A->Comm().MyPID()){
       std::cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
-	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
+		<< Sweeps << ",omega=" << omega;
+      if(use_line) std::cout << ",auto-line";	
+      std::cout << ")" <<std::endl;
     }
-
+    
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
     Ifpack_DynamicFactory Factory;
 #else
