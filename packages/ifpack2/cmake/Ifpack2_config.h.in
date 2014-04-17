@@ -21,8 +21,8 @@
 /* Define if we have Amesos2 */
 #cmakedefine HAVE_IFPACK2_AMESOS2
 
-/* Define if building with the Boost library */
-#cmakedefine HAVE_IFPACK2_BOOST
+/* Define if building with the lemon library */
+#cmakedefine HAVE_IFPACK2_LEMON
 
 /* Define if building with the Cholmod library */
 #cmakedefine HAVE_IFPACK2_CHOLMOD
