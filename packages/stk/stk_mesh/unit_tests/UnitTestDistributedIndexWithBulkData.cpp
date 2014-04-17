@@ -21,23 +21,20 @@ class StkMeshCreator
 {
 
 public:
-    StkMeshCreator(const std::string& generatedMeshSpec, MPI_Comm communicator) : m_exodusFilename("junk.par"),
+    StkMeshCreator(const std::string& generatedMeshSpec, MPI_Comm communicator) :
     m_stkMeshMetaData(NULL), m_stkMeshBulkData(NULL)
     {
-        this->writeExodusFile(generatedMeshSpec, m_exodusFilename, communicator);
-
         const int spatialDim = 3;
         m_stkMeshMetaData = new stk::mesh::MetaData(spatialDim);
         m_stkMeshBulkData = new stk::mesh::BulkData(*m_stkMeshMetaData, communicator);
 
-        readExodusFileIntoStkMesh(m_exodusFilename, *m_stkMeshMetaData, *m_stkMeshBulkData, communicator);
+        readExodusFileIntoStkMesh(generatedMeshSpec, *m_stkMeshBulkData, communicator);
     }
 
     ~StkMeshCreator()
     {
         delete m_stkMeshBulkData;
         delete m_stkMeshMetaData;
-        unlink(m_exodusFilename.c_str());
     }
 
     stk::mesh::MetaData* getMetaData() { return m_stkMeshMetaData; }
@@ -45,30 +42,16 @@ public:
 
 private:
 
-    void writeExodusFile(const std::string &generatedMeshSpecification, const std::string& exodusFileName, MPI_Comm communicator)
-    {
-        stk::io::StkMeshIoBroker stkIo(communicator);
-
-        size_t index = stkIo.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-        stkIo.set_active_mesh(index);
-        stkIo.create_input_mesh();
-        stkIo.populate_bulk_data();
-
-        size_t fh = stkIo.create_output_mesh(exodusFileName, stk::io::WRITE_RESULTS);
-        stkIo.write_output_mesh(fh);
-    }
-
-    void readExodusFileIntoStkMesh(const std::string& exodusFileName, stk::mesh::MetaData &stkMeshMetaData, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
+    void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
     {
         stk::io::StkMeshIoBroker exodusFileReader(communicator);
         exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
+        exodusFileReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
         exodusFileReader.create_input_mesh();
         exodusFileReader.populate_bulk_data();
     }
 
 private:
-    std::string m_exodusFilename;
     stk::mesh::MetaData *m_stkMeshMetaData;
     stk::mesh::BulkData *m_stkMeshBulkData;
 };
