@@ -2,18 +2,18 @@ TRILINOS_DRIVER_SETUP()
 
 find_program(PYTHON_EXE python)
 
-TRILINOS_DRIVER_ADD_DASHBOARD(
-  MPI_OPT_DEV
-  ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
-  CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 300
-)
+#TRILINOS_DRIVER_ADD_DASHBOARD(
+#  MPI_OPT_DEV
+#  ctest_linux_nightly_mpi_development_opt_trilinos-test2.cmake
+#  CTEST_INSTALLER_TYPE release
+#  TIMEOUT_MINUTES 300
+#)
 
 TRILINOS_DRIVER_ADD_DASHBOARD(
   MPI_OPT_DEV_NOEI
   ctest_linux_nightly_mpi_development_opt_noei_trilinos-test2.cmake
   CTEST_INSTALLER_TYPE release
-  TIMEOUT_MINUTES 300
+  TIMEOUT_MINUTES 330
 )
 
 #TRILINOS_DRIVER_ADD_DASHBOARD(
