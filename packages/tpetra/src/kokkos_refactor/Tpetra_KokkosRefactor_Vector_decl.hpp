@@ -161,8 +161,15 @@ public:
   //! Const view of the local values of this vector.
   Teuchos::ArrayRCP<const Scalar> getData() const { return getData(0); }
 
-  //@}
+  Teuchos::RCP<const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetView (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
+              size_t offset) const;
 
+  Teuchos::RCP<Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> >
+  offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &subMap,
+                      size_t offset);
+
+  //@}
   //! @name Mathematical methods
   //@{
 

@@ -539,6 +539,12 @@ namespace Tpetra {
     /// You may <i>not</i> call them in a Kokkos parallel kernel.
     //@{
 
+    /// \brief Whether the Map is one to one.
+    ///
+    /// This must be called collectively over all processes in the
+    /// Map's communicator.
+    bool isOneToOne () const;
+
     /// \fn getDeviceView
     /// \brief Get the version of the Map's implementation for the given Kokkos device.
     /// \tparam OutDeviceType The Kokkos device type of the returned object.

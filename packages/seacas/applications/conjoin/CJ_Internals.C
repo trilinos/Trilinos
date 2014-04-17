@@ -226,7 +226,7 @@ int Excn::Internals::write_meta_data(const Mesh<INT> &mesh,
       }
     }
   	 
-    int name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
+    size_t name_size = ex_inquire_int(exodusFilePtr, EX_INQ_MAX_READ_NAME_LENGTH);
     char **names = new char* [max_entity];
     for (size_t i=0; i < max_entity; i++) {
       names[i] = new char [name_size+1];

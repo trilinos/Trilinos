@@ -106,15 +106,28 @@ namespace Tpetra {
 
     template<class LO, class GO, class NT>
     ReplicatedDirectory<LO, GO, NT>::
-    ReplicatedDirectory (const map_type& map)
-    {
-      (void) map;
-    }
+    ReplicatedDirectory (const map_type& map) :
+      numProcs_ (map.getComm ()->getSize ())
+    {}
 
 
     template<class LO, class GO, class NT>
     ReplicatedDirectory<LO, GO, NT>::
-    ReplicatedDirectory () {}
+    ReplicatedDirectory () :
+      numProcs_ (0) // to be set later
+    {}
+
+
+    template<class LO, class GO, class NT>
+    bool
+    ReplicatedDirectory<LO, GO, NT>::
+    isOneToOne (const Teuchos::Comm<int>& comm) const
+    {
+      // A locally replicated Map is one-to-one only if there is no
+      // replication, that is, only if the Map's communicator only has
+      // one process.
+      return (numProcs_ == 1);
+    }
 
 
     template<class LO, class GO, class NT>
@@ -481,6 +494,8 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     DistributedNoncontiguousDirectory<LO, GO, NT>::
     DistributedNoncontiguousDirectory (const map_type& map) :
+      oneToOneResult_ (ONE_TO_ONE_NOT_CALLED_YET), // to be revised below
+      locallyOneToOne_ (true), // to be revised below
       useHashTables_ (false) // to be revised below
     {
       initialize (map, Teuchos::null);
@@ -488,7 +503,10 @@ namespace Tpetra {
 
     template<class LO, class GO, class NT>
     DistributedNoncontiguousDirectory<LO, GO, NT>::
-    DistributedNoncontiguousDirectory (const map_type& map, const tie_break_type& tie_break) :
+    DistributedNoncontiguousDirectory (const map_type& map,
+                                       const tie_break_type& tie_break) :
+      oneToOneResult_ (ONE_TO_ONE_NOT_CALLED_YET), // to be revised below
+      locallyOneToOne_ (true), // to be revised below
       useHashTables_ (false) // to be revised below
     {
       initialize (map, Teuchos::ptrFromRef (tie_break));
@@ -497,7 +515,8 @@ namespace Tpetra {
     template<class LO, class GO, class NT>
     void
     DistributedNoncontiguousDirectory<LO, GO, NT>::
-    initialize (const map_type& map, Teuchos::Ptr<const tie_break_type> tie_break)
+    initialize (const map_type& map,
+                Teuchos::Ptr<const tie_break_type> tie_break)
     {
       using Teuchos::Array;
       using Teuchos::ArrayView;
@@ -712,10 +731,13 @@ namespace Tpetra {
             tablePids[i] = importElements[importIndex++];
             tableLids[i] = importElements[importIndex++];
           }
-          // Set up the hash tables.
+          // Set up the hash tables.  The hash tables' constructor
+          // detects whether there are duplicates, so that we can set
+          // locallyOneToOne_.
           lidToPidTable_ =
             rcp (new Details::FixedHashTable<LO, int> (tableKeys (),
                                                        tablePids ()));
+          locallyOneToOne_ = ! (lidToPidTable_->hasDuplicateKeys ());
           lidToLidTable_ =
             rcp (new Details::FixedHashTable<LO, LO> (tableKeys (),
                                                       tableLids ()));
@@ -768,13 +790,18 @@ namespace Tpetra {
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
             const std::vector<std::pair<int, LO> >& pidLidList =
               ownedPidLidPairs[i];
-            if (pidLidList.size () > 0) {
+            const size_t listLen = pidLidList.size ();
+            if (listLen > 0) {
+              if (listLen > 1) {
+                locallyOneToOne_ = false;
+              }
               // If there is some (PID,LID) pair for the current input
               // Map LID, then it makes sense to invoke the TieBreak
               // object to arbitrate between the options.  Even if
               // there is only one (PID,LID) pair, we still want to
               // give the TieBreak object a chance to do whatever it
-              // likes to do (e.g., track (PID,LID) pairs).
+              // likes to do, in terms of side effects (e.g., track
+              // (PID,LID) pairs).
               const size_type index =
                 static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
                                                                   pidLidList));
@@ -793,12 +820,11 @@ namespace Tpetra {
         }
       }
       else {
-        if (tie_break == Teuchos::null) {
-          // use array-based implementation of Directory storage
-          // Allocate arrays implementing Directory storage.  Fill them
-          // with invalid values, in case the input Map's GID list is
-          // sparse (i.e., does not populate all GIDs from minAllGID to
-          // maxAllGID).
+        if (tie_break.is_null ()) {
+          // Use array-based implementation of Directory storage.
+          // Allocate these arrays and fill them with invalid values,
+          // in case the input Map's GID list is sparse (i.e., does
+          // not populate all GIDs from minAllGID to maxAllGID).
           PIDs_ = arcp<int> (dir_numMyEntries);
           std::fill (PIDs_.begin (), PIDs_.end (), -1);
           LIDs_ = arcp<LO> (dir_numMyEntries);
@@ -812,6 +838,13 @@ namespace Tpetra {
               Teuchos::typeName(*this) << " constructor: Incoming global index "
               << curGID << " does not have a corresponding local index in the "
               "Directory Map.  Please report this bug to the Tpetra developers.");
+
+            // If PIDs_[curLID] is not -1, then curGID is a duplicate
+            // on the calling process, so the Directory is not locally
+            // one-to-one.
+            if (PIDs_[curLID] != -1) {
+              locallyOneToOne_ = false;
+            }
             PIDs_[curLID] = importElements[importIndex++];
             LIDs_[curLID] = importElements[importIndex++];
           }
@@ -854,20 +887,25 @@ namespace Tpetra {
           for (size_type i = 0; i < numPairs; ++i) {
             const LO dirMapLid = static_cast<LO> (i);
             const GO dirMapGid = directoryMap_->getGlobalElement (dirMapLid);
-            const std::vector<std::pair<int, LO> >& pid_and_lid =
+            const std::vector<std::pair<int, LO> >& pidLidList =
               ownedPidLidPairs[i];
-            if (pid_and_lid.size () > 0) {
+            const size_t listLen = pidLidList.size ();
+            if (listLen > 0) {
+              if (listLen > 1) {
+                locallyOneToOne_ = false;
+              }
               // If there is some (PID,LID) pair for the current input
               // Map LID, then it makes sense to invoke the TieBreak
               // object to arbitrate between the options.  Even if
               // there is only one (PID,LID) pair, we still want to
               // give the TieBreak object a chance to do whatever it
-              // likes to do (e.g., track (PID,LID) pairs).
+              // likes to do, in terms of side effects (e.g., track
+              // (PID,LID) pairs).
               const size_type index =
                 static_cast<size_type> (tie_break->selectedIndex (dirMapGid,
-                                                                  pid_and_lid));
-              PIDs_[i] = pid_and_lid[index].first;
-              LIDs_[i] = pid_and_lid[index].second;
+                                                                  pidLidList));
+              PIDs_[i] = pidLidList[index].first;
+              LIDs_[i] = pidLidList[index].second;
             }
             // else no GID specified by source map
           }
@@ -1113,6 +1151,22 @@ namespace Tpetra {
         "the Tpetra developers.");
 
       return res;
+    }
+
+
+    template<class LO, class GO, class NT>
+    bool
+    DistributedNoncontiguousDirectory<LO, GO, NT>::
+    isOneToOne (const Teuchos::Comm<int>& comm) const
+    {
+      if (oneToOneResult_ == ONE_TO_ONE_NOT_CALLED_YET) {
+        const int lcl121 = isLocallyOneToOne () ? 1 : 0;
+        int gbl121 = 0;
+        Teuchos::reduceAll<int, int> (comm, Teuchos::REDUCE_MIN, lcl121,
+                                      Teuchos::outArg (gbl121));
+        oneToOneResult_ = (gbl121 == 1) ? ONE_TO_ONE_TRUE : ONE_TO_ONE_FALSE;
+      }
+      return (oneToOneResult_ == ONE_TO_ONE_TRUE);
     }
   } // namespace Details
 } // namespace Tpetra

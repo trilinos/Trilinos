@@ -79,6 +79,8 @@
 
 namespace Kokkos {
 
+enum { UnorderedMapInvalidIndex = ~0u };
+
 /// \brief First element of the return value of UnorderedMap::insert().
 ///
 /// Inserting an element into an UnorderedMap is not guaranteed to
@@ -93,27 +95,72 @@ namespace Kokkos {
 ///      ignored and the old value was left in place. </li>
 /// </ol>
 
-struct UnorderedMapInsertResult
+class UnorderedMapInsertResult
 {
-  enum Status { FAILED, EXISTING, SUCCESS };
+private:
+  enum Status{
+     SUCCESS = 1u << 31
+   , EXISTING = 1u << 30
+   , FREED_EXISTING = 1u << 29
+   , LIST_LENGTH_MASK = ~(SUCCESS | EXISTING | FREED_EXISTING)
+  };
+
+public:
+  /// Did the map successful insert the key/value pair
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool success() const { return (m_status & SUCCESS); }
+
+  /// Was the key already present in the map
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool existing() const { return (m_status & EXISTING); }
+
+  /// Did the map fail to insert the key due to insufficent capacity
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool failed() const { return m_index == UnorderedMapInvalidIndex; }
+
+  /// Did the map lose a race condition to insert a dupulicate key/value pair
+  /// where an index was claimed that needed to be released
+  KOKKOS_FORCEINLINE_FUNCTION
+  bool freed_existing() const { return (m_status & FREED_EXISTING); }
+
+  /// How many iterations through the insert loop did it take before the
+  /// map returned
+  KOKKOS_FORCEINLINE_FUNCTION
+  uint32_t list_position() const { return (m_status & LIST_LENGTH_MASK); }
+
+  /// Index where the key can be found as long as the insert did not fail
+  KOKKOS_FORCEINLINE_FUNCTION
+  uint32_t index() const { return m_index; }
 
   KOKKOS_FORCEINLINE_FUNCTION
-  bool success() const { return status == SUCCESS; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool existing() const { return status == EXISTING; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  bool failed() const { return status == FAILED; }
-
-  KOKKOS_FORCEINLINE_FUNCTION
-  UnorderedMapInsertResult( uint32_t i = ~0u, Status s = FAILED )
-    : index(i)
-    , status(s)
+  UnorderedMapInsertResult()
+    : m_index(UnorderedMapInvalidIndex)
+    , m_status(0)
   {}
 
-  uint32_t index;
-  int32_t status;
+  KOKKOS_FORCEINLINE_FUNCTION
+  void increment_list_position()
+  {
+    m_status += (list_position() < LIST_LENGTH_MASK) ? 1u : 0u;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_existing(uint32_t i, bool arg_freed_existing)
+  {
+    m_index = i;
+    m_status = EXISTING | (arg_freed_existing ? FREED_EXISTING : 0u) | list_position();
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void set_success(uint32_t i)
+  {
+    m_index = i;
+    m_status = SUCCESS | list_position();
+  }
+
+private:
+  uint32_t m_index;
+  uint32_t m_status;
 };
 
 /// \class UnorderedMap
@@ -222,8 +269,12 @@ public:
   //@}
 
 private:
-  enum{ invalid_index = 0xFFFFFFFFu} ;
-  static const size_type block_size = 32u;
+  typedef uint32_t block_type;
+  enum { invalid_index = UnorderedMapInvalidIndex   };
+  enum { block_size = sizeof(block_type)*CHAR_BIT   };
+  enum { block_shift = Impl::power_of_two<block_size>::value };
+  enum { intial_block = ~static_cast<block_type>(0) };
+  enum { fast_num_search_blocks = 32 };
 
 
   typedef typename Impl::if_c< is_set, int, declared_value_type>::type impl_value_type;
@@ -243,6 +294,11 @@ private:
                                , View< const size_type *, device_type, MemoryTraits<RandomAccess> >
                              >::type size_type_view;
 
+  typedef typename Impl::if_c<   is_insertable_map
+                               , View< block_type *, device_type>
+                               , View< const block_type *, device_type, MemoryTraits<RandomAccess> >
+                             >::type block_type_view;
+
   typedef View< Impl::UnorderedMapScalars, device_type> scalars_view;
 
   typedef Kokkos::Impl::DeepCopy< Kokkos::HostSpace, typename device_type::memory_space > raw_deep_copy;
@@ -252,7 +308,8 @@ public:
   //@{
 
   UnorderedMap()
-    : m_hasher()
+    : m_bounded_insert()
+    , m_hasher()
     , m_equal_to()
     , m_capacity()
     , m_available_indexes()
@@ -265,17 +322,17 @@ public:
 
   /// \brief Constructor
   ///
-  /// \param requested_capacity [in] Initial requested maximum number of
-  ///   entries in the hash table.
+  /// \param capacity_hint [in] Initial guess of how many unique keys will be inserted into the map
   /// \param hash [in] Hasher function for \c Key instances.  The
   ///   default value usually suffices.
-  UnorderedMap(  size_type requested_capacity , hasher_type hasher = hasher_type(), equal_to_type equal = equal_to_type() )
-    : m_hasher(hasher)
-    , m_equal_to(equal)
-    , m_capacity(((requested_capacity + block_size -1)/block_size)*block_size)
-    , m_available_indexes(AllocateWithoutInitializing(), "UnorderedMap available indexes", m_capacity/block_size)
+  UnorderedMap(  size_type capacity_hint, hasher_type hasher = hasher_type(), equal_to_type equal_to = equal_to_type() )
+    : m_bounded_insert(true)
+    , m_hasher(hasher)
+    , m_equal_to(equal_to)
+    , m_capacity( calculate_capacity(capacity_hint) )
+    , m_available_indexes(AllocateWithoutInitializing(), "UnorderedMap available indexes", (m_capacity >> block_shift))
     , m_hash_lists(AllocateWithoutInitializing(), "UnorderedMap hash list", Impl::find_hash_size(m_capacity))
-    , m_next_index(AllocateWithoutInitializing(), "UnorderedMap next index", m_capacity+1)
+    , m_next_index(AllocateWithoutInitializing(), "UnorderedMap next index", m_capacity+1) // +1 so that the *_at functions can always return a valid reference
     , m_keys("UnorderedMap keys",m_capacity+1)
     , m_values("UnorderedMap values",(is_set? 1 : m_capacity+1))
     , m_scalars("UnorderedMap scalars")
@@ -284,9 +341,16 @@ public:
       throw std::runtime_error("Cannot construct a non-insertable (i.e. const key_type) unordered_map");
     }
 
-    Kokkos::deep_copy(m_available_indexes, invalid_index);
+    Kokkos::deep_copy(m_available_indexes, intial_block);
     Kokkos::deep_copy(m_hash_lists,invalid_index);
     Kokkos::deep_copy(m_next_index,invalid_index);
+  }
+
+  void reset_failed_insert_flag()
+  {
+    typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, Kokkos::HostSpace > tmp_deep_copy;
+    const bool tmp = false;
+    tmp_deep_copy(&m_scalars.ptr_on_device()->failed_insert, &tmp, sizeof(bool));
   }
 
   histogram_type get_histogram()
@@ -297,9 +361,11 @@ public:
   //! Clear all entries in the table.
   void clear()
   {
+    m_bounded_insert = true;
+
     if (m_capacity == 0) return;
 
-    Kokkos::deep_copy(m_available_indexes,invalid_index);
+    Kokkos::deep_copy(m_available_indexes, intial_block);
     Kokkos::deep_copy(m_hash_lists,invalid_index);
     Kokkos::deep_copy(m_next_index,invalid_index);
     {
@@ -314,7 +380,6 @@ public:
       const Impl::UnorderedMapScalars tmp = Impl::UnorderedMapScalars();
       Kokkos::deep_copy(m_scalars,tmp);
     }
-
   }
 
   /// \brief Change the capacity of the the map
@@ -327,27 +392,29 @@ public:
   ///
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.
-  bool rehash(size_type new_capacity = 0)
+  bool rehash(size_type requested_capacity = 0)
+  {
+    const bool bounded_insert = (m_capacity == 0) || (size() == 0u);
+    return rehash(requested_capacity, bounded_insert );
+  }
+
+  bool rehash(size_type requested_capacity, bool bounded_insert)
   {
     if(!is_insertable_map) return false;
 
-    if ( new_capacity != m_capacity ) {
+    const size_type curr_size = size();
+    requested_capacity = (requested_capacity < curr_size) ? curr_size : requested_capacity;
 
-      const size_type curr_size = size();
-      const bool copy_data = (curr_size > 0u) && !has_failed_inserts();
-      new_capacity = (copy_data && (new_capacity < curr_size)) ? curr_size : new_capacity;
+    insertable_map_type tmp(requested_capacity, m_hasher, m_equal_to);
 
-      declared_map_type tmp(new_capacity, m_hasher);
-
-      if (copy_data ) {
-        Impl::UnorderedMapRehash<declared_map_type> f(tmp,*this);
-        f.apply();
-      }
-      *this = tmp;
+    if (curr_size) {
+      tmp.m_bounded_insert = false;
+      Impl::UnorderedMapRehash<insertable_map_type> f(tmp,*this);
+      f.apply();
     }
-    else if ( has_failed_inserts() ) {
-      clear();
-    }
+    tmp.m_bounded_insert = bounded_insert;
+
+    *this = tmp;
 
     return true;
   }
@@ -373,11 +440,11 @@ public:
   /// This is <i>not</i> a device function; it may <i>not</i> be
   /// called in a parallel kernel.  The value is not stored as a
   /// variable; it must be computed.
-  bool has_failed_inserts() const
+  bool failed_insert() const
   {
     if( m_capacity == 0u ) return false;
     bool result;
-    raw_deep_copy(&result,&m_scalars.ptr_on_device()->has_failed_inserts, sizeof(size_type));
+    raw_deep_copy(&result,&m_scalars.ptr_on_device()->failed_insert, sizeof(size_type));
     return result;
   }
 
@@ -456,26 +523,28 @@ public:
   KOKKOS_INLINE_FUNCTION
   insert_result insert(key_type const& k, impl_value_type const&v = impl_value_type()) const
   {
-    insert_result result(invalid_index, insert_result::FAILED);
+    insert_result result;
 
     if ( is_insertable_map && 0u < m_capacity && ! m_scalars().erasable ) {
 
-      bool volatile & has_failed_inserts = m_scalars().has_failed_inserts ;
+      bool volatile & failed_insert_ref = m_scalars().failed_insert ;
 
       const size_type hash_value = m_hasher(k);
       const size_type hash_list = hash_value % m_hash_lists.size();
-      const size_type num_blocks = m_available_indexes.size();
-
-      // Force integer multiply to long
-      const size_type start_block =
-        static_cast<size_type>( ( static_cast<uint64_t>(hash_list) * num_blocks ) / m_hash_lists.size() );
+      const uint64_t num_blocks = m_available_indexes.size();
 
       size_type * curr_ptr   = & m_hash_lists[ hash_list ];
-      size_type * block_ptr  = & m_available_indexes[ start_block ];
       size_type new_index    = invalid_index ;
-      size_type new_block    = start_block ;
-      size_type new_bit_mask = 0 ;
 
+      // Force integer multiply to long
+      size_type block_idx = static_cast<size_type>((hash_list * num_blocks) / m_hash_lists.size());
+      size_type search_blocks = 0;
+
+      const size_type max_search_blocks = (m_bounded_insert && (fast_num_search_blocks < num_blocks)) ? fast_num_search_blocks : num_blocks;
+
+      block_type * block_ptr    = & m_available_indexes[ block_idx ];
+
+      block_type new_index_mask  = 0 ;
       bool not_done = true ;
 
 #if defined( __MIC__ )
@@ -493,6 +562,7 @@ public:
         #pragma noprefetch
 #endif
         while ( curr != invalid_index && ! m_equal_to( volatile_load(&m_keys[curr]), k) ) {
+          result.increment_list_position();
           curr_ptr = &m_next_index[curr];
           curr = volatile_load(curr_ptr);
           KOKKOS_NONTEMPORAL_PREFETCH_LOAD(&m_keys[curr != invalid_index ? curr : 0]);
@@ -502,13 +572,14 @@ public:
         // If key already present then return that index.
         if ( curr != invalid_index ) {
 
-          if ( new_index != invalid_index ) {
+          const bool free_existing = new_index != invalid_index;
+          if ( free_existing ) {
             // Previously claimed an unused entry that was not inserted.
             // Release this unused entry immediately.
-            atomic_fetch_or( block_ptr , new_bit_mask );
+            free_index(new_index);
           }
 
-          result = insert_result(curr, insert_result::EXISTING);
+          result.set_existing(curr, free_existing);
           not_done = false ;
         }
         //------------------------------------------------------------
@@ -523,60 +594,63 @@ public:
           // Succeeded in appending
           if ( curr == invalid_index ) {
             if ( ! m_scalars().modified ) { m_scalars().modified = true ; }
-            result = insert_result(new_index, insert_result::SUCCESS);
+            result.set_success(new_index);
             not_done = false ;
           }
         }
         //------------------------------------------------------------
         // If have not already claimed an unused entry then do so now.
-        // If there are failed inserts then don't even try to claim an unused entry.
-        else if ( !has_failed_inserts ) {
+        else if (!failed_insert_ref) {
+          const block_type block = volatile_load(block_ptr) ;
 
-          const size_type block = volatile_load(block_ptr) ;
-
+          // Block has an unused entry, try to claim that entry, a race condition managed via atomics
           if ( block ) {
-            // Block has an unused entry, try to claim that entry, a race condition managed via atomics
 
-            // Offset of first set bit in 'block':
-            const int offset = (hash_list & 1u) ? Impl::bit_scan_forward(block) : Impl::bit_scan_reverse(block) ;
+            // Find an unused offset within the current block
+            // rotate the block to the right so that different lists
+            // which map to the same block don't all try for the same offset
+            const int rotate = ((hash_list >> 1) & (block_size-1)); // hash_lish % block_size
+            const block_type tmp_block = Impl::rotate_right(block, rotate);
+            const int offset = (((hash_list & 1u) ? Impl::bit_scan_reverse(tmp_block) : Impl::bit_scan_forward(tmp_block) ) + rotate) & (block_size-1);
 
             // Try to unset that bit:
-            new_bit_mask = size_type(1) << offset ;
+            new_index_mask = static_cast<block_type>(1) << offset ;
 
-            const size_type old_block = atomic_fetch_and(block_ptr, ~new_bit_mask);
-
-            if ( old_block & new_bit_mask ) {
-              // Succeded in claiming entry
-              new_index = ( new_block << Impl::power_of_two<block_size>::value ) + offset;
+            // Try to claim the offset
+            if ( atomic_fetch_and(block_ptr, ~new_index_mask) & new_index_mask) {
+              new_index = ( block_idx << block_shift ) + static_cast<size_type>(offset);
 
               // Set key and value
+              KOKKOS_NONTEMPORAL_PREFETCH_STORE(&m_keys[new_index]);
+              m_keys[new_index] = k ;
+
               if (!is_set) {
                 KOKKOS_NONTEMPORAL_PREFETCH_STORE(&m_values[new_index]);
                 m_values[new_index] = v ;
               }
 
-              KOKKOS_NONTEMPORAL_PREFETCH_STORE(&m_keys[new_index]);
-              m_keys[new_index] = k ;
-
               // Do not proceed until key and value are updated in global memory
               memory_fence();
             }
           }
+          // block is empty, advanced to the next block
           else {
-            // 'new_block' is full, try the next block
-            new_block = (hash_list & 1u) ? ((new_block + 1) < num_blocks ? new_block + 1u : 0u)  : ((0u < new_block) ? new_block -1u : num_blocks -1u) ;
-            block_ptr = & m_available_indexes[ new_block ];
-            // Wrapped completely around to the start, is full or nearly so, set failure flag
-            if ( start_block == new_block ) {
-              has_failed_inserts = true ;
+            ++search_blocks;
+
+            block_idx = (hash_list & 2u) ?
+                        ((block_idx != 0u) ? (block_idx - 1u) : (num_blocks - 1u)) :
+                        ((block_idx < (num_blocks - 1u)) ? (block_idx + 1u) : 0u)  ;
+
+            block_ptr = & m_available_indexes[ block_idx ];
+            // Wrapped completely around to start, map is (nearly) full, set failure flag
+            if ( search_blocks == max_search_blocks ) {
+              failed_insert_ref = true;
               not_done = false ;
             }
           }
         }
-        //------------------------------------------------------------
-        // Has failed inserts, done attempting to insert
         else {
-          not_done = false ;
+          not_done = false;
         }
       } // while ( not_done )
     }
@@ -612,7 +686,9 @@ public:
   {
     size_type curr = 0u < m_capacity ? m_hash_lists( m_hasher(k) % m_hash_lists.size() ) : invalid_index ;
 
+    KOKKOS_NONTEMPORAL_PREFETCH_LOAD(&m_keys[curr != invalid_index ? curr : 0]);
     while (curr != invalid_index && !m_equal_to( m_keys[curr], k) ) {
+      KOKKOS_NONTEMPORAL_PREFETCH_LOAD(&m_keys[curr != invalid_index ? curr : 0]);
       curr = m_next_index[curr];
     }
 
@@ -661,17 +737,19 @@ public:
   bool valid_at(size_type i) const
   {
     if (i >= m_capacity) return false;
-    const size_type block = m_available_indexes[i >> Impl::power_of_two<block_size>::value];
-    const size_type offset = i & (block_size-1u);
+    const block_type block = m_available_indexes[i >> block_shift];
+    const int offset = static_cast<int>(i & (block_size-1u));
 
-    return !(block & ( static_cast<size_type>(1) << offset));
+    return !(block & ( static_cast<block_type>(1u) << offset));
   }
 
   template <typename SKey, typename SValue>
   UnorderedMap( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src,
                 typename Impl::enable_if< Impl::UnorderedMapCanAssign<declared_key_type,declared_value_type,SKey,SValue>::value,int>::type = 0
               )
-    : m_hasher(src.m_hasher)
+    : m_bounded_insert(src.m_bounded_insert)
+    , m_hasher(src.m_hasher)
+    , m_equal_to(src.m_equal_to)
     , m_capacity(src.m_capacity)
     , m_available_indexes(src.m_available_indexes)
     , m_hash_lists(src.m_hash_lists)
@@ -687,7 +765,9 @@ public:
                            ,declared_map_type & >::type
   operator=( UnorderedMap<SKey,SValue,Device,Hasher,EqualTo> const& src)
   {
+    m_bounded_insert = src.m_bounded_insert;
     m_hasher = src.m_hasher;
+    m_equal_to = src.m_equal_to;
     m_capacity = src.m_capacity;
     m_available_indexes = src.m_available_indexes;
     m_hash_lists = src.m_hash_lists;
@@ -707,37 +787,57 @@ public:
     if (m_available_indexes.ptr_on_device() != src.m_available_indexes.ptr_on_device()) {
       typedef Kokkos::Impl::DeepCopy< typename device_type::memory_space, typename SDevice::memory_space > deep_copy_pointer;
 
-      src.sync_scalars();
-      *this = insertable_map_type(src.capacity(), src.m_hasher);
+      insertable_map_type tmp;
 
-      deep_copy_pointer(m_available_indexes.ptr_on_device(), src.m_available_indexes.ptr_on_device(), sizeof(uint32_t) * src.m_available_indexes.size());
-      deep_copy_pointer(m_hash_lists.ptr_on_device(), src.m_hash_lists.ptr_on_device(), sizeof(uint32_t) * src.m_hash_lists.size());
-      deep_copy_pointer(m_next_index.ptr_on_device(), src.m_next_index.ptr_on_device(), sizeof(uint32_t) * src.m_next_index.size());
-      deep_copy_pointer(m_keys.ptr_on_device(), src.m_keys.ptr_on_device(), sizeof(key_type) * src.m_keys.size());
-      if (!is_set) deep_copy_pointer(m_values.ptr_on_device(), src.m_values.ptr_on_device(), sizeof(value_type) * src.m_values.size());
-      deep_copy_pointer(m_scalars.ptr_on_device(), src.m_scalars.ptr_on_device(), sizeof(Impl::UnorderedMapScalars));
+      src.sync_scalars();
+
+      tmp.m_bounded_insert = src.m_bounded_insert;
+      tmp.m_hasher = src.m_hasher;
+      tmp.m_equal_to = src.m_equal_to;
+      tmp.m_capacity = src.m_capacity;
+      tmp.m_available_indexes = block_type_view( AllocateWithoutInitializing(), "UnorderedMap available indexes", src.m_available_indexes.size() );
+      tmp.m_hash_lists        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap hash list", src.m_hash_lists.size() );
+      tmp.m_next_index        = size_type_view( AllocateWithoutInitializing(), "UnorderedMap next index", src.m_next_index.size() );
+      tmp.m_keys              = key_type_view( AllocateWithoutInitializing(), "UnorderedMap keys", src.m_keys.size() );
+      tmp.m_values            = value_type_view( AllocateWithoutInitializing(), "UnorderedMap values", src.m_values.size() );
+      tmp.m_scalars           = scalars_view("UnorderedMap scalars");
+
+      deep_copy_pointer(tmp.m_available_indexes.ptr_on_device(), src.m_available_indexes.ptr_on_device(), sizeof(block_type) * src.m_available_indexes.size());
+      deep_copy_pointer(tmp.m_hash_lists.ptr_on_device(), src.m_hash_lists.ptr_on_device(), sizeof(size_type) * src.m_hash_lists.size());
+      deep_copy_pointer(tmp.m_next_index.ptr_on_device(), src.m_next_index.ptr_on_device(), sizeof(size_type) * src.m_next_index.size());
+      deep_copy_pointer(tmp.m_keys.ptr_on_device(), src.m_keys.ptr_on_device(), sizeof(key_type) * src.m_keys.size());
+      if (!is_set) {
+        deep_copy_pointer(tmp.m_values.ptr_on_device(), src.m_values.ptr_on_device(), sizeof(value_type) * src.m_values.size());
+      }
+      deep_copy_pointer(tmp.m_scalars.ptr_on_device(), src.m_scalars.ptr_on_device(), sizeof(Impl::UnorderedMapScalars));
+
+      *this = tmp;
     }
   }
 
   //@}
 private: // private member functions
 
+  KOKKOS_FORCEINLINE_FUNCTION
+  int get_offset(size_type hash_list, block_type block) const
+  {
+    const int rotate = (hash_list & 31u);
+    block = rotate ? ((block >> rotate) | (block << static_cast<int>(block_size-rotate))) : block;
+    return (Impl::bit_scan_forward(block) + rotate) & (block_size-1);
+  }
+
   KOKKOS_INLINE_FUNCTION
   bool free_index(size_type i) const
   {
     if (!is_insertable_map) return false;
 
-    const size_type block = i >> Impl::power_of_two<block_size>::value;
-    const size_type offset = i & (block_size-1u);
-    const size_type increment = static_cast<size_type>(1) << offset;
+    block_type * available_ptr = &m_available_indexes[ i >> block_shift ];
+    const block_type bit_mask = static_cast<block_type>(1u) << static_cast<int>(i & (block_size-1));
 
-    size_type * available_ptr = &m_available_indexes[block];
-
-    atomic_or(available_ptr, increment);
+    atomic_or(available_ptr, bit_mask);
 
     return true;
   }
-
 
   void sync_scalars(bool force_sync = false) const
   {
@@ -757,16 +857,27 @@ private: // private member functions
     }
   }
 
+  uint32_t calculate_capacity(uint32_t capacity_hint) const
+  {
+    capacity_hint = capacity_hint ? capacity_hint : block_size;
+
+    uint32_t num_blocks = (capacity_hint + block_size -1) >> block_shift;
+    // inflate by 15%
+    num_blocks = static_cast<uint32_t>((23ull*num_blocks)/20u);
+    return (num_blocks << block_shift);
+  }
+
 private: // private members
-  hasher_type     m_hasher;
-  equal_to_type   m_equal_to;
-  size_type       m_capacity;
-  size_type_view  m_available_indexes;
-  size_type_view  m_hash_lists;
-  size_type_view  m_next_index;
-  key_type_view   m_keys;
-  value_type_view m_values;
-  scalars_view    m_scalars;
+  bool             m_bounded_insert;
+  hasher_type      m_hasher;
+  equal_to_type    m_equal_to;
+  size_type        m_capacity;
+  block_type_view  m_available_indexes;
+  size_type_view   m_hash_lists;
+  size_type_view   m_next_index;
+  key_type_view    m_keys;
+  value_type_view  m_values;
+  scalars_view     m_scalars;
 
   template <typename KKey, typename VValue, typename DDevice, typename HHash, typename EEqualTo>
   friend class UnorderedMap;

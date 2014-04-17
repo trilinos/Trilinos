@@ -821,13 +821,17 @@ namespace panzer_stk {
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
 	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
 
-          if(fieldItr->second->isScalarBasis()) {
-	    mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
+          if(fieldItr->second->isScalarBasis() &&  
+             fieldItr->second->getElementSpace()==panzer::PureBasis::CONST) {
+             mesh.addCellField(fieldItr->first,pb->elementBlockID());
+          }
+          else if(fieldItr->second->isScalarBasis()) {
+             mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
           }
           else if(fieldItr->second->isVectorBasis()) {
             std::string d_mod[3] = {"X","Y","Z"};
             for(int d=0;d<fieldItr->second->dimension();d++) 
-	      mesh.addCellField(fieldItr->first+d_mod[d],pb->elementBlockID());
+              mesh.addCellField(fieldItr->first+d_mod[d],pb->elementBlockID());
           }
           else { TEUCHOS_ASSERT(false); }
 

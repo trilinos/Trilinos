@@ -311,7 +311,7 @@ target_buffer_queue_t target_buffers;
 
 
 static mpi_transport_global transport_global_data;
-//static const int MIN_TIMEOUT = 0;  /* in milliseconds */
+static const int MAX_SLEEP = 100;  /* in milliseconds */
 
 /**
  * @brief Initialize NNTI to use a specific transport.
@@ -1113,6 +1113,15 @@ NNTI_result_t NNTI_mpi_wait (
                         break;
                     }
 
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
+                    }
+
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1328,6 +1337,15 @@ NNTI_result_t NNTI_mpi_waitany (
                         break;
                     }
 
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
+                    }
+
                     /* continue if the timeout has not expired */
                     /* log_debug(debug_level, "timedout... continuing"); */
 
@@ -1505,6 +1523,15 @@ NNTI_result_t NNTI_mpi_waitall (
                         log_debug(debug_level, "MPI_Testall() timed out");
                         nnti_rc = NNTI_ETIMEDOUT;
                         break;
+                    }
+
+                    int timeout_remaining=timeout-elapsed_time;
+                    if ((timeout < 0) || (timeout_remaining > MAX_SLEEP)) {
+                    	nnti_sleep(MAX_SLEEP);
+                    } else {
+                    	if (timeout_remaining > 0) {
+                    		nnti_sleep(timeout_remaining);
+                    	}
                     }
 
                     /* continue if the timeout has not expired */

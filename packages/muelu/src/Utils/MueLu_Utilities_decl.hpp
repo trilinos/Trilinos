@@ -89,6 +89,7 @@ class Epetra_Vector;
 #ifdef HAVE_MUELU_TPETRA
 #include <Xpetra_TpetraMultiVector_fwd.hpp>
 #include <Xpetra_TpetraCrsMatrix_fwd.hpp>
+#include <Tpetra_Map_decl.hpp>
 
 namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>                    class Vector;

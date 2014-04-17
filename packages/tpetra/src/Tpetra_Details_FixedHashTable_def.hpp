@@ -146,7 +146,8 @@ FixedHashTable<KeyType, ValueType>::
 FixedHashTable (const ArrayView<const KeyType>& keys) :
   size_ (0),
   rawPtr_ (NULL),
-  rawVal_ (NULL)
+  rawVal_ (NULL),
+  hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, Teuchos::as<ValueType> (0));
 }
@@ -157,7 +158,8 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
                 const ValueType startingValue) :
   size_ (0),
   rawPtr_ (NULL),
-  rawVal_ (NULL)
+  rawVal_ (NULL),
+  hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, startingValue);
 }
@@ -168,7 +170,8 @@ FixedHashTable (const ArrayView<const KeyType>& keys,
                 const ArrayView<const ValueType>& vals) :
   size_ (0),
   rawPtr_ (NULL),
-  rawVal_ (NULL)
+  rawVal_ (NULL),
+  hasDuplicateKeys_ (false) // to revise in init()
 {
   init (keys, vals);
 }
@@ -223,6 +226,10 @@ init (const ArrayView<const KeyType>& keys,
     const int hashVal = hashFunc (keys[k]);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
+
+    if (ptr[hashVal+1] > 1) {
+      hasDuplicateKeys_ = true;
+    }
   }
 
   // Compute row offsets via prefix sum:
@@ -323,6 +330,10 @@ init (const ArrayView<const KeyType>& keys,
     const int hashVal = hashFunc (keys[k]);
     // Shift over one, so that counts[j] = ptr[j+1].  See below.
     ++ptr[hashVal+1];
+
+    if (ptr[hashVal+1] > 1) {
+      hasDuplicateKeys_ = true;
+    }
   }
 
   // Compute row offsets via prefix sum:
@@ -380,7 +391,8 @@ FixedHashTable (const FixedHashTable & obj) :
   ptr_ (obj.ptr_),
   val_ (obj.val_),
   rawPtr_ (obj.rawPtr_),
-  rawVal_ (obj.rawVal_)
+  rawVal_ (obj.rawVal_),
+  hasDuplicateKeys_ (obj.hasDuplicateKeys_)
 {}
 
 template<typename KeyType, typename ValueType>

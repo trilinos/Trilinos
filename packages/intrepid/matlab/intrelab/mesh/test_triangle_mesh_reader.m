@@ -1,5 +1,7 @@
 %
-%
+% AUTHOR: Denis Ridzal
+%         Computational and Applied Mathematics
+%         Rice University
 %
 
 % get point, triangle and edge information from file 

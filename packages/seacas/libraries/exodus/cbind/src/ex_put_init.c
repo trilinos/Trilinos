@@ -86,7 +86,9 @@ int ex_put_init (int   exoid,
 {
   ex_init_params par;
 
-  strcpy( par.title, title );
+  strncpy( par.title, title, 80 );
+  par.title[80] = '\0';
+  
   par.num_dim = num_dim;
   par.num_nodes = num_nodes;
   par.num_edge = 0;

@@ -151,9 +151,7 @@ public:
                 optional entity weights.
 
       \param weights on return will contain a list of the weights for the
-               number specified.  If weights for
-           this number are to be uniform for all entities in the
-           global problem, the \c weights should be a NULL pointer.
+               number specified.  
 
       \param stride on return will indicate the stride of the weights list.
 

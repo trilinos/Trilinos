@@ -556,7 +556,7 @@ private:
   std::vector<size_t> NumEntries_;
 
   //! Temporary array used in getLocalRowCopy().
-  mutable Teuchos::Array<local_ordinal_type> Indices_;
+  mutable Teuchos::Array<local_ordinal_type> localIndices_;
 
   //! Temporary array used in getLocalRowCopy().
   mutable Teuchos::Array<scalar_type> Values_;

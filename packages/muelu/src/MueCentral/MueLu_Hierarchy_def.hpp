@@ -718,6 +718,9 @@ namespace MueLu {
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
     if (verbLevel & (Statistics0 | Test)) {
+      // save ostream flags
+      std::ios::fmtflags flags(out.flags());
+
       out << "\n--------------------------------------------------------------------------------\n" <<
                "---                            Multigrid Summary                             ---\n"
                "--------------------------------------------------------------------------------" << std::endl;
@@ -750,6 +753,7 @@ namespace MueLu {
           preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
         if (Levels_[i]->IsAvailable("PostSmoother"))
           postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
+
         if (preSmoo != null && preSmoo == postSmoo)
           out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
@@ -761,7 +765,9 @@ namespace MueLu {
 
         out << std::endl;
 
-      } //for (int i=0; i<GetNumLevels(); ++i)
+        // restore ostream flags
+        out.flags(flags);
+      }
     }
 
     if (verbLevel & Statistics2) {

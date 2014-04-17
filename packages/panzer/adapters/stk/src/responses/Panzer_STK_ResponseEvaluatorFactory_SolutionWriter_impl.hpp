@@ -89,7 +89,8 @@ buildAndRegisterEvaluators(const std::string & responseName,
     Teuchos::RCP<const panzer::PureBasis> basis = found->second;
     
     // write out nodal fields
-    if(basis->getElementSpace()==panzer::PureBasis::HGRAD) {
+    if(basis->getElementSpace()==panzer::PureBasis::HGRAD ||
+       basis->getElementSpace()==panzer::PureBasis::CONST) {
       
       // determine if user has modified field scalar for each field to be written to STK
       std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 

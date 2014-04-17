@@ -70,10 +70,10 @@ namespace Amesos2 {
       return A->getLocalValuesView().sacado_size();
     }
     else if (X != Teuchos::null) {
-      return X->getLocalView().d_view.sacado_size();
+      return X->template getLocalView<D>().sacado_size();
     }
     else if (B != Teuchos::null) {
-      return B->getLocalView().d_view.sacado_size();
+      return B->template getLocalView<D>().sacado_size();
     }
     return 0;
   }

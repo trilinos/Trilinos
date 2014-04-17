@@ -111,17 +111,32 @@ public:
 
 CudaMemoryTrackingEntry::~CudaMemoryTrackingEntry()
 {
-  cudaError_t sync_err = cudaDeviceSynchronize();
+  std::ostringstream oss;
+  bool error = false;
+  try {
+    Kokkos::Impl::cuda_device_synchronize();
+  }
+  catch(std::runtime_error & err) {
+    error = true;
+    oss << err.what() << std::endl;
+  }
 
   if ( tex_obj ) {
 
   }
 
-  cudaError_t free_err = cudaFree( ptr_alloc );
+  try {
+    CUDA_SAFE_CALL( cudaFree( ptr_alloc ) );
+  }
+  catch(std::runtime_error & err) {
+    error = true;
+    oss << err.what() << std::endl;
+  }
 
-  if ( cudaSuccess != sync_err || cudaSuccess != free_err ) {
+  if ( error ) {
     std::cerr << "cudaFree( " << ptr_alloc << " ) FAILED for " ;
     Impl::MemoryTrackingEntry::print( std::cerr );
+    std::cerr << oss.str() << std::endl;
   }
 }
 
@@ -154,7 +169,7 @@ void * CudaSpace::allocate(
   if ( 0 < scalar_size * scalar_count ) {
 
     try {
-      CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+      Kokkos::Impl::cuda_device_synchronize();
 
 #if defined( CUDA_VERSION ) && ( 6000 <= CUDA_VERSION ) && defined(KOKKOS_USE_UVM)
       CUDA_SAFE_CALL( cudaMallocManaged( (void**) &ptr, size, cudaMemAttachGlobal) );
@@ -162,7 +177,7 @@ void * CudaSpace::allocate(
       CUDA_SAFE_CALL( cudaMalloc( (void**) &ptr, size) );
 #endif
 
-      CUDA_SAFE_CALL( cudaThreadSynchronize() );
+      Kokkos::Impl::cuda_device_synchronize();
     }
     catch( std::runtime_error & err) {
       std::ostringstream msg ;

@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -80,10 +80,10 @@ Epetra_FEVector::Epetra_FEVector(const Epetra_BlockMap& map,
 }
 
 //----------------------------------------------------------------------------
-Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-                                 double *A, int MyLDA, int NumVectors,
+Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& theMap,
+                                 double *A, int MyLDA, int theNumVectors,
                                  bool ignoreNonLocalEntries)
- : Epetra_MultiVector(CV, Map, A, MyLDA, NumVectors),
+ : Epetra_MultiVector(CV, theMap, A, MyLDA, theNumVectors),
     myFirstID_(0),
     myNumIDs_(0),
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -99,16 +99,16 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalVector_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = Map.MinMyGID64();
-  myNumIDs_ = Map.NumMyElements();
-  nonlocalCoefs_.resize(NumVectors);
+  myFirstID_ = theMap.MinMyGID64();
+  myNumIDs_ = theMap.NumMyElements();
+  nonlocalCoefs_.resize(theNumVectors);
 }
 
 //----------------------------------------------------------------------------
-Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Map, 
-                                 double **ArrayOfPointers, int NumVectors,
+Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& theMap,
+                                 double **ArrayOfPointers, int theNumVectors,
                                  bool ignoreNonLocalEntries)
- : Epetra_MultiVector(CV, Map, ArrayOfPointers, NumVectors),
+ : Epetra_MultiVector(CV, theMap, ArrayOfPointers, theNumVectors),
     myFirstID_(0),
     myNumIDs_(0),
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -124,9 +124,9 @@ Epetra_FEVector::Epetra_FEVector(Epetra_DataAccess CV, const Epetra_BlockMap& Ma
     nonlocalVector_(0),
     ignoreNonLocalEntries_(ignoreNonLocalEntries)
 {
-  myFirstID_ = Map.MinMyGID64();
-  myNumIDs_ = Map.NumMyElements();
-  nonlocalCoefs_.resize(NumVectors);
+  myFirstID_ = theMap.MinMyGID64();
+  myNumIDs_ = theMap.NumMyElements();
+  nonlocalCoefs_.resize(theNumVectors);
 }
 
 //----------------------------------------------------------------------------
@@ -380,7 +380,7 @@ int Epetra_FEVector::inputNonlocalValues(int_type GID, int numValues,
   if(!Map().template GlobalIndicesIsType<int_type>())
   throw ReportError("Epetra_FEVector::inputValues mismatch between argument types (int/long long) and map type.", -1);
 
-  
+
   //find offset of GID in nonlocalIDs_var
 
   std::vector<int_type>& nonlocalIDs_var = nonlocalIDs<int_type>();
@@ -538,7 +538,7 @@ Epetra_FEVector& Epetra_FEVector::operator=(const Epetra_FEVector& source)
     // Don't allow self-assignment, since the allocations and
     // deallocations in the code below assume that source is a
     // different object than *this.
-    return *this; 
+    return *this;
   }
   // This redundantly checks for self-assignment, but the check is
   // inexpensive (just a pointer comparison).

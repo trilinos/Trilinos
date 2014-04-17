@@ -169,7 +169,7 @@ namespace Xpetra {
 
         if (oldTCrsOp != Teuchos::null) {
           RCP<TpetraCrsMatrix> newTCrsOp(new TpetraCrsMatrix(*oldTCrsOp));
-          RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(newTCrsOp));
+          RCP<CrsMatrixWrap>   newOp    (new CrsMatrixWrap(Teuchos::as<RCP<CrsMatrix> >(newTCrsOp)));
 
           return newOp;
         } else {

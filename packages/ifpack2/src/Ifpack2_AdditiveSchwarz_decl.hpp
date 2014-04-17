@@ -885,23 +885,8 @@ private:
   mutable double ApplyFlops_;
   //! The inner (that is, per subdomain local) solver.
   Teuchos::RCP<prec_type> Inverse_;
-  //! SerialMap for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> SerialMap_;
-  //! Distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> DistributedMap_;
   //! Local distributed map for filtering multivector with no overlap.
-  Teuchos::RCP<const map_type> LocalDistributedMap_;
-
-  /// \brief Import object used in apply().
-  ///
-  /// If the domain decomposition is <i>not</i> overlapping, then
-  /// apply() needs to redistribute the X input vector from the domain
-  /// Map of this operator to SerialMap_ (see above).  Computing the
-  /// Import is expensive, and the Import does not change as long as
-  /// the overlap level does not change, so it makes sense to keep the
-  /// Import object around.  apply() creates this on demand if
-  /// necessary, which explains why this is marked \c mutable.
-  mutable Teuchos::RCP<const import_type> SerialImporter_;
+  Teuchos::RCP<const map_type> localMap_;
 
   /// \brief Import object used in apply().
   ///

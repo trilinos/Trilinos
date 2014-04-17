@@ -231,14 +231,45 @@ Perf fenl(
 
   //------------------------------------
 
-  if ( print_flag ) {
+  if ( use_print ) {
+    typename FixtureType::node_grid_type::HostMirror
+      h_node_grid = Kokkos::create_mirror_view( fixture.node_grid() );
+
+    typename FixtureType::node_coord_type::HostMirror
+      h_node_coord = Kokkos::create_mirror_view( fixture.node_coord() );
+
+    typename FixtureType::elem_node_type::HostMirror
+      h_elem_node = Kokkos::create_mirror_view( fixture.elem_node() );
+
+    Kokkos::deep_copy( h_node_grid , fixture.node_grid() );
+    Kokkos::deep_copy( h_node_coord , fixture.node_coord() );
+    Kokkos::deep_copy( h_elem_node , fixture.elem_node() );
+
+    std::cout << "Node grid {" ;
+    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+      std::cout << " (" << h_node_grid(inode,0)
+                << "," << h_node_grid(inode,1)
+                << "," << h_node_grid(inode,2)
+                << ")" ;
+    }
+    std::cout << " }" << std::endl ;
+
+    std::cout << "Node coord {" ;
+    for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
+      std::cout << " (" << h_node_coord(inode,0)
+                << "," << h_node_coord(inode,1)
+                << "," << h_node_coord(inode,2)
+                << ")" ;
+    }
+    std::cout << " }" << std::endl ;
+
     std::cout << "Manufactured solution"
               << " a[" << manufactured_solution.a << "]"
               << " b[" << manufactured_solution.b << "]"
               << " K[" << manufactured_solution.K << "]"
               << " {" ;
     for ( unsigned inode = 0 ; inode < fixture.node_count() ; ++inode ) {
-      std::cout << " " << manufactured_solution( fixture.node_coord( inode , 2 ) );
+      std::cout << " " << manufactured_solution( h_node_coord( inode , 2 ) );
     }
     std::cout << " }" << std::endl ;
 
@@ -246,7 +277,7 @@ Perf fenl(
     for ( unsigned ielem = 0 ; ielem < fixture.elem_count() ; ++ielem ) {
       std::cout << "  elem[" << ielem << "]{" ;
       for ( unsigned inode = 0 ; inode < FixtureType::ElemNode ; ++inode ) {
-        std::cout << " " << fixture.elem_node(ielem,inode);
+        std::cout << " " << h_elem_node(ielem,inode);
       }
       std::cout << " }" << std::endl ;
     }

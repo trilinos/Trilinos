@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,24 +35,24 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #include "Epetra_MpiComm.h"
 
 //=============================================================================
-Epetra_MpiComm::Epetra_MpiComm(MPI_Comm Comm) : 
-	Epetra_Object("Epetra::MpiComm"),
-	MpiCommData_(new Epetra_MpiCommData(Comm))
+Epetra_MpiComm::Epetra_MpiComm(MPI_Comm theComm) :
+        Epetra_Object("Epetra::MpiComm"),
+        MpiCommData_(new Epetra_MpiCommData(theComm))
 {
 }
 
 //=============================================================================
-Epetra_MpiComm::Epetra_MpiComm(const Epetra_MpiComm & Comm) : 
-  Epetra_Object(Comm.Label()), 
-  MpiCommData_(Comm.MpiCommData_)
+Epetra_MpiComm::Epetra_MpiComm(const Epetra_MpiComm & theComm) :
+  Epetra_Object(theComm.Label()),
+  MpiCommData_(theComm.MpiCommData_)
 {
   MpiCommData_->IncrementReferenceCount();
 }
@@ -102,21 +102,21 @@ int Epetra_MpiComm::GatherAll(double * MyVals, double * AllVals, int Count) cons
 int Epetra_MpiComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, MpiCommData_->Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, MpiCommData_->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::GatherAll(long * MyVals, long * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG, AllVals, Count, MPI_LONG, MpiCommData_->Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG, AllVals, Count, MPI_LONG, MpiCommData_->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiComm::GatherAll(long long * MyVals, long long * AllVals, int Count) const {
   EPETRA_CHK_ERR(CheckInput(MyVals,Count));
   EPETRA_CHK_ERR(CheckInput(AllVals,Count));
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG_LONG, AllVals, Count, MPI_LONG_LONG, MpiCommData_->Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG_LONG, AllVals, Count, MPI_LONG_LONG, MpiCommData_->Comm_));
   return(0);
 }
 //=============================================================================
@@ -245,24 +245,24 @@ Epetra_Directory * Epetra_MpiComm:: CreateDirectory(const Epetra_BlockMap & map)
 }
 //=============================================================================
 Epetra_MpiComm::~Epetra_MpiComm()  {
-	CleanupData();
+        CleanupData();
 }
 //=============================================================================
 void Epetra_MpiComm::CleanupData() {
-	if(MpiCommData_ != 0) {
-		MpiCommData_->DecrementReferenceCount();
-		if(MpiCommData_->ReferenceCount() == 0) {
-			delete MpiCommData_;
-			MpiCommData_ = 0;
-		}
-	}
+        if(MpiCommData_ != 0) {
+                MpiCommData_->DecrementReferenceCount();
+                if(MpiCommData_->ReferenceCount() == 0) {
+                        delete MpiCommData_;
+                        MpiCommData_ = 0;
+                }
+        }
 }
 //=============================================================================
-Epetra_MpiComm & Epetra_MpiComm::operator= (const Epetra_MpiComm & Comm) {
-	if((this != &Comm) && (MpiCommData_ != Comm.MpiCommData_)) {
-		CleanupData();
-		MpiCommData_ = Comm.MpiCommData_;
-		MpiCommData_->IncrementReferenceCount();
-	}
-	return(*this);
+Epetra_MpiComm & Epetra_MpiComm::operator= (const Epetra_MpiComm & theComm) {
+        if((this != &theComm) && (MpiCommData_ != theComm.MpiCommData_)) {
+                CleanupData();
+                MpiCommData_ = theComm.MpiCommData_;
+                MpiCommData_->IncrementReferenceCount();
+        }
+        return(*this);
 }

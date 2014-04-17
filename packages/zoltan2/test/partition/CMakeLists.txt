@@ -108,13 +108,57 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   FAIL_REGULAR_EXPRESSION "FAIL"
   )
 
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  Partitioning1_OneProc
-  SOURCES partitioning1.cpp
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc
   NUM_MPI_PROCS 4
   COMM serial mpi
   ARGS 
    "--inputFile=simple --no-distribute"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --vertexWeights=3"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc_VWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --no-distribute --vertexWeights=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --edgeWeights=1"
+  PASS_REGULAR_EXPRESSION "PASS"
+  FAIL_REGULAR_EXPRESSION "FAIL"
+  )
+
+TRIBITS_ADD_TEST(
+  Partitioning1
+  NAME Partitioning1_OneProc_EWeights
+  NUM_MPI_PROCS 4
+  COMM serial mpi
+  ARGS 
+   "--inputFile=simple --no-distribute --edgeWeights=2"
   PASS_REGULAR_EXPRESSION "PASS"
   FAIL_REGULAR_EXPRESSION "FAIL"
   )

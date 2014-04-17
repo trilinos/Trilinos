@@ -84,7 +84,7 @@ void Ifpack_OverlappingRowMatrix::BuildMap(int OverlapLevel_in)
   const Epetra_Map *RowMap; 
   const Epetra_Map *ColMap; 
 
-  vector<int_type> ExtElements; 
+  std::vector<int_type> ExtElements; 
 
   for (int overlap = 0 ; overlap < OverlapLevel_in ; ++overlap) {
     if (TmpMatrix != Teuchos::null) {
@@ -97,7 +97,7 @@ void Ifpack_OverlappingRowMatrix::BuildMap(int OverlapLevel_in)
     }
 
     int size = ColMap->NumMyElements() - RowMap->NumMyElements(); 
-    vector<int_type> list(size); 
+    std::vector<int_type> list(size); 
 
     int count = 0; 
 
@@ -105,7 +105,7 @@ void Ifpack_OverlappingRowMatrix::BuildMap(int OverlapLevel_in)
     for (int i = 0 ; i < ColMap->NumMyElements() ; ++i) { 
       int_type GID = (int_type) ColMap->GID64(i); 
       if (A().RowMatrixRowMap().LID(GID) == -1) { 
-        typename vector<int_type>::iterator pos 
+        typename std::vector<int_type>::iterator pos 
           = find(ExtElements.begin(),ExtElements.end(),GID); 
         if (pos == ExtElements.end()) { 
           ExtElements.push_back(GID);
@@ -130,7 +130,7 @@ void Ifpack_OverlappingRowMatrix::BuildMap(int OverlapLevel_in)
 
   // build the map containing all the nodes (original
   // matrix + extended matrix)
-  vector<int_type> list(NumMyRowsA_ + ExtElements.size());
+  std::vector<int_type> list(NumMyRowsA_ + ExtElements.size());
   for (int i = 0 ; i < NumMyRowsA_ ; ++i)
     list[i] = (int_type) A().RowMatrixRowMap().GID64(i);
   for (int i = 0 ; i < (int)ExtElements.size() ; ++i)
@@ -528,7 +528,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     gidsarray.clear(); votesarray.clear();
     ghostTable.arrayify(gidsarray,votesarray);
 
-    vector<int> list(size); 
+    std::vector<int> list(size); 
     count=0;
     for (int i=0; i<ghostTable.size(); i++) {
       // if votesarray[i] == votesmax, then this GID was found during a previous overlap round
@@ -617,7 +617,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   /* ** ************************************************************************ ** */
 
   // off-node GIDs that will be in the overlap
-  vector<int> ghostElements; 
+  std::vector<int> ghostElements; 
 
   Teuchos::Array<int> gidsarray,votesarray;
   ghostTable.arrayify(gidsarray,votesarray);
@@ -638,7 +638,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     }
 
     // GIDs that will be in the overlapped matrix's column map
-    vector<int> colMapElements; 
+    std::vector<int> colMapElements; 
 
   gidsarray.clear(); votesarray.clear();
   colMapTable.arrayify(gidsarray,votesarray);
@@ -656,7 +656,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 */
 
   // build the row map containing all the nodes (original matrix + off-node matrix)
-  vector<int> rowList(NumMyRowsA_ + ghostElements.size());
+  std::vector<int> rowList(NumMyRowsA_ + ghostElements.size());
   for (int i = 0 ; i < NumMyRowsA_ ; ++i)
     rowList[i] = A().RowMatrixRowMap().GID(i);
   for (int i = 0 ; i < (int)ghostElements.size() ; ++i)
@@ -671,7 +671,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   //colMap_ = rcp( new Epetra_Map(-1, colMapElements.size(), &colList[0], 0, Comm()) );
   //for (int i = 0 ; i < (int)colMapElements.size() ; i++)
   //  colList[i] = colMapElements[i];
-  vector<int> colList(A().RowMatrixColMap().NumMyElements() + colMapElements.size());
+  std::vector<int> colList(A().RowMatrixColMap().NumMyElements() + colMapElements.size());
   int nc = A().RowMatrixColMap().NumMyElements();
   for (int i = 0 ; i < nc; i++)
     colList[i] = A().RowMatrixColMap().GID(i);
@@ -1214,7 +1214,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     gidsarray.clear(); votesarray.clear();
     ghostTable.arrayify(gidsarray,votesarray);
 
-    vector<int> list(size); 
+    std::vector<int> list(size); 
     count=0;
     for (int i=0; i<ghostTable.size(); i++) {
       // if votesarray[i] == votesmax, then this GID was found during a previous overlap round
@@ -1303,7 +1303,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   /* ** ************************************************************************ ** */
 
   // off-node GIDs that will be in the overlap
-  vector<int> ghostElements; 
+  std::vector<int> ghostElements; 
 
   Teuchos::Array<int> gidsarray,votesarray;
   ghostTable.arrayify(gidsarray,votesarray);
@@ -1324,7 +1324,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
     }
 
     // GIDs that will be in the overlapped matrix's column map
-    vector<int> colMapElements; 
+    std::vector<int> colMapElements; 
 
   gidsarray.clear(); votesarray.clear();
   colMapTable.arrayify(gidsarray,votesarray);
@@ -1342,7 +1342,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
 */
 
   // build the row map containing all the nodes (original matrix + off-node matrix)
-  vector<int> rowList(NumMyRowsA_ + ghostElements.size());
+  std::vector<int> rowList(NumMyRowsA_ + ghostElements.size());
   for (int i = 0 ; i < NumMyRowsA_ ; ++i)
     rowList[i] = A().RowMatrixRowMap().GID(i);
   for (int i = 0 ; i < (int)ghostElements.size() ; ++i)
@@ -1357,7 +1357,7 @@ Ifpack_OverlappingRowMatrix(const RCP<const Epetra_RowMatrix>& Matrix_in,
   //colMap_ = rcp( new Epetra_Map(-1, colMapElements.size(), &colList[0], 0, Comm()) );
   //for (int i = 0 ; i < (int)colMapElements.size() ; i++)
   //  colList[i] = colMapElements[i];
-  vector<int> colList(A().RowMatrixColMap().NumMyElements() + colMapElements.size());
+  std::vector<int> colList(A().RowMatrixColMap().NumMyElements() + colMapElements.size());
   int nc = A().RowMatrixColMap().NumMyElements();
   for (int i = 0 ; i < nc; i++)
     colList[i] = A().RowMatrixColMap().GID(i);
@@ -1736,8 +1736,8 @@ int Ifpack_OverlappingRowMatrix::
 Multiply(bool TransA, const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
   int NumVectors = X.NumVectors();
-  vector<int> Ind(MaxNumEntries_);
-  vector<double> Val(MaxNumEntries_);
+  std::vector<int> Ind(MaxNumEntries_);
+  std::vector<double> Val(MaxNumEntries_);
 
   Y.PutScalar(0.0);
 

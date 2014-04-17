@@ -51,6 +51,7 @@
 
 #include <Xpetra_Export.hpp>
 #include <Xpetra_Import.hpp>
+#include <Xpetra_Matrix.hpp>
 
 #include "MueLu_PerfUtils_decl.hpp"
 

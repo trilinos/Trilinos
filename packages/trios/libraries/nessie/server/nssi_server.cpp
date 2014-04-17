@@ -1291,13 +1291,19 @@ int nssi_process_rpc_request(nssi_svc_rpc_request *rpc_req)
      ** don't return error, because some operations are meant to fail
      */
     log_debug(debug_level, "calling the server function"
-            " for request %d (id=%lu, opcode=%d, func=%p)",
+            " for request %d (id=%lu, opcode=%d, func=%p, obj=%p)",
             req_count, header.id, header.opcode,
-            svc_op.func);
+            svc_op.func, svc_op.obj);
 
     // is reentrant??
     trios_start_timer(call_time);
-    rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+    if (svc_op.func) {
+        rc = svc_op.func(header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+    } else if (svc_op.obj) {
+        rc = svc_op.obj->doRPC(svc_op.opcode, header.id, &caller, op_args, req_args->shadow_data_hdl, &header.res_addr);
+    } else {
+        rc = NSSI_ENOENT;
+    }
     trios_stop_timer("svc_op", call_time);
     if (rc != NSSI_OK) {
         log_info(rpc_debug_level,

@@ -523,6 +523,7 @@ SolverFactory<Scalar, MV, OP>::SolverFactory()
   // alias requires modifying the user's parameter list if necessary.
   // This is a good idea because users may not know about the
   // parameter, or may have forgotten.
+  aliasToCanonicalName_["Block GMRES"] = "Block GMRES";
   aliasToCanonicalName_["Flexible GMRES"] = "Block GMRES";
   aliasToCanonicalName_["CG"] = "Pseudoblock CG";
   aliasToCanonicalName_["PseudoBlockCG"] = "Pseudoblock CG";

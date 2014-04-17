@@ -63,6 +63,27 @@
 namespace Kokkos {
 namespace Impl {
 
+namespace {
+
+bool cuda_launch_blocking()
+{
+  const char * env = getenv("CUDA_LAUNCH_BLOCKING");
+  if (env == 0) return false;
+
+  return atoi(env);
+}
+
+
+}
+
+void cuda_device_synchronize()
+{
+  static const bool launch_blocking = cuda_launch_blocking();
+
+  if (!launch_blocking) {
+    CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+  }
+}
 
 void cuda_internal_error_throw( cudaError e , const char * name, const char * file, const int line )
 {
@@ -308,7 +329,7 @@ void CudaInternal::initialize( int cuda_device_id )
 
     CUDA_SAFE_CALL( cudaSetDevice( m_cudaDev ) );
     CUDA_SAFE_CALL( cudaDeviceReset() );
-    CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+    Kokkos::Impl::cuda_device_synchronize();
 
     //----------------------------------
     // Maximum number of warps,
@@ -449,7 +470,7 @@ CudaInternal::scratch_unified( const Cuda::size_type size )
     const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
 
     if ( allocate || deallocate ) {
-      CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+      Kokkos::Impl::cuda_device_synchronize();
     }
 
     if ( deallocate ) {
@@ -567,7 +588,7 @@ bool Cuda::wake() { return true ; }
 
 void Cuda::fence()
 { 
-  CUDA_SAFE_CALL( cudaDeviceSynchronize() );
+  Kokkos::Impl::cuda_device_synchronize();
 }
 
 unsigned Cuda::team_max()

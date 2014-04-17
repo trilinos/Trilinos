@@ -102,12 +102,14 @@ initialize(const std::string & scatterName,
 
   // build dependent fields
   scatterFields_.resize(names.size());
-  stkFields_.resize(names.size());
   for (std::size_t fd = 0; fd < names.size(); ++fd) {
     scatterFields_[fd] = 
       PHX::MDField<ScalarT,Cell,NODE>(names[fd],basis->functional);
     this->addDependentField(scatterFields_[fd]);
   }
+
+  // determine if this is a cell field or not
+  cellFields_ = basis->getElementSpace()==panzer::PureBasis::CONST;
 
   // setup a dummy field to evaluate
   PHX::Tag<ScalarT> scatterHolder(scatterName,Teuchos::rcp(new PHX::MDALayout<panzer::Dummy>(0)));
@@ -123,8 +125,6 @@ postRegistrationSetup(typename TraitsT::SetupData d,
 {
   for (std::size_t fd = 0; fd < scatterFields_.size(); ++fd) {
     std::string fieldName = scatterFields_[fd].fieldTag().name();
-
-    stkFields_[fd] = mesh_->getMetaData()->get_field<VariableField>(fieldName);
 
     // setup the field data object
     this->utils.setFieldData(scatterFields_[fd],fm);
@@ -151,8 +151,12 @@ evaluateFields(panzer::Traits::EvalData workset)
       double scaling = (scaling_.size()>0) ? scaling_[fieldIndex] : 1.0;
 
       // write field to the STK mesh object
-      mesh_->setSolutionFieldData(scatterFields_[fieldIndex].fieldTag().name(),blockId,
-                                  localCellIds,scatterFields_[fieldIndex],scaling);
+      if(!cellFields_)
+        mesh_->setSolutionFieldData(scatterFields_[fieldIndex].fieldTag().name(),blockId,
+                                    localCellIds,scatterFields_[fieldIndex],scaling);
+      else
+        mesh_->setCellFieldData(scatterFields_[fieldIndex].fieldTag().name(),blockId,
+                                localCellIds,scatterFields_[fieldIndex],scaling);
    }
 }
 

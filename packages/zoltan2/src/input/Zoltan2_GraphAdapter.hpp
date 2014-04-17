@@ -174,9 +174,7 @@ public:
 
   /*! \brief  Provide a pointer to the vertex weights, if any.
       \param weights is the list of weights of the given index for
-           the vertices returned in getVertexIDsView().  If weights for
-           this index are to be uniform for all vertices in the
-           global problem, the \c weights should be a NULL pointer.
+           the vertices returned in getVertexIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerVertex().
    */
@@ -258,7 +256,7 @@ public:
    *  Also sets to adjacencyEntityType to something reasonable:  opposite of
    *  primaryEntityType.
    */
-  void setPrimaryEntityType(string typestr) {
+  void setPrimaryEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->primaryEntityType = GRAPH_VERTEX;
       this->adjacencyEntityType = GRAPH_EDGE;
@@ -289,7 +287,7 @@ public:
    *  Also sets to primaryEntityType to something reasonable:  opposite of
    *  adjacencyEntityType.
    */
-  void setAdjacencyEntityType(string typestr) {
+  void setAdjacencyEntityType(std::string typestr) {
     if (typestr == "vertex") {
       this->adjacencyEntityType = GRAPH_VERTEX;
       this->primaryEntityType = GRAPH_EDGE;
