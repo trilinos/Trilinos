@@ -533,7 +533,7 @@ GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr()
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP>::
 GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
-	     const Teuchos::RCP<Teuchos::ParameterList>& pl)
+             const Teuchos::RCP<Teuchos::ParameterList>& pl)
 {
   // Initialize local pointers to null, and initialize local variables
   // to default values.
@@ -1531,31 +1531,57 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           Teuchos::SerialDenseMatrix<int,ScalarType> HPtmp( Teuchos::View, *HP_, p+1, keff );
           HPtmp.multiply( Teuchos::NO_TRANS, Teuchos::NO_TRANS, one, Htmp, *PPtmp, zero );
 
-          // Step #1.5: Perform workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
+          // Step #1.5: Perform workspace size query for QR
+          // factorization of HP.  On input, lwork must be -1.
+          // _GEQRF will put the workspace size in work_[0].
           int lwork = -1;
-          tau_.resize(keff);
-          lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+          tau_.resize (keff);
+          lapack.GEQRF (HPtmp.numRows (), HPtmp.numCols (), HPtmp.values (),
+                        HPtmp.stride (), &tau_[0], &work_[0], lwork, &info);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve:"
+            " LAPACK's _GEQRF failed to compute a workspace size.");
 
           // Step #2: Compute QR factorization of HP
-          lwork = std::abs(work_[0]);
-          work_.resize(lwork);
-          lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+          //
+          // NOTE (mfh 16 Apr 2014) LAPACK promises that the value of
+          // work_[0] after the workspace query will fit in int.  This
+          // justifies the cast.  We call real() first because
+          // static_cast from std::complex to int doesn't work.
+          lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
+          work_.resize (lwork); // Allocate workspace for the QR factorization
+          lapack.GEQRF (HPtmp.numRows (), HPtmp.numCols (), HPtmp.values (),
+                        HPtmp.stride (), &tau_[0], &work_[0], lwork, &info);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve:"
+            " LAPACK's _GEQRF failed to compute a QR factorization.");
 
           // Step #3: Explicitly construct Q and R factors
           // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
           Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff, keff );
-          for(int ii=0;ii<keff;ii++) { for(int jj=ii;jj<keff;jj++) Rtmp(ii,jj) = HPtmp(ii,jj); }
-          //lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-	  lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
+          for (int ii = 0; ii < keff; ++ii) {
+            for (int jj = ii; jj < keff; ++jj) {
+              Rtmp(ii,jj) = HPtmp(ii,jj);
+            }
+          }
+          // NOTE (mfh 16 Apr 2014): Teuchos::LAPACK's wrapper for
+          // UNGQR dispatches to the correct Scalar-specific routine.
+          // It calls {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if
+          // Scalar is complex.
+          lapack.UNGQR (HPtmp.numRows (), HPtmp.numCols (), HPtmp.numCols (),
+                        HPtmp.values (), HPtmp.stride (), &tau_[0], &work_[0],
+                        lwork, &info);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+            "LAPACK's _UNGQR failed to construct the Q factor.");
 
           // Now we have [Q,R] = qr(H*P)
 
           // Now compute C = V(:,1:p+1) * Q
-          index.resize( p+1 );
-          for (int ii=0; ii < (p+1); ++ii) { index[ii] = ii; }
+          index.resize (p + 1);
+          for (int ii = 0; ii < (p+1); ++ii) {
+            index[ii] = ii;
+          }
           Vtmp = MVT::CloneView( *V_, index ); // need new view into V (p+1 vectors now; needed p above)
           MVT::MvTimesMatAddMv( one, *Vtmp, HPtmp, zero, *Ctmp );
 
@@ -1566,18 +1592,30 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           // Step #1: First, compute LU factorization of R
           ipiv_.resize(Rtmp.numRows());
           lapack.GETRF(Rtmp.numRows(),Rtmp.numCols(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK _GETRF failed to compute an LU factorization.");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+            "LAPACK's _GETRF failed to compute an LU factorization.");
+
+          // FIXME (mfh 16 Apr 2014) We have to compute the explicit
+          // inverse of R here because Belos::MultiVecTraits doesn't
+          // have a triangular solve (where the triangular matrix is
+          // globally replicated and the "right-hand side" is the
+          // distributed MultiVector).
 
           // Step #2: Form inv(R)
           lwork = Rtmp.numRows();
           work_.resize(lwork);
           lapack.GETRI(Rtmp.numRows(),Rtmp.values(),Rtmp.stride(),&ipiv_[0],&work_[0],lwork,&info);
-          TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,  "Belos::GCRODRSolMgr::solve(): LAPACK _GETRI failed to invert triangular matrix.");
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+            "LAPACK's _GETRI failed to invert triangular matrix.");
 
           // Step #3: Let U = U * R^{-1}
           MVT::MvTimesMatAddMv( one, *U1tmp, Rtmp, zero, *Utmp );
 
-          printer_->stream(Debug) << " Generated recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
+          printer_->stream(Debug)
+            << " Generated recycled subspace using RHS index " << currIdx[0]
+            << " of dimension " << keff << std::endl << std::endl;
 
         }  // if (recycledBlocks_ < p+1)
 
@@ -1588,14 +1626,12 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
           // Update indices for the linear systems to be solved.
           numRHS2Solve -= 1;
-          if ( numRHS2Solve > 0 ) {
+          if (numRHS2Solve > 0) {
             currIdx[0]++;
-
-            // Set the next indices.
-            problem_->setLSIndex( currIdx );
+            problem_->setLSIndex (currIdx); // Set the next indices
           }
           else {
-            currIdx.resize( numRHS2Solve );
+            currIdx.resize (numRHS2Solve);
           }
 
           continue;
@@ -1675,16 +1711,21 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
             buildRecycleSpace2(gcrodr_iter);
 
-            printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
+            printer_->stream(Debug)
+              << " Generated new recycled subspace using RHS index "
+              << currIdx[0] << " of dimension " << keff << std::endl
+              << std::endl;
 
             // NOTE:  If we have hit the maximum number of restarts then quit
-            if ( numRestarts >= maxRestarts_ ) {
+            if (numRestarts >= maxRestarts_) {
               isConverged = false;
               break; // break from while(1){gcrodr_iter->iterate()}
             }
             numRestarts++;
 
-            printer_->stream(Debug) << " Performing restart number " << numRestarts << " of " << maxRestarts_ << std::endl << std::endl;
+            printer_->stream(Debug)
+              << " Performing restart number " << numRestarts << " of "
+              << maxRestarts_ << std::endl << std::endl;
 
             // Create the restart vector (first block in the current Krylov basis)
             problem_->computeCurrPrecResVec( &*r_ );
@@ -1717,7 +1758,9 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
           ////////////////////////////////////////////////////////////////////////////////////
 
           else {
-            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,"Belos::GCRODRSolMgr::solve(): Invalid return from GCRODRIter::iterate().");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+              true, std::logic_error, "Belos::GCRODRSolMgr::solve: "
+              "Invalid return from GCRODRIter::iterate().");
           }
         }
         catch (const GCRODRIterOrthoFailure &e) {
@@ -1730,10 +1773,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
             isConverged = false;
           break;
         }
-        catch (const std::exception &e) {
-          printer_->stream(Errors) << "Error! Caught exception in GCRODRIter::iterate() at iteration "
-                                   << gcrodr_iter->getNumIters() << std::endl
-                                   << e.what() << std::endl;
+        catch (const std::exception& e) {
+          printer_->stream(Errors)
+            << "Error! Caught exception in GCRODRIter::iterate() at iteration "
+            << gcrodr_iter->getNumIters() << std::endl << e.what() << std::endl;
           throw;
         }
       }
@@ -1751,27 +1794,24 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
 
       if (!builtRecycleSpace_) {
         buildRecycleSpace2(gcrodr_iter);
-        printer_->stream(Debug) << " Generated new recycled subspace using RHS index " << currIdx[0] << " of dimension " << keff << std::endl << std::endl;
+        printer_->stream(Debug)
+          << " Generated new recycled subspace using RHS index " << currIdx[0]
+          << " of dimension " << keff << std::endl << std::endl;
       }
 
       // Update indices for the linear systems to be solved.
       numRHS2Solve -= 1;
-      if ( numRHS2Solve > 0 ) {
+      if (numRHS2Solve > 0) {
         currIdx[0]++;
-
-        // Set the next indices.
-        problem_->setLSIndex( currIdx );
+        problem_->setLSIndex (currIdx); // Set the next indices
       }
       else {
-        currIdx.resize( numRHS2Solve );
+        currIdx.resize (numRHS2Solve);
       }
-
-    }// while ( numRHS2Solve > 0 )
-
+    } // while (numRHS2Solve > 0)
   }
 
-  // print final summary
-  sTest_->print( printer_->stream(FinalSummary) );
+  sTest_->print (printer_->stream (FinalSummary)); // print final summary
 
   // print timing information
 #ifdef BELOS_TEUCHOS_TIME_MONITOR
@@ -1780,10 +1820,10 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
   // the work even if it's passed a "black hole" output stream.
   if (verbosity_ & TimingDetails)
     Teuchos::TimeMonitor::summarize( printer_->stream(TimingDetails) );
-#endif
+#endif // BELOS_TEUCHOS_TIME_MONITOR
 
   // get iteration information for this solve
-  numIters_ = maxIterTest_->getNumIters();
+  numIters_ = maxIterTest_->getNumIters ();
 
   // Save the convergence test value ("achieved tolerance") for this
   // solve.  This solver (unlike BlockGmresSolMgr) always has two
@@ -1813,10 +1853,7 @@ ReturnType GCRODRSolMgr<ScalarType,MV,OP>::solve() {
     achievedTol_ = *std::max_element (pTestValues->begin(), pTestValues->end());
   }
 
-  if (!isConverged) {
-    return Unconverged; // return from GCRODRSolMgr::solve()
-  }
-  return Converged; // return from GCRODRSolMgr::solve()
+  return isConverged ? Converged : Unconverged; // return from solve()
 }
 
 //  Given existing recycle space and Krylov space, build new recycle space
@@ -2032,7 +2069,7 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
   //lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
   //            vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &info);
   lapack.GEEV('N', 'V', m, harmHH.values(), harmHH.stride(), &wr[0], &wi[0],
-	      vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
+              vl, ldvl, vr.values(), vr.stride(), &work[0], lwork, &rwork[0], &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK GEEV failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
@@ -2050,31 +2087,31 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs1(int m,
       PP(j,i) = vr(j,iperm[i]);
     }
   }
-  
+
   if(scalarTypeIsComplex==false) {
 
     // Determine exact size for PP (i.e., determine if we need to store an additional vector)
     if (wi[iperm[recycledBlocks_-1]] != 0.0) {
       int countImag = 0;
       for ( i=0; i<recycledBlocks_; ++i ) {
-	if (wi[iperm[i]] != 0.0)
-	  countImag++;
+        if (wi[iperm[i]] != 0.0)
+          countImag++;
       }
       // Check to see if this count is even or odd:
       if (countImag % 2)
-	xtraVec = true;
+        xtraVec = true;
     }
 
     if (xtraVec) { // we need to store one more vector
       if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
-	for( j=0; j<m; ++j ) {   // so get the "imag" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
-	}
+        for( j=0; j<m; ++j ) {   // so get the "imag" component
+          PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+        }
       }
       else { //  I picked the "imag" component
-	for( j=0; j<m; ++j ) {   // so get the "real" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
-	}
+        for( j=0; j<m; ++j ) {   // so get the "real" component
+          PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
+        }
       }
     }
 
@@ -2176,9 +2213,9 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
   //             &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
   //             &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &iwork[0], bwork, &info);
   lapack.GGEVX(balanc, jobvl, jobvr, sense, ld, A.values(), ld, B.values(), ld, &wr[0], &wi[0],
-               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0], 
+               &beta[0], vl, ldvl, vr.values(), ldvr, &ilo, &ihi, &lscale[0], &rscale[0],
                &abnrm, &bbnrm, &rconde[0], &rcondv[0], &work[0], lwork, &rwork[0],
-	       &iwork[0], bwork, &info);
+               &iwork[0], bwork, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve(): LAPACK GGEVX failed to compute eigensolutions.");
 
   // Construct magnitude of each harmonic Ritz value
@@ -2198,36 +2235,36 @@ int GCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecs2(int keffloc, int m,
       PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
     }
   }
-  
+
   if(scalarTypeIsComplex==false) {
-    
+
     // Determine exact size for PP (i.e., determine if we need to store an additional vector)
     if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
       int countImag = 0;
       for ( i=ld-recycledBlocks_; i<ld; i++ ) {
-	if (wi[iperm[i]] != 0.0)
-	  countImag++;
+        if (wi[iperm[i]] != 0.0)
+          countImag++;
       }
       // Check to see if this count is even or odd:
       if (countImag % 2)
-	xtraVec = true;
+        xtraVec = true;
     }
-    
+
     if (xtraVec) { // we need to store one more vector
       if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
-	for( j=0; j<ld; j++ ) {   // so get the "imag" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
-	}
+        for( j=0; j<ld; j++ ) {   // so get the "imag" component
+          PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+        }
       }
       else { // I picked the "imag" component
-	for( j=0; j<ld; j++ ) {   // so get the "real" component
-	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
-	}
+        for( j=0; j<ld; j++ ) {   // so get the "real" component
+          PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
+        }
       }
     }
-    
+
   }
-  
+
   // Return whether we needed to store an additional vector
   if (xtraVec) {
     return recycledBlocks_+1;
