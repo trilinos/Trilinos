@@ -378,6 +378,17 @@ namespace MueLu {
         @return boolean array.  The ith entry is true iff row i is a Dirichlet row.
     */
     static Teuchos::ArrayRCP<const bool> DetectDirichletRows(const Matrix& A, const Magnitude& tol = Teuchos::ScalarTraits<SC>::zero());
+
+    /*! @brief Set seed for random number generator.
+
+      Distribute the seeds evenly in [1,INT_MAX-1].  This guarantees nothing
+      about where random number streams on difference processes will intersect.
+      This does avoid overflow situations in parallel when multiplying by a PID.
+      It also avoids the pathological case of having the *same* random number stream
+      on each process.
+    */
+
+    static void SetRandomSeed(const Teuchos::Comm<int> &comm);
   }; // class Utils
 
 #ifdef HAVE_MUELU_EPETRA

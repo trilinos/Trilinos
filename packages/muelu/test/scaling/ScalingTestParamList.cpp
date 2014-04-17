@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 
       {
         // we set seed for reproducibility
-        X->setSeed(846930886);
+        Utils::SetRandomSeed(*comm);
         X->randomize();
         A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
