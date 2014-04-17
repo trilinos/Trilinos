@@ -1819,46 +1819,60 @@ Usage::
 Every argument in this macro is optional.  The arguments that apply a package
 itself are:
 
-* **LIB_REQUIRED_PACKAGES:** List of upstream packages that must be enabled
-  in order to build and use the libraries (or capabilities) in this
-  package.
+  ``LIB_REQUIRED_PACKAGES``
 
-* **LIB_OPTIONAL_PACKAGES:** List of additional optional upstream packages
-  that can be used in this package if enabled.  These upstream packages need
-  not be enabled in order to use this package but not enabling one or more
-  of these optional upstream packages will result in diminished capabilities
-  of this package.
+    List of upstream packages that must be enabled in order to build and use
+    the libraries (or capabilities) in this package.
+ 
+  ``LIB_OPTIONAL_PACKAGES``
 
-* **TEST_REQUIRED_PACKAGES:** List of additional upstream packages that must
-  be enabled in order to build and/or run the tests and/or examples in this
-  packages.  If any of these upstream packages is not enabled, then there
-  will be no tests or examples defined or run for this package.
+    List of additional optional upstream packages that can be used in this
+    package if enabled.  These upstream packages need not be enabled in
+    order to use this package but not enabling one or more of these optional
+    upstream packages will result in diminished capabilities of this
+    package.
+ 
+  ``TEST_REQUIRED_PACKAGES``
 
-* **TEST_OPTIONAL_PACKAGES:** List of additional optional upstream packages
-  that can be used by the tests in this package.  These upstream packages
-  need not be enabled in order to run basic tests for this package.
-  Typically, extra tests that depend on optional test packages involve
-  integration testing of some type.
+    List of additional upstream packages that must be enabled in order to
+    build and/or run the tests and/or examples in this packages.  If any of
+    these upstream packages is not enabled, then there will be no tests or
+    examples defined or run for this package.
+ 
+  ``TEST_OPTIONAL_PACKAGES``
 
-* **LIB_REQUIRED_TPLS:** List of upstream TPLs that must be enabled in order
-  to build and use the libraries (or capabilities) in this package.
+    List of additional optional upstream packages that can be used by the
+    tests in this package.  These upstream packages need not be enabled in
+    order to run basic tests for this package.  Typically, extra tests that
+    depend on optional test packages involve integration testing of some
+    type.
+ 
+  `LIB_REQUIRED_TPLS``
 
-* **LIB_OPTIONAL_TPLS:** List of additional optional upstream TPLs that can
-  be used in this package if enabled.  These upstream TPLs need not be
-  enabled in order to use this package but not enabling one or more of these
-  optional upstream TPLs will result in diminished capabilities of this
-  package.
+    List of upstream TPLs that must be enabled in order to build and use the
+    libraries (or capabilities) in this package.
+ 
+  ``LIB_OPTIONAL_TPLS``
 
-* **TEST_REQUIRED_TPLS:** List of additional upstream TPLs that must
-  be enabled in order to build and/or run the tests and/or examples in this
-  packages.  If any of these upstream TPLs is not enabled, then there
-  will be no tests or examples defined or run for this package.
+    List of additional optional upstream TPLs that can be used in this
+    package if enabled.  These upstream TPLs need not be enabled in order to
+    use this package but not enabling one or more of these optional upstream
+    TPLs will result in diminished capabilities of this package.
+ 
+  ``TEST_REQUIRED_TPLS``
 
-* **TEST_OPTIONAL_TPLS:** List of additional optional upstream TPLs
-  that can be used by the tests in this package.  These upstream TPLs
-  need not be enabled in order to run basic tests for this package.
-  Typically, extra tests that depend on optional test TPLs involve
-  integration testing of some type.
+    List of additional upstream TPLs that must be enabled in order to build
+    and/or run the tests and/or examples in this packages.  If any of these
+    upstream TPLs is not enabled, then there will be no tests or examples
+    defined or run for this package.
+ 
+  ``TEST_OPTIONAL_TPLS``
+
+    List of additional optional upstream TPLs
+    that can be used by the tests in this package.  These upstream TPLs
+    need not be enabled in order to run basic tests for this package.
+    Typically, extra tests that depend on optional test TPLs involve
+    integration testing of some type.
 
 Only upstream SE packages can be listed (as defined by the order the
 packages are listed in `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in the
@@ -1897,49 +1911,54 @@ If some upstream packages are allowed to be missing, this can be specified
 by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
 
 A top-level package can also have subpackages.  In this case, the following
-varible must be set:
+argument must be set:
 
-* **SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:** 2D array with rows listing
-  the subpackages and the columns:
+  .. _SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:
 
-  * **SUBPACKAGE:** The name of the subpackage <spkg_name>.  The full SE
-    package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The full SE
-    package name is what is used in listing dependenices in other SE
-    packages.
+  ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS``
 
-  * **DIRS:** The subdirectory <spkg_dir> relative to the parent package's
-    base directory.  All of the contents of the subpackage should be under
-    this subdirectory.  This is assumed by the TriBITS testing support
-    software when mapping modified files to SE packages that need to be
-    tested.
+    2D array with rows listing the subpackages and the 4 columns:
 
-  * **CLASSIFICATIONS**: The test group PT, ST, EX and the maturity level
-    EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a coma ',' with no
-    spaces in between (e.g. "PT,GPM").  These have exactly the name meaning
-    as for full packages (see
-    `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
-
-  * **OPTREQ:** Determines if the outer parent package has an OPTIONAL or
-    REQUIRED dependence on this subpackage.
+    * **SUBPACKAGE** (Column 0): The name of the subpackage <spkg_name>.
+      The full SE package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The
+      full SE package name is what is used in listing dependenices in other
+      SE packages.
+   
+    * **DIRS** (Column 1): The subdirectory <spkg_dir> relative to the
+      parent package's base directory.  All of the contents of the
+      subpackage should be under this subdirectory.  This is assumed by the
+      TriBITS testing support software when mapping modified files to SE
+      packages that need to be tested.
+   
+    * **CLASSIFICATIONS** (Column 2): The test group PT, ST, EX and the
+      maturity level EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a
+      coma ',' with no spaces in between (e.g. "PT,GPM").  These have
+      exactly the name meaning as for full packages (see
+      `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
+   
+    * **OPTREQ** (Column 3): Determines if the outer parent package has an
+      OPTIONAL or REQUIRED dependence on this subpackage.
 
 Other variables that this macro handles:
 
-* **REGRESSION_EMAIL_LIST:** The email list that is used to send CDash error
-  messages.  If this is missing, then the email list that CDash errors go to
-  is determined by other means (see `CDash regression email addresses`_).
+  ``REGRESSION_EMAIL_LIST``
+
+    The email list that is used to send CDash error messages.  If this is
+    missing, then the email list that CDash errors go to is determined by
+    other means (see `CDash regression email addresses`_).
 
 NOTE: All this macro really does is to just define the variables:
 
-* LIB_REQUIRED_DEP_PACKAGES
-* LIB_OPTIONAL_DEP_PACKAGES
-* TEST_REQUIRED_DEP_PACKAGES
-* TEST_OPTIONAL_DEP_PACKAGES
-* LIB_REQUIRED_DEP_TPLS
-* LIB_OPTIONAL_DEP_TPLS
-* TEST_REQUIRED_DEP_TPLS
-* TEST_OPTIONAL_DEP_TPLS
-* REGRESSION_EMAIL_LIST
-* SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
+* ``LIB_REQUIRED_DEP_PACKAGES``
+* ``LIB_OPTIONAL_DEP_PACKAGES``
+* ``TEST_REQUIRED_DEP_PACKAGES``
+* ``TEST_OPTIONAL_DEP_PACKAGES``
+* ``LIB_REQUIRED_DEP_TPLS``
+* ``LIB_OPTIONAL_DEP_TPLS``
+* ``TEST_REQUIRED_DEP_TPLS``
+* ``TEST_OPTIONAL_DEP_TPLS``
+* ``REGRESSION_EMAIL_LIST``
+* ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS``
 
 which are then read by the TriBITS cmake code to build the package
 dependency graph.  The advantage of using this macro instead of just
