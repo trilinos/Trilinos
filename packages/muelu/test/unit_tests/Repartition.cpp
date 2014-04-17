@@ -798,15 +798,11 @@ namespace MueLuTests {
 
   GlobalOrdinal myrandom (GlobalOrdinal i) { return std::rand()%i;}
 
-// JJH 17Feb2014  Disabling for now.  This is hanging in the nightly
-// tests on typhon, which is playing havoc w/ the other tests.
-#ifdef MUELU_NOT_WORKING
   TEUCHOS_UNIT_TEST(Repartition, CoordinateMap)
   {
     out << "version: " << MueLu::Version() << std::endl;
     out << "Tests that repartitioning is invariant to map specified in coordinates." << std::endl;
     out << std::endl;
-    return;
 
     /*
       This test checks that MueLu successfully ignores the map of the coordinate MultiVector (MV).
@@ -837,7 +833,7 @@ namespace MueLuTests {
     matrixList.set("top boundary"   , "Neumann");
     matrixList.set("front boundary" , "Neumann");
     matrixList.set("back boundary"  , "Neumann");
-          
+
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
         Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, matrixList);
     RCP<Matrix> A = Pr->BuildMatrix();
@@ -849,8 +845,6 @@ namespace MueLuTests {
     H->GetLevel(0)->Set("Coordinates", coordinates);
     mueLuFactory->SetupHierarchy(*H);
     ParameterList stats1 = H->print();
-    H = Teuchos::null;
-    comm->barrier();
 
     //build a map that is a "randomly" permuted version of the correct
     //coordinate map.  This map will be used to build the "bad" coordinates.
@@ -873,6 +867,7 @@ namespace MueLuTests {
     xcoords = Teuchos::null;
     ycoords = Teuchos::null;
 
+    mueLuFactory = rcp(new EasyParameterListInterpreter("testCoordinates.xml", *comm));
     H = mueLuFactory->CreateHierarchy();
     H->GetLevel(0)->Set("A", A);
     H->GetLevel(0)->Set("Coordinates", badCoordinates);
@@ -884,6 +879,5 @@ namespace MueLuTests {
     TEST_EQUALITY(cplx1, cplx2);
 
   } // CoordinateMap
-#endif
 
 } // namespace MueLuTests
