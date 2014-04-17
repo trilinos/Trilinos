@@ -58,6 +58,9 @@
 /* Define when enabling KokkosContainers in Tpetra */
 /* #undef HAVE_TPETRA_KOKKOSCONTAINERS */
 
+/* Define when enabling KokkosContainers in Tpetra */
+/* #undef HAVE_TPETRA_KOKKOSMPICOMM */
+
 /* Define when enabling Kokkos::View DistObject in Tpetra */
 /* #undef TPETRA_ENABLE_KOKKOS_DISTOBJECT */
 
