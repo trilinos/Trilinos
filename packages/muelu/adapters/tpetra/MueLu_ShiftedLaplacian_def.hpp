@@ -144,7 +144,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
  
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
   P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   PreconditioningMatrixSet_=true;
@@ -164,7 +164,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setst
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK) {
 
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
   K_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   StiffMatrixSet_=true;
@@ -184,7 +184,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setma
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM) {
 
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
   M_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   MassMatrixSet_=true;
@@ -204,7 +204,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setda
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
   
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
   C_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   DampMatrixSet_=true;
