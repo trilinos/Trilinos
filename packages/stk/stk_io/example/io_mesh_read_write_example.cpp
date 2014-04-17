@@ -69,10 +69,6 @@ namespace {
 
     size_t restart_index = mesh_data.create_output_mesh(restart_filename, stk::io::WRITE_RESTART);
 
-    // Create heartbeat file of the specified format...
-    std::string heartbeat_filename = working_directory + type + ".hrt";
-    size_t heart = mesh_data.add_heartbeat_output(heartbeat_filename, hb_type);
-    
     // Iterate all fields and set them as restart fields...
     const stk::mesh::FieldVector &fields = mesh_data.meta_data().get_fields();
     for (size_t i=0; i < fields.size(); i++) {
@@ -89,6 +85,13 @@ namespace {
     std::vector<std::string> global_fields;
     mesh_data.get_global_variable_names(global_fields);
 
+    // Create heartbeat file of the specified format...
+    size_t heart = 0;
+    if (!global_fields.empty()) {
+      std::string heartbeat_filename = working_directory + type + ".hrt";
+      heart = mesh_data.add_heartbeat_output(heartbeat_filename, hb_type);
+    }
+    
     stk::util::ParameterList parameters;
     
     // For each global field name on the input database, determine the type of the field
@@ -178,7 +181,9 @@ namespace {
 	  mesh_data.end_output_step(results_index);
 
 	}
-	mesh_data.process_heartbeat_output(heart, step, time);
+	if (!global_fields.empty()) {
+	  mesh_data.process_heartbeat_output(heart, step, time);
+	}
       }
     }
   }
