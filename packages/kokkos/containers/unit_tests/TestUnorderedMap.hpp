@@ -171,24 +171,30 @@ void test_insert( uint32_t num_nodes , uint32_t num_inserts , uint32_t num_dupli
     test_insert.apply();
   }
 
+  const bool print_list = false;
+  if (print_list) {
+    Kokkos::Impl::UnorderedMapPrint<map_type> f(map);
+    f.apply();
+  }
+
   const uint32_t map_size = map.size();
 
   ASSERT_FALSE( map.failed_insert());
   {
-    EXPECT_EQ(map_size, expected_inserts);
+    EXPECT_EQ(expected_inserts, map_size);
 
     {
       uint32_t find_errors = 0;
       Impl::TestFind<const_map_type> test_find(map, num_inserts, num_duplicates);
       test_find.apply(find_errors);
-      EXPECT_EQ( find_errors, 0u);
+      EXPECT_EQ( 0u, find_errors);
     }
 
     map.begin_erase();
     Impl::TestErase<map_type,false> test_erase(map, num_inserts, num_duplicates);
     test_erase.apply();
     map.end_erase();
-    EXPECT_EQ(map.size(), 0u);
+    EXPECT_EQ(0u, map.size());
   }
 }
 

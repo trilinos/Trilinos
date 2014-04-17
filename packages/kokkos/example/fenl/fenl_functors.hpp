@@ -137,7 +137,7 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
+      size_t set_capacity = (28ull * node_count) / 2;
 
 
       {

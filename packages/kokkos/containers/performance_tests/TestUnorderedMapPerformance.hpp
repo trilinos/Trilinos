@@ -18,7 +18,11 @@ struct UnorderedMapTest
   typedef Device device_type;
   typedef Kokkos::UnorderedMap<uint32_t, uint32_t, device_type> map_type;
   typedef typename map_type::histogram_type histogram_type;
-  typedef uint32_t value_type;
+
+  struct value_type {
+    uint32_t failed_count;
+    uint32_t max_list;
+  };
 
   uint32_t capacity;
   uint32_t inserts;
@@ -38,19 +42,19 @@ struct UnorderedMapTest
     Kokkos::Impl::Timer wall_clock ;
     wall_clock.reset();
 
-    uint32_t failed_count = 0;
+    value_type v = {};
     int loop_count = 0;
     do {
       ++loop_count;
 
-      failed_count = 0;
-      Kokkos::parallel_reduce(inserts, *this, failed_count);
+      v = value_type();
+      Kokkos::parallel_reduce(inserts, *this, v);
 
-      if (failed_count > 0u) {
-        const uint32_t new_capacity = map.capacity() + ((map.capacity()*3ull)/20u) + failed_count/collisions ;
+      if (v.failed_count > 0u) {
+        const uint32_t new_capacity = map.capacity() + ((map.capacity()*3ull)/20u) + v.failed_count/collisions ;
         map.rehash( new_capacity );
       }
-    } while (failed_count > 0u);
+    } while (v.failed_count > 0u);
 
     seconds = wall_clock.seconds();
 
@@ -60,10 +64,10 @@ struct UnorderedMapTest
     case 2u: std::cout << " \033[1;31m" << loop_count << "\033[0m "; break;
     default: std::cout << " \033[0;31m" << loop_count << "\033[0m "; break;
     }
-    std::cout << std::setprecision(2) << std::fixed << std::setw(5) << (1e9*(seconds/(inserts))) << " " << std::flush;
+    std::cout << std::setprecision(2) << std::fixed << std::setw(5) << (1e9*(seconds/(inserts))) << "; " << std::flush;
 
-    //histogram.calculate();
-    //Device::fence();
+    histogram.calculate();
+    Device::fence();
   }
 
   void print(std::ostream & metrics_out, std::ostream & length_out, std::ostream & distance_out, std::ostream & block_distance_out)
@@ -95,22 +99,31 @@ struct UnorderedMapTest
 
 
   KOKKOS_INLINE_FUNCTION
-  void init( value_type & failed_count ) const { failed_count = 0; }
+  void init( value_type & v ) const
+  {
+    v.failed_count = 0;
+    v.max_list = 0;
+  }
 
   KOKKOS_INLINE_FUNCTION
-  void join( volatile value_type & failed_count, const volatile value_type & count ) const
-  { failed_count += count; }
+  void join( volatile value_type & dst, const volatile value_type & src ) const
+  {
+    dst.failed_count += src.failed_count;
+    dst.max_list = src.max_list < dst.max_list ? dst.max_list : src.max_list;
+  }
 
   KOKKOS_INLINE_FUNCTION
-  void operator()(uint32_t i, value_type & failed_count) const
+  void operator()(uint32_t i, value_type & v) const
   {
     const uint32_t key = Near ? i/collisions : i%(inserts/collisions);
-    if (map.insert(key,i).failed()) ++failed_count;
+    typename map_type::insert_result result = map.insert(key,i);
+    v.failed_count += !result.failed() ? 0 : 1;
+    v.max_list = result.list_position() < v.max_list ? v.max_list : result.list_position();
   }
 
 };
 
-#define KOKKOS_COLLECT_UNORDERED_MAP_METRICS
+//#define KOKKOS_COLLECT_UNORDERED_MAP_METRICS
 
 template <typename Device, bool Near>
 void run_performance_tests(std::string const & base_file_name)
@@ -127,20 +140,36 @@ void run_performance_tests(std::string const & base_file_name)
   std::ofstream block_distance_out( block_distance_file_name.c_str(), std::ofstream::out );
 
 
+  /*
   const double test_ratios[] = {
      0.50
    , 0.75
-   , 0.775
    , 0.80
-   , 0.825
    , 0.85
-   , 0.875
    , 0.90
-   , 0.925
+   , 0.95
    , 1.00
-   , 1.10
+   , 1.25
+   , 2.00
   };
+  */
+
+  const double test_ratios[] = { 1.00 };
+
   const int num_ratios = sizeof(test_ratios) / sizeof(double);
+
+  /*
+  const uint32_t collisions[] {
+      1
+    , 4
+    , 16
+    , 64
+  };
+  */
+
+  const uint32_t collisions[] = { 16 };
+
+  const int num_collisions = sizeof(collisions) / sizeof(uint32_t);
 
   // set up file headers
   metrics_out << "Capacity , Unique , Percent Full , Attempted Inserts , Failed Inserts , Collision Ratio , Nanoseconds/Inserts, Seconds" << std::endl;
@@ -159,19 +188,20 @@ void run_performance_tests(std::string const & base_file_name)
   block_distance_out << "\b\b\b   " << std::endl;
 
   Kokkos::Impl::Timer wall_clock ;
-  for (uint32_t collisions = 1;  collisions <= 64u; collisions = collisions << 1) {
+  for (int i=0;  i < num_collisions ; ++i) {
     wall_clock.reset();
-    std::cout << "Collisions: " << collisions << std::endl;
-    for (int i = 0; i < num_ratios; ++i) {
-      std::cout << std::setprecision(1) << std::fixed << std::setw(5) << (100.0*test_ratios[i]) << "%  " << std::flush;
-      for (uint32_t capacity = 1<<14; capacity < 1<<26; capacity = capacity << 1) {
-        uint32_t inserts = static_cast<uint32_t>(test_ratios[i]*(capacity));
+    std::cout << "Collisions: " << collisions[i] << std::endl;
+    for (int j = 0; j < num_ratios; ++j) {
+      std::cout << std::setprecision(1) << std::fixed << std::setw(5) << (100.0*test_ratios[j]) << "%  " << std::flush;
+      for (uint32_t capacity = 1<<14; capacity < 1<<25; capacity = capacity << 1) {
+        uint32_t inserts = static_cast<uint32_t>(test_ratios[j]*(capacity));
         std::cout << capacity << std::flush;
-        UnorderedMapTest<Device, Near> test(capacity, inserts*collisions, collisions);
+        UnorderedMapTest<Device, Near> test(capacity, inserts*collisions[i], collisions[i]);
         Device::fence();
-        //test.print(metrics_out, length_out, distance_out, block_distance_out);
+        test.print(metrics_out, length_out, distance_out, block_distance_out);
       }
-      std::cout << std::endl;
+      std::cout << "\b\b  " <<  std::endl;
+
     }
     std::cout << "  " << wall_clock.seconds() << " secs" << std::endl;
   }
