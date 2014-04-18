@@ -1939,22 +1939,40 @@ void GCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpace2(Teuchos::RCP<GCRODRIter<
 
   // Workspace size query for QR factorization of HP (the worksize will be placed in work_[0])
   int info = 0, lwork = -1;
-  tau_.resize(keff_new);
-  lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a workspace size.");
+  tau_.resize (keff_new);
+  lapack.GEQRF (HPtmp.numRows (), HPtmp.numCols (), HPtmp.values (),
+                HPtmp.stride (), &tau_[0], &work_[0], lwork, &info);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+    "LAPACK's _GEQRF failed to compute a workspace size.");
 
-  lwork = std::abs(work_[0]);
-  work_.resize(lwork);
-  lapack.GEQRF(HPtmp.numRows(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _GEQRF failed to compute a QR factorization.");
+  // NOTE (mfh 18 Apr 2014) LAPACK promises that the value of work_[0]
+  // after the workspace query will fit in int.  This justifies the
+  // cast.  We call real() first because static_cast from std::complex
+  // to int doesn't work.
+  lwork = std::abs (static_cast<int> (Teuchos::ScalarTraits<ScalarType>::real (work_[0])));
+  work_.resize (lwork); // Allocate workspace for the QR factorization
+  lapack.GEQRF (HPtmp.numRows (), HPtmp.numCols (), HPtmp.values (),
+                HPtmp.stride (), &tau_[0], &work_[0], lwork, &info);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+    "LAPACK's _GEQRF failed to compute a QR factorization.");
 
   // Explicitly construct Q and R factors
   // NOTE:  The upper triangular part of HP is copied into R and HP becomes Q.
   Teuchos::SerialDenseMatrix<int,ScalarType> Rtmp( Teuchos::View, *R_, keff_new, keff_new );
   for(int i=0;i<keff_new;i++) { for(int j=i;j<keff_new;j++) Rtmp(i,j) = HPtmp(i,j); }
-  //lapack.ORGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  lapack.UNGQR(HPtmp.numRows(),HPtmp.numCols(),HPtmp.numCols(),HPtmp.values(),HPtmp.stride(),&tau_[0],&work_[0],lwork,&info);
-  TEUCHOS_TEST_FOR_EXCEPTION(info != 0,GCRODRSolMgrLAPACKFailure,"Belos::GCRODRSolMgr::solve(): LAPACK _UNGQR failed to construct the Q factor.");
+
+  // NOTE (mfh 18 Apr 2014): Teuchos::LAPACK's wrapper for UNGQR
+  // dispatches to the correct Scalar-specific routine.  It calls
+  // {S,D}ORGQR if Scalar is real, and {C,Z}UNGQR if Scalar is
+  // complex.
+  lapack.UNGQR (HPtmp.numRows (), HPtmp.numCols (), HPtmp.numCols (),
+                HPtmp.values (), HPtmp.stride (), &tau_[0], &work_[0],
+                lwork, &info);
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    info != 0, GCRODRSolMgrLAPACKFailure, "Belos::GCRODRSolMgr::solve: "
+    "LAPACK's _UNGQR failed to construct the Q factor.");
 
   // Form orthonormalized C and adjust U accordingly so that C = A*U
   // C = [C V] * Q;
