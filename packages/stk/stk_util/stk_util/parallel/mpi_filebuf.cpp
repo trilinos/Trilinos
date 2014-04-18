@@ -10,6 +10,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
+#include <iostream>
 #include <stk_util/parallel/mpi_filebuf.hpp>
 #include <aprepro.h>
 #include <apr_tokenize.h>
