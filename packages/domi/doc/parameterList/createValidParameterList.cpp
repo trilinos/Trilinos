@@ -105,7 +105,7 @@ int main(int argc, char* argv[])
   //
   if (xsl_header_flag )
     *out << "<?xml-stylesheet type=\"text/xsl\" "
-         << "href=\"common/paramList/paramList.xslt\"?>\n";
+         << "href=\"common/paramList/paramList.xsl\"?>\n";
 
   //
   // Obtain the validated ParameterList and write it to the fancy
