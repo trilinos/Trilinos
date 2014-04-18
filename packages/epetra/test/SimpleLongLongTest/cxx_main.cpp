@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -100,19 +100,19 @@ int main(int argc, char *argv[])
     cout << Epetra_Version() << std::endl << std::endl;
 
   if (verbose) cout << "Processor "<<MyPID<<" of "<< NumProc
-		    << " is alive."<<endl;
+                    << " is alive."<<endl;
 
-  bool verbose1 = verbose;
+  //bool verbose1 = verbose; // unused
 
   // Redefine verbose to only print on PE 0
   if(verbose && rank!=0) verbose = false;
-  
+
   int NumMyEquations = 1;
-  long long NumGlobalEquations = NumProc; 
-  
+  long long NumGlobalEquations = NumProc;
+
   // Get update list and number of local equations from newly created Map
   long long* MyGlobalElementsLL = new long long[NumMyEquations];
-  
+
   MyGlobalElementsLL[0] = 2000000000+MyPID;
 
   // Construct a Map that puts approximately the same Number of equations on each processor
@@ -126,10 +126,10 @@ int main(int argc, char *argv[])
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
 
   int* NumNzLL = new int[NumMyEquations];
-  NumNzLL[0] = 0;  
+  NumNzLL[0] = 0;
 
   // Create int types meant to add to long long matrix for test of failure
-  int* MyIntGlobalElementsLL = new int[NumMyEquations]; 
+  int* MyIntGlobalElementsLL = new int[NumMyEquations];
   MyIntGlobalElementsLL[0] = 20000+MyPID;
 
   // Create a long long Epetra_Matrix
@@ -153,21 +153,21 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(A_LL.IndicesAreGlobal()),ierr);
   EPETRA_TEST_ERR(!(A_LL.FillComplete(false)==0),ierr);
   EPETRA_TEST_ERR(!(A_LL.IndicesAreLocal()),ierr);
-  
+
 
   // Get update list and number of local equations from newly created Map
   int* MyGlobalElementsInt = new int[NumMyEquations];
-  
+
   MyGlobalElementsInt[0] = 2000+MyPID;
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
   // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
 
   int* NumNzInt = new int[NumMyEquations];
-  NumNzInt[0] = 0; 
+  NumNzInt[0] = 0;
 
   // Create int types meant to add to long long matrix for test of failure
-  long long* MyLLGlobalElementsInt = new long long[NumMyEquations]; 
+  long long* MyLLGlobalElementsInt = new long long[NumMyEquations];
   MyLLGlobalElementsInt[0] = 2000000000+MyPID;
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -195,11 +195,11 @@ int main(int argc, char *argv[])
   EPETRA_TEST_ERR(!(A_Int.FillComplete(false)==0),ierr);
   EPETRA_TEST_ERR(!(A_Int.IndicesAreLocal()),ierr);
 #endif
-  
+
   delete [] MyGlobalElementsLL;
   delete [] NumNzLL;
   delete [] MyIntGlobalElementsLL;
-  delete [] MyGlobalElementsInt; 
+  delete [] MyGlobalElementsInt;
   delete [] NumNzInt;
   delete [] MyLLGlobalElementsInt;
 
