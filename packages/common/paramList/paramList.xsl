@@ -12,6 +12,8 @@
         <script type="text/javascript"
          src="common/paramList/js/jquery.js"></script>
         <script type="text/javascript"
+         src="common/paramList/js/iframeResizer.contentWindow.min.js"></script>
+        <script type="text/javascript"
          src="common/paramList/bootstrap/js/bootstrap.js"></script>
         <script type="text/javascript">
    $('.accordion-toggle').click(function(){
