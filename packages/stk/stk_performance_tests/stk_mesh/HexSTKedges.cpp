@@ -19,6 +19,7 @@
 
 #include <stk_mesh/base/Relation.hpp>
 #include <stk_mesh/base/Entity.hpp>
+#include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 #include <stk_mesh/base/MemoryUsage.hpp>
@@ -45,9 +46,9 @@ TEST(hex_edges, hex_edges)
   mesh_dims[1]=50; //num_elems_y
   mesh_dims[2]=50; //num_elems_z
 #else
-  mesh_dims[0]=100; //num_elems_x
-  mesh_dims[1]=100; //num_elems_y
-  mesh_dims[2]=100*numprocs; //num_elems_z
+  mesh_dims[0]=200; //num_elems_x
+  mesh_dims[1]=200; //num_elems_y
+  mesh_dims[2]=2*numprocs; //num_elems_z
 #endif
 
   std::ostringstream oss;
@@ -74,6 +75,12 @@ TEST(hex_edges, hex_edges)
 
   double create_edges_time = stk::cpu_time() - start_time;
   double total_time = mesh_create_time + create_edges_time;
+
+  //quick check to make sure all nodes got induced into the edge part.
+  const stk::mesh::Part& edgePart = fixture.getBulkData().mesh_meta_data().get_cell_topology_root_part(stk::mesh::get_cell_topology(stk::topology::LINE_2));
+  const stk::mesh::BucketVector& nodeBuckets = fixture.getBulkData().get_buckets(stk::topology::NODE_RANK, edgePart);
+  const stk::mesh::BucketVector& allNodeBuckets = fixture.getBulkData().buckets(stk::topology::NODE_RANK);
+  EXPECT_EQ(allNodeBuckets.size(), nodeBuckets.size());
 
   std::vector<size_t> mesh_counts;
   stk::mesh::comm_mesh_counts(fixture.getBulkData(), mesh_counts);

@@ -79,6 +79,12 @@ Entity declare_element( BulkData & mesh ,
 
   const EntityRank node_rank = stk::topology::NODE_RANK;
 
+  Permutation perm = static_cast<Permutation>(0);
+  OrdinalVector ordinal_scratch;
+  ordinal_scratch.reserve(64);
+  PartVector part_scratch;
+  part_scratch.reserve(64);
+
   for ( unsigned i = 0 ; i < top->node_count ; ++i ) {
     //declare node if it doesn't already exist
     Entity node = mesh.get_entity( node_rank , node_id[i]);
@@ -86,7 +92,7 @@ Entity declare_element( BulkData & mesh ,
       node = mesh.declare_entity( node_rank , node_id[i], empty );
     }
 
-    mesh.declare_relation( elem , node , i );
+    mesh.declare_relation( elem , node , i, perm, ordinal_scratch, part_scratch );
   }
   return elem ;
 }
@@ -114,19 +120,24 @@ Entity declare_element_side(
   const unsigned * const side_node_map = elem_top->side[ local_side_id ].node ;
 
   PartVector add_parts ;
+  Permutation perm = static_cast<Permutation>(0);
+  OrdinalVector ordinal_scratch;
+  ordinal_scratch.reserve(64);
+  PartVector part_scratch;
+  part_scratch.reserve(64);
 
   if ( part ) { add_parts.push_back( part ); }
 
   mesh.change_entity_parts(side, add_parts);
 
-  mesh.declare_relation( elem , side , local_side_id );
+  mesh.declare_relation( elem , side , local_side_id, perm, ordinal_scratch, part_scratch );
 
   Entity const *elem_nodes = mesh.begin_nodes(elem);
 
   for ( unsigned i = 0 ; i < side_top->node_count ; ++i )
   {
     Entity node = elem_nodes[ side_node_map[i] ];
-    mesh.declare_relation( side , node , i );
+    mesh.declare_relation( side , node , i, perm, ordinal_scratch, part_scratch );
   }
 
   return side ;
@@ -153,19 +164,24 @@ Entity declare_element_edge(
   const unsigned * const edge_node_map = elem_top->edge[ local_edge_id ].node ;
 
   PartVector add_parts ;
+  Permutation perm = static_cast<Permutation>(0);
+  OrdinalVector ordinal_scratch;
+  ordinal_scratch.reserve(64);
+  PartVector part_scratch;
+  part_scratch.reserve(64);
 
   if ( part ) { add_parts.push_back( part ); }
 
   mesh.change_entity_parts(edge, add_parts);
 
-  mesh.declare_relation( elem , edge , local_edge_id );
+  mesh.declare_relation( elem , edge , local_edge_id, perm, ordinal_scratch, part_scratch );
 
   Entity const *elem_nodes = mesh.begin_nodes(elem);
 
   for ( unsigned i = 0 ; i < edge_top->node_count ; ++i )
   {
     Entity node = elem_nodes[ edge_node_map[i] ];
-    mesh.declare_relation( edge , node , i );
+    mesh.declare_relation( edge , node , i, perm, ordinal_scratch, part_scratch );
   }
 
   return edge ;

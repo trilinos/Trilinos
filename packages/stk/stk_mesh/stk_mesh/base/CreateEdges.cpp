@@ -98,6 +98,10 @@ struct create_edge_impl
     boost::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
     EntityKeyVector edge_node_keys(EdgeTopology::num_nodes);
+    OrdinalVector ordinal_scratch;
+    ordinal_scratch.reserve(64);
+    PartVector part_scratch;
+    part_scratch.reserve(64);
 
     for (size_t ielem=0, eelem=m_bucket.size(); ielem<eelem; ++ielem) {
       {
@@ -134,6 +138,7 @@ struct create_edge_impl
         typename edge_map_type::iterator iedge = m_edge_map.find(edge_nodes);
 
         Entity edge;
+        Permutation perm = static_cast<Permutation>(0);
         if (iedge == m_edge_map.end()) {
           EntityId edge_id = m_next_edge++;
           edge = mesh.declare_entity( stk::topology::EDGE_RANK, edge_id, add_parts);
@@ -142,7 +147,7 @@ struct create_edge_impl
           const int num_edge_nodes = EdgeTopology::num_nodes;
           for (int n=0; n<num_edge_nodes; ++n) {
             Entity node = edge_nodes[n];
-            mesh.declare_relation(edge,node,n);
+            mesh.declare_relation(edge,node,n, perm, ordinal_scratch, part_scratch);
             shared_edge = shared_edge && mesh.bucket(node).shared();
           }
           if (shared_edge) {
@@ -160,7 +165,7 @@ struct create_edge_impl
         else {
           edge = iedge->second;
         }
-        mesh.declare_relation(m_bucket[ielem], edge, e);
+        mesh.declare_relation(m_bucket[ielem], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
   }
@@ -199,6 +204,10 @@ struct connect_face_impl
 
     boost::array<Entity,Topology::num_nodes> face_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
+    OrdinalVector ordinal_scratch;
+    ordinal_scratch.reserve(64);
+    PartVector part_scratch;
+    part_scratch.reserve(64);
 
     for (size_t iface=0, eface=m_bucket.size(); iface<eface; ++iface) {
       {
@@ -238,7 +247,8 @@ struct connect_face_impl
         ThrowAssert(iedge != m_edge_map.end());
 
         Entity edge = iedge->second;
-        mesh.declare_relation(m_bucket[iface], edge, e);
+        Permutation perm = static_cast<Permutation>(0);
+        mesh.declare_relation(m_bucket[iface], edge, e, perm, ordinal_scratch, part_scratch);
       }
     }
   }

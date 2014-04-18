@@ -490,10 +490,20 @@ public:
       const RelationIdentifier local_id,
       Permutation permutation = static_cast<Permutation>(0));
 
+  void declare_relation( Entity e_from ,
+      Entity e_to ,
+      const RelationIdentifier local_id,
+      Permutation permutation,
+      OrdinalVector& ordinal_scratch,
+      PartVector& part_scratch);
+
   /** \brief  Declare a collection of relations by simply iterating
    *          the input and calling declare_relation on each entry.
    */
   void declare_relation( Entity entity, const std::vector<Relation> & rel);
+
+  void declare_relation( Entity entity, const std::vector<Relation> & rel,
+                         OrdinalVector& ordinal_scratch, PartVector& part_scratch);
 
   /** \brief  Remove all relations between two entities.
    *

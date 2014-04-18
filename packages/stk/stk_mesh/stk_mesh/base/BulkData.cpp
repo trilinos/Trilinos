@@ -1768,7 +1768,7 @@ bool BulkData::internal_declare_relation(Entity e_from, Entity e_to,
                                          unsigned sync_count, bool is_back_relation,
                                          Permutation permut)
 {
-  TraceIfWatching("stk::mesh::BuilkData::declare_relation", LOG_ENTITY, entity_key(e_from));
+  TraceIfWatching("stk::mesh::BuilkData::internal_declare_relation", LOG_ENTITY, entity_key(e_from));
 
   const MeshIndex& idx = mesh_index(e_from);
 
@@ -1785,6 +1785,18 @@ void BulkData::declare_relation( Entity e_from ,
                                  Entity e_to ,
                                  const RelationIdentifier local_id ,
                                  Permutation permut)
+{
+  OrdinalVector ordinal_scratch;
+  PartVector part_scratch;
+  declare_relation(e_from, e_to, local_id, permut, ordinal_scratch, part_scratch);
+}
+
+void BulkData::declare_relation( Entity e_from ,
+                                 Entity e_to ,
+                                 const RelationIdentifier local_id ,
+                                 Permutation permut,
+                                 OrdinalVector& ordinal_scratch,
+                                 PartVector& part_scratch)
 {
   TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, entity_key(e_from));
   TraceIfWatchingDec("stk::mesh::BulkData::declare_relation", LOG_ENTITY, entity_key(e_to), 1);
@@ -1829,27 +1841,36 @@ void BulkData::declare_relation( Entity e_from ,
     this->modified(e_from);
   }
 
-  OrdinalVector add , empty ;
+  OrdinalVector empty ;
 
   // Deduce and set new part memberships:
+  ordinal_scratch.clear();
 
-  induced_part_membership(*this, e_from, empty, entity_rank(e_to), add );
+  induced_part_membership(*this, e_from, empty, entity_rank(e_to), ordinal_scratch );
 
-  PartVector addParts, emptyParts;
-  addParts.reserve(add.size());
-  for(unsigned ipart=0; ipart<add.size(); ++ipart) {
-    addParts.push_back(&m_mesh_meta_data.get_part(add[ipart]));
+  PartVector emptyParts;
+  part_scratch.clear();
+  for(unsigned ipart=0; ipart<ordinal_scratch.size(); ++ipart) {
+    part_scratch.push_back(&m_mesh_meta_data.get_part(ordinal_scratch[ipart]));
   }
 
-
-
-  internal_change_entity_parts( e_to , addParts , emptyParts );
+  internal_change_entity_parts( e_to , part_scratch , emptyParts );
 }
 
 //----------------------------------------------------------------------
 
 void BulkData::declare_relation( Entity entity ,
                                  const std::vector<Relation> & rel )
+{
+  OrdinalVector ordinal_scratch;
+  PartVector part_scratch;
+  declare_relation(entity, rel, ordinal_scratch, part_scratch);
+}
+
+void BulkData::declare_relation( Entity entity ,
+                                 const std::vector<Relation> & rel,
+                                 OrdinalVector& ordinal_scratch,
+                                 PartVector& part_scratch )
 {
   require_ok_to_modify();
 
@@ -1861,10 +1882,10 @@ void BulkData::declare_relation( Entity entity ,
     const unsigned n = i->relation_ordinal();
     const Permutation permut = static_cast<Permutation>(i->getOrientation());
     if ( entity_rank(e) < erank ) {
-      declare_relation( entity , e , n, permut );
+      declare_relation( entity , e , n, permut, ordinal_scratch, part_scratch );
     }
     else if ( erank < entity_rank(e) ) {
-      declare_relation( e , entity , n, permut );
+      declare_relation( e , entity , n, permut, ordinal_scratch, part_scratch );
     }
     else {
       ThrowErrorMsg("Given entities of the same entity rank. entity is " <<
@@ -3736,6 +3757,8 @@ void BulkData::internal_change_ghosting(
 
     std::ostringstream error_msg ;
     int error_count = 0 ;
+    OrdinalVector ordinal_scratch;
+    PartVector part_scratch;
 
     for ( unsigned rank = 0 ; rank < rank_count ; ++rank ) {
       for ( int p = 0 ; p < p_size ; ++p ) {
@@ -3786,7 +3809,7 @@ void BulkData::internal_change_ghosting(
             this->set_parallel_owner_rank( entity, owner);
           }
 
-          declare_relation( entity , relations );
+          declare_relation( entity , relations, ordinal_scratch, part_scratch );
 
           if ( ! unpack_field_values(*this, buf , entity , error_msg ) ) {
             ++error_count ;
@@ -5130,13 +5153,15 @@ void pack_induced_memberships( BulkData& bulk_data,
                                CommAll & comm ,
                                const EntityCommListInfoVector & entity_comm )
 {
+  OrdinalVector empty , induced ;
   for ( EntityCommListInfoVector::const_iterator
         i = entity_comm.begin() ; i != entity_comm.end() ; ++i ) {
 
     if ( bulk_data.in_shared( i->key , i->owner ) ) {
       // Is shared with owner, send to owner.
 
-      OrdinalVector empty , induced ;
+      empty.clear();
+      induced.clear();
 
       induced_part_membership(bulk_data, i->entity , empty , induced );
 
@@ -5272,13 +5297,19 @@ void BulkData::internal_resolve_shared_membership()
 
     comm.communicate();
 
+    OrdinalVector empty , induced_parts , current_parts , remove_parts ;
+    PartVector inducedParts, removeParts;
+
     for ( EntityCommListInfoVector::iterator
           i = m_entity_comm_list.begin() ; i != m_entity_comm_list.end() ; ++i ) {
 
       if ( i->owner == p_rank ) {
         // Receiving from all sharing processes
 
-        OrdinalVector empty , induced_parts , current_parts , remove_parts ;
+        empty.clear();
+        induced_parts.clear();
+        current_parts.clear();
+        remove_parts.clear();
 
         induced_part_membership(*this, i->entity , empty , induced_parts );
 
@@ -5310,7 +5341,8 @@ void BulkData::internal_resolve_shared_membership()
         }
 
 
-	PartVector inducedParts, removeParts;
+	inducedParts.clear();
+	removeParts.clear();
 
 	inducedParts.reserve(induced_parts.size());
 	for(unsigned ipart=0; ipart<induced_parts.size(); ++ipart) {
