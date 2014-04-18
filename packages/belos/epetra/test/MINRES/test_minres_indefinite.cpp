@@ -42,9 +42,9 @@
 // This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
 // Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
 // from the problem, if it exists, will be used instead of multiple
-// random right-hand-sides.  The initial guesses are all set to zero. 
+// random right-hand-sides.  The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this example. 
+// NOTE: No preconditioner is used in this example.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -62,8 +62,8 @@
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
 
-int 
-main(int argc, char *argv[]) 
+int
+main(int argc, char *argv[])
 {
   using Teuchos::CommandLineProcessor;
   using Teuchos::ParameterList;
@@ -99,20 +99,20 @@ main(int argc, char *argv[])
   // Define command-line arguments
   CommandLineProcessor cmdp(false,true);
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
-  cmdp.setOption ("debug", "nodebug", &debug, 
-		  "Print debugging information from the solver.");
+  cmdp.setOption ("debug", "nodebug", &debug,
+                  "Print debugging information from the solver.");
   cmdp.setOption ("frequency", &frequency,
-		  "Solver's frequency for printing residuals (#iters).");
+                  "Solver's frequency for printing residuals (#iters).");
   cmdp.setOption ("tol", &tol,
-		  "Relative residual tolerance used by MINRES solver.");
+                  "Relative residual tolerance used by MINRES solver.");
   cmdp.setOption ("num-rhs", &numrhs,
-		  "Number of right-hand sides for which to solve (> 0).");
-  cmdp.setOption ("max-iters", &maxiters, 
-		  "Maximum number of iterations per linear system.  -1 means "
-		  "we choose, based on problem size.");
+                  "Number of right-hand sides for which to solve (> 0).");
+  cmdp.setOption ("max-iters", &maxiters,
+                  "Maximum number of iterations per linear system.  -1 means "
+                  "we choose, based on problem size.");
 
   // Parse command-line arguments and fetch values
-  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL) 
+  if (cmdp.parse(argc,argv) != CommandLineProcessor::PARSE_SUCCESSFUL)
     {
       std::cout << "Failed to parse command-line arguments!" << std::endl;
       std::cout << "End Result: TEST FAILED" << std::endl;
@@ -122,25 +122,25 @@ main(int argc, char *argv[])
   // **********************************************************************
   // ******************Set up the problem to be solved*********************
   // construct diagonal matrix
-  const int NumGlobalElements = 1e2;
+  const int NumGlobalElements = 100;
   const int m = 4; // number of negative eigenvalues
-  
+
   // Create diagonal matrix with n-m positive and m negative eigenvalues.
   Epetra_Map epetraMap( NumGlobalElements, 0, Comm );
-  
+
   Teuchos::RCP<Epetra_CrsMatrix> A = Teuchos::rcp( new Epetra_CrsMatrix( Copy, epetraMap, 1 ) );
   for ( int k=0; k<epetraMap.NumMyElements(); k++ )
   {
       int GIDk = epetraMap.GID(k);
       double val = 2*(GIDk-m) + 1;
       TEUCHOS_ASSERT_EQUALITY( 0, A->InsertGlobalValues( GIDk, 1, &val, &GIDk ) );
-  } 
+  }
   TEUCHOS_ASSERT_EQUALITY( 0, A->FillComplete() );
   TEUCHOS_ASSERT_EQUALITY( 0, A->OptimizeStorage() );
-  
+
   //
   // Make some (multi)vectors, for use in testing: an exact solution,
-  // its corresponding right-hand side, and an initial guess. 
+  // its corresponding right-hand side, and an initial guess.
   //
 
   // Make a random exact solution.
@@ -165,7 +165,7 @@ main(int argc, char *argv[])
   // maxiters=numGlobalElements-1 may not always converge, so we
   // set to numGlobalElements+1 for good measure.
   if (maxiters == -1)
-    maxiters = NumGlobalElements + 1; 
+    maxiters = NumGlobalElements + 1;
 
   // In a nonverbose test, the frequency should be set to -1, which
   // Belos interprets as "no intermediate status output."  Override
@@ -178,16 +178,16 @@ main(int argc, char *argv[])
 
   // Validate command-line arguments
   TEUCHOS_TEST_FOR_EXCEPTION( tol < 0, std::invalid_argument,
-		      "Relative residual tolerance must be nonnegative, but "
-		      "you supplied tol = " << tol << "." );
+                      "Relative residual tolerance must be nonnegative, but "
+                      "you supplied tol = " << tol << "." );
   TEUCHOS_TEST_FOR_EXCEPTION( numrhs < 1, std::invalid_argument,
-		      "MINRES test requires at least one right-hand side, but "
-		      "you set the number of right-hand sides to " 
-		      << numrhs << "." );
+                      "MINRES test requires at least one right-hand side, but "
+                      "you set the number of right-hand sides to "
+                      << numrhs << "." );
   TEUCHOS_TEST_FOR_EXCEPTION( maxiters < 1, std::invalid_argument,
-		      "MINRES test requires at least one iteration, but you "
-		      "set the maximum number of iterations to " 
-		      << maxiters << "." );
+                      "MINRES test requires at least one iteration, but you "
+                      "set the maximum number of iterations to "
+                      << maxiters << "." );
 
   const bool proc_verbose = verbose && (MyPID==0);  /* Only print on the zero processor */
 
@@ -217,10 +217,10 @@ main(int argc, char *argv[])
   Belos::LinearProblem< ST, MV, OP > problem (A, X, B);
   {
     const bool set = problem.setProblem();
-    TEUCHOS_TEST_FOR_EXCEPTION( set == false, std::logic_error, 
-			"Belos::LinearProblem failed to set up correctly (setP"
-			"roblem() returned false)!  This probably means we imp"
-			"lemented our test incorrectly." );
+    TEUCHOS_TEST_FOR_EXCEPTION( set == false, std::logic_error,
+                        "Belos::LinearProblem failed to set up correctly (setP"
+                        "roblem() returned false)!  This probably means we imp"
+                        "lemented our test incorrectly." );
   }
   //
   // *******************************************************************
@@ -290,4 +290,4 @@ main(int argc, char *argv[])
     return -1;
   else
     return 0;
-} 
+}

@@ -79,6 +79,8 @@ int main(int argc, char *argv[])
 #else
   MyPID = 0;
 #endif
+  (void) MyPID; // forestall "set but not used" warnings
+
   bool verbose = false;
   std::string filename("mhd1280b.cua");
 
