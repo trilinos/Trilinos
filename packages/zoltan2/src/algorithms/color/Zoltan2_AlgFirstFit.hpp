@@ -80,19 +80,14 @@ class AlgFirstFit
   {
     HELLO;
   
-    // Check size of communicator: serial only.
-    // TODO: Remove this test when RCM works on local graph.
-    //if (comm->getSize() > 1){
-    //  throw std::runtime_error("RCM currently only works in serial.");
-    //}
-  
+    // Only color local graph. Global coloring is supported in Zoltan (not Zoltan2).
     // Get local graph.
     ArrayView<const lno_t> edgeIds;
     ArrayView<const lno_t> offsets;
-    ArrayView<StridedData<lno_t, scalar_t> > wgts;
+    ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
     const size_t nVtx = model->getLocalNumVertices();
-    model->getLocalEdgeList(edgeIds, offsets, wgts); 
+    model->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
     // Debug
@@ -102,11 +97,40 @@ class AlgFirstFit
     cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
 #endif
   
-    // Get color array to fill
+    // Get color array to fill.
+    // TODO: Allow user to input an old coloring.
     ArrayRCP<lno_t> colors = solution->getColors();
 
-    // TODO: First-fit coloring.
+    // First-fit greedy coloring.
+    // Use natural order for now. 
+    // TODO: Support better orderings (e.g., Smallest-Last)
+    const int maxColorGuess = 256; // for array allocation
+    int maxColor = 0;
+ 
+    // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
+    Teuchos::Array<int> forbidden(maxColorGuess, -1);
+
+    for (lno_t i=0; i<nVtx; i++){
+      lno_t v=i; // TODO: Use ordering here.
+      for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
+        lno_t nbor = edgeIds[j];
+        if (color[nbor] > 0){
+          // TODO: Check if we need reallocate forbidden array.
+          forbidden[color[nbor]] = v;
+        }
+      }
+      // Pick first (smallest) available color > 0
+      int c=1;
+      while (forbidden[c]==v) c++;
+      color[v] = c;
+      if (c > maxColor){
+        maxColor = c;
+      }
+    }
   
+    // Set maxColor in solution
+    solution->maxColor_ = maxColor;
+
     return;
   }
   
