@@ -808,6 +808,146 @@ TEST(UnderstandingDistributedIndex, GhostANode)
     }
 }
 
+void testReceivingProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int owningProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
+    bool isGhosted = !bucket.shared() && !bucket.owned();
+    EXPECT_TRUE(isGhosted);
+
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    size_t numGhostingsInvolvingEntity = 2;
+    EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
+    EXPECT_EQ(owningProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting1.ordinal(), (*commStuff.first).ghost_id);
+    commStuff++;
+    EXPECT_EQ(owningProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
+}
+
+void testOwningProcHasOneNodeGhosted(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int ghostReceivingProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    size_t numGhostingsInvolvingEntity = 2;
+    EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
+    EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting1.ordinal(), (*commStuff.first).ghost_id);
+    commStuff++;
+    EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
+}
+
+void testReceivingProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int owningProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    EXPECT_FALSE(stkMeshBulkData.is_valid(ghostedNode));
+}
+
+void testOwningProcHasNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int ghostReceivingProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    size_t numGhostingsInvolvingEntity = 0;
+    EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
+}
+
+void testReceivingProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int owningProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
+    bool isGhosted = !bucket.shared() && !bucket.owned();
+    EXPECT_TRUE(isGhosted);
+
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    size_t numGhostingsInvolvingEntity = 1;
+    EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
+    EXPECT_EQ(owningProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
+}
+
+void testOwningProcAfterOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+                           stk::mesh::Ghosting &ghosting1,
+                           stk::mesh::Ghosting &ghosting2,
+                           int nodeIdToGhost, int ghostReceivingProc)
+{
+    stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+    stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
+    size_t numGhostingsInvolvingEntity = 1;
+    EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
+    EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
+    EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
+}
+
+void testOneNodeGhostedTwice(stk::mesh::BulkData &stkMeshBulkData,
+                        stk::mesh::Ghosting &ghosting1,
+                        stk::mesh::Ghosting &ghosting2,
+                        int nodeIdToGhost,
+                        int owningProc,
+                        int ghostReceivingProc,
+                        int myProc)
+{
+    if(myProc == ghostReceivingProc)
+    {
+        testReceivingProcHasOneNodeGhosted(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc);
+    }
+    else
+    {
+        testOwningProcHasOneNodeGhosted(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, ghostReceivingProc);
+    }
+}
+
+void testNoGhosts(stk::mesh::BulkData &stkMeshBulkData,
+                        stk::mesh::Ghosting &ghosting1,
+                        stk::mesh::Ghosting &ghosting2,
+                        int nodeIdToGhost,
+                        int owningProc,
+                        int ghostReceivingProc,
+                        int myProc)
+{
+    if(myProc == ghostReceivingProc)
+    {
+        testReceivingProcHasNoGhosts(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc);
+    }
+    else
+    {
+        testOwningProcHasNoGhosts(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, ghostReceivingProc);
+    }
+}
+
+void testOneGhostingDestroyed(stk::mesh::BulkData &stkMeshBulkData,
+                        stk::mesh::Ghosting &ghosting1,
+                        stk::mesh::Ghosting &ghosting2,
+                        int nodeIdToGhost,
+                        int owningProc,
+                        int ghostReceivingProc,
+                        int myProc)
+{
+    if(myProc == ghostReceivingProc)
+    {
+        testReceivingProcAfterOneGhostingDestroyed(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc);
+    }
+    else
+    {
+        testOwningProcAfterOneGhostingDestroyed(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, ghostReceivingProc);
+    }
+}
+
 TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
 {
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -840,34 +980,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
         stkMeshBulkData.change_ghosting(ghosting2, ghostsToSend);
         stkMeshBulkData.modification_end();
 
-        if(myProc == ghostReceivingProc)
-        {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-            stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
-            bool isGhosted = !bucket.shared() && !bucket.owned();
-            EXPECT_TRUE(isGhosted);
-
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
-            size_t numGhostingsInvolvingEntity = 2;
-            EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
-            EXPECT_EQ(owningProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting1.ordinal(), (*commStuff.first).ghost_id);
-            commStuff++;
-            EXPECT_EQ(owningProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
-        }
-        else
-        {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
-            size_t numGhostingsInvolvingEntity = 2;
-            EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
-            EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting1.ordinal(), (*commStuff.first).ghost_id);
-            commStuff++;
-            EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
-        }
+        testOneNodeGhostedTwice(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
 
         stkMeshBulkData.modification_begin();
         std::vector<std::pair<stk::mesh::Entity, int> > noGhostsToSend;
@@ -879,28 +992,54 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
         stkMeshBulkData.change_ghosting(ghosting1, noGhostsToSend, receivedGhostsToRemove);
         stkMeshBulkData.modification_end();
 
-        if(myProc == ghostReceivingProc)
-        {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-            stk::mesh::Bucket& bucket = stkMeshBulkData.bucket(ghostedNode);
-            bool isGhosted = !bucket.shared() && !bucket.owned();
-            EXPECT_TRUE(isGhosted);
+        testOneGhostingDestroyed(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
+    }
+}
 
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
-            size_t numGhostingsInvolvingEntity = 1;
-            EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
-            EXPECT_EQ(owningProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
-        }
-        else
+TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
+{
+    MPI_Comm communicator = MPI_COMM_WORLD;
+    int procCount = -1;
+    int myProc = -1;
+    MPI_Comm_size(communicator, &procCount);
+    MPI_Comm_rank(communicator, &myProc);
+
+    if(procCount == 2)
+    {
+        const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
+        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+
+        int owningProc = 0;
+        int ghostReceivingProc = 1;
+        int nodeIdToGhost = 2;
+
+        stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
+
+        stkMeshBulkData.modification_begin();
+        stk::mesh::Ghosting &ghosting1 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 1");
+        stk::mesh::Ghosting &ghosting2 = stkMeshBulkData.create_ghosting("Ghosting For Algorithm 2");
+        std::vector<std::pair<stk::mesh::Entity, int> > ghostsToSend;
+        if(myProc == owningProc)
         {
-            stk::mesh::Entity ghostedNode = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
-            stk::mesh::PairIterEntityComm commStuff = stkMeshBulkData.entity_comm(stkMeshBulkData.entity_key(ghostedNode));
-            size_t numGhostingsInvolvingEntity = 1;
-            EXPECT_EQ(numGhostingsInvolvingEntity, commStuff.size());
-            EXPECT_EQ(ghostReceivingProc, (*commStuff.first).proc);
-            EXPECT_EQ(ghosting2.ordinal(), (*commStuff.first).ghost_id);
+            stk::mesh::Entity nodeToGhost = stkMeshBulkData.get_entity(stk::topology::NODE_RANK, nodeIdToGhost);
+            ghostsToSend.push_back(std::make_pair(nodeToGhost, ghostReceivingProc));
         }
+
+        stkMeshBulkData.change_ghosting(ghosting1, ghostsToSend);
+        stkMeshBulkData.change_ghosting(ghosting2, ghostsToSend);
+        testOneNodeGhostedTwice(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
+
+        stkMeshBulkData.destroy_ghosting(ghosting1);
+        stkMeshBulkData.destroy_ghosting(ghosting2);
+        testNoGhosts(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
+
+        stkMeshBulkData.change_ghosting(ghosting1, ghostsToSend);
+        stkMeshBulkData.change_ghosting(ghosting2, ghostsToSend);
+        testOneNodeGhostedTwice(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
+
+        stkMeshBulkData.destroy_ghosting(ghosting1);
+        stkMeshBulkData.modification_end();
+        testOneGhostingDestroyed(stkMeshBulkData, ghosting1, ghosting2, nodeIdToGhost, owningProc, ghostReceivingProc, myProc);
     }
 }
 
