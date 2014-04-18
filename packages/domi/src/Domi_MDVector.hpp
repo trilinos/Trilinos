@@ -724,7 +724,7 @@ public:
   virtual std::string description() const;
 
   /** \brief Print the object with some verbosity level to a
-             FancyOStream
+   *         FancyOStream
    */
   virtual void
   describe(Teuchos::FancyOStream &out,
@@ -760,12 +760,12 @@ public:
   /// axis
   void updateCommPad(int axis);
 
-  /// Send the non-blocking updates for the communication padding
-  /// along the given axis
+  /// Post the non-blocking sends and receives for the communication
+  /// padding along the given axis
   void startUpdateCommPad(int axis);
 
-  /// Receive non-blocking updates for the communication padding along
-  /// the given axis
+  /// Wait for all of the non-blocking updates for the communication
+  /// padding along the given axis to complete
   void endUpdateCommPad(int axis);
 
   //@}
