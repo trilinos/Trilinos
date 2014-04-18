@@ -16,7 +16,8 @@ namespace mesh {
 
 std::ostream & operator << ( std::ostream &os , const Entity &entity )
 {
-  os << entity.m_value;
+  size_t value = entity.m_value;
+  os << value;
   return os;
 }
 

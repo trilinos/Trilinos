@@ -565,7 +565,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
         }
         stkMeshBulkData.generate_new_entities(requestsForNewEntities, generatedEntities);
 
-        stk::mesh::EntityId elementId = -1;
+        stk::mesh::EntityId elementId = static_cast<stk::mesh::EntityId>(-1);
         if(myProc == owningProc)
         {
             std::vector<stk::mesh::EntityId> nodeIds;
