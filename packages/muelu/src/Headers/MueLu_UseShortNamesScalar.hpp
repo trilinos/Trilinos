@@ -290,6 +290,10 @@ typedef MueLu::SubBlockAFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 typedef MueLu::TentativePFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TentativePFactory;
 #endif
 
+#ifdef MUELU_TENTATIVEPNEWFACTORY_SHORT
+typedef MueLu::TentativePNewFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> TentativePNewFactory;
+#endif
+
 #ifdef MUELU_THRESHOLDAFILTERFACTORY_SHORT
 typedef MueLu::ThresholdAFilterFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> ThresholdAFilterFactory;
 #endif
