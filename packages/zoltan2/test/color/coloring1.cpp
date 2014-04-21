@@ -83,10 +83,10 @@ typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
-typedef SparseMatrixAdapter::color_t Color_t;
+//typedef SparseMatrixAdapter::color_t color_t;
+typedef int color_t; // TODO
 
-
-int validateColoring(size_t n, Color_t *color)
+int validateColoring(size_t n, color_t *color)
 // returns 0 if coloring is valid, negative if invalid
 {
   int nconflicts = 0;
@@ -148,7 +148,7 @@ int main(int narg, char** arg)
   // Coloring options to test.
   //////////////////////////////////
   std::string colorMethod("todo"); // TODO
-  cmdp.setOption("color_method", &orderMethod,
+  cmdp.setOption("color_method", &colorMethod,
                 "color_method: todo");
   
   //////////////////////////////////
@@ -205,16 +205,16 @@ int main(int narg, char** arg)
     fname << outputFile << "." << comm->getSize() << "." << me;
     colorFile.open(fname.str().c_str());
     for (size_t i=0; i<checkLength; i++){
-      colorFile << " " << checkColor[i] << endl;
+      colorFile << " " << checkColoring[i] << endl;
     }
     colorFile.close();
   }
 
   // TODO: Print to some other stream than stdout?
-  cout << "No. of colors: " << checkColoring.getNumColors() << endl;
+  cout << "No. of colors: " << checkColoring.getLocalNumColors() << endl;
 
   cout << "Going to validate the soln" << endl;
-  // Verify that checkColor is a coloring
+  // Verify that checkColoring is a coloring
   testReturn = validateColoring(checkLength, checkColoring);
 
   } catch (std::exception &e){
