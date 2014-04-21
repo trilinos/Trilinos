@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
       if (printTimings)
         TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
 
-      TimeMonitor::zeroOutTimers();
+      TimeMonitor::clearCounters();
 
       if (isDriver) {
         if (openedOut != NULL) {

@@ -201,8 +201,8 @@ int main(int argc, char *argv[]) {
 
 #ifdef __APPLE__
       // Some Macs print outs ptrs as 0x0 instead of 0, fix that
-      sed_cmd = "sed -i \"\" '/RCP/ s/=0x0/=0/g' ";
-      system((sed_cmd + baseFile + ".res").c_str());
+      sed_cmd = "sed -i \"\" '/ArrayRCP/ s/=0x0/=0/g' ";
+      system((sed_cmd + baseFile + ".out").c_str());
 #endif
 
       // Run comparison

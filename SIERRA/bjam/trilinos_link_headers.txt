@@ -3,7 +3,7 @@ amesos: src[*.h] src/SuiteSparse/AMD/Include[*.h] src/SuiteSparse/KLU/Include[*.
 amesos2: src[*.hpp] src/SuiteSparse/KLU2/Source[*.hpp]
 anasazi: src[*.hpp] thyra/src[*.hpp] epetra/src[*.hpp]
 aztecoo: src[*.h]
-claps: src[*.hpp *.H] src/salinas[*.hpp] /src/preconditioners[*.hpp]
+claps: src[*.hpp *.H] src/salinas[*.hpp *.H] /src/preconditioners[*.hpp]
 belos: src[*.hpp] epetra/src[*.hpp] tpetra/src[*.hpp]
 epetra: src[*.h]
 epetraext: src[*.h] src/transform[*.h] src/model_evaluator[*.h] src/coloring[*.h] src/inout[*.h] src/block[*.h]
