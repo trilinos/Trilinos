@@ -122,7 +122,7 @@ namespace stk {
     {
       bool fieldAlreadyExists=false;
       for (size_t i=0; i <m_fields.size(); i++) {
-        if (mesh_field.field() == m_fields[i].field()) {
+        if (mesh_field == m_fields[i]) {
           fieldAlreadyExists = true;
           break;
         }

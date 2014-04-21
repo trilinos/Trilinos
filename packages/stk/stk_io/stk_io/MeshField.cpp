@@ -101,6 +101,13 @@ void MeshField::add_part(const stk::mesh::EntityRank rank,
   m_fieldParts.push_back(MeshFieldPart(rank,io_entity, m_dbName));
 }
 
+bool MeshField::operator==(const MeshField &other) const
+{
+  return m_field       == other.m_field &&
+         m_dbName      == other.m_dbName &&
+         m_subsetParts == other.m_subsetParts;
+}
+
 void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 				   const stk::io::DBStepTimeInterval &sti)
 {

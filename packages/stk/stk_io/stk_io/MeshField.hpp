@@ -104,6 +104,8 @@ namespace stk {
       void add_part(const stk::mesh::EntityRank rank,
 		    Ioss::GroupingEntity *io_entity);
       
+      bool operator==(const MeshField &other) const;
+
     private:
       std::vector<MeshFieldPart> m_fieldParts;
       
