@@ -185,6 +185,11 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Map ()
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   global_size_t
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getGlobalNumElements () const {

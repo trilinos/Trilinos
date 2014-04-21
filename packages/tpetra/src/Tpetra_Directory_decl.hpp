@@ -180,26 +180,49 @@ namespace Tpetra {
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      using Teuchos::rcp_dynamic_cast;
 
       RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
       if (clone_map.isDistributed ()) {
         if (clone_map.isUniform ()) {
           typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be distributed, contiguous, and uniform, "
+            "but its Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else if (clone_map.isContiguous ()) {
           typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be distributed and contiguous, but its "
+            "Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else { // not contiguous
           typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be noncontiguous, but its "
+            "Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
       }
       else { // locally replicated (not distributed)
         typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
-        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+        const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+          "The input Map claims to be locally replicated, but its "
+          "Directory's implementation type does not match that assumption.  "
+          "Please report this bug to the Tpetra developers.");
+        dir->impl_ = theImpl->template clone<Node2> (clone_map);
       }
       return dir;
     }
