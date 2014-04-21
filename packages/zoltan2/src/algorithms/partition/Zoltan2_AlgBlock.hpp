@@ -108,7 +108,7 @@ public:
   {}
 
   // Partitioning method
-  void solve()
+  void partition()
   {
     using std::string;
     using std::ostringstream;
