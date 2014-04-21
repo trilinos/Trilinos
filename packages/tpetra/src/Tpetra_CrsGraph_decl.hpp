@@ -1160,16 +1160,6 @@ namespace Tpetra {
     removeEmptyProcessesInPlace (const Teuchos::RCP<const map_type>& newMap);
     //@}
 
-  private:
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
-
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
-
   protected:
     typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
 
@@ -1889,7 +1879,6 @@ namespace Tpetra {
     typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
     return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
   }
-
 
 } // namespace Tpetra
 

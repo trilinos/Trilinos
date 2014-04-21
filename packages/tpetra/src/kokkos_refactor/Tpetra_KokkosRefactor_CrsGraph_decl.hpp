@@ -42,21 +42,10 @@
 #ifndef TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 #define TPETRA_KOKKOSREFACTOR_CRSGRAPH_DECL_HPP
 
-/*#include <Teuchos_CompileTimeAssert.hpp>
-#include <Teuchos_Describable.hpp>
-#include <Teuchos_ParameterListAcceptorDefaultBase.hpp>
-
-#include <Kokkos_DefaultNode.hpp>
-#include <Kokkos_DefaultKernels.hpp>
-
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_RowGraph.hpp"
-#include "Tpetra_DistObject.hpp"
-#include "Tpetra_Exceptions.hpp"
-#include "Tpetra_CrsGraph_decl.hpp"*/
-#include "Kokkos_StaticCrsGraph.hpp"
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_DualView.hpp>
+#include <Kokkos_StaticCrsGraph.hpp>
+
 namespace Tpetra {
 
 #ifndef DOXYGEN_SHOULD_SKIP_THIS
@@ -65,28 +54,8 @@ namespace Tpetra {
   class CrsMatrix;
 #endif
 
-  /// \struct RowInfo
-  /// \brief Allocation information for a locally owned row in a
-  ///   CrsGraph or CrsMatrix
-  ///
-  /// A RowInfo instance identifies a locally owned row uniquely by
-  /// its local index, and contains other information useful for
-  /// inserting entries into the row.  It is the return value of
-  /// CrsGraph's getRowInfo() or updateAllocAndValues() methods.
- /* struct RowInfo {
-    size_t localRow;
-    size_t allocSize;
-    size_t numEntries;
-    size_t offset1D;
-  };
-
-  enum ELocalGlobal {
-    LocalIndices,
-    GlobalIndices
-  };*/
-
   /** \class CrsGraph
-   * \brief A distributed graph accessed by rows (adjacency lists) and stored sparsely.
+   \brief A distributed graph accessed by rows (adjacency lists) and stored sparsely.
 
    \tparam LocalOrdinal The type of local indices.  Same as the \c
      LocalOrdinal template parameter of \c Map objects used by this
@@ -165,10 +134,23 @@ namespace Tpetra {
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>
-  class CrsGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,
-  typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
-    public RowGraph<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
-    public DistObject<GlobalOrdinal,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+  class CrsGraph<
+    LocalOrdinal, // the type of local indices
+    GlobalOrdinal, // the type of global indices
+    Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, // the Kokkos Node type
+    typename KokkosClassic::DefaultKernels<
+      void,
+      LocalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> :
+    public RowGraph<
+      LocalOrdinal,
+      GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
+    public DistObject<
+      GlobalOrdinal,
+      LocalOrdinal,
+      GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >,
     public Teuchos::ParameterListAcceptorDefaultBase
   {
     template <class S, class LO, class GO, class N, class SpMatOps>
@@ -1115,16 +1097,6 @@ namespace Tpetra {
       }
     };
 
-  private:
-    // We forbid copy construction by declaring this method private
-    // and not implementing it.
-    CrsGraph (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
-
-    // We forbid assignment (operator=) by declaring this method
-    // private and not implementing it.
-    CrsGraph<LocalOrdinal,GlobalOrdinal,Node>&
-    operator= (const CrsGraph<LocalOrdinal,GlobalOrdinal,Node>& rhs);
-
   protected:
     typedef typename LocalMatOps::template graph<LocalOrdinal,Node>::graph_type local_graph_type;
     // these structs are conveniences, to cut down on the number of
@@ -1805,24 +1777,6 @@ namespace Tpetra {
     inline bool hasRowInfo () const;
 
   }; // class CrsGraph
-
-  /** \brief Non-member function to create an empty CrsGraph given a row map and a non-zero profile.
-
-      \return A dynamically allocated (DynamicProfile) graph with specified number of nonzeros per row (defaults to zero).
-
-      \relatesalso CrsGraph
-   */
-  /*template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<CrsGraph<LocalOrdinal,GlobalOrdinal,Node> >
-  createCrsGraph (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map,
-                   size_t maxNumEntriesPerRow = 0,
-                   const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
-  {
-    using Teuchos::rcp;
-    typedef CrsGraph<LocalOrdinal, GlobalOrdinal, Node> graph_type;
-    return rcp (new graph_type (map, maxNumEntriesPerRow, DynamicProfile, params));
-  }*/
-
 
 } // namespace Tpetra
 
