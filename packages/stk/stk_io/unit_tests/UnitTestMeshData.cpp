@@ -91,7 +91,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
     fixture.process_output_request(output_index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(ok && "Could not open unit test file");
+    ASSERT_TRUE(ok);
   }
   // Since correctness can only be established by running SEACAS tools, correctness
   // checking is left to the test XML.
@@ -139,7 +139,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
     fixture.process_output_request(index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(ok && "Could not open unit test file");
+    ASSERT_TRUE(ok);
   }
 
 
@@ -200,7 +200,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
     fixture.process_output_request(universal_index, time_step);
   }
   catch(...) {
-    ASSERT_TRUE(ok && "Could not open unit test file");
+    ASSERT_TRUE(ok);
   }
 
   // Since correctness can only be established by running SEACAS tools, correctness
@@ -248,6 +248,6 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
     }
   }
   catch(...) {
-    ASSERT_TRUE(ok && "Could not open unit test file");
+    ASSERT_TRUE(ok);
   }
 }
