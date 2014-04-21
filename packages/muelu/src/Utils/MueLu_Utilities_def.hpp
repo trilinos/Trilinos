@@ -1329,7 +1329,7 @@ namespace MueLu {
     // in parallel when multiplying by a PID.  It would be better to use
     // a good parallel random number generator.
 
-    SC one = 1.0;
+    double one = 1.0;
     int maxint = INT_MAX; //= 2^31-1 = 2147483647 for 32-bit integers
     int mySeed = Teuchos::as<int>((maxint-1) * (one -(comm.getRank()+1)/(comm.getSize()+one)) );
     if (mySeed < 1 || mySeed == maxint) {
