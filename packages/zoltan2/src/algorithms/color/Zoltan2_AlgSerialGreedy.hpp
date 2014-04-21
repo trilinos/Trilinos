@@ -51,14 +51,14 @@
 
 
 ////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgFirstFit.hpp
-//! \brief Greedy first-fit graph coloring (serial, local graph only)
+//! \file Zoltan2_AlgSerialGreedy.hpp
+//! \brief Serial greedy first-fit graph coloring (local graph only)
 
 
 namespace Zoltan2{
 
 template <typename Adapter>
-class AlgFirstFit
+class AlgSerialGreedy
 {
   private:
     typedef typename Adapter::lno_t lno_t;
@@ -66,7 +66,7 @@ class AlgFirstFit
     typedef typename Adapter::scalar_t scalar_t;
   
   public:
-  AlgFirstFit()
+  AlgSerialGreedy()
   {
   }
 
