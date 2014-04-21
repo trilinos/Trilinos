@@ -36,7 +36,7 @@
 
 template <typename FadType1, typename FadType2>
 bool checkFads(const FadType1& x, const FadType2& x2,
-               Teuchos::FancyOStream& out)
+               Teuchos::FancyOStream& out, double tol = 1.0e-15)
 {
   bool success = true;
 
@@ -48,7 +48,7 @@ bool checkFads(const FadType1& x, const FadType2& x2,
 
   // Check derivatives match
   for (int i=0; i<x.size(); ++i)
-    TEUCHOS_TEST_EQUALITY(x.dx(i), x2.dx(i), out, success);
+    TEUCHOS_TEST_FLOATING_EQUALITY(x.dx(i), x2.dx(i), tol, out, success);
 
   return success;
 }
