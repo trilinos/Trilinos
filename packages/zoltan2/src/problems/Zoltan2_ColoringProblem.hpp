@@ -43,14 +43,15 @@
 //
 // @HEADER
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
 /*! \file Zoltan2_ColoringProblem.hpp
     \brief Defines the ColoringProblem class.
 */
 
 #ifndef _ZOLTAN2_COLORINGPROBLEM_HPP_
 #define _ZOLTAN2_COLORINGPROBLEM_HPP_
+
+#include <Zoltan2_Standards.hpp>
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_ColoringAlgorithms.hpp>
@@ -318,5 +319,6 @@ void ColoringProblem<Adapter>::createColoringProblem()
   }
 }
 } //namespace Zoltan2
-#endif
+
 #endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
+#endif

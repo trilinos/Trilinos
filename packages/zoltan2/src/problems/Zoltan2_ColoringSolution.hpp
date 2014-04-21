@@ -43,8 +43,6 @@
 //
 // @HEADER
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
 /*! \file Zoltan2_ColoringSolution.hpp
     \brief Defines the ColoringSolution class.
 */
@@ -53,6 +51,7 @@
 #define _ZOLTAN2_COLORINGSOLUTION_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #include <Zoltan2_Solution.hpp>
 
 namespace Zoltan2 {
@@ -122,5 +121,5 @@ protected:
 
 }
 
-#endif
 #endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
+#endif
