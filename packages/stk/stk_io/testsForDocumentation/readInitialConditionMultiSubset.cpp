@@ -32,6 +32,7 @@ namespace {
     MPI_Comm communicator = MPI_COMM_WORLD;
 
     {
+      //-BEGIN
       // ============================================================
       // INITIALIZATION
       //+ Create a generated mesh containg hexes and shells with a
@@ -72,6 +73,7 @@ namespace {
       //+ Populate the fields with data from the input mesh.
       stkIo.read_defined_input_fields(time);
 
+      //-END
       // ============================================================
       //+ VERIFICATION
       //+ The value of the field on the first 729 elements should be 0.0;
@@ -91,6 +93,5 @@ namespace {
         EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
       }
     }
-    //unlink(resultsFilename.c_str());
   }
 }

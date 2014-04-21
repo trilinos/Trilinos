@@ -26,6 +26,7 @@ namespace {
 
   TEST(StkMeshIoBrokerHowTo, readInitialConditionSubset)
   {
+    //-BEGIN
     std::string dbFieldNameShell = "ElementBlock_1";
     std::string appFieldName = "pressure";
     
@@ -74,6 +75,7 @@ namespace {
       //+ Populate the fields with data from the input mesh.
       stkIo.read_defined_input_fields(time);
 
+      //-END
       // ============================================================
       //+ VERIFICATION
       //+ The value of the field on the first 729 elements should be 0.0;
@@ -93,6 +95,5 @@ namespace {
         EXPECT_DOUBLE_EQ(sqrt(i+1), *fieldDataForElement);
       }
     }
-    //unlink(resultsFilename.c_str());
   }
 }
