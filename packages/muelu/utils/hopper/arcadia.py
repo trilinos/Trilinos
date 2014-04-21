@@ -152,7 +152,7 @@ def controller():
                 for k in range(0,len(datafiles)):
                     os.system("echo -e '  <ParameterList name=\"Run" + str(k+1) + "\">'" + " >> " + unified_xml)
                     os.system("echo -e '    <Parameter   name=\"filename\" type=\"string\" value=\"cmd" + str(k+1) + "\"/>'"+ qn + qn + " >> " + unified_xml)
-                    os.system("cat " + datafiles[i] + " >> " + unified_xml)
+                    os.system("cat " + datafiles[k] + " >> " + unified_xml)
                     os.system("echo -e '  </ParameterList>'" + " >> " + unified_xml)
 
                 os.system("echo -e '</ParameterList>'" + " >> " + unified_xml)
