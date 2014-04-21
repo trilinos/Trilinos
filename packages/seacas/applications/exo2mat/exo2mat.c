@@ -83,6 +83,20 @@ static char *qainfo[] =
 };
 
 
+void usage()
+{
+    printf("exo2mat [options] exodus_file_name.\n");
+    printf("   the exodus_file_name is required (exodusII only).\n");
+    printf("   Options:\n");
+    printf("     -t write a text (.m) file rather than a binary .mat\n");
+    printf("     -o output file name (rather than auto generate)\n");
+    printf("   -v5  output version 5 mat file (default)\n");
+    printf("   -v73 output version 7.3 mat file (hdf5-based)\n");
+    printf(" ** note **\n");
+    printf("Binary files are written by default on all platforms with");
+    printf(" available libraries.\n");
+}
+
 /* put a string into an m file. If the string has
    line feeds, we put it as ints, and use 'char()' to convert it */
 void mPutStr (char *name,char *str)
@@ -241,6 +255,8 @@ int main (int argc, char *argv[])
   float
     exo_version;
 
+  int mat_version = 50;
+  
   double
     *scr,*x,*y,*z;
 
@@ -251,6 +267,23 @@ int main (int argc, char *argv[])
     if ( strcmp(argv[j],"-t")==0){    /* write text file (*.m) */
       del_arg(&argc,argv,j);
       textfile=1;
+      j--;
+      continue;
+    }
+    if ( strcmp(argv[j],"-h")==0){    /* write help info */
+      del_arg(&argc,argv,j);
+      usage();
+      exit(1);
+    }
+    if ( strcmp(argv[j],"-v73")==0){    /* Version 7.3 */
+      del_arg(&argc,argv,j);
+      mat_version = 73;
+      j--;
+      continue;
+    }
+    if ( strcmp(argv[j],"-v5")==0){    /* Version 5 (default) */
+      del_arg(&argc,argv,j);
+      mat_version = 50;
       j--;
       continue;
     }
@@ -277,14 +310,7 @@ int main (int argc, char *argv[])
   
   /* usage message*/
   if(argc != 2){
-    printf("%s [options] exodus_file_name.\n",argv[0]);
-    printf("   the exodus_file_name is required (exodusII only).\n");
-    printf("   Options:\n");
-    printf("     -t write a text (.m) file rather than a binary .mat\n");
-    printf("     -o output file name (rather than auto generate)\n");
-    printf(" ** note **\n");
-    printf("Binary files are written by default on all platforms with");
-    printf(" available libraries.\n");
+    usage();
     exit(1);
   }
 
@@ -311,7 +337,11 @@ int main (int argc, char *argv[])
     }
   }
   else {
-    mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT5);
+    if (mat_version == 50) {
+      mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT5);
+    } else if (mat_version == 73) {
+      mat_file = Mat_CreateVer(filename, NULL, MAT_FT_MAT73);
+    }
     if (mat_file == NULL) {
       fprintf(stderr,"Unable to create matlab file %s\n",filename);
       exit(1);
