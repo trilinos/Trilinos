@@ -60,18 +60,24 @@ namespace Zoltan2 {
 /*! \brief The class containing coloring solution.
 
     Template parameters:
-    \li \c gid_t    data type for application global Ids
-    \li \c lno_t    data type for local indices and local counts
+    \li \c adapter    input adapter, which must contain color_t
 
 The coloring solution contains an array of colors, one per id.
-Colors are represented as integers starting from 0. A special value,
-NO_COLOR, is used for vertices that have not been colored.
+Colors are represented as color_t, typically integers. A special value,
+currently 0, is used for vertices that have not been colored.
 
 */
 
-template <typename gid_t, typename lno_t>
+template <typename Adapter>
   class ColoringSolution : public Solution
 {
+private: 
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::color_t color_t;
+
 public:
 
   /*! \brief Constructor allocates memory for the solution.
@@ -83,7 +89,7 @@ public:
     HELLO;
     length_ = length;
     gids_   = ArrayRCP<gid_t>(length_);
-    colors_  = ArrayRCP<int>(length_);
+    colors_  = ArrayRCP<color_t>(length_);
   }
 
   //////////////////////////////////////////////
@@ -101,17 +107,17 @@ public:
 
   /*! \brief Get local number of colors.
    */
-  int getLocalNumColors(); // TODO
+  color_t getLocalNumColors(); // TODO
 
   /*! \brief Get global number of colors.
    */
-  int getGlobalNumColors(); // TODO
+  color_t getGlobalNumColors(); // TODO
 
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
   ArrayRCP<gid_t>  gids_; // TODO: Remove?
-  ArrayRCP<int> colors_;    // zero-based local color array
+  ArrayRCP<color_t> colors_;    // zero-based local color array
 };
 
 }
