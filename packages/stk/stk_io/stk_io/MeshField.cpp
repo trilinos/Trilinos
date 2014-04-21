@@ -8,6 +8,7 @@
 #include <stk_io/MeshField.hpp>
 #include <stk_io/DbStepTimeInterval.hpp>
 #include <stk_io/IossBridge.hpp>        
+#include <stk_mesh/base/Part.hpp>      
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field, etc
@@ -95,6 +96,12 @@ MeshField& MeshField::set_read_once(bool yesno)
   return *this;
 }
 
+MeshField& MeshField::add_subset(const stk::mesh::Part &part)
+{
+  m_subsetParts.push_back(&part);
+  return *this;
+}
+
 void MeshField::add_part(const stk::mesh::EntityRank rank,
 			 Ioss::GroupingEntity *io_entity)
 {
@@ -103,8 +110,11 @@ void MeshField::add_part(const stk::mesh::EntityRank rank,
 
 bool MeshField::operator==(const MeshField &other) const
 {
+  // NOTE: Do not check 'm_dbName'.  The behavior is that
+  // if the user attempts to add to MeshFields that only differ by
+  // the database name, the name is updated to the most recent
+  // MeshField database name.
   return m_field       == other.m_field &&
-         m_dbName      == other.m_dbName &&
          m_subsetParts == other.m_subsetParts;
 }
 

@@ -247,16 +247,37 @@ namespace stk {
     {
       // Each input field will have a list of the Parts that the field exists on...
       // Create this list.
-      
       Ioss::Region *region = m_region.get();
+      
+      // First handle any fields that are subsetted (restricted to a specified list of parts)
+      std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+      while (I != m_fields.end()) {
+	std::vector<const stk::mesh::Part*>::iterator P = (*I).m_subsetParts.begin();
+	while (P != (*I).m_subsetParts.end()) {
+	  // Find the Ioss::GroupingEntity corresponding to this part...
+	  const stk::mesh::Part *part = *P; ++P;
+	  Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
+	  ThrowErrorMsgIf( io_entity == NULL,
+			   "ERROR: For field '" << (*I).field()->name()
+			   << "' Could not find database entity corresponding to the part named '"
+			   << part->name() << "'.");
+	  stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+	  build_field_part_associations(*I, *part, rank, io_entity);
+	}
+	++I;
+      }
+      
+      // Now handle the non-subsetted fields...
 
       // Check universal_part() NODE_RANK first...
       const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
       {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
-	  build_field_part_associations(*I, meta.universal_part(), stk::topology::NODE_RANK,
-					region->get_node_blocks()[0]);
+	  if ((*I).m_subsetParts.empty()) {
+	    build_field_part_associations(*I, meta.universal_part(), stk::topology::NODE_RANK,
+					  region->get_node_blocks()[0]);
+	  }
 	  ++I;
 	}
       }
@@ -273,24 +294,26 @@ namespace stk {
           stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
           // Get Ioss::GroupingEntity corresponding to this part...
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
-          if (entity != NULL && entity->type() != Ioss::SIDESET) {
+          if (entity != NULL && !m_fields.empty() && entity->type() != Ioss::SIDESET) {
 	    std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-	    while (I != m_fields.end()) {
-	      build_field_part_associations(*I, *part, rank, entity);
+	    if ((*I).m_subsetParts.empty()) {
+	      while (I != m_fields.end()) {
+		build_field_part_associations(*I, *part, rank, entity);
 
-	      // If rank is != NODE_RANK, then see if field is defined on the nodes of this part
-	      if (rank != stk::topology::NODE_RANK) {
-		Ioss::GroupingEntity *node_entity = NULL;
-		std::string nodes_name = part->name() + "_nodes";
-		node_entity = region->get_entity(nodes_name);
-		if (node_entity == NULL) {
-		  node_entity = region->get_entity("nodeblock_1");
+		// If rank is != NODE_RANK, then see if field is defined on the nodes of this part
+		if (rank != stk::topology::NODE_RANK) {
+		  Ioss::GroupingEntity *node_entity = NULL;
+		  std::string nodes_name = part->name() + "_nodes";
+		  node_entity = region->get_entity(nodes_name);
+		  if (node_entity == NULL) {
+		    node_entity = region->get_entity("nodeblock_1");
+		  }
+		  if (node_entity != NULL) {
+		    build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity);
+		  }
 		}
-		if (node_entity != NULL) {
-		  build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity);
-		}
+		++I;
 	      }
-	      ++I;
 	    }
 	  }
 	}
@@ -343,59 +366,59 @@ namespace stk {
       return db_time;
     }
 
-      double InputFile::read_defined_input_fields(double time,
-						  std::vector<stk::io::MeshField> *missing,
-						  stk::mesh::BulkData &bulk)
-      {
-	// Sort fields to ensure they are iterated in the same order on all processors.
-	std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
+    double InputFile::read_defined_input_fields(double time,
+						std::vector<stk::io::MeshField> *missing,
+						stk::mesh::BulkData &bulk)
+    {
+      // Sort fields to ensure they are iterated in the same order on all processors.
+      std::sort(m_fields.begin(), m_fields.end(), meshFieldSort);
 
-	if (!m_fieldsInitialized) {
-	  std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-	  while (I != m_fields.end()) {
-	    (*I).set_inactive(); ++I;
-	  }
-
-	  build_field_part_associations(bulk);
-	  report_missing_fields(missing);
-	  
-	  m_fieldsInitialized = true;
-	}
-
-	if (time < m_startTime || time > m_stopTime)
-	  return 0.0;
-
-	// Map analysis time to database time using offset, periodic, ...
-	// See details in header file.
-	double db_time = map_analysis_to_db_time(time);
-	
-	ThrowErrorMsgIf (Teuchos::is_null(m_region),
-			 "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
-
-	Ioss::Region *region = m_region.get();
-
-	// Get struct containing interval of database time(s) containing 'time'
-	DBStepTimeInterval sti(region, db_time);
-
-	ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
-			"ERROR: Input database '" << region->get_database()->get_filename()
-			<< "' has no transient data.");
-
+      if (!m_fieldsInitialized) {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
-	  (*I).restore_field_data(bulk, sti);
-	  ++I;
+	  (*I).set_inactive(); ++I;
 	}
 
-	size_t step = sti.get_closest_step();
-	int current_step = region->get_current_state();
-	if (current_step != -1 && current_step != (int)step)
-	  region->end_state(current_step);
-	if (current_step != (int)step) 
-	  region->begin_state(step);
-
-	return region->get_state_time(step);
+	build_field_part_associations(bulk);
+	report_missing_fields(missing);
+	  
+	m_fieldsInitialized = true;
       }
+
+      if (time < m_startTime || time > m_stopTime)
+	return 0.0;
+
+      // Map analysis time to database time using offset, periodic, ...
+      // See details in header file.
+      double db_time = map_analysis_to_db_time(time);
+	
+      ThrowErrorMsgIf (Teuchos::is_null(m_region),
+		       "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
+
+      Ioss::Region *region = m_region.get();
+
+      // Get struct containing interval of database time(s) containing 'time'
+      DBStepTimeInterval sti(region, db_time);
+
+      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
+		      "ERROR: Input database '" << region->get_database()->get_filename()
+		      << "' has no transient data.");
+
+      std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+      while (I != m_fields.end()) {
+	(*I).restore_field_data(bulk, sti);
+	++I;
+      }
+
+      size_t step = sti.get_closest_step();
+      int current_step = region->get_current_state();
+      if (current_step != -1 && current_step != (int)step)
+	region->end_state(current_step);
+      if (current_step != (int)step) 
+	region->begin_state(step);
+
+      return region->get_state_time(step);
+    }
 
   }
 }

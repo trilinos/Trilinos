@@ -15,8 +15,10 @@
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 namespace Ioss { class GroupingEntity; }
 namespace stk { namespace io { class DBStepTimeInterval; } }
+namespace stk { namespace io { class InputFile; } }
 namespace stk { namespace mesh { class BulkData; } }
 namespace stk { namespace mesh { class FieldBase; } }
+namespace stk { namespace mesh { class Part; } }
 
 namespace Ioss {
   class Region;
@@ -57,6 +59,8 @@ namespace stk {
     {
     public:
 
+      friend class InputFile;
+      
       // Options:
       // * Frequency:
       //   -- one time only
@@ -93,6 +97,10 @@ namespace stk {
       MeshField& set_single_state(bool yesno);
       MeshField& set_read_once(bool yesno);
       
+      // Limit the field to part(s) specified by this call.
+      // Default is to restore field on all parts that it is defined on.
+      MeshField &add_subset(const stk::mesh::Part &part);
+
       bool is_active() const {return m_isActive;}
       
       void restore_field_data(stk::mesh::BulkData &bulk,
@@ -101,12 +109,14 @@ namespace stk {
       const std::string &db_name() const {return m_dbName;}
       stk::mesh::FieldBase *field() const {return m_field;}
 	
+
       void add_part(const stk::mesh::EntityRank rank,
 		    Ioss::GroupingEntity *io_entity);
       
       bool operator==(const MeshField &other) const;
 
     private:
+      std::vector<const stk::mesh::Part*> m_subsetParts;
       std::vector<MeshFieldPart> m_fieldParts;
       
       stk::mesh::FieldBase *m_field;
