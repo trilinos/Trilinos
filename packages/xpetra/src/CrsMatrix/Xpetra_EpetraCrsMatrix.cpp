@@ -164,45 +164,59 @@ namespace Xpetra {
 
   }
 
-  void EpetraCrsMatrix::allocateAllValues(size_t numNonZeros,ArrayRCP<size_t> & rowptr, ArrayRCP<int> & colind, ArrayRCP<double> & values)
-  {
-    // NOTE: Tpetra's insistence on using size_t's necessitate not directly accessing the rowptr here... Thus is is the ONLY thing we copy in setAllValues.
+  void EpetraCrsMatrix::allocateAllValues(size_t numNonZeros, ArrayRCP<size_t>& rowptr, ArrayRCP<int>& colind, ArrayRCP<double>& values) {
      XPETRA_MONITOR("EpetraCrsMatrix::allocateAllValues");
 
-    // Grab pointers
-    Epetra_IntSerialDenseVector& myColind = mtx_->ExpertExtractIndices();
-    double *& myValues = mtx_->ExpertExtractValues();
-
-    // Resize
-    myColind.Resize(numNonZeros);
-    delete [] myValues; myValues = new double[numNonZeros];
-
-    // Wrap in array RCPs w/o the memory control.
+    // Row offsets
+    // Unfortunately, we cannot do this in the same manner as column indices
+    // and values (see below).  The problem is that Tpetra insists on using
+    // size_t, and Epetra uses int internally.  So we only resize here, and
+    // will need to copy in setAllValues
     rowptr.resize(getNodeNumRows()+1);
-    colind = Teuchos::arcp(myColind.Values(),0,numNonZeros,false);
-    values = Teuchos::arcp(myValues,0,numNonZeros,false);
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    // Column indices
+    // Extract, resize, set colind
+    Epetra_IntSerialDenseVector& myColind = mtx_->ExpertExtractIndices();
+    myColind.Resize(numNonZeros);
+    colind = Teuchos::arcp(myColind.Values(), lowerOffset, numNonZeros, ownMemory);
+
+    // Values
+    // Extract, reallocate, set values
+    double *& myValues = mtx_->ExpertExtractValues();
+    delete [] myValues;
+    myValues = new double[numNonZeros];
+    values = Teuchos::arcp(myValues,lowerOffset,numNonZeros,ownMemory);
   }
 
-  void EpetraCrsMatrix::setAllValues(const ArrayRCP<size_t> & rowptr, const ArrayRCP<int> & colind, const ArrayRCP<double> & values)
-  {
+  void EpetraCrsMatrix::setAllValues(const ArrayRCP<size_t>& rowptr, const ArrayRCP<int>& colind, const ArrayRCP<double>& values) {
     XPETRA_MONITOR("EpetraCrsMatrix::setAllValues");
 
-    TEUCHOS_TEST_FOR_EXCEPTION((size_t)rowptr.size()!=getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
-    TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr()!=mtx_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
+    // Check sizes
+    TEUCHOS_TEST_FOR_EXCEPTION(Teuchos::as<size_t>(rowptr.size()) != getNodeNumRows()+1, Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that the size of your rowptr array is incorrect.");
+    TEUCHOS_TEST_FOR_EXCEPTION(values.size() != colind.size(), Xpetra::Exceptions::RuntimeError,
+                               "An exception is thrown to let you know that you mismatched your pointers.");
+
+    // Check pointers
     if (values.size() > 0) {
-      TEUCHOS_TEST_FOR_EXCEPTION(values.getRawPtr()!=mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(colind.getRawPtr() != mtx_->ExpertExtractIndices().Values(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
+      TEUCHOS_TEST_FOR_EXCEPTION(values.getRawPtr() != mtx_->ExpertExtractValues(), Xpetra::Exceptions::RuntimeError,
+                                 "An exception is thrown to let you know that you mismatched your pointers.");
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(values.size()!=colind.size(), Xpetra::Exceptions::RuntimeError, "An exception is thrown to let you know that you mismatched your pointers.");
 
-    // NOTE: Tpetra's insistence on using size_t's necessitate not directly accessing the rowptr here... Thus is is the ONLY thing we copy in setAllValues.
+    // We have to make a copy here, it is unavoidable
+    // See comments in allocateAllValues
+    const size_t N = getNodeNumRows();
+
     Epetra_IntSerialDenseVector& myRowptr = mtx_->ExpertExtractIndexOffset();
-    size_t N = getNodeNumRows();
-
     myRowptr.Resize(N+1);
-    for(size_t i=0; i<N+1; i++)
+    for (size_t i = 0; i < N+1; i++)
       myRowptr[i] = Teuchos::as<int>(rowptr[i]);
   }
-
 
   void EpetraCrsMatrix::resumeFill(const RCP< ParameterList > &params) {
     XPETRA_MONITOR("EpetraCrsMatrix::resumeFill");
