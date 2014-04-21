@@ -121,6 +121,10 @@ namespace MueLu {
 
     //@}
 
+  private:
+
+    bool isGoodMap(const Map& rowMap, const Map& colMap) const;
+
   }; //class TentativePNewFactory
 
 } //namespace MueLu

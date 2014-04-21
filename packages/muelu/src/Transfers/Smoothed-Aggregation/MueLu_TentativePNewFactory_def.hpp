@@ -105,7 +105,6 @@ namespace MueLu {
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void TentativePNewFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::BuildP(Level& fineLevel, Level& coarseLevel) const {
-
     FactoryMonitor m(*this, "Build", coarseLevel);
 
     RCP<Matrix>           A             = Get< RCP<Matrix> >          (fineLevel, "A");
@@ -124,21 +123,35 @@ namespace MueLu {
 
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
-    const SC     zero    = STS::zero();
-    const SC     one     = STS::one();
-    const LO     INVALID = Teuchos::OrdinalTraits<LO>::invalid();
+    const SC     zero      = STS::zero();
+    const SC     one       = STS::one();
+    const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     const GO     numAggs   = aggregates->GetNumAggregates();
     const bool   localAggs = !aggregates->AggregatesCrossProcessors();
     const size_t NSDim     = fineNullspace->getNumVectors();
 
+    // Aggregates map is based on the amalgamated column map
+    // We can skip global-to-local conversion if LIDs in row map are
+    // same as LIDs in column map
+    bool goodMap = isGoodMap(*rowMap, *colMap);
+
     // Create a lookup table to determine the rows (fine DOFs) that belong to a given aggregate.
-    // aggStart is a pointer into aggToRowMap
-    // aggStart[i]..aggStart[i+1] are indices into aggToRowMap
-    // aggToRowMap[aggStart[i]]..aggToRowMap[aggStart[i+1]-1] are the DOFs in aggregate i
+    // aggStart is a pointer into aggToRowMapLO
+    // aggStart[i]..aggStart[i+1] are indices into aggToRowMapLO
+    // aggToRowMapLO[aggStart[i]]..aggToRowMapLO[aggStart[i+1]-1] are the DOFs in aggregate i
     ArrayRCP<LO> aggStart;
-    ArrayRCP<GO> aggToRowMap;
-    amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMap);
+    ArrayRCP<LO> aggToRowMapLO;
+    ArrayRCP<GO> aggToRowMapGO;
+    if (goodMap) {
+      amalgInfo->UnamalgamateAggregatesLO(*aggregates, aggStart, aggToRowMapLO);
+      GetOStream(Runtime1) << "Column map is consistent with the row map, good." << std::endl;
+
+    } else {
+      amalgInfo->UnamalgamateAggregates(*aggregates, aggStart, aggToRowMapGO);
+      GetOStream(Warnings0) << "Column map is not consistent with the row map\n"
+                            << "using GO->LO conversion with performance penalty" << std::endl;
+    }
 
     // Find largest aggregate size
     LO maxAggSize = 0;
@@ -190,14 +203,24 @@ namespace MueLu {
       // put it in the flat array, "localQR" (in column major format) for the
       // QR routine.
       Teuchos::SerialDenseMatrix<LO,SC> localQR(aggSize, NSDim);
+      if (goodMap) {
+        for (size_t j = 0; j < NSDim; j++)
+          for (LO k = 0; k < aggSize; k++)
+            localQR(k,j) = fineNS[j][aggToRowMapLO[aggStart[agg]+k]];
+      } else {
+        for (size_t j = 0; j < NSDim; j++)
+          for (LO k = 0; k < aggSize; k++)
+            localQR(k,j) = fineNS[j][rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+k])];
+      }
+
+      // Test for zero columns
       for (size_t j = 0; j < NSDim; j++) {
         bool bIsZeroNSColumn = true;
 
-        for (LO k = 0; k < aggSize; k++) {
-          localQR(k,j) = fineNS[j][rowMap->getLocalElement(aggToRowMap[aggStart[agg]+k])];
+        for (LO k = 0; k < aggSize; k++)
           if (localQR(k,j) != zero)
             bIsZeroNSColumn = false;
-        }
+
         TEUCHOS_TEST_FOR_EXCEPTION(bIsZeroNSColumn == true, Exceptions::RuntimeError,
                                    "MueLu::TentativePNewFactory::MakeTentative: fine level NS part has a zero column");
       }
@@ -247,8 +270,7 @@ namespace MueLu {
       // Process each row in the local Q factor
       // FIXME: What happens if maps are blocked?
       for (LO j = 0; j < aggSize; j++) {
-        GO globalRow = aggToRowMap[aggStart[agg]+j];
-        LO localRow  = rowMap->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
+        LO localRow = (goodMap ? aggToRowMapLO[aggStart[agg]+j] : rowMap->getLocalElement(aggToRowMapGO[aggStart[agg]+j]));
 
         size_t rowStart = ia[localRow];
         for (size_t k = 0, lnnz = 0; k < NSDim; k++) {
@@ -314,6 +336,23 @@ namespace MueLu {
         params->set("printCommInfo",        true);
       GetOStream(Statistics1) << PerfUtils::PrintMatrixInfo(*Ptentative, "Ptent", params);
     }
+  }
+
+  template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  bool TentativePNewFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::isGoodMap(const Map& rowMap, const Map& colMap) const {
+    ArrayView<const GO> rowElements = rowMap.getNodeElementList();
+    ArrayView<const GO> colElements = colMap.getNodeElementList();
+
+    const size_t numElements = rowElements.size();
+
+    bool goodMap = true;
+    for (size_t i = 0; i < numElements; i++)
+      if (rowElements[i] != colElements[i]) {
+        goodMap = false;
+        break;
+      }
+
+    return goodMap;
   }
 
 } //namespace MueLu
