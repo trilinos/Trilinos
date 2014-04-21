@@ -420,7 +420,7 @@ Perf fenl(
       Kokkos::create_mirror_view(lid_to_gid);
     Kokkos::deep_copy(lid_to_gid_host, lid_to_gid);
 
-    pMapType ColMap = ::Teuchos::rcp (new MapType ( (fixture.node_count_global()),
+    pMapType ColMap = ::Teuchos::rcp (new MapType ( Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
         ::Teuchos::arrayView(lid_to_gid_host.ptr_on_device(),lid_to_gid.dimension_0()),
          0,comm, node) );
 
