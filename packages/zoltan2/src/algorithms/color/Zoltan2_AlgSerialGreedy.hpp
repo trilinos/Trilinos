@@ -64,6 +64,7 @@ class AlgSerialGreedy
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
     typedef typename Adapter::scalar_t scalar_t;
+    typedef int color_t; // TODO get from adapter
   
   public:
   AlgSerialGreedy()
@@ -72,8 +73,7 @@ class AlgSerialGreedy
 
   void color(
     const RCP<GraphModel<Adapter> > &model,
-    const RCP<ColoringSolution<typename Adapter::gid_t,
-  			     typename Adapter::lno_t> > &solution,
+    const RCP<ColoringSolution<Adapter> > &solution,
     const RCP<Teuchos::ParameterList> &pl,
     const RCP<Teuchos::Comm<int> > &comm
   )
@@ -99,37 +99,37 @@ class AlgSerialGreedy
   
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
-    ArrayRCP<lno_t> colors = solution->getColors();
+    ArrayRCP<color_t> colors = solution->getColors();
 
     // First-fit greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
-    const int maxColorGuess = 256; // for array allocation
-    int maxColor = 0;
+    const color_t maxColorGuess = 256; // for array allocation
+    color_t maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
-    Teuchos::Array<int> forbidden(maxColorGuess, -1);
+    Teuchos::Array<color_t> forbidden(maxColorGuess, -1);
 
     for (lno_t i=0; i<nVtx; i++){
       lno_t v=i; // TODO: Use ordering here.
       for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
         lno_t nbor = edgeIds[j];
-        if (color[nbor] > 0){
+        if (colors[nbor] > 0){
           // TODO: Check if we need reallocate forbidden array.
-          forbidden[color[nbor]] = v;
+          forbidden[colors[nbor]] = v;
         }
       }
       // Pick first (smallest) available color > 0
-      int c=1;
+      color_t c=1;
       while (forbidden[c]==v) c++;
-      color[v] = c;
+      colors[v] = c;
       if (c > maxColor){
         maxColor = c;
       }
     }
   
-    // Set maxColor in solution
-    solution->maxColor_ = maxColor;
+    // Set numColors in solution
+    solution->numColors_ = maxColor;
 
     return;
   }
