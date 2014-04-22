@@ -181,7 +181,7 @@ int Ifpack_LinePartitioner::ComputePartitions()
 {
   // Sanity Checks
   if(!xcoord_ && !ycoord_ && !zcoord_)  IFPACK_CHK_ERR(-1);
-  if(Partition_.size() != NumMyRows())  IFPACK_CHK_ERR(-2);
+  if((int)Partition_.size() != NumMyRows())  IFPACK_CHK_ERR(-2);
 
   // Short circuit
   if(Partition_.size() == 0) {NumLocalParts_ = 0; return 0;}
@@ -192,7 +192,7 @@ int Ifpack_LinePartitioner::ComputePartitions()
 
   // Use the auto partitioner 
   NumLocalParts_ = Compute_Blocks_AutoLine(&Partition_[0]);
-
+  
   // Resize Parts_
   Parts_.resize(NumLocalParts_);
   return(0);
