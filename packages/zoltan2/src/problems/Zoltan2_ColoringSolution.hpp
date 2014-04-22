@@ -115,6 +115,14 @@ public:
   /*! \brief Get global number of colors.
    */
   //color_t getGlobalNumColors(); // TODO
+ 
+  //////////////////////////////////////////////
+  // Set methods, allowing algorithms to store data.
+  //
+  void setNumColors(color_t nc)
+  {
+    numColors_ = nc;
+  }
 
 protected:
   // Coloring solution consists of permutation vector(s).

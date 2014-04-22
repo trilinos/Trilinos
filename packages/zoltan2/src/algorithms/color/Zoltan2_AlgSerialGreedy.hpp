@@ -86,7 +86,7 @@ class AlgSerialGreedy
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const size_t nVtx = model->getLocalNumVertices();
+    const lno_t nVtx = model->getLocalNumVertices();
     model->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
@@ -99,7 +99,7 @@ class AlgSerialGreedy
   
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
-    ArrayRCP<color_t> colors = solution->getColors();
+    ArrayRCP<color_t> colors = solution->getColorsRCP();
 
     // First-fit greedy coloring.
     // Use natural order for now. 
@@ -129,7 +129,7 @@ class AlgSerialGreedy
     }
   
     // Set numColors in solution
-    solution->numColors_ = maxColor;
+    solution->setNumColors(maxColor); // solution->numColors_ = maxColor;
 
     return;
   }
