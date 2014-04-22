@@ -3,13 +3,13 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   #
   # New Kokkos subpackages:
   TPL                   TPL               PS       OPTIONAL
-  Core                  core              SS       OPTIONAL
-  Compat                compat            SS       OPTIONAL
+  Core                  core              EX       OPTIONAL
+  Compat                compat            EX       OPTIONAL
   Classic               classic           PS       OPTIONAL
-  Containers            containers        SS       OPTIONAL
-  LinAlg                linalg            SS       OPTIONAL
-  Example               example           SS       OPTIONAL
-  MpiComm               mpicomm           SS       OPTIONAL
+  Containers            containers        EX       OPTIONAL
+  LinAlg                linalg            EX       OPTIONAL
+  Example               example           EX       OPTIONAL
+  MpiComm               mpicomm           EX       OPTIONAL
   Task                  task              EX       OPTIONAL
   )
 
