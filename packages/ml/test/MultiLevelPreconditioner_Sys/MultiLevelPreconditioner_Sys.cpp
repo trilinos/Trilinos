@@ -13,6 +13,7 @@
 #include "Epetra_SerialComm.h"
 #endif
 #include "Epetra_Map.h"
+#include "Epetra_Import.h"
 #include "Epetra_Vector.h"
 #include "Epetra_Time.h"
 #include "Epetra_RowMatrix.h"
@@ -163,9 +164,8 @@ int main(int argc, char *argv[]) {
   // ===================== //
   Epetra_CrsMatrix * Matrix;
   MatlabFileToCrsMatrix("elasticity.dat",Comm,Matrix);
-
   Epetra_Map NodeMap(Matrix->NumGlobalRows()/3,0,Comm);
-
+ 
   MatrixMarketFileToVector("c1.dat",NodeMap,coord1);
   MatrixMarketFileToVector("c2.dat",NodeMap,coord2);
   MatrixMarketFileToVector("c3.dat",NodeMap,coord3);
@@ -191,7 +191,6 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
-#ifdef MEH
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
@@ -232,8 +231,6 @@ int main(int argc, char *argv[]) {
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
-
-#endif
   // =========================== //
   // Autodetected Line SGS (trivial lines) 
   // =========================== //
