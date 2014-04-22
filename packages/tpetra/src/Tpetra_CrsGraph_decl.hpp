@@ -1058,11 +1058,7 @@ namespace Tpetra {
     //
     bool indicesAreAllocated() const;
 
-  public:
-    //! WARNING DO NOT USE
     void allocateIndices (ELocalGlobal lg);
-
-  protected:
 
     template <class T>
     ArrayRCP<T> allocateValues1D () const;
@@ -1906,17 +1902,6 @@ public:
       const GO localMinLID = inputRowMap.getMinLocalIndex ();
       const GO localMaxLID = inputRowMap.getMaxLocalIndex ();
 
-      try {
-        clonedGraph->allocateIndices (LocalIndices);
-      }
-      catch (std::exception& e) {
-        std::ostringstream os;
-        os << "Process " << myRank << ": allocateIndices(LocalIndices) on the "
-          "output graph threw an exception: " << e.what () << endl;
-        cerr << os.str ();
-        failed = true;
-      }
-
       if (graphIn.isLocallyIndexed ()) {
         if (numRows != 0) {
           try {
@@ -1988,17 +1973,6 @@ public:
       }
     }
     else { /* useGlobalIndices */
-      try {
-        clonedGraph->allocateIndices (GlobalIndices);
-      }
-      catch (std::exception& e) {
-        std::ostringstream os;
-        os << "Process " << myRank << ": allocateIndices(GlobalIndices) on the "
-          "output graph threw an exception: " << e.what () << endl;
-        cerr << os.str ();
-        failed = true;
-      }
-
       if (numRows != 0) {
         const GlobalOrdinal localMinGID = inputRowMap.getMinGlobalIndex ();
         const GlobalOrdinal localMaxGID = inputRowMap.getMaxGlobalIndex ();

@@ -977,11 +977,8 @@ namespace Tpetra {
     //
     bool indicesAreAllocated() const;
 
-  public:
-    //! WARNING DO NOT USE
     void allocateIndices (ELocalGlobal lg);
 
-  protected:
     template <class T>
     ArrayRCP<T> allocateValues1D () const;
     template <class T>
