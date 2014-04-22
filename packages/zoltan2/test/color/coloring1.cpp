@@ -77,6 +77,7 @@ using namespace std;
 typedef lno_t z2TestLO;
 typedef gno_t z2TestGO;
 typedef scalar_t Scalar;
+typedef int color_t; // TODO
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
@@ -84,7 +85,6 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 //typedef SparseMatrixAdapter::color_t color_t;
-typedef int color_t; // TODO
 
 int validateColoring(size_t n, color_t *color)
 // returns 0 if coloring is valid, negative if invalid
@@ -186,14 +186,13 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;
-  z2TestGO *checkGIDs;
-  z2TestLO *checkColoring;
-  Zoltan2::ColoringSolution<z2TestGO, z2TestLO> *soln = problem.getSolution();
+  color_t *checkColoring;
+  Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
   cout << "Going to get results" << endl;
   // Check that the solution is really a coloring
-  checkLength = soln->getColoringSize();
-  checkColoring = soln->getColoring();
+  checkLength = soln->getColorsSize();
+  checkColoring = soln->getColors();
 
   if (outputFile != "") {
     ofstream colorFile;

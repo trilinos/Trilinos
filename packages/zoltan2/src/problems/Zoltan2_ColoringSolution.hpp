@@ -75,7 +75,8 @@ private:
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gid_t gid_t;
-  typedef typename Adapter::color_t color_t;
+  //typedef typename Adapter::color_t color_t;
+  typedef typename int color_t; // TODO change to above?
 
 public:
 
@@ -87,7 +88,6 @@ public:
   {
     HELLO;
     length_ = length;
-    gids_   = ArrayRCP<gid_t>(length_);
     colors_  = ArrayRCP<color_t>(length_);
   }
 
@@ -102,11 +102,15 @@ public:
 
   /*! \brief Get (local) color array by RCP.
    */
-  inline ArrayRCP<int>  &getColorsRCP()  {return colors_;}
+  inline ArrayRCP<color_t>  &getColorsRCP()  {return colors_;}
+
+  /*! \brief Get (local) color array by raw pointer (no RCP).
+   */
+  inline color_t * getColors()  {return &(*colors_);}
 
   /*! \brief Get local number of colors.
    */
-  color_t getLocalNumColors(); // TODO
+  inline color_t getLocalNumColors(); {return numColors_;} 
 
   /*! \brief Get global number of colors.
    */
@@ -115,8 +119,9 @@ public:
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
-  ArrayRCP<gid_t>  gids_; // TODO: Remove?
   ArrayRCP<color_t> colors_;    // zero-based local color array
+  color_t numColors_;
+  //color_t numColorsGlobal_;  // For future distributed coloring
 };
 
 }
