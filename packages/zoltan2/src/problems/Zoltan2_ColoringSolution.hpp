@@ -76,7 +76,7 @@ private:
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gid_t gid_t;
   //typedef typename Adapter::color_t color_t;
-  typedef typename int color_t; // TODO change to above?
+  typedef int color_t; // TODO change to above?
 
 public:
 
@@ -110,17 +110,17 @@ public:
 
   /*! \brief Get local number of colors.
    */
-  inline color_t getLocalNumColors(); {return numColors_;} 
+  inline color_t getNumColors()  {return numColors_;} 
 
   /*! \brief Get global number of colors.
    */
-  color_t getGlobalNumColors(); // TODO
+  //color_t getGlobalNumColors(); // TODO
 
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
-  ArrayRCP<color_t> colors_;    // zero-based local color array
-  color_t numColors_;
+  ArrayRCP<color_t> colors_;   // zero-based local color array
+  color_t numColors_;          // Number of colors (local on this proc)
   //color_t numColorsGlobal_;  // For future distributed coloring
 };
 

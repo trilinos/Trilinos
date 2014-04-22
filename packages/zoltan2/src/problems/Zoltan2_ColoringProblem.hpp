@@ -73,7 +73,7 @@ namespace Zoltan2{
  *  The ColoringProblem is the core of the Zoltan2 coloring API.
  *  Based on the the user's input and parameters, the ColoringProblem
  *  sets up a computational Model, and a Solution object.  When the user
- *  calls the solve() method, the ColoringProblem runs the algorithm,
+ *  calls the color() method, the ColoringProblem runs the algorithm,
  *  after which the Solution object may be obtained by the user.
  *  \todo include pointers to examples
  *
@@ -143,11 +143,12 @@ public:
   //  but different problem parameters, than that which was used to compute
   //  the most recent solution.
   
-  void solve(bool updateInputData=true);
+  void color(bool updateInputData=true);
+  void solve(bool updateInputData=true); // Same as color(), for consistency
 
   //!  \brief Get the solution to the problem.
   //
-  //   \return  a reference to the solution to the most recent solve().
+  //   \return  a reference to the solution to the most recent color().
 
   ColoringSolution<Adapter> *getSolution() {
     // Get the raw ptr from the rcp
@@ -170,6 +171,14 @@ private:
 ////////////////////////////////////////////////////////////////////////
 template <typename Adapter>
 void ColoringProblem<Adapter>::solve(bool newData)
+{
+  // solve() is same as color()
+  this->color(newData);
+}
+
+////////////////////////////////////////////////////////////////////////
+template <typename Adapter>
+void ColoringProblem<Adapter>::color(bool newData)
 {
   HELLO;
 

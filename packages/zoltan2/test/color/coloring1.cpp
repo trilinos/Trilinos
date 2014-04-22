@@ -210,7 +210,7 @@ int main(int narg, char** arg)
   }
 
   // TODO: Print to some other stream than stdout?
-  cout << "No. of colors: " << checkColoring.getLocalNumColors() << endl;
+  cout << "No. of colors: " << soln->getNumColors() << endl;
 
   cout << "Going to validate the soln" << endl;
   // Verify that checkColoring is a coloring
