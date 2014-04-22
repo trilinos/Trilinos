@@ -44,11 +44,39 @@
 #define IFPACK2_BLOCKRELAXATION_DEF_HPP
 
 #include "Ifpack2_BlockRelaxation_decl.hpp"
-#include "Ifpack2_LinearPartitioner_decl.hpp"
+#include "Ifpack2_LinearPartitioner.hpp"
+#include "Ifpack2_Details_UserPartitioner_decl.hpp"
+#include "Ifpack2_Details_UserPartitioner_def.hpp"
 #include <Ifpack2_Condest.hpp>
 #include <Ifpack2_Parameters.hpp>
 
 namespace Ifpack2 {
+
+template<class MatrixType,class ContainerType>
+void BlockRelaxation<MatrixType,ContainerType>::
+setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
+{
+  if (A.getRawPtr () != A_.getRawPtr ()) { // it's a different matrix
+    IsInitialized_ = false;
+    IsComputed_ = false;
+
+    Condest_ = 0;
+
+    Partitioner_ = Teuchos::null;
+    Importer_ = Teuchos::null;
+    W_ = Teuchos::null;
+
+    if (! A.is_null ()) {
+      IsParallel_ = (A->getRowMap ()->getComm ()->getSize () > 1);
+    }
+
+    std::vector<Teuchos::RCP<ContainerType> > emptyVec;
+    std::swap (Containers_, emptyVec);
+    NumLocalBlocks_ = 0;
+
+    A_ = A;
+  }
+}
 
 template<class MatrixType,class ContainerType>
 BlockRelaxation<MatrixType,ContainerType>::
@@ -384,6 +412,9 @@ void BlockRelaxation<MatrixType,ContainerType>::initialize() {
   if (PartitionerType_ == "linear") {
     Partitioner_ =
       rcp (new Ifpack2::LinearPartitioner<row_graph_type> (A_->getGraph ()));
+  } else if (PartitionerType_ == "user") {
+    Partitioner_ =
+      rcp (new Ifpack2::Details::UserPartitioner<row_graph_type> (A_->getGraph () ) );
   } else {
     // We should have checked for this in setParameters(), so it's a
     // logic_error, not an invalid_argument or runtime_error.
