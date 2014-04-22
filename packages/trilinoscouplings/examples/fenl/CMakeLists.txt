@@ -5,11 +5,9 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
-  SET(SOURCES "")
+  SET(SOURCES BoxElemPart.cpp fenl.cpp main.cpp)
 
-  FILE(GLOB SOURCES *.cpp)
-
-  IF (Kokkos_ENABLE_Cuda) 
+  IF (Kokkos_ENABLE_Cuda)
 
     # add MPI include dir to nvcc
     IF( TPL_ENABLE_MPI )
@@ -33,5 +31,28 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     SOURCES ${SOURCES}
     COMM serial mpi
     )
-ENDIF ()
 
+  IF( TrilinosCouplings_ENABLE_Stokhos AND
+      Stokhos_ENABLE_Sacado AND
+      Stokhos_ENABLE_KokkosCore AND
+      Stokhos_ENABLE_KokkosLinAlg )
+
+    SET( SOURCES BoxElemPart.cpp fenl_ensemble.cpp )
+
+    IF (Kokkos_ENABLE_Cuda)
+      CUDA_COMPILE( OBJECTS_CUDA fenl_ensemble.cpp.cu main_ensemble.cpp.cu )
+      LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+    ELSE()
+      LIST( APPEND SOURCES main_ensemble.cpp )
+    ENDIF()
+
+    TRIBITS_ADD_EXECUTABLE(
+      fenl_ensemble
+      SOURCES ${SOURCES}
+      COMM serial mpi
+      DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
+      )
+
+  ENDIF()
+
+ENDIF ()

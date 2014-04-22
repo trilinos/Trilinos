@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,6 +50,7 @@
 #include <Kokkos_CrsMatrix.hpp>
 #include <Kokkos_MV.hpp>
 #include <impl/Kokkos_Timer.hpp>
+#include <Kokkos_ArithTraits.hpp>
 
 #include <Teuchos_CommHelpers.hpp>
 #include <Tpetra_CrsMatrix.hpp>
@@ -59,18 +60,20 @@
 namespace Kokkos {
 namespace Example {
 
+template <typename Scalar>
 inline
-double all_reduce( double local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+Scalar all_reduce( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 {
-  double global = 0 ;
+  Scalar global = 0 ;
   Teuchos::reduceAll( *comm , Teuchos::REDUCE_SUM , 1 , & local , & global );
   return global ;
 }
 
+template <typename Scalar>
 inline
-double all_reduce_max( double local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
+Scalar all_reduce_max( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int> >& comm )
 {
-  double global = 0 ;
+  Scalar global = 0 ;
   Teuchos::reduceAll( *comm , Teuchos::REDUCE_MAX , 1 , & local , & global );
   return global ;
 }
@@ -84,10 +87,16 @@ struct result_struct {
 };
 
 template<class CrsMatrix, class Vector>
-result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x, int max_iter = 200
-    , typename CrsMatrix::scalar_type tolerance = std::numeric_limits<typename CrsMatrix::scalar_type>::epsilon(), int print = 0) {
+result_struct cg_solve(
+  Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x,
+  int max_iter = 200,
+  typename CrsMatrix::scalar_type tolerance =
+    Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
+  int print = 0)
+{
   typedef typename CrsMatrix::scalar_type ScalarType;
-  typedef typename CrsMatrix::scalar_type magnitude_type;
+  typedef Kokkos::Details::ArithTraits<ScalarType> KAT;
+  typedef typename KAT::mag_type MagnitudeType;
   typedef typename CrsMatrix::local_ordinal_type LocalOrdinalType;
   Teuchos::RCP<Vector> r,p,Ap;
 
@@ -104,9 +113,9 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
     Ap->replaceLocalValue(i,1);
   }
 
-  magnitude_type normr = 0;
-  magnitude_type rtrans = 0;
-  magnitude_type oldrtrans = 0;
+  MagnitudeType normr = 0;
+  MagnitudeType rtrans = 0;
+  MagnitudeType oldrtrans = 0;
 
   LocalOrdinalType print_freq = max_iter/10;
   if (print_freq>50) print_freq = 50;
@@ -132,15 +141,17 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
 
   normr = std::sqrt(rtrans);
 
+  MagnitudeType normr_orig = normr;
+
   if (print) {
     std::cout << "Initial Residual = "<< normr << std::endl;
   }
 
-  magnitude_type brkdown_tol = std::numeric_limits<magnitude_type>::epsilon();
+  MagnitudeType brkdown_tol = KAT::epsilon();
 
   // Count external so that we keep iteration count in the end
   LocalOrdinalType k;
-  for(k=1; k <= max_iter && normr > tolerance; ++k) {
+  for(k=1; k <= max_iter && normr / normr_orig > tolerance; ++k) {
     if (k == 1) {
       p->update(1.0,*r,0.0,*r,0.0);
       addtime += timer.seconds(); timer.reset();
@@ -149,7 +160,7 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
       oldrtrans = rtrans;
       rtrans = r->dot(*r);
       dottime += timer.seconds(); timer.reset();
-      magnitude_type beta = rtrans/oldrtrans;
+      MagnitudeType beta = rtrans/oldrtrans;
       p->update(beta,*p,1.0,*r,0.0);
       addtime += timer.seconds(); timer.reset();
     }
@@ -158,8 +169,8 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
       std::cout << "Iteration = "<<k<<"   Residual = "<<normr<<std::endl;
     }
 
-    magnitude_type alpha = 0;
-    magnitude_type p_ap_dot = 0;
+    MagnitudeType alpha = 0;
+    MagnitudeType p_ap_dot = 0;
     A->apply(*p, *Ap);
     matvectime += timer.seconds(); timer.reset();
     p_ap_dot = Ap->dot(*p);
@@ -198,5 +209,3 @@ result_struct cg_solve(Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teucho
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_EXAMPLE_CG_SOLVE */
-
-

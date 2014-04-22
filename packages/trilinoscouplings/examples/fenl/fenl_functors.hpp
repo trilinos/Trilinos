@@ -289,7 +289,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
-    typedef typename CrsGraphType::size_type size_type;
     typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
@@ -663,25 +662,6 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-struct ElementComputationConstantCoefficient {
-  enum { is_constant = true };
-
-  const float coeff_k ;
-
-  KOKKOS_INLINE_FUNCTION
-  float operator()( double /* x */
-                  , double /* y */
-                  , double /* z */
-                  ) const
-    { return coeff_k ; }
-
-  ElementComputationConstantCoefficient( const float val )
-    : coeff_k( val ) {}
-
-  ElementComputationConstantCoefficient( const ElementComputationConstantCoefficient & rhs )
-    : coeff_k( rhs.coeff_k ) {}
-};
-
 template< class FiniteElementMeshType , class SparseMatrixType
         , class CoeffFunctionType = ElementComputationConstantCoefficient
         >
@@ -882,21 +862,21 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   void contributeResidualJacobian(
-    const double dof_values[] ,
+    const scalar_type dof_values[] ,
     const float  dpsidx[] ,
     const float  dpsidy[] ,
     const float  dpsidz[] ,
     const float  detJ ,
-    const float  coeff_k ,
+    const scalar_type  coeff_k ,
     const float  integ_weight ,
     const float  bases_vals[] ,
-    double       elem_res[] ,
-    double       elem_mat[][ FunctionCount ] ) const
+    scalar_type  elem_res[] ,
+    scalar_type  elem_mat[][ FunctionCount ] ) const
   {
-    double value_at_pt = 0 ;
-    double gradx_at_pt = 0 ;
-    double grady_at_pt = 0 ;
-    double gradz_at_pt = 0 ;
+    scalar_type value_at_pt = 0 ;
+    scalar_type gradx_at_pt = 0 ;
+    scalar_type grady_at_pt = 0 ;
+    scalar_type gradz_at_pt = 0 ;
 
     for ( unsigned m = 0 ; m < FunctionCount ; m++ ) {
       value_at_pt += dof_values[m] * bases_vals[m] ;
@@ -905,15 +885,15 @@ public:
       gradz_at_pt += dof_values[m] * dpsidz[m] ;
     }
 
-    const scalar_type k_detJ_weight = coeff_k        * detJ * integ_weight ;
-    const double res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
-    const double mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
+    const scalar_type k_detJ_weight = coeff_k             * detJ * integ_weight ;
+    const scalar_type res_val = value_at_pt * value_at_pt * detJ * integ_weight ;
+    const scalar_type mat_val = 2.0 * value_at_pt         * detJ * integ_weight ;
 
     // $$ R_i = \int_{\Omega} \nabla \phi_i \cdot (k \nabla T) + \phi_i T^2 d \Omega $$
     // $$ J_{i,j} = \frac{\partial R_i}{\partial T_j} = \int_{\Omega} k \nabla \phi_i \cdot \nabla \phi_j + 2 \phi_i \phi_j T d \Omega $$
 
     for ( unsigned m = 0; m < FunctionCount; ++m) {
-      double * const mat = elem_mat[m] ;
+      scalar_type * const mat = elem_mat[m] ;
       const float bases_val_m = bases_vals[m];
       const float dpsidx_m    = dpsidx[m] ;
       const float dpsidy_m    = dpsidy[m] ;
@@ -942,7 +922,7 @@ public:
     double x[ FunctionCount ] ;
     double y[ FunctionCount ] ;
     double z[ FunctionCount ] ;
-    double val[ FunctionCount ] ;
+    scalar_type val[ FunctionCount ] ;
     unsigned node_index[ ElemNodeCount ];
 
     for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
@@ -958,8 +938,8 @@ public:
     }
 
 
-    double elem_vec[ FunctionCount ] ;
-    double elem_mat[ FunctionCount ][ FunctionCount ] ;
+    scalar_type elem_vec[ FunctionCount ] ;
+    scalar_type elem_mat[ FunctionCount ][ FunctionCount ] ;
 
     for( unsigned i = 0; i < FunctionCount ; i++ ) {
       elem_vec[i] = 0 ;
@@ -974,7 +954,7 @@ public:
       float dpsidy[ FunctionCount ] ;
       float dpsidz[ FunctionCount ] ;
 
-      float coeff_k = 0 ;
+      scalar_type coeff_k = 0 ;
 
       {
         double pt_x = 0 ;
@@ -1036,12 +1016,12 @@ if ( 1 == ielem ) {
       for( unsigned i = 0 ; i < FunctionCount ; i++ ) {
         const unsigned row = node_index[i] ;
         if ( row < residual.dimension_0() ) {
-          atomic_fetch_add( & residual( row ) , elem_vec[i] );
+          atomic_add( & residual( row ) , elem_vec[i] );
 
           for( unsigned j = 0 ; j < FunctionCount ; j++ ) {
             const unsigned entry = elem_graph( ielem , i , j );
             if ( entry != ~0u ) {
-              atomic_fetch_add( & jacobian.values( entry ) , elem_mat[i][j] );
+              atomic_add( & jacobian.values( entry ) , elem_mat[i][j] );
             }
           }
         }
@@ -1172,6 +1152,182 @@ public:
   }
 };
 
+template< typename FixtureType , typename VectorType >
+class ResponseComputation
+{
+public:
+
+  typedef FixtureType fixture_type ;
+  typedef VectorType vector_type ;
+  typedef typename vector_type::device_type device_type ;
+  typedef typename vector_type::value_type value_type ;
+
+  typedef Kokkos::Example::HexElement_Data< fixture_type::ElemNode > element_data_type ;
+  static const unsigned SpatialDim       = element_data_type::spatial_dimension ;
+  static const unsigned TensorDim        = SpatialDim * SpatialDim ;
+  static const unsigned ElemNodeCount    = element_data_type::element_node_count ;
+  static const unsigned IntegrationCount = element_data_type::integration_count ;
+
+  //------------------------------------
+  // Computational data:
+
+  const element_data_type    elem_data ;
+  const fixture_type         fixture ;
+  const vector_type          solution ;
+
+  ResponseComputation( const ResponseComputation & rhs )
+    : elem_data()
+    , fixture( rhs.fixture )
+    , solution( rhs.solution )
+    {}
+
+  ResponseComputation( const fixture_type& arg_fixture ,
+                       const vector_type & arg_solution )
+    : elem_data()
+    , fixture( arg_fixture )
+    , solution( arg_solution )
+    {}
+
+  //------------------------------------
+
+  value_type apply() const
+  {
+    value_type response = 0;
+    //Kokkos::parallel_reduce( fixture.elem_count() , *this , response );
+    Kokkos::parallel_reduce( solution.dimension_0() , *this , response );
+    return response;
+  }
+
+  //------------------------------------
+
+   KOKKOS_INLINE_FUNCTION
+  float compute_detJ(
+    const float grad[][ ElemNodeCount ] , // Gradient of bases master element
+    const double x[] ,
+    const double y[] ,
+    const double z[] ) const
+  {
+    enum { j11 = 0 , j12 = 1 , j13 = 2 ,
+           j21 = 3 , j22 = 4 , j23 = 5 ,
+           j31 = 6 , j32 = 7 , j33 = 8 };
+
+    // Jacobian accumulation:
+
+    double J[ TensorDim ] = { 0, 0, 0,  0, 0, 0,  0, 0, 0 };
+
+    for( unsigned i = 0; i < ElemNodeCount ; ++i ) {
+      const double x1 = x[i] ;
+      const double x2 = y[i] ;
+      const double x3 = z[i] ;
+
+      const float g1 = grad[0][i] ;
+      const float g2 = grad[1][i] ;
+      const float g3 = grad[2][i] ;
+
+      J[j11] += g1 * x1 ;
+      J[j12] += g1 * x2 ;
+      J[j13] += g1 * x3 ;
+
+      J[j21] += g2 * x1 ;
+      J[j22] += g2 * x2 ;
+      J[j23] += g2 * x3 ;
+
+      J[j31] += g3 * x1 ;
+      J[j32] += g3 * x2 ;
+      J[j33] += g3 * x3 ;
+    }
+
+    // Inverse jacobian:
+
+    float invJ[ TensorDim ] = {
+      static_cast<float>( J[j22] * J[j33] - J[j23] * J[j32] ) ,
+      static_cast<float>( J[j13] * J[j32] - J[j12] * J[j33] ) ,
+      static_cast<float>( J[j12] * J[j23] - J[j13] * J[j22] ) ,
+
+      static_cast<float>( J[j23] * J[j31] - J[j21] * J[j33] ) ,
+      static_cast<float>( J[j11] * J[j33] - J[j13] * J[j31] ) ,
+      static_cast<float>( J[j13] * J[j21] - J[j11] * J[j23] ) ,
+
+      static_cast<float>( J[j21] * J[j32] - J[j22] * J[j31] ) ,
+      static_cast<float>( J[j12] * J[j31] - J[j11] * J[j32] ) ,
+      static_cast<float>( J[j11] * J[j22] - J[j12] * J[j21] ) };
+
+    const float detJ = J[j11] * invJ[j11] +
+                       J[j21] * invJ[j12] +
+                       J[j31] * invJ[j13] ;
+
+    return detJ ;
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  value_type contributeResponse(
+    const value_type dof_values[] ,
+    const float  detJ ,
+    const float  integ_weight ,
+    const float  bases_vals[] ) const
+  {
+    // $$ g_i = \int_{\Omega} T^2 d \Omega $$
+
+    value_type value_at_pt = 0 ;
+    for ( unsigned m = 0 ; m < ElemNodeCount ; m++ ) {
+      value_at_pt += dof_values[m] * bases_vals[m] ;
+    }
+
+    value_type elem_response =
+      value_at_pt * value_at_pt * detJ * integ_weight ;
+
+    return elem_response;
+  }
+
+  /*
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned ielem , value_type& response ) const
+  {
+    // Gather nodal coordinates and solution vector:
+
+    double x[ ElemNodeCount ] ;
+    double y[ ElemNodeCount ] ;
+    double z[ ElemNodeCount ] ;
+    value_type val[ ElemNodeCount ] ;
+
+    for ( unsigned i = 0 ; i < ElemNodeCount ; ++i ) {
+      const unsigned ni = fixture.elem_node( ielem , i );
+
+      x[i] = fixture.node_coord( ni , 0 );
+      y[i] = fixture.node_coord( ni , 1 );
+      z[i] = fixture.node_coord( ni , 2 );
+
+      val[i] = solution( ni );
+    }
+
+    for ( unsigned i = 0 ; i < IntegrationCount ; ++i ) {
+
+      const float detJ = compute_detJ( elem_data.gradients[i] , x , y , z );
+
+      response += contributeResponse( val , detJ , elem_data.weights[i] ,
+                                      elem_data.values[i] );
+    }
+  }
+  */
+
+  KOKKOS_INLINE_FUNCTION
+  void operator()( const unsigned i , value_type& response ) const
+  {
+    value_type u = solution(i);
+    response += (u * u) / fixture.node_count_global();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & response ) const
+  { response = 0 ; }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & response ,
+             volatile const value_type & input ) const
+  { response += input ; }
+
+}; /* ResponseComputation */
+
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos  */
@@ -1186,4 +1342,3 @@ public:
 //----------------------------------------------------------------------------
 
 #endif /* #ifndef KOKKOS_EXAMPLE_FENLFUNCTORS_HPP */
-
