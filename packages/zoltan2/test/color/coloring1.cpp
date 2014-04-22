@@ -86,12 +86,23 @@ typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
 //typedef SparseMatrixAdapter::color_t color_t;
 
-int validateColoring(size_t n, color_t *color)
+int validateColoring(RCP<SparseMatrix> A, color_t *color)
 // returns 0 if coloring is valid, negative if invalid
 {
   int nconflicts = 0;
+  Teuchos::ArrayView<lno_t> indices;
+  Teuchos::ArrayView<scalar_t> values; // Not used
 
-  // TODO: count conflicts in graph
+  // Count conflicts in the graph.
+  // Loop over local rows, treat local column indices as edges.
+  lno_t n = A->getNodeNumRows();
+  for (lno_t i=0; i<n; i++) {
+    A->getLocalRowView(i, indices, values);
+    for (lno_t j=0; j<indices.size(); j++) {
+      if ((indices[j]<n) && (color[i]==color[indices[j]]))
+        nconflicts++;
+    }
+  } 
   
   return nconflicts;
 }
@@ -163,11 +174,11 @@ int main(int narg, char** arg)
 
     uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
 
-  RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
+  RCP<SparseMatrix> Matrix = uinput->getUITpetraCrsMatrix();
 
   if (me == 0) 
-    cout << "NumRows     = " << origMatrix->getGlobalNumRows() << endl
-         << "NumNonzeros = " << origMatrix->getGlobalNumEntries() << endl
+    cout << "NumRows     = " << Matrix->getGlobalNumRows() << endl
+         << "NumNonzeros = " << Matrix->getGlobalNumEntries() << endl
          << "NumProcs = " << comm->getSize() << endl;
 
   ////// Specify problem parameters
@@ -175,14 +186,14 @@ int main(int narg, char** arg)
   //params.set("color_method", colorMethod);
 
   ////// Create an input adapter for the Tpetra matrix.
-  SparseMatrixAdapter adapter(origMatrix);
+  SparseMatrixAdapter adapter(Matrix);
 
   ////// Create and solve ordering problem
   try
   {
   Zoltan2::ColoringProblem<SparseMatrixAdapter> problem(&adapter, &params);
-  cout << "Going to solve" << endl;
-  problem.solve();
+  cout << "Going to color" << endl;
+  problem.color();
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;
@@ -209,26 +220,17 @@ int main(int narg, char** arg)
     colorFile.close();
   }
 
-  // TODO: Print to some other stream than stdout?
-  cout << "No. of colors: " << soln->getNumColors() << endl;
+  // Print # of colors on each proc.
+  cout << "No. of colors on proc " << me << " : " << soln->getNumColors() << endl;
 
   cout << "Going to validate the soln" << endl;
   // Verify that checkColoring is a coloring
-  testReturn = validateColoring(checkLength, checkColoring);
+  testReturn = validateColoring(Matrix, checkColoring);
 
   } catch (std::exception &e){
-      if (comm->getSize() != 1)
-      {
-          std::cout << "Coloring does not support distributed matrices."
-             << std::endl;
-          std::cout << "PASS" << std::endl;
-      }
-      else
-      {
-          std::cout << "Exception caught in coloring" << std::endl;
-          std::cout << e.what() << std::endl;
-          std::cout << "FAIL" << std::endl;
-      }
+      std::cout << "Exception caught in coloring" << std::endl;
+      std::cout << e.what() << std::endl;
+      std::cout << "FAIL" << std::endl;
       return 0;
   }
 
