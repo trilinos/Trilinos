@@ -179,6 +179,8 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList MLList;
   double TotalErrorResidual = 0.0, TotalErrorExactSol = 0.0;
 
+
+
   // ====================== //
   // default options for SA //
   // ====================== //
@@ -189,6 +191,7 @@ int main(int argc, char *argv[]) {
   MLList.set("smoother: type", "Gauss-Seidel");
   char mystring[80];
   strcpy(mystring,"SA");
+#ifdef MEH
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
 
@@ -228,6 +231,23 @@ int main(int argc, char *argv[]) {
 
   TestMultiLevelPreconditioner(mystring, MLList, Problem,
                                TotalErrorResidual, TotalErrorExactSol);
+
+
+#endif
+  // =========================== //
+  // Autodetected Line SGS (trivial lines) 
+  // =========================== //
+  if (Comm.MyPID() == 0) PrintLine();
+  ML_Epetra::SetDefaults("SA",MLList);
+  MLList.set("smoother: type", "line Gauss-Seidel");
+  MLList.set("smoother: line detection threshold",0.1);
+  MLList.set("x-coordinates",&((*coord1)[0]));
+  MLList.set("y-coordinates",&((*coord2)[0]));
+  MLList.set("z-coordinates",&((*coord3)[0]));
+  TestMultiLevelPreconditioner(mystring, MLList, Problem,
+                               TotalErrorResidual, TotalErrorExactSol);
+  
+
   // ===================== //
   // print out total error //
   // ===================== //
