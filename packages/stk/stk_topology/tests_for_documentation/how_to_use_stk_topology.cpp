@@ -2,6 +2,8 @@
 #include <stk_topology/topology.hpp>
 #include <vector>
 
+#ifndef __IBMCPP__
+
 namespace {
 
 void verifyPermutationsForTriangle(stk::topology triangular_shell, unsigned* triangle_1_node_ids, unsigned* gold_triangle_1_permutations)
@@ -137,3 +139,4 @@ TEST(stk_topology_understanding, superelements)
 
 }
 
+#endif // __IBMCPP__
