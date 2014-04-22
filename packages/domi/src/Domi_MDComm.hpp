@@ -161,7 +161,7 @@ public:
    *
    * \param plist [in] ParameterList with construction information
    *        \htmlonly
-   *        <iframe src="domi.xml" width="100%" frameborder="0"></iframe>
+   *        <iframe src="domi.xml" width="100%" scrolling="no" frameborder="0"></iframe>
    *        <hr />
    *        \endhtmlonly
    */
