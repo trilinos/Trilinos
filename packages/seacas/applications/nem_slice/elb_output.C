@@ -869,8 +869,10 @@ int write_nemesis(std::string &nemI_out_file,
 	      nsize = el_cnt_blk[ecnt] * node_pel_blk[ecnt] * sizeof(INT);
 	      if(nsize > nsize_old)
 		{
-		  if(nsize_old == 0)
+		  if(nsize_old == 0) {
 		    tmp_connect = (INT*)malloc(nsize);
+		    nsize_old = nsize;
+		  }
 		  else
 		    {
 		      tmp_connect = (INT*)realloc(tmp_connect, nsize);

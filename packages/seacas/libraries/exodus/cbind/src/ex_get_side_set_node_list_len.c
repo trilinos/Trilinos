@@ -60,8 +60,6 @@
 #include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 #include "netcdf.h"                     // for NC_NOERR
 
-static void *safe_free(void *array);
-
 /*!
  * This routine is designed to read the Exodus II V 2.0 side set side 
  * definition  and return the length of a ExodusI style side set node list.
@@ -573,8 +571,3 @@ int ex_get_side_set_node_list_len(int exoid,
   return(EX_NOERR);
 }
 
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}

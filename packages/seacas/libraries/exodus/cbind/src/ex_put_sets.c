@@ -96,6 +96,7 @@ int ex_put_sets (int   exoid,
 		ex_name_of_object(sets[i].type), exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
       }
+      free(sets_to_define);
       return (EX_FATAL);
     }
 
@@ -117,6 +118,7 @@ int ex_put_sets (int   exoid,
 	      "Error: failed to put file id %d into define mode",
 	      exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
+      free(sets_to_define);
       return (EX_FATAL);
     }
     
@@ -286,6 +288,7 @@ int ex_put_sets (int   exoid,
       sprintf(errmsg,
 	      "Error: failed to complete definition in file id %d", exoid);
       ex_err("ex_put_sets",errmsg,exerrval);
+      free(sets_to_define);
       return (EX_FATAL);
     }
 
@@ -320,6 +323,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to locate %s %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -333,6 +337,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to store %s id %"PRId64" in file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -344,6 +349,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to locate %s status in file id %d", ex_name_of_object(sets[i].type),
 		exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
       
@@ -353,6 +359,7 @@ int ex_put_sets (int   exoid,
 		"Error: failed to store %s %"PRId64" status to file id %d", ex_name_of_object(sets[i].type),
 		sets[i].id, exoid);
 	ex_err("ex_put_sets",errmsg,exerrval);
+	free(sets_to_define);
 	return (EX_FATAL);
       }
     }

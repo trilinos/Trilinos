@@ -54,7 +54,6 @@
 #include "exodusII_int.h"               // for ex_get_dimension, etc
 #include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-static void *safe_free(void *array);
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label, int *dimid);
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
                                          const char *label);
@@ -466,12 +465,6 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
       stat_vals[i] = 1;
   }
  return stat_vals;
-}
-
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
 }
 
 static int put_truth_table(int exoid, int varid, int *table, const char *label)

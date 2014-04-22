@@ -777,7 +777,7 @@ int ex_id_lkup( int exoid,
   if (i >= dim_len) /* failed to find id number */
   {
     if ( !(tmp_stats->valid_ids) ) {
-       free (id_vals);
+      if (id_vals) free (id_vals); 
     }
     exerrval = EX_LOOKUPFAIL;
     return(EX_LOOKUPFAIL); /*if we got here, the id array value doesn't exist */
@@ -797,6 +797,7 @@ int ex_id_lkup( int exoid,
 
       if (!(stat_vals = malloc(dim_len*sizeof(int)))) {
         exerrval = EX_MEMFAIL;
+        if (id_vals) free (id_vals); 
         sprintf(errmsg,
                  "Error: failed to allocate memory for %s array for file id %d",
                   id_table,exoid);
@@ -806,6 +807,7 @@ int ex_id_lkup( int exoid,
 
       if ((status = nc_get_var_int (exoid, varid, stat_vals)) != NC_NOERR) {
         exerrval = status;
+        if (id_vals) free (id_vals); 
         free(stat_vals);
         sprintf(errmsg,
                "Error: failed to get %s array from file id %d",
@@ -1551,3 +1553,10 @@ void ex_compress_variable(int exoid, int varid, int type)
   }
 #endif
 }
+
+void *safe_free(void *array)
+{
+  if (array != 0) free(array);
+  return 0;
+}
+

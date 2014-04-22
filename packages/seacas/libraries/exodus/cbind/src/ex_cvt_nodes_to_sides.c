@@ -43,12 +43,6 @@
 #include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
 #include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
 static int64_t get_node(void_int *connect, size_t index, size_t int_size)
 {
   if (int_size == sizeof(int64_t)) {
@@ -1039,7 +1033,8 @@ int ex_cvt_nodes_to_sides(int exoid,
   safe_free(elem_blk_parms);
   safe_free(elem_blk_ids);
   safe_free(ss_elem_ndx);
-
+  safe_free(same_elem_type);
+  
   return (err_stat);
 }
 

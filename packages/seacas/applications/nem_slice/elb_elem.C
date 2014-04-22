@@ -1823,8 +1823,8 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
 
   case HEXSHELL:
     switch (side_num) {
+    case 4:
     case 5:
-    case 6:
       for (i = 0; i < 4; i++)
         ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
       break;

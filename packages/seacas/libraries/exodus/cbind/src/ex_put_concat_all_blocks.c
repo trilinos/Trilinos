@@ -191,6 +191,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to locate " TNAME " block status in file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
+	safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\
@@ -202,6 +203,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to store " TNAME " block status array to file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
+	safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\
@@ -219,7 +221,7 @@ int ex_put_concat_all_blocks (int    exoid,
       }									\
 									\
       /* then, write out id list */					\
-      if (ids_int64) {                  \
+      if (ids_int64) {                                                  \
          status = nc_put_var_longlong(exoid, varid, SIDNAME);		\
       } else {                                                          \
          status = nc_put_var_int(exoid, varid, SIDNAME);		\

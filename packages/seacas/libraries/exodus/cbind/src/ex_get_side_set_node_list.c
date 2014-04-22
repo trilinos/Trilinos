@@ -64,12 +64,6 @@
  * This routine is designed to read the Exodus II V 2.0 side set side 
  * definition  and return a ExodusI style side set node definition.
  */
-static void* safe_free(void* array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
 static void set_count(int exoid, void_int *cnt, size_t ndx, size_t val)
 {
   if (ex_int64_status(exoid) & EX_BULK_INT64_API) {
@@ -311,7 +305,8 @@ int ex_get_side_set_node_list(int exoid,
 	    "Error: failed to get side set %"PRId64" in file id %d",
 	    side_set_id, exoid);
     ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-    return (EX_FATAL);
+    err_stat = EX_FATAL;
+    goto cleanup;
   }
 
   /* Allocate space for the ss element index array */
@@ -1019,7 +1014,8 @@ int ex_get_side_set_node_list(int exoid,
 		  "Error: %s is an unsupported element type",
 		  elem_blk_parms[parm_ndx].elem_type);
 	  ex_err("ex_get_side_set_node_list",errmsg,exerrval);
-	  return(EX_FATAL);
+	  err_stat = EX_FATAL;
+	  goto cleanup;
 	}
       }
   }

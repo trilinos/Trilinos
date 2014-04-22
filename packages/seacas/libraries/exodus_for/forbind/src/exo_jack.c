@@ -451,6 +451,7 @@ F2C(exgqa,EXGQA) (int *idexo,
 
   /* do ExodusII C call to get qa records */
   if (ex_get_qa(*idexo, (void *) sptr) == EX_FATAL) {
+    free(sptr);
     *ierr = EX_FATAL;
     return;
   }
@@ -1389,6 +1390,7 @@ F2C(exgp,EXGP) (int *idexo,
   /* allocate memory to stage the property name into */
   if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
     *ierr = EX_MEMFAIL;
+    return;
   }
   /* Copy property name from Fortran string to staging area */
   ex_fstrncpy(sptr, prop_name, slen);
@@ -1423,6 +1425,7 @@ F2C(exgpa,EXGPA) (int *idexo,
   /* allocate memory to stage the property name into */
   if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
     *ierr = EX_MEMFAIL;
+    return;
   }
   memset(sptr, 0, slen + 1);
 
@@ -1460,6 +1463,7 @@ F2C(exppa,EXPPA) (int *idexo,
   /* allocate memory to stage the property name into */
   if (!(sptr = malloc((slen + 1) * sizeof(char)))) {
     *ierr = EX_MEMFAIL;
+    return;
   }
   /* Copy property name from Fortran string to staging area */
   ex_fstrncpy(sptr, prop_name, slen);

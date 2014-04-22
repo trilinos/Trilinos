@@ -132,6 +132,7 @@ int ex_put_concat_elem_block (int    exoid,
 	    "Error: failed to locate element block status in file id %d",
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -143,6 +144,7 @@ int ex_put_concat_elem_block (int    exoid,
 	    "Error: failed to store element block status array to file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -154,6 +156,7 @@ int ex_put_concat_elem_block (int    exoid,
 	    "Error: failed to locate element block ids array in file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -170,6 +173,7 @@ int ex_put_concat_elem_block (int    exoid,
 	    "Error: failed to store element block id array in file id %d",
             exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -179,6 +183,7 @@ int ex_put_concat_elem_block (int    exoid,
     sprintf(errmsg,
 	    "Error: failed to get string length in file id %d",exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -187,6 +192,7 @@ int ex_put_concat_elem_block (int    exoid,
     exerrval = status;
     sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -393,6 +399,7 @@ int ex_put_concat_elem_block (int    exoid,
 	    "Error: failed to complete element block definition in file id %d", 
 	    exoid);
     ex_err("ex_put_concat_elem_block",errmsg,exerrval);
+    free(eb_array);
     return (EX_FATAL);
   }
 
@@ -427,6 +434,7 @@ int ex_put_concat_elem_block (int    exoid,
   
   /* Fatal error: exit definition mode and return */
  error_ret:
+  free(eb_array);
   if (nc_enddef (exoid) != NC_NOERR) {     /* exit define mode */
     sprintf(errmsg,
 	    "Error: failed to complete definition for file id %d",

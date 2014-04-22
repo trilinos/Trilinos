@@ -59,13 +59,6 @@
 #include "exodusII.h"                   // for ex_err, exerrval, EX_MSG, etc
 #include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
-/*! \cond INTERNAL */
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
 /* Generic error message for element type/node count mapping...*/
 #define EL_NODE_COUNT_ERROR sprintf(errmsg, \
       "Error: An element of type '%s' with %d nodes is not valid.",\
@@ -166,7 +159,7 @@ int ex_get_concat_side_set_node_count(int exoid,
             "Error: failed to get element block ids in file id %d",
             exoid);
     ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
-    return(EX_FATAL);
+    goto error_ret;
   } 
 
   /* Allocate space for the element block params */
@@ -200,7 +193,7 @@ int ex_get_concat_side_set_node_count(int exoid,
              "Error: failed to get element block  %"PRId64" parameters in file id %d",
               block.id, exoid);
       ex_err("ex_get_concat_side_set_node_count",errmsg,EX_MSG);
-      return(EX_FATAL);
+      goto error_ret;
     }
 
     elem_blk_parms[i].num_elem_in_blk = block.num_entry;
@@ -626,6 +619,9 @@ int ex_get_concat_side_set_node_count(int exoid,
   /* All done: release allocated memory */
   safe_free(elem_blk_ids);
   safe_free(side_set_ids);
+  safe_free(ss_elem_ndx);
+  safe_free(side_set_elem_list);
+  safe_free(side_set_side_list);
 
   return(EX_NOERR);
 
