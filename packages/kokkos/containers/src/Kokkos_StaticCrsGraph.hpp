@@ -50,6 +50,7 @@
 #include <vector>
 
 #include <Kokkos_View.hpp>
+#include <Kokkos_Parallel.hpp> // for parallel_reduce
 
 namespace Kokkos {
 
