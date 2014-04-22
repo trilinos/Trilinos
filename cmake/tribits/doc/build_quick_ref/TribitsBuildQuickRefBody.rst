@@ -354,7 +354,7 @@ users to set and override these compiler flag variables globally and on a
 package-by-package basis.  Below, the facilities for manipulating compiler
 flags is described.
 
-The <Project> TriBiTS CMake build system will set up default compile flags for
+The <Project> TriBITS CMake build system will set up default compile flags for
 GCC ('GNU') in development mode
 (i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
 portable code.  These flags set up strong warning options and enforce langauge
@@ -1675,7 +1675,7 @@ with::
 
   $ make dashboard
 
-This invokes the advanced TriBiTS CTest scripts to do an experimental build
+This invokes the advanced TriBITS CTest scripts to do an experimental build
 for all of the packages that you have explicitly enabled.  The packages that
 are implicitly enabled due to package dependencies are not directly processed
 by the experimental_build_test.cmake script.
