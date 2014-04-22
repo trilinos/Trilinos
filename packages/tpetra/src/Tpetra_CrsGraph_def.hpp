@@ -3566,6 +3566,12 @@ namespace Tpetra {
                 << "Node number of entries = " << nodeNumEntries_ << std::endl
                 << "Node number of diagonals = " << nodeNumDiags_ << std::endl
                 << "Node max number of entries = " << nodeMaxNumRowEntries_ << std::endl;
+            if (isUpperTriangular()) {
+              out << "Graph is upper triangular" << std::endl;
+            }
+            if (isLowerTriangular()) {
+              out << "Graph is lower triangular" << std::endl;
+            }
             if (indicesAreAllocated()) {
               out << "Node number of allocated entries = " << nodeNumAllocated_ << std::endl;
             }
