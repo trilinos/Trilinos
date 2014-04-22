@@ -1261,61 +1261,54 @@ namespace {
 // INSTANTIATIONS
 //
 
+// Tests to build and run in both debug and release modes.  We will
+// instantiate them over all enabled local ordinal (LO), global
+// ordinal (GO), and Kokkos Node (NODE) types.
+#define UNIT_TEST_GROUP_DEBUG_AND_RELEASE( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+
+// Test(s) for "Node conversion" (i.e., the clone() template method of
+// CrsGraph).  We will instantiate them over all enabled Kokkos Node
+// (N2) types.
+#define NC_TESTS(N2) \
+    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
+
 // mfh 05 Apr 2013: CrsGraph only tests for bad nonowned GIDs in a
 // debug build.  The BadGIDs test fails in a release build.
 #ifdef HAVE_TPETRA_DEBUG
 
-#define UNIT_TEST_GROUP( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+#define UNIT_TEST_GROUP_DEBUG_ONLY( LO, GO, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadGIDs, LO, GO, NODE )
 
 #else // NOT HAVE_TPETRA_DEBUG
 
-#define UNIT_TEST_GROUP( LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc0, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyGraphAlloc1, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ExcessAllocation, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, BadConst  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, insert_remove_LIDs   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NonLocals , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, DottedDiag , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithStaticProfile , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, CopiesAndViews, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, WithColMap,     LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Describable   , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, EmptyFillComplete, LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Typedefs      , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, Bug20100622K  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, ActiveFill    , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SortingTests  , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, TwoArraysESFC , LO, GO, NODE ) \
-      TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, SetAllIndices , LO, GO, NODE )
+#define UNIT_TEST_GROUP_DEBUG_ONLY( LO, GO, NODE )
 
 #endif // HAVE_TPETRA_DEBUG
 
-#define NC_TESTS(N2) \
-    TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( CrsGraph, NodeConversion, int, int, N2 )
 
     TPETRA_ETI_MANGLING_TYPEDEFS()
 
-    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP )
+    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_AND_RELEASE )
+
+    TPETRA_INSTANTIATE_LGN( UNIT_TEST_GROUP_DEBUG_ONLY )
 
     TPETRA_INSTANTIATE_N(NC_TESTS)
 }
