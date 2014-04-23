@@ -47,6 +47,7 @@
 #define KOKKOS_TASK_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
