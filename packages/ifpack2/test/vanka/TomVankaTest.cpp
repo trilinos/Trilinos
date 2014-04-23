@@ -153,7 +153,7 @@ int main(int argc, char *argv[]){
   typedef int GlobalOrdinal;
   typedef double Scalar;
   typedef Tpetra::DefaultPlatform::DefaultPlatformType::NodeType Node;
-  typedef typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
+  typedef KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Node>::SparseOps LocalMatOps;
   
   // Matrix stuff
   typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> MAP;
