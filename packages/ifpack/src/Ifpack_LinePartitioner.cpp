@@ -91,7 +91,7 @@ inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int
     for(int k=0; k<NumEqns; k++) 
       blockIndices[next + k] = LineID;
     
-    // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal)
+    // Try to find the next guy in the line (only check the closest two that aren't element 0 (diagonal))
     Epetra_Util::Sort(true,neighbor_len,dist,0,0,1,&indices,0,0);
 
     if(neighbor_len > 2 && indices[1] != last && blockIndices[indices[1]] == -1 && dist[1]/dist[neighbor_len-1] < tol) {
@@ -113,7 +113,7 @@ inline void Ifpack_LinePartitioner::local_automatic_line_search(int NumEqns, int
 int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
   double *xvals=xcoord_, *yvals=ycoord_, *zvals=zcoord_;
   int NumEqns = NumEqns_;
-  int tol = threshold_;
+  double tol = threshold_;
   int N = NumMyRows();
   int allocated_space = MaxNumEntries();
     
@@ -149,7 +149,7 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
       indices[neighbor_len]=cols[j];
       neighbor_len++;
     }
-    //    ML_az_dsort2(dist,neighbor_len,indices);
+
     Epetra_Util::Sort(true,neighbor_len,dist,0,0,1,&indices,0,0);
 
     // Number myself
@@ -167,7 +167,7 @@ int Ifpack_LinePartitioner::Compute_Blocks_AutoLine(int * blockIndices) const {
 
     num_lines++;
   }
-
+  
   // Cleanup
   delete [] cols;
   delete [] dist;
