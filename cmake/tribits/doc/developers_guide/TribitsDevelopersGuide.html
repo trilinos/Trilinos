@@ -2942,7 +2942,6 @@ example, if the TPL <tt class="docutils literal">BLAS</tt> is defined in an <a c
 dependency on the TPL <tt class="docutils literal">BLAS</tt> without having to define its own <tt class="docutils literal">BLAS</tt> TPL
 in its repository's <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file.  For more details, see
 <a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.</p>
-<!-- ToDo: Edited and spell-checked up to here on 4/17/2014! -->
 <!-- Where to set variables? -->
 <!-- - - - - - - - - - - - - - - - - - - - - - - - -->
 <!-- A TriBITS project, repository, package have a number of files in which
@@ -2957,7 +2956,7 @@ depend on: -->
 <div class="section" id="example-tribits-projects">
 <h1><a class="toc-backref" href="#id37">4&nbsp;&nbsp;&nbsp;Example TriBITS Projects</a></h1>
 <p>In this section, a few different example TriBITS projects and packages are
-previewed.  All of these examples exist in the TriBITS source directory
+previewed.  Most of these examples exist in the TriBITS source directory
 <tt class="docutils literal">tribits</tt> itself so they are available to all users of TriBITS.  These
 examples also provide a means to test the TriBITS system itself (see <a class="reference internal" href="#the-tribits-test-package">The
 TriBITS Test Package</a>).</p>
@@ -2965,34 +2964,33 @@ TriBITS Test Package</a>).</p>
 project.  The second example covered in detail is <a class="reference internal" href="#tribitsexampleproject">TribitsExampleProject</a>.
 This example covers all the basics for setting up a simple multi-package
 TriBITS project.  The third example outlined is <a class="reference internal" href="#mocktrilinos">MockTrilinos</a> which mostly
-exists to test the TriBITS system itself but use contains some nice examples
+exists to test the TriBITS system itself but also contains some nice examples
 of a few different TriBITS features and behaviors.  The forth example is the
-<a class="reference internal" href="#reducedmocktrilinos">ReducedMockTrilinos</a> project which is used to dmeonstrate TriBITS behavior
+<a class="reference internal" href="#reducedmocktrilinos">ReducedMockTrilinos</a> project which is used to demonstrate TriBITS behavior
 in this document.  Also mentioned is the <a class="reference internal" href="#trilinos">Trilinos</a> project itself which can
-be a useful example of the usage of TriBITS (see disclamers in the section
-<a class="reference internal" href="#trilinos">Trilinos</a>).  The last example mentioned
-is <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a> itself which allows the TriBITS system to be
-tested and installed from any TriBITS project that lists it, including the
-<tt class="docutils literal">TriBITSProj</tt> project itself (see <a class="reference internal" href="#coexisting-projects-repositories-and-packages">Coexisting Projects, Repositories, and
-Packages</a>).</p>
+be a useful example of the usage of TriBITS (see disclaimers in the section
+<a class="reference internal" href="#trilinos">Trilinos</a>).  The last example mentioned is <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>
+itself which allows the TriBITS system to be tested and installed from any
+TriBITS project that lists it, including the <tt class="docutils literal">TriBITSProj</tt> project itself
+(see <a class="reference internal" href="#coexisting-projects-repositories-and-packages">Coexisting Projects, Repositories, and Packages</a>).</p>
 <p>The directory <tt class="docutils literal">tribits/doc/examples/</tt> contains some other example TriBITS
 projects and repositories as well that are referred to in this and other
 documents.</p>
 <div class="section" id="tribitshelloworld">
 <h2><a class="toc-backref" href="#id38">4.1&nbsp;&nbsp;&nbsp;TribitsHelloWorld</a></h2>
-<p>This is the simplest possible TriBITS project that you can imagine and is
-contained under the directory:</p>
+<p><tt class="docutils literal">TribitsHelloWorld</tt> is about the simplest possible TriBITS project that you
+can imagine and is contained under the directory:</p>
 <pre class="literal-block">
 tribits/doc/examples/TribitsHelloWorld/
 </pre>
-<p>It contains only a single TriBITS package and no frills at all (does not
-support MPI or Fortran).  However, it does show how minimal a <a class="reference internal" href="#tribits-project">TriBITS
-Project</a> (which is also a <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>) and a <a class="reference internal" href="#tribits-package">TriBITS Package</a> can
-be and still show the value of TriBITS over raw CMake.  The simple
-<cite>HelloWorld</cite> package is used to compare with the raw CMakeLists.txt file in the
-<tt class="docutils literal">RawHeloWorld</tt> example project in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS Overview</a> document.</p>
-<p>The directory structure for this examples shows what is necessary for a
-minimal TriBITS project:</p>
+<p>This example project contains only a single TriBITS package and no frills at
+all (does not support MPI or Fortran).  However, it does show how minimal a
+<a class="reference internal" href="#tribits-project">TriBITS Project</a> (which is also a <a class="reference internal" href="#tribits-repository">TriBITS Repository</a>) and a <a class="reference internal" href="#tribits-package">TriBITS
+Package</a> can be and still demonstrates some of the value of TriBITS over raw
+CMake.  The simple <tt class="docutils literal">HelloWorld</tt> package is used to compare with the raw
+CMakeLists.txt file in the <tt class="docutils literal">RawHeloWorld</tt> example project in the <a class="reference external" href="../overview/TribitsOverview.pdf">TriBITS
+Overview</a> document.</p>
+<p>The directory structure for this example his shown below:</p>
 <pre class="literal-block">
   TribitsHelloWorld/
     CMakeLists.txt
@@ -3011,7 +3009,7 @@ minimal TriBITS project:</p>
 
 </pre>
 <p>This has all of the required <a class="reference internal" href="#tribits-project-core-files">TriBITS Project Core Files</a>, <a class="reference internal" href="#tribits-repository-core-files">TriBITS
-Repository Core Files</a>, and <a class="reference internal" href="#tribits-package-core-files">TriBITS Package Core Files</a>.  It just build a
+Repository Core Files</a>, and <a class="reference internal" href="#tribits-package-core-files">TriBITS Package Core Files</a>.  It just builds a
 simple library, a simple executable, a test executable, and the tests them as
 shown by the file <tt class="docutils literal">TribitsHelloWorld/hello_world/CMakeLists.txt</tt> which is:</p>
 <pre class="literal-block">
@@ -3026,8 +3024,8 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(unit_tests SOURCES hello_world_unit_tests.cpp
 TRIBITS_PACKAGE_POSTPROCESS()
 
 </pre>
-<p>The build and test of this simple project is tested in the <a class="reference internal" href="#tribits-package">TriBITS Package</a>
-testing file:</p>
+<p>The build and test of this simple project is tested in the <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test
+Package</a> file:</p>
 <pre class="literal-block">
 tribits/doc/examples/UnitTests/CMakeLists.txt
 </pre>
@@ -3038,20 +3036,30 @@ along with any other such TriBITS-based software.</p>
 </div>
 <div class="section" id="tribitsexampleproject">
 <h2><a class="toc-backref" href="#id39">4.2&nbsp;&nbsp;&nbsp;TribitsExampleProject</a></h2>
-<p>TribitsExampleProject in an example <a class="reference internal" href="#tribits-project">TriBITS Project</a> and <a class="reference internal" href="#tribits-repository">TriBITS
+<p><tt class="docutils literal">TribitsExampleProject</tt> in an example <a class="reference internal" href="#tribits-project">TriBITS Project</a> and <a class="reference internal" href="#tribits-repository">TriBITS
 Repository</a> contained in the TriBITS source tree under:</p>
 <pre class="literal-block">
 tribits/doc/examples/TribitsExampleProject/
 </pre>
-<p>When this used as the base TriBITS project, this is the directory corresponds
-to <tt class="docutils literal">&lt;projectDir&gt;</tt> and <tt class="docutils literal">&lt;repoDir&gt;</tt> referenced in <a class="reference internal" href="#tribits-project-core-files">TriBITS Project Core
-Files</a> and <a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a>, respectively.</p>
-<p>Several files from this project were used as examples in the section <a class="reference internal" href="#tribits-project-structure">TriBITS
+<p>When this is used as the base TriBITS project, this is the directory
+corresponds to <tt class="docutils literal">&lt;projectDir&gt;</tt> and <tt class="docutils literal">&lt;repoDir&gt;</tt> referenced in <a class="reference internal" href="#tribits-project-core-files">TriBITS
+Project Core Files</a> and <a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a>, respectively.</p>
+<p>Several files from this project are used as examples in the section <a class="reference internal" href="#tribits-project-structure">TriBITS
 Project Structure</a>.  Here, a fuller description is given of this project and
-how TriBITS works using it.  From this simple example project, one can quickly
-see how the basic structural elements a TriBITS project, repository, and
-package (and subpackage) are pulled together.</p>
-<p>The name of this project <tt class="docutils literal">PROJECT_NAME</tt> given in its
+demonstrates some how TriBITS works.  From this simple example project, one
+can quickly see how the basic structural elements of a TriBITS project,
+repository, and package (and subpackage) are pulled together.</p>
+<p>This simple project shows how what is listed in files:</p>
+<ul class="simple">
+<li><a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>,</li>
+<li><a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>, and</li>
+<li><a class="reference internal" href="#packagedir-spkgdir-cmake-dependencies-cmake">&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</a></li>
+</ul>
+<p>are used to specify the packages and SE packages in a TriBITS project and
+repository.  More details about the contents of the <tt class="docutils literal">Dependencies.cmake</tt>
+files is described in the section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
+Logic</a>.</p>
+<p>The name of this project <tt class="docutils literal">PROJECT_NAME</tt> is given in its
 <tt class="docutils literal">TribitsExampleProject/ProjectName.cmake</tt> file:</p>
 <pre class="literal-block">
 # Must set the project name at very beginning before including anything else
@@ -3061,13 +3069,11 @@ SET(PROJECT_NAME TribitsExProj)
 SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
 
 </pre>
-<p>The variable <tt class="docutils literal">PROJECT_NAME=TribitsExProj</tt> is used to prefix with
-<tt class="docutils literal"><span class="pre">&quot;${PROJECT_NAME}_&quot;</span></tt> all of the projects global TriBITS variables like
-<tt class="docutils literal">TribitsExProj_ENABLE_TESTS</tt>, <tt class="docutils literal">TribitsExProj_ENABLE_ALL_PACKAGES</tt>, etc.
-Note, as shown in this example, the project name and the base project
-directory name do <strong>not</strong> need to match.</p>
-<p id="tribitsexampleproject-files-and-directories">The directory structure and key files for this example project is shown in
-this partial list of <strong>TribitsExampleProject Files and Directories</strong>:</p>
+<p>The variable <tt class="docutils literal">PROJECT_NAME=TribitsExProj</tt> is used to prefix (using
+<tt class="docutils literal"><span class="pre">&quot;${PROJECT_NAME}_&quot;</span></tt>) all of the project's global TriBITS variables like
+<tt class="docutils literal">TribitsExProj_ENABLE_TESTS</tt>, <tt class="docutils literal">TribitsExProj_ENABLE_ALL_PACKAGES</tt>, etc.</p>
+<p id="tribitsexampleproject-files-and-directories">The directory structure and key files for this example project are shown in
+the partial list of <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject Files and Directories</a> below:</p>
 <pre class="literal-block">
 TribitsExampleProject/
   CMakeLists.txt
@@ -3127,11 +3133,11 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(WrapExternal Windows)
 <tt class="docutils literal">MixedLanguage</tt>, <tt class="docutils literal">PackageWithSubpackages</tt>, and <tt class="docutils literal">WrapExternal</tt> (and their
 base package directories and testing group, see
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>).</p>
-<p>The full listing of package files in <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject Files and
+<p>A full listing of package files in <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject Files and
 Directories</a> is only shown for the <tt class="docutils literal">SimpleCxx</tt> package directory
-<tt class="docutils literal">packages/simple_cxx/</tt>.  This gives <tt class="docutils literal">&lt;packageDir&gt; =
-<span class="pre">&lt;repoDir&gt;/packages/simple_cxx</span></tt> for the package <tt class="docutils literal">PACKAGE_NAME = SimpleCxx</tt>
-referenced in <a class="reference internal" href="#tribits-package-core-files">TriBITS Package Core Files</a>.  As explained there, the files
+<tt class="docutils literal">packages/simple_cxx/</tt>.  For this package, <tt class="docutils literal">&lt;packageDir&gt; =
+<span class="pre">&lt;repoDir&gt;/packages/simple_cxx</span></tt> and <tt class="docutils literal">PACKAGE_NAME = SimpleCxx</tt>.  As
+explained in <a class="reference internal" href="#tribits-package-core-files">TriBITS Package Core Files</a>, the files
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> and <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a>
 must exist for every package directory listed in
 <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> and we see these files under in the directory
@@ -3153,11 +3159,11 @@ TRIBITS_PACKAGE_DEFINE_DEPENDENCIES(
   )
 
 </pre>
-<p>references the three subpackage with sub-directories <tt class="docutils literal">&lt;spkgDir&gt;</tt> = <tt class="docutils literal">A</tt>,
+<p>references the three subpackages with sub-directories <tt class="docutils literal">&lt;spkgDir&gt;</tt> = <tt class="docutils literal">A</tt>,
 <tt class="docutils literal">B</tt>, and <tt class="docutils literal">C</tt> under the parent package directory
 <tt class="docutils literal">packages/package_with_packages/</tt> which are shown in <a class="reference internal" href="#tribitsexampleproject-files-and-directories">TribitsExampleProject
 Files and Directories</a>.  This gives another set of three SE packages
-<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackaeB</tt>,
+<tt class="docutils literal">PackageWithSubpackagesSubpackageA</tt>, <tt class="docutils literal">PackageWithSubpackagesSubpackageB</tt>,
 and <tt class="docutils literal">PackageWithSubpackagesSubpackageC</tt>.  Combining <tt class="docutils literal">&lt;packageDir&gt; =
 packages/package_with_packages</tt> and <tt class="docutils literal">&lt;spkgDir&gt;</tt> for each subpackage gives
 the subpackage directories:</p>
@@ -3167,36 +3173,27 @@ TribitsExampleProject/packages/package_with_subpackages/B/
 TribitsExampleProject/packages/package_with_subpackages/C/
 </pre>
 <p>Together with the top-level parent SE package <tt class="docutils literal">PackageWithSubpackages</tt>
-itself, this top-level package provides four SE packages giving the final list
-of SE packages provided by this TriBITS repo as:</p>
+itself, this top-level package provides four <a class="reference internal" href="#tribits-se-packages">TriBITS SE Packages</a> giving the
+final list of SE packages provided by this TriBITS repo as:</p>
 <pre class="literal-block">
 SimpleCxx MixedLanguage PackageWithSubpackagesSubpackageA \
-  PackageWithSubpackagesSubpackaeB PackageWithSubpackagesSubpackaeC \
+  PackageWithSubpackagesSubpackaeB PackageWithSubpackagesSubpackageC \
   PackageWithSubpackages WrapExternal 7
 </pre>
-<p>The above list of SE packages is shown formatted this way since this is the
-format that the SE packages are printed by TriBITS in the <tt class="docutils literal">cmake</tt> STDOUT on
-the line starting with <tt class="docutils literal">&quot;Final set of <span class="pre">non-enabled</span> SE packages:&quot;</tt> when no
-packages are enabled (see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>).
-TriBITS defines enable/disable cache variables for each of the defined SE
-packages like <tt class="docutils literal">TribitsExProj_ENABLE_SimpleCxx</tt>,
-<tt class="docutils literal">TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA</tt>, and defines all the
-variables listed in <a class="reference internal" href="#tribits-package-cache-variables">TriBITS Package Cache Variables</a> that are settable by
-the users or by the dependency logic described in section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
+<p>The above list of SE packages is printed (with the number of packages printed
+at the end) by TriBITS to the <tt class="docutils literal">cmake</tt> STDOUT on the line starting with
+<tt class="docutils literal">&quot;Final set of <span class="pre">non-enabled</span> SE packages:&quot;</tt> when no packages are enabled (see
+<a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable">Selecting the list of packages to enable</a>).  (Note that TriBITS does not put
+in line-brakes with continuation characters <tt class="docutils literal">&quot;\&quot;</tt> as shown above.)  TriBITS
+defines enable/disable cache variables for each of these defined SE packages
+like <tt class="docutils literal">TribitsExProj_ENABLE_SimpleCxx</tt> and
+<tt class="docutils literal">TribitsExProj_ENABLE_PackageWithSubpackagesSubpackageA</tt>, and defines all
+the variables listed in <a class="reference internal" href="#tribits-package-cache-variables">TriBITS Package Cache Variables</a> that are settable
+by the users or by the dependency logic described in section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
 Dependencies and Enable/Disable Logic</a>.</p>
-<p>Hopefully this simple project shows how what is listed in files:</p>
-<ul class="simple">
-<li><a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>,</li>
-<li><a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a>, and</li>
-<li><a class="reference internal" href="#packagedir-spkgdir-cmake-dependencies-cmake">&lt;packageDir&gt;/&lt;spkgDir&gt;/cmake/Dependencies.cmake</a></li>
-</ul>
-<p>is used to specify the packages and SE packages in a TriBITS project and
-repository.  More details about the contents of the <tt class="docutils literal">Dependencies.cmake</tt>
-files is described in the section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
-Logic</a>.</p>
 <p>When starting a new TriBITS project, repository, or package, one should
-consider basing these on the examples in this project.  In fact, the skeletons
-for any of the</p>
+consider basing these on the examples in <tt class="docutils literal">TribitsExampleProject</tt>.  In fact,
+the skeletons for any of the</p>
 <ul class="simple">
 <li><a class="reference internal" href="#tribits-project-core-files">TriBITS Project Core Files</a>,</li>
 <li><a class="reference internal" href="#tribits-repository-core-files">TriBITS Repository Core Files</a>,</li>
@@ -3213,11 +3210,12 @@ when using TriBITS for the typical use cases.</p>
 tribits/package_arch/UnitTests/MockTrilinos/
 </pre>
 <p>This TriBITS project is not a full TriBITS project (i.e. it does not build
-anything).  Instead, it is used to test the TriBITS system using tests defined
-in the <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>.  The <tt class="docutils literal">MockTrilinos</tt> project is actually
-given the name <tt class="docutils literal">PROJECT_NAME = Trilinos</tt> and contains a subset of packages
-with slightly modified dependencies from a snapshot of the real Trilinos
-project from May 2009.  The list of packages in:</p>
+anything).  Instead, it is primarily used to test the TriBITS system using
+tests defined in the <a class="reference internal" href="#the-tribits-test-package">The TriBITS Test Package</a>.  The <tt class="docutils literal">MockTrilinos</tt>
+project is actually given the name <tt class="docutils literal">PROJECT_NAME = Trilinos</tt> and contains a
+subset of Trilinos packages with slightly modified dependencies from a
+snapshot of the real Trilinos project from May 2009.  The list of packages
+in:</p>
 <pre class="literal-block">
 tribits/package_arch/UnitTests/MockTrilinos/PackagesList.cmake
 </pre>
@@ -3257,9 +3255,11 @@ TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(ML BadSystem1)
 TRIBITS_DISABLE_PACKAGE_ON_PLATFORMS(Ifpack BadSystem1 BadSystem2)
 
 </pre>
-<p>All of the package directories listed above have <tt class="docutils literal">cmake/Dependenices.cmake</tt>
-files but generally do not have <tt class="docutils literal">CMakeLists.txt</tt> files since most of the
-testing of <tt class="docutils literal">MockTrilinos</tt> just involves dependency handling.</p>
+<p>All of the package directories listed above have
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files but generally do not have
+<a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> files since most of usage of <tt class="docutils literal">MockTrilinos</tt>
+just involves the testing of the algorithms and behaviors described in the
+section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable Logic</a>.</p>
 <p><tt class="docutils literal">MockTrilinos</tt> also contains a number of extra TriBITS repositories used in
 various tests.  These extra repositories offer examples of different types of
 TriBITS repositories like:</p>
@@ -3273,27 +3273,27 @@ repository directory but is broken up into subpackages.</li>
 of defining multiple repositories with possible missing required and
 optional <a class="reference internal" href="#upstream">upstream</a> packages (see <a class="reference internal" href="#multi-repository-support">Multi-Repository Support</a>).</li>
 <li><tt class="docutils literal">extraTrilinosRepo</tt>: Just a typical extra repo with add-on packages and
-new TPLs defined that depends on a few <tt class="docutils literal">MockTrilinos</tt> packages.</li>
+TPLs that depends on a few upstream <tt class="docutils literal">MockTrilinos</tt> packages.</li>
 </ul>
 <p>New test extra repositories are added when new types of tests are needed that
 would require new package and TPL dependency structures since existing
 dependency tests based on <tt class="docutils literal">MockTrilinos</tt> are expensive to change by their
 very nature.</p>
-<p>The reason that the <tt class="docutils literal">MockTrilinos</tt> test project is mentioned in this
-developers guide is because it contains a greater variety of packages,
-subpackages, and TPLs with a greater variety of different types of
-dependencies.  This variety is is needed to fully test the TriBITS system but
-this project and the tests also serve as examples and extra documentation for
-the behavior of the TriBITS system.  Several of the examples referenced in
-this document come from <tt class="docutils literal">MockTrilinos</tt>.</p>
+<p>The primary reason that the <tt class="docutils literal">MockTrilinos</tt> test project is mentioned in this
+developers guide is because it contains a variety of packages, subpackages,
+and TPLs with a variety of different types of dependencies.  This variety is
+is needed to more fully test the TriBITS system but this project and the tests
+also serve as examples and extra documentation for the behavior of the TriBITS
+system.  Several of the dependency-related examples referenced in this
+document come from <tt class="docutils literal">MockTrilinos</tt>.</p>
 <p>Most of the dependency tests involving <tt class="docutils literal">MockTrilinos</tt> are specified in:</p>
 <pre class="literal-block">
 tribits/package_arch/UnitTests/DependencyUnitTests/CMakeLists.txt
 </pre>
 <p>A great deal about the current behavior of TriBITS <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and
-Enable/Disable Logic</a> can be learned from inspecting the tests defined in
-this <tt class="docutils literal">CMakeLists.txt</tt> file.  There are also some faster-running unit tests
-involving <tt class="docutils literal">MockTrilinos</tt> defined in the file:</p>
+Enable/Disable Logic</a> can be learned from inspecting these tests.  There are
+also some faster-running unit tests involving <tt class="docutils literal">MockTrilinos</tt> defined in the
+file:</p>
 <pre class="literal-block">
 tribits/package_arch/UnitTests/TribitsAdjustPackageEnables_UnitTests.cmake
 </pre>
@@ -3305,10 +3305,10 @@ tribits/package_arch/UnitTests/TribitsAdjustPackageEnables_UnitTests.cmake
 tribits/package_arch/UnitTests/ReducedMockTrilinos/
 </pre>
 <p>It is a scaled-down version of the <a class="reference internal" href="#mocktrilinos">MockTrilinos</a> test project with just a
-handful of packages and some modified dependencies.  Its primary purpose is to
-be used for examples in the section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package Dependencies and Enable/Disable
-Logic</a> and to test a few features of the TriBITS system not tested in other
-tests.</p>
+handful of packages and some modified dependencies.  Its primary purpose for
+this example project is to be used for examples in the section <a class="reference internal" href="#package-dependencies-and-enable-disable-logic">Package
+Dependencies and Enable/Disable Logic</a> and to test a few features of the
+TriBITS system not tested in other tests.</p>
 <p>The list of packages in:</p>
 <pre class="literal-block">
 tribits/package_arch/UnitTests/ReducedMockTrilinos/PackagesList.cmake
@@ -3335,21 +3335,21 @@ Logic</a>.</p>
 <p>The real Trilinos project and repository itself is an advanced example for the
 usage of TriBITS.  Almost every single-repository use case for TriBITS is
 demonstrated somewhere in Trilinos.  While some of the usage of TriBITS in
-Trilinos may not be not examplary (e.g., because it represents old usage, or
+Trilinos may not be not exemplary (e.g., because it represents old usage, or
 was written by CMake/TriBITS beginners) it does represent real working usage.
-Given that Trilinos is a widely avaiable software repository, anyone should be
+Given that Trilinos is a widely available software repository, anyone should be
 able to access a newer version of Trilinos and mine it for CMake and TriBITS
 examples.</p>
 </div>
 <div class="section" id="the-tribits-test-package">
 <h2><a class="toc-backref" href="#id43">4.6&nbsp;&nbsp;&nbsp;The TriBITS Test Package</a></h2>
 <p>The last TriBITS example mentioned here is the TriBITS test package named
-(appropriately) <tt class="docutils literal">TriBITS</tt> itself.  The directory for the <tt class="docutils literal">TriBITS</tt> package
-is the base TriBITS source directory <tt class="docutils literal">tribits</tt>.  This allows any TriBITS
-project to add testing for the TriBITS system by just listing this package and
-its directory in its repository's <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a> file.  For
-example, the Trilinos repository which currently snapshots the TriBITS source
-tree lists the <tt class="docutils literal">TriBITS</tt> package with:</p>
+(appropriately) <tt class="docutils literal">TriBITS</tt> itself.  The directory for the <tt class="docutils literal">TriBITS</tt> test
+package is the base TriBITS source directory <tt class="docutils literal">tribits</tt>.  This allows any
+TriBITS project to add testing for the TriBITS system by just listing this
+package and its directory in its repository's <a class="reference internal" href="#repodir-packageslist-cmake">&lt;repoDir&gt;/PackagesList.cmake</a>
+file.  For example, the Trilinos repository which currently snapshots the
+TriBITS source tree lists the <tt class="docutils literal">TriBITS</tt> package with:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS   cmake/tribits  PT   # Only tests, no libraries/capabilities!
@@ -3360,9 +3360,9 @@ TRIBITS_REPOSITORY_DEFINE_PACKAGES(
 <a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files.  Listing the <tt class="docutils literal">TriBITS</tt>
 package in only done in the <tt class="docutils literal">PackagesList.cmake</tt> file for testing TriBITS.</p>
 <p>Other TriBITS projects/repositories that don't snapshot TriBITS but also want
-to test TriBITS (perhaps just to mine the running tests for examples) can do
-so by including the <tt class="docutils literal">TriBITS</tt> test package in their <tt class="docutils literal">PackagesList.cmake</tt>
-file using:</p>
+to test TriBITS (perhaps just to mine its tests for examples) can do so by
+including the <tt class="docutils literal">TriBITS</tt> test package in their <tt class="docutils literal">PackagesList.cmake</tt> file
+using:</p>
 <pre class="literal-block">
 TRIBITS_REPOSITORY_DEFINE_PACKAGES(
   TriBITS   ${${PROJECT_NAME}_TRIBITS_DIR}   PT
@@ -3380,6 +3380,7 @@ following to the <tt class="docutils literal">cmake</tt> command-line options:</
 tests are defined and how they are run.  There is a wealth of information
 about the TriBITS system embedded in these tests and where documentation and
 these tests disagreed, believe the tests!</p>
+<!-- ToDo: Edited and spell-checked up to here on 4/22/2014! -->
 </div>
 </div>
 <div class="section" id="package-dependencies-and-enable-disable-logic">
