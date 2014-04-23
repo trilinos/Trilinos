@@ -5922,5 +5922,51 @@ void BulkData::internal_verify_change_parts( const MetaData   & meta ,
 }
 
 
+void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector )
+{
+    // Check locally owned:
+    if (bulkData.bucket(entity).member(bulkData.mesh_meta_data().locally_owned_part())) {
+        EntityGhostData data;
+        data.bulkData = &bulkData;
+        data.entity = entity;
+        data.direction = EntityGhostData::NONE;
+        data.ghostingLevel = EntityGhostData::LOCALLY_OWNED;
+        ThrowAssert( bulkData.parallel_rank() == bulkData.parallel_owner_rank(entity) );
+        data.processor = bulkData.parallel_rank();
+        dataVector.push_back(data);
+    }
+    // Look through all the ghosting levels:
+    std::vector<Ghosting *> ghosting = bulkData.ghostings();
+    for (size_t z=0 ; z<ghosting.size() ; ++z) {
+        std::vector<EntityProc> send_list;
+        ghosting[z]->send_list(send_list);
+        for (size_t si=0 ; si<send_list.size() ; ++si) {
+            if (send_list[si].first == entity) {
+                EntityGhostData data;
+                data.bulkData = &bulkData;
+                data.entity = entity;
+                data.ghostingLevel = z;
+                data.direction = EntityGhostData::SEND;
+                data.processor = send_list[si].second;
+                dataVector.push_back(data);
+            }
+        }
+        std::vector<EntityKey> recv_list;
+        ghosting[z]->receive_list(recv_list);
+        for (size_t ri=0 ; ri<recv_list.size() ; ++ri) {
+            if (recv_list[ri] == bulkData.entity_key(entity)) {
+                EntityGhostData data;
+                data.bulkData = &bulkData;
+                data.entity = entity;
+                data.ghostingLevel = z;
+                data.direction = EntityGhostData::RECEIVE;
+                data.processor = bulkData.parallel_owner_rank(entity);
+                dataVector.push_back(data);
+            }
+        }
+    }
+}
+
+
 } // namespace mesh
 } // namespace stk

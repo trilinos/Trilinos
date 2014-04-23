@@ -1955,6 +1955,94 @@ void BulkData::internal_check_unpopulated_relations(Entity entity, EntityRank ra
 #endif
 }
 
+struct EntityGhostData
+{
+    enum DIRECTION {
+        INVALID,
+        NONE,
+        SEND,
+        RECEIVE
+    };
+    enum GHOST_LEVEL {
+        LOCALLY_OWNED = -1,
+        SHARED = 0,
+        AURA = 1
+    };
+    DIRECTION direction;
+    int ghostingLevel;
+    int processor;
+    Entity entity;
+    const BulkData * bulkData;
+
+    EntityGhostData()
+    : direction(INVALID)
+    , ghostingLevel(-2)
+    , processor(-1)
+    , entity()
+    , bulkData(NULL) { }
+
+    // insert to any ostream-like s
+    template<class OStream> friend inline OStream& operator << (OStream& s, const DIRECTION& dir)
+    {
+        switch (dir) {
+            case INVALID:
+                s << "INVALID";
+                break;
+            case NONE:
+                s << "NONE";
+                break;
+            case SEND:
+                s << "SEND";
+                break;
+            case RECEIVE:
+                s << "RECEIVE";
+                break;
+            default:
+                s << "INVALID";
+        }
+        return s;
+    }
+    template<class OStream> friend inline OStream& printGhostLevel(OStream& s, int gl)
+    {
+        switch (gl) {
+            case LOCALLY_OWNED:
+                s << "LOCALLY_OWNED";
+                break;
+            case SHARED:
+                s << "SHARED";
+                break;
+            case AURA:
+                s << "AURA";
+                break;
+            default:
+                s << "CUSTOM_" << (gl-1);
+        }
+        return s;
+    }
+    template<class OStream> friend inline OStream& operator << (OStream& s, const EntityGhostData& egd)
+    {
+        if (egd.bulkData != NULL) {
+            s << "(Entity_gid=";
+            s << egd.bulkData->identifier(egd.entity)
+              << ", rank=" << egd.bulkData->entity_rank(egd.entity);
+        }
+        else {
+            s << "(Entity_lid=";
+            s << egd.entity;
+        }
+        s << ", direction=" << egd.direction
+          << ", processor=" << egd.processor
+          << ", ghosting level=";
+        printGhostLevel(s,egd.ghostingLevel);
+        s << ")";
+        return s;
+    }
+};
+
+void get_ghost_data( const BulkData& bulkData, Entity entity, std::vector<EntityGhostData> & dataVector );
+
+
+
 } // namespace mesh
 } // namespace stk
 
