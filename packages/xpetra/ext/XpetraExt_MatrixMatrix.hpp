@@ -494,36 +494,12 @@ void Jacobi(
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-      // Placeholder until we get a for a Tpetra Jacobi implementation
-
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
-      const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-
-      // Multiply setup For now, follow what ML and Epetra do.
-      double nnzPerRow = Teuchos::as<double>(0);
-      GlobalOrdinal numRowsA = A.getGlobalNumRows();
-      GlobalOrdinal numRowsB = B.getGlobalNumRows();
-      nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
-	sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
-      nnzPerRow *=  nnzPerRow;
-      double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
-      double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
-      if (totalNnz < minNnz)
-	totalNnz = minNnz;
-      nnzPerRow = totalNnz / A.getGlobalNumRows();
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> AB(tpA.getDomainMap(), Teuchos::as<LocalOrdinal>(nnzPerRow));
-
-      // Multiply
-      Tpetra::MatrixMatrix::Multiply(tpA, false, tpB, false, AB, true);
-
-      // Left Scale
-      AB.leftScale(*tpD);
-
-      // Add
-      Tpetra::MatrixMatrix::Add(tpB,false,Teuchos::ScalarTraits<Scalar>::one(),AB,false,Scalar(-omega),Teuchos::rcp(&tpC,false));
-      tpC.fillComplete( tpB.getDomainMap(), tpB.getRangeMap() );
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+    const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
+    
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif
@@ -595,36 +571,12 @@ inline void Jacobi<double,int,int,KokkosClassic::DefaultNode::DefaultNodeType,Ko
 #endif
     } else if (C.getRowMap()->lib() == Xpetra::UseTpetra) {
 #ifdef HAVE_XPETRA_TPETRA
-      // Placeholder until we get a for a Tpetra Jacobi implementation
-
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
-      const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
-      const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
-
-      // Multiply setup For now, follow what ML and Epetra do.
-      double nnzPerRow = Teuchos::as<double>(0);
-      GlobalOrdinal numRowsA = A.getGlobalNumRows();
-      GlobalOrdinal numRowsB = B.getGlobalNumRows();
-      nnzPerRow = sqrt(Teuchos::as<double>(A.getGlobalNumEntries())/numRowsA) +
-	sqrt(Teuchos::as<double>(B.getGlobalNumEntries())/numRowsB) - 1;
-      nnzPerRow *=  nnzPerRow;
-      double totalNnz = nnzPerRow * A.getGlobalNumRows() * 0.75 + 100;
-      double minNnz = Teuchos::as<double>(1.2 * A.getGlobalNumEntries());
-      if (totalNnz < minNnz)
-	totalNnz = minNnz;
-      nnzPerRow = totalNnz / A.getGlobalNumRows();
-      Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> AB(tpA.getDomainMap(), Teuchos::as<LocalOrdinal>(nnzPerRow));
-
-      // Multiply
-      Tpetra::MatrixMatrix::Multiply(tpA, false, tpB, false, AB, true);
-
-      // Left Scale
-      AB.leftScale(*tpD);
-
-      // Add
-      Tpetra::MatrixMatrix::Add(tpB,false,Teuchos::ScalarTraits<Scalar>::one(),AB,false,-omega,Teuchos::rcp(&tpC,false));
-      tpC.fillComplete( tpB.getDomainMap(), tpB.getRangeMap() );
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpA = Xpetra::MatrixMatrix::Op2TpetraCrs(A);
+    const Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> & tpB = Xpetra::MatrixMatrix::Op2TpetraCrs(B);
+    Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>       & tpC = Xpetra::MatrixMatrix::Op2NonConstTpetraCrs(C);
+    const RCP<Tpetra::Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node>  >          & tpD = toTpetra(Dinv);
+    
+    Tpetra::MatrixMatrix::Jacobi(omega,*tpD,tpA,tpB,tpC,haveMultiplyDoFillComplete);
 #else
       throw(Xpetra::Exceptions::RuntimeError("Xpetra must be compiled with Tpetra."));
 #endif

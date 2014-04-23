@@ -124,7 +124,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   if (rank == 0){
     cout << endl;
-    cout << "Test: number of weights" << nWeights;
+    cout << "Test: number of weights " << nWeights;
     cout << ", desired number of parts " << numGlobalParts;
     if (givePartSizes)
       cout << ", with differing part sizes." << endl;

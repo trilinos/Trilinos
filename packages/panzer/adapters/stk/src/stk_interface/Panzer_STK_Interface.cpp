@@ -93,13 +93,13 @@ const std::string STK_Interface::nodesString = "nodes";
 const std::string STK_Interface::edgesString = "edges";
 
 STK_Interface::STK_Interface()
-   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false)
+   : dimension_(0), initialized_(false), currentLocalId_(0), initialStateTime_(0.0), currentStateTime_(0.0), useFieldCoordinates_(false), useLowerCase_(false)
 {
    metaData_ = rcp(new stk::mesh::fem::FEMMetaData());
 }
 
 STK_Interface::STK_Interface(unsigned dim)
-   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false)
+   : dimension_(dim), initialized_(false), currentLocalId_(0), useFieldCoordinates_(false), useLowerCase_(false)
 {
    std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(dimension_);
    entity_rank_names.push_back("FAMILY_TREE");
@@ -395,7 +395,7 @@ void STK_Interface::writeToExodus(const std::string & filename)
 
       Ioss::Init::Initializer io;
       stk::io::MeshData meshData;
-      stk::io::create_output_mesh(filename, comm, *bulkData_, meshData);
+      stk::io::create_output_mesh(filename, comm, *bulkData_, meshData,getUseLowerCaseForIO());
       stk::io::define_output_fields(meshData,*metaData_);
 
       stk::io::process_output_request(meshData, *bulkData_, 0.0);
@@ -414,7 +414,7 @@ void STK_Interface::setupTransientExodusFile(const std::string & filename)
 
       Ioss::Init::Initializer io;
       meshData_ = Teuchos::rcp(new stk::io::MeshData);
-      stk::io::create_output_mesh(filename, comm, *bulkData_, *meshData_);
+      stk::io::create_output_mesh(filename, comm, *bulkData_, *meshData_,getUseLowerCaseForIO());
       stk::io::define_output_fields(*meshData_,*metaData_);
    #else 
       TEUCHOS_ASSERT(false);

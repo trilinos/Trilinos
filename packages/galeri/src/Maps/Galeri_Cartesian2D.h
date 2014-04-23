@@ -87,7 +87,7 @@ TCartesian2D(const Epetra_Comm& Comm, const int nx, const int ny,
   if ( ypid < NBigYDir) endy++;
 
   int NumMyElements = (endx - startx) * (endy - starty);
-  vector<int_type> MyGlobalElements(NumMyElements);
+  std::vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
 
   for (int i = startx ; i < endx ; ++i) 

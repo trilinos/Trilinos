@@ -380,12 +380,31 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
 
+
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// This only exists to support view semantics of Map.  That is,
+    /// one can create an empty Map, and then assign a nonempty Map to
+    /// it using operator=.
+    ///
+    /// This constructor is also useful in methods like clone() and
+    /// removeEmptyProcesses(), where we have the information to
+    /// initialize the Map more efficiently ourselves, without going
+    /// through one of the three usual Map construction paths.
+    Map ();
+
     //! Destructor.
-    ~Map();
+    ~Map ();
 
     //@}
     //! @name Attributes
     //@{
+
+    /// \brief Whether the Map is one to one.
+    ///
+    /// This must be called collectively over all processes in the
+    /// Map's communicator.
+    bool isOneToOne () const;
 
     //! The number of elements in this Map.
     inline global_size_t getGlobalNumElements() const { return numGlobalElements_; }
@@ -734,14 +753,6 @@ namespace Tpetra {
     // specialization's internal methods and data, so that we can
     // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
-
-    /// \brief Default constructor (that does nothing).
-    ///
-    /// We use this in clone() and removeEmptyProcesses(), where we
-    /// have the information to initialize the Map more efficiently
-    /// ourselves, without going through one of the three usual Map
-    /// construction paths.
-    Map() {}
 
   private:
     template<class OutMapType, class InMapType>

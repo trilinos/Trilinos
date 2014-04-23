@@ -53,14 +53,14 @@ void addlog(char *name, int len)
 #endif
 {
 #if !defined(__CYGWIN__)
-#define LEN 256
+#define LEN 512
   char time_string[LEN];
   char log_string[LEN];
   char codename[LEN];
 
   double u_time, s_time;
   struct utsname sys_info;
-  char *username = NULL;
+  const char *username = NULL;
 
   /* Don't log information if this environment variable is set */
   if (getenv("SEACAS_NO_LOGGING") != NULL) {
@@ -71,6 +71,9 @@ void addlog(char *name, int len)
   username = getlogin();
   if (username == NULL) {
     username = getenv("LOGNAME");
+  }
+  if (username == NULL) {
+    username = "UNKNOWN";
   }
   
   {
@@ -95,8 +98,8 @@ void addlog(char *name, int len)
   
   uname(&sys_info);
 
-  sprintf(log_string, "%s %s %s %.3fu %.3fs 0:00.00 0.0%% 0+0k 0+0io 0pf+0w %s\n",
-	  codename, username, time_string, u_time, s_time, sys_info.nodename);
+  snprintf(log_string, LEN, "%s %s %s %.3fu %.3fs 0:00.00 0.0%% 0+0k 0+0io 0pf+0w %s\n",
+	   codename, username, time_string, u_time, s_time, sys_info.nodename);
 
   /* Now try to find the $ACCESS/etc/audit.log file */
   /* Don't need to try too hard since information is not critical; just useful */
@@ -104,7 +107,7 @@ void addlog(char *name, int len)
     char *access_dir = getenv("ACCESS");
     if (access_dir != NULL) {
       char filename[LEN];
-      sprintf(filename, "%s/etc/audit.log", access_dir);
+      snprintf(filename, LEN, "%s/etc/audit.log", access_dir);
       if (0 == access(filename, W_OK)) {
 	FILE *audit = fopen(filename, "a");
 	if (audit != NULL) {

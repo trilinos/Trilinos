@@ -742,13 +742,15 @@ void EpetraModelEvaluator::evalModelImpl(
     &epetraOutArgs, &allFuncsWhereScaled,
     out.get(), verbLevel
     );
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    !allFuncsWhereScaled, std::logic_error,
-    "Error, we can not currently handle epetra output objects that could not be"
-    " scaled.  Special code will have to be added to handle this (i.e. using"
-    " implicit diagonal and multiplied linear operators to implicitly do"
-    " the scaling."
-    );
+  // AGS: This test precluded use of matrix-free Operators (vs. RowMatrix)
+  if (stateFunctionScaling_ != STATE_FUNC_SCALING_NONE)
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      !allFuncsWhereScaled, std::logic_error,
+      "Error, we can not currently handle epetra output objects that could not be"
+      " scaled.  Special code will have to be added to handle this (i.e. using"
+      " implicit diagonal and multiplied linear operators to implicitly do"
+      " the scaling."
+      );
 
   timer.stop();
   if (out.get() && includesVerbLevel(verbLevel,Teuchos::VERB_LOW))

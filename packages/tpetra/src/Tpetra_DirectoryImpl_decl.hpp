@@ -135,6 +135,14 @@ namespace Tpetra {
                   const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                   const bool computeLIDs) const;
 
+      /// \brief Whether the Directory's input Map is (globally) one to one.
+      ///
+      /// This method should always be treated as a collective on all
+      /// processes in the given communicator, which must be the same
+      /// as the input Map's communicator.  Not all implementations
+      /// necessarily communicate.
+      virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const = 0;
+
     protected:
       //! Actually do the work of getEntries(), with no input validation.
       virtual LookupStatus
@@ -160,6 +168,8 @@ namespace Tpetra {
       //! Constructor (that takes no arguments).
       ReplicatedDirectory ();
 
+      virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
+
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
       clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
@@ -182,6 +192,10 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
+
+    private:
+      //! The number of process(es) in the input Map's communicator.
+      const int numProcs_;
     };
 
 
@@ -209,6 +223,10 @@ namespace Tpetra {
 
       //! Constructor.
       ContiguousUniformDirectory (const map_type& map);
+
+      virtual bool isOneToOne (const Teuchos::Comm<int>&) const {
+        return true;
+      }
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -254,6 +272,10 @@ namespace Tpetra {
       //! Constructor.
       DistributedContiguousDirectory (const map_type& map);
 
+      virtual bool isOneToOne (const Teuchos::Comm<int>&) const {
+        return true;
+      }
+
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
       clone (const Map<LocalOrdinal,GlobalOrdinal,Node2>& cloneMap) const
@@ -279,6 +301,7 @@ namespace Tpetra {
                       const Teuchos::ArrayView<int> &nodeIDs,
                       const Teuchos::ArrayView<LocalOrdinal> &localIDs,
                       const bool computeLIDs) const;
+
     private:
       /// \brief Minimum global ID for each process in the communicator.
       ///
@@ -314,7 +337,7 @@ namespace Tpetra {
     private:
       template <class LO, class GO, class N> friend class DistributedNoncontiguousDirectory;
       //! Private constructor for post-contruction initialization in clone()
-      DistributedNoncontiguousDirectory() {}
+      DistributedNoncontiguousDirectory () {}
 
     public:
       typedef Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal> tie_break_type;
@@ -327,6 +350,8 @@ namespace Tpetra {
       //! Constructor.
       DistributedNoncontiguousDirectory (const map_type& map,
                                          const tie_break_type& tie_break);
+
+      virtual bool isOneToOne (const Teuchos::Comm<int>& comm) const;
 
       template <class Node2>
       RCP<Directory<LocalOrdinal,GlobalOrdinal,Node2> >
@@ -370,6 +395,22 @@ namespace Tpetra {
       void
       initialize (const map_type& map,
                   Teuchos::Ptr<const tie_break_type> tie_break);
+
+      /// \brief Whether the Directory is "locally" one to one.
+      ///
+      /// This means that the calling process' Directory does not own
+      /// GIDs with multiple ownership on different processes.  If
+      /// this method returns true on all processes in the Directory's
+      /// communicator, then the Directory's input Map is one to one.
+      /// If it returns false on at least one process in the
+      /// Directory's communicator, then the Directory's input Map is
+      /// <i>not</i> one to one.
+      ///
+      /// This method is protected because it is an implementation
+      /// detail of isOneToOne().
+      bool isLocallyOneToOne () const {
+        return locallyOneToOne_;
+      }
 
       /// \brief This Directory's Map which describes the distribution of its data.
       ///
@@ -425,6 +466,23 @@ namespace Tpetra {
       /// the GID's LID in the input Map on the GID's owning process.
       Teuchos::RCP<Details::FixedHashTable<LocalOrdinal, LocalOrdinal> > lidToLidTable_;
       //@}
+
+      /// \brief The result of the first call to isOneToOne() on this object.
+      ///
+      /// If isOneToOne() has not yet been called on this object
+      /// before, the value is ONE_TO_ONE_NOT_CALLED_YET.  Otherwise,
+      /// if it returned false, the value is ONE_TO_ONE_FALSE; if it
+      /// returned true, the value is ONE_TO_ONE_TRUE.
+      mutable enum EOneToOneResult {
+        ONE_TO_ONE_NOT_CALLED_YET,
+        ONE_TO_ONE_FALSE,
+        ONE_TO_ONE_TRUE
+      } oneToOneResult_;
+
+      /// \brief Whether this process is locally one-to-one.
+      ///
+      /// See documentation of isLocallyOneToOne() for a definition.
+      bool locallyOneToOne_;
 
       /// \brief Whether this process is using hash tables for Directory storage.
       ///

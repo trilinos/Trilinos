@@ -102,7 +102,7 @@ TCartesian3D(const Epetra_Comm& Comm, const int nx, const int ny, const int nz,
   if ( zpid < NBigZDir) endz++;
 
   int NumMyElements = (endx - startx) * (endy - starty) * (endz - startz);
-  vector<int_type> MyGlobalElements(NumMyElements);
+  std::vector<int_type> MyGlobalElements(NumMyElements);
   int count = 0;
 
   for (int i = startx ; i < endx ; ++i) 

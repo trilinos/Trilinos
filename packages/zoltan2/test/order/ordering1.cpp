@@ -228,7 +228,7 @@ int main(int narg, char** arg)
   }
   else                  // Let Galeri generate a matrix
 
-    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true));
+    uinput = rcp(new UserInputForTests(xdim, ydim, zdim, matrixType, comm, true, true));
 
   RCP<SparseMatrix> origMatrix = uinput->getUITpetraCrsMatrix();
 

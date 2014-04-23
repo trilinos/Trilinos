@@ -100,7 +100,7 @@
 template<class T, int N>
 bool testTuple( Teuchos::FancyOStream &out )
 {
-  
+
   using Teuchos::Tuple;
   using Teuchos::tuple;
   using Teuchos::ArrayView;
@@ -112,14 +112,27 @@ bool testTuple( Teuchos::FancyOStream &out )
   using Teuchos::getConst;
   using Teuchos::as;
   typedef typename ArrayView<T>::size_type size_type;
+  // mfh 03 Apr 2014: The point of the above line of code is to ensure
+  // that ArrayView<T> has a public size_type typedef.  However, the
+  // above line of code in isolation causes some compilers to warn
+  // about a declared but unused typedef.  We deal with this by
+  // declaring a variable (actually, the oxymoron "const variable") of
+  // type size_type, then using the "cast to void" trick to forestall
+  // compiler warnings for the declared but unused variable.  (Fun
+  // fact: "oxymoron" means "sharp dull" and is itself an oxymoron.)
+  // The "cast to void" trick doesn't always work, but if it doesn't,
+  // it's easy to make it go away by printing it to the output stream
+  // 'out'.
+  const size_type arbitrarySizeTypeValue = 0;
+  (void) arbitrarySizeTypeValue;
 
   bool success = true;
- 
+
   out
     << "\n***"
     << "\n*** Testing "<<TypeNameTraits<Tuple<T,N> >::name()<<" of size = "<<N
     << "\n***\n";
-  
+
   Teuchos::OSTab tab(out);
 
   //
@@ -357,7 +370,7 @@ bool testTuple( Teuchos::FancyOStream &out )
     const ArrayView<const T> av2 = t;
     TEST_COMPARE_ARRAYS( av2, t );
   }
-  
+
   // ToDo: Add more tests!
 
   return success;
@@ -372,17 +385,17 @@ bool testTuple( Teuchos::FancyOStream &out )
 int main( int argc, char* argv[] ) {
 
   using Teuchos::CommandLineProcessor;
-	
+
   bool success = true;
   bool result;
- 
+
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- 
+
   Teuchos::RCP<Teuchos::FancyOStream>
     out = Teuchos::VerboseObjectBase::getDefaultOStream();
- 
+
   try {
-    
+
     //
     // Read options from the commandline
     //
@@ -399,7 +412,7 @@ int main( int argc, char* argv[] ) {
     *out << std::endl << Teuchos::Teuchos_Version() << std::endl;
 
     const int N = 8;
- 
+
     result = testTuple<int,N>(*out);
     if (!result) success = false;
 
@@ -411,15 +424,15 @@ int main( int argc, char* argv[] ) {
 
     result = testTuple<std::complex<double> ,N>(*out);
     if (!result) success = false;
- 
+
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true,std::cerr,success);
- 
+
   if (success)
     *out << "\nEnd Result: TEST PASSED" << std::endl;
   else
     *out << "\nEnd Result: TEST FAILED" << std::endl;
- 
+
   return ( success ? 0 : 1 );
- 
+
 }

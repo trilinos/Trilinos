@@ -118,10 +118,10 @@ public:
       numEntriesPerID_(1), entries_(),
       numWeights_(usewgts==true), weights_()
   {
-    vector<const scalar_t *> values;
-    vector<int> strides;
-    vector<const scalar_t *> weightValues;
-    vector<int> weightStrides;
+    std::vector<const scalar_t *> values;
+    std::vector<int> strides;
+    std::vector<const scalar_t *> weightValues;
+    std::vector<int> weightStrides;
 
     values.push_back(entries);
     strides.push_back(entryStride);
@@ -159,8 +159,8 @@ public:
    */
 
   BasicVectorAdapter(lno_t numIds, const gid_t *ids,
-    vector<const scalar_t *> &entries,  vector<int> &entryStride,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
+    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       numIds_(numIds), idList_(ids),
       numEntriesPerID_(entries.size()), entries_(),
       numWeights_(weights.size()), weights_()
@@ -203,8 +203,8 @@ public:
       numIds_(numIds), idList_(ids), numEntriesPerID_(0), entries_(),
       numWeights_(usewgts==true), weights_()
   {
-    vector<const scalar_t *> values, weightValues;
-    vector<int> strides, weightStrides;
+    std::vector<const scalar_t *> values, weightValues;
+    std::vector<int> strides, weightStrides;
 
     if (x){
       values.push_back(x);
@@ -283,8 +283,8 @@ private:
   ArrayRCP<StridedData<lno_t, scalar_t> > weights_;
 
   void createBasicVector(
-    vector<const scalar_t *> &entries,  vector<int> &entryStride,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides)
+    std::vector<const scalar_t *> &entries,  std::vector<int> &entryStride,
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides)
   {
     typedef StridedData<lno_t,scalar_t> input_t;
 

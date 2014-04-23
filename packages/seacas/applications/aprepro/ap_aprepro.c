@@ -235,27 +235,36 @@ int main (int argc, char *argv[])
 
     var = argv[optind++];
     val = strchr (var, '=');
-    *val++ = '\0';
-    if (!check_valid_var(var)) {
-      fprintf(stderr, "ERROR: '%s' is not a valid form for a variable; it will not be defined\n", var);
+    if (val == NULL) {
+      fprintf(stderr, "ERROR: '%s' is not a valid form for assiging a variable; it will not be defined\n", var);
     } else {
-      if (strchr(val, '"') != NULL) { /* Should be a string variable */
-	char *pt = strrchr(val, '"');
-	val++;
-	*pt = '\0';
-	if (var[0] == '_')
-	  s = putsym(var, SVAR, 0);
-	else
-	  s = putsym(var, IMMSVAR, 0);
-	NEWSTR(val, s->value.svar);
-      }
-      else {
-	sscanf (val, "%lf", &value);
-	if (var[0] == '_')
-	  s = putsym (var, VAR, 0);
-	else
-	  s = putsym (var, IMMVAR, 0);
-	s->value.var = value;
+      *val++ = '\0';
+      if (!check_valid_var(var)) {
+	fprintf(stderr, "ERROR: '%s' is not a valid form for a variable; it will not be defined\n", var);
+      } else {
+	if (strchr(val, '"') != NULL) { /* Should be a string variable */
+	  char *pt = strrchr(val, '"');
+	  if (pt != NULL) {
+	    val++;
+	    *pt = '\0';
+	    if (var[0] == '_')
+	      s = putsym(var, SVAR, 0);
+	    else
+	      s = putsym(var, IMMSVAR, 0);
+	    NEWSTR(val, s->value.svar);
+	  }
+	  else {
+	    fprintf(stderr, "ERROR: Missing trailing \" in definition of variable '%s'; it will not be defined\n", var);
+	  }
+	}
+	else {
+	  sscanf (val, "%lf", &value);
+	  if (var[0] == '_')
+	    s = putsym (var, VAR, 0);
+	  else
+	    s = putsym (var, IMMVAR, 0);
+	  s->value.var = value;
+	}
       }
     }
   }

@@ -232,14 +232,12 @@ Teuchos::RCP<Vector> runExample(std::vector<size_t> stridingInfo, LocalOrdinal s
   // build transfer operators
   RCP<TentativePFactory> TentPFact = rcp(new TentativePFactory());
 
-  /*TentPFact->setStridingData(stridingInfo);
-  TentPFact->setStridedBlockId(stridedBlockId);
-  TentPFact->setDomainMapOffset(offset);*/
-
   RCP<CoarseMapFactory> coarseMapFact = Teuchos::rcp(new CoarseMapFactory());
   coarseMapFact->setStridingData(stridingInfo);
   coarseMapFact->setStridedBlockId(stridedBlockId);
-  coarseMapFact->setDomainMapOffset(offset);
+  std::stringstream strOffset;
+  strOffset << "{" << offset << "," << offset << "," << offset << "," << offset << "}";
+  coarseMapFact->SetParameter("Domain GID offsets",Teuchos::ParameterEntry(strOffset.str()));
 
   RCP<SaPFactory> Pfact  = rcp( new SaPFactory() );
   //RCP<PgPFactory> Pfact  = rcp( new PgPFactory() );

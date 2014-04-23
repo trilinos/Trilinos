@@ -139,8 +139,8 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
     IFPACK_CHK_ERR(-1); // strange graph this one
   
   // Extract CRS format
-  vector<int> ia(NumMyRows_+1,0);
-  vector<int> ja(NumNz);
+  std::vector<int> ia(NumMyRows_+1,0);
+  std::vector<int> ja(NumNz);
   int cnt;
   for( int i = 0; i < NumMyRows_; ++i )
   {
@@ -150,8 +150,8 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
   }
 
   // Trim down to local only
-  vector<int> iat(NumMyRows_+1);
-  vector<int> jat(NumNz);
+  std::vector<int> iat(NumMyRows_+1);
+  std::vector<int> jat(NumNz);
   int loc = 0;
   for( int i = 0; i < NumMyRows_; ++i )
   {
@@ -168,7 +168,7 @@ int Ifpack_AMDReordering::Compute(const Ifpack_Graph& Graph)
 
   // Compute AMD permutation
   Reorder_.resize(NumMyRows_);
-  vector<double> info(AMD_INFO);
+  std::vector<double> info(AMD_INFO);
 
   amesos_amd_order( NumMyRows_, &iat[0], &jat[0], &Reorder_[0], NULL, &info[0] );
 

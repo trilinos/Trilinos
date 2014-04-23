@@ -245,6 +245,8 @@ int main(int narg, char **arg)
 
   delete [] myWeights;
   delete [] myIds;
+  delete [] sumCnt;
+  delete [] totalCnt;
   delete [] sumWeight;
   delete [] totalWeight;
 

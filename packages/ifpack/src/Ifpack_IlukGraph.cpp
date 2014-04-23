@@ -191,8 +191,8 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
   // Get Maximun Row length
   int MaxNumIndices = OverlapGraph_->MaxNumIndices();
 
-  vector<int> L(MaxNumIndices);
-  vector<int> U(MaxNumIndices);
+  std::vector<int> L(MaxNumIndices);
+  std::vector<int> U(MaxNumIndices);
 
   // First we copy the user's graph into L and U, regardless of fill level
 
@@ -249,11 +249,11 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
     // LevelFill is greater than zero, so continue...
 
     int MaxRC = NumMyBlockRows_;
-    vector<vector<int> > Levels(MaxRC);
-    vector<int> LinkList(MaxRC);
-    vector<int> CurrentLevel(MaxRC);
-    vector<int> CurrentRow(MaxRC);
-    vector<int> LevelsRowU(MaxRC);
+    std::vector<std::vector<int> > Levels(MaxRC);
+    std::vector<int> LinkList(MaxRC);
+    std::vector<int> CurrentLevel(MaxRC);
+    std::vector<int> CurrentRow(MaxRC);
+    std::vector<int> LevelsRowU(MaxRC);
 
     for (i=0; i<NumMyBlockRows_; i++)
     {
@@ -381,7 +381,7 @@ int Ifpack_IlukGraph::ConstructFilledGraph() {
       if (ierr2<0) EPETRA_CHK_ERR(ierr2);
 
       // Allocate and fill Level info for this row
-      Levels[i] = vector<int>(LenU+1);
+      Levels[i] = std::vector<int>(LenU+1);
       for (int jj=0; jj<LenU+1; jj++) Levels[i][jj] = LevelsRowU[jj];
 
     }

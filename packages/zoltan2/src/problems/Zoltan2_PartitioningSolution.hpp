@@ -406,13 +406,13 @@ public:
 
   /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
    */
-  void setPartBoxes(RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
+  void setPartBoxes(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
       this->partBoxes = outPartBoxes;
   }
 
   /*! \brief returns the part box boundary list.
    */
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
       return this->partBoxes;
   }
 
@@ -430,7 +430,7 @@ public:
           if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
               ntasks = this->getTargetGlobalNumberOfParts();
           }
-          RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
+          RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
           int dim = (*pBoxes)[0].getDim();
           GridHash < scalar_t, partId_t> grid(
                   pBoxes,
@@ -443,7 +443,7 @@ public:
 
   }
 
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
           const Teuchos::Comm<int> *comm){
 
       partId_t ntasks =  this->getActualGlobalNumberOfParts();
@@ -451,7 +451,7 @@ public:
           ntasks = this->getTargetGlobalNumberOfParts();
       }
 
-      RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
+      RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
 
       int dim = (*pBoxes)[0].getDim();
 
@@ -624,7 +624,7 @@ private:
   RCP<const IdentifierMap<user_t> > idMap_;
 
   //part box boundaries as a result of geometric partitioning algorithm.
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
   ArrayRCP <partId_t> comXAdj_; //communication graph xadj
   ArrayRCP <partId_t> comAdj_; //communication graph adj.
 
@@ -847,7 +847,7 @@ template <typename Adapter>
     nLocalParts_ = procDist_[rank+1] - procDist_[rank];
   }
   else {
-    throw logic_error("partToProc error");
+    throw std::logic_error("partToProc error");
   }
 
 }
@@ -1759,7 +1759,7 @@ template <typename Adapter>
     int c1, int c2) const
 {
   if (c1 < 0 || c1 >= nWeightsPerObj_ || c2 < 0 || c2 >= nWeightsPerObj_ )
-    throw logic_error("criteriaHaveSamePartSizes error");
+    throw std::logic_error("criteriaHaveSamePartSizes error");
 
   bool theSame = false;
 
@@ -2005,9 +2005,9 @@ void PartitioningSolution<Adapter>::RemapParts()
 
   if (np < nGlobalParts_) {
     if (me == 0)
-      cout << "Remapping not yet supported for "
+      std::cout << "Remapping not yet supported for "
            << "num_global_parts " << nGlobalParts_
-           << " > num procs " << np << endl;
+           << " > num procs " << np << std::endl;
     return;
   }
   // Build edges of a bipartite graph with np + nGlobalParts_ vertices,
@@ -2106,16 +2106,16 @@ void PartitioningSolution<Adapter>::RemapParts()
 
 #ifdef KDDKDD_DEBUG
     cout << "IDX ";
-    for (partId_t i = 0; i <= tnVtx; i++) cout << idx[i] << " ";
-    cout << endl;
+    for (partId_t i = 0; i <= tnVtx; i++) std::cout << idx[i] << " ";
+    std::cout << std::endl;
 
-    cout << "ADJ ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
-    cout << endl;
+    std::cout << "ADJ ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) std::cout << adj[i] << " ";
+    std::cout << std::endl;
 
-    cout << "WGT ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
-    cout << endl;
+    std::cout << "WGT ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) std::cout << wgt[i] << " ";
+    std::cout << std::endl;
 #endif
 
     // Perform matching on the graph
@@ -2125,13 +2125,13 @@ void PartitioningSolution<Adapter>::RemapParts()
              Zoltan2::GreedyMWM<partId_t, long>(idx, adj, wgt, tnVtx, match);
 
 #ifdef KDDKDD_DEBUG
-    cout << "After matching:  " << nmatches << " found" << endl;
+    std::cout << "After matching:  " << nmatches << " found" << std::endl;
     for (partId_t i = 0; i < tnVtx; i++)
-      cout << "match[" << i << "] = " << match[i]
+      std::cout << "match[" << i << "] = " << match[i]
            << ((match[i] != i &&
                (i < np && match[i] != i+np))
                   ? " *" : " ")
-           << endl;
+           << std::endl;
 #endif
 
     // See whether there were nontrivial changes in the matching.
@@ -2185,18 +2185,18 @@ void PartitioningSolution<Adapter>::RemapParts()
 #ifdef KDDKDD_DEBUG
     cout << "Remap vector: ";
     for (partId_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
-    cout << endl;
+    std::cout << std::endl;
 #endif
 
     long newgstaying = Zoltan2::measure_stays(remap, idx, adj, wgt,
                                               nGlobalParts_, np);
     doRemap = (newgstaying > gstaying);
-    cout << "gstaying " << gstaying << " measure(input) "
+    std::cout << "gstaying " << gstaying << " measure(input) "
          << Zoltan2::measure_stays(NULL, idx, adj, wgt,
                                    nGlobalParts_, np)
          << " newgstaying " << newgstaying
          << " nontrivial " << nontrivial
-         << " doRemap " << doRemap << endl;
+         << " doRemap " << doRemap << std::endl;
   }
   delete [] idx;
   delete [] sizes;
