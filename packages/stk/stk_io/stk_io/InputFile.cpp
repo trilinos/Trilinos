@@ -277,8 +277,11 @@ namespace stk {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
 	  if ((*I).m_subsetParts.empty()) {
-	    build_field_part_associations(*I, meta.universal_part(), stk::topology::NODE_RANK,
-					  region->get_node_blocks()[0]);
+	    const stk::mesh::FieldBase *f = (*I).field();
+	    if (f->entity_rank() == stk::topology::NODE_RANK) {
+	      build_field_part_associations(*I, meta.universal_part(), stk::topology::NODE_RANK,
+					    region->get_node_blocks()[0]);
+	    }
 	  }
 	  ++I;
 	}
@@ -298,12 +301,15 @@ namespace stk {
           Ioss::GroupingEntity *entity = region->get_entity(part->name());
           if (entity != NULL && !m_fields.empty() && entity->type() != Ioss::SIDESET) {
 	    std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-	    if ((*I).m_subsetParts.empty()) {
-	      while (I != m_fields.end()) {
-		build_field_part_associations(*I, *part, rank, entity);
+	    while (I != m_fields.end()) {
+	      if ((*I).m_subsetParts.empty()) {
+		const stk::mesh::FieldBase *f = (*I).field();
+		if (f->entity_rank() == rank) {
+		  build_field_part_associations(*I, *part, rank, entity);
+		}
 
 		// If rank is != NODE_RANK, then see if field is defined on the nodes of this part
-		if (rank != stk::topology::NODE_RANK) {
+		if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
 		  Ioss::GroupingEntity *node_entity = NULL;
 		  std::string nodes_name = part->name() + "_nodes";
 		  node_entity = region->get_entity(nodes_name);
@@ -314,8 +320,8 @@ namespace stk {
 		    build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity);
 		  }
 		}
-		++I;
 	      }
+	      ++I;
 	    }
 	  }
 	}
