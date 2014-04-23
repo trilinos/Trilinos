@@ -133,6 +133,8 @@ namespace panzer {
     int getBasisRank() const
     { return basis_rank_; }
 
+    bool supportsBasisCoordinates() const;
+
     Teuchos::RCP<const shards::CellTopology> getCellTopology() const
     { return topology_; }
 

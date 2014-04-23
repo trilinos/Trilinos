@@ -204,3 +204,13 @@ panzer::PureBasis::getIntrepidBasis() const
 {
    return intrepid_basis_;
 }
+
+bool 
+panzer::PureBasis::supportsBasisCoordinates() const
+{
+  typedef Intrepid::FieldContainer<double> Array;
+  Teuchos::RCP<const Intrepid::DofCoordsInterface<Array> > coord_interface 
+      = Teuchos::rcp_dynamic_cast<const Intrepid::DofCoordsInterface<Array> >(getIntrepidBasis());
+
+  return !Teuchos::is_null(coord_interface);
+}

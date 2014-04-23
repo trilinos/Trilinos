@@ -137,8 +137,13 @@ PHX_POST_REGISTRATION_SETUP(PointValues_Evaluator,sd,fm)
   this->utils.setFieldData(pointValues.jac_det,fm);
   this->utils.setFieldData(pointValues.point_coords,fm);
 
-  if(useBasisValuesRefArray)
+  if(useBasisValuesRefArray) {
     basis_index = panzer::getPureBasisIndex(basis->name(), (*sd.worksets_)[0]);
+
+    // basis better have coordinates if you want to use them! Assertion to protect
+    // a silent failure.
+    TEUCHOS_ASSERT(basis->supportsBasisCoordinates());
+  }
 }
 
 //**********************************************************************
