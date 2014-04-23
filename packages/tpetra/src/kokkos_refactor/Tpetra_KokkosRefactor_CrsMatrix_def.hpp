@@ -593,17 +593,27 @@ namespace Tpetra {
             class DeviceType>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const
+  getAllValues (ArrayRCP<const size_t>& rowPointers,
+                ArrayRCP<const LocalOrdinal>& columnIndices,
+                ArrayRCP<const Scalar>& values) const
   {
-    const char tfecfFuncName[] = "getAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "getAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      " requires that columnIndices and values are the same size.");
+
+    RCP<const crs_graph_type> relevantGraph = getCrsGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      relevantGraph.is_null (), std::runtime_error,
+      " requires that getCrsGraph() is not null.");
     try {
-      rowPointers   = myGraph_->getNodeRowPtrs();
-      columnIndices = myGraph_->getNodePackedIndices();
+      rowPointers = relevantGraph->getNodeRowPtrs ();
+      columnIndices = relevantGraph->getNodePackedIndices ();
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->getAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error,
+        ": Caught exception while calling getCrsGraph()->getAllIndices().");
     }
     values = values1D_;
   }
@@ -1969,16 +1979,27 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const t_RowPtrs & rowPointers,const t_LocalOrdinal_1D & columnIndices, const t_ValuesType & values)
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setAllValues (const t_RowPtrs& rowPointers,
+                const t_LocalOrdinal_1D& columnIndices,
+                const t_ValuesType& values)
   {
-    const char tfecfFuncName[] = "setAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "setAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      ": columnIndices and values must have the same size.  columnIndices.size() = "
+      << columnIndices.size () << " != values.size() = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+
     try {
-      myGraph_->setAllIndices(rowPointers,columnIndices);
+      myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error, ": Caught exception while calling myGraph_->"
+        "setAllIndices(): " << e.what ());
     }
     k_values1D_  = values;
     values1D_    = Kokkos::Compat::persistingView(k_values1D_);
@@ -1988,16 +2009,26 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setAllValues (const ArrayRCP<size_t>& rowPointers,
+                const ArrayRCP<LocalOrdinal>& columnIndices,
+                const ArrayRCP<Scalar>& values)
   {
-    const char tfecfFuncName[] = "setAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "setAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      ": columnIndices and values must have the same size.  columnIndices.size() = "
+      << columnIndices.size () << " != values.size() = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+
     try {
-      myGraph_->setAllIndices(rowPointers,columnIndices);
+      myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error, ": Caught exception while calling myGraph_->"
+        "setAllIndices(): " << e.what ());
     }
     k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
     values1D_    = values;
@@ -2795,7 +2826,16 @@ namespace Tpetra {
             class GlobalOrdinal, class DeviceType>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   fillComplete (const RCP<ParameterList> &params) {
-    fillComplete (getRowMap (), getRowMap (), params);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "fillComplete(0-1 args): getCrsGraph() returns null.  This should not "
+      "happen at this point.  Please report this bug to the Tpetra developers.");
+
+    if (isStaticGraph () && getCrsGraph ()->isFillComplete ()) {
+      fillComplete (getCrsGraph ()->getDomainMap (), getCrsGraph ()->getRangeMap (), params);
+    } else {
+      fillComplete (getRowMap (), getRowMap (), params);
+    }
   }
 
   template<class Scalar,

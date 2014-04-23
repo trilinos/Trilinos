@@ -2619,10 +2619,12 @@ namespace Tpetra {
                 const RCP<const Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > > &rangeMap,
                 const RCP<ParameterList> &params)
   {
+    const char tfecfFuncName[] = "fillComplete()";
+
 #ifdef HAVE_TPETRA_DEBUG
     rowMap_->getComm ()->barrier ();
 #endif // HAVE_TPETRA_DEBUG
-    const char tfecfFuncName[] = "fillComplete()";
+
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC( ! isFillActive() || isFillComplete(),
       std::runtime_error, ": Graph fill state must be active (isFillActive() "
       "must be true) before calling fillComplete().");
@@ -2664,9 +2666,13 @@ namespace Tpetra {
     }
     // set domain/range map: may clear the import/export objects
     setDomainRangeMaps(domainMap,rangeMap);
-    // make column map
-    if (! hasColMap()) {
-      makeColMap();
+
+    // If the graph does not already have a column Map (either from
+    // the user constructor calling the version of the constructor
+    // that takes a column Map, or from a previous fillComplete call),
+    // then create it.
+    if (! hasColMap ()) {
+      makeColMap ();
     }
 
     // Make indices local, if they aren't already.
@@ -3076,7 +3082,6 @@ namespace Tpetra {
           // upperTriangular_, lowerTriangular_, or
           // nodeMaxNumRowEntries_) which this loop sets.
           const LO rlcid = colMap.getLocalElement (globalRow);
-          if (rlcid != Teuchos::OrdinalTraits<LO>::invalid ()) {
             // This process owns one or more entries in the current row.
             RowInfo rowInfo = getRowInfo (localRow);
             ArrayView<const LO> rview = getLocalView (rowInfo);
@@ -3105,7 +3110,6 @@ namespace Tpetra {
             }
             // Update the max number of entries over all rows.
             nodeMaxNumRowEntries_ = std::max (nodeMaxNumRowEntries_, rowInfo.numEntries);
-          }
         }
       }
       haveLocalConstants_ = true;
