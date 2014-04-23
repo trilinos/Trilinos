@@ -225,11 +225,12 @@ namespace ML_Epetra{
     bool use_line=false;
     if(List.isParameter("smoother: line detection threshold")) {
       use_line = true;
-      IFPACKList.set("relaxation: line detection threshold",List.get("smoother: line detection threshold",-1.0));
+      IFPACKList.set("partitioner: line detection threshold",List.get("smoother: line detection threshold",-1.0));
       IFPACKList.set("partitioner: type","line");
       IFPACKList.set("partitioner: x-coordinates",List.get("x-coordinates",(double*)0));
       IFPACKList.set("partitioner: y-coordinates",List.get("y-coordinates",(double*)0));
       IFPACKList.set("partitioner: z-coordinates",List.get("z-coordinates",(double*)0));
+
     }
 
     if(verbose && !A->Comm().MyPID()){
