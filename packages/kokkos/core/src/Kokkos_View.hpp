@@ -478,7 +478,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
-    { m_offset_map.assign(0,0,0,0,0,0,0,0); }
+    { m_offset_map.assign(0, 0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0)

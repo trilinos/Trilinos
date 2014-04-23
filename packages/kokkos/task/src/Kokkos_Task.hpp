@@ -94,6 +94,16 @@ class FunctorTraits ;
 
 namespace Kokkos {
 
+// TaskPool< MyFunctor , Kokkos::TaskSerial<long> , Kokkos::Serial >
+template< class FunctorType , class PatternType , class DeviceType >
+class TaskPool ;
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
 template< class DeviceType , class ResultType = void >
 class Future {
 public:
