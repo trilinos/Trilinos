@@ -261,7 +261,11 @@ namespace {
 #elif defined(HAVE_KOKKOSCLASSIC_THREADPOOL)
   typedef KokkosClassic::TPINode      NodeType;
 #elif defined(HAVE_KOKKOSCLASSIC_THRUST)
-  typedef KokkosClassic::ThustGPUNode NodeType;
+  typedef KokkosClassic::ThrustGPUNode NodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_PTHREAD)
+  typedef Kokkos::Compat::KokkosThreadsWrapperNode NodeType;
+#elif defined(HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT) && defined(KOKKOS_HAVE_OPENMP)
+  typedef Kokkos::Compat::KokkosOpenMPWrapperNode NodeType;
 #endif
 
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Cloner, MapCloneTpetra, int, int, NodeType )
