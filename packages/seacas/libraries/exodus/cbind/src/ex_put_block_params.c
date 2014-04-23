@@ -113,6 +113,7 @@ int ex_put_block_params( int         exoid,
       sprintf( errmsg, "Error: Bad block type (%d) specified for entry %d file id %d",
 	       blocks[i].type, (int)i, exoid );
       ex_err( "ex_put_block_params", errmsg, exerrval );
+      free(blocks_to_define);
       return (EX_FATAL);
     }
 
@@ -123,6 +124,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: No %ss defined in file id %d",
 	      ex_name_of_object(blocks[i].type), exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return EX_FATAL;
     }
 
@@ -138,6 +140,8 @@ int ex_put_block_params( int         exoid,
 	      "Error: failed to locate %s ids in file id %d",
 	      ex_name_of_object(blocks[i].type), exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
+      return (EX_FATAL);
     }
 
     ex_id_lkup(exoid,blocks[i].type,blocks[i].id); /* Error value used, but don't need return value */
@@ -147,6 +151,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: %s id %"PRId64" already exists in file id %d",
 	      ex_name_of_object(blocks[i].type), blocks[i].id,exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return (EX_FATAL);
     }
 
@@ -162,6 +167,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: exceeded number of %ss (%d) defined in file id %d",
 	      ex_name_of_object(blocks[i].type), (int)num_blk,exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return (EX_FATAL);
     }
 
@@ -179,6 +185,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: failed to store %s id to file id %d",
 	      ex_name_of_object(blocks[i].type), exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return (EX_FATAL);
     }
 
@@ -195,6 +202,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: failed to locate %s status in file id %d",
 	      ex_name_of_object(blocks[i].type), exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return (EX_FATAL);
     }
 
@@ -204,6 +212,7 @@ int ex_put_block_params( int         exoid,
 	      "Error: failed to store %s id %"PRId64" status to file id %d",
 	      ex_name_of_object(blocks[i].type), blocks[i].id, exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
+      free(blocks_to_define);
       return (EX_FATAL);
     }
   }
@@ -213,6 +222,7 @@ int ex_put_block_params( int         exoid,
     exerrval = status;
     sprintf(errmsg,"Error: failed to place file id %d into define mode",exoid);
     ex_err("ex_put_block_params",errmsg,exerrval);
+    free(blocks_to_define);
     return (EX_FATAL);
   }
 
@@ -264,7 +274,7 @@ int ex_put_block_params( int         exoid,
       vfaccon = VAR_FCONN(blk_id_ndx);
       break;
     default:
-      return (EX_FATAL); /* should have been handled earlier; quiet compiler here */
+      goto error_ret;
     }
 
     /* define some dimensions and variables*/
@@ -350,7 +360,7 @@ int ex_put_block_params( int         exoid,
 	sprintf(errmsg,
 		"Error: failed to get string length in file id %d",exoid);
 	ex_err("ex_put_block_params",errmsg,exerrval);
-	return (EX_FATAL);
+	goto error_ret;         /* exit define mode and return */
       }
      
       /* Attribute names... */
@@ -392,7 +402,7 @@ int ex_put_block_params( int         exoid,
 	sprintf( errmsg, "Error: Bad block type (%d) for nsided/nfaced block in file id %d",
 		 blocks[i].type, exoid );
 	ex_err( "ex_put_block_params", errmsg, exerrval );
-	return (EX_FATAL);
+	goto error_ret;         /* exit define mode and return */
       }
 
       if (arbitrary_polyhedra == 1) {
@@ -510,6 +520,8 @@ int ex_put_block_params( int         exoid,
     }
   }
 
+  free(blocks_to_define);
+
   /* leave define mode  */
   if ((exerrval=nc_enddef (exoid)) != NC_NOERR) {
     sprintf(errmsg,
@@ -519,7 +531,6 @@ int ex_put_block_params( int         exoid,
     return (EX_FATAL);
   }
 
-  free(blocks_to_define);
 
   for (i=0; i < block_count; i++) {
     switch (blocks[i].type) {
