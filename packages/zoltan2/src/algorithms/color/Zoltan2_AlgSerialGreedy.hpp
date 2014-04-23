@@ -80,7 +80,7 @@ class AlgSerialGreedy
   {
     HELLO;
   
-    // Only color local graph. Global coloring is supported in Zoltan (not Zoltan2).
+    // Color local graph. Global coloring is supported in Zoltan (not Zoltan2).
     // Get local graph.
     ArrayView<const lno_t> edgeIds;
     ArrayView<const lno_t> offsets;
@@ -101,14 +101,20 @@ class AlgSerialGreedy
     // TODO: Allow user to input an old coloring.
     ArrayRCP<color_t> colors = solution->getColorsRCP();
 
+    // Find max degree, since (max degree)+1 is an upper bound.
+    lno_t maxDegree = 0; 
+    for (lno_t i=0; i<nVtx; i++){
+      if (offsets[i+1]-offsets[i] > maxDegree)
+        maxDegree = offsets[i+1]-offsets[i];
+    }
+
     // First-fit greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
-    const color_t maxColorGuess = 256; // for array allocation
     color_t maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
-    Teuchos::Array<color_t> forbidden(maxColorGuess, -1);
+    Teuchos::Array<color_t> forbidden(maxDegree+1, 0);
 
     for (lno_t i=0; i<nVtx; i++){
       lno_t v=i; // TODO: Use ordering here.
