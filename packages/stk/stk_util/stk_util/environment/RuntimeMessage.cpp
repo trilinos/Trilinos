@@ -17,8 +17,6 @@
 #include <string>                       // for string, char_traits, etc
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, etc
-#include "boost/functional/hash/extensions.hpp"  // for hash
-#include "boost/functional/hash/hash.hpp"  // for hash
 #include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
 #include "boost/unordered/unordered_map.hpp"
 #include "mpi.h"                        // for MPI_CHAR, MPI_Comm_rank, etc
