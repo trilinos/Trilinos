@@ -690,7 +690,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(Int64Vector &map)
+  void GeneratedMesh::node_map(Int64Vector &map) const
   {
     int64_t count = node_count_proc();
     map.reserve(count);
@@ -700,7 +700,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(IntVector &map)
+  void GeneratedMesh::node_map(IntVector &map) const
   {
     int count = node_count_proc();
     map.resize(count);

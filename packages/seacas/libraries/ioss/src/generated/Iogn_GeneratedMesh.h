@@ -374,8 +374,8 @@ namespace Iogn {
      * "map[local_position] = global_id" for the nodes on this
      * processor.
      */
-    virtual void node_map(MapVector &map);
-    virtual void node_map(IntVector &map);
+    virtual void node_map(MapVector &map) const;
+    virtual void node_map(IntVector &map) const;
 
     /** 
      * Fill the passed in 'map' argument with the element map
