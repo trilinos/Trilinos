@@ -156,6 +156,7 @@ SET(SOURCES
    src/ex_put_attr_param.c
    src/ex_put_block.c
    src/ex_put_block_param.c
+   src/ex_put_block_params.c
    src/ex_put_cmap_params.c
    src/ex_put_cmap_params_cc.c
    src/ex_put_concat_all_blocks.c
