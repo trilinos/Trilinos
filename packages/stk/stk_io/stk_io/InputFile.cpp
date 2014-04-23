@@ -250,21 +250,23 @@ namespace stk {
       Ioss::Region *region = m_region.get();
       
       // First handle any fields that are subsetted (restricted to a specified list of parts)
-      std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
-      while (I != m_fields.end()) {
-	std::vector<const stk::mesh::Part*>::iterator P = (*I).m_subsetParts.begin();
-	while (P != (*I).m_subsetParts.end()) {
-	  // Find the Ioss::GroupingEntity corresponding to this part...
-	  const stk::mesh::Part *part = *P; ++P;
-	  Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-	  ThrowErrorMsgIf( io_entity == NULL,
-			   "ERROR: For field '" << (*I).field()->name()
-			   << "' Could not find database entity corresponding to the part named '"
-			   << part->name() << "'.");
-	  stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	  build_field_part_associations(*I, *part, rank, io_entity);
+      {
+	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
+	while (I != m_fields.end()) {
+	  std::vector<const stk::mesh::Part*>::iterator P = (*I).m_subsetParts.begin();
+	  while (P != (*I).m_subsetParts.end()) {
+	    // Find the Ioss::GroupingEntity corresponding to this part...
+	    const stk::mesh::Part *part = *P; ++P;
+	    Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
+	    ThrowErrorMsgIf( io_entity == NULL,
+			     "ERROR: For field '" << (*I).field()->name()
+			     << "' Could not find database entity corresponding to the part named '"
+			     << part->name() << "'.");
+	    stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
+	    build_field_part_associations(*I, *part, rank, io_entity);
+	  }
+	  ++I;
 	}
-	++I;
       }
       
       // Now handle the non-subsetted fields...
