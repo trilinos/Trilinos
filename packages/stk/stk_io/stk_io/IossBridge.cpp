@@ -1052,24 +1052,6 @@ void define_side_blocks(stk::mesh::Part &part,
 }
 
 //----------------------------------------------------------------------
-//----------------------------------------------------------------------
-//----------------------------------------------------------------------
-#ifndef NDEBUG
-// Used in an assert statement...
-bool field_has_expected_size(const stk::mesh::FieldBase* field, unsigned expected_size)
-{
-  const stk::mesh::FieldBase::RestrictionVector& restrictions = field->restrictions();
-  for(size_t i=0; i<restrictions.size(); ++i) {
-    unsigned field_size = restrictions[i].num_scalars_per_entity();
-    if (field_size != expected_size) {
-      return false;
-    }
-  }
-
-  return true;
-}
-#endif
-
 void define_node_block(stk::mesh::Part &part,
                        const stk::mesh::BulkData &bulk,
                        Ioss::Region &io_region,
@@ -1083,7 +1065,6 @@ void define_node_block(stk::mesh::Part &part,
   //it from the coordinate-field's restriction onto the universal part.
   //This is because some codes (sierra framework) don't put the coordinate
   //field on the universal part. (framework puts it on active and inactive parts)
-  //As a debug-mode error-check, we'll assert that 'field_has_expected_size'.
 
   const int spatial_dim = meta.spatial_dimension();
   io_region.property_add( Ioss::Property("spatial_dimension", spatial_dim));
