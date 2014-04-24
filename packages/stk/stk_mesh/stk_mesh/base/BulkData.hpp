@@ -2002,7 +2002,7 @@ struct EntityGhostData
         }
         return s;
     }
-    template<class OStream> friend inline OStream& printGhostLevel(OStream& s, int gl)
+    template<class OStream> inline OStream& printGhostLevel(OStream& s, int gl) const
     {
         switch (gl) {
             case LOCALLY_OWNED:
@@ -2033,7 +2033,7 @@ struct EntityGhostData
         s << ", direction=" << egd.direction
           << ", processor=" << egd.processor
           << ", ghosting level=";
-        printGhostLevel(s,egd.ghostingLevel);
+        egd.printGhostLevel(s,egd.ghostingLevel);
         s << ")";
         return s;
     }
