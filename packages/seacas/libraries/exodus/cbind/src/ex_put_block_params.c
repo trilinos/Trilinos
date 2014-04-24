@@ -555,14 +555,14 @@ int ex_put_block_params( int         exoid,
       */
       size_t  count[2];
       char *text = "";
-      size_t i;
+      size_t j;
 
       count[0] = 1;
       start[1] = 0;
       count[1] = strlen(text)+1;
   
-      for (i = 0; i < blocks[i].num_attribute; i++) {
-	start[0] = i;
+      for (j = 0; j < blocks[i].num_attribute; j++) {
+	start[0] = j;
 	nc_put_vara_text(exoid, att_name_varid, start, count, text);
       }
     }
