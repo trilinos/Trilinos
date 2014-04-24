@@ -1437,8 +1437,8 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       };
 
     const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      , ViewOffsetRange< Type1 >::begin( arg1 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
       };
 
     size_t stride[9] ;
@@ -1574,17 +1574,17 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
       };
 
     const unsigned begin[ src_rank ] =
-      { ViewOffsetRange< Type0 >::begin( arg0 )
-      , ViewOffsetRange< Type1 >::begin( arg1 )
-      , ViewOffsetRange< Type2 >::begin( arg2 )
-      , ViewOffsetRange< Type3 >::begin( arg3 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::begin( arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::begin( arg3 ))
       };
 
     unsigned dim[ src_rank ] =
-      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
-      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
-      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
-      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 ))
       };
 
     size_t stride[9] = {0,0,0,0,0,0,0,0,0};
