@@ -13,7 +13,8 @@ namespace stk {
   namespace mesh {
     class BulkData;
     class Selector;
-  
+    class Part;
+
     /** Create all the edges in the mesh and attach them to
      * existing elements and defined faces.
      *
@@ -21,7 +22,7 @@ namespace stk {
      * processors at the same time
      *
      */
-    void create_edges(  BulkData & mesh, const Selector & element_selector );
+    void create_edges(  BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges = 0 );
 
     void create_edges( BulkData & mesh );
   }

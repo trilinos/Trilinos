@@ -77,11 +77,13 @@ struct create_edge_impl
                     , edge_map_type        & edge_map
                     , shared_edge_map_type & shared_edge_map
                     , Bucket               & bucket
+                    , Part * part_to_insert_new_edges
                   )
     : m_next_edge(next_edge)
     , m_edge_map(edge_map)
     , m_shared_edge_map(shared_edge_map)
     , m_bucket(bucket)
+    , m_part_to_insert_new_edges(part_to_insert_new_edges)
   {}
 
   template <typename Topology>
@@ -94,6 +96,8 @@ struct create_edge_impl
     PartVector add_parts;
 
     add_parts.push_back( & mesh.mesh_meta_data().get_cell_topology_root_part( get_cell_topology( EdgeTopology::value )));
+    if (m_part_to_insert_new_edges)
+      add_parts.push_back(m_part_to_insert_new_edges);
 
     boost::array<Entity,Topology::num_nodes> elem_nodes;
     EntityVector edge_nodes(EdgeTopology::num_nodes);
@@ -181,6 +185,7 @@ struct create_edge_impl
   edge_map_type         & m_edge_map;
   shared_edge_map_type  & m_shared_edge_map;
   Bucket                & m_bucket;
+  Part                  * m_part_to_insert_new_edges;
 };
 
 struct connect_face_impl
@@ -351,10 +356,10 @@ void update_shared_edges_global_ids( BulkData & mesh, shared_edge_map_type & sha
 
 void create_edges( BulkData & mesh )
 {
-  create_edges(mesh, mesh.mesh_meta_data().universal_part());
+  create_edges(mesh, mesh.mesh_meta_data().universal_part(), 0 );
 }
 
-void create_edges( BulkData & mesh, const Selector & element_selector )
+void create_edges( BulkData & mesh, const Selector & element_selector, Part * part_to_insert_new_edges )
 {
 
   //  static size_t next_edge = static_cast<size_t>(mesh.parallel_rank()+1) << 32;
@@ -401,7 +406,7 @@ void create_edges( BulkData & mesh, const Selector & element_selector )
         for (size_t i=0, e=element_buckets.size(); i<e; ++i) {
           Bucket &b = *element_buckets[i];
 
-          create_edge_impl functor( next_edge, edge_map, shared_edge_map, b);
+          create_edge_impl functor( next_edge, edge_map, shared_edge_map, b, part_to_insert_new_edges);
           stk::topology::apply_functor< create_edge_impl > apply(functor);
           apply( b.topology() );
         }
