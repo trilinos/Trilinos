@@ -89,7 +89,7 @@ executable_date()
   static std::string executable_date;
 
   if (executable_date.empty())
-    executable_date = ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, ProductRegistry::BUILD_TIME);
+    executable_date = stk::ProductRegistry::instance().getProductAttribute(stk::EnvData::instance().m_productName, stk::ProductRegistry::BUILD_TIME);
 
   return executable_date;
 }
