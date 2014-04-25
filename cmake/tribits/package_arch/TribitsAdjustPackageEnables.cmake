@@ -374,7 +374,7 @@ ENDMACRO()
 #     depend on optional test packages involve integration testing of some
 #     type.
 #  
-#   `LIB_REQUIRED_TPLS``
+#   ``LIB_REQUIRED_TPLS``
 #
 #     List of upstream TPLs that must be enabled in order to build and use the
 #     libraries (or capabilities) in this package.
