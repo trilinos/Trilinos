@@ -260,8 +260,14 @@ namespace Xpetra {
 
     //@}
 
-  private:
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    virtual void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
 
+  private:
+    //! The Epetra_MultiVector which this class wraps.
     RCP< Epetra_MultiVector > vec_;
 
   }; // EpetraMultiVector class

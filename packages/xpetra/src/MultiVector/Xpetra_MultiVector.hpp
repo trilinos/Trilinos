@@ -76,8 +76,23 @@ namespace Xpetra {
     //! Destructor.
     virtual ~MultiVector() { }
 
-   //@}
+    /// \brief Assignment operator: Does a deep copy.
+    ///
+    /// The assignment operator does a deep copy, just like
+    /// subclasses' copy constructors.
+    ///
+    /// \note This currently only works if both <tt>*this</tt> and the
+    ///   input argument are instances of the same subclass.  We do
+    ///   not currently allow assignment between an
+    ///   Xpetra::TpetraMultiVector and an Xpetra::EpetraMultiVector,
+    ///   or vice versa, for example.
+    MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&
+    operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& rhs) {
+      assign (rhs); // dispatch to protected virtual method
+      return *this;
+    }
 
+    //@}
     //! @name Post-construction modification routines
     //@{
 
@@ -215,6 +230,14 @@ namespace Xpetra {
 
 
     //@}
+
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    ///
+    /// Each subclass must implement this.  This includes
+    /// Xpetra::EpetraMultiVector and Xpetra::TpetraMultiVector.
+    virtual void assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs) = 0;
 
   }; // MultiVector class
 
