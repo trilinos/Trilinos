@@ -154,6 +154,17 @@ namespace Xpetra {
     //! Scale in place: this = alpha*this.
     void scale(const Scalar &alpha) { XPETRA_MONITOR("EpetraMultiVector::scale"); vec_->Scale(alpha); }
 
+    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    void scale (Teuchos::ArrayView< const Scalar > alpha) {
+      XPETRA_MONITOR("EpetraMultiVector::scale");
+      // Epetra, unlike Tpetra, doesn't implement this version of
+      // scale().  Deal with this by scaling one column at a time.
+      const size_t numVecs = this->getNumVectors ();
+      for (size_t j = 0; j < numVecs; ++j) {
+        vec_->Scale (alpha[j]);
+      }
+    }
+
     //! Update: this = beta*this + alpha*A.
     void update(const Scalar &alpha, const MultiVector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &A, const Scalar &beta) { XPETRA_MONITOR("EpetraMultiVector::update"); vec_->Update(alpha, toEpetra(A), beta); }
 

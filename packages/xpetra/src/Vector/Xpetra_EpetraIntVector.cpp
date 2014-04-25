@@ -122,7 +122,15 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::scale(const int &alpha) { XPETRA_MONITOR("EpetraIntVector::scale"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::scale(const int &alpha) {
+    XPETRA_MONITOR("EpetraIntVector::scale");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
+  void EpetraIntVector::scale (Teuchos::ArrayView< const int > alpha) {
+    XPETRA_MONITOR("EpetraIntVector::scale");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
 
   void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) {
     XPETRA_MONITOR("EpetraIntVector::update");
