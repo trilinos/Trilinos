@@ -128,7 +128,7 @@ struct CudaTraits {
   typedef unsigned long
     ConstantGlobalBufferType[ ConstantMemoryUsage / sizeof(unsigned long) ];
 
-  enum { ConstantMemoryUseThreshold = 0x000100 /* 256 bytes */ };
+  enum { ConstantMemoryUseThreshold = 0x000200 /* 512 bytes */ };
 
   KOKKOS_INLINE_FUNCTION static
   CudaSpace::size_type warp_count( CudaSpace::size_type i )
