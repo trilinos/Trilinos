@@ -59,13 +59,19 @@
 #include "Xpetra_DefaultPlatform.hpp"
 
 #ifdef HAVE_XPETRA_TPETRA
-#include "Tpetra_ConfigDefs.hpp"
-#include "Tpetra_DefaultPlatform.hpp"
-//#include "Tpetra_MultiVector.hpp"
-//#include "Tpetra_Vector.hpp"
-#include "Xpetra_TpetraMultiVector.hpp"
-#include "Xpetra_TpetraVector.hpp"
-#endif
+#  include "Tpetra_ConfigDefs.hpp"
+#  include "Tpetra_DefaultPlatform.hpp"
+#  include "Xpetra_TpetraMultiVector.hpp"
+#  include "Xpetra_TpetraVector.hpp"
+#else
+#  ifdef HAVE_XPETRA_EPETRA
+#    include "Xpetra_EpetraMultiVector.hpp"
+#    include "Xpetra_EpetraVector.hpp"
+#  endif // HAVE_XPETRA_EPETRA
+#endif // HAVE_XPETRA_TPETRA
+
+#include "Xpetra_MapFactory.hpp"
+#include "Xpetra_VectorFactory.hpp"
 
 // #include "Xpetra_EpetraMultiVector.hpp"
 // #include "Xpetra_EpetraVector.hpp"
@@ -145,21 +151,6 @@ namespace {
   using Xpetra::useTpetra::createLocalMapWithNode;
 #endif
 
-  using KokkosClassic::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
-
   bool testMpi = true;
   double errorTolSlack = 1.0e+2;
 
@@ -188,60 +179,127 @@ namespace {
     return ret;
   }
 
+  // Get an instance of the given Kokkos Node type.
+  //
+  // \warning This function is NOT reentrant, and therefore NOT thread safe.
   template <class Node>
-  RCP<Node> getNode() {
-    assert(false);
-  }
-
-  template <>
-  RCP<SerialNode> getNode<SerialNode>() {
-    if (snode == null) {
+  RCP<Node> getNode () {
+    static RCP<Node> node_; // Defaults to null
+    if (node_.is_null ()) {
       Teuchos::ParameterList pl;
-      snode = rcp(new SerialNode(pl));
+      pl.set<int> ("Num Threads", 0);
+      pl.set<int> ("Verbose", 1);
+      node_ = Teuchos::rcp (new Node (pl));
     }
-    return snode;
+    return node_;
   }
-
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  template <>
-  RCP<TBBNode> getNode<TBBNode>() {
-    if (tbbnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tbbnode = rcp(new TBBNode(pl));
-    }
-    return tbbnode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  template <>
-  RCP<TPINode> getNode<TPINode>() {
-    if (tpinode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      tpinode = rcp(new TPINode(pl));
-    }
-    return tpinode;
-  }
-#endif
-
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  template <>
-  RCP<ThrustGPUNode> getNode<ThrustGPUNode>() {
-    if (thrustnode == null) {
-      Teuchos::ParameterList pl;
-      pl.set<int>("Num Threads",0);
-      pl.set<int>("Verbose",1);
-      thrustnode = rcp(new ThrustGPUNode(pl));
-    }
-    return thrustnode;
-  }
-#endif
 
   //
   // UNIT TESTS
   //
+
+  //
+  // Bug 6115 test: Ensure that Xpetra::Vector::operator= does a deep copy.
+  // This test prefers Tpetra, but uses Epetra if not building with Tpetra.
+  //
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( Vector, AssignmentDeepCopies, MV, V, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+    // using std::cerr;
+    // using std::endl;
+    typedef Ordinal LO;
+    typedef Ordinal GO;
+    typedef Xpetra::Map<LO, GO, Node> map_type;
+    typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
+    typedef Xpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    typedef Xpetra::VectorFactory<Scalar, LO, GO, Node> vec_factory_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    // const int myRank = comm->getRank ();
+    // {
+    //   std::ostringstream os;
+    //   os << "Process " << myRank << ": (Vector, AssignmentDeepCopies) test" << endl;
+    //   cerr << os.str ();
+    // }
+
+#ifdef HAVE_XPETRA_TPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+#else
+#  ifdef HAVE_XPETRA_EPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+#  else
+#    error "Should never get here!"
+#  endif // HAVE_XPETRA_EPETRA
+#endif // HAVE_XPETRA_TPETRA
+
+    // Create a Map, which will be the row, domain, and range Map of the matrix A.
+    const LO numInd = 63;
+    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+
+    RCP<vec_type> v = vec_factory_type::Build (map);
+    v->setSeed (8675309);
+    v->randomize (true);
+
+    // {
+    //   std::ostringstream os;
+    //   os << "Process " << myRank << ": Testing that Xpetra::Vector::operator= does a deep copy" << endl;
+    //   cerr << os.str ();
+    // }
+
+    // Remember the norm of v, to make sure that neither apply() call changes it.
+    const magnitude_type v_norm = v->norm2 ();
+
+    // Keep a copy of v, to test that neither apply() call changes it.
+    RCP<vec_type> vcopy = vec_factory_type::Build (map);
+
+    // Xpetra's operator= does a deep copy, like Epetra, but unlike
+    // Tpetra (as of early 2014).
+    *vcopy = *v;
+
+    // Make sure that vcopy and v have the same norm.  It's OK for the
+    // norms to be slightly different, due to nondeterminism in
+    // parallel collectives.
+    const magnitude_type vcopy_norm = vcopy->norm2 ();
+    // {
+    //   std::ostringstream os;
+    //   os << "Process " << myRank << ": v->norm2() = " << v_norm
+    //      << ", vcopy->norm2() = " << vcopy_norm << endl;
+    //   cerr << os.str ();
+    // }
+
+    const magnitude_type norm_tol =
+      static_cast<magnitude_type> (map->getGlobalNumElements ()) * STM::eps ();
+    TEUCHOS_TEST_COMPARE(STM::magnitude (v_norm - vcopy_norm), <, norm_tol, out, success);
+
+    // Make sure that if you change vcopy, v doesn't change.
+    // That is, vcopy must be a true deep copy of v.
+    {
+      Teuchos::ArrayRCP<Scalar> vcopy_data = vcopy->getDataNonConst (0);
+      if (map->getNodeNumElements () != 0) {
+        vcopy_data[0] += static_cast<magnitude_type> (10000.0);
+      }
+      // Destroy the view, so that the changes get written back to the Vector.
+      vcopy_data = Teuchos::null;
+
+      // Adding 10000 to an entry had better change the 2-norm by at least sqrt(10000) = 100.
+      const magnitude_type norm_tol2 = static_cast<magnitude_type> (100.0);
+      TEUCHOS_TEST_COMPARE(STM::magnitude (vcopy_norm - vcopy->norm2 ()), >, norm_tol2, out, success);
+
+      // Restore the original vcopy, by doing a deep copy again.
+      // Xpetra's operator= does a deep copy, like Epetra, but unlike
+      // Tpetra (as of early 2014).
+      *vcopy = *v;
+
+      // Make sure the original copy got restored.
+      TEUCHOS_TEST_COMPARE(STM::magnitude (vcopy_norm - vcopy->norm2 ()), <, norm_tol, out, success);
+    }
+#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+  }
+
 
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, NonMemberConstructors, MV, V, Ordinal, Scalar , Node )
@@ -249,7 +307,7 @@ namespace {
     RCP<Node> node = getNode<Node>();
 #ifdef HAVE_XPETRA_TPETRA
 
-    typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
+    // typedef typename ScalarTraits<Scalar>::magnitudeType Magnitude;
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
     RCP<const Comm<int> > comm = getDefaultComm();
@@ -697,7 +755,7 @@ namespace {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
     using Teuchos::View;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    // typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // get a comm and node
@@ -841,7 +899,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     using Teuchos::View;
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    // typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
@@ -1255,7 +1313,7 @@ namespace {
   {
 #ifdef HAVE_XPETRA_TPETRA
     RCP<Node> node = getNode<Node>();
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    // typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
 
     const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
     // TODO const Scalar S0 = ScalarTraits<Scalar>::zero();
@@ -1496,20 +1554,31 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ScaleAndAssign, MV, V, Ordinal, Scalar , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
-    RCP<Node> node = getNode<Node>();
-    if (ScalarTraits<Scalar>::isOrdinal) return;
-    Teuchos::ScalarTraits<Scalar>::seedrandom(0);   // consistent seed
-    typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType Mag;
+    typedef Teuchos::ScalarTraits<Mag> STM;
+    typedef Xpetra::Map<Ordinal, Ordinal, Node> map_type;
+    typedef Xpetra::Vector<Scalar, Ordinal, Ordinal, Node> vec_type;
 
-    const global_size_t INVALID = OrdinalTraits<global_size_t>::invalid();
-    const Mag tol = errorTolSlack * ScalarTraits<Mag>::eps();
-    const Mag M0 = ScalarTraits<Mag>::zero();
+    if (STS::isOrdinal) {
+      return;
+    }
+
+    STS::seedrandom (0); // consistent seed
+    const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid ();
+    const Mag tol = errorTolSlack * STM::eps ();
+    const Mag M0 = STM::zero ();
+
     // get a comm and node
-    RCP<const Comm<int> > comm = getDefaultComm();
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    RCP<Node> node = getNode<Node> ();
+
     // create a Map
     const size_t numLocal = 23;
     const size_t numVectors = 11;
-    RCP<const Xpetra::Map<Ordinal,Ordinal,Node> > map = createContigMapWithNode<Ordinal,Ordinal>(INVALID,numLocal,comm,node);
+    RCP<const map_type> map =
+      createContigMapWithNode<Ordinal,Ordinal> (INVALID, numLocal, comm, node);
+
     // Use random multivector A
     // Set B = A * 2 manually.
     // Therefore, if C = 2*A, then C == B
@@ -1517,66 +1586,67 @@ namespace {
     // This test operator= and all of our scale ops
     // We'll do Vector and MultiVector variations
     // Also, ensure that other vectors aren't changed
-    MV A(map,numVectors,false),
-       B(map,numVectors,false);
+    MV A (map, numVectors, false);
+    MV B (map, numVectors, false);
     A.randomize();
     Array<Mag> Anrms(numVectors);
     A.norm2(Anrms());
-    // set B = A * 2, using different techniques
-    // * get vector, Vector::operator=
-    // * get 1-vector subview(Range1D), MultiVector::operator=
-    // * get 1-vector subview(ArrayView), MultiVector::operator=
-    // * get data view, assign
+    // Set B = A * 2, using different techniques, depending on the value of j % 4.
+    //
+    // 0: getVector, B_j = A_j (Vector::operator=), B_j(i) *= 2
+    // 1: getVector, B_j(i) = 2 * A_j(i)
+    // 2: getVector, B_j->update (2, *A_j, 0)
+    // 3. A_j = A.getData(j), B_j = B.getDataNonConst(j), B_j(i) = A_j(i) * 2
     TEUCHOS_TEST_FOR_EXCEPT(numVectors < 4);
-#ifdef XPETRA_NOT_IMPLEMENTED
+
     for (size_t j = 0; j < numVectors; ++j) {
       // assign j-th vector of B to 2 * j-th vector of A
       switch (j % 4) {
-        case 0:
-          {
-            RCP<V> bj = B.getVectorNonConst(j);
-            RCP<const V> aj = A.getVector(j);
-            (*bj) = (*aj);
-            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (size_t i=0; i < numLocal; ++i) {
-              bjview[i] *= as<Scalar>(2);
-            }
+      case 0:
+        {
+          // B(:,j) := A(:,j), and B(i,j) *= 2 for all i.
+          RCP<vec_type> bj = B.getVectorNonConst (j);
+          RCP<const vec_type> aj = A.getVector (j);
+          (*bj) = (*aj);
+          ArrayRCP<Scalar> bjview = bj->getDataNonConst (0); // zero-th column of bj
+          for (size_t i = 0; i < numLocal; ++i) {
+            bjview[i] *= as<Scalar> (2);
           }
-          break;
-        case 1:
-          {
-            RCP<MV>       bj = B.subViewNonConst(Range1D(j,j));
-            RCP<const MV> aj = A.subView(Range1D(j,j));
-            (*bj) = (*aj);
-            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (size_t i=0; i < numLocal; ++i) {
-              bjview[i] *= as<Scalar>(2);
-            }
+        }
+        break;
+      case 1:
+        {
+          // B(i,j) := 2 * A(i,j) for all i.
+          RCP<vec_type> B_j = B.getVectorNonConst (j);
+          RCP<const vec_type> A_j = A.getVector (j);
+          // View of the zero-th column of A_j is a view of the j-th column of A.
+          ArrayRCP<const Scalar> A_j_view = A_j->getData (0);
+          // View of the zero-th column of B_j is a view of the j-th column of B.
+          ArrayRCP<Scalar> B_j_view = B_j->getDataNonConst (0);
+          for (size_t i = 0; i < numLocal; ++i) {
+            B_j_view[i] = as<Scalar> (2) * A_j_view[i];
           }
-          break;
-        case 2:
-          {
-            RCP<MV> bj = B.subViewNonConst(tuple<size_t>(j));
-            RCP<const MV> aj = A.subView(tuple<size_t>(j));
-            (*bj) = (*aj);
-            ArrayRCP<Scalar> bjview = bj->get1dViewNonConst();
-            for (size_t i=0; i < numLocal; ++i) {
-              bjview[i] *= as<Scalar>(2);
-            }
+        }
+        break;
+      case 2:
+        {
+          RCP<vec_type> B_j = B.getVectorNonConst (j);
+          RCP<const vec_type> A_j = A.getVector (j);
+          B_j->update (as<Scalar> (2), *A_j, STS::zero ());
+        }
+        break;
+      case 3:
+        {
+          ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
+          ArrayRCP<const Scalar> ajview = A.getData(j);
+          for (size_t i=0; i < numLocal; ++i) {
+            bjview[i] = as<Scalar>(2) * ajview[i];
           }
-          break;
-        case 3:
-          {
-            ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
-            ArrayRCP<const Scalar> ajview = A.getData(j);
-            for (size_t i=0; i < numLocal; ++i) {
-              bjview[i] = as<Scalar>(2) * ajview[i];
-            }
-          }
-          break;
+        }
+        break;
       }
     }
-#endif
+
     // check that A wasn't modified
     {
       Array<Mag> Anrms_aft(numVectors);
@@ -1587,7 +1657,7 @@ namespace {
     {
       MV C(map,numVectors,false);
       C.scale(as<Scalar>(2), A);
-      C.update(-1.0,B,1.0);
+      C.update(-1.0,B,1.0); // C := C - B
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
@@ -2281,6 +2351,7 @@ typedef std::complex<double> ComplexDouble;
   //TODO:TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, Typedefs          , MV, V, ORDINAL, SCALAR, NODE )
   //      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadCombinations   , MV, V, ORDINAL, SCALAR, NODE )
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, AssignmentDeepCopies, MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, basic             , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstNumVecs   , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstLDA       , MV, V, ORDINAL, SCALAR, NODE ) \
@@ -2311,10 +2382,13 @@ typedef std::complex<double> ComplexDouble;
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE )
 #endif // HAVE_XPETRA_TPETRA
 
+  using KokkosClassic::SerialNode;
 #define UNIT_TEST_SERIALNODE(MV, V, ORDINAL, SCALAR)                     \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, SerialNode )
 
 #ifdef HAVE_KOKKOSCLASSIC_TBB
+
+  using KokkosClassic::TBBNode;
 #define UNIT_TEST_TBBNODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TBBNode )
 #else
@@ -2322,6 +2396,7 @@ typedef std::complex<double> ComplexDouble;
 #endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
+  using KokkosClassic::TPINode;
 #define UNIT_TEST_TPINODE(MV, V, ORDINAL, SCALAR) \
       UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, TPINode )
 #else
@@ -2330,6 +2405,7 @@ typedef std::complex<double> ComplexDouble;
 
 // don't test Kokkos node for MPI builds, because we probably don't have multiple GPUs per node
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && !defined(HAVE_MPI)
+  using KokkosClassic::ThrustGPUNode;
 // float
 #if defined(HAVE_KOKKOSCLASSIC_CUDA_FLOAT)
 #  define UNIT_TEST_THRUSTGPUNODE_FLOAT(MV, V, ORDINAL) \
