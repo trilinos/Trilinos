@@ -358,7 +358,7 @@ void OpenMP::initialize( unsigned thread_count ,
 
     if ( ! thread_spawn_failed ) {
       Impl::s_threads_per_numa = Impl::s_using_hwloc ? thread_count / use_numa_count : thread_count;
-      Impl::s_threads_per_core = Impl::s_using_hwloc ? thread_count / ( use_numa_count * use_cores_per_numa ) : thread_count;
+      Impl::s_threads_per_core = Impl::s_using_hwloc ? thread_count / ( use_numa_count * use_cores_per_numa ) : 1;
 
       Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
       Impl::OpenMPexec::resize_shared_scratch( 4096 );
