@@ -29,7 +29,7 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   KokkosClassic_ENABLE_KokkosCompat
   HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   "Enable use of the KokkosCompat subpackage in the KokkosClassic subpackage.  This option is only for use by expert developers.  I MEAN IT."
-  ${${PROJECT_NAME}_ENABLE_KokkosCompat}
+  "${${PROJECT_NAME}_ENABLE_KokkosCompat}"
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(

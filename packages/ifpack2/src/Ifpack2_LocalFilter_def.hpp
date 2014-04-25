@@ -683,16 +683,39 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  using Teuchos::as;
-  using Teuchos::ArrayView;
-  using Teuchos::ArrayRCP;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Ifpack2::LocalFilter::apply: X and Y must have the same number of columns.  "
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
+
+  if (&X == &Y) {
+    // FIXME (mfh 23 Apr 2014) We have to do more work to figure out
+    // if X and Y alias one another.  For example, we should check
+    // whether one is a noncontiguous view of the other.
+    //
+    // X and Y alias one another, so we have to copy X.
+    MV X_copy = Tpetra::createCopy (X);
+    applyNonAliased (X_copy, Y, mode, alpha, beta);
+  } else {
+    applyNonAliased (X, Y, mode, alpha, beta);
+  }
+}
+
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+                 Teuchos::ETransp mode,
+                 scalar_type alpha,
+                 scalar_type beta) const
+{
+  using Teuchos::as;
+  using Teuchos::ArrayView;
+  using Teuchos::ArrayRCP;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
 
   const scalar_type zero = STS::zero ();
   const scalar_type one = STS::one ();

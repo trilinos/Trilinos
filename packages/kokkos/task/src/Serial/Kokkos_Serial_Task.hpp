@@ -615,6 +615,75 @@ public:
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+template< class FunctorType , class PatternType >
+class TaskPool< FunctorType , PatternType , Kokkos::Serial > {
+public:
+
+  typedef Kokkos::Serial device_type ;
+  typedef Kokkos::Impl::IntPool<device_type>  int_pool_type ;
+
+  class TaskType {
+    FunctorType m_functor ;
+    PatternType m_pattern ;
+    int         m_ref_count ;
+    int         m_state ;
+    int         m_index ;
+
+  };
+
+  void apply( int itask ) const
+    {
+      m_task_pool[itask].apply();
+    }
+
+  template< class Arg1Type
+          , class Arg2Type
+          , class Arg3Type
+          , class Arg4Type
+          , class Arg5Type
+          , class FutureType
+          >
+  KOKKOS_INLINE_FUNCTION
+  typename PatternType::future_type
+  spawn( Arg1Type const & arg1
+       , Arg2Type const & arg2
+       , Arg3Type const & arg3
+       , Arg4Type const & arg4
+       , Arg5Type const & arg5
+       , FutureType const * const ibegin
+       , FutureType const * const iend
+       )
+    {
+      typename int_pool_type::ClaimResult result ;
+      result.value = 0 ;
+      do {
+        result = m_task_wait.claim( result.value );
+      } while ( result.status == int_pool_type::FAIL );
+
+      TaskType * const t = & m_task_pool[ result.value ];
+
+      new( & t->m_functor ) FunctorType(arg1,arg2,arg3,arg4,arg5);
+
+      return typename PatternType::future_type(t);
+    }
+
+
+private:
+
+  Kokkos::View<TaskType*,device_type> m_task_pool ; // Allocate without initializing
+  Kokkos::Impl::IntPool<device_type>  m_task_wait ;
+  Kokkos::Impl::IntPool<device_type>  m_task_depend ;
+
+};
+
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
 #endif /* #define KOKKOS_SERIAL_TASK_HPP */
 

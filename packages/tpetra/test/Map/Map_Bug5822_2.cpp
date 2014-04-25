@@ -124,7 +124,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   typedef int LO;
-  typedef KokkosClassic::SerialNode NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
@@ -162,8 +162,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 
   RCP<NT> node;
   {
-    ParameterList junk;
-    node = rcp (new NT (junk));
+    Teuchos::ParameterList defaultParams;
+    node = Teuchos::rcp (new NT (defaultParams));
   }
   // if (myRank == 0) {
   //   std::cout << "type '0' and hit enter" << std::endl;

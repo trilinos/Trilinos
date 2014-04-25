@@ -103,6 +103,13 @@ SET(EXTRA_CONFIGURE_OPTIONS
   "-DZoltan_ENABLE_EXAMPLES=OFF"
   "-DZoltan2_ENABLE_TESTS=OFF"
   "-DZoltan2_ENABLE_EXAMPLES=OFF"
+  
+  "-DTrilinos_ENABLE_KokkosCore=ON"
+  "-DTrilinos_ENABLE_KokkosCompat=ON"
+  "-DTrilinos_ENABLE_KokkosContainers=ON"
+  "-DTrilinos_ENABLE_KokkosLinAlg=ON"
+  "-DTrilinos_ENABLE_KokkosClassic=ON"
+  "-DTrilinos_ENABLE_KokkosMpiComm=ON"
 )
 
 #

@@ -137,14 +137,13 @@ public:
       phase = FILL_NODE_SET ;
 
       // upper bound on the capacity
-      size_t set_capacity = (((28ull * node_count) / 2ull)*4ull)/3ull;
-
+      size_t set_capacity = (28ull * node_count) / 2;
 
       {
         // Zero the row count to restart the fill
         Kokkos::deep_copy( row_count , 0u );
 
-        node_node_set.rehash( set_capacity );
+        node_node_set = SetType( set_capacity );
 
         // May be larger that requested:
         set_capacity = node_node_set.capacity();
@@ -223,6 +222,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_set( const unsigned ielem ) const
   {
+    // Loop over element's (row_local_node,col_local_node) pairs:
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
       const unsigned row_node = elem_node_id( ielem , row_local_node );
@@ -231,13 +231,23 @@ public:
 
         const unsigned col_node = elem_node_id( ielem , col_local_node );
 
-        const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
+        // If either node is locally owned then insert the pair into the unordered map:
 
-        const typename SetType::insert_result result = node_node_set.insert( key );
+        if ( row_node < row_count.dimension_0() || col_node < row_count.dimension_0() ) {
 
-        if ( result.success() ) {
-          if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
-          if ( col_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          const key_type key = (row_node < col_node) ? make_pair( row_node, col_node ) : make_pair( col_node, row_node ) ;
+
+          const typename SetType::insert_result result = node_node_set.insert( key );
+
+          // A successfull insert: the first time this pair was added
+          if ( result.success() ) {
+
+            // If row node is owned then increment count
+            if ( row_node < row_count.dimension_0() ) { atomic_fetch_add( & row_count( row_node ) , 1 ); }
+
+            // If column node is owned and not equal to row node then increment count
+            if ( col_node < row_count.dimension_0() && col_node != row_node ) { atomic_fetch_add( & row_count( col_node ) , 1 ); }
+          }
         }
       }
     }
@@ -247,6 +257,8 @@ public:
   void fill_graph_entries( const unsigned iset ) const
   {
     if ( node_node_set.valid_at(iset) ) {
+      // Add each entry to the graph entries.
+
       const key_type key = node_node_set.key_at(iset) ;
       const unsigned row_node = key.first ;
       const unsigned col_node = key.second ;
@@ -256,7 +268,7 @@ public:
         graph.entries( offset ) = col_node ;
       }
 
-      if ( col_node < row_count.dimension_0() ) {
+      if ( col_node < row_count.dimension_0() && col_node != row_node ) {
         const unsigned offset = graph.row_map( col_node ) + atomic_fetch_add( & row_count( col_node ) , 1 );
         graph.entries( offset ) = row_node ;
       }

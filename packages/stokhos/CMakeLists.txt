@@ -1,4 +1,3 @@
-
 INCLUDE(TribitsPackageMacros)
 INCLUDE(TribitsAddOptionAndDefine)
 
@@ -28,6 +27,9 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_Experimental
   STOKHOS_EXPERIMENTAL
   "Enable experimental code in stokhos"
   OFF )
+
+# Check if immintrin.h is available
+CHECK_INCLUDE_FILE_CXX(immintrin.h HAVE_STOKHOS_INTRINSICS)
 
 #IF(Stokhos_ENABLE_ML)
 #  SET(HAVE_STOKHOS_ML ON)

@@ -111,7 +111,12 @@ namespace Teuchos {
 
 namespace {
 
-  using Tpetra::TestingUtilities::getNode;
+  template<class NodeType>
+  Teuchos::RCP<NodeType> getNode () {
+    Teuchos::ParameterList defaultParams;
+    return Teuchos::rcp (new NodeType (defaultParams));
+  }
+
   using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
@@ -153,25 +158,6 @@ namespace {
 
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-
-  using KokkosClassic::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using KokkosClassic::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
   double errorTolSlack = 1.0e+2;
 

@@ -225,11 +225,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   Scalar alpha = Teuchos::as<Scalar> (2);
   Scalar beta = Teuchos::as<Scalar> (0);
   out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
-  MV x_copy (x);
-  MV y_copy (y);
+  MV x_copy = Tpetra::createCopy (x);
+  MV y_copy = Tpetra::createCopy (y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
   // y_copy should be 2*y now.
-  MV y_times_2 (y);
+  MV y_times_2 = Tpetra::createCopy (y);
   y_times_2.scale (Teuchos::as<Scalar> (2));
   TEST_COMPARE_FLOATING_ARRAYS(y_times_2.get1dView (), y_copy.get1dView (), 10*Teuchos::ScalarTraits<Scalar>::eps ());
 
@@ -237,8 +237,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   alpha = Teuchos::as<Scalar> (0);
   beta = Teuchos::as<Scalar> (0);
   out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
-  x_copy = x;
-  y_copy = y;
+  Tpetra::deep_copy (x_copy, x);
+  Tpetra::deep_copy (y_copy, y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
   // y_copy should be zero now.
   MV y_zero (y.getMap (), 2);
@@ -249,11 +249,11 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Test1, Scalar, LocalOrdinal, Glo
   alpha = Teuchos::as<Scalar> (0);
   beta = Teuchos::as<Scalar> (-1);
   out << "Testing apply() for alpha = " << alpha << " and beta = " << beta << endl;
-  x_copy = x;
-  y_copy = y;
+  x_copy = Tpetra::createCopy (x);
+  y_copy = Tpetra::createCopy (y);
   crsmatrix->apply (x_copy, y_copy, Teuchos::NO_TRANS, alpha, beta);
   // y_copy should be -y now.
-  MV y_neg (y);
+  MV y_neg = Tpetra::createCopy (y);
   y_neg.update (Teuchos::as<Scalar> (0), y, Teuchos::as<Scalar> (-1));
   TEST_COMPARE_FLOATING_ARRAYS(y_neg.get1dView (), y_copy.get1dView (), Teuchos::as<Scalar> (0));
 
@@ -371,7 +371,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
   std::string version = Ifpack2::Version();
   out << "Ifpack2::Version(): " << version << std::endl;
 
-  int nx = 2; 
+  int nx = 2;
   size_t numElementsPerProc = nx*nx;
 
   //create noncontiguous row map.

@@ -59,6 +59,7 @@ IOClosureModelFactory(const Teuchos::RCP<const panzer::ClosureModelFactory<EvalT
 {
    parseOutputList(outputList.sublist("Cell Average Quantities"),blockIdToCellAvgFields_);
    parseOutputList(outputList.sublist("Cell Quantities"),blockIdToCellFields_);
+   parseOutputList(outputList.sublist("Nodal Quantities"),blockIdToNodalFields_);
 }
 
 // ********************************************************************

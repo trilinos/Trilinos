@@ -50,6 +50,7 @@
 #include <string>
 
 #include <Serial/Kokkos_Serial_Task.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 
 //----------------------------------------------------------------------------
 

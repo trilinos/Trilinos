@@ -53,10 +53,12 @@
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 
+#include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_Vector.hpp>
 
 //----------------------------------------------------------------------------
+#include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
@@ -87,6 +89,11 @@ protected:
     Kokkos::OpenMP::finalize();
   }
 };
+
+TEST_F( openmp, bitset )
+{
+  test_bitset<Kokkos::OpenMP>();
+}
 
 #define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat, near )                                \
   TEST_F( openmp, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \

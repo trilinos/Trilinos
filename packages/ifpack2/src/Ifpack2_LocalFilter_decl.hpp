@@ -510,6 +510,13 @@ private:
   typedef Tpetra::RowGraph<local_ordinal_type,
                            global_ordinal_type,
                            node_type> row_graph_type;
+  //! Special case of apply() for when X and Y do not alias one another.
+  void
+  applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                   Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+                   Teuchos::ETransp mode,
+                   scalar_type alpha,
+                   scalar_type beta) const;
 
   /// \brief Whether map1 is fitted to map2.
   ///
