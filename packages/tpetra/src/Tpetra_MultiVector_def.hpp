@@ -1608,20 +1608,63 @@ namespace Tpetra {
     const size_t numVecs = this->getNumVectors();
     TEUCHOS_TEST_FOR_EXCEPTION(as<size_t>(alphas.size()) != numVecs, std::runtime_error,
       "Tpetra::MultiVector::scale(alphas): alphas.size() must be as large as the number of vectors in *this.");
-    KMV vec(MVT::getNode(lclMV_));
-    const size_t myLen = MVT::getNumRows(lclMV_);
-    if (myLen == 0) return;
-    ArrayRCP<Scalar> mybuf = MVT::getValuesNonConst(lclMV_);
-    for (size_t j = 0; j < numVecs; ++j) {
-      if (alphas[j] == Teuchos::ScalarTraits<Scalar>::one()) {
-        // do nothing: NaN * 1.0 == NaN, Number*1.0 == Number
+
+    // Unfortunately, MVT doesn't have a Scale method that works on a
+    // whole MultiVector.  Thus, we have to scale a column at a time.
+    if (this->isConstantStride ()) {
+      for (size_t j = 0; j < numVecs; ++j) {
+        const Scalar alpha_j = alphas[j];
+        const size_t curCol = j;
+
+        // If alphas[j] is zero, don't scale; just fill with zeros.
+        // This follows the BLAS convention.  (zero*NaN is NaN.)
+        //
+        // Similarly, if alphas[j] is one, don't scale; just do nothing.
+        // This follows the BLAS convention.  (one*NaN is NaN.)
+        if (alpha_j == Teuchos::ScalarTraits<Scalar>::zero ()) {
+          KMV MV_j = lclMV_.offsetViewNonConst (lclMV_.getNumRows (), 1, 0, curCol);
+          MVT::Init (MV_j, alpha_j);
+        }
+        else if (alpha_j != Teuchos::ScalarTraits<Scalar>::one ()) {
+          KMV MV_j = lclMV_.offsetViewNonConst (lclMV_.getNumRows (), 1, 0, curCol);
+          MVT::Scale (MV_j, alpha_j);
+        }
       }
-      else {
-        ArrayRCP<Scalar> mybufj = getSubArrayRCP(mybuf,j);
-        MVT::initializeValues(vec,myLen,1,mybufj,myLen);
-        MVT::Scale(vec,alphas[j]);
+    } else { // not constant stride
+      for (size_t j = 0; j < numVecs; ++j) {
+        const Scalar alpha_j = alphas[j];
+        const size_t curCol = whichVectors_[j];
+
+        // If alphas[j] is zero, don't scale; just fill with zeros.
+        // This follows the BLAS convention.  (zero*NaN is NaN.)
+        //
+        // Similarly, if alphas[j] is one, don't scale; just do nothing.
+        // This follows the BLAS convention.  (one*NaN is NaN.)
+        if (alpha_j == Teuchos::ScalarTraits<Scalar>::zero ()) {
+          KMV MV_j = lclMV_.offsetViewNonConst (lclMV_.getNumRows (), 1, 0, curCol);
+          MVT::Init (MV_j, alpha_j);
+        }
+        else if (alpha_j != Teuchos::ScalarTraits<Scalar>::one ()) {
+          KMV MV_j = lclMV_.offsetViewNonConst (lclMV_.getNumRows (), 1, 0, curCol);
+          MVT::Scale (MV_j, alpha_j);
+        }
       }
     }
+
+    // KMV vec(MVT::getNode(lclMV_));
+    // const size_t myLen = MVT::getNumRows(lclMV_);
+    // if (myLen == 0) return;
+    // ArrayRCP<Scalar> mybuf = MVT::getValuesNonConst(lclMV_);
+    // for (size_t j = 0; j < numVecs; ++j) {
+    //   if (alphas[j] == Teuchos::ScalarTraits<Scalar>::one()) {
+    //     // do nothing: NaN * 1.0 == NaN, Number*1.0 == Number
+    //   }
+    //   else {
+    //     ArrayRCP<Scalar> mybufj = getSubArrayRCP(mybuf,j);
+    //     MVT::initializeValues(vec,myLen,1,mybufj,myLen);
+    //     MVT::Scale(vec,alphas[j]);
+    //   }
+    // }
   }
 
 
