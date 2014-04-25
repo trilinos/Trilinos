@@ -42,20 +42,20 @@
 // ***********************************************************************
 //
 // @HEADER
-#include <Zoltan2_ColoringProblem.hpp>
-#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
-#include <Zoltan2_TestHelpers.hpp>
 #include <iostream>
 #include <fstream>
 #include <limits>
 #include <vector>
-#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_RCP.hpp>
+#include <Teuchos_ParameterList.hpp>
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Tpetra_CrsMatrix.hpp>
 #include <Tpetra_DefaultPlatform.hpp>
 #include <Tpetra_Vector.hpp>
 #include <MatrixMarket_Tpetra.hpp>
+#include <Zoltan2_XpetraCrsMatrixAdapter.hpp>
+#include <Zoltan2_TestHelpers.hpp>
+#include <Zoltan2_ColoringProblem.hpp>
 
 using Teuchos::RCP;
 using namespace std;
@@ -90,8 +90,8 @@ int validateColoring(RCP<SparseMatrix> A, color_t *color)
 // returns 0 if coloring is valid, negative if invalid
 {
   int nconflicts = 0;
-  Teuchos::ArrayView<lno_t> indices;
-  Teuchos::ArrayView<scalar_t> values; // Not used
+  Teuchos::ArrayView<const lno_t> indices;
+  Teuchos::ArrayView<const scalar_t> values; // Not used
 
   // Count conflicts in the graph.
   // Loop over local rows, treat local column indices as edges.
@@ -193,7 +193,7 @@ int main(int narg, char** arg)
   {
   Zoltan2::ColoringProblem<SparseMatrixAdapter> problem(&adapter, &params);
   cout << "Going to color" << endl;
-  problem.color();
+  problem.solve();
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;

@@ -72,7 +72,7 @@ class AlgSerialGreedy
   }
 
   void color(
-    const RCP<GraphModel<Adapter> > &model,
+    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<ColoringSolution<Adapter> > &solution,
     const RCP<Teuchos::ParameterList> &pl,
     const RCP<Teuchos::Comm<int> > &comm
@@ -121,7 +121,7 @@ class AlgSerialGreedy
       for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
         lno_t nbor = edgeIds[j];
         if (colors[nbor] > 0){
-          // TODO: Check if we need reallocate forbidden array.
+          // Neighbors' colors are forbidden
           forbidden[colors[nbor]] = v;
         }
       }
