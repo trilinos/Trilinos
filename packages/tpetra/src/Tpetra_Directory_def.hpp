@@ -84,6 +84,41 @@ namespace Tpetra {
   }
 
   template<class LO, class GO, class NT>
+  TEUCHOS_DEPRECATED
+  Directory<LO, GO, NT>::Directory (const Teuchos::RCP<const Map<LO, GO, NT> >& mapPtr) :
+    impl_ (NULL)
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      mapPtr.is_null (), std::invalid_argument,
+      "Tpetra::Directory(const RCP<const Map>& mapPtr): "
+      "Input Map pointer is null.");
+    const Map<LO, GO, NT>& map = *mapPtr;
+
+    // Create an implementation object of the appropriate type,
+    // depending on whether the Map is distributed or replicated, and
+    // contiguous or noncontiguous.
+    const Details::Directory<LO, GO, NT>* dir = NULL;
+    if (map.isDistributed ()) {
+      if (map.isUniform ()) {
+        dir = new Details::ContiguousUniformDirectory<LO, GO, NT> (map);
+      }
+      else if (map.isContiguous ()) {
+        dir = new Details::DistributedContiguousDirectory<LO, GO, NT> (map);
+      }
+      else {
+        dir = new Details::DistributedNoncontiguousDirectory<LO, GO, NT> (map);
+      }
+    }
+    else {
+      dir = new Details::ReplicatedDirectory<LO, GO, NT> (map);
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(dir == NULL, std::logic_error, "Tpetra::"
+      "Directory constructor failed to create Directory implementation.  "
+      "Please report this bug to the Tpetra developers.");
+    impl_ = dir;
+  }
+
+  template<class LO, class GO, class NT>
   Directory<LO, GO, NT>::
   Directory (const Map<LO, GO, NT>& map,
              const Tpetra::Details::TieBreak<LO,GO>& tieBreak) :
@@ -195,6 +230,19 @@ namespace Tpetra {
     return impl_->getEntries (map, globalIDs, nodeIDs, Teuchos::null, computeLIDs);
   }
 
+
+  template<class LO, class GO, class NT>
+  LookupStatus TEUCHOS_DEPRECATED
+  Directory<LO, GO, NT>::
+  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+                       const Teuchos::ArrayView<int>& nodeIDs) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "This method is DEPRECATED.  Please call the "
+      "three-argument version of getDirectoryEntries that takes a Map, an "
+      "ArrayView<const GO>, and an ArrayView<int>.");
+  }
+
   template<class LO, class GO, class NT>
   LookupStatus
   Directory<LO, GO, NT>::
@@ -205,6 +253,19 @@ namespace Tpetra {
   {
     const bool computeLIDs = true;
     return impl_->getEntries (map, globalIDs, nodeIDs, localIDs, computeLIDs);
+  }
+
+  template<class LO, class GO, class NT>
+  LookupStatus TEUCHOS_DEPRECATED
+  Directory<LO, GO, NT>::
+  getDirectoryEntries (const Teuchos::ArrayView<const GO>& globalIDs,
+                       const Teuchos::ArrayView<int>& nodeIDs,
+                       const Teuchos::ArrayView<LO>& localIDs) const
+  {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error, "This method is DEPRECATED.  Please call the "
+      "four-argument version of getDirectoryEntries that takes a Map, an "
+      "ArrayView<const GO>, an ArrayView<int>, and an ArrayView<LO>.");
   }
 
   template<class LO, class GO, class NT>

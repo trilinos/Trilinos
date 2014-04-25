@@ -153,6 +153,13 @@ namespace Tpetra {
     explicit Directory (const map_type& map,
                         const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
 
+    /// \brief Constructor (preserved for backwards compatibility with 11.4).
+    ///
+    /// This constructor is DEPRECATED.  Please use the constructor
+    /// that takes a <tt>const map_type&</tt>.
+    explicit TEUCHOS_DEPRECATED
+    Directory (const Teuchos::RCP<const map_type>& map);
+
     //! Destructor.
     ~Directory ();
 
@@ -268,6 +275,15 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
 
+    /// \brief DEPRECATED method; does not work.
+    ///
+    /// This method only exists so that the 11.4 backwards
+    /// compatibility build passes.  This method does NOT succeed.  It
+    /// throws an exception on all calling processes, in fact.
+    LookupStatus TEUCHOS_DEPRECATED
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<int>& nodeIDs) const;
+
     /// \brief Given a global ID list, return a list of their owning
     ///   process IDs and their corresponding local IDs.
     ///
@@ -306,6 +322,16 @@ namespace Tpetra {
     LookupStatus
     getDirectoryEntries (const map_type& map,
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<int>& nodeIDs,
+                         const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
+
+    /// \brief DEPRECATED method; does not work.
+    ///
+    /// This method only exists so that the 11.4 backwards
+    /// compatibility build passes.  This method does NOT succeed.  It
+    /// throws an exception on all calling processes, in fact.
+    LookupStatus TEUCHOS_DEPRECATED
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
 
