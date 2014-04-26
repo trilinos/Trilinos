@@ -24,7 +24,8 @@ namespace mesh {
 
 bool comm_mesh_counts( const BulkData & M ,
                        std::vector<size_t> & counts ,
-                       bool local_flag )
+                       bool local_flag,
+                       const Selector *selector)
 {
   const size_t zero = 0 ;
 
@@ -38,7 +39,8 @@ bool comm_mesh_counts( const BulkData & M ,
   std::vector<size_t> global( comm_count , zero );
 
   ParallelMachine comm = M.parallel();
-  Part & owns = S.locally_owned_part();
+  //Part & owns = S.locally_owned_part();
+  Selector owns = S.locally_owned_part();
 
   for ( EntityRank i = stk::topology::NODE_RANK ; i < entity_rank_count ; ++i ) {
     const BucketVector & ks = M.buckets( i );
@@ -46,7 +48,10 @@ bool comm_mesh_counts( const BulkData & M ,
     BucketVector::const_iterator ik ;
 
     for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
-      if ( has_superset( **ik , owns ) ) {
+      if (selector && !(*selector)(**ik)) 
+        continue;
+      //if ( has_superset( **ik , owns ) ) {
+      if ( owns(**ik) ) {
         local[i] += (*ik)->size();
       }
     }

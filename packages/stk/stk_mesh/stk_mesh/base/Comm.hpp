@@ -18,6 +18,8 @@ namespace stk { namespace mesh { class BulkData; } }
 namespace stk {
 namespace mesh {
 
+class Selector;
+
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
  *  \{
@@ -26,7 +28,8 @@ namespace mesh {
 /** \brief Global counts for a mesh's entities. */
 bool comm_mesh_counts( const BulkData &bulk_data ,
                        std::vector<size_t> & counts ,
-                       bool localFlag= false );
+                       bool localFlag= false,
+                       const Selector *select = 0);
 
 //----------------------------------------------------------------------
 
