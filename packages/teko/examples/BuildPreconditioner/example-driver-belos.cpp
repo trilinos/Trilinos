@@ -108,6 +108,7 @@ int main(int argc,char * argv[])
    typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
    typedef Tpetra::CrsMatrix<ST,int,int> TP_Crs;
    typedef Tpetra::Operator<ST,int,int> TP_Op;
+   typedef Tpetra::Vector<ST,int,int> TP_Vec;
 
    typedef Thyra::PreconditionerFactoryBase<double> Base;
    typedef Thyra::Ifpack2PreconditionerFactory<TP_Crs> Impl;
@@ -125,18 +126,33 @@ int main(int argc,char * argv[])
                                                                          Teuchos::DefaultComm<int>::getComm(),
                                                                          node);
 
+   // Allocate some right handside vectors
+   RCP<TP_Vec> x0_tp = rcp(new TP_Vec(Mat->getDomainMap()));
+   RCP<TP_Vec> x1_tp = rcp(new TP_Vec(Mat->getDomainMap()));
+   RCP<TP_Vec> b0_tp = rcp(new TP_Vec(Mat->getRangeMap()));
+   RCP<TP_Vec> b1_tp = rcp(new TP_Vec(Mat->getRangeMap()));
+   b0_tp->randomize();
+   b1_tp->randomize();
+
+   RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > domain = Thyra::tpetraVectorSpace<ST>(Mat->getDomainMap());
+   RCP<const Thyra::TpetraVectorSpace<ST,int,int,NT> > range = Thyra::tpetraVectorSpace<ST>(Mat->getRangeMap());
+
+   // convert them to teko compatible sub vectors
+   Teko::MultiVector x0_th = Thyra::tpetraVector(domain, x0_tp);
+   Teko::MultiVector x1_th = Thyra::tpetraVector(domain, x1_tp);
+   Teko::MultiVector b0_th = Thyra::tpetraVector( range, b0_tp);
+   Teko::MultiVector b1_th = Thyra::tpetraVector( range, b1_tp);
+   std::vector<Teko::MultiVector> x_vec; x_vec.push_back(x0_th); x_vec.push_back(x1_th);
+   std::vector<Teko::MultiVector> b_vec; b_vec.push_back(b0_th); b_vec.push_back(b1_th);
+
+   Teko::MultiVector x = Teko::buildBlockedMultiVector(x_vec); // these will be used in the Teko solve
+   Teko::MultiVector b = Teko::buildBlockedMultiVector(b_vec);
+
    // Build the Teko compatible linear system
-   RCP<const Thyra::VectorSpaceBase<ST> > range = Thyra::tpetraVectorSpace<ST>(Mat->getRangeMap());
-   RCP<const Thyra::VectorSpaceBase<ST> > domain = Thyra::tpetraVectorSpace<ST>(Mat->getDomainMap());
    Teko::LinearOp thMat = Thyra::tpetraLinearOp<double>(range,domain,Mat);
    Teko::LinearOp thZero;
    Teko::LinearOp A = Thyra::block2x2(thMat,thMat,thZero,thMat); // build an upper triangular 2x2
   
-   Teko::MultiVector x = Thyra::createMembers(A->domain(),1);
-   Teko::MultiVector b = Thyra::createMembers(A->range(),1);
-
-   Thyra::assign(x.ptr(),0.0);
-   Thyra::randomize(-1.0,1.0,b.ptr());
 
    // Build the preconditioner 
    /////////////////////////////////////////////////////////
