@@ -414,12 +414,241 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, Parallel, Scalar, LocalOrdinal, 
 
 } //unit test Parallel()
 
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, IgnoreRowMapGIDs, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Test that ILU(k) ignores ordering of GIDs in the matrix rowmap.  This test is a virtual duplicate
+  // of the test "FillLevel", with the exception that the row map GIDs are permuted.
+  // This test is associated with bug#6033.
+  //
+  // This test does nothing in parallel.
+  //
+  // 1) Create a banded matrix A with bandwidth equal to lof+2.
+  //    Nonzero off-diagonals are subdiagonals +/-1 and +/-(lof+2).
+  //    The matrix has 4's on the main diagonal, -1's on off-diagonals.
+  // 2) Compute ILU(lof) of A.
+  // 3) The incomplete factors should be equal to those of an exact LU decomposition without pivoting.
+  //    Note that Ifpack2 stores the inverse of the diagonal separately and scales U.
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node> crs_matrix_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type> reader_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType magnitudeType;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
+  typedef Teuchos::ScalarTraits<Scalar>                               TST;
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+  using Teuchos::RCP;
+
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+
+  if (comm->getSize() > 1) {
+    out << std::endl;
+    out << "This test is only meaningful in serial." << std::endl;
+    return;
+  }
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  global_size_t num_rows_per_proc = 10;
+
+  const RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > rowMap = tif_utest::create_tpetra_map<LocalOrdinal,GlobalOrdinal,Node>(num_rows_per_proc);
+
+  //Create a permuted row map.  The first entry is the same as the original row map,
+  //the remainder are in descending order.
+  Teuchos::ArrayView<const GlobalOrdinal> GIDs = rowMap->getNodeElementList();
+  Teuchos::Array<GlobalOrdinal> permutedGIDs(GIDs.size());
+  Teuchos::Array<GlobalOrdinal> origToPerm(GIDs.size());
+  permutedGIDs[0] = GIDs[0];
+  origToPerm[0] = 0;
+  for (size_t i=1; i<GIDs.size(); ++i) {
+    permutedGIDs[i] = GIDs[GIDs.size()-i];
+    origToPerm[GIDs[GIDs.size()-i]] = i;
+  }
+  const LocalOrdinal indexBase = 0;
+  Teuchos::RCP<const map_type> permRowMap = Teuchos::rcp(new map_type(INVALID, permutedGIDs(), indexBase, comm));
+
+  for (GlobalOrdinal lof=0; lof<6; ++lof) {
+
+    RCP<const crs_matrix_type > crsmatrix = tif_utest::create_banded_matrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>(rowMap,lof+2);
+
+    //Copy the banded matrix into a new matrix with permuted row map GIDs.
+    //This matrix will have the sparsity pattern as the original matrix.
+    RCP<crs_matrix_type> permutedMatrix = Teuchos::rcp(new crs_matrix_type(permRowMap, 5));
+    Teuchos::Array<GlobalOrdinal> Inds(5);
+    Teuchos::Array<GlobalOrdinal> pInds(5);
+    Teuchos::Array<Scalar>        Vals(5);
+    size_t numEntries;
+    for (int i=0; i<num_rows_per_proc; ++i) {
+      crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
+      pInds.resize(numEntries);
+      for (size_t j=0; j<numEntries; ++j)
+        pInds[j] = origToPerm[Inds[j]];
+      permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),Vals());
+    }
+    permutedMatrix->fillComplete();
+
+    Ifpack2::RILUK<crs_matrix_type> prec(Teuchos::as< RCP<const crs_matrix_type> >(permutedMatrix));
+
+    Teuchos::ParameterList params;
+    params.set("fact: iluk level-of-fill", lof);
+    params.set("fact: iluk level-of-overlap", 0);
+
+    prec.setParameters(params);
+    prec.initialize();
+    prec.compute();
+    //extract incomplete factors
+    const crs_matrix_type &iL = prec.getL();
+    const crs_matrix_type &iU = prec.getU();
+    const multivector_type &iD = prec.getD();
+
+    //read L,U, and D factors from file
+    std::string lFile = "Lfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+    std::string uFile = "Ufactor_bw" + Teuchos::toString(lof+2) + ".mm";
+    std::string dFile = "Dfactor_bw" + Teuchos::toString(lof+2) + ".mm";
+    out << "reading " << lFile << ", " << uFile << ", " << dFile << std::endl;
+    RCP<crs_matrix_type> L = reader_type::readSparseFile (lFile, comm, platform.getNode());
+    RCP<crs_matrix_type> U = reader_type::readSparseFile (uFile, comm, platform.getNode());
+    RCP<const map_type> rm = U->getRowMap();
+
+    //Compare factors.  We can't use the Frobenius norm, as it uses GIDs.
+    //Instead, we use the trick of multiply by the same random vector and comparing the
+    //two norm of the results.  One of the random vectors is based on the original rowmap,
+    //the other on the permuted row map.  Both contain the same random entries.
+    multivector_type randVec(rowMap,1);
+    randVec.randomize();
+    multivector_type permRandVec(permRowMap,1);
+    Teuchos::ArrayRCP<const Scalar> data  = randVec.getData(0);
+    Teuchos::ArrayRCP<Scalar> pdata = permRandVec.getDataNonConst(0);
+    for (int i=0; i<num_rows_per_proc; ++i)
+      pdata[i] = data[i];
+    data = pdata = Teuchos::null;
+
+    out << "bandwidth = " << lof+2 << ", lof = " << lof << std::endl;
+    multivector_type permResult(permRowMap,1);
+    iL.apply(permRandVec,permResult);
+    Teuchos::Array<magnitudeType> n1(1);
+    permResult.norm2(n1);
+
+    multivector_type result(rowMap,1);
+    L->apply(randVec,result);
+    Teuchos::Array<magnitudeType> n2(1);
+    result.norm2(n2);
+
+    out << "||L*randvec||_2 - ||iL*randvec||_2 = " << n1[0]-n2[0] << std::endl;
+    TEST_EQUALITY(n1[0]-n2[0] < 1e-12, true);
+    out << std::endl;
+
+    iU.apply(permRandVec,permResult);
+    permResult.norm2(n1);
+
+    U->apply(randVec,result);
+    result.norm2(n2);
+
+    out << "||U*randvec||_2 - ||iU*randvec||_2 = " << n1[0]-n2[0] << std::endl;
+    TEST_EQUALITY(n1[0]-n2[0] < 1e-12, true);
+    out << std::endl;
+
+    RCP<multivector_type> D = reader_type::readVectorFile (dFile, comm, platform.getNode(), rm);
+    D->update(TST::one(),iD,-TST::one());
+    Teuchos::Array<magnitudeType> norms(1);
+    D->norm2(norms);
+    out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
+    TEST_EQUALITY(norms[0] < 1e-12, true);
+    out << std::endl;
+
+  } //for (GlobalOrdinal lof=0; lof<6; ++lof)
+
+
+} //unit test IgnoreRowMapGIDs()
+
+TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, TestGIDConsistency, Scalar, LocalOrdinal, GlobalOrdinal)
+{
+  // Test that ILU(k) throws an exception if the ordering of the GIDs in the rowmap is
+  // not the same as the ordering of the local GIDs in the column map.
+  // The ILU(k) setup and algorithm assumes this for the moment.
+
+  // 25April2014 JJH: The local filter appears to fix the column map in parallel so that it's
+  //                  consistently ordered with the row map.  In otherwords, I can't get this
+  //                  test to fail in parallel.  So this check is only necessary in serial.
+
+  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
+  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   crs_matrix_type;
+  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>               reader_type;
+  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType       magnitudeType;
+  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
+  typedef Teuchos::ScalarTraits<Scalar>                               TST;
+
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+
+  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
+  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+
+  if (comm->getSize() > 1) {
+    out << std::endl;
+    out << "This test only runs in serial." << std::endl;
+    return;
+  }
+
+  std::string version = Ifpack2::Version();
+  out << "Ifpack2::Version(): " << version << std::endl;
+
+  //create matrix: 5 rows per processor, 3 entries per row
+  const LocalOrdinal indexBase = 0;
+  global_size_t numRowsPerProc = 5;
+  RCP<map_type> rowMap = Teuchos::rcp(new map_type(INVALID, numRowsPerProc, indexBase, comm));
+
+  //Create a column map with the same GIDs at the row map, but in permuted order.
+  //The first entry is the same as the row map, the remainder are in descending order.
+  Teuchos::ArrayView<const GlobalOrdinal> rowGIDs = rowMap->getNodeElementList();
+  Teuchos::Array<GlobalOrdinal> colElements(rowGIDs.size());
+  colElements[0]=rowGIDs[0];
+  for (size_t i=1; i<rowGIDs.size(); ++i)
+    colElements[i] = rowGIDs[rowGIDs.size()-i];
+    
+  Teuchos::RCP<const map_type> colMap = Teuchos::rcp(new map_type(INVALID, colElements(), indexBase, comm));
+  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, colMap, 3));
+
+  //Construct a nondiagonal matrix.  It's not tridiagonal because of processor boundaries.
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  const Scalar two = one + one;
+  Teuchos::Array<GlobalOrdinal> col(3);
+  Teuchos::Array<Scalar>        val(3);
+  size_t numLocalElts = rowMap->getNodeNumElements();
+  for(LocalOrdinal l_row = 0; (size_t) l_row < numLocalElts; l_row++) {
+    GlobalOrdinal g_row = rowMap->getGlobalElement(l_row);
+    size_t i=0;
+    col[i] = g_row;
+    val[i++] = two;
+    if (l_row>0)              {col[i] = rowMap->getGlobalElement(l_row-1); val[i++] = -one;}
+    if ((size_t)l_row<numLocalElts-1) {col[i] = rowMap->getGlobalElement(l_row+1); val[i++] = -one;}
+    A->insertGlobalValues(g_row, col(0,i), val(0,i));
+  }
+  A->fillComplete();
+
+  RCP<const crs_matrix_type> constA = A;
+  Ifpack2::RILUK<crs_matrix_type> prec(constA);
+
+  Teuchos::ParameterList params;
+  GlobalOrdinal lof=1;
+  params.set("fact: iluk level-of-fill", lof);
+  params.set("fact: iluk level-of-overlap", 0);
+
+  prec.setParameters(params);
+  TEST_THROW(prec.initialize(),std::runtime_error);
+
+} //unit test TestGIDConsistency()
+
 #define UNIT_TEST_GROUP_SCALAR_ORDINAL(Scalar,LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test0, Scalar, LocalOrdinal,GlobalOrdinal) \
   TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Test1, Scalar, LocalOrdinal,GlobalOrdinal)
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, FillLevel, double, int, int)
 TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, Parallel, double, int, int)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, IgnoreRowMapGIDs, double, int, int)
+TEUCHOS_UNIT_TEST_TEMPLATE_3_INSTANT( Ifpack2RILUK, TestGIDConsistency, double, int, int)
 
 UNIT_TEST_GROUP_SCALAR_ORDINAL(double, int, int)
 #ifndef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
