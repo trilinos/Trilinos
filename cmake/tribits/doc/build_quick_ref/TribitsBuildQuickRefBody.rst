@@ -1628,36 +1628,38 @@ using::
 
   $ git clean -fd -x
 
-You can also include generated files, such as Doxygen output files first, then
-run ``make package_source`` and it will be included in the distribution.
+You can include generated files in the tarball, such as Doxygen output files,
+by creating them first, then running ``make package_source`` and they will be
+included in the distribution (unless there is an internal exclude set).
 
-While this TriBITS project has a default, disabled subpackages can be included
-or excluded from the tarball by setting
-``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
-``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
-to include some subpackages that are otherwise excluded, just enable them or
-their outer package so they will be included in the source tarball.  To get a
-printout of the files being excluded, set::
+Disabled subpackages can be included or excluded from the tarball by setting
+``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`` (the TriBITS
+project has its own default, check ``CMakeCache.txt`` to see what the default
+is).  If ``<Project>_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and
+but one wants to include some subpackages that are otherwise excluded, just
+enable them or their outer package so they will be included in the source
+tarball.  To get a printout of set regular expresions that will be used to
+match files to exclude, set::
 
   -D <Project>_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
 
-While a set of default CPack source generator types is defined, it can be
-overridden using, for example::
+While a set of default CPack source generator types is defined for this
+project (see the ``CMakeCache.txt`` file), it can be overridden using, for
+example::
 
   -D <Project>_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
 
 (see CMake documentation to find out the types of supported CPack source
 generators on your system).
 
-NOTE: When untarring the source with missing packages, one must configure
-with::
+NOTE: When configuring from an untarred source tree that has missing packages,
+one must configure with::
 
   -D <Project>_ASSERT_MISSING_PACKAGES:BOOL=OFF
 
-so that missing packages will be ignored.  Otherwise, TriBITS will error out
-about missing packages.  (Note that ``<Project>_ASSERT_MISSING_PACKAGES`` will
-default to ```OFF``` in release mode,
-i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
+Otherwise, TriBITS will error out complaining about missing packages.  (Note
+that ``<Project>_ASSERT_MISSING_PACKAGES`` will default to ```OFF``` in
+release mode, i.e. ``<Project>_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
 Dashboard submissions
