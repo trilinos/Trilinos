@@ -1647,10 +1647,20 @@ Usage::
 
 This is called in the package's top-level `<packageDir>/CMakeLists.txt`_
 file and each file or directory name ``<filei>`` is actually interpreted by
-CMake/CPack as a regex that is prefixed by the project's and packages source
-directory names so as to not exclude files and directories of the same name
-and path from other packages.  If ``<filei>`` is an absolute path it it not
-prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES`` unmodified.
+CMake/CPack as a regex that is prefixed by the project's and package's
+source directory names so as to not exclude files and directories of the
+same name and path from other packages.  If ``<filei>`` is an absolute path
+it it not prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES``
+unmodified.
+
+In general, do **NOT** put in excludes for files and directories that are
+not under this package's source tree.  If the given package is not enabled,
+then this command will never be called!
+
+Also, be careful to note that the ``<filei>`` arguments are actually regexes
+and one must be very careful not understand how CPack will use these regexes
+to match files that get excluded from the tarball.  For more details, see
+`Creating Source Distributions`_.
    
 TRIBITS_INCLUDE_DIRECTORIES()
 +++++++++++++++++++++++++++++

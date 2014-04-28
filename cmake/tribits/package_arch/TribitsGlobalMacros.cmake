@@ -2522,21 +2522,32 @@ ENDMACRO()
 #
 # This is called in the package's top-level `<packageDir>/CMakeLists.txt`_
 # file and each file or directory name ``<filei>`` is actually interpreted by
-# CMake/CPack as a regex that is prefixed by the project's and packages source
-# directory names so as to not exclude files and directories of the same name
-# and path from other packages.  If ``<filei>`` is an absolute path it it not
-# prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES`` unmodified.
+# CMake/CPack as a regex that is prefixed by the project's and package's
+# source directory names so as to not exclude files and directories of the
+# same name and path from other packages.  If ``<filei>`` is an absolute path
+# it it not prefixed but is appended to ``CPACK_SOURCE_IGNORE_FILES``
+# unmodified.
+#
+# In general, do **NOT** put in excludes for files and directories that are
+# not under this package's source tree.  If the given package is not enabled,
+# then this command will never be called!
+#
+# Also, be careful to note that the ``<filei>`` arguments are actually regexes
+# and one must be very careful not understand how CPack will use these regexes
+# to match files that get excluded from the tarball.  For more details, see
+# `Creating Source Distributions`_.
 #    
 MACRO(TRIBITS_EXCLUDE_FILES)
 
   SET(FILES_TO_EXCLUDE ${ARGN})
   
-  #need to add "/<project source dir>/<package dir>/" to each file this is to prevent
-  #someone from trying to exclude a file like "readme" and having it 
-  #inadvertently exclude a file matching that name in another package.
+  # Need to add "/<project source dir>/<package dir>/" to each file to prevent
+  # someone from trying to exclude a file like "readme" and having it
+  # inadvertently exclude a file matching that name in another package.
   SET(MODIFIED_FILES_TO_EXCLUDE "")
 
-  GET_FILENAME_COMPONENT(${PROJECT_NAME}_SOURCE_PATH ${${PROJECT_NAME}_SOURCE_DIR} PATH)
+  GET_FILENAME_COMPONENT(${PROJECT_NAME}_SOURCE_PATH
+    ${${PROJECT_NAME}_SOURCE_DIR} PATH)
 
   LIST(FIND ${PROJECT_NAME}_PACKAGES ${PACKAGE_NAME} PACKAGE_IDX)
   LIST(GET ${PROJECT_NAME}_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
