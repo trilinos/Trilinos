@@ -164,7 +164,7 @@ void IOShell::Interface::enroll_options()
 
   options_.enroll("field_suffix_separator", Ioss::GetLongOption::MandatoryValue,
 		  "Character used to separate a field suffix from the field basename\n"
-		  "\t\t when recognizing vector, tensor fields. Enter '0' for no separaor", "_");
+		  "\t\t when recognizing vector, tensor fields. Enter '0' for no separator", "_");
 
   options_.enroll("surface_split_scheme", Ioss::GetLongOption::MandatoryValue,
 		  "Method used to split sidesets into homogenous blocks\n"
@@ -197,7 +197,7 @@ bool IOShell::Interface::parse_options(int argc, char **argv)
   if (options_.retrieve("help")) {
     options_.usage();
     std::cerr << "\n\tCan also set options via IO_SHELL_OPTIONS environment variable.\n\n";
-    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for epu support.<-<-<-\n";
+    std::cerr << "\n\t->->-> Send email to gdsjaar@sandia.gov for io_shell support.<-<-<-\n";
     exit(EXIT_SUCCESS);
   }
 
