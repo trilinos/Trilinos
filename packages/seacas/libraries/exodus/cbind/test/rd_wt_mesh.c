@@ -70,6 +70,7 @@
 #define NUM_NODES_PER_ELEM     8
 #define QUIT                   EX_FALSE
 #define WRITE_FILE_TYPE        "new"
+#define EBLK_ID 100000
 
 /*
  *	Prototypes
@@ -516,7 +517,7 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
     }
   
     err = ex_get_block 
-      (exoid, EX_ELEM_BLOCK, 10, type, num_elems, &num_nodes_per_elem, 0, 0, &num_attrs);
+      (exoid, EX_ELEM_BLOCK, EBLK_ID, type, num_elems, &num_nodes_per_elem, 0, 0, &num_attrs);
   
     if (err) {
       printf ("after ex_get_elem_block, error = %d\n", err);
@@ -526,7 +527,7 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
   
     t_tmp1 = my_timer();
   
-    err = ex_get_conn (exoid, EX_ELEM_BLOCK, 10, *connect, 0, 0);
+    err = ex_get_conn (exoid, EX_ELEM_BLOCK, EBLK_ID, *connect, 0, 0);
   
     t_tmp2 = my_timer();
   
@@ -647,7 +648,7 @@ int read_exo_mesh (char *file_name, int rank, int *num_dim, int num_domains,
 
 	for (i=1; i <= *num_element_fields; i++) {
 	  t_tmp1 = my_timer();
-	  err = ex_get_var (exoid, t+1, EX_ELEM_BLOCK, i, 10, *num_elems, *x_coords);
+	  err = ex_get_var (exoid, t+1, EX_ELEM_BLOCK, i, EBLK_ID, *num_elems, *x_coords);
 	  t_tmp2 = my_timer();
   
 	  raw_read_time += t_tmp2-t_tmp1;
@@ -848,7 +849,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
     
 #if 0
       {
-	int ids[1] = {10};
+	int ids[1] = {EBLK_ID};
 	int num_elem_per_block[1];
 	char *names[1] = {"hex"};
 	int num_node_per_elem[1];
@@ -862,7 +863,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       }
 #else
       err = ex_put_block 
-	(exoid[npd], EX_ELEM_BLOCK, 10, "hex", num_elems, NUM_NODES_PER_ELEM, 0, 0, 0);
+	(exoid[npd], EX_ELEM_BLOCK, EBLK_ID, "hex", num_elems, NUM_NODES_PER_ELEM, 0, 0, 0);
 #endif
       if (err) {
 	printf ("after ex_put_elem_block, error = %d\n", err);
@@ -886,7 +887,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       }
   
       t_tmp1 = my_timer();
-      err = ex_put_elem_conn (exoid[npd], 10, connect);
+      err = ex_put_elem_conn (exoid[npd], EBLK_ID, connect);
       t_tmp2 = my_timer();
   
       raw_write_time += t_tmp2-t_tmp1;
@@ -1080,7 +1081,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
 	  }
 	  for (j=0; j<num_element_fields; j++) {
 	    t_tmp1 = my_timer();
-	    err = ex_put_var (exoid[npd], t+1, EX_ELEM_BLOCK, j+1, 10, num_elems, x_coords);
+	    err = ex_put_var (exoid[npd], t+1, EX_ELEM_BLOCK, j+1, EBLK_ID, num_elems, x_coords);
 	    t_tmp2 = my_timer();
 	    raw_write_time += t_tmp2-t_tmp1;
 	    if (err) {
