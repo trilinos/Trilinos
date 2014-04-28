@@ -813,10 +813,6 @@ namespace MueLuTests {
     RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
 
     GO nx = 20, ny = 20;
-    Teuchos::ParameterList matrixList;
-    matrixList.set("nx",      nx);
-    matrixList.set("ny",      ny);
-    matrixList.set("keepBCs", false);
 
     // Describes the initial layout of matrix rows across processors.
     Teuchos::ParameterList galeriList;
@@ -825,19 +821,23 @@ namespace MueLuTests {
     RCP<const Map> map = Galeri::Xpetra::CreateMap<LO, GO, Node>(TestHelpers::Parameters::getLib(), "Cartesian2D", comm, galeriList);
 
     //build coordinates before expanding map (nodal coordinates, not dof-based)
-    RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D",map,matrixList);
+    RCP<MultiVector> coordinates = Galeri::Xpetra::Utils::CreateCartesianCoordinates<SC,LO,GO,Map,MultiVector>("2D", map, galeriList);
     map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 2); //expand map for 2 DOFs per node
 
-    matrixList.set("right boundary" , "Neumann");
-    matrixList.set("bottom boundary", "Neumann");
-    matrixList.set("top boundary"   , "Neumann");
-    matrixList.set("front boundary" , "Neumann");
-    matrixList.set("back boundary"  , "Neumann");
+    galeriList.set("right boundary" , "Neumann");
+    galeriList.set("bottom boundary", "Neumann");
+    galeriList.set("top boundary"   , "Neumann");
+    galeriList.set("front boundary" , "Neumann");
+    galeriList.set("back boundary"  , "Neumann");
+    galeriList.set("keepBCs",             false);
 
     RCP<Galeri::Xpetra::Problem<Map,CrsMatrixWrap,MultiVector> > Pr =
-        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, matrixList);
+        Galeri::Xpetra::BuildProblem<SC, LO, GO, Map, CrsMatrixWrap, MultiVector>("Elasticity2D", map, galeriList);
     RCP<Matrix> A = Pr->BuildMatrix();
     A->SetFixedBlockSize(2);
+
+    Utils::Write("A.mm", *A);
+    comm->barrier();
 
     RCP<HierarchyManager> mueLuFactory = rcp(new EasyParameterListInterpreter("testCoordinates.xml", *comm));
     RCP<Hierarchy> H = mueLuFactory->CreateHierarchy();
