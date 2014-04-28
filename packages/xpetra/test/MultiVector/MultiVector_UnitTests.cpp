@@ -72,6 +72,7 @@
 
 #include "Xpetra_MapFactory.hpp"
 #include "Xpetra_VectorFactory.hpp"
+#include "Xpetra_MultiVectorFactory.hpp"
 
 // #include "Xpetra_EpetraMultiVector.hpp"
 // #include "Xpetra_EpetraVector.hpp"
@@ -198,6 +199,122 @@ namespace {
   // UNIT TESTS
   //
 
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, GetVector, MV, V, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+    // using std::cerr;
+    // using std::endl;
+    typedef Ordinal LO;
+    typedef Ordinal GO;
+    typedef Scalar scalar_type;
+    typedef Xpetra::Map<LO, GO, Node> map_type;
+    typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
+    typedef Xpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    typedef Xpetra::Vector<Scalar, LO, GO, Node> vec_type;
+    typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> mv_factory_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+
+#ifdef HAVE_XPETRA_TPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+#else
+#  ifdef HAVE_XPETRA_EPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+#  else
+#    error "Should never get here!"
+#  endif // HAVE_XPETRA_EPETRA
+#endif // HAVE_XPETRA_TPETRA
+
+    const size_t numVecs = 11;
+
+    // Create a Map for the MultiVector X, and create X.
+    const LO numInd = 63;
+    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    RCP<mv_type> X = mv_factory_type::Build (map, numVecs);
+    X->putScalar (STS::zero ());
+
+    // Make sure that X has the correct number of columns.
+    TEST_EQUALITY( X->getNumVectors (), numVecs );
+
+    // Fill all entries of the j-th column of X with the value j.
+    // Use X->getVectorNonConst(j) to get the j-th column of X.
+    for (size_t j = 0; j < numVecs; ++j) {
+      RCP<vec_type> X_j = X->getVectorNonConst (j);
+      X_j->putScalar (as<scalar_type> (j));
+    }
+
+    const size_t numRows = map->getGlobalNumElements ();
+    const magnitude_type normTol = as<magnitude_type> (numRows) * STM::eps ();
+
+    Teuchos::Array<magnitude_type> correctNorms (numVecs);
+    Teuchos::Array<magnitude_type> allAtOnceNorms (numVecs);
+    Teuchos::Array<magnitude_type> oneAtATimeNorms (numVecs);
+
+    // Calculate what the 2-norm of each column of X should be.
+    for (size_t j = 0; j < numVecs; ++j) {
+      correctNorms[j] = as<magnitude_type> (j) *
+        STM::squareroot (as<magnitude_type> (numRows));
+    }
+
+    // Fill the Array with zeros, and use X->norm2(ArrayView) to
+    // compute the 2-norm of each column of X.  Test the results.
+    std::fill (allAtOnceNorms.begin (), allAtOnceNorms.end (), STM::zero ());
+    X->norm2 (allAtOnceNorms);
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), allAtOnceNorms (), normTol );
+
+    // Use X_j->norm2() to compute the 2-norm of each column of X, and
+    // use X->getVector(j) to get X_j.  Test the resulting norms.
+    for (size_t j = 0; j < numVecs; ++j) {
+      RCP<const vec_type> X_j = X->getVector (j);
+      oneAtATimeNorms[j] = X_j->norm2 ();
+    }
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), oneAtATimeNorms (), normTol );
+
+    // Calculate what the 1-norm of each column of X should be.
+    for (size_t j = 0; j < numVecs; ++j) {
+      correctNorms[j] = as<magnitude_type> (j) * as<magnitude_type> (numRows);
+    }
+
+    // Fill the Array with zeros, and use X->norm1(ArrayView) to
+    // compute the 1-norm of each column of X.  Test the results.
+    std::fill (allAtOnceNorms.begin (), allAtOnceNorms.end (), STM::zero ());
+    X->norm1 (allAtOnceNorms);
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), allAtOnceNorms (), normTol );
+
+    // Use X_j->norm1() to compute the 1-norm of each column of X, and
+    // use X->getVector(j) to get X_j.  Test the resulting norms.
+    for (size_t j = 0; j < numVecs; ++j) {
+      RCP<const vec_type> X_j = X->getVector (j);
+      oneAtATimeNorms[j] = X_j->norm1 ();
+    }
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), oneAtATimeNorms (), normTol );
+
+    // Calculate what the inf-norm of each column of X should be.
+    for (size_t j = 0; j < numVecs; ++j) {
+      correctNorms[j] = as<magnitude_type> (j);
+    }
+
+    // Fill the Array with zeros, and use X->normInf(ArrayView) to
+    // compute the inf-norm of each column of X.  Test the results.
+    std::fill (allAtOnceNorms.begin (), allAtOnceNorms.end (), STM::zero ());
+    X->normInf (allAtOnceNorms);
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), allAtOnceNorms (), normTol );
+
+    // Use X_j->normInf() to compute the inf-norm of each column of X,
+    // and use X->getVector(j) to get X_j.  Test the resulting norms.
+    for (size_t j = 0; j < numVecs; ++j) {
+      RCP<const vec_type> X_j = X->getVector (j);
+      oneAtATimeNorms[j] = X_j->normInf ();
+    }
+    TEST_COMPARE_FLOATING_ARRAYS( correctNorms (), oneAtATimeNorms (), normTol );
+
+#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+  }
+
   //
   // Bug 6115 test: Ensure that Xpetra::Vector::operator= does a deep copy.
   // This test prefers Tpetra, but uses Epetra if not building with Tpetra.
@@ -210,6 +327,7 @@ namespace {
     // using std::endl;
     typedef Ordinal LO;
     typedef Ordinal GO;
+    typedef Scalar scalar_type;
     typedef Xpetra::Map<LO, GO, Node> map_type;
     typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
     typedef Xpetra::Vector<Scalar, LO, GO, Node> vec_type;
@@ -219,12 +337,6 @@ namespace {
     typedef Teuchos::ScalarTraits<magnitude_type> STM;
 
     RCP<const Comm<int> > comm = getDefaultComm ();
-    // const int myRank = comm->getRank ();
-    // {
-    //   std::ostringstream os;
-    //   os << "Process " << myRank << ": (Vector, AssignmentDeepCopies) test" << endl;
-    //   cerr << os.str ();
-    // }
 
 #ifdef HAVE_XPETRA_TPETRA
     Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
@@ -241,17 +353,23 @@ namespace {
     RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
 
     RCP<vec_type> v = vec_factory_type::Build (map);
-    v->setSeed (8675309);
-    v->randomize (true);
+    v->putScalar (STS::one ());
 
-    // {
-    //   std::ostringstream os;
-    //   os << "Process " << myRank << ": Testing that Xpetra::Vector::operator= does a deep copy" << endl;
-    //   cerr << os.str ();
-    // }
-
-    // Remember the norm of v, to make sure that neither apply() call changes it.
+    // Remember the norm of v, to make sure that neither apply() call
+    // changes it.  Remember both the 2-norm and the 1-norm.
     const magnitude_type v_norm = v->norm2 ();
+    const magnitude_type v_oneNorm = v->norm1 ();
+
+    // Test the computed 1-norm of v against what we know it should
+    // be.  This test ensures that we aren't just subtracting zero
+    // from zero in all the tests below.
+    const magnitude_type v_expectedOneNorm =
+      as<magnitude_type> (map->getGlobalNumElements ());
+
+    TEST_FLOATING_EQUALITY(
+      v_expectedOneNorm,
+      v_oneNorm,
+      STM::squareroot (v_expectedOneNorm) * STM::eps ());
 
     // Keep a copy of v, to test that neither apply() call changes it.
     RCP<vec_type> vcopy = vec_factory_type::Build (map);
@@ -264,19 +382,35 @@ namespace {
     // norms to be slightly different, due to nondeterminism in
     // parallel collectives.
     const magnitude_type vcopy_norm = vcopy->norm2 ();
-    // {
-    //   std::ostringstream os;
-    //   os << "Process " << myRank << ": v->norm2() = " << v_norm
-    //      << ", vcopy->norm2() = " << vcopy_norm << endl;
-    //   cerr << os.str ();
-    // }
+    const magnitude_type vcopy_oneNorm = vcopy->norm1 ();
 
     const magnitude_type norm_tol =
       static_cast<magnitude_type> (map->getGlobalNumElements ()) * STM::eps ();
-    TEUCHOS_TEST_COMPARE(STM::magnitude (v_norm - vcopy_norm), <, norm_tol, out, success);
 
-    // Make sure that if you change vcopy, v doesn't change.
-    // That is, vcopy must be a true deep copy of v.
+    TEST_FLOATING_EQUALITY(v_norm, vcopy_norm, norm_tol);
+    TEST_FLOATING_EQUALITY(v_oneNorm, vcopy_oneNorm, norm_tol);
+
+    // Make sure that if you change vcopy, v doesn't change.  That is,
+    // vcopy must be a true deep copy of v.  Do this by setting all
+    // entries of the Vector to 2, using putScalar(2).
+    {
+      vcopy->putScalar (as<scalar_type> (2));
+      // Changing all the entries from 1 to 2 should double the
+      // 1-norm, but give a little wiggle room for rounding error.
+      const magnitude_type two = STM::one () + STM::one ();
+      // First make sure that the 1-norm of vcopy is as expected.
+      TEST_FLOATING_EQUALITY(two * v_oneNorm, vcopy->norm1 (), norm_tol);
+      // Now make sure that the 1-norm of v has not changed.
+      TEST_FLOATING_EQUALITY(v_oneNorm, v->norm1 (), norm_tol);
+
+      // Restore vcopy, using v.
+      *vcopy = *v;
+    }
+
+    // Make sure that if you change vcopy, v doesn't change.  That is,
+    // vcopy must be a true deep copy of v.  Do this by setting the
+    // first local entry of the Vector to 10000, using
+    // getDataNonConst(0).
     {
       Teuchos::ArrayRCP<Scalar> vcopy_data = vcopy->getDataNonConst (0);
       if (map->getNodeNumElements () != 0) {
@@ -286,8 +420,10 @@ namespace {
       vcopy_data = Teuchos::null;
 
       // Adding 10000 to an entry had better change the 2-norm by at least sqrt(10000) = 100.
-      const magnitude_type norm_tol2 = static_cast<magnitude_type> (100.0);
-      TEUCHOS_TEST_COMPARE(STM::magnitude (vcopy_norm - vcopy->norm2 ()), >, norm_tol2, out, success);
+      const magnitude_type minChange = static_cast<magnitude_type> (100.0);
+      TEUCHOS_TEST_COMPARE(
+        STM::magnitude (vcopy_norm - vcopy->norm2 ()), >, minChange,
+        out, success);
 
       // Restore the original vcopy, by doing a deep copy again.
       // Xpetra's operator= does a deep copy, like Epetra, but unlike
@@ -295,7 +431,102 @@ namespace {
       *vcopy = *v;
 
       // Make sure the original copy got restored.
-      TEUCHOS_TEST_COMPARE(STM::magnitude (vcopy_norm - vcopy->norm2 ()), <, norm_tol, out, success);
+      TEST_FLOATING_EQUALITY(vcopy_norm, vcopy->norm2 (), norm_tol);
+    }
+#endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+  }
+
+
+  TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, AssignmentDeepCopies, MV, V, Ordinal, Scalar, Node )
+  {
+    RCP<Node> node = getNode<Node>();
+#if defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
+    typedef Ordinal LO;
+    typedef Ordinal GO;
+    typedef Scalar scalar_type;
+    typedef Xpetra::Map<LO, GO, Node> map_type;
+    typedef Xpetra::MapFactory<LO, GO, Node> map_factory_type;
+    typedef Xpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    typedef Xpetra::MultiVectorFactory<Scalar, LO, GO, Node> mv_factory_type;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+    typedef typename STS::magnitudeType magnitude_type;
+    typedef Teuchos::ScalarTraits<magnitude_type> STM;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+
+#ifdef HAVE_XPETRA_TPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseTpetra;
+#else
+#  ifdef HAVE_XPETRA_EPETRA
+    Xpetra::UnderlyingLib lib = Xpetra::UseEpetra;
+#  else
+#    error "Should never get here!"
+#  endif // HAVE_XPETRA_EPETRA
+#endif // HAVE_XPETRA_TPETRA
+
+    // Create a Map, which will be the row, domain, and range Map of the matrix A.
+    const LO numInd = 63;
+    RCP<const map_type> map = map_factory_type::Build (lib, numInd, 0, comm);
+    const size_t numVecs = 11;
+
+    RCP<mv_type> X = mv_factory_type::Build (map, numVecs);
+    Teuchos::Array<magnitude_type> X_correctOneNorms (numVecs);
+    const GO numRows = map->getGlobalNumElements ();
+    for (size_t j = 0; j < numVecs; ++j) {
+      X->getVectorNonConst (j)->putScalar (as<scalar_type> (j));
+      X_correctOneNorms[j] = as<magnitude_type> (numRows) * as<magnitude_type> (j);
+    }
+
+    // Remember the norms of the columns of X, to make sure that
+    // MultiVector::operator= really does a deep copy.  Remember both
+    // the two-norms and the one-norms.
+    Teuchos::Array<magnitude_type> X_twoNorms (numVecs);
+    X->norm2 (X_twoNorms ());
+    Teuchos::Array<magnitude_type> X_oneNorms (numVecs);
+    X->norm1 (X_oneNorms ());
+
+    // Test the computed 1-norms of the columns of X against what we
+    // know they should be.  This test ensures that we aren't just
+    // subtracting zero from zero in all the tests below.
+    const magnitude_type normTol =
+      STM::squareroot (as<magnitude_type> (numRows)) * STM::eps ();
+    TEST_COMPARE_FLOATING_ARRAYS(X_correctOneNorms (), X_oneNorms (), normTol);
+
+    // Keep a copy of X, to test that operator= really does a deep copy.
+    RCP<mv_type> X_copy = mv_factory_type::Build (map, numVecs);
+    *X_copy = *X;
+
+    // Make sure that the columns of X and X_copy have the same norms.
+    Teuchos::Array<magnitude_type> X_copy_twoNorms (numVecs);
+    X_copy->norm2 (X_copy_twoNorms ());
+    Teuchos::Array<magnitude_type> X_copy_oneNorms (numVecs);
+    X_copy->norm1 (X_copy_oneNorms ());
+
+    TEST_COMPARE_FLOATING_ARRAYS(X_oneNorms (), X_copy_oneNorms (), normTol);
+    TEST_COMPARE_FLOATING_ARRAYS(X_twoNorms (), X_copy_twoNorms (), normTol);
+
+    // Make sure that if you change X_copy, X doesn't change.  That
+    // is, X_copy must be a true deep copy of X.  Do this by setting
+    // all entries of X_copy to 2, using putScalar(2).
+    {
+      X_copy->putScalar (as<scalar_type> (2));
+      Teuchos::Array<magnitude_type> newOneNorms (numVecs);
+      X_copy->norm1 (newOneNorms ());
+
+      Teuchos::Array<magnitude_type> expectedOneNorms (numVecs);
+      for (size_t j = 0; j < numVecs; ++j) {
+        expectedOneNorms[j] =
+          as<magnitude_type> (2) * as<magnitude_type> (numRows);
+      }
+
+      // First make sure that the 1-norms of the columns X_copy are as expected.
+      TEST_COMPARE_FLOATING_ARRAYS(newOneNorms (), expectedOneNorms (), normTol);
+      // Now make sure that the 1-norms of the columns of X have not changed.
+      X->norm1 (newOneNorms ());
+      TEST_COMPARE_FLOATING_ARRAYS(newOneNorms (), X_oneNorms (), normTol);
+
+      // Restore X_copy to be a deep copy of X.
+      *X_copy = *X;
     }
 #endif // defined(HAVE_XPETRA_TPETRA) || defined(HAVE_XPETRA_EPETRA)
   }
@@ -1554,6 +1785,7 @@ namespace {
   TEUCHOS_UNIT_TEST_TEMPLATE_5_DECL( MultiVector, ScaleAndAssign, MV, V, Ordinal, Scalar , Node )
   {
 #ifdef HAVE_XPETRA_TPETRA
+    using std::endl;
     typedef Teuchos::ScalarTraits<Scalar> STS;
     typedef typename STS::magnitudeType Mag;
     typedef Teuchos::ScalarTraits<Mag> STM;
@@ -1636,6 +1868,7 @@ namespace {
         }
         break;
       case 3:
+      default:
         {
           ArrayRCP<Scalar>       bjview = B.getDataNonConst(j);
           ArrayRCP<const Scalar> ajview = A.getData(j);
@@ -1647,33 +1880,77 @@ namespace {
       }
     }
 
-    // check that A wasn't modified
+    // Check that A wasn't modified
+    out << "Check that A wasn't modified" << endl;
     {
+      Teuchos::OSTab tab1 (out);
       Array<Mag> Anrms_aft(numVectors);
       A.norm2(Anrms_aft());
       TEST_COMPARE_FLOATING_ARRAYS(Anrms(),Anrms_aft(),tol);
     }
-    // check that C.Scale(A,2.0) == B
+    // Check that C.Scale(2, A) results in C == B
+    out << "Check that C.scale(2, A) results in C == B" << endl;
     {
-      MV C(map,numVectors,false);
-      C.scale(as<Scalar>(2), A);
-      C.update(-1.0,B,1.0); // C := C - B
+      Teuchos::OSTab tab1 (out);
+      MV C (map, numVectors, false);
+      C.scale (as<Scalar> (2), A);
+      C.update (-1.0, B, 1.0); // C := C - B
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
-    // check that C=A, C.Scale(2.0) == B
+    out << "Check that A wasn't modified" << endl;
     {
+      Teuchos::OSTab tab1 (out);
+      Array<Mag> Anrms_aft (numVectors);
+      A.norm2 (Anrms_aft ());
+      TEST_COMPARE_FLOATING_ARRAYS( Anrms (), Anrms_aft (), tol);
+    }
+    // Check that C = A, C.scale(2) results in C == B
+    out << "Check that C = A, C.scale(2) results in C == B" << endl;
+    {
+      Teuchos::OSTab tab1 (out);
+      MV C (map, numVectors, false);
+      C = A;
+      C.scale (as<Scalar> (2));
+      C.update (-1.0, B, 1.0);
+      Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
+      C.norm2(Cnorms());
+      TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
+    }
+    out << "Check that A wasn't modified" << endl;
+    {
+      Teuchos::OSTab tab1 (out);
+      Array<Mag> Anrms_aft (numVectors);
+      A.norm2 (Anrms_aft ());
+      TEST_COMPARE_FLOATING_ARRAYS( Anrms (), Anrms_aft (), tol);
+    }
+    // Check that C = A, C_j.scale(2) for all j, results in C == B
+    out << "Check that C = A, C_j.scale(2) for all j, results in C == B" << endl;
+    {
+      Teuchos::OSTab tab1 (out);
       MV C(map,numVectors,false);
       C = A;
-      C.scale(as<Scalar>(2));
-      C.update(-1.0,B,1.0);
+      for (size_t j = 0; j < numVectors; ++j) {
+        RCP<vec_type> C_j = C.getVectorNonConst (j);
+        C_j->scale (as<Scalar> (2));
+      }
+      C.update (-1.0, B, 1.0);
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
     }
-    // check that C=A, C.Scale(tuple(2)) == B
+    out << "Check that A wasn't modified" << endl;
     {
+      Teuchos::OSTab tab1 (out);
+      Array<Mag> Anrms_aft (numVectors);
+      A.norm2 (Anrms_aft ());
+      TEST_COMPARE_FLOATING_ARRAYS( Anrms (), Anrms_aft (), tol);
+    }
+    // Check that C = A, C.scale([2, 2, ..., 2]) results in C == B
+    out << "Check that C = A, C.scale([2, 2, ..., 2]) results in C == B" << endl;
+    {
+      Teuchos::OSTab tab1 (out);
       MV C(map,numVectors,false);
       C = A;
       Array<Scalar> twos(numVectors,as<Scalar>(2));
@@ -1682,6 +1959,13 @@ namespace {
       Array<Mag> Cnorms(numVectors), zeros(numVectors,M0);
       C.norm2(Cnorms());
       TEST_COMPARE_FLOATING_ARRAYS(Cnorms(),zeros,tol);
+    }
+    out << "Check that A wasn't modified" << endl;
+    {
+      Teuchos::OSTab tab1 (out);
+      Array<Mag> Anrms_aft (numVectors);
+      A.norm2 (Anrms_aft ());
+      TEST_COMPARE_FLOATING_ARRAYS( Anrms (), Anrms_aft (), tol);
     }
 #endif // HAVE_XPETRA_TPETRA
   }
@@ -2352,6 +2636,8 @@ typedef std::complex<double> ComplexDouble;
   //      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadCombinations   , MV, V, ORDINAL, SCALAR, NODE )
 #define UNIT_TEST_GROUP_ORDINAL_SCALAR_NODE( MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT(      Vector, AssignmentDeepCopies, MV, V, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, AssignmentDeepCopies, MV, V, ORDINAL, SCALAR, NODE ) \
+      TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, GetVector         , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, basic             , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstNumVecs   , MV, V, ORDINAL, SCALAR, NODE ) \
       TEUCHOS_UNIT_TEST_TEMPLATE_5_INSTANT( MultiVector, BadConstLDA       , MV, V, ORDINAL, SCALAR, NODE ) \
