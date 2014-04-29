@@ -429,8 +429,8 @@ namespace MueLu {
 
     } else if (multigridAlgo == "emin") {
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, "AkPtent", patternType);
-      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument, "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
-
+      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
+                                 "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
       // Pattern
       RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
       ParameterList patternParams = *(patternFactory->GetValidParameterList());
@@ -448,7 +448,8 @@ namespace MueLu {
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
       ParameterList Pparams = *(P->GetValidParameterList());
-      MUELU_TEST_AND_SET_PARAM(Pparams, "Niterations", paramList, defaultList, "emin: num iterations", int);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, "emin: num iterations",   int);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, "emin: iterative method", std::string);
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
