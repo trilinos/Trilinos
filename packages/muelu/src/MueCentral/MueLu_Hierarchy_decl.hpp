@@ -153,8 +153,6 @@ namespace MueLu {
     //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
     bool GetImplicitTranspose() const;
 
-    //@}
-
     //! Helper function
     void CheckLevel(Level& level, int levelID);
 
@@ -338,27 +336,27 @@ namespace MueLu {
 
   }; //class Hierarchy
 
-template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-template<typename Node2, typename LocalMatOps2>
-Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
-Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
-	typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
-	typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
-	typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
+  template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  template<typename Node2, typename LocalMatOps2>
+  Teuchos::RCP<Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> >
+  Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const Teuchos::RCP<Node2> &node2) const{
+    typedef Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>           New_H_Type;
+    typedef Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2>      CloneMatrix;
+    typedef MueLu::SmootherBase<Scalar, LocalOrdinal, GlobalOrdinal, Node2, LocalMatOps2> CloneSmoother;
 
-	Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
-	new_h->Levels_.resize(this->GetNumLevels());
-	new_h->maxCoarseSize_     = maxCoarseSize_;
-	new_h->implicitTranspose_ = implicitTranspose_;
-	new_h->isPreconditioner_  = isPreconditioner_;
-	new_h->isDumpingEnabled_  = isDumpingEnabled_;
-	new_h->dumpLevel_         = dumpLevel_;
-	new_h->dumpFile_          = dumpFile_;
+    Teuchos::RCP<New_H_Type> new_h = Teuchos::rcp(new New_H_Type());
+    new_h->Levels_.resize(this->GetNumLevels());
+    new_h->maxCoarseSize_     = maxCoarseSize_;
+    new_h->implicitTranspose_ = implicitTranspose_;
+    new_h->isPreconditioner_  = isPreconditioner_;
+    new_h->isDumpingEnabled_  = isDumpingEnabled_;
+    new_h->dumpLevel_         = dumpLevel_;
+    new_h->dumpFile_          = dumpFile_;
 
-	RCP<SmootherBase>  Pre, Post;
-	RCP<CloneSmoother> clonePre, clonePost;
-	RCP<CloneMatrix>   cloneA, cloneR, cloneP;
-	RCP<Matrix>        A, R, P;
+    RCP<SmootherBase>  Pre, Post;
+    RCP<CloneSmoother> clonePre, clonePost;
+    RCP<CloneMatrix>   cloneA, cloneR, cloneP;
+    RCP<Matrix>        A, R, P;
     for (int i = 0; i < GetNumLevels(); i++) {
       RCP<Level> level      = this->Levels_[i];
       RCP<Level> clonelevel = rcp(new Level());
@@ -392,7 +390,7 @@ Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::clone(const T
     }
 
     return new_h;
-}
+  }
 
 } //namespace MueLu
 

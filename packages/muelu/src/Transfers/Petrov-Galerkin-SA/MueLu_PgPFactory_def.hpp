@@ -376,9 +376,9 @@ namespace MueLu {
       }
 
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < min_local)
-	{ min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > max_local)
-	{ max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
     }
 
     { // be verbose

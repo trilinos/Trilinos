@@ -194,11 +194,11 @@ namespace MueLu {
     }
 
     static RCP<Matrix> Jacobi(Scalar omega,
-			      const Vector& D,
-			      const Matrix& A,
-			      const Matrix& B,
-			      RCP<Matrix> C_in,
-			      Teuchos::FancyOStream &fos);
+                              const Vector& D,
+                              const Matrix& A,
+                              const Matrix& B,
+                              RCP<Matrix> C_in,
+                              Teuchos::FancyOStream &fos);
 
 
     /*! @brief Helper function to do matrix-matrix multiply
