@@ -605,7 +605,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -632,7 +632,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           Impl::is_same<T,typename traits::value_type>::value ||
-          Impl::is_same<T,typename traits::const_value_type>::value ),
+          Impl::is_same<T,typename traits::non_const_value_type>::value ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
