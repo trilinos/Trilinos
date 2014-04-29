@@ -4674,19 +4674,21 @@ Repositories`_ which contain multiple `TriBITS Packages`_.  The basic
 configuration, build, and test of such projects requires only raw CMake/CTest,
 just like any other CMake project (see `TriBITS System Project
 Dependencies`_).  Every TriBITS project automatically supports tacking on
-add-on TriBITS packages and TPL through the
-``${PROJECT_NAME}_EXTRA_REPOSITORIES`` cmake cache variable as described in
+add-on TriBITS packages and TPLs through the
+`${PROJECT_NAME}_EXTRA_REPOSITORIES`_ cmake cache variable as described in
 `Enabling extra repositories with add-on packages`_.  In addition, a TriBITS
 project can be set up from the start to pull in other TriBITS Repositories
 using the `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  A special
-form of this is a `TriBITS Meta-Project`_ that contains no TPLs or packages of
-its own.  The ability to create meta-projects is what allows TriBITS to be
-used to provide the build of large aggregations of software.
+form of this is a `TriBITS Meta-Project`_ that contains no packages or TPLs of
+its own.  The ability to create meta-projects out of individual TriBITS
+repositories allows TriBITS to be used to provide coordinated builds of large
+aggregations of software.
 
-To help set up a development environment for multi-repository TriBITS
-projects, TriBITS provides some extra development tools based on Python.  The
-primary tools supporting multi-repository project are the `checkin-test.py`_
-tool and the `egdist`_ tool.
+To help set up a full-featured development environment (i.e. not just the
+basic configure, build, test, and install) for TriBITS projects with multiple
+repositories, TriBITS provides some extra development tools implemented using
+Python.  The primary tools supporting multi-repository projects are the
+`checkin-test.py`_ tool and the `egdist`_ tool.
 
 For projects with a standard set of extra repositories defined in the
 `<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file, the
@@ -4698,16 +4700,17 @@ perform all of the various actions for all of the selected repositories.  See
 
 .. _egdist:
 
-The tool **egdist** is a simple Python script that just distributes the listed
-eg/git command across a set of git repos.  It is not specific to TriBITS at
-all.  It only requires that a base git repo and a set of zero or more git repos
-cloned under it.  For example, consider the TriBITS meta-project given in the
-ExtraRepositoriesList.cmake file:
+The tool **egdist** is a simple Python script that distributes an eg/git
+command across a set of git repos.  This tool is not specific to TriBITS but
+it is very useful for dealing with TriBITS projects with multiple
+repositories.  It only requires that a base git repo and a set of zero or more
+git repos cloned under it.  For example, consider the TriBITS meta-project
+given in the ExtraRepositoriesList.cmake file:
 
 .. include:: ../../python/UnitTests/ExtraReposList.cmake
    :literal:
 
-This would be laid out a directories as::
+This would be laid out in directories as::
 
   BaseRepo/
     .git/
@@ -4748,27 +4751,26 @@ Common aggregate commands then run under the ``BaseRepo/`` directory are::
   # Push local commits to tracking branches
   egdist push
 
-See `egdist --help` for more details.
+See `egdist --help`_ for more details.
 
 The TriBITS approach to managing multiple VC repos described above works well
-for order 10 or so VC repos but will not scale well to order 30 or more.  For
-larger numbers of VC repos, one should consider nested integration creating
-snapshot git repos (e.g. using the tool `snapshot-dir.py`_) that aggregate
-several related repositories into a single git repo.  Another approach might
-be to use git submodules.  However, note that the TriBITS tools and processes
-described here are currently **not** set up to support aggregate VC repos that
-use git submodules.  The design decision with TriBITS was to explicitly handle
-the different git VC repos using `egdist`_ and
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  There are advantages and
-disadvantages to using git submodules verses the approach currently supported
-in TriBITS using `egdist`_ and
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  It is possible that
-TriBITS will add support for aggregate git repos that use git submodules but
-only if there are important projects that choose to use them.  The discussion
-of these various approaches and strategies to dealing with aggregate repos is
-beyond the scope of this document.
+for order-10 or so VC repos but will not scale well to order-30 or more repos.
+For larger numbers of VC repos, one should consider nested integration
+creating snapshot git repos (e.g. using the tool `snapshot-dir.py`_) that
+aggregate several related repositories into a single git repo.  Another
+approach might be to use git submodules.  However, note that the TriBITS tools
+and processes described here are **not** currently set up to support aggregate
+VC repos that use git submodules.  The design decision with TriBITS was to
+explicitly handle the different git VC repos using `egdist`_ and the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file.  There are advantages
+and disadvantages to using git submodules verses explicitly handling the
+different git repos currently employed by the TriBITS software development
+tools.  It is possible that TriBITS will add support for aggregate git repos
+using git submodules but only if there are important projects that choose to
+use them.  The discussion of these various approaches and strategies to
+dealing with aggregate repos is beyond the scope of this document.
 
-.. ToDo: Discuss a repo clone script.
+.. ToDo: Discuss a repo clone script (once you write it).
 
 .. ToDo: Discuss how to handle missing packages in upstream repos.
 
