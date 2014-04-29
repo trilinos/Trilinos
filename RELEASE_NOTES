@@ -198,6 +198,14 @@ Tpetra
     only manifest on MPICH.  This bug fix alone is enough reason to upgrade to
     Trilinos 11.8.
 
+PyTrilinos
+
+  - Various changes to improve the stability and robustness of the build system. 
+    Addresses some instability in PyTrilinos introduced with new 64 bit
+    capabilities in Epetra.  Some compilation warnings eliminated.  SWIG version
+    checks added.
+
+
 Zoltan
 
   - Revised Scotch TPL specification in Trilinos' CMake environment to link with
