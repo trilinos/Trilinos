@@ -270,8 +270,8 @@ struct UnorderedMapPrint
     const size_type invalid_index = map_type::invalid_index;
 
     uint32_t list = m_map.m_hash_lists(i);
-    for (size_type curr = list, i=0; curr != invalid_index; curr = m_map.m_next_index[curr], ++i) {
-      printf("%d[%d]: %d->%d\n", list, i, m_map.key_at(curr), m_map.value_at(curr));
+    for (size_type curr = list, ii=0; curr != invalid_index; curr = m_map.m_next_index[curr], ++ii) {
+      printf("%d[%d]: %d->%d\n", list, ii, m_map.key_at(curr), m_map.value_at(curr));
     }
   }
 };
