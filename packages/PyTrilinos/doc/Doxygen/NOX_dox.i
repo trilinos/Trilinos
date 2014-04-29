@@ -1,6 +1,305 @@
 
 // File: index.xml
 
+// File: classNOX_1_1Epetra_1_1AdaptiveSolutionManager.xml
+%feature("docstring") NOX::Epetra::AdaptiveSolutionManager "";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager "NOX::Epetra::AdaptiveSolutionManager::AdaptiveSolutionManager(const
+Teuchos::RCP< const Epetra_Map > &map_, const Teuchos::RCP< const
+Epetra_Map > &overlapMap_, const Teuchos::RCP< const Epetra_CrsGraph >
+&overlapJacGraph_) ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::~AdaptiveSolutionManager "virtual
+NOX::Epetra::AdaptiveSolutionManager::~AdaptiveSolutionManager() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::adaptProblem "virtual bool
+NOX::Epetra::AdaptiveSolutionManager::adaptProblem()=0
+
+Apply adaptation method to mesh and problem. Returns true if
+adaptation is performed successfully. ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::getOverlapSolution "Epetra_Vector *
+NOX::Epetra::AdaptiveSolutionManager::getOverlapSolution(const
+Epetra_Vector &solution)
+
+Accessor function to Epetra_Import the solution from other PEs for
+output. ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::getAdaptManager "virtual
+Teuchos::RCP<NOX::Epetra::AdaptManager>
+NOX::Epetra::AdaptiveSolutionManager::getAdaptManager()
+
+Function to get the active AdaptManager. ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays "void
+NOX::Epetra::AdaptiveSolutionManager::resizeMeshDataArrays(const
+Teuchos::RCP< const Epetra_Map > &map, const Teuchos::RCP< const
+Epetra_Map > &overlapMap, const Teuchos::RCP< const Epetra_CrsGraph >
+&overlapJacGraph)
+
+Function to resize the data structures when adapting. ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::getInitialSolution "virtual
+Teuchos::RCP<const Epetra_Vector>
+NOX::Epetra::AdaptiveSolutionManager::getInitialSolution() const
+
+Accessor functions. ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_initial_x "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_initial_x() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::setInitialSolution "void
+NOX::Epetra::AdaptiveSolutionManager::setInitialSolution(const
+Teuchos::RCP< Epetra_Vector > &soln_) ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::getInitialSolutionDot "virtual
+Teuchos::RCP<const Epetra_Vector>
+NOX::Epetra::AdaptiveSolutionManager::getInitialSolutionDot() const ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_initial_xdot "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_initial_xdot() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_x "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_x() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_xdot "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_xdot() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_xdotdot "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_xdotdot() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_f "virtual
+Teuchos::RCP<Epetra_Vector>&
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_f() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_jac "virtual
+Teuchos::RCP<Epetra_CrsMatrix>&
+NOX::Epetra::AdaptiveSolutionManager::get_overlapped_jac() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_importer "virtual
+Teuchos::RCP<Epetra_Import>&
+NOX::Epetra::AdaptiveSolutionManager::get_importer() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptiveSolutionManager::get_exporter "virtual
+Teuchos::RCP<Epetra_Export>&
+NOX::Epetra::AdaptiveSolutionManager::get_exporter() ";
+
+
+// File: classNOX_1_1Epetra_1_1AdaptManager.xml
+%feature("docstring") NOX::Epetra::AdaptManager "";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::AdaptManager "NOX::Epetra::AdaptManager::AdaptManager() ";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::~AdaptManager "virtual NOX::Epetra::AdaptManager::~AdaptManager() ";
+
+%feature("docstring")
+NOX::Epetra::AdaptManager::queryAdaptationCriteria "virtual bool
+NOX::Epetra::AdaptManager::queryAdaptationCriteria()=0
+
+Method called by Piro NOXSolver to determine if the mesh needs
+adapting. ";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::adaptMesh "virtual
+bool NOX::Epetra::AdaptManager::adaptMesh(const Epetra_Vector
+&solution, const Epetra_Vector &ovlp_solution)=0
+
+Apply adaptation method to mesh and problem. Returns true if
+adaptation is performed successfully. ";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::solutionTransfer "virtual void NOX::Epetra::AdaptManager::solutionTransfer(const
+Epetra_Vector &oldSolution, Epetra_Vector &newSolution)=0
+
+Transfer solution between meshes. ";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::setTime "void
+NOX::Epetra::AdaptManager::setTime(const double time_)
+
+Track the time state of the mesh. ";
+
+%feature("docstring")  NOX::Epetra::AdaptManager::setIteration "void
+NOX::Epetra::AdaptManager::setIteration(const int iter_)
+
+Track the time state of the mesh. ";
+
+
+// File: classNOX_1_1Solver_1_1AndersonAcceleration.xml
+%feature("docstring") NOX::Solver::AndersonAcceleration "
+
+Nonlinear solver based on Anderson Acceleration.
+
+Solves $F(x)=0$ using Anderson Acceleration.
+
+This method requires a mixing parameter $\\\\beta$ and a
+preconditioner $M(x)$. If preconditioning is not supported, it is
+taken to be the identity.
+
+For the first iteration, the solver computes $x_1 = x_0 + \\\\beta
+M(x_0)F(x_0)$.
+
+Each iteration afterward, the solver does the following.
+
+Set $m_k = \\\\min\\\\{m,k\\\\}$, where $m$ is a parameter that
+determines the maximum number of iterates for which we store iterate
+and function values in addition to the current iterate. $m_k$
+represents the number of previous iterates stored currently.
+
+Solve the least-squares problem:
+$\\\\min_{\\\\gamma}\\\\|\\\\sum_{i=0}^{m_k}
+\\\\alpha_iM(x_{k-i})F(x_{k-i}) \\\\|$, such that $
+\\\\sum_{i=1}^{m_k} \\\\alpha_i = 1 $. In this implementation, we
+solve an equivalent unconstrained problem for which the QR factors are
+stored and updated.
+
+Calculate the new iterate: $x_{k+1} = {i=0}^{m_k} [x_{k-i} +
+M(x_{k-i})F(x_{k-i})]$.
+
+The iterations progress until the status tests (see NOX::StatusTest)
+determine either failure or convergence.
+
+Input Parameters
+
+The following parameter list entries are valid for this solver:
+
+\"Anderson Parameters\" - Sublist of parameters specific to AA, passed
+to the NOX::LineSearch::Manager constructor.
+
+\"Direction\" - Sublist of the direction parameters, passed to the
+NOX::Direction::Manager constructor. Defaults to an empty list.
+
+\"Solver Options\" - Sublist of general solver options. \"User Defined
+Pre/Post Operator\" is supported. See NOX::Parameter::PrePostOperator
+for more details.
+
+Output Parameters
+
+Every time solve() is called, a sublist for output parameters called
+\"Output\" will be created and contain the following parameters.
+
+\"Output\":
+
+\"Nonlinear Iterations\" - Number of nonlinear iterations
+
+\"2-Norm of Residual\" - Two-norm of final residual
+
+Tammy Kolda (SNL 8950), Roger Pawlowski (SNL 9233)
+
+C++ includes: NOX_Solver_AndersonAcceleration.H ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::AndersonAcceleration "NOX::Solver::AndersonAcceleration::AndersonAcceleration(const
+Teuchos::RCP< NOX::Abstract::Group > &grp, const Teuchos::RCP<
+NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
+Teuchos::ParameterList > &params)
+
+Constructor.
+
+See reset(NOX::Abstract::Group&, NOX::StatusTest::Generic&,
+Teuchos::ParameterList&) for description ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::~AndersonAcceleration "NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
+
+Destructor. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::reset "void
+NOX::Solver::AndersonAcceleration::reset(const NOX::Abstract::Vector
+&initialGuess, const Teuchos::RCP< NOX::StatusTest::Generic > &tests)
+
+Resets the solver, sets a new status test, and sets a new initial
+guess. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::reset "void
+NOX::Solver::AndersonAcceleration::reset(const NOX::Abstract::Vector
+&initialGuess)
+
+Resets the solver and sets a new initial guess. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::getStatus "NOX::StatusTest::StatusType
+NOX::Solver::AndersonAcceleration::getStatus()
+
+Check current convergence and failure status. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::step "NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
+
+Do one nonlinear step in the iteration sequence and return status. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::solve "NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::solve()
+
+Solve the nonlinear problem and return final status.
+
+By \"solve\", we call iterate() until the NOX::StatusTest value is
+either NOX::StatusTest::Converged or NOX::StatusTest::Failed. ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::getSolutionGroup "const
+NOX::Abstract::Group &
+NOX::Solver::AndersonAcceleration::getSolutionGroup() const
+
+Return a reference to the current solution group. ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::getPreviousSolutionGroup "const
+NOX::Abstract::Group &
+NOX::Solver::AndersonAcceleration::getPreviousSolutionGroup() const
+
+Return a reference to the previous solution group. ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::getNumIterations "int
+NOX::Solver::AndersonAcceleration::getNumIterations() const
+
+Get number of iterations. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::getList "const Teuchos::ParameterList &
+NOX::Solver::AndersonAcceleration::getList() const
+
+Return a reference to the solver parameters. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::getStepSize
+"double NOX::Solver::AndersonAcceleration::getStepSize() const ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::getSolutionGroupPtr "virtual
+Teuchos::RCP< const NOX::Abstract::Group >
+NOX::Solver::AndersonAcceleration::getSolutionGroupPtr() const
+
+Return a RCP to the solution group. ";
+
+%feature("docstring")
+NOX::Solver::AndersonAcceleration::getPreviousSolutionGroupPtr "virtual Teuchos::RCP< const NOX::Abstract::Group >
+NOX::Solver::AndersonAcceleration::getPreviousSolutionGroupPtr() const
+
+Return a RCP to the previous solution group. ";
+
+%feature("docstring")  NOX::Solver::AndersonAcceleration::getListPtr "virtual Teuchos::RCP< const Teuchos::ParameterList >
+NOX::Solver::AndersonAcceleration::getListPtr() const
+
+Return a RCP to the solver parameters. ";
+
+
 // File: classNOX_1_1LineSearch_1_1Backtrack.xml
 %feature("docstring") NOX::LineSearch::Backtrack "
 
@@ -413,7 +712,8 @@ Destructor. ";
 %feature("docstring")  NOX::Epetra::BroydenOperator::Label "const
 char * BroydenOperator::Label() const
 
-Returns a character string describing the name of the operator. ";
+Returns a character std::string describing the name of the operator.
+";
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::SetUseTranspose "int BroydenOperator::SetUseTranspose(bool UseTranspose)
 
@@ -526,19 +826,31 @@ See Epetra_RowMatrix documentation. ";
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")
+NOX::Epetra::BroydenOperator::NumGlobalNonzeros64 "long long
+BroydenOperator::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalRows "int BroydenOperator::NumGlobalRows() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalRows64 "long long BroydenOperator::NumGlobalRows64() const ";
+
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalCols "int BroydenOperator::NumGlobalCols() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")  NOX::Epetra::BroydenOperator::NumGlobalCols64 "long long BroydenOperator::NumGlobalCols64() const ";
 
 %feature("docstring")
 NOX::Epetra::BroydenOperator::NumGlobalDiagonals "int
 BroydenOperator::NumGlobalDiagonals() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")
+NOX::Epetra::BroydenOperator::NumGlobalDiagonals64 "long long
+BroydenOperator::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  NOX::Epetra::BroydenOperator::NumMyNonzeros "int BroydenOperator::NumMyNonzeros() const
 
@@ -700,8 +1012,9 @@ See addOp() and orOp() for details. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::Combo::print "ostream &
-NOX::StatusTest::Combo::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::Combo::print "std::ostream &
+NOX::StatusTest::Combo::print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -879,9 +1192,8 @@ const
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::Divergence::print "ostream &
-NOX::StatusTest::Divergence::print(ostream &stream, int indent=0)
-const
+%feature("docstring")  NOX::StatusTest::Divergence::print "std::ostream & NOX::StatusTest::Divergence::print(std::ostream
+&stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -979,8 +1291,9 @@ Constructor. ";
 
 Destructor. ";
 
-%feature("docstring")  NOX::Direction::Factory::buildDirection "Teuchos::RCP< NOX::Direction::Generic > buildDirection(const
-Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
+%feature("docstring")  NOX::Direction::Factory::buildDirection "Teuchos::RCP< NOX::Direction::Generic >
+NOX::Direction::Factory::buildDirection(const Teuchos::RCP<
+NOX::GlobalData > &gd, Teuchos::ParameterList &params)
 
 Factory to build a direction object.
 
@@ -992,9 +1305,7 @@ Without storing this inside the direction object, there is no
 guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
-params:  Sublist with direction construction parameters.
-
-Nonmember function to build a direction object. ";
+params:  Sublist with direction construction parameters. ";
 
 
 // File: classNOX_1_1LineSearch_1_1Factory.xml
@@ -1060,8 +1371,9 @@ Constructor. ";
 
 Destructor. ";
 
-%feature("docstring")  NOX::LineSearch::Factory::buildLineSearch "Teuchos::RCP< NOX::LineSearch::Generic > buildLineSearch(const
-Teuchos::RCP< NOX::GlobalData > &gd, Teuchos::ParameterList &params)
+%feature("docstring")  NOX::LineSearch::Factory::buildLineSearch "Teuchos::RCP< NOX::LineSearch::Generic >
+NOX::LineSearch::Factory::buildLineSearch(const Teuchos::RCP<
+NOX::GlobalData > &gd, Teuchos::ParameterList &params)
 
 Factory to build a line search object.
 
@@ -1073,9 +1385,7 @@ Without storing this inside the line searchobject, there is no
 guarantee that the second parameter params will still exist. It can be
 deleted by the top level RCP.
 
-params:  Sublist with line search construction parameters.
-
-Nonmember function to build a line search object. ";
+params:  Sublist with line search construction parameters. ";
 
 
 // File: classNOX_1_1Solver_1_1Factory.xml
@@ -1110,6 +1420,9 @@ the NOX::Solver::InexactTrustRegionBased solver.
 \"Tensor Based\" <Teuchos::ParameterList> Sublist for the
 NOX::Solver::TensorBased solver.
 
+\"Pseudo-Transient\" <Teuchos::ParameterList> Sublist for the
+NOX::Solver::PseudoTransient solver. (Requires Thyra support enabled)
+
 \"Tensor-Krylov Based\" <Teuchos::ParameterList> Sublist for the
 NOX::Solver::TensorBasedTest solver. (Prerelease only)
 
@@ -1128,12 +1441,11 @@ Constructor. ";
 
 Destructor. ";
 
-%feature("docstring")  NOX::Solver::Factory::buildSolver "Teuchos::RCP< NOX::Solver::Generic > buildSolver(const Teuchos::RCP<
+%feature("docstring")  NOX::Solver::Factory::buildSolver "Teuchos::RCP< NOX::Solver::Generic >
+NOX::Solver::Factory::buildSolver(const Teuchos::RCP<
 NOX::Abstract::Group > &grp, const Teuchos::RCP<
 NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
-Teuchos::ParameterList > &params)
-
-Nonmember helper function for the NOX::Solver::Factory. ";
+Teuchos::ParameterList > &params) ";
 
 
 // File: classNOX_1_1StatusTest_1_1Factory.xml
@@ -1431,7 +1743,8 @@ Pure virtual destructor. ";
 %feature("docstring")  NOX::Epetra::FiniteDifference::Label "const
 char * FiniteDifference::Label() const
 
-Returns a character string describing the name of the operator. ";
+Returns a character std::string describing the name of the operator.
+";
 
 %feature("docstring")  NOX::Epetra::FiniteDifference::SetUseTranspose
 "int FiniteDifference::SetUseTranspose(bool UseTranspose)
@@ -1548,19 +1861,33 @@ FiniteDifference::NumGlobalNonzeros() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")
+NOX::Epetra::FiniteDifference::NumGlobalNonzeros64 "long long
+FiniteDifference::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalRows "int FiniteDifference::NumGlobalRows() const
 
 See Epetra_RowMatrix documentation. ";
 
+%feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalRows64
+"long long FiniteDifference::NumGlobalRows64() const ";
+
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalCols "int FiniteDifference::NumGlobalCols() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")  NOX::Epetra::FiniteDifference::NumGlobalCols64
+"long long FiniteDifference::NumGlobalCols64() const ";
 
 %feature("docstring")
 NOX::Epetra::FiniteDifference::NumGlobalDiagonals "int
 FiniteDifference::NumGlobalDiagonals() const
 
 See Epetra_RowMatrix documentation. ";
+
+%feature("docstring")
+NOX::Epetra::FiniteDifference::NumGlobalDiagonals64 "long long
+FiniteDifference::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  NOX::Epetra::FiniteDifference::NumMyNonzeros "int FiniteDifference::NumMyNonzeros() const
 
@@ -1651,7 +1978,7 @@ NOX::Epetra::FiniteDifference::getUnderlyingMatrix "Epetra_CrsMatrix
 An accessor method for the underlying Epetra_CrsMatrix. ";
 
 %feature("docstring")  NOX::Epetra::FiniteDifference::Print "void
-FiniteDifference::Print(ostream &) const
+FiniteDifference::Print(std::ostream &) const
 
 Output the underlying matrix. ";
 
@@ -1755,7 +2082,7 @@ C++ includes: NOX_Epetra_FiniteDifferenceColoring.H ";
 NOX::Epetra::FiniteDifferenceColoring::FiniteDifferenceColoring "FiniteDifferenceColoring::FiniteDifferenceColoring(Teuchos::ParameterList
 &printingParams, const Teuchos::RCP< Interface::Required > &i, const
 NOX::Epetra::Vector &initialGuess, const Teuchos::RCP<
-Epetra_MapColoring > &colorMap, const Teuchos::RCP< vector<
+Epetra_MapColoring > &colorMap, const Teuchos::RCP< std::vector<
 Epetra_IntVector > > &columns, bool parallelColoring=false, bool
 distance1=false, double beta=1.0e-6, double alpha=1.0e-4)
 
@@ -1766,7 +2093,7 @@ NOX::Epetra::FiniteDifferenceColoring::FiniteDifferenceColoring "FiniteDifferenc
 &printingParams, const Teuchos::RCP< Interface::Required > &i, const
 NOX::Epetra::Vector &initialGuess, const Teuchos::RCP< Epetra_CrsGraph
 > &rawGraph, const Teuchos::RCP< Epetra_MapColoring > &colorMap, const
-Teuchos::RCP< vector< Epetra_IntVector > > &columns, bool
+Teuchos::RCP< std::vector< Epetra_IntVector > > &columns, bool
 parallelColoring=false, bool distance1=false, double beta=1.0e-6,
 double alpha=1.0e-4)
 
@@ -1945,9 +2272,8 @@ const
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::FiniteValue::print "ostream &
-NOX::StatusTest::FiniteValue::print(ostream &stream, int indent=0)
-const
+%feature("docstring")  NOX::StatusTest::FiniteValue::print "std::ostream & NOX::StatusTest::FiniteValue::print(std::ostream
+&stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -2024,7 +2350,7 @@ C++ includes: NOX_Multiphysics_Solver_FixedPointBased.H ";
 
 %feature("docstring")
 NOX::Multiphysics::Solver::FixedPointBased::FixedPointBased "NOX::Multiphysics::Solver::FixedPointBased::FixedPointBased(const
-Teuchos::RCP< vector< Teuchos::RCP< NOX::Solver::Generic > > >
+Teuchos::RCP< std::vector< Teuchos::RCP< NOX::Solver::Generic > > >
 &solvers, const Teuchos::RCP<
 NOX::Multiphysics::DataExchange::Interface > &interface, const
 Teuchos::RCP< NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
@@ -2043,7 +2369,7 @@ Destructor. ";
 %feature("docstring")
 NOX::Multiphysics::Solver::FixedPointBased::reset "bool
 NOX::Multiphysics::Solver::FixedPointBased::reset(const Teuchos::RCP<
-vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
+std::vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
 Teuchos::RCP< NOX::Multiphysics::DataExchange::Interface > &interface,
 const Teuchos::RCP< NOX::StatusTest::Generic > &tests, const
 Teuchos::RCP< Teuchos::ParameterList > &params)
@@ -2224,75 +2550,6 @@ search.
 Return value is true for a successful line search computation. ";
 
 
-// File: classNOX_1_1Multiphysics_1_1Solver_1_1Generic.xml
-%feature("docstring") NOX::Multiphysics::Solver::Generic "
-
-Abstract nonlinear solver method interface.
-
-Defines the type of access methods into the iterative nonlinear
-solvers.
-
-Instantiate or reset() the solver.
-
-Find the solution via solve() or perform a single iterations via
-iterate().
-
-Get information about the current solver state via getSolutionGroup(),
-getPreviousSolutionGroup(), getNumIterations(), and getParameterList()
---- particularily useful for NOX::StatusTest methods.
-
-Get the current status of the solver via getStatus().
-
-C++ includes: NOX_Multiphysics_Solver_Generic.H ";
-
-%feature("docstring")  NOX::Multiphysics::Solver::Generic::Generic "NOX::Multiphysics::Solver::Generic::Generic()
-
-Constructor (does nothing) ";
-
-%feature("docstring")  NOX::Multiphysics::Solver::Generic::~Generic "virtual NOX::Multiphysics::Solver::Generic::~Generic()
-
-Destructor (does nothing) ";
-
-%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual bool NOX::Multiphysics::Solver::Generic::reset(const
-Teuchos::RCP< vector< Teuchos::RCP< NOX::Solver::Generic > > >
-&solvers, const Teuchos::RCP<
-NOX::Multiphysics::DataExchange::Interface > &interface, const
-Teuchos::RCP< NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
-Teuchos::ParameterList > &params)=0
-
-Reset the nonlinear solver for a new solve.
-
-Parameters:
------------
-
-tests:  Status tests to check for convergence or failure. These tests
-will be modified by the solver.
-
-params:  List of parameters. These parameters will be modified by the
-solver.
-
-All the objects passed to reset() will be modified.
-
-The group object will be cloned via NOX::Abstract::Group::clone(), and
-the vectors within will also be individually cloned via
-NOX::Abstract::Vector::clone().
-
-WARNING:  If the contents of grp, tests, or params are modified by the
-calling program after calling reset(), then the behavior of iterate()
-and solve() are completely undefined. To remedy this, call reset()
-again with the modified objects. ";
-
-%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual void NOX::Multiphysics::Solver::Generic::reset(const
-NOX::Abstract::Vector &initialGuess)=0
-
-reset methods inherited from NOX::Solver::Generic and needed here to
-avoid hiding this overloaded virtual method ";
-
-%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual void NOX::Multiphysics::Solver::Generic::reset(const
-NOX::Abstract::Vector &initialGuess, const Teuchos::RCP<
-NOX::StatusTest::Generic > &tests)=0 ";
-
-
 // File: classNOX_1_1Direction_1_1Generic.xml
 %feature("docstring") NOX::Direction::Generic "
 
@@ -2346,6 +2603,75 @@ function that some directions require.
 
 If it is not redefined in the derived class, it will just call the
 compute with the NOX::Solver::Generic argument. ";
+
+
+// File: classNOX_1_1Multiphysics_1_1Solver_1_1Generic.xml
+%feature("docstring") NOX::Multiphysics::Solver::Generic "
+
+Abstract nonlinear solver method interface.
+
+Defines the type of access methods into the iterative nonlinear
+solvers.
+
+Instantiate or reset() the solver.
+
+Find the solution via solve() or perform a single iterations via
+iterate().
+
+Get information about the current solver state via getSolutionGroup(),
+getPreviousSolutionGroup(), getNumIterations(), and getParameterList()
+particularily useful for NOX::StatusTest methods.
+
+Get the current status of the solver via getStatus().
+
+C++ includes: NOX_Multiphysics_Solver_Generic.H ";
+
+%feature("docstring")  NOX::Multiphysics::Solver::Generic::Generic "NOX::Multiphysics::Solver::Generic::Generic()
+
+Constructor (does nothing) ";
+
+%feature("docstring")  NOX::Multiphysics::Solver::Generic::~Generic "virtual NOX::Multiphysics::Solver::Generic::~Generic()
+
+Destructor (does nothing) ";
+
+%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual bool NOX::Multiphysics::Solver::Generic::reset(const
+Teuchos::RCP< std::vector< Teuchos::RCP< NOX::Solver::Generic > > >
+&solvers, const Teuchos::RCP<
+NOX::Multiphysics::DataExchange::Interface > &interface, const
+Teuchos::RCP< NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
+Teuchos::ParameterList > &params)=0
+
+Reset the nonlinear solver for a new solve.
+
+Parameters:
+-----------
+
+tests:  Status tests to check for convergence or failure. These tests
+will be modified by the solver.
+
+params:  List of parameters. These parameters will be modified by the
+solver.
+
+All the objects passed to reset() will be modified.
+
+The group object will be cloned via NOX::Abstract::Group::clone(), and
+the vectors within will also be individually cloned via
+NOX::Abstract::Vector::clone().
+
+WARNING:  If the contents of grp, tests, or params are modified by the
+calling program after calling reset(), then the behavior of iterate()
+and solve() are completely undefined. To remedy this, call reset()
+again with the modified objects. ";
+
+%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual void NOX::Multiphysics::Solver::Generic::reset(const
+NOX::Abstract::Vector &initialGuess)=0
+
+reset methods inherited from NOX::Solver::Generic and needed here to
+avoid hiding this overloaded virtual method ";
+
+%feature("docstring")  NOX::Multiphysics::Solver::Generic::reset "virtual void NOX::Multiphysics::Solver::Generic::reset(const
+NOX::Abstract::Vector &initialGuess, const Teuchos::RCP<
+NOX::StatusTest::Generic > &tests)=0 ";
 
 
 // File: classNOX_1_1LineSearch_1_1Generic.xml
@@ -2425,7 +2751,7 @@ Find the solution via solve() or perform a single iterations via
 iterate().
 
 Get information about the current solver state via getSolutionGroup(),
-getPreviousSolutionGroup(), getNumIterations(), and getList() ---
+getPreviousSolutionGroup(), getNumIterations(), and getList()
 particularily useful for NOX::StatusTest methods.
 
 Get the current status of the solver via getStatus().
@@ -2547,8 +2873,8 @@ const =0
 Return the result of the most recent checkStatus call. ";
 
 %feature("docstring")  NOX::StatusTest::Generic::print "virtual
-ostream& NOX::StatusTest::Generic::print(ostream &stream, int
-indent=0) const =0
+std::ostream& NOX::StatusTest::Generic::print(std::ostream &stream,
+int indent=0) const =0
 
 Output formatted description of stopping test to output stream. ";
 
@@ -2637,15 +2963,15 @@ f(x)^T d + d^T \\\\nabla^2 f(x) d + d^T \\\\mathbf{B} d \\\\]
 where $ B $ is ideally the Hessian of the merit function, $\\\\nabla^2
 f(x)$, but can be approximated with the restriction that it is a
 symmetric and has uniform boundedness in the iterate sequence (see J.
-Nocedal and S. J. Wright, \"Numerical     Optimization\", Springer,
-1999. Chapters 4 and 6).
+Nocedal and S. J. Wright, \"Numerical Optimization\", Springer, 1999.
+Chapters 4 and 6).
 
 The result vector should be computed as: \\\\[ result =
 -\\\\frac{\\\\nabla f^T \\\\nabla f}{\\\\nabla f^T B \\\\nabla f}
 \\\\nabla f \\\\] ";
 
 %feature("docstring")  NOX::MeritFunction::Generic::name "virtual
-const string& NOX::MeritFunction::Generic::name() const =0
+const std::string& NOX::MeritFunction::Generic::name() const =0
 
 Returns the name of the merit function. ";
 
@@ -2858,7 +3184,7 @@ currect xVector.
 
 */
 
-%feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< vector<
+%feature("docstring")  NOX::Multiphysics::Group::Group "NOX::Multiphysics::Group::Group(const Teuchos::RCP< std::vector<
 Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const Teuchos::RCP<
 NOX::StatusTest::Generic > &t, const Teuchos::RCP<
 Teuchos::ParameterList > &p)
@@ -3069,22 +3395,15 @@ Applies the inverse of the Jacobian matrix to the given input vector
 and puts the answer in result.
 
 Computes \\\\[ v = J^{-1} u, \\\\] where $J$ is the Jacobian, $u$ is
-the input vector, and $v$ is the result vector.
-
-The \"Tolerance\" parameter specifies that the solution should be such
-that \\\\[ \\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1,
-\\\\|u\\\\|_2\\\\} } < \\\\mbox{Tolerance} \\\\]
-
+the input vector, and $v$ is the result vector. The \"Tolerance\"
+parameter specifies that the  solution should be such that \\\\[
+\\\\frac{\\\\| J v - u \\\\|_2}{\\\\max \\\\{ 1, \\\\|u\\\\|_2\\\\} }
+< \\\\mbox{Tolerance} \\\\]\\\\return <ul> <li>
 NOX::Abstract::Group::NotDefined - Returned by default implementation
-in NOX::Abstract::Group
-
-NOX::Abstract::Group::BadDependency - If $J$ has not been computed
-
-NOX::Abstract::Group::NotConverged - If the linear solve fails to
-satisfy the \"Tolerance\" specified in params
-
+in NOX::Abstract::Group NOX::Abstract::Group::BadDependency - If $J$
+has not been computed NOX::Abstract::Group::NotConverged - If the
+linear solve fails to satisfy the \"Tolerance\" specified in params
 NOX::Abstract::Group::Failed - If the computation fails
-
 NOX::Abstract::Group::Ok - Otherwise
 
 The parameter \"Tolerance\" may be added/modified in the list of
@@ -4057,7 +4376,7 @@ Set $x_{\\\\rm new} = x + d$ and calculate $f_{\\\\rm new}$
 
 If $f_{\\\\rm new} \\\\geq f$, then $\\\\rho = -1$ Otherwise $ \\\\rho
 = \\\\displaystyle \\\\frac {f - f_{\\\\rm new}} {| d^T J F +
-\\\\frac{1}{2} (J d)^T (J d)|} $
+\\\\frac{1}{2} (J d)^T (J d)|} $</ul>
 
 Update the solution: $x = x_{\\\\rm new}$
 
@@ -4065,15 +4384,10 @@ Update trust region:
 
 If $\\\\rho < \\\\rho_{\\\\rm s}$ and $\\\\|n\\\\|_2 < \\\\Delta$,
 then shrink the trust region to the size of the Newton step:
-$\\\\Delta = \\\\|n\\\\|_2$.
-
-Otherwise if $\\\\rho < \\\\rho_{\\\\rm s}$, then shrink the trust
-region: $\\\\Delta = \\\\max \\\\{ \\\\beta_{\\\\rm s} \\\\Delta,
-\\\\Delta_{\\\\min} \\\\} $.
-
-Otherwise if $\\\\rho > \\\\rho_{\\\\rm e}$ and $\\\\|d\\\\|_2 =
-\\\\Delta$, then expand the trust region: $\\\\Delta = \\\\min \\\\{
-\\\\beta_{\\\\rm e} \\\\Delta, \\\\Delta_{\\\\rm max} \\\\} $.
+$\\\\Delta = \\\\|n\\\\|_2$.<li> Otherwise if \\\\form#238, then
+shrink the      trust region: \\\\form#239@_fakenl.  <li> Otherwise if
+\\\\form#240 and \\\\form#241@_fakenl, then expand the trust region:
+\\\\form#242@_fakenl.  </ul>
 
 Input Paramters
 
@@ -4816,8 +5130,8 @@ the options supported by the ML factory can be specified using a
 Teuchos::ParameterList containing the ML options and then setting this
 as a parameter named \"ML\" in the \"Linear Solver\" sublist.
 
-\"Preconditioner Reuse Policy\" - (string) Allows the user to set how
-and when the preconditioner should be computed. This flag supports
+\"Preconditioner Reuse Policy\" - (std::string) Allows the user to set
+how and when the preconditioner should be computed. This flag supports
 native Aztec, Ifpack and ML preconditioners. There are three options:
 \"Rebuild\" - The \"Rebuild\" option always completely destroys and
 then rebuilds the preconditioner each time a linear solve is
@@ -4883,13 +5197,13 @@ to the parameter list after each linear solve. default is true.
 
 \"Write Linear System\" - (boolean) If set to true, the linear system
 (Epetra_Map, Jacobian, LHS and RHS) is printed to a set of files in
-matrix market format. This option requires building nox with the flag
---enable-nox-debug and building the EpetraExt library.
+matrix market format. This option requires building nox with the
+flagenable-nox-debug and building the EpetraExt library.
 
-\"Write Linear System File Prefix\" - (string) If writing of the
+\"Write Linear System File Prefix\" - (std::string) If writing of the
 linear system is enabled (see above parameter) users can change the
 name of the output file prefix. The default is \"NOX_LinSys\". This
-option requires building nox with the flag --enable-nox-debug and
+option requires building nox with the flagenable-nox-debug and
 building the EpetraExt library.
 
 \"Output\" sublist
@@ -5357,7 +5671,7 @@ C++ includes: NOX_Multiphysics_Solver_Manager.H ";
 Empty constructor - reset called later to really construct it. ";
 
 %feature("docstring")  NOX::Multiphysics::Solver::Manager::Manager "NOX::Multiphysics::Solver::Manager::Manager(const Teuchos::RCP<
-vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
+std::vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
 Teuchos::RCP< NOX::Multiphysics::DataExchange::Interface > &i, const
 Teuchos::RCP< NOX::StatusTest::Generic > &t, const Teuchos::RCP<
 Teuchos::ParameterList > &p)
@@ -5380,7 +5694,7 @@ See reset() for a full description. ";
 Destructor. ";
 
 %feature("docstring")  NOX::Multiphysics::Solver::Manager::reset "bool NOX::Multiphysics::Solver::Manager::reset(const Teuchos::RCP<
-vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
+std::vector< Teuchos::RCP< NOX::Solver::Generic > > > &solvers, const
 Teuchos::RCP< NOX::Multiphysics::DataExchange::Interface > &i, const
 Teuchos::RCP< NOX::StatusTest::Generic > &tests, const Teuchos::RCP<
 Teuchos::ParameterList > &params) ";
@@ -5556,7 +5870,7 @@ Returns the infinity norm of the global matrix. ";
 %feature("docstring")  NOX::Epetra::MatrixFree::Label "const char *
 MatrixFree::Label() const
 
-Returns a character string describing the operator. ";
+Returns a character std::string describing the operator. ";
 
 %feature("docstring")  NOX::Epetra::MatrixFree::UseTranspose "bool
 MatrixFree::UseTranspose() const
@@ -5681,8 +5995,9 @@ const
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::MaxIters::print "ostream &
-NOX::StatusTest::MaxIters::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::MaxIters::print "std::ostream
+& NOX::StatusTest::MaxIters::print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -5758,15 +6073,20 @@ no step can be found which satisfies both conditions, then the
 algorithm usually stops when rounding errors prevent further progress.
 In this case stp only satisfies the sufficient decrease condition.
 
-Modifications from NOX::LineSearch::MoreThuente  1. Added the option
-to use Ared/Pred conditions as describe in Homer Walker's papers. 2.
+Modifications from NOX::LineSearch::MoreThuente Added the option to
+use Ared/Pred conditions as describe in Homer Walker's papers.
+
 Added support to use an adjustable forcing term as describe in Homer
-Walker's papers. 3. Added the option to use directional derivatives in
-computing the slope instead of explicitly computing the Jacobian. This
-eliminates the need to recompute the Jacobian at each inner iteration
-of the More'-Thuente algorithm. 4. Added the ability to use the
-NOX::Parameter::UserNorm and NOX::Parameter::MeritFunction objects to
-supply user defined norms and merit functions to the line search.
+Walker's papers.
+
+Added the option to use directional derivatives in computing the slope
+instead of explicitly computing the Jacobian. This eliminates the need
+to recompute the Jacobian at each inner iteration of the More'-Thuente
+algorithm.
+
+Added the ability to use the NOX::Parameter::UserNorm and
+NOX::Parameter::MeritFunction objects to supply user defined norms and
+merit functions to the line search.
 
 Implementation  This line search can be called via
 NOX::LineSearch::Manager.
@@ -5780,12 +6100,14 @@ The following parameters can be specified for this line search in the
 
 \"Sufficient Decrease Condition\" - Choice to use for the sufficient
 decrease condition. Options are \"Ared/Pred\" or \"Armijo-Goldstein\"
-(defaults to \"Armijo-Goldstein\").  1. \"Armijo-Goldstein\"
-conditions: $ f(x_{n-1}+ \\\\lambda s) \\\\le f(x_{n-1}) +\\\\alpha
-\\\\lambda f'(x_{n-1}) $  2. \"Ared/Pred\" conditions: $ \\\\|
-F(x_{n-1}+ \\\\lambda s) \\\\| \\\\le \\\\| F(x_{n-1}) \\\\|
-(1-\\\\alpha(1-\\\\eta)) $ where $ \\\\eta $ is the linear solve
-tolerance in the inexact Newton method.
+(defaults to \"Armijo-Goldstein\").
+
+\"Armijo-Goldstein\" conditions: $ f(x_{n-1}+ \\\\lambda s) \\\\le
+f(x_{n-1}) +\\\\alpha \\\\lambda f'(x_{n-1}) $
+
+\"Ared/Pred\" conditions: $ \\\\| F(x_{n-1}+ \\\\lambda s) \\\\|
+\\\\le \\\\| F(x_{n-1}) \\\\| (1-\\\\alpha(1-\\\\eta)) $ where $
+\\\\eta $ is the linear solve tolerance in the inexact Newton method.
 
 \"Sufficient Decrease\" - The ftol in the sufficient decrease
 condition (defaults to 1.0e-4)
@@ -5929,14 +6251,14 @@ useSeed=false, int seed=1)
 Initialize each element of this multi-vector with a random value. ";
 
 %feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)
+NOX::Abstract::MultiVector &source, const std::vector< int > &index)
 
 Copy the vectors in source to a set of vectors in *this. The
 index.size() vectors in source are copied to a subset of vectors in
 *this indicated by the indices given in index. ";
 
 %feature("docstring")  NOX::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::MultiVector::setBlock(const
-NOX::MultiVector &source, const vector< int > &index) ";
+NOX::MultiVector &source, const std::vector< int > &index) ";
 
 %feature("docstring")  NOX::MultiVector::augment "NOX::Abstract::MultiVector & NOX::MultiVector::augment(const
 NOX::Abstract::MultiVector &source)
@@ -6004,21 +6326,21 @@ const
 Creates a new multi-vector with numvecs columns. ";
 
 %feature("docstring")  NOX::MultiVector::subCopy "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const vector<
-int > &index) const
+NOX::Abstract::MultiVector > NOX::MultiVector::subCopy(const
+std::vector< int > &index) const
 
 Creates a new multi-vector with index.size() columns whose columns are
 copies of the columns of *this given by index. ";
 
 %feature("docstring")  NOX::MultiVector::subView "Teuchos::RCP<
-NOX::Abstract::MultiVector > NOX::MultiVector::subView(const vector<
-int > &index) const
+NOX::Abstract::MultiVector > NOX::MultiVector::subView(const
+std::vector< int > &index) const
 
 Creates a new multi-vector with index.size() columns that shares the
 columns of *this given by index. ";
 
 %feature("docstring")  NOX::MultiVector::norm "void
-NOX::MultiVector::norm(vector< double > &result,
+NOX::MultiVector::norm(std::vector< double > &result,
 NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
 const
 
@@ -6071,6 +6393,144 @@ NOX::MultiVector::print(std::ostream &stream) const
 Print the vector. This is meant for debugging purposes only. ";
 
 
+// File: classNOX_1_1Abstract_1_1MultiVector.xml
+%feature("docstring") NOX::Abstract::MultiVector "
+
+Abstract interface for multi-vectors used by NOX.
+
+C++ includes: NOX_Abstract_MultiVector.H ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::init "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::init(double
+gamma)=0
+
+Initialize every element of this multi-vector with gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::random "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::random(bool
+useSeed=false, int seed=1)=0
+
+Initialize each element of this multi-vector with a random value. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::setBlock "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::setBlock(const
+NOX::Abstract::MultiVector &source, const std::vector< int > &index)=0
+
+Copy the vectors in source to a set of vectors in *this. The
+index.size() vectors in source are copied to a subset of vectors in
+*this indicated by the indices given in index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::augment "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::augment(const
+NOX::Abstract::MultiVector &source)=0
+
+Append the vectors in source to *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::scale "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::scale(double
+gamma)=0
+
+Scale each element of this multivector by gamma. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
+= *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
+alpha, const NOX::Abstract::MultiVector &a, double beta, const
+NOX::Abstract::MultiVector &b, double gamma=0.0)=0
+
+Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
+multi-vectors and x = *this. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
+NOX::Abstract::MultiVector&
+NOX::Abstract::MultiVector::update(Teuchos::ETransp transb, double
+alpha, const NOX::Abstract::MultiVector &a, const DenseMatrix &b,
+double gamma=0.0)=0
+
+Compute x = (alpha * a * op(b)) + (gamma * x) where a is a
+multivector, b is a dense matrix, x = *this, and op(b) = b if transb =
+Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
+";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(NOX::CopyType type=NOX::DeepCopy)
+const =0
+
+Create a new Vector of the same underlying type by cloning \"this\",
+and return a pointer to the new vector.
+
+If type is NOX::DeepCopy, then we need to create an exact replica of
+\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
+the shape of \"this\". Note that there is no assumption that a vector
+created by ShapeCopy is initialized to zeros.
+
+Pointer to newly created vector or NULL if clone is not supported. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::clone(int numvecs) const =0
+
+Creates a new multi-vector with numvecs columns. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subCopy "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subCopy(const std::vector< int > &index)
+const =0
+
+Creates a new multi-vector with index.size() columns whose columns are
+copies of the columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::subView "virtual
+Teuchos::RCP<NOX::Abstract::MultiVector>
+NOX::Abstract::MultiVector::subView(const std::vector< int > &index)
+const =0
+
+Creates a new multi-vector with ndex.size() columns that shares the
+columns of *this given by index. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::norm "virtual void
+NOX::Abstract::MultiVector::norm(std::vector< double > &result,
+NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
+const =0
+
+Norm. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::multiply "virtual
+void NOX::Abstract::MultiVector::multiply(double alpha, const
+NOX::Abstract::MultiVector &y, DenseMatrix &b) const =0
+
+Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::MultiVector "NOX::Abstract::MultiVector::MultiVector()
+
+Default constructor. Does nothing. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::~MultiVector "virtual NOX::Abstract::MultiVector::~MultiVector()
+
+Destructor. Does nothing. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::length "virtual
+int NOX::Abstract::MultiVector::length() const =0
+
+Return the length of multi-vector. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::numVectors "virtual int NOX::Abstract::MultiVector::numVectors() const =0
+
+Return the number of vectors in the multi-vector. ";
+
+%feature("docstring")  NOX::Abstract::MultiVector::print "virtual
+void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
+
+Print the vector. This is meant for debugging purposes only. ";
+
+
 // File: classNOX_1_1Epetra_1_1MultiVector.xml
 %feature("docstring") NOX::Epetra::MultiVector "
 
@@ -6101,14 +6561,14 @@ useSeed=false, int seed=1)
 Initialize each element of this multi-vector with a random value. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)
+NOX::Abstract::MultiVector &source, const std::vector< int > &index)
 
 Copy the vectors in source to a set of vectors in *this. The
 index.size() vectors in source are copied to a subset of vectors in
 *this indicated by the indices given in index. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::setBlock "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::setBlock(const
-NOX::Epetra::MultiVector &source, const vector< int > &index) ";
+NOX::Epetra::MultiVector &source, const std::vector< int > &index) ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::augment "NOX::Abstract::MultiVector & NOX::Epetra::MultiVector::augment(const
 NOX::Abstract::MultiVector &source)
@@ -6179,19 +6639,21 @@ numvecs) const
 Creates a new multi-vector with numvecs columns. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::subCopy "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Epetra::MultiVector::subCopy(const vector< int > &index) const
+NOX::Epetra::MultiVector::subCopy(const std::vector< int > &index)
+const
 
 Creates a new multi-vector with index.size() columns whose columns are
 copies of the columns of *this given by index. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::subView "Teuchos::RCP< NOX::Abstract::MultiVector >
-NOX::Epetra::MultiVector::subView(const vector< int > &index) const
+NOX::Epetra::MultiVector::subView(const std::vector< int > &index)
+const
 
 Creates a new multi-vector with ndex.size() columns that shares the
 columns of *this given by index. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::norm "void
-NOX::Epetra::MultiVector::norm(vector< double > &result,
+NOX::Epetra::MultiVector::norm(std::vector< double > &result,
 NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
 const
 
@@ -6252,144 +6714,6 @@ Return the number of vectors in the multi-vector. ";
 
 %feature("docstring")  NOX::Epetra::MultiVector::print "void
 NOX::Epetra::MultiVector::print(std::ostream &stream) const
-
-Print the vector. This is meant for debugging purposes only. ";
-
-
-// File: classNOX_1_1Abstract_1_1MultiVector.xml
-%feature("docstring") NOX::Abstract::MultiVector "
-
-Abstract interface for multi-vectors used by NOX.
-
-C++ includes: NOX_Abstract_MultiVector.H ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::init "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::init(double
-gamma)=0
-
-Initialize every element of this multi-vector with gamma. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::random "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::random(bool
-useSeed=false, int seed=1)=0
-
-Initialize each element of this multi-vector with a random value. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::setBlock "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::setBlock(const
-NOX::Abstract::MultiVector &source, const vector< int > &index)=0
-
-Copy the vectors in source to a set of vectors in *this. The
-index.size() vectors in source are copied to a subset of vectors in
-*this indicated by the indices given in index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::augment "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::augment(const
-NOX::Abstract::MultiVector &source)=0
-
-Append the vectors in source to *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::scale "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::scale(double
-gamma)=0
-
-Scale each element of this multivector by gamma. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (gamma * x) where a is a multi-vector and x
-= *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector& NOX::Abstract::MultiVector::update(double
-alpha, const NOX::Abstract::MultiVector &a, double beta, const
-NOX::Abstract::MultiVector &b, double gamma=0.0)=0
-
-Compute x = (alpha * a) + (beta * b) + (gamma * x) where a and b are
-multi-vectors and x = *this. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::update "virtual
-NOX::Abstract::MultiVector&
-NOX::Abstract::MultiVector::update(Teuchos::ETransp transb, double
-alpha, const NOX::Abstract::MultiVector &a, const DenseMatrix &b,
-double gamma=0.0)=0
-
-Compute x = (alpha * a * op(b)) + (gamma * x) where a is a
-multivector, b is a dense matrix, x = *this, and op(b) = b if transb =
-Teuchos::NO_TRANS and op(b) is b transpose if transb = Teuchos::TRANS.
-";
-
-%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::clone(NOX::CopyType type=NOX::DeepCopy)
-const =0
-
-Create a new Vector of the same underlying type by cloning \"this\",
-and return a pointer to the new vector.
-
-If type is NOX::DeepCopy, then we need to create an exact replica of
-\"this\". Otherwise, if type is NOX::ShapeCopy, we need only replicate
-the shape of \"this\". Note that there is no assumption that a vector
-created by ShapeCopy is initialized to zeros.
-
-Pointer to newly created vector or NULL if clone is not supported. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::clone "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::clone(int numvecs) const =0
-
-Creates a new multi-vector with numvecs columns. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::subCopy "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::subCopy(const vector< int > &index) const
-=0
-
-Creates a new multi-vector with index.size() columns whose columns are
-copies of the columns of *this given by index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::subView "virtual
-Teuchos::RCP<NOX::Abstract::MultiVector>
-NOX::Abstract::MultiVector::subView(const vector< int > &index) const
-=0
-
-Creates a new multi-vector with ndex.size() columns that shares the
-columns of *this given by index. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::norm "virtual void
-NOX::Abstract::MultiVector::norm(vector< double > &result,
-NOX::Abstract::Vector::NormType type=NOX::Abstract::Vector::TwoNorm)
-const =0
-
-Norm. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::multiply "virtual
-void NOX::Abstract::MultiVector::multiply(double alpha, const
-NOX::Abstract::MultiVector &y, DenseMatrix &b) const =0
-
-Computes the matrix-matrix product $\\\\alpha * y^T * (*this)$. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::MultiVector "NOX::Abstract::MultiVector::MultiVector()
-
-Default constructor. Does nothing. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::~MultiVector "virtual NOX::Abstract::MultiVector::~MultiVector()
-
-Destructor. Does nothing. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::length "virtual
-int NOX::Abstract::MultiVector::length() const =0
-
-Return the length of multi-vector. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::numVectors "virtual int NOX::Abstract::MultiVector::numVectors() const =0
-
-Return the number of vectors in the multi-vector. ";
-
-%feature("docstring")  NOX::Abstract::MultiVector::print "virtual
-void NOX::Abstract::MultiVector::print(std::ostream &stream) const =0
 
 Print the vector. This is meant for debugging purposes only. ";
 
@@ -6920,8 +7244,9 @@ be set to NOX::StatusTest::Unevaluated. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::NormF::print "ostream &
-NOX::StatusTest::NormF::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::NormF::print "std::ostream &
+NOX::StatusTest::NormF::print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -7022,8 +7347,8 @@ be set to NOX::StatusTest::Unevaluated. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::NormUpdate::print "ostream &
-NormUpdate::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::NormUpdate::print "std::ostream & NormUpdate::print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -7183,8 +7508,8 @@ be set to NOX::StatusTest::Unevaluated. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::NormWRMS::print "ostream &
-NormWRMS::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::NormWRMS::print "std::ostream
+& NormWRMS::print(std::ostream &stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -7240,8 +7565,9 @@ be set to NOX::StatusTest::Unevaluated. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::NStep::print "ostream &
-NOX::StatusTest::NStep::print(ostream &stream, int indent=0) const
+%feature("docstring")  NOX::StatusTest::NStep::print "std::ostream &
+NOX::StatusTest::NStep::print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -7481,14 +7807,14 @@ Section 8.3.1 in C.T. Kelley, \"Iterative Methods for %Linear and
 Nonlinear Equations\", SIAM, 1995.
 
 Section 6.3.2 and Algorithm 6.3.1 of J. E. Dennis Jr. and Robert B.
-Schnabel, \"Numerical Methods for Unconstrained Optimization     and
+Schnabel, \"Numerical Methods for Unconstrained Optimization   and
 Nonlinear Equations,\" Prentice Hall, 1983.
 
 Section 3.4 of Jorge Nocedal and Stephen J. Wright, \"Numerical
 Optimization,\"Springer, 1999.
 
 \"An Inexact Newton Method for Fully Coupled Solution of the Navier-
-Stokes      Equations with Heat and Mass Transfer\", Shadid, J. N.,
+Stokes    Equations with Heat and Mass Transfer\", Shadid, J. N.,
 Tuminaro, R. S., and Walker, H. F., Journal of Computational Physics,
 137, 155-185 (1997)
 
@@ -7615,7 +7941,7 @@ Abstract Vector constructor (does nothing) ";
 
 %feature("docstring")  NOX::Abstract::PrePostOperator::PrePostOperator
 "NOX::Abstract::PrePostOperator::PrePostOperator(const
-NOX::Abstract::PrePostOperator &source)
+NOX::Abstract::PrePostOperator &)
 
 Copy constructor (doesnothing) ";
 
@@ -7790,14 +8116,14 @@ NOX::LineSearch::Utils::Printing::reset(const Teuchos::RCP< NOX::Utils
 
 %feature("docstring")
 NOX::LineSearch::Utils::Printing::printOpeningRemarks "void
-NOX::LineSearch::Utils::Printing::printOpeningRemarks(const string
-&lineSearchName) const
+NOX::LineSearch::Utils::Printing::printOpeningRemarks(const
+std::string &lineSearchName) const
 
 Prints the opening information. ";
 
 %feature("docstring")  NOX::LineSearch::Utils::Printing::printStep "void NOX::LineSearch::Utils::Printing::printStep(int n, double step,
-double oldf, double newf, const string s=\"\", bool unscaleF=true)
-const
+double oldf, double newf, const std::string s=\"\", bool
+unscaleF=true) const
 
 Print out step information for the inner iterations of a line search
 algorithm.
@@ -7810,15 +8136,10 @@ search:
 newf = 1.076e+03   2: step = 1.000e-01 oldf = 2.403e+00 newf =
 4.440e+00   3: step = 1.000e-02 oldf = 2.403e+00 newf = 2.394e+00
 (STEP ACCEPTED!)
-************************************************************************
-
-Parameters:
------------
-
-unscaleF:  - If this is true (the default), than the values printed
-are $ \\\\sqrt{2 * {\\\\rm oldf}} $ and $ \\\\sqrt{2 * {\\\\rm newf}}
-$. This is to accomodate the standard merit function, $ \\\\phi(x) =
-\\\\frac{1}{2} \\\\|F(x)\\\\|^2 $. ";
+************************************************************************\\\\param
+unscaleF - If this is true (the default), than the values printed are
+\\\\form#170 and \\\\form#171@_fakenl. This is to accomodate the
+standard merit function, \\\\form#172@_fakenl. ";
 
 
 // File: classNOX_1_1Random.xml
@@ -7881,9 +8202,8 @@ NOX::StatusTest::RelativeNormF::getStatus() const
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::RelativeNormF::print "ostream
-& NOX::StatusTest::RelativeNormF::print(ostream &stream, int indent=0)
-const
+%feature("docstring")  NOX::StatusTest::RelativeNormF::print "std::ostream & NOX::StatusTest::RelativeNormF::print(std::ostream
+&stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -7930,6 +8250,72 @@ Epetra_Vector &x, Epetra_Vector &F, const FillType fillFlag)=0
 
 Compute the function, F, given the specified input vector x. Returns
 true if computation was successful. ";
+
+
+// File: classNOX_1_1LineSearch_1_1SafeguardedStep.xml
+%feature("docstring") NOX::LineSearch::SafeguardedStep "
+
+A line search that determines the step size by capping the magnitue of
+specific entries of the direction vector. The limits are specified by
+a user defined vector.
+
+C++ includes: NOX_LineSearch_SafeguardedStep.H ";
+
+%feature("docstring")
+NOX::LineSearch::SafeguardedStep::SafeguardedStep "NOX::LineSearch::SafeguardedStep::SafeguardedStep(const Teuchos::RCP<
+NOX::GlobalData > &gd, Teuchos::ParameterList &params)
+
+Constructor. ";
+
+%feature("docstring")  NOX::LineSearch::SafeguardedStep::reset "bool
+NOX::LineSearch::SafeguardedStep::reset(const Teuchos::RCP<
+NOX::GlobalData > &gd, Teuchos::ParameterList &params) ";
+
+%feature("docstring")  NOX::LineSearch::SafeguardedStep::compute "bool NOX::LineSearch::SafeguardedStep::compute(NOX::Abstract::Group
+&newgrp, double &step, const NOX::Abstract::Vector &dir, const
+NOX::Solver::Generic &s)
+
+Perform a line search.
+
+On input:
+
+Parameters:
+-----------
+
+grp:  The initial solution vector, $x_{\\\\rm old}$.
+
+dir:  A vector of directions to be used in the line search, $d$.
+
+s:  The nonlinear solver.
+
+On output:
+
+Parameters:
+-----------
+
+step:  The distance the direction was scaled, $ \\\\lambda $.
+
+grp:  The grp is updated with a new solution, $ x_{\\\\rm new} $,
+resulting from the linesearch. Normally, for a single direction line
+search, this is computed as:
+
+\\\\[ x_{\\\\rm new} = x_{\\\\rm old} + \\\\lambda d. \\\\]
+
+Ideally, $ \\\\|F(x_{\\\\rm new})\\\\| < \\\\|F(x_{\\\\rm old})\\\\| $
+(e.g the final direction is a descent direction).
+
+Note that the dir object is a std::vector. For typical line searches
+as described in the above equation, this vector is of size one. We
+have used a std::vector to allow for special cases of multi-
+directional line searches such as the Bader/Schnabel curvillinear line
+search.
+
+Return value is true for a successful line search computation. ";
+
+%feature("docstring")
+NOX::LineSearch::SafeguardedStep::getValidParameters "Teuchos::RCP<
+const Teuchos::ParameterList >
+NOX::LineSearch::SafeguardedStep::getValidParameters() ";
 
 
 // File: classNOX_1_1Epetra_1_1Scaling.xml
@@ -8000,7 +8386,7 @@ Epetra_Vector &result)
 Applies any LEFT scaling vectors to an input vector. ";
 
 %feature("docstring")  NOX::Epetra::Scaling::print "void
-NOX::Epetra::Scaling::print(ostream &os)
+NOX::Epetra::Scaling::print(std::ostream &os)
 
 Printing. ";
 
@@ -8187,9 +8573,8 @@ const
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  NOX::StatusTest::Stagnation::print "ostream &
-NOX::StatusTest::Stagnation::print(ostream &stream, int indent=0)
-const
+%feature("docstring")  NOX::StatusTest::Stagnation::print "std::ostream & NOX::StatusTest::Stagnation::print(std::ostream
+&stream, int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -8370,7 +8755,7 @@ Computes the vector result: \\\\[ result = \\\\frac{\\\\nabla f^T
 F)^T (J^T F)}{(J J^T F)^T (J J^T F)} J^T F \\\\] ";
 
 %feature("docstring")  NOX::MeritFunction::SumOfSquares::name "const
-string & NOX::MeritFunction::SumOfSquares::name() const
+std::string & NOX::MeritFunction::SumOfSquares::name() const
 
 Returns the name of the merit function. ";
 
@@ -8428,16 +8813,11 @@ NOX::Abstract::Group::applyJacobianInverse(). \"Linear Solver\" is
 itself a sublist of the list specified in \"Method\" above (i.e.,
 \"Tensor\" or \"Newton\"). Below is a partial list of standard
 parameters usually available in common linear solvers. Check with the
-specific linear solver being used for other parameters.
-
+specific linear solver being used for other parameters. <ul>   <li>
 \"Max Iterations\" - Maximum number of Arnoldi iterations (also max
-Krylov space dimension)
-
-\"Tolerance\" - Relative tolerance for solving local model [default =
-1e-4]
-
-\"Output Frequency\" - Print output at every number of iterations
-[default = 20]
+Krylov space dimension)   <li> \"Tolerance\" - Relative tolerance for
+solving local  model [default = 1e-4]   <li> \"Output Frequency\" -
+Print output at every number of  iterations [default = 20]   </ul>
 
 \"Line Search\" - Sublist of the line search parameters. Because the
 tensor step is not guaranteed to be a descent direction on the
@@ -8449,21 +8829,17 @@ methods with its own set of global strategies. The following
 parameters specify the specific options for this line search:
 
 \"Method\" - Name of the line search available to tensor methods Valid
-choices are:
-
-\"Curvilinear\" - Backtrack along the \"curvilinear\" path that spans
-the tensor direction and the Newton direction and that maintains
-monotonicity on the tensor model. Recommended because it tends to be
-more robust and efficient than the other choices. [Default]
-
-\"Standard\" - Backtrack along tensor direction unless it is not a
-descent direction, in which case backtrack along Newton direction.
-
-\"Dual\" - Backtrack along both the Newton and tensor directions and
-choose the better of the two.
-
-\"Full Step\" - Only use the full step and do not backtrack along both
-the Newton and tensor directions and choose the better of the two.
+choices are: <ul>    <li> \"Curvilinear\" - Backtrack along the
+\"curvilinear\" path that spans the tensor direction and the Newton
+direction and that maintains monotonicity on the tensor  model.
+Recommended because it tends to be more robust and  efficient than the
+other choices. [Default]   <li> \"Standard\" - Backtrack along tensor
+direction unless  it is not a descent direction, in which case
+backtrack  along Newton direction.   <li> \"Dual\" - Backtrack along
+both the Newton and tensor  directions and choose the better of the
+two.   <li> \"Full Step\" - Only use the full step and do not
+backtrack along both the Newton and tensor directions and  choose the
+better of the two. </ul>
 
 \"Lambda selection\" - Flag for how to calculate the next linesearch
 parameter lambda. Valid choices are \"Quadratic\" and \"Halving\"
@@ -8673,7 +9049,7 @@ Set $x_{\\\\rm new} = x + d$ and calculate $f_{\\\\rm new}$
 
 If $f_{\\\\rm new} \\\\geq f$, then $\\\\rho = -1$ Otherwise $ \\\\rho
 = \\\\displaystyle \\\\frac {f - f_{\\\\rm new}} {| d^T J F +
-\\\\frac{1}{2} (J d)^T (J d)|} $
+\\\\frac{1}{2} (J d)^T (J d)|} $</ul>
 
 Update the solution: $x = x_{\\\\rm new}$
 
@@ -8681,15 +9057,10 @@ Update trust region:
 
 If $\\\\rho < \\\\rho_{\\\\rm s}$ and $\\\\|n\\\\|_2 < \\\\Delta$,
 then shrink the trust region to the size of the Newton step:
-$\\\\Delta = \\\\|n\\\\|_2$.
-
-Otherwise if $\\\\rho < \\\\rho_{\\\\rm s}$, then shrink the trust
-region: $\\\\Delta = \\\\max \\\\{ \\\\beta_{\\\\rm s} \\\\Delta,
-\\\\Delta_{\\\\min} \\\\} $.
-
-Otherwise if $\\\\rho > \\\\rho_{\\\\rm e}$ and $\\\\|d\\\\|_2 =
-\\\\Delta$, then expand the trust region: $\\\\Delta = \\\\min \\\\{
-\\\\beta_{\\\\rm e} \\\\Delta, \\\\Delta_{\\\\rm max} \\\\} $.
+$\\\\Delta = \\\\|n\\\\|_2$.<li> Otherwise if \\\\form#238, then
+shrink the      trust region: \\\\form#239@_fakenl.  <li> Otherwise if
+\\\\form#240 and \\\\form#241@_fakenl, then expand the trust region:
+\\\\form#242@_fakenl.  </ul>
 
 Input Paramters
 
@@ -9088,11 +9459,12 @@ outputPrecision=3, const Teuchos::RCP< std::ostream >
 
 Constructor.
 
-The final two arguments are a reference counted pointers to ostreams.
-This defaults to std::cout and std::cerr if not supplied. Users should
-only supply this argument if they want output directed to a
-std::ostream other than the defaults. If so, they must wrap the
-ostream in a reference counted pointer for safe memory management. ";
+The final two arguments are a reference counted pointers to
+std::ostreams. This defaults to std::cout and std::cerr if not
+supplied. Users should only supply this argument if they want output
+directed to a std::ostream other than the defaults. If so, they must
+wrap the std::ostream in a reference counted pointer for safe memory
+management. ";
 
 %feature("docstring")  NOX::Utils::Utils "NOX::Utils::Utils(Teuchos::ParameterList &p)
 
@@ -9120,29 +9492,29 @@ Returns true if this is a valid print type. ";
 %feature("docstring")  NOX::Utils::out "std::ostream &
 NOX::Utils::out() const
 
-Returns the ostream for printing if this proces is the print process.
-Returns a Teuchos::oblackholestream otherwise. ";
+Returns the std::ostream for printing if this proces is the print
+process. Returns a Teuchos::oblackholestream otherwise. ";
 
 %feature("docstring")  NOX::Utils::out "std::ostream &
 NOX::Utils::out(NOX::Utils::MsgType type) const
 
-Returns the ostream for printing if this process is the print process
-and the print type is valid. Returns a Teuchos::oblackholestream
-otherwise. ";
+Returns the std::ostream for printing if this process is the print
+process and the print type is valid. Returns a
+Teuchos::oblackholestream otherwise. ";
 
 %feature("docstring")  NOX::Utils::pout "std::ostream &
 NOX::Utils::pout() const
 
-Returns the ostream for printing regardless of the print processor.
-Only use this call if you want all processes to print to the ostream.
-";
+Returns the std::ostream for printing regardless of the print
+processor. Only use this call if you want all processes to print to
+the std::ostream. ";
 
 %feature("docstring")  NOX::Utils::pout "std::ostream &
 NOX::Utils::pout(NOX::Utils::MsgType type) const
 
-Returns the ostream for printing if the print type matches. Only use
-this call if you want all processes to print to the ostream for the
-print type. ";
+Returns the std::ostream for printing if the print type matches. Only
+use this call if you want all processes to print to the std::ostream
+for the print type. ";
 
 %feature("docstring")  NOX::Utils::err "std::ostream &
 NOX::Utils::err() const
@@ -9156,7 +9528,7 @@ Returns the error stream for printing to all processors. Only use this
 call if you want all processes to print to the error stream. ";
 
 %feature("docstring")  NOX::Utils::print "void
-NOX::Utils::print(ostream &os) const
+NOX::Utils::print(std::ostream &os) const
 
 Print this object. ";
 
@@ -9747,9 +10119,11 @@ vectors associated with either left of right scaling. ";
 
 
 // File: namespaceNOX.xml
-%feature("docstring")  NOX::Abstract::version "string NOX::version()
+%feature("docstring")  NOX::Abstract::version "std::string
+NOX::version()
 
-Returns a string with the current version number of the NOX code. ";
+Returns a std::string with the current version number of the NOX code.
+";
 
 
 // File: namespaceNOX_1_1Abstract.xml
@@ -9811,9 +10185,6 @@ follow the link for this object for more information. ";
 // File: namespaceNOX_1_1StatusTest.xml
 
 
-// File: namespacestd.xml
-
-
 // File: namespaceTeuchos.xml
 
 
@@ -9839,6 +10210,9 @@ follow the link for this object for more information. ";
 
 
 // File: NOX__Abstract__Vector_8H.xml
+
+
+// File: NOX__Assert_8H.xml
 
 
 // File: NOX__Common_8H.xml
@@ -9914,6 +10288,15 @@ follow the link for this object for more information. ";
 
 
 // File: NOX__Epetra_8H.xml
+
+
+// File: NOX__Epetra__AdaptiveSolutionManager_8C.xml
+
+
+// File: NOX__Epetra__AdaptiveSolutionManager_8H.xml
+
+
+// File: NOX__Epetra__AdaptManager_8H.xml
 
 
 // File: NOX__Epetra__BroydenOperator_8C.xml
@@ -10069,6 +10452,12 @@ follow the link for this object for more information. ";
 // File: NOX__LineSearch__Polynomial_8H.xml
 
 
+// File: NOX__LineSearch__SafeguardedStep_8C.xml
+
+
+// File: NOX__LineSearch__SafeguardedStep_8H.xml
+
+
 // File: NOX__LineSearch__Tensor_8C.xml
 
 
@@ -10151,6 +10540,12 @@ follow the link for this object for more information. ";
 
 
 // File: NOX__SharedObjectTemplate_8H.xml
+
+
+// File: NOX__Solver__AndersonAcceleration_8C.xml
+
+
+// File: NOX__Solver__AndersonAcceleration_8H.xml
 
 
 // File: NOX__Solver__Factory_8C.xml
@@ -10345,13 +10740,13 @@ follow the link for this object for more information. ";
 // File: deprecated.xml
 
 
-// File: dir_b106184bd0dc0f033e01febdd5b0cca3.xml
+// File: dir_19cafeac97f6e61ba8631ab0160d73d1.xml
 
 
-// File: dir_a16aea2d80b93cbd11c299610ea92ab6.xml
+// File: dir_621826bbd5a70be6346334c680ab8063.xml
 
 
-// File: dir_b88ee91968898ee9cab38dd71e2f2d37.xml
+// File: dir_051b585908625e8517d750f2b1df1f82.xml
 
 
 // File: indexpage.xml

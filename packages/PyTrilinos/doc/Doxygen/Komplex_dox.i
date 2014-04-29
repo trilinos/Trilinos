@@ -137,11 +137,12 @@ any Trilinos preconditioner or solver. ";
 
 
 // File: Komplex__Version_8h.xml
-%feature("docstring")  Komplex_Version "string Komplex_Version() ";
+%feature("docstring")  Komplex_Version "std::string Komplex_Version()
+";
 
 
-// File: dir_5dde9cc40b3bbb9db93e3e148c874a70.xml
+// File: dir_82eb769f38bd5ca6b76c0c1664fd9383.xml
 
 
-// File: dir_6f7b992297991ea7bb945c55cf30835c.xml
+// File: dir_d188c800377fd8c722e23178f5c61e3c.xml
 

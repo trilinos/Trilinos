@@ -36,7 +36,7 @@ C++ includes: MLAPI_BaseObject.h ";
 
 Constructor with empty label. ";
 
-%feature("docstring")  MLAPI::BaseObject::BaseObject "MLAPI::BaseObject::BaseObject(const string &Label)
+%feature("docstring")  MLAPI::BaseObject::BaseObject "MLAPI::BaseObject::BaseObject(const std::string &Label)
 
 Constructor with given Label. ";
 
@@ -46,12 +46,12 @@ MLAPI::BaseObject::~BaseObject()
 Destructor. ";
 
 %feature("docstring")  MLAPI::BaseObject::SetLabel "void
-MLAPI::BaseObject::SetLabel(const string &Label)
+MLAPI::BaseObject::SetLabel(const std::string &Label)
 
 Sets the Label of this object to Label. ";
 
-%feature("docstring")  MLAPI::BaseObject::GetLabel "const string&
-MLAPI::BaseObject::GetLabel() const
+%feature("docstring")  MLAPI::BaseObject::GetLabel "const
+std::string& MLAPI::BaseObject::GetLabel() const
 
 Returns the Label of this object. ";
 
@@ -213,6 +213,17 @@ double MLAPI::DistributedMatrix::NormOne() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::NumGlobalDiagonals "virtual int MLAPI::DistributedMatrix::NumGlobalDiagonals() const ";
 
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalNonzeros64 "virtual long long MLAPI::DistributedMatrix::NumGlobalNonzeros64()
+const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalRows64 "virtual long long MLAPI::DistributedMatrix::NumGlobalRows64() const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalCols64 "virtual long long MLAPI::DistributedMatrix::NumGlobalCols64() const ";
+
+%feature("docstring")  MLAPI::DistributedMatrix::NumGlobalDiagonals64
+"virtual long long MLAPI::DistributedMatrix::NumGlobalDiagonals64()
+const ";
+
 %feature("docstring")  MLAPI::DistributedMatrix::NumMyNonzeros "virtual int MLAPI::DistributedMatrix::NumMyNonzeros() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::NumMyRows "virtual
@@ -251,7 +262,8 @@ Epetra_Map& MLAPI::DistributedMatrix::Map() const ";
 MLAPI::DistributedMatrix::Apply(const MultiVector &X, MultiVector &Y)
 const
 
-Applies this operator to LHS, returns the result in RHS. ";
+Applies the operator to X, using Y as starting solution. Returns the
+solution in Y. ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::Apply "virtual int
 MLAPI::DistributedMatrix::Apply(const Epetra_MultiVector &X,
@@ -275,16 +287,12 @@ Epetra_Comm& MLAPI::DistributedMatrix::Comm() const ";
 MLAPI::DistributedMatrix::Print(std::ostream &os, const bool
 verbose=true) const
 
-Prints basic information about this object. ";
+Prints information on stream. ";
 
-%feature("docstring")  MLAPI::DistributedMatrix::GetDomainSpace "Space MLAPI::DistributedMatrix::GetDomainSpace() const
-
-Returns a reference to the internally stored domain space. ";
+%feature("docstring")  MLAPI::DistributedMatrix::GetDomainSpace "Space MLAPI::DistributedMatrix::GetDomainSpace() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::GetRangeSpace "Space
-MLAPI::DistributedMatrix::GetRangeSpace() const
-
-Returns a reference to the internally stored range space. ";
+MLAPI::DistributedMatrix::GetRangeSpace() const ";
 
 %feature("docstring")  MLAPI::DistributedMatrix::ReplaceElement "void
 MLAPI::DistributedMatrix::ReplaceElement(const int GRID, const int
@@ -371,6 +379,20 @@ double MLAPI::Epetra_SerialMatrix::NormOne() const ";
 %feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals
 "virtual int MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals() const
 ";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalNonzeros64
+"virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalNonzeros64()
+const ";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalRows64 "virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalRows64() const
+";
+
+%feature("docstring")  MLAPI::Epetra_SerialMatrix::NumGlobalCols64 "virtual long long MLAPI::Epetra_SerialMatrix::NumGlobalCols64() const
+";
+
+%feature("docstring")
+MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals64 "virtual long long
+MLAPI::Epetra_SerialMatrix::NumGlobalDiagonals64() const ";
 
 %feature("docstring")  MLAPI::Epetra_SerialMatrix::NumMyNonzeros "virtual int MLAPI::Epetra_SerialMatrix::NumMyNonzeros() const ";
 
@@ -519,12 +541,12 @@ C++ includes: MLAPI_LoadBalanceInverseOperator.h ";
 Empty constructor. ";
 
 %feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator(const Operator &Op, const
-string Type)
+std::string Type)
 
 Constructor for a given Operator and type, and default parameters. ";
 
 %feature("docstring")  MLAPI::InverseOperator::InverseOperator "MLAPI::InverseOperator::InverseOperator(const Operator &Op, const
-string Type, Teuchos::ParameterList &List)
+std::string Type, Teuchos::ParameterList &List)
 
 Constructor for a given Operator, type and parameters. ";
 
@@ -542,13 +564,15 @@ MLAPI::InverseOperator::Reshape()
 Resets this object. ";
 
 %feature("docstring")  MLAPI::InverseOperator::Reshape "void
-MLAPI::InverseOperator::Reshape(const Operator &Op, const string Type)
+MLAPI::InverseOperator::Reshape(const Operator &Op, const std::string
+Type)
 
 Reshapes the object with default values. ";
 
 %feature("docstring")  MLAPI::InverseOperator::Reshape "void
-MLAPI::InverseOperator::Reshape(const Operator &Op, const string Type,
-Teuchos::ParameterList &List, Teuchos::ParameterList *pushlist=NULL)
+MLAPI::InverseOperator::Reshape(const Operator &Op, const std::string
+Type, Teuchos::ParameterList &List, Teuchos::ParameterList
+*pushlist=NULL)
 
 Reshapes the object by setting the Operator and the specified type. ";
 
@@ -623,7 +647,7 @@ const
 
 Applies this object to vector lhs, returns values in rhs. ";
 
-%feature("docstring")  MLAPI::InverseOperator::Print "ostream&
+%feature("docstring")  MLAPI::InverseOperator::Print "std::ostream&
 MLAPI::InverseOperator::Print(std::ostream &os, const bool
 verbose=true) const
 
@@ -782,8 +806,8 @@ MultiVector &y) const
 
 Applies this object to vector lhs, returns values in rhs. ";
 
-%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Print "ostream& MLAPI::LoadBalanceInverseOperator::Print(std::ostream &os,
-const bool verbose=true) const
+%feature("docstring")  MLAPI::LoadBalanceInverseOperator::Print "std::ostream& MLAPI::LoadBalanceInverseOperator::Print(std::ostream
+&os, const bool verbose=true) const
 
 Prints out basic information about this object. ";
 
@@ -941,9 +965,8 @@ MLAPI::LoadBalanceOperator::Apply(const MultiVector &X, MultiVector
 
 Applies this operator to LHS, returns the result in RHS. ";
 
-%feature("docstring")  MLAPI::LoadBalanceOperator::Print "ostream&
-MLAPI::LoadBalanceOperator::Print(std::ostream &os, const bool
-verbose=true) const
+%feature("docstring")  MLAPI::LoadBalanceOperator::Print "std::ostream& MLAPI::LoadBalanceOperator::Print(std::ostream &os,
+const bool verbose=true) const
 
 Prints basic information about this object. ";
 
@@ -963,7 +986,7 @@ Marzio Sala, SNL 9214
 
 C++ includes: MLAPI_MATLABStream.h ";
 
-%feature("docstring")  MLAPI::MATLABStream::MATLABStream "MLAPI::MATLABStream::MATLABStream(const string &FileName, bool
+%feature("docstring")  MLAPI::MATLABStream::MATLABStream "MLAPI::MATLABStream::MATLABStream(const std::string &FileName, bool
 UseSparse=true)
 
 Opens the specified file for writing. ";
@@ -982,7 +1005,7 @@ MLAPI::MATLABStream::SetUseSparse(const bool UseSparse)
 
 Toggles the use of sparse MATLAB formats. ";
 
-%feature("docstring")  MLAPI::MATLABStream::GetFileName "string
+%feature("docstring")  MLAPI::MATLABStream::GetFileName "std::string
 MLAPI::MATLABStream::GetFileName() const
 
 Returns the name of the output file. ";
@@ -1165,11 +1188,11 @@ MLAPI::MultiLevelAdaptiveSA::SetList(Teuchos::ParameterList &List)
 
 Sets the internally stored list to List. ";
 
-%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetSmootherType "string MLAPI::MultiLevelAdaptiveSA::GetSmootherType()
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetSmootherType "std::string MLAPI::MultiLevelAdaptiveSA::GetSmootherType()
 
 Returns the smoother solver type. ";
 
-%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetCoarseType "string MLAPI::MultiLevelAdaptiveSA::GetCoarseType()
+%feature("docstring")  MLAPI::MultiLevelAdaptiveSA::GetCoarseType "std::string MLAPI::MultiLevelAdaptiveSA::GetCoarseType()
 
 Returns the coarse solver type. ";
 
@@ -1541,7 +1564,7 @@ Sorts the component of the vector. ";
 std::ostream& MLAPI::MultiVector::Print(std::ostream &os, const bool
 verbose=true) const
 
-Prints basic information about this object on ostream. ";
+Prints basic information about this object on std::ostream. ";
 
 %feature("docstring")  MLAPI::MultiVector::IsAlias "bool
 MLAPI::MultiVector::IsAlias(const MultiVector &rhs) const ";
@@ -1751,7 +1774,7 @@ MLAPI::Operator::Apply(const MultiVector &X, MultiVector &Y) const
 
 Applies this operator to LHS, returns the result in RHS. ";
 
-%feature("docstring")  MLAPI::Operator::Print "ostream&
+%feature("docstring")  MLAPI::Operator::Print "std::ostream&
 MLAPI::Operator::Print(std::ostream &os, const bool verbose=true)
 const
 
@@ -1906,7 +1929,7 @@ Returns a pointer to the list of global nodes. ";
 %feature("docstring")  MLAPI::Space::Print "std::ostream&
 MLAPI::Space::Print(std::ostream &os, const bool verbose=true) const
 
-Prints on ostream basic information about this object. ";
+Prints on std::ostream basic information about this object. ";
 
 
 // File: structMLAPI_1_1StackEntry.xml
@@ -1982,7 +2005,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace in format ML accepts
 
-Ptent(out):  ::  Matrix containing tentative prolongator
+Ptent(out):  Matrix containing tentative prolongator
 
 NextNS:  (out): MultiVector containing next level nullspace.
 
@@ -2009,7 +2032,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace in format ML accepts
 
-Ptent(out):  ::  Matrix containing tentative prolongator
+Ptent(out):  Matrix containing tentative prolongator
 
 domainoffset:  (in,optional): give an offset such that the domainmap
 of Ptent starts global numbering from domainoffset instead from zero.
@@ -2040,7 +2063,7 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace
 
-aggrinfo(out):  ::  vector containing aggregation information
+aggrinfo(out):  vector containing aggregation information
 
 Map of aggrinfo has to match rowmap of A on input.
 
@@ -2072,8 +2095,8 @@ List:  (in): ParameterList containing ML options
 
 thisns:  (in): nullspace
 
-aggrinfo(out):  ::  vector containing aggregation information in
-global numbering
+aggrinfo(out):  vector containing aggregation information in global
+numbering
 
 Map of aggrinfo has to match rowmap of A on input.
 
@@ -2124,7 +2147,7 @@ only). ";
 %feature("docstring")  MLAPI::StackPrint "void MLAPI::StackPrint() ";
 
 %feature("docstring")  MLAPI::Gallery "Operator MLAPI::Gallery(const
-string ProblemType, const Space &MySpace)
+std::string ProblemType, const Space &MySpace)
 
 Creates a matrix using the TRIUTILS gallery. ";
 
@@ -2296,10 +2319,10 @@ Initialize the MLAPI workspace. ";
 
 Destroys the MLAPI workspace. ";
 
-%feature("docstring")  MLAPI::GetString "string
+%feature("docstring")  MLAPI::GetString "std::string
 MLAPI::GetString(const int &x) ";
 
-%feature("docstring")  MLAPI::GetString "string
+%feature("docstring")  MLAPI::GetString "std::string
 MLAPI::GetString(const double &x) ";
 
 %feature("docstring")  MLAPI::GetMatrixType "int
@@ -2456,14 +2479,14 @@ MLAPI::GetMatrixType() ";
 // File: MLAPI__Workspace_8h.xml
 
 
-// File: dir_155fcb0d4cda658caac02c78710535e4.xml
+// File: dir_1c3a59615ddebb5fbf04127ce013cb9e.xml
 
 
-// File: dir_cc1e09988ecec1a328546f0af31f254d.xml
+// File: dir_3439baffccfbe6e95de60f017932fbf9.xml
 
 
-// File: dir_b81d57d7b52d20c51be34aee0631351e.xml
+// File: dir_86f77546058147b605fd3b960a0f1393.xml
 
 
-// File: dir_3e2c3fa1e52511a70276f9374dc35ced.xml
+// File: dir_9012ecf16f901e4bdd6290ad480fb36d.xml
 

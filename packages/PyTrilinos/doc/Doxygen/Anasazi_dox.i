@@ -1814,13 +1814,13 @@ Anasazi::BlockKrylovSchurState::BlockKrylovSchurState "Anasazi::BlockKrylovSchur
 >::BlockKrylovSchurState() ";
 
 
-// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
+// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
 
 
 // File: structAnasazi_1_1BlockKrylovSchur_1_1CheckList.xml
 
 
-// File: structAnasazi_1_1RTRBase_1_1CheckList.xml
+// File: structAnasazi_1_1LOBPCG_1_1CheckList.xml
 
 
 // File: structAnasazi_1_1BlockDavidson_1_1CheckList.xml
@@ -2407,6 +2407,347 @@ void Anasazi::Eigensolver< ScalarType, MV, OP
 
 This method requests that the solver print out its current status to
 screen. ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidson.xml
+%feature("docstring") Anasazi::GeneralizedDavidson "
+
+Solves eigenvalue problem using generalized Davidson method.
+
+This class searches for a few eigenvalues and corresponding
+eigenvectors for either a standard eigenvalue problem $Ax=\\\\lambda
+x$ or a generalized eigenvalue problem $Ax=\\\\lambda B x$ Note that
+unlike some other solvers, the generalized Davidson method places no
+restrictions on either matrix in a generalized eigenvalue problem.
+
+Tips for preconditioning: A good preconditioner usually approximates
+$(A-\\\\sigma I)^{-1}$ or $(A-\\\\sigma B)^{-1}$, where $\\\\sigma$ is
+close to the target eigenvalue. When searching for largest magnitude
+eigenvalues, selecting a preconditioner $P^{-1} \\\\approx B^{-1}$
+usually works well and when searching for smallest magnitude
+eigenvalues selecting $P^{-1} \\\\approx A^{-1}$ is usually
+appropriate.
+
+This class is currently only implemented for real scalar types (i.e.
+float, double).
+
+C++ includes: AnasaziGeneralizedDavidson.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidson::GeneralizedDavidson "Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::GeneralizedDavidson(const RCP< Eigenproblem< ScalarType, MV, OP > >
+&problem, const RCP< SortManager< MagnitudeType > > &sortman, const
+RCP< OutputManager< ScalarType > > &outputman, const RCP< StatusTest<
+ScalarType, MV, OP > > &tester, const RCP< OrthoManager< ScalarType,
+MV > > &orthoman, Teuchos::ParameterList &pl)
+
+Constructor.
+
+GeneralizedDavidson constructor with eigenproblem, parameters, and
+solver utilities.
+
+Behavior of the solver is controlled by the following ParameterList
+entries: \"Block Size\" block size used by algorithm. Default: 1.
+
+\"Maximum Subspace Dimension\" maximum number of basis vectors for
+subspace. Two for standard eigenvalue problem) or three (for
+generalized eigenvalue problem) sets of basis vectors of this size
+will be required. Default: 3*problem->getNEV()*\"Block Size\"
+
+\"Initial Guess\" how should initial vector be selected: \"Random\" or
+\"User\". If \"User,\" the value in problem->getInitVec() will be
+used. Default: \"Random\".
+
+\"Print Number of Ritz Values\" an int specifying how many Ritz values
+should be printed at each iteration. Default: \"NEV\".
+
+\"Relative Convergence Tolerance\" should residual be scaled by
+corresponding Ritz value to measure convergence. Default: \"false\" ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::iterate "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::iterate()
+
+Solves the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::initialize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::initialize()
+
+Initialize the eigenvalue problem.
+
+Anything on the state that is not null is assumed to be valid.
+Anything not present on the state will be generated. Very limited
+error checking can be performed to ensure the validity of state
+components (e.g. we cannot verify that  state.AVactually corresponds
+to A*state.V), so this function should be used carefully. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::initialize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::initialize(GeneralizedDavidsonState< ScalarType, MV > state)
+
+Initialize solver from state. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getNumIters "int
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getNumIters()
+const
+
+Get number of iterations. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::resetNumIters "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::resetNumIters()
+
+Reset the number of iterations. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzVectors "RCP<const MV> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getRitzVectors()
+
+Get the current Ritz vectors. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzValues "std::vector< Value< ScalarType > > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getRitzValues()
+
+Get the current Ritz values. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzIndex "std::vector<int> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getRitzIndex()
+
+Get the current Ritz index vector. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getBlockIndex "std::vector<int> Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getBlockIndex() const
+
+Get indices of current block.
+
+Number of entries is equal to getBlockSize() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getResNorms "std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getResNorms()
+
+Get the current residual norms (w.r.t. norm defined by OrthoManager)
+";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getResNorms "std::vector< typename Teuchos::ScalarTraits< ScalarType
+>::magnitudeType > Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getResNorms(int numWanted)
+
+Get the current residual norms (w.r.t. norm defined by OrthoManager)
+";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRes2Norms "std::vector<MagnitudeType> Anasazi::GeneralizedDavidson< ScalarType,
+MV, OP >::getRes2Norms()
+
+Get the current residual norms (2-norm) ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getRitzRes2Norms
+"std::vector<MagnitudeType> Anasazi::GeneralizedDavidson< ScalarType,
+MV, OP >::getRitzRes2Norms()
+
+Get the current Ritz residual norms (2-norm)
+
+GeneralizedDavidson doesn't compute Ritz residual norms so this is
+equivalent to calling getRes2Norms() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getCurSubspaceDim
+"int Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getCurSubspaceDim() const
+
+Get current subspace dimension. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getMaxSubspaceDim
+"int Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::getMaxSubspaceDim() const
+
+Get maximum subspace dimension. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setStatusTest "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::setStatusTest(RCP< StatusTest< ScalarType, MV, OP > > tester)
+
+Set status test. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getStatusTest "RCP<StatusTest<ScalarType,MV,OP> > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getStatusTest() const
+
+Get status test. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getProblem "const Eigenproblem<ScalarType,MV,OP>& Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getProblem() const
+
+Get eigenproblem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getBlockSize "int Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getBlockSize()
+const
+
+Get block size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setBlockSize "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::setBlockSize(int blockSize)
+
+Set block size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setSize "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::setSize(int
+blockSize, int maxSubDim)
+
+Set problem size. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getAuxVecs "Teuchos::Array< RCP<const MV> > Anasazi::GeneralizedDavidson<
+ScalarType, MV, OP >::getAuxVecs() const
+
+Get the auxilliary vectors. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::setAuxVecs "void
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::setAuxVecs(const
+Teuchos::Array< RCP< const MV > > &auxVecs)
+
+Set auxilliary vectors.
+
+Manually setting the auxilliary vectors invalidates the current state
+of the solver. Reuse of any components of the solver requires
+extracting the state, orthogonalizing V against the aux vecs and
+reinitializing. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::isInitialized "bool Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::isInitialized() const
+
+Query if the solver is in an initialized state. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::currentStatus "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::currentStatus(std::ostream &myout)
+
+Print current status of solver. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::getState "GeneralizedDavidsonState< ScalarType, MV >
+Anasazi::GeneralizedDavidson< ScalarType, MV, OP >::getState()
+
+Get the current state of the eigensolver. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson::sortProblem "void Anasazi::GeneralizedDavidson< ScalarType, MV, OP
+>::sortProblem(int numWanted)
+
+Reorder Schur form, bringing wanted values to front ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidson_3_01std_1_1complex_3_01MagnitudeType_01_4_00_01MV_00_01OP_01_4.xml
+%feature("docstring") Anasazi::GeneralizedDavidson< std::complex<
+MagnitudeType >, MV, OP > " ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidson< std::complex<
+MagnitudeType >, MV, OP >::GeneralizedDavidson "
+Anasazi::GeneralizedDavidson< std::complex< MagnitudeType >, MV, OP
+>::GeneralizedDavidson(const RCP< Eigenproblem< ScalarType, MV, OP > >
+&problem, const RCP< SortManager< MagnitudeType > > &sortman, const
+RCP< OutputManager< ScalarType > > &outputman, const RCP< StatusTest<
+ScalarType, MV, OP > > &tester, const RCP< OrthoManager< ScalarType,
+MV > > &orthoman, Teuchos::ParameterList &pl) ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidsonSolMgr.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonSolMgr "
+
+Solver Manager for GeneralizedDavidson.
+
+This class provides a simple interface to the GeneralizedDavidson
+eigensolver. This manager creates appropriate
+orthogonalization/sort/output managers based on user specified
+ParameterList entries (or selects suitable defaults), provides access
+to solver functionality, and manages the restarting process.
+
+This class is currently only implemented for real scalar types (i.e.
+float, double).
+
+Steven Hamilton
+
+C++ includes: AnasaziGeneralizedDavidsonSolMgr.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidsonSolMgr::GeneralizedDavidsonSolMgr "Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::GeneralizedDavidsonSolMgr(const RCP< Eigenproblem< ScalarType, MV,
+OP > > &problem, Teuchos::ParameterList &pl)
+
+Basic constructor for GeneralizedDavidsonSolMgr.
+
+This constructor accepts the Eigenproblem to be solved and a parameter
+list of options for the solver. The following options control the
+behavior of the solver: \"Which\" a string specifying the desired
+eigenvalues: SM, LM, SR, LR, SI, or LI. Default: \"LM.\"
+
+\"Block Size\" block size used by algorithm. Default: 1.
+
+\"Maximum Subspace Dimension\" maximum number of basis vectors for
+subspace. Two (for standard eigenvalue problems) or three (for
+generalized eigenvalue problems) sets of basis vectors of this size
+will be required. Default: 3*problem->getNEV()*\"Block Size\"
+
+\"Restart Dimension\" Number of vectors retained after a restart.
+Default: NEV
+
+\"Maximum Restarts\" an int specifying the maximum number of restarts
+the underlying solver is allowed to perform. Default: 20
+
+\"Orthogonalization\" a string specifying the desired
+orthogonalization: DGKS, SVQB, ICGS. Default: \"SVQB\"
+
+\"Verbosity\" a sum of MsgType specifying the verbosity. Default:
+AnasaziErrors
+
+\"Convergence Tolerance\" a MagnitudeType specifying the level that
+residual norms must reach to decide convergence. Default: machine
+precision
+
+\"Relative Convergence Tolerance\" a bool specifying whether residual
+norms should be scaled by the magnitude of the corresponding Ritz
+value. Care should be taken when performing scaling for problems where
+the eigenvalue can be very large or very small. Default: \"false\".
+
+\"Initial Guess\" how should initial vector be selected: \"Random\" or
+\"User\". If \"User,\" the value in problem->getInitVec() will be
+used. Default: \"Random\".
+
+\"Print Number of Ritz Values\" an int specifying how many Ritz values
+should be printed at each iteration. Default: \"NEV\". ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::getProblem
+"const Eigenproblem<ScalarType,MV,OP>&
+Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP >::getProblem()
+const
+
+Return the eigenvalue problem. ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::getNumIters
+"int Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::getNumIters() const
+
+Get the iteration count for the most recent call to solve() ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr::solve "ReturnType Anasazi::GeneralizedDavidsonSolMgr< ScalarType, MV, OP
+>::solve()
+
+This method performs possibly repeated calls to the underlying
+eigensolver's iterate() routine until the problem has been solved (as
+decided by the StatusTest) or the solver manager decides to quit. ";
+
+
+// File: classAnasazi_1_1GeneralizedDavidsonSolMgr_3_01std_1_1complex_3_01MagnitudeType_01_4_00_01MV_00_01OP_01_4.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonSolMgr<
+std::complex< MagnitudeType >, MV, OP > " ";
+
+%feature("docstring")  Anasazi::GeneralizedDavidsonSolMgr<
+std::complex< MagnitudeType >, MV, OP >::GeneralizedDavidsonSolMgr "
+Anasazi::GeneralizedDavidsonSolMgr< std::complex< MagnitudeType >, MV,
+OP >::GeneralizedDavidsonSolMgr(const RCP< Eigenproblem< ScalarType,
+MV, OP > > &problem, Teuchos::ParameterList &pl) ";
+
+
+// File: structAnasazi_1_1GeneralizedDavidsonState.xml
+%feature("docstring") Anasazi::GeneralizedDavidsonState "
+
+Structure to contain pointers to GeneralizedDavidson state variables.
+
+C++ includes: AnasaziGeneralizedDavidson.hpp ";
+
+%feature("docstring")
+Anasazi::GeneralizedDavidsonState::GeneralizedDavidsonState "Anasazi::GeneralizedDavidsonState< ScalarType, MV
+>::GeneralizedDavidsonState() ";
 
 
 // File: classAnasazi_1_1GenOrthoManager.xml
@@ -3031,9 +3372,9 @@ Gradient (LOBPCG) iteration, a preconditioned iteration for solving
 linear Hermitian eigenproblems.
 
 This implementation is a modification of the one found in A. Knyazev,
-\"Toward the optimal preconditioned eigensolver:         Locally
-optimal block preconditioner conjugate gradient method\", SIAM J. Sci.
-Comput., vol 23, n 2, pp. 517-541.
+\"Toward the optimal preconditioned eigensolver: Locally optimal block
+preconditioner conjugate gradient method\", SIAM J. Sci. Comput., vol
+23, n 2, pp. 517-541.
 
 The modification consists of the orthogonalization steps recommended
 in U. Hetmaniuk and R. Lehoucq, \"Basis Selection in LOBPCG\", Journal
@@ -4047,6 +4388,12 @@ Anasazi::MultiVec< ScalarType >::GetVecLength() const =0
 
 The number of rows in the multivector. ";
 
+%feature("docstring")  Anasazi::MultiVec::GetGlobalLength "virtual
+ptrdiff_t Anasazi::MultiVec< ScalarType >::GetGlobalLength() const
+
+The number of rows in the multivector. This method supersedes
+GetVecLength, which will be deprecated. ";
+
 %feature("docstring")  Anasazi::MultiVec::GetNumberVecs "virtual int
 Anasazi::MultiVec< ScalarType >::GetNumberVecs() const =0
 
@@ -4301,7 +4648,13 @@ Reference-counted pointer to the const view of specified columns of mv
 int Anasazi::MultiVecTraits< ScalarType, MV >::GetVecLength(const MV
 &mv)
 
-Obtain the vector length of mv. ";
+Return the number of rows in the given multivector mv.
+
+If you are writing a specialization of MultiVecTraits for your own
+multivector type MV, please see the documentation of MultiVecTraitsExt
+in this file. Most Anasazi users will not need to do this, since
+MultiVecTraits already has specializations for Epetra, Tpetra, and
+Thyra objects. ";
 
 %feature("docstring")  Anasazi::MultiVecTraits::GetNumberVecs "static
 int Anasazi::MultiVecTraits< ScalarType, MV >::GetNumberVecs(const MV
@@ -4614,6 +4967,78 @@ ScalarType, MultiVec< ScalarType > >::MvPrint(const MultiVec<
 ScalarType > &mv, std::ostream &os)
 
 Print the mv multi-vector to the os output stream. ";
+
+
+// File: classAnasazi_1_1MultiVecTraitsExt.xml
+%feature("docstring") Anasazi::MultiVecTraitsExt "
+
+An extension of the MultiVecTraits class that adds a new vector length
+method.
+
+This traits class provides a 64-bit compatible method,
+GetGlobalLength(), that returns the number of rows in a multivector.
+GetGlobalLength() will replace the GetVecLength() method in
+MultiVecTraits, which is not 64-bit compatible. GetVecLength() will be
+deprecated, and will be removed in the next major Trilinos release.
+
+For now, GetGlobalLength() will call the GetVecLength() method by
+default for any traits implementation that does not specialize this
+class. If you have written a specialization of MultiVecTraits for your
+own multivector type MV, and if MV does not support returning the
+number of rows as a 64-bit integer, then you don't need to do
+anything. If your MV class does support this, then you should write a
+specialization of MultiVecTraitsExt that reimplements
+GetGlobalLength(). Otherwise, you risk overflowing the int return
+value of GetVecLength().
+
+You do not need to write a specialization of MultiVecTraitsExt if you
+are using Epetra, Tpetra, or Thyra multivectors. Anasazi already
+provides specializations for these types. Just relax and enjoy using
+the solvers!
+
+C++ includes: AnasaziMultiVecTraits.hpp ";
+
+/*  New attribute methods  */
+
+%feature("docstring")  Anasazi::MultiVecTraitsExt::GetGlobalLength "static ptrdiff_t Anasazi::MultiVecTraitsExt< ScalarType, MV
+>::GetGlobalLength(const MV &mv)
+
+Obtain the vector length of mv. This method supersedes GetVecLength,
+which will be deprecated. ";
+
+
+// File: classAnasazi_1_1MultiVecTraitsExt_3_01ScalarType_00_01MultiVec_3_01ScalarType_01_4_01_4.xml
+%feature("docstring") Anasazi::MultiVecTraitsExt< ScalarType,
+MultiVec< ScalarType > > "
+
+An extension of the MultiVecTraits class that adds a new vector length
+method.
+
+This traits class provides an additional method to the multivector
+operations for finding the number of rows that is 64-bit compatible.
+The method in this traits class will replace the GetVecLength()
+method, which will be deprecated, and removed in the next major
+Trilinos release. At this time, this traits class will call the
+GetVecLength() method by default for any traits implementation that
+does not specialize this template. However, for 64-bit support this
+template will need to be specialized.
+
+You do not need to write a specialization of MultiVecTraitsExt if you
+are using Epetra, Tpetra, or Thyra multivectors. Anasazi already
+provides specializations for these types. Just relax and enjoy using
+the solvers!
+
+C++ includes: AnasaziMultiVec.hpp ";
+
+/*  New attribute methods  */
+
+%feature("docstring")  Anasazi::MultiVecTraitsExt< ScalarType,
+MultiVec< ScalarType > >::GetGlobalLength " static ptrdiff_t
+Anasazi::MultiVecTraitsExt< ScalarType, MultiVec< ScalarType >
+>::GetGlobalLength(const MultiVec< ScalarType > &mv)
+
+Obtain the vector length of mv. This method supersedes GetVecLength,
+which will be deprecated. ";
 
 
 // File: classAnasazi_1_1details_1_1MultiVecTsqrAdapter.xml
@@ -5009,7 +5434,7 @@ in place. TSQR (the Tall Skinny QR factorization, see
 TsqrOrthoManager.hpp for references) is an orthogonalization method
 which cannot normalize (or projectAndNormalize) in place.
 
-Tsqr(Mat) OrthoManager implements (Mat)OrthoManager's normalize() and
+Tsqr(Mat) OrthoManager implements (Mat) OrthoManager's normalize() and
 projectAndNormalize() methods with scratch space and copying. However,
 if you handle Tsqr(Mat) OrthoManager through this mixin, you can
 exploit TSQR's unique interface to avoid copying back and forth
@@ -5869,6 +6294,12 @@ int Anasazi::SolverManager< ScalarType, MV, OP >::getNumIters() const
 
 Get the iteration count for the most recent call to  solve(). ";
 
+%feature("docstring")  Anasazi::SolverManager::getTimers "virtual
+Teuchos::Array<Teuchos::RCP<Teuchos::Time> > Anasazi::SolverManager<
+ScalarType, MV, OP >::getTimers() const
+
+Return the timers for this object. ";
+
 /*  Solver application methods  */
 
 %feature("docstring")  Anasazi::SolverManager::solve "virtual
@@ -6385,8 +6816,8 @@ C++ includes: AnasaziStatusTest.hpp ";
 A status test for testing the number of iterations.
 
 Anasazi::StatusTestMaxIters will test true when an eigensolver has
-reached some number of iterations. Specifically,
-{ Passed,  if solver->getNumIters() >= maxIter status(solver) = {
+reached some number of iterations. Specifically,                  {
+Passed,  if solver->getNumIters() >= maxIter status(solver) = {
 { Failed,  if solver->getNumIters()  < maxIter where maxIter is the
 parameter given to the status tester.
 
@@ -7838,7 +8269,7 @@ MV:  The type of (multi)vector inputs and outputs.
 This class uses a combination of Tall Skinny QR (TSQR) and Block Gram-
 Schmidt (BGS) to orthogonalize multivectors. The Block Gram- Schmidt
 procedure used here is inspired by that of G. W. Stewart (\"Block
-Gram-Schmidt Orthogonalization\", SISC vol 31 #1 pp. 761-- 775, 2008).
+Gram-Schmidt Orthogonalization\", SISC vol 31 #1 pp. 761775, 2008).
 The difference is that we use TSQR+SVD instead of Stewart's careful
 Gram-Schmidt with reorthogonalization to handle the current block.
 \"Orthogonalization faults\" (as defined by Stewart) may still happen,
@@ -8262,6 +8693,12 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziEigensolverDecl_8hpp.xml
 
 
+// File: AnasaziGeneralizedDavidson_8hpp.xml
+
+
+// File: AnasaziGeneralizedDavidsonSolMgr_8hpp.xml
+
+
 // File: AnasaziGenOrthoManager_8hpp.xml
 
 
@@ -8367,10 +8804,10 @@ Status of the test: true is successful, false otherwise. ";
 // File: AnasaziVersion_8cpp.xml
 
 
-// File: dir_cfcf785d330e8f6cf9265ee0cf028086.xml
+// File: dir_cb6170a21a23f130acc107876b1eb76c.xml
 
 
-// File: dir_73432c73b202f8663e3fe783990d1240.xml
+// File: dir_362dab574799082b864ce88437753581.xml
 
 
 // File: BlockDavidson_2BlockDavidsonEpetraEx_8cpp-example.xml
@@ -8395,6 +8832,9 @@ Status of the test: true is successful, false otherwise. ";
 
 
 // File: BlockKrylovSchur_2BlockKrylovSchurEpetraExSVD_8cpp-example.xml
+
+
+// File: GeneralizedDavidson_2GeneralizedDavidsonEpetraExFileIfpack_8cpp-example.xml
 
 
 // File: LOBPCG_2LOBPCGEpetraEx_8cpp-example.xml
