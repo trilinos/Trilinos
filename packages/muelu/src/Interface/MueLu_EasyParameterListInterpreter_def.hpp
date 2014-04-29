@@ -58,12 +58,15 @@
 
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
@@ -76,12 +79,6 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
-
-#ifdef HAVE_MUELU_EXPERIMENTAL
-#include "MueLu_ConstraintFactory.hpp"
-#include "MueLu_PatternFactory.hpp"
-#include "MueLu_EminPFactory.hpp"
-#endif
 
 namespace MueLu {
 
@@ -431,7 +428,6 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "emin") {
-#ifdef HAVE_MUELU_EXPERIMENTAL
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, "AkPtent", patternType);
       TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument, "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
 
@@ -457,9 +453,6 @@ namespace MueLu {
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
       manager.SetFactory("P", P);
-#else
-      throw Exceptions::RuntimeError("Please enable Experimental options in MueLu to use \"emin\"");
-#endif
 
     } else if (multigridAlgo == "pg") {
       // Petrov-Galerkin
