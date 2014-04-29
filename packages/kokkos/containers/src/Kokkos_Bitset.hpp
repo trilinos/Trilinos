@@ -299,13 +299,16 @@ private:
   enum { block_shift = static_cast<int>(Impl::power_of_two<block_size>::value) };
 
 public:
+  ConstBitset()
+    : m_size (0)
+  {}
 
   ConstBitset(Bitset<Device> const& rhs)
     : m_size(rhs.m_size)
     , m_blocks(rhs.m_blocks)
   {}
 
-  ConstBitset( ConstBitset<Device> const& rhs)
+  ConstBitset(ConstBitset<Device> const& rhs)
     : m_size( rhs.m_size )
     , m_blocks( rhs.m_blocks )
   {}
