@@ -259,8 +259,8 @@ public:
 
     virtual void node_communication_map(std::vector<int64_t> &map, std::vector<int> &proc);
 
-    virtual void node_map(std::vector<int> &map);
-    virtual void node_map(std::vector<int64_t> &map);
+    virtual void node_map(std::vector<int> &map) const;
+    virtual void node_map(std::vector<int64_t> &map) const;
 
     virtual void element_map(int64_t block_number, std::vector<int> &map) const;
     virtual void element_map(int64_t block_number, std::vector<int64_t> &map) const;

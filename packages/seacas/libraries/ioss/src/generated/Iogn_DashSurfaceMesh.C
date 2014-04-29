@@ -456,7 +456,7 @@ void ExodusMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
     }
 }
 
-void ExodusMesh::node_map(IntVector &map)
+void ExodusMesh::node_map(IntVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);
@@ -467,7 +467,7 @@ void ExodusMesh::node_map(IntVector &map)
     }
 }
 
-void ExodusMesh::node_map(MapVector &map)
+void ExodusMesh::node_map(MapVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);
