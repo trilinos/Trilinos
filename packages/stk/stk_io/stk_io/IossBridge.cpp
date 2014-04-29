@@ -262,6 +262,47 @@ void internal_field_data_from_ioss(const stk::mesh::BulkData& mesh,
 }
 
 template <typename T>
+void internal_subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+					     const Ioss::Field &io_field,
+					     const stk::mesh::FieldBase *field,
+					     std::vector<stk::mesh::Entity> &entities,
+					     Ioss::GroupingEntity *io_entity,
+					     const stk::mesh::Part *stk_part,
+					     T /*dummy */)
+{
+  size_t field_component_count = io_field.transformed_storage()->component_count();
+  std::vector<T> io_field_data;
+  size_t io_entity_count = io_entity->get_field_data(io_field.get_name(), io_field_data);
+  assert(io_field_data.size() == entities.size() * field_component_count);
+  size_t entity_count = entities.size();
+  if (io_entity_count != entity_count) {
+    std::ostringstream errmsg;
+    errmsg << "ERROR: Field count mismatch for IO field '"
+           << io_field.get_name() << "'. The IO system has " << io_entity_count
+           << " entries, but the stk:mesh system has " << entity_count
+           << " entries. The two counts must match.";
+    throw std::runtime_error(errmsg.str());
+  }
+
+  stk::mesh::MetaData &meta = stk::mesh::MetaData::get(*stk_part);
+  stk::mesh::Selector selector = meta.locally_owned_part() & *stk_part;
+
+  for (size_t i=0; i < entity_count; ++i) {
+    if (mesh.is_valid(entities[i])) {
+      const stk::mesh::Bucket &bucket = mesh.bucket(entities[i]);
+      if (selector(bucket)) {
+	T *fld_data = static_cast<T*>(stk::mesh::field_data(*field, entities[i]));
+	if (fld_data !=NULL) {
+	  for(size_t j=0; j<field_component_count; ++j) {
+	    fld_data[j] = io_field_data[i*field_component_count+j];
+	  }
+	}
+      }
+    }
+  }
+}
+
+template <typename T>
 void internal_field_data_to_ioss(const stk::mesh::BulkData& mesh,
                                  const Ioss::Field &io_field,
                                  const stk::mesh::FieldBase *field,
@@ -871,6 +912,25 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
     }
 }
 
+void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+					       const stk::mesh::FieldBase *field,
+					       std::vector<stk::mesh::Entity> &entity_list,
+					       Ioss::GroupingEntity *io_entity,
+					       const stk::mesh::Part *stk_part,
+					       const std::string &name,
+					       const size_t state_count)
+{
+    for(size_t state = 0; state < state_count - 1; state++)
+    {
+        stk::mesh::FieldState state_identifier = static_cast<stk::mesh::FieldState>(state);
+        std::string field_name_with_suffix = get_stated_field_name(name, state_identifier);
+        stk::mesh::FieldBase *stated_field = field->field_state(state_identifier);
+        STKIORequire(io_entity->field_exists(field_name_with_suffix));
+        stk::io::subsetted_field_data_from_ioss(mesh, stated_field, entity_list,
+						io_entity, stk_part, field_name_with_suffix);
+    }
+}
+
 void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const stk::mesh::FieldBase *field,
                           std::vector<stk::mesh::Entity> &entities,
@@ -896,6 +956,37 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
 	    io_field.check_type(Ioss::Field::INT64);
 	    internal_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
                                       static_cast<int64_t>(1));
+	  }
+	}
+  }
+}
+
+void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+				    const stk::mesh::FieldBase *field,
+				    std::vector<stk::mesh::Entity> &entities,
+				    Ioss::GroupingEntity *io_entity,
+				    const stk::mesh::Part *stk_part,
+				    const std::string &io_fld_name)
+{
+  /// \todo REFACTOR Need some additional compatibility checks between
+  /// Ioss field and stk::mesh::Field; better error messages...
+
+  if (field != NULL && io_entity->field_exists(io_fld_name)) {
+	const Ioss::Field &io_field = io_entity->get_fieldref(io_fld_name);
+	if (field->type_is<double>()) {
+	  internal_subsetted_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+						  stk_part, static_cast<double>(1.0));
+	} else if (field->type_is<int>()) {
+	  // Make sure the IO field type matches the STK field type.
+	  // By default, all IO fields are created of type 'double'
+	  if (db_api_int_size(io_entity) == 4) {
+	    io_field.check_type(Ioss::Field::INTEGER);
+	    internal_subsetted_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+						    stk_part, static_cast<int>(1));
+	  } else {
+	    io_field.check_type(Ioss::Field::INT64);
+	    internal_subsetted_field_data_from_ioss(mesh, io_field, field, entities, io_entity,
+						    stk_part, static_cast<int64_t>(1));
 	  }
 	}
   }

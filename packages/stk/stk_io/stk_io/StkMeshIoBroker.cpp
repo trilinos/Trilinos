@@ -1541,6 +1541,12 @@ namespace stk {
 	m_input_files[m_active_mesh_index]->add_all_mesh_fields_as_input_fields(meta_data(), tmo);
       }
 
+      bool StkMeshIoBroker::read_input_field(stk::io::MeshField &mf)
+      {
+	validate_input_file_index(m_active_mesh_index);
+	return m_input_files[m_active_mesh_index]->read_input_field(mf, bulk_data());
+      }
+
       double StkMeshIoBroker::read_defined_input_fields(double time,
 							std::vector<stk::io::MeshField> *missing)
       {

@@ -293,6 +293,14 @@ void multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           const std::string &name,
                           const size_t state_count);
 
+void subsetted_multistate_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+					       const stk::mesh::FieldBase *field,
+					       std::vector<stk::mesh::Entity> &entity_list,
+					       Ioss::GroupingEntity *io_entity,
+					       const stk::mesh::Part *stk_part,
+					       const std::string &name,
+					       const size_t state_count);
+
 /**
  * Fill the specified 'field' with data from the Ioss field named
  * 'io_fld_name' on the Ioss entity 'io_entity'. The mapping from
@@ -304,6 +312,13 @@ void field_data_from_ioss(const stk::mesh::BulkData& mesh,
                           std::vector<stk::mesh::Entity> &entities,
                           Ioss::GroupingEntity *io_entity,
                           const std::string &io_fld_name);
+
+void subsetted_field_data_from_ioss(const stk::mesh::BulkData& mesh,
+				    const stk::mesh::FieldBase *field,
+				    std::vector<stk::mesh::Entity> &entities,
+				    Ioss::GroupingEntity *io_entity,
+				    const stk::mesh::Part *stk_part,
+				    const std::string &io_fld_name);
 
 void multistate_field_data_to_ioss(const stk::mesh::BulkData& mesh,
                         const stk::mesh::FieldBase *field,
