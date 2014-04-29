@@ -4788,14 +4788,15 @@ Basic Development Workflow
 --------------------------
 
 The basic development workflow of a TriBITS project is not much different than
-with any CMake project that uses CTest to define and run tests.  One pulls
-updates from the master VC repo then configures with ``cmake``, and
-iteratively builds, runs tests, adds files, changes files, etc.  The major
-difference is that a well constructed development process will use the
-`checkin-test.py`_ script to test and push all changes that affect the build
-or the tests.  The basic steps in configuring, building, running tests, etc.,
-are given in the project's `<Project>BuildQuickRef`_. file (see
-`Project-Specific Build Quick Reference`_).
+with any other CMake project that uses CTest to define and run tests.  One
+pulls updates from the master VC repo then configures with ``cmake``, and
+iteratively builds, runs tests, adds files, changes files, does a final test,
+then pushes updates.  The major difference is that a well constructed
+development process will use the `checkin-test.py`_ script to test and push
+all changes that affect the build or the tests.  The basic steps in
+configuring, building, running tests, etc., are given in the project's
+`<Project>BuildQuickRef`_. file (see `Project-Specific Build Quick
+Reference`_).
 
 Multi-Repository Development Workflow
 -------------------------------------
@@ -4815,9 +4816,9 @@ all the VC repos.
 Howtos
 ======
 
-While the rest of this document provides all of the information one would need
-to construct and maintain a TriBITS project, this section provides short,
-succinct lists of the steps to accomplish a few common tasks.
+This section provides short, succinct lists of the steps to accomplish a few
+common tasks.  Extra details are referenced.
+
 
 How to Add a new TriBITS Package
 --------------------------------
@@ -4835,20 +4836,20 @@ To add a new TriBITS package (with no subpackages), do the following:
    chosen name ``<packageName>`` must be unique across all TriBITS
    repositories (see `Globally unique TriBITS package names`_).
 
-2) Create the directory ``<repoDir>/<packageDir>`` for the new package and put
-   in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
+2) Create the directory ``<repoDir>/<packageDir>/`` for the new package and
+   put in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
    `<packageDir>/CMakeLists.txt`_.  Set the desired upstream TPL and SE
    package dependencies in the new ``Dependencies.cmake`` file but initially
    comment out everything in the ``CMakeLists.txt`` file except for the
    `TRIBITS_PACKAGE()`_ and `TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
 
-3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
-   file after all of its upstream dependent packages.  If a mistake is made
-   and it is listed before one of its upstream dependent packages, the TriBITS
-   CMake code will catch this and issue an error.
+3) Add a row for the new package to the `<repoDir>/PackagesList.cmake`_ file
+   after all of its upstream dependent packages.  If a mistake is made and it
+   is listed before one of its upstream dependent packages, the TriBITS CMake
+   code will catch this and issue an error.
 
 4) Configure the TriBITS project enabling the new empty package
-``<packageName>``.  This will enabled the listed dependencies.
+   ``<packageName>``.  This will enable the listed dependencies.
 
 5) Incrementally fill in the package's ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.  The project should be built
@@ -4863,10 +4864,11 @@ dependencies on this new package.
 How to Add a new TriBITS Package with Subpackages
 -------------------------------------------------
 
-Adding a new package with subpackages is similarly to adding a new regular
-packages described in `How to Add a new TriBITS Package`_.  Again, it is
-recommended that one copies an example package from `TribitsExampleProject`_;
-this time the ``PackageWithSubpackages`` package files and directories.
+Adding a new package with subpackages is similar to adding a new regular
+package described in `How to Add a new TriBITS Package`_.  Again, it is
+recommended that one copies an example package from `TribitsExampleProject`_.
+For example, one could copy files and directories from the example package
+``PackageWithSubpackages``.
 
 To add a new TriBITS package with packages, do the following:
 
@@ -4875,18 +4877,18 @@ To add a new TriBITS package with packages, do the following:
    chosen name ``<packageName>`` must be unique across all TriBITS
    repositories (see `Globally unique TriBITS package names`_).
 
-2) Create the directory ``<repoDir>/<packageDir>`` for the new package and put
-   in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
-   `<packageDir>/CMakeLists.txt`_.  Initially don't define any subpackages yet
-   and comment out everything in the ``CMakeLists.txt`` file except for the
+2) Create the directory ``<repoDir>/<packageDir>/`` for the new package and
+   put in skeleton files for `<packageDir>/cmake/Dependencies.cmake`_ and
+   `<packageDir>/CMakeLists.txt`_.  Initially don't define any subpackages and
+   comment out everything in the ``CMakeLists.txt`` file except for the
    `TRIBITS_PACKAGE()`_ and `TRIBITS_PACKAGE_POSTPROCESS()`_ commands.
 
-3) Add the line for the new package to the `<repoDir>/PackagesList.cmake`_
+3) Add a new row for the new package to the `<repoDir>/PackagesList.cmake`_
    file after all of the upstream dependencies of its to-be-defined
    subpackages.
 
 4) Configure the TriBITS project enabling the new empty package
-``<packageName>``.
+   ``<packageName>``.
 
 5) Incrementally add the subpackages as described in `How to Add a new TriBITS
    Subpackage`_, filling out the various ``CMakeLists.txt`` files defining
@@ -4899,7 +4901,8 @@ How to Add a new TriBITS Subpackage
 -----------------------------------
 
 Given an existing top-level TriBITS package that is already broken down into
-subpackages, adding a new subpackage does not require changing any project- or
+subpackages (see `How to Add a new TriBITS Package with Subpackages`_), adding
+a new subpackage does not require changing any project-level or
 repository-level files.  One only needs to add the declaration for the new
 subpackages in its parent's `<packageDir>/cmake/Dependencies.cmake`_ file then
 fill out the pieces of the new subpackage defined in the section `TriBITS
@@ -4915,7 +4918,7 @@ subpackages, do the following:
    appended to the parent package's name ``<packageName>`` to form the SE
    package name ``<packageName><spkgName>``.
 
-2) Create the directory `<packageDir><spkgDir>`` for the new package and put
+2) Create the directory ``<packageDir><spkgDir>/`` for the new package and put
    in skeleton files for `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_
    and `<packageDir>/<spkgDir>/CMakeLists.txt`_.  Set the desired upstream TPL
    and SE package dependencies in the new ``Dependencies.cmake`` file but
@@ -4923,7 +4926,7 @@ subpackages, do the following:
    the `TRIBITS_SUBPACKAGE()`_ and `TRIBITS_SUBPACKAGE_POSTPROCESS()`_
    commands.
 
-3) Add the line for the new subpackage to the argument
+3) Add a row for the new subpackage to the argument
    `SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS`_ in the macro call
    `TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()`_ in the parent package's
    `<packageDir>/cmake/Dependencies.cmake`_ file after all of its upstream
@@ -4931,8 +4934,8 @@ subpackages, do the following:
    its upstream dependent subpackages, the TriBITS CMake code will catch this
    and issue an error.
 
-4) Configure the TriBITS project enabling the new empty subpackage
-   ``<packageName><spkgName>``.  This will enabled the listed dependencies.
+4) Configure the TriBITS project enabling the new empty SE package
+   ``<packageName><spkgName>``.  This will enable the listed dependencies.
 
 5) Incrementally fill in the subpackage's ``CMakeLists.txt`` files defining
    libraries, executables, tests and examples.  The project should be built
@@ -4955,29 +4958,31 @@ To add a new TriBITS TPL, do the following:
    repo is usually the one where the package exists that needs the new TPL
    dependency.
 
-2) Create the TPL find module for the new,
-   e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake`` (see `TriBITS TPL`_ and
-   `TRIBITS_TPL_DECLARE_LIBRARIES()`_ for details).  List the default required
-   header files and/or libraries that must be provided by the TPL.
+2) Create the TPL find module, e.g. ``<repoDir>/tpls/FindTPL<tplName>.cmake``
+   (see `TriBITS TPL`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ for details).
+   List the default required header files and/or libraries that must be
+   provided by the TPL.
 
-3) Add the line for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after
-   any TPLs that this new TPL may depend on.
+3) Add a row for the new TPL to the `<repoDir>/TPLsList.cmake`_ file after any
+   TPLs that this new TPL may depend on.
 
 4) Configure the TriBITS project enabling the new TPL with
-   ``TPL_ENABLE_<tplName>=ON`` and see that TriBITS finds the TPL correctly.
+   ``TPL_ENABLE_<tplName>=ON`` and see that the new find module finds the TPL
+   correctly at configure time.
 
 5) List the new TPL in the package(s) that need this dependency in the
-   package's `<packageDir>/cmake/Dependencies.cmake`_ file.
+   package's `<packageDir>/cmake/Dependencies.cmake`_ file (or
+   `<packageDir>/<spkgDir>/cmake/Dependencies.cmake`_ for a subpackage).
 
 6) If the TPL is an optional TPL for the package, then::
 
-    #cmakedefine HAVE_<PACKAGE_NAME_UC>_<TPLN_AME_UC>
+    #cmakedefine HAVE_<PACKAGE_NAME_UC>_<TPL_NAME_UC>
 
    should be added to the package's ``<packageName>_config.h.in`` file (see
-   `TRIBITS_CONFIGURE_FILE()`) so that the code knows if the TPL is defined or
-   not.
+   `TRIBITS_CONFIGURE_FILE()`_) so that the code knows if the TPL is defined
+   or not.
 
-7) Use the TPL in the package's that define the dependency on the new TPL,
+7) Use the TPL in the packages that define the dependency on the new TPL,
    configure, test, etc.
 
 .. ToDo: Provide more details on various things.
@@ -4992,14 +4997,14 @@ How to Add a new TriBITS Repository
 To add a new TriBITS and/ git VC repository to a TriBITS project that already
 contains other extra repositories, do the following:
 
-1) Add a row for the new git repo to
+1) Add a row for the new TriBITS and/or git repo to the file
    `<projectDir>/cmake/ExtraRepositoriesList.cmake`_.  Commit this file.
 
 2) Add an ignore for the extra repo name to the base project's git repo's
-   ``.gitignore`` file.  Commit this file.
+   ``.gitignore`` file (see `Multi-Repository Support`_).  Commit this file.
 
-3) Set up the new package dependencies in the existing packages for the new
-   packages in the new repo.
+3) Set up the new package dependencies for the new package in the new TriBITS
+   repo or make other adjustments.
 
 4) Consider the potential for missing upstream repos and packages by using
    `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
@@ -5013,27 +5018,30 @@ links.
 How to insert a package into an upstream repo
 ---------------------------------------------
 
-Sometimes it is desired to insert a package into an upstream repo that is
-defined in a downstream VC repo for for package in that repo to define a
-dependency on that package.  While TriBITS does not provide direct support for
-doing this, it is easy to set up.  For example, say you want to add the
+Sometimes it is desired to insert a package from a downstream VC repo into an
+upstream repo in order for one or more packages in the upstream repo to define
+a dependency on that package.  While TriBITS does not provide direct support
+for doing this, it is easy to set up.  For example, say you want to add the
 package ``PackageFromDownstreamRepo`` who's source is provided in a downstream
-repo (i.e. listed later in the
-`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).  This is done in
-several different TriBITS projects such as Trilinos (with Dakota wrapped in
-the TriKota package) and in the MPACT project (with one of their sensitive
-packages).  There are a few different ways to accomplish this that depend on a
-few details.  One issue is if the downstream repo and the extra package is
-allowed to be missing.  If it is, then all of the packages that define a
-dependency on the package must declare that the package might be missing by
-calling `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ in the package's
-`<packageDir>/cmake/Dependencies.cmake`_ file.
+VC repo (i.e. listed later in the
+`<projectDir>/cmake/ExtraRepositoriesList.cmake`_ file).  This was done in
+several different TriBITS projects at one point such as Trilinos (with Dakota
+wrapped in the TriKota package) and in the MPACT project (with one of their
+sensitive packages).  There are a few different ways to accomplish this and
+choosing an approach depends on a few details.  One issue is that the
+downstream repo and the extra package may be allowed to be missing.  If so,
+then all of the packages that define a dependency on the potentially missing
+package must declare that the package might be missing by calling
+`TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_ in the SE package's
+``Dependencies.cmake`` file.
 
 .. ToDo: Create an example where a package is inserted into
 .. TribitsExampleProject and is listed as an extra repo in an
 .. ExtraRepositoriesList.cmake file.  To test and demonstrate this example we
 .. would have to copy the TribitsExampleProject source into the build tree,
 .. then copy in the extra package source, then configure the project.
+
+.. ToDo: Edited and spell-checked up to here on 4/28/2014!
 
 
 Additional Topics
