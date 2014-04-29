@@ -876,7 +876,7 @@ namespace Tpetra {
     /// This has to be declared \c mutable, because Kokkos' idea of
     /// what methods should be const differs from current Tpetra's
     /// idea.
-    mutable device_impl_type mapHost_;
+    mutable host_impl_type mapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
@@ -996,14 +996,12 @@ namespace Tpetra {
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
         using Teuchos::RCP;
-        typedef typename OutDeviceType::host_mirror_device_type
-          host_mirror_device_type;
         RCP<out_map_type> mapOut (new out_map_type ()); // Make an empty Map.
 
         mapOut->comm_ = mapIn.comm_;
         mapOut->node_ = nodeOut;
-        mapOut->mapDevice_.template create_copy_view<OutDeviceType> (mapIn.mapDevice_);
-        mapOut->mapHost_.template create_copy_view<host_mirror_device_type> (mapIn.mapHost_);
+        mapOut->mapDevice_.template create_copy_view<InDeviceType> (mapIn.mapDevice_);
+        mapOut->mapHost_.template create_copy_view<typename InDeviceType::host_mirror_device_type> (mapIn.mapHost_);
 
         // mfh 02 Apr 2013: While Map only needs to create the Directory
         // on demand in getRemoteIndexList, we have a Directory here that
