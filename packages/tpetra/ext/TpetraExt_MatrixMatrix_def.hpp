@@ -191,7 +191,7 @@ void Multiply(
 #endif
 
   //Now import any needed remote rows and populate the Aview struct.
-  if(!use_optimized_ATB) 
+  if(!use_optimized_ATB)
     MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
 
 
@@ -202,7 +202,7 @@ void Multiply(
   }
 
   //Now import any needed remote rows and populate the Bview struct.
-  if(!use_optimized_ATB) 
+  if(!use_optimized_ATB)
     MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
 
 #ifdef ENABLE_MMM_TIMINGS
@@ -897,7 +897,7 @@ void mult_AT_B_newmatrix(
     GlobalOrdinal,
     Node,
     SpMatOps> CrsMatrixStruct_t;
-  typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t;
+  // typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t; // unused
 
 #ifdef ENABLE_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -915,9 +915,9 @@ void mult_AT_B_newmatrix(
   /*************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T I&X")));
-#endif    
+#endif
 
-  // Get views 
+  // Get views
   // FIXME: Need to get rid of this as part of an overall refactor of the view object
   CrsMatrixStruct_t Aview;
   CrsMatrixStruct_t Bview;
@@ -927,17 +927,17 @@ void mult_AT_B_newmatrix(
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T AB-core")));
-#endif  
-  
+#endif
+
   RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >Ctemp;
-  
+
   // If Atrans has no Exporter, we can use C instead of having to create a temp matrix
   bool needs_final_export = !Atrans->getGraph()->getExporter().is_null();
   if(needs_final_export)
     Ctemp = rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(Atrans->getRowMap(),0));
   else
     Ctemp = rcp(&C,false);// don't allow deallocation
-  
+
   // Multiply
   mult_A_B_newmatrix(Aview,Bview,*Ctemp);
 
@@ -946,9 +946,9 @@ void mult_AT_B_newmatrix(
   /*************************************************************/
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T exportAndFillComplete")));
-#endif  
+#endif
 
-  // FIXME: The actual exportAndFillCompleteCrsMatrix function does not support combining entries.  
+  // FIXME: The actual exportAndFillCompleteCrsMatrix function does not support combining entries.
   // This needs to be fixed and this code needs to be replaced.
   if(needs_final_export) {
     C.doExport(*Ctemp,*Ctemp->getGraph()->getExporter(),Tpetra::ADD);
