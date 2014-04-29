@@ -528,7 +528,7 @@ initAllValues (const row_matrix_type& A)
   Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getNodeElementList();
   bool gidsAreConsistentlyOrdered=true;
   global_ordinal_type indexOfInconsistentGID=0;
-  for (size_t i=0; i<rowGIDs.size(); ++i) {
+  for (global_ordinal_type i=0; i<rowGIDs.size(); ++i) {
     if (rowGIDs[i] != colGIDs[i]) {
       gidsAreConsistentlyOrdered=false;
       indexOfInconsistentGID=i;
@@ -576,7 +576,6 @@ initAllValues (const row_matrix_type& A)
   Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
   for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
     local_ordinal_type local_row = myRow;
-    global_ordinal_type global_row = rowMap->getGlobalElement(local_row);
 
     //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
     //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
@@ -610,7 +609,7 @@ initAllValues (const row_matrix_type& A)
         LV[NumL] = InV[j];
         NumL++;
       }
-      else if (k <= rowMap->getNodeNumElements()) {
+      else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
         UI[NumU] = k;
         UV[NumU] = InV[j];
         NumU++;

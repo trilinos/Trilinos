@@ -461,7 +461,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, IgnoreRowMapGIDs, Scalar, LocalO
   Teuchos::Array<GlobalOrdinal> origToPerm(GIDs.size());
   permutedGIDs[0] = GIDs[0];
   origToPerm[0] = 0;
-  for (size_t i=1; i<GIDs.size(); ++i) {
+  for (GlobalOrdinal i=1; i<GIDs.size(); ++i) {
     permutedGIDs[i] = GIDs[GIDs.size()-i];
     origToPerm[GIDs[GIDs.size()-i]] = i;
   }
@@ -479,7 +479,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, IgnoreRowMapGIDs, Scalar, LocalO
     Teuchos::Array<GlobalOrdinal> pInds(5);
     Teuchos::Array<Scalar>        Vals(5);
     size_t numEntries;
-    for (int i=0; i<num_rows_per_proc; ++i) {
+    for (global_size_t i=0; i<num_rows_per_proc; ++i) {
       crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
       pInds.resize(numEntries);
       for (size_t j=0; j<numEntries; ++j)
@@ -520,7 +520,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, IgnoreRowMapGIDs, Scalar, LocalO
     multivector_type permRandVec(permRowMap,1);
     Teuchos::ArrayRCP<const Scalar> data  = randVec.getData(0);
     Teuchos::ArrayRCP<Scalar> pdata = permRandVec.getDataNonConst(0);
-    for (int i=0; i<num_rows_per_proc; ++i)
+    for (global_size_t i=0; i<num_rows_per_proc; ++i)
       pdata[i] = data[i];
     data = pdata = Teuchos::null;
 
@@ -605,7 +605,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, TestGIDConsistency, Scalar, Loca
   Teuchos::ArrayView<const GlobalOrdinal> rowGIDs = rowMap->getNodeElementList();
   Teuchos::Array<GlobalOrdinal> colElements(rowGIDs.size());
   colElements[0]=rowGIDs[0];
-  for (size_t i=1; i<rowGIDs.size(); ++i)
+  for (GlobalOrdinal i=1; i<rowGIDs.size(); ++i)
     colElements[i] = rowGIDs[rowGIDs.size()-i];
     
   Teuchos::RCP<const map_type> colMap = Teuchos::rcp(new map_type(INVALID, colElements(), indexBase, comm));
