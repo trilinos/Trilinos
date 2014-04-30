@@ -2544,9 +2544,36 @@ TRIBITS_TPL_DECLARE_LIBRARIES( PETSC
 <p>Some concrete <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> files actually do use
 <tt class="docutils literal">FIND_PACKAGE()</tt> and a standard CMake package find module to fill in the
 guts of finding at TPL which is perfectly fine.</p>
-<p>Once processed, each defined TPL <tt class="docutils literal">TPL_NAME</tt> is given global non-cache
-variables for the TPL's find module <span class="target" id="tpl-name-findmod">${TPL_NAME}_FINDMOD</span> and test group
-<span class="target" id="tpl-name-testgroup">${TPL_NAME}_TESTGROUP</span> (see <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>).</p>
+<p>Once processed, each defined TPL <tt class="docutils literal">TPL_NAME</tt> is assigned the following global
+non-cache variables:</p>
+<blockquote>
+<p id="tpl-name-findmod"><tt class="docutils literal">${TPL_NAME}_FINDMOD</tt></p>
+<blockquote>
+Gives the location for the TPL's find module.  This is set using the
+<tt class="docutils literal">FINDMOD</tt> field in the call to <a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>.  The
+final value of the variable is defined by the <em>last</em>
+<a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file that is processed that declares the TPL
+<tt class="docutils literal">TPL_NAME</tt>.  For example, if <tt class="docutils literal">Repo1/TPLsList.cmake</tt> and
+<tt class="docutils literal">Repo2/TPLsList.cmake</tt> both list the TPL <tt class="docutils literal">SomeTpl</tt>, then if <tt class="docutils literal">Repo2</tt>
+is processed after <tt class="docutils literal">Repo1</tt>, then <tt class="docutils literal">SomeTpl_FINDMOD</tt> is determined by
+<tt class="docutils literal">Repo2/TPLsList.cmake</tt> and the find module listed in
+<tt class="docutils literal">Repo1/TPLsList.cmake</tt> is ignored.</blockquote>
+<p id="tpl-name-testgroup"><tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt></p>
+<blockquote>
+Gives the TPLs <a class="reference internal" href="#se-package-test-group">SE Package Test Group</a>. This is set using the
+<tt class="docutils literal">CLASSIFICATION</tt> field in the call to
+<a class="reference internal" href="#tribits-repository-define-tpls">TRIBITS_REPOSITORY_DEFINE_TPLS()</a>.  If multiple repos define a given
+TPL, then the <em>first</em> <a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> file that is processed
+that declares the TPL <tt class="docutils literal">TPL_NAME</tt> specifies the test group.  For example,
+if <tt class="docutils literal">Repo1/TPLsList.cmake</tt> and <tt class="docutils literal">Repo2/TPLsList.cmake</tt> both list the TPL
+<tt class="docutils literal">SomeTpl</tt>, then if <tt class="docutils literal">Repo2</tt> is processed after <tt class="docutils literal">Repo1</tt>, then
+<tt class="docutils literal">SomeTpl_TESTGROUP</tt> is determined by <tt class="docutils literal">Repo1/TPLsList.cmake</tt> and the
+test group in <tt class="docutils literal">Repo2/TPLsList.cmake</tt> is ignored.  However, if
+<tt class="docutils literal">${TPL_NAME}_TESTGROUP</tt> is already set before the the
+<a class="reference internal" href="#repodir-tplslist-cmake">&lt;repoDir&gt;/TPLsList.cmake</a> files are processed, then that test group will
+be used.  Therefore, the project can override the test group for a given
+TPL if desired.</blockquote>
+</blockquote>
 <p>The specification given in <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#enabling-support-for-an-optional-third-party-library-tpl">Enabling support for an optional Third-Party
 Library (TPL)</a> and <a class="reference internal" href="#tribits-tpl-declare-libraries">TRIBITS_TPL_DECLARE_LIBRARIES()</a> describes how the a
 <tt class="docutils literal"><span class="pre">FindTPL${TPL_NAME}.cmake</span></tt> module should behave and allow users to override

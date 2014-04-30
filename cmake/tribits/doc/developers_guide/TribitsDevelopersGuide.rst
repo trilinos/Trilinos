@@ -1937,9 +1937,40 @@ Some concrete ``FindTPL${TPL_NAME}.cmake`` files actually do use
 ``FIND_PACKAGE()`` and a standard CMake package find module to fill in the
 guts of finding at TPL which is perfectly fine.
 
-Once processed, each defined TPL ``TPL_NAME`` is given global non-cache
-variables for the TPL's find module _`${TPL_NAME}_FINDMOD` and test group
-_`${TPL_NAME}_TESTGROUP` (see `SE Package Test Group`_).
+Once processed, each defined TPL ``TPL_NAME`` is assigned the following global
+non-cache variables:
+
+  .. _${TPL_NAME}_FINDMOD:
+
+  ``${TPL_NAME}_FINDMOD``
+
+    Gives the location for the TPL's find module.  This is set using the
+    ``FINDMOD`` field in the call to `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.  The
+    final value of the variable is defined by the *last*
+    `<repoDir>/TPLsList.cmake`_ file that is processed that declares the TPL
+    ``TPL_NAME``.  For example, if ``Repo1/TPLsList.cmake`` and
+    ``Repo2/TPLsList.cmake`` both list the TPL ``SomeTpl``, then if ``Repo2``
+    is processed after ``Repo1``, then ``SomeTpl_FINDMOD`` is determined by
+    ``Repo2/TPLsList.cmake`` and the find module listed in
+    ``Repo1/TPLsList.cmake`` is ignored.
+
+  .. _${TPL_NAME}_TESTGROUP:
+
+  ``${TPL_NAME}_TESTGROUP``
+
+    Gives the TPLs `SE Package Test Group`_. This is set using the
+    ``CLASSIFICATION`` field in the call to
+    `TRIBITS_REPOSITORY_DEFINE_TPLS()`_.  If multiple repos define a given
+    TPL, then the *first* `<repoDir>/TPLsList.cmake`_ file that is processed
+    that declares the TPL ``TPL_NAME`` specifies the test group.  For example,
+    if ``Repo1/TPLsList.cmake`` and ``Repo2/TPLsList.cmake`` both list the TPL
+    ``SomeTpl``, then if ``Repo2`` is processed after ``Repo1``, then
+    ``SomeTpl_TESTGROUP`` is determined by ``Repo1/TPLsList.cmake`` and the
+    test group in ``Repo2/TPLsList.cmake`` is ignored.  However, if
+    ``${TPL_NAME}_TESTGROUP`` is already set before the the
+    `<repoDir>/TPLsList.cmake`_ files are processed, then that test group will
+    be used.  Therefore, the project can override the test group for a given
+    TPL if desired.
 
 The specification given in `Enabling support for an optional Third-Party
 Library (TPL)`_ and `TRIBITS_TPL_DECLARE_LIBRARIES()`_ describes how the a
