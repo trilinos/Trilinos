@@ -51,11 +51,12 @@ STKUNIT_UNIT_TEST( UnitTestMetaData, testMetaData )
   MetaData metadata_not_committed(spatial_dimension);
   MetaData metadata(spatial_dimension);
 
-  Part &pa = metadata.declare_part( std::string("a") , 0 );
-  Part &pb = metadata.declare_part( std::string("b") , 0 );
-  Part &pc = metadata.declare_part( std::string("c") , 0 );
-  Part &pd = metadata.declare_part( std::string("d") , 0 );
-  Part &pe = metadata.declare_part( std::string("e") , 0 );
+  stk::mesh::EntityRank node_rank = stk::topology::NODE_RANK;
+  Part &pa = metadata.declare_part( std::string("a") , node_rank );
+  Part &pb = metadata.declare_part( std::string("b") , node_rank );
+  Part &pc = metadata.declare_part( std::string("c") , node_rank );
+  Part &pd = metadata.declare_part( std::string("d") , node_rank );
+  Part &pe = metadata.declare_part( std::string("e") , node_rank );
   PartVector part_vector;
   metadata_committed.commit();
 

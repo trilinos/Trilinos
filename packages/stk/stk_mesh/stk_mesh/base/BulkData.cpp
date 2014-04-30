@@ -5424,9 +5424,9 @@ void BulkData::internal_update_fast_comm_maps()
     EntityCommListInfoVector const& all_comm = comm_list();
 
     // Flush previous map
-    const EntityRank num_ranks = m_mesh_meta_data.entity_rank_count();
+    const EntityRank num_ranks = static_cast<EntityRank>(m_mesh_meta_data.entity_rank_count());
     m_volatile_fast_shared_comm_map.resize(num_ranks);
-    for (EntityRank r = 0; r < num_ranks; ++r) {
+    for (EntityRank r = stk::topology::BEGIN_RANK; r < num_ranks; ++r) {
       m_volatile_fast_shared_comm_map[r].resize(parallel_size());
       for (int proc = 0; proc < parallel_size(); ++proc) {
         m_volatile_fast_shared_comm_map[r][proc].clear();

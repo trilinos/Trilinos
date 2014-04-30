@@ -131,10 +131,10 @@ void UnitTestFieldImpl::testFieldRestriction()
   //------------------------------
   // Declare some parts for restrictions:
 
-  Part & pA = meta_data.declare_part( std::string("A") , 0 );
-  Part & pB = meta_data.declare_part( std::string("B") , 0 );
-  Part & pC = meta_data.declare_part( std::string("C") , 0 );
-  Part & pD = meta_data.declare_part( std::string("D") , 0 );
+  Part & pA = meta_data.declare_part( std::string("A") , stk::topology::NODE_RANK );
+  Part & pB = meta_data.declare_part( std::string("B") , stk::topology::NODE_RANK );
+  Part & pC = meta_data.declare_part( std::string("C") , stk::topology::NODE_RANK );
+  Part & pD = meta_data.declare_part( std::string("D") , stk::topology::NODE_RANK );
 
   // Declare three restrictions:
 

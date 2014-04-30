@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
   STKUNIT_ASSERT( !( key_order_1_12 >  key_order_2_10));
 
 #ifndef NDEBUG
-  STKUNIT_ASSERT_THROW( EntityKey( ~0u , 1 ) , std::logic_error );
+  STKUNIT_ASSERT_THROW( EntityKey( stk::topology::INVALID_RANK, 1 ) , std::logic_error );
   STKUNIT_ASSERT_THROW( EntityKey( stk::topology::NODE_RANK , ~0ull ) , std::logic_error );
 #endif // NDEBUG
 }

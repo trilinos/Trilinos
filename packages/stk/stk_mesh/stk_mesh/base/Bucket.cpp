@@ -803,7 +803,7 @@ void Bucket::debug_dump(std::ostream& out, unsigned ordinal) const
 #ifndef NDEBUG
 void Bucket::check_for_invalid_connectivity_request(ConnectivityType const* type) const
 {
-  EntityRank rank = -1u;
+  EntityRank rank = stk::topology::END_RANK;
   if (type == &m_node_kind) {
     rank = stk::topology::NODE_RANK;
   }
