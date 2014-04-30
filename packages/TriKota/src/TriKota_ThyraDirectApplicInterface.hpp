@@ -35,10 +35,6 @@
 #include "TriKota_ConfigDefs.hpp"
 
 #include "DirectApplicInterface.hpp"
-#include "CommandLineHandler.hpp"
-#include "DakotaStrategy.hpp"
-#include "DakotaModel.hpp"
-#include "ParallelLibrary.hpp"
 #include "ProblemDescDB.hpp"
 
 #include "Thyra_ModelEvaluatorDefaultBase.hpp"

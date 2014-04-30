@@ -177,24 +177,21 @@ Piro::PerformDakotaAnalysis(
   dakotaParams.validateParameters(*Piro::getValidPiroAnalysisDakotaParameters(),0);
   using std::string;
 
-  string dakotaIn = dakotaParams.get("Input File","dakota.in");
-  string dakotaOut= dakotaParams.get("Output File","dakota.out");
-  string dakotaErr= dakotaParams.get("Error File","dakota.err");
-  string dakotaRes= dakotaParams.get("Restart File","dakota_restart.out");
+  string dakotaIn  = dakotaParams.get("Input File","dakota.in");
+  string dakotaOut = dakotaParams.get("Output File","dakota.out");
+  string dakotaErr = dakotaParams.get("Error File","dakota.err");
+  string dakotaRes = dakotaParams.get("Restart File","dakota_restart.out");
   string dakotaRestartIn;
-  const char * dakRestartIn = NULL;
-  if (dakotaParams.isParameter("Restart File To Read")) {
+  if (dakotaParams.isParameter("Restart File To Read"))
     dakotaRestartIn = dakotaParams.get<string>("Restart File To Read");
-    dakRestartIn = dakotaRestartIn.c_str();
-  }
+
   int dakotaRestartEvals= dakotaParams.get("Restart Evals To Read", 0);
 
   int p_index = dakotaParams.get("Parameter Vector Index", 0);
   int g_index = dakotaParams.get("Response Vector Index", 0);
 
-  TriKota::Driver dakota(dakotaIn.c_str(), dakotaOut.c_str(),
-                         dakotaErr.c_str(), dakotaRes.c_str(),
-                         dakRestartIn, dakotaRestartEvals );
+  TriKota::Driver dakota(dakotaIn, dakotaOut, dakotaErr, dakotaRes,
+                         dakotaRestartIn, dakotaRestartEvals);
 
   RCP<TriKota::ThyraDirectApplicInterface> trikota_interface =
     rcp(new TriKota::ThyraDirectApplicInterface
