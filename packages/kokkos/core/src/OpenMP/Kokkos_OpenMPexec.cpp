@@ -52,10 +52,12 @@ namespace Kokkos {
 namespace Impl {
 namespace {
 
+KOKKOS_INLINE_FUNCTION
 int kokkos_omp_in_parallel();
 
 int kokkos_omp_in_critical_region = ( Kokkos::HostSpace::register_in_parallel( kokkos_omp_in_parallel ) , 0 );
 
+KOKKOS_INLINE_FUNCTION
 int kokkos_omp_in_parallel()
 {
   return omp_in_parallel() && ! kokkos_omp_in_critical_region ;
@@ -65,7 +67,7 @@ unsigned s_threads_per_core = 0 ;
 unsigned s_threads_per_numa = 0 ;
 bool s_using_hwloc = false;
 
-inline
+KOKKOS_INLINE_FUNCTION
 unsigned fan_size( const unsigned rank , const unsigned size )
 {
   const unsigned rank_rev = size - ( rank + 1 );
@@ -255,6 +257,8 @@ void OpenMPexec::resize_shared_scratch( size_t size )
   s_size = size ;
 }
 
+
+KOKKOS_FUNCTION
 void * OpenMPexec::get_shmem( const int size )
 {
   // m_shared_iter is in bytes, convert to integer offsets
@@ -277,6 +281,7 @@ void * OpenMPexec::get_shmem( const int size )
 
 namespace Kokkos {
 
+KOKKOS_FUNCTION
 unsigned OpenMP::league_max()
 {
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
@@ -285,6 +290,7 @@ unsigned OpenMP::league_max()
   return unsigned( std::numeric_limits<int>::max() );
 }
 
+KOKKOS_INLINE_FUNCTION
 unsigned OpenMP::team_max()
 {
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_max" );
