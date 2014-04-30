@@ -478,13 +478,17 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUK, IgnoreRowMapGIDs, Scalar, LocalO
     Teuchos::Array<GlobalOrdinal> Inds(5);
     Teuchos::Array<GlobalOrdinal> pInds(5);
     Teuchos::Array<Scalar>        Vals(5);
+    Teuchos::Array<Scalar>        pVals(5);
     size_t numEntries;
     for (global_size_t i=0; i<num_rows_per_proc; ++i) {
       crsmatrix->getGlobalRowCopy(i,Inds(),Vals(),numEntries);
       pInds.resize(numEntries);
-      for (size_t j=0; j<numEntries; ++j)
+      pVals.resize(numEntries);
+      for (size_t j=0; j<numEntries; ++j) {
         pInds[j] = origToPerm[Inds[j]];
-      permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),Vals());
+        pVals[j] = Vals[j];
+      }
+      permutedMatrix->insertGlobalValues(origToPerm[i],pInds(),pVals());
     }
     permutedMatrix->fillComplete();
 
