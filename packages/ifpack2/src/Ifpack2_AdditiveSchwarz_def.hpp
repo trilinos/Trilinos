@@ -1041,26 +1041,25 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
 
   out << "\"Ifpack2::AdditiveSchwarz\": {";
   if (this->getObjectLabel () != "") {
-    out << "Label: \"" << this->getObjectLabel () << "\"";
+    out << "Label: \"" << this->getObjectLabel () << "\", ";
   }
-  out << ", Initialized: " << (isInitialized () ? "true" : "false")
+  out << "Initialized: " << (isInitialized () ? "true" : "false")
       << ", Computed: " << (isComputed () ? "true" : "false")
       << ", Overlap level: " << OverlapLevel_
       << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"";
-
   if (Matrix_.is_null ()) {
     out << ", Matrix: null";
   }
   else {
-    out << ", Matrix: not null"
-        << ", Global matrix dimensions: ["
+    out << ", Global matrix dimensions: ["
         << Matrix_->getGlobalNumRows () << ", "
         << Matrix_->getGlobalNumCols () << "]";
   }
-
-  // It's useful to print this instance's overlap level.  If you want
-  // more info than that, call describe() instead.
-  out << ", Overlap level: " << OverlapLevel_;
+  out << ", Inner solver: ";
+  if (!Inverse_.is_null ())
+    out << "{" << Inverse_->description() << "}";
+  else
+    out << "null";
 
   out << "}";
   return out.str ();
