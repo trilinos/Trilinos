@@ -142,8 +142,8 @@ void find_sides_to_be_created(
 void find_lower_rank_entities_to_kill(
     const stk::mesh::BulkData &mesh,
     const stk::mesh::EntityVector & entities_closure,
-    unsigned closure_rank,
-    unsigned entity_rank,
+    stk::mesh::EntityRank closure_rank,
+    stk::mesh::EntityRank entity_rank,
     unsigned spatial_dim,
     const stk::mesh::Selector & select_owned,
     const stk::mesh::Selector & select_live,
@@ -182,7 +182,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   bool passed = true;
 
-  unsigned mesh_rank = element_rank;
+  stk::mesh::EntityRank mesh_rank = element_rank;
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
@@ -254,7 +254,8 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
     //find lower ranked entity that are only related to the dead entities
     //and kill them
-    for (int rank = side_rank; rank >= 0; --rank) {
+    for (stk::mesh::EntityRank irank = stk::topology::BEGIN_RANK; irank <= side_rank; ++irank) {
+      stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(side_rank - irank);
       stk::mesh::EntityVector kill_list;
       find_lower_rank_entities_to_kill(
           mesh,
@@ -332,8 +333,8 @@ void find_sides_to_be_created(
 void find_lower_rank_entities_to_kill(
     const stk::mesh::BulkData &mesh,
     const stk::mesh::EntityVector & entities_closure,
-    unsigned mesh_rank,
-    unsigned entity_rank,
+    stk::mesh::EntityRank mesh_rank,
+    stk::mesh::EntityRank entity_rank,
     unsigned spatial_dim,
     const stk::mesh::Selector & select_owned,
     const stk::mesh::Selector & select_live,
@@ -354,7 +355,7 @@ void find_lower_rank_entities_to_kill(
   const stk::mesh::EntityVector::const_iterator end =
       std::lower_bound(entities_closure.begin(),
                        entities_closure.end(),
-                       stk::mesh::EntityKey(entity_rank+1, 0),
+                       stk::mesh::EntityKey(static_cast<stk::mesh::EntityRank>(entity_rank+1), 0),
                        lesser);
 
   for (; itr != end; ++itr) {
@@ -367,7 +368,7 @@ void find_lower_rank_entities_to_kill(
     if (select_owned(*bucket_ptr)) {
       bool found_live = false;
 
-      for(unsigned rank = entity_rank + 1; rank<=mesh_rank && !found_live; ++rank) {
+      for(stk::mesh::EntityRank rank = static_cast<stk::mesh::EntityRank>(entity_rank + 1); rank<=mesh_rank && !found_live; ++rank) {
         if (spatial_dim == 2 && rank == stk::topology::FACE_RANK) {
           continue;
         }

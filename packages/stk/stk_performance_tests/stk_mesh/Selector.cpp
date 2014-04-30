@@ -51,7 +51,7 @@ STKUNIT_UNIT_TEST(selector_timings, selector_timings)
 
     // Selector usage:
     start_time = stk::wall_time();
-    unsigned entity_rank = 0;
+    stk::mesh::EntityRank entity_rank = stk::topology::NODE_RANK;
     stk::mesh::BucketVector const& buckets_out =  fix.m_BulkData.get_buckets(entity_rank, selectUnion);
     total_buckets_grabbed += buckets_out.size();
     get_buckets_usage[timing_index] = stk::wall_dtime(start_time);

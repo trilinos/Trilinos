@@ -27,7 +27,7 @@
 
 namespace {
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
+static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 void find_owned_nodes_with_relations_outside_closure(
     const stk::mesh::BulkData &mesh,
@@ -40,7 +40,7 @@ void find_owned_nodes_with_relations_outside_closure(
   stk::mesh::EntityLess lesser(mesh);
 
   //the closure is a sorted unique vector
-  const stk::mesh::EntityRank upward_rank = NODE_RANK + 1;
+  const stk::mesh::EntityRank upward_rank = stk::topology::EDGE_RANK;
   const stk::mesh::EntityId base_id = 0;
   stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
       closure.end(),

@@ -31,7 +31,7 @@ namespace {
 
 using stk::mesh::EntityRank;
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
+static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 size_t count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, EntityRank skin_rank ) {
 
@@ -99,7 +99,7 @@ void find_owned_nodes_with_relations_outside_closure(
   nodes.clear();
 
   //the closure is a sorted unique vector
-  const EntityRank upward_rank = NODE_RANK + 1;
+  const EntityRank upward_rank = stk::topology::EDGE_RANK;
   stk::mesh::EntityVector::iterator node_end = std::lower_bound(closure.begin(),
       closure.end(),
       stk::mesh::EntityKey(upward_rank, 0),

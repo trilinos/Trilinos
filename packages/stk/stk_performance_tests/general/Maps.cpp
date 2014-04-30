@@ -84,7 +84,7 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   // Populate map
   double start_time = stk::wall_time();
   for (int i = 0; i < iters ; ++i) {
-    testmap[EntityKey(1,i)] = i;
+    testmap[EntityKey(stk::topology::EDGE_RANK,i)] = i;
   }
   double timing0 = stk::wall_dtime(start_time);
   std::cout << mapname << "\ttiming map growth: \t"  << timing0 << " s" << std::endl;
@@ -93,7 +93,7 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   start_time = stk::wall_time();
   int counter_to_fool_optimizer = 0;
   for (int i = 0; i < iters; ++i) {
-    counter_to_fool_optimizer += testmap[EntityKey(1,i)];
+    counter_to_fool_optimizer += testmap[EntityKey(stk::topology::EDGE_RANK,i)];
   }
   double timing = stk::wall_dtime(start_time);
   std::cout << mapname << "\tsequential timing map lookups: \t"  << timing << " s" << std::endl;
@@ -112,7 +112,7 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   start_time = stk::wall_time();
   counter_to_fool_optimizer = 0;
   for (int i = 0; i < iters; ++i) {
-    counter_to_fool_optimizer += testmap[EntityKey(1,num_array[i])];
+    counter_to_fool_optimizer += testmap[EntityKey(stk::topology::EDGE_RANK,num_array[i])];
   }
   double timing2 = stk::wall_dtime(start_time);
   delete[] num_array;
@@ -249,7 +249,7 @@ STKUNIT_UNIT_TEST( map_tests, googledensemap)
 
   EntityMap testmap;
 
-  SET_EMPTY_KEY(testmap, EntityKey(0,0));
+  SET_EMPTY_KEY(testmap, EntityKey(stk::topology::NODE_RANK,0));
 
   time_map(testmap, NUM_KEYS, "google dense map");
 }

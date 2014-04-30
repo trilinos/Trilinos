@@ -43,7 +43,7 @@ namespace {
   [ save as animation with 60fps ]
 **/
 
-static const size_t NODE_RANK = stk::topology::NODE_RANK;
+static const stk::mesh::EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
 typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
 typedef stk::mesh::Field<int> IntField;
@@ -267,7 +267,7 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
-  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",stk::topology::ELEMENT_RANK-1);
+  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.meta_data.side_rank());
 
   const unsigned ONE_STATE = 1;
   CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>(stk::topology::NODE_RANK, "velocity",ONE_STATE);
@@ -306,14 +306,14 @@ STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
         t = topo_part.name()+std::string("_Skin_part");
         t.erase(t.find("FEM_ROOT_CELL_TOPOLOGY_PART"), sizeof("FEM_ROOT_CELL_TOPOLOGY_PART"));
       }
-      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, stk::topology::ELEMENT_RANK-1);
+      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.meta_data.side_rank());
       stk::io::put_io_part_attribute(topo_skin_part);
       fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
       fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
       if (   t == "skin_hex8_quad4_4" || t == "skin_hex20_quad8_5") {
         if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
         else                             t = "skin_wedge15_quad4_8";
-        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, stk::topology::ELEMENT_RANK-1);
+        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, fixture.meta_data.side_rank());
         stk::io::put_io_part_attribute(topo_skin_part2);
         fixture.meta_data.declare_part_subset(topo_part, topo_skin_part2);
         fixture.meta_data.declare_part_subset(skin_part, topo_skin_part2);

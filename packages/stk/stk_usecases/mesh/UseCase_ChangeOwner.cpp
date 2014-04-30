@@ -212,7 +212,7 @@ bool test_change_owner_with_constraint( stk::ParallelMachine pm )
   if ( p_size != 2 ) { return success ; }
 
   std::vector<std::string> rank_names = stk::mesh::entity_rank_names();
-  const stk::mesh::EntityRank constraint_rank = rank_names.size();
+  const stk::mesh::EntityRank constraint_rank = static_cast<stk::mesh::EntityRank>(rank_names.size());
   rank_names.push_back("Constraint");
   stk::mesh::MetaData fem_meta_data( spatial_dimension, rank_names );
   const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;

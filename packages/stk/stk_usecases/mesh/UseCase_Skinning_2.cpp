@@ -64,7 +64,7 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity entit
       mesh.destroy_relation( entity, related_entity, rel_id );
 
       bool related_entity_no_upward_rels = true;
-      for (stk::mesh::EntityRank krank = related_entity_rank + 1;
+      for (stk::mesh::EntityRank krank = ++related_entity_rank;
             krank != stk::topology::END_RANK;
             ++krank)
       {

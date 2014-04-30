@@ -43,7 +43,7 @@ void create_entities( BulkData & bulk,
   boost::unordered_map<unsigned, Entity> node_map;
 
   for(unsigned nid=nid_start; nid<nid_end; ++nid) {
-    Entity e = bulk.declare_entity(0, nid, node_parts);
+    Entity e = bulk.declare_entity(stk::topology::NODE_RANK, nid, node_parts);
     node_map[nid] = e;
   }
 
