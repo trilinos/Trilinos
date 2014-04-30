@@ -431,9 +431,9 @@ Software Engineering Packaging Principles
 The term "software engineering" package is adopted in TriBITS nomenclature in
 order to highlight and the role of defining and managing "Packages" according
 to standard software engineering packaging principles.  In his book [`Agile
-Software Engineering`_], Robert Martin defines several object-oriented (OO)
-software engineering principles related to packaging software which are listed
-below:
+Software Development, 2003`_], Robert Martin defines several object-oriented
+(OO) software engineering principles related to packaging software which are
+listed below:
 
 * *Package Cohesion OO Principles*:
 
@@ -466,8 +466,8 @@ when deciding how to partition software into different `TriBITS SE Packages`_.
 NOTE: This purpose of this TriBITS Developers Guide document is not teach
 basic software engineering so these various principles will not be expanded on
 further here.  However, interested readers are strongly encouraged to read
-[`Agile Software Engineering`_] as one of the better software engineering
-books out there (see
+[`Agile Software Development, 2003`_] as one of the better software
+engineering books out there (see
 http://web.ornl.gov/~8vt/readingList.html#Most_Recommended_SE_Books).
 
 TriBITS Project Structure
@@ -4663,8 +4663,6 @@ TriBITS packages, you must perform the actions:
 Hopefully that should be enough clues to manage the mapping of CDash
 regression email lists to TriBITS packages.
 
-.. ToDo: Edited and spell-checked up to here on 4/28/2014!
-
 
 Multi-Repository Support
 ========================
@@ -5041,8 +5039,6 @@ package must declare that the package might be missing by calling
 .. would have to copy the TribitsExampleProject source into the build tree,
 .. then copy in the extra package source, then configure the project.
 
-.. ToDo: Edited and spell-checked up to here on 4/28/2014!
-
 
 Additional Topics
 =================
@@ -5057,15 +5053,15 @@ TriBITS System Project Dependencies
 -----------------------------------
 
 The basic TriBITS system itself which is used to configure, built, test,
-create tarballs, and install software that uses the TriBITS system has no
-dependencies other than a basic installation of CMake (which typically
-includes the executables ``cmake``, ``ctest``, and ``cpack``).  Great effort
-has been expended to implement all of the core functionality of TriBITS just
-using raw CMake.  That means that anyone who needs to configure, build, and
-install the software just needs a compatible CMake implementation.  TriBITS is
-purposefully maintained to require an older version of CMake.  At the time of
-this writing, the minimum required version of CMake needed to use TriBITS is
-CMake 2.8.1 (released in March 2010, see `CMake Release Wiki
+create tarballs, and install software has no dependencies other than a basic
+installation of CMake (which typically includes the executables ``cmake``,
+``ctest``, and ``cpack``).  Great effort has been expended to implement all of
+the core functionality of TriBITS just using raw CMake.  That means that
+anyone who needs to configure, build, and install software that uses TriBITS
+just needs a compatible CMake implementation.  TriBITS is purposefully
+maintained to work with older versions of CMake (as well as newer versions).
+At the time of this writing, the minimum required version of CMake needed to
+use TriBITS is CMake 2.8.1 (released in March 2010, see `CMake Release Wiki
 <http://www.cmake.org/Wiki/CMake_Released_Versions>`_).  CMake is becoming
 iniquitous enough that many clients will already have a current-enough version
 of CMake installed by default on their systems and will therefore not need to
@@ -5081,20 +5077,22 @@ CMake than what is required by TriBITS (see discussion of
 ``CMAKE_MINIMUM_REQUIRED()`` in `<projectDir>/CMakeLists.txt`_).  But also
 note that specific TriBITS projects and packages will also require additional
 tools like compilers, Python, Perl, or many other such dependencies.  It is
-just that TriBITS itself does not require any of these.  The goal of TriBITS
-is not to make the portability of software that uses it any worse than it
-already is but instead to make it easier in most cases (that after all is the
-whole goal of CMake).
+just that TriBITS itself does not require any of these in order to perform the
+basic configure, build, test, and install of software.  The goal of TriBITS is
+not to make the portability of software that uses it any worse than it already
+is but instead to make it easier in most cases (that after all is the whole
+goal of CMake).
 
-While the core TriBITS functionality is just written using raw CMake, the more
-sophisticated development tools needed to implement the full TriBITS
-development environment requires Python 2.4 (or higher, but not Python 3.x).
-Python is needed for tools like ``checkin-test.py`` and ``egdist``.  In
-addition, these python tools are used in `TRIBITS_CTEST_DRIVER()`_ to drive
-automated testing and submittals to CDash.  In addition, git is the chosen
-version control tool for TriBITS and all of the VC related functionality
-requires git support.  But none of this is required for doing the most basic
-building, testing, or installation of a TriBITS project.
+While the core TriBITS functionality to configure, build, test, and install
+software is written using only raw CMake, the more sophisticated development
+tools needed to implement the full TriBITS development environment require
+Python 2.4 (or higher, but not Python 3.x).  Python is needed for tools like
+`checkin-test.py`_ and `egdist`_.  In addition, these python tools are used in
+`TRIBITS_CTEST_DRIVER()`_ to drive automated testing and submits to CDash.
+Also not that git is the chosen version control tool for the TriBITS software
+development tools and all the VC-related functionality in TriBITS.  But none
+of this is required for doing the most basic building, testing, or
+installation of a project using TriBITS.
 
 
 Project-Specific Build Quick Reference
@@ -5105,9 +5103,10 @@ will configure, build, and test the project, then having some documentation
 that explains how to do this would be useful.  For this purpose, TriBITS
 provides a mechanism to quickly create a project-specific build quick
 reference document in restructured text (RST) format and with HTML and
-LaTeX/PDF outputs.  These documents are generally created in the base project
+LaTeX/PDF outputs.  This document are generally created in the base project
 source tree and given then name ``<Project>BuildQuickRef.[rst,html,pdf]``.
-This document consists of two parts.  One part is a generic template document::
+This document consists of two parts.  One part is a generic template
+document::
 
   tribits/doc/build_quick_ref/TribitsBuildQuickRefBody.rst
 
@@ -5132,7 +5131,7 @@ by default) and then generates the read-only files::
     <Project>BuildQuickRef.html
     <Project>BuildQuickRef.pdf
 
-To see a simple example of this, see::
+For a simple example of this, see::
 
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
@@ -5145,24 +5144,25 @@ times in this developers guide.
 Project and Repository Versioning and Release Mode
 ----------------------------------------------------
 
-TriBITS has built-in support for project and repository versioning and release
-mode control.  When the project contains the file
+TriBITS has built-in support for project and repository versioning and
+release-mode control.  When the project contains the file
 `<projectDir>/Version.cmake`_, it is used to define the project's official
 version.  The idea is that when it is time to branch for a release, the only
-file that needs to be changed is the file is `<projectDir>/Version.cmake`_
+file that needs to be changed is the file `<projectDir>/Version.cmake`_.
 
 Each TriBITS repository can also contain a `<repoDir>/Version.cmake`_ file
-that sets variables which TriBITS packages in that repository can use to
-derive development and release version information.  If the TriBITS repository
-also contains a `<repoDir>/Copyright.txt`_ file, then the information in
-``<repoDir>/Version.cmake`` and ``<repoDir>/Copyright.txt`` are used to
-configure a repository version header file::
+that sets version-related variables which TriBITS packages in that repository
+can use to derive development and release version information.  If the TriBITS
+repository also contains a `<repoDir>/Copyright.txt`_ file, then the
+information in ``<repoDir>/Version.cmake`` and ``<repoDir>/Copyright.txt`` are
+used to configure a repository version header file::
 
   ${${REPOSITORY_NAME}_BINARY_DIR}/${REPOSITORY_NAME}_version.h
 
-The configured header file ``${REPOSITORY_NAME}_version.h`` gives the
-repository version number in several formats, which allows C/C++ code (or any
-software that uses the C preprocessor) to write conditional code like::
+The configured header file ``${REPOSITORY_NAME}_version.h`` defines C
+pre-processor macros that give the repository version number in several
+formats, which allows C/C++ code (or any software that uses the C
+preprocessor) to write conditional code like::
 
   #if Trilinos_MAJOR_MINOR_VERSION > 100200
     /* Contains feature X */
@@ -5181,10 +5181,9 @@ TriBITS Environment Probing and Setup
 -------------------------------------
 
 Part of the TriBITS Framework is to probe the environment, set up the
-compilers, and get ready to compile code.  This was mentioned in the step
-"Probe and set up the environment" in `Full Processing of TriBITS Project
-Files`_.  This is executed by the TriBITS macro ``TRIBITS_SETUP_ENV()``.  Some
-of to things this macro does are:
+compilers, and get ready to compile code.  This was mentioned in `Full
+Processing of TriBITS Project Files`_.  This is executed by the TriBITS macro
+``TRIBITS_SETUP_ENV()``.  Some of to things this macro does are:
 
 .. _Probe and set up the environment:
 
@@ -5192,29 +5191,30 @@ of to things this macro does are:
 
 * Set ``CMAKE_BUILD_TYPE``
 * Set up for MPI (MPI compilers, etc.)
-* Set up C, C++, and Fortran compiler
+* Set up C, C++, and Fortran compilers
 * Find Perl (sets ``PERL_EXECUTABLE``)
 * Determine mixed language C/Fortran linking
-* Set up C++11, OpenMP, and Windows issues
-* Find Doxygen
-* Perform some other configure-time tests (see output)
+* Set up C++11, OpenMP, and Windows support
+* Find Doxygen (sets ``DOXYGEN_EXECUTABLE``)
+* Perform some other configure-time tests (see ``cmake`` output)
 
 At the completion of this part of the processing, the TriBITS CMake project is
-ready to compile code.
+ready to compile code.  All of the major variables set as part of this process
+are printed to the ``cmake`` stdout.
 
 
 Configure-time System Tests
 ---------------------------
 
-CMake has very nice support for defining configure-time checks of the system
-to help in configuring the project.  One can check for whether a header file
-exists or not, if the compiler supports a given data-type or language feature
-or perform almost any other type of check that one can imagine that can be
-done using the configured compilers, libraries, system tools, etc.  An example
-was given in `TribitsExampleProject`_.  Just following that example, looking
-at some of the built-in CMake configure-time test modules, and using provided
-on-line CMake documentation, one can see how to create a configure-time test
-for almost anything.
+CMake has good support for defining configure-time checks of the system to
+help in configuring the project.  One can check for whether a header file
+exists, if the compiler supports a given data-type or language feature, or
+perform almost any other type of check that one can imagine that can be done
+using the configured compilers, libraries, system tools, etc.  An example was
+given in `TribitsExampleProject`_.  Just follow that example, look at some of
+the built-in CMake configure-time test modules, and consult provided on-line
+CMake documentation in order to learn how to create a configure-time test for
+almost anything.
 
 .. ToDo: Provide more detail how to integrate a configure-time test into a
 .. TriBITS project and TriBITS package.
@@ -5316,20 +5316,14 @@ file/directory it will be included in the source distribution!
 Multi-Repository Almost Continuous Integration
 ----------------------------------------------
 
-The `checkin-test.py`_ script can be used to implement staged integration of
-the various repositories in a multi-repo TriBITS project.  This is referred to
-here as Almost Continuous Integration (ACI).  The basic concept of Almost
-Continuous Integration (ACI) is defined and described in the paper:
+The `checkin-test.py`_ script can be used to the implement staged integration
+of the various repositories in a multi-repo TriBITS project (see
+`Multi-Repository Support`_) .  This is referred to here as Almost Continuous
+Integration (ACI).  The basic concept of Almost Continuous Integration (ACI)
+is defined and described in the paper [`Integration Strategies for CSE,
+2009`_].
 
-|  Bartlett, Roscoe. Integration Strategies for Computational Science &
-|  Engineering Software.  2009-0655, Second International Workshop on Software
-|  Engineering for Computational Science and Engineering, 2009
-
-which can be found here:
-
-  https://cfwebprod.sandia.gov/cfdocs/CCIM/docs/CSE_SoftwareIntegration_Strategies%5B2%5D.pdf
-
-See:
+This topic is broken down into the following subsections:
 
 * `ACI Multi-Git/TriBITS Repo Integration Example`_
 * `ACI Local Sync Git Repo Setup`_
@@ -5344,28 +5338,29 @@ ACI Introduction
 
 The TriBITS system allows for setting up composite meta-builds of large
 collections of software pulled in from many different git/TriBITS code
-repositories.  The `checkin-test.py`_ script is a key tool to enable the
-testing of a set of packages in different git/TriBITS repos before pushing to
-a master 'origin' set of git repos; all in one robust command invocation.
+repositories as described in the section `Multi-Repository Support`_.  The
+`checkin-test.py`_ script is a key tool to enable the testing of a set of
+packages in different git/TriBITS repos before pushing to remote tracking
+branches for the set of git repos; all in one robust command invocation.
 
 While the ``checkin-test.py`` script was originally designed and its default
 behavior is to test a set of local commits created by a developer before
 pushing changes to one or more (public) git repos, it can also be used to set
 up an Almost Continuous Integration (ACI) process to keep these various
 git/TriBITS repos in sync thereby integrating the work of various disconnected
-development teams and projects.  To use the checkin-test.py for ACI requires
-some setup and changing what the script does a little by passing in additional
-options that a developer typically never uses.
+development teams and projects.  To use the ``checkin-test.py`` script for ACI
+requires some setup and changing what the script does a little by passing in
+additional options that a regular developer typically never uses.
 
-This section describes how to use the ``checkin-test.py`` script to implement
-an ACI process for a given set of git/TriBITS repositories and also provides a
-little background and context behind ACI.
+The following subsections describe how to use the `checkin-test.py`_ script to
+implement an ACI process for a given set of git/TriBITS repositories and also
+provides a little background and context behind ACI.
 
 
 ACI Multi-Git/TriBITS Repo Integration Example
 ++++++++++++++++++++++++++++++++++++++++++++++
 
-In order to set up the context for the ACI process, let's take, for example, a
+In order to set up the context for the ACI process, consider the following
 simple TriBITS project with two extra repositories::
 
   BaseProj/
@@ -5375,13 +5370,13 @@ simple TriBITS project with two extra repositories::
 Here, ``BaseProj`` is the base TriBITS project/repository and ``ExtraRepo1``
 and ``ExtraRepo2`` are extra repositories that supply additional TriBITS
 packages that are appended to the TriBITS packages defined in ``BaseProj``
-(see `<projectDir>/cmake/ExtraRepositoriesList.cmake`_).  Also, let's assume
-that ``BaseProj``, ``ExtraRepo1``, and ``ExtraRepo2`` are developed by three
+(see `<projectDir>/cmake/ExtraRepositoriesList.cmake`_).  Also, assume that
+``BaseProj``, ``ExtraRepo1``, and ``ExtraRepo2`` are developed by three
 different development teams that all have different funding sources and
-priorities so they tend not to work together or consider the other efforts too
-much when developing the software.  However, in this example, there is great
-value in combining all of this software into a single integrated TriBITS
-meta-project.  This combined meta-build is driven by a 4th
+different priorities so they tend not to work closely together or consider the
+other efforts too much when developing their software.  However, in this
+example, there is great value in combining all of this software into a single
+integrated TriBITS meta-project.  This combined meta-build is driven by a 4th
 integration/development team.  In this case, the core developers for each of
 these three different git/TriBITS repos do not test compatibility with the
 other git/TriBITS repos when pushing commits to their own git/TriBITS repos.
@@ -5423,13 +5418,13 @@ git integration server ``url4.gov``.  The state where the TriBITS packages in
 the three different git/TriBITS repos in the master branch on ``url4.gov`` all
 work together correctly constitutes the initial condition for the ACI process
 described below.  From that initial condition, the ACI processes ensures that
-updates of the git/TriBITS repos on ``url4.gov`` do not break any builds or
-tests of the integrated software.
+updates the the master branches for the git/TriBITS repos on ``url4.gov`` do
+not break any builds or tests of the integrated software.
 
-We will use the update of the git/TriBITS ``ExtraRepo1`` repo keeping the
-other two git/TriBITS repos ``BaseProj`` and ``ExtraRepo2`` constant as the
-ACI use case in order to describe how to set up an ACI process using the
-``checkin-test.py`` script.
+In order to describe how to set up an ACI process using the
+``checkin-test.py`` script, the following subsections will focus on the update
+of the git/TriBITS ``ExtraRepo1`` repo keeping the other two git/TriBITS repos
+``BaseProj`` and ``ExtraRepo2`` constant as the ACI use case.
 
 
 ACI Local Sync Git Repo Setup
@@ -5463,35 +5458,39 @@ Next, the remotes that define the integration pattern are created as follows::
 
   $ cd $SYNC_BASE_DIR/BaseProj
   $ git remote add integrate-from url4.gov:/git/BaseProj
-  $ cd ExtraRep1
+  $ cd ExtraRepo1
   $ git remote add integrate-from url2.gov:/git/ExtraRepo1
   $ cd ..
   $ cd ExtraRepo2
   $ git remote add integrate-from url4.gov:/git/ExtraRepo2
   $ cd ..
 
+.. ToDo: It would be great the create a remote for only ExtraRepo1 and pass in
+.. --extra-pull-from=ExtraRepo1:integrate-from:master.  This would avoid the
+.. other dummy ' integrate-from' remotes.
+
 This gives the remotes::
 
   $ cd $SYNC_BASE_DIR/BaseProj
   $ egdist remote -v | grep -v push | grep -v "^$"
   *** Base Git Repo: BaseProj
-  origin	url4.gov:/git/BaseProj (fetch)
+  origin	        url4.gov:/git/BaseProj (fetch)
   integrate-from	url4.gov:/git/BaseProj (fetch)
   *** Git Repo: ExtraRepo1
-  origin	url4.gov:/git/ExtraRepo1 (fetch)
+  origin	        url4.gov:/git/ExtraRepo1 (fetch)
   integrate-from	url2.gov:/git/ExtraRepo1 (fetch)
   *** Git Repo: ExtraRepo2
-  origin	url4.gov:/git/ExtraRepo2 (fetch)
+  origin	        url4.gov:/git/ExtraRepo2 (fetch)
   integrate-from	url4.gov:/git/ExtraRepo2 (fetch)
 
-Above, the remote ``integrate-from`` is used by the ``checkin-test.py``
-wrapper script (see below) to pull and merge in additional changes that will
-be tested and pushed to the 'origin' repos on ``url4.gov``.  In this case, the
+The remote ``integrate-from`` is used by the ``checkin-test.py`` wrapper
+script (see below) to pull and merge in additional changes that will be tested
+and pushed to the 'origin' repos on ``url4.gov``.  In this case, the
 ``BaseProj`` and ``ExtraRepo2`` repos have the remote ``integrate-from`` that
 points to the same repos as 'origin' (and will therefore not result in any
-merging) but the ExtraRepo1 remote ``integrate-from`` will result in updates
-being pulled from the main development repo on ``url2.gov``, thereby
-facilitating the update of ExtraRepo1 in the integrated project.
+merging) but the ``ExtraRepo1`` remote ``integrate-from`` will result in
+updates being pulled from the main development repo on ``url2.gov``, thereby
+facilitating the update of ``ExtraRepo1`` in the integrated meta-project.
 
 
 ACI Integration Build Directory Setup
@@ -5545,18 +5544,19 @@ like::
     $EXTRA_ARGS
 
 NOTE, in the above example ``sync_ExtraRepo1.sh`` script, the variable
-``CHECKIN_TEST_WRAPPER`` is set to a wrapper script
+``CHECKIN_TEST_WRAPPER`` is set to a wrapper script::
 
    BaseProj/sampleScripts/checkin-test-foo.sh
 
-which would be set up to call the ``checkin-test.py`` script with configure
-options for the specific machine.  The location and the nature of the wrapper
-script will vary project to project.  In some simple cases,
-``CHECKIN_TEST_WRAPPER`` might just be set to be the raw machine-independent
-``checkin-test.py`` script for the project.
+which would be set up to call the project's `checkin-test.py`_ script with
+configure options for the specific machine.  The location and the nature of
+the wrapper script will vary from project to project and machine to machine.
+In some simple cases, ``CHECKIN_TEST_WRAPPER`` might just be set to be the raw
+machine-independent ``checkin-test.py`` script for the project.
 
 A description of each option passed into this invocation of the
-`checkin-test.py`_ script is given below (see `checkin-test.py --help`_):
+`checkin-test.py`_ script is given below (see `checkin-test.py --help`_ for
+more details):
 
   ``--extra-pull-from=integrate-from:master``
   
@@ -5565,10 +5565,10 @@ A description of each option passed into this invocation of the
     branch name has to be the same in all git repos (todo: remove this
     requirement).  If it is not, then this option can't be used and instead
     the wrapper script should do the pulls up front manually before calling
-    the checkin-test.py script.  The disadvantage of doing the pulls manually
-    is that if they fail for some reason, they will not be seen by the
-    ``checkin-test.py`` script and no notification email would go out.
-    However, integrating 'master' branches in different git repos is a very
+    the ``checkin-test.py`` script.  The disadvantage of doing the pulls
+    manually is that if they fail for some reason, they will not be seen by
+    the ``checkin-test.py`` script and no notification email would go out.
+    However, integrating ``master`` branches in different git repos is a very
     common use case when good Lean/Agile CI practices are used by all of the
     projects.
   
@@ -5582,12 +5582,12 @@ A description of each option passed into this invocation of the
     ``url2.gov:/git/ExtraRepo1`` since the last time this sync process was
     run.  This avoids getting confusing and annoying emails like ``"PUSH
     FAILED"``.  The reason this option is not generally needed for local
-    developer usage of the checkin-test.py script is that in general a
+    developer usage of the ``checkin-test.py`` script is that in general a
     developer will not run the ``checkin-test.py`` script with ``--push``
     unless they have made local changes; it just does not make any sense at
     all to do that and if they do by accident, they should get an error email.
-    However, for an automated CI sync process, there is no easy way to know a
-    priori if changes needs to be synced so the script supports this option to
+    However, for an automated ACI sync process, there is no easy way to know a
+    priori if changes need to be synced so the script supports this option to
     deal with that case gracefully.
   
   ``--send-email-to=base-proj-integrators@url4.gov``
@@ -5611,19 +5611,19 @@ A description of each option passed into this invocation of the
     another.  The option ``--no-append-test-results`` is needed to instruct
     the ``checkin-test.py`` script to *NOT* amend the last commit with the
     test results.  The option ``--no-rebase`` is needed to avoid rebasing the
-    new commits pulled from being rebased.  While the default behavior of the
-    ``checkin-test.py`` script is to amend the last commit message and rebase
-    the local commits (which is considered best practice when testing local
-    commits), this is a very bad thing to do when a ACI sync server is only
-    testing and moving commits between public repos.  Amending the last commit
-    would change the SHA1 of the commit (just as a rebase would) and would
-    fork the history and mess up a number of workflows that otherwise should
-    work smoothly.  Since an email logging what was tested will go out if a
-    push happens due to the ``--send-email-to-on-push`` argument, there is no
-    value in appending the test results to the last commit pulled and merged
-    (which will generally not be a merge commit but just a fast-forward).
-    There are cases, however, where appending the test results in an ACI
-    process might be acceptable but they are not discussed here.
+    new commits pulled.  While the default behavior of the ``checkin-test.py``
+    script is to amend the last commit message and rebase the local commits
+    (which is considered best practice when testing local commits), this is a
+    very bad thing to do when a ACI sync server is only testing and moving
+    commits between public repos.  Amending the last commit would change the
+    SHA1 of the commit (just as a rebase would) and would fork the history and
+    mess up a number of workflows that otherwise should work smoothly.  Since
+    an email logging what was tested will go out if a push happens due to the
+    ``--send-email-to-on-push`` argument, there is no value in appending the
+    test results to the last commit pulled and merged (which will generally
+    not be a merge commit but just a fast-forward).  There are cases, however,
+    where appending the test results in an ACI process might be acceptable but
+    they are not discussed here.
   
   ``--do-all --push -j16``
   
@@ -5634,7 +5634,8 @@ A description of each option passed into this invocation of the
   
     This option is added if you want to make the sync server more robust to
     changes that might require a clean configure from script.  If you care
-    more about using less computer resources and rebuild, remove this option.
+    more about using less computer resources and testing that rebuilds work
+    smoothly, remove this option.
 
 Note that the option ``--enable-packages`` is not set in the above invocation
 of the ``checkin-test.py`` script, and therefore the ``checkin-test.py``
@@ -5670,7 +5671,7 @@ ACI Cron Job Setup
 Once the sync script ``sync_ExtraRepo1.sh`` has been locally tested, then it
 should be committed to a version control git repo and then run automatically
 as a cron job.  For example, the cron script shown below would fire off the
-daily ACI process at 8pm every night::
+daily ACI process at 8pm local time every night::
 
   # ----------------- minute (0 - 59)
   # |  -------------- hour (0 - 23)
@@ -5701,28 +5702,28 @@ the git pulls part of the ACI process.
 Addressing ACI Failures and Summary
 +++++++++++++++++++++++++++++++++++
 
-After the above cron job starts running, it will send out emails to the email
-addresses passed into the underlying ``checkin-test.py`` script.  If the
-emails report an update, configure, build, or test failure, then someone will
-need to log onto the machine where the ACI sync server is running and
-investigate what went wrong, just like they would if the were running the
-``checkin-test.py`` script for testing locally modified changes before
-pushing.
+After the above cron job starts running (setup described above), the
+``checkin-test.py`` script will send out emails to the email addresses passed
+into the underlying ``checkin-test.py`` script.  If the emails report an
+update, configure, build, or test failure, then someone will need to log onto
+the machine where the ACI sync server is running and investigate what went
+wrong, just like they would if the were running the ``checkin-test.py`` script
+for testing locally modified changes before pushing.
 
 In the above example, only a single git/TriBITS repo is integrated in this ACI
 sync scripts.  For a complete system, other ACI sync scripts would be written
 to sync the two other git/TriBITS repos in order to maintain some
 independence.  Or, a single ACI sync script that tries to update all three
-git/TriBITS repos at once would be written and used.  The pattern of
-integrations chosen will depend many different factors.
+git/TriBITS repos at could would be written and used.  The pattern of
+integrations chosen will depend many different factors and these patterns can
+change over time according to current needs and circumstances.
 
-In summary, the ``checkin-test.py`` script can be used to set up robust and
+In summary, the `checkin-test.py`_ script can be used to set up robust and
 effective Almost Continuous Integration (ACI) sync servers that can be used to
-integrate large collections of software in logical pieces at any logical
-frequency.  Such an approach, together with the practice of `Regulated
+integrate large collections of software in logical configurations at any
+logical frequency.  Such an approach, together with the practice of `Regulated
 Backward Compatibility and Deprecated Code`_, can allow very large collections
 of software to be kept integrated in short time intervals using ACI.
-
 
 Post-Push CI and Nightly Testing using checkin-test.py
 ------------------------------------------------------
@@ -5731,7 +5732,9 @@ While the post-push CI and Nightly testing processes using ``ctest -S``
 scripts using `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS Package-by-Package
 CTest/Dash Driver`_) which posts results to a CDash server (see `TriBITS CDash
 Customizations`_) is a very attractive testing system with many advantages,
-setting up a CDash server can be a bit of a chore.  As an intermediate
+setting up a CDash server can be a bit difficult and a CDash server can
+require non-trivial storage and CPU resources (due to the MySQL DB of test
+results) and requires some amount of extra maintenance.  As an intermediate
 approach, one can consider just using the project's `checkin-test.py`_ script
 to implement basic post-push CI and/or Nightly testing servers using simple
 cron jobs and a some other helper scripts.  The ``checkin-test.py`` script
@@ -5746,8 +5749,8 @@ What one gives up with this approach over the full-blow CTest/CDash
 implementation is:
 
 1) Test results over multiple builds/days are not archived in a database for
-   later retrieval and query.  Only the latest build's detailed results can be
-   found.
+   later retrieval and query.  Only the latest build's detailed results are
+   accessible.
 
 2) Detailed test results (pass or fail) cannot be easily looked up on a
    website.  Only detailed results from the last build can be found and one
@@ -5763,19 +5766,21 @@ using existing tools.
 
 .. ToDo: Show how to set up a cron job using checkin-test.py.
 
-For smaller private less-critical projects with few developers, setting up CI
-and Nightly testing using ``checkin-test.py`` may be quite adequate.  In fact,
-post-push testing processes implemented with ``checkin-test.py`` are much more
-solid and feature-full than have been employed in many software projects that
-we have seen over the years that were larger, very public, had many
-developers, and and were quite important to many users and development teams.
+For smaller, private, less-critical projects with few developers, setting up
+CI and Nightly testing using ``checkin-test.py`` may be quite adequate.  In
+fact, post-push testing processes implemented with ``checkin-test.py`` are
+much more solid and feature-full than have been employed in many software
+projects that we have seen over the years that were larger, more public, had
+many developers, and and were quite important to many users and development
+teams.
 
 
 TriBITS Dashboard Driver
 ------------------------
 
 TriBITS also includes a system based on CMake/CTest/CDash to drive the builds
-of a TriBITS project and post results to another CDash project.  This system is contained under the directory::
+of a TriBITS project and post results to another CDash project.  This system
+is contained under the directory::
 
   tribits/ctest/tdd/
 
@@ -5784,9 +5789,10 @@ is typically called ``<projectName>Driver``.  Using CTest to drive the Nightly
 builds of a TriBITS project makes sense because CTest can run different builds
 in parallel, can time-out builds that are taking too long, and will report
 results to a dashboard and submit notification emails when things fail.
-However, this is the most confusing and immature part of the TriBITS system
-and is completely independent from the TriBITS `TriBITS Package-by-Package
-CTest/Dash Driver`_ using the `TRIBITS_CTEST_DRIVER()`_.
+However, this is the most confusing and immature part of the TriBITS system.
+The `TriBITS Package-by-Package CTest/Dash Driver`_ system using the
+`TRIBITS_CTEST_DRIVER()`_ can be used without this TriBITS Dashboard Driver
+(TDD) system.
 
 .. ToDo: Import and format the contents of tribits/ctest/README related to
 .. this topic into this section.
@@ -5800,26 +5806,382 @@ deprecated code are described in the `TriBITS Lifecycle Model`_ document.
 Here, the details of the implementation in the TriBITS system are given and
 how transitions between non-backward compatible versions is accomplished.
 
-.. ToDo: Put in the material from the document README.DEPRECATED_CODE and
-.. format for RST.
+This section describes the process to use for deprecating code within a major
+version sequence and finally removing deprecated code when transitioning to a
+new the major repository version X to X+1 for the TriBITS version numbering
+scheme X.Y.Z.  This information is given as a process with different phases.
+
+The processing for managing deprecated code is as follows and more details are
+given below:
+
+* `Setting up support for deprecated code handling`_
+
+* `Deprecating code but maintaining backward compatibility`_
+
+  * `Deprecating C/C++ classes, structs, functions, typdefs, etc.`_
+  * `Deprecating preprocessor macros`_
+  * `Deprecating an entire header and/or source file`_
+
+* `Hiding deprecated code to certify and facilitate later removal`_
+
+  * `Hiding C/C++ entities`_
+  * `Hiding entire deprecated header and source files`_
+
+* `Physically removing deprecated code`_
+
+  * `Removing entire deprecated header and source files`_
+  * `Removing deprecated code from remaining files`_
+
+
+Setting up support for deprecated code handling
++++++++++++++++++++++++++++++++++++++++++++++++
+
+Setting up support for managing deprecated code in a TriBITS package requires
+just two simple changes to the TriBITS-related files in a package.  First, the
+top-level package `<packageDir>/CMakeLists.txt`_ file needs to have a call
+to::
+
+  TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
+
+Second, the package's configure header::
+
+  <packageDir>/cmake/<PACKAGE_UCNAME>_config.h.in
+
+file needs to have::
+
+  @<PACKAGE_UCNAME>_DEPRECATED_DECLARATIONS@
+
+where ``<PACKAGE_UCNAME>`` is the upper-case name of the TriBITS package.
+
+That is all that is needed to provide support for TriBITS deprecated code.
+
+When a TriBITS project is configured with::
+
+   -D<Project>_SHOW_DEPRECATED_WARNINGS=ON
+
+by default, all packages will show deprecated warnings.  These deprecated
+warnings can be turned on and off on a package-by-package basis by setting::
+
+   -D<PackageName>_SHOW_DEPRECATED_WARNINGS=[ON|OFF]
+
+This gives developers and users a little extra control over what deprecated
+warnings are shown.
+
+In addition, deprecated code can be hidden from the build to help certify that
+downstream code is clean by configuring with::
+
+   -D<Project>_HIDE_DEPRECATED_CODE=ON
+
+This will remove the deprecated code from the build and install (see details
+below) so that other software in the TriBITS project can be shown to build
+clean without deprecated code and so that outside client code can be shown to
+be clean of deprecated code.
+
+As with deprecated warnings, showing or hiding deprecated code can be
+controlled on a package-by-package basis by setting::
+
+   -D<PackageName>_HIDE_DEPRECATED_CODE=[ON|OFF]
+
+In this case, hiding deprecated code on a package-by-package basis may not
+work because deprecated code in a downstream package might rely on deprecated
+code in an upstream package (which might have its deprecated code hidden).
+
+
+Deprecating code but maintaining backward compatibility
++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+One of the most important aspects of the `TriBITS Lifecycle Model`_ for
+later-stage Production Growth and Production Maintenance code is to provide
+backward compatibility between a continuous stream of versions of the software
+within a major version number X in the version numbering scheme X.Y.Z.  In all
+cases, if a piece of client code builds and runs correctly against version
+X0.Y0.Z0, it should also build, without modification, against versions
+X0.Y1,Z1 for all Y1 >= Y0 and all Z1 and up to (but not including) X0+1.0.0.
+There are many types of constructs that one will want to deprecate and
+therefore later remove.  When deprecating code, one wants to give users
+compile-time warnings of the usage of deprecated features so that they know
+what they need to remove.  One also wants to allow them to certify that their
+code is free of deprecated warnings by hiding deprecated code.  Below, the
+different types of entities that one wants to deprecate and how to support
+hiding code (which also facilitates removing it later) are described.
+
+
+Deprecating C/C++ classes, structs, functions, typdefs, etc.
+............................................................
+
+To deprecate standard C/C++ constructs, one can just use the standard TriBITS
+compile-time macro ``<PACKAGE_UCNAME>_DEPRECATED`` which is properly ifdefed
+by the TriBITS system to add a GCC/Intel deprecated attribute or not.  For
+example, one would deprecate standard C/C++ constructs for the package
+``SomePackage`` with::
+
+  // Deprecate a class (or struct)
+  class SOMEPACKAGE_DEPRECATED SomeClass { ... };
+
+  // Deprecate a function
+  SOMEPACKAGE_DEPRECATED int someFunc(...);
+
+  // Deprecate a typedef
+  SOMEPACKAGE_DEPRECATED typedef someTypeDef int;
+
+The GCC and Intel C and C++ compilers both support adding extra attributes
+including the ``__deprecated__`` attribute.  When this attribute is applied to
+a given C/C++ entity, it produces a compiler warning that can be searched for
+in the compiler output and elevated to an error (when ``-Werror`` is also
+passed to the compiler).
+
+
+Deprecating preprocessor macros
+...............................
+
+A C/C++ preprocessor macro is not an entity seen by the C/C++ compiler and
+therefore cannot directly take advantage of a feature such as the
+``__deprecated__`` attribute of the GCC/Intel compilers.  However, in some
+cases, for function-like macros can such as::
+
+  // The definition of the macro
+  #define SOME_OLD_FUNC_MACRO(ARG1, ARG2, ...) ...
+  ...
+  // A use of the macro
+  SOME_OLD_FUNC_MACRO(a, b, ...)
+
+there is a strategy where one can define the macro to call a dummy deprecated
+function such as with::
+
+  SOMEPACKAGE_DEPRECATED
+  inline void SOME_OLD_FUNC_MACRO_is_deprecated()
+  {}
+
+  // The definition of the macro
+  #define SOME_OLD_FUNC_MACRO(ARG1, ARG2, ...) \
+    { \
+      SOME_OLD_FUNC_MACRO_is_deprecated(); \
+      ... \
+    }
+
+  ...
+
+  // A use of the macro
+  SOME_OLD_FUNC_MACRO(a, b, ...)
+
+In the above example, client code calling ``SOME_OLD_FUNC_MACRO()`` will now
+result in a deprecated compiler warning which should make it clear what is
+being deprecated.
+
+Note that this approach will not work in cases were a macro is only providing
+a single value such as a constant (but one should not use macros for providing
+constants anyway).
+
+
+Deprecating an entire header and/or source file
+...............................................
+
+There are times when one wants to deprecate an entire set of files and all of
+the contents in those files.  In addition to deprecating the contents of the
+files one will want to deprecate the entire file as well.  There are a few
+steps to this.  First, one wants to put a warning in the file such as::
+
+  #ifdef __GNUC__
+  #  warning "This header <THIS_HEADER> is deprecated!  Use <NEW_HEADER> instead!"
+  #endif
+
+The above ``ifdef`` on ``__GNUC__`` is needed in order avoid the non-standard
+``#warning`` preprocessor directive on non-compliant compilers (but should
+work on all later version GCC and Intel compilers).
+
+
+Hiding deprecated code to certify and facilitate later removal
+++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In addition to adding deprecation warnings at preprecessing or compile-time,
+it is also highly desirable to allow the deprecated code to be removed from
+the build to help certify that client code indeed no longer needs the
+deprecated code.  The following subsections describe how to hide deprecated
+code from existing files and how to hide deprecated files entirely.
+
+
+Hiding C/C++ entities
+.....................
+
+In the case when various C/C++ entities will be removed from an existing file,
+but the file will remain, then the deprecated code can be ifdefed out, for the
+package ``SomePackage`` for example, using::
+
+  #ifndef SOMEPACKAGE_HIDE_DEPRECATED_CODE
+    // Deprecate a class (or struct)
+    class SOMEPACKAGE_DEPRECATED SomeClass { ... };
+    ...
+  #endif /* SOMEPACKAGE_HIDE_DEPRECATED_CODE */
+
+In this way, when the CMake variable ``SomePackae_HIDE_DEPRECATED_CODE=ON``,
+then the deprecated code will be completely removed resulting in compile
+errors for any downstream code still using them.
+
+
+Hiding entire deprecated header and source files
+................................................
+
+In order to hide entire deprecated header and source files when the CMake
+variable ``<PackageName>_HIDE_DEPRECATED_CODE=ON`` is set, one needs to move
+the headers and sources to another directory and provide for conditional
+inclusion in the TriBITS build of the library.  For example, suppose one wants
+to remove support for the deprecated files ``SomeOldStuff.hpp`` and
+``SomeOldStuff.cpp``.  In this case, one would move the files onto a new
+``deprecated/`` sub-directory and then write the ``CMakeLists.txt`` file
+like::
+
+  SET(HEADERS "")
+  SET(SOURCES "")
+
+  SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR})
+  APPEND_GLOB(HEADERS ${DIR}/*.hpp)
+  APPEND_GLOB(SOURCES ${DIR}/*.cpp)
+  
+  IF (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/deprecated)
+    APPEND_SET(HEADERS
+      SomeOldStuff.hpp
+      )
+    APPEND_SET(SOURCES
+      SomeOldStuff.cpp
+      )
+  ENDIF()
+
+  ...
+
+  TRIBITS_ADD_LIBRARY(
+    <LIBRARY_NAME>
+    HEADERS ${HEADERS}
+    SOURCES ${SOURCES}
+    )
+
+In this way, when ``${PACKAGE_NAME}_HIDE_DEPRECATED_CODE=TRUE``, then the
+directory for the deprecated headers will not be in the include path (so
+downstream clients will not even be able to see them) and they will not be
+installed so external clients will not be able to see them either.  However,
+when ``${PACKAGE_NAME}_HIDE_DEPRECATED_CODE=FALSE``, then these files will be
+included in the build and include path and downstream clients can use them.
+
+Once these files need to be permanently removed, one just then needs to remove
+them from the version control repository (i.e. ``git rm <files_to_remove>``)
+and them remove them from the above ``CMakeLists.txt`` code.
+
+
+Physically removing deprecated code
++++++++++++++++++++++++++++++++++++
+
+The final step in the code deprecation cycle is to actually remove the
+deprecated code.  This is necessary to clean house, remove clutter and finally
+get the payoff in the reduction of technical debt that occurs when removing
+what is no longer needed or wanted.
+
+It is recommended to remove deprecated files first, then remove deprecated
+file fragments from remaining files.  Also, it is recommended to create git
+commits after each step.
+
+It is also recommended that some time before deprecated code is actually
+removed, that a TriBITS repo change the default of
+``<Project>_HIDE_DEPRECATED_CODE`` from ``OFF`` to ``ON`` so that downstream
+clients will see the effects of hiding the deprecated code before the code is
+actually removed.  In fact, this default should be changed several days to a
+week or more before the code is actually removed.  This way, downstream code
+developers will get a "shock" about removal of the deprecated code but can
+manually configure with ``-D<Project>_HIDE_DEPRECATED_CODE=OFF`` to keep
+building in the short-term until they can remove their usage of deprecated
+code.
+
+
+Removing entire deprecated header and source files
+..................................................
+
+To remove entire deprecated header and source files one just needs to first
+remove them from the version control repository and local directories
+(e.g. ``git rm deprecated/*``) and then remove any traces of them from the
+``CMakeLists.txt`` file.  For the example in `Hiding entire deprecated header
+and source files`_, one would just remove the files ``SomeOldStuff.hpp`` and
+``SomeOldStuff.cpp`` from the ``CMakeLists.txt`` file leaving::
+  
+  IF (NOT ${PACKAGE_NAME}_HIDE_DEPRECATED_CODE)
+    INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/deprecated)
+    APPEND_SET(HEADERS
+      )
+    APPEND_SET(SOURCES
+      )
+  ENDIF()
+
+Since more files may be deprecated later, it may be a good idea to leave the
+machinery for conditionally including deprecated files by leaving the above
+empty CMake code or just commenting it out.
+
+To find which ``CMakeLists.txt`` files need to be modified, do a search like::
+
+  $ find . -name CMakeLists.txt -exec grep -nH HIDE_DEPRECATED_CODE {} \;
+
+After removing the files, create a local commit of the removed files and the
+updated ``CMakeLists.txt`` files before removing deprecated fragments from the
+source files.  In other words, do::
+
+  $ emacs -nw CMakeLists.txt  # Remove the references to the deprecated files
+  $ git rm SomeOldStuff.hpp SomeOldStuff.cpp
+  $ git commit -m "Removing deprecated files"
+
+
+Removing deprecated code from remaining files
+.............................................
+
+The deprecated ifdefed blocks described in `Hiding C/C++ entities`_ can be
+removed manually but it is generally preferred to use a tool.  One simple tool
+that can do this is called ``unifdef``, that can be downloaded and it is
+documented at:
+
+    http://dotat.at/prog/unifdef/
+
+Just download, build, and install the program ``unifdef`` (see
+``unifdef/INSTALL`` in untarred source) and then run it as described below.
+In the example below, assume the program is installed in the user's home
+directory under::
+
+  ~/install/bin/unifdef
+
+For a given TriBITS package, the program is then run as::
+
+  $ find . -name "*pp" -exec ~/install/bin/unifdef \
+    -DSomePackage_HIDE_DEPRECATED_CODE {} -o {} \;
+
+After the above command runs, look at the diffs to make sure the ifdef
+deprecated code blocks were removed correctly.  For example, run::
+
+  $ git diff -- .
+
+If the diffs look correct, commit the changes::
+
+  $ git commit -m "Removing deprecated code blocks" -- .
+
+Then test everything and push using the `checkin-test.py`_ script.
+
+After that, all deprecated code is removed and the next period of incremental
+change and deprecation begins.
 
 
 Wrapping Externally Configured/Built Software
 ---------------------------------------------
 
-It is possible to take an external piece of software that uses an uses any
-arbitrary builds system and wrap it as a TriBITS package and have it integrate
-in with the package dependency infrastructure.  The `TribitsExampleProject`_
-package ``WrapExternal`` shows how this can be done.
+It is possible to take an external piece of software that uses any arbitrary
+build system and wrap it as a TriBITS package and have it integrate in with
+the package dependency infrastructure.  The `TribitsExampleProject`_ package
+``WrapExternal`` shows how this can be done.
+
+.. ToDo: Show this this is done in detail once TriBITS has nice support for
+.. this and this example looks cleaner.
 
 While it is possible to wrap an externally configured and built piece of
 software as a TriBITS package, is is usually must better to just go ahead and
 create a TriBITS build system for the software.  For projects that use a raw
-CMake build system, a TriBITS build build can be created side by side using a
-number of approaches. The common approach that is not too invasive is to
-create a ``CMakeLists.tribits.txt`` file along side every native
-``CMakeLists.txt`` file and have the native ``CMakeLists.txt`` file defined
-like::
+CMake build system, a TriBITS build can be created side-by-side with the
+existing CMake raw build using a number of approaches. The common approach
+that is not too invasive is to create a ``CMakeLists.tribits.txt`` file along
+side every native ``CMakeLists.txt`` file and have the native
+``CMakeLists.txt`` file defined like::
 
   IF (DOING_A_TRIBITS_BUILD)
     INCLUDE("${CMAKE_CURRENT_SOURCE_DIR}/CMakeLists.tribits.txt")
@@ -5828,9 +6190,9 @@ like::
 
   # Rest of native CMakeLists.txt file ...
 
-Experience from the CASL VERA project shows that, overall, there is less
+Experience from the CASL VERA project showed that, overall, there is less
 hassle and less work and better portability when creating a native TriBITS
-build, even it it is a secondary build system for a given piece of software.
+build, even if it is a secondary build system for a given piece of software.
 
 
 TriBITS directory snapshotting
@@ -5839,8 +6201,8 @@ TriBITS directory snapshotting
 Some TriBITS projects choose to snapshot the ``tribits`` directory source tree
 into their project's source tree, typically under
 `<projectDir>/cmake/tribits/`_.  The ``tribits`` git source tree contains a
-symbolic link to the the tool ``snapshot-dir.py`` that allows one to update
-the snapshot of the TriBITS source tree as simply as::
+symbolic link to the the tool `snapshot-dir.py`_ that allows one to update the
+snapshot of the TriBITS source tree as simply as::
 
   $ cd <projectDir>/cmake/tribits/
   $ <some-base-dir>/tribits/snapshot-dir.py
@@ -5870,11 +6232,12 @@ one to maintain local changes to TriBITS and use git to manage the merges.
 TriBITS Development Toolset
 ---------------------------
 
-Most TriBITS projects need a git, a compiler (e.g. GCC), MPI, and a number of
-other standard TPLs and tools in order to develop on the project sources.  To
-this end, TriBITS contains some helper scripts for downloading, configuring,
-building, and installing packages like git, cmake, GCC, OpenMPI, and others
-needed to set up a development environment.  These tools are used to set up
+Most TriBITS projects need git, a compiler (e.g. GCC), MPI, and a number of
+other standard TPLs and tools in order to develop on and test the project
+code.  To this end, TriBITS contains some helper scripts for downloading,
+configuring, building, and installing packages like git, cmake, GCC, OpenMPI,
+and others needed to set up a development environment for a typical
+computational science software project.  These tools are used to set up
 development environments on new machines for projects like Trilinos and CASL
 VERA.  Scripts with names like ``install-gcc.py`` are defined which pull
 sources from public git repos then configure, build, and install into
@@ -5890,17 +6253,22 @@ specified installation directories.
 References
 ==========
 
-.. _SCALE:
-
-**SCALE** http://scale.ornl.gov/
-
-.. _Agile Software Engineering:
+.. _Agile Software Development, 2003:
 
 Martin, Robert. *Agile Software Development (Principles, Patterns, and
-Practices)*. Prentice Hall. 2003
+Practices)*. Prentice Hall. 2003. 
 
+.. _Integration Strategies for CSE, 2009:
 
+Bartlett, Roscoe. *Integration Strategies for Computational Science &
+Engineering Software*.  2009-0655, Second International Workshop on Software
+Engineering for Computational Science and Engineering, 2009.  http://web.ornl.gov/~8vt/CSE_SoftwareIntegration_Strategies.pdf.
 
+.. _SCALE, 2011:
+
+*SCALE: A Comprehensive Modeling and Simulation Suite for Nuclear Safety Analysis and Design*, ORNL/TM-2005/39, Version 6.1, Oak Ridge National Laboratory, Oak Ridge, Tennessee, June 2011. Available from Radiation Safety Information Computational Center at Oak Ridge National Laboratory as CCC-785.  http://scale.ornl.gov/
+
+.. ToDo: Edited and spell-checked up to here on 4/30/2014!
 
 
 TriBITS Detailed Reference Documentation
@@ -6044,7 +6412,7 @@ These options are described below.
 **${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES**
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
-  ``Makefile.export.<PACKAGE_NAME>`` will get created at configure time in the
+  ``Makefile.export.<PackageName>`` will get created at configure time in the
   build tree and installed into the install tree.  See `TribitsBuildQuickRef.*
   <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.  The TriBITS
   default is ``ON`` but a project can decide to turn this off by default by
@@ -6062,7 +6430,7 @@ These options are described below.
 **${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES**
 
   If ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` is set to ``ON``,
-  then ``<PACKAGE_NAME>Config.cmake`` files are created at configure time in
+  then ``<PackageName>Config.cmake`` files are created at configure time in
   the build tree and installed into the install tree.  These files are used by
   external CMake projects to pull in the list of compilers, compiler options,
   include directories and libraries.  The TriBITS default is ``ON``.  A
@@ -6071,7 +6439,7 @@ These options are described below.
     SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
 
   A project would want to turn off the creation and installation of
-  ``<PACKAGE_NAME>Config.cmake`` files if it was only installing and providing
+  ``<PackageName>Config.cmake`` files if it was only installing and providing
   executables. See `TribitsBuildQuickRef.*
   <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.
 
@@ -6080,8 +6448,8 @@ These options are described below.
 **${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES**
 
   If ``${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES`` is ``ON``, then the
-  data-structures needed to generate ``Makefile.export.<PACKAGE_NAME>`` and
-  ``<PACKAGE_NAME>Config.cmake`` are created.  These data structures are also
+  data-structures needed to generate ``Makefile.export.<PackageName>`` and
+  ``<PackageName>Config.cmake`` are created.  These data structures are also
   needed in order to generate export makefiles on demand using the function
   `TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()`_.  The default in
   TriBITS is to turn this ``ON`` automatically by default if
@@ -6293,7 +6661,7 @@ the name TriBITS was formally adopted in November 2011.  Work to refactor the
 Trilinos CMake system into a general reusable stand-alone CMake-based build
 system started in October 2011 and an initial implementation was complete in
 December 2011 when it was used for the CASL VERA build system.  In early 2012,
-the ORNL CASL-related projects Denovo and SCALE (see [`SCALE`_]) adopted
+the ORNL CASL-related projects Denovo and SCALE (see [`SCALE, 2011`_]) adopted
 TriBITS as their native development build systems.  Shortly after TriBITS was
 adopted the native build system for the the CASL-related University of
 Michigan code MPACT.  In addition to being used in CASL, all of these codes
@@ -6350,7 +6718,7 @@ software engineering package anyway so TriBITS forces development teams to
 glob all of this stuff together into a single `TriBITS SE Package`_ when
 cycles in software exists.  There are numerous wonderful ways to break
 circular dependencies that are proven and well established in the SE community
-(for example, see [`Agile Software Engineering`_]).
+(for example, see [`Agile Software Development, 2003`_]).
 
 ToDo: Discuss why it is a good idea to explicitly list packages instead of
 just searching for them.  Hint: Think performance and circular dependencies!
