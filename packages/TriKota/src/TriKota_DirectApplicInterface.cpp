@@ -30,6 +30,7 @@
 
 #include <iostream>
 #include "TriKota_DirectApplicInterface.hpp"
+#include "DakotaModel.hpp"
 #include "Teuchos_VerboseObject.hpp"
 
 using namespace Dakota;

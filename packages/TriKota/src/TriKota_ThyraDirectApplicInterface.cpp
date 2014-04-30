@@ -34,8 +34,9 @@
 #include "Thyra_DetachedSpmdVectorView.hpp"
 #include "Thyra_DetachedVectorView.hpp"
 
-
+#include "DakotaModel.hpp"
 using namespace Dakota;
+
 typedef Thyra::ModelEvaluatorBase MEB;
 
 
