@@ -95,6 +95,7 @@ Architect`_.  Each of these roles builds on the necessary knowledge of the
 lower-level roles.
  
 .. _TriBITS Project User:
+.. _TriBITS Project Users:
 
 The first role is that of a **TriBITS Project User** who only needs to be able
 to configure, build, and test a project that uses TriBITS as its build system.
@@ -767,9 +768,9 @@ requires a version of CMake newer than what is required by TriBITS itself (as
 defined in the variable ``TRIBITS_CMAKE_MINIMUM_REQUIRED`` which was set when
 the ``TriBITS.cmake`` file was included), then that version can be passed
 instead of using ``${TRIBITS_CMAKE_MINIMUM_REQUIRED}`` (the current minimum
-version of CMake required by TriBITS is given at in `TribitsBuildQuickRef
-<../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake>`_)
-.  For example, the ``VERA/CMakeLists.txt`` file lists as its first line::
+version of CMake required by TriBITS is given at in `Getting set up to use
+CMake`_) .  For example, the ``VERA/CMakeLists.txt`` file lists as its first
+line::
 
   SET(VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED 2.8.5)
   CMAKE_MINIMUM_REQUIRED(VERSION ${VERA_TRIBITS_CMAKE_MINIMUM_REQUIRED})
@@ -780,9 +781,8 @@ version of CMake required by TriBITS is given at in `TribitsBuildQuickRef
 project to submit results to when doing an automated build driven by the CTest
 driver function `TRIBITS_CTEST_DRIVER()`_ (see `TriBITS Package-by-Package
 CTest/Dash Driver`_).  This file is also required to use the TriBITS-generated
-``dashboard`` target (see `Dashboard Submissions
-<../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions>`_).  An
-example of this file is `TribitsExampleProject`_/``CTestConfig.cmake``:
+``dashboard`` target (see `Dashboard Submissions`_).  An example of this file
+is `TribitsExampleProject`_/``CTestConfig.cmake``:
 
 .. include:: ../examples/TribitsExampleProject/CTestConfig.cmake
    :literal:
@@ -5136,9 +5136,8 @@ For a simple example of this, see::
   tribits/doc/examples/TribitsExampleProject/cmake/create-build-quickref.sh
 
 A project-independent version of this file is provided in the
-`TribitsBuildQuickRef.[rst,html,pdf]
-<../build_quick_ref/TribitsBuildQuickRef.html>`_ which is referred to many
-times in this developers guide.
+`TribitsBuildQuickRef`_.[rst,html,pdf] which is referred to many times in this
+developers guide.
 
 
 Project and Repository Versioning and Release Mode
@@ -6268,14 +6267,15 @@ Engineering for Computational Science and Engineering, 2009.  http://web.ornl.go
 
 *SCALE: A Comprehensive Modeling and Simulation Suite for Nuclear Safety Analysis and Design*, ORNL/TM-2005/39, Version 6.1, Oak Ridge National Laboratory, Oak Ridge, Tennessee, June 2011. Available from Radiation Safety Information Computational Center at Oak Ridge National Laboratory as CCC-785.  http://scale.ornl.gov/
 
-.. ToDo: Edited and spell-checked up to here on 4/30/2014!
-
 
 TriBITS Detailed Reference Documentation
 ========================================
 
 The following subsections contain detailed reference documentation for the
-various TriBITS variables and functions and macros that are used by TriBITS.
+various TriBITS variables, functions, and macros that are used by TriBITS
+projects that `TriBITS Project Developers`_ need to know about.  Variables,
+functions and macros that are used only internally in TriBITS are generally
+not documented here (see the TriBITS ``*.cmake`` source files).
 
 
 TriBITS Global Project Settings
@@ -6288,7 +6288,7 @@ reasonable default is set by the TriBITS system automatically.  These options
 are defined and are set, for the most part, in the internal TriBITS function
 ``TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS()`` in the TriBITS
 CMake code file ``TribitsGlobalMacros.cmake`` which gets called inside of the
-``TRIBITS_PROJECT()`` macro.  That function and that file are the definitive
+`TRIBITS_PROJECT()`_ macro.  That function and that file are the definitive
 source the options that a TriBITS project takes and what the default values
 are but we strive to document them here as well.  Many of these global options
 (i.e. cache variables) such as ``${PROJECT_NAME}_<SOME_OPTION>`` allow the
@@ -6298,9 +6298,10 @@ project to define a default by setting a local variable
   SET(${PROJECT_NAME}_<SOME_OPTION>_DEFAULT <someDefault>)
 
 either in its top-level ``CMakeLists.txt`` file or in its
-``ProjectName.cmake`` file.  If ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` is
-not set by the project, then TriBITS provides a reasonable default value.  The
-TriBITS code for this looks like::
+``ProjectName.cmake`` file (depends on what variable it is as to where it
+should be set).  If ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` is not set by
+the project, then TriBITS provides a reasonable default value.  The TriBITS
+code that uses these defaults for this looks like::
 
   IF ("${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_<SOME_OPTION>_DEFAULT <someDefault>)
@@ -6311,21 +6312,20 @@ TriBITS code for this looks like::
     CACHE BOOL "[documentation]."
     )
 
-where ``<SOME_OPTION>`` is the option name like ``TEST_CATEGORIES`` and
-``<someDefault>`` is the default set by TriBITS if the project does not define
-a default.  In this way, if the project sets the variable
-``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` before this code executes, then
-``${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}`` will be used as the default for
-the cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` which, of course, can be
-overridden by the user when calling ``cmake`` in a number of ways.
+where ``<SOME_OPTION>`` is an option name, for example like
+``TEST_CATEGORIES``, and ``<someDefault>`` is the default set by TriBITS if
+the project does not define a default.  In this way, if the project sets the
+variable ``${PROJECT_NAME}_<SOME_OPTION>_DEFAULT`` before this code executes,
+then ``${${PROJECT_NAME}_<SOME_OPTION>_DEFAULT}`` will be used as the default
+for the cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` which, of course, can
+be overridden by the user when calling ``cmake`` in a number of ways.
 
 Most of these global options that can be overridden externally by setting the
 cache variable ``${PROJECT_NAME}_<SOME_OPTION>`` should be documented in the
 `Project-Specific Build Quick Reference`_ document.  A generic version of this
-document is found in `TribitsBuildQuickRef.[rst,html,pdf]
-<../build_quick_ref/TribitsBuildQuickRef.html>`_.  Some of the more unusual
+document is found in `TribitsBuildQuickRef`_.  Some of the more unusual
 options that might only be of interest to developers mentioned below may not
-be documented in ``<Project>BuildQuickRef.[rst,html,pdf]``.
+be documented in `TribitsBuildQuickRef`_.
 
 The global project-level TriBITS options for which defaults can be provided by
 a given TriBITS project are:
@@ -6341,6 +6341,7 @@ a given TriBITS project are:
 * `${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`_
 * `${PROJECT_NAME}_CPACK_SOURCE_GENERATOR`_
 * `${PROJECT_NAME}_TEST_CATEGORIES`_
+* `${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`_
 * `MPI_EXEC_MAX_NUMPROCS`_
 
 These options are described below.
@@ -6354,12 +6355,11 @@ These options are described below.
   `upstream`_ required packages or TPLs will be disabled.  If
   `${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF`_, then an
   configure error will occur.  For more details also see
-  `TribitsBuildQuickRef.* <../build_quick_ref/TribitsBuildQuickRef.html>`_ and
-  `Disables trump enables where there is a conflict`_.  A project can define a
-  different default value by setting::
+  `TribitsBuildQuickRef`_ and `Disables trump enables where there is a
+  conflict`_.  A project can define a different default value by setting::
   
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
-  
+ 
 .. _${PROJECT_NAME}_ENABLE_Fortran:
   
 **${PROJECT_NAME}_ENABLE_Fortran**
@@ -6390,15 +6390,15 @@ These options are described below.
   any defined libraries or header files that are listed in calls to
   `TRIBITS_ADD_LIBRARY()`_ will be installed (unless options are passed into
   `TRIBITS_ADD_LIBRARY()`_ that disable installs).  If set to ``OFF``, then
-  headers and libraries will be installed by default and only ``INSTALLABLE``
-  executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be installed.
-  However, as described in `TribitsBuildQuickRef.*
-  <../build_quick_ref/TribitsBuildQuickRef.html>`_, shared libraries will
-  still be always be installed if enabled since they are needed by the
-  installed executables.  The TriBITS default is to set this to ``ON``.
+  headers and libraries will *not* be installed by default and only
+  ``INSTALLABLE`` executables added with `TRIBITS_ADD_EXECUTABLE()`_ will be
+  installed.  However, as described in `TribitsBuildQuickRef`_, shared
+  libraries will always be installed if enabled since they are needed by the
+  installed executables.
   
-  For a TriBITS project that primarily is delivering libraries (e.g. Trilinos),
-  then it makes sense to leave the TriBITS default or explicitly set::
+  For a TriBITS project that primarily is delivering libraries
+  (e.g. Trilinos), then it makes sense to leave the TriBITS default which is
+  ``ON`` or explicitly set::
   
     SET(${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT ON)
   
@@ -6413,10 +6413,9 @@ These options are described below.
   
   If ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` is ``ON``, then
   ``Makefile.export.<PackageName>`` will get created at configure time in the
-  build tree and installed into the install tree.  See `TribitsBuildQuickRef.*
-  <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.  The TriBITS
-  default is ``ON`` but a project can decide to turn this off by default by
-  setting::
+  build tree and installed into the install tree.  See `TribitsBuildQuickRef`_
+  for details.  The TriBITS default is ``ON`` but a project can decide to turn
+  this off by default by setting::
   
     SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
   
@@ -6433,15 +6432,14 @@ These options are described below.
   then ``<PackageName>Config.cmake`` files are created at configure time in
   the build tree and installed into the install tree.  These files are used by
   external CMake projects to pull in the list of compilers, compiler options,
-  include directories and libraries.  The TriBITS default is ``ON``.  A
+  include directories and libraries.  The TriBITS default is ``ON`` but a
   project can change the default by setting, for example::
 
     SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
 
   A project would want to turn off the creation and installation of
   ``<PackageName>Config.cmake`` files if it was only installing and providing
-  executables. See `TribitsBuildQuickRef.*
-  <../build_quick_ref/TribitsBuildQuickRef.html>`_ for details.
+  executables (see `${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS`_).
 
 .. _${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES:
 
@@ -6456,7 +6454,7 @@ These options are described below.
   ``${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES`` or
   ``${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES`` are ``ON``.  Else, by
   default, TriBITS sets this to ``OFF``.  The only reason for the project to
-  override the default is to set it to ``ON`` as with:
+  override the default is to set it to ``ON`` as with::
 
     SET(${PROJECT_NAME}_GENERATE_EXPORT_FILE_DEPENDENCIES_DEFAULT ON)
 
@@ -6475,16 +6473,16 @@ These options are described below.
 
   There are projects, especially meta-projects, where the distinction between
   ``PT`` and ``ST`` code is not helpful or the assignment of ``PT`` and ``ST``
-  packages in a repository is not appropriate.  An example project like this
-  CASL VERA.  Changing the default to ``ON`` allows any packages to be
-  considered in pre-push testing.
+  packages in a repository is not appropriate with respect to the outer
+  meta-project.  An example project like this CASL VERA.  Changing the default
+  to ``ON`` allows any and packages to be considered in pre-push testing.
 
 .. _${PROJECT_NAME}_ENABLE_CPACK_PACKAGING:
 
 **${PROJECT_NAME}_ENABLE_CPACK_PACKAGING**
 
   If ``${PROJECT_NAME}_ENABLE_CPACK_PACKAGING`` is ``ON``, then CPack support
-  is enabled and some TriBITS code is avoided that is needed to set up
+  is enabled and some TriBITS code is run that is needed to set up
   data-structures that are used by the built-in CMake target
   ``package_source``.  The TriBITS default is ``OFF`` with the idea that the
   average developer or user will not be wanting to create source distributions
@@ -6538,16 +6536,17 @@ These options are described below.
 
     SET(${PROJECT_NAME}_TEST_CATEGORIES_DEFAULT BASIC)
 
-  The justification for having the default test category be ``NIGHTLY``
-  instead of ``BASIC`` is that when someone is enabling a package to develop
-  on it or install it, we want them by default to be seeing the full version
-  of the test suite (shy of the `Test Test Category WEEKLY`_ tests which can
-  be very expensive) for the packages they are explicitly enabling.  Typically
-  they will not be enabling forward/`downstream`_ dependent packages so the
-  cost of running the test suite should not be too prohibitive.  This all
-  depends on how good of a job the development teams do in making their test
-  suites run fast and keeping the cost of running the tests down.  See the
-  section `TriBITS Automated Testing`_ for a more detailed discussion.
+  The justification for having the default `Test Test Category`_ be
+  ``NIGHTLY`` instead of ``BASIC`` is that when someone is enabling a package
+  to develop on it or install it, we want them by default to be seeing the
+  full version of the test suite (shy of the `Test Test Category WEEKLY`_
+  tests which can be very expensive) for the packages they are explicitly
+  enabling.  Typically they will not be enabling forward/`downstream`_
+  dependent packages so the cost of running the test suite should not be too
+  prohibitive.  This all depends on how good of a job the development teams do
+  in making their test suites run fast and keeping the cost of running the
+  tests down.  See the section `TriBITS Automated Testing`_ for a more
+  detailed discussion.
 
 .. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE:
 .. _${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT:
@@ -6559,13 +6558,13 @@ These options are described below.
   variable ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE_DEFAULT`` should be set
   in the project's `<projectDir>/Version.cmake`_ file and switched from ``ON``
   to ``OFF`` when creating a release (see `Project and Repository Versioning
-  and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE = ON``,
-  several other variables are given defaults appropriate for development mode.
-  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES`` is set to ``ON`` by
-  default in development mode but is set to ``OFF`` by default in release
-  mode.  In addition, strong compiler warnings are enabled by default in
-  development mode but are disabled by default in release mode.  This variable
-  also affects the behavior of `TRIBITS_SET_ST_FOR_DEV_MODE()`_.
+  and Release Mode`_).  When ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE`` is
+  ``ON``, several other variables are given defaults appropriate for
+  development mode.  For example, ``${PROJECT_NAME}_ASSERT_MISSING_PACKAGES``
+  is set to ``ON`` by default in development mode but is set to ``OFF`` by
+  default in release mode.  In addition, strong compiler warnings are enabled
+  by default in development mode but are disabled by default in release mode.
+  This variable also affects the behavior of `TRIBITS_SET_ST_FOR_DEV_MODE()`_.
 
 .. _MPI_EXEC_MAX_NUMPROCS:
 
@@ -6585,6 +6584,8 @@ These options are described below.
   by a given machine (or class of machines).  For example if a given machine
   has 64 cores, a reasonable number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
   64.
+
+.. ToDo: Edited and spell-checked up to here on 4/30/2014!
 
 
 TriBITS Macros and Functions
@@ -6767,9 +6768,15 @@ snapshotting`_.
 
 .. _<Project>BuildQuickRef: ../build_quick_ref/TribitsBuildQuickRef.html
 
+.. _TribitsBuildQuickRef: `<Project>BuildQuickRef`_
+
 .. _Selecting the list of packages to enable: ../build_quick_ref/TribitsBuildQuickRef.html#selecting-the-list-of-packages-to-enable
 
 .. _Enabling extra repositories with add-on packages: ../build_quick_ref/TribitsBuildQuickRef.html#enabling-extra-repositories-with-add-on-packages
+
+.. _Getting set up to use CMake: ../build_quick_ref/TribitsBuildQuickRef.html#getting-set-up-to-use-cmake
+
+.. _Dashboard Submissions: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
 
 .. _<Project>_EXTRAREPOS_FILE: ../build_quick_ref/TribitsBuildQuickRef.html#project-extrarepos-file
 
