@@ -26,7 +26,7 @@ namespace MueLu {
     validParamList->set< RCP<const FactoryBase> >("A",                 Teuchos::null, "Generating factory for the matrix A used during internal iterations");
     validParamList->set< RCP<const FactoryBase> >("P",                 Teuchos::null, "Generating factory for the initial guess");
     validParamList->set< RCP<const FactoryBase> >("Constraint",        Teuchos::null, "Generating factory for constraints");
-    validParamList->set< int >                   ("emin: num iterations",          3, "Number of iterations of the internal iterative method");
+    validParamList->set< int >                   ("emin: num iterations",          2, "Number of iterations of the internal iterative method");
     validParamList->set< int >                   ("emin: num reuse iterations",    1, "Number of iterations of the internal iterative method");
 
     validParamList->set< RCP<Matrix> >           ("P0",                Teuchos::null, "Initial guess at P");
