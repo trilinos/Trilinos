@@ -140,32 +140,53 @@ void get_processor_count(std::vector<int> &procinfo)
 
   while (1)
   {
-    if(!std::getline(proc_cpuinfo, line)) {
+    if(!std::getline(proc_cpuinfo, line)) 
+    {
       proc_cpuinfo.close();
+
+      if(procinfo.size() == (size_t) 0)
+	procinfo.push_back(1);  
+
       return;
     }
-    else if (line.substr(0, 11) == "processor	:")
+
+    cores = 1;
+
+    if (line.substr(0, 9) == "processor")
     {
-      proc_string = line.substr(12);
+      size_t found = line.find_last_of(":");
+      proc_string = line.substr(found+1);
       std::istringstream iss(proc_string);
       iss >> proc;
-      have_processor = true;
+      have_processor = true;      
     }
-    else if (line.substr(0, 11) == "cpu cores	:")
+    else if (line.substr(0, 9) == "cpu cores")
     {
-      core_string = line.substr(12);
+      size_t found = line.find_last_of(":");
+      core_string = line.substr(found+1);
       std::istringstream iss(core_string);
       iss >> cores;
-      have_cores = true;
+      have_cores = true;      
     }
 
-    if(have_cores && have_processor)
+    if(have_processor)
     {
       if((size_t) proc == procinfo.size())
 	procinfo.push_back(cores);
 
+      have_processor = false;            
+    }
+
+    if(have_cores)
+    {
+      int ind = procinfo.size()-1;
+
+      if(have_processor)
+	ind = proc;
+
+      procinfo[ind] = cores;
+
       have_cores     = false;
-      have_processor = false;
     }
   }
 #else
@@ -189,8 +210,12 @@ void get_memory_available(size_t & avail)
 
   while (memtotal.empty())
   {
-    if(!std::getline(proc_meminfo, line)) return;
-
+    if(!std::getline(proc_meminfo, line)) 
+    {
+      proc_meminfo.close();
+      return;
+    }
+    
     /* Find MemTotal */
     else if (line.substr(0, 9) == "MemTotal:")
     {
