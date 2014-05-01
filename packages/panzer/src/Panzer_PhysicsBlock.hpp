@@ -121,6 +121,17 @@ namespace panzer {
     PhysicsBlock(const panzer::PhysicsBlock & pb,
                  const panzer::CellData & cell_data);
 
+    /** This constructor builds a bare bones equation set. It will do gather
+      * and scatter for a particular field and set of basis functions. It will
+      * not have any equation sets associated with it.
+      */ 
+    PhysicsBlock(const std::string & element_block_id,
+                 const std::string & physics_block_id,
+		 const int integration_order,
+		 const panzer::CellData & cell_data,
+		 const Teuchos::RCP<panzer::GlobalData>& global_data,
+                 const Teuchos::RCP<panzer::PureBasis> & fields);
+
     void buildAndRegisterEquationSetEvaluators(PHX::FieldManager<panzer::Traits>& fm,
 					       const Teuchos::ParameterList& user_data) const;
 
