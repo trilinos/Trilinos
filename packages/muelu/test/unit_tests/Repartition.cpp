@@ -852,7 +852,7 @@ namespace MueLuTests {
     std::srand(Teuchos::as<unsigned int>(comm->getRank()*31415));
     Teuchos::ArrayView<const GO> correctLocalElts = coordMap->getNodeElementList();
     std::vector<GO> eltsToShuffle;
-    for (size_t i=0; i<correctLocalElts.size(); ++i)
+    for (size_t i=0; i < Teuchos::as<size_t>(correctLocalElts.size()); ++i)
       eltsToShuffle.push_back(correctLocalElts[i]);
     std::random_shuffle(eltsToShuffle.begin(),eltsToShuffle.end(),myrandom);
     Teuchos::Array<GO> eltList(eltsToShuffle);
