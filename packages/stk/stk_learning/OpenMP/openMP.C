@@ -7,13 +7,12 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
-// #if defined _OPENMP
-
 #include <omp.h>
 
 namespace
 {
 
+//DocTest1
 TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
 {
 #pragma omp parallel
@@ -22,6 +21,7 @@ TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
     }
 }
 
+//DocTest2
 TEST(OPENMP, HelloWorldSetNumThreadsstart_timeInsideCode)
 {
     int numThreads = 8;
@@ -31,10 +31,8 @@ TEST(OPENMP, HelloWorldSetNumThreadsstart_timeInsideCode)
         std::cout << "Hello World\n";
     }
 }
-//#if defined(_OPENMP)
-//#pragma omp critical
-//#endif
-//            numberIterations++;
+
+//DocTest3
 TEST(OPENMP, HelloWorldUsingPrivate)
 {
     int numThreads = 8;
@@ -47,16 +45,14 @@ TEST(OPENMP, HelloWorldUsingPrivate)
     }
 }
 
+//DocTest4
 // #define DO_OUTPUT
 
 TEST(OPENMP, MatrixVectorMultiplyUsingThreads)
 {
 //    size_t numRows = 200000;
 //    size_t numCols = 20000;
-    size_t numRows = 2000;//#if defined(_OPENMP)
-    //#pragma omp critical
-    //#endif
-    //            numberIterations++;
+    size_t numRows = 2000;
     size_t numCols = 2000;
     std::vector<std::vector<double> > matrix(numRows);
     std::vector<double> vec_in(numCols, 1);
@@ -113,7 +109,7 @@ TEST(OPENMP, MatrixVectorMultiplyUsingThreads)
     }
 }
 
-
+//DocTest5
 TEST(OPENMP, SumOverVector)
 {
     //size_t sizeOfVector = 4000000000;
@@ -148,6 +144,7 @@ TEST(OPENMP, SumOverVector)
     EXPECT_EQ(goldAnswer, sum);
 }
 
+//DocTest6
 TEST(OPENMP, SumUsingSections)
 {
     int numThreads = 2;
@@ -201,7 +198,6 @@ TEST(OPENMP, SumUsingSections)
     double goldAnswer = sizeOfVector*initVal;
     EXPECT_EQ(goldAnswer, sum);
 }
+//EndDocTest
 
 } // end namespace
-
-// #endif
