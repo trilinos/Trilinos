@@ -22,7 +22,7 @@ TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
 }
 
 //DocTest2
-TEST(OPENMP, HelloWorldSetNumThreadsstart_timeInsideCode)
+TEST(OpenMp, HelloWorldSetNumThreadsstart_timeInsideCode)
 {
     int numThreads = 8;
     omp_set_num_threads(numThreads);
@@ -47,8 +47,7 @@ TEST(OPENMP, HelloWorldUsingPrivate)
 
 //DocTest4
 // #define DO_OUTPUT
-
-TEST(OPENMP, MatrixVectorMultiplyUsingThreads)
+TEST(OpenMp, MatrixVectorMultiplyUsingThreads)
 {
 //    size_t numRows = 200000;
 //    size_t numCols = 20000;
@@ -110,7 +109,7 @@ TEST(OPENMP, MatrixVectorMultiplyUsingThreads)
 }
 
 //DocTest5
-TEST(OPENMP, SumOverVector)
+TEST(OpenMp, SumOverVector)
 {
     //size_t sizeOfVector = 4000000000;
     size_t sizeOfVector = 1000000;
@@ -145,7 +144,7 @@ TEST(OPENMP, SumOverVector)
 }
 
 //DocTest6
-TEST(OPENMP, SumUsingSections)
+TEST(OpenMp, SumUsingSections)
 {
     int numThreads = 2;
     omp_set_num_threads(numThreads);
@@ -199,5 +198,40 @@ TEST(OPENMP, SumUsingSections)
     EXPECT_EQ(goldAnswer, sum);
 }
 //EndDocTest
+
+
+struct SimpleDefaultedInt
+{
+    SimpleDefaultedInt() : value(-1) {}
+    SimpleDefaultedInt(int defaultValue) : value(defaultValue) {}
+    int value;
+};
+
+TEST(OpenMp, learningAboutPrivates)
+{
+    SimpleDefaultedInt a(13);
+    SimpleDefaultedInt b(14);
+    SimpleDefaultedInt c(15);
+
+    const int numberOfIterations = 10;
+    #pragma omp parallel private(a) firstprivate(b) shared(c)
+    {
+        EXPECT_NE(13, a.value);
+        EXPECT_EQ(14, b.value);
+        EXPECT_EQ(15, c.value);
+        #pragma omp for lastprivate(c)
+        for(int i =0; i <= numberOfIterations; i++)
+        {
+            EXPECT_NE(15, c.value);
+
+            a.value = i;
+            b.value = i;
+            c.value = i;
+        }
+    }
+    EXPECT_EQ(13, a.value);
+    EXPECT_EQ(14, b.value);
+    EXPECT_EQ(numberOfIterations, c.value);
+}
 
 } // end namespace
