@@ -12,6 +12,12 @@
 namespace
 {
 
+#ifndef __INTEL_COMPILER
+// there seems to be an issue with OpenMP combined with GoogleTest macros with Intel compilers
+// example of error:
+//    openMP.C(206): internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5531
+
+
 //DocTest1
 TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
 {
@@ -235,4 +241,5 @@ TEST(OpenMp, learningAboutPrivates)
 }
 //EndDocTest
 
+#endif
 } // end namespace
