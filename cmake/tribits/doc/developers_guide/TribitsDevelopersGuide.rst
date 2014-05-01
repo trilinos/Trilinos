@@ -6625,10 +6625,10 @@ TriBITS Macros and Functions
 The following subsections give detailed documentation for the CMake macros and
 functions that make up the core TriBITS system.  These are what are used by
 TriBITS project developers in their ``CMakeLists.txt`` and other files.  All
-of these functions and macros should be available when processing the
-project's and package's variables files if used properly.  Therefore, no
-explicit ``INCLUDE()`` statements should be needed other than the initial
-include of the ``TribitsProject.cmake`` file in the top-level
+of these functions and macros should be automatically available when
+processing the project's and package's variables files if used properly.
+Therefore, no explicit ``INCLUDE()`` statements should be needed other than
+the initial include of the ``TriBITS.cmake`` file in the top-level
 `<projectDir>/CMakeLists.txt`_ file so the command `TRIBITS_PROJECT()`_ can be
 executed.
 

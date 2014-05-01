@@ -74,7 +74,7 @@ INCLUDE(TribitsAddTestHelpers)
 # *Sections:*
 #
 # * `Formal Arguments (TRIBITS_ADD_TEST())`_
-# * `Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())`_
+# * `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_
 # * `Determining the Full Test Name (TRIBITS_ADD_TEST())`_
 # * `Adding Multiple Tests  (TRIBITS_ADD_TEST())`_
 # * `Determining Pass/Fail (TRIBITS_ADD_TEST())`_
@@ -89,7 +89,7 @@ INCLUDE(TribitsAddTestHelpers)
 #   ``<exeRootName>``
 #
 #     The name of the exectuble or path to the exectuable to run for the test
-#     (see `Determining the Exectuable or Command to Run
+#     (see `Determining the Executable or Command to Run
 #     (TRIBITS_ADD_TEST())`_).  This name is also the default root name for
 #     the test (see `Determining the Full Test Name (TRIBITS_ADD_TEST())`_).
 #
@@ -302,9 +302,9 @@ INCLUDE(TribitsAddTestHelpers)
 # In the following subsections, more details on how tests are defined and run
 # is given.
 #
-# .. _Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST()):
+# .. _Determining the Executable or Command to Run (TRIBITS_ADD_TEST()):
 #
-# **Determining the Exectuable or Command to Run (TRIBITS_ADD_TEST())**
+# **Determining the Executable or Command to Run (TRIBITS_ADD_TEST())**
 #
 # This funtion is primarily designed to make it easy to run tests for
 # exectaubles built using the function `TRIBITS_ADD_EXECUTABLE()`_.  To set up
