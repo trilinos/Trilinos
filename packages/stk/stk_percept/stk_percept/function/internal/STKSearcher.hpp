@@ -54,11 +54,11 @@ namespace stk
       void tearDownSearch();
 
       /**
-       *  Dimensions of input_phy_points = ([P]=1, [D]) 
+       *  Dimensions of input_phy_points = ([P]=1, [D])
        *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
        */
 
-      virtual const stk::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
+      virtual const stk::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                                    unsigned& found_it, const mesh::Entity *hint_element );
 
     private:
@@ -69,6 +69,6 @@ namespace stk
   }
 }
 
-//#include "STKSearcherDef.hpp"
+#include "STKSearcherDef.hpp"
 
 #endif
