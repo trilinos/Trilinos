@@ -199,7 +199,7 @@ TEST(OpenMp, SumUsingSections)
 }
 //EndDocTest
 
-
+//DocTestForLearningAboutPrivates
 struct SimpleDefaultedInt
 {
     SimpleDefaultedInt() : value(-1) {}
@@ -233,5 +233,6 @@ TEST(OpenMp, learningAboutPrivates)
     EXPECT_EQ(14, b.value);
     EXPECT_EQ(numberOfIterations, c.value);
 }
+//EndDocTest
 
 } // end namespace
