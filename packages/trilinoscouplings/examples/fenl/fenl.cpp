@@ -54,6 +54,7 @@ namespace FENL {
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP< ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -63,6 +64,7 @@ Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
 template
 Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP< ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Threads> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -83,6 +85,7 @@ namespace FENL {
 template
 Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP< ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -92,6 +95,7 @@ Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
 template
 Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP< ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::OpenMP> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,

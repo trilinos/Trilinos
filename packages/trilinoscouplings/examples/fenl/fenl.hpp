@@ -49,6 +49,7 @@
 
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
+#include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 
 namespace Kokkos {
 namespace Example {
@@ -77,6 +78,7 @@ struct Perf {
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const ::Teuchos::RCP<  typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
