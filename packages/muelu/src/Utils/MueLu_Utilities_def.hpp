@@ -911,8 +911,9 @@ namespace MueLu {
       ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
       GO indexBase = 0;
-      RCP<Map>    map = MapFactory   ::Build(lib, m, indexBase, comm);
-      RCP<Matrix> A   = MatrixFactory::Build(map, 1);
+      RCP<Map>    rowMap = MapFactory::Build(lib, m, indexBase, comm), rangeMap  = rowMap;
+      RCP<Map>    colMap = MapFactory::Build(lib, n, indexBase, comm), domainMap = colMap;
+      RCP<Matrix> A   = MatrixFactory::Build(rowMap, colMap, 1);
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
 
@@ -936,7 +937,7 @@ namespace MueLu {
         }
         A->insertGlobalValues(row, inds, vals);
       }
-      A->fillComplete();
+      A->fillComplete(domainMap, rangeMap);
       return A;
     }
 
