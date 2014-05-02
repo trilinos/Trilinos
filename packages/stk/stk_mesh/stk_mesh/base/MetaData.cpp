@@ -207,7 +207,8 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_coord_field(NULL),
     m_properties( ),
     m_entity_rank_names( ),
-    m_spatial_dimension( 0 /*invalid spatial dimension*/)
+    m_spatial_dimension( 0 /*invalid spatial dimension*/),
+    m_part_fields()
 {
   // Declare the predefined parts
 
@@ -229,7 +230,8 @@ MetaData::MetaData()
     m_coord_field(NULL),
     m_properties( ),
     m_entity_rank_names( ),
-    m_spatial_dimension( 0 /*invalid spatial dimension*/)
+    m_spatial_dimension( 0 /*invalid spatial dimension*/),
+    m_part_fields()
 {
   // Declare the predefined parts
 
@@ -309,12 +311,38 @@ Part * MetaData::get_part( const std::string & p_name ,
   return p ;
 }
 
+void MetaData::add_new_part_in_part_fields()
+{
+  for(size_t i=0; i<m_part_fields.size(); ++i) {
+    PartFieldBase* part_field = m_part_fields[i];
+    std::vector<char*>& char_ptr_vector = part_field->char_data();
+    char_ptr_vector.push_back(new char[part_field->bytes_per_part()]);
+  }
+}
+
+void MetaData::synchronize_part_fields_with_parts()
+{
+  size_t num_parts = get_parts().size();
+  for(size_t i=0; i<m_part_fields.size(); ++i) {
+    PartFieldBase* part_field = m_part_fields[i];
+    std::vector<char*>& char_ptr_vector = part_field->char_data();
+    if (char_ptr_vector.size() != num_parts) {
+      size_t old_size = char_ptr_vector.size();
+      char_ptr_vector.resize(num_parts);
+      for(size_t j=old_size; j<num_parts; ++j) {
+        char_ptr_vector[j] = new char[part_field->bytes_per_part()];
+      }
+    }
+  }
+}
+
 Part & MetaData::declare_part( const std::string & p_name )
 {
   require_not_committed();
 
   const EntityRank rank = InvalidEntityRank;
 
+  add_new_part_in_part_fields();
   return *m_part_repo.declare_part( p_name, rank );
 }
 
@@ -329,6 +357,7 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, boo
   require_not_committed();
   require_valid_entity_rank(rank);
 
+  add_new_part_in_part_fields();
   return *m_part_repo.declare_part( p_name , rank, arg_force_no_induce );
 }
 
@@ -460,6 +489,8 @@ void MetaData::commit()
 
   m_commit = true ; // Cannot add or change parts or fields now
 
+  synchronize_part_fields_with_parts();
+
 #ifdef STK_VERBOSE_OUTPUT
   dump_all_meta_info(std::cout);
 #endif
@@ -467,6 +498,11 @@ void MetaData::commit()
 
 MetaData::~MetaData()
 {
+  // Destroy part fields:
+  for(size_t i=0; i<m_part_fields.size(); ++i) {
+    delete m_part_fields[i];
+  }
+
   // Destroy the properties, used 'new' to allocate so now use 'delete'
 
   try {

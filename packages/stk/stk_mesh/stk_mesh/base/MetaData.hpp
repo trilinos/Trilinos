@@ -18,6 +18,7 @@
 #include <map>                          // for map, map<>::value_compare
 #include <stk_mesh/base/CellTopology.hpp>  // for CellTopology
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
+#include <stk_mesh/base/PartField.hpp>    // for PartField
 #include <stk_mesh/base/Part.hpp>       // for Part
 #include <stk_mesh/base/PropertyBase.hpp>  // for Property
 #include <stk_mesh/base/Selector.hpp>   // for Selector
@@ -113,16 +114,6 @@ CellTopology get_cell_topology(stk::topology topo);
  *     of each other.
  *     -> Enforced by declare_part_subset
  */
-
-// 02/10/11 MetaData Todo:
-// * Implement get_cell_topology for Part.
-// * Implement declare_part with cell topology
-// Non-critical:
-// * Implement stk::mesh::get namespace to include getters for MetaData,
-//   BulkData, MetaData, BulkData, CellTopology from things like Part,
-//   Bucket, Entity, etc.
-// * Create impl class inside the handle classes to hold their parent pointer
-//   and a friend to the getter above.
 class MetaData {
 public:
 
@@ -367,6 +358,15 @@ public:
   template<class T>
   bool remove_attribute( FieldBase & field, const T * attribute);
 
+  template< class data_type >
+  PartField<data_type>& declare_part_field(unsigned itemsPerPart = 1)
+  {
+    unsigned part_field_index = m_part_fields.size();
+    PartField<data_type>* new_part_field = new PartField<data_type>(this, part_field_index, itemsPerPart);
+    m_part_fields.push_back(new_part_field);
+    return *new_part_field;
+  }
+
   /** \} */
   //------------------------------------
 
@@ -510,6 +510,9 @@ private:
   MetaData( const MetaData & );                ///< \brief  Not allowed
   MetaData & operator = ( const MetaData & );  ///< \brief  Not allowed
 
+  void add_new_part_in_part_fields();
+  void synchronize_part_fields_with_parts();
+
   Part & declare_internal_part( const std::string & p_name);
 
   Part & declare_internal_part( const std::string & p_name, EntityRank rank);
@@ -540,6 +543,8 @@ private:
   unsigned m_spatial_dimension;
   EntityRank m_side_rank;
 
+  std::vector<PartFieldBase*> m_part_fields;
+
   /// Used to store mapping between Cell Topologies and their associated root parts and specified ranks:
   CellTopologyPartEntityRankMap m_cellTopologyPartEntityRankMap;
   /// Fast-lookup vector that maps part ordinals to Cell Topologies.
@@ -566,6 +571,13 @@ private:
 
   void clean_field_restrictions();
 };
+
+template< typename part_field_type >
+typename part_field_type::PartFieldDataType* part_field_data(part_field_type& part_field, const Part& part)
+{
+  unsigned part_ordinal = part.mesh_meta_data_ordinal();
+  return part_field.data(part_ordinal);
+}
 
 /** \brief  Verify that the meta data is identical on all processors */
 void verify_parallel_consistency( const MetaData & , ParallelMachine );
