@@ -1384,27 +1384,46 @@ and examples in a uniform way..
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()
 +++++++++++++++++++++++++++++++++++++++++
 
-Macro used in Dependencies.cmake files to allow some upstream dependent packages
-to be missing.
+Allow listed packages to be missing (typically called in Package
+Dependencies.cmake files).
 
 Usage::
 
   TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(<pack_1> <pack_2> ...)
 
-If the missing upstream SE package <pack_i> is optional, then the effect
+If the missing upstream SE package ``<pack_i>`` is optional, then the effect
 will be to simply ignore the missing package and remove it from the
-dependency list.  However, if the missing upstream SE package <pack_i> is
-required, then in addition to ignoring the missing package, the current SE
-(sub)package will also ee hard disabled,
-i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.
+dependency list for downstream SE packages that have an optional dependency
+on the missing upstream SE package.  However, all downstream SE packages
+that have a required dependency on the missing upstream SE package will be
+hard disabled, i.e. ``${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF``.
 
-This function is typically used in packages in external TriBITS repos that
-are depend on other packages in other exteral TriBITS repos that might be
+This function is typically used for marking packages in external TriBITS
+repos where the repos might be missing.  This allows the downstream repos
+and packages to still be enabled (assuming they don't have required
+dependencies on the missing packages) when one or more upstream repos are
 missing.
 
-NOTE: Using this function effectively turns off error checking for
-misspelled package names so it is important to only use it when it
-absolutely is needed.
+Using this function effectively turns off error checking for misspelled
+package names so it is important to only use it when it absolutely is
+needed.  The typical place to call this macro is in the
+`<packageDir>/cmake/Dependencies.cmake`_ files for the packages who list
+dependencies on the possibility missing upstream SE package(s).  Therefore,
+if a given package is not defined, this ``Dependencies.cmake`` file will not
+be processed and the error checking for the listed packages will not be
+turned off.  Otherwise, this macro can also be called from any file
+processed at the top-level scope *before* the
+``<packageDir>/cmake/Dependencies.cmake`` files are processed (see `Reduced
+Package Dependency Processing`_).  For projects, likely the best place to
+call this macro is in the file
+`<projectDir>/cmake/ProjectDependenciesSetup.cmake`_.  In this way, it will
+not turn off error checking in other projects where the given packages will
+always be required.
+
+NOTE: Currently, this macro just sets the non-cache local variables
+``<pack_i>__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE``.  Therefore this macro
+must be called from the top-level CMake project scope for it to have an
+effect.
 
 TRIBITS_CONFIGURE_FILE()
 ++++++++++++++++++++++++
@@ -2206,16 +2225,16 @@ NOTE: This macro just sets the varaible::
 
 in the current
 scope.  The advantages of using this macro instead of directly setting this
-varible include:
+variable include:
 
-* Asserts that the varible ``REPOSITORY_NAME`` is defined and set
+* Asserts that the variable ``REPOSITORY_NAME`` is defined and set
 
 * Avoids having to hard-code the assumed repository name
   ``${REPOSITORY_NAME}``.  This provides more flexibility for how other
   TriBITS project name a given TriBITS repo (i.e. the name of repo
   subdirs).
 
-* Avoid mispelling the name of the varible
+* Avoid mispelling the name of the variable
   ``${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS``.  If you
   misspell the name of the macro, it is an immediate error in CMake.
 

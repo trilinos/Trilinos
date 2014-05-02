@@ -8455,24 +8455,42 @@ and examples in a uniform way..</p>
 </div>
 <div class="section" id="tribits-allow-missing-external-packages">
 <h3><a class="toc-backref" href="#id110">TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()</a></h3>
-<p>Macro used in Dependencies.cmake files to allow some upstream dependent packages
-to be missing.</p>
+<p>Allow listed packages to be missing (typically called in Package
+Dependencies.cmake files).</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES(&lt;pack_1&gt; &lt;pack_2&gt; ...)
 </pre>
-<p>If the missing upstream SE package &lt;pack_i&gt; is optional, then the effect
+<p>If the missing upstream SE package <tt class="docutils literal">&lt;pack_i&gt;</tt> is optional, then the effect
 will be to simply ignore the missing package and remove it from the
-dependency list.  However, if the missing upstream SE package &lt;pack_i&gt; is
-required, then in addition to ignoring the missing package, the current SE
-(sub)package will also ee hard disabled,
-i.e. ${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF.</p>
-<p>This function is typically used in packages in external TriBITS repos that
-are depend on other packages in other exteral TriBITS repos that might be
+dependency list for downstream SE packages that have an optional dependency
+on the missing upstream SE package.  However, all downstream SE packages
+that have a required dependency on the missing upstream SE package will be
+hard disabled, i.e. <tt class="docutils literal"><span class="pre">${PROJECT_NAME}_ENABLE_{CURRENT_PACKAGE}=OFF</span></tt>.</p>
+<p>This function is typically used for marking packages in external TriBITS
+repos where the repos might be missing.  This allows the downstream repos
+and packages to still be enabled (assuming they don't have required
+dependencies on the missing packages) when one or more upstream repos are
 missing.</p>
-<p>NOTE: Using this function effectively turns off error checking for
-misspelled package names so it is important to only use it when it
-absolutely is needed.</p>
+<p>Using this function effectively turns off error checking for misspelled
+package names so it is important to only use it when it absolutely is
+needed.  The typical place to call this macro is in the
+<a class="reference internal" href="#packagedir-cmake-dependencies-cmake">&lt;packageDir&gt;/cmake/Dependencies.cmake</a> files for the packages who list
+dependencies on the possibility missing upstream SE package(s).  Therefore,
+if a given package is not defined, this <tt class="docutils literal">Dependencies.cmake</tt> file will not
+be processed and the error checking for the listed packages will not be
+turned off.  Otherwise, this macro can also be called from any file
+processed at the top-level scope <em>before</em> the
+<tt class="docutils literal"><span class="pre">&lt;packageDir&gt;/cmake/Dependencies.cmake</span></tt> files are processed (see <a class="reference internal" href="#reduced-package-dependency-processing">Reduced
+Package Dependency Processing</a>).  For projects, likely the best place to
+call this macro is in the file
+<a class="reference internal" href="#projectdir-cmake-projectdependenciessetup-cmake">&lt;projectDir&gt;/cmake/ProjectDependenciesSetup.cmake</a>.  In this way, it will
+not turn off error checking in other projects where the given packages will
+always be required.</p>
+<p>NOTE: Currently, this macro just sets the non-cache local variables
+<tt class="docutils literal">&lt;pack_i&gt;__ALLOW_MISSING_EXTERNAL_PACKAGE=TRUE</tt>.  Therefore this macro
+must be called from the top-level CMake project scope for it to have an
+effect.</p>
 </div>
 <div class="section" id="tribits-configure-file">
 <h3><a class="toc-backref" href="#id111">TRIBITS_CONFIGURE_FILE()</a></h3>
@@ -9185,14 +9203,14 @@ ${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
 </pre>
 <p>in the current
 scope.  The advantages of using this macro instead of directly setting this
-varible include:</p>
+variable include:</p>
 <ul class="simple">
-<li>Asserts that the varible <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
+<li>Asserts that the variable <tt class="docutils literal">REPOSITORY_NAME</tt> is defined and set</li>
 <li>Avoids having to hard-code the assumed repository name
 <tt class="docutils literal">${REPOSITORY_NAME}</tt>.  This provides more flexibility for how other
 TriBITS project name a given TriBITS repo (i.e. the name of repo
 subdirs).</li>
-<li>Avoid mispelling the name of the varible
+<li>Avoid mispelling the name of the variable
 <tt class="docutils literal">${REPOSITORY_NAME}_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS</tt>.  If you
 misspell the name of the macro, it is an immediate error in CMake.</li>
 </ul>
