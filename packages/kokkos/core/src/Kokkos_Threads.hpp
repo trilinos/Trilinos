@@ -189,9 +189,9 @@ public:
    *  does not satisfy the condition: 0 == team_max() % team_size
    *  then some threads will idle.
    */
-  KOKKOS_INLINE_FUNCTION unsigned team_max();
+  KOKKOS_INLINE_FUNCTION static unsigned team_max();
 
-  KOKKOS_INLINE_FUNCTION unsigned league_max();
+  KOKKOS_INLINE_FUNCTION static unsigned league_max();
 
   //@}
   /*------------------------------------------------------------------------*/

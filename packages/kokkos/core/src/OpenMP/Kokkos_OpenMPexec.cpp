@@ -60,7 +60,11 @@ int kokkos_omp_in_critical_region = ( Kokkos::HostSpace::register_in_parallel( k
 KOKKOS_INLINE_FUNCTION
 int kokkos_omp_in_parallel()
 {
+#ifndef __CUDA_ARCH__
   return omp_in_parallel() && ! kokkos_omp_in_critical_region ;
+#else
+  return 0;
+#endif
 }
 
 unsigned s_threads_per_core = 0 ;
@@ -261,6 +265,7 @@ void OpenMPexec::resize_shared_scratch( size_t size )
 KOKKOS_FUNCTION
 void * OpenMPexec::get_shmem( const int size )
 {
+#ifndef __CUDA_ARCH__
   // m_shared_iter is in bytes, convert to integer offsets
   const int offset = m_team_shared_iter >> power_of_two<sizeof(int)>::value ;
 
@@ -271,6 +276,9 @@ void * OpenMPexec::get_shmem( const int size )
   }
 
   return ((int*)m_team_shared) + offset ;
+#else
+  return NULL;
+#endif
 }
 
 } // namespace Impl
@@ -284,19 +292,27 @@ namespace Kokkos {
 KOKKOS_FUNCTION
 unsigned OpenMP::league_max()
 {
+#ifndef __CUDA_ARCH__
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
 
   return unsigned( std::numeric_limits<int>::max() );
+#else
+  return 0;
+#endif
 }
 
-KOKKOS_INLINE_FUNCTION
+KOKKOS_FUNCTION
 unsigned OpenMP::team_max()
 {
+#ifndef __CUDA_ARCH__
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
   return Impl::s_threads_per_numa ;
+#else
+  return 0;
+#endif
 }
 
 //----------------------------------------------------------------------------
