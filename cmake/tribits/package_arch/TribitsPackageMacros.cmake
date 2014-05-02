@@ -116,9 +116,6 @@ ENDMACRO()
 # Macro called at the very beginning of a package's top-level CMakeLists.txt
 # file when a packages has subpackages.
 #
-# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
-# which calls this macro.
-#
 # Usage::
 #
 #   TRIBITS_PACKAGE_DECL(
@@ -180,6 +177,9 @@ ENDMACRO()
 #   ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
 #   can be read in with just a raw ``INCLUDE()`` leaving off the full path and
 #   the ``*.cmake`` extension.
+#
+# If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+# which calls this macro.
 #
 MACRO(TRIBITS_PACKAGE_DECL PACKAGE_NAME_IN)
 
@@ -362,7 +362,8 @@ ENDMACRO()
 #
 # @MACRO: TRIBITS_ADD_DEBUG_OPTION()
 #
-# Add the standard option ``${PACKGE_NAME}_ENABLE_DEBUG`` for the package.
+# Add the standard cache variable option ``${PACKAGE_NAME}_ENABLE_DEBUG`` for
+# the package.
 #
 # Usage::
 #
@@ -370,7 +371,8 @@ ENDMACRO()
 #
 # This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
 # true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
-# the package's configured header file).
+# the package's configured header file).  This macro is typically called in
+# the package's `<packageDir>/CMakeLists.txt`_ file.
 #
 MACRO(TRIBITS_ADD_DEBUG_OPTION)
   TRIBITS_ADD_OPTION_AND_DEFINE(
@@ -446,17 +448,18 @@ ENDMACRO()
 #
 #    TRIBITS_ADD_EXAMPLE_DIRECTORIES(<dir1> <dir2> ...)
 #
-# This macro only needs to be called from the top most CMakeList.txt file for
-# which all subdirectories are all "examples".
+# This macro typically is called from the top-level
+# `<packageDir>/CMakeLists.txt`_ file for which all subdirectories are all
+# "examples" according to standard package layout.
 #
-# This macro can be called several times within a package and it will have the
-# right effect.
+# This macro can be called several times within a package as desired to break
+# up example directories any way one would like.
 #
-# Currently, really all it does macro does is to call
-# ``ADD_SUBDIRECTORY(<diri>)`` if ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
+# Currently, all it does macro does is to call ``ADD_SUBDIRECTORY(<diri>)`` if
+# ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
 # ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
-# be extended in the futgure in order to modify behavior related to adding
-# tests and examples in a uniform way..
+# be extended in the future in order to modify behavior related to adding
+# tests and examples in a uniform way.
 #
 MACRO(TRIBITS_ADD_EXAMPLE_DIRECTORIES)
 

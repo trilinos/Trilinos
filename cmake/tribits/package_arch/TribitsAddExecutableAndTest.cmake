@@ -81,7 +81,8 @@ ENDFUNCTION()
 #
 # @FUNCTION: TRIBITS_ADD_EXECUTABLE_AND_TEST()
 #
-# Add an executable and a test (or several tests) all in one shot.
+# Add an executable and a test (or several tests) all in one shot (just calls
+# `TRIBITS_ADD_EXECUTABLE()`_ followed by `TRIBITS_ADD_TEST()`_).
 #
 # Usage::
 #
@@ -116,26 +117,29 @@ ENDFUNCTION()
 # `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
 # passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
 # `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
-# are accpeted by which functions.
+# are accepted by which functions.
 #
-# Arguments that are specific to this function and not contained in
+# Arguments that are specific to this function and not directly passed on to
 # ``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
 #
 #   ``XHOST_TEST <xhost0> <xhost1> ...``
 #
 #     When specified, this disables just running the tests for the named hosts
 #     ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
-#     test.
+#     test.  These are just passed in through the ``XHOST`` argument to
+#     ``TRIBITS_ADD_TEST()``.
 #
 #   ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
 #
 #     When specified, this disables just running the tests for the named host
 #     types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
-#     executable for the test.
+#     executable for the test.  These are just passed in through the
+#     ``XHOSTTYPE`` argument to ``TRIBITS_ADD_TEST()``.
 #
-# This is the function to use for simple test executbles that you want to run
+# This is the function to use for simple test executables that you want to run
 # that either takes no arguments or just a simple set of arguments passed in
-# through ``ARGS``.
+# through ``ARGS``.  For more flexibility, just use
+# ``TRIBITS_ADD_EXECUTABLE()`` followed by ``TRIBITS_ADD_TEST()``.
 #
 FUNCTION(TRIBITS_ADD_EXECUTABLE_AND_TEST EXE_NAME)
    

@@ -404,7 +404,8 @@ file that should list this test case.
 TRIBITS_ADD_DEBUG_OPTION()
 ++++++++++++++++++++++++++
 
-Add the standard option ``${PACKGE_NAME}_ENABLE_DEBUG`` for the package.
+Add the standard cache variable option ``${PACKAGE_NAME}_ENABLE_DEBUG`` for
+the package.
 
 Usage::
 
@@ -412,7 +413,8 @@ Usage::
 
 This option is given the default ``${${PROJECT_NAME}_ENABLE_DEBUG}`` and if
 true, will set the variable ``HAVE_${PACKAGE_NAME_UC}_DEBUG`` (to be used in
-the package's configured header file).
+the package's configured header file).  This macro is typically called in
+the package's `<packageDir>/CMakeLists.txt`_ file.
 
 TRIBITS_ADD_EXAMPLE_DIRECTORIES()
 +++++++++++++++++++++++++++++++++
@@ -424,17 +426,18 @@ Usage::
 
    TRIBITS_ADD_EXAMPLE_DIRECTORIES(<dir1> <dir2> ...)
 
-This macro only needs to be called from the top most CMakeList.txt file for
-which all subdirectories are all "examples".
+This macro typically is called from the top-level
+`<packageDir>/CMakeLists.txt`_ file for which all subdirectories are all
+"examples" according to standard package layout.
 
-This macro can be called several times within a package and it will have the
-right effect.
+This macro can be called several times within a package as desired to break
+up example directories any way one would like.
 
-Currently, really all it does macro does is to call
-``ADD_SUBDIRECTORY(<diri>)`` if ``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
+Currently, all it does macro does is to call ``ADD_SUBDIRECTORY(<diri>)`` if
+``${PACKAGE_NAME}_ENABLE_EXAMPLES`` or
 ``${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES`` are true. However, this macro may
-be extended in the futgure in order to modify behavior related to adding
-tests and examples in a uniform way..
+be extended in the future in order to modify behavior related to adding
+tests and examples in a uniform way.
 
 TRIBITS_ADD_EXECUTABLE()
 ++++++++++++++++++++++++
@@ -474,7 +477,8 @@ Usage::
   ``<exeRootName>``
 
     The root name of the exectuable (and CMake target) (see `Executable and
-    Target Name (TRIBITS_ADD_EXECUTABLE())`_).
+    Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This must be the first
+    argument.
 
   ``NOEXEPREFIX``
 
@@ -490,9 +494,9 @@ Usage::
 
   ``ADD_DIR_TO_NAME``
 
-    If passed in, the directory path relative to the package base directory
-    (with "/" replaced by "_") is added to the executable name (see
-    `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
+    If passed in, the directory path relative to the package's base
+    directory (with "/" replaced by "_") is added to the executable name
+    (see `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_).  This
     provides a simple way to create unique test exectuable names inside of a
     given TriBITS package.  Only test executables in the same directory
     would need to have unique ``<execRootName>`` passed in.
@@ -501,25 +505,25 @@ Usage::
 
     Gives the source files that will be compiled into the built executable.
     By default, these sources are assumed to be in the current working
-    directory or gives the relative path to the current working directory.
-    If ``<srci>`` is an absolute path, then that full file path is used.
-    This list of sources (with adjusted directory path) are passed into
+    directory (or can contain the relative path or absolute path).  If
+    ``<srci>`` is an absolute path, then that full file path is used.  This
+    list of sources (with adjusted directory path) are passed into
     ``ADD_EXECUTABLE(<fullExeName> ... )``.  After calling this function,
-    the properties of the source files can be altered using
-    ``SET_SOURCE_FILE_PROPERTIES()``.
+    the properties of the source files can be altered using the built-in
+    CMake command ``SET_SOURCE_FILE_PROPERTIES()``.
 
   ``DIRECTORY <dir>``
 
-    If specified, then the soruces for the exectuable listed in ``SOURCES
+    If specified, then the sources for the executable listed in ``SOURCES
     <src0> <src1> ...`` are assumed to be in the relative or absolute
     directory ``<dir>`` instead of the current source directory.  This
-    directrory path is prepended to each source file name ``<srci>`` unless
+    directory path is prepended to each source file name ``<srci>`` unless
     ``<srci>`` is an absolute path.
 
   ``CATEGORIES <category0> <category1> ...``
 
-    Gives the test categories for which this test will be added.  See
-    `TRIBITS_ADD_TEST()`_ for more details.
+    Gives the `Test Test Categories`_ for which this test will be added.
+    See `TRIBITS_ADD_TEST()`_ for more details.
 
   ``HOST <host0> <host1> ...``
 
@@ -544,15 +548,16 @@ Usage::
 
     Specifies extra libraries that will be linked to the executable using
     ``TARGET_LINK_LIBRARY()``.  Note that regular libraries (i.e. not
-    ''TESTONLY'') defined in the current SE package or any upstream SE
-    packages do **NOT** need to be listed!  TriBITS automatically links
-    these libraries to the executable!  The only libraries that should be
-    listed in this argument are either ``TESTONLY`` libraries, or other
-    libraries that are built external from this CMake project and are not
-    provided through a proper TriBITS TPL.  The latter usage is not
-    recommended.  External TPLs should be handled as a declared TriBITS TPL.
-    For a ``TESTONLY`` library, the include directories will automatically
-    be added using::
+    ``TESTONLY``) defined in the current SE package or any upstream SE
+    packages do **NOT** need to be listed!  TriBITS automatically links non
+    ``TESTONLY`` libraries in this package and upstream packages to the
+    executable.  The only libraries that should be listed in this argument
+    are either ``TESTONLY`` libraries, or other libraries that are built
+    external from this CMake project and are not provided through a proper
+    `TriBITS TPL`_.  The latter usage of passing in external libraries is
+    not recommended.  External libraries should be handled as declared
+    `TriBITS TPLs`_.  For a ``TESTONLY`` library, the include directories
+    will automatically be added using::
 
       INCLUDE_DIRECTORIES(${<libi>_INCLUDE_DIRS})
 
@@ -572,12 +577,12 @@ Usage::
 
   ``LINKER_LANGUAGE (C|CXX|Fortran)``
 
-    If specified, overrides the linker language used by setting the target
-    property ``LINKER_LANGUAGE``.  By default, CMake choses the compiler to
-    be used as the linker based on file extensions.  The most typical use
-    case is when Fortran-only or C-only sources are passed in through
-    ``SOURCES`` but a C++ linker is needed because there are upstream C++
-    libraries.
+    If specified, overrides the linker language used by setting the built-in
+    CMake target property ``LINKER_LANGUAGE``.  By default, CMake chooses the
+    compiler to be used as the linker based on file extensions.  The most
+    typical use case for this option is when Fortran-only or C-only sources
+    are passed in through ``SOURCES`` but a C++ linker is needed because
+    there are upstream C++ libraries.
 
   ``DEFINES -D<define0> -D<define1> ...``
 
@@ -588,7 +593,7 @@ Usage::
   ``INSTALLABLE``
 
     If passed in, then an install target will be added to install the built
-    exectuable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
+    executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (see
     `Install Target (TRIBITS_ADD_EXECUTABLE())`_).
 
 .. _Executable and Target Name (TRIBITS_ADD_EXECUTABLE()):
@@ -596,55 +601,61 @@ Usage::
 **Executable and Target Name (TRIBITS_ADD_EXECUTABLE())**
 
 By default, the full name of the executable and target name
-``<fullExecName>`` = ::
+is::
 
-  ${PACKAGE_NAME}_<exeRootName>
+  <fullExecName> = ${PACKAGE_NAME}_<exeRootName>
 
 If ``ADD_DIR_TO_NAME`` is set, then the directory path relative to the
 package base directory (with "/" replaced with "_"), or ``<relDirName>``, is
-added to the executable name to form ``<fullExecName>`` = ::
+added to the executable name to form::
 
-  ${PACKAGE_NAME}_<relDirName>_<exeRootName>
+  <fullExecName> = ${PACKAGE_NAME}_<relDirName>_<exeRootName>
 
-If the option ``NOEXEPREFIX`` is pased in, the prefix ``${PACKAGE_NAME}_``
-is removed.
+If the option ``NOEXEPREFIX`` is passed in, then the prefix
+``${PACKAGE_NAME}_`` is removed.
 
-CMake will add the executable suffix
-``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` the actual executable file if
-the option ``NOEXESUFFIX`` is not passed in but this suffix is never added
-to the target name.
+The executable suffix ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` will be
+added to the actual executable file name if the option ``NOEXESUFFIX`` is
+*not* passed in but this suffix is never added to the target name.
 
 The reason that a default prefix is prepended to the executable and target
 name is because the primary reason to create an executable is typically to
 create a test or an example that is private to the package.  This prefix
-helps to namespace the exexutable and its target so as to avoid name clashes
+helps to namespace the executable and its target so as to avoid name clashes
 with targets in other packages.  It also helps to avoid clashes if the
 executable gets installed into the install directory (if ``INSTALLABLE`` is
-specified).
+specified).  For general utility executables on Linux/Unix systems,
+``NOEXEPREFIX`` and ``NOEXESUFFIX`` should be passed in.  In this case, one
+must be careful to pick ``<exeRootName>`` that will be sufficiently globally
+unique.  Please use common sense when picking non-namespaced names.
 
 .. _Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE()):
 
 **Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())**
 
-Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called, one can set and
-change properties on the ``<fullExeName>`` executable target using
-``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
-listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
-any CMake project.
+Once ``ADD_EXECUTABLE(<fullExeName> ... )`` is called and this function
+exists, one can set and change properties on the ``<fullExeName>``
+executable target using the built-in ``SET_TARGET_PROPERTIES()`` command as
+well as properties on any of the source files listed in ``SOURCES`` using
+the built-in ``SET_SOURCE_FILE_PROPERTIES()`` command just like in any CMake
+project.
 
 .. _Install Target (TRIBITS_ADD_EXECUTABLE()):
 
 **Install Target (TRIBITS_ADD_EXECUTABLE())**
 
-If ``INSTALLABLE`` is passed in, then an install target ``INSTALL(TARGETS
-<fullExeName> ...)`` is added to install the built executable into the
-``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual install directory path is
-determined by ``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``) .
+If ``INSTALLABLE`` is passed in, then an install target using the built-in
+CMake command ``INSTALL(TARGETS <fullExeName> ...)`` is added to install the
+built executable into the ``${CMAKE_INSTALL_PREFIX}/bin/`` directory (actual
+install directory path is determined by
+``${PROJECT_NAME}_INSTALL_RUNTIME_DIR``, see `Setting the install prefix at
+configure time`_) .
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST()
 +++++++++++++++++++++++++++++++++
 
-Add an executable and a test (or several tests) all in one shot.
+Add an executable and a test (or several tests) all in one shot (just calls
+`TRIBITS_ADD_EXECUTABLE()`_ followed by `TRIBITS_ADD_TEST()`_).
 
 Usage::
 
@@ -679,26 +690,29 @@ This function takes a fairly common set of arguments to
 `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ but not the full set
 passed to ``TRIBITS_ADD_TEST()``.  See the documentation for
 `TRIBITS_ADD_EXECUTABLE()`_ and `TRIBITS_ADD_TEST()`_ to see which arguments
-are accpeted by which functions.
+are accepted by which functions.
 
-Arguments that are specific to this function and not contained in
+Arguments that are specific to this function and not directly passed on to
 ``TRIBITS_ADD_EXECUTABLE()`` or ``TRIBITS_ADD_TEST()`` include:
 
   ``XHOST_TEST <xhost0> <xhost1> ...``
 
     When specified, this disables just running the tests for the named hosts
     ``<xhost0>``, ``<xhost0>`` etc. but still builds the executable for the
-    test.
+    test.  These are just passed in through the ``XHOST`` argument to
+    ``TRIBITS_ADD_TEST()``.
 
   ``XHOSTTYPE_TEST <xhosttype0> <hosttype1> ...``
 
     When specified, this disables just running the tests for the named host
     types ``<hosttype0>``, ``<hosttype0>``, ..., but still builds the
-    executable for the test.
+    executable for the test.  These are just passed in through the
+    ``XHOSTTYPE`` argument to ``TRIBITS_ADD_TEST()``.
 
-This is the function to use for simple test executbles that you want to run
+This is the function to use for simple test executables that you want to run
 that either takes no arguments or just a simple set of arguments passed in
-through ``ARGS``.
+through ``ARGS``.  For more flexibility, just use
+``TRIBITS_ADD_EXECUTABLE()`` followed by ``TRIBITS_ADD_TEST()``.
 
 TRIBITS_ADD_LIBRARY()
 +++++++++++++++++++++
@@ -734,20 +748,21 @@ Usage::
   ``<libName>``
 
     Required name of the library.  This is the name passed to
-     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-     packae name.  CMake will of course add any standard prefix or post-fix
-     to the library file name appropriate for the platform and if this is a
-     static or shared library build.
+    ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
+    package name.  CMake will of course add any standard prefix or post-fix
+    to the library file name appropriate for the platform and if this is a
+    static or shared library build (see documentation for the built-in CMake
+    command ``ADD_LIBRARY()``.
 
   ``HEADERS <h0> <h1> ...``
 
     List of public header files for using this library.  By default, these
     header files are assumed to be in the current source directory.  They
     can also contain the relative path or absolute path to the files if they
-    are not in the current source directory.  List list of headers is passed
+    are not in the current source directory.  This list of headers is passed
     into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
-    helpful for some build tools, like MS Visual Stuido).  By default, these
-    headers will be installed as well (see `Include Directories
+    helpful for some build tools, like MS Visual Studio).  By default, these
+    headers will be installed (see `Install Targets
     (TRIBITS_ADD_LIBRARY())`_).
 
   ``NOINSTALLHEADERS <nih0> <hih1> ...``
@@ -762,29 +777,30 @@ Usage::
     List of source files passed into ``ADD_LIBRARY()`` that are compiled
     into header files and included in the library.  The compiler used to
     compile the files is determined automatically based on the file
-    extension (see CMake documentation).
+    extension (see CMake documentation for ``ADD_LIBRARY()``).
 
   ``DEPLIBS <deplib0> <deplib1> ...``
 
     List of dependent libraries that are built in the current SE package
     that this library is dependent on.  These libraries are passed into
     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  You should **not** list libraries in other upstream SE
-    packages or libraries built externally from this TriBITS CMake project.
-    The TriBITS system automatically handles linking to libraries in uptream
-    TriBITS packages and external libraries need to be listed in
-    ``IMPORTEDLIBS`` instead.
+    dependency structure of the libraries within the package.  **NOTE:** One
+    must **not** list libraries in other upstream SE packages or libraries
+    built externally from this TriBITS CMake project.  The TriBITS system
+    automatically handles linking to libraries in upstream TriBITS SE
+    packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
+    argument instead.
 
   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 
-    List of dependent libraries built exteranlly from this TriBITS CMake
+    List of dependent libraries built externally from this TriBITS CMake
     project.  These libraries are passed into
     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-    dependency.  These libraries are added the ``${PACKAGE_NAME}_LIBRARIES``
-    so that downstream SE packages will also have these libraries and the
-    link line also and these libraries will show up in the generated
-    ``Makefile.export.${PACKAGE_NAME}`` and ``${PACKAGE_NAME}Config.cmake``
-    files if they are generated.
+    dependency.  These libraries are added to the
+    ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
+    will also pick up these libraries and these libraries will show up in
+    the generated ``Makefile.export.${PACKAGE_NAME}`` and
+    ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).
 
   ``TESTONLY``
 
@@ -792,7 +808,8 @@ Usage::
     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
     not be added.  In this case, the current include directories will be set
     in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in.
+    `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in
+    through its ``DEPLIBS`` argument.
 
   ``NO_INSTALL_LIB_OR_HEADERS``
 
@@ -803,21 +820,23 @@ Usage::
 
     If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
     ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
-    by the standard FindCUDA.cmake module as processed using the standard
-    TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
-    package must have an enabled direct or indirect dependency on the
-    TriBITS CUDA TPL or a configure-time error will occur about not finding
+    by the standard ``FindCUDA.cmake`` module as processed using the
+    standard TriBITS ``FindTPLCUDA.cmake`` file (see `Standard TriBITS
+    TPLs`_).  For this option to work, this SE package must have an enabled
+    direct or indirect dependency on the TriBITS CUDA TPL or a
+    configure-time error may occur about not knowing about
     ``CUDA_ALL_LIBRARY()``.
 
 .. _Include Directories (TRIBITS_ADD_LIBRARY()):
 
 **Include Directories (TRIBITS_ADD_LIBRARY())**
 
-Any base directories for these header files listed in ``HEADERS`` or
-``NOINSTALLHEADERS`` should be passed into ``INCLUDE_DIRECTORIES()`` *before*
-calling this function.  These include directories will then be added to
-current packages list of include directories
-``${PACKAGE_NAME}_INCLUDE_DIRS``.
+Any base directories for the header files listed in the arguments
+``HEADERS`` or ``NOINSTALLHEADERS`` should be passed into the standard CMake
+command ``INCLUDE_DIRECTORIES()`` *before* calling this function.  These
+include directories will then be added to current packages list of include
+directories ``${PACKAGE_NAME}_INCLUDE_DIRS`` which is then exported to
+downstream SE packages..
 
 .. _Install Targets (TRIBITS_ADD_LIBRARY()):
 
@@ -826,41 +845,45 @@ current packages list of include directories
 By default, an install target for the library is created using
 ``INSTALL(TARGETS <libName> ...)`` to install into the directory
 ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
-``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
-created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
+time`_).  However, this install target will not get created if
+``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
 ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 target will get created.  Also, this install target will *not* get created
 if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 
 By default, an install target for the headers listed in ``HEADERS`` will get
-created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+created using ``INSTALL(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
 ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
 installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
 actual install directory is given by
-``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
-*not* get created for the headers listed in ``NOINSTALLHEADERS``.
+``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``, see `Setting the install prefix at
+configure time`_).  Note that an install target will *not* get created for
+the headers listed in ``NOINSTALLHEADERS``.
 
 .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
 
 **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
 
 Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-and change properties on the ``<libName>`` library target using
-``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
-listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
-any CMake project.
+and change properties on the ``<libName>`` library target using the built-in
+CMake command ``SET_TARGET_PROPERTIES()`` as well as set and change
+properties on any of the source files listed in ``SOURCES`` using the
+built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+CMake project.
 
 .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
 
 **Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
 
-**WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
-``-D<someDefine>`` to the compile command line that will affect a header
-file!  These defines are only set locally in this directory and child
-directories.  These defines will **NOT** be set when code in peer
-directories (e.g. a downstream TriBIS pacakge) compiles code that may
-include these header files.  To add defines, please use a configured header
-file (see `TRIBITS_CONFIGURE_FILE()`_).
+**WARNING:** Do **NOT** use the built-in CMake command ``ADD_DEFINITIONS()``
+to add defines ``-D<someDefine>`` to the compile command line that will
+affect any of the header files in the package!  These CMake-added defines
+are only set locally in this directory and child directories.  These defines
+will **NOT** be set when code in peer directories (e.g. a downstream TriBITS
+packages) compiles that may include these header files.  To add defines that
+affect header files, please use a configured header file (see
+`TRIBITS_CONFIGURE_FILE()`_).
 
 TRIBITS_ADD_OPTION_AND_DEFINE()
 +++++++++++++++++++++++++++++++
@@ -1726,9 +1749,6 @@ TRIBITS_PACKAGE_DECL()
 Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.
 
-If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
-which calls this macro.
-
 Usage::
 
   TRIBITS_PACKAGE_DECL(
@@ -1790,6 +1810,9 @@ There are several side-effects of calling this macro:
   ``CMAKE_MODULE_PATH`` locally so that the package's try-compile modules
   can be read in with just a raw ``INCLUDE()`` leaving off the full path and
   the ``*.cmake`` extension.
+
+If the package does not have subpackages, just call `TRIBITS_PACKAGE()`_
+which calls this macro.
 
 TRIBITS_PACKAGE_DEF()
 +++++++++++++++++++++

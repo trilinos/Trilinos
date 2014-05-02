@@ -6616,8 +6616,6 @@ These options are described below.
   has 64 cores, a reasonable number for ``MPI_EXEC_MAX_NUMPROCS_DEFAULT`` is
   64.
 
-.. ToDo: Edited and spell-checked up to here on 4/30/2014!
-
 
 TriBITS Macros and Functions
 ----------------------------
@@ -6633,6 +6631,9 @@ the initial include of the ``TriBITS.cmake`` file in the top-level
 executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
+
+.. ToDo: Edited and spell-checked up through TRIBITS_ADD_LIBRARY() on
+.. 05/02/2014!
 
 
 General Utility Macros and Functions
@@ -6824,6 +6825,8 @@ snapshotting`_.
 .. _${PROJECT_NAME}_TRACE_FILE_PROCESSING: ../build_quick_ref/TribitsBuildQuickRef.html#project-trace-file-processing
 
 .. _make dashboard: ../build_quick_ref/TribitsBuildQuickRef.html#dashboard-submissions
+
+.. _Setting the install prefix at configure time: ../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time
 
 .. Common references to the TribitsOverview document
 

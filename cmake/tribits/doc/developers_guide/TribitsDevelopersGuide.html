@@ -7264,7 +7264,6 @@ by a given machine (or class of machines).  For example if a given machine
 has 64 cores, a reasonable number for <tt class="docutils literal">MPI_EXEC_MAX_NUMPROCS_DEFAULT</tt> is
 64.</p>
 </blockquote>
-<!-- ToDo: Edited and spell-checked up to here on 4/30/2014! -->
 </div>
 <div class="section" id="tribits-macros-and-functions">
 <h2><a class="toc-backref" href="#id99">12.2&nbsp;&nbsp;&nbsp;TriBITS Macros and Functions</a></h2>
@@ -7619,14 +7618,16 @@ file that should list this test case.</p>
 </div>
 <div class="section" id="tribits-add-debug-option">
 <h3><a class="toc-backref" href="#id101">TRIBITS_ADD_DEBUG_OPTION()</a></h3>
-<p>Add the standard option <tt class="docutils literal">${PACKGE_NAME}_ENABLE_DEBUG</tt> for the package.</p>
+<p>Add the standard cache variable option <tt class="docutils literal">${PACKAGE_NAME}_ENABLE_DEBUG</tt> for
+the package.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_DEBUG_OPTION()
 </pre>
 <p>This option is given the default <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_ENABLE_DEBUG}</span></tt> and if
 true, will set the variable <tt class="docutils literal"><span class="pre">HAVE_${PACKAGE_NAME_UC}_DEBUG</span></tt> (to be used in
-the package's configured header file).</p>
+the package's configured header file).  This macro is typically called in
+the package's <a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file.</p>
 </div>
 <div class="section" id="tribits-add-example-directories">
 <h3><a class="toc-backref" href="#id102">TRIBITS_ADD_EXAMPLE_DIRECTORIES()</a></h3>
@@ -7636,15 +7637,16 @@ package.</p>
 <pre class="literal-block">
 TRIBITS_ADD_EXAMPLE_DIRECTORIES(&lt;dir1&gt; &lt;dir2&gt; ...)
 </pre>
-<p>This macro only needs to be called from the top most CMakeList.txt file for
-which all subdirectories are all &quot;examples&quot;.</p>
-<p>This macro can be called several times within a package and it will have the
-right effect.</p>
-<p>Currently, really all it does macro does is to call
-<tt class="docutils literal"><span class="pre">ADD_SUBDIRECTORY(&lt;diri&gt;)</span></tt> if <tt class="docutils literal">${PACKAGE_NAME}_ENABLE_EXAMPLES</tt> or
+<p>This macro typically is called from the top-level
+<a class="reference internal" href="#packagedir-cmakelists-txt">&lt;packageDir&gt;/CMakeLists.txt</a> file for which all subdirectories are all
+&quot;examples&quot; according to standard package layout.</p>
+<p>This macro can be called several times within a package as desired to break
+up example directories any way one would like.</p>
+<p>Currently, all it does macro does is to call <tt class="docutils literal"><span class="pre">ADD_SUBDIRECTORY(&lt;diri&gt;)</span></tt> if
+<tt class="docutils literal">${PACKAGE_NAME}_ENABLE_EXAMPLES</tt> or
 <tt class="docutils literal">${PARENT_PACKAGE_NAME}_ENABLE_EXAMPLES</tt> are true. However, this macro may
-be extended in the futgure in order to modify behavior related to adding
-tests and examples in a uniform way..</p>
+be extended in the future in order to modify behavior related to adding
+tests and examples in a uniform way.</p>
 </div>
 <div class="section" id="tribits-add-executable">
 <h3><a class="toc-backref" href="#id103">TRIBITS_ADD_EXECUTABLE()</a></h3>
@@ -7680,7 +7682,8 @@ TRIBITS_ADD_EXECUTABLE(
 <p><tt class="docutils literal">&lt;exeRootName&gt;</tt></p>
 <blockquote>
 The root name of the exectuable (and CMake target) (see <a class="reference internal" href="#executable-and-target-name-tribits-add-executable">Executable and
-Target Name (TRIBITS_ADD_EXECUTABLE())</a>).</blockquote>
+Target Name (TRIBITS_ADD_EXECUTABLE())</a>).  This must be the first
+argument.</blockquote>
 <p><tt class="docutils literal">NOEXEPREFIX</tt></p>
 <blockquote>
 If passed in, then <tt class="docutils literal">${PACKAGE_NAME}_</tt> is not added the beginning of
@@ -7693,9 +7696,9 @@ not added to the end of the executable name (see <a class="reference internal" h
 Target Name (TRIBITS_ADD_EXECUTABLE())</a>).</blockquote>
 <p><tt class="docutils literal">ADD_DIR_TO_NAME</tt></p>
 <blockquote>
-If passed in, the directory path relative to the package base directory
-(with &quot;/&quot; replaced by &quot;_&quot;) is added to the executable name (see
-<a class="reference internal" href="#executable-and-target-name-tribits-add-executable">Executable and Target Name (TRIBITS_ADD_EXECUTABLE())</a>).  This
+If passed in, the directory path relative to the package's base
+directory (with &quot;/&quot; replaced by &quot;_&quot;) is added to the executable name
+(see <a class="reference internal" href="#executable-and-target-name-tribits-add-executable">Executable and Target Name (TRIBITS_ADD_EXECUTABLE())</a>).  This
 provides a simple way to create unique test exectuable names inside of a
 given TriBITS package.  Only test executables in the same directory
 would need to have unique <tt class="docutils literal">&lt;execRootName&gt;</tt> passed in.</blockquote>
@@ -7703,23 +7706,23 @@ would need to have unique <tt class="docutils literal">&lt;execRootName&gt;</tt>
 <blockquote>
 Gives the source files that will be compiled into the built executable.
 By default, these sources are assumed to be in the current working
-directory or gives the relative path to the current working directory.
-If <tt class="docutils literal">&lt;srci&gt;</tt> is an absolute path, then that full file path is used.
-This list of sources (with adjusted directory path) are passed into
+directory (or can contain the relative path or absolute path).  If
+<tt class="docutils literal">&lt;srci&gt;</tt> is an absolute path, then that full file path is used.  This
+list of sources (with adjusted directory path) are passed into
 <tt class="docutils literal"><span class="pre">ADD_EXECUTABLE(&lt;fullExeName&gt;</span> ... )</tt>.  After calling this function,
-the properties of the source files can be altered using
-<tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt>.</blockquote>
+the properties of the source files can be altered using the built-in
+CMake command <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt>.</blockquote>
 <p><tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt></p>
 <blockquote>
-If specified, then the soruces for the exectuable listed in <tt class="docutils literal">SOURCES
+If specified, then the sources for the executable listed in <tt class="docutils literal">SOURCES
 &lt;src0&gt; &lt;src1&gt; ...</tt> are assumed to be in the relative or absolute
 directory <tt class="docutils literal">&lt;dir&gt;</tt> instead of the current source directory.  This
-directrory path is prepended to each source file name <tt class="docutils literal">&lt;srci&gt;</tt> unless
+directory path is prepended to each source file name <tt class="docutils literal">&lt;srci&gt;</tt> unless
 <tt class="docutils literal">&lt;srci&gt;</tt> is an absolute path.</blockquote>
 <p><tt class="docutils literal">CATEGORIES &lt;category0&gt; &lt;category1&gt; ...</tt></p>
 <blockquote>
-Gives the test categories for which this test will be added.  See
-<a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> for more details.</blockquote>
+Gives the <a class="reference internal" href="#test-test-categories">Test Test Categories</a> for which this test will be added.
+See <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> for more details.</blockquote>
 <p><tt class="docutils literal">HOST &lt;host0&gt; &lt;host1&gt; ...</tt></p>
 <blockquote>
 The list of hosts for which to enable the test (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</blockquote>
@@ -7739,15 +7742,16 @@ The list of host types for which <strong>not</strong> to enable the test (see
 <blockquote>
 <p>Specifies extra libraries that will be linked to the executable using
 <tt class="docutils literal">TARGET_LINK_LIBRARY()</tt>.  Note that regular libraries (i.e. not
-''TESTONLY'') defined in the current SE package or any upstream SE
-packages do <strong>NOT</strong> need to be listed!  TriBITS automatically links
-these libraries to the executable!  The only libraries that should be
-listed in this argument are either <tt class="docutils literal">TESTONLY</tt> libraries, or other
-libraries that are built external from this CMake project and are not
-provided through a proper TriBITS TPL.  The latter usage is not
-recommended.  External TPLs should be handled as a declared TriBITS TPL.
-For a <tt class="docutils literal">TESTONLY</tt> library, the include directories will automatically
-be added using:</p>
+<tt class="docutils literal">TESTONLY</tt>) defined in the current SE package or any upstream SE
+packages do <strong>NOT</strong> need to be listed!  TriBITS automatically links non
+<tt class="docutils literal">TESTONLY</tt> libraries in this package and upstream packages to the
+executable.  The only libraries that should be listed in this argument
+are either <tt class="docutils literal">TESTONLY</tt> libraries, or other libraries that are built
+external from this CMake project and are not provided through a proper
+<a class="reference internal" href="#tribits-tpl">TriBITS TPL</a>.  The latter usage of passing in external libraries is
+not recommended.  External libraries should be handled as declared
+<a class="reference internal" href="#tribits-tpls">TriBITS TPLs</a>.  For a <tt class="docutils literal">TESTONLY</tt> library, the include directories
+will automatically be added using:</p>
 <pre class="literal-block">
 INCLUDE_DIRECTORIES(${&lt;libi&gt;_INCLUDE_DIRS})
 </pre>
@@ -7766,12 +7770,12 @@ mode.  See the <tt class="docutils literal">COMM</tt> argument in the script
 <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> for more details.</blockquote>
 <p><tt class="docutils literal">LINKER_LANGUAGE (C|CXX|Fortran)</tt></p>
 <blockquote>
-If specified, overrides the linker language used by setting the target
-property <tt class="docutils literal">LINKER_LANGUAGE</tt>.  By default, CMake choses the compiler to
-be used as the linker based on file extensions.  The most typical use
-case is when Fortran-only or C-only sources are passed in through
-<tt class="docutils literal">SOURCES</tt> but a C++ linker is needed because there are upstream C++
-libraries.</blockquote>
+If specified, overrides the linker language used by setting the built-in
+CMake target property <tt class="docutils literal">LINKER_LANGUAGE</tt>.  By default, CMake chooses the
+compiler to be used as the linker based on file extensions.  The most
+typical use case for this option is when Fortran-only or C-only sources
+are passed in through <tt class="docutils literal">SOURCES</tt> but a C++ linker is needed because
+there are upstream C++ libraries.</blockquote>
 <p><tt class="docutils literal">DEFINES <span class="pre">-D&lt;define0&gt;</span> <span class="pre">-D&lt;define1&gt;</span> ...</tt></p>
 <blockquote>
 Add the listed defines using <tt class="docutils literal">ADD_DEFINITIONS()</tt>.  These should only
@@ -7780,49 +7784,55 @@ compiles in this directory due to the FUNCTION scoping.</blockquote>
 <p><tt class="docutils literal">INSTALLABLE</tt></p>
 <blockquote>
 If passed in, then an install target will be added to install the built
-exectuable into the <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/bin/</span></tt> directory (see
+executable into the <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/bin/</span></tt> directory (see
 <a class="reference internal" href="#install-target-tribits-add-executable">Install Target (TRIBITS_ADD_EXECUTABLE())</a>).</blockquote>
 </blockquote>
 <p id="executable-and-target-name-tribits-add-executable"><strong>Executable and Target Name (TRIBITS_ADD_EXECUTABLE())</strong></p>
 <p>By default, the full name of the executable and target name
-<tt class="docutils literal">&lt;fullExecName&gt;</tt> =</p>
+is:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;exeRootName&gt;
+&lt;fullExecName&gt; = ${PACKAGE_NAME}_&lt;exeRootName&gt;
 </pre>
 <p>If <tt class="docutils literal">ADD_DIR_TO_NAME</tt> is set, then the directory path relative to the
 package base directory (with &quot;/&quot; replaced with &quot;_&quot;), or <tt class="docutils literal">&lt;relDirName&gt;</tt>, is
-added to the executable name to form <tt class="docutils literal">&lt;fullExecName&gt;</tt> =</p>
+added to the executable name to form:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;relDirName&gt;_&lt;exeRootName&gt;
+&lt;fullExecName&gt; = ${PACKAGE_NAME}_&lt;relDirName&gt;_&lt;exeRootName&gt;
 </pre>
-<p>If the option <tt class="docutils literal">NOEXEPREFIX</tt> is pased in, the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt>
-is removed.</p>
-<p>CMake will add the executable suffix
-<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> the actual executable file if
-the option <tt class="docutils literal">NOEXESUFFIX</tt> is not passed in but this suffix is never added
-to the target name.</p>
+<p>If the option <tt class="docutils literal">NOEXEPREFIX</tt> is passed in, then the prefix
+<tt class="docutils literal">${PACKAGE_NAME}_</tt> is removed.</p>
+<p>The executable suffix <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> will be
+added to the actual executable file name if the option <tt class="docutils literal">NOEXESUFFIX</tt> is
+<em>not</em> passed in but this suffix is never added to the target name.</p>
 <p>The reason that a default prefix is prepended to the executable and target
 name is because the primary reason to create an executable is typically to
 create a test or an example that is private to the package.  This prefix
-helps to namespace the exexutable and its target so as to avoid name clashes
+helps to namespace the executable and its target so as to avoid name clashes
 with targets in other packages.  It also helps to avoid clashes if the
 executable gets installed into the install directory (if <tt class="docutils literal">INSTALLABLE</tt> is
-specified).</p>
+specified).  For general utility executables on Linux/Unix systems,
+<tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> should be passed in.  In this case, one
+must be careful to pick <tt class="docutils literal">&lt;exeRootName&gt;</tt> that will be sufficiently globally
+unique.  Please use common sense when picking non-namespaced names.</p>
 <p id="additional-executable-and-source-file-properties-tribits-add-executable"><strong>Additional Executable and Source File Properties (TRIBITS_ADD_EXECUTABLE())</strong></p>
-<p>Once <tt class="docutils literal"><span class="pre">ADD_EXECUTABLE(&lt;fullExeName&gt;</span> ... )</tt> is called, one can set and
-change properties on the <tt class="docutils literal">&lt;fullExeName&gt;</tt> executable target using
-<tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> as well as properties on any of the source files
-listed in <tt class="docutils literal">SOURCES</tt> using <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> just like in
-any CMake project.</p>
+<p>Once <tt class="docutils literal"><span class="pre">ADD_EXECUTABLE(&lt;fullExeName&gt;</span> ... )</tt> is called and this function
+exists, one can set and change properties on the <tt class="docutils literal">&lt;fullExeName&gt;</tt>
+executable target using the built-in <tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> command as
+well as properties on any of the source files listed in <tt class="docutils literal">SOURCES</tt> using
+the built-in <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> command just like in any CMake
+project.</p>
 <p id="install-target-tribits-add-executable"><strong>Install Target (TRIBITS_ADD_EXECUTABLE())</strong></p>
-<p>If <tt class="docutils literal">INSTALLABLE</tt> is passed in, then an install target <tt class="docutils literal">INSTALL(TARGETS
-&lt;fullExeName&gt; <span class="pre">...)</span></tt> is added to install the built executable into the
-<tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/bin/</span></tt> directory (actual install directory path is
-determined by <tt class="docutils literal">${PROJECT_NAME}_INSTALL_RUNTIME_DIR</tt>) .</p>
+<p>If <tt class="docutils literal">INSTALLABLE</tt> is passed in, then an install target using the built-in
+CMake command <tt class="docutils literal">INSTALL(TARGETS &lt;fullExeName&gt; <span class="pre">...)</span></tt> is added to install the
+built executable into the <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/bin/</span></tt> directory (actual
+install directory path is determined by
+<tt class="docutils literal">${PROJECT_NAME}_INSTALL_RUNTIME_DIR</tt>, see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time">Setting the install prefix at
+configure time</a>) .</p>
 </div>
 <div class="section" id="tribits-add-executable-and-test">
 <h3><a class="toc-backref" href="#id104">TRIBITS_ADD_EXECUTABLE_AND_TEST()</a></h3>
-<p>Add an executable and a test (or several tests) all in one shot.</p>
+<p>Add an executable and a test (or several tests) all in one shot (just calls
+<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> followed by <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -7856,24 +7866,27 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
 <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> and <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> but not the full set
 passed to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.  See the documentation for
 <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> and <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a> to see which arguments
-are accpeted by which functions.</p>
-<p>Arguments that are specific to this function and not contained in
+are accepted by which functions.</p>
+<p>Arguments that are specific to this function and not directly passed on to
 <tt class="docutils literal">TRIBITS_ADD_EXECUTABLE()</tt> or <tt class="docutils literal">TRIBITS_ADD_TEST()</tt> include:</p>
 <blockquote>
 <p><tt class="docutils literal">XHOST_TEST &lt;xhost0&gt; &lt;xhost1&gt; ...</tt></p>
 <blockquote>
 When specified, this disables just running the tests for the named hosts
 <tt class="docutils literal">&lt;xhost0&gt;</tt>, <tt class="docutils literal">&lt;xhost0&gt;</tt> etc. but still builds the executable for the
-test.</blockquote>
+test.  These are just passed in through the <tt class="docutils literal">XHOST</tt> argument to
+<tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</blockquote>
 <p><tt class="docutils literal">XHOSTTYPE_TEST &lt;xhosttype0&gt; &lt;hosttype1&gt; ...</tt></p>
 <blockquote>
 When specified, this disables just running the tests for the named host
 types <tt class="docutils literal">&lt;hosttype0&gt;</tt>, <tt class="docutils literal">&lt;hosttype0&gt;</tt>, ..., but still builds the
-executable for the test.</blockquote>
+executable for the test.  These are just passed in through the
+<tt class="docutils literal">XHOSTTYPE</tt> argument to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</blockquote>
 </blockquote>
-<p>This is the function to use for simple test executbles that you want to run
+<p>This is the function to use for simple test executables that you want to run
 that either takes no arguments or just a simple set of arguments passed in
-through <tt class="docutils literal">ARGS</tt>.</p>
+through <tt class="docutils literal">ARGS</tt>.  For more flexibility, just use
+<tt class="docutils literal">TRIBITS_ADD_EXECUTABLE()</tt> followed by <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
 </div>
 <div class="section" id="tribits-add-library">
 <h3><a class="toc-backref" href="#id105">TRIBITS_ADD_LIBRARY()</a></h3>
@@ -7904,23 +7917,21 @@ TRIBITS_ADD_LIBRARY(
 <blockquote>
 <p><tt class="docutils literal">&lt;libName&gt;</tt></p>
 <blockquote>
-<dl class="docutils">
-<dt>Required name of the library.  This is the name passed to</dt>
-<dd><tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> <span class="pre">...)</span></tt>.  The name is <em>not</em> prefixed by the
-packae name.  CMake will of course add any standard prefix or post-fix
+Required name of the library.  This is the name passed to
+<tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> <span class="pre">...)</span></tt>.  The name is <em>not</em> prefixed by the
+package name.  CMake will of course add any standard prefix or post-fix
 to the library file name appropriate for the platform and if this is a
-static or shared library build.</dd>
-</dl>
-</blockquote>
+static or shared library build (see documentation for the built-in CMake
+command <tt class="docutils literal">ADD_LIBRARY()</tt>.</blockquote>
 <p><tt class="docutils literal">HEADERS &lt;h0&gt; &lt;h1&gt; ...</tt></p>
 <blockquote>
 List of public header files for using this library.  By default, these
 header files are assumed to be in the current source directory.  They
 can also contain the relative path or absolute path to the files if they
-are not in the current source directory.  List list of headers is passed
+are not in the current source directory.  This list of headers is passed
 into <tt class="docutils literal"><span class="pre">ADD_LIBRARY(...)</span></tt> as well (which is not strictly needed but is
-helpful for some build tools, like MS Visual Stuido).  By default, these
-headers will be installed as well (see <a class="reference internal" href="#include-directories-tribits-add-library">Include Directories
+helpful for some build tools, like MS Visual Studio).  By default, these
+headers will be installed (see <a class="reference internal" href="#install-targets-tribits-add-library">Install Targets
 (TRIBITS_ADD_LIBRARY())</a>).</blockquote>
 <p><tt class="docutils literal">NOINSTALLHEADERS &lt;nih0&gt; &lt;hih1&gt; ...</tt></p>
 <blockquote>
@@ -7933,34 +7944,36 @@ tools like to have these listed (e.g. MS Visual Studio).</blockquote>
 List of source files passed into <tt class="docutils literal">ADD_LIBRARY()</tt> that are compiled
 into header files and included in the library.  The compiler used to
 compile the files is determined automatically based on the file
-extension (see CMake documentation).</blockquote>
+extension (see CMake documentation for <tt class="docutils literal">ADD_LIBRARY()</tt>).</blockquote>
 <p><tt class="docutils literal">DEPLIBS &lt;deplib0&gt; &lt;deplib1&gt; ...</tt></p>
 <blockquote>
 List of dependent libraries that are built in the current SE package
 that this library is dependent on.  These libraries are passed into
 <tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about the
-dependency.  You should <strong>not</strong> list libraries in other upstream SE
-packages or libraries built externally from this TriBITS CMake project.
-The TriBITS system automatically handles linking to libraries in uptream
-TriBITS packages and external libraries need to be listed in
-<tt class="docutils literal">IMPORTEDLIBS</tt> instead.</blockquote>
+dependency structure of the libraries within the package.  <strong>NOTE:</strong> One
+must <strong>not</strong> list libraries in other upstream SE packages or libraries
+built externally from this TriBITS CMake project.  The TriBITS system
+automatically handles linking to libraries in upstream TriBITS SE
+packages.  External libraries need to be listed in the <tt class="docutils literal">IMPORTEDLIBS</tt>
+argument instead.</blockquote>
 <p><tt class="docutils literal">IMPORTEDLIBS &lt;ideplib0&gt; &lt;ideplib1&gt; ...</tt></p>
 <blockquote>
-List of dependent libraries built exteranlly from this TriBITS CMake
+List of dependent libraries built externally from this TriBITS CMake
 project.  These libraries are passed into
 <tt class="docutils literal"><span class="pre">TARGET_LINK_LIBRARIES(&lt;libName&gt;</span> <span class="pre">...)</span></tt> so that CMake knows about the
-dependency.  These libraries are added the <tt class="docutils literal">${PACKAGE_NAME}_LIBRARIES</tt>
-so that downstream SE packages will also have these libraries and the
-link line also and these libraries will show up in the generated
-<tt class="docutils literal"><span class="pre">Makefile.export.${PACKAGE_NAME}</span></tt> and <tt class="docutils literal">${PACKAGE_NAME}Config.cmake</tt>
-files if they are generated.</blockquote>
+dependency.  These libraries are added to the
+<tt class="docutils literal">${PACKAGE_NAME}_LIBRARIES</tt> variable so that downstream SE packages
+will also pick up these libraries and these libraries will show up in
+the generated <tt class="docutils literal"><span class="pre">Makefile.export.${PACKAGE_NAME}</span></tt> and
+<tt class="docutils literal">${PACKAGE_NAME}Config.cmake</tt> files (if they are generated).</blockquote>
 <p><tt class="docutils literal">TESTONLY</tt></p>
 <blockquote>
 If passed in, then <tt class="docutils literal">&lt;libName&gt;</tt> will <strong>not</strong> be added to
 <tt class="docutils literal">${PACKAGE_NAME}_LIBRARIES</tt> and an install target for the library will
 not be added.  In this case, the current include directories will be set
 in the global variable <tt class="docutils literal">&lt;libName&gt;_INCLUDE_DIR</tt> which will be used in
-<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> when a test-only library is linked in.</blockquote>
+<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a> when a test-only library is linked in
+through its <tt class="docutils literal">DEPLIBS</tt> argument.</blockquote>
 <p><tt class="docutils literal">NO_INSTALL_LIB_OR_HEADERS</tt></p>
 <blockquote>
 If specified, then no install targets will be added for the library
@@ -7969,48 +7982,54 @@ If specified, then no install targets will be added for the library
 <blockquote>
 If specified then <tt class="docutils literal">CUDA_ADD_LIBRARY()</tt> is used instead of
 <tt class="docutils literal">ADD_LIBRARY()</tt> where <tt class="docutils literal">CUDA_ADD_LIBRARY()</tt> is assumed to be defined
-by the standard FindCUDA.cmake module as processed using the standard
-TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
-package must have an enabled direct or indirect dependency on the
-TriBITS CUDA TPL or a configure-time error will occur about not finding
+by the standard <tt class="docutils literal">FindCUDA.cmake</tt> module as processed using the
+standard TriBITS <tt class="docutils literal">FindTPLCUDA.cmake</tt> file (see <a class="reference internal" href="#standard-tribits-tpls">Standard TriBITS
+TPLs</a>).  For this option to work, this SE package must have an enabled
+direct or indirect dependency on the TriBITS CUDA TPL or a
+configure-time error may occur about not knowing about
 <tt class="docutils literal">CUDA_ALL_LIBRARY()</tt>.</blockquote>
 </blockquote>
 <p id="include-directories-tribits-add-library"><strong>Include Directories (TRIBITS_ADD_LIBRARY())</strong></p>
-<p>Any base directories for these header files listed in <tt class="docutils literal">HEADERS</tt> or
-<tt class="docutils literal">NOINSTALLHEADERS</tt> should be passed into <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt> <em>before</em>
-calling this function.  These include directories will then be added to
-current packages list of include directories
-<tt class="docutils literal">${PACKAGE_NAME}_INCLUDE_DIRS</tt>.</p>
+<p>Any base directories for the header files listed in the arguments
+<tt class="docutils literal">HEADERS</tt> or <tt class="docutils literal">NOINSTALLHEADERS</tt> should be passed into the standard CMake
+command <tt class="docutils literal">INCLUDE_DIRECTORIES()</tt> <em>before</em> calling this function.  These
+include directories will then be added to current packages list of include
+directories <tt class="docutils literal">${PACKAGE_NAME}_INCLUDE_DIRS</tt> which is then exported to
+downstream SE packages..</p>
 <p id="install-targets-tribits-add-library"><strong>Install Targets (TRIBITS_ADD_LIBRARY())</strong></p>
 <p>By default, an install target for the library is created using
 <tt class="docutils literal">INSTALL(TARGETS &lt;libName&gt; <span class="pre">...)</span></tt> to install into the directory
 <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/lib/</span></tt> (actual install directory is given by
-<tt class="docutils literal">${PROJECT}_INSTALL_LIB_DIR</tt>).  However, this install target will not get
-created if <tt class="docutils literal">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE</tt> and
+<tt class="docutils literal">${PROJECT}_INSTALL_LIB_DIR</tt>, see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time">Setting the install prefix at configure
+time</a>).  However, this install target will not get created if
+<tt class="docutils literal">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE</tt> and
 <tt class="docutils literal">BUILD_SHARD_LIBS=OFF</tt>.  But when <tt class="docutils literal">BUILD_SHARD_LIBS=ON</tt>, the install
 target will get created.  Also, this install target will <em>not</em> get created
 if <tt class="docutils literal">TESTONLY</tt> or <tt class="docutils literal">NO_INSTALL_LIB_OR_HEADERS</tt> are passed in.</p>
 <p>By default, an install target for the headers listed in <tt class="docutils literal">HEADERS</tt> will get
-created using <tt class="docutils literal">INSTALL(FILES &lt;h1&gt; &lt;h2&gt; <span class="pre">...)</span></tt>, but only if <tt class="docutils literal">TESTONLY</tt> and
+created using <tt class="docutils literal">INSTALL(FILES &lt;h0&gt; &lt;h1&gt; <span class="pre">...)</span></tt>, but only if <tt class="docutils literal">TESTONLY</tt> and
 <tt class="docutils literal">NO_INSTALL_LIB_OR_HEADERS</tt> are not passed in as well.  These headers get
 installed into the flat directory <tt class="docutils literal"><span class="pre">${CMAKE_INSTALL_PREFIX}/include/</span></tt> (the
 actual install directory is given by
-<tt class="docutils literal">${PROJECT_NAME}_INSTALL_INCLUDE_DIR</tt>).  Note that an install target will
-<em>not</em> get created for the headers listed in <tt class="docutils literal">NOINSTALLHEADERS</tt>.</p>
+<tt class="docutils literal">${PROJECT_NAME}_INSTALL_INCLUDE_DIR</tt>, see <a class="reference external" href="../build_quick_ref/TribitsBuildQuickRef.html#setting-the-install-prefix-at-configure-time">Setting the install prefix at
+configure time</a>).  Note that an install target will <em>not</em> get created for
+the headers listed in <tt class="docutils literal">NOINSTALLHEADERS</tt>.</p>
 <p id="additional-library-and-source-file-properties-tribits-add-library"><strong>Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())</strong></p>
 <p>Once <tt class="docutils literal"><span class="pre">ADD_LIBRARY(&lt;libName&gt;</span> ... &lt;src0&gt; &lt;src1&gt; <span class="pre">...)</span></tt> is called, one can set
-and change properties on the <tt class="docutils literal">&lt;libName&gt;</tt> library target using
-<tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> as well as properties on any of the source files
-listed in <tt class="docutils literal">SOURCES</tt> using <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> just like in
-any CMake project.</p>
+and change properties on the <tt class="docutils literal">&lt;libName&gt;</tt> library target using the built-in
+CMake command <tt class="docutils literal">SET_TARGET_PROPERTIES()</tt> as well as set and change
+properties on any of the source files listed in <tt class="docutils literal">SOURCES</tt> using the
+built-in CMake command <tt class="docutils literal">SET_SOURCE_FILE_PROPERTIES()</tt> just like in any
+CMake project.</p>
 <p id="miscellaneous-notes-tribits-add-library"><strong>Miscellaneous Notes (TRIBITS_ADD_LIBRARY())</strong></p>
-<p><strong>WARNING:</strong> Do <strong>NOT</strong> use <tt class="docutils literal">ADD_DEFINITIONS()</tt> to add defines
-<tt class="docutils literal"><span class="pre">-D&lt;someDefine&gt;</span></tt> to the compile command line that will affect a header
-file!  These defines are only set locally in this directory and child
-directories.  These defines will <strong>NOT</strong> be set when code in peer
-directories (e.g. a downstream TriBIS pacakge) compiles code that may
-include these header files.  To add defines, please use a configured header
-file (see <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>).</p>
+<p><strong>WARNING:</strong> Do <strong>NOT</strong> use the built-in CMake command <tt class="docutils literal">ADD_DEFINITIONS()</tt>
+to add defines <tt class="docutils literal"><span class="pre">-D&lt;someDefine&gt;</span></tt> to the compile command line that will
+affect any of the header files in the package!  These CMake-added defines
+are only set locally in this directory and child directories.  These defines
+will <strong>NOT</strong> be set when code in peer directories (e.g. a downstream TriBITS
+packages) compiles that may include these header files.  To add defines that
+affect header files, please use a configured header file (see
+<a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a>).</p>
 </div>
 <div class="section" id="tribits-add-option-and-define">
 <h3><a class="toc-backref" href="#id106">TRIBITS_ADD_OPTION_AND_DEFINE()</a></h3>
@@ -8760,8 +8779,6 @@ side-effects (and varibles set) after calling this macro.</p>
 <h3><a class="toc-backref" href="#id118">TRIBITS_PACKAGE_DECL()</a></h3>
 <p>Macro called at the very beginning of a package's top-level CMakeLists.txt
 file when a packages has subpackages.</p>
-<p>If the package does not have subpackages, just call <a class="reference internal" href="#id1">TRIBITS_PACKAGE()</a>
-which calls this macro.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_PACKAGE_DECL(
@@ -8817,6 +8834,8 @@ package's subdir and its subdirs) in <tt class="docutils literal">CMAKE_&lt;LANG
 can be read in with just a raw <tt class="docutils literal">INCLUDE()</tt> leaving off the full path and
 the <tt class="docutils literal">*.cmake</tt> extension.</li>
 </ul>
+<p>If the package does not have subpackages, just call <a class="reference internal" href="#id1">TRIBITS_PACKAGE()</a>
+which calls this macro.</p>
 </div>
 <div class="section" id="tribits-package-def">
 <h3><a class="toc-backref" href="#id119">TRIBITS_PACKAGE_DEF()</a></h3>
@@ -9419,6 +9438,8 @@ the fly during a one-pass configure.</p>
 <p>NOTE: This function does <em>not</em> contain the the INSTALL() commands because
 CMake will not allow those to even be present in scripting mode that is used
 for unit testing this function.</p>
+<!-- ToDo: Edited and spell-checked up through TRIBITS_ADD_LIBRARY() on -->
+<!-- 05/02/2014! -->
 </div>
 </div>
 <div class="section" id="general-utility-macros-and-functions">

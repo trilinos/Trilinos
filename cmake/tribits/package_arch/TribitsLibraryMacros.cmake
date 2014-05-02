@@ -216,20 +216,21 @@ ENDFUNCTION()
 #   ``<libName>``
 #
 #     Required name of the library.  This is the name passed to
-#      ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
-#      packae name.  CMake will of course add any standard prefix or post-fix
-#      to the library file name appropriate for the platform and if this is a
-#      static or shared library build.
+#     ``ADD_LIBRARY(<libName> ...)``.  The name is *not* prefixed by the
+#     package name.  CMake will of course add any standard prefix or post-fix
+#     to the library file name appropriate for the platform and if this is a
+#     static or shared library build (see documentation for the built-in CMake
+#     command ``ADD_LIBRARY()``.
 #
 #   ``HEADERS <h0> <h1> ...``
 #
 #     List of public header files for using this library.  By default, these
 #     header files are assumed to be in the current source directory.  They
 #     can also contain the relative path or absolute path to the files if they
-#     are not in the current source directory.  List list of headers is passed
+#     are not in the current source directory.  This list of headers is passed
 #     into ``ADD_LIBRARY(...)`` as well (which is not strictly needed but is
-#     helpful for some build tools, like MS Visual Stuido).  By default, these
-#     headers will be installed as well (see `Include Directories
+#     helpful for some build tools, like MS Visual Studio).  By default, these
+#     headers will be installed (see `Install Targets
 #     (TRIBITS_ADD_LIBRARY())`_).
 #
 #   ``NOINSTALLHEADERS <nih0> <hih1> ...``
@@ -244,29 +245,30 @@ ENDFUNCTION()
 #     List of source files passed into ``ADD_LIBRARY()`` that are compiled
 #     into header files and included in the library.  The compiler used to
 #     compile the files is determined automatically based on the file
-#     extension (see CMake documentation).
+#     extension (see CMake documentation for ``ADD_LIBRARY()``).
 #
 #   ``DEPLIBS <deplib0> <deplib1> ...``
 #
 #     List of dependent libraries that are built in the current SE package
 #     that this library is dependent on.  These libraries are passed into
 #     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-#     dependency.  You should **not** list libraries in other upstream SE
-#     packages or libraries built externally from this TriBITS CMake project.
-#     The TriBITS system automatically handles linking to libraries in uptream
-#     TriBITS packages and external libraries need to be listed in
-#     ``IMPORTEDLIBS`` instead.
+#     dependency structure of the libraries within the package.  **NOTE:** One
+#     must **not** list libraries in other upstream SE packages or libraries
+#     built externally from this TriBITS CMake project.  The TriBITS system
+#     automatically handles linking to libraries in upstream TriBITS SE
+#     packages.  External libraries need to be listed in the ``IMPORTEDLIBS``
+#     argument instead.
 #
 #   ``IMPORTEDLIBS <ideplib0> <ideplib1> ...``
 #
-#     List of dependent libraries built exteranlly from this TriBITS CMake
+#     List of dependent libraries built externally from this TriBITS CMake
 #     project.  These libraries are passed into
 #     ``TARGET_LINK_LIBRARIES(<libName> ...)`` so that CMake knows about the
-#     dependency.  These libraries are added the ``${PACKAGE_NAME}_LIBRARIES``
-#     so that downstream SE packages will also have these libraries and the
-#     link line also and these libraries will show up in the generated
-#     ``Makefile.export.${PACKAGE_NAME}`` and ``${PACKAGE_NAME}Config.cmake``
-#     files if they are generated.
+#     dependency.  These libraries are added to the
+#     ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
+#     will also pick up these libraries and these libraries will show up in
+#     the generated ``Makefile.export.${PACKAGE_NAME}`` and
+#     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).
 #
 #   ``TESTONLY``
 #
@@ -274,7 +276,8 @@ ENDFUNCTION()
 #     ``${PACKAGE_NAME}_LIBRARIES`` and an install target for the library will
 #     not be added.  In this case, the current include directories will be set
 #     in the global variable ``<libName>_INCLUDE_DIR`` which will be used in
-#     `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in.
+#     `TRIBITS_ADD_EXECUTABLE()`_ when a test-only library is linked in
+#     through its ``DEPLIBS`` argument.
 #
 #   ``NO_INSTALL_LIB_OR_HEADERS``
 #
@@ -285,21 +288,23 @@ ENDFUNCTION()
 #
 #     If specified then ``CUDA_ADD_LIBRARY()`` is used instead of
 #     ``ADD_LIBRARY()`` where ``CUDA_ADD_LIBRARY()`` is assumed to be defined
-#     by the standard FindCUDA.cmake module as processed using the standard
-#     TriBITS FindTPLCUDA.cmake file.  For this option to work, this SE
-#     package must have an enabled direct or indirect dependency on the
-#     TriBITS CUDA TPL or a configure-time error will occur about not finding
+#     by the standard ``FindCUDA.cmake`` module as processed using the
+#     standard TriBITS ``FindTPLCUDA.cmake`` file (see `Standard TriBITS
+#     TPLs`_).  For this option to work, this SE package must have an enabled
+#     direct or indirect dependency on the TriBITS CUDA TPL or a
+#     configure-time error may occur about not knowing about
 #     ``CUDA_ALL_LIBRARY()``.
 #
 # .. _Include Directories (TRIBITS_ADD_LIBRARY()):
 #
 # **Include Directories (TRIBITS_ADD_LIBRARY())**
 #
-# Any base directories for these header files listed in ``HEADERS`` or
-# ``NOINSTALLHEADERS`` should be passed into ``INCLUDE_DIRECTORIES()`` *before*
-# calling this function.  These include directories will then be added to
-# current packages list of include directories
-# ``${PACKAGE_NAME}_INCLUDE_DIRS``.
+# Any base directories for the header files listed in the arguments
+# ``HEADERS`` or ``NOINSTALLHEADERS`` should be passed into the standard CMake
+# command ``INCLUDE_DIRECTORIES()`` *before* calling this function.  These
+# include directories will then be added to current packages list of include
+# directories ``${PACKAGE_NAME}_INCLUDE_DIRS`` which is then exported to
+# downstream SE packages..
 #
 # .. _Install Targets (TRIBITS_ADD_LIBRARY()):
 #
@@ -308,41 +313,45 @@ ENDFUNCTION()
 # By default, an install target for the library is created using
 # ``INSTALL(TARGETS <libName> ...)`` to install into the directory
 # ``${CMAKE_INSTALL_PREFIX}/lib/`` (actual install directory is given by
-# ``${PROJECT}_INSTALL_LIB_DIR``).  However, this install target will not get
-# created if ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
+# ``${PROJECT}_INSTALL_LIB_DIR``, see `Setting the install prefix at configure
+# time`_).  However, this install target will not get created if
+# ``${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS=FALSE`` and
 # ``BUILD_SHARD_LIBS=OFF``.  But when ``BUILD_SHARD_LIBS=ON``, the install
 # target will get created.  Also, this install target will *not* get created
 # if ``TESTONLY`` or ``NO_INSTALL_LIB_OR_HEADERS`` are passed in.
 #
 # By default, an install target for the headers listed in ``HEADERS`` will get
-# created using ``INSTALL(FILES <h1> <h2> ...)``, but only if ``TESTONLY`` and
+# created using ``INSTALL(FILES <h0> <h1> ...)``, but only if ``TESTONLY`` and
 # ``NO_INSTALL_LIB_OR_HEADERS`` are not passed in as well.  These headers get
 # installed into the flat directory ``${CMAKE_INSTALL_PREFIX}/include/`` (the
 # actual install directory is given by
-# ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``).  Note that an install target will
-# *not* get created for the headers listed in ``NOINSTALLHEADERS``.
+# ``${PROJECT_NAME}_INSTALL_INCLUDE_DIR``, see `Setting the install prefix at
+# configure time`_).  Note that an install target will *not* get created for
+# the headers listed in ``NOINSTALLHEADERS``.
 #
 # .. _Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY()):
 #
 # **Additional Library and Source File Properties (TRIBITS_ADD_LIBRARY())**
 #
 # Once ``ADD_LIBRARY(<libName> ... <src0> <src1> ...)`` is called, one can set
-# and change properties on the ``<libName>`` library target using
-# ``SET_TARGET_PROPERTIES()`` as well as properties on any of the source files
-# listed in ``SOURCES`` using ``SET_SOURCE_FILE_PROPERTIES()`` just like in
-# any CMake project.
+# and change properties on the ``<libName>`` library target using the built-in
+# CMake command ``SET_TARGET_PROPERTIES()`` as well as set and change
+# properties on any of the source files listed in ``SOURCES`` using the
+# built-in CMake command ``SET_SOURCE_FILE_PROPERTIES()`` just like in any
+# CMake project.
 #
 # .. _Miscellaneous Notes (TRIBITS_ADD_LIBRARY()):
 #
 # **Miscellaneous Notes (TRIBITS_ADD_LIBRARY())**
 #
-# **WARNING:** Do **NOT** use ``ADD_DEFINITIONS()`` to add defines
-# ``-D<someDefine>`` to the compile command line that will affect a header
-# file!  These defines are only set locally in this directory and child
-# directories.  These defines will **NOT** be set when code in peer
-# directories (e.g. a downstream TriBIS pacakge) compiles code that may
-# include these header files.  To add defines, please use a configured header
-# file (see `TRIBITS_CONFIGURE_FILE()`_).
+# **WARNING:** Do **NOT** use the built-in CMake command ``ADD_DEFINITIONS()``
+# to add defines ``-D<someDefine>`` to the compile command line that will
+# affect any of the header files in the package!  These CMake-added defines
+# are only set locally in this directory and child directories.  These defines
+# will **NOT** be set when code in peer directories (e.g. a downstream TriBITS
+# packages) compiles that may include these header files.  To add defines that
+# affect header files, please use a configured header file (see
+# `TRIBITS_CONFIGURE_FILE()`_).
 #
 FUNCTION(TRIBITS_ADD_LIBRARY LIBRARY_NAME)
 
