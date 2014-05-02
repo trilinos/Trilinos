@@ -101,11 +101,16 @@ namespace MueLu {
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void CoalesceDropFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
     Input(currentLevel, "A");
-    Input(currentLevel, "UnAmalgamationInfo");
 
-    const ParameterList  & pL = GetParameterList();
-    if (pL.get<bool>("lightweight wrap") == true && pL.get<std::string>("algorithm") == "laplacian")
-      Input(currentLevel, "Coordinates");
+    const ParameterList& pL = GetParameterList();
+    if (pL.get<bool>("lightweight wrap") == true) {
+      if (pL.get<std::string>("algorithm") == "laplacian")
+        Input(currentLevel, "Coordinates");
+
+    } else {
+      Input(currentLevel, "UnAmalgamationInfo");
+    }
+
   }
 
   template <class Scalar,class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
