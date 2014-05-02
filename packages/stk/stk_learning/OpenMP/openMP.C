@@ -72,12 +72,11 @@ TEST(OpenMp, MatrixVectorMultiplyUsingThreads)
 
     size_t i = 0, j = 0;
     int num_threads = 0;
-    int tid = -1;
 
-#pragma omp parallel private (tid)
+#pragma omp parallel
     {
-        tid = omp_get_thread_num();
 #if defined(DO_OUTPUT)
+        int tid = omp_get_thread_num();
         std::ostringstream oss;
         oss << "Thread_" << tid;
         std::string filename = oss.str();
