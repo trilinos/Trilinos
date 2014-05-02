@@ -521,9 +521,31 @@ initAllValues (const row_matrix_type& A)
   size_t NumNonzeroDiags = 0;
   size_t MaxNumEntries = A.getGlobalMaxNumRowEntries();
 
-  Teuchos::Array<global_ordinal_type> InI(MaxNumEntries); // Allocate temp space
-  Teuchos::Array<global_ordinal_type> LI(MaxNumEntries);
-  Teuchos::Array<global_ordinal_type> UI(MaxNumEntries);
+  // First check that the local row map ordering is the same as the local portion of the column map.
+  // The extraction of the strictly lower/upper parts of A, as well as the factorization,
+  // implicitly assume that this is the case.
+  Teuchos::ArrayView<const global_ordinal_type> rowGIDs = A.getRowMap()->getNodeElementList();
+  Teuchos::ArrayView<const global_ordinal_type> colGIDs = A.getColMap()->getNodeElementList();
+  bool gidsAreConsistentlyOrdered=true;
+  global_ordinal_type indexOfInconsistentGID=0;
+  for (global_ordinal_type i=0; i<rowGIDs.size(); ++i) {
+    if (rowGIDs[i] != colGIDs[i]) {
+      gidsAreConsistentlyOrdered=false;
+      indexOfInconsistentGID=i;
+      break;
+    }
+  }
+  TEUCHOS_TEST_FOR_EXCEPTION(gidsAreConsistentlyOrdered==false, std::runtime_error, 
+                             "The ordering of the local GIDs in the row and column maps is not the same"
+                             << std::endl << "at index " << indexOfInconsistentGID
+                             << ".  Consistency is required, as all calculations are done with"
+                             << std::endl << "local indexing.");
+
+  // Allocate temporary space for extracting the strictly
+  // lower and upper parts of the matrix A.
+  Teuchos::Array<local_ordinal_type> InI(MaxNumEntries);
+  Teuchos::Array<local_ordinal_type> LI(MaxNumEntries);
+  Teuchos::Array<local_ordinal_type> UI(MaxNumEntries);
   Teuchos::Array<scalar_type> InV(MaxNumEntries);
   Teuchos::Array<scalar_type> LV(MaxNumEntries);
   Teuchos::Array<scalar_type> UV(MaxNumEntries);
@@ -543,15 +565,21 @@ initAllValues (const row_matrix_type& A)
 
   RCP<const map_type> rowMap = L_->getRowMap ();
 
-  // First we copy the user's matrix into L and U, regardless of fill level
+  // First we copy the user's matrix into L and U, regardless of fill level.
+  // It is important to note that L and U are populated using local indices.
+  // This means that if the row map GIDs are not monotonically increasing
+  // (i.e., permuted or gappy), then the strictly lower (upper) part of the
+  // matrix is not the one that you would get if you based L (U) on GIDs.
+  // This is ok, as the *order* of the GIDs in the rowmap is a better
+  // expression of the user's intent than the GIDs themselves.
 
   Teuchos::ArrayView<const global_ordinal_type> nodeGIDs = rowMap->getNodeElementList();
-  for (typename Teuchos::ArrayView<const global_ordinal_type>::const_iterator avi = nodeGIDs.begin(); avi != nodeGIDs.end(); avi++)
-  {
-    global_ordinal_type global_row = *avi;
-    local_ordinal_type local_row = rowMap->getLocalElement (global_row);
+  for (size_t myRow=0; myRow<A.getNodeNumRows(); ++myRow) {
+    local_ordinal_type local_row = myRow;
 
-    A.getGlobalRowCopy (global_row, InI(), InV(), NumIn); // Get Values and Indices
+    //TODO JJH 4April2014 An optimization is to use getLocalRowView.  Not all matrices support this,
+    //                    we'd need to check via the Tpetra::RowMatrix method supportsRowViews().
+    A.getLocalRowCopy (local_row, InI(), InV(), NumIn); // Get Values and Indices
 
     // Split into L and U (we don't assume that indices are ordered).
 
@@ -560,9 +588,9 @@ initAllValues (const row_matrix_type& A)
     DiagFound = false;
 
     for (size_t j = 0; j < NumIn; ++j) {
-      const global_ordinal_type k = InI[j];
+      const local_ordinal_type k = InI[j];
 
-      if (k == global_row) {
+      if (k == local_row) {
         DiagFound = true;
         // Store perturbed diagonal in Tpetra::Vector D_
         DV[local_row] += Rthresh_ * InV[j] + IFPACK2_SGN(InV[j]) * Athresh_;
@@ -576,19 +604,16 @@ initAllValues (const row_matrix_type& A)
           "Nevertheless, the code I found here insisted on this being an error "
           "state, so I will throw an exception here.");
       }
-      else if (k < global_row) {
+      else if (k < local_row) {
         LI[NumL] = k;
         LV[NumL] = InV[j];
         NumL++;
       }
-      else if (k <= rowMap->getMaxGlobalIndex()) {
+      else if (Teuchos::as<size_t>(k) <= rowMap->getNodeNumElements()) {
         UI[NumU] = k;
         UV[NumU] = InV[j];
         NumU++;
       }
-//      else {
-//        throw std::runtime_error("out of range in Ifpack2::RILUK::initAllValues");
-//      }
     }
 
     // Check in things for this row of L and U
@@ -601,17 +626,21 @@ initAllValues (const row_matrix_type& A)
 
     if (NumL) {
       if (ReplaceValues) {
-        L_->replaceGlobalValues(global_row, LI(0, NumL), LV(0,NumL));
+        L_->replaceLocalValues(local_row, LI(0, NumL), LV(0,NumL));
       } else {
-        L_->insertGlobalValues(global_row, LI(0,NumL), LV(0,NumL));
+        //FIXME JJH 24April2014 Is this correct?  I believe this case is when there aren't already values
+        //FIXME in this row in the column locations corresponding to UI.
+        L_->insertLocalValues(local_row, LI(0,NumL), LV(0,NumL));
       }
     }
 
     if (NumU) {
       if (ReplaceValues) {
-        U_->replaceGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
+        U_->replaceLocalValues(local_row, UI(0,NumU), UV(0,NumU));
       } else {
-        U_->insertGlobalValues(global_row, UI(0,NumU), UV(0,NumU));
+        //FIXME JJH 24April2014 Is this correct?  I believe this case is when there aren't already values
+        //FIXME in this row in the column locations corresponding to UI.
+        U_->insertLocalValues(local_row, UI(0,NumU), UV(0,NumU));
       }
     }
   }

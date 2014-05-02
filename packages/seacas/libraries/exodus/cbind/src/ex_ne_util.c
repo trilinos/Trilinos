@@ -153,7 +153,7 @@ int ne_id_lkup(int exoid, const char *ne_var_name, int64_t *idx, ex_entity_id ne
     return (EX_FATAL);
   }
 
-  /* check if I need the length for this varible */
+  /* check if I need the length for this variable */
   if (idx[1] == -1) {
     /* Get the dimension IDs for this variable */
     if ((status = nc_inq_var(exoid, varid, (char *) 0, &var_type, &ndims,

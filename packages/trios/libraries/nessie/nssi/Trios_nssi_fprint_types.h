@@ -51,13 +51,16 @@
 #define _TRIOS_NSSI_FPRINT_TYPES_H_
 
 #include <stdio.h>
-#include <ostream>
 #include "Trios_nssi_types.h"
 
 
 #if defined(__STDC__) || defined(__cplusplus)
 
-extern const char* nssi_err_str(const int rc);
+#ifdef __cplusplus
+extern "C" {
+#endif
+
+    extern const char* nssi_err_str(const int rc);
 
     /**
      * @brief Print out a return code.
@@ -67,13 +70,8 @@ extern const char* nssi_err_str(const int rc);
      * @param prefix @input_type Text that precedes the variable.
      * @param rc @input_type The return code.
      */
-    void fprint_nssi_return_code(
+    extern void fprint_nssi_return_code(
         FILE *fp,
-        const char *name,
-        const char *prefix,
-        const int rc);
-    void fprint_nssi_return_code(
-        std::ostream &out,
         const char *name,
         const char *prefix,
         const int rc);
@@ -92,11 +90,6 @@ extern const char* nssi_err_str(const int rc);
         const char *name,
         const char *prefix,
         const nssi_request_header *hdr);
-    extern void fprint_nssi_request_header(
-            std::ostream &out,
-        const char *name,
-        const char *prefix,
-        const nssi_request_header *hdr);
 
     /**
      * @brief Output the contents of a result header.
@@ -111,45 +104,65 @@ extern const char* nssi_err_str(const int rc);
         const char *name,
         const char *prefix,
         const nssi_result_header *hdr);
+
+
+    extern void fprint_nssi_rpc_encode(
+        FILE *fp,
+        const char *name,
+        const char *prefix,
+        const nssi_rpc_encode *rpc_encode);
+
+    extern void fprint_nssi_service(
+        FILE *fp,
+        const char *name,
+        const char *prefix,
+        const nssi_service *svc);
+
+    extern void fprint_nssi_ssize(
+        FILE *fp,
+        const char *name,
+        const char *prefix,
+        const nssi_ssize *ssize);
+
+#ifdef __cplusplus
+}
+#endif
+
+    /* this is only for C++ code */
+#ifdef __cplusplus
+#include <ostream>
+
+    void fprint_nssi_return_code(
+        std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const int rc);
+    extern void fprint_nssi_request_header(
+        std::ostream &out,
+        const char *name,
+        const char *prefix,
+        const nssi_request_header *hdr);
     extern void fprint_nssi_result_header(
-            std::ostream &out,
+        std::ostream &out,
         const char *name,
         const char *prefix,
         const nssi_result_header *hdr);
-
-
     extern void fprint_nssi_rpc_encode(
-        FILE *fp,
+        std::ostream &out,
         const char *name,
         const char *prefix,
         const nssi_rpc_encode *rpc_encode);
-    extern void fprint_nssi_rpc_encode(
-            std::ostream &out,
-        const char *name,
-        const char *prefix,
-        const nssi_rpc_encode *rpc_encode);
-
     extern void fprint_nssi_service(
-        FILE *fp,
+        std::ostream &out,
         const char *name,
         const char *prefix,
         const nssi_service *svc);
-    extern void fprint_nssi_service(
-            std::ostream &out,
-        const char *name,
-        const char *prefix,
-        const nssi_service *svc);
-
     extern void fprint_nssi_ssize(
-        FILE *fp,
+        std::ostream &out,
         const char *name,
         const char *prefix,
         const nssi_ssize *ssize);
-    extern void fprint_nssi_ssize(
-            std::ostream &out,
-        const char *name,
-        const char *prefix,
-        const nssi_ssize *ssize);
+#endif
 
 #else /* K&R C */
 

@@ -540,17 +540,16 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
     else if (algorithm_ == std::string("block")){
       AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
-      algblock.solve();
+      algblock.partition();
     }
     else if (algorithm_ == std::string("rcb")){
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
     else if (algorithm_ == std::string("multijagged")){
-      Zoltan2_AlgMJ<Adapter> *alg_mj = new Zoltan2_AlgMJ<Adapter>();
-      alg_mj->multi_jagged_part( this->envConst_, problemComm_,
+      Zoltan2_AlgMJ<Adapter> alg_mj;
+      alg_mj.partition( this->envConst_, problemComm_,
          this->coordinateModel_, solution_);
-      delete alg_mj;
     }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");

@@ -39,7 +39,6 @@
 #include <string>
 
 namespace Ioss {
-  class ElementTopology;
   class ElementSet;
   class DatabaseIO;
 
@@ -57,12 +56,8 @@ namespace Ioss {
     EntitySet(const EntitySet&); // do not implement
     EntitySet& operator=(const EntitySet&); // do not implement
 
-    ElementTopology *topology_;
   protected:
     void count_attributes() const;
-
-    size_t entityCount; ///< stored locally to avoid looking up property
-    mutable size_t attributeCount;
   };
 }
 #endif

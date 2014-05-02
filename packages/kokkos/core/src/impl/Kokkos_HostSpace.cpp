@@ -74,7 +74,7 @@ public:
 
 HostMemoryTrackingEntry::~HostMemoryTrackingEntry()
 {
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
    _mm_free( ptr_alloc );
 #else
    free( ptr_alloc );
@@ -112,7 +112,7 @@ void * host_allocate_not_thread_safe(
     void * ptr_alloc = 0 ;
     size_t count_alloc = scalar_count ;
 
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
 
     ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , MEMORY_ALIGNMENT );
    

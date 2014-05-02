@@ -89,7 +89,7 @@ namespace Tpetra {
       typedef typename OutMapType::node_type out_node_type;
       typedef typename InMapType::node_type in_node_type;
 
-      static Teuchos::RCP<const OutMapType>
+      static OutMapType
       clone (const InMapType& mapIn,
              const Teuchos::RCP<out_node_type>& node2);
     };
@@ -380,12 +380,31 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> > &comm,
          const Teuchos::RCP<Node> &node = KokkosClassic::Details::getNode<Node>());
 
+
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// This only exists to support view semantics of Map.  That is,
+    /// one can create an empty Map, and then assign a nonempty Map to
+    /// it using operator=.
+    ///
+    /// This constructor is also useful in methods like clone() and
+    /// removeEmptyProcesses(), where we have the information to
+    /// initialize the Map more efficiently ourselves, without going
+    /// through one of the three usual Map construction paths.
+    Map ();
+
     //! Destructor.
-    ~Map();
+    ~Map ();
 
     //@}
     //! @name Attributes
     //@{
+
+    /// \brief Whether the Map is one to one.
+    ///
+    /// This must be called collectively over all processes in the
+    /// Map's communicator.
+    bool isOneToOne () const;
 
     //! The number of elements in this Map.
     inline global_size_t getGlobalNumElements() const { return numGlobalElements_; }
@@ -646,7 +665,8 @@ namespace Tpetra {
 
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > clone (const RCP<NodeOut>& nodeOut) const;
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+    clone (const RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -734,14 +754,6 @@ namespace Tpetra {
     // specialization's internal methods and data, so that we can
     // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
-
-    /// \brief Default constructor (that does nothing).
-    ///
-    /// We use this in clone() and removeEmptyProcesses(), where we
-    /// have the information to initialize the Map more efficiently
-    /// ourselves, without going through one of the three usual Map
-    /// construction paths.
-    Map() {}
 
   private:
     template<class OutMapType, class InMapType>
@@ -1071,38 +1083,39 @@ namespace Tpetra {
   namespace Details {
 
     template<class OutMapType, class InMapType>
-    Teuchos::RCP<const OutMapType>
+    OutMapType
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& nodeOut)
     {
-      Teuchos::RCP<OutMapType> mapOut = Teuchos::rcp (new OutMapType ());
+      OutMapType mapOut; // Make an empty Map.
+
       // Fill the new Map with shallow copies of all of the original
       // Map's data.  This is safe because Map is immutable, so
       // users can't change the original Map.
-      mapOut->comm_              = mapIn.comm_;
-      mapOut->indexBase_         = mapIn.indexBase_;
-      mapOut->numGlobalElements_ = mapIn.numGlobalElements_;
-      mapOut->numLocalElements_  = mapIn.numLocalElements_;
-      mapOut->minMyGID_          = mapIn.minMyGID_;
-      mapOut->maxMyGID_          = mapIn.maxMyGID_;
-      mapOut->minAllGID_         = mapIn.minAllGID_;
-      mapOut->maxAllGID_         = mapIn.maxAllGID_;
-      mapOut->firstContiguousGID_= mapIn.firstContiguousGID_;
-      mapOut->lastContiguousGID_ = mapIn.lastContiguousGID_;
-      mapOut->uniform_           = mapIn.uniform_;
-      mapOut->contiguous_        = mapIn.contiguous_;
-      mapOut->distributed_       = mapIn.distributed_;
-      mapOut->lgMap_             = mapIn.lgMap_;
-      mapOut->glMap_             = mapIn.glMap_;
+      mapOut.comm_              = mapIn.comm_;
+      mapOut.indexBase_         = mapIn.indexBase_;
+      mapOut.numGlobalElements_ = mapIn.numGlobalElements_;
+      mapOut.numLocalElements_  = mapIn.numLocalElements_;
+      mapOut.minMyGID_          = mapIn.minMyGID_;
+      mapOut.maxMyGID_          = mapIn.maxMyGID_;
+      mapOut.minAllGID_         = mapIn.minAllGID_;
+      mapOut.maxAllGID_         = mapIn.maxAllGID_;
+      mapOut.firstContiguousGID_= mapIn.firstContiguousGID_;
+      mapOut.lastContiguousGID_ = mapIn.lastContiguousGID_;
+      mapOut.uniform_           = mapIn.uniform_;
+      mapOut.contiguous_        = mapIn.contiguous_;
+      mapOut.distributed_       = mapIn.distributed_;
+      mapOut.lgMap_             = mapIn.lgMap_;
+      mapOut.glMap_             = mapIn.glMap_;
       // New Map gets the new Node instance.
-      mapOut->node_              = nodeOut;
+      mapOut.node_              = nodeOut;
       // mfh 02 Apr 2013: While Map could just wait to create the
       // Directory on demand in getRemoteIndexList, we have a
       // Directory here that we can clone inexpensively, so there is
       // no harm in creating it here.
       // if (! mapIn.directory_.is_null ()) {
-      //   mapOut->directory_ =
+      //   mapOut.directory_ =
       //     mapIn.directory_->template clone<out_node_type> (mapIn);
       // }
       return mapOut;
@@ -1113,11 +1126,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
   RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<NodeOut> &nodeOut) const
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> in_map_type;
     typedef Map<LocalOrdinal, GlobalOrdinal, NodeOut> out_map_type;
-    return Details::MapCloner<out_map_type, in_map_type>::clone (*this, nodeOut);
+    typedef Details::MapCloner<out_map_type, in_map_type> cloner_type;
+    // Copy constructor does a shallow copy.
+    return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
 
 } // namespace Tpetra

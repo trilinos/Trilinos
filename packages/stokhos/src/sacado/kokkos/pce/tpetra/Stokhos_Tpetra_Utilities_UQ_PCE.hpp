@@ -222,10 +222,10 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getLocalView();
+    flat_view_type flat_vals = vec.getDualView();
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -254,10 +254,10 @@ namespace Stokhos {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
-    typedef typename FlatVector::view_type flat_view_type;
+    typedef typename FlatVector::dual_view_type flat_view_type;
 
     // Create flattenend view using special reshaping view assignment operator
-    flat_view_type flat_vals = vec.getLocalView();
+    flat_view_type flat_vals = vec.getDualView();
 
     // Create flat vector
     RCP<FlatVector> flat_vec = rcp(new FlatVector(flat_map, flat_vals));
@@ -281,7 +281,8 @@ namespace Stokhos {
                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
-      const LocalOrdinal pce_size = vec.getLocalView().d_view.sacado_size();
+      const LocalOrdinal pce_size =
+        vec.template getLocalView<Device>().sacado_size();
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -304,7 +305,8 @@ namespace Stokhos {
                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
-      const LocalOrdinal pce_size = vec.getLocalView().d_view.sacado_size();
+      const LocalOrdinal pce_size =
+        vec.template getLocalView<Device>().sacado_size();
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -346,7 +348,8 @@ namespace Stokhos {
                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
-      const LocalOrdinal pce_size = vec.getLocalView().d_view.sacado_size();
+      const LocalOrdinal pce_size =
+        vec.template getLocalView<Device>().sacado_size();
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;
@@ -388,7 +391,8 @@ namespace Stokhos {
                                     Kokkos::Compat::KokkosDeviceWrapperNode<Device> > >& flat_map) {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
     if (flat_map == Teuchos::null) {
-      const LocalOrdinal pce_size = vec.getLocalView().d_view.sacado_size();
+      const LocalOrdinal pce_size =
+        vec.template getLocalView<Device>().sacado_size();
       flat_map = create_flat_map(*(vec.getMap()), pce_size);
     }
     const Teuchos::RCP< const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > const_flat_map = flat_map;

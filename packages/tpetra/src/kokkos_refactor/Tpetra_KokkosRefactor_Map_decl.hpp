@@ -389,6 +389,18 @@ namespace Tpetra {
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const Teuchos::RCP<node_type>& node = KokkosClassic::Details::getNode<node_type> ());
 
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// This only exists to support view semantics of Map.  That is,
+    /// one can create an empty Map, and then assign a nonempty Map to
+    /// it using operator=.
+    ///
+    /// This constructor is also useful in methods like clone() and
+    /// removeEmptyProcesses(), where we have the information to
+    /// initialize the Map more efficiently ourselves, without going
+    /// through one of the three usual Map construction paths.
+    Map ();
+
     //@}
     /// \name Methods safe to call in a Kokkos parallel kernel on the host.
     ///
@@ -538,6 +550,12 @@ namespace Tpetra {
     /// These methods are NOT thread-safe, on either host or device.
     /// You may <i>not</i> call them in a Kokkos parallel kernel.
     //@{
+
+    /// \brief Whether the Map is one to one.
+    ///
+    /// This must be called collectively over all processes in the
+    /// Map's communicator.
+    bool isOneToOne () const;
 
     /// \fn getDeviceView
     /// \brief Get the version of the Map's implementation for the given Kokkos device.
@@ -817,14 +835,6 @@ namespace Tpetra {
     // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
 
-    /// \brief Default constructor (that does nothing).
-    ///
-    /// We use this in clone() and removeEmptyProcesses(), where we
-    /// have the information to initialize the Map more efficiently
-    /// ourselves, without going through one of the three usual Map
-    /// construction paths.
-    Map () {}
-
   private:
     template<class OutMapType, class InMapType>
     friend struct Details::MapCloner;
@@ -866,7 +876,7 @@ namespace Tpetra {
     /// This has to be declared \c mutable, because Kokkos' idea of
     /// what methods should be const differs from current Tpetra's
     /// idea.
-    mutable device_impl_type mapHost_;
+    mutable host_impl_type mapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
@@ -909,30 +919,28 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, OutNodeType> out_map_type;
       typedef Tpetra::Map<LO, GO, in_node_type> in_map_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::rcp;
-
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), lg, nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), lg, nodeOut);
         }
         else if (mapIn.isContiguous ()) {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
         else {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeElementList (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeElementList (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
       }
     };
@@ -945,30 +953,28 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, out_node_type> out_map_type;
       typedef Tpetra::Map<LO, GO, in_node_type> in_map_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::rcp;
-
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), lg, nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), lg, nodeOut);
         }
         else if (mapIn.isContiguous ()) {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
         else {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeElementList (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeElementList (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
       }
     };
@@ -981,28 +987,25 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<InDeviceType> > in_map_type;
       typedef Kokkos::Compat::KokkosDeviceWrapperNode<OutDeviceType> out_node_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::RCP;
-        typedef typename OutDeviceType::host_mirror_device_type
-          host_mirror_device_type;
-        RCP<out_map_type> mapOut (new out_map_type ()); // Make an empty Map.
+        out_map_type mapOut; // Make an empty Map.
 
-        mapOut->comm_ = mapIn.comm_;
-        mapOut->node_ = nodeOut;
-        mapOut->mapDevice_.template create_copy_view<OutDeviceType> (mapIn.mapDevice_);
-        mapOut->mapHost_.template create_copy_view<host_mirror_device_type> (mapIn.mapHost_);
+        mapOut.comm_ = mapIn.comm_;
+        mapOut.node_ = nodeOut;
+        mapOut.mapDevice_.template create_copy_view<InDeviceType> (mapIn.mapDevice_);
+        mapOut.mapHost_.template create_copy_view<typename InDeviceType::host_mirror_device_type> (mapIn.mapHost_);
 
         // mfh 02 Apr 2013: While Map only needs to create the Directory
         // on demand in getRemoteIndexList, we have a Directory here that
         // we can clone inexpensively, so there is no harm in creating it
         // here.
         if (! mapIn.directory_.is_null ()) {
-          mapOut->directory_ = mapIn.directory_->template clone<out_node_type> (*mapOut);
+          mapOut.directory_ = mapIn.directory_->template clone<out_node_type> (mapOut);
         } else {
-          mapOut->directory_ = Teuchos::null; // created on demand
+          mapOut.directory_ = Teuchos::null; // created on demand
         }
         return mapOut;
       }
@@ -1019,7 +1022,9 @@ namespace Tpetra {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<InDeviceType> in_node_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, in_node_type> in_map_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, OutNodeType> out_map_type;
-    return Details::MapCloner<out_map_type, in_map_type>::clone (*this, outNode);
+    typedef Tpetra::Details::MapCloner<out_map_type, in_map_type> cloner_type;
+    // Copy constructor does a shallow copy.
+    return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, outNode)));
   }
 
 } // namespace Tpetra

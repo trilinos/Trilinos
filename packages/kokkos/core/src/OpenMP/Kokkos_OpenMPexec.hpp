@@ -155,7 +155,8 @@ public:
 
   void team_barrier()
     {
-     const int rank_rev = m_team_size - ( m_team_rank + 1 );
+      if(m_team_size==1) return;
+      const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
       for ( int i = 0 ; i < m_team_fan_size ; ++i ) {
         Impl::spinwait( m_team_base[ rank_rev + (1<<i) ]->m_barrier_state , OpenMPexec::Active );

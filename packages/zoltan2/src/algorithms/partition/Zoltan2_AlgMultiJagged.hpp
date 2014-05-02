@@ -5991,7 +5991,7 @@ public:
 	 *      contains part information, on return it also contains
 	 *      the solution and quality metrics.
 	 */
-	void multi_jagged_part(
+	void partition(
 			const RCP<const Environment> &env,
 			RCP<Comm<int> > &problemComm,
 			const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &mj_coords,
@@ -6009,7 +6009,7 @@ public:
  *      the solution and quality metrics.
  */
 template <typename Adapter>
-void Zoltan2_AlgMJ<Adapter>::multi_jagged_part(
+void Zoltan2_AlgMJ<Adapter>::partition(
 		const RCP<const Environment> &env,
 		RCP<Comm<int> > &problemComm,
 		const RCP<const CoordinateModel<typename Adapter::base_adapter_t> > &coords,

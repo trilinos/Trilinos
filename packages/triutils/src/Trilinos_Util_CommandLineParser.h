@@ -146,7 +146,7 @@ private:
  \class Trilinos_Util::CommandLineParser
 
  Using Trilinos_Util::CommandLineParser, it is easy to handle input line arguments and shell
- varibles. For instance, the user can write
+ variables. For instance, the user can write
  \verbatim
  $ ./a.out -nx 10 -tol 1e-6 -solver=cg
  \endverbatim

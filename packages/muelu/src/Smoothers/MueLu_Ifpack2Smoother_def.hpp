@@ -204,25 +204,25 @@ namespace MueLu {
     bool supportInitialGuess = false;
     if (type_ == "CHEBYSHEV") {
       paramList.set("chebyshev: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
     } else if (type_ == "RELAXATION") {
       paramList.set("relaxation: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
     } else if (type_ == "KRYLOV") {
       paramList.set("krylov: zero starting solution", InitialGuessIsZero);
+      SetPrecParameters(paramList);
       supportInitialGuess = true;
 
-    } else if (type_ == "SCHWARZ") {
-      int overlap = 0;
-      Ifpack2::getParameter(paramList, "schwarz: overlap level", overlap);
-      if (InitialGuessIsZero == true)
-        paramList.set("schwarz: zero starting solution", InitialGuessIsZero);
-      supportInitialGuess = true;
     }
-
-    SetPrecParameters(paramList);
+    //TODO JJH 30Apr2014  Calling SetPrecParameters(paramList) when the smoother
+    //is Ifpack2::AdditiveSchwarz::setParameterList() will destroy the subdomain
+    //(aka inner) solver.  This behavior is documented but a departure from what
+    //it previously did, and what other Ifpack2 solvers currently do.  So I have
+    //moved SetPrecParameters(paramList) into the if-else block above.
 
     // Apply
     if (InitialGuessIsZero || supportInitialGuess) {

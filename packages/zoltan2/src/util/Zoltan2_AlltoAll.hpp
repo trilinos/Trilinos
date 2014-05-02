@@ -119,7 +119,8 @@ void AlltoAllv(const Comm<int> &comm,
   }
 
 
-  T *rbuf = new T[totalrecv];
+  T *rbuf = NULL;
+  if (totalrecv) rbuf = new T[totalrecv];
 
   if (nprocs > 1) {
 

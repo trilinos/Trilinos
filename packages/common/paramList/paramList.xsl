@@ -5,13 +5,14 @@
     <html>
       <head>
         <link rel="stylesheet" type="text/css"
-   href="common/paramList/bootstrap/css/bootstrap.css" />
+ 	  href="common/paramList/bootstrap/css/bootstrap.css" />
         <link rel="stylesheet" type="text/css"
-   href="common/paramList/trilinos-bootstrap.css" />
-
+   	  href="common/paramList/trilinos-bootstrap.css" />
 
         <script type="text/javascript"
          src="common/paramList/js/jquery.js"></script>
+        <script type="text/javascript"
+         src="common/paramList/js/iframeResizer.contentWindow.min.js"></script>
         <script type="text/javascript"
          src="common/paramList/bootstrap/js/bootstrap.js"></script>
         <script type="text/javascript">
@@ -116,10 +117,41 @@
                 </xsl:if>
               </xsl:when>
 
+              <xsl:when test="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/@type='ArrayValidator(EnhancedNumberValidator(int), int)'">
+                <xsl:variable name="min" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/Validator/@min"
+                  as="xs:integer"/>
+                <xsl:variable name="max" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/Validator/@max"
+                  as="xs:integer"/>
+                <xsl:variable name="step" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/Validator/@step"
+                  as="xs:integer"/>
+                <p><span class="emph-bold">Valid range:</span> [<xsl:value-of select="$min"/> : <xsl:value-of select="$max"/>]</p>
+                <xsl:if test="$step!='1'">
+                  <p>(step = <xsl:value-of select="$step"/>)</p>
+                </xsl:if>
+	      </xsl:when>
+
               <xsl:when test="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/@type='EnhancedNumberValidator(double)'">
                 <xsl:variable name="min" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/@min"
                   as="xs:string"/>
                 <xsl:variable name="max" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/@max"
+                  as="xs:string"/>
+                <xsl:variable name="mymin">
+                  <xsl:call-template name="printFloat">
+                    <xsl:with-param name="x" select="$min"/>
+                  </xsl:call-template>
+                </xsl:variable>
+                <xsl:variable name="mymax">
+                  <xsl:call-template name="printFloat">
+                    <xsl:with-param name="x" select="$max"/>
+                  </xsl:call-template>
+                </xsl:variable>
+                <p>[ <xsl:value-of select="$mymin"/> : <xsl:value-of select="$mymax"/> ]</p>
+              </xsl:when>
+
+              <xsl:when test="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/@type='ArrayValidator(EnhancedNumberValidator(double), double)'">
+                <xsl:variable name="min" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/Validator/@min"
+                  as="xs:string"/>
+                <xsl:variable name="max" select="/ParameterList/Validators/Validator[@validatorId=current()/@validatorId]/Validator/@max"
                   as="xs:string"/>
                 <xsl:variable name="mymin">
                   <xsl:call-template name="printFloat">

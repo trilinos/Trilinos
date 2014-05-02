@@ -1787,16 +1787,27 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  setAllValues (const ArrayRCP<size_t>& rowPointers,
+                const ArrayRCP<LocalOrdinal>& columnIndices,
+                const ArrayRCP<Scalar>& values)
   {
-    const char tfecfFuncName[] = "setAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "setAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      ": columnIndices and values must have the same size.  columnIndices.size() = "
+      << columnIndices.size () << " != values.size() = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+
     try {
-      myGraph_->setAllIndices(rowPointers,columnIndices);
+      myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error, ": Caught exception while calling myGraph_->"
+        "setAllIndices(): " << e.what ());
     }
     values1D_    = values;
     checkInternalState();
@@ -1805,19 +1816,29 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
+  getAllValues (ArrayRCP<const size_t>& rowPointers,
+                ArrayRCP<const LocalOrdinal>& columnIndices,
+                ArrayRCP<const Scalar>& values) const
   {
-    const char tfecfFuncName[] = "getAllValues()";
-    RCP<const crs_graph_type > relevantGraph = getCrsGraph();
+    const char tfecfFuncName[] = "getAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      " requires that columnIndices and values are the same size.");
 
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(relevantGraph==Teuchos::null,std::runtime_error," requires that getGraph() != Teuchos::null.");
+    RCP<const crs_graph_type> relevantGraph = getCrsGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      relevantGraph.is_null (), std::runtime_error,
+      " requires that getCrsGraph() is not null.");
     try {
-      rowPointers   = relevantGraph->getNodeRowPtrs();
-      columnIndices = relevantGraph->getNodePackedIndices();
+      rowPointers = relevantGraph->getNodeRowPtrs ();
+      columnIndices = relevantGraph->getNodePackedIndices ();
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling getGraph()->getAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error,
+        ": Caught exception while allocating calling getCrsGraph()->getAllIndices().");
     }
     values = values1D_;
   }
@@ -2594,7 +2615,16 @@ namespace Tpetra {
             class LocalMatOps>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::
   fillComplete (const RCP<ParameterList> &params) {
-    fillComplete (getRowMap (), getRowMap (), params);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "fillComplete(0-1 args): getCrsGraph() returns null.  This should not "
+      "happen at this point.  Please report this bug to the Tpetra developers.");
+
+    if (isStaticGraph () && getCrsGraph ()->isFillComplete ()) {
+      fillComplete (getCrsGraph ()->getDomainMap (), getCrsGraph ()->getRangeMap (), params);
+    } else {
+      fillComplete (getRowMap (), getRowMap (), params);
+    }
   }
 
   template<class Scalar,

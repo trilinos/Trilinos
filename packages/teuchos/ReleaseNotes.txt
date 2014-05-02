@@ -2,6 +2,71 @@
 Release Notes for Trilinos Package Teuchos
 ------------------------------------------
 
+Trilinos 11.8
+-------------
+
+* New mode for TimeMonitor::summarize (27 Mar 2014)
+    
+We added a new mode of calculating global statistics to
+TimeMonitor::summarize.  The new mode ignores contributions from
+processes that either do not have a particular timer, or have a hard
+zero for a timer.  This mode is off by default, meaning that the
+default summarize behavior is unchanged.
+    
+This new mode is useful in cases where not all processes have the same
+timers and/or some timers are zero.  This can arise when multiple MPI
+communicators are in play.  A single call to summarize using a global
+communicator yields reasonable statistics for all timers.  The cost is
+an additional MPI_Allreduce.
+    
+Consider this example:
+    
+  - proc 0 has timers T1=1.0, T2=0.5
+  - proc 1 has timers         T2=1.0, T3=1.0
+  - proc 2 has timers         T2=2.0, T3=0.5
+    
+where MCW is a communicator containing 0,1,2, and MC12 is a
+communicator containing 1,2.
+    
+Calling
+TimeMonitor::summarize(MCW, std::cout, false, true, false, Teuchos::Union)
+yields
+    
+  - min(T1)=0.0, avg(T1)=0.33, max(T1)=1.0
+  - min(T2)=0.5, avg(T2)=1.17, max(T2)=2.0
+  - min(T3)=0.0, avg(T3)=0.5,  max(T3)=1.0
+    
+Calling
+TimeMonitor::summarize(MC12, std::cout, false, true, false, Teuchos::Union) 
+yields
+    
+  - min(T1)=0.0, avg(T1)=0.0,  max(T1)=0.0
+  - min(T2)=1.0, avg(T2)=1.5,  max(T2)=2.0
+  - min(T3)=0.5, avg(T3)=0.75, max(T3)=1.0
+    
+While each is technically correct for the communicators given, neither
+by itself gives information that one might want, namely, averages over
+just the processes that have a timer and mins over the nonzero times.
+    
+With the new mode, calling 
+TimeMonitor::summarize(MCW, std::cout, false, true, false, Teuchos::Union, "", true) 
+yields
+    
+  - min(T1)=1.0, avg(T1)=1.0,  max(T1)=1.0
+  - min(T2)=0.5, avg(T2)=1.17, max(T2)=2.0
+  - min(T3)=0.5, avg(T3)=0.75, max(T3)=1.0
+
+* Ptr: Added is_null() method to match RCP (23 Mar 2014)
+
+* MpiComm: Improved duplicate(), split(), and createSubcommunicator()
+  (27 Feb 2014).
+
+These methods now do MPI_Comm_dup, MPI_Comm_split,
+resp. MPI_Comm_create, as one would expect.  They also do one less
+MPI_Bcast than before.  This is because messages in the new MPI_Comm
+(which MPI_Comm_dup, MPI_Comm_split, and MPI_Comm_create all create)
+cannot collide with messages in the old MPI_Comm, so there is no need
+for a broadcast to agree on a common tag.
 
 Trilinos 11.3:
 --------------

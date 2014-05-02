@@ -434,7 +434,7 @@ namespace Belos {
       void
       matScale (mat_type& A, const scalar_type& alpha) const
       {
-        const int LDA = A.stride();
+        // const int LDA = A.stride(); // unused
         const int numRows = A.numRows();
         const int numCols = A.numCols();
 
@@ -478,17 +478,15 @@ namespace Belos {
       void
       matAdd (mat_type& A, const mat_type& B) const
       {
-        const int LDA = A.stride();
-        const int LDB = B.stride();
         const int numRows = A.numRows();
         const int numCols = A.numCols();
 
-        TEUCHOS_TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
-                           std::invalid_argument,
-                           "matAdd: The input matrices A and B have "
-                           "incompatible dimensions.  A is " << numRows
-                           << " x " << numCols << ", but B is " << B.numRows()
-                           << " x " << B.numCols() << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          B.numRows() != numRows || B.numCols() != numCols,
+          std::invalid_argument,
+          "matAdd: The input matrices A and B have incompatible dimensions.  "
+          "A is " << numRows << " x " << numCols << ", but B is " <<
+          B.numRows () << " x " << B.numCols () << ".");
         if (numRows == 0 || numCols == 0) {
           return;
         } else {
@@ -507,17 +505,15 @@ namespace Belos {
       void
       matSub (mat_type& A, const mat_type& B) const
       {
-        const int LDA = A.stride();
-        const int LDB = B.stride();
         const int numRows = A.numRows();
         const int numCols = A.numCols();
 
-        TEUCHOS_TEST_FOR_EXCEPTION(B.numRows() != numRows || B.numCols() != numCols,
-                           std::invalid_argument,
-                           "matSub: The input matrices A and B have "
-                           "incompatible dimensions.  A is " << numRows
-                           << " x " << numCols << ", but B is " << B.numRows()
-                           << " x " << B.numCols() << ".");
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          B.numRows() != numRows || B.numCols() != numCols,
+          std::invalid_argument,
+          "matSub: The input matrices A and B have incompatible dimensions.  "
+          "A is " << numRows << " x " << numCols << ", but B is " <<
+          B.numRows () << " x " << B.numCols () << ".");
         if (numRows == 0 || numCols == 0) {
           return;
         } else {

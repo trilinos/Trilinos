@@ -293,6 +293,7 @@ namespace Tpetra {
     /// must be able to live on a CUDA device, without requiring UVM.
     template<class LO, class GO, class DeviceType>
     class Map {
+      template<class LO2, class GO2, class D2> friend class Map;
     public:
       //! \name Typedefs
       //@{

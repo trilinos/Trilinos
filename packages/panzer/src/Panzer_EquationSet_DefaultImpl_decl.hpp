@@ -233,6 +233,17 @@ namespace panzer {
     void addDOFCurl(const std::string & dofName,
                     const std::string & curlName = "");
 
+    /** Alert the panzer library that a div of particular a DOF is needed.
+      *
+      * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
+      * \param[in] divName (Optional) Name of the div field associated with
+      *                     this DOF.  If not supplied or an empty string used,
+      *                     the default is to add the prefix "DIV__"
+      *                     to the dofName for the naem of the div field.
+      */
+    void addDOFDiv(const std::string & dofName,
+                   const std::string & divName = "");
+
     /** Alert the panzer library that a time derivative of particular a DOF is needed.
       *
       * \param[in] dofName (Required) Name of field to lookup in the unique global indexer. 
@@ -311,6 +322,7 @@ namespace panzer {
         , residualName(std::make_pair(false,""))
         , grad(std::make_pair(false,""))
         , curl(std::make_pair(false,""))
+        , div(std::make_pair(false,""))
         , timeDerivative(std::make_pair(false,"")) {}
 
       std::string dofName;
@@ -323,6 +335,7 @@ namespace panzer {
       std::string scatterName;
       std::pair<bool,std::string> grad;
       std::pair<bool,std::string> curl;
+      std::pair<bool,std::string> div;
       std::pair<bool,std::string> timeDerivative;
 
       void print(std::ostream & os) const {
@@ -331,6 +344,7 @@ namespace panzer {
            << "Res = (" << residualName.first << ", \"" << residualName.second << "\"), "
            << "Grad = (" << grad.first << ", \"" << grad.second << "\"), "
            << "Curl = (" << curl.first << ", \"" << curl.second << "\"), "
+           << "Div = (" << div.first << ", \"" << div.second << "\"), "
            << "Time = (" << timeDerivative.first << ", \"" << timeDerivative.second << "\")";
       }
     };

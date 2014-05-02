@@ -70,9 +70,7 @@
 // Belos
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
-#include <BelosBlockGCRODRSolMgr.hpp>
+#include <BelosSolverFactory.hpp>
 
 namespace MueLu {
 
@@ -92,11 +90,9 @@ namespace MueLu {
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
-    typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
-    typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
-    typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
-    typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
-    typedef Belos::BlockGCRODRSolMgr<SC,TMV,OP>          BelosGCRODR;
+    typedef Belos::LinearProblem<SC,TMV,OP>              LinearProblem;
+    typedef Belos::SolverManager<SC,TMV,OP>              SolverManager;
+    typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
 
   public:
 
@@ -249,8 +245,9 @@ namespace MueLu {
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;
 
     // Belos Linear Problem and Solver
-    RCP<BelosLinearProblem>           BelosLinearProblem_;
-    RCP<BelosSolverManager>           BelosSolverManager_;
+    RCP<LinearProblem>                LinearProblem_;
+    RCP<SolverManager>                SolverManager_;
+    RCP<SolverFactory>                SolverFactory_;
     RCP<Teuchos::ParameterList>       BelosList_;
 
   };

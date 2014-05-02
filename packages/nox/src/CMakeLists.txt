@@ -232,6 +232,7 @@ IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_THYRA)
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_MatrixFreeJacobianOperator_impl.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_MatrixFree_ModelEvaluatorDecorator.hpp
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_LineSearch_SafeguardedDirection.hpp
+    ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_TOpEleWiseMinSwap.hpp
   )
   APPEND_SET(SOURCES
     ${PACKAGE_SOURCE_DIR}/src-thyra/NOX_Thyra_Vector.C

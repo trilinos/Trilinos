@@ -170,7 +170,8 @@ public:
    * about problem types.
    */
   UserInputForTests(int x, int y, int z, string matrixType,
-    const RCP<const Comm<int> > &c, bool debugInfo=false);
+    const RCP<const Comm<int> > &c, bool debugInfo=false,
+    bool distributeInput=true);
 
   /*! \brief Generate lists of random scalars.
    */
@@ -238,7 +239,8 @@ private:
   // Build matrix M_ from a mesh and a problem type
   // with Galeri::Xpetra.
 
-  void buildCrsMatrix(int xdim, int ydim, int zdim, string type);
+  void buildCrsMatrix(int xdim, int ydim, int zdim, string type,
+                      bool distributeInput);
 
   // Read a Zoltan1 Chaco or Matrix Market file
   // into M_.  If it has geometric coordinates,
@@ -279,7 +281,8 @@ UserInputForTests::UserInputForTests(string path, string testData,
 }
 
 UserInputForTests::UserInputForTests(int x, int y, int z, 
-  string matrixType, const RCP<const Comm<int> > &c, bool debugInfo):
+  string matrixType, const RCP<const Comm<int> > &c, bool debugInfo,
+  bool distributeInput):
     verbose_(debugInfo),
     tcomm_(c), M_(), xM_(), xyz_(), vtxWeights_(), edgWeights_()
 #ifdef HAVE_EPETRA_DATA_TYPES
@@ -304,7 +307,7 @@ UserInputForTests::UserInputForTests(int x, int y, int z,
       std::cout << "UserInputForTests, Matrix type : " << matrixType << std::endl;
   }
 
-  buildCrsMatrix(x, y, z, matrixType);
+  buildCrsMatrix(x, y, z, matrixType, distributeInput);
   
 #ifdef HAVE_EPETRA_DATA_TYPES
   ecomm_ = Xpetra::toEpetra(c);
@@ -690,25 +693,33 @@ void UserInputForTests::readMatrixMarketFile(string path, string testData)
 }
 
 void UserInputForTests::buildCrsMatrix(int xdim, int ydim, int zdim, 
-  string problemType)
+  string problemType, bool distributeInput)
 {
   Teuchos::CommandLineProcessor tclp;
   Galeri::Xpetra::Parameters<gno_t> params(tclp,
      xdim, ydim, zdim, problemType);
 
-  RCP<const Tpetra::Map<lno_t, gno_t> > map =
-    rcp(new Tpetra::Map<lno_t, gno_t>(
-      params.GetNumGlobalElements(), 0, tcomm_));
+  RCP<const Tpetra::Map<lno_t, gno_t> > map;
+  if (distributeInput)
+    map = rcp(new Tpetra::Map<lno_t, gno_t>(params.GetNumGlobalElements(),
+                                            0, tcomm_));
+  else {
+    // All data initially on rank 0
+    size_t nGlobalElements = params.GetNumGlobalElements();
+    size_t nLocalElements = ((tcomm_->getRank() == 0) ? nGlobalElements : 0);
+    map = rcp(new Tpetra::Map<lno_t, gno_t>(nGlobalElements, nLocalElements, 0,
+                                            tcomm_));
+  }
 
   if (verbose_ && tcomm_->getRank() == 0){
     std::cout << "UserInputForTests, Create matrix with " << problemType;
-    std::cout << " (and" << xdim;
+    std::cout << " (and " << xdim;
     if (zdim > 0)
-      std::cout << " x " << ydim << " x " << zdim << std::endl;
+      std::cout << " x " << ydim << " x " << zdim;
     else if (ydim > 0)
-      std::cout << " x"  << ydim << " x 1" << std::endl;
+      std::cout << " x"  << ydim << " x 1";
     else
-      std::cout << "x 1 x 1" << std::endl;
+      std::cout << "x 1 x 1";
 
     std::cout << " mesh)" << std::endl;
   }

@@ -109,6 +109,11 @@ public:
   //! Get the value corresponding to the given key.
   ValueType get (const KeyType key) const;
 
+  //! Whether the table noticed any duplicate keys on construction.
+  bool hasDuplicateKeys () const {
+    return hasDuplicateKeys_;
+  }
+
   //! Implementation of Teuchos::Describable
   //@{
   //! Return a simple one-line description of this object.
@@ -141,6 +146,9 @@ private:
   ///
   /// This is redundant, but we keep it around to speed up get().
   const std::pair<KeyType, ValueType>* rawVal_;
+
+  //! Whether the table noticed any duplicate keys on construction.
+  bool hasDuplicateKeys_;
 
   /// \brief Allocate storage and initialize the table.
   ///

@@ -49,11 +49,15 @@ namespace Impl {
 
 void cuda_internal_error_throw( cudaError e , const char * name, const char * file = NULL, const int line = 0 );
 
+void cuda_device_synchronize();
+
 inline
 void cuda_internal_safe_call( cudaError e , const char * name, const char * file = NULL, const int line = 0)
 {
   if ( cudaSuccess != e ) { cuda_internal_error_throw( e , name, file, line ); }
 }
+
+
 
 }
 }

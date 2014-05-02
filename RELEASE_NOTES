@@ -1,5 +1,257 @@
 ###############################################################################
 #                                                                             #
+# Trilinos Release 11.8 Release Notes                                         #
+#                                                                             #
+###############################################################################
+
+Overview:
+
+The Trilinos Project is an effort to develop algorithms and enabling
+technologies within an object-oriented software framework for the solution of
+large-scale, complex multi-physics engineering and scientific problems.
+
+Packages:
+
+The Trilinos 11.8 general release contains 54 packages: Amesos, Amesos2,
+Anasazi, AztecOO, Belos, CTrilinos, Didasko, Epetra, EpetraExt, FEI,
+ForTrilinos, Galeri, GlobiPack, Ifpack, Ifpack2, Intrepid, Isorropia, Kokkos,
+Komplex, LOCA, Mesquite, ML, Moertel, MOOCHO, NOX, Optika, OptiPack, Pamgen,
+Phalanx, Piro, Pliris, PyTrilinos, RTOp, Rythmos, Sacado, SEACAS, Shards,
+ShyLU, STK, Stokhos, Stratimikos, Sundance, Teko, Teuchos, ThreadPool, Thyra,
+Tpetra, TriKota, TrilinosCouplings, Trios, Triutils, Xpetra, Zoltan, Zoltan2.
+
+Amesos2
+
+  - Amesos2's adapter for Tpetra now caches Import and Export objects, so that it
+    doesn't have to recreate them on every solve.  This fixes Bug 6011 and should
+    improve performance of solves.
+
+Belos
+
+  - More Belos solvers now work with complex Scalar type; more now compile for
+    complex Scalar type. This includes GCRODR, LSQR, RCG, and BlockGCRODR.  Not
+    all of these solvers are enabled by default; some are still marked
+    "experimental."
+
+Galeri
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+Ifpack
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+Ifpack2
+
+  - RILUK and Krylov may now be used as subdomain solvers in
+    AdditiveSchwarz.
+
+  - We made many improvements to RILUK and LocalFilter.  This will move
+  towards fixes for a number of Ifpack2 bugs, such as 5992 and 5987.
+
+Teuchos
+
+  - New mode for TimeMonitor::summarize (27 Mar 2014)
+
+    We added a new mode of calculating global statistics to
+    TimeMonitor::summarize.  The new mode ignores contributions from processes
+    that either do not have a particular timer, or have a hard zero for a timer. 
+    This mode is off by default, meaning that the default summarize behavior is
+    unchanged.
+
+    This new mode is useful in cases where not all processes have the same timers
+    and/or some timers are zero.  This can arise when multiple MPI communicators
+    are in play.  A single call to summarize using a global communicator yields
+    reasonable statistics for all timers.  The cost is an additional
+    MPI_Allreduce.
+
+    Consider this example:
+
+      - proc 0 has timers T1=1.0, T2=0.5
+      - proc 1 has timers         T2=1.0, T3=1.0
+      - proc 2 has timers         T2=2.0, T3=0.5
+
+    where MCW is a communicator containing 0,1,2, and MC12 is a communicator
+    containing 1,2.
+
+    Calling
+    TimeMonitor::summarize(MCW, std::cout, false, true, false, Teuchos::Union)
+    yields
+
+      - min(T1)=0.0, avg(T1)=0.33, max(T1)=1.0
+      - min(T2)=0.5, avg(T2)=1.17, max(T2)=2.0
+      - min(T3)=0.0, avg(T3)=0.5,  max(T3)=1.0
+
+    Calling
+    TimeMonitor::summarize(MC12, std::cout, false, true, false, Teuchos::Union) 
+    yields
+
+      - min(T1)=0.0, avg(T1)=0.0,  max(T1)=0.0
+      - min(T2)=1.0, avg(T2)=1.5,  max(T2)=2.0
+      - min(T3)=0.5, avg(T3)=0.75, max(T3)=1.0
+
+    While each is technically correct for the communicators given, neither by
+    itself gives information that one might want, namely, averages over just the
+    processes that have a timer and mins over the nonzero times.
+
+    With the new mode, calling 
+    TimeMonitor::summarize(MCW, std::cout, false, true, false, Teuchos::Union, "",
+    true)  yields
+
+      - min(T1)=1.0, avg(T1)=1.0,  max(T1)=1.0
+      - min(T2)=0.5, avg(T2)=1.17, max(T2)=2.0
+      - min(T3)=0.5, avg(T3)=0.75, max(T3)=1.0
+
+  - Ptr: Added is_null() method to match RCP (23 Mar 2014)
+
+  - MpiComm: Improved duplicate(), split(), and createSubcommunicator()
+    (27 Feb 2014).
+
+    These methods now do MPI_Comm_dup, MPI_Comm_split, resp. MPI_Comm_create, as
+    one would expect.  They also do one less MPI_Bcast than before.  This is
+    because messages in the new MPI_Comm (which MPI_Comm_dup, MPI_Comm_split, and
+    MPI_Comm_create all create) cannot collide with messages in the old MPI_Comm,
+    so there is no need for a broadcast to agree on a common tag.
+
+Tpetra
+
+  - BACKWARDS IMCOMPATIBLE CHANGE: MultiVector and Vector now implement
+    view semantics.
+
+    This means that the copy constructor and assignment operator (operator=) of
+    both classes now do shallow copies.  This change will support gradual porting
+    to the new ("Kokkos Refactor") version of Tpetra.
+
+    We have propagated this change to other Trilinos packages that use Tpetra. 
+    Please use the new createCopy nonmember function to get a new instance of
+    (Multi)Vector that is a deep copy of an existing (Multi)Vector.  Also, please
+    use the new nonmember function deep_copy to do a deep copy between two
+    existing compatible (Multi)Vector instances.
+
+  - Kokkos Refactor updates.
+
+    Development continues on the Kokkos Refactor version of Tpetra.  This is a
+    partial specialization of some Tpetra classes that uses the new Kokkos
+    programming model.  We plan eventually to switch to this version of Tpetra and
+    deprecate the old version.
+
+    This release adds a Kokkos Refactor version of Map.  Its GID->LID and LID->GID
+    conversion methods are now thread-safe and thread-scalable on the host.  It
+    also has a "device object" that you can use on CUDA devices.
+
+    The Kokkos Refactor version of MultiVector now implements "dual view"
+    semantics.  This means that the Tpetra interface lets users mark either host
+    or device as modified, and synchronize between host and device on demand, if
+    necessary.
+
+  - Sparse matrix-matrix multiply performance improvements.
+
+    This release includes many performance improvements to Tpetra's sparse
+    matrix-matrix multiply routine, and other supporting routines, such as
+    explicit transpose, and {im,ex}portAndFillComplete.  Tpetra now has a sparse
+    matrix-matrix multiply variant for implementing Jacobi smoothing of matrices. 
+    This is useful for algebraic multigrid.
+
+  - CrsMatrix: "Preserve Local Graph" defaults true (17 Mar 2014)
+
+    In CrsMatrix, the undocumented parameter "Preserve Local Graph" now defaults
+    to true.  This makes the following scenario work by default:
+
+      1. Create a CrsMatrix A that creates and owns its graph (i.e., don't
+          use the constructor that takes an RCP<const Tpetra::CrsGraph> or
+          a local graph)
+      2. Set an entry in the matrix A, and call fillComplete on it
+      3. Create a CrsMatrix B using A's graph (obtained via
+          A.getCrsGraph()), so that B has a const (a.k.a. "static") graph
+      4. Change a value in B (you can't change its structure), and call
+          fillComplete on B
+
+    Before this commit, the above scenario didn't work by default.  This is
+    because A's first fillComplete call would call fillLocalGraphAndMatrix, which
+    by default sets the local graph to null.  As a result, from that point,
+    A.getCrsGraph()->getLocalGraph() returns null, which makes B's fillComplete
+    throw an exception.  The only way to make this scenario work was to set A's
+    "Preserve Local Graph" parameter to true.  (It defaulted to false.)
+
+    The idea behind this nonintuitive behavior was for the local sparse ops object
+    to own all the data.  This might make sense if it is a third-party library
+    that takes CSR's three arrays and copies them into its own storage format.  In
+    that case, it might be a good idea to free the original three CSR arrays, in
+    order to avoid duplicate storage. However, resumeFill never had a way to get
+    that data back out of the local sparse ops object.  Rather than try to
+    implement that, it's easier just to make "Preserve Local Graph" default to
+    true.
+
+    The possible data duplication mentioned in the previous paragraph can never
+    happen with the Kokkos Refactor version of CrsMatrix, since it insists on
+    controlling the matrix representation itself.  This makes the code shorter and
+    easier to read, and also ensures efficient fill. That will in turn make the
+    option unnecessary.
+
+  - Many bug fixes.
+
+  - The most important bug fixed is Bug 6069, an error in Distributor, which would
+    only manifest on MPICH.  This bug fix alone is enough reason to upgrade to
+    Trilinos 11.8.
+
+PyTrilinos
+
+  - Various changes to improve the stability and robustness of the build system. 
+    Addresses some instability in PyTrilinos introduced with new 64 bit
+    capabilities in Epetra.  Some compilation warnings eliminated.  SWIG version
+    checks added.
+
+
+Zoltan
+
+  - Revised Scotch TPL specification in Trilinos' CMake environment to link with
+    all libraries needed by Scotch v6.
+
+  - Fixed bug in interface to ParMETIS v4 when multiple vertex weights are used.
+
+  - Fixed bug in interface to Scotch when some processor has no vertices.
+
+Zoltan2
+
+  - Removed some instances of "using namespace std;" User code that
+    inadvertantly depended on symbols in std being in the global namespace may 
+    now have errors.
+
+  - Simplified input Adapter classes for easier implementation by applications.
+    (This change may break backward compatibility for some users.)
+
+  - Some parameter names have changed or have been deleted:
+          pqParts --> mj_parts
+          parallel_part_calculation_count --> mj_concurrent_part_count
+          migration_check_option --> mj_migration_option
+          migration_imbalance_cut_off --> mj_minimum_migration_imbalance
+          keep_part_boxes --> mj_keep_part_boxes
+          recursion_depth --> mj_recursion_depth
+          migration_processor_assignment_type deleted.
+          migration_all_to_all_type deleted.
+          migration_doMigration_type deleted.
+
+  - Added ability to associate coordinates with matrix rows and graph vertices
+    through the MatrixAdapter and GraphAdapter.
+
+  - Improved the performance and readability of Multijagged Partitioning.
+
+  - Added weights to graph partitioning via Scotch.
+
+  - Changed weight specifications in input Adapters; users can no longer provide
+    NULL weight arrays for uniform weights.
+
+  - Added more robuts testing.
+
+  - Fixed several bugs.
+
+
+###############################################################################
+#                                                                             #
 # Trilinos Release 11.6 Release Notes                                         #
 #                                                                             #
 ###############################################################################

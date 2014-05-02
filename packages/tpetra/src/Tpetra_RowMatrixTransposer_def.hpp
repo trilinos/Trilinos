@@ -71,6 +71,32 @@ RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
 RowMatrixTransposer (const crs_matrix_type& origMatrix)
   : origMatrix_ (Teuchos::rcpFromRef (origMatrix)) {}
 
+
+template<class Scalar, 
+     class LocalOrdinal,
+     class GlobalOrdinal, 
+     class Node, 
+     class SpMatOps>
+Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
+RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
+createTranspose() {
+  using Teuchos::RCP;
+  using Tpetra::Export;
+  // Do the local transpose
+  RCP<crs_matrix_type> transMatrixWithSharedRows = createTransposeLocal();
+  
+  // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
+  // and we're done!
+  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
+  if(exporter == Teuchos::null) {
+    return transMatrixWithSharedRows;
+  }
+
+  // Finish using fusedexport
+  return exportAndFillCompleteCrsMatrix<crs_matrix_type>(transMatrixWithSharedRows,*exporter);
+}
+
+
 // mfh 03 Feb 2013: In a definition outside the class like this, the
 // return value is considered outside the class scope (for things like
 // resolving typedefs), but the arguments are considered inside the
@@ -82,8 +108,7 @@ template<class Scalar,
      class SpMatOps>
 Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >
 RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::
-createTranspose()
-{
+createTransposeLocal() {
   using Teuchos::Array;
   using Teuchos::ArrayView;
   using Teuchos::ParameterList;
@@ -188,19 +213,9 @@ createTranspose()
   if(!origMatrix_->getGraph()->getExporter().is_null()) 
     myImport = rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(*origMatrix_->getGraph()->getExporter()));
 
-  // Call ESFC
+  // Call ESFC & return
   transMatrixWithSharedRows->expertStaticFillComplete(origMatrix_->getRangeMap(),origMatrix_->getDomainMap(),myImport,myExport);
-
-  // If transMatrixWithSharedRows has an exporter, that's what we want.  If it doesn't, the rows aren't actually shared,
-  // and we're done!
-  RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > exporter = transMatrixWithSharedRows->getGraph()->getExporter();
-  if(exporter == Teuchos::null) {
-    return transMatrixWithSharedRows;
-  }
-
-  // Finish using fusedexport
-  return exportAndFillCompleteCrsMatrix<crs_matrix_type>(transMatrixWithSharedRows,*exporter);
-
+  return transMatrixWithSharedRows;
 }
 //
 // Explicit instantiation macro

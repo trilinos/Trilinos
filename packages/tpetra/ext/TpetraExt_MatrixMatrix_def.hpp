@@ -52,12 +52,13 @@
 #include "Tpetra_RowMatrixTransposer.hpp"
 #include "Tpetra_ConfigDefs.hpp"
 #include "Tpetra_Map.hpp"
+#include "Tpetra_Export.hpp"
 #include "Tpetra_Import_Util.hpp"
 #include "Tpetra_Import_Util2.hpp"
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-
+//#define USE_NEW_TRANSPOSE_CODE
 
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
@@ -114,13 +115,27 @@ void Multiply(
 
   RCP<const Matrix_t > Aprime = null;
   RCP<const Matrix_t > Bprime = null;
-  if(transposeA){
+
+  // Is this a "clean" matrix
+  bool NewFlag=!C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
+
+  bool use_optimized_ATB=false;
+#ifdef USE_NEW_TRANSPOSE_CODE
+  if(transposeA && !transposeB && call_FillComplete_on_result && NewFlag) {
+    use_optimized_ATB=true;
+    if(!A.getComm()->getRank()) printf("CMS: New Transpose code Invoked\n");
+  }
+#endif
+
+
+  if(!use_optimized_ATB && transposeA) {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
     Aprime = at.createTranspose();
   }
   else{
     Aprime = rcpFromRef(A);
   }
+
   if(transposeB){
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> bt (Teuchos::rcpFromRef (B));
     Bprime=bt.createTranspose();
@@ -176,7 +191,8 @@ void Multiply(
 #endif
 
   //Now import any needed remote rows and populate the Aview struct.
-  MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
+  if(!use_optimized_ATB)
+    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
 
 
   //We will also need local access to all rows of B that correspond to the
@@ -186,7 +202,8 @@ void Multiply(
   }
 
   //Now import any needed remote rows and populate the Bview struct.
-  MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
+  if(!use_optimized_ATB)
+    MMdetails::import_and_extract_views(*Bprime, targetMap_B, Bview, Aprime->getGraph()->getImporter());
 
 #ifdef ENABLE_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM All Multiply")));
@@ -196,10 +213,10 @@ void Multiply(
   //Now call the appropriate method to perform the actual multiplication.
   CrsWrapper_CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> crsmat(C);
 
-  // Is this a "clean" matrix
-  bool NewFlag=!C.getGraph()->isLocallyIndexed() && !C.getGraph()->isGloballyIndexed();
-
-  if(call_FillComplete_on_result && NewFlag ) {
+  if(use_optimized_ATB) {
+    MMdetails::mult_AT_B_newmatrix(A, B, C);
+  }
+  else if(call_FillComplete_on_result && NewFlag ) {
     MMdetails::mult_A_B_newmatrix(Aview, Bview, C);
   }
   else {
@@ -858,6 +875,86 @@ void Add(
 } //End namespace MatrixMatrix
 
 namespace MMdetails{
+
+
+//kernel method for computing the local portion of C = A*B
+template<class Scalar,
+         class LocalOrdinal,
+         class GlobalOrdinal,
+         class Node,
+         class SpMatOps>
+void mult_AT_B_newmatrix(
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& A,
+  const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& B,
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& C) {
+
+  // Using &  Typedefs
+  using Teuchos::RCP;
+  using Teuchos::rcp;
+  typedef CrsMatrixStruct<
+    Scalar,
+    LocalOrdinal,
+    GlobalOrdinal,
+    Node,
+    SpMatOps> CrsMatrixStruct_t;
+  // typedef Map<LocalOrdinal, GlobalOrdinal, Node> Map_t; // unused
+
+#ifdef ENABLE_MMM_TIMINGS
+  using Teuchos::TimeMonitor;
+  Teuchos::RCP<Teuchos::TimeMonitor> MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T Transpose")));
+#endif
+
+  /*************************************************************/
+  /* 1) Local Transpose of A                                   */
+  /*************************************************************/
+  RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
+  RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Atrans = at.createTransposeLocal();
+
+  /*************************************************************/
+  /* 2/3) Call mult_A_B_newmatrix w/ fillComplete              */
+  /*************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T I&X")));
+#endif
+
+  // Get views
+  // FIXME: Need to get rid of this as part of an overall refactor of the view object
+  CrsMatrixStruct_t Aview;
+  CrsMatrixStruct_t Bview;
+
+  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview);
+  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview);
+
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T AB-core")));
+#endif
+
+  RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> >Ctemp;
+
+  // If Atrans has no Exporter, we can use C instead of having to create a temp matrix
+  bool needs_final_export = !Atrans->getGraph()->getExporter().is_null();
+  if(needs_final_export)
+    Ctemp = rcp(new Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>(Atrans->getRowMap(),0));
+  else
+    Ctemp = rcp(&C,false);// don't allow deallocation
+
+  // Multiply
+  mult_A_B_newmatrix(Aview,Bview,*Ctemp);
+
+  /*************************************************************/
+  /* 4) exportAndFillComplete matrix                           */
+  /*************************************************************/
+#ifdef ENABLE_MMM_TIMINGS
+  MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T exportAndFillComplete")));
+#endif
+
+  // FIXME: The actual exportAndFillCompleteCrsMatrix function does not support combining entries.
+  // This needs to be fixed and this code needs to be replaced.
+  if(needs_final_export) {
+    C.doExport(*Ctemp,*Ctemp->getGraph()->getExporter(),Tpetra::ADD);
+    C.fillComplete(B.getDomainMap(),A.getDomainMap());
+  }
+}
 
 
 //kernel method for computing the local portion of C = A*B

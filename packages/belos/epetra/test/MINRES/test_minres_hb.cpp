@@ -48,7 +48,7 @@
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
 #include "BelosEpetraAdapter.hpp"
-#include "BelosMinresSolMgr.hpp"
+#include "BelosSolverFactory.hpp"
 #include "createEpetraProblem.hpp"
 #include "Trilinos_Util.h"
 #include "Epetra_Comm.h"
@@ -95,23 +95,22 @@ main (int argc, char *argv[])
   Teuchos::CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("frequency", &frequency, "Solvers frequency for printing "
-      "residuals (#iters).");
+                  "residuals (#iters).");
   cmdp.setOption ("tol", &tol, "Relative residual tolerance used by MINRES "
-      "solver.");
+                  "solver.");
   cmdp.setOption ("filename", &filename, "Filename for Harwell-Boeing test "
-      "matrix.");
+                  "matrix.");
   cmdp.setOption ("num-rhs", &numRHS, "Number of right-hand sides to solve.");
   cmdp.setOption ("max-iters", &maxIters, "Maximum number of iterations per "
-      "linear system (-1 means \"adapt to problem/block size\").");
+                  "linear system (-1 means \"adapt to problem/block size\").");
   if (cmdp.parse (argc,argv) != Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL) {
-    return -1;
+    return EXIT_FAILURE;
   }
   Teuchos::oblackholestream blackHole;
   std::ostream& verbOut = (verbose && MyPID == 0) ? std::cout : blackHole;
 
   bool testPassed = false;
-  try
-  {
+  try {
     //
     // Generate the linear system(s) to solve.
     //
@@ -146,14 +145,14 @@ main (int argc, char *argv[])
       for (int i = 0; i < numRHS; ++i) {
         verbOut << initialResidualNorms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl << "Initial residual Inf-norms:          \t";
       for (int i = 0; i < numRHS; ++i) {
         verbOut << initialResidualInfNorms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl;
@@ -168,14 +167,14 @@ main (int argc, char *argv[])
       for (int i = 0; i < numRHS; ++i) {
         verbOut << rhs2Norms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl << "Right-hand side Inf-norms:           \t";
       for (int i = 0; i < numRHS; ++i) {
         verbOut << rhsInfNorms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl;
@@ -190,14 +189,14 @@ main (int argc, char *argv[])
       for (int i = 0; i < numRHS; ++i) {
         verbOut << initialGuess2Norms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl << "Initial guess Inf-norms:             \t";
       for (int i = 0; i < numRHS; ++i) {
         verbOut << initialGuessInfNorms[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl;
@@ -219,7 +218,7 @@ main (int argc, char *argv[])
       for (int i = 0; i < numRHS; ++i) {
         verbOut << scaleFactors[i];
         if (i < numRHS-1) {
-    verbOut << ", ";
+          verbOut << ", ";
         }
       }
       verbOut << endl;
@@ -255,8 +254,10 @@ main (int argc, char *argv[])
     }
 
     // Create an iterative solver manager.
-    RCP<Belos::SolverManager<double,MV,OP> > newSolver
-      = rcp (new Belos::MinresSolMgr<double,MV,OP> (problem, belosList));
+    Belos::SolverFactory<double, MV, OP> factory;
+    RCP<Belos::SolverManager<double,MV,OP> > newSolver =
+      factory.create ("MINRES", belosList);
+    newSolver->setProblem (problem);
 
     // Print out information about problem.  Make sure to use the
     // information as stored in the Belos ParameterList, so that we know

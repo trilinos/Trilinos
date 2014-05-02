@@ -40,10 +40,10 @@
 //@HEADER
 */
 
-#ifndef IFPACK2_SPARSECONTAINER_DEF_HPP
-#define IFPACK2_SPARSECONTAINER_DEF_HPP
+#ifndef IFPACK2_DENSECONTAINER_DEF_HPP
+#define IFPACK2_DENSECONTAINER_DEF_HPP
 
-#include "Ifpack2_DenseContainer_def.hpp"
+#include "Ifpack2_DenseContainer_decl.hpp"
 #include "Teuchos_LAPACK.hpp"
 
 #ifdef HAVE_MPI
@@ -269,7 +269,7 @@ applyImpl (const local_mv_type& X,
       Y.putScalar (STS::zero ());
     }
     else { // beta != 0
-      Y.scale (STS::zero ());
+      Y.scale (beta);
     }
   }
   else { // alpha != 0; must solve the linear system
@@ -278,7 +278,7 @@ applyImpl (const local_mv_type& X,
     // a temporary output multivector.  It gets a copy of X, since
     // GETRS overwrites its (multi)vector input with its output.
     RCP<local_mv_type> Y_tmp;
-    if (beta == STS::zero () || Y.isConstantStride ()) {
+    if (beta == STS::zero () ){
       Y = X;
       Y_tmp = rcpFromRef (Y);
     }

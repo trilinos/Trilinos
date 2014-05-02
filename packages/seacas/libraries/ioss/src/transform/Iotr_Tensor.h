@@ -54,7 +54,7 @@ namespace Iotr {
   class Tensor: public Ioss::Transform
     {
       friend class Tensor_Factory;
-      enum TranType {TRACE, SPHERICAL, DEVIATOR, MAGNITUDE,
+      enum TranType {INVALID, TRACE, SPHERICAL, DEVIATOR, MAGNITUDE,
 		     INVARIANTS, INVARIANT1, INVARIANT2, INVARIANT3};
     public:
       const Ioss::VariableType *output_storage(const Ioss::VariableType *in) const;

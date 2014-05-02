@@ -131,6 +131,7 @@ DEFAULT_ENABLE_DISABLE_LIST = [
   ("Xpetra", True),
   ("Zoltan", True),
   ("Zoltan2", True),
+  ("Gtest", True),
 ]
 
 #Make reporting errors easier to make consistent between all system calls

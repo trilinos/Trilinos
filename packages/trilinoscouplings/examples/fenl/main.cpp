@@ -33,6 +33,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // #include <Tpetra_Vector.hpp>
 
@@ -126,8 +127,11 @@ void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  c
 //----------------------------------------------------------------------------
 
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
-void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[] )
+bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[] )
 {
+  bool success = true;
+  try {
+
   const int comm_rank = comm->getRank();
 
   if ( 0 == comm_rank ) {
@@ -213,6 +217,11 @@ void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[]
 
     if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
   }
+
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  return success;
 }
 
 //----------------------------------------------------------------------------

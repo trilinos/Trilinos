@@ -697,6 +697,8 @@ int main(int argc, char *argv[])
         &exportToPart);  /* Partition to which each vertex will belong */
 
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
+  Zoltan_LB_Free_Part(importGlobalGids, importLocalGids, importProcs, importToPart);
+  Zoltan_LB_Free_Part(exportGlobalGids, exportLocalGids, exportProcs, exportToPart);
   Zoltan_Destroy(&zz);
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 

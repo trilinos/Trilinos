@@ -62,6 +62,7 @@
 
 namespace Kokkos {
 
+#if 0
 //! Specialization of SparseRowView<> for Sacado::MP::Vector scalar type
 /*!
  * Here we store the view and offset directly instead of pointers, since
@@ -171,6 +172,7 @@ public:
     return colidx_[offset_+i*stride_];
   }
 };
+#endif
 
 } // namespace Kokkos
 

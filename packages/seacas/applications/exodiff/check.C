@@ -367,7 +367,7 @@ namespace {
       }
     }
 
-    // Do the following check(s) only if there are nodeset varibles...
+    // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
     if (!interface.ns_var_names.empty() || interface.pedantic) {
@@ -441,7 +441,7 @@ namespace {
       }
     }
 
-    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
+    // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
     if (!interface.ss_var_names.empty() || interface.pedantic) {

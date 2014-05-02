@@ -131,7 +131,7 @@ ENDFUNCTION()
 #
 # EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>
 #
-#   If specified, then all of the varibles in the generated export files will
+#   If specified, then all of the variables in the generated export files will
 #   be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
 #   This is to provide flexibility.
 #

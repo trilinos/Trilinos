@@ -591,7 +591,7 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   if (fname.size() > 0)
     uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    uinput = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
+    uinput = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true, true);
 
   RCP<tcrsMatrix_t> M = uinput->getUITpetraCrsMatrix();
 

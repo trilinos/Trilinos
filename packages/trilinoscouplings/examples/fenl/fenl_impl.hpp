@@ -152,6 +152,32 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
+/* Builds a map from LIDs to GIDs suitable for Tpetra */
+template < class Map, class Fixture >
+class BuildLocalToGlobalMap {
+  const Map m_lid_to_gid;
+  const Fixture m_fixture;
+public:
+  typedef typename Map::device_type device_type;
+  typedef typename device_type::size_type size_type;
+
+  BuildLocalToGlobalMap(const Map& lid_to_gid, const Fixture& fixture) :
+    m_lid_to_gid(lid_to_gid),
+    m_fixture(fixture)
+    {}
+
+  KOKKOS_INLINE_FUNCTION
+  void operator() (const size_type i) const {
+    m_lid_to_gid(i) = m_fixture.node_global_index(i);
+  }
+};
+
+template <class Map, class Fixture >
+void build_lid_to_gid(const Map& lid_to_gid, const Fixture& fixture) {
+  typedef BuildLocalToGlobalMap<Map,Fixture> F;
+  Kokkos::parallel_for(lid_to_gid.dimension_0(), F(lid_to_gid, fixture));
+}
+
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
   const ::Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
@@ -375,22 +401,34 @@ Perf fenl(
     RCP<NodeType> node = rcp (new NodeType());
 
     // Create Maps
-    ::Kokkos::View<int*,Device> lid_to_gid_row("lig_to_gid",jacobian.numRows());
-    for(int i=0;i<jacobian.numRows();i++) lid_to_gid_row(i) = fixture.node_global_index(i);
+    typedef ::Kokkos::View<int*,Device> lid_to_gid_type;
+    lid_to_gid_type lid_to_gid_row("lig_to_gid",jacobian.numRows());
+    //for(int i=0;i<jacobian.numRows();i++) lid_to_gid_row(i) = fixture.node_global_index(i);
+    build_lid_to_gid(lid_to_gid_row, fixture);
+    typename lid_to_gid_type::HostMirror lid_to_gid_row_host =
+      Kokkos::create_mirror_view(lid_to_gid_row);
+    Kokkos::deep_copy(lid_to_gid_row_host, lid_to_gid_row);
 
     pMapType RowMap = ::Teuchos::rcp (new MapType (fixture.node_count_global(),
-        ::Teuchos::arrayView(lid_to_gid_row.ptr_on_device(),lid_to_gid_row.dimension_0()),
+        ::Teuchos::arrayView(lid_to_gid_row_host.ptr_on_device(),lid_to_gid_row.dimension_0()),
         0, comm, node));
 
-    ::Kokkos::View<int*,Device> lid_to_gid("lig_to_gid",jacobian.numCols());
-    for(int i=0;i<jacobian.numCols();i++) lid_to_gid(i) = fixture.node_global_index(i);
+    lid_to_gid_type lid_to_gid("lig_to_gid",jacobian.numCols());
+    //for(int i=0;i<jacobian.numCols();i++) lid_to_gid(i) = fixture.node_global_index(i);
+    build_lid_to_gid(lid_to_gid, fixture);
+    typename lid_to_gid_type::HostMirror lid_to_gid_host =
+      Kokkos::create_mirror_view(lid_to_gid);
+    Kokkos::deep_copy(lid_to_gid_host, lid_to_gid);
 
-    pMapType ColMap = ::Teuchos::rcp (new MapType ( (fixture.node_count_global()),
-        ::Teuchos::arrayView(lid_to_gid.ptr_on_device(),lid_to_gid.dimension_0()),
+    pMapType ColMap = ::Teuchos::rcp (new MapType ( Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid(),
+        ::Teuchos::arrayView(lid_to_gid_host.ptr_on_device(),lid_to_gid.dimension_0()),
          0,comm, node) );
 
     // Create Teptra Matrix: this uses the already allocated matrix data
     GlobalMatrixType g_jacobian(RowMap,ColMap,jacobian);
+
+    // g_jacobian.describe(*(Teuchos::fancyOStream(Teuchos::rcp(&std::cout,false))),
+    //                     Teuchos::VERB_EXTREME);
 
     // Create Teptra Vectors: this uses the already allocated vector data
     GlobalVectorType g_nodal_solution(ColMap,k_nodal_solution);

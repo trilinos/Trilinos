@@ -760,6 +760,31 @@ addDOFCurl(const std::string & dofName,
 // ***********************************************************************
 template <typename EvalT>
 void panzer::EquationSet_DefaultImpl<EvalT>::
+addDOFDiv(const std::string & dofName,
+          const std::string & divName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addDOFDiv: DOF \"" << dofName << "\" has not been specified as a DOF "
+                             "by derived equation set \"" << this->getType() << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
+
+  if (divName == "")
+    desc.div = std::make_pair(true,std::string("DOF_")+dofName);
+  else
+    desc.div = std::make_pair(true,divName);
+
+  // can't do this yet!
+  TEUCHOS_ASSERT(false);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
 addDOFTimeDerivative(const std::string & dofName,
                               const std::string & dotName)
 {

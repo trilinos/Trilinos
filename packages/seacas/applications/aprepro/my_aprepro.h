@@ -73,6 +73,7 @@ struct aprepro_options
   int statistics;
   int interactive;
   int immutable;
+  int one_based_index;
 };
 
 typedef struct aprepro_options aprepro_options;

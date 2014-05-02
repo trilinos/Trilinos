@@ -93,6 +93,198 @@ struct pair
   { return std::make_pair(first,second); }
 };
 
+template <class T1, class T2>
+struct pair<T1&, T2&>
+{
+  //! The first template parameter of this class.
+  typedef T1& first_type;
+  //! The second template parameter of this class.
+  typedef T2& second_type;
+
+  //! The first element of the pair.
+  first_type  first;
+  //! The second element of the pair.
+  second_type second;
+
+  /// \brief Constructor that takes both elements of the pair.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair(first_type f, second_type s)
+    : first(f), second(s)
+  {}
+
+  /// \brief Copy constructor.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair( const pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  // from std::pair<U,V>
+  template <class U, class V>
+  pair( const std::pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  /// \brief Assignment operator.
+  ///
+  /// This calls the assignment operators of T1 and T2.  It won't
+  /// compile if the assignment operators are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair<first_type, second_type> & operator=(const pair<U,V> &p)
+  {
+    first = p.first;
+    second = p.second;
+    return *this;
+  }
+
+  /// \brief Return the std::pair version of this object.
+  ///
+  /// This is <i>not</i> a device function; you may not call it on a
+  /// CUDA device.  It is meant to be called on the host, if the user
+  /// wants an std::pair instead of a Kokkos::pair.
+  ///
+  /// \note This is not a conversion operator, since defining a
+  ///   conversion operator made the relational operators have
+  ///   ambiguous definitions.
+  std::pair<T1,T2> to_std_pair() const
+  { return std::make_pair(first,second); }
+};
+
+template <class T1, class T2>
+struct pair<T1, T2&>
+{
+  //! The first template parameter of this class.
+  typedef T1  first_type;
+  //! The second template parameter of this class.
+  typedef T2& second_type;
+
+  //! The first element of the pair.
+  first_type  first;
+  //! The second element of the pair.
+  second_type second;
+
+  /// \brief Constructor that takes both elements of the pair.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair(first_type const& f, second_type s)
+    : first(f), second(s)
+  {}
+
+  /// \brief Copy constructor.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair( const pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  // from std::pair<U,V>
+  template <class U, class V>
+  pair( const std::pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  /// \brief Assignment operator.
+  ///
+  /// This calls the assignment operators of T1 and T2.  It won't
+  /// compile if the assignment operators are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair<first_type, second_type> & operator=(const pair<U,V> &p)
+  {
+    first = p.first;
+    second = p.second;
+    return *this;
+  }
+
+  /// \brief Return the std::pair version of this object.
+  ///
+  /// This is <i>not</i> a device function; you may not call it on a
+  /// CUDA device.  It is meant to be called on the host, if the user
+  /// wants an std::pair instead of a Kokkos::pair.
+  ///
+  /// \note This is not a conversion operator, since defining a
+  ///   conversion operator made the relational operators have
+  ///   ambiguous definitions.
+  std::pair<T1,T2> to_std_pair() const
+  { return std::make_pair(first,second); }
+};
+
+template <class T1, class T2>
+struct pair<T1&, T2>
+{
+  //! The first template parameter of this class.
+  typedef T1&  first_type;
+  //! The second template parameter of this class.
+  typedef T2 second_type;
+
+  //! The first element of the pair.
+  first_type  first;
+  //! The second element of the pair.
+  second_type second;
+
+  /// \brief Constructor that takes both elements of the pair.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair(first_type f, second_type const& s)
+    : first(f), second(s)
+  {}
+
+  /// \brief Copy constructor.
+  ///
+  /// This calls the copy constructors of T1 and T2.  It won't compile
+  /// if those copy constructors are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair( const pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  // from std::pair<U,V>
+  template <class U, class V>
+  pair( const std::pair<U,V> &p)
+    : first(p.first), second(p.second)
+  {}
+
+  /// \brief Assignment operator.
+  ///
+  /// This calls the assignment operators of T1 and T2.  It won't
+  /// compile if the assignment operators are not defined and public.
+  template <class U, class V>
+  KOKKOS_FORCEINLINE_FUNCTION
+  pair<first_type, second_type> & operator=(const pair<U,V> &p)
+  {
+    first = p.first;
+    second = p.second;
+    return *this;
+  }
+
+  /// \brief Return the std::pair version of this object.
+  ///
+  /// This is <i>not</i> a device function; you may not call it on a
+  /// CUDA device.  It is meant to be called on the host, if the user
+  /// wants an std::pair instead of a Kokkos::pair.
+  ///
+  /// \note This is not a conversion operator, since defining a
+  ///   conversion operator made the relational operators have
+  ///   ambiguous definitions.
+  std::pair<T1,T2> to_std_pair() const
+  { return std::make_pair(first,second); }
+};
+
 //! Equality operator for Kokkos::pair.
 template <class T1, class T2>
 KOKKOS_FORCEINLINE_FUNCTION

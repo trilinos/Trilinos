@@ -1,6 +1,8 @@
 #include "my_aprepro.h"
 #include <stdlib.h>
 
+extern aprepro_options ap_options;
+
 double array_interpolate(array *arr, double row, double col)
 {
   /*
@@ -9,6 +11,11 @@ double array_interpolate(array *arr, double row, double col)
    * (0.0 -> rows-1) (0.0 -> cols-1)
    */
   
+  if (ap_options.one_based_index == True) {
+    row--;
+    col--;
+  }
+
   int irl = row;
   int irh = irl+1;
   int icl = col;
@@ -36,6 +43,10 @@ double array_interpolate(array *arr, double row, double col)
 
 double array_value(array *arr, double row, double col)
 {
+  if (ap_options.one_based_index == True) {
+    row--;
+    col--;
+  }
   double value = 0.0;
   int cols = arr->cols;
   int rows = arr->rows;

@@ -218,9 +218,7 @@ public:
 
   /*! \brief  Provide a pointer to the row weights, if any.
       \param weights is the list of weights with a given index for
-           the rows returned in getRowIDsView().  If weights for
-           this index are to be uniform for all rows in the
-           global problem, the \c weights should be a NULL pointer.
+           the rows returned in getRowIDsView().  
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerRow().
    */
@@ -309,9 +307,7 @@ public:
 
   /*! \brief  Provide a pointer to the column weights, if any.
       \param weights is the list of weights with a given index for
-           the columns returned in getColumnIDsView().  If weights for
-           this index are to be uniform for all columns in the
-           global problem, the \c weights should be a NULL pointer.
+           the columns returned in getColumnIDsView().
       \param stride The k'th weight is located at weights[stride*k]
       \param idx ranges from zero to one less than getNumWeightsPerColumn().
    */

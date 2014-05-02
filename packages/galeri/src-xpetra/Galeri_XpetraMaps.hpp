@@ -65,9 +65,7 @@
 
 #include "Galeri_ConfigDefs.h"
 
-#include "Galeri_XpetraCartesian1D.hpp"
-#include "Galeri_XpetraCartesian2D.hpp"
-#include "Galeri_XpetraCartesian3D.hpp"
+#include "Galeri_XpetraCartesian.hpp"
 
 #ifdef HAVE_GALERI_XPETRA
 #include <Xpetra_ConfigDefs.hpp>

@@ -143,6 +143,9 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 /// \param numItersPerformed [out] Number of iterations that the Belos
 ///   solver performed.
 ///
+/// \param solverName [in] Which iterative linear solver to use.
+///   Any name that Belos::SolverFactory knows will work here.
+///
 /// \param tol [in] Convergence tolerance for the iterative method.
 ///   The meaning of this depends on the particular iterative method.
 ///
@@ -170,9 +173,10 @@ exactResidualNorm (const Teuchos::RCP<const sparse_matrix_type>& A,
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
-		const int num_steps,
+                const int num_steps,
                 const Teuchos::RCP<multivector_type>& X,
                 const Teuchos::RCP<const sparse_matrix_type>& A,
                 const Teuchos::RCP<const multivector_type>& B,

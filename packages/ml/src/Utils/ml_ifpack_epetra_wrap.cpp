@@ -29,6 +29,7 @@
 #include "Ifpack.h"
 #endif
 #include "Ifpack_Chebyshev.h"
+#include "Ifpack_BlockRelaxation.h"
 
 using namespace ML_Epetra;
 
@@ -208,7 +209,7 @@ namespace ML_Epetra{
   /***           Block Relaxation             ***/
   /**********************************************/
   else if(SmooType=="block Gauss-Seidel" || SmooType=="symmetric block Gauss-Seidel" || SmooType=="block Jacobi"
-	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation" ){
+	  || SmooType=="block relaxation stand-alone" || SmooType=="block relaxation") {
     const Epetra_CrsMatrix* Acrs=dynamic_cast<const Epetra_CrsMatrix*>(A);
     if(!Acrs) return 0;
     std::string MyIfpackType="block relaxation stand-alone";
@@ -221,12 +222,23 @@ namespace ML_Epetra{
     IFPACKList.set("relaxation: sweeps", Sweeps);
     IFPACKList.set("relaxation: damping factor", omega);
     IFPACKList.set("relaxation: zero starting solution",false);
+    bool use_line=false;
+    if(List.isParameter("smoother: line detection threshold")) {
+      use_line = true;
+      IFPACKList.set("partitioner: line detection threshold",List.get("smoother: line detection threshold",-1.0));
+      IFPACKList.set("partitioner: type","line");
+      IFPACKList.set("partitioner: x-coordinates",List.get("x-coordinates",(double*)0));
+      IFPACKList.set("partitioner: y-coordinates",List.get("y-coordinates",(double*)0));
+      IFPACKList.set("partitioner: z-coordinates",List.get("z-coordinates",(double*)0));
+
+    }
 
     if(verbose && !A->Comm().MyPID()){
       std::cout << printMsg << "block " << IFPACKList.get("relaxation: type",MyRelaxType).c_str()<<" (sweeps="
-	   << Sweeps << ",omega=" << omega << ")" <<std::endl;
+		<< Sweeps << ",omega=" << omega;
+      if(use_line) std::cout << ",auto-line";	
     }
-
+    
 #ifdef HAVE_IFPACK_DYNAMIC_FACTORY
     Ifpack_DynamicFactory Factory;
 #else
@@ -237,6 +249,15 @@ namespace ML_Epetra{
     SmootherP_->SetParameters(IFPACKList);
     SmootherP_->Initialize();
     SmootherP_->Compute();
+
+    int global_blocks=0,local_blocks=0;
+    Ifpack_BlockRelaxation<Ifpack_DenseContainer> * temp0 = dynamic_cast<Ifpack_BlockRelaxation<Ifpack_DenseContainer>*>(SmootherP_);
+    if(temp0) local_blocks = temp0->NumLocalBlocks();  
+    A->Comm().SumAll(&local_blocks,&global_blocks,1);
+    if(verbose && !A->Comm().MyPID())
+      std::cout<<","<<global_blocks<<" blocks found)"<<std::endl;
+
+
     return SmootherP_;
   }
   /**********************************************/

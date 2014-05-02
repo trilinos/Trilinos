@@ -42,75 +42,10 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-#ifndef _ZOLTAN2_ALGFIRSTFIT_HPP_
-#define _ZOLTAN2_ALGFIRSTFIT_HPP_
+#ifndef _ZOLTAN2_COLORINGALGORITHMS_HPP_
+#define _ZOLTAN2_COLORINGALGORITHMS_HPP_
 
-#include <Zoltan2_GraphModel.hpp>
-#include <Zoltan2_ColoringSolution.hpp>
+#include <Zoltan2_Standards.hpp>
+#include <Zoltan2_AlgSerialGreedy.hpp>
 
-
-////////////////////////////////////////////////////////////////////////
-//! \file Zoltan2_AlgFirstFit.hpp
-//! \brief Greedy first-fit graph coloring (serial, local graph only)
-
-
-namespace Zoltan2{
-
-template <typename Adapter>
-class AlgFirstFit
-{
-  private:
-    typedef typename Adapter::lno_t lno_t;
-    typedef typename Adapter::gno_t gno_t;
-    typedef typename Adapter::scalar_t scalar_t;
-  
-  public:
-  AlgFirstFit()
-  {
-  }
-
-  void color(
-    const RCP<GraphModel<Adapter> > &model,
-    const RCP<ColoringSolution<typename Adapter::gid_t,
-  			     typename Adapter::lno_t> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
-  )
-  {
-    HELLO;
-  
-    // Check size of communicator: serial only.
-    // TODO: Remove this test when RCM works on local graph.
-    //if (comm->getSize() > 1){
-    //  throw std::runtime_error("RCM currently only works in serial.");
-    //}
-  
-    // Get local graph.
-    ArrayView<const lno_t> edgeIds;
-    ArrayView<const lno_t> offsets;
-    ArrayView<StridedData<lno_t, scalar_t> > wgts;
-  
-    const size_t nVtx = model->getLocalNumVertices();
-    model->getLocalEdgeList(edgeIds, offsets, wgts); 
-  
-#if 0
-    // Debug
-    cout << "Debug: Local graph from getLocalEdgeList" << endl;
-    cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
-    cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
-    cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
 #endif
-  
-    // Get color array to fill
-    ArrayRCP<lno_t> colors = solution->getColors();
-
-    // TODO: First-fit coloring.
-  
-    return;
-  }
-  
-};
-}
-#endif
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL

@@ -43,6 +43,7 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Serial.hpp>
 #include <stdexcept>
 #include <sstream>
 #include <iostream>
@@ -911,6 +912,7 @@ public:
     run_test_scalar();
     run_test_const();
     run_test_subview();
+    run_test_subview_strided();
     run_test_vector();
 
     TestViewOperator< T , device >::apply();
@@ -1167,6 +1169,48 @@ public:
     sView s2 = Kokkos::subview< sView >( d2 , 1 , 1 );
     sView s3 = Kokkos::subview< sView >( d3 , 1 , 1 , 1 );
     sView s4 = Kokkos::subview< sView >( d4 , 1 , 1 , 1 , 1 );
+  }
+
+  static void run_test_subview_strided()
+  {
+    typedef Kokkos::View< int **** , Kokkos::LayoutLeft  , Kokkos::Serial >  view_left_4 ;
+    typedef Kokkos::View< int **** , Kokkos::LayoutRight , Kokkos::Serial >  view_right_4 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutLeft  , Kokkos::Serial >  view_left_2 ;
+    typedef Kokkos::View< int **   , Kokkos::LayoutRight , Kokkos::Serial >  view_right_2 ;
+
+    typedef Kokkos::View< int * ,  Kokkos::LayoutStride , Kokkos::Serial >  view_stride_1 ;
+    typedef Kokkos::View< int ** ,  Kokkos::LayoutStride , Kokkos::Serial >  view_stride_2 ;
+
+    view_left_2  xl2("xl2", 100 , 200 );
+    view_right_2 xr2("xr2", 100 , 200 );
+    view_stride_1  yl1 = Kokkos::subview< view_stride_1 >( xl2 , 0 , Kokkos::ALL() );
+    view_stride_1  yl2 = Kokkos::subview< view_stride_1 >( xl2 , 1 , Kokkos::ALL() );
+    view_stride_1  yr1 = Kokkos::subview< view_stride_1 >( xr2 , 0 , Kokkos::ALL() );
+    view_stride_1  yr2 = Kokkos::subview< view_stride_1 >( xr2 , 1 , Kokkos::ALL() );
+
+    ASSERT_EQ( yl1.dimension_0() , xl2.dimension_1() );
+    ASSERT_EQ( yl2.dimension_0() , xl2.dimension_1() );
+    ASSERT_EQ( yr1.dimension_0() , xr2.dimension_1() );
+    ASSERT_EQ( yr2.dimension_0() , xr2.dimension_1() );
+
+    ASSERT_EQ( & yl1(0) - & xl2(0,0) , 0 );
+    ASSERT_EQ( & yl2(0) - & xl2(1,0) , 0 );
+    ASSERT_EQ( & yr1(0) - & xr2(0,0) , 0 );
+    ASSERT_EQ( & yr2(0) - & xr2(1,0) , 0 );
+
+    view_left_4 xl4( "xl4" , 10 , 20 , 30 , 40 );
+    view_right_4 xr4( "xr4" , 10 , 20 , 30 , 40 );
+
+    view_stride_2 yl4 = Kokkos::subview< view_stride_2 >( xl4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+    view_stride_2 yr4 = Kokkos::subview< view_stride_2 >( xr4 , 1 , Kokkos::ALL() , 2 , Kokkos::ALL() );
+
+    ASSERT_EQ( yl4.dimension_0() , xl4.dimension_1() );
+    ASSERT_EQ( yl4.dimension_1() , xl4.dimension_3() );
+    ASSERT_EQ( yr4.dimension_0() , xr4.dimension_1() );
+    ASSERT_EQ( yr4.dimension_1() , xr4.dimension_3() );
+
+    ASSERT_EQ( & yl4(4,4) - & xl4(1,4,2,4) , 0 );
+    ASSERT_EQ( & yr4(4,4) - & xr4(1,4,2,4) , 0 );
   }
 
   static void run_test_vector()

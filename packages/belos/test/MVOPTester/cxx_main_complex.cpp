@@ -76,9 +76,11 @@ int main(int argc, char *argv[])
   int MyPID;
 #ifdef HAVE_MPI
   MPI_Comm_rank(MPI_COMM_WORLD, &MyPID);
-#else 
+#else
   MyPID = 0;
 #endif
+  (void) MyPID; // forestall "set but not used" warnings
+
   bool verbose = false;
   std::string filename("mhd1280b.cua");
 
@@ -119,10 +121,10 @@ int main(int argc, char *argv[])
   typedef Belos::MultiVec<ST> MV;
   typedef Belos::Operator<ST> OP;
   typedef Belos::MultiVecTraits<ST,MV> MVT;
-  typedef Belos::OperatorTraits<ST,MV,OP> OPT;
+  //typedef Belos::OperatorTraits<ST,MV,OP> OPT;
 
   // Create an output manager to handle the I/O from the solver
-  RCP<Belos::OutputManager<ST> > MyOM 
+  RCP<Belos::OutputManager<ST> > MyOM
     = rcp( new Belos::OutputManager<ST>() );
   if (verbose) {
     MyOM->setVerbosity( Belos::Warnings );
@@ -146,7 +148,7 @@ int main(int argc, char *argv[])
   nnz = -1;
   info = readHB_newmat_double(filename.c_str(),&dim,&dim2,&nnz,&colptr,&rowind,&dvals);
   if (info == 0 || nnz < 0) {
-    MyOM->stream(Belos::Warnings) 
+    MyOM->stream(Belos::Warnings)
       << "Warning reading '" << filename << "'" << std::endl
       << "End Result: TEST FAILED" << std::endl;
 #ifdef HAVE_MPI
