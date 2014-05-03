@@ -603,17 +603,17 @@ ENDIF()
 # Need to fix these tests so they don't require Epetra
 IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    KokkosArrayKernelsUnitTest_Serial
-    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    DEPLIBS stokhos kokkoscore
-    )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    KokkosArrayKernelsUnitTest_Serial
+#    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+#            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
+#    COMM serial mpi
+#    STANDARD_PASS_OUTPUT
+#    NUM_MPI_PROCS 1
+#    DEPLIBS stokhos kokkoscore
+#    )
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
