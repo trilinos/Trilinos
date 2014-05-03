@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+
+
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -65,4 +65,4 @@ INSTANTIATE_TPETRA_UQ_PCE_THREADS(MUELU_INST_N)
 
 #endif
 
-#endif
+
