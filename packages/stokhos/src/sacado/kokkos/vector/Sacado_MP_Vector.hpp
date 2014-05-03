@@ -787,7 +787,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -813,7 +814,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -839,7 +841,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -865,7 +868,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -891,7 +895,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -917,7 +922,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -943,7 +949,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -969,7 +976,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -995,7 +1003,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1021,7 +1030,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1047,7 +1057,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1073,7 +1084,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1099,7 +1111,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1125,7 +1138,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1151,7 +1165,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1177,7 +1192,8 @@ namespace Sacado {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
 
-        this->reset(x.size());
+        if (x.size() > s.size())
+          this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
