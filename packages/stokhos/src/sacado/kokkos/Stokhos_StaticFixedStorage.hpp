@@ -262,7 +262,13 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
+#if defined(__INTEL_COMPILER) && defined(__MIC__)
+    value_type coeff_[Num] __attribute__((aligned(64)));
+#elif defined(__INTEL_COMPILER) && defined(__AVX__)
+    value_type coeff_[Num] __attribute__((aligned(32)));
+#else
     value_type coeff_[Num];
+#endif
 
   };
 
