@@ -150,9 +150,11 @@ int main(int argc, char *argv[])
 
       Kokkos::Threads::initialize(num_cores*num_hyper_threads);
 
-      std::cout << std::endl
-                << "Threads performance with " << num_cores*num_hyper_threads
-                << " threads:" << std::endl;
+      if (comm->getRank() == 0)
+        std::cout << std::endl
+                  << "Threads performance with " << comm->getSize()
+                  << " MPI ranks and " << num_cores*num_hyper_threads
+                  << " threads per rank:" << std::endl;
 
       Kokkos::DeviceConfig dev_config(num_cores,
                                        threads_per_vector,
@@ -175,10 +177,12 @@ int main(int argc, char *argv[])
 
       cudaDeviceProp deviceProp;
       cudaGetDeviceProperties(&deviceProp, device_id);
-      std::cout << std::endl
-                << "CUDA performance for device " << device_id << " ("
-                << deviceProp.name << "):"
-                << std::endl;
+      if (comm->getRank() == 0)
+        std::cout << std::endl
+                  << "CUDA performance performance with " << comm->getSize()
+                  << " MPI ranks and device " << device_id << " ("
+                  << deviceProp.name << "):"
+                  << std::endl;
 
       Kokkos::DeviceConfig dev_config(
         num_cuda_blocks,
