@@ -118,6 +118,7 @@ private:
          >::value };
 
   typedef typename VectorType::HostMirror HostVectorType ;
+  typedef typename CommMessageType::HostMirror HostCommMessageType;
 
   enum { ReceiveInPlace =
     Kokkos::Impl::is_same< typename VectorType::memory_space ,
@@ -126,6 +127,8 @@ private:
   const CommMessageType  recv_msg ;
   const CommMessageType  send_msg ;
   const CommIdentType    send_nodeid ;
+  HostCommMessageType    host_recv_msg ;
+  HostCommMessageType    host_send_msg ;
   VectorType             send_buffer ;
   HostVectorType         host_send_buffer ;
   HostVectorType         host_recv_buffer ;
@@ -168,6 +171,8 @@ public:
     : recv_msg( arg_recv_msg )
     , send_msg( arg_send_msg )
     , send_nodeid( arg_send_nodeid )
+    , host_recv_msg()
+    , host_send_msg()
     , send_buffer()
     , host_send_buffer()
     , host_recv_buffer()
@@ -175,12 +180,16 @@ public:
     , count_owned( arg_count_owned )
     , count_receive( arg_count_receive )
     {
+      host_recv_msg = Kokkos::create_mirror_view( recv_msg );
+      host_send_msg = Kokkos::create_mirror_view( send_msg );
+      Kokkos::deep_copy( host_recv_msg , recv_msg );
+      Kokkos::deep_copy( host_send_msg , send_msg );
       if ( ! ReceiveInPlace ) {
         host_recv_buffer = HostVectorType("recv_buffer",count_receive);
       }
 
       unsigned send_count = 0 ;
-      for ( unsigned i = 0 ; i < send_msg.dimension_0() ; ++i ) { send_count += send_msg(i,1); }
+      for ( unsigned i = 0 ; i < send_msg.dimension_0() ; ++i ) { send_count += host_send_msg(i,1); }
       send_buffer      = VectorType("send_buffer",send_count);
       host_send_buffer = Kokkos::create_mirror_view( send_buffer );
     }
@@ -209,8 +218,8 @@ public:
       scalar_type * ptr = recv_vector.ptr_on_device();
 
       for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
-        const int proc  = recv_msg(i,0);
-        const int count = recv_msg(i,1) * chunk ;
+        const int proc  = host_recv_msg(i,0);
+        const int count = host_recv_msg(i,1) * chunk ;
 
         MPI_Irecv( ptr , count * sizeof(scalar_type) , MPI_BYTE ,
                    proc , mpi_tag , mpi_comm , & recv_request[i] );
@@ -222,8 +231,8 @@ public:
       host_scalar_type * ptr = host_recv_buffer.ptr_on_device();
 
       for ( size_t i = 0 ; i < recv_msg.dimension_0() ; ++i ) {
-        const int proc  = recv_msg(i,0);
-        const int count = recv_msg(i,1) * chunk ;
+        const int proc  = host_recv_msg(i,0);
+        const int count = host_recv_msg(i,1) * chunk ;
 
         MPI_Irecv( ptr , count * sizeof(host_scalar_type) , MPI_BYTE ,
                    proc , mpi_tag , mpi_comm , & recv_request[i] );
@@ -235,7 +244,7 @@ public:
 
     MPI_Barrier( mpi_comm );
 
-    { // Pack and send 
+    { // Pack and send
       const Pack pack( send_nodeid , v , send_buffer );
 
       Kokkos::deep_copy( host_send_buffer , send_buffer );
@@ -243,8 +252,8 @@ public:
       host_scalar_type * ptr = host_send_buffer.ptr_on_device();
 
       for ( size_t i = 0 ; i < send_msg.dimension_0() ; ++i ) {
-        const int proc  = send_msg(i,0);
-        const int count = send_msg(i,1) * chunk ;
+        const int proc  = host_send_msg(i,0);
+        const int count = host_send_msg(i,1) * chunk ;
 
         // MPI_Ssend blocks until
         // (1) a receive is matched for the message and
@@ -276,8 +285,8 @@ public:
 
       // Verify message properly received:
 
-      const int  expected_proc = recv_msg(recv_which,0);
-      const int  expected_size = recv_msg(recv_which,1) * chunk * sizeof(scalar_type);
+      const int  expected_proc = host_recv_msg(recv_which,0);
+      const int  expected_size = host_recv_msg(recv_which,1) * chunk * sizeof(scalar_type);
 
       if ( ( expected_proc != recv_proc ) ||
            ( expected_size != recv_size ) ) {
