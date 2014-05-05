@@ -120,13 +120,13 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     useSecantPrecond_ = parlist.get("Use Secant Preconditioning", false);
     krylov_ = Teuchos::null;
+    iterKrylov_ = 0;
+    flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
       krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
-      iterKrylov_ = 0;
-      flagKrylov_ = 0;
     }
 
     // Initialize Secant Object
@@ -171,13 +171,13 @@ public:
     useSecantHessVec_ = parlist.get("Use Secant Hessian-Times-A-Vector", false);
     useSecantPrecond_ = parlist.get("Use Secant Preconditioner", false);
     krylov_ = Teuchos::null;
+    iterKrylov_ = 0;
+    flagKrylov_ = 0;
     if ( edesc_ == DESCENT_NEWTONKRYLOV ) {
       Real CGtol1 = parlist.get("Absolute Krylov Tolerance", 1.e-4);
       Real CGtol2 = parlist.get("Relative Krylov Tolerance", 1.e-2);
       int maxitCG = parlist.get("Maximum Number of Krylov Iterations", 20);
       krylov_ = Teuchos::rcp( new Krylov<Real>(ekv_,CGtol1,CGtol2,maxitCG,useInexact_[2]) );
-      iterKrylov_ = 0;
-      flagKrylov_ = 0;
     }
 
     // Secant Information
