@@ -108,21 +108,24 @@ namespace MueLu {
     //! Input
     //@{
 
-    void DeclareInput(Level & fineLevel, Level & coarseLevel) const;
+    void DeclareInput(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
     //! @name Build methods.
     //@{
 
-    void Build(Level & fineLevel, Level & coarseLevel) const;
-
-    void BuildP(Level & fineLevel, Level & coarseLevel) const;
+    void Build (Level& fineLevel, Level& coarseLevel) const;
+    void BuildP(Level& fineLevel, Level& coarseLevel) const;
 
     //@}
 
   private:
 
+    void BuildPuncoupled(RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
+    void BuildPcoupled  (RCP<Matrix> A, RCP<Aggregates> aggregates, RCP<AmalgamationInfo> amalgInfo, RCP<MultiVector> fineNullspace,
+                         RCP<const Map> coarseMap, RCP<Matrix>& Ptentative, RCP<MultiVector>& coarseNullspace) const;
     bool isGoodMap(const Map& rowMap, const Map& colMap) const;
 
   }; //class TentativePNewFactory
