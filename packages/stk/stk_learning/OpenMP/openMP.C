@@ -7,16 +7,14 @@
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/environment/CPUTime.hpp>
 
+// there seems to be an issue with OpenMP combined with GoogleTest macros with Intel compilers
+// example of error:
+//    openMP.C(206): internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5531
+#if defined(_OPENMP) && !defined(__INTEL_COMPILER)
 #include <omp.h>
 
 namespace
 {
-
-#ifndef __INTEL_COMPILER
-// there seems to be an issue with OpenMP combined with GoogleTest macros with Intel compilers
-// example of error:
-//    openMP.C(206): internal error: assertion failed at: "shared/cfe/edgcpfe/checkdir.c", line 5531
-
 
 //DocTest1
 TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
@@ -240,5 +238,5 @@ TEST(OpenMp, learningAboutPrivates)
 }
 //EndDocTest
 
-#endif
 } // end namespace
+#endif
