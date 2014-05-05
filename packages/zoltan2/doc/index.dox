@@ -18,12 +18,18 @@ Information specifically for developers can be found at \ref z2_developer.
 \section z2_main_intro Introduction to Zoltan2
 
 Zoltan2 is a package for partitioning, load balancing and 
-combinatorial scientific computing. It can be vieweed as
-a complete refactoring of the well known
+combinatorial scientific computing. It can be viewed as
+a complete redesign/refactoring of the well known
 <a href=http://www.cs.sandia.gov/Zoltan > Zoltan </a>
 library into C++ in order to support template programming,
 to scale to larger problems, and to support architecture aware partitioning.
 This library is currently under active development.
+The capabilities in Zoltan2 roughly fall within these areas:
+<ul>
+<li> Partitioning and load-balancing
+<li> Ordering and permutations
+<li> Graph coloring (experimental)
+</ul>
 
 Partitioning functionality that is available now is:
 
