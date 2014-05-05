@@ -204,10 +204,9 @@ public:
   size_type * m_scratchFlags ;
   size_type * m_scratchUnified ;
 
-  static CudaInternal & raw_singleton();
   static CudaInternal & singleton();
 
-  const CudaInternal & assert_initialized() const ;
+  int verify_is_initialized( const char * const label ) const ;
 
   int is_initialized() const
     { return 0 != m_scratchSpace && 0 != m_scratchFlags ; }
@@ -277,25 +276,32 @@ CudaInternal::~CudaInternal()
               << std::endl ;
     std::cerr.flush();
   }
+
+  m_cudaDev             = -1 ;
+  m_maxWarpCount        = 0 ;
+  m_maxBlock            = 0 ;
+  m_maxSharedWords      = 0 ;
+  m_scratchSpaceCount   = 0 ;
+  m_scratchFlagsCount   = 0 ;
+  m_scratchUnifiedCount = 0 ;
+  m_scratchUnifiedSupported = 0 ;
+  m_scratchSpace   = 0 ;
+  m_scratchFlags   = 0 ;
+  m_scratchUnified = 0 ;
 }
 
-CudaInternal & CudaInternal::raw_singleton()
-{ static CudaInternal self ; return self ; }
-
-const CudaInternal & CudaInternal::assert_initialized() const
+int CudaInternal::verify_is_initialized( const char * const label ) const
 {
-  if ( m_cudaDev == -1 ) {
-    const std::string msg("CATASTROPHIC FAILURE: Using Kokkos::Cuda before calling Kokkos::Cuda::initialize(...)");
-    throw_runtime_exception( msg );
+  if ( m_cudaDev < 0 ) {
+    std::cerr << "Kokkos::Cuda::" << label << " : ERROR device not initialized" << std::endl ;
   }
-  return *this ;
+  return 0 <= m_cudaDev ;
 }
 
 CudaInternal & CudaInternal::singleton()
 {
-  CudaInternal & s = raw_singleton();
-  s.assert_initialized();
-  return s ;
+  static CudaInternal self ;
+  return self ;
 }
 
 void CudaInternal::initialize( int cuda_device_id )
@@ -416,9 +422,7 @@ enum { sizeScratchGrain = sizeof(ScratchGrain) };
 Cuda::size_type *
 CudaInternal::scratch_flags( const Cuda::size_type size )
 {
-  assert_initialized();
-
-  if ( m_scratchFlagsCount * sizeScratchGrain < size ) {
+  if ( verify_is_initialized("scratch_flags") && m_scratchFlagsCount * sizeScratchGrain < size ) {
 
     Cuda::memory_space::decrement( m_scratchFlags );
   
@@ -440,9 +444,7 @@ CudaInternal::scratch_flags( const Cuda::size_type size )
 Cuda::size_type *
 CudaInternal::scratch_space( const Cuda::size_type size )
 {
-  assert_initialized();
-
-  if ( m_scratchSpaceCount * sizeScratchGrain < size ) {
+  if ( verify_is_initialized("scratch_space") && m_scratchSpaceCount * sizeScratchGrain < size ) {
 
     Cuda::memory_space::decrement( m_scratchSpace );
   
@@ -462,9 +464,8 @@ CudaInternal::scratch_space( const Cuda::size_type size )
 Cuda::size_type *
 CudaInternal::scratch_unified( const Cuda::size_type size )
 {
-  assert_initialized();
 
-  if ( m_scratchUnifiedSupported ) {
+  if ( verify_is_initialized("scratch_unified") && m_scratchUnifiedSupported ) {
 
     const bool allocate   = m_scratchUnifiedCount * sizeScratchGrain < size ;
     const bool deallocate = m_scratchUnified && ( 0 == size || allocate );
@@ -547,10 +548,10 @@ Cuda::size_type Cuda::detect_device_count()
 { return Impl::CudaInternalDevices::singleton().m_cudaDevCount ; }
 
 int Cuda::is_initialized()
-{ return Impl::CudaInternal::raw_singleton().is_initialized(); }
+{ return Impl::CudaInternal::singleton().is_initialized(); }
 
 void Cuda::initialize( const Cuda::SelectDevice config )
-{ Impl::CudaInternal::raw_singleton().initialize( config.cuda_device_id ); }
+{ Impl::CudaInternal::singleton().initialize( config.cuda_device_id ); }
 
 std::vector<unsigned>
 Cuda::detect_device_arch()
@@ -570,17 +571,23 @@ Cuda::size_type Cuda::device_arch()
 {
   const int dev_id = Impl::CudaInternal::singleton().m_cudaDev ;
 
-  const struct cudaDeviceProp & cudaProp =
-    Impl::CudaInternalDevices::singleton().m_cudaProp[ dev_id ] ;
+  int dev_arch = 0 ;
 
-  return cudaProp.major * 100 + cudaProp.minor ;
+  if ( 0 <= dev_id ) {
+    const struct cudaDeviceProp & cudaProp =
+      Impl::CudaInternalDevices::singleton().m_cudaProp[ dev_id ] ;
+
+    dev_arch = cudaProp.major * 100 + cudaProp.minor ;
+  }
+
+  return dev_arch ;
 }
 
 void Cuda::finalize()
-{ Impl::CudaInternal::raw_singleton().finalize(); }
+{ Impl::CudaInternal::singleton().finalize(); }
 
 void Cuda::print_configuration( std::ostream & s , const bool )
-{ Impl::CudaInternal::raw_singleton().print_configuration( s ); }
+{ Impl::CudaInternal::singleton().print_configuration( s ); }
 
 bool Cuda::sleep() { return false ; }
 

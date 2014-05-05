@@ -18,16 +18,11 @@ namespace Kokkos {
         if(Cuda::host_mirror_device_type::is_initialized()) {
           // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
           if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0) {
-            //Don't try to kill me if HostSpace was already destroyed.
-            //Typical reason: static global instance of node is used, which might get destroyed after
-            //the static HostSpace is destroyed.
-            if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-              Cuda::host_mirror_device_type::finalize();
+            Cuda::host_mirror_device_type::finalize();
           }
         }
         if(Cuda::is_initialized())
-          if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-            Cuda::finalize();
+          Cuda::finalize();
       }
     }
     template<>

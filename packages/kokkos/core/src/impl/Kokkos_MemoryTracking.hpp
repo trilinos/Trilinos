@@ -125,10 +125,14 @@ public:
   MemoryTracking & operator[]( const iType & i ) const
     { return *m_tracking[i]; }
 
+  /** \brief Construct with a name for error messages */
   explicit MemoryTracking( const std::string & space );
 
   /** \brief  Print memory leak warning for all entries. */
   ~MemoryTracking();
+
+  /** \brief Query if constructed */
+  bool exists() const { return ! m_tracking_end.empty(); }
 
 private:
   MemoryTracking();

@@ -146,6 +146,22 @@ Impl::MemoryTracking & cuda_space_singleton()
   return self ;
 }
 
+bool cuda_space_verify_modifiable( const char * const label )
+{
+  static const char error_in_parallel[] = "Called with HostSpace::in_parallel()" ;
+  static const char error_not_exists[]  = "Called after return from main()" ;
+
+  const char * const error_msg =
+    HostSpace::in_parallel() ? error_in_parallel : (
+    ! cuda_space_singleton().exists() ? error_not_exists : (const char *) 0 );
+
+  if ( error_msg ) {
+    std::cerr << "Kokkos::CudaSpace::" << label << " ERROR : " << error_msg << std::endl ;
+  }
+
+  return error_msg == 0  ;
+}
+
 }
 
 /*--------------------------------------------------------------------------*/
@@ -158,15 +174,11 @@ void * CudaSpace::allocate(
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  if ( HostSpace::in_parallel() ) {
-    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::allocate ERROR : Called with HostSpace::in_parallel" );
-  }
+  void * ptr = 0 ;
 
   const size_t size = scalar_size * scalar_count ;
 
-  void * ptr = 0 ;
-
-  if ( 0 < scalar_size * scalar_count ) {
+  if ( cuda_space_verify_modifiable("allocate") && size ) {
 
     try {
       Kokkos::Impl::cuda_device_synchronize();
@@ -179,7 +191,7 @@ void * CudaSpace::allocate(
 
       Kokkos::Impl::cuda_device_synchronize();
     }
-    catch( std::runtime_error & err) {
+    catch( std::runtime_error & err ) {
       std::ostringstream msg ;
       msg << "Kokkos::Impl::CudaSpace::allocate( "
           << label
@@ -200,20 +212,16 @@ void * CudaSpace::allocate(
 
 void CudaSpace::increment( const void * ptr )
 {
-  if ( HostSpace::in_parallel() ) {
-    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::increment ERROR : Called with HostSpace::in_parallel" );
+  if ( cuda_space_verify_modifiable("increment") ) {
+    cuda_space_singleton().increment( ptr );
   }
-
-  cuda_space_singleton().increment( ptr );
 }
 
 void CudaSpace::decrement( const void * ptr )
 {
-  if ( HostSpace::in_parallel() ) {
-    Kokkos::Impl::throw_runtime_exception( "Kokkos::CudaSpace::decrement ERROR : Called with HostSpace::in_parallel" );
+  if ( cuda_space_verify_modifiable("decrement") ) {
+    cuda_space_singleton().decrement( ptr );
   }
-
-  cuda_space_singleton().decrement( ptr );
 }
 
 void CudaSpace::print_memory_view( std::ostream & o )
@@ -262,7 +270,7 @@ cuda_texture_object_attach(
   const cudaChannelFormatDesc & desc ,
   const void * const            ptr )
 {
-  if ( 0 == ptr ) return 0 ;
+  if ( 0 == ptr || ! cuda_space_verify_modifiable("texture_object_attach") ) return 0 ;
 
   const unsigned max_count = 1 << 28 ;
 
