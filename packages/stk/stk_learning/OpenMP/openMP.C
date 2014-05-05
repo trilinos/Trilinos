@@ -225,7 +225,7 @@ TEST(OpenMp, learningAboutPrivates)
         #pragma omp for lastprivate(c)
         for(int i =0; i <= numberOfIterations; i++)
         {
-            EXPECT_NE(15, c.value);
+            EXPECT_NE(15, c.value);  // with excruciatingly high probability
 
             a.value = i;
             b.value = i;
