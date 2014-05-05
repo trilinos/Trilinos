@@ -338,18 +338,14 @@ namespace MueLu {
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Multiply(const Matrix& A, bool transposeA,
                                                                           const Matrix& B, bool transposeB,
                                                                           RCP<Matrix> C_in,
-                                                                          Teuchos::FancyOStream &fos,
+                                                                          Teuchos::FancyOStream& fos,
                                                                           bool doFillComplete,
                                                                           bool doOptimizeStorage) {
 
+    TEUCHOS_TEST_FOR_EXCEPTION(!A.isFillComplete(), Exceptions::RuntimeError, "A is not fill-completed");
+    TEUCHOS_TEST_FOR_EXCEPTION(!B.isFillComplete(), Exceptions::RuntimeError, "B is not fill-completed");
 
-    // Preconditions
-    if (!A.isFillComplete())
-      throw Exceptions::RuntimeError("A is not fill-completed");
-    if (!B.isFillComplete())
-      throw Exceptions::RuntimeError("B is not fill-completed");
-
-    // Optimization using ML Multiply when available
+    // Optimization using ML Multiply when available and requested
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT) && defined(HAVE_MUELU_ML_MMM)
     if (B.getDomainMap()->lib() == Xpetra::UseEpetra && !transposeA && !transposeB) {
       RCP<const Epetra_CrsMatrix> epA = Op2EpetraCrs(rcpFromRef(A));
@@ -363,7 +359,11 @@ namespace MueLu {
         C->fillComplete(B.getDomainMap(), A.getRangeMap(), params);
       }
 
+      // Fill strided maps information
+      // This is necessary since the ML matrix matrix multiplication routine has no handling for this
+      // TODO: move this call to MLMultiply...
       C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
+
       return C;
     }
 #endif // EPETRA + EPETRAEXT + ML
@@ -400,13 +400,8 @@ namespace MueLu {
 
     Xpetra::MatrixMatrix::Multiply(A, transposeA, B, transposeB, *C, doFillComplete, doOptimizeStorage);
 
-    // Fill strided maps information
-    // This is necessary since the ML matrix matrix multiplication routine has no handling for this
-    // TODO: move this call to MLMultiply...
-    C->CreateView("stridedMaps", rcpFromRef(A), transposeA, rcpFromRef(B), transposeB);
-
     return C;
-  } //Multiply()
+  }
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_EPETRAEXT)
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
