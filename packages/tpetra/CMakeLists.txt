@@ -89,6 +89,12 @@ ELSE()
   MESSAGE(STATUS "Not enabling Tpetra/RTI")
 ENDIF()
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE MMM_TIMINGS
+  HAVE_TPETRA_MMM_TIMINGS
+  "Enable timers for matrix-matrix multiplication"
+  OFF )
+
+
 #
 # Decide whether to enable the Kokkos Refactor version of Tpetra.
 #
