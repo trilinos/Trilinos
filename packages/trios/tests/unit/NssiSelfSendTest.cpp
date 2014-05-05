@@ -120,7 +120,7 @@ int main(int argc, char *argv[])
     int rc;
     nssi_service svc;
 
-    logger_init(LOG_DEBUG, "nssiselfsend.log");
+    logger_init(LOG_ERROR, "nssiselfsend.log");
 
     pthread_barrier_init(&barrier, NULL, 2);
 
