@@ -68,7 +68,14 @@ int ex_prepare_result_var(int exoid, int num_vars,
   }
 
   /* Now define type_name variable name variable */
-  nc_inq_dimid (exoid, DIM_STR_NAME, &dim_str_name);
+  if ((status = nc_inq_dimid(exoid, DIM_STR_NAME, &dim_str_name)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to get string length in file id %d",exoid);
+    ex_err("ex_put_variable_param",errmsg,exerrval);
+    return (EX_FATAL);
+  }
+  
   dims[0] = dimid;
   dims[1] = dim_str_name;
   if ((status = nc_def_var (exoid, variable_name,
@@ -222,7 +229,13 @@ int ex_put_variable_param (int exoid,
 					DIM_NUM_GLO_VAR,VAR_NAME_GLO_VAR)) == 1)
       goto error_ret;
 
-    nc_inq_dimid (exoid, DIM_NUM_GLO_VAR, &dimid);
+    if ((status = nc_inq_dimid (exoid, DIM_NUM_GLO_VAR, &dimid)) != NC_NOERR) {
+      exerrval = status;
+      sprintf(errmsg,
+	      "Error: failed to get global variable count in file id %d",exoid);
+      ex_err("ex_put_variable_param",errmsg,exerrval);
+      return (EX_FATAL);
+    }
     dims[0] = time_dim;
     dims[1] = dimid;
     if ((status = nc_def_var (exoid, VAR_GLO_VAR,

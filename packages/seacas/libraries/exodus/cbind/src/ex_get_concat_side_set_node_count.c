@@ -65,6 +65,12 @@
                       elem_blk_parms[i].elem_type,\
                       elem_blk_parms[i].num_nodes_per_elem);\
               ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
+              safe_free(elem_blk_ids); \
+              safe_free(side_set_ids); \
+              safe_free(ss_elem_ndx); \
+              safe_free(side_set_elem_list); \
+              safe_free(side_set_side_list); \
+              safe_free(elem_blk_parms); \
               return(EX_FATAL);
 /*! \endcond */
 
@@ -86,7 +92,7 @@ int ex_get_concat_side_set_node_count(int exoid,
   int int_size, ids_size;
   int status;
   
-  struct elem_blk_parm  *elem_blk_parms;
+  struct elem_blk_parm  *elem_blk_parms = NULL;
 
   char errmsg[MAX_ERR_LENGTH];
 
@@ -622,7 +628,7 @@ int ex_get_concat_side_set_node_count(int exoid,
   safe_free(ss_elem_ndx);
   safe_free(side_set_elem_list);
   safe_free(side_set_side_list);
-
+  safe_free(elem_blk_parms);
   return(EX_NOERR);
 
  error_ret:
@@ -631,5 +637,6 @@ int ex_get_concat_side_set_node_count(int exoid,
   safe_free(ss_elem_ndx);
   safe_free(side_set_elem_list);
   safe_free(side_set_side_list);
+  safe_free(elem_blk_parms);
   return (EX_FATAL);
 }

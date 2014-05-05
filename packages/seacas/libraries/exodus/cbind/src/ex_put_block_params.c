@@ -141,7 +141,7 @@ int ex_put_block_params( int         exoid,
 	      ex_name_of_object(blocks[i].type), exoid);
       ex_err("ex_put_block_params",errmsg,exerrval);
       free(blocks_to_define);
-      return (EX_FATAL);
+      return EX_FATAL;
     }
 
     ex_id_lkup(exoid,blocks[i].type,blocks[i].id); /* Error value used, but don't need return value */
@@ -360,7 +360,7 @@ int ex_put_block_params( int         exoid,
 	sprintf(errmsg,
 		"Error: failed to get string length in file id %d",exoid);
 	ex_err("ex_put_block_params",errmsg,exerrval);
-	goto error_ret;         /* exit define mode and return */
+	goto error_ret;
       }
      
       /* Attribute names... */
@@ -402,7 +402,7 @@ int ex_put_block_params( int         exoid,
 	sprintf( errmsg, "Error: Bad block type (%d) for nsided/nfaced block in file id %d",
 		 blocks[i].type, exoid );
 	ex_err( "ex_put_block_params", errmsg, exerrval );
-	goto error_ret;         /* exit define mode and return */
+	goto error_ret;
       }
 
       if (arbitrary_polyhedra == 1) {

@@ -58,8 +58,8 @@
 #endif
 
 /* EXODUS II version number */
-#define EX_API_VERS 6.07f
-#define EX_API_VERS_NODOT 607
+#define EX_API_VERS 6.08f
+#define EX_API_VERS_NODOT 608
 #define EX_VERS EX_API_VERS
 #define NEMESIS_API_VERSION		EX_API_VERS
 #define NEMESIS_API_VERSION_NODOT	EX_API_VERS_NODOT
@@ -91,8 +91,8 @@ extern "C" {
    *@{
    */
   /* Modes for ex_open */
-#define EX_READ                 0x0000 /**< ex_open(): open file for reading (default) */
 #define EX_WRITE                0x0001 /**< ex_open(): open existing file for appending. */
+#define EX_READ                 0x0002 /**< ex_open(): open file for reading (default) */
 
 #define EX_NOCLOBBER            0x0004 /**< Don't overwrite existing database, default */
 #define EX_CLOBBER              0x0008 /**< Overwrite existing database if it exists */

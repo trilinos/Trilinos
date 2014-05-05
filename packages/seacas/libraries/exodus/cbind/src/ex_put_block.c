@@ -83,7 +83,8 @@ int ex_put_block( int         exoid,
   ex_block block;
   block.type = blk_type;
   block.id   = blk_id;
-  strcpy(block.topology, entry_descrip);
+  strncpy(block.topology, entry_descrip, MAX_STR_LENGTH+1);
+  block.topology[MAX_STR_LENGTH] = '\0';
   block.num_entry           = num_entries_this_blk;
   block.num_nodes_per_entry = num_nodes_per_entry;
   block.num_edges_per_entry = num_edges_per_entry;

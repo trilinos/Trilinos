@@ -806,7 +806,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
 	
 	if (exoid[npd] < 0) {
 	  printf ("after ex_create\n");
-	  
+	  free(exoid);
 	  return( 1 );
 	}
       }
@@ -832,6 +832,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
 	
 	if (exoid[npd] < 0) {
 	  printf ("after ex_create\n");
+	  free(exoid);
 	  return( 1 );
 	}
       }
@@ -842,6 +843,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_init, error = %d\n", err);
 	ex_close (exoid[npd]);
+	free(exoid);
 
 	return( 1);
       }
@@ -868,7 +870,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_elem_block, error = %d\n", err);
 	ex_close (exoid[npd]);
-
+	free(exoid);
 	return( 1 );
       }
   
@@ -882,6 +884,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_coord, error = %d\n", err);
 	ex_close (exoid[npd]);
+	free(exoid);
 
 	return( 1 );
       }
@@ -896,6 +899,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_elem_conn, error = %d\n", err);
 	ex_close (exoid[npd]);
+	free(exoid);
 
 	return( 1);
       }
@@ -911,6 +915,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_id_map, error = %d\n", err);
 	ex_close (exoid[npd]);
+	free(exoid);
 
 	return( 1 );
       }
@@ -927,6 +932,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
       if (err) {
 	printf ("after ex_put_id_map, error = %d\n", err);
 	ex_close (exoid[npd]);
+	free(exoid);
 
 	return( 1 );
       }
@@ -1110,6 +1116,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
 	err = ex_close (exoid[npd]);
 	if (err) {
 	  printf ("after ex_close, error = %d\n", err);
+	  free(exoid);
 	  return( 1);
 	}
       }
@@ -1170,6 +1177,7 @@ int write_exo_mesh (char *file_name, int rank, int num_dim, int num_domains, int
     if ( rank == 0 ) 
       fprintf ( stderr, "Exodus Write: cannot get %s file size.\n", tmp_name );
   
+    free(exoid);
     return( 1 );
   }
   else

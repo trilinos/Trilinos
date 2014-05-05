@@ -220,8 +220,8 @@ static void invalidate_id_status(int exoid, const char *var_stat,
       for (i=0; i < count; i++) {
 	ids[i] = EX_INVALID_ID;
       }
-      nc_inq_varid(exoid, var_id,   &id_var);
-      nc_put_var_int(exoid, id_var,   ids);
+      (void)nc_inq_varid(exoid, var_id,   &id_var);
+      (void)nc_put_var_int(exoid, id_var,   ids);
     }
 
     if (var_stat != 0) {
@@ -229,8 +229,8 @@ static void invalidate_id_status(int exoid, const char *var_stat,
 	ids[i] = 0;
       }
 
-      nc_inq_varid(exoid, var_stat, &stat_var);
-      nc_put_var_int(exoid, stat_var, ids);
+      (void)nc_inq_varid(exoid, var_stat, &stat_var);
+      (void)nc_put_var_int(exoid, stat_var, ids);
     }
   }
 }

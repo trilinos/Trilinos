@@ -106,7 +106,6 @@ int ex_put_truth_table (int  exoid,
   if (obj_type == EX_ELEM_BLOCK) {
     ex_get_dimension(exoid, DIM_NUM_ELE_VAR,  "element variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_ELEM_TAB, &varid);
     var_name = "vals_elem_var";
     ent_type = "eb";
     ent_size = "num_el_in_blk";
@@ -116,7 +115,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_EDGE_BLOCK) {
     ex_get_dimension(exoid, DIM_NUM_EDG_VAR, "edge block variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_EBLK_TAB, &varid);
     var_name = "vals_edge_var";
     ent_type = "eb";
     ent_size = "num_ed_in_blk";
@@ -126,7 +124,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type  == EX_FACE_BLOCK) {
     ex_get_dimension(exoid, DIM_NUM_FAC_VAR, "face block variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_FBLK_TAB, &varid);
     var_name = "vals_face_var";
     ent_type = "fb";
     ent_size = "num_fa_in_blk";
@@ -136,7 +133,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_SIDE_SET) {
     ex_get_dimension(exoid, DIM_NUM_SSET_VAR, "sideset variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_SSET_TAB, &varid);
     var_name = "vals_sset_var";
     ent_type = "ss";
     ent_size = "num_side_ss";
@@ -146,7 +142,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_NODE_SET) {
     ex_get_dimension(exoid, DIM_NUM_NSET_VAR, "nodeset variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_NSET_TAB, &varid);
     var_name = "vals_nset_var";
     ent_type = "ns";
     ent_size = "num_nod_ns";
@@ -156,7 +151,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_EDGE_SET) {
     ex_get_dimension(exoid, DIM_NUM_ESET_VAR, "edge set variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_ESET_TAB, &varid);
     var_name = "vals_eset_var";
     ent_type = "es";
     ent_size = "num_edge_es";
@@ -166,7 +160,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_FACE_SET) {
     ex_get_dimension(exoid, DIM_NUM_FSET_VAR, "face set variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_FSET_TAB, &varid);
     var_name = "vals_fset_var";
     ent_type = "fs";
     ent_size = "num_face_fs";
@@ -176,7 +169,6 @@ int ex_put_truth_table (int  exoid,
   else if (obj_type == EX_ELEM_SET) {
     ex_get_dimension(exoid, DIM_NUM_ELSET_VAR, "element set variables",
 		     &num_var_db, &numelvardim, routine);
-    nc_inq_varid (exoid, VAR_ELSET_TAB, &varid);
     var_name = "vals_elset_var";
     ent_type = "es";
     ent_size = "num_ele_els";
@@ -192,7 +184,7 @@ int ex_put_truth_table (int  exoid,
     ex_err("ex_get_varid",errmsg,exerrval);
     return (EX_WARN);
   }
-   
+       
   if ((int)num_entity != num_blk) {
     exerrval = EX_FATAL;
     sprintf(errmsg,

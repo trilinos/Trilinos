@@ -126,9 +126,9 @@
   int status;
   int dimid; /* ID of the dimension of # frames */
   char errmsg[MAX_ERR_LENGTH];
-  int varids;                      /* variable id for the frame ids  */
+  int varids;                    /* variable id for the frame ids  */
   size_t start=0;                /* start value for varputs        */
-  size_t count;                  /* number vars to put in varput   */
+  size_t count=0;                /* number vars to put in varput   */
 
   /* get the dimensions */
   assert( nframes !=NULL );
@@ -138,7 +138,7 @@
     return EX_NOERR;
   }
 
-  nc_inq_dimlen(exoid,dimid,&count);
+  (void)nc_inq_dimlen(exoid,dimid,&count);
   *nframes=(int)count;
 
   if ( count==0 )

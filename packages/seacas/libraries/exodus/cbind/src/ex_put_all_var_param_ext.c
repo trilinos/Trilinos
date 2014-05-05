@@ -407,7 +407,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
   int status;
   
   dims[0] = dimension;
-  nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
+  (void)nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
   if ((status=nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
@@ -495,7 +495,13 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   int varid;
   int status;
 
-  nc_inq_dimid(exoid, DIM_TIME, &time_dim);
+  if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to locate time dimension in file id %d", exoid);
+    ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
+    return -1;
+  }
 
   if (var_tab == NULL) {
     exerrval = EX_BADPARAM;

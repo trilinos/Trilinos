@@ -472,10 +472,6 @@ int main (int argc, char **argv)
 
    free (connect);
 
-
-   /* Add an attribute to block 1 */
-   ex_add_attr(exoid, EX_ELEM_BLOCK, blocks[0].id, 1);
-   
    /* write element block attributes */
    attrib[0] = 3.14159;
    error = ex_put_attr (exoid, EX_ELEM_BLOCK, blocks[0].id, attrib);

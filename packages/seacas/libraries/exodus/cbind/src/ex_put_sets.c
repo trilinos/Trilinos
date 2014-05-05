@@ -363,9 +363,10 @@ int ex_put_sets (int   exoid,
 	return (EX_FATAL);
       }
     }
-    free(sets_to_define);
   }
   
+  free(sets_to_define);
+
   /* Sets are now all defined; see if any set data needs to be output... */
   status = EX_NOERR;
   for (i=0; i < set_count; i++) {
