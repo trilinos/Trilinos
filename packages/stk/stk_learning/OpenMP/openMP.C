@@ -21,7 +21,7 @@ TEST(OPENMP, HelloWorldDontSetNumThreadsInsideCode)
 {
     #pragma omp parallel
     {
-        std::cout << "Hello World\n";
+        std::cout << "Hello, World!\n";
     }
 }
 
@@ -32,7 +32,7 @@ TEST(OpenMp, HelloWorldSetNumThreadsstart_timeInsideCode)
     omp_set_num_threads(numThreads);
     #pragma omp parallel
     {
-        std::cout << "Hello World\n";
+        std::cout << "Hello, World!\n";
     }
 }
 
@@ -46,7 +46,7 @@ TEST(OPENMP, HelloWorldUsingPrivate)
     {
         threadId = omp_get_thread_num();
         std::stringstream avoidScrambledOutputByHavingSingleCoutCommand;
-        avoidScrambledOutputByHavingSingleCoutCommand << "Hello World from thread " << threadId << "/" << numThreads << std::endl;
+        avoidScrambledOutputByHavingSingleCoutCommand << "Hello, World! (from thread " << threadId << "/" << numThreads << ")" << std::endl;
         std::cout << avoidScrambledOutputByHavingSingleCoutCommand.str();
     }
 }
