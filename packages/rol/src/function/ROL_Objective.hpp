@@ -90,7 +90,7 @@ public:
 
   /** \brief Apply preconditioner to vector.
   */
-  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x ) {
+  virtual void precond( Vector<Real> &Pv, const Vector<Real> &v, const Vector<Real> &x, Real &tol ) {
     Pv.set(v);
   }
 
