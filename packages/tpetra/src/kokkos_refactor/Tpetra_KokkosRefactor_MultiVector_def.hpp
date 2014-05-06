@@ -43,8 +43,6 @@
 #define TPETRA_KOKKOS_REFACTOR_MULTIVECTOR_DEF_HPP
 
 #include <Kokkos_DefaultArithmetic.hpp>
-#include <Kokkos_NodeTrace.hpp>
-#include <Teuchos_Assert.hpp>
 #include <Teuchos_as.hpp>
 #include <Tpetra_Util.hpp>
 #include <Tpetra_Vector.hpp>
@@ -1516,7 +1514,6 @@ namespace Tpetra {
     mv = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (this->getMap (), numCopyVecs, zeroData));
     // copy data from *this into mv
     for (size_t j=0; j<numCopyVecs; ++j) {
-      KOKKOS_NODE_TRACE("MultiVector::subCopy()")
       node->template copyBuffers<Scalar> (getLocalLength (),
                                           getSubArrayRCP (MVT::getValues (lclMV_), cols[j]),
                                           MVT::getValuesNonConst (mv->lclMV_, j));
@@ -1543,7 +1540,6 @@ namespace Tpetra {
     mv = rcp (new MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (this->getMap (), numCopyVecs, zeroData));
     // copy data from *this into mv
     for (size_t js=colRng.lbound(), jd=0; jd<numCopyVecs; ++jd, ++js) {
-      KOKKOS_NODE_TRACE("MultiVector::subCopy()")
       node->template copyBuffers<Scalar> (getLocalLength (),
                                           getSubArrayRCP (MVT::getValues (lclMV_), js),
                                           MVT::getValuesNonConst (mv->lclMV_, jd));
@@ -1813,7 +1809,6 @@ namespace Tpetra {
                   myLen   = getLocalLength();
     if (myLen > 0) {
       ArrayRCP<const Scalar> mydata = MVT::getValues(lclMV_);
-      KOKKOS_NODE_TRACE("MultiVector::getVectorNonConst()")
       ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,mydata);
       typename ArrayView<Scalar>::iterator Aptr = A.begin();
       for (size_t j=0; j<numCols; j++) {
@@ -1846,7 +1841,6 @@ namespace Tpetra {
                    myLen = getLocalLength();
     if (myLen > 0) {
       ArrayRCP<const Scalar> mybuff = MVT::getValues(lclMV_);
-      KOKKOS_NODE_TRACE("MultiVector::get2dCopy()")
       ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(mybuff.size(), mybuff);
       for (size_t j=0; j<numCols; ++j) {
 #ifdef HAVE_TPETRA_DEBUG
@@ -1869,7 +1863,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dView() requires that this MultiVector have constant stride.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    KOKKOS_NODE_TRACE("MultiVector::get1dView()")
     return node->template viewBuffer<Scalar>( getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValues(lclMV_) );
   }
 
@@ -1881,7 +1874,6 @@ namespace Tpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
       "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
     Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    KOKKOS_NODE_TRACE("MultiVector::get1dViewNonConst()")
     return node->template viewBufferNonConst<Scalar>( KokkosClassic::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
   }
 
@@ -1901,7 +1893,6 @@ namespace Tpetra {
                     numCols = getNumVectors(),
                     myLen   = getLocalLength();
       if (myLen > 0) {
-        KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
         ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
@@ -1915,7 +1906,6 @@ namespace Tpetra {
                      myCols = getNumVectors(),
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
-        KOKKOS_NODE_TRACE("MultiVector::get2dViewNonConst()")
         ArrayRCP<Scalar> myview = node->template viewBufferNonConst<Scalar>(KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,MVT::getValuesNonConst(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
@@ -1941,7 +1931,6 @@ namespace Tpetra {
                     numCols = getNumVectors(),
                     myLen   = getLocalLength();
       if (myLen > 0) {
-        KOKKOS_NODE_TRACE("MultiVector::get2dView()")
         ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
         for (size_t j=0; j<numCols; ++j) {
           views[j] = myview.persistingView(0,myLen);
@@ -1955,7 +1944,6 @@ namespace Tpetra {
                      myCols = getNumVectors(),
                      myLen  = MVT::getNumRows(lclMV_);
       if (myLen > 0) {
-        KOKKOS_NODE_TRACE("MultiVector::get2dView()")
         ArrayRCP<const Scalar> myview = node->template viewBuffer<Scalar>(myStride*(numCols-1)+myLen,MVT::getValues(lclMV_));
         for (size_t j=0; j<myCols; ++j) {
           views[j] = myview.persistingView(whichVectors_[j]*myStride,myLen);
@@ -2092,7 +2080,6 @@ namespace Tpetra {
       TEUCHOS_TEST_FOR_EXCEPT(&C_mv != &lclMV_);
       const size_t numVecs = MVT::getNumCols(lclMV_);
       for (size_t j=0; j < numVecs; ++j) {
-        KOKKOS_NODE_TRACE("MultiVector::multiply()")
         node->template copyBuffers<Scalar>(getLocalLength(),MVT::getValues(C_mv,j),MVT::getValuesNonConst(lclMV_,whichVectors_[j]));
       }
     }
@@ -2164,7 +2151,6 @@ namespace Tpetra {
                  myLen    = MVT::getNumRows(lclMV_);
     Array<Scalar> sourceBuffer(numCols*myLen), tmparr(0);
     bool packed = isConstantStride() && (myStride == myLen);
-    KOKKOS_NODE_TRACE("MultiVector::reduce()")
     ArrayRCP<Scalar> bufView = node->template viewBufferNonConst<Scalar>(
                                           KokkosClassic::ReadWrite,myStride*(numCols-1)+myLen,
                                           MVT::getValuesNonConst(lclMV_) );
