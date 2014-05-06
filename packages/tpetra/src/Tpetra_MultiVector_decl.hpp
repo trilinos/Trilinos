@@ -388,6 +388,9 @@ namespace Tpetra {
     //! \name Constructors and destructor
     //@{
 
+    //! Default constructor: makes a MultiVector with no rows or columns.
+    MultiVector ();
+
     /// \brief Basic constuctor.
     ///
     /// \param map [in] Map describing the distribution of rows.

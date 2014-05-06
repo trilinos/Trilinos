@@ -68,6 +68,13 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector () :
+    DO (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, Node> ())),
+    lclMV_ (this->getMap ()->getNode ())
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                size_t NumVectors,
                bool zeroOut) : /* default is true */
