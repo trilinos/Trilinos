@@ -277,7 +277,7 @@ namespace ROL {
         this->secant_->applyH( Mv, v, x );
       }
       else {
-        this->obj_->precond( Mv, v, x );
+        this->obj_->precond( Mv, v, x, tol );
       }
     }
 
