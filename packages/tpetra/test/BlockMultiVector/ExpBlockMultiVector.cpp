@@ -110,6 +110,12 @@ namespace {
                          Y.getMap ()->isSameAs (meshMap), true );
 
     TEST_EQUALITY_CONST( Y.getPointMap ().isSameAs (X.getPointMap ()), true );
+
+    BMV Z; // Exercise the default constructor.
+
+    TEST_EQUALITY_CONST( Z.getMap ().is_null (), true );
+    TEST_EQUALITY_CONST( Z.getBlockSize (), static_cast<LO> (0) );
+    TEST_EQUALITY_CONST( Z.getNumVectors (), static_cast<LO> (0) );
   }
 
 //
