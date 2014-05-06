@@ -1,43 +1,43 @@
 
 #ifndef F77_FUNC
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define F77_FUNC(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define F77_FUNC(name,NAME) NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define F77_FUNC(name,NAME) name ## _
+#  else
+#    define F77_FUNC(name,NAME) NAME
 #  endif
 #endif
 
 /* As F77_FUNC, but for C identifiers containing underscores. */
 #ifndef F77_FUNC_
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define F77_FUNC_(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define F77_FUNC_(name,NAME) NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define F77_FUNC_(name,NAME) name ## _
+#  else
+#    define F77_FUNC_(name,NAME) NAME
 #  endif
 #endif
 
 #ifndef FC_FUNC
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define FC_FUNC(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FC_FUNC(name,NAME) NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define FC_FUNC(name,NAME) name ## _
+#  else
+#    define FC_FUNC(name,NAME) NAME
 #  endif
 #endif
 
 /* As FC_FUNC, but for C identifiers containing underscores. */
 #ifndef FC_FUNC_
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define FC_FUNC_(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FC_FUNC_(name,NAME) NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define FC_FUNC_(name,NAME) name ## _
+#  else
+#    define FC_FUNC_(name,NAME) NAME
 #  endif
 #endif
 
@@ -47,45 +47,45 @@
 
  /* Mangling for Fortran global symbols without underscores. */
 #ifndef FortranCInterface_GLOBAL
-#  if ! (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define FortranCInterface_GLOBAL(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FortranCInterface_GLOBAL(name,NAME) NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define FortranCInterface_GLOBAL(name,NAME) name##_
+#  else
+#    define FortranCInterface_GLOBAL(name,NAME) NAME
 #  endif
 #endif
  
  /* Mangling for Fortran global symbols with underscores. */
 #ifndef FortranCInterface_GLOBAL_
-#  if ! (defined(__IBMC__) || defined(__IBMCPP__))
-#    define FortranCInterface_GLOBAL_(name,NAME) name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FortranCInterface_GLOBAL_(name,NAME) NAME
+#  if defined( FORTRAN_NO_UNDERSCORE )
+#    define FortranCInterface_GLOBAL(name,NAME) name
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
+#    define FortranCInterface_GLOBAL(name,NAME) name##_
 #  else
-#    define FortranCInterface_GLOBAL_(name,NAME) name##_
+#    define FortranCInterface_GLOBAL(name,NAME) NAME
 #  endif
 #endif
  
  /* Mangling for Fortran module symbols without underscores. */
 #ifndef FortranCInterface_MODULE
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define FortranCInterface_MODULE(mod_name,name, mod_NAME,NAME) __##mod_name##_NMOD_##name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FortranCInterface_MODULE(mod_name,name, mod_NAME,NAME) mod_NAME##_mp_MOD_##NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define FortranCInterface_MODULE(mod_name,name, mod_NAME,NAME) __##mod_name##_MOD_##name
+#  else
+#    define FortranCInterface_MODULE(mod_name,name, mod_NAME,NAME) mod_NAME##_mp_MOD_##NAME
 #  endif
 #endif
  
  /* Mangling for Fortran module symbols with underscores. */
 #ifndef FortranCInterface_MODULE_
-#  if (defined(__IBMC__) || defined(__IBMCPP__))
+#  if defined( FORTRAN_NO_UNDERSCORE )
 #    define FortranCInterface_MODULE_(mod_name,name, mod_NAME,NAME) __##mod_name##_NMOD_##name
-#  elif (defined(WIN32) || defined(ICL))
-#    define FortranCInterface_MODULE_(mod_name,name, mod_NAME,NAME) mod_NAME##_mp_MOD_##NAME
-#  else
+#  elif defined( FORTRAN_ONE_UNDERSCORE )
 #    define FortranCInterface_MODULE_(mod_name,name, mod_NAME,NAME) __##mod_name##_MOD_##name
+#  else
+#    define FortranCInterface_MODULE_(mod_name,name, mod_NAME,NAME) mod_NAME##_mp_MOD_##NAME
 #  endif
 #endif
 
