@@ -197,20 +197,20 @@ struct Vectorization<Cuda,N> {
       const int tid = threadIdx.x - k;
       if(tid > 0 && tid<256) {
         result[tid] = val;
-        if (N > 1) && (tid%2=0)
+        if ( (N > 1) && (tid%2==0) )
           result[tid] += result[tid+1];
-        if (N > 2) && (tid%4=0)
+        if ( (N > 2) && (tid%4==0) )
           result[tid] += result[tid+2];
-        if (N > 4) && (tid%8=0)
+        if ( (N > 4) && (tid%8==0) )
           result[tid] += result[tid+4];
-        if (N > 8) && (tid%16=0)
+        if ( (N > 8) && (tid%16==0) )
           result[tid] += result[tid+8];
-        if (N > 16) && (tid%32=0)
+        if ( (N > 16) && (tid%32==0) )
           result[tid] += result[tid+16];
         myresult = result[tid];
       }
       if(blockDim.x>256)
-        __threadSynchronize();
+        __syncthreads();
     }
     return myresult;
     #else
