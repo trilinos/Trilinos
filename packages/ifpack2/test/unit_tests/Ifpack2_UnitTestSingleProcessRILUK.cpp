@@ -341,16 +341,19 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, FillLevel, Scalar, 
     D->update(TST::one(),iD,-TST::one());
     RCP<crs_matrix_type> matdiff = Tpetra::MatrixMatrix::add(1.,false,*L,-1.,false,iL);
     magnitudeType mag = matdiff->getFrobeniusNorm();
-    TEST_EQUALITY(mag < 1e-12, true);
     out << "||L - iL||_fro = " << mag << std::endl;
+    TEST_EQUALITY(mag < 1e-12, true);
+    out << std::endl;
     matdiff = Tpetra::MatrixMatrix::add(1.,false,*U,-1.,false,iU);
     mag = matdiff->getFrobeniusNorm();
-    TEST_EQUALITY(mag < 1e-12, true);
     out << "||U - iU||_fro = " << mag << std::endl;
+    TEST_EQUALITY(mag < 1e-12, true);
+    out << std::endl;
     Teuchos::Array<magnitudeType> norms(1);
     D->norm2(norms);
-    TEST_EQUALITY(norms[0] < 1e-12, true);
     out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
+    TEST_EQUALITY(norms[0] < 1e-12, true);
+    out << std::endl;
 
   } //for (GlobalOrdinal lof=0; lof<6; ++lof)
 
@@ -500,7 +503,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
     Teuchos::Array<magnitudeType> norms(1);
     D->norm2(norms);
     out << "||inverse(D) - inverse(iD)||_2 = " << norms[0] << std::endl;
-    TEST_EQUALITY(norms[0] < 1e-12, true);
+    TEST_EQUALITY(norms[0] < 1e-7, true);
     out << std::endl;
 
   } //for (GlobalOrdinal lof=0; lof<6; ++lof)
