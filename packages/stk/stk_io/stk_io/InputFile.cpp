@@ -189,62 +189,6 @@ namespace stk {
       }
     }
 
-    bool InputFile::read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk)
-    {
-      ThrowErrorMsgIf (Teuchos::is_null(m_region),
-		       "ERROR: There is no Input mesh/restart region associated with this Mesh Data.");
-      Ioss::Region *region = m_region.get();
-      double time = mf.m_timeToRead;
-      if (time < m_startTime || time > m_stopTime)
-	return false;
-      
-      // Map analysis time to database time using offset, periodic, ...
-      // See details in header file.
-      double db_time = map_analysis_to_db_time(time);
-
-      // Get struct containing interval of database time(s) containing 'time'
-      DBStepTimeInterval sti(region, db_time);
-
-      ThrowErrorMsgIf(!sti.exists_before && !sti.exists_after,
-		      "ERROR: Input database '" << region->get_database()->get_filename()
-		      << "' has no transient data.");
-
-      const stk::mesh::FieldBase *f = mf.field();
-      std::vector<const stk::mesh::Part*>::iterator P = mf.m_subsetParts.begin();
-      while (P != mf.m_subsetParts.end()) {
-	// Find the Ioss::GroupingEntity corresponding to this part...
-	mf.set_inactive();
-	const stk::mesh::Part *part = *P; ++P;
-	stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	if (f->entity_rank() == rank) {
-	  Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-	  ThrowErrorMsgIf( io_entity == NULL,
-			   "ERROR: For field '" << mf.field()->name()
-			   << "' Could not find database entity corresponding to the part named '"
-			   << part->name() << "'.");
-	  build_field_part_associations(mf, *part, rank, io_entity);
-	} 
-
-	// If rank is != NODE_RANK, then see if field is defined on the nodes of this part
-	if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
-	  Ioss::GroupingEntity *node_entity = NULL;
-	  std::string nodes_name = part->name() + "_nodes";
-	  node_entity = region->get_entity(nodes_name);
-	  if (node_entity == NULL) {
-	    node_entity = region->get_entity("nodeblock_1");
-	  }
-	  if (node_entity != NULL) {
-	    build_field_part_associations(mf, *part, stk::topology::NODE_RANK, node_entity);
-	  }
-	}
-
-	if (mf.is_active()) {
-	  mf.restore_field_data(bulk, sti);
-	}
-      }
-      return true;
-    }
-
     double InputFile::read_defined_input_fields(int step,
 						std::vector<stk::io::MeshField> *missing,
 						stk::mesh::BulkData &bulk)
@@ -290,7 +234,7 @@ namespace stk {
 	    // See if field with that name exists on io_entity...
 	    const std::string &db_name = mesh_field.db_name();
 	    if (io_entity->field_exists(db_name)) {
-	      mesh_field.add_part(rank, part, io_entity);
+	      mesh_field.add_part(rank, io_entity);
 	      mesh_field.set_single_state((m_db_purpose == stk::io::READ_RESTART) ? false : true);
 	      mesh_field.set_active();
 	    }
@@ -309,33 +253,17 @@ namespace stk {
       {
 	std::vector<stk::io::MeshField>::iterator I = m_fields.begin();
 	while (I != m_fields.end()) {
-	  const stk::mesh::FieldBase *f = (*I).field();
 	  std::vector<const stk::mesh::Part*>::iterator P = (*I).m_subsetParts.begin();
 	  while (P != (*I).m_subsetParts.end()) {
 	    // Find the Ioss::GroupingEntity corresponding to this part...
 	    const stk::mesh::Part *part = *P; ++P;
+	    Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
+	    ThrowErrorMsgIf( io_entity == NULL,
+			     "ERROR: For field '" << (*I).field()->name()
+			     << "' Could not find database entity corresponding to the part named '"
+			     << part->name() << "'.");
 	    stk::mesh::EntityRank rank = part_primary_entity_rank(*part);
-	    if (f->entity_rank() == rank) {
-	      Ioss::GroupingEntity *io_entity = region->get_entity(part->name());
-	      ThrowErrorMsgIf( io_entity == NULL,
-			       "ERROR: For field '" << (*I).field()->name()
-			       << "' Could not find database entity corresponding to the part named '"
-			       << part->name() << "'.");
-	      build_field_part_associations(*I, *part, rank, io_entity);
-	    } 
-
-	    // If rank is != NODE_RANK, then see if field is defined on the nodes of this part
-	    if (rank != stk::topology::NODE_RANK && f->entity_rank() == stk::topology::NODE_RANK) {
-	      Ioss::GroupingEntity *node_entity = NULL;
-	      std::string nodes_name = part->name() + "_nodes";
-	      node_entity = region->get_entity(nodes_name);
-	      if (node_entity == NULL) {
-		node_entity = region->get_entity("nodeblock_1");
-	      }
-	      if (node_entity != NULL) {
-		build_field_part_associations(*I, *part, stk::topology::NODE_RANK, node_entity);
-	      }
-	    }
+	    build_field_part_associations(*I, *part, rank, io_entity);
 	  }
 	  ++I;
 	}

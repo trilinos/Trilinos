@@ -32,9 +32,8 @@ namespace stk {
     
     class MeshFieldPart {
     public:
-      MeshFieldPart(stk::mesh::EntityRank rank, const stk::mesh::Part *part,
-		    Ioss::GroupingEntity *io_entity, const std::string db_field_name)
-	: m_rank(rank), m_stkPart(part), m_ioEntity(io_entity), m_dbName(db_field_name),
+      MeshFieldPart(stk::mesh::EntityRank rank, Ioss::GroupingEntity *io_entity, const std::string db_field_name)
+	: m_rank(rank), m_ioEntity(io_entity), m_dbName(db_field_name),
 	  m_preStep(0), m_postStep(0)
       {}
 
@@ -43,14 +42,12 @@ namespace stk {
       
       stk::mesh::EntityRank get_entity_rank() const {return m_rank;}
       Ioss::GroupingEntity* get_io_entity() const {return m_ioEntity;}
-      const stk::mesh::Part* get_stk_part() const {return m_stkPart;}
 
     private:
       void load_field_data(const DBStepTimeInterval &sti);
 
       stk::mesh::EntityRank m_rank;
-      const stk::mesh::Part *m_stkPart;
-      Ioss::GroupingEntity  *m_ioEntity;
+      Ioss::GroupingEntity *m_ioEntity;
       std::string m_dbName;
       std::vector<double> m_preData;
       std::vector<double> m_postData;
@@ -114,7 +111,6 @@ namespace stk {
 	
 
       void add_part(const stk::mesh::EntityRank rank,
-		    const stk::mesh::Part &part,
 		    Ioss::GroupingEntity *io_entity);
       
       bool operator==(const MeshField &other) const;

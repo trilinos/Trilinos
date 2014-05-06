@@ -51,36 +51,27 @@ namespace {
 
       const stk::mesh::PartVector &all_parts = meta_data.get_mesh_parts();
       for (size_t i=0; i < all_parts.size(); i++) {
+	const stk::mesh::Part *part = all_parts[i];
+	
 	//+ Put the field on all element block parts...
-	stk::mesh::put_field(pressure, *all_parts[i]);
+	stk::mesh::put_field(pressure, *part);
+
+	stk::topology topo = part->topology();
+	if (topo == stk::topology::SHELL_QUAD_4) {
+	  stk::io::MeshField mf(pressure, dbFieldNameShell);
+
+	  //+ only initialize the "pressure" field from mesh data on the shell parts.
+	  mf.add_subset(*part);
+	  stkIo.add_input_field(mf);
+	}
       }
 
-      // This commits BulkData and populates the coordinates, connectivity, mesh...
       stkIo.populate_bulk_data();
 
       double time = stkIo.get_input_io_region()->get_state_time(1);
 
-      //+ Initialize the "pressure" field from mesh data on the shell parts on demand...
-      for (size_t i=0; i < all_parts.size(); i++) {
-	stk::topology topo = all_parts[i]->topology();
-	if (topo == stk::topology::SHELL_QUAD_4) {
-
-	  stk::io::MeshField mf(pressure, dbFieldNameShell);
-	  mf.set_read_time(time);
-	  mf.add_subset(*all_parts[i]);
-#if 0
-	  stkIo.read_input_field(mf);
-#else
-	  stkIo.add_input_field(mf);
-#endif
-	}
-      }
-
-      //+ Populate any other fields with data from the input mesh.
-      //+ This would *not* know about the MeshFields above since 
-      //+ "add_input_field()" was not called...
+      //+ Populate the fields with data from the input mesh.
       stkIo.read_defined_input_fields(time);
-
 
       //-END
       // ============================================================

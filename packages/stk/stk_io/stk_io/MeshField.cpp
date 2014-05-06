@@ -103,10 +103,9 @@ MeshField& MeshField::add_subset(const stk::mesh::Part &part)
 }
 
 void MeshField::add_part(const stk::mesh::EntityRank rank,
-			 const stk::mesh::Part &part,
 			 Ioss::GroupingEntity *io_entity)
 {
-  m_fieldParts.push_back(MeshFieldPart(rank, &part, io_entity, m_dbName));
+  m_fieldParts.push_back(MeshFieldPart(rank,io_entity, m_dbName));
 }
 
 bool MeshField::operator==(const MeshField &other) const
@@ -140,41 +139,19 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
 
     std::vector<stk::io::MeshFieldPart>::iterator I = m_fieldParts.begin();
     while (I != m_fieldParts.end()) {
-      const stk::mesh::EntityRank rank = (*I).get_entity_rank();
+      const stk::mesh::EntityRank part_rank = (*I).get_entity_rank();
       Ioss::GroupingEntity *io_entity = (*I).get_io_entity();
       std::vector<stk::mesh::Entity> entity_list;
-      stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
-      const stk::mesh::Part *stk_part = (*I).get_stk_part();
+      stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
       
-      // If the field being restored is a nodal field stored on the
-      // Ioss::Nodeblock on the database, but is not being applied to
-      // the stk universal part, then we need to transfer a subset of
-      // the data to the stk field. The subset will be defined as a
-      // selector of the stk part.
-      bool subsetted = rank == stk::topology::NODE_RANK &&
-	io_entity->type() == Ioss::NODEBLOCK &&
-	*stk_part != mesh::MetaData::get(bulk).universal_part();
-
       size_t state_count = m_field->number_of_states();
       stk::mesh::FieldState state = m_field->state();
       // If the multi-state field is not "set" at the newest state, then the user has
       // registered the field at a specific state and only that state should be input.
       if(m_singleState || state_count == 1 || state != stk::mesh::StateNew) {
-	if (subsetted) {
-	  stk::io::subsetted_field_data_from_ioss(bulk, m_field, entity_list,
-						  io_entity, stk_part, m_dbName);
-	} else {
-	  stk::io::field_data_from_ioss(bulk, m_field, entity_list,
-					io_entity, m_dbName);
-	}
+	stk::io::field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName);
       } else {
-	if (subsetted) {
-	  stk::io::subsetted_multistate_field_data_from_ioss(bulk, m_field, entity_list,
-							     io_entity, stk_part, m_dbName, state_count);
-	} else {
-	  stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list,
-						   io_entity, m_dbName, state_count);
-	}
+	stk::io::multistate_field_data_from_ioss(bulk, m_field, entity_list, io_entity, m_dbName, state_count);
       }
 
       if (m_oneTimeOnly) {
@@ -203,8 +180,8 @@ void MeshField::restore_field_data(stk::mesh::BulkData &bulk,
       size_t field_component_count = io_field.transformed_storage()->component_count();
 
       std::vector<stk::mesh::Entity> entity_list;
-      const stk::mesh::EntityRank rank = (*I).get_entity_rank();
-      stk::io::get_entity_list(io_entity, rank, bulk, entity_list);
+      const stk::mesh::EntityRank part_rank = (*I).get_entity_rank();
+      stk::io::get_entity_list(io_entity, part_rank, bulk, entity_list);
       
       for (size_t i=0; i < entity_list.size(); ++i) {
 	if (bulk.is_valid(entity_list[i])) {

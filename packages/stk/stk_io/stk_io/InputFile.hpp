@@ -43,7 +43,6 @@ namespace stk {
       //      void add_input_field(stk::mesh::FieldBase &field, const std::string &db_name);
       void add_input_field(const stk::io::MeshField &mesh_field);
       void add_all_mesh_fields_as_input_fields(stk::mesh::MetaData &meta, MeshField::TimeMatchOption tmo);
-      bool read_input_field(stk::io::MeshField &mf, stk::mesh::BulkData &bulk);
       double read_defined_input_fields(double time, std::vector<stk::io::MeshField> *missing,
 				       stk::mesh::BulkData &bulk);
       double read_defined_input_fields(int step, std::vector<stk::io::MeshField> *missing,
