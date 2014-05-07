@@ -108,7 +108,7 @@ public:
    *      The number of weights per multivector element is assumed to be
    *      \c weights.size().
    *  \param weightStrides  a list of strides for the \c weights.
-   *     The weight for weight dimension \c n for multivector element
+   *     The weight for weight index \c n for multivector element
    *     \c k should be found at <tt>weights[n][weightStrides[n] * k]</tt>.
    *     If \c weightStrides.size() is zero, it is assumed all strides are one.
    *
@@ -117,7 +117,7 @@ public:
    */
 
   XpetraMultiVectorAdapter(const RCP<const User> &invector,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides);
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides);
 
   /*! \brief Constructor for case when weights are not being used.
    *
@@ -179,7 +179,7 @@ private:
 template <typename User>
   XpetraMultiVectorAdapter<User>::XpetraMultiVectorAdapter(
     const RCP<const User> &invector,
-    vector<const scalar_t *> &weights, vector<int> &weightStrides):
+    std::vector<const scalar_t *> &weights, std::vector<int> &weightStrides):
       invector_(invector), vector_(), map_(), 
       env_(rcp(new Environment)), base_(),
       numWeights_(weights.size()), weights_(weights.size())
@@ -247,7 +247,7 @@ template <typename User>
     }
   }
   else{
-    throw logic_error("invalid underlying lib");
+    throw std::logic_error("invalid underlying lib");
   }
 }
 

@@ -49,10 +49,12 @@
 #ifndef KOKKOS_LAYOUT_HPP
 #define KOKKOS_LAYOUT_HPP
 
+#include <stddef.h>
 #include <impl/Kokkos_Traits.hpp>
 
 namespace Kokkos {
 
+//----------------------------------------------------------------------------
 /// \struct LayoutLeft
 /// \brief Memory layout tag indicating left-to-right (Fortran scheme)
 ///   striding of multi-indices.
@@ -69,6 +71,7 @@ namespace Kokkos {
 /// major."
 struct LayoutLeft { typedef LayoutLeft array_layout ; };
 
+//----------------------------------------------------------------------------
 /// \struct LayoutRight
 /// \brief Memory layout tag indicating right-to-left (C or
 ///   lexigraphical scheme) striding of multi-indices.
@@ -84,12 +87,51 @@ struct LayoutLeft { typedef LayoutLeft array_layout ; };
 /// two-dimensional array, "layout right" is also called "row major."
 struct LayoutRight { typedef LayoutRight array_layout ; };
 
-
+//----------------------------------------------------------------------------
 /// \struct LayoutStride
 /// \brief  Memory layout tag indicated arbitrarily strided
 ///         multi-index mapping into contiguous memory.
-struct LayoutStride { typedef LayoutStride array_layout ; };
+struct LayoutStride {
+  typedef LayoutStride array_layout ;
 
+  enum { MAX_RANK = 8 };
+
+  size_t dimension[ MAX_RANK ] ;
+  size_t stride[ MAX_RANK ] ; 
+
+  /** \brief  Compute strides from ordered dimensions.
+   *
+   *  Values of order uniquely form the set [0..rank)
+   *  and specify ordering of the dimensions.
+   *  Order = {0,1,2,...} is LayoutLeft
+   *  Order = {...,2,1,0} is LayoutRight
+   */
+  template< typename iTypeOrder , typename iTypeDimen >
+  KOKKOS_INLINE_FUNCTION static
+  LayoutStride order_dimensions( int const rank
+                               , iTypeOrder const * const order
+                               , iTypeDimen const * const dimen )
+    {
+      LayoutStride tmp ;
+      // Verify valid rank order:
+      int check_input = MAX_RANK < rank ? 0 : int( 1 << rank ) - 1 ;
+      for ( int r = 0 ; r < MAX_RANK ; ++r ) {
+        tmp.dimension[r] = 0 ;
+        tmp.stride[r]    = 0 ;
+        check_input &= ~int( 1 << order[r] );
+      }
+      if ( 0 == check_input ) {
+        size_t n = 1 ;
+        for ( int r = 0 ; r < rank ; ++r ) {
+          tmp.stride[ order[r] ] = n ;
+          n *= ( tmp.dimension[r] = dimen[r] );
+        }
+      }
+      return tmp ;
+    }
+};
+
+//----------------------------------------------------------------------------
 /// \struct LayoutTileLeft
 /// \brief Memory layout tag indicating left-to-right (Fortran scheme)
 ///   striding of multi-indices by tiles.

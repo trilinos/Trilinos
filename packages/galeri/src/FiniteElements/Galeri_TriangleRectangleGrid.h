@@ -577,7 +577,7 @@ private:
 
   void CreateVertexMap()
   {
-    vector<int> itmp(NumMyVertices());
+    std::vector<int> itmp(NumMyVertices());
 
     int count = 0;
     int px, py;
@@ -623,7 +623,7 @@ private:
     int size = (endx - startx) * (endy - starty);
 
     int count = 0;
-    vector<int> itmp(size);
+    std::vector<int> itmp(size);
     for (int j = starty ; j < endy ; ++j) 
     {
       for (int i = startx ; i < endx ; ++i) 

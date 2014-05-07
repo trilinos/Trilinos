@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -70,7 +70,7 @@ namespace NOX
 {
 
 /*!  Get the next quoted std::string on the given line, starting at
-  position pos. 
+  position pos.
 
   \param line - Line of text from which to read
 
@@ -84,12 +84,12 @@ namespace NOX
 
   \retval Returns true if the quoted std::string is successfully found,
   false otherwise.
-  
+
 */
 bool getNextQuotedString(const std::string& line, std::string::size_type& pos, std::string& value);
 
 /*!  Get the next std::string on the given line, starting at
-  position pos. 
+  position pos.
 
   \param line - Line of text from which to read
 
@@ -104,12 +104,12 @@ bool getNextQuotedString(const std::string& line, std::string::size_type& pos, s
 
   \retval Returns true if the std::string is successfully found,
   false otherwise.
-  
+
 */
 bool getNextString(const std::string& line, std::string::size_type& pos, std::string& value);
 
 /*!  Get the next std::string on the given line, starting at
-  position pos, and convert it to a double. 
+  position pos, and convert it to a double.
 
   \param line - Line of text from which to read
 
@@ -121,16 +121,16 @@ bool getNextString(const std::string& line, std::string::size_type& pos, std::st
   \param value - On output, filled in with the double value constained
   in the next std::string (i.e., the next contguous block of non-space
   characters).
-  
+
   \retval Returns true if the next std::string contains a double,
   false otherwise.
-  
+
 */
 bool getNextDouble(const std::string& line, std::string::size_type& pos, double& value);
 
 
 /*!  Get the next std::string on the given line, starting at
-  position pos, and convert it to a int. 
+  position pos, and convert it to a int.
 
   \param line - Line of text from which to read
 
@@ -142,10 +142,10 @@ bool getNextDouble(const std::string& line, std::string::size_type& pos, double&
   \param value - On output, filled in with the int value constained
   in the next std::string (i.e., the next contguous block of non-space
   characters).
-  
+
   \retval Returns true if the next std::string contains a int,
   false otherwise.
-  
+
 */
 bool getNextInt(const std::string& line, std::string::size_type& pos, int& value);
 
@@ -155,7 +155,7 @@ bool getNextInt(const std::string& line, std::string::size_type& pos, int& value
 
   \param filename - The file name.  See \ref pageExecutables_step2 for details on
   the structure of the input file.
-  
+
   \param params - The parameter list that is to be filled in by this
   function
 
@@ -169,8 +169,8 @@ bool getNextInt(const std::string& line, std::string::size_type& pos, int& value
 bool parseTextInputFile(const std::string filename, Teuchos::ParameterList& params);
 
 //! Process a single line of the text input file.
-bool processTextInputFileLine(const std::string& line, Teuchos::ParameterList& params, 
-			      Teuchos::ParameterList*& subPtr);
+bool processTextInputFileLine(const std::string& line, Teuchos::ParameterList& params,
+                  Teuchos::ParameterList*& subPtr);
 
 } // namespace NOX
 

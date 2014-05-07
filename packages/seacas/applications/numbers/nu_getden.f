@@ -1,0 +1,24 @@
+C $Id: getden.f,v 1.1 1991/02/21 15:43:20 gdsjaar Exp $
+C $Log: getden.f,v $
+C Revision 1.1  1991/02/21 15:43:20  gdsjaar
+C Initial revision
+C
+      SUBROUTINE GETDEN (MAT, DEN, NELBLK, LABEL)
+      DIMENSION MAT(6,*), DEN(*)
+      DIMENSION IDUM(4), RV(4), KV(4)
+      CHARACTER*16 LABEL(*), CV(4)
+      CHARACTER*32 PRMPT
+C
+      WRITE (*, 20)
+   20 FORMAT (/,'   Input DENSITY, and NAME: ')
+      DO 40 IBLK=1,NELBLK
+         I = MAT(6,IBLK)
+         WRITE (PRMPT, 30) MAT(1,I)
+   30    FORMAT ('    Material ',I5,' > ')
+         CALL FREFLD (0, 0, PRMPT(:LENSTR(PRMPT)+1), 2, IOS, 
+     *      NF, KV, CV, IDUM, RV)
+         DEN(I)     = RV(1)
+         LABEL(I)   = CV(2)
+   40 CONTINUE
+      RETURN
+      END

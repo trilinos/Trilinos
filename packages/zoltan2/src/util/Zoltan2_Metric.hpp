@@ -79,7 +79,7 @@ private:
     values_ = arcp(tmp, 0, evalNumMetrics, true);
   }
   ArrayRCP<scalar_t> values_;
-  string metricName_;
+  std::string metricName_;
   multiCriteriaNorm mcnorm_;   // store "actualNorm + 1"
 
 public:
@@ -110,13 +110,13 @@ enum metricOffset{
   are set in order to decide what header to print.  So it would
   be a member method instead of static.
  */
-static void printHeader(ostream &os);
+static void printHeader(std::ostream &os);
 
 /*! \brief Print a standard line of data that fits under the header. */
-void printLine(ostream &os) const;
+void printLine(std::ostream &os) const;
 
 /*! \brief Constructor */
-MetricValues(string mname) : 
+MetricValues(std::string mname) : 
   values_(), metricName_(mname), mcnorm_(multiCriteriaNorm(0)) { 
     resetValues();}
 
@@ -126,7 +126,7 @@ MetricValues() :
     resetValues();}
 
 /*! \brief Set or reset the name.  */
-void setName(string name) { metricName_ = name;}
+void setName(std::string name) { metricName_ = name;}
 
 /*! \brief Set or reset the norm.  */
 void setNorm(multiCriteriaNorm normVal) { 
@@ -159,7 +159,7 @@ void setMaxImbalance(scalar_t x) { values_[evalMaxImbalance] = x;}
 void setAvgImbalance(scalar_t x) { values_[evalAvgImbalance] = x;}
 
 /*! \brief Get the name of the item measured. */
-const string &getName() const { return metricName_; }
+const std::string &getName() const { return metricName_; }
 
 /*! \brief Get the norm.  */
 multiCriteriaNorm getNorm() { return multiCriteriaNorm(mcnorm_-1);}
@@ -194,12 +194,12 @@ scalar_t getAvgImbalance() const { return values_[evalAvgImbalance];}
 
 
 template <typename scalar_t>
-  void MetricValues<scalar_t>::printLine(ostream &os) const
+  void MetricValues<scalar_t>::printLine(std::ostream &os) const
 {
-  string label(metricName_);
+  std::string label(metricName_);
   if (mcnorm_ > 0){
     multiCriteriaNorm realNorm = multiCriteriaNorm(mcnorm_ - 1);
-    ostringstream oss;
+    std::ostringstream oss;
     switch (realNorm){
       case normMinimizeTotalWeight:   // 1-norm = Manhattan norm 
         oss << metricName_ << " (1)";
@@ -218,31 +218,31 @@ template <typename scalar_t>
     label = oss.str();
   }
 
-  os << setw(20) << label;
-  os << setw(12) << setprecision(4) << values_[evalGlobalMin];
-  os << setw(12) << setprecision(4) << values_[evalGlobalMax];
-  os << setw(12) << setprecision(4) << values_[evalGlobalAvg];
-  os << setw(2) << " ";
-  os << setw(6) << setprecision(4) << values_[evalMinImbalance];
-  os << setw(6) << setprecision(4) << values_[evalMaxImbalance];
-  os << setw(6) << setprecision(4) << values_[evalAvgImbalance];
-  os << endl;
+  os << std::setw(20) << label;
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMin];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalMax];
+  os << std::setw(12) << std::setprecision(4) << values_[evalGlobalAvg];
+  os << std::setw(2) << " ";
+  os << std::setw(6) << std::setprecision(4) << values_[evalMinImbalance];
+  os << std::setw(6) << std::setprecision(4) << values_[evalMaxImbalance];
+  os << std::setw(6) << std::setprecision(4) << values_[evalAvgImbalance];
+  os << std::endl;
 }
 
 template <typename scalar_t>
-  void MetricValues<scalar_t>::printHeader(ostream &os)
+  void MetricValues<scalar_t>::printHeader(std::ostream &os)
 {
-  os << setw(20) << " ";
-  os << setw(36) << "------------SUM PER PART-----------";
-  os << setw(2) << " ";
-  os << setw(18) << "IMBALANCE PER PART";
-  os << endl;
+  os << std::setw(20) << " ";
+  os << std::setw(36) << "------------SUM PER PART-----------";
+  os << std::setw(2) << " ";
+  os << std::setw(18) << "IMBALANCE PER PART";
+  os << std::endl;
 
-  os << setw(20) << " ";
-  os << setw(12) << "min" << setw(12) << "max" << setw(12) << "avg";
-  os << setw(2) << " ";
-  os << setw(6) << "min" << setw(6) << "max" << setw(6) << "avg";
-  os << endl;
+  os << std::setw(20) << " ";
+  os << std::setw(12) << "min" << std::setw(12) << "max" << std::setw(12) << "avg";
+  os << std::setw(2) << " ";
+  os << std::setw(6) << "min" << std::setw(6) << "max" << std::setw(6) << "avg";
+  os << std::endl;
 }
 
 ///////////////////////////////////////////////////////////////////
@@ -280,9 +280,9 @@ template <typename scalar_t>
  * \param parts the part Id for each object, which may range 
  *         from 0 to one less than \c numberOfParts
  * \param vwgts \c vwgts[w] is the StridedData object 
- *    representing weight dimension
+ *    representing weight index
  *    \c w.  vwgts[w][i] is the \c w'th weight for object \c i.
- * \param mcNorm the multiCriteria norm, to be used if weight dimension 
+ * \param mcNorm the multiCriteria norm, to be used if the number of weights
  *           is greater than one.
  * \param weights on return, \c weights[p] is the total weight for part 
       \c p. \c weights is allocated by the caller
@@ -310,17 +310,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   if (numObjects == 0)
     return;
 
-  bool haveUniform = false;
-  bool haveNonUniform = false;
-
-  for (int wdim=0; wdim < vwgtDim; wdim++){
-    if (vwgts[wdim].size() > 0)
-      haveNonUniform = true;
-    if (vwgts[wdim].size() == 0)
-      haveUniform = true;
-  }
-
-  if (!haveNonUniform){
+  if (vwgtDim == 0) {
     for (lno_t i=0; i < numObjects; i++){
       weights[parts[i]]++;
     }
@@ -333,69 +323,29 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   else{
     switch (mcNorm){
       case normMinimizeTotalWeight:   /*!< 1-norm = Manhattan norm */
-
         for (int wdim=0; wdim < vwgtDim; wdim++){
-          if (vwgts[wdim].size() == 0){
-            for (lno_t i=0; i < numObjects; i++){
-              weights[parts[i]]++;
-            }
+          for (lno_t i=0; i < numObjects; i++){
+            weights[parts[i]] += vwgts[wdim][i];
           }
-          else{
-            for (lno_t i=0; i < numObjects; i++){
-              weights[parts[i]] += vwgts[wdim][i];
-            }
-          }
-        }  // next weight dimension
+        }  // next weight index
         break;
        
       case normBalanceTotalMaximum:   /*!< 2-norm = sqrt of sum of squares */
-        if (!haveUniform){
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t ssum = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
-            weights[parts[i]] += sqrt(ssum);
-          }
-        }
-        else{
-          scalar_t uniformFactor = 0;
+        for (lno_t i=0; i < numObjects; i++){
+          scalar_t ssum = 0;
           for (int wdim=0; wdim < vwgtDim; wdim++)
-            if (vwgts[wdim].size() == 0)
-              uniformFactor++;
-              
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t ssum = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++){
-              if (vwgts[wdim].size() > 0)
-                ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
-            }
-            ssum += uniformFactor;
-            weights[parts[i]] += sqrt(ssum);
-          }
+            ssum += (vwgts[wdim][i] * vwgts[wdim][i]);
+          weights[parts[i]] += sqrt(ssum);
         }
         break;
 
       case normMinimizeMaximumWeight: /*!< inf-norm = maximum norm */
-
-        if (!haveUniform){
-
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t max = 0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              if (vwgts[wdim][i] > max)
-                max = vwgts[wdim][i];
-            weights[parts[i]] += max;
-          }
-        }
-        else{
-
-          for (lno_t i=0; i < numObjects; i++){
-            scalar_t max = 1.0;
-            for (int wdim=0; wdim < vwgtDim; wdim++)
-              if (vwgts[wdim].size() > 0 && vwgts[wdim][i] > max)
-                max = vwgts[wdim][i];
-            weights[parts[i]] += max;
-          }
+        for (lno_t i=0; i < numObjects; i++){
+          scalar_t max = 0;
+          for (int wdim=0; wdim < vwgtDim; wdim++)
+            if (vwgts[wdim][i] > max)
+              max = vwgts[wdim][i];
+          weights[parts[i]] += max;
         }
         break;
 
@@ -413,11 +363,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *   \param comm   communicator
  *   \param part   \c part[i] is the part ID for local object \c i
  *   \param vwgts  \c vwgts[w] is the StridedData object 
- *       representing weight dimension \c w. The weight dimension
- *       (which must be at least one) is taken to be \c vwgts.size().  
- *       If <tt>vwgts[wdim].size() == 0</tt>,
- *       we assume uniform weights for weight dimension \c wdim.
- *   \param mcNorm the multiCriteria norm, to be used if weight dimension is
+ *       representing weight index \c w. The number of weights
+ *       (which must be at least one  TODO  WHY?) is taken to be \c vwgts.size().  
+ *   \param mcNorm the multiCriteria norm, to be used if the number of weights is
  *             greater than one.
  *   \param numParts  on return this is the global number of parts.
  *   \param numNonemptyParts  on return this is the number of those
@@ -427,13 +375,13 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *     the item being measured. The list may contain "object count",
  *     "normed weight", "weight 1", "weight 2" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
+ *     If one set of non-uniform weights were given, then
  *     "object count" and "weight 1" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
  *     then the individual weights "weight 1", "weight 2", and so on.
  *   \param globalSums If weights are uniform, the globalSums is the
  *      \c numParts totals of global number of objects in each part.
- *     Suppose the weight dimension is \c W.  If
+ *     Suppose the number of weights is \c W.  If
  *     W is 1, then on return this is an array of length \c 2*numParts .
  *     The first \c numParts entries are the count of objects in each part,  
  *     and the second is the total weight in each part.
@@ -443,7 +391,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
  *     The next \c numParts entries are the sum of the normed weights in 
  *     each part.  
  *     The final entries are the sum of the individual weights in each part,
- *     by weight dimension by part number.  The array is allocated here.
+ *     by weight index by part number.  The array is allocated here.
  *
  * globalSumsByPart() must be called by all processes in \c comm.
  * The imbalance metrics are not yet set in the MetricValues objects, 
@@ -455,6 +403,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     const RCP<const Environment> &env,
     const RCP<const Comm<int> > &comm, 
     const ArrayView<const pnum_t> &part, 
+    int vwgtDim,
     const ArrayView<StridedData<lno_t, scalar_t> > &vwgts,
     multiCriteriaNorm mcNorm,
     partId_t &numParts, 
@@ -468,13 +417,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   numParts = numNonemptyParts = 0;
 
-  int vwgtDim = vwgts.size();
-
-  int numMetrics = 1;        // "object count"
-  if (vwgts[0].size() > 0)
-    numMetrics++;            // "normed weight" or "weight 1"
-  if (vwgtDim > 1)
-    numMetrics += vwgtDim;   // "weight n"
+  int numMetrics = 1;                       // "object count"
+  if (vwgtDim) numMetrics++;                // "normed weight" or "weight 1"
+  if (vwgtDim > 1) numMetrics += vwgtDim;   // "weight n"
 
   typedef MetricValues<scalar_t> mv_t;
   mv_t *newMetrics = new mv_t [numMetrics];
@@ -485,7 +430,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
 
   //////////////////////////////////////////////////////////
   // Figure out the global number of parts in use.
-  // Verify vertex weight dim is the same everywhere.
+  // Verify number of vertex weights is the same everywhere.
 
   lno_t localNumObj = part.size();
   partId_t localNum[2], globalNum[2];
@@ -501,9 +446,9 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
   }
   Z2_THROW_OUTSIDE_ERROR(*env)
 
-  env->globalBugAssertion(__FILE__, __LINE__, "inconsistent vertex dimension",
-    globalNum[0] > 0 && globalNum[0] == localNum[0], 
-    DEBUG_MODE_ASSERTION, comm);
+  env->globalBugAssertion(__FILE__,__LINE__,
+    "inconsistent number of vertex weights",
+    globalNum[0] == localNum[0], DEBUG_MODE_ASSERTION, comm);
 
   partId_t nparts = globalNum[1] + 1;
 
@@ -541,14 +486,8 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
     if (vwgtDim > 1){
       wgt += nparts;         // individual weights
       for (int vdim = 0; vdim < vwgtDim; vdim++){
-        if (vwgts[vdim].size()){
-         for (lno_t i=0; i < localNumObj; i++)
-           wgt[part[i]] += vwgts[vdim][i];
-        }
-        else{  // uniform weights
-          for (int p=0; p < nparts; p++)
-            wgt[p] = obj[p];
-        }
+        for (lno_t i=0; i < localNumObj; i++)
+          wgt[part[i]] += vwgts[vdim][i];
         wgt += nparts;
       }
     }
@@ -586,7 +525,7 @@ template <typename scalar_t, typename pnum_t, typename lno_t>
           total += wgt[p];
         }
 
-        ostringstream oss;
+        std::ostringstream oss;
         oss << "weight " << vdim+1;
 
         metrics[next].setName(oss.str());
@@ -765,10 +704,10 @@ template <typename scalar_t>
  *             length of the \c psizes array if it is defined.
  *  \param numSizes the number of part size arrays
  *  \param psizes  is an array of \c numSizes pointers to part size arrays.
- *         If the part sizes for dimension \c w are uniform, then
+ *         If the part sizes for index \c w are uniform, then
  *         <tt>psizes[w]</tt> should be NULL.  Otherwise it should
  *         point to \c targetNumParts sizes, and the sizes for each
- *         dimension should sum to one.
+ *         index should sum to one.
  *  \param sumVals is the sum of the values in the \c vals list.
  *  \param vals  <tt> vals[p] </tt> is the amount in part \c p, for \c p
  *          ranging from zero to one less than \c numParts.
@@ -902,7 +841,7 @@ template <typename scalar_t>
  *   \param comm  The problem communicator.
  *   \param ia the InputAdapter object which corresponds to the Solution.
  *   \param solution the PartitioningSolution to be evaluated.
- *   \param mcNorm  is the multicriteria norm to use if the weight dimension
+ *   \param mcNorm  is the multicriteria norm to use if the number of weights
  *           is greater than one.  See the multiCriteriaNorm enumerator for
  *           \c mcNorm values.
  *   \param numParts on return is the global number of parts in the solution
@@ -914,7 +853,7 @@ template <typename scalar_t>
  *     the item being measured. The list may contain "object count",
  *     "normed weight", "weight 1", "weight 2" and so on in that order.
  *     If uniform weights were given, then only "object count" appears.
- *     If one dimension of non-uniform weights were given, then
+ *     If one set of non-uniform weights were given, then
  *     "object count" and "weight 1" appear.  Finally, if multiple
  *     weights were given, we have "object count", then "normed weight",
  *     then the individual weights "weight 1", "weight 2", and so on.
@@ -955,17 +894,17 @@ template <typename Adapter>
 
   // Weights, if any, for each object.
 
-  int weightDim = ia->getNumWeightsPerID();
-  int numCriteria = (weightDim > 0 ? weightDim : 1);
+  int nWeights = ia->getNumWeightsPerID();
+  int numCriteria = (nWeights > 0 ? nWeights : 1);
   Array<sdata_t> weights(numCriteria);
 
-  if (weightDim == 0){
-    // One dimension of uniform weights is implied.
+  if (nWeights == 0){
+    // One set of uniform weights is implied.
     // StridedData default constructor creates length 0 strided array.
     weights[0] = sdata_t();
   }
   else{
-    for (int i=0; i < weightDim; i++){
+    for (int i=0; i < nWeights; i++){
       int stride;
       const scalar_t *wgt;
       ia->getWeightsView(wgt, stride, i); 
@@ -999,14 +938,14 @@ template <typename Adapter>
 
   try{
     globalSumsByPart<scalar_t, partId_t, lno_t>(env, comm, 
-      partArray, weights.view(0, numCriteria), mcNorm,
+      partArray, nWeights, weights.view(0, numCriteria), mcNorm,
       numParts, numNonemptyParts, metrics, globalSums);
   }
   Z2_FORWARD_EXCEPTIONS
 
   ///////////////////////////////////////////////////////////////////////////
   // Compute imbalances for the object count.  
-  // (Use first dimension of part sizes.) 
+  // (Use first index of part sizes.) 
 
   scalar_t *objCount  = globalSums.getRawPtr();
   scalar_t min, max, avg;
@@ -1042,7 +981,7 @@ template <typename Adapter>
     if (metrics.size() > 2){
 
     ///////////////////////////////////////////////////////////////////////////
-    // Compute imbalances for each individual weight dimension.
+    // Compute imbalances for each individual weight.
 
       int next = 2;
   
@@ -1071,18 +1010,18 @@ template <typename Adapter>
  */
 
 template <typename scalar_t>
-  void printMetrics( ostream &os,
+  void printMetrics( std::ostream &os,
     partId_t targetNumParts, partId_t numParts, partId_t numNonemptyParts, 
     const ArrayView<MetricValues<scalar_t> > &infoList)
 {
   os << "NUMBER OF PARTS IS " << numParts;
   if (numNonemptyParts < numParts)
     os << " (" << numNonemptyParts << " of which are non-empty)";
-  os << endl;
+  os << std::endl;
   if (targetNumParts != numParts)
     os << "TARGET NUMBER OF PARTS IS " << targetNumParts << std::endl;
 
-  string unset("unset");
+  std::string unset("unset");
 
   MetricValues<scalar_t>::printHeader(os);
 
@@ -1090,14 +1029,14 @@ template <typename scalar_t>
     if (infoList[i].getName() != unset)
       infoList[i].printLine(os);
 
-  os << endl;
+  os << std::endl;
 }
 
 /*! \brief Print out a header and the values for a single metric.
  */
 
 template <typename scalar_t>
-  void printMetrics( ostream &os,
+  void printMetrics( std::ostream &os,
     partId_t targetNumParts, partId_t numParts, partId_t numNonemptyParts, 
     const MetricValues<scalar_t> &info)
 {

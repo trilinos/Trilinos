@@ -51,11 +51,8 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_all_var_param
 
-#include <ctype.h>
 /*!
  * writes the number of global, nodal, and element variables 
  * that will be written to the database

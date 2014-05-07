@@ -38,7 +38,6 @@ Ifpack2_UnitTestOverlappingRowMatrix.cpp
 Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
-Ifpack2_UnitTestRILUK.cpp
 Ifpack2_UnitTestAmesos2solver.cpp
 )
 
@@ -77,6 +76,18 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   ARGS ""
   COMM mpi
   NUM_MPI_PROCS 2
+  DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  RILUKSingleProcessUnitTests
+  SOURCES 
+    Ifpack2_UnitTestSingleProcessRILUK.cpp
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  ARGS ""
+  COMM serial mpi
+  NUM_MPI_PROCS 1
   DEPLIBS ifpack2 tpetra ifpack2_tpetra_testinst
   STANDARD_PASS_OUTPUT
   )

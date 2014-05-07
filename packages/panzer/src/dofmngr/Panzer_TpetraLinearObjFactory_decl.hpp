@@ -221,6 +221,10 @@ public:
    //! get exporter for converting an overalapped object to a "normal" object
    virtual const Teuchos::RCP<const Teuchos::Comm<int> > getTeuchosComm() const;
 
+   //! Get the unique global indexer this factory was created with.
+   Teuchos::RCP<const panzer::UniqueGlobalIndexerBase> getGlobalIndexer() const
+   { return gidProvider_; }
+
    virtual void beginFill(LinearObjContainer & loc) const;
    virtual void endFill(LinearObjContainer & loc) const;
 

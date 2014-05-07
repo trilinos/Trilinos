@@ -51,28 +51,24 @@
 #include <Teuchos_ParameterList.hpp>
 
 // Headers for factories used by default:
-#include "MueLu_NoFactory.hpp"
-#include "MueLu_TentativePFactory.hpp"
-#include "MueLu_SaPFactory.hpp"
-#include "MueLu_RAPFactory.hpp"
-#include "MueLu_NullspaceFactory.hpp"
-#include "MueLu_TransPFactory.hpp"
-#include "MueLu_SmootherFactory.hpp"
-#include "MueLu_TrilinosSmoother.hpp"
-#include "MueLu_DirectSolver.hpp"
-#include "MueLu_CoupledAggregationFactory.hpp"
-#include "MueLu_CoalesceDropFactory.hpp"
-#include "MueLu_RepartitionFactory.hpp"
-#include "MueLu_ZoltanInterface.hpp"
-#include "MueLu_MultiVectorTransferFactory.hpp"
 #include "MueLu_AmalgamationFactory.hpp"
+#include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
-
-#ifdef HAVE_MUELU_EXPERIMENTAL
-#include "MueLu_PatternFactory.hpp"
 #include "MueLu_ConstraintFactory.hpp"
-#endif
-
+#include "MueLu_CoupledAggregationFactory.hpp"
+#include "MueLu_DirectSolver.hpp"
+#include "MueLu_MultiVectorTransferFactory.hpp"
+#include "MueLu_NoFactory.hpp"
+#include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
+#include "MueLu_RAPFactory.hpp"
+#include "MueLu_RepartitionFactory.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_TransPFactory.hpp"
+#include "MueLu_TrilinosSmoother.hpp"
+#include "MueLu_ZoltanInterface.hpp"
 
 namespace MueLu {
 
@@ -144,14 +140,12 @@ namespace MueLu {
       if (varName == "PreSmoother")                     return GetFactory("Smoother");
       if (varName == "PostSmoother")                    return GetFactory("Smoother");
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
       if (varName == "Ppattern") {
         RCP<PatternFactory> PpFact = rcp(new PatternFactory);
         PpFact->SetFactory("P", GetFactory("Ptent"));
         return SetAndReturnDefaultFactory(varName, PpFact);
       }
       if (varName == "Constraint")                      return SetAndReturnDefaultFactory(varName, rcp(new ConstraintFactory()));
-#endif
 
       if (varName == "Smoother") {
         Teuchos::ParameterList smootherParamList;

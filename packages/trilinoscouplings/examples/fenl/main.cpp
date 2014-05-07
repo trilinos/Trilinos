@@ -33,6 +33,7 @@
 #include <Teuchos_Comm.hpp>
 #include <Teuchos_GlobalMPISession.hpp>
 #include <Teuchos_oblackholestream.hpp>
+#include <Teuchos_StandardCatchMacros.hpp>
 
 // #include <Tpetra_Vector.hpp>
 
@@ -126,8 +127,12 @@ void print_perf_value( std::ostream & s , const std::vector<size_t> & widths,  c
 //----------------------------------------------------------------------------
 
 template< class Device , Kokkos::Example::BoxElemPart::ElemOrder ElemOrder >
-void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[] )
+bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[] )
 {
+  typedef typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
+  bool success = true;
+  try {
+
   const int comm_rank = comm->getRank();
 
   if ( 0 == comm_rank ) {
@@ -143,6 +148,19 @@ void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[]
 
   std::vector< std::pair<std::string,std::string> > headers;
 
+  Teuchos::ParameterList params;
+  params.set("Verbose",     0);
+  if ( cmd[ CMD_USE_THREADS ] )
+    params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
+    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
+    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
+  }
+  if ( cmd[ CMD_USE_CUDA_DEV ] )
+    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
+
+  // Create Tpetra Node
+  ::Teuchos::RCP<NodeType> node = ::Teuchos::rcp (new NodeType(params));
 
   headers.push_back(std::make_pair("ELEMS","count"));
   headers.push_back(std::make_pair("NODES","count"));
@@ -190,9 +208,9 @@ void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[]
       const Kokkos::Example::FENL::Perf perf =
         cmd[ CMD_USE_FIXTURE_QUADRATIC ]
         ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic >
-            ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
+            ( comm , node , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear >
-            ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
+            ( comm , node , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
         ;
 
       if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
@@ -206,13 +224,19 @@ void run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm , const int cmd[]
     const Kokkos::Example::FENL::Perf perf =
       cmd[ CMD_USE_FIXTURE_QUADRATIC ]
       ? Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemQuadratic >
-          ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
+          ( comm , node , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       : Kokkos::Example::FENL::fenl< Device , Kokkos::Example::BoxElemPart::ElemLinear >
-          ( comm , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
+          ( comm , node , cmd[CMD_PRINT], cmd[CMD_USE_TRIALS], cmd[CMD_USE_ATOMIC], nelem )
       ;
 
     if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
   }
+
+
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
+
+  return success;
 }
 
 //----------------------------------------------------------------------------
@@ -227,6 +251,7 @@ int main( int argc , char ** argv )
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   const int comm_rank = comm->getRank();
+  Teuchos::ParameterList params;
 
   //--------------------------------------------------------------------------
 
@@ -307,19 +332,7 @@ int main( int argc , char ** argv )
 #if defined( KOKKOS_HAVE_PTHREAD )
 
     if ( cmdline[ CMD_USE_THREADS ] ) {
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::Threads::initialize( cmdline[ CMD_USE_THREADS ] );
-      }
-
       run< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::Threads::finalize();
     }
 
 #endif
@@ -327,34 +340,14 @@ int main( int argc , char ** argv )
 #if defined( KOKKOS_HAVE_OPENMP )
 
     if ( cmdline[ CMD_USE_OPENMP ] ) {
-
-      if ( cmdline[ CMD_USE_NUMA ] && cmdline[ CMD_USE_CORE_PER_NUMA ] ) {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] ,
-                                     cmdline[ CMD_USE_NUMA ] ,
-                                     cmdline[ CMD_USE_CORE_PER_NUMA ] );
-      }
-      else {
-        Kokkos::OpenMP::initialize( cmdline[ CMD_USE_OPENMP ] );
-      }
-
       run< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::OpenMP::finalize();
     }
 
 #endif
 
 #if defined( KOKKOS_HAVE_CUDA )
     if ( cmdline[ CMD_USE_CUDA ] ) {
-      // Use the last device:
-
-      Kokkos::Cuda::host_mirror_device_type::initialize();
-      Kokkos::Cuda::initialize( Kokkos::Cuda::SelectDevice( cmdline[ CMD_USE_CUDA_DEV ] ) );
-
       run< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >( comm , cmdline );
-
-      Kokkos::Cuda::finalize();
-      Kokkos::Cuda::host_mirror_device_type::finalize();
     }
 
 #endif

@@ -4,7 +4,7 @@
 "Nonlinear Solver" string "Line Search Based"
 
 @ "Line Search"
-"Method"  string "Backtrack" 
+"Method"  string "Backtrack"
 @@
 
 @ "Printing"

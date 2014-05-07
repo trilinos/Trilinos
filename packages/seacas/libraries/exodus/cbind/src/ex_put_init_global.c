@@ -58,12 +58,13 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for ex_leavedef, EX_FATAL, etc
+#include <netcdf.h>                     // for nc_def_var, NC_NOERR, etc
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_put_init_global(int   exoid,
                        int64_t   num_nodes_g,

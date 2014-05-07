@@ -478,7 +478,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   View() : m_ptr_on_device(0)
-    { m_offset_map.assign(0,0,0,0,0,0,0,0); }
+    { m_offset_map.assign(0, 0,0,0,0,0,0,0,0); }
 
   KOKKOS_INLINE_FUNCTION
   View( const View & rhs ) : m_ptr_on_device(0)
@@ -587,6 +587,55 @@ public:
                                 m_offset_map.capacity() );
     }
 
+  template< class LabelType >
+  explicit inline
+  View( const AllocateWithoutInitializing & ,
+        const LabelType & label ,
+        typename Impl::enable_if<(
+          Impl::IsViewLabel< LabelType >::value &&
+          ( ! Impl::is_const< typename traits::value_type >::value ) &&
+          traits::is_managed ),
+        const typename traits::array_layout >::type layout )
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::memory_space  memory_space_ ;
+      typedef typename traits::value_type    value_type_ ;
+
+      m_offset_map.assign( layout );
+      m_offset_map.set_padding();
+
+      m_ptr_on_device = (value_type_ *)
+        memory_space_::allocate( label ,
+                                typeid(value_type_) ,
+                                sizeof(value_type_) ,
+                                m_offset_map.capacity() );
+    }
+
+  template< class LabelType >
+  explicit inline
+  View( const LabelType & label ,
+        typename Impl::enable_if<(
+          Impl::IsViewLabel< LabelType >::value &&
+          ( ! Impl::is_const< typename traits::value_type >::value ) &&
+          traits::is_managed
+        ), typename traits::array_layout const & >::type layout )
+    : m_ptr_on_device(0)
+    {
+      typedef typename traits::memory_space  memory_space_ ;
+      typedef typename traits::value_type    value_type_ ;
+
+      m_offset_map.assign( layout );
+      m_offset_map.set_padding();
+     
+      m_ptr_on_device = (value_type_ *)
+        memory_space_::allocate( label ,
+                                typeid(value_type_) ,
+                                sizeof(value_type_) ,
+                                m_offset_map.capacity() );
+
+      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+    }
+
   //------------------------------------
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
@@ -614,6 +663,21 @@ public:
       m_tracking = false ;
     }
 
+  template< typename T >
+  explicit inline
+  View( T * ptr ,
+        typename Impl::enable_if<(
+          ( Impl::is_same<T,typename traits::value_type>::value ||
+            Impl::is_same<T,typename traits::const_value_type>::value )
+          &&
+          ( ! traits::is_managed )
+        ), typename traits::array_layout const & >::type layout )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( layout );
+      m_tracking = false ;
+    }
+
   explicit inline
   View( const ViewWithoutManaging & ,
         typename traits::value_type * ptr ,
@@ -629,6 +693,16 @@ public:
     : m_ptr_on_device(ptr)
     {
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7, n8 );
+      m_tracking = false ;
+    }
+
+  explicit inline
+  View( const ViewWithoutManaging & 
+      , typename traits::value_type * ptr 
+      , typename traits::array_layout const & layout )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( layout );
       m_tracking = false ;
     }
 

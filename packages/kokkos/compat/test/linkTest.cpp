@@ -269,14 +269,16 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
 
   ka_view_type X ("X", stride, numCols);
   ka_view_type X_view = Kokkos::subview<ka_view_type> (X, std::make_pair (ZERO, numRows), std::make_pair (ZERO, numCols));
+  TEST_EQUALITY( & X(0,0) , & X_view(0,0) );
   TEST_EQUALITY(X_view.dimension_0(), numRows);
   TEST_EQUALITY(X_view.dimension_1(), numCols);
 
   // Test that the strides of X_view are correct, for size_t.
   {
-    size_t strides[2];
+    size_t strides[3]; // stride[rank] is the maximum span
     strides[0] = static_cast<size_t> (0);
     strides[1] = static_cast<size_t> (0);
+    strides[2] = static_cast<size_t> (0);
     X_view.stride (strides);
     TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_view(i,j) and X_view(i+1,j)
     // The stride must be at least as given, but can be greater (due to possible padding for alignment).
@@ -288,14 +290,16 @@ TEUCHOS_UNIT_TEST( LinkTeuchosAndKokkos, ArrayRCP2D_of_2DView ) {
   Teuchos::ArrayRCP<Teuchos::ArrayRCP<double> > Y_2D (X_view.dimension_1 ());
   for (size_t j = 0; j < static_cast<size_t> (X_view.dimension_1 ()); ++j) {
     ka_view_type X_j = Kokkos::subview<ka_view_type> (X_view, std::make_pair (ZERO, numRows), std::make_pair (j, j+1));
+    TEST_EQUALITY( & X_view(0,j) , & X_j(0,0) );
     TEST_EQUALITY(static_cast<size_t>(X_j.dimension_0()), numRows);
     TEST_EQUALITY_CONST(X_j.dimension_1(), 1);
 
     // Test that the strides of X_j are correct.
     {
-      size_t strides[2];
+      size_t strides[3]; // stride[rank] is the maximum span
       strides[0] = static_cast<size_t> (0);
-      strides[1] = static_cast<size_t> (1);
+      strides[1] = static_cast<size_t> (0);
+      strides[2] = static_cast<size_t> (0);
       X_j.stride (strides);
       TEST_EQUALITY_CONST(strides[0], static_cast<size_t>(1)); // stride between X_j(i,j) and X_j(i+1,j)
       // Stride between X_j(i,j) and X_j(i,j+1), even though X_j only

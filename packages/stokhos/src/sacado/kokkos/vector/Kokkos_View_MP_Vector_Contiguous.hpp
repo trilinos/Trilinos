@@ -47,6 +47,7 @@
 
 #include "Kokkos_View.hpp"
 #include "Kokkos_AnalyzeSacadoShape.hpp"
+#include "Kokkos_View_Utils.hpp"
 #include "Kokkos_View_MP_Vector_Utils.hpp"
 
 /*
@@ -182,7 +183,10 @@ struct MPVectorAllocation<Device, Storage, false> {
   // This makes BIG assumption on how the data was allocated
   KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
-    m_scalar_ptr_on_device = reinterpret_cast<scalar_type*>(ptr);
+    if (ptr != 0)
+      m_scalar_ptr_on_device = ptr->coeff();
+    else
+      m_scalar_ptr_on_device = 0;
   }
 
   struct VectorInit {
@@ -488,10 +492,6 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
@@ -520,10 +520,6 @@ public:
         const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size =
@@ -543,10 +539,6 @@ public:
         const iType * const n )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -577,10 +569,6 @@ public:
         const iType * const n )
     : m_ptr_on_device(0)
     {
-      typedef typename traits::memory_space  memory_space ;
-      typedef typename traits::shape_type    shape_type ;
-      typedef typename traits::value_type    value_type ;
-
       const size_t n0 = Rank >= 0 ? n[0] : 0 ;
       const size_t n1 = Rank >= 1 ? n[1] : 0 ;
       const size_t n2 = Rank >= 2 ? n[2] : 0 ;
@@ -617,14 +605,11 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
     {
-      typedef typename traits::shape_type   shape_type ;
-      typedef typename traits::value_type   value_type ;
-
       m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
       m_stride = 1 ;
       m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
@@ -632,6 +617,33 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
+      m_tracking = false;
+    }
+
+  template< typename T >
+  View( const ViewWithoutManaging & ,
+        T * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<T,typename traits::value_type>::value ||
+          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_stride = 1 ;
+      m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
+      m_sacado_size = m_storage_size;
+      m_allocation.assign(ptr);
+      m_tracking = false;
     }
 
   //------------------------------------
@@ -1297,6 +1309,8 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
 #endif
     }
 
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
     const int length = part.end - part.begin ;
 
     dst.m_offset_map.assign( src.m_offset_map );
@@ -1314,6 +1328,8 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------

@@ -248,6 +248,16 @@ namespace Xpetra {
     //! Get a copy of the diagonal entries owned by this node, with local row indices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const { XPETRA_MONITOR("EpetraCrsMatrix::getLocalDiagCopy"); mtx_->ExtractDiagonalCopy(toEpetra(diag)); }
 
+    //! Get offsets of the diagonal entries in the matrix.
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.getLocalDiagOffsets() is not implemented or supported.");
+    }
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+      TEUCHOS_TEST_FOR_EXCEPTION(true, Xpetra::Exceptions::NotImplemented, "Xpetra::EpetraCrsMatrix.getLocalDiagCopy using offsets is not implemented or supported.");
+    }
+
     //@}
 
     //! @name Methods implementing Operator
@@ -282,7 +292,7 @@ namespace Xpetra {
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getMap"); return toXpetra(mtx_->Map()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("EpetraCrsMatrix::getMap"); return toXpetra(mtx_->Map()); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source, const Import< LocalOrdinal, GlobalOrdinal, Node > &importer, CombineMode CM);

@@ -128,7 +128,7 @@ namespace {
   
 #ifdef USE_ZOLTAN
   /* ZOLTAN_RCB partitioning interface */
-  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *,
+  int ZOLTAN_assign(const char *, int, size_t, int *, float *, float *, float *, int,
 			   int *, int, char **);
 #endif
   void BALANCE_STATS(Machine_Description*, int *, size_t, int *);
@@ -720,17 +720,17 @@ int generate_loadbal(Machine_Description* machine,
 #ifdef USE_ZOLTAN
       else if (lb->type == ZOLTAN_RCB) {
         flag = ZOLTAN_assign("RCB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_RIB) {
         flag = ZOLTAN_assign("RIB", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
       else if (lb->type == ZOLTAN_HSFC) {
         flag = ZOLTAN_assign("HSFC", totalproc, tmp_nv, tmp_vwgts,
-                             tmp_x, tmp_y, tmp_z, tmp_v2p, argc, argv);
+                             tmp_x, tmp_y, tmp_z, lb->ignore_z, tmp_v2p, argc, argv);
         BALANCE_STATS(machine, tmp_vwgts, tmp_nv, tmp_v2p);
       }
 #endif
@@ -1068,7 +1068,7 @@ namespace {
   {
     INT   *pt_list;
     size_t nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     size_t nhold;
     size_t count;
     size_t num_found = 0;
@@ -1095,7 +1095,6 @@ namespace {
 	  return 0;
 	}
 
-
 	rows[0] = 1;
 	for(size_t ecnt=1; ecnt < mesh->num_elems; ecnt++) {
 	  ssize_t distance = graph->start[ecnt] - graph->start[ecnt-1] + 1;
@@ -1110,6 +1109,10 @@ namespace {
 	  return 0;
 	}
 
+	for (size_t i=0; i < nedges; i++) {
+	  columns[i] = 0;
+	}
+	
 	size_t ki = 0;
 	size_t kf = 0;
 	for(size_t ecnt=0; ecnt < mesh->num_elems; ecnt++) {
@@ -1580,7 +1583,7 @@ namespace {
     int    dflag;
 
     INT   *pt_list, nelem;
-    INT   *hold_elem;
+    INT   *hold_elem = NULL;
     INT    side_nodes[MAX_SIDE_NODES], mirror_nodes[MAX_SIDE_NODES];
     int    side_cnt;
 
@@ -2707,6 +2710,7 @@ namespace {
 		    float *x,             /* x-coordinates */
 		    float *y,             /* y-coordinates */
 		    float *z,             /* z-coordinates */
+                    int ignore_z,          /* flag indicating whether to use z-coords*/
 		    int *part,          /* Output:  partition assignments for each element */
 		    int argc,             /* Fields needed by MPI_Init */
 		    char *argv[]          /* Fields needed by MPI_Init */
@@ -2734,7 +2738,7 @@ namespace {
     Zoltan_Data.vwgt = vwgt;
     Zoltan_Data.x = x;
     Zoltan_Data.y = y;
-    Zoltan_Data.z = z;
+    Zoltan_Data.z = (ignore_z ? NULL : z);
 
     /* Initialize Zoltan */
     Zoltan_Initialize(argc, argv, &ver);
@@ -2764,6 +2768,7 @@ namespace {
     Zoltan_Set_Param(zz, "REMAP", "0");
     Zoltan_Set_Param(zz, "RETURN_LISTS", "PARTITION_ASSIGNMENTS");
     if (vwgt) Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", "1");
+    if (ignore_z) Zoltan_Set_Param(zz, "RCB_RECTILINEAR_BLOCKS", "1");
 
     /* Call partitioner */
     printf("Using Zoltan version %f, method %s\n", ver, method);

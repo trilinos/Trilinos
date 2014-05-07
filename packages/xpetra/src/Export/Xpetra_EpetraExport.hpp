@@ -62,7 +62,6 @@ namespace Xpetra {
 
   // TODO: move that elsewhere
   const Epetra_Export & toEpetra(const Export<int, int> &);
-  //
   RCP<const Export<int, int> > toXpetra(const Epetra_Export *exp);
 
   class EpetraExport
@@ -125,10 +124,10 @@ namespace Xpetra {
     ArrayView< const int > getExportPIDs() const;
 
     //! The source Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getSourceMap() const { XPETRA_MONITOR("EpetraExport::getSourceMap"); return toXpetra(export_->SourceMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getSourceMap() const { XPETRA_MONITOR("EpetraExport::getSourceMap"); return toXpetra(export_->SourceMap()); }
 
     //! The target Map used to construct this Export.
-    const RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > >  getTargetMap() const { XPETRA_MONITOR("EpetraExport::getTargetMap"); return toXpetra(export_->TargetMap()); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getTargetMap() const { XPETRA_MONITOR("EpetraExport::getTargetMap"); return toXpetra(export_->TargetMap()); }
 
     //@}
 

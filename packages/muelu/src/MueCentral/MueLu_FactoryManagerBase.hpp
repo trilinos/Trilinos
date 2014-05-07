@@ -64,6 +64,7 @@ namespace MueLu {
 
   public:
     //@{ Constructors/Destructors.
+    FactoryManagerBase() : bIgnoreUserData_(false) { }
 
     //! Destructor.
     virtual ~FactoryManagerBase() { }
@@ -74,7 +75,7 @@ namespace MueLu {
 
     //! Get
     // Return ref because user also give ref to the Hierarchy.
-    const virtual RCP<const FactoryBase> GetFactory(const std::string & varName) const = 0;
+    const virtual RCP<const FactoryBase> GetFactory(const std::string& varName) const = 0;
     //@}
 
     // Free temporarily hold data at the end of Hierarchy::Setup()
@@ -85,10 +86,7 @@ namespace MueLu {
     virtual void ResetDebugData() const = 0;
 #endif
 
-    //! returns internal IgnoreUserData flag
-    //! The FactoryManager has some control over the Level::GetFactory function
-    //! If IgnoreUserData is set, the Level::GetFactory function always asks the factory manager for a valid factory
-    //! Otherwise user-given data is preferred, if available (default behaviour)
+    //! get IgnoreUserData flag
     bool IgnoreUserData() const { return bIgnoreUserData_; }
 
     //! set IgnoreUserData flag
@@ -96,7 +94,7 @@ namespace MueLu {
 
   private:
     //! boolean flag that controls behaviour of Level::GetFactory
-    //! if bIgnoreUserData == true, the Level::GetFactory function always asks the Factory manager for a valid factory given a variable name
+    //! if bIgnoreUserData == true,  the Level::GetFactory function always asks the Factory manager for a valid factory given a variable name
     //! if bIgnoreUserData == false, the Level::GetFactory prefers user-provided data for a variable name if available. Otherwise the factory manager is asked for a valid factory
     //! default: bIgnoreUserData = false;
     bool bIgnoreUserData_;

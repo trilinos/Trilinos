@@ -33,15 +33,15 @@
 #ifndef IOSS_Ioss_EntityBlock_h
 #define IOSS_Ioss_EntityBlock_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Property.h>
-#include <Ioss_GroupingEntity.h>
-#include <string>
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class ElementTopology; }
 
 namespace Ioss {
-  class ElementTopology;
   class ElementBlock;
-  class DatabaseIO;
 
   class EntityBlock : public GroupingEntity {
   public:

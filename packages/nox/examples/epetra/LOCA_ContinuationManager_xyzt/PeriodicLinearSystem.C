@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,7 +57,7 @@
 
 PeriodicLinearSystem::
 PeriodicLinearSystem(
-    const Teuchos::RefCountPtr <Epetra_Comm> aComm): 
+    const Teuchos::RefCountPtr <Epetra_Comm> aComm):
   comm(aComm),
   continuableParams(LOCA::ParameterVector()),
   continuationFileParams(Teuchos::null),
@@ -69,7 +69,7 @@ PeriodicLinearSystem(
 {
 
   // Check if we are running with too many processors
-  TEUCHOS_TEST_FOR_EXCEPTION( comm->NumProc() > 3, 
+  TEUCHOS_TEST_FOR_EXCEPTION( comm->NumProc() > 3,
       std::logic_error,
       "Run this code with 3 processors at most!");
 
@@ -79,9 +79,9 @@ PeriodicLinearSystem(
   // (only one parameter: p)
   continuableParams.addParameter("p",1.0);
 
-  // In the continuation file, we want p and the three 
-  // components of x, 
-  continuationFileParams = 
+  // In the continuation file, we want p and the three
+  // components of x,
+  continuationFileParams =
     Teuchos::rcp (new Teuchos::ParameterList());
   continuationFileParams->set<double>("p",
       continuableParams.getValue("p"));
@@ -101,14 +101,14 @@ PeriodicLinearSystem(
   myGlobalElements = vectorMap->MyGlobalElements();
 
   // Initial guess ---------------------------------------
-  initialGuess = 
+  initialGuess =
     Teuchos::rcp (new Epetra_Vector(*vectorMap));
   initialGuess->PutScalar(0.0);
 
   // Jacobian --------------------------------------------
   // Number of nonzero elements
   int * numNonzeros = new int[3];
-  for ( int i = 0; i < numMyElements; i++ ) 
+  for ( int i = 0; i < numMyElements; i++ )
     if ( myGlobalElements[i] == 0 )
       numNonzeros[i] = 3;
     else
@@ -120,31 +120,31 @@ PeriodicLinearSystem(
   // Filling the jacobian
   int * indices = new int[3];
   double * values = new double[3];
-  for ( int i = 0; i < numMyElements; i++ ) 
+  for ( int i = 0; i < numMyElements; i++ )
   {
     switch (myGlobalElements[i]) {
       case 0:
-	indices[0] = 0;
-	values[0]  = 1.0;
-	indices[1] = 1;
-	values[1]  = 1.0;
-	indices[2] = 2;
-	values[2]  = 1.0;
-	break;
+    indices[0] = 0;
+    values[0]  = 1.0;
+    indices[1] = 1;
+    values[1]  = 1.0;
+    indices[2] = 2;
+    values[2]  = 1.0;
+    break;
       case 1:
-	indices[0] = 0;
-	values[0]  = -2.0;
-	indices[1] = 1;
-	values[1]  = -2.0;
-	break;
+    indices[0] = 0;
+    values[0]  = -2.0;
+    indices[1] = 1;
+    values[1]  = -2.0;
+    break;
       case 2:
-	indices[0] = 0;
-	values[0]  = 2.0;
-	indices[1] = 1;
-	values[1]  = 1.0;
-	break;
+    indices[0] = 0;
+    values[0]  = 2.0;
+    indices[1] = 1;
+    values[1]  = 1.0;
+    break;
       default:
-	throw "Thrown exception in PeriodicLinearSystem: myGlobalElements[i] must be between 0 to 2"; 
+    throw "Thrown exception in PeriodicLinearSystem: myGlobalElements[i] must be between 0 to 2";
     }
     jacobian->InsertGlobalValues(myGlobalElements[i],numNonzeros[i],values,indices);
   }
@@ -179,10 +179,10 @@ ComputeF(const Epetra_Vector & x, Epetra_Vector & f)
   double p  = continuableParams.getValue("p");
 
   // Filling in the forcing terms
-  for ( int i = 0; i < numMyElements; i++ ) 
+  for ( int i = 0; i < numMyElements; i++ )
    if (myGlobalElements[i] == 0 || myGlobalElements[i] == 1)
      f[i] -= p;
- 
+
   return true;
 }
 
@@ -216,7 +216,7 @@ SetContinuableParameter(std::string label,double value)
 {
 
   // These are the continuable parameters
-  if (label == "p") 
+  if (label == "p")
     continuableParams.setValue("p",value);
   else
     throw "Thrown exception in SetParameter(): label not known";
@@ -245,7 +245,7 @@ SetContinuationFileParameters(const Epetra_Vector & x)
   continuationFileParams->set<double>("p",continuableParams.getValue("p"));
 
   // Three components of the solution
-  for ( int i = 0; i < numMyElements; i++ ) 
+  for ( int i = 0; i < numMyElements; i++ )
     switch (myGlobalElements[i]) {
       case 0:
        continuationFileParams->set<double>("x1",x[i]);
@@ -257,7 +257,7 @@ SetContinuationFileParameters(const Epetra_Vector & x)
        continuationFileParams->set<double>("x3",x[i]);
        break;
       default:
-       throw "Thrown exception in PeriodicLinearSystem: myGlobalElements[i] must be between 0 to 2"; 
+       throw "Thrown exception in PeriodicLinearSystem: myGlobalElements[i] must be between 0 to 2";
     }
 
   return true;

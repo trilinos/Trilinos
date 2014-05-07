@@ -127,13 +127,13 @@ public:
 
   void setWeights(const scalar_t *val, int stride, int idx);
 
-  /*! \brief Provide a pointer to one dimension of the vertex weights.
-   *    \param val A pointer to the weights for dimension \c dim.
+  /*! \brief Provide a pointer to vertex weights.
+   *    \param val A pointer to the weights for index \c idx.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
-   *             \c n th vertex for dimension \dim.
+   *             \c n th vertex for index \idx.
    *    \param idx A number from 0 to one less than 
-   *          vertex weight dimension specified in the constructor.
+   *          number of vertex weights specified in the constructor.
    *
    *  The order of the vertex weights should match the order that
    *  vertices appear in the input data structure.
@@ -158,13 +158,13 @@ public:
    */
   void setVertexWeightIsDegree(int idx);
 
-  /*! \brief Provide a pointer to one dimension of the edge weights.
-   *    \param val A pointer to the weights for dimension \c dim.
+  /*! \brief Provide a pointer to edge weights.
+   *    \param val A pointer to the weights for index \c idx.
    *    \param stride    A stride for the \c val array.  If \stride is
    *             \c k, then val[n * k] is the weight for the
-   *             \c n th edge for dimension \dim.
-   *    \param dim A number from 0 to one less than 
-   *          edge weight dimension specified in the constructor.
+   *             \c n th edge for index \idx.
+   *    \param dim A number from 0 to one less than the number
+   *          of edge weights specified in the constructor.
    *
    *  The order of the edge weights should follow the order that the
    *  the vertices and edges appear in the input data structure.
@@ -213,33 +213,29 @@ public:
 
   void getEdgesView(const lno_t *&offsets, const gid_t *&adjIds) const
   {
-    adjIds = NULL;
-    offsets = NULL;
-    if (getLocalNumVertices()) {
-      offsets = offs_.getRawPtr();
-      if (getLocalNumEdges()) adjIds = adjids_.getRawPtr();
-    }
+    offsets = offs_.getRawPtr();
+    adjIds = (getLocalNumEdges() ? adjids_.getRawPtr() : NULL);
   }
 
-  int getNumWeightsPerVertex() const { return vertexWeightDim_;}
+  int getNumWeightsPerVertex() const { return nWeightsPerVertex_;}
 
   void getVertexWeightsView(const scalar_t *&weights, int &stride,
                             int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
+      idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
     size_t length;
     vertexWeights_[idx].getStridedList(length, weights, stride);
   }
 
   bool useDegreeAsVertexWeight(int idx) const {return vertexDegreeWeight_[idx];}
 
-  int getNumWeightsPerEdge() const { return edgeWeightDim_;}
+  int getNumWeightsPerEdge() const { return nWeightsPerEdge_;}
 
   void getEdgeWeightsView(const scalar_t *&weights, int &stride, int idx) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid weight index",
-      idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
+      idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
     size_t length;
     edgeWeights_[idx].getStridedList(length, weights, stride);
   }
@@ -258,11 +254,11 @@ private:
   ArrayRCP<const lno_t> offs_;
   ArrayRCP<const gid_t> adjids_;
 
-  int vertexWeightDim_;
+  int nWeightsPerVertex_;
   ArrayRCP<StridedData<lno_t, scalar_t> > vertexWeights_;
   ArrayRCP<bool> vertexDegreeWeight_;
 
-  int edgeWeightDim_;
+  int nWeightsPerEdge_;
   ArrayRCP<StridedData<lno_t, scalar_t> > edgeWeights_;
 
   int coordinateDim_;
@@ -282,8 +278,8 @@ template <typename User, typename UserCoord>
   XpetraCrsGraphAdapter<User,UserCoord>::XpetraCrsGraphAdapter(
     const RCP<const User> &ingraph, int nVtxWgts, int nEdgeWgts):
       ingraph_(ingraph), graph_(), comm_() , offs_(), adjids_(),
-      vertexWeightDim_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
-      edgeWeightDim_(nEdgeWgts), edgeWeights_(),
+      nWeightsPerVertex_(nVtxWgts), vertexWeights_(), vertexDegreeWeight_(),
+      nWeightsPerEdge_(nEdgeWgts), edgeWeights_(),
       coordinateDim_(0), coords_(),
       env_(rcp(new Environment))
 {
@@ -319,17 +315,17 @@ template <typename User, typename UserCoord>
   offs_ = arcp(offs, 0, n, true);
   adjids_ = arcp(adjids, 0, nedges, true);
 
-  if (vertexWeightDim_ > 0) {
+  if (nWeightsPerVertex_ > 0) {
     vertexWeights_ = 
-          arcp(new input_t[vertexWeightDim_], 0, vertexWeightDim_, true);
+          arcp(new input_t[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
     vertexDegreeWeight_ =
-          arcp(new bool[vertexWeightDim_], 0, vertexWeightDim_, true);
-    for (int i=0; i < vertexWeightDim_; i++)
+          arcp(new bool[nWeightsPerVertex_], 0, nWeightsPerVertex_, true);
+    for (int i=0; i < nWeightsPerVertex_; i++)
       vertexDegreeWeight_[i] = false;
   }
 
-  if (edgeWeightDim_ > 0)
-    edgeWeights_ = arcp(new input_t[edgeWeightDim_], 0, edgeWeightDim_, true);
+  if (nWeightsPerEdge_ > 0)
+    edgeWeights_ = arcp(new input_t[nWeightsPerEdge_], 0, nWeightsPerEdge_, true);
 }
 
 ////////////////////////////////////////////////////////////////////////////
@@ -350,7 +346,7 @@ template <typename User, typename UserCoord>
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
   size_t nvtx = getLocalNumVertices();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nvtx*stride, false);
   vertexWeights_[idx] = input_t(weightV, stride);
@@ -378,7 +374,7 @@ template <typename User, typename UserCoord>
     int idx)
 {
   env_->localInputAssertion(__FILE__, __LINE__, "invalid vertex weight index",
-    idx >= 0 && idx < vertexWeightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < nWeightsPerVertex_, BASIC_ASSERTION);
 
   vertexDegreeWeight_[idx] = true;
 }
@@ -390,7 +386,7 @@ template <typename User, typename UserCoord>
 {
   typedef StridedData<lno_t,scalar_t> input_t;
   env_->localInputAssertion(__FILE__, __LINE__, "invalid edge weight index",
-    idx >= 0 && idx < edgeWeightDim_, BASIC_ASSERTION);
+    idx >= 0 && idx < nWeightsPerEdge_, BASIC_ASSERTION);
   size_t nedges = getLocalNumEdges();
   ArrayRCP<const scalar_t> weightV(weightVal, 0, nedges*stride, false);
   edgeWeights_[idx] = input_t(weightV, stride);

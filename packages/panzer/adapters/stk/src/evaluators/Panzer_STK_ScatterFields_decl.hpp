@@ -72,9 +72,9 @@ class ScatterFields : public PHX::EvaluatorWithBaseImpl<TraitsT>,
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;
 
-  std::vector<VariableField*> stkFields_;
-
   std::vector<double> scaling_;
+
+  bool cellFields_;
 
   void initialize(const std::string & scatterName,
                   const Teuchos::RCP<STK_Interface> mesh,

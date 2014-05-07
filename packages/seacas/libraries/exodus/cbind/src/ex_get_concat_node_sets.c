@@ -33,7 +33,8 @@
  * 
  */
 
-#include "exodusII.h"
+#include <stddef.h>                     // for NULL
+#include "exodusII.h"                   // for ex_set_specs, void_int, etc
 
 /*!
 \deprecated Use ex_get_concat_sets()(exoid, EX_NODE_SET, set_specs) instead
@@ -90,7 +91,6 @@ As an example, the following code segment will read concatenated node
 sets:
 
 \code
-#include "exodusII.h"
 
 int error, exoid, num_node_sets, list_len, *ids, 
     *num_nodes_per_set, *num_df_per_set, *node_ind, 

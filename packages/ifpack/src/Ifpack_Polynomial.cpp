@@ -115,9 +115,9 @@ Ifpack_Polynomial(const Epetra_Operator* Operator) :
   NumGlobalRows_(0),
   NumGlobalNonzeros_(0),
   Operator_(Teuchos::rcp(Operator,false)),
-  UseBlockMode_(false),  
+  UseBlockMode_(false),
   SolveNormalEquations_(false),
-  IsRowMatrix_(false), 
+  IsRowMatrix_(false),
   ZeroStartingSolution_(true)
 {
 }
@@ -168,7 +168,7 @@ Ifpack_Polynomial(const Epetra_RowMatrix* Operator) :
   Matrix_(Teuchos::rcp(Operator,false)),
   UseBlockMode_(false),
   SolveNormalEquations_(false),
-  IsRowMatrix_(true), 
+  IsRowMatrix_(true),
   ZeroStartingSolution_(true)
 {
 }
@@ -188,12 +188,12 @@ int Ifpack_Polynomial::SetParameters(Teuchos::ParameterList& List)
   LSPointsImag_         = List.get("polynomial: imag interp points",LSPointsImag_);
   IsIndefinite_         = List.get("polynomial: indefinite",IsIndefinite_);
   IsComplex_            = List.get("polynomial: complex",IsComplex_);
-  MinDiagonalValue_     = List.get("polynomial: min diagonal value", 
+  MinDiagonalValue_     = List.get("polynomial: min diagonal value",
                                    MinDiagonalValue_);
-  ZeroStartingSolution_ = List.get("polynomial: zero starting solution", 
+  ZeroStartingSolution_ = List.get("polynomial: zero starting solution",
                                    ZeroStartingSolution_);
 
-  Epetra_Vector* ID     = List.get("polynomial: operator inv diagonal", 
+  Epetra_Vector* ID     = List.get("polynomial: operator inv diagonal",
                                    (Epetra_Vector*)0);
   EigMaxIters_          = List.get("polynomial: eigenvalue max iterations",EigMaxIters_);
 
@@ -205,7 +205,7 @@ int Ifpack_Polynomial::SetParameters(Teuchos::ParameterList& List)
     BlockList_          = List.get("polynomial: block list",BlockList_);
 
     // Since we know we're doing a matrix inverse, clobber the block list
-    // w/"invert" if it's set to multiply      
+    // w/"invert" if it's set to multiply
     Teuchos::ParameterList Blist;
     Blist=BlockList_.get("blockdiagmatrix: list",Blist);
     string dummy("invert");
@@ -213,13 +213,13 @@ int Ifpack_Polynomial::SetParameters(Teuchos::ParameterList& List)
     if(ApplyMode==string("multiply")){
       Blist.set("apply mode","invert");
       BlockList_.set("blockdiagmatrix: list",Blist);
-    }    
-  }  
+    }
+  }
 #endif
 
   SolveNormalEquations_ = List.get("polynomial: solve normal equations",SolveNormalEquations_);
 
-  if (ID != 0) 
+  if (ID != 0)
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(*ID) );
   }
@@ -292,7 +292,7 @@ int Ifpack_Polynomial::Initialize()
   }
   else
   {
-    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=       
+    if (Operator_->OperatorDomainMap().NumGlobalElements64() !=
         Operator_->OperatorRangeMap().NumGlobalElements64())
       IFPACK_CHK_ERR(-2); // only square operators
   }
@@ -322,9 +322,9 @@ int Ifpack_Polynomial::Compute()
   // Check to see if we can run in block mode
   if(IsRowMatrix_ && InvDiagonal_ == Teuchos::null && UseBlockMode_){
     const Epetra_CrsMatrix *CrsMatrix=dynamic_cast<const Epetra_CrsMatrix*>(&*Matrix_);
-    
+
     // If we don't have CrsMatrix, we can't use the block preconditioner
-    if(!CrsMatrix) UseBlockMode_=false;    
+    if(!CrsMatrix) UseBlockMode_=false;
     else{
       int ierr;
       InvBlockDiagonal_=Teuchos::rcp(new EpetraExt_PointToBlockDiagPermute(*CrsMatrix));
@@ -336,8 +336,8 @@ int Ifpack_Polynomial::Compute()
       ierr=InvBlockDiagonal_->Compute();
       if(ierr) IFPACK_CHK_ERR(-8);
     }
-  }    
-#endif  
+  }
+#endif
   if (IsRowMatrix_ && InvDiagonal_ == Teuchos::null && !UseBlockMode_)
   {
     InvDiagonal_ = Teuchos::rcp( new Epetra_Vector(Matrix().Map()) );
@@ -358,7 +358,7 @@ int Ifpack_Polynomial::Compute()
     }
   }
 
-  // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one 
+  // Automatically compute maximum eigenvalue estimate of D^{-1}A if user hasn't provided one
   double lambda_real_min, lambda_real_max, lambda_imag_min, lambda_imag_max;
   if (LambdaRealMax_ == -1) {
     //PowerMethod(Matrix(), *InvDiagonal_, EigMaxIters_, lambda_max);
@@ -419,15 +419,15 @@ int Ifpack_Polynomial::Compute()
 #ifdef HAVE_TEUCHOS_COMPLEX
 
   // Construct overdetermined Vandermonde matrix
-  Teuchos::SerialDenseMatrix< int,std::complex<double> > Vmatrix(cpts.size(),PolyDegree_+1);
+  Teuchos::SerialDenseMatrix<int, std::complex<double> > Vmatrix(cpts.size(),PolyDegree_+1);
   Vmatrix.putScalar(zero);
-  for( int jj=0; jj<=PolyDegree_; jj++) {
-    for( int ii=0; ii<cpts.size()-1; ii++) {
-      if(jj>0) {
-	Vmatrix(ii,jj)=pow(cpts[ii],jj);
+  for (int jj = 0; jj <= PolyDegree_; ++jj) {
+    for (int ii = 0; ii < static_cast<int> (cpts.size ()) - 1; ++ii) {
+      if (jj > 0) {
+        Vmatrix(ii,jj) = pow(cpts[ii],jj);
       }
       else {
-	Vmatrix(ii,jj)=one;
+        Vmatrix(ii,jj) = one;
       }
     }
   }
@@ -447,29 +447,29 @@ int Ifpack_Polynomial::Compute()
   std::complex<double> lworkScalar(1.0,0.0);
   int info = 0;
   lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(), RHS.numCols(),
-	           Vmatrix.values(),  Vmatrix.numRows(), RHS.values(),    RHS.numRows(),
-	           &lworkScalar, -1, &info);
+                   Vmatrix.values(),  Vmatrix.numRows(), RHS.values(),    RHS.numRows(),
+                   &lworkScalar, -1, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			     "_GELSS workspace query returned INFO = "
-			     << info << " != 0.");
+                             "_GELSS workspace query returned INFO = "
+                             << info << " != 0.");
   const int lwork = static_cast<int> (real(lworkScalar));
   TEUCHOS_TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			     "_GELSS workspace query returned LWORK = "
-			     << lwork << " < 0.");
+                             "_GELSS workspace query returned LWORK = "
+                             << lwork << " < 0.");
   // Allocate workspace.  Size > 0 means &work[0] makes sense.
   Teuchos::Array< std::complex<double> > work (std::max (1, lwork));
   // Solve the least-squares problem.
   lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(),  RHS.numCols(),
-	           Vmatrix.values(),  Vmatrix.numRows(),  RHS.values(),   RHS.numRows(),
-       	           &work[0], lwork, &info);
+                   Vmatrix.values(),  Vmatrix.numRows(),  RHS.values(),   RHS.numRows(),
+                   &work[0], lwork, &info);
 
   coeff_.resize(PolyDegree_+1);
   std::complex<double> c0=RHS(0,0);
   for(int ii=0; ii<=PolyDegree_; ii++) {
     // test that the imaginary part is nonzero
     //TEUCHOS_TEST_FOR_EXCEPTION(abs(imag(RHS(ii,0))) > 1e-8, std::logic_error,
-    //			       "imaginary part of polynomial coefficients is nonzero! coeff = "
-    //			       << RHS(ii,0));
+    //                         "imaginary part of polynomial coefficients is nonzero! coeff = "
+    //                         << RHS(ii,0));
     coeff_[ii]=real(RHS(ii,0)/c0);
     //std::cout<<"coeff["<<ii<<"]="<<coeff_[ii]<<std::endl;
   }
@@ -482,10 +482,10 @@ int Ifpack_Polynomial::Compute()
   for( int jj=0; jj<=PolyDegree_; jj++) {
     for( int ii=0; ii<xs.size(); ii++) {
       if(jj>0) {
-	Vmatrix(ii,jj)=pow(xs[ii],jj);
+        Vmatrix(ii,jj)=pow(xs[ii],jj);
       }
       else {
-	Vmatrix(ii,jj)=1.0;
+        Vmatrix(ii,jj)=1.0;
       }
     }
   }
@@ -505,29 +505,29 @@ int Ifpack_Polynomial::Compute()
   double lworkScalar(1.0);
   int info = 0;
   lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(), RHS.numCols(),
-	           Vmatrix.values(),  Vmatrix.numRows(), RHS.values(),    RHS.numRows(),
-	           &lworkScalar, -1, &info);
+                   Vmatrix.values(),  Vmatrix.numRows(), RHS.values(),    RHS.numRows(),
+                   &lworkScalar, -1, &info);
   TEUCHOS_TEST_FOR_EXCEPTION(info != 0, std::logic_error,
-			     "_GELSS workspace query returned INFO = "
-			     << info << " != 0.");
+                             "_GELSS workspace query returned INFO = "
+                             << info << " != 0.");
   const int lwork = static_cast<int> (lworkScalar);
   TEUCHOS_TEST_FOR_EXCEPTION(lwork < 0, std::logic_error,
-			     "_GELSS workspace query returned LWORK = "
-			     << lwork << " < 0.");
+                             "_GELSS workspace query returned LWORK = "
+                             << lwork << " < 0.");
   // Allocate workspace.  Size > 0 means &work[0] makes sense.
   Teuchos::Array< double > work (std::max (1, lwork));
   // Solve the least-squares problem.
   lapack.GELS('N', Vmatrix.numRows(), Vmatrix.numCols(),  RHS.numCols(),
-	           Vmatrix.values(),  Vmatrix.numRows(),  RHS.values(),   RHS.numRows(),
-       	           &work[0], lwork, &info);
+                   Vmatrix.values(),  Vmatrix.numRows(),  RHS.values(),   RHS.numRows(),
+                   &work[0], lwork, &info);
 
   coeff_.resize(PolyDegree_+1);
   double c0=RHS(0,0);
   for(int ii=0; ii<=PolyDegree_; ii++) {
     // test that the imaginary part is nonzero
     //TEUCHOS_TEST_FOR_EXCEPTION(abs(imag(RHS(ii,0))) > 1e-8, std::logic_error,
-    //			       "imaginary part of polynomial coefficients is nonzero! coeff = "
-    //			       << RHS(ii,0));
+    //                         "imaginary part of polynomial coefficients is nonzero! coeff = "
+    //                         << RHS(ii,0));
     coeff_[ii]=RHS(ii,0)/c0;
   }
 
@@ -569,24 +569,24 @@ ostream& Ifpack_Polynomial::Print(ostream & os) const
       os << "Minimum value on stored inverse diagonal = " << MinVal << endl;
       os << "Maximum value on stored inverse diagonal = " << MaxVal << endl;
     }
-    if (ZeroStartingSolution_) 
+    if (ZeroStartingSolution_)
       os << "Using zero starting solution" << endl;
     else
       os << "Using input starting solution" << endl;
     os << endl;
     os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
     os << "-----           -------   --------------       ------------     --------" << endl;
-    os << "Initialize()    "   << std::setw(5) << NumInitialize_ 
-       << "  " << std::setw(15) << InitializeTime_ 
+    os << "Initialize()    "   << std::setw(5) << NumInitialize_
+       << "  " << std::setw(15) << InitializeTime_
        << "              0.0              0.0" << endl;
-    os << "Compute()       "   << std::setw(5) << NumCompute_ 
+    os << "Compute()       "   << std::setw(5) << NumCompute_
        << "  " << std::setw(15) << ComputeTime_
        << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_;
     if (ComputeTime_ != 0.0)
       os << "  " << std::setw(15) << 1.0e-6 * ComputeFlops_ / ComputeTime_ << endl;
     else
       os << "  " << std::setw(15) << 0.0 << endl;
-    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_ 
+    os << "ApplyInverse()  "   << std::setw(5) << NumApplyInverse_
        << "  " << std::setw(15) << ApplyInverseTime_
        << "  " << std::setw(15) << 1.0e-6 * ApplyInverseFlops_;
     if (ApplyInverseTime_ != 0.0)
@@ -602,9 +602,9 @@ ostream& Ifpack_Polynomial::Print(ostream & os) const
 
 //==============================================================================
 double Ifpack_Polynomial::
-Condest(const Ifpack_CondestType CT, 
+Condest(const Ifpack_CondestType CT,
         const int MaxIters, const double Tol,
-	Epetra_RowMatrix* Matrix_in)
+        Epetra_RowMatrix* Matrix_in)
 {
   if (!IsComputed()) // cannot compute right now
     return(-1.0);
@@ -626,7 +626,7 @@ void Ifpack_Polynomial::SetLabel()
 int Ifpack_Polynomial::
 ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 {
-  
+
   if (!IsComputed())
     IFPACK_CHK_ERR(-3);
 
@@ -644,21 +644,23 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
     Y.PutScalar(0.0);
   }
 
-#ifdef HAVE_IFPACK_EPETRAEXT
-  EpetraExt_PointToBlockDiagPermute* IBD=0;
-  if (UseBlockMode_) IBD=&*InvBlockDiagonal_;
-#endif
+  // mfh 20 Mar 2014: IBD never gets used, so I'm commenting out the
+  // following lines of code in order to forestall build warnings.
+// #ifdef HAVE_IFPACK_EPETRAEXT
+//   EpetraExt_PointToBlockDiagPermute* IBD=0;
+//   if (UseBlockMode_) IBD=&*InvBlockDiagonal_;
+// #endif
 
   Y.Update(-coeff_[1], Xcopy, 1.0);
-  for(int ii=2; ii<coeff_.size(); ii++) {
+  for (int ii = 2; ii < static_cast<int> (coeff_.size ()); ++ii) {
     const Epetra_MultiVector V(Xcopy);
     Operator_->Apply(V,Xcopy);
     Xcopy.Multiply(1.0, *InvDiagonal_, Xcopy, 0.0);
     // Update Y
     Y.Update(-coeff_[ii], Xcopy, 1.0);
   }
-  
-  // Flops are updated in each of the following. 
+
+  // Flops are updated in each of the following.
   ++NumApplyInverse_;
   ApplyInverseTime_ += Time_->ElapsedTime();
   return(0);
@@ -666,9 +668,9 @@ ApplyInverse(const Epetra_MultiVector& X, Epetra_MultiVector& Y) const
 
 //==============================================================================
 int Ifpack_Polynomial::
-PowerMethod(const Epetra_Operator& Operator, 
-            const Epetra_Vector& InvPointDiagonal, 
-            const int MaximumIterations, 
+PowerMethod(const Epetra_Operator& Operator,
+            const Epetra_Vector& InvPointDiagonal,
+            const int MaximumIterations,
             double& lambda_max)
 {
   // this is a simple power method
@@ -699,9 +701,9 @@ PowerMethod(const Epetra_Operator& Operator,
 
 //==============================================================================
 int Ifpack_Polynomial::
-CG(const Epetra_Operator& Operator, 
-   const Epetra_Vector& InvPointDiagonal, 
-   const int MaximumIterations, 
+CG(const Epetra_Operator& Operator,
+   const Epetra_Vector& InvPointDiagonal,
+   const int MaximumIterations,
    double& lambda_min, double& lambda_max)
 {
 #ifdef HAVE_IFPACK_AZTECOO
@@ -778,21 +780,21 @@ PowerMethod(const int MaximumIterations,  double& lambda_max)
 //==============================================================================
 #ifdef HAVE_IFPACK_EPETRAEXT
 int Ifpack_Polynomial::
-CG(const int MaximumIterations, 
+CG(const int MaximumIterations,
    double& lambda_min, double& lambda_max)
 {
   IFPACK_CHK_ERR(-1);// NTS: This always seems to yield errors in AztecOO, ergo,
                      // I turned it off.
 
   if(!UseBlockMode_) IFPACK_CHK_ERR(-1);
-  
+
 #ifdef HAVE_IFPACK_AZTECOO
   Epetra_Vector x(Operator_->OperatorDomainMap());
   Epetra_Vector y(Operator_->OperatorRangeMap());
   x.Random();
   y.PutScalar(0.0);
   Epetra_LinearProblem LP(const_cast<Epetra_RowMatrix*>(&*Matrix_), &x, &y);
-  
+
   AztecOO solver(LP);
   solver.SetAztecOption(AZ_solver, AZ_cg_condnum);
   solver.SetAztecOption(AZ_output, AZ_none);
@@ -804,7 +806,7 @@ CG(const int MaximumIterations,
 
   lambda_min = status[AZ_lambda_min];
   lambda_max = status[AZ_lambda_max];
-  
+
   return(0);
 #else
   cout << "You need to configure IFPACK with support for AztecOO" << endl;

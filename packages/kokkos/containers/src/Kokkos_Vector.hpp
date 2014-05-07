@@ -152,7 +152,7 @@ public:
       DV::resize(size_t (n*_extra_storage));
     _size = n;
 
-	  /* Assign value either on host or on device */
+          /* Assign value either on host or on device */
 
     if( DV::modified_host >= DV::modified_device ) {
       set_functor_host f(DV::h_view,val);
@@ -204,12 +204,16 @@ public:
 
   /* std::algorithms wich work originally with iterators, here they are implemented as member functions */
 
-  size_t lower_bound(const size_t &start, const size_t &end, const Scalar &comp_val) const {
-
-    int lower = start;
-    int upper = _size > end? end : _size-1;
-    if(upper<=lower) return end;
-
+  size_t
+  lower_bound (const size_t& start,
+               const size_t& theEnd,
+               const Scalar& comp_val) const
+  {
+    int lower = start; // FIXME (mfh 24 Apr 2014) narrowing conversion
+    int upper = _size > theEnd? theEnd : _size-1; // FIXME (mfh 24 Apr 2014) narrowing conversion
+    if (upper <= lower) {
+      return theEnd;
+    }
 
     Scalar lower_val = DV::h_view(lower);
     Scalar upper_val = DV::h_view(upper);

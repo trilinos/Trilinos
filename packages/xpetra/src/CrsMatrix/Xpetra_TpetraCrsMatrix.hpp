@@ -107,10 +107,10 @@ namespace Xpetra {
 
     //! Constructor for a fused import
     TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& sourceMatrix,
-		    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Import<LocalOrdinal,GlobalOrdinal,Node> & importer,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
     {
       typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MyTpetraCrsMatrix;
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, *sourceMatrix, tSourceMatrix, "Xpetra::TpetraCrsMatrix constructor only accepts Xpetra::TpetraCrsMatrix as the input argument.");//TODO: remove and use toTpetra()
@@ -127,10 +127,10 @@ namespace Xpetra {
 
     //! Constructor for a fused export
     TpetraCrsMatrix(const Teuchos::RCP<const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> >& sourceMatrix,
-		    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
-		    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
-		    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
+                    const Export<LocalOrdinal,GlobalOrdinal,Node> & exporter,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& domainMap = Teuchos::null,
+                    const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& rangeMap = Teuchos::null,
+                    const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null)
     {
       typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> MyTpetraCrsMatrix;
       XPETRA_DYNAMIC_CAST(const TpetraCrsMatrixClass, *sourceMatrix, tSourceMatrix, "Xpetra::TpetraCrsMatrix constructor only accepts Xpetra::TpetraCrsMatrix as the input argument.");//TODO: remove and use toTpetra()
@@ -204,21 +204,21 @@ namespace Xpetra {
 
     //! Expert static fill complete
     void expertStaticFillComplete(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & domainMap,
-				  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
-				  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
-				  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
-				  const RCP<ParameterList> &params=Teuchos::null) {
+                                  const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > & rangeMap,
+                                  const RCP<const Import<LocalOrdinal,GlobalOrdinal,Node> > &importer=Teuchos::null,
+                                  const RCP<const Export<LocalOrdinal,GlobalOrdinal,Node> > &exporter=Teuchos::null,
+                                  const RCP<ParameterList> &params=Teuchos::null) {
       XPETRA_MONITOR("TpetraCrsMatrix::expertStaticFillComplete");
       RCP<const Tpetra::Import<LocalOrdinal,GlobalOrdinal,Node> > myImport;
-      RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > myExport; 
+      RCP<const Tpetra::Export<LocalOrdinal,GlobalOrdinal,Node> > myExport;
 
       if(importer!=Teuchos::null) {
-	XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
-	myImport = tImporter.getTpetra_Import();
+        XPETRA_DYNAMIC_CAST( const TpetraImportClass , *importer, tImporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraImport.");
+        myImport = tImporter.getTpetra_Import();
       }
       if(exporter!=Teuchos::null) {
-	XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
-	myExport = tExporter.getTpetra_Export();
+        XPETRA_DYNAMIC_CAST( const TpetraExportClass , *exporter, tExporter, "Xpetra::TpetraCrsMatrix::expertStaticFillComplete only accepts Xpetra::TpetraExport.");
+        myExport = tExporter.getTpetra_Export();
       }
 
       mtx_->expertStaticFillComplete(toTpetra(domainMap),toTpetra(rangeMap),myImport,myExport,params);
@@ -327,7 +327,7 @@ namespace Xpetra {
 
     //! Deep copy constructor
     TpetraCrsMatrix(const TpetraCrsMatrix& matrix)
-    : mtx_(matrix.mtx_->template clone<Node>(rcp(new Node()))) { }
+      : mtx_ (matrix.mtx_->template clone<Node> (matrix.mtx_->getNode ())) {}
 
     //! Get a copy of the diagonal entries owned by this node, with local row idices.
     void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag) const {
@@ -337,11 +337,25 @@ namespace Xpetra {
       // mtx_->getLocalDiagCopy(toTpetra(diag));
     }
 
+    //! Get offsets of the diagonal entries in the matrix.
+    void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+      XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagOffsets");
+      mtx_->getLocalDiagOffsets(offsets);
+    }
+
+    //! Get a copy of the diagonal entries owned by this node, with local row indices.
+    void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+      XPETRA_MONITOR("TpetraCrsMatrix::getLocalDiagCopy");
+      //XPETRA_DYNAMIC_CAST(TpetraVectorClass, diag, tDiag, "Xpetra::TpetraCrsMatrix.getLocalDiagCopy() only accept Xpetra::TpetraVector as input arguments.");
+      //mtx_->getLocalDiagCopy(*tDiag.getTpetra_Vector(), offsets);
+      mtx_->getLocalDiagCopy(*(toTpetra(diag)), offsets);
+    }
+
     //! Implements DistObject interface
     //{@
 
     //! Access function for the Tpetra::Map this DistObject was constructed with.
-    const Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
+    Teuchos::RCP< const Map< LocalOrdinal, GlobalOrdinal, Node > > getMap() const { XPETRA_MONITOR("TpetraCrsMatrix::getMap"); return rcp( new TpetraMap< LocalOrdinal, GlobalOrdinal, Node >(mtx_->getMap()) ); }
 
     //! Import.
     void doImport(const DistObject<char, LocalOrdinal, GlobalOrdinal, Node> &source,
@@ -418,7 +432,6 @@ namespace Xpetra {
 
   private:
 
-    // RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
     RCP< Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > mtx_;
 
   }; // TpetraCrsMatrix class

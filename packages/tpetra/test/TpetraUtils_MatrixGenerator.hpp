@@ -730,9 +730,9 @@ namespace Tpetra {
          typedef local_ordinal_type LO;
          typedef global_ordinal_type GO;
          typedef node_type NT;
-         typedef Teuchos::ScalarTraits<ST> STS;
-         typedef typename STS::magnitudeType MT;
-         typedef Teuchos::ScalarTraits<MT> STM;
+         //typedef Teuchos::ScalarTraits<ST> STS; // unused
+         //typedef typename STS::magnitudeType MT; // unused
+         //typedef Teuchos::ScalarTraits<MT> STM; // unused
          typedef Tpetra::Vector<ST, LO, GO, NT> MV;
 
          Tuple<GO, 3> dims;

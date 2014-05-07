@@ -131,9 +131,6 @@ namespace MueLu {
     //! checks main diagonal entries of (0,0) block. Does not affect entries in (1,1) block!
     static void CheckMainDiagonal(RCP<BlockedCrsMatrix> & bAc, bool repairZeroDiagonals = false);
 
-    //! If true, the action of the restriction operator action is implicitly defined by the transpose of the prolongator.
-    bool implicitTranspose_;
-
     //! If true, perform a basic plausibility check on Ac (default = false)
     //! note, that the repairZeroDiagonals_ flag only is valid for checkAc_ == true
     bool checkAc_;

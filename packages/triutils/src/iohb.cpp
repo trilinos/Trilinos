@@ -819,7 +819,7 @@ int writeHB_mat_double(const char* filename, int M, int N,
        }
     } else out_file = stdout;
 
-    if ( Ptrfmt == NULL ) Ptrfmt = "(8I10)";
+    if ( Ptrfmt == NULL ) strcpy(Ptrfmt, "(8I10)");
     ParseIfmt(Ptrfmt,&Ptrperline,&Ptrwidth);
     std::sprintf(pformat,"%%%dd",Ptrwidth);
     ptrcrd = (N+1)/Ptrperline;
@@ -832,7 +832,7 @@ int writeHB_mat_double(const char* filename, int M, int N,
     if ( nz%Indperline != 0) indcrd++;
 
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
-      if ( Valfmt == NULL ) Valfmt = "(4E20.13)";
+      if ( Valfmt == NULL ) strcpy(Valfmt, "(4E20.13)");
       ParseRfmt(Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
       if (Valflag == 'D') *std::strchr(Valfmt,'D') = 'E';
       if (Valflag == 'F')
@@ -1427,7 +1427,7 @@ int writeHB_mat_char(const char* filename, int M, int N,
        }
     } else out_file = stdout;
 
-    if ( Ptrfmt == NULL ) Ptrfmt = "(8I10)";
+    if ( Ptrfmt == NULL ) strcpy(Ptrfmt, "(8I10)");
     ParseIfmt(Ptrfmt,&Ptrperline,&Ptrwidth);
     std::sprintf(pformat,"%%%dd",Ptrwidth);
 
@@ -1436,7 +1436,7 @@ int writeHB_mat_char(const char* filename, int M, int N,
     std::sprintf(iformat,"%%%dd",Indwidth);
 
     if ( Type[0] != 'P' ) {          /* Skip if pattern only  */
-      if ( Valfmt == NULL ) Valfmt = "(4E20.13)";
+      if ( Valfmt == NULL ) strcpy(Valfmt, "(4E20.13)");
       ParseRfmt(Valfmt,&Valperline,&Valwidth,&Valprec,&Valflag);
       std::sprintf(vformat,"%%%ds",Valwidth);
     }

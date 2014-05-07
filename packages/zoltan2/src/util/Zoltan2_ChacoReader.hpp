@@ -50,8 +50,8 @@
 namespace Zoltan2 {
 
 int chaco_input_graph( FILE *fin, char *inname, int **start,
-int **adjacency, int  *nvtxs, int  *vwgt_dim, float **vweights,
-int  *ewgt_dim, float **eweights );
+int **adjacency, int  *nvtxs, int  *nVwgts, float **vweights,
+int  *nEwgts, float **eweights );
 
 int chaco_input_geom( FILE *fingeom, char *geomname, int nvtxs,
 int  *igeom, float **x, float **y, float **z);

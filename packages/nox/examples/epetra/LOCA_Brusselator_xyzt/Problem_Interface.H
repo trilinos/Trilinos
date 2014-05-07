@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,7 +49,7 @@
 #ifndef Problem_Interface_H
 #define Problem_Interface_H
 
-// Interface to the NOX_Epetra_Group to provide for 
+// Interface to the NOX_Epetra_Group to provide for
 // residual and matrix fill routines.
 
 // ---------- Standard Includes ----------
@@ -75,7 +75,7 @@ public:
   ~Problem_Interface();
 
   //! Compute and return F (LOCA::Epetra::Interface::Required)
-  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec, 
+  bool computeF(const Epetra_Vector& x, Epetra_Vector& FVec,
                 NOX::Epetra::Interface::Required::FillType fillType);
 
   //! Compute an explicit Jacobian (NOX::Epetra::Interface::Jacobian)
@@ -89,15 +89,15 @@ public:
 
   //! Routine to set data for file indexing in subsequent printSolution call
   virtual void dataForPrintSolution(const int conStep, const int timeStep,
-		                    const int numTimeSteps);
+                            const int numTimeSteps);
 
   //! Calculation of preconditioner (NOX::Epetra::Interface::Preconditioner)
   bool computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatrix& M);
-  
+
   //! Computes a user supplied preconditioner based on input vector x.  Returns true if computation was successful.  (NOX::Epetra::Interface::Preconditioner)
-  bool computePreconditioner(const Epetra_Vector& x, 
-			     Epetra_Operator& Prec,
-			     Teuchos::ParameterList* p);
+  bool computePreconditioner(const Epetra_Vector& x,
+                 Epetra_Operator& Prec,
+                 Teuchos::ParameterList* p);
 
   //! Compute a Time Dependent Shifted Matrix (LOCA::Epetra::Interface::TimeDependent)
   bool computeShiftedMatrix(double alpha, double beta, const Epetra_Vector& x,
@@ -108,11 +108,11 @@ public:
   void setXdot(const Epetra_Vector& xDot, const double time);
 
   //! Application Operator: Object that points to the user's evaluation routines.
-  /*! This is used to point to the actual routines and to store 
+  /*! This is used to point to the actual routines and to store
    *  auxiliary data required by the user's application for function/Jacobian
-   *  evaluations that NOX does not need to know about.  This is type of 
+   *  evaluations that NOX does not need to know about.  This is type of
    *  passdown class design by the application code.
-   */ 
+   */
   Brusselator& problem;
 
 private:

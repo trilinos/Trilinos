@@ -2419,8 +2419,10 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
       if (getrow_comm != NULL)
          ML_exchange_bdry(x_ext,getrow_comm, inlen,comm,ML_OVERWRITE,NULL);
 
-      for (i = 0; i < Nblocks; i++)
-      {
+      if(smooth_ptr->gs_sweep_type == ML_GS_standard ||
+         smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+         (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_PRESM)){
+       for (i = 0; i < Nblocks; i++) {
          do_update = 0;
          blocksize = blocklengths[i];
          for (k = 0; k < blocksize; k++)
@@ -2452,9 +2454,9 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
                x_ext[aggr_group[aggr_offset[i]+k]] += (omega * res[k]);
             }
          }
-      }
-      for (i = 0; i < Nrows; i++)
-      {
+       }
+       for (i = 0; i < Nrows; i++)
+       {
          if ( block_indices[i] == -1 )
          {
             ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
@@ -2463,9 +2465,12 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
             for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
             x_ext[i] += (omega * (rhs[i] - Ax[0]));
          }
+       }
       }
-      for (i = Nrows-1; i >= 0; i--)
-      {
+      /* backward mode  */
+      if (smooth_ptr->gs_sweep_type == ML_GS_symmetric ||
+         (smooth_ptr->gs_sweep_type == ML_GS_efficient_symmetric && smooth_ptr->pre_or_post==ML_TAG_POSTSM)){
+       for (i = Nrows-1; i >= 0; i--) {
          if ( block_indices[i] == -1 )
          {
             ML_get_matrix_row(Amat,1,&i,&allocated_space,&cols,&vals,
@@ -2474,9 +2479,8 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
             for (j = 0; j < length; j++) Ax[0] += (vals[j]*x_ext[cols[j]]);
             x_ext[i] += (omega * (rhs[i] - Ax[0]));
          }
-      }
-      for (i = Nblocks-1; i >= 0; i--)
-      {
+       }
+       for (i = Nblocks-1; i >= 0; i--) {
          blocksize = blocklengths[i];
          do_update = 0;
          for (k = 0; k < blocksize; k++)
@@ -2508,6 +2512,7 @@ int ML_Smoother_VBlockSGS(ML_Smoother *sm, int inlen, double x[],
                x_ext[aggr_group[aggr_offset[i]+k]] += (omega * res[k]);
             }
          }
+       }
       }
    }
 

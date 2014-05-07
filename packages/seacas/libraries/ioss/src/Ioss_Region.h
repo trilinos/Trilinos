@@ -33,25 +33,36 @@
 #ifndef IOSS_Ioss_Region_h
 #define IOSS_Ioss_Region_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
-#include <Ioss_GroupingEntity.h>
-#include <Ioss_State.h>
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_EntityType.h>            // for EntityType, etc
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <Ioss_State.h>                 // for State
+#include <stddef.h>                     // for size_t, NULL
+#include <stdint.h>                     // for int64_t
+#include <functional>                   // for less
+#include <iosfwd>                       // for ostream
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string, operator<
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Ioss_CoordinateFrame.h"       // for CoordinateFrame
+#include "Ioss_Property.h"              // for Property
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 // Needed for node_global_to_local inline function.
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_EntityType.h>
-#include <vector>
-#include <map>
-#include <iosfwd>
 
 namespace Ioss {
 
-  class NodeBlock;
-  class ElementBlock;
-  class SideSet;
-  class SideBlock;
-  class NodeSet;
-  class CommSet;
   class CoordinateFrame;
 
   typedef std::vector<NodeBlock*>    NodeBlockContainer;
@@ -224,7 +235,7 @@ namespace Ioss {
   private:
     void delete_database();
 
-    AliasMap aliases_; //< Stores alias mappings
+    AliasMap aliases_; ///< Stores alias mappings
 
     // Containers for all grouping entities
     NodeBlockContainer    nodeBlocks;

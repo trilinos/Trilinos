@@ -2,8 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <math.h>
-#include "structs.h"
+#include "structs.h"                    // for vtx_data
 
 /* Compute the terminal constraints for next partition. */
 void 

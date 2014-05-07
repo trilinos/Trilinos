@@ -48,6 +48,9 @@ buildAndRegisterEvaluators(const std::string & responseName,
 
   const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases = physicsBlock.getBases();
   std::map<std::string,std::vector<std::string> > basisBucket;
+
+  std::vector<panzer::StrPureBasisPair> allFields = physicsBlock.getProvidedDOFs();;
+  allFields.insert(allFields.end(),additionalFields_.begin(),additionalFields_.end());
   bucketByBasisType(physicsBlock.getProvidedDOFs(),basisBucket);
 
   // add this for HCURL and HDIV basis, only want to add them once: evaluate vector fields at centroid
@@ -86,7 +89,8 @@ buildAndRegisterEvaluators(const std::string & responseName,
     Teuchos::RCP<const panzer::PureBasis> basis = found->second;
     
     // write out nodal fields
-    if(basis->getElementSpace()==panzer::PureBasis::HGRAD) {
+    if(basis->getElementSpace()==panzer::PureBasis::HGRAD ||
+       basis->getElementSpace()==panzer::PureBasis::CONST) {
       
       // determine if user has modified field scalar for each field to be written to STK
       std::vector<double> scalars(fields.size(),1.0); // fill with 1.0 
@@ -231,6 +235,13 @@ typeSupported() const
     return true;
 
   return false;
+}
+
+template <typename EvalT>
+void ResponseEvaluatorFactory_SolutionWriter<EvalT>::
+addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis)
+{
+  additionalFields_.push_back(std::make_pair(fieldName,basis));
 }
 
 }

@@ -2,10 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <math.h>
-#include "defs.h"
-#include "params.h"
+#include <math.h>                       // for fabs
+#include "defs.h"                       // for FALSE, TRUE
 
 /* NOTE: This should only be called if j >= 2. It returns a residual and
          the point where the forward and backward recurrences met. */

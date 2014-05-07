@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -70,7 +70,7 @@ void NOX::LineSearch::Utils::Counters::reset()
   totalNumIterations = 0;
 }
 
-bool NOX::LineSearch::Utils::Counters::setValues(Teuchos::ParameterList& lineSearchParams) 
+bool NOX::LineSearch::Utils::Counters::setValues(Teuchos::ParameterList& lineSearchParams)
 {
   Teuchos::ParameterList& outputList = lineSearchParams.sublist("Output");
   outputList.set("Total Number of Line Search Calls", totalNumLineSearchCalls);
@@ -89,7 +89,7 @@ void NOX::LineSearch::Utils::Counters::incrementNumNonTrivialLineSearches(int nu
 {
   totalNumNonTrivialLineSearches += numNonTrivialLS;
 }
- 
+
 void NOX::LineSearch::Utils::Counters::incrementNumFailedLineSearches(int numFailedLS)
 {
   totalNumFailedLineSearches += numFailedLS;
@@ -104,7 +104,7 @@ int NOX::LineSearch::Utils::Counters::getNumLineSearches() const
 {
   return totalNumLineSearchCalls;
 }
- 
+
 int NOX::LineSearch::Utils::Counters::getNumNonTrivialLineSearches() const
 {
   return totalNumNonTrivialLineSearches;

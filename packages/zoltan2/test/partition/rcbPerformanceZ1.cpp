@@ -144,7 +144,7 @@ int getDim(void *data, int *ierr)
 
 void getObjList(void *data, int numGid, int numLid,
   gid_t * gids, gid_t * lids, 
-  int wgt_dim, float *obj_wgts, int *ierr)
+  int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   size_t localLen = coordinates->getLocalLength();
@@ -159,15 +159,15 @@ void getObjList(void *data, int numGid, int numLid,
       gids[i] = static_cast<gid_t>(idsNonConst[i]);
   }
 
-  if (wgt_dim > 0){
+  if (num_wgts > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
-      for (int w=0; w < wgt_dim; w++)
+      for (int w=0; w < num_wgts; w++)
         *wgts++ = static_cast<float>(weights[w][i]);
   }
 }
 
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, gid_t * gids, gid_t * lids,
   int dim, double *coords, int *ierr)
 {
@@ -464,7 +464,7 @@ int main(int argc, char *argv[])
 
   // Default values
   //double numGlobalCoords = 1000;
-  //int weightDim = 0;
+  //int nWeights = 0;
   int debugLevel=2;          // for timing
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
@@ -490,7 +490,7 @@ int main(int argc, char *argv[])
   cout << "GeometricGen Time:" << end - begin << endl;
 #endif
   int coord_dim = gg->getCoordinateDimension();
-  int weight_dim = gg->getWeightDimension();
+  int nWeights = gg->getNumWeights();
   lno_t numLocalPoints = gg->getNumLocalCoords();
   gno_t numGlobalPoints = gg->getNumGlobalCoords();
   scalar_t **coords = new scalar_t * [coord_dim];
@@ -499,9 +499,9 @@ int main(int argc, char *argv[])
   }
   gg->getLocalCoordinatesCopy(coords);
   scalar_t **weight = NULL;
-  if(weight_dim){
-    weight= new scalar_t * [weight_dim];
-    for(int i = 0; i < weight_dim; ++i){
+  if(nWeights){
+    weight= new scalar_t * [nWeights];
+    for(int i = 0; i < nWeights; ++i){
       weight[i] = new scalar_t[numLocalPoints];
     }
     gg->getLocalWeightsCopy(weight);
@@ -510,14 +510,14 @@ int main(int argc, char *argv[])
   gno_t globalSize = static_cast<gno_t>(numGlobalPoints);
   delete gg;
 
-  cout << "coord_dim:" << coord_dim << " weight_dim:" << weight_dim << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << endl;
+  cout << "coord_dim:" << coord_dim << " nWeights:" << nWeights << " numLocalPoints:" << numLocalPoints << " numGlobalPoints:" << numGlobalPoints << endl;
 
   CommandLineProcessor commandLine(false, true);
   commandLine.setOption("size", &numGlobalPoints,
     "Approximate number of global coordinates.");
   commandLine.setOption("numParts", &numGlobalParts, 
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weight_dim,
+  commandLine.setOption("numWeights", &nWeights,
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
   commandLine.setOption("timers", &dummyTimer, "ignored");
@@ -612,11 +612,11 @@ int main(int argc, char *argv[])
   }
 #endif
 
-  if (weight_dim > 0){
+  if (nWeights > 0){
 
-    weights = arcp(new ArrayRCP<scalar_t> [weight_dim],
-      0, weight_dim, true);
-    for(int i = 0; i < weight_dim; ++i){
+    weights = arcp(new ArrayRCP<scalar_t> [nWeights],
+      0, nWeights, true);
+    for(int i = 0; i < nWeights; ++i){
       //weights[i] = ArrayRCP<scalar_t>(weight[i]);
     }
   }
@@ -654,7 +654,7 @@ int main(int argc, char *argv[])
 
   if (objective != balanceCount){
     oss.str("");
-    oss << weight_dim;
+    oss << nWeights;
     Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
 
     if (objective == mcnorm1)
@@ -671,7 +671,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, NULL);
   Zoltan_Set_Obj_List_Fn(zz, getObjList,NULL);
   Zoltan_Set_Num_Geom_Fn(zz, getDim, NULL);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates,NULL);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoords, NULL);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   gid_t * importGlobalGids, * importLocalGids;
@@ -697,6 +697,8 @@ int main(int argc, char *argv[])
         &exportToPart);  /* Partition to which each vertex will belong */
 
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_LB_Partition");
+  Zoltan_LB_Free_Part(importGlobalGids, importLocalGids, importProcs, importToPart);
+  Zoltan_LB_Free_Part(exportGlobalGids, exportLocalGids, exportProcs, exportToPart);
   Zoltan_Destroy(&zz);
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 

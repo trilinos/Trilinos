@@ -163,6 +163,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
 		   int NumDoubleCompanions,double ** DoubleCompanions, 
 		   int NumIntCompanions, int ** IntCompanions);
 
+  static void Sort(bool SortAscending, int NumKeys, double * Keys, 
+		   int NumDoubleCompanions,double ** DoubleCompanions, 
+		   int NumIntCompanions, int ** IntCompanions,
+		   int NumLongLongCompanions, long long ** LongLongCompanions);
+  
   //! Epetra_Util Create_Root_Map function
   /*! Function to create a new Epetra_Map object with all GIDs sent to the root processor
       which is zero by default.  All all processors will have no GIDs.  This root map can then 

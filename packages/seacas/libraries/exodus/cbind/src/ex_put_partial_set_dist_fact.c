@@ -52,8 +52,13 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, ex_name_of_object, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_WARN, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*!
  * writes the partial distribution factors for a single set

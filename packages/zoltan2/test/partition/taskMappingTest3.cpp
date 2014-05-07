@@ -71,7 +71,7 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
     bool fail = false;
     if(comm->getRank() == 0){
 
-        fstream inParam(paramFileName.c_str());
+        std::fstream inParam(paramFileName.c_str());
         if (inParam.fail())
         {
             fail = true;
@@ -107,13 +107,13 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
         throw "File " + paramFileName + " cannot be opened.";
     }
     comm->broadcast(0, size, inp);
-    istringstream inParam(inp);
-    string str;
+    std::istringstream inParam(inp);
+    std::string str;
     getline (inParam,str);
     while (!inParam.eof()){
         if(str[0] != param_comment){
             size_t pos = str.find('=');
-            if(pos == string::npos){
+            if(pos == std::string::npos){
                 throw  "Invalid Line:" + str  + " in parameter file";
             }
             string paramname = trim_copy(str.substr(0,pos));
@@ -130,7 +130,7 @@ string convert_to_string(char *args){
     return tmp;
 }
 bool getArgumentValue(string &argumentid, double &argumentValue, string argumentline){
-    stringstream stream(stringstream::in | stringstream::out);
+    std::stringstream stream(std::stringstream::in | std::stringstream::out);
     stream << argumentline;
     getline(stream, argumentid, '=');
     if (stream.eof()){
@@ -160,7 +160,7 @@ void getArgVals(
         value = (long long int) (fval);
 
         if(identifier == "PROC"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, procF, '=');
 
@@ -168,7 +168,7 @@ void getArgVals(
             isprocset = true;
         }
         else if(identifier == "NX"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, tmp2, '=');
 
@@ -176,7 +176,7 @@ void getArgVals(
             ispartset++;
         }
         else if(identifier == "NY"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, tmp2, '=');
 
@@ -184,7 +184,7 @@ void getArgVals(
             ispartset++;
         }
         else if(identifier == "NZ"){
-            stringstream stream(stringstream::in | stringstream::out);
+            std::stringstream stream(std::stringstream::in | std::stringstream::out);
             stream << tmp;
             getline(stream, tmp2, '=');
 
@@ -285,7 +285,7 @@ int main(int argc, char *argv[]){
 
         //getProcCenters(procCoordinates, numProcs, procDim);
         {
-            fstream m(procfile.c_str());
+            std::fstream m(procfile.c_str());
             procCoordinates = new scalar_t * [procDim];
             for(int i = 0; i < procDim; ++i){
                 procCoordinates[i] = new scalar_t[numParts];
@@ -376,8 +376,15 @@ int main(int argc, char *argv[]){
         delete cm;
         delete env;
         */
-        delete []proc_to_task_xadj_;
+        delete [] proc_to_task_xadj_;
         delete [] proc_to_task_adj_;
+        delete [] task_communication_xadj_;
+        delete [] task_communication_adj_;
+
+        for (int i = 0; i < coordDim; i++) delete [] partCenters[i];
+        delete [] partCenters;
+        for (int i = 0; i < procDim; i++) delete [] procCoordinates[i];
+        delete [] procCoordinates;
     }
     catch(std::string &s){
         cerr << s << endl;

@@ -47,6 +47,7 @@
 #define MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_
 
 #include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MPI)
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -101,7 +102,7 @@ namespace MueLu {
     //@{
 
     //! Constructor.
-    BrickAggregationFactory() { };
+    BrickAggregationFactory() : nDim_(-1), nx_(-1), ny_(-1), nz_(-1), bx_(-1), by_(-1), bz_(-1) { };
 
     //! Destructor.
     virtual ~BrickAggregationFactory() { }
@@ -155,5 +156,6 @@ namespace MueLu {
   }
 
 #define MUELU_BRICKAGGREGATIONFACTORY_SHORT
+#endif //if defined(HAVE_MPI)
 
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DECL_HPP_ */

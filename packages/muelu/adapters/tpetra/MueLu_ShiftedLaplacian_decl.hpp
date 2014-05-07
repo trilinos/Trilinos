@@ -70,8 +70,7 @@
 // Belos
 #include <BelosConfigDefs.hpp>
 #include <BelosLinearProblem.hpp>
-#include <BelosBlockCGSolMgr.hpp>
-#include <BelosBlockGmresSolMgr.hpp>
+#include <BelosSolverFactory.hpp>
 
 namespace MueLu {
 
@@ -91,10 +90,9 @@ namespace MueLu {
     typedef Tpetra::Vector<SC,LO,GO,NO>                  TVEC;
     typedef Tpetra::MultiVector<SC,LO,GO,NO>             TMV;
     typedef Tpetra::Operator<SC,LO,GO,NO>                OP;
-    typedef Belos::LinearProblem<SC,TMV,OP>              BelosLinearProblem;
-    typedef Belos::SolverManager<SC,TMV,OP>              BelosSolverManager;
-    typedef Belos::BlockCGSolMgr<SC,TMV,OP>              BelosCG;
-    typedef Belos::BlockGmresSolMgr<SC,TMV,OP>           BelosGMRES;
+    typedef Belos::LinearProblem<SC,TMV,OP>              LinearProblem;
+    typedef Belos::SolverManager<SC,TMV,OP>              SolverManager;
+    typedef Belos::SolverFactory<SC,TMV,OP>              SolverFactory;
 
   public:
 
@@ -102,7 +100,7 @@ namespace MueLu {
     ShiftedLaplacian()
       : Problem_("acoustic"), numPDEs_(1), Smoother_("schwarz"), Aggregation_("uncoupled"), Nullspace_("constant"), numLevels_(5), coarseGridSize_(100),
 	omega_(2.0*M_PI), ashift1_((SC) 0.0), ashift2_((SC) -1.0), pshift1_((SC) 0.0), pshift2_((SC) -1.0), iters_(500), blksize_(1),
-	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1),
+	tol_(1.0e-4), nsweeps_(5), ncycles_(1), cycles_(8), subiters_(10), option_(1), nproblems_(0), solverType_(1), restart_size_(100), recycle_size_(25),
 	smoother_sweeps_(4), smoother_damping_((SC)1.0), krylov_type_(1), krylov_iterations_(5), krylov_preconditioner_(1),
 	ilu_leveloffill_(5.0), ilu_abs_thresh_(0.0), ilu_rel_thresh_(1.0), ilu_diagpivotthresh_(0.1), ilu_drop_tol_(0.01), ilu_fill_tol_(0.01), ilu_relax_val_(1.0),
 	ilu_rowperm_("LargeDiag"), ilu_colperm_("COLAMD"), ilu_drop_rule_("DROP_BASIC"), ilu_normtype_("INF_NORM"), ilu_milutype_("SILU"),
@@ -149,6 +147,7 @@ namespace MueLu {
     void multigrid_apply(const RCP<MultiVector> B, RCP<MultiVector>& X);
     void multigrid_apply(const RCP<Tpetra::MultiVector<SC,LO,GO,NO> > B, RCP<Tpetra::MultiVector<SC,LO,GO,NO> >& X);
     int GetIterations();
+    double GetResidual();
 
   private:
 
@@ -187,6 +186,7 @@ namespace MueLu {
     double tol_;
     int    nsweeps_, ncycles_;
     int    cycles_, subiters_, option_, nproblems_, solverType_;
+    int    restart_size_, recycle_size_;
 
     // Smoother parameters
     int    smoother_sweeps_;
@@ -245,8 +245,9 @@ namespace MueLu {
     RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >           TpetraA_;
 
     // Belos Linear Problem and Solver
-    RCP<BelosLinearProblem>           BelosLinearProblem_;
-    RCP<BelosSolverManager>           BelosSolverManager_;
+    RCP<LinearProblem>                LinearProblem_;
+    RCP<SolverManager>                SolverManager_;
+    RCP<SolverFactory>                SolverFactory_;
     RCP<Teuchos::ParameterList>       BelosList_;
 
   };

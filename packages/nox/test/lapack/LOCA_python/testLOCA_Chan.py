@@ -12,10 +12,10 @@ def runTests(verbose):
     # It is declared here so it can access the symbols below
     class ChanTestCase(unittest.TestCase):
         "TestCase for the Chan Problem"
-        
+
         def testContinuation(self):
             "Test the continuation run finishes correctly"
-            
+
             self.assertEqual(status, LOCA.Iterator.Finished)
 
         def testNumSteps(self):
@@ -50,22 +50,22 @@ def runTests(verbose):
 
     # Create problem interface
     chan = LOCA.Chan.ProblemInterface(n, alpha, beta, scale)
-    
+
     # Set up parameter vector
     p = LOCA.ParameterVector()
     p.addParameter("alpha",alpha)
     p.addParameter("beta",beta)
     p.addParameter("scale",scale)
-    
+
     # Create group
     grp = LOCA.LAPACK.Group(chan)
     grp.setParams(p)
-    
+
     # Set up parameter lists
     paramList = NOX.Parameter.List()
-    
+
     locaParamsList = paramList.sublist("LOCA")
-    
+
     # Create the stepper sublist and set the stepper parameters
     stepperList = locaParamsList.sublist("Stepper")
     stepperList.setParameter("Continuation Method", "Arc Length")
@@ -84,17 +84,17 @@ def runTests(verbose):
     stepperList.setParameter("Min Tangent Factor", -1.0)
     stepperList.setParameter("Tangent Factor Exponent",1.0)
     stepperList.setParameter("Compute Eigenvalues",False)
-    
+
     # Create bifurcation sublist
     bifurcationList = locaParamsList.sublist("Bifurcation")
     bifurcationList.setParameter("Method", "None")
-    
+
     # Create predictor sublist
     predictorList = locaParamsList.sublist("Predictor")
     predictorList.setParameter("Method", "Tangent")
     firstStepPredictorList = predictorList.sublist("First Step Predictor");
     firstStepPredictorList.setParameter("Method", "Constant")
-    
+
     # Create step size sublist
     stepSizeList = locaParamsList.sublist("Step Size")
     stepSizeList.setParameter("Method", "Adaptive")
@@ -104,12 +104,12 @@ def runTests(verbose):
     stepSizeList.setParameter("Aggressiveness", 0.5)
     stepSizeList.setParameter("Failed Step Reduction Factor", 0.5)
     stepSizeList.setParameter("Successful Step Increase Factor", 1.26)
-    
+
     # Set the LOCA Utilities
     locaUtilsList = locaParamsList.sublist("Utilities")
     if (verbose):
         locaUtilsList.setParameter("Output Information",
-                                   LOCA.Utils.Error + 
+                                   LOCA.Utils.Error +
                                    LOCA.Utils.Warning +
                                    LOCA.Utils.StepperIteration +
                                    LOCA.Utils.StepperDetails +
@@ -118,30 +118,30 @@ def runTests(verbose):
                                    LOCA.Utils.SolverDetails)
     else:
         locaUtilsList.setParameter("Output Information",LOCA.Utils.Error)
-    
+
     # Create the "Solver" parameters sublist to be used with NOX Solvers
     nlParams = paramList.sublist("NOX");
     nlParams.setParameter("Nonlinear Solver", "Line Search Based")
-    
+
     nlPrintParams = nlParams.sublist("Printing");
     if (verbose):
         nlPrintParams.setParameter("Output Information",
                                    NOX.Utils.Error +
                                    NOX.Utils.Details +
-                                   NOX.Utils.OuterIteration + 
-                                   NOX.Utils.InnerIteration + 
+                                   NOX.Utils.OuterIteration +
+                                   NOX.Utils.InnerIteration +
                                    NOX.Utils.Warning +
                                    NOX.Utils.TestDetails)
     else:
          nlPrintParams.setParameter("Output Information", NOX.Utils.Error)
-    
+
     # Set up the status tests
     normF = NOX.StatusTest.NormF(1.0e-8)
     maxIters = NOX.StatusTest.MaxIters(maxNewtonIters)
-    comboOR = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR, 
-                                   normF, 
+    comboOR = NOX.StatusTest.Combo(NOX.StatusTest.Combo.OR,
+                                   normF,
                                    maxIters)
-    
+
     # Create the stepper
     stepper = LOCA.Stepper(grp, comboOR, paramList)
     status = stepper.run()
@@ -160,7 +160,7 @@ def runTests(verbose):
         result = unittest.TextTestRunner(verbosity=2).run(suite)
     else:
         result = unittest.TextTestRunner(verbosity=0).run(suite)
-        
+
     if result.wasSuccessful():
         return 0
     else:
@@ -170,7 +170,7 @@ if (__name__ == "__main__"):
 
     # Run the tests
     runTests()
-    
-    
-    
+
+
+
 

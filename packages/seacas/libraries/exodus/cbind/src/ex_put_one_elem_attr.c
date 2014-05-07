@@ -51,8 +51,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_one_attr, etc
 
 /*!
  * writes the specified attribute for an element block

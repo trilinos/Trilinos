@@ -61,7 +61,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Michael A. Heroux (maherou@sandia.gov)
 //
@@ -111,10 +111,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, AddCombineMode, ScalarType, L
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
+  // typedef Tpetra::RowMatrix<scalar_type,
+  //                           local_ordinal_type,
+  //                           global_ordinal_type,
+  //                           node_type> row_matrix_type; // unused
   typedef Tpetra::Vector<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,
@@ -278,10 +278,10 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(AdditiveSchwarz, ZeroCombineMode, ScalarType, 
                             local_ordinal_type,
                             global_ordinal_type,
                             node_type> crs_matrix_type;
-  typedef Tpetra::RowMatrix<scalar_type,
-                            local_ordinal_type,
-                            global_ordinal_type,
-                            node_type> row_matrix_type;
+  // typedef Tpetra::RowMatrix<scalar_type,
+  //                           local_ordinal_type,
+  //                           global_ordinal_type,
+  //                           node_type> row_matrix_type; // unused
   typedef Tpetra::Vector<scalar_type,
                          local_ordinal_type,
                          global_ordinal_type,

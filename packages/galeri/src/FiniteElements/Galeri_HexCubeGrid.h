@@ -56,7 +56,6 @@
 #include "Galeri_Workspace.h"
 #include <vector>
 
-using namespace std;
 using namespace Teuchos;
 
 namespace Galeri {
@@ -735,7 +734,7 @@ private:
 
   void CreateVertexMap()
   {
-    vector<int> itmp(NumMyVertices());
+    std::vector<int> itmp(NumMyVertices());
 
     int count = 0;
     int px, py, pz;
@@ -768,7 +767,7 @@ private:
 
   void CreateRowMap()
   {
-    vector<int> itmp(NumMyVertices());
+    std::vector<int> itmp(NumMyVertices());
 
     int count = 0;
     int px, py, pz;

@@ -633,6 +633,14 @@ public:
    bool getUseFieldCoordinates() const
    { return useFieldCoordinates_; }
 
+   /** Use lower case (or not) for I/O */
+   void setUseLowerCaseForIO(bool useLowerCase) 
+   { useLowerCase_ = useLowerCase; }
+
+   /** Use lower case (or not) for I/O */
+   bool getUseLowerCaseForIO() const
+   { return useLowerCase_; }
+
 public: // static operations
    static const std::string coordsString;
    static const std::string nodesString;
@@ -778,6 +786,8 @@ protected:
    std::map<std::string,std::vector<std::string> > meshDispFields_;  // displacement fields, output to exodus
 
    bool useFieldCoordinates_;
+
+   bool useLowerCase_;
 
    // Object describing how to sort a vector of elements using
    // local ID as the key, very short lived object

@@ -155,7 +155,7 @@ void testAdapter(
     RCP<const Tpetra::CrsGraph<lno_t, gno_t> > &Mgraph,
     const RCP<const Comm<int> > &comm,
     bool idsAreConsecutive,
-    int rowWeightDim, int edgeWeightDim, int nnzDim, int coordDim,
+    int nVtxWeights, int nEdgeWeights, int nnzWgtIdx, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int fail=0;
@@ -188,10 +188,10 @@ void testAdapter(
     }
   }
 
-  if (rowWeightDim > 0){
-    rowWeights = new scalar_t * [rowWeightDim];
-    for (int i=0; i < rowWeightDim; i++){
-      if (nnzDim == i)
+  if (nVtxWeights > 0){
+    rowWeights = new scalar_t * [nVtxWeights];
+    for (int i=0; i < nVtxWeights; i++){
+      if (nnzWgtIdx == i)
         rowWeights[i] = NULL;
       else{
         rowWeights[i] = new scalar_t [nLocalRows];
@@ -202,16 +202,16 @@ void testAdapter(
     }
   }
 
-  if (edgeWeightDim > 0){
+  if (nEdgeWeights > 0){
     printf("TODO:  STILL NEED TO TEST EDGE WEIGHTS!\n");
   }
 
   // Create a matrix or graph input adapter.
 
-  Adapter tmi(M, rowWeightDim);
+  Adapter tmi(M, nVtxWeights);
 
-  for (int i=0; i < rowWeightDim; i++){
-    if (nnzDim == i)
+  for (int i=0; i < nVtxWeights; i++){
+    if (nnzWgtIdx == i)
       tmi.setWeightIsDegree(i);
     else
       tmi.setWeights(rowWeights[i], 1, i);
@@ -315,13 +315,13 @@ void testAdapter(
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "getGlobalNumEdges", 1)
 
-  if (model->getVertexWeightDim() != rowWeightDim)
+  if (model->getNumWeightsPerVertex() != nVtxWeights)
     fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getVertexWeightDim", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerVertex", 1)
 
-  if (model->getEdgeWeightDim() != 0)
+  if (model->getNumWeightsPerEdge() != 0)
     fail = 1;
-  TEST_FAIL_AND_EXIT(*comm, !fail, "getEdgeWeightDim", 1)
+  TEST_FAIL_AND_EXIT(*comm, !fail, "getNumWeightsPerEdge", 1)
 
   if (model->getCoordinateDim() != coordDim)
     fail = 1;
@@ -388,7 +388,7 @@ void testAdapter(
 
   TEST_FAIL_AND_EXIT(*comm, !fail, "vertex gids", 1)
 
-  if ((crds.size() != coordDim) || (wgts.size() != rowWeightDim))
+  if ((crds.size() != coordDim) || (wgts.size() != nVtxWeights))
     fail = 1;
   TEST_FAIL_AND_EXIT(*comm, !fail, "coord or weight array size", 1)
 
@@ -402,8 +402,8 @@ void testAdapter(
   }
   TEST_FAIL_AND_EXIT(*comm, !fail, "coord values", 1)
 
-  for (int i=0; !fail && i < rowWeightDim; i++){
-    if (nnzDim == i){
+  for (int i=0; !fail && i < nVtxWeights; i++){
+    if (nnzWgtIdx == i){
       for (lno_t j=0; j < nLocalRows; j++){
         scalar_t val = numNbors[j];
         if (removeSelfEdges && haveDiag[j])
@@ -533,8 +533,8 @@ void testAdapter(
     delete [] numLocalNbors;
     delete [] haveDiag;
 
-    if (rowWeightDim > 0){
-      for (int i=0; i < rowWeightDim; i++){
+    if (nVtxWeights > 0){
+      for (int i=0; i < nVtxWeights; i++){
         if (rowWeights[i])
           delete [] rowWeights[i];
       }
@@ -558,7 +558,7 @@ void testAdapter(
 /////////////////////////////////////////////////////////////////////////////
 void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     const RCP<const Comm<int> > &comm,
-    int rowWeightDim, int nnzDim, int coordDim,
+    int nVtxWeights, int nnzWgtIdx, int coordDim,
     bool consecutiveIdsRequested, bool removeSelfEdges)
 {
   int rank = comm->getRank();
@@ -572,9 +572,9 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
       cout  << xdim << "x" << ydim << "x" << zdim << endl;
     }
 
-    cout << "Vertex weight dim: " << rowWeightDim << endl;
-    if (nnzDim >= 0)
-     cout << "  Dimension " << nnzDim << " is number of neighbors" << endl;
+    cout << "Num Vertex Weights: " << nVtxWeights << endl;
+    if (nnzWgtIdx >= 0)
+     cout << "  Dimension " << nnzWgtIdx << " is number of neighbors" << endl;
 
     cout << "Coordinate dim: " << coordDim << endl;
     cout << "Request consecutive vertex gids: ";
@@ -586,14 +586,14 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
   typedef Tpetra::CrsMatrix<scalar_t, lno_t, gno_t, node_t> tcrsMatrix_t;
 
   // Input generator
-  UserInputForTests *input;
+  UserInputForTests *uinput;
 
   if (fname.size() > 0)
-    input = new UserInputForTests(testDataFilePath, fname, comm, true);
+    uinput = new UserInputForTests(testDataFilePath, fname, comm, true);
   else
-    input = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true);
+    uinput = new UserInputForTests(xdim,ydim,zdim,string(""), comm, true, true);
 
-  RCP<tcrsMatrix_t> M = input->getTpetraCrsMatrix();
+  RCP<tcrsMatrix_t> M = uinput->getUITpetraCrsMatrix();
 
   // Row Ids of test input are already consecutive
 
@@ -610,16 +610,16 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mconsec, graph, comm,
                                                        idsAreConsecutive,
-                                                       rowWeightDim, 0, 
-                                                       nnzDim, coordDim,
+                                                       nVtxWeights, 0, 
+                                                       nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
                                                        removeSelfEdges);
   if (rank == 0) 
     std::cout << "   TEST GraphAdapter with Consecutive IDs" << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
-                                                      rowWeightDim, 1, 
-                                                      nnzDim, coordDim,
+                                                      nVtxWeights, 1, 
+                                                      nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
                                                       removeSelfEdges);
 
@@ -645,8 +645,8 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
 
   testAdapter<baseMAdapter_t,xMAdapter_t,tcrsMatrix_t>(Mnonconsec, graph, comm,
                                                        idsAreConsecutive,
-                                                       rowWeightDim, 0, 
-                                                       nnzDim, coordDim,
+                                                       nVtxWeights, 0, 
+                                                       nnzWgtIdx, coordDim,
                                                        consecutiveIdsRequested,
                                                        removeSelfEdges);
 
@@ -654,12 +654,12 @@ void testGraphModel(string fname, gno_t xdim, gno_t ydim, gno_t zdim,
     std::cout << "   TEST GraphAdapter with Round-Robin IDs" << std::endl;
   testAdapter<baseGAdapter_t,xGAdapter_t,tcrsGraph_t>(graph, graph, comm,
                                                       idsAreConsecutive,
-                                                      rowWeightDim, 0, 
-                                                      nnzDim, coordDim,
+                                                      nVtxWeights, 0, 
+                                                      nnzWgtIdx, coordDim,
                                                       consecutiveIdsRequested,
                                                       removeSelfEdges);
 
-  delete input;
+  delete uinput;
 }
 
 /////////////////////////////////////////////////////////////////////////////
@@ -671,8 +671,8 @@ int main(int argc, char *argv[])
 
   int rank = comm->getRank();
 
-  int rowWeightDim=0;
-  int nnzDim = -1; 
+  int nVtxWeights=0;
+  int nnzWgtIdx = -1; 
   int coordDim=0;
   bool consecutiveIdsRequested=false, removeSelfEdges=false;
   string fname("simple");
@@ -680,32 +680,32 @@ int main(int argc, char *argv[])
   if (rank == 0)
     std::cout << "TESTING base case" << std::endl;
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with row weights" << std::endl;
-  rowWeightDim = 1;
+  nVtxWeights = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with weights = nnz" << std::endl;
-  nnzDim = 1;
+  nnzWgtIdx = 1;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
     std::cout << "TESTING with multiple row weights and coords" << std::endl;
-  rowWeightDim = 2;
+  nVtxWeights = 2;
   coordDim = 3;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -713,7 +713,7 @@ int main(int argc, char *argv[])
   consecutiveIdsRequested = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -721,7 +721,7 @@ int main(int argc, char *argv[])
   removeSelfEdges = true;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank == 0)
@@ -729,7 +729,7 @@ int main(int argc, char *argv[])
   consecutiveIdsRequested = false;
 
   testGraphModel(fname, 0, 0, 0, comm,
-    rowWeightDim, nnzDim, coordDim,
+    nVtxWeights, nnzWgtIdx, coordDim,
     consecutiveIdsRequested, removeSelfEdges);
 
   if (rank==0)

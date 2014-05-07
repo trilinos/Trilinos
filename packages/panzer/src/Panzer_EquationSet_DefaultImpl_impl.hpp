@@ -258,7 +258,7 @@ buildAndRegisterGatherAndOrientationEvaluators(PHX::FieldManager<panzer::Traits>
       p.set("Basis", basis_it->second.first);
       p.set("DOF Names", basis_it->second.second);
       p.set("Indexer Names", basis_it->second.second);
-      
+     
       RCP< PHX::Evaluator<panzer::Traits> > op = lof.buildGatherOrientation<EvalT>(p);
       
       fm.template registerEvaluator<EvalT>(op);
@@ -360,6 +360,11 @@ buildAndRegisterDOFProjectionsToIPEvaluators(PHX::FieldManager<panzer::Traits>& 
     p.set("Name", td_name);
     p.set("Basis", fl.lookupLayout(itr->first)); 
     p.set("IR", ir);
+
+    // set the orientiation field name explicitly if orientations are
+    // required for the basis
+    if(itr->second.basis->requiresOrientations())
+      p.set("Orientation Field Name", itr->first+" Orientation");
     
     RCP< PHX::Evaluator<panzer::Traits> > op = 
       rcp(new panzer::DOF<EvalT,panzer::Traits>(p));
@@ -750,6 +755,31 @@ addDOFCurl(const std::string & dofName,
     desc.curl = std::make_pair(true,std::string("CURL_")+dofName);
   else
     desc.curl = std::make_pair(true,curlName);
+}
+
+// ***********************************************************************
+template <typename EvalT>
+void panzer::EquationSet_DefaultImpl<EvalT>::
+addDOFDiv(const std::string & dofName,
+          const std::string & divName)
+{
+  typename std::map<std::string,DOFDescriptor>::iterator itr = m_provided_dofs_desc.find(dofName);
+
+  TEUCHOS_TEST_FOR_EXCEPTION(itr==m_provided_dofs_desc.end(),std::runtime_error,
+                             "EquationSet_DefaultImpl::addDOFDiv: DOF \"" << dofName << "\" has not been specified as a DOF "
+                             "by derived equation set \"" << this->getType() << "\".");
+
+  // allocate and populate a dof descriptor associated with the field "dofName"
+  DOFDescriptor & desc = m_provided_dofs_desc[dofName];
+  TEUCHOS_ASSERT(desc.dofName==dofName); // safety check
+
+  if (divName == "")
+    desc.div = std::make_pair(true,std::string("DOF_")+dofName);
+  else
+    desc.div = std::make_pair(true,divName);
+
+  // can't do this yet!
+  TEUCHOS_ASSERT(false);
 }
 
 // ***********************************************************************

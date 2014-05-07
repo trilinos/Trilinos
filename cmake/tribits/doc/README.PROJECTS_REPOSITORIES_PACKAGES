@@ -357,7 +357,7 @@ source and binary directories.  This is so that it can refer to
 repository-level resources (e.g. like the Trilinos_version.h file).  This may
 be undesirable because it will make it very hard to pull a package out of one
 Repository and place it in another repository for a different use.  In this
-case, we might eliminate the defined varibles <REPOSITORY_NAME>_SOURCE_DIR and
+case, we might eliminate the defined variables <REPOSITORY_NAME>_SOURCE_DIR and
 <REPOSITORY_NAME>_BINARY_DIR and make Packages oblivious to the Repository
 that they are in.
 

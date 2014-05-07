@@ -286,8 +286,14 @@ namespace Tpetra {
     /// All methods marked \c const may be called in Kokkos parallel
     /// kernels.  No method that is not marked \c const may be called
     /// in a Kokkos parallel kernel.
+    ///
+    /// This class must <i>not</i> inherit from Teuchos::Describable,
+    /// because that class contains data (e.g., the object label) that
+    /// cannot live in CUDA device memory.  Every datum in this device
+    /// must be able to live on a CUDA device, without requiring UVM.
     template<class LO, class GO, class DeviceType>
     class Map {
+      template<class LO2, class GO2, class D2> friend class Map;
     public:
       //! \name Typedefs
       //@{
@@ -318,7 +324,8 @@ namespace Tpetra {
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()),
         contiguous_ (false),
         distributed_ (true), // could be either false or true
-        uniform_ (false)
+        uniform_ (false),
+        initialized_ (false)
       {}
 
       //! Contiguous uniform constructor.
@@ -341,7 +348,8 @@ namespace Tpetra {
                     indexBase + globalNumIndices - 1), // final
         contiguous_ (true), // final
         distributed_ (true), // this may be changed below
-        uniform_ (true) // final
+        uniform_ (true), // final
+        initialized_ (true) // final
       {
         using Teuchos::as;
         using Teuchos::broadcast;
@@ -493,9 +501,10 @@ namespace Tpetra {
         maxMyGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // set below
         minAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
         maxAllGID_ (Teuchos::OrdinalTraits<GO>::invalid ()), // initialize below
-        contiguous_ (true), // final
+        contiguous_ (true),  // final
         distributed_ (true), // set below
-        uniform_ (false) // final (conservative; we could try to detect this)
+        uniform_ (false),    // final (conservative; we could try to detect this)
+        initialized_ (true)  // final
       {
         using Teuchos::broadcast;
         using Teuchos::outArg;
@@ -635,7 +644,8 @@ namespace Tpetra {
         lgMap_ (myGlobalIndices), // final (input assumed correct)
         contiguous_ (false), // final (conservative; we could try to detect this)
         distributed_ (true), // set below
-        uniform_ (false) // final (conservative; we could try to detect this)
+        uniform_ (false),    // final (conservative; we could try to detect this)
+        initialized_ (true)  // final
       {
         using Teuchos::outArg;
         using Teuchos::reduceAll;
@@ -925,23 +935,6 @@ namespace Tpetra {
           } // if GO is signed
         }
 
-        // {
-        //   Teuchos::ArrayView<const GO> av (const_cast<const GO*> (myGlobalIndices.ptr_on_device ()),
-        //                                    myGlobalIndices.dimension_0 ());
-        //   Teuchos::ArrayView<const GO> av2 (nonContigEntries.ptr_on_device (),
-        //                                     nonContigEntries.dimension_0 ());
-        //   std::ostringstream os;
-        //   os << "Proc " << comm.getRank () << ": "
-        //      << "my first,last contig GIDs = "
-        //      << firstContiguousGID_ << "," << lastContiguousGID_
-        //      << "; my min,max = " << minMyGID_ << "," << maxMyGID_
-        //      << "; all min,max = " << minAllGID_ << "," << maxAllGID_
-        //      << "; my GIDs: " << Teuchos::toString (av)
-        //      << "; my noncontig GIDs: " << Teuchos::toString (av2)
-        //      << std::endl;
-        //   std::cerr << os.str ();
-        // }
-
         // mfh 10 Feb 2014: tpetra/test/Map/Map_UnitTests.cpp,
         // indexBaseAndAllMin test uses a different indexBase input
         // (0) than the actual min GID (1).  Other tests seem to
@@ -957,43 +950,64 @@ namespace Tpetra {
         //   "equal the given indexBase " << indexBase_ << ".");
       }
 
-      //! Make this Map a copy of the input Map, but for a (possibly) different device.
+      /// \brief Make this Map a copy of the input Map, but for a
+      ///   (possibly) different device.
       template<class InDeviceType>
       void
       create_copy_view (const Map<LO, GO, InDeviceType>& map)
       {
-        invalidGlobalIndex_ = map.invalidGlobalIndex_;
-        invalidLocalIndex_ = map.invalidLocalIndex_;
-        globalNumIndices_ = map.globalNumIndices_;
-        myNumIndices_ = map.myNumIndices_;
-        indexBase_ = map.indexBase_;
-        firstContiguousGID_ = map.firstContiguousGID_;
-        lastContiguousGID_ = map.lastContiguousGID_;
-        minMyGID_ = map.minMyGID_;
-        maxMyGID_ = map.maxMyGID_;
-        minAllGID_ = map.minAllGID_;
-        maxAllGID_ = map.maxAllGID_;
-
-        if (! map.contiguous_) {
-          if (map.myNumIndices_ != 0 && map.glMap_.size () != 0) {
-            // The calling process owns one or more GIDs, and some of
-            // these GIDs are not contiguous.
-            Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
-            glMap.create_copy_view (map.glMap_);
-            glMap_ = glMap;
-          }
-
-          // It's OK for this to be dimension 0; that means it hasn't been initialized yet.
-          Kokkos::View<GO*, DeviceType> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
-          if (map.lgMap_.dimension_0 () != 0) {
-            Kokkos::deep_copy (lgMap, map.lgMap_);
-          }
-          lgMap_ = lgMap; // shallow copy and cast to const
+        if (! map.initialized ()) {
+          invalidGlobalIndex_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          invalidLocalIndex_ = Teuchos::OrdinalTraits<LO>::invalid ();
+          globalNumIndices_ = 0;
+          myNumIndices_ = 0;
+          indexBase_ = 0;
+          firstContiguousGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          lastContiguousGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          minMyGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          maxMyGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          minAllGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          maxAllGID_ = Teuchos::OrdinalTraits<GO>::invalid ();
+          contiguous_ = false;
+          distributed_ = true;
+          uniform_ = false;
+          initialized_ = false;
         }
+        else {
+          invalidGlobalIndex_ = map.invalidGlobalIndex_;
+          invalidLocalIndex_ = map.invalidLocalIndex_;
+          globalNumIndices_ = map.globalNumIndices_;
+          myNumIndices_ = map.myNumIndices_;
+          indexBase_ = map.indexBase_;
+          firstContiguousGID_ = map.firstContiguousGID_;
+          lastContiguousGID_ = map.lastContiguousGID_;
+          minMyGID_ = map.minMyGID_;
+          maxMyGID_ = map.maxMyGID_;
+          minAllGID_ = map.minAllGID_;
+          maxAllGID_ = map.maxAllGID_;
 
-        contiguous_ = map.contiguous_;
-        distributed_ = map.distributed_;
-        uniform_ = map.uniform_;
+          if (! map.contiguous_) {
+            if (map.myNumIndices_ != 0 && map.glMap_.size () != 0) {
+              // The calling process owns one or more GIDs, and some of
+              // these GIDs are not contiguous.
+              Kokkos::UnorderedMap<GO, LO, DeviceType> glMap;
+              glMap.create_copy_view (map.glMap_);
+              glMap_ = glMap;
+            }
+
+            // It's OK for this to be dimension 0; that means it hasn't been initialized yet.
+            Kokkos::View<GO*, DeviceType> lgMap ("LID->GID", map.lgMap_.dimension_0 ());
+            if (map.lgMap_.dimension_0 () != 0) {
+              Kokkos::deep_copy (lgMap, map.lgMap_);
+            }
+            lgMap_ = lgMap; // shallow copy and cast to const
+          }
+
+          contiguous_ = map.contiguous_;
+          distributed_ = map.distributed_;
+          uniform_ = map.uniform_;
+          initialized_ = map.initialized_;
+        }
       }
 
       /// \brief Set the \c distributed_ state.
@@ -1005,6 +1019,20 @@ namespace Tpetra {
       ///   automatically.
       void setDistributed (const bool distributed) {
         distributed_ = distributed;
+      }
+
+      /// \brief Whether this Map has been initialized.
+      ///
+      /// The default Map constructor creates an uninitialized Map.
+      /// All other Map constructors create an initialized Map.  The
+      /// create_copy_view method set the output Map (the
+      /// <tt>*this</tt> argument) as initialized.
+      ///
+      /// It is an error to use an uninitialized Map.  Results are
+      /// undefined, but the resulting Map will likely behave as if it
+      /// were empty.
+      bool initialized () const {
+        return initialized_;
       }
 
       //@}
@@ -1458,6 +1486,136 @@ namespace Tpetra {
       /// (uniform contiguous) constructor or a nonmember constructor
       /// that calls it.
       bool uniform_;
+
+      /// \brief Whether this Map has been initialized.
+      ///
+      /// Please see the documentation of initialized() for details.
+      bool initialized_;
+    };
+
+    /// \class MapMirrorer
+    /// \brief Return a mirror of either deviceMap or hostMap for a
+    ///   possibly different output device type.
+    ///
+    /// \tparam OutMapType A specialization of Map; the type of the
+    ///   return value of mirror().
+    /// \tparam DeviceMapType A specialization of Map; the type of the
+    ///   \c deviceMap input.
+    /// \tparam HostMapType A specialization of Map; the type of the
+    ///   \c hostMap input.
+    ///
+    /// MapMirrorer's mirror() method returns a "mirror copy" of
+    /// either deviceMap or hostMap.  It assumes that both Maps
+    /// represents the same distribution, just stored on possibly
+    /// different devices.  A "mirror copy" is a shallow copy if
+    /// possible, else a deep copy.  The method will favor the
+    /// initialized Map, if one of deviceMap or hostMap is not
+    /// initialized.
+    ///
+    /// The mirror() method will only compile if all three Map types
+    /// have the same first two template parameters (LO and GO).
+    ///
+    /// If mirror() had to do work (a deep copy) to create the mirror,
+    /// then we cache that work.  This is why the input arguments are
+    /// passed in as nonconst references.
+    template<class OutMapType, class DeviceMapType, class HostMapType>
+    struct MapMirrorer {
+      typedef OutMapType output_map_type;
+      typedef DeviceMapType device_map_type;
+      typedef HostMapType host_map_type;
+
+      //! Return a mirror copy of either deviceMap or hostMap.
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap);
+    };
+
+    // Partial specialization for when all three Maps have different
+    // device types.
+    template<class LO, class GO, class OutDeviceType, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, OutDeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, OutDeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        output_map_type outputMap;
+
+        // Favor the host Map, since if OutDeviceType != DeviceType,
+        // then OutDeviceType is likely not to be a CUDA device (e.g.,
+        // DeviceType = Cuda, HostDeviceType = OpenMP, and
+        // OutDeviceType = Serial).
+        if (hostMap.initialized ()) {
+          outputMap.template create_copy_view<HostDeviceType> (hostMap);
+        } else {
+          outputMap.template create_copy_view<DeviceType> (deviceMap);
+        }
+        return outputMap;
+      }
+    };
+
+    // Partial specialization for when the device and host Maps have
+    // different device types, and the output Map has the same device
+    // type as the device Map.
+    template<class LO, class GO, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, DeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        if (deviceMap.initialized ()) {
+          return deviceMap;
+        }
+        else {
+          output_map_type outMap;
+          outMap.template create_copy_view<HostDeviceType> (hostMap);
+          if (outMap.initialized () && ! deviceMap.initialized ()) {
+            deviceMap = outMap; // cache the deep copy
+          }
+          return outMap;
+        }
+      }
+    };
+
+    // Partial specialization for when the device and host Maps have
+    // different device types, and the output Map has the same device
+    // type as the host Map.
+    template<class LO, class GO, class DeviceType, class HostDeviceType>
+    struct MapMirrorer<Map<LO, GO, HostDeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, HostDeviceType> > {
+      typedef Map<LO, GO, HostDeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, HostDeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, host_map_type& hostMap) {
+        if (hostMap.initialized ()) {
+          return hostMap;
+        }
+        else {
+          output_map_type outMap;
+          outMap.template create_copy_view<DeviceType> (deviceMap);
+          if (outMap.initialized ()) {
+            hostMap = outMap; // cache the deep copy
+          }
+          return outMap;
+        }
+      }
+    };
+
+    // Partial specialization for when the device, host, and output
+    // Maps have the same device types.
+    template<class LO, class GO, class DeviceType>
+    struct MapMirrorer<Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType>, Map<LO, GO, DeviceType> > {
+      typedef Map<LO, GO, DeviceType> output_map_type;
+      typedef Map<LO, GO, DeviceType> device_map_type;
+      typedef Map<LO, GO, DeviceType> host_map_type;
+
+      static output_map_type
+      mirror (device_map_type& deviceMap, const host_map_type& /* hostMap */ ) {
+        return deviceMap;
+      }
     };
 
   }

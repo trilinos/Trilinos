@@ -33,14 +33,18 @@
 #ifndef IOSS_Ioss_GroupingEntity_h
 #define IOSS_Ioss_GroupingEntity_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
-#include <Ioss_State.h>
-#include <Ioss_Field.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_PropertyManager.h>
-#include <Ioss_FieldManager.h>
-#include <Ioss_EntityType.h>
+#include <Ioss_CodeTypes.h>             // for Complex
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_EntityType.h>            // for EntityType
+#include <Ioss_Field.h>                 // for Field, Field::RoleType, etc
+#include <Ioss_FieldManager.h>          // for FieldManager, NameList
+#include <Ioss_PropertyManager.h>       // for PropertyManager
+#include <Ioss_State.h>                 // for State
+#include <stddef.h>                     // for size_t, NULL
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_Property.h"              // for Property
 
 namespace Ioss {
 
@@ -141,6 +145,7 @@ namespace Ioss {
     int field_describe(NameList* names) const;
     int field_describe(Field::RoleType role, NameList* names) const;
     size_t field_count() const;
+    size_t field_count(Field::RoleType role) const;
 
     // Put this fields data into 'data'.
     // Returns number of entities for which the field was read.

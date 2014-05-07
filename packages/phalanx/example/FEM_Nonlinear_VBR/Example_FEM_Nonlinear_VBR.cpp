@@ -91,7 +91,7 @@ void printVector(std::string filename_prefix, const Epetra_Vector& vector,
 {
   std::stringstream ss;
   ss << filename_prefix << "_" << newton_step << ".dat";
-  ofstream file( ss.str().c_str(), ios::out | ios::app );
+  std::ofstream file( ss.str().c_str(), std::ios::out | std::ios::app );
   vector.Print(file);
 }
 
@@ -102,7 +102,7 @@ void printMatrix(std::string filename_prefix, const Epetra_VbrMatrix& matrix,
 {
   std::stringstream ss;
   ss << filename_prefix << "_" << newton_step << ".dat";
-  ofstream file( ss.str().c_str(), ios::out | ios::app );
+  std::ofstream file( ss.str().c_str(), std::ios::out | std::ios::app );
   matrix.Print(file);
 }
 
@@ -294,7 +294,7 @@ int main(int argc, char *argv[])
     LinearObjectFactoryVBR lof(mb, comm, num_eq);
 
     if (print_debug_info) {
-      ofstream file("OwnedGraph.dat", ios::out | ios::app);
+      std::ofstream file("OwnedGraph.dat", std::ios::out | std::ios::app);
       Teuchos::basic_FancyOStream<char> p(rcp(&file,false)); 
       p.setShowProcRank(true); 
       p.setProcRankAndSize(comm->MyPID(), comm->NumProc()); 	
@@ -794,12 +794,12 @@ int main(int argc, char *argv[])
 
 
       {
-	std::vector< RCP<ofstream> > files; 
+	std::vector< RCP<std::ofstream> > files; 
 	for (std::size_t eq = 0; eq < num_eq; ++eq) {
 	  std::stringstream ost;
 	  ost << "upper_DOF" << eq << "_PID" << comm->MyPID() << ".dat";
 	  files.push_back( rcp(new std::ofstream(ost.str().c_str()), 
-			       ios::out | ios::trunc) );
+			       std::ios::out | std::ios::trunc) );
 	  files[eq]->precision(10);
 	}
 	
@@ -815,12 +815,12 @@ int main(int argc, char *argv[])
       }
 
       {
-	std::vector< RCP<ofstream> > files; 
+	std::vector< RCP<std::ofstream> > files; 
 	for (std::size_t eq = 0; eq < num_eq; ++eq) {
 	  std::stringstream ost;
 	  ost << "lower_DOF" << eq << "_PID" << comm->MyPID() << ".dat";
 	  files.push_back( rcp(new std::ofstream(ost.str().c_str()), 
-			       ios::out | ios::trunc) );
+			       std::ios::out | std::ios::trunc) );
 	  files[eq]->precision(10);
 	}
 	

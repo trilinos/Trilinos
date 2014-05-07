@@ -21,7 +21,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 # Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
@@ -157,7 +157,21 @@ FIND_PACKAGE(PythonInclude REQUIRED)
 FIND_PACKAGE(NumPy 1.0 REQUIRED)
 
 # Simple wrapper interface generator (SWIG) is required
-FIND_PACKAGE(SWIG 2.0.0 REQUIRED)
+SET(SWIG_VERSION_FLOOR   2.0.0)
+SET(SWIG_VERSION_CEILING 2.0.8)
+FIND_PACKAGE(SWIG REQUIRED)
+IF(${SWIG_VERSION} VERSION_LESS ${SWIG_VERSION_FLOOR})
+  MESSAGE(FATAL_ERROR
+    "SWIG version " ${SWIG_VERSION}
+    " is less than minimum version " ${SWIG_VERSION_FLOOR}
+    )
+ENDIF()
+IF(${SWIG_VERSION} VERSION_GREATER ${SWIG_VERSION_CEILING})
+  MESSAGE(FATAL_ERROR
+    "SWIG version " ${SWIG_VERSION}
+    " is greater than maximum version " ${SWIG_VERSION_CEILING}
+    )
+ENDIF()
 # ${SWIG_USE_FILE} is hard-coded to be the installed UseSWIG.cmake
 # file.  We want to include the local, modified version.
 INCLUDE(UseSWIG)

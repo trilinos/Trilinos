@@ -171,6 +171,9 @@ namespace Xpetra {
     //! Scale the current values of a multi-vector, this = alpha*this.
     void scale(const int &alpha);
 
+    //! Scale the current values of a multi-vector, this[j] = alpha[j]*this[j].
+    void scale (Teuchos::ArrayView< const int > alpha);
+
     //! Update multi-vector values with scaled values of A, this = beta*this + alpha*A.
     void update(const int &alpha, const MultiVector<int,int,int,KokkosClassic::DefaultNode::DefaultNodeType> &A, const int &beta);
 
@@ -251,7 +254,7 @@ namespace Xpetra {
     }
 
     // Implementing DistObject
-    const Teuchos::RCP<const Map<int,int> > getMap() const {
+    Teuchos::RCP<const Map<int,int> > getMap() const {
       RCP<const Epetra_BlockMap> map = rcp(new Epetra_BlockMap(vec_->Map()));
       return rcp ( new Xpetra::EpetraMap(map) );
     }
@@ -268,7 +271,14 @@ namespace Xpetra {
       // do nothing
     }
 
+  protected:
+    /// \brief Implementation of the assignment operator (operator=);
+    ///   does a deep copy.
+    virtual void
+    assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs);
+
   private:
+    //! The Epetra_IntVector which this class wraps.
     RCP< Epetra_IntVector > vec_;
 
   }; // class EpetraIntVector

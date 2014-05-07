@@ -1,8 +1,6 @@
 #include <KokkosCompat_ClassicNodeAPI_Wrapper.hpp>
 #include <Kokkos_HostSpace.hpp>
 
-//static size_t KokkosHostWrapperNodeDUMMYINT = Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size();
-
 namespace Kokkos {
   namespace Compat {
 
@@ -20,6 +18,7 @@ namespace Kokkos {
 #ifdef KOKKOS_HAVE_PTHREAD
     template<> int KokkosThreadsWrapperNode::count = 0;
 #endif
+    template<> int KokkosSerialWrapperNode::count = 0;
 
 #ifdef KOKKOS_HAVE_PTHREAD
     template<>
@@ -32,19 +31,20 @@ namespace Kokkos {
         if (! Impl::is_same<Kokkos::Threads,Cuda::host_mirror_device_type>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
-          //Don't try to kill me if HostSpace was already destroyed.
-          //Typical reason: static global instance of node is used, which might get destroyed after
-          //the static HostSpace is destroyed.
-          if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-            Threads::finalize ();
+          Threads::finalize ();
       }
     }
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::Threads>::
-    init (int NumTeams, int NumThreads, int Device) {
+    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
       if (! Kokkos::Threads::is_initialized ()) {
-        Kokkos::Threads::initialize (NumTeams*NumThreads);
+        if(NumNUMA>0 && NumCoresPerNUMA>0)
+          Kokkos::Threads::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
+        else if (NumNUMA > 0)
+          Kokkos::Threads::initialize ( NumThreads, NumNUMA );
+        else
+          Kokkos::Threads::initialize ( NumThreads );
       }
     }
 
@@ -63,20 +63,20 @@ namespace Kokkos {
         if (! Impl::is_same<Kokkos::OpenMP, Cuda::host_mirror_device_type>::value ||
             KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
 #endif
-        //Don't try to kill me if HostSpace was already destroyed.
-        //Typical reason: static global instance of node is used, which might get destroyed after
-        //the static HostSpace is destroyed.
-        if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-          OpenMP::finalize ();
+        OpenMP::finalize ();
       }
     }
 
     template<>
     void KokkosDeviceWrapperNode<Kokkos::OpenMP>::
-    init (int NumTeams, int NumThreads, int Device)
-    {
+    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
       if (! Kokkos::OpenMP::is_initialized ()) {
-        Kokkos::OpenMP::initialize (NumTeams*NumThreads);
+        if(NumNUMA>0 && NumCoresPerNUMA>0)
+          Kokkos::OpenMP::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
+        else if (NumNUMA > 0)
+          Kokkos::OpenMP::initialize ( NumThreads, NumNUMA );
+        else
+          Kokkos::OpenMP::initialize ( NumThreads );
       }
     }
 
@@ -85,6 +85,32 @@ namespace Kokkos {
       return "OpenMP/Wrapper";
     }
 #endif
+
+    template<>
+    KokkosDeviceWrapperNode<Kokkos::Serial>::~KokkosDeviceWrapperNode<Kokkos::Serial>() {
+      count--;
+      if (count == 0 && Serial::is_initialized ()) {
+#ifdef KOKKOS_HAVE_CUDA
+        if (! Impl::is_same<Kokkos::Serial, Cuda::host_mirror_device_type>::value ||
+            KokkosDeviceWrapperNode<Kokkos::Cuda>::count == 0)
+#endif
+          Serial::finalize ();
+      }
+    }
+
+    template<>
+    void KokkosDeviceWrapperNode<Kokkos::Serial>::
+    init (int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
+      if (! Kokkos::Serial::is_initialized ()) {
+          Kokkos::Serial::initialize ();
+      }
+    }
+
+    template<>
+    std::string KokkosDeviceWrapperNode<Kokkos::Serial>::name () {
+      return "Serial/Wrapper";
+    }
+
 
   }
 }

@@ -64,7 +64,8 @@ namespace Ifpack2 {
 \brief ILU(k) factorization of a given Tpetra::RowMatrix.
 \tparam MatrixType A specialization of Tpetra::RowMatrix.
 
-This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.
+This class implements a "relaxed" incomplete ILU (ILU) factorization with level k fill.  It is based upon the ILU algorithms
+outlined in Yousef Saad's "Iterative Methods for Sparse Linear Systems", 2nd edition, Chapter 10.
 
 \section Ifpack2_RILUK_Parameters Parameters
 
@@ -127,6 +128,23 @@ the details of diagonal perturbations.
 </li>
 
 </ul>
+
+\section Ifpack2_RILUK_GlobalOrdering An important note about ordering
+
+Note that the factorization is calculated based upon local ordering.   This means
+that the ordering of the GIDs in the row map is ignored.
+Initial entries in \f$L\f$, the strictly lower triangular part of A, and \f$U\f$, the strictly upper
+triangular part of A, are given by
+
+\f$L(i,j) = A(i,j)\f$ if \f$j < i\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$>\f$ GID\f$(i)\f$,
+
+and
+
+\f$U(i,j) = A(i,j)\f$ if \f$i < j\f$, for local IDs \f$i\f$ and \f$j\f$, even if GID\f$(j)\f$ \f$<\f$ GID\f$(i)\f$.
+
+In particular, if the row map GIDs are not in ascending
+order on processor, then the incomplete factors will be different than those produced by ILU(k) using global IDs.
+If the row map GIDs are in ascending order, then the factors produced based on LID and GID ordering are the same.
 
 \section Ifpack2_RILUK_CondEst Estimating preconditioner condition numbers
 
@@ -595,19 +613,30 @@ private:
   void allocate_L_and_U();
   void initAllValues (const row_matrix_type& A);
 
-  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,global_ordinal_type,node_type> > > Graph_;
+  /// \brief Return A, wrapped in a LocalFilter, if necessary.
+  ///
+  /// "If necessary" means that if A is already a LocalFilter, or if
+  /// its communicator only has one process, then we don't need to
+  /// wrap it, so we just return A.
+  static Teuchos::RCP<const row_matrix_type>
+  makeLocalFilter (const Teuchos::RCP<const row_matrix_type>& A);
 
   //! The (original) input matrix for which to compute ILU(k).
   Teuchos::RCP<const row_matrix_type> A_;
 
+  //! The ILU(k) graph.
+  Teuchos::RCP<Ifpack2::IlukGraph<Tpetra::CrsGraph<local_ordinal_type,
+                                                   global_ordinal_type,
+                                                   node_type> > > Graph_;
   /// \brief The matrix used to to compute ILU(k).
   ///
-  /// If A_ (the original input matrix) is a Tpetra::CrsMatrix, then
-  /// this is just A_.  Otherwise, this class reserves the right for
-  /// A_crs_ to be a copy of A_.  This is because the current
-  /// implementation of ILU(k) only knows how to factor a
-  /// Tpetra::CrsMatrix.  That may change in the future.
-  Teuchos::RCP<const crs_matrix_type> A_crs_;
+  /// If A_local (the local filter of the original input matrix) is a
+  /// Tpetra::CrsMatrix, then this is just A_local.  Otherwise, this
+  /// class reserves the right for A_local_crs_ to be a copy of
+  /// A_local.  This is because the current implementation of ILU(k)
+  /// only knows how to factor a Tpetra::CrsMatrix.  That may change
+  /// in the future.
+  Teuchos::RCP<const crs_matrix_type> A_local_crs_;
 
   //! The L (lower triangular) factor of ILU(k).
   Teuchos::RCP<crs_matrix_type> L_;

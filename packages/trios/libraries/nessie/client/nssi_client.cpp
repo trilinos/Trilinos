@@ -623,6 +623,8 @@ int nssi_get_service(
         }
     }
 
+    memcpy(&result->svc_host, &peer_hdl, sizeof(NNTI_peer_t));
+
 // Cleanup data structures
 
     if (nssi_config.use_buffer_queue) {

@@ -418,6 +418,16 @@ public:
     matrixData_->getLocalDiagCopy(diag);
   }
 
+  //! Get offsets of the diagonal entries in the matrix.
+  void getLocalDiagOffsets(Teuchos::ArrayRCP<size_t> &offsets) const {
+    matrixData_->getLocalDiagOffsets(offsets);
+  }
+
+  //! Get a copy of the diagonal entries owned by this node, with local row indices, using row offsets.
+  void getLocalDiagCopy(Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > &diag, const Teuchos::ArrayView<const size_t> &offsets) const {
+    matrixData_->getLocalDiagCopy(diag,offsets);
+  }
+
   //! Get Frobenius norm of the matrix
   typename ScalarTraits<Scalar>::magnitudeType getFrobeniusNorm() const {
     return matrixData_->getFrobeniusNorm();

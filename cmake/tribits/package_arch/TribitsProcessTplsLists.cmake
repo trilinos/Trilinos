@@ -47,10 +47,10 @@ INCLUDE(Split)
 #
 # Macro that processes the list of TPLs
 #
-# This macro reads from the varible
+# This macro reads from the variable
 # ${REPOSITORY_NAME}_TPLS_FINDMODS_CLASSIFICATIONS for a given repository and
 # and fills the variables ${PROJECT_NAME}_TPLS, ${PROJECT_NAME}_NUM_TPLS,
-# ${PROJECT_NAME}_REVERSE_TPLS.  For each TPL, it also sets the varible
+# ${PROJECT_NAME}_REVERSE_TPLS.  For each TPL, it also sets the variable
 # ${TPL_NAME}_FINDMOD and ${TPL_NAME}_CLASSIFICATION.
 #
 

@@ -57,6 +57,17 @@
 #include "Sacado_mpl_range_c.hpp"
 #include "Stokhos_mpl_for_each.hpp"
 
+// ivdep is necessary to get the intel compiler to vectorize through
+// expresion template assignent operators
+#if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
+#define STOKHOS_HAVE_PRAGMA_IVDEP
+#endif
+
+// unrolling appears to slow everything down
+#if 0 && ( defined(__INTEL_COMPILER) || defined(__CUDA_ARCH__) )
+#define STOKHOS_HAVE_PRAGMA_UNROLL
+#endif
+
 namespace Sacado {
 
   //! Namespace for multipoint classes
@@ -129,7 +140,7 @@ namespace Sacado {
       typedef typename storage_type::const_reference const_reference;
       typedef typename storage_type::const_volatile_reference const_volatile_reference;
 
-      //! Typename of scalar's (which may be different from T)
+      //! Typename of scalar's (which may be different from value_type)
       typedef typename ScalarType<value_type>::type scalar_type;
 
       //! Turn Vector into a meta-function class usable with mpl::apply
@@ -140,17 +151,6 @@ namespace Sacado {
 
       //! Number of arguments
       static const int num_args = 1;
-
-#if 0
-      // A temporary hack to allow taking the address of a temporary
-      // Vector with ViewStorage.  A better approach would be to return
-      // a VectorViewStoragePtr with overloaded * to return a new
-      // Vector<ViewStorage>
-      KOKKOS_INLINE_FUNCTION
-      Vector* operator&() { return this; }
-      KOKKOS_INLINE_FUNCTION
-      const Vector* operator&() const { return this; }
-#endif
 
       //! Default constructor
       /*!
@@ -166,9 +166,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       Vector(const value_type& x) : s(1) { s.init(x); }
 
-      //! Constructor with specified size \c sz
+      //! View constructor
       /*!
-       * Creates array of size \c sz and initializes coeffiencts to 0.
+       * Creates vector with pre-allocated data.  Set \c owned = true
+       * if this Vector should take over management of the data.
        */
       KOKKOS_INLINE_FUNCTION
       Vector(ordinal_type sz, pointer v, bool owned) : s(sz,v,owned) {}
@@ -201,6 +202,12 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -423,6 +430,12 @@ namespace Sacado {
 
         this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -442,6 +455,12 @@ namespace Sacado {
 
         this->reset(x.size());
         if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
           for (ordinal_type i=0; i<s.size(); i++)
             s[i] = x.fastAccessCoeff(i);
         }
@@ -763,128 +782,432 @@ namespace Sacado {
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator += (const Expr<S>& x) {
-        *this = *this + x;
+      Vector& operator += (const Expr<S>& xx) {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator += (const volatile Expr<S>& x) {
-        *this = *this + x;
+      Vector& operator += (const volatile Expr<S>& xx) {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return *this;
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator += (const Expr<S>& x) volatile {
-        *this = *this + x;
+      /*volatile*/ Vector& operator += (const Expr<S>& xx) volatile {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Addition-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator += (const volatile Expr<S>& x) volatile {
-        *this = *this + x;
+      /*volatile*/ Vector& operator += (const volatile Expr<S>& xx) volatile {
+        //*this = *this + x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] += x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator -= (const Expr<S>& x) {
-        *this = *this - x;
+      Vector& operator -= (const Expr<S>& xx) {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator -= (const volatile Expr<S>& x) {
-        *this = *this - x;
+      Vector& operator -= (const volatile Expr<S>& xx) {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return *this;
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator -= (const Expr<S>& x) volatile {
-        *this = *this - x;
+      /*volatile*/ Vector& operator -= (const Expr<S>& xx) volatile {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Subtraction-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator -= (const volatile Expr<S>& x) volatile {
-        *this = *this - x;
+      /*volatile*/ Vector& operator -= (const volatile Expr<S>& xx) volatile {
+        //*this = *this - x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] -= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator *= (const Expr<S>& x) {
-        *this = *this * x;
+      Vector& operator *= (const Expr<S>& xx) {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator *= (const volatile Expr<S>& x) {
-        *this = *this * x;
+      Vector& operator *= (const volatile Expr<S>& xx) {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return *this;
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator *= (const Expr<S>& x) volatile {
-        *this = *this * x;
+      /*volatile*/ Vector& operator *= (const Expr<S>& xx) volatile {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Multiplication-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator *= (const volatile Expr<S>& x) volatile {
-        *this = *this * x;
+      /*volatile*/ Vector& operator *= (const volatile Expr<S>& xx) volatile {
+        //*this = *this * x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] *= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator /= (const Expr<S>& x) {
-        *this = *this / x;
+      Vector& operator /= (const Expr<S>& xx) {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      Vector& operator /= (const volatile Expr<S>& x) {
-        *this = *this / x;
+      Vector& operator /= (const volatile Expr<S>& xx) {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return *this;
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator /= (const Expr<S>& x) volatile {
-        *this = *this / x;
+      /*volatile*/ Vector& operator /= (const Expr<S>& xx) volatile {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
       //! Division-assignment operator with Expr right-hand-side
       template <typename S>
       KOKKOS_INLINE_FUNCTION
-      /*volatile*/ Vector& operator /= (const volatile Expr<S>& x) volatile {
-        *this = *this / x;
+      /*volatile*/ Vector& operator /= (const volatile Expr<S>& xx) volatile {
+        //*this = *this / x;
+        typedef typename Expr<S>::derived_type expr_type;
+        const expr_type& x = xx.derived();
+
+        if (x.size() > s.size())
+          this->reset(x.size());
+        if (x.hasFastAccess(s.size())) {
+#ifdef STOKHOS_HAVE_PRAGMA_IVDEP
+#pragma ivdep
+#endif
+#ifdef STOKHOS_HAVE_PRAGMA_UNROLL
+#pragma unroll
+#endif
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.fastAccessCoeff(i);
+        }
+        else {
+          for (ordinal_type i=0; i<s.size(); i++)
+            s[i] /= x.coeff(i);
+        }
         return const_cast<Vector&>(*this);
       }
 
@@ -1117,5 +1440,7 @@ namespace Sacado {
 #include "Sacado_MP_Vector_ops.hpp"
 
 #endif // HAVE_STOKHOS_SACADO
+
+//#include "Sacado_MP_Vector_SFS.hpp"
 
 #endif // SACADO_MP_VECTOR_HPP

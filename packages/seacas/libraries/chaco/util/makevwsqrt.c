@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <math.h>
-#include "structs.h"
+#include <math.h>                       // for sqrt
+#include "structs.h"                    // for vtx_data
 
 
 void      makevwsqrt(double *vwsqrt, struct vtx_data **graph, int nvtxs)

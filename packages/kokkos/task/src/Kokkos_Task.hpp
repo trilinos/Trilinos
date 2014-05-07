@@ -47,6 +47,7 @@
 #define KOKKOS_TASK_HPP
 
 #include <Kokkos_Macros.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 #include <impl/Kokkos_Traits.hpp>
 #include <impl/Kokkos_StaticAssert.hpp>
 
@@ -87,6 +88,16 @@ template< class PatternType
 class FunctorTraits ;
 
 } /* namespace Impl */
+} /* namespace Kokkos */
+
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+
+// TaskPool< MyFunctor , Kokkos::TaskSerial<long> , Kokkos::Serial >
+template< class FunctorType , class PatternType , class DeviceType >
+class TaskPool ;
+
 } /* namespace Kokkos */
 
 //----------------------------------------------------------------------------

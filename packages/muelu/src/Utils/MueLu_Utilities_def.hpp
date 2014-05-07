@@ -311,11 +311,11 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   RCP<Xpetra::Matrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
   Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Jacobi(Scalar omega,
-									const Vector& Dinv,
-									const Matrix& A,
-									const Matrix& B,
-									RCP<Matrix> C_in,
-									Teuchos::FancyOStream &fos) {
+                                                                        const Vector& Dinv,
+                                                                        const Matrix& A,
+                                                                        const Matrix& B,
+                                                                        RCP<Matrix> C_in,
+                                                                        Teuchos::FancyOStream &fos) {
     // Sanity checks
     if (!A.isFillComplete())
       throw Exceptions::RuntimeError("A is not fill-completed");
@@ -600,6 +600,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Teuchos::ArrayRCP<Scalar> Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixDiagonal(const Matrix& A) {
+
     size_t numRows = A.getRowMap()->getNodeNumElements();
     Teuchos::ArrayRCP<SC> diag(numRows);
 
@@ -640,12 +641,12 @@ namespace MueLu {
       LO j = 0;
       for (; j < cols.size(); ++j) {
         if (Teuchos::as<size_t>(cols[j]) == i) {
-	  if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
-	    diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
-	  else
-	    diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
-	  break;
-	}
+          if(Teuchos::ScalarTraits<SC>::magnitude(vals[j]) > tol)
+            diagVals[i] = Teuchos::ScalarTraits<SC>::one() / vals[j];
+          else
+            diagVals[i]=Teuchos::ScalarTraits<SC>::zero();
+          break;
+        }
       }
       if (j == cols.size()) {
         // Diagonal entry is absent
@@ -682,20 +683,31 @@ namespace MueLu {
   RCP<Xpetra::Vector<Scalar,LocalOrdinal,GlobalOrdinal,Node> > Utils<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::GetMatrixOverlappedDiagonal(const Matrix& A) {
     RCP<const Map> rowMap = A.getRowMap(), colMap = A.getColMap();
     RCP<Vector>    localDiag     = VectorFactory::Build(rowMap);
-    ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
 
-    Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
-    for (LO i = 0; i < localDiagVals.size(); i++)
-      localDiagVals[i] = diagVals[i];
-    localDiagVals = diagVals = null;
-
-    // TODO there's a problem with the importer from the underlying Tpetra::CrsGraph
-    // TODO so right now construct an importer.
-    // diagonal->doImport(*localDiag, *(A.getCrsGraph()->getImporter()), Xpetra::INSERT);
-    RCP<const Import> importer = ImportFactory::Build(rowMap, colMap);
+    try {
+       const CrsMatrixWrap* crsOp = dynamic_cast<const CrsMatrixWrap*>(&A);
+       if (crsOp == NULL) {
+         throw Exceptions::RuntimeError("cast to CrsMatrixWrap failed");
+       }
+       Teuchos::ArrayRCP<size_t> offsets;
+       crsOp->getLocalDiagOffsets(offsets);
+       crsOp->getLocalDiagCopy(*localDiag,offsets());
+    }
+    catch (...) {
+      ArrayRCP<SC>   localDiagVals = localDiag->getDataNonConst(0);
+      Teuchos::ArrayRCP<SC> diagVals = GetMatrixDiagonal(A);
+      for (LO i = 0; i < localDiagVals.size(); i++)
+        localDiagVals[i] = diagVals[i];
+      localDiagVals = diagVals = null;
+    }
 
     RCP<Vector> diagonal = VectorFactory::Build(colMap);
-    diagonal->doImport(*localDiag, *importer, Xpetra::INSERT);
+    RCP< const Import> importer;
+    importer = A.getCrsGraph()->getImporter();
+    if (importer == Teuchos::null) {
+      importer = ImportFactory::Build(rowMap, colMap);
+    }
+    diagonal->doImport(*localDiag, *(importer), Xpetra::INSERT);
 
     return diagonal;
   } //GetMatrixOverlappedDiagonal
@@ -864,13 +876,13 @@ namespace MueLu {
       } else if (lib == Xpetra::UseTpetra) {
 #ifdef HAVE_MUELU_TPETRA
 //        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::SerialNode, typename KokkosClassic::DefaultKernels<void, LocalOrdinal, Kokkos::SerialNode>::SparseOps> sparse_matrix_type;
-	typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
+        typedef Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> sparse_matrix_type;
 
         typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
 
         //RCP<Node> node = Xpetra::DefaultPlatform::getDefaultPlatform().getNode();
-	Teuchos::ParameterList pl = Teuchos::ParameterList();
-	RCP<Node> node = rcp(new Node(pl));
+        Teuchos::ParameterList pl = Teuchos::ParameterList();
+        RCP<Node> node = rcp(new Node(pl));
         bool callFillComplete = true;
 
         RCP<sparse_matrix_type> tA = reader_type::readSparseFile(fileName, comm, node, callFillComplete);
@@ -1036,7 +1048,7 @@ namespace MueLu {
     }
 #endif // HAVE_MUELU_TPETRA
 
-    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in multivector writing");
 
   } //Write
 
@@ -1307,6 +1319,25 @@ namespace MueLu {
     }
 
     return boundaryNodes;
+  }
+
+  //pulled directly from ml_utils.cpp
+  template <class SC, class LO, class GO, class NO, class LMO>
+  void Utils<SC, LO, GO, NO, LMO>::SetRandomSeed(const Teuchos::Comm<int> &comm) {
+    // Distribute the seeds evenly in [1,maxint-1].  This guarantees nothing
+    // about where in random number stream we are, but avoids overflow situations
+    // in parallel when multiplying by a PID.  It would be better to use
+    // a good parallel random number generator.
+
+    double one = 1.0;
+    int maxint = INT_MAX; //= 2^31-1 = 2147483647 for 32-bit integers
+    int mySeed = Teuchos::as<int>((maxint-1) * (one -(comm.getRank()+1)/(comm.getSize()+one)) );
+    if (mySeed < 1 || mySeed == maxint) {
+      std::ostringstream errStr;
+      errStr << "Error detected with random seed = " << mySeed << ". It should be in the interval [1,2^31-2].";
+      throw Exceptions::RuntimeError(errStr.str());
+    }
+    Teuchos::ScalarTraits<SC>::seedrandom(mySeed);
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

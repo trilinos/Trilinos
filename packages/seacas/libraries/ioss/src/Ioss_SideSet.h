@@ -33,16 +33,19 @@
 #ifndef IOSS_Ioss_SideSet_h
 #define IOSS_Ioss_SideSet_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_Property.h>
-#include <Ioss_GroupingEntity.h>
-#include <string>
+#include <Ioss_GroupingEntity.h>        // for GroupingEntity
+#include <Ioss_Property.h>              // for Property
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "Ioss_EntityType.h"            // for EntityType, etc
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class Field; }
+namespace Ioss { class SideBlock; }
 
-#include <vector>
 
 namespace Ioss {
-  class DatabaseIO;
-  class SideBlock;
 
   typedef std::vector<SideBlock*> SideBlockContainer;
 

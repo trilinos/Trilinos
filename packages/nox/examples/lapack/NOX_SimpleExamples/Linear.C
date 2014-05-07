@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,12 +48,12 @@
 // ************************************************************************
 //@HEADER
 
-/*! 
+/*!
   \file Linear.C
 
   \brief A simple linear example based on NOX::LAPACK. Creates the
   executable named \c linear.
-  
+
   <b>Usage</b>
 
   <tt>linear \<problem size\> [line search type] [direction type] [memory size] </tt>
@@ -72,12 +72,12 @@
             even if the first step decreases the function value.  Uses
             NOX::LineSearch::Polynomial the following settings:
 
-	    <ul>
-	    <li>"Force Interpolation" = true
-	    <li>"Sufficient Decrease Condition" = "None"
-	    <li>"Default Step"= 1.0
-	    <li>"Min Bounds Factor" = 0.0
-	    </ul>
+        <ul>
+        <li>"Force Interpolation" = true
+        <li>"Sufficient Decrease Condition" = "None"
+        <li>"Default Step"= 1.0
+        <li>"Min Bounds Factor" = 0.0
+        </ul>
 
        <li> Poly - Uses NOX::LineSearch::Polynomial with the default
             settings.
@@ -141,7 +141,7 @@
   then the following 4 x 4 problem is used instead:
 
    \f[
-   A = 
+   A =
    \left[
    \begin{array}{cccc}
    7 & 1 & 2 & 1\\
@@ -203,9 +203,9 @@
 class Linear : public NOX::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor
-  Linear(int n, bool useDefaultProblem) : 
+  Linear(int n, bool useDefaultProblem) :
     initialGuess(n),
     solution(n),
     A(n, n),
@@ -214,25 +214,25 @@ public:
     if (useDefaultProblem)
     {
       if (n != 4)
-	throw "Linear::Linear (from NOX) - Problem size mismatch";
+    throw "Linear::Linear (from NOX) - Problem size mismatch";
 
       initialGuess.init(4);
-      
+
       b.init(1);
-      
-      A(0,0) = 7; 
+
+      A(0,0) = 7;
       A(0,1) = 1;
       A(0,2) = 2;
       A(0,3) = 1;
-      A(1,0) = 1; 
+      A(1,0) = 1;
       A(1,1) = 8;
       A(1,2) = 3;
       A(1,3) = 1;
-      A(2,0) = 1; 
+      A(2,0) = 1;
       A(2,1) = 3;
       A(2,2) = 9;
       A(2,3) = 1;
-      A(3,0) = 1; 
+      A(3,0) = 1;
       A(3,1) = 1;
       A(3,2) = 1;
       A(3,3) = 10;
@@ -241,15 +241,15 @@ public:
     else
     {
       if (n < 0)
-	throw "Linear::Linear (from NOX) - Invalid problem size";
+    throw "Linear::Linear (from NOX) - Invalid problem size";
 
       initialGuess.init(1);
       b.init(1);
       NOX::Random random(1);
 
       for (int i = 0; i < n; i ++)
-	for (int j = 0; j < n; j ++)
-	  A(i,j) = random.number();
+    for (int j = 0; j < n; j ++)
+      A(i,j) = random.number();
     }
 
     int info;
@@ -258,7 +258,7 @@ public:
     solution = b;
     DGESV_F77(&n, &NOX::LAPACK::i_one, &Acopy(0,0), &n, &ipiv[0], &solution(0), &n, &info);
   };
-  
+
   //! Destructor
   ~Linear() {};
 
@@ -278,20 +278,20 @@ public:
   bool computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x)
   {
     int n = f.length();
-    for (int i = 0; i < n; i ++) 
+    for (int i = 0; i < n; i ++)
     {
       f(i) = 0    ;
       for (int j = 0; j < n; j ++) {
-	f(i) += A(i,j) * x(j);
+    f(i) += A(i,j) * x(j);
       }
       f(i) -= b(i);
     }
     return true;
   };
-  
+
   // Derived
-  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		       const NOX::LAPACK::Vector& x)
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J,
+               const NOX::LAPACK::Vector& x)
   {
     J = A;
     return true;
@@ -328,21 +328,21 @@ int main(int argc, char* argv[])
 
   // Set up the problem interface
   Linear linear(n, useDefaultProblem);
-  
+
   // Create a group which uses that problem interface. The group will
   // be initialized to contain the default initial guess for the
   // specified problem.
-  Teuchos::RCP<NOX::LAPACK::Group> grp = 
+  Teuchos::RCP<NOX::LAPACK::Group> grp =
     Teuchos::rcp(new NOX::LAPACK::Group(linear));
-  
+
   // ** Status Tests **
   Teuchos::RCP<NOX::StatusTest::NormF> normf =
     Teuchos::rcp(new NOX::StatusTest::NormF(*grp, 1.0e-8));
   Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters( 5 * n ));
   Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
-					    normf, maxiters));
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                        normf, maxiters));
 
   // ** Paramter List **
   Teuchos::RCP<Teuchos::ParameterList> solverParamsPtr =
@@ -350,12 +350,12 @@ int main(int argc, char* argv[])
   Teuchos::ParameterList& solverParams = *solverParamsPtr.get();
 
   // -- Output Level --
-  solverParams.sublist("Printing").set("Output Information", 
-						    NOX::Utils::Warning + 
-						    NOX::Utils::OuterIteration +
-						    NOX::Utils::OuterIterationStatusTest + 
-						    NOX::Utils::InnerIteration + 
-						    NOX::Utils::Parameters);
+  solverParams.sublist("Printing").set("Output Information",
+                            NOX::Utils::Warning +
+                            NOX::Utils::OuterIteration +
+                            NOX::Utils::OuterIterationStatusTest +
+                            NOX::Utils::InnerIteration +
+                            NOX::Utils::Parameters);
 
   // -- Solver --
   solverParams.set("Nonlinear Solver", "Line Search Based");
@@ -389,7 +389,7 @@ int main(int argc, char* argv[])
 
   // -- Direction --
   Teuchos::ParameterList& directionParams = solverParams.sublist("Direction");
-  
+
   // Set direction type
   std::string directionMethod = "Newton";
   directionParams.set("Method", directionMethod);
@@ -399,9 +399,9 @@ int main(int argc, char* argv[])
     directionParams.sublist(directionMethod).set("Compute Jacobian", true);
 
   // ** Solve **
-  
+
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grp, statusTestsCombo, solverParamsPtr);
 
   // Solve the nonlinesar system
@@ -414,9 +414,9 @@ int main(int argc, char* argv[])
   solver->getList().print(std::cout);
 
   // Get the answer from the solver
-  NOX::LAPACK::Group solnGrp = 
+  NOX::LAPACK::Group solnGrp =
     dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
-  
+
   // Print the answer from the solver
   std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
   solnGrp.print();

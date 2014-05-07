@@ -329,8 +329,14 @@ exp:	  NUM			{ $$ = $1; 				}
                                     array *arr = $1->value.avar;
                                     int cols = arr->cols;
                                     int rows = arr->rows;
-                                    if ($3 < rows && $5 < cols) {
-                                      int offset = $3*cols+$5;
+				    int row = $3;
+				    int col = $5;
+				    if (aprepro.ap_options.one_based_index) {
+				      row--;
+				      col--;
+				    }
+				    if (row < rows && col < cols) {
+                                      int offset = row*cols+col;
                                       $1->value.avar->data[offset] = $8;
                                     }
                                     else {

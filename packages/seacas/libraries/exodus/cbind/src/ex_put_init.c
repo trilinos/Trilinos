@@ -33,9 +33,9 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <string.h>                     // for strncpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_init_params, etc
 
 /*!
 
@@ -86,7 +86,9 @@ int ex_put_init (int   exoid,
 {
   ex_init_params par;
 
-  strcpy( par.title, title );
+  strncpy( par.title, title, 80 );
+  par.title[80] = '\0';
+  
   par.num_dim = num_dim;
   par.num_nodes = num_nodes;
   par.num_edge = 0;

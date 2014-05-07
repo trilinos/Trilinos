@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,7 +56,7 @@
 
 NOX::Epetra::Scaling::Scaling()
 {
-  
+
 }
 
 NOX::Epetra::Scaling::~Scaling()
@@ -66,7 +66,7 @@ NOX::Epetra::Scaling::~Scaling()
 
 void NOX::Epetra::Scaling::addUserScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D)
 {
-  if ( Teuchos::is_null(tmpVectorPtr) ) 
+  if ( Teuchos::is_null(tmpVectorPtr) )
     tmpVectorPtr = Teuchos::rcp(new Epetra_Vector(*D));
 
   scaleType.push_back(type);
@@ -96,45 +96,45 @@ void NOX::Epetra::Scaling::addColSumScaling(ScaleType type, const Teuchos::RCP<E
 
 void NOX::Epetra::Scaling::computeScaling(const Epetra_LinearProblem& problem)
 {
-  
+
   Epetra_Vector* diagonal = 0;
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
- 
+
     if (sourceType[i] == RowSum) {
-      
+
       diagonal = scaleVector[i].get();
 
-      // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't 
+      // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't
       // perform a row sum scale!
       const Epetra_RowMatrix* test = 0;
       test = dynamic_cast<const Epetra_RowMatrix*>(problem.GetOperator());
       if (test == 0) {
-	std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
-	     << "For \"Row Sum\" scaling, the Matrix must be an "
-	     << "Epetra_RowMatrix derived object!" << std::endl;
-	throw "NOX Error";
+    std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
+         << "For \"Row Sum\" scaling, the Matrix must be an "
+         << "Epetra_RowMatrix derived object!" << std::endl;
+    throw "NOX Error";
       }
-      
+
       test->InvRowSums(*diagonal);
       diagonal->Reciprocal(*diagonal);
 
     }
 
     else if (sourceType[i] == ColSum) {
-      
+
       diagonal = scaleVector[i].get();
 
-      // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't 
+      // Make sure the Jacobian is an Epetra_RowMatrix, otherwise we can't
       // perform a row sum scale!
       const Epetra_RowMatrix* test = 0;
       test = dynamic_cast<const Epetra_RowMatrix*>(problem.GetOperator());
       if (test == 0) {
-	std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
-	     << "For \"Column Sum\" scaling, the Matrix must be an "
-	     << "Epetra_RowMatrix derived object!" << std::endl;
-	throw "NOX Error";
+    std::cout << "ERROR: NOX::Epetra::Scaling::scaleLinearSystem() - "
+         << "For \"Column Sum\" scaling, the Matrix must be an "
+         << "Epetra_RowMatrix derived object!" << std::endl;
+    throw "NOX Error";
       }
-      
+
       test->InvColSums(*diagonal);
       diagonal->Reciprocal(*diagonal);
 
@@ -148,11 +148,11 @@ void NOX::Epetra::Scaling::scaleLinearSystem(Epetra_LinearProblem& problem)
 {
   Epetra_Vector* diagonal = 0;
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
- 
+
     diagonal = scaleVector[i].get();
 
     if (scaleType[i] == Left) {
- 
+
       tmpVectorPtr->Reciprocal(*diagonal);
       problem.LeftScale(*tmpVectorPtr);
 
@@ -170,21 +170,21 @@ void NOX::Epetra::Scaling::unscaleLinearSystem(Epetra_LinearProblem& problem)
 {
   Epetra_Vector* diagonal = 0;
   for (unsigned int i = 0; i < scaleVector.size(); i ++) {
-    
+
     diagonal = scaleVector[i].get();
-    
-    if (scaleType[i] == Left) { 
+
+    if (scaleType[i] == Left) {
       problem.LeftScale(*diagonal);
     }
     else if (scaleType[i] == Right) {
       problem.RightScale(*diagonal);
-      
+
     }
   }
 }
 
-void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input, 
-					     Epetra_Vector& result)
+void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input,
+                         Epetra_Vector& result)
 {
   if (scaleVector.size() == 0) {
     result = input;
@@ -192,34 +192,34 @@ void NOX::Epetra::Scaling::applyRightScaling(const Epetra_Vector& input,
   else {
     Epetra_Vector* diagonal = 0;
     for (unsigned int i = 0; i < scaleVector.size(); i ++) {
-      
+
       if (scaleType[i] == Right) {
-	diagonal = scaleVector[i].get();
-	
-	tmpVectorPtr->Reciprocal(*diagonal);
-	
-	result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+    diagonal = scaleVector[i].get();
+
+    tmpVectorPtr->Reciprocal(*diagonal);
+
+    result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
       }
     }
   }
 }
 
-void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input, 
-					    Epetra_Vector& result)
-{ 
+void NOX::Epetra::Scaling::applyLeftScaling(const Epetra_Vector& input,
+                        Epetra_Vector& result)
+{
   if (scaleVector.size() == 0) {
     result = input;
   }
   else {
     Epetra_Vector* diagonal = 0;
     for (unsigned int i = 0; i < scaleVector.size(); i ++) {
-      
+
       if (scaleType[i] == Left) {
-	diagonal = scaleVector[i].get();
-	
-	tmpVectorPtr->Reciprocal(*diagonal);
-	
-	result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
+    diagonal = scaleVector[i].get();
+
+    tmpVectorPtr->Reciprocal(*diagonal);
+
+    result.Multiply(1.0, input, *tmpVectorPtr, 0.0);
       }
     }
   }
@@ -251,7 +251,7 @@ void NOX::Epetra::Scaling::print(std::ostream& os)
   return;
 }
 
-std::ostream& 
+std::ostream&
 NOX::Epetra::operator<<(std::ostream& os, NOX::Epetra::Scaling& scalingObject)
 {
   scalingObject.print(os);

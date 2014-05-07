@@ -45,12 +45,15 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for ex_get_dimension, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_def_var, etc
 
-#include <ctype.h>
-static void *safe_free(void *array);
 static int define_dimension(int exoid, const char *DIMENSION, int count, const char *label, int *dimid);
 static int define_variable_name_variable(int exoid, const char *VARIABLE, int dimension,
                                          const char *label);
@@ -404,7 +407,7 @@ static int define_variable_name_variable(int exoid, const char *VARIABLE, int di
   int status;
   
   dims[0] = dimension;
-  nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
+  (void)nc_inq_dimid(exoid, DIM_STR_NAME, &dims[1]); /* Checked earlier, so known to exist */
 
   if ((status=nc_def_var(exoid, VARIABLE, NC_CHAR, 2, dims, &variable)) != NC_NOERR) {
     if (status == NC_ENAMEINUSE) {
@@ -464,12 +467,6 @@ static int *get_status_array(int exoid, int var_count, const char *VARIABLE, con
  return stat_vals;
 }
 
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
-
 static int put_truth_table(int exoid, int varid, int *table, const char *label)
 {
   int  iresult = 0;
@@ -498,7 +495,13 @@ static int define_truth_table(ex_entity_type obj_type, int exoid, int num_ent, i
   int varid;
   int status;
 
-  nc_inq_dimid(exoid, DIM_TIME, &time_dim);
+  if ((status = nc_inq_dimid(exoid, DIM_TIME, &time_dim)) != NC_NOERR) {
+    exerrval = status;
+    sprintf(errmsg,
+            "Error: failed to locate time dimension in file id %d", exoid);
+    ex_err("ex_put_all_var_param_ext",errmsg,exerrval);
+    return -1;
+  }
 
   if (var_tab == NULL) {
     exerrval = EX_BADPARAM;

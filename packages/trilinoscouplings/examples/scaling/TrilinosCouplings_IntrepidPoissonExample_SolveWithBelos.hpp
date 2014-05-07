@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -36,8 +36,7 @@
 
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
-#include "BelosPseudoBlockCGSolMgr.hpp"
-#include "BelosPseudoBlockGmresSolMgr.hpp"
+#include "BelosSolverFactory.hpp"
 
 
 namespace TrilinosCouplings {
@@ -78,6 +77,9 @@ namespace IntrepidPoissonExample {
 /// \param numItersPerformed [out] Number of iterations that the Belos
 ///   solver performed.
 ///
+/// \param solverName [in] Name of Belos solver to use.  You may use
+///   any name that Belos::SolverFactory understands.
+///
 /// \param tol [in] Convergence tolerance for the iterative method.
 ///   The meaning of this depends on the particular iterative method.
 ///
@@ -106,9 +108,10 @@ template<class ST, class MV, class OP>
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const typename Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
-		const int num_steps,
+                const int num_steps,
                 const Teuchos::RCP<MV>& X,
                 const Teuchos::RCP<const OP>& A,
                 const Teuchos::RCP<const MV>& B,
@@ -120,8 +123,8 @@ solveWithBelos (bool& converged,
   using Teuchos::RCP;
   using Teuchos::rcp;
   typedef Belos::LinearProblem<ST, MV, OP > problem_type;
-  //typedef Belos::PseudoBlockCGSolMgr<ST, MV, OP> solver_type;
-  typedef Belos::PseudoBlockGmresSolMgr<ST, MV, OP> solver_type;
+  typedef Belos::SolverFactory<ST, MV, OP> solver_factory_type;
+  typedef Belos::SolverManager<ST, MV, OP> solver_type;
   typedef Belos::MultiVecTraits<ST, MV> MVT;
 
   // Set these in advance, so that if the Belos solver throws an
@@ -143,11 +146,13 @@ solveWithBelos (bool& converged,
   belosParams->set ("Maximum Iterations", maxNumIters);
   belosParams->set ("Num Blocks", maxNumIters);
   belosParams->set ("Convergence Tolerance", tol);
-  belosParams->set ("Orthogonalization", "ICGS");
-  belosParams->set ("maxNumOrthogPasses", 1);
-  belosParams->set("Output Frequency",10);
-  belosParams->set("Output Style",1);
-  belosParams->set("Verbosity",33);
+  if (solverName == "GMRES") {
+    belosParams->set ("Orthogonalization", "ICGS");
+    belosParams->set ("maxNumOrthogPasses", 1);
+  }
+  belosParams->set ("Output Frequency", 10);
+  belosParams->set ("Output Style", 1);
+  belosParams->set ("Verbosity", 33);
 
   RCP<problem_type> problem = rcp (new problem_type (A, X, B));
   if (! M_left.is_null ()) {
@@ -158,14 +163,16 @@ solveWithBelos (bool& converged,
   }
 
   // Create solver
-  solver_type solver;
-  solver.setParameters(belosParams);
+  RCP<solver_type> solver;
+  {
+    solver_factory_type factory;
+    solver = factory.create (solverName, belosParams);
+  }
 
   // Enter "time step" loop -- we're really solving the same system repeatedly
   converged = true;
   numItersPerformed = 0;
-  for (int step=0; step<num_steps; ++step) {
-
+  for (int step = 0; step < num_steps; ++step) {
     // Set x
     MVT::MvInit(*X);
 
@@ -175,14 +182,13 @@ solveWithBelos (bool& converged,
       ! set, std::runtime_error, "solveWithBelos: The "
       "Belos::LinearProblem's setProblem() method returned false.  "
       "This probably indicates that there is something wrong with A, X, or B.");
-    solver.setProblem(problem);
+    solver->setProblem (problem);
 
     // Solve
-    Belos::ReturnType result = solver.solve ();
+    Belos::ReturnType result = solver->solve ();
 
     converged = converged && (result == Belos::Converged);
-    numItersPerformed += solver.getNumIters ();
-
+    numItersPerformed += solver->getNumIters ();
   }
 }
 

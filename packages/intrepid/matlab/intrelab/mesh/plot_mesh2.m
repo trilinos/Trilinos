@@ -28,7 +28,7 @@ function plot_mesh2(mesh, varargin)
 %                    j = 1   print node numbers
 %                    If GridPlot is called without option, then no labels are plotted
 %
-%  AUTHOR:  Matthias Heinkenschloss
+%  AUTHOR:  Matthias Heinkenschloss and Denis Ridzal
 %           Department of Computational and Applied Mathematics
 %           Rice University
 %           November 23, 2005

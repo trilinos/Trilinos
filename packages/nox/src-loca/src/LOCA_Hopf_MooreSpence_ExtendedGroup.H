@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -72,20 +72,20 @@ namespace LOCA {
     }
   }
 }
-namespace LOCA { 
+namespace LOCA {
 
-  namespace Hopf { 
-    
+  namespace Hopf {
+
     namespace MooreSpence {
 
-      /*! 
-       * \brief A group representing the Moore-Spence Hopf equations. 
+      /*!
+       * \brief A group representing the Moore-Spence Hopf equations.
        */
       /*!
-       * The LOCA::Hopf::MooreSpence::ExtendedGroup is a concrete 
-       * implementation of the NOX::Abstract::Group, 
-       * LOCA::MultiContinuation::AbstractGroup and 
-       * LOCA::Extended::MultiAbstractGroup that defines the following 
+       * The LOCA::Hopf::MooreSpence::ExtendedGroup is a concrete
+       * implementation of the NOX::Abstract::Group,
+       * LOCA::MultiContinuation::AbstractGroup and
+       * LOCA::Extended::MultiAbstractGroup that defines the following
        * extended set of equations that are regular at a generic Hopf point:
        * \f[
        *     G(z) = \left[
@@ -98,417 +98,417 @@ namespace LOCA {
        *      \end{array}
        *      \right] = 0
        * \f]
-       * where \f$z = [x, y, z, \omega, p]\in\Re^{3n+2}\f$, \f$x\f$ is the 
-       * solution vector, \f$y+i\omega z\f$ is the complex eigenvector of 
-       * \f$J\f$ with corresponding eigenvalues \f$\pm i\omega\f$, \f$l\f$ 
-       * is the length normalization vector and \f$J\f$ is the Jacobian of F 
+       * where \f$z = [x, y, z, \omega, p]\in\Re^{3n+2}\f$, \f$x\f$ is the
+       * solution vector, \f$y+i\omega z\f$ is the complex eigenvector of
+       * \f$J\f$ with corresponding eigenvalues \f$\pm i\omega\f$, \f$l\f$
+       * is the length normalization vector and \f$J\f$ is the Jacobian of F
        * w.r.t \f$x\f$.
-       * 
-       * The group stores an underlying group of type 
+       *
+       * The group stores an underlying group of type
        * LOCA::Hopf::MooreSpence AbstractGroup to represent the equations
        * \f$F(x,p) = 0\f$ and to manipulate the underlying Jacobian \f$J\f$.
        * Note that the entire extended Jacobian \f$D_z G\f$ is not stored in
        * memory, rather a block-elimination algorithm (bordering algorithm) is
-       * used to compute linear solves of the extended Jacobian (see 
+       * used to compute linear solves of the extended Jacobian (see
        * LOCA::Hopf::MooreSpence::SolverFactory() for more details).
        *
-       * This class implements all of the NOX::Abstract::Group, 
-       * LOCA::MultiContinuation::AbstractGroup, and 
-       * LOCA::Extended::MultiAbstractGroup 
+       * This class implements all of the NOX::Abstract::Group,
+       * LOCA::MultiContinuation::AbstractGroup, and
+       * LOCA::Extended::MultiAbstractGroup
        * methods for this extended set of equations and therefore is a complete
-       * group which can be passed to most %NOX solvers to locate a single 
-       * Hopf point or to the LOCA::Stepper to compute a family of Hopf 
+       * group which can be passed to most %NOX solvers to locate a single
+       * Hopf point or to the LOCA::Stepper to compute a family of Hopf
        * points in a second parameter.
        *
-       * However, Jacobian-tranpose operations and gradient calculations 
-       * cannot be implemented efficiently and therefore gradient-base 
-       * nonlinear solvers such as steepest descent and Trust region methods 
+       * However, Jacobian-tranpose operations and gradient calculations
+       * cannot be implemented efficiently and therefore gradient-base
+       * nonlinear solvers such as steepest descent and Trust region methods
        * cannot be used to solve the extended Hopf point equations.
        *
-       * The class is intialized via the \c hopfParams parameter list argument 
+       * The class is intialized via the \c hopfParams parameter list argument
        * to the constructor.  The parameters this class recognizes are:
        * <ul>
-       * <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of 
+       * <li> "Bifurcation Parameter" -- [string] (Must be supplied) Name of
        *      the bifurcation parameter \f$p\f$
-       * <li> "Length Normalization Vector" -- 
-       *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied) 
+       * <li> "Length Normalization Vector" --
+       *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
        *     Vector storing length normalization vector \f$l\f$
-       * <li> "Initial Real Eigenvector"  -- 
+       * <li> "Initial Real Eigenvector"  --
        *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
-       *     Vector storing initial guess for the real component of the  
+       *     Vector storing initial guess for the real component of the
        *     eigenvector \f$y\f$
-       * <li> "Initial Imaginary Eigenvector"  -- 
+       * <li> "Initial Imaginary Eigenvector"  --
        *      [Teuchos::RCP<NOX::Abstract::Vector>] (Must be supplied)
-       *     Vector storing initial guess for the imaginary component of the  
+       *     Vector storing initial guess for the imaginary component of the
        *     eigenvector \f$z\f$
        * <li> "Initial Frequency" -- [double] (Must be supplied)
        *      Initial guess for the Hopf frequency \f$\omega\f$.
-       * <li> "Perturb Initial Solution" -- [bool] (default: false) Flag 
+       * <li> "Perturb Initial Solution" -- [bool] (default: false) Flag
        *      indicating whether to perturb the initial solution
-       * <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3) 
+       * <li> "Relative Perturbation Size" -- [double] (default: 1.0e-3)
        *      Relative perturbation size if perturbing the initial solution
        * </ul>
        */
-      class ExtendedGroup 
-	: public virtual LOCA::Extended::MultiAbstractGroup,
-	  public virtual LOCA::MultiContinuation::AbstractGroup {
+      class ExtendedGroup
+    : public virtual LOCA::Extended::MultiAbstractGroup,
+      public virtual LOCA::MultiContinuation::AbstractGroup {
 
       public:
 
-	/*! 
-	 * \brief Constructor with initial data passed through parameter lists.
-	 */
-	ExtendedGroup(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    /*!
+     * \brief Constructor with initial data passed through parameter lists.
+     */
+    ExtendedGroup(
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
          const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& hopfParams,
-	 const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& g);
+     const Teuchos::RCP<Teuchos::ParameterList>& hopfParams,
+     const Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup>& g);
 
-	//! Copy constructor.
-	ExtendedGroup(const ExtendedGroup& source, 
-		      NOX::CopyType type = NOX::DeepCopy);
+    //! Copy constructor.
+    ExtendedGroup(const ExtendedGroup& source,
+              NOX::CopyType type = NOX::DeepCopy);
 
-	//! Destructor.
-	virtual ~ExtendedGroup();
+    //! Destructor.
+    virtual ~ExtendedGroup();
 
-	/*! 
-	 * @name Implementation of NOX::Abstract::Group virtual methods 
-	 */
-	//@{
+    /*!
+     * @name Implementation of NOX::Abstract::Group virtual methods
+     */
+    //@{
 
-	//! Assignment operator
-	virtual NOX::Abstract::Group& 
-	operator=(const NOX::Abstract::Group& source);
-     
-	//! Cloning function
-	virtual Teuchos::RCP<NOX::Abstract::Group>
-	clone(NOX::CopyType type = NOX::DeepCopy) const;
+    //! Assignment operator
+    virtual NOX::Abstract::Group&
+    operator=(const NOX::Abstract::Group& source);
 
-	//! Set the solution vector, x, to y.
-	virtual void setX(const NOX::Abstract::Vector& y);
+    //! Cloning function
+    virtual Teuchos::RCP<NOX::Abstract::Group>
+    clone(NOX::CopyType type = NOX::DeepCopy) const;
 
-	//! Compute this.x = grp.x + step * d.
-	virtual void computeX(const NOX::Abstract::Group& g, 
-			      const NOX::Abstract::Vector& d,
-			      double step);
+    //! Set the solution vector, x, to y.
+    virtual void setX(const NOX::Abstract::Vector& y);
 
-	//! Compute the Hopf point equation residual \f$G\f$.
-	virtual NOX::Abstract::Group::ReturnType computeF();
+    //! Compute this.x = grp.x + step * d.
+    virtual void computeX(const NOX::Abstract::Group& g,
+                  const NOX::Abstract::Vector& d,
+                  double step);
 
-	//! Compute the blocks of the Jacobian derivative of \f$G\f$
-	virtual NOX::Abstract::Group::ReturnType computeJacobian();
+    //! Compute the Hopf point equation residual \f$G\f$.
+    virtual NOX::Abstract::Group::ReturnType computeF();
 
-	//! Gradient computation is not defined for this group
-	virtual NOX::Abstract::Group::ReturnType computeGradient();
+    //! Compute the blocks of the Jacobian derivative of \f$G\f$
+    virtual NOX::Abstract::Group::ReturnType computeJacobian();
 
-	//! Compute %Newton direction using applyJacobianInverse().
-	virtual NOX::Abstract::Group::ReturnType 
-	computeNewton(Teuchos::ParameterList& params);
-  
-	//! Computes the extended Jacobian vector product
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobian(const NOX::Abstract::Vector& input, 
-		      NOX::Abstract::Vector& result) const;
+    //! Gradient computation is not defined for this group
+    virtual NOX::Abstract::Group::ReturnType computeGradient();
 
-	//! Jacobian transpose product is not defined by this group
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-			       NOX::Abstract::Vector& result) const;
+    //! Compute %Newton direction using applyJacobianInverse().
+    virtual NOX::Abstract::Group::ReturnType
+    computeNewton(Teuchos::ParameterList& params);
 
-	/*! 
-	 * \brief Applies the inverse of the extended Jacobian matrix using 
-	 * the bordering algorithm.
-	 */
-	/*!
-	 * This method is a special case of applyJacobianInverseMultiVector() 
-	 * for a single right-hand-side.
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverse(Teuchos::ParameterList& params, 
-			     const NOX::Abstract::Vector& input, 
-			     NOX::Abstract::Vector& result) const;
+    //! Computes the extended Jacobian vector product
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobian(const NOX::Abstract::Vector& input,
+              NOX::Abstract::Vector& result) const;
 
-	//! Applies Jacobian for extended system
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
-				 NOX::Abstract::MultiVector& result) const;
+    //! Jacobian transpose product is not defined by this group
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobianTranspose(const NOX::Abstract::Vector& input,
+                   NOX::Abstract::Vector& result) const;
 
-	//! Jacobian transpose not defined for this system
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianTransposeMultiVector(
-				     const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& result) const;
+    /*!
+     * \brief Applies the inverse of the extended Jacobian matrix using
+     * the bordering algorithm.
+     */
+    /*!
+     * This method is a special case of applyJacobianInverseMultiVector()
+     * for a single right-hand-side.
+     */
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobianInverse(Teuchos::ParameterList& params,
+                 const NOX::Abstract::Vector& input,
+                 NOX::Abstract::Vector& result) const;
 
-	//! Applies Jacobian inverse for extended system
-	/*!
-	 * Uses a LOCA::Hopf::MooreSpence::SolverStrategy instantiated
-	 * by the LOCA::Hopf::MooreSpence::SolverFactory to 
-	 * implement the solve.
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	applyJacobianInverseMultiVector(
-				    Teuchos::ParameterList& params, 
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const;
-  
-	//! Return \c true if the extended residual \f$G\f$ is valid.
-	virtual bool isF() const;
+    //! Applies Jacobian for extended system
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
+                 NOX::Abstract::MultiVector& result) const;
 
-	//! Return \c true if the extended Jacobian is valid.
-	virtual bool isJacobian() const;
+    //! Jacobian transpose not defined for this system
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobianTransposeMultiVector(
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const;
 
-	//! Always returns false.
-	virtual bool isGradient() const;
+    //! Applies Jacobian inverse for extended system
+    /*!
+     * Uses a LOCA::Hopf::MooreSpence::SolverStrategy instantiated
+     * by the LOCA::Hopf::MooreSpence::SolverFactory to
+     * implement the solve.
+     */
+    virtual NOX::Abstract::Group::ReturnType
+    applyJacobianInverseMultiVector(
+                    Teuchos::ParameterList& params,
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const;
 
-	//! Return \c true if the extended Newton direction is valid.
-	virtual bool isNewton() const;
+    //! Return \c true if the extended residual \f$G\f$ is valid.
+    virtual bool isF() const;
 
-	//! Return extended solution vector \f$z\f$.  
-	virtual const NOX::Abstract::Vector& getX() const;
+    //! Return \c true if the extended Jacobian is valid.
+    virtual bool isJacobian() const;
 
-	//! Return extended equation residual \f$G(z)\f$
-	virtual const NOX::Abstract::Vector& getF() const;
+    //! Always returns false.
+    virtual bool isGradient() const;
 
-	//! Return 2-norm of \f$G(z)\f$. 
-	virtual double getNormF() const;
+    //! Return \c true if the extended Newton direction is valid.
+    virtual bool isNewton() const;
 
-	//! Vector returned is not valid.
-	virtual const NOX::Abstract::Vector& getGradient() const;
+    //! Return extended solution vector \f$z\f$.
+    virtual const NOX::Abstract::Vector& getX() const;
 
-	//! Return extended Newton direction.
-	virtual const NOX::Abstract::Vector& getNewton() const;
+    //! Return extended equation residual \f$G(z)\f$
+    virtual const NOX::Abstract::Vector& getF() const;
 
-	//! Return RCP to extended solution vector \f$z\f$.  
-	virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
+    //! Return 2-norm of \f$G(z)\f$.
+    virtual double getNormF() const;
 
-	//! Return RCP to extended equation residual \f$G(z)\f$
-	virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
+    //! Vector returned is not valid.
+    virtual const NOX::Abstract::Vector& getGradient() const;
 
-	//! Vector returned is not valid.
-	virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
+    //! Return extended Newton direction.
+    virtual const NOX::Abstract::Vector& getNewton() const;
 
-	//! Return RCP to extended Newton direction.
-	virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
+    //! Return RCP to extended solution vector \f$z\f$.
+    virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
-	//! Return the norm of the %Newton solve residual.
-	virtual double getNormNewtonSolveResidual() const;
+    //! Return RCP to extended equation residual \f$G(z)\f$
+    virtual Teuchos::RCP< const NOX::Abstract::Vector > getFPtr() const;
 
-	//@}
+    //! Vector returned is not valid.
+    virtual Teuchos::RCP< const NOX::Abstract::Vector > getGradientPtr() const;
 
-	/*! 
-	 * @name Implementation of LOCA::Extended::MultiAbstractGroup 
-	 * virtual methods 
-	 */
-	//@{
-	
-	//! Return underlying group
-	virtual 
-	Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
-	getUnderlyingGroup() const;
-	
-	//! Return underlying group
-	virtual 
-	Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
-	getUnderlyingGroup();
+    //! Return RCP to extended Newton direction.
+    virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const;
 
-	//@}
+    //! Return the norm of the %Newton solve residual.
+    virtual double getNormNewtonSolveResidual() const;
 
-	/*! 
-	 * @name Implementation of LOCA::MultiContinuation::AbstractGroup
-	 * virtual methods 
-	 */
-	//@{
+    //@}
 
-	//! Assignment operator
-	virtual void copy(const NOX::Abstract::Group& source);
+    /*!
+     * @name Implementation of LOCA::Extended::MultiAbstractGroup
+     * virtual methods
+     */
+    //@{
 
-	//! Set parameters indexed by (integer) paramIDs
-	virtual void setParamsMulti(
-			  const std::vector<int>& paramIDs, 
-			  const NOX::Abstract::MultiVector::DenseMatrix& vals);
+    //! Return underlying group
+    virtual
+    Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
+    getUnderlyingGroup() const;
 
-	//! Set the parameter vector in the group to p.
-	virtual void setParams(const ParameterVector& p);
+    //! Return underlying group
+    virtual
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
+    getUnderlyingGroup();
 
-	//! Set parameter indexed by paramID
-	virtual void setParam(int paramID, double val);
+    //@}
 
-	//! Set parameter indexed by paramID
-	virtual void setParam(std::string paramID, double val);
+    /*!
+     * @name Implementation of LOCA::MultiContinuation::AbstractGroup
+     * virtual methods
+     */
+    //@{
 
-	//! Return a const reference to the paramter vector owned by the group.
-	virtual const ParameterVector& getParams() const;
+    //! Assignment operator
+    virtual void copy(const NOX::Abstract::Group& source);
 
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(int paramID) const;
+    //! Set parameters indexed by (integer) paramIDs
+    virtual void setParamsMulti(
+              const std::vector<int>& paramIDs,
+              const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
-	//! Return copy of parameter indexed by paramID
-	virtual double getParam(std::string paramID) const;
+    //! Set the parameter vector in the group to p.
+    virtual void setParams(const ParameterVector& p);
 
-	/*! 
-	 * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$ 
-	 * indexed by paramIDs.  The first column of \em dfdp holds F,
-	 * which is valid if \em isValidF is true.  Otherwise F must be
-	 * computed.
-	 */
-	virtual NOX::Abstract::Group::ReturnType
-	computeDfDpMulti(const std::vector<int>& paramIDs, 
-			 NOX::Abstract::MultiVector& dfdp, 
-			 bool isValidF);
+    //! Set parameter indexed by paramID
+    virtual void setParam(int paramID, double val);
 
-	//! Perform any preprocessing before a continuation step starts.
-	/*!
-	 * The \c stepStatus argument indicates whether the previous step was
-	 * successful.
-	 */
-	virtual void 
-	preProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
-	
-	//! Perform any postprocessing after a continuation step finishes.
-	/*!
-	 * The \c stepStatus argument indicates whether the step was
-	 * successful.
-	 */
-	virtual void 
-	postProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+    //! Set parameter indexed by paramID
+    virtual void setParam(std::string paramID, double val);
 
-	//! Projects solution to a few scalars for multiparameter continuation
-	virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				   double *px) const;
+    //! Return a const reference to the paramter vector owned by the group.
+    virtual const ParameterVector& getParams() const;
 
-	//! Returns the dimension of the project to draw array
-	virtual int projectToDrawDimension() const;
+    //! Return copy of parameter indexed by paramID
+    virtual double getParam(int paramID) const;
 
-	/*! 
-	 * \brief Function to print out extended solution and continuation 
-	 * parameter after successful continuation step.
-	 */
-	/*!
-	 * This method prints the solution, null-vector, and parameter 
-	 * components of the extended solution vector using the printSolution
-	 * method of the underlying group.
-	 */
-	virtual void printSolution(const double conParam) const;
+    //! Return copy of parameter indexed by paramID
+    virtual double getParam(std::string paramID) const;
 
-	/*! 
-	 * \brief Function to print out extended solution and continuation 
-	 * parameter after successful continuation step.
-	 */
-	/*!
-	 * This method prints the solution, null-vector, and parameter 
-	 * components of the extended solution vector using the printSolution
-	 * method of the underlying group.
-	 */
-	 virtual void printSolution(const NOX::Abstract::Vector& x_,
-				    const double conParam) const;
+    /*!
+     * Compute \f$\partial F/\partial p\f$ for each parameter \f$p\f$
+     * indexed by paramIDs.  The first column of \em dfdp holds F,
+     * which is valid if \em isValidF is true.  Otherwise F must be
+     * computed.
+     */
+    virtual NOX::Abstract::Group::ReturnType
+    computeDfDpMulti(const std::vector<int>& paramIDs,
+             NOX::Abstract::MultiVector& dfdp,
+             bool isValidF);
 
-	//! Get bifurcation parameter
-	double getBifParam() const;
+    //! Perform any preprocessing before a continuation step starts.
+    /*!
+     * The \c stepStatus argument indicates whether the previous step was
+     * successful.
+     */
+    virtual void
+    preProcessContinuationStep(
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
-	//! Get bifurcation frequency
-	double getFrequency() const;
+    //! Perform any postprocessing after a continuation step finishes.
+    /*!
+     * The \c stepStatus argument indicates whether the step was
+     * successful.
+     */
+    virtual void
+    postProcessContinuationStep(
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
-	//! Defines null vector normalization \f$l^Tz\f$ equation
-	double lTransNorm(const NOX::Abstract::Vector& z) const;
+    //! Projects solution to a few scalars for multiparameter continuation
+    virtual void projectToDraw(const NOX::Abstract::Vector& x,
+                   double *px) const;
 
-	//! null vector normalization for multivectors
-	/*!
-	 * Note:  result should have 1 row and z.numVectors() columns.
-	 */
-	void lTransNorm(const NOX::Abstract::MultiVector& z,
-			NOX::Abstract::MultiVector::DenseMatrix& result) const;
+    //! Returns the dimension of the project to draw array
+    virtual int projectToDrawDimension() const;
+
+    /*!
+     * \brief Function to print out extended solution and continuation
+     * parameter after successful continuation step.
+     */
+    /*!
+     * This method prints the solution, null-vector, and parameter
+     * components of the extended solution vector using the printSolution
+     * method of the underlying group.
+     */
+    virtual void printSolution(const double conParam) const;
+
+    /*!
+     * \brief Function to print out extended solution and continuation
+     * parameter after successful continuation step.
+     */
+    /*!
+     * This method prints the solution, null-vector, and parameter
+     * components of the extended solution vector using the printSolution
+     * method of the underlying group.
+     */
+     virtual void printSolution(const NOX::Abstract::Vector& x_,
+                    const double conParam) const;
+
+    //! Get bifurcation parameter
+    double getBifParam() const;
+
+    //! Get bifurcation frequency
+    double getFrequency() const;
+
+    //! Defines null vector normalization \f$l^Tz\f$ equation
+    double lTransNorm(const NOX::Abstract::Vector& z) const;
+
+    //! null vector normalization for multivectors
+    /*!
+     * Note:  result should have 1 row and z.numVectors() columns.
+     */
+    void lTransNorm(const NOX::Abstract::MultiVector& z,
+            NOX::Abstract::MultiVector::DenseMatrix& result) const;
 
       protected:
 
-	//! Set bifurcation parameter
-	void setBifParam(double param);
+    //! Set bifurcation parameter
+    void setBifParam(double param);
 
-	//! Sets up multivector views
-	void setupViews();
+    //! Sets up multivector views
+    void setupViews();
 
-	//! Initializes group
-	void init(bool perturbSoln = false, double perturbSize = 0.0);
+    //! Initializes group
+    void init(bool perturbSoln = false, double perturbSize = 0.0);
 
       private:
 
-	//! Prohibit generation and use of operator=()
-	ExtendedGroup& operator=(const ExtendedGroup&);
+    //! Prohibit generation and use of operator=()
+    ExtendedGroup& operator=(const ExtendedGroup&);
 
       protected:
 
-	//! Pointer LOCA global data object
-	Teuchos::RCP<LOCA::GlobalData> globalData;
+    //! Pointer LOCA global data object
+    Teuchos::RCP<LOCA::GlobalData> globalData;
 
-	//! Parsed top-level parameters
-	Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
+    //! Parsed top-level parameters
+    Teuchos::RCP<LOCA::Parameter::SublistParser> parsedParams;
 
-	//! Bifurcation parameter list
-	Teuchos::RCP<Teuchos::ParameterList> hopfParams;
+    //! Bifurcation parameter list
+    Teuchos::RCP<Teuchos::ParameterList> hopfParams;
 
-	//! Pointer to base group that defines \f$F\f$
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
+    //! Pointer to base group that defines \f$F\f$
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::AbstractGroup> grpPtr;
 
-	//! Stores the extended solution vector
-	LOCA::Hopf::MooreSpence::ExtendedMultiVector xMultiVec;
-	
-	//! Stores the extended residual vector and df/dp
-	LOCA::Hopf::MooreSpence::ExtendedMultiVector fMultiVec;
-	
-	//! Stores the extended Newton vector
-	LOCA::Hopf::MooreSpence::ExtendedMultiVector newtonMultiVec;
+    //! Stores the extended solution vector
+    LOCA::Hopf::MooreSpence::ExtendedMultiVector xMultiVec;
 
-	//! Stores the length normalization vector
-	Teuchos::RCP<NOX::Abstract::MultiVector> lengthMultiVec;
-	
-	//! Stores view of first column of xMultiVec
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> xVec;
-	
-	//! Stores view of first column of fMultiVec
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> fVec;
-	
-	//! Stores view of first column of fMultiVec as a multivec
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> ffMultiVec;
+    //! Stores the extended residual vector and df/dp
+    LOCA::Hopf::MooreSpence::ExtendedMultiVector fMultiVec;
 
-	//! Stores view of df/dp columns of fMultiVec
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
+    //! Stores the extended Newton vector
+    LOCA::Hopf::MooreSpence::ExtendedMultiVector newtonMultiVec;
 
-	//! Stores view of first column of newtonMultiVec
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> newtonVec;
+    //! Stores the length normalization vector
+    Teuchos::RCP<NOX::Abstract::MultiVector> lengthMultiVec;
 
-	//! Stores view of first column of lengthMultiVec
-	Teuchos::RCP<NOX::Abstract::Vector> lengthVec;
+    //! Stores view of first column of xMultiVec
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> xVec;
 
-	//! Stores mass matrix times real component of eigenvector
-	Teuchos::RCP<NOX::Abstract::MultiVector> massTimesY;
+    //! Stores view of first column of fMultiVec
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> fVec;
 
-	/*!
-	 * \brief Stores negative of mass matrix times imaginary component of 
-	 eigenvector
-	*/
-	Teuchos::RCP<NOX::Abstract::MultiVector> minusMassTimesZ;
+    //! Stores view of first column of fMultiVec as a multivec
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> ffMultiVec;
 
-	//! Stores bordering strategy
-	Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> solverStrategy;
+    //! Stores view of df/dp columns of fMultiVec
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedMultiVector> dfdpMultiVec;
 
-	//! Stores indices for getting f part of fMultiVec
-	std::vector<int> index_f;
+    //! Stores view of first column of newtonMultiVec
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::ExtendedVector> newtonVec;
 
-	//! Stores indices for getting df/dp part of fMultiVec
-	std::vector<int> index_dfdp;
+    //! Stores view of first column of lengthMultiVec
+    Teuchos::RCP<NOX::Abstract::Vector> lengthVec;
 
-	//! Stores the bifurcation parameter index
-	std::vector<int> bifParamID;
+    //! Stores mass matrix times real component of eigenvector
+    Teuchos::RCP<NOX::Abstract::MultiVector> massTimesY;
 
-	//! Is residual vector valid
-	bool isValidF;
+    /*!
+     * \brief Stores negative of mass matrix times imaginary component of
+     eigenvector
+    */
+    Teuchos::RCP<NOX::Abstract::MultiVector> minusMassTimesZ;
 
-	//! Is Jacobian matrix valid
-	bool isValidJacobian;
+    //! Stores bordering strategy
+    Teuchos::RCP<LOCA::Hopf::MooreSpence::SolverStrategy> solverStrategy;
 
-	//! Is Newton vector valid
-	bool isValidNewton;
+    //! Stores indices for getting f part of fMultiVec
+    std::vector<int> index_f;
+
+    //! Stores indices for getting df/dp part of fMultiVec
+    std::vector<int> index_dfdp;
+
+    //! Stores the bifurcation parameter index
+    std::vector<int> bifParamID;
+
+    //! Is residual vector valid
+    bool isValidF;
+
+    //! Is Jacobian matrix valid
+    bool isValidJacobian;
+
+    //! Is Newton vector valid
+    bool isValidNewton;
 
       }; // class ExtendedGroup
 

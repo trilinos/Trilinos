@@ -89,7 +89,7 @@ class AlgSortedDegree
     perm = (lno_t *) (solution->getPermutation());
     if (perm==0){
       // Throw exception
-      cerr << "perm is NULL" << std::endl;
+      std::cerr << "perm is NULL" << std::endl;
       ierr = -1;
     }
   

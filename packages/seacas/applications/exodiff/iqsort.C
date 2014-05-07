@@ -31,8 +31,6 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 #include "iqsort.h"
-#include "smart_assert.h"
-#include <unistd.h>
 
 namespace {
   template <typename INT>

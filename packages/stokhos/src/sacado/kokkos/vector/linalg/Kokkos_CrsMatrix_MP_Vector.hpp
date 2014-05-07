@@ -43,7 +43,9 @@
 #define KOKKOS_CRSMATRIX_MP_VECTOR_HPP
 
 #include "Sacado_MP_Vector.hpp"
+#include "Kokkos_View_MP_Vector.hpp"
 #include "Kokkos_CrsMatrix.hpp"
+#include "Kokkos_MV_MP_Vector.hpp" // for some utilities
 
 #include "Kokkos_Parallel.hpp"
 #include "Stokhos_Multiply.hpp"
@@ -52,12 +54,15 @@
 #include "Kokkos_hwloc.hpp"
 #include "Kokkos_Cuda.hpp"
 
+#include "Teuchos_TestForException.hpp"
+
 //----------------------------------------------------------------------------
 // Specializations of Kokkos::CrsMatrix for Sacado::MP::Vector scalar type
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
 
+#if 0
 //! Specialization of SparseRowView<> for Sacado::MP::Vector scalar type
 /*!
  * Here we store the view and offset directly instead of pointers, since
@@ -167,6 +172,7 @@ public:
     return colidx_[offset_+i*stride_];
   }
 };
+#endif
 
 } // namespace Kokkos
 
@@ -221,7 +227,7 @@ compute_work_range( const size_type work_count,
 // Kernel implementing y = A * x where
 //   A == Kokkos::CrsMatrix< Sacado::MP::Vector<...>,...>,
 //   x, y == Kokkos::View< Sacado::MP::Vector<...>*,...>,
-//   x and y are rank 1
+//   x and y are rank 1, any layout
 // We spell everything out here to make sure the ranks and devices match.
 //
 // This implementation uses overloaded operators for MP::Vector.
@@ -231,8 +237,10 @@ template <typename Device,
           typename MatrixMemory,
           typename MatrixSize,
           typename InputStorage,
+          typename InputLayout,
           typename InputMemory,
           typename OutputStorage,
+          typename OutputLayout,
           typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                    MatrixOrdinal,
@@ -240,11 +248,11 @@ class Multiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                    MatrixMemory,
                                    MatrixSize>,
                 Kokkos::View< Sacado::MP::Vector<InputStorage>*,
-                              Kokkos::LayoutRight,
+                              InputLayout,
                               Device,
                               InputMemory >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
-                              Kokkos::LayoutRight,
+                              OutputLayout,
                               Device,
                               OutputMemory >
                 >
@@ -264,11 +272,11 @@ public:
                              MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef Kokkos::View< InputVectorValue*,
-                        Kokkos::LayoutRight,
+                        InputLayout,
                         Device,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
-                        Kokkos::LayoutRight,
+                        OutputLayout,
                         Device,
                         OutputMemory > output_vector_type;
 
@@ -291,11 +299,11 @@ private:
 
     const matrix_type  m_A;
     const input_vector_type  m_x;
-    output_vector_type  m_y;
+    const output_vector_type  m_y;
 
     MultiplyKernel( const matrix_type & A,
                     const input_vector_type & x,
-                    output_vector_type & y )
+                    const output_vector_type & y )
       : m_A( A )
       , m_x( x )
       , m_y( y )
@@ -316,6 +324,20 @@ private:
       const size_type num_row_threads    = m_A.dev_config.block_dim.y ;
       const size_type row_rank = dev.team_rank() / num_vector_threads ;
       const size_type vec_rank = dev.team_rank() % num_vector_threads ;
+
+#if !defined(__CUDA_ARCH__)
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        num_vector_threads * num_row_threads != size_type(dev.team_size()),
+        std::logic_error,
+        "num_vector_threads (" << num_vector_threads <<
+        ") * num_row_threads (" << num_row_threads <<
+        ") != dev.team_size (" << dev.team_size() << ")!");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        m_A.dev_config.num_blocks != size_type(dev.league_size()),
+        std::logic_error,
+        "num_blocks (" << m_A.dev_config.num_blocks <<
+        ") != dev.league_size (" << dev.league_size() << ")!");
+#endif
 
       // Create local views with corresponding offset into the vector
       // dimension based on vector_rank and reduced number of vector entries
@@ -386,10 +408,12 @@ public:
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
-                     output_vector_type & y )
+                     const output_vector_type & y )
   {
     const bool is_cuda =
       Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+
+    matrix_type AA = A;
 
     // By default, use one one entry per thread for GPU and
     // one thread per vector for CPU/MIC
@@ -400,6 +424,7 @@ public:
       else
         threads_per_vector = 1;
     }
+    AA.dev_config.block_dim.x = threads_per_vector;
 
     // Check threads_per_vector evenly divides number of vector entries
     size_type num_per_thread = x.sacado_size() / threads_per_vector;
@@ -419,6 +444,7 @@ public:
           Kokkos::hwloc::get_available_threads_per_core();
       }
     }
+    AA.dev_config.block_dim.y = rows_per_block;
 
     // Thread team size
     size_type team_size = threads_per_vector * rows_per_block;
@@ -436,25 +462,313 @@ public:
           Kokkos::hwloc::get_available_numa_count() *
           Kokkos::hwloc::get_available_cores_per_numa();
     }
+    AA.dev_config.num_blocks = league_size;
 
     // Parallel launch with corresponding number of vector entries per thread
     Kokkos::ParallelWorkRequest config(league_size, team_size);
     if (num_per_thread == 1)
-      Kokkos::parallel_for( config, MultiplyKernel<1>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<1>(AA,x,y) );
     else if (num_per_thread == 2)
-      Kokkos::parallel_for( config, MultiplyKernel<2>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<2>(AA,x,y) );
     else if (num_per_thread == 3)
-      Kokkos::parallel_for( config, MultiplyKernel<3>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<3>(AA,x,y) );
     else if (num_per_thread == 4)
-      Kokkos::parallel_for( config, MultiplyKernel<4>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<4>(AA,x,y) );
     else if (num_per_thread == 8)
-      Kokkos::parallel_for( config, MultiplyKernel<8>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<8>(AA,x,y) );
     else if (num_per_thread == 12)
-      Kokkos::parallel_for( config, MultiplyKernel<12>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<12>(AA,x,y) );
     else if (num_per_thread == 16)
-      Kokkos::parallel_for( config, MultiplyKernel<16>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<16>(AA,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(AA,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(AA,x,y) );
     else if (num_per_thread == 32)
-      Kokkos::parallel_for( config, MultiplyKernel<32>(A,x,y) );
+      Kokkos::parallel_for( config, MultiplyKernel<32>(AA,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(AA,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(AA,x,y) );
+    else
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
+  }
+};
+
+// Kernel implementing y = A * x where
+//   A == Kokkos::CrsMatrix< Sacado::MP::Vector<...>,...>,
+//   x, y == Kokkos::View< Sacado::MP::Vector<...>**,...>,
+//   x and y are rank 2, any layout
+// We spell everything out here to make sure the ranks and devices match.
+//
+// This implementation uses overloaded operators for MP::Vector.
+template <typename Device,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputLayout,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputLayout,
+          typename OutputMemory>
+class Multiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                                   MatrixOrdinal,
+                                   Device,
+                                   MatrixMemory,
+                                   MatrixSize>,
+                Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                              InputLayout,
+                              Device,
+                              InputMemory >,
+                Kokkos::View< Sacado::MP::Vector<OutputStorage>**,
+                              OutputLayout,
+                              Device,
+                              OutputMemory >
+                >
+{
+public:
+  typedef Sacado::MP::Vector<MatrixStorage> MatrixValue;
+  typedef Sacado::MP::Vector<InputStorage> InputVectorValue;
+  typedef Sacado::MP::Vector<OutputStorage> OutputVectorValue;
+
+  typedef Device device_type;
+  typedef typename device_type::size_type size_type;
+
+  typedef Kokkos::CrsMatrix< MatrixValue,
+                             MatrixOrdinal,
+                             Device,
+                             MatrixMemory,
+                             MatrixSize> matrix_type;
+  typedef typename matrix_type::values_type matrix_values_type;
+  typedef Kokkos::View< InputVectorValue**,
+                        InputLayout,
+                        Device,
+                        InputMemory > input_vector_type;
+  typedef Kokkos::View< OutputVectorValue**,
+                        OutputLayout,
+                        Device,
+                        OutputMemory > output_vector_type;
+
+private:
+
+  template <unsigned NumPerThread>
+  struct MultiplyKernel {
+
+    typedef Device device_type;
+
+    // Typenames for thread-local views
+    typedef typename Kokkos::LocalMPVectorView<matrix_values_type,
+                                               NumPerThread>::type matrix_local_view_type;
+    typedef typename Kokkos::LocalMPVectorView<input_vector_type,
+                                               NumPerThread>::type input_local_view_type;
+    typedef typename Kokkos::LocalMPVectorView<output_vector_type,
+                                               NumPerThread>::type output_local_view_type;
+
+    typedef typename output_local_view_type::value_type scalar_type;
+
+    const matrix_type  m_A;
+    const input_vector_type  m_x;
+    const output_vector_type  m_y;
+
+    MultiplyKernel( const matrix_type & A,
+                    const input_vector_type & x,
+                    const output_vector_type & y )
+      : m_A( A )
+      , m_x( x )
+      , m_y( y )
+      {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      // 2-D distribution of threads: num_vector_threads x num_row_threads
+      // where the x-dimension are vector threads and the y dimension are
+      // row threads
+      //
+      // Note:  The actual team size granted by Kokkos may not match the
+      // request, which we need to handle in the kernel launch
+      // (because this kernel is effectively templated on the team size).
+      // Currently Kokkos doesn't make this easy.
+      const size_type num_vector_threads = m_A.dev_config.block_dim.x ;
+      const size_type num_row_threads    = m_A.dev_config.block_dim.y ;
+      const size_type row_rank = dev.team_rank() / num_vector_threads ;
+      const size_type vec_rank = dev.team_rank() % num_vector_threads ;
+
+#if !defined(__CUDA_ARCH__)
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        num_vector_threads * num_row_threads != size_type(dev.team_size()),
+        std::logic_error,
+        "num_vector_threads (" << num_vector_threads <<
+        ") * num_row_threads (" << num_row_threads <<
+        ") != dev.team_size (" << dev.team_size() << ")!");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        m_A.dev_config.num_blocks != size_type(dev.league_size()),
+        std::logic_error,
+        "num_blocks (" << m_A.dev_config.num_blocks <<
+        ") != dev.league_size (" << dev.league_size() << ")!");
+#endif
+
+      // Create local views with corresponding offset into the vector
+      // dimension based on vector_rank and reduced number of vector entries
+
+      // Partition Sacado::MP::Vector as
+      // [ NumPerThread * rank .. NumPerThread * ( rank + 1 ) )
+      const Sacado::MP::VectorPartition part( NumPerThread * vec_rank ,
+                                              NumPerThread * (vec_rank + 1 ) );
+
+      const matrix_local_view_type A =
+        Kokkos::subview<matrix_local_view_type>( m_A.values, part );
+      const input_local_view_type  x =
+        Kokkos::subview<input_local_view_type>(  m_x , part );
+      const output_local_view_type y =
+        Kokkos::subview<output_local_view_type>( m_y , part );
+
+      // const matrix_values_type A(m_A.values);
+      // const input_vector_type x(m_x);
+      // const output_vector_type y(m_y);
+
+      // Compute range of rows processed for each thread block
+      const size_type row_count = m_A.graph.row_map.dimension_0()-1;
+      size_type work_begin;
+      const size_type work_end =
+        details::compute_work_range<typename scalar_type::value_type,device_type,size_type>(row_count, dev.league_size(), dev.league_rank(), work_begin);
+
+      // To make better use of L1 cache on the CPU/MIC, we move through the
+      // row range where each thread processes a cache-line's worth of rows,
+      // with adjacent threads processing adjacent cache-lines.
+      // For Cuda, adjacent threads process adjacent rows.
+      const size_type cache_line =
+        Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value ? 1 : 64;
+      const size_type scalar_size = sizeof(scalar_type);
+      const size_type rows_per_thread = (cache_line+scalar_size-1)/scalar_size;
+      const size_type row_block_size = rows_per_thread * num_row_threads;
+
+      const size_type num_col = m_y.dimension_1();
+
+      scalar_type sum;
+
+      // Loop over rows in blocks of row_block_size
+      for (size_type iBlockRow=work_begin+row_rank*rows_per_thread;
+           iBlockRow<work_end; iBlockRow+=row_block_size) {
+
+        // Loop over rows within block
+        const size_type row_end = iBlockRow+rows_per_thread <= work_end ?
+          rows_per_thread : work_end - iBlockRow;
+        for (size_type row=0; row<row_end; ++row) {
+          const size_type iRow = iBlockRow + row;
+
+          // Loop over columns of x, y
+          for (size_type col=0; col<num_col; ++col) {
+
+            // Compute mat-vec for this row
+            const size_type iEntryBegin = m_A.graph.row_map[iRow];
+            const size_type iEntryEnd   = m_A.graph.row_map[iRow+1];
+            sum = 0.0;
+            for (size_type iEntry = iEntryBegin; iEntry < iEntryEnd; ++iEntry) {
+              size_type iCol = m_A.graph.entries(iEntry);
+              sum += A(iEntry) * x(iCol,col);
+            }
+            y(iRow,col) = sum;
+
+          } // x, y column loop
+
+        } // row loop
+
+      } // block row loop
+
+    } // operator()
+
+  }; // MatrixKernel<NumPerThread>
+
+public:
+
+  static void apply( const matrix_type & A,
+                     const input_vector_type & x,
+                     const output_vector_type & y )
+  {
+    const bool is_cuda =
+      Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
+
+    matrix_type AA = A;
+
+    // By default, use one one entry per thread for GPU and
+    // one thread per vector for CPU/MIC
+    size_type threads_per_vector = A.dev_config.block_dim.x;
+    if (threads_per_vector == 0) {
+      if (is_cuda)
+        threads_per_vector = x.sacado_size();
+      else
+        threads_per_vector = 1;
+    }
+    AA.dev_config.block_dim.x = threads_per_vector;
+
+    // Check threads_per_vector evenly divides number of vector entries
+    size_type num_per_thread = x.sacado_size() / threads_per_vector;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      num_per_thread * threads_per_vector != x.sacado_size(),
+      std::logic_error,
+      "Entries/thread * threads/vector must equal number of vector entries");
+
+    // By default, use a block size of 256 for GPU and number of hyperthreads
+    // per core for CPU/MIC
+    size_type rows_per_block = A.dev_config.block_dim.y;
+    if (rows_per_block == 0) {
+      if (is_cuda)
+        rows_per_block = 256 / threads_per_vector;
+      else {
+        rows_per_block =
+          Kokkos::hwloc::get_available_threads_per_core();
+      }
+    }
+    AA.dev_config.block_dim.y = rows_per_block;
+
+    // Thread team size
+    size_type team_size = threads_per_vector * rows_per_block;
+
+    // Number of teams -- For GPU, each block does rows_per_block rows,
+    // for CPU/MIC, league_size is the number of cores
+    size_type league_size = A.dev_config.num_blocks;
+    if (league_size == 0) {
+      if (is_cuda) {
+        const size_type row_count = A.graph.row_map.dimension_0()-1;
+        league_size = (row_count+rows_per_block-1)/rows_per_block;
+      }
+      else
+        league_size =
+          Kokkos::hwloc::get_available_numa_count() *
+          Kokkos::hwloc::get_available_cores_per_numa();
+    }
+    AA.dev_config.num_blocks = league_size;
+
+    // Parallel launch with corresponding number of vector entries per thread
+    Kokkos::ParallelWorkRequest config(league_size, team_size);
+    if (num_per_thread == 1)
+      Kokkos::parallel_for( config, MultiplyKernel<1>(AA,x,y) );
+    else if (num_per_thread == 2)
+      Kokkos::parallel_for( config, MultiplyKernel<2>(AA,x,y) );
+    else if (num_per_thread == 3)
+      Kokkos::parallel_for( config, MultiplyKernel<3>(AA,x,y) );
+    else if (num_per_thread == 4)
+      Kokkos::parallel_for( config, MultiplyKernel<4>(AA,x,y) );
+    else if (num_per_thread == 8)
+      Kokkos::parallel_for( config, MultiplyKernel<8>(AA,x,y) );
+    else if (num_per_thread == 12)
+      Kokkos::parallel_for( config, MultiplyKernel<12>(AA,x,y) );
+    else if (num_per_thread == 16)
+      Kokkos::parallel_for( config, MultiplyKernel<16>(AA,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(AA,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(AA,x,y) );
+    else if (num_per_thread == 32)
+      Kokkos::parallel_for( config, MultiplyKernel<32>(AA,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(AA,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(AA,x,y) );
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
@@ -476,8 +790,10 @@ template <typename Device,
           typename MatrixMemory,
           typename MatrixSize,
           typename InputStorage,
+          typename InputLayout,
           typename InputMemory,
           typename OutputStorage,
+          typename OutputLayout,
           typename OutputMemory>
 class Multiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                    MatrixOrdinal,
@@ -485,11 +801,11 @@ class Multiply< Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                                    MatrixMemory,
                                    MatrixSize>,
                 Kokkos::View< Sacado::MP::Vector<InputStorage>*,
-                              Kokkos::LayoutRight,
+                              InputLayout,
                               Device,
                               InputMemory >,
                 Kokkos::View< Sacado::MP::Vector<OutputStorage>*,
-                              Kokkos::LayoutRight,
+                              OutputLayout,
                               Device,
                               OutputMemory >,
                 void,
@@ -511,11 +827,11 @@ public:
                              MatrixSize> matrix_type;
   typedef typename matrix_type::values_type matrix_values_type;
   typedef Kokkos::View< InputVectorValue*,
-                        Kokkos::LayoutRight,
+                        InputLayout,
                         Device,
                         InputMemory > input_vector_type;
   typedef Kokkos::View< OutputVectorValue*,
-                        Kokkos::LayoutRight,
+                        OutputLayout,
                         Device,
                         OutputMemory > output_vector_type;
 
@@ -534,11 +850,11 @@ private:
     const matrix_type  m_A;
     const typename matrix_values_type::array_type m_Avals;
     const typename input_vector_type::array_type  m_x;
-    typename output_vector_type::array_type  m_y;
+    const typename output_vector_type::array_type  m_y;
 
     MultiplyKernel( const matrix_type & A,
                     const input_vector_type & x,
-                    output_vector_type & y )
+                    const output_vector_type & y )
       : m_A( A )
       , m_Avals( A.values )
       , m_x( x )
@@ -632,7 +948,7 @@ public:
 
   static void apply( const matrix_type & A,
                      const input_vector_type & x,
-                     output_vector_type & y )
+                     const output_vector_type & y )
   {
     const bool is_cuda =
       Kokkos::Impl::is_same<device_type,Kokkos::Cuda>::value;
@@ -699,8 +1015,16 @@ public:
       Kokkos::parallel_for( config, MultiplyKernel<12>(A,x,y) );
     else if (num_per_thread == 16)
       Kokkos::parallel_for( config, MultiplyKernel<16>(A,x,y) );
+    else if (num_per_thread == 20)
+      Kokkos::parallel_for( config, MultiplyKernel<20>(A,x,y) );
+    else if (num_per_thread == 24)
+      Kokkos::parallel_for( config, MultiplyKernel<24>(A,x,y) );
     else if (num_per_thread == 32)
       Kokkos::parallel_for( config, MultiplyKernel<32>(A,x,y) );
+    else if (num_per_thread == 40)
+      Kokkos::parallel_for( config, MultiplyKernel<40>(A,x,y) );
+    else if (num_per_thread == 48)
+      Kokkos::parallel_for( config, MultiplyKernel<48>(A,x,y) );
     else
       TEUCHOS_TEST_FOR_EXCEPTION(
         true, std::logic_error, "Invalid num_per_thread == " << num_per_thread);
@@ -737,10 +1061,10 @@ template <typename Device,
           typename OutputMemory>
 void
 MV_Multiply(
-  Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
-                                    OutputLayout,
-                                    Device,
-                                    OutputMemory >& y,
+  const Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
+                                          OutputLayout,
+                                          Device,
+                                          OutputMemory >& y,
   const Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
                            MatrixOrdinal,
                            Device,
@@ -751,9 +1075,116 @@ MV_Multiply(
                       Device,
                       InputMemory >& x)
 {
+  typedef Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
+    OutputLayout, Device, OutputMemory > OutputVectorType;
+  typedef Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+    MatrixOrdinal, Device, MatrixMemory, MatrixSize> MatrixType;
+  typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+    InputLayout, Device, InputMemory > InputVectorType;
+  typedef Stokhos::Multiply<MatrixType,InputVectorType,
+    OutputVectorType> multiply_type;
+
+  multiply_type::apply( A, x, y );
+
   //typedef Stokhos::DefaultMultiply Tag;
-  typedef Stokhos::EnsembleMultiply Tag;
-  Stokhos::multiply(A, x, y, Tag());
+  //typedef Stokhos::EnsembleMultiply Tag;
+  //Stokhos::multiply(A, x, y, Tag());
+}
+
+template <typename Device,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputLayout,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputLayout,
+          typename OutputMemory>
+void
+MV_Multiply(
+  const Kokkos::View< Sacado::MP::Vector< OutputStorage>*,
+                     OutputLayout,
+                     Device,
+                     OutputMemory >& y,
+  const Sacado::MP::Vector<InputStorage>& a,
+  const Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                           MatrixOrdinal,
+                           Device,
+                           MatrixMemory,
+                           MatrixSize>& A,
+  const Kokkos::View< Sacado::MP::Vector<InputStorage>*,
+                      InputLayout,
+                      Device,
+                      InputMemory >& x)
+{
+  typedef typename InputStorage::value_type value_type;
+  if (Impl::is_mp_vector_constant(a) && a.fastAccessCoeff(0) == value_type(1)) {
+    MV_Multiply(y, A, x);
+  }
+  else {
+    Impl::raise_mp_vector_error(
+      "MV_Multiply not implemented for non-constant a != 1");
+  }
+}
+
+template <typename Device,
+          typename MatrixStorage,
+          typename MatrixOrdinal,
+          typename MatrixMemory,
+          typename MatrixSize,
+          typename InputStorage,
+          typename InputLayout,
+          typename InputMemory,
+          typename OutputStorage,
+          typename OutputLayout,
+          typename OutputMemory>
+void
+MV_Multiply(
+  const Kokkos::View< Sacado::MP::Vector< OutputStorage>**,
+                      OutputLayout,
+                      Device,
+                      OutputMemory >& y,
+  const Sacado::MP::Vector<InputStorage>& a,
+  const Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+                           MatrixOrdinal,
+                           Device,
+                           MatrixMemory,
+                           MatrixSize>& A,
+  const Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+                      InputLayout,
+                      Device,
+                      InputMemory >& x)
+{
+  if (y.dimension_1() == 1) {
+    typedef Kokkos::View< Sacado::MP::Vector< OutputStorage>*, OutputLayout,
+      Device,OutputMemory > OutputView1D;
+    typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*, InputLayout,
+      Device, InputMemory > InputView1D;
+    OutputView1D y_1D = subview<OutputView1D>(y, ALL(), 0);
+    InputView1D x_1D = subview<InputView1D>(x, ALL(), 0);
+    MV_Multiply(y_1D, a, A, x_1D);
+  }
+  else {
+    typedef typename InputStorage::value_type value_type;
+    if (Impl::is_mp_vector_constant(a) && a.fastAccessCoeff(0) == value_type(1)) {
+      typedef Kokkos::View< Sacado::MP::Vector< OutputStorage>**,
+        OutputLayout, Device, OutputMemory > OutputVectorType;
+      typedef Kokkos::CrsMatrix< Sacado::MP::Vector<MatrixStorage>,
+        MatrixOrdinal, Device, MatrixMemory, MatrixSize> MatrixType;
+      typedef Kokkos::View< Sacado::MP::Vector<InputStorage>**,
+        InputLayout, Device, InputMemory > InputVectorType;
+      typedef Stokhos::Multiply<MatrixType,InputVectorType,
+        OutputVectorType> multiply_type;
+      multiply_type::apply( A, x, y );
+      //Stokhos::multiply(A, x, y);
+    }
+    else {
+      Impl::raise_mp_vector_error(
+        "MV_Multiply not implemented for non-constant a != 1");
+    }
+  }
 }
 
 }

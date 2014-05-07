@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,7 +54,7 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Parameter::SublistParser::SublistParser(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data),
   sublistMap()
 {
@@ -66,7 +66,7 @@ LOCA::Parameter::SublistParser::~SublistParser()
 
 void
 LOCA::Parameter::SublistParser::parseSublists(
-	     const Teuchos::RCP<Teuchos::ParameterList>& topLevelParams)
+         const Teuchos::RCP<Teuchos::ParameterList>& topLevelParams)
 {
   // Top level sublist
   sublistMap["Top Level"] = topLevelParams;
@@ -80,17 +80,17 @@ LOCA::Parameter::SublistParser::parseSublists(
   sublistMap["Stepper"] = Teuchos::rcp(&stepperSublist, false);
 
   // Eigensolver sublist
-  Teuchos::ParameterList& eigensolverSublist = 
+  Teuchos::ParameterList& eigensolverSublist =
     stepperSublist.sublist("Eigensolver");
   sublistMap["Eigensolver"] = Teuchos::rcp(&eigensolverSublist, false);
 
   // Constraints sublist
-  Teuchos::ParameterList& constraintsSublist = 
+  Teuchos::ParameterList& constraintsSublist =
     locaSublist.sublist("Constraints");
   sublistMap["Constraints"] = Teuchos::rcp(&constraintsSublist, false);
 
   // Bifurcation sublist
-  Teuchos::ParameterList& bifurcationSublist = 
+  Teuchos::ParameterList& bifurcationSublist =
     locaSublist.sublist("Bifurcation");
   sublistMap["Bifurcation"] = Teuchos::rcp(&bifurcationSublist, false);
 
@@ -99,13 +99,13 @@ LOCA::Parameter::SublistParser::parseSublists(
   sublistMap["Predictor"] = Teuchos::rcp(&predictorSublist, false);
 
   // First Step Predictor sublist
-  Teuchos::ParameterList& fspredictorSublist = 
+  Teuchos::ParameterList& fspredictorSublist =
     predictorSublist.sublist("First Step Predictor");
-  sublistMap["First Step Predictor"] = 
+  sublistMap["First Step Predictor"] =
     Teuchos::rcp(&fspredictorSublist, false);
 
   // Last Step Predictor sublist
-  Teuchos::ParameterList& lspredictorSublist = 
+  Teuchos::ParameterList& lspredictorSublist =
     predictorSublist.sublist("Last Step Predictor");
   sublistMap["Last Step Predictor"] = Teuchos::rcp(&lspredictorSublist, false);
 
@@ -138,7 +138,7 @@ LOCA::Parameter::SublistParser::parseSublists(
   sublistMap["Printing"] = Teuchos::rcp(&printingSublist, false);
 }
 
-Teuchos::RCP<Teuchos::ParameterList> 
+Teuchos::RCP<Teuchos::ParameterList>
 LOCA::Parameter::SublistParser::getSublist(const std::string& name)
 {
   // Find name in list, if it exists.
@@ -147,8 +147,8 @@ LOCA::Parameter::SublistParser::getSublist(const std::string& name)
   // If it does not exist throw an error.
   if (i == sublistMap.end()) {
    globalData->locaErrorCheck->throwError(
-			     "LOCA::Parameter::SublistParser::getSublist()",
-			     "Invalid sublist name: " + name);
+                 "LOCA::Parameter::SublistParser::getSublist()",
+                 "Invalid sublist name: " + name);
   }
 
   // Return sublist

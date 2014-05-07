@@ -439,6 +439,11 @@ public:
   ///   empty, this method will only print timers whose labels begin
   ///   with this string.
   ///
+  /// \param ignoreZeroTimers [in] Processes that either do not have
+  ///   a particular timer or have zero time for a timer are not used
+  ///   in calculating global statistics. This mode requires one
+  ///   additional all-reduce per invocation.
+  ///
   /// \note If \c writeGlobalStats is true, this method <i>must</i> be
   ///   called as a collective by all processes in the communicator.
   ///   This method will <i>only</i> perform communication if
@@ -450,7 +455,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Print summary statistics for all timers on all (MPI) processes.
   ///
@@ -474,7 +480,8 @@ public:
              const bool writeGlobalStats=true,
              const bool writeZeroTimers=true,
              const ECounterSetOp setOp=Intersection,
-             const std::string& filter="");
+             const std::string& filter="",
+             const bool ignoreZeroTimers=false);
 
   /// \brief Report timer statistics to the given output stream.
   ///

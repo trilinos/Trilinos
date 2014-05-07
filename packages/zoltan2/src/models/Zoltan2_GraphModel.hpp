@@ -85,7 +85,7 @@ namespace Zoltan2 {
  *  \param edgeWeights weights for edges in \c gidNbors list
  *  \param offsets offset into above lists for each vertex in \c gids.
  *  \param newGidNbors  on return a list of the desired neighbors
- *  \param newWeights if \c wdim is the edge weight dimension,
+ *  \param newWeights if \c wdim is the number of weights per edge
  *       then on return this points to \c wdim pointers to arrays
  *       of weights for the desired edges.  If it is NULL on return,
  *       then one of these must be true:
@@ -143,11 +143,6 @@ size_t removeUndesiredEdges(
 
   newWeights = NULL;
   int eDim = edgeWeights.size();
-  std::vector<bool> uniformWeight;
-  if (eDim > 0){
-    for (int i=0; i < eDim; i++)
-      uniformWeight[i] = (edgeWeights[i].size() == 0);
-  }
 
   // count desired edges
 
@@ -215,13 +210,15 @@ size_t removeUndesiredEdges(
     newWeights = new scalar_t * [eDim];
     env->localMemoryAssertion(__FILE__, __LINE__, eDim, newWeights);
 
-    for (int w=0; w < eDim; w++){
-      if (uniformWeight[w])
-        newWeights[w] = NULL;  // implies uniform
-      else{
+    if (numKeep) {
+      for (int w=0; w < eDim; w++){
         newWeights[w] = new scalar_t [numKeep];
         env->localMemoryAssertion(__FILE__, __LINE__, numKeep, newWeights[w]);
       }
+    }
+    else {
+      for (int w=0; w < eDim; w++)
+        newWeights[w] = NULL;
     }
   }
 
@@ -236,11 +233,8 @@ size_t removeUndesiredEdges(
 
       if (keep){
         newGids[next] = allIds[j];
-        if (eDim > 0){
-          for (int w=0; w < eDim; w++){
-            if (!uniformWeight[w])
-              newWeights[w][next] = edgeWeights[w][j];
-          }
+        for (int w=0; w < eDim; w++){
+          newWeights[w][next] = edgeWeights[w][j];
         }
         next++;
         if (next == numKeep)
@@ -312,7 +306,7 @@ size_t computeLocalEdgeList(
 
     // Create subset list of local graph edges, offsets and weights.
 
-    int eWeightDim = allWeights.size();
+    int nWeightsPerEdge = allWeights.size();
 
     ArrayRCP<const gid_t> newEgids;
     scalar_t **newWeights = NULL;
@@ -320,7 +314,7 @@ size_t computeLocalEdgeList(
     ArrayView<const gid_t> dummyVtx;
     ArrayView<const gid_t> nborView= allEdgeIds.view(0, numLocalEdges);
     ArrayView<const int> nborOwner = allProcs.view(0, numLocalEdges);
-    ArrayView<input_t> eWgts = allWeights.view(0, eWeightDim);
+    ArrayView<input_t> eWgts = allWeights.view(0, nWeightsPerEdge);
     ArrayView<const lno_t> offView = allOffs.view(0, allOffs.size());
 
     try{
@@ -336,16 +330,14 @@ size_t computeLocalEdgeList(
 
     // offsets array was set by removeUndesiredEdges.  Create weight array.
 
-    if (eWeightDim > 0){
-      input_t *wgts = new input_t [eWeightDim];
-      for (int w=0; w < eWeightDim; w++){
-        if (newWeights[w]){
-          ArrayRCP<const scalar_t> wgtArray(
-            newWeights[w], 0, numLocalGraphEdges, true);
-          wgts[w] = input_t(wgtArray, 1);
-        }
+    if (nWeightsPerEdge > 0){
+      input_t *wgts = new input_t [nWeightsPerEdge];
+      for (int w=0; w < nWeightsPerEdge; w++){
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numLocalGraphEdges,true);
+        wgts[w] = input_t(wgtArray, 1);
       }
-      eWeights = arcp(wgts, 0, eWeightDim);
+      eWeights = arcp(wgts, 0, nWeightsPerEdge);
+      delete [] newWeights;
     }
 
     // Create local ID array.  First translate gid to gno.
@@ -479,13 +471,13 @@ public:
    */
   size_t getGlobalNumEdges() const { return numGlobalEdges_; }
 
-  /*! \brief Returns the dimension (0 or greater) of vertex weights.
+  /*! \brief Returns the number (0 or greater) of weights per vertex
    */
-  int getVertexWeightDim() const { return vWeightDim_; }
+  int getNumWeightsPerVertex() const { return numWeightsPerVertex_; }
 
-  /*! \brief Returns the dimension (0 or greater) of edge weights.
+  /*! \brief Returns the number (0 or greater) of weights per edge.
    */
-  int getEdgeWeightDim() const { return eWeightDim_; }
+  int getNumWeightsPerEdge() const { return nWeightsPerEdge_; }
 
   /*! \brief Returns the dimension (0 to 3) of vertex coordinates.
    */
@@ -510,7 +502,7 @@ public:
     if (gnosAreGids_) Ids = gids_.view(0, nv);
     else              Ids = gnosConst_.view(0, nv);
     xyz = vCoords_.view(0, vCoordDim_);
-    wgts = vWeights_.view(0, vWeightDim_);
+    wgts = vWeights_.view(0, numWeightsPerVertex_);
     return nv;
   }
 
@@ -539,7 +531,7 @@ public:
     else              edgeIds = edgeGnosConst_.view(0, numLocalEdges_);
     procIds = procIdsConst_.view(0, numLocalEdges_);
     offsets = offsets_.view(0, numLocalVertices_+1);
-    wgts = eWeights_.view(0, eWeightDim_);
+    wgts = eWeights_.view(0, nWeightsPerEdge_);
     return numLocalEdges_;
   }
 
@@ -602,7 +594,7 @@ private:
   ArrayRCP<const gid_t> gids_;        // vertices of input graph
   ArrayRCP<gno_t> gnos_;
 
-  int vWeightDim_;
+  int numWeightsPerVertex_;
   ArrayRCP<input_t> vWeights_;
 
   int vCoordDim_;
@@ -616,7 +608,7 @@ private:
   ArrayRCP<int> procIds_;
   ArrayRCP<const lno_t> offsets_;
 
-  int eWeightDim_;
+  int nWeightsPerEdge_;
   ArrayRCP<input_t> eWeights_;
 
   ArrayRCP<const gno_t> gnosConst_;
@@ -653,7 +645,7 @@ GraphModel<Adapter>::GraphModel(
        comm_(comm),
        gids_(),
        gnos_(),
-       vWeightDim_(0),
+       numWeightsPerVertex_(0),
        vWeights_(),
        vCoordDim_(0),
        vCoords_(),
@@ -661,7 +653,7 @@ GraphModel<Adapter>::GraphModel(
        edgeGnos_(),
        procIds_(),
        offsets_(),
-       eWeightDim_(0),
+       nWeightsPerEdge_(0),
        eWeights_(),
        gnosConst_(),
        edgeGnosConst_(),
@@ -712,7 +704,7 @@ GraphModel<Adapter>::GraphModel(
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = 0;   // no edge weights from a matrix yet.
+  nWeightsPerEdge_ = 0;   // no edge weights from a matrix yet.
                      // TODO:  use matrix values as edge weights
 
   shared_constructor(ia, modelFlags);
@@ -730,7 +722,7 @@ GraphModel<Adapter>::GraphModel(
        comm_(comm),
        gids_(),
        gnos_(),
-       vWeightDim_(0),
+       numWeightsPerVertex_(0),
        vWeights_(),
        vCoordDim_(0),
        vCoords_(),
@@ -738,7 +730,7 @@ GraphModel<Adapter>::GraphModel(
        edgeGnos_(),
        procIds_(),
        offsets_(),
-       eWeightDim_(0),
+       nWeightsPerEdge_(0),
        eWeights_(),
        gnosConst_(),
        edgeGnosConst_(),
@@ -778,14 +770,14 @@ GraphModel<Adapter>::GraphModel(
   edgeGids_ = arcp<const gid_t>(nborIds, 0, numLocalEdges_, false);
   offsets_ = arcp<const lno_t>(offsets, 0, numLocalVertices_ + 1, false);
 
-  eWeightDim_ = ia->getNumWeightsPerEdge();
+  nWeightsPerEdge_ = ia->getNumWeightsPerEdge();
 
-  if (eWeightDim_ > 0){
-    input_t *wgts = new input_t [eWeightDim_];
-    eWeights_ = arcp(wgts, 0, eWeightDim_, true);
+  if (nWeightsPerEdge_ > 0){
+    input_t *wgts = new input_t [nWeightsPerEdge_];
+    eWeights_ = arcp(wgts, 0, nWeightsPerEdge_, true);
   }
 
-  for (int w=0; w < eWeightDim_; w++){
+  for (int w=0; w < nWeightsPerEdge_; w++){
     const scalar_t *ewgts=NULL;
     int stride=0;
 
@@ -871,7 +863,7 @@ void GraphModel<Adapter>::shared_constructor(
     ArrayView<const gid_t> vtxView = gids_.view(0, numLocalVertices_);
     ArrayView<const gid_t> nborView= edgeGids_.view(0, numLocalEdges_);
     ArrayView<const int> nborOwner = nborProcs.view(0, nborProcs.size());
-    ArrayView<input_t> eWgts = eWeights_.view(0, eWeightDim_);
+    ArrayView<input_t> eWgts = eWeights_.view(0, nWeightsPerEdge_);
     ArrayView<const lno_t> offView = offsets_.view(0, numLocalVertices_ + 1);
 
     try{
@@ -897,14 +889,12 @@ void GraphModel<Adapter>::shared_constructor(
       offsets_ = newOffs;
       numLocalEdges_ = numNewEdges;
 
-      for (int w=0; w < eWeightDim_; w++){
-        if (newWeights[w] != NULL){   // non-uniform weights
-          ArrayRCP<const scalar_t> wgtArray(newWeights[w],
-            0, numNewEdges, true);
-          eWeights_[w] = input_t(wgtArray, 1);
-        }
+      for (int w=0; w < nWeightsPerEdge_; w++){
+        ArrayRCP<const scalar_t> wgtArray(newWeights[w], 0, numNewEdges, true);
+        eWeights_[w] = input_t(wgtArray, 1);
       }
     }
+    delete [] newWeights;
   }
 
   // Create an IdentifierMap, which maps the user's global IDs to
@@ -988,13 +978,13 @@ void GraphModel<Adapter>::shared_constructor(
 
   // Vertex weights
 
-  vWeightDim_ = ia->getNumWeightsPerID();
+  numWeightsPerVertex_ = ia->getNumWeightsPerID();
 
-  if (vWeightDim_ > 0){
-    input_t *weightInfo = new input_t [vWeightDim_];
-    env_->localMemoryAssertion(__FILE__, __LINE__, vWeightDim_, weightInfo);
+  if (numWeightsPerVertex_ > 0){
+    input_t *weightInfo = new input_t [numWeightsPerVertex_];
+    env_->localMemoryAssertion(__FILE__, __LINE__, numWeightsPerVertex_, weightInfo);
 
-    for (int idx=0; idx < vWeightDim_; idx++){
+    for (int idx=0; idx < numWeightsPerVertex_; idx++){
       bool useNumNZ = ia->useDegreeAsWeight(idx); 
       if (useNumNZ){
         scalar_t *wgts = new scalar_t [numLocalVertices_];
@@ -1010,26 +1000,16 @@ void GraphModel<Adapter>::shared_constructor(
         const scalar_t *weights=NULL;
         int stride=0;
         ia->getWeightsView(weights, stride, idx);
-        // If weights is NULL, user wants to use uniform weights
-        if (weights != NULL){
-          ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
-                                                   stride*numLocalVertices_,
-                                                   false);
-          weightInfo[idx] = input_t(wgtArray, stride);
-        }
+        ArrayRCP<const scalar_t> wgtArray = arcp(weights, 0,
+                                                 stride*numLocalVertices_,
+                                                 false);
+        weightInfo[idx] = input_t(wgtArray, stride);
       }
     }
 
-    vWeights_ = arcp<input_t>(weightInfo, 0, vWeightDim_, true);
+    vWeights_ = arcp<input_t>(weightInfo, 0, numWeightsPerVertex_, true);
   }
 
-  // Model base class needs to know if any weights are uniform.
-
-  Array<lno_t> weightArrayLengths(vWeightDim_);
-  for (int idx=0; idx < vWeightDim_; idx++){
-    weightArrayLengths[idx] = vWeights_[idx].size();
-  }
-  this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
   // Vertex coordinates
 

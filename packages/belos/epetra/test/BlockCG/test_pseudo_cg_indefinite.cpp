@@ -39,7 +39,7 @@
 // ************************************************************************
 //@HEADER
 //
-// NOTE: No preconditioner is used in this example. 
+// NOTE: No preconditioner is used in this example.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -102,7 +102,7 @@ int main(int argc, char *argv[]) {
   // **********************************************************************
   // ******************Set up the problem to be solved*********************
   // construct diagonal matrix
-  const int NumGlobalElements = 1e2;
+  const int NumGlobalElements = 100;
   const int m = 4; // number of negative eigenvalues
 
   // Create diagonal matrix with n-m positive and m negative eigenvalues.
@@ -211,7 +211,7 @@ int main(int argc, char *argv[]) {
   std::vector<double> rhs_norm( numrhs );
   Epetra_MultiVector resid(epetraMap, numrhs);
   OPT::Apply( *A, *X, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
@@ -239,4 +239,4 @@ int main(int argc, char *argv[]) {
     std::cout << "End Result: TEST PASSED" << std::endl;
   return 0;
   //
-} 
+}

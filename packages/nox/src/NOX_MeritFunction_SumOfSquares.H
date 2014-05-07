@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,7 +64,7 @@ namespace MeritFunction {
   //! Sum of squares merit function.
   /*!
     A basic merit function used in many nonlinear equation solvers:
-    
+
     \f[
       f = \frac{1}{2} \| F(x) \| ^2
     \f]
@@ -80,40 +80,40 @@ namespace MeritFunction {
   */
   class SumOfSquares : public virtual NOX::MeritFunction::Generic {
 
-  public:			
+  public:
 
     //! Constructor.
     SumOfSquares(const Teuchos::RCP<NOX::Utils>& u);
-    
+
     //! Destructor.
     virtual ~SumOfSquares();
 
-    //! Computes the merit function, \f$ f(x) = \frac{1}{2}\| F(x) \|^2 \f$. 
+    //! Computes the merit function, \f$ f(x) = \frac{1}{2}\| F(x) \|^2 \f$.
     virtual double computef(const NOX::Abstract::Group& grp) const;
-    
+
     //! Computes the gradient, \f$ g = \nabla f(x) = J(x)^T F(x) \f$.
     virtual void computeGradient(const NOX::Abstract::Group& group,
-				 NOX::Abstract::Vector& result) const;
-    
+                 NOX::Abstract::Vector& result) const;
+
     //! Computes the slope, \f$ s(x,d) = d^T \nabla f(x) = d^T J(x)^T F(x) \f$.
     /*! If the Jacobian is not computed in the \c grp object, then the
       slope can be approximated using directional derivatives.  More
       information can be found in the method computeSlopeWithoutJac.
      */
     virtual double computeSlope(const NOX::Abstract::Vector& dir,
-				const NOX::Abstract::Group& grp) const;
-    
+                const NOX::Abstract::Group& grp) const;
+
     //! Computes the quadratic model, \f$ m(x,d) = f(x) + \nabla f(x)^T d + d^T \nabla^2 f(x) d \f$.
     /*!
-      We approximate \f$ \nabla^2f(x) \approx J^TJ \f$: 
+      We approximate \f$ \nabla^2f(x) \approx J^TJ \f$:
 
       \f[
         m(d) = f(x) + (J(x)^T F)^T d + \frac{1}{2} d^T B d
       \f]
     */
     virtual double computeQuadraticModel(const NOX::Abstract::Vector& dir,
-				   const NOX::Abstract::Group& grp) const;
-    
+                   const NOX::Abstract::Group& grp) const;
+
     //! Computes the vector  in the steepest descent direction that minimizes, the quadratic model.
     /*!
       Computes the vector \c result:
@@ -122,18 +122,18 @@ namespace MeritFunction {
     \f]
     */
     virtual void computeQuadraticMinimizer(const NOX::Abstract::Group& grp,
-				     NOX::Abstract::Vector& result) const;
+                     NOX::Abstract::Vector& result) const;
 
     virtual const std::string& name() const;
 
   private:
-    
+
     //! Disallow default ctor.
     SumOfSquares() {};
 
-    //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.  
+    //! This is a variant of the computeSlope() method above optimized to work with out having to compute an explicit Jacobian.
     /*!
-      Calculates and returns 
+      Calculates and returns
       \f[
       \zeta = d^T \nabla f(x) = d^TJ^TF
       \f]
@@ -146,7 +146,7 @@ namespace MeritFunction {
     We can rewrite this equation as:
 
     \f[ d^TJ^TF = F^TJd \f]
-    
+
     which allows us to use directional derivatives to estimate \f$ J^TF \f$:
 
     \f[ F^TJd = F^T \frac{F(x + \eta d) - F(x)}{\eta} \f]
@@ -161,13 +161,13 @@ namespace MeritFunction {
     \f$ \lambda \f$ is a constant fixed at 1.0e-6.
 
     */
-    virtual double 
+    virtual double
     computeSlopeWithoutJacobian(const NOX::Abstract::Vector& dir,
-				const NOX::Abstract::Group& grp) const;
+                const NOX::Abstract::Group& grp) const;
 
     //! This is a variant of the computeSlope() method above that works when the Jacobian operator is available but doesn't support transpose
     /*!
-      Calculates and returns 
+      Calculates and returns
       \f[
       \zeta = d^T \nabla f(x) = (Jd)^TF
       \f]
@@ -176,9 +176,9 @@ namespace MeritFunction {
     is provided to support Jacobian operators which do not
     support the transpose operation.
     */
-    virtual double 
+    virtual double
     computeSlopeWithoutJacobianTranspose(const NOX::Abstract::Vector& dir,
-				         const NOX::Abstract::Group& grp) const;
+                         const NOX::Abstract::Group& grp) const;
 
   private:
 

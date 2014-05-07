@@ -33,11 +33,12 @@
 #ifndef IOSS_Iotr_MinMax_h
 #define IOSS_Iotr_MinMax_h
 
-#include <Ioss_Transform.h>
-#include <string>
+#include <Ioss_Transform.h>             // for Transform, Factory
+#include <string>                       // for string
+#include "Ioss_VariableType.h"          // for VariableType
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class Field;
 }
 
 namespace Iotr {

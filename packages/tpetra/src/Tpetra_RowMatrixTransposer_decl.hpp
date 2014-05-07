@@ -108,6 +108,17 @@ public:
   ///
   ///
   Teuchos::RCP<crs_matrix_type> createTranspose();
+
+  /// Compute and return the transpose of the matrix given to the constructor.
+  /// In this call, we (potentially) leave the matrix with an overlapping row map.
+  /// This is a perfectly valid matrix, but won't work correctly with some routines
+  /// in Ifpack or Muelu.
+  /// 
+  /// WARNING: This routine leaves overlapping rows.  Unless you're sure that's OK,
+  /// call createTranspose() instead.
+  ///
+  Teuchos::RCP<crs_matrix_type> createTransposeLocal();
+
         
 private: 
   //! The original matrix to be transposed.

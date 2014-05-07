@@ -100,10 +100,6 @@ public:
     return numGlobalIdentifiers_;
   }
 
-  /*! Returns the dimension (0 or greater) of identifier weights.
-   */
-  inline int getIdentifierWeightDim() const { return this->getNumWeights(); }
-
   /*! Sets pointers to this process' identifier Ids and their weights.
       \param Ids will on return point to the list of the global Ids for
         each identifier on this process.
@@ -116,7 +112,7 @@ public:
                                   ArrayView<input_t> &wgts) const 
   {
     Ids = ArrayView<const gno_t>();
-    wgts = weights_.view(0, userWeightDim_);
+    wgts = weights_.view(0, nUserWeights_);
     size_t n = getLocalNumIdentifiers();
     if (n){
       if (gnosAreGids_) Ids = gids_(0, n);
@@ -140,7 +136,7 @@ private:
   const RCP<const Environment> env_;
   const RCP<const Comm<int> > comm_;
   ArrayRCP<const gid_t> gids_;
-  int userWeightDim_;
+  int nUserWeights_;
   ArrayRCP<input_t> weights_;
   ArrayRCP<gno_t> gnos_;
   ArrayRCP<const gno_t> gnosConst_;
@@ -154,7 +150,7 @@ template <typename Adapter>
     const RCP<const Comm<int> > &comm,
     modelFlag_t &modelFlags):
       gnosAreGids_(false), numGlobalIdentifiers_(), env_(env), comm_(comm),
-      gids_(), userWeightDim_(0), weights_(), gnos_(), gnosConst_()
+      gids_(), nUserWeights_(0), weights_(), gnos_(), gnosConst_()
 {
   // Get the local and global problem size
   size_t nLocalIds = ia->getLocalNumIDs();
@@ -163,21 +159,20 @@ template <typename Adapter>
     &numGlobalIdentifiers_);
 
   // Get the number of weights
-  // Use max weight dim over all processes as userWeightDim_
+  // Use max number of weights over all processes as nUserWeights_
   int tmp = ia->getNumWeightsPerID();
   Teuchos::reduceAll<int, int>(*comm, Teuchos::REDUCE_MAX, 1,
-      &tmp, &userWeightDim_);
+      &tmp, &nUserWeights_);
 
   // Prepare to store views from input adapter
   // TODO:  Do we have to store these views, or can we get them on an 
   // TODO:  as-needed basis?
-  Array<const scalar_t *> wgts(userWeightDim_, (const scalar_t *)NULL);
-  Array<int> wgtStrides(userWeightDim_, 0);
-  Array<lno_t> weightArrayLengths(userWeightDim_, 0);
+  Array<const scalar_t *> wgts(nUserWeights_, (const scalar_t *)NULL);
+  Array<int> wgtStrides(nUserWeights_, 0);
 
-  if (userWeightDim_ > 0){
-    input_t *w = new input_t [userWeightDim_];
-    weights_ = arcp<input_t>(w, 0, userWeightDim_);
+  if (nUserWeights_ > 0){
+    input_t *w = new input_t [nUserWeights_];
+    weights_ = arcp<input_t>(w, 0, nUserWeights_);
   }
 
   const gid_t *gids=NULL;
@@ -185,7 +180,7 @@ template <typename Adapter>
   // Get the input adapter's views
   try{
     ia->getIDsView(gids);
-    for (int idx=0; idx < userWeightDim_; idx++)
+    for (int idx=0; idx < nUserWeights_; idx++)
       ia->getWeightsView(wgts[idx], wgtStrides[idx], idx);
   }
   Z2_FORWARD_EXCEPTIONS;
@@ -193,19 +188,15 @@ template <typename Adapter>
   if (nLocalIds){
     gids_ = arcp(gids, 0, nLocalIds, false);
 
-    if (userWeightDim_ > 0){
-      for (int i=0; i < userWeightDim_; i++){
-        if (wgts[i] != NULL){
-          ArrayRCP<const scalar_t> wgtArray(
-            wgts[i], 0, nLocalIds*wgtStrides[i], false);
-          weights_[i] = input_t(wgtArray, wgtStrides[i]);
-          weightArrayLengths[i] = nLocalIds;
-        }
+    if (nUserWeights_ > 0){
+      for (int idx=0; idx < nUserWeights_; idx++){
+        ArrayRCP<const scalar_t> wgtArray(wgts[idx], 0,
+                                          nLocalIds*wgtStrides[idx], false);
+        weights_[idx] = input_t(wgtArray, wgtStrides[idx]);
       }
     }
   }
 
-  this->setWeightArrayLengths(weightArrayLengths, *comm_);
 
   // TODO:  Why does an IdentifierModel need an IdentifierMap?
   // TODO:  Currently is useful only if gid_t is not Teuchos::Ordinal

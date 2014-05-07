@@ -43,11 +43,14 @@
 // ***********************************************************************
 //
 // @HEADER
+#include <cstdio>
+#include <unistd.h>
 #include <iostream>
 
 #include <Teuchos_XMLParameterListHelpers.hpp>
 
 #include <Xpetra_MultiVectorFactory.hpp>
+#include <Xpetra_ImportFactory.hpp>
 
 // Galeri
 #include <Galeri_XpetraParameters.hpp>
@@ -82,6 +85,7 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP; // reference count pointers
   using Teuchos::rcp;
   using Teuchos::TimeMonitor;
+  using Teuchos::ParameterList;
 
   // =========================================================================
   // MPI initialization using Teuchos
@@ -92,12 +96,8 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   // Convenient definitions
   // =========================================================================
-  SC zero = Teuchos::ScalarTraits<SC>::zero(), one = Teuchos::ScalarTraits<SC>::one();
-
-  // Instead of checking each time for rank, create a rank 0 stream
-  RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  Teuchos::FancyOStream& fancyout = *fancy;
-  fancyout.setOutputToRootOnly(0);
+  typedef Teuchos::ScalarTraits<SC> STS;
+  SC zero = STS::zero(), one = STS::one();
 
   // =========================================================================
   // Parameters initialization
@@ -111,19 +111,35 @@ int main(int argc, char *argv[]) {
   std::string xmlFileName       = "scalingTest.xml"; clp.setOption("xml",                   &xmlFileName,      "read parameters from a file [default = 'scalingTest.xml']");
   bool        printTimings      = true;              clp.setOption("timings", "notimings",  &printTimings,     "print timings to screen");
   int         writeMatricesOPT  = -2;                clp.setOption("write",                 &writeMatricesOPT, "write matrices to file (-1 means all; i>=0 means level i)");
-  std::string solveType         = "cg";              clp.setOption("solver",                &solveType,        "solve type: (none | cg | gmres | standalone)");
-  double      tol               = 1e-12;             clp.setOption("tol",                   &tol,              "solver convergence tolerance");
+  std::string dsolveType        = "cg", solveType;   clp.setOption("solver",                &dsolveType,       "solve type: (none | cg | gmres | standalone)");
+  double      dtol              = 1e-12, tol;        clp.setOption("tol",                   &dtol,             "solver convergence tolerance");
 
   std::string mapFile;                               clp.setOption("map",                   &mapFile,          "map data file");
   std::string matrixFile;                            clp.setOption("matrix",                &matrixFile,       "matrix data file");
   std::string coordFile;                             clp.setOption("coords",                &coordFile,        "coordinates data file");
-  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds, "#times to rebuild hierarchy");
+  int         numRebuilds       = 0;                 clp.setOption("rebuild",               &numRebuilds,      "#times to rebuild hierarchy");
 
-  switch (clp.parse(argc,argv)) {
-    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
     case Teuchos::CommandLineProcessor::PARSE_ERROR:
-    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE; break;
-    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:                               break;
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
+  }
+
+  Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
+
+  ParameterList paramList;
+  Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<ParameterList>(&paramList), *comm);
+  bool isDriver = paramList.isSublist("Run1");
+  if (isDriver) {
+    // update galeriParameters with the values from the XML file
+    ParameterList& realParams = galeriParameters.GetParameterList();
+
+    for (ParameterList::ConstIterator it = realParams.begin(); it != realParams.end(); it++) {
+      const std::string& name = realParams.name(it);
+      if (paramList.isParameter(name))
+        realParams.setEntry(name, paramList.getEntry(name));
+    }
   }
 
   // Retrieve matrix parameters (they may have been changed on the command line)
@@ -133,6 +149,7 @@ int main(int argc, char *argv[]) {
   // =========================================================================
   // Problem construction
   // =========================================================================
+  std::ostringstream galeriStream;
   comm->barrier();
   RCP<TimeMonitor> globalTimeMonitor = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: S - Global Time")));
   RCP<TimeMonitor> tm                = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1 - Matrix Build")));
@@ -141,7 +158,7 @@ int main(int argc, char *argv[]) {
   RCP<MultiVector> coordinates;
   RCP<MultiVector> nullspace;
   if (matrixFile.empty()) {
-    fancyout << "========================================================\n" << xpetraParameters << galeriParameters;
+    galeriStream << "========================================================\n" << xpetraParameters << galeriParameters;
 
     // Galeri will attempt to create a square-as-possible distribution of subdomains di, e.g.,
     //                                 d1  d2  d3
@@ -152,7 +169,6 @@ int main(int argc, char *argv[]) {
     // This *will* result in "strip" distribution if the #processors is a prime number or if the factors are very different in
     // size. For example, np=14 will give a 7-by-2 distribution.
     // If you don't want Galeri to do this, specify mx or my on the galeriList.
-
     std::string matrixType = galeriParameters.GetMatrixType();
 
     // Create map and coordinates
@@ -179,10 +195,10 @@ int main(int argc, char *argv[]) {
     if (matrixType == "Elasticity3D")
       map = Xpetra::MapFactory<LO,GO,Node>::Build(map, 3);
 
-    fancyout << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
-             << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
-             << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
-             << "========================================================" << std::endl;
+    galeriStream << "Processor subdomains in x direction: " << galeriList.get<int>("mx") << std::endl
+                 << "Processor subdomains in y direction: " << galeriList.get<int>("my") << std::endl
+                 << "Processor subdomains in z direction: " << galeriList.get<int>("mz") << std::endl
+                 << "========================================================" << std::endl;
 
     if (matrixType == "Elasticity2D" || matrixType == "Elasticity3D") {
       // Our default test case for elasticity: all boundaries of a square/cube have Neumann b.c. except left which has Dirichlet
@@ -210,7 +226,23 @@ int main(int argc, char *argv[]) {
     RCP<const Map> map = (mapFile.empty() ? Teuchos::null : Utils2::ReadMap(mapFile, xpetraParameters.GetLib(), comm));
     comm->barrier();
 
-    A = Utils::Read(matrixFile, map);
+    if (lib == Xpetra::UseEpetra) {
+      A = Utils::Read(matrixFile, map);
+
+    } else {
+      // Tpetra matrix reader is still broken, so instead we read in
+      // a matrix in a binary format and then redistribute it
+      const bool binaryFormat = true;
+      A = Utils::Read(matrixFile, lib, comm, binaryFormat);
+
+      RCP<Matrix> newMatrix = MatrixFactory::Build(map, 1);
+      RCP<Import> importer  = ImportFactory::Build(A->getRowMap(), map);
+      newMatrix->doImport(*A, *importer, Xpetra::INSERT);
+      newMatrix->fillComplete();
+
+      A.swap(newMatrix);
+    }
+
     comm->barrier();
 
     coordinates = Utils2::ReadMultiVector(coordFile, map);
@@ -223,152 +255,214 @@ int main(int argc, char *argv[]) {
   comm->barrier();
   tm = Teuchos::null;
 
-  fancyout << "Galeri complete.\n========================================================" << std::endl;
+  galeriStream << "Galeri complete.\n========================================================" << std::endl;
 
-  // =========================================================================
-  // Preconditioner construction
-  // =========================================================================
-  comm->barrier();
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
-  bool useEasy = true;
-  {
-    // XML files for the original interpreter always contain "Hierarchy" sublist
-    Teuchos::ParameterList paramList;
-    Teuchos::updateParametersFromXmlFileAndBroadcast(xmlFileName, Teuchos::Ptr<Teuchos::ParameterList>(&paramList), *comm);
-    if (paramList.isSublist("Hierarchy"))
-      useEasy = false;
-  }
+  int numReruns = 1;
+  if (paramList.isParameter("number of reruns"))
+    numReruns = paramList.get<int>("number of reruns");
 
-  RCP<HierarchyManager> mueLuFactory;
-  if (useEasy == false)
-    mueLuFactory = rcp(new ParameterListInterpreter    (xmlFileName, *comm));
-  else
-    mueLuFactory = rcp(new EasyParameterListInterpreter(xmlFileName, *comm));
+  const bool mustAlreadyExist = true;
+  for (int rerunCount = 1; rerunCount <= numReruns; rerunCount++) {
+    ParameterList mueluList, runList;
 
-  comm->barrier();
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
+    bool stop = false;
+    if (isDriver) {
+      runList   = paramList.sublist("Run1",  mustAlreadyExist);
+      mueluList = runList  .sublist("MueLu", mustAlreadyExist);
+    } else {
+      mueluList = paramList;
+      stop = true;
+    }
 
-  RCP<Hierarchy> H;
-  for (int i = 0; i <= numRebuilds; i++) {
-    A->SetMaxEigenvalueEstimate(-one);
+    int runCount = 1;
+    do {
+      A->SetMaxEigenvalueEstimate(-one);
 
-    H = mueLuFactory->CreateHierarchy();
-    H->GetLevel(0)->Set("A",           A);
-    H->GetLevel(0)->Set("Nullspace",   nullspace);
-    H->GetLevel(0)->Set("Coordinates", coordinates);
-    mueLuFactory->SetupHierarchy(*H);
-  }
+      solveType = dsolveType;
+      tol       = dtol;
 
-  comm->barrier();
-  tm = Teuchos::null;
+      int   savedOut  = -1;
+      FILE* openedOut = NULL;
+      if (isDriver) {
+        if (runList.isParameter("filename")) {
+          // Redirect all output into a filename We have to redirect all output,
+          // including printf's, therefore we cannot simply replace C++ cout
+          // buffers, and have to use heavy machinary (dup2)
+          std::string filename = runList.get<std::string>("filename");
+          if (numReruns > 1)
+            filename += "_run" + MueLu::toString(rerunCount);
+          filename += (lib == Xpetra::UseEpetra ? ".epetra" : ".tpetra");
 
-  // =========================================================================
-  // System solution (Ax = b)
-  // =========================================================================
-  comm->barrier();
-  tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+          savedOut  = dup(STDOUT_FILENO);
+          openedOut = fopen(filename.c_str(), "w");
+          dup2(fileno(openedOut), STDOUT_FILENO);
+        }
+        if (runList.isParameter("solver")) solveType = runList.get<std::string>("solver");
+        if (runList.isParameter("tol"))    tol       = runList.get<double>     ("tol");
+      }
 
-  RCP<Vector> X = VectorFactory::Build(map);
-  RCP<Vector> B = VectorFactory::Build(map);
+      // Instead of checking each time for rank, create a rank 0 stream
+      RCP<Teuchos::FancyOStream> fancy = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+      Teuchos::FancyOStream& fancyout = *fancy;
+      fancyout.setOutputToRootOnly(0);
 
-  {
-    // we set seed for reproducibility
-    X->setSeed(846930886);
-    X->randomize();
-    A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+      fancyout << galeriStream.str();
 
-    Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> norms(1);
-    B->norm2(norms);
-    B->scale(1.0/norms[0]);
-    X->putScalar(zero);
-  }
-  tm = Teuchos::null;
+      // =========================================================================
+      // Preconditioner construction
+      // =========================================================================
+      comm->barrier();
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 1.5 - MueLu read XML")));
+      bool useEasy = !mueluList.isSublist("Hierarchy"); // XML files for the original interpreter always contain "Hierarchy" sublist
 
-  if (writeMatricesOPT > -2) {
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3.5 - Matrix output")));
-    H->Write(writeMatricesOPT, writeMatricesOPT);
-    tm = Teuchos::null;
-  }
+      RCP<HierarchyManager> mueLuFactory;
+      if (useEasy == false)
+        mueLuFactory = rcp(new ParameterListInterpreter    (mueluList));
+      else
+        mueLuFactory = rcp(new EasyParameterListInterpreter(mueluList));
 
-  comm->barrier();
-  if (solveType == "none") {
-    // Do not perform a solve
+      comm->barrier();
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 2 - MueLu Setup")));
 
-  } else if (solveType == "standalone") {
-    tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
+      RCP<Hierarchy> H;
+      for (int i = 0; i <= numRebuilds; i++) {
+        A->SetMaxEigenvalueEstimate(-one);
 
-    H->IsPreconditioner(false);
-    H->Iterate(*B, 25, *X);
+        H = mueLuFactory->CreateHierarchy();
+        H->GetLevel(0)->Set("A",           A);
+        H->GetLevel(0)->Set("Nullspace",   nullspace);
+        H->GetLevel(0)->Set("Coordinates", coordinates);
+        mueLuFactory->SetupHierarchy(*H);
+      }
 
-  } else if (solveType == "cg" || solveType == "gmres") {
+      comm->barrier();
+      tm = Teuchos::null;
+
+      // =========================================================================
+      // System solution (Ax = b)
+      // =========================================================================
+      comm->barrier();
+      tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3 - LHS and RHS initialization")));
+
+      RCP<Vector> X = VectorFactory::Build(map);
+      RCP<Vector> B = VectorFactory::Build(map);
+
+      {
+        // we set seed for reproducibility
+        Utils::SetRandomSeed(*comm);
+        X->randomize();
+        A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
+
+        Teuchos::Array<STS::magnitudeType> norms(1);
+        B->norm2(norms);
+        B->scale(one/norms[0]);
+        X->putScalar(zero);
+      }
+      tm = Teuchos::null;
+
+      if (writeMatricesOPT > -2) {
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 3.5 - Matrix output")));
+        H->Write(writeMatricesOPT, writeMatricesOPT);
+        tm = Teuchos::null;
+      }
+
+      comm->barrier();
+      if (solveType == "none") {
+        // Do not perform a solve
+
+      } else if (solveType == "standalone") {
+        tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
+
+        H->IsPreconditioner(false);
+        H->Iterate(*B, 25, *X);
+
+      } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
-    tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
+        tm = rcp(new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 5 - Belos Solve")));
 
-    // Operator and Multivector type that will be used with Belos
-    typedef MultiVector          MV;
-    typedef Belos::OperatorT<MV> OP;
+        // Operator and Multivector type that will be used with Belos
+        typedef MultiVector          MV;
+        typedef Belos::OperatorT<MV> OP;
 
-    H->IsPreconditioner(true);
+        H->IsPreconditioner(true);
 
-    // Define Operator and Preconditioner
-    Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
-    Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
+        // Define Operator and Preconditioner
+        Teuchos::RCP<OP> belosOp   = Teuchos::rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
+        Teuchos::RCP<OP> belosPrec = Teuchos::rcp(new Belos::MueLuOp <SC, LO, GO, NO, LMO>(H)); // Turns a MueLu::Hierarchy object into a Belos operator
 
-    // Construct a Belos LinearProblem object
-    RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-    belosProblem->setLeftPrec(belosPrec);
+        // Construct a Belos LinearProblem object
+        RCP< Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
+        belosProblem->setLeftPrec(belosPrec);
 
-    bool set = belosProblem->setProblem();
-    if (set == false) {
-      fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
-      return EXIT_FAILURE;
-    }
+        bool set = belosProblem->setProblem();
+        if (set == false) {
+          fancyout << "\nERROR:  Belos::LinearProblem failed to set up correctly!" << std::endl;
+          return EXIT_FAILURE;
+        }
 
-    // Belos parameter list
-    int maxIts = 2000;
-    Teuchos::ParameterList belosList;
-    belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
-    belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
-    belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
-    belosList.set("Output Frequency",      1);
-    belosList.set("Output Style",          Belos::Brief);
+        // Belos parameter list
+        int maxIts = 2000;
+        Teuchos::ParameterList belosList;
+        belosList.set("Maximum Iterations",    maxIts); // Maximum number of iterations allowed
+        belosList.set("Convergence Tolerance", tol);    // Relative convergence tolerance requested
+        belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
+        belosList.set("Output Frequency",      1);
+        belosList.set("Output Style",          Belos::Brief);
 
-    // Create an iterative solver manager
-    RCP< Belos::SolverManager<SC, MV, OP> > solver;
-    if (solveType == "cg")
-      solver = rcp(new Belos::BlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
-    else if (solveType == "gmres")
-      solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        // Create an iterative solver manager
+        RCP< Belos::SolverManager<SC, MV, OP> > solver;
+        if (solveType == "cg")
+          solver = rcp(new Belos::BlockCGSolMgr   <SC, MV, OP>(belosProblem, rcp(&belosList, false)));
+        else if (solveType == "gmres")
+          solver = rcp(new Belos::BlockGmresSolMgr<SC, MV, OP>(belosProblem, rcp(&belosList, false)));
 
-    // Perform solve
-    Belos::ReturnType ret = Belos::Unconverged;
-    try {
-      ret = solver->solve();
+        // Perform solve
+        Belos::ReturnType ret = Belos::Unconverged;
+        try {
+          ret = solver->solve();
 
-      // Get the number of iterations for this solve.
-      fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
+          // Get the number of iterations for this solve.
+          fancyout << "Number of iterations performed for this solve: " << solver->getNumIters() << std::endl;
 
-    } catch(...) {
-      fancyout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
-    }
+        } catch(...) {
+          fancyout << std::endl << "ERROR:  Belos threw an error! " << std::endl;
+        }
 
-    // Check convergence
-    if (ret != Belos::Converged)
-      fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
-    else
-      fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+        // Check convergence
+        if (ret != Belos::Converged)
+          fancyout << std::endl << "ERROR:  Belos did not converge! " << std::endl;
+        else
+          fancyout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
 #endif //ifdef HAVE_MUELU_BELOS
-  } else {
-    throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
-  }
-  comm->barrier();
-  tm = Teuchos::null;
-  globalTimeMonitor = Teuchos::null;
+      } else {
+        throw MueLu::Exceptions::RuntimeError("Unknown solver type: \"" + solveType + "\"");
+      }
+      comm->barrier();
+      tm = Teuchos::null;
+      globalTimeMonitor = Teuchos::null;
 
-  if (printTimings) {
-    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
-    // MueLu::MutuallyExclusiveTime<MueLu::BaseClass>::PrintParentChildPairs();
+      if (printTimings)
+        TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
+
+      TimeMonitor::clearCounters();
+
+      if (isDriver) {
+        if (openedOut != NULL) {
+          dup2(savedOut, STDOUT_FILENO);
+          fclose(openedOut);
+          openedOut = NULL;
+        }
+        try {
+          runList   = paramList.sublist("Run" + MueLu::toString(++runCount), mustAlreadyExist);
+          mueluList = runList  .sublist("MueLu", mustAlreadyExist);
+        } catch (std::exception) {
+          stop = true;
+        }
+      }
+
+    } while (stop == false);
   }
+
 
   return 0;
 } //main

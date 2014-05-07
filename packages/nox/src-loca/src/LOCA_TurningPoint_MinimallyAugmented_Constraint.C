@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -95,9 +95,9 @@ Constraint(
   tmp_mass(grpPtr->getX().clone(NOX::ShapeCopy))
 {
   // Instantiate bordered solvers
-  borderedSolver = 
+  borderedSolver =
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							  turningPointParams);
+                              turningPointParams);
 
   // Get symmetric flag
   isSymmetric = turningPointParams->get("Symmetric Jacobian", false);
@@ -105,13 +105,13 @@ Constraint(
   bifParamID[0] = bif_param;
 
   // Options
-  updateVectorsEveryContinuationStep = 
-    turningPointParams->get("Update Null Vectors Every Continuation Step", 
-			    true);
-  updateVectorsEveryIteration = 
-    turningPointParams->get("Update Null Vectors Every Nonlinear Iteration", 
-			    false);
-  std::string nullVecScalingMethod = 
+  updateVectorsEveryContinuationStep =
+    turningPointParams->get("Update Null Vectors Every Continuation Step",
+                true);
+  updateVectorsEveryIteration =
+    turningPointParams->get("Update Null Vectors Every Nonlinear Iteration",
+                false);
+  std::string nullVecScalingMethod =
     turningPointParams->get("Null Vector Scaling", "Order N");
   if (nullVecScalingMethod == "None")
     nullVecScaling = NVS_None;
@@ -123,7 +123,7 @@ Constraint(
     globalData->locaErrorCheck->throwError(
        "LOCA::TurningPoint::MinimallyAugmented::Constraint::Constraint()",
        std::string("Unknown null vector scaling method:  ") + nullVecScalingMethod);
-  multiplyMass = 
+  multiplyMass =
     turningPointParams->get("Multiply Null Vectors by Mass Matrix", false);
   if (multiplyMass && tdGrp == Teuchos::null) {
     globalData->locaErrorCheck->throwError(
@@ -136,8 +136,8 @@ Constraint(
 }
 
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source, 
-	   NOX::CopyType type) : 
+Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
+       NOX::CopyType type) :
   globalData(source.globalData),
   parsedParams(source.parsedParams),
   turningPointParams(source.turningPointParams),
@@ -170,9 +170,9 @@ Constraint(const LOCA::TurningPoint::MinimallyAugmented::Constraint& source,
     isValidDX = true;
 
   // Instantiate bordered solvers
-  borderedSolver = 
+  borderedSolver =
     globalData->locaFactory->createBorderedSolverStrategy(parsedParams,
-							  turningPointParams);
+                              turningPointParams);
 
   // We don't explicitly copy the group because the constrained group
   // will do that
@@ -229,7 +229,7 @@ void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::TurningPoint::MinimallyAugmented::Constraint& source = 
+  const LOCA::TurningPoint::MinimallyAugmented::Constraint& source =
   dynamic_cast<const LOCA::TurningPoint::MinimallyAugmented::Constraint&>(src);
 
   if (this != &source) {
@@ -250,18 +250,18 @@ copy(const LOCA::MultiContinuation::ConstraintInterface& src)
     isValidConstraints = source.isValidConstraints;
     isValidDX = source.isValidDX;
     bifParamID = source.bifParamID;
-    updateVectorsEveryContinuationStep = 
+    updateVectorsEveryContinuationStep =
       source.updateVectorsEveryContinuationStep;
-    updateVectorsEveryIteration = 
+    updateVectorsEveryIteration =
       source.updateVectorsEveryIteration;
     nullVecScaling = source.nullVecScaling;
     multiplyMass = source.multiplyMass;
 
     // Instantiate bordered solvers
-    borderedSolver = 
+    borderedSolver =
       globalData->locaFactory->createBorderedSolverStrategy(
-							 parsedParams,
-							 turningPointParams);
+                             parsedParams,
+                             turningPointParams);
 
     // We don't explicitly copy the group because the constrained group
     // will do that
@@ -302,8 +302,8 @@ setParam(int paramID, double val)
 
 void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-setParams(const std::vector<int>& paramIDs, 
-	  const NOX::Abstract::MultiVector::DenseMatrix& vals)
+setParams(const std::vector<int>& paramIDs,
+      const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   grpPtr->setParamsMulti(paramIDs, vals);
   isValidConstraints = false;
@@ -317,25 +317,25 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // Compute J
   status = grpPtr->computeJacobian();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Set up bordered systems
   Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(grpPtr));
-  borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
-						    a_vector, 
-						    b_vector, 
-						    Teuchos::null);
+  borderedSolver->setMatrixBlocksMultiVecConstraint(op,
+                            a_vector,
+                            b_vector,
+                            Teuchos::null);
 
   // Create RHS
   NOX::Abstract::MultiVector::DenseMatrix one(1,1);
@@ -351,56 +351,56 @@ computeConstraints()
   // Compute sigma_1 and right null vector v
   NOX::Abstract::MultiVector::DenseMatrix s1(1,1);
   status = borderedSolver->initForSolve();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
-  status = borderedSolver->applyInverse(*linear_solver_params, 
-					NULL, 
-					&one, 
-					*v_vector, 
-					s1);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
+  status = borderedSolver->applyInverse(*linear_solver_params,
+                    NULL,
+                    &one,
+                    *v_vector,
+                    s1);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Compute sigma_2 and left null vector w
   NOX::Abstract::MultiVector::DenseMatrix s2(1,1);
   if (!isSymmetric) {
     status = borderedSolver->initForTransposeSolve();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-    status = borderedSolver->applyInverseTranspose(*linear_solver_params, 
-						   NULL, 
-						   &one, 
-						   *w_vector, 
-						   s2);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
+    status = borderedSolver->applyInverseTranspose(*linear_solver_params,
+                           NULL,
+                           &one,
+                           *w_vector,
+                           s2);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
   }
   else {
     *w_vector = *v_vector;
     s2.assign(s1);
   }
-  
+
   // Compute sigma = -w^T*J*v
   status = grpPtr->applyJacobianMultiVector(*v_vector, *Jv_vector);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
   if (!isSymmetric) {
     status = grpPtr->applyJacobianTransposeMultiVector(*w_vector, *Jtw_vector);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   else
     *Jtw_vector = *Jv_vector;
@@ -418,22 +418,22 @@ computeConstraints()
   constraints.scale(1.0/sigma_scale);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-    globalData->locaUtils->out() << "\n\t||Right null vector v|| = " 
-				 << globalData->locaUtils->sciformat(v_norm);
-    globalData->locaUtils->out() << "\n\t||Left null vector w|| = " 
-				 << globalData->locaUtils->sciformat(w_norm);
-    globalData->locaUtils->out() << "\n\t||Jv|| = " 
-				 << globalData->locaUtils->sciformat(Jv_norm);
-    globalData->locaUtils->out() << "\n\t||J^T*w|| = " 
-				 << globalData->locaUtils->sciformat(Jtw_norm);
-    globalData->locaUtils->out() << 
-      "\n\tRight estimate for singularity of Jacobian (sigma1) = " << 
+    globalData->locaUtils->out() << "\n\t||Right null vector v|| = "
+                 << globalData->locaUtils->sciformat(v_norm);
+    globalData->locaUtils->out() << "\n\t||Left null vector w|| = "
+                 << globalData->locaUtils->sciformat(w_norm);
+    globalData->locaUtils->out() << "\n\t||Jv|| = "
+                 << globalData->locaUtils->sciformat(Jv_norm);
+    globalData->locaUtils->out() << "\n\t||J^T*w|| = "
+                 << globalData->locaUtils->sciformat(Jtw_norm);
+    globalData->locaUtils->out() <<
+      "\n\tRight estimate for singularity of Jacobian (sigma1) = " <<
       globalData->locaUtils->sciformat(s1(0,0));
-    globalData->locaUtils->out() << 
-      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " << 
+    globalData->locaUtils->out() <<
+      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " <<
       globalData->locaUtils->sciformat(s2(0,0));
-    globalData->locaUtils->out() << 
-      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " << 
+    globalData->locaUtils->out() <<
+      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " <<
       globalData->locaUtils->sciformat(constraints(0,0)) << std::endl;
   }
 
@@ -442,9 +442,9 @@ computeConstraints()
   // Update a and b if requested
   if (updateVectorsEveryIteration) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-      globalData->locaUtils->out() << 
-	"\n\tUpdating null vectors for the next nonlinear iteration" << 
-	std::endl;
+      globalData->locaUtils->out() <<
+    "\n\tUpdating null vectors for the next nonlinear iteration" <<
+    std::endl;
     }
     *a_vector = *w_vector;
     *b_vector = *v_vector;
@@ -462,7 +462,7 @@ computeDX()
   if (isValidDX)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDX()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -470,19 +470,19 @@ computeDX()
   // Compute sigma, w and v if necessary
   if (!isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Compute -(w^T*J*v)_x
-  status = grpPtr->computeDwtJnDx((*w_vector)[0], (*v_vector)[0], 
-				  (*sigma_x)[0]);
-  finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+  status = grpPtr->computeDwtJnDx((*w_vector)[0], (*v_vector)[0],
+                  (*sigma_x)[0]);
+  finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   sigma_x->scale(-1.0/sigma_scale);
 
   isValidDX = true;
@@ -492,11 +492,11 @@ computeDX()
 
 NOX::Abstract::Group::ReturnType
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
-computeDP(const std::vector<int>& paramIDs, 
-	  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-	  bool isValidG)
+computeDP(const std::vector<int>& paramIDs,
+      NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+      bool isValidG)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::computeDP()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
@@ -504,19 +504,19 @@ computeDP(const std::vector<int>& paramIDs,
   // Compute sigma, w and v if necessary
   if (!isValidConstraints) {
     status = computeConstraints();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
 
   // Compute -(w^T*J*v)_p
-  status = grpPtr->computeDwtJnDp(paramIDs, (*w_vector)[0], (*v_vector)[0], 
-				  dgdp, false);
-  finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+  status = grpPtr->computeDwtJnDp(paramIDs, (*w_vector)[0], (*v_vector)[0],
+                  dgdp, false);
+  finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   dgdp.scale(-1.0/sigma_scale);
 
   // Set the first column of dgdp
@@ -564,10 +564,10 @@ void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 postProcessContinuationStep(LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
-  if (stepStatus == LOCA::Abstract::Iterator::Successful && 
+  if (stepStatus == LOCA::Abstract::Iterator::Successful &&
       updateVectorsEveryContinuationStep) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-      globalData->locaUtils->out() << 
+      globalData->locaUtils->out() <<
       "\n\tUpdating null vectors for the next continuation step" << std::endl;
     }
     *a_vector = *w_vector;
@@ -581,34 +581,34 @@ void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 scaleNullVectors(NOX::Abstract::Vector& a, NOX::Abstract::Vector& b)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::scaleNullVectors()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   if (multiplyMass && tdGrp != Teuchos::null) {
     status = tdGrp->computeShiftedMatrix(0.0, 1.0);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     *tmp_mass = a;
     status = tdGrp->applyShiftedMatrix(*tmp_mass, a);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     *tmp_mass = b;
     status = tdGrp->applyShiftedMatrix(*tmp_mass, b);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     status = tdGrp->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   if (nullVecScaling == NVS_OrderOne) {
     a.scale(1.0 / a.norm());
@@ -623,68 +623,68 @@ scaleNullVectors(NOX::Abstract::Vector& a, NOX::Abstract::Vector& b)
 void
 LOCA::TurningPoint::MinimallyAugmented::Constraint::
 getInitialVectors(NOX::Abstract::Vector& aVec,
-		  NOX::Abstract::Vector& bVec)
+          NOX::Abstract::Vector& bVec)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::Constraint::getIntitialVectors()";
 
   // Get method
-  std::string method = 
+  std::string method =
     turningPointParams->get("Initial Null Vector Computation",
-			    "User Provided");
+                "User Provided");
   if (method == "Solve df/dp") {
     NOX::Abstract::Group::ReturnType status;
     NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
     std::vector<int> paramID(1);
     paramID[0] = bifParamID[0];
-    Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp = 
+    Teuchos::RCP<NOX::Abstract::MultiVector> fdfdp =
       grpPtr->getX().createMultiVector(2);
     aVec.init(0.0);
     bVec.init(0.0);
 
     // Compute df/dp
     status = grpPtr->computeDfDpMulti(paramID, *fdfdp, false);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
     // Compute J
     status = grpPtr->computeJacobian();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
     // Compute b = J^-1*dfdp
     Teuchos::RCP<Teuchos::ParameterList> lsParams =
       parsedParams->getSublist("Linear Solver");
     status = grpPtr->applyJacobianInverse(*lsParams, (*fdfdp)[1], bVec);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
     // Compute a = J^-T*dfdp if necessary
     if (!isSymmetric) {
       // Cast group to one that can solve J^T
-      Teuchos::RCP<LOCA::Abstract::TransposeSolveGroup> ts_grp = 
-	Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(grpPtr);
+      Teuchos::RCP<LOCA::Abstract::TransposeSolveGroup> ts_grp =
+    Teuchos::rcp_dynamic_cast<LOCA::Abstract::TransposeSolveGroup>(grpPtr);
       if (ts_grp == Teuchos::null)
-	globalData->locaErrorCheck->throwError(
-	   callingFunction,
-	   std::string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
-	   std::string(" to compute initial left null vector"));
-      
+    globalData->locaErrorCheck->throwError(
+       callingFunction,
+       std::string("Group must implement LOCA::Abstract::TransposeSolveGroup") +
+       std::string(" to compute initial left null vector"));
+
       Teuchos::RCP<Teuchos::ParameterList> lsParams =
-	parsedParams->getSublist("Linear Solver");
-      status = 
-	ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], aVec);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+    parsedParams->getSublist("Linear Solver");
+      status =
+    ts_grp->applyJacobianTransposeInverse(*lsParams, (*fdfdp)[1], aVec);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
     }
     else
       aVec = bVec;
@@ -699,21 +699,21 @@ getInitialVectors(NOX::Abstract::Vector& aVec,
     // Get initial "a" vector
     if (!turningPointParams->isParameter("Initial A Vector")) {
       globalData->locaErrorCheck->throwError(callingFunction,
-					 "\"Initial A Vector\" is not set!");
+                     "\"Initial A Vector\" is not set!");
     }
-    Teuchos::RCP<NOX::Abstract::Vector> aVecPtr = 
-      (*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+    Teuchos::RCP<NOX::Abstract::Vector> aVecPtr =
+      (*turningPointParams).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial A Vector");
     aVec = *aVecPtr;
 
     // Get initial "b" vector
     if (!isSymmetric) {
       if (!turningPointParams->isParameter("Initial B Vector")) {
-	globalData->locaErrorCheck->throwError(callingFunction,
-					   "\"Initial B Vector\" is not set!");
+    globalData->locaErrorCheck->throwError(callingFunction,
+                       "\"Initial B Vector\" is not set!");
       }
-      Teuchos::RCP<NOX::Abstract::Vector> bVecPtr = 
-	(*turningPointParams).INVALID_TEMPLATE_QUALIFIER 
+      Teuchos::RCP<NOX::Abstract::Vector> bVecPtr =
+    (*turningPointParams).INVALID_TEMPLATE_QUALIFIER
         get< Teuchos::RCP<NOX::Abstract::Vector> >("Initial B Vector");
       bVec = *bVecPtr;
     }

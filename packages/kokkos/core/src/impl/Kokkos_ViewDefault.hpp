@@ -1360,6 +1360,614 @@ struct ViewAssignment< ViewDefault , ViewDefault , void >
   }
 
   //------------------------------------
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 1 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 1 };
+
+    size_t str[2] = {0,0};
+
+    src.m_offset_map.stride( str );
+
+    const size_t offset = ViewOffsetRange< Type0 >::begin( arg0 ) * str[0] ;
+
+    LayoutStride spec ;
+
+    // Collapse dimension for non-ranges
+    if ( ViewOffsetRange< Type0 >::is_range ) {
+      spec.dimension[0] = ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 );
+      spec.stride[0]    = str[0] ;
+    }
+    else {
+      spec.dimension[0] = 1 ;
+      spec.stride[0]    = 1 ;
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 2 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 2 };
+
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
+      };
+
+    size_t stride[9] ;
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    spec.dimension[0] = ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 );
+    spec.dimension[1] = ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 );
+    spec.stride[0]    = stride[0] ;
+    spec.stride[1]    = stride[1] ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = spec.dimension[i] ;
+      spec.stride[j]    = spec.stride[i] ;
+      offset += begin[i] * spec.stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 3 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 3 };
+
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { ViewOffsetRange< Type0 >::begin( arg0 )
+      , ViewOffsetRange< Type1 >::begin( arg1 )
+      , ViewOffsetRange< Type2 >::begin( arg2 )
+      };
+
+    unsigned dim[ src_rank ] =
+      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
+      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
+      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          , class Type3
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const Type3 & arg3 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 4 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type3 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 4 };
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      , ViewOffsetRange< Type3 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::begin( arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::begin( arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::begin( arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::begin( arg3 ))
+      };
+
+    unsigned dim[ src_rank ] =
+      { static_cast<unsigned>(ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 ))
+      , static_cast<unsigned>(ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 ))
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          , class Type3
+          , class Type4
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const Type3 & arg3 ,
+                  const Type4 & arg4 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 5 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type3 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type4 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 5 };
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      , ViewOffsetRange< Type3 >::is_range
+      , ViewOffsetRange< Type4 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { ViewOffsetRange< Type0 >::begin( arg0 )
+      , ViewOffsetRange< Type1 >::begin( arg1 )
+      , ViewOffsetRange< Type2 >::begin( arg2 )
+      , ViewOffsetRange< Type3 >::begin( arg3 )
+      , ViewOffsetRange< Type4 >::begin( arg4 )
+      };
+
+    unsigned dim[ src_rank ] =
+      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
+      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
+      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
+      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      , ViewOffsetRange< Type4 >::dimension( src.m_offset_map.N4 , arg4 )
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          , class Type3
+          , class Type4
+          , class Type5
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const Type3 & arg3 ,
+                  const Type4 & arg4 ,
+                  const Type5 & arg5 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 6 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type3 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type4 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type5 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 6 };
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      , ViewOffsetRange< Type3 >::is_range
+      , ViewOffsetRange< Type4 >::is_range
+      , ViewOffsetRange< Type5 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { ViewOffsetRange< Type0 >::begin( arg0 )
+      , ViewOffsetRange< Type1 >::begin( arg1 )
+      , ViewOffsetRange< Type2 >::begin( arg2 )
+      , ViewOffsetRange< Type3 >::begin( arg3 )
+      , ViewOffsetRange< Type4 >::begin( arg4 )
+      , ViewOffsetRange< Type5 >::begin( arg5 )
+      };
+
+    unsigned dim[ src_rank ] =
+      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
+      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
+      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
+      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      , ViewOffsetRange< Type4 >::dimension( src.m_offset_map.N4 , arg4 )
+      , ViewOffsetRange< Type5 >::dimension( src.m_offset_map.N5 , arg5 )
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          , class Type3
+          , class Type4
+          , class Type5
+          , class Type6
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const Type3 & arg3 ,
+                  const Type4 & arg4 ,
+                  const Type5 & arg5 ,
+                  const Type6 & arg6 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 7 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type3 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type4 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type5 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type6 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 7 };
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      , ViewOffsetRange< Type3 >::is_range
+      , ViewOffsetRange< Type4 >::is_range
+      , ViewOffsetRange< Type5 >::is_range
+      , ViewOffsetRange< Type6 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { ViewOffsetRange< Type0 >::begin( arg0 )
+      , ViewOffsetRange< Type1 >::begin( arg1 )
+      , ViewOffsetRange< Type2 >::begin( arg2 )
+      , ViewOffsetRange< Type3 >::begin( arg3 )
+      , ViewOffsetRange< Type4 >::begin( arg4 )
+      , ViewOffsetRange< Type5 >::begin( arg5 )
+      , ViewOffsetRange< Type6 >::begin( arg6 )
+      };
+
+    unsigned dim[ src_rank ] =
+      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
+      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
+      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
+      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      , ViewOffsetRange< Type4 >::dimension( src.m_offset_map.N4 , arg4 )
+      , ViewOffsetRange< Type5 >::dimension( src.m_offset_map.N5 , arg5 )
+      , ViewOffsetRange< Type6 >::dimension( src.m_offset_map.N6 , arg6 )
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+    dst.m_tracking = src.m_tracking ;
+    dst.m_offset_map.assign( spec );
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  template< class DT , class DL , class DD , class DM
+          , class ST , class SL , class SD , class SM
+          , class Type0
+          , class Type1
+          , class Type2
+          , class Type3
+          , class Type4
+          , class Type5
+          , class Type6
+          , class Type7
+          >
+  KOKKOS_INLINE_FUNCTION
+  ViewAssignment(       View<DT,DL,DD,DM,Specialize> & dst ,
+                  const View<ST,SL,SD,SM,Specialize> & src ,
+                  const Type0 & arg0 ,
+                  const Type1 & arg1 ,
+                  const Type2 & arg2 ,
+                  const Type3 & arg3 ,
+                  const Type4 & arg4 ,
+                  const Type5 & arg5 ,
+                  const Type6 & arg6 ,
+                  const Type7 & arg7 ,
+                  const typename enable_if< (
+                    ViewAssignable< ViewTraits<DT,DL,DD,DM> , ViewTraits<ST,SL,SD,SM> >::assignable_value
+                    &&
+                    is_same< typename ViewTraits<DT,DL,DD,DM>::array_layout , LayoutStride >::value
+                    &&
+                    ( ViewTraits<ST,SL,SD,SM>::rank == 8 )
+                    &&
+                    ( unsigned(ViewTraits<DT,DL,DD,DM>::rank) ==
+                      ( ViewOffsetRange< Type0 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type1 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type2 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type3 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type4 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type5 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type6 >::is_range ? 1u : 0 ) +
+                      ( ViewOffsetRange< Type7 >::is_range ? 1u : 0 ) )
+                  )>::type * = 0 )
+  {
+    enum { src_rank = 8 };
+
+    const bool is_range[ src_rank ] =
+      { ViewOffsetRange< Type0 >::is_range
+      , ViewOffsetRange< Type1 >::is_range
+      , ViewOffsetRange< Type2 >::is_range
+      , ViewOffsetRange< Type3 >::is_range
+      , ViewOffsetRange< Type4 >::is_range
+      , ViewOffsetRange< Type5 >::is_range
+      , ViewOffsetRange< Type6 >::is_range
+      , ViewOffsetRange< Type7 >::is_range
+      };
+
+    const unsigned begin[ src_rank ] =
+      { ViewOffsetRange< Type0 >::begin( arg0 )
+      , ViewOffsetRange< Type1 >::begin( arg1 )
+      , ViewOffsetRange< Type2 >::begin( arg2 )
+      , ViewOffsetRange< Type3 >::begin( arg3 )
+      , ViewOffsetRange< Type4 >::begin( arg4 )
+      , ViewOffsetRange< Type5 >::begin( arg5 )
+      , ViewOffsetRange< Type6 >::begin( arg6 )
+      , ViewOffsetRange< Type7 >::begin( arg7 )
+      };
+
+    unsigned dim[ src_rank ] =
+      { ViewOffsetRange< Type0 >::dimension( src.m_offset_map.N0 , arg0 )
+      , ViewOffsetRange< Type1 >::dimension( src.m_offset_map.N1 , arg1 )
+      , ViewOffsetRange< Type2 >::dimension( src.m_offset_map.N2 , arg2 )
+      , ViewOffsetRange< Type3 >::dimension( src.m_offset_map.N3 , arg3 )
+      , ViewOffsetRange< Type4 >::dimension( src.m_offset_map.N4 , arg4 )
+      , ViewOffsetRange< Type5 >::dimension( src.m_offset_map.N5 , arg5 )
+      , ViewOffsetRange< Type6 >::dimension( src.m_offset_map.N6 , arg6 )
+      , ViewOffsetRange< Type7 >::dimension( src.m_offset_map.N7 , arg7 )
+      };
+
+    size_t stride[9] = {0,0,0,0,0,0,0,0,0};
+
+    src.m_offset_map.stride( stride );
+
+    LayoutStride spec ;
+
+    size_t offset = 0 ;
+
+    // Collapse dimension for non-ranges
+    for ( int i = 0 , j = 0 ; i < int(src_rank) ; ++i ) {
+      spec.dimension[j] = dim[i] ;
+      spec.stride[j]    = stride[i] ;
+      offset += begin[i] * stride[i] ;
+      if ( is_range[i] ) { ++j ; }
+    }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
+
+    dst.m_tracking = src.m_tracking ;
+
+    dst.m_offset_map.assign( spec );
+
+    dst.m_ptr_on_device = src.m_ptr_on_device + offset ;
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
+  }
+
+  //------------------------------------
   /** \brief  Deep copy data from compatible value type, layout, rank, and specialization.
    *          Check the dimensions and allocation lengths at runtime.
    */

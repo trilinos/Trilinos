@@ -4,17 +4,18 @@
    PURPOSE
      Initialize variables and functions Aprepro
 ***/
-#include "aprepro.h"
-#include <cstdio>
-#include <sys/types.h>
-#include "init_structs.h"
+#include <cstring>                      // for strncpy
+#include <string>                       // for string
+#include "aprepro.h"                    // for symrec, Aprepro, etc
+#include "init_structs.h"               // for array_a_init, array_c_init, etc
 
 namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;
 
 void init_table(const char *comment);
 char comm_string[32];
-
+char vers_string[32];
+  
 extern double
   do_fabs(double x),
   do_acos(double x),
@@ -465,8 +466,10 @@ struct svar_init svariables[] =
     ptr->value.svar = comm_string;
 
     {
+      std::strncpy(vers_string, aprepro->version().c_str(), 32);
+      vers_string[31] = '\0';
       ptr = putsym("VERSION", STRING_VARIABLE, 1);
-      ptr->value.svar = aprepro->version().c_str();
+      ptr->value.svar = vers_string;
     }
   }
 } // namespace SEAMS

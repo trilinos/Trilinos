@@ -33,11 +33,11 @@
  * 
  */
 
-#include <string.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for fprintf, stderr, fflush
+#include <stdlib.h>                     // for exit
+#include <string.h>                     // for strcpy
+#include "exodusII.h"                   // for exoptval, MAX_ERR_LENGTH, etc
+#include "netcdf.h"                     // for NC_EAXISTYPE, NC_EBADDIM, etc
 
 /*!
 \fn{void ex_err(const char *module_name, const char *message, int err_num)}
@@ -70,7 +70,6 @@ specific messages.
 The following is an example of the use of this function:
 
 \code
-#include "exodusII.h"
 int exoid, CPU_word_size, IO_word_size, errval;
 float version;
 char errmsg[MAX_ERR_LENGTH];

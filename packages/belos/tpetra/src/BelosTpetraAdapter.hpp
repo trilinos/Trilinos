@@ -114,9 +114,9 @@ namespace { // anonymous
 
 #ifdef HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
   template<class S, class LO, class GO, class Device>
-
   struct TpetraMultiVectorCloneCopier<Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<Device> > > {
-    typedef Tpetra::MultiVector<S, LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<Device> > MV;
+    typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> node_type;
+    typedef Tpetra::MultiVector<S, LO, GO, node_type> MV;
     static Teuchos::RCP<MV> cloneCopy (const MV& X) {
       // mfh 29 Jan 2014: If the specialization of MultiVector for Node
       // does a deep copy in its copy constructor, then this will
@@ -127,7 +127,6 @@ namespace { // anonymous
       return Teuchos::rcp (new MV (Tpetra::createCopy<S,LO,GO,Device> (X)));
     }
   };
-
 #endif // HAVE_KOKKOSCLASSIC_KOKKOSCOMPAT
 
 } // namespace (anonymous)
@@ -579,11 +578,9 @@ namespace { // anonymous
             std::vector<typename Teuchos::ScalarTraits<Scalar>::magnitudeType>& normvec,
             NormType type=TwoNorm)
     {
-      typedef std::vector<int>::size_type size_type;
-
 #ifdef HAVE_TPETRA_DEBUG
       TEUCHOS_TEST_FOR_EXCEPTION(
-        normvec.size () < static_cast<size_type> (mv.getNumVectors ()),
+        normvec.size () < static_cast<std::vector<int>::size_type> (mv.getNumVectors ()),
         std::invalid_argument,
         "Belos::MultiVecTraits::MvNorm(mv,normvec): The normvec output "
         "argument must have at least as many entries as the number of vectors "

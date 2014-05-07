@@ -1,0 +1,25 @@
+C $Id: mass.blk,v 1.1 1991/02/21 15:44:16 gdsjaar Exp $
+C $Log: mass.blk,v $
+C Revision 1.1  1991/02/21 15:44:16  gdsjaar
+C Initial revision
+C
+      COMMON /MASS/ IM, IR, IX, IS, ID, IV, IC, IZ, IXXX, IXG,
+     *    IXINI, IAJ, IECEN, IW
+C
+C POINTERS USED IN MASS PROPERTIES CALCULATION:
+C
+C     IM       Material block array
+C     IR       Coordinate array
+C     IX       Connectivity array
+C     IS       Element block Mass array
+C     ID       Element block Density array
+C     IV       Element block Volume array
+C     IC       Location of centroid
+C     IZ       Moments of inertia
+C     IXXX     Shape function array
+C     IXG      Global quadrature point locations
+C     IXINI    Sum of shape function functions
+C     IAJ      Jacobian matrix
+C     IECEN    Element Centroid location
+C     IW       Element Wave Speed Array
+C     

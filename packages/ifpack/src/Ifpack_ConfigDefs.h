@@ -125,8 +125,6 @@ using std::ostream;
 using std::cerr;
 using std::cout;
 using std::endl;
-using namespace std;
-/* 2008/11/20: rabartl: ToDo: Above: Get rid of using namespace std! */
 
 // prints out an error message if variable is not zero,
 // and returns this value.

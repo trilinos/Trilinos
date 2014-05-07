@@ -141,7 +141,7 @@ public:
  *    \param comm the communicator for the problem associated with
  *             this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied by the
+ *    \param nUserWeights  the number of weights supplied by the
  *         application for each object.
  *
  *   It is possible that part sizes were supplied on other processes,
@@ -152,7 +152,7 @@ public:
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
-    int userWeightDim);
+    int nUserWeights);
 
 /*! \brief Constructor when part sizes are supplied.
  *
@@ -163,10 +163,10 @@ public:
  *    \param comm the communicator for the problem associated with
  *                        this solution
  *    \param idMap  the IdentifierMap corresponding to the solution
- *    \param userWeightDim  the number of weights supplied
+ *    \param nUserWeights  the number of weights supplied
  *                         by the application
  *    \param reqPartIds  reqPartIds[i] is a list of
- *          of part numbers for weight dimension i.
+ *          of part numbers for weight index i.
  *    \param reqPartSizes  reqPartSizes[i] is the list
  *          of part sizes for weight i corresponding to parts in
  *          reqPartIds[i]
@@ -186,7 +186,7 @@ public:
   PartitioningSolution( RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
     RCP<const IdentifierMap<user_t> > &idMap,
-    int userWeightDim, ArrayView<ArrayRCP<partId_t> > reqPartIds,
+    int nUserWeights, ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
 
   ////////////////////////////////////////////////////////////////////
@@ -269,13 +269,13 @@ public:
     else return NULL;
   }
 
-/*! \brief Get the number of criteria (the weight dimension).
+/*! \brief Get the number of criteria (object weights)
     \return the number of criteria for which the solution has part sizes.
  */
-  int getNumberOfCriteria() const { return weightDim_; }
+  int getNumberOfCriteria() const { return nWeightsPerObj_; }
 
 
-/*! \brief Determine if balancing criteria (weight dimension) has uniform
+/*! \brief Determine if balancing criteria has uniform
                 part sizes.  (User can specify differing part sizes.)
     \param idx   A value from 0 to one less than the number of weights per
                    object.
@@ -283,7 +283,7 @@ public:
  */
   bool criteriaHasUniformPartSizes(int idx) const { return pSizeUniform_[idx];}
 
-/*! \brief Get the size for a given weight dimension and a given part.
+/*! \brief Get the size for a given weight index and a given part.
 
     \param idx   A value from 0 to one less than the number of weights per
                        object.
@@ -304,12 +304,12 @@ public:
       return pSize_[idx][part];
   }
 
-/*! \brief Return true if the two weight dimensions have the same
+/*! \brief Return true if the two weight indices have the same
  *          part size information.
 
     \param c1   A value from 0 through one less than the number of weights.
     \param c2   A value from 0 through one less than the number of weights.
-    \return   If weight dimension \c c1 and weight dimension \c c2 have
+    \return   If weight index \c c1 and weight index \c c2 have
         the same part size information, the \c true is returned, otherwise
         \c false is returned.
 
@@ -406,13 +406,13 @@ public:
 
   /*! \brief set the Part Box boundaries as a result of geometric partitioning algorithm.
    */
-  void setPartBoxes(RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
+  void setPartBoxes(RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > outPartBoxes){
       this->partBoxes = outPartBoxes;
   }
 
   /*! \brief returns the part box boundary list.
    */
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getPartBoxes(){
       return this->partBoxes;
   }
 
@@ -430,7 +430,7 @@ public:
           if (partId_t (this->getTargetGlobalNumberOfParts()) > ntasks){
               ntasks = this->getTargetGlobalNumberOfParts();
           }
-          RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
+          RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getGlobalBoxBoundaries(comm);
           int dim = (*pBoxes)[0].getDim();
           GridHash < scalar_t, partId_t> grid(
                   pBoxes,
@@ -443,7 +443,7 @@ public:
 
   }
 
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > getGlobalBoxBoundaries(
           const Teuchos::Comm<int> *comm){
 
       partId_t ntasks =  this->getActualGlobalNumberOfParts();
@@ -451,7 +451,7 @@ public:
           ntasks = this->getTargetGlobalNumberOfParts();
       }
 
-      RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
+      RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > pBoxes = this->getPartBoxes();
 
       int dim = (*pBoxes)[0].getDim();
 
@@ -613,10 +613,10 @@ private:
   void setPartSizes(ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes);
 
-  void computePartSizes(int wdim, ArrayView<partId_t> ids,
+  void computePartSizes(int widx, ArrayView<partId_t> ids,
     ArrayView<scalar_t> sizes);
 
-  void broadcastPartSizes(int wdim);
+  void broadcastPartSizes(int widx);
 
 
   RCP<const Environment> env_;             // has application communicator
@@ -624,7 +624,7 @@ private:
   RCP<const IdentifierMap<user_t> > idMap_;
 
   //part box boundaries as a result of geometric partitioning algorithm.
-  RCP < vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
+  RCP < std::vector <Zoltan2::coordinateModelPartBox <scalar_t, partId_t> > > partBoxes;
   ArrayRCP <partId_t> comXAdj_; //communication graph xadj
   ArrayRCP <partId_t> comAdj_; //communication graph adj.
 
@@ -632,7 +632,7 @@ private:
   partId_t nLocalParts_; // number of parts to be on this process
 
   scalar_t localFraction_; // approx fraction of a part on this process
-  int weightDim_;      // if user has no weights, this is 1
+  int nWeightsPerObj_;      // if user has no weights, this is 1  TODO:  WHY???
 
   // If process p is to be assigned part p for all p, then onePartPerProc_
   // is true. Otherwise it is false, and either procDist_ or partDist_
@@ -674,14 +674,14 @@ private:
   // In order to minimize the storage required for part sizes, we
   // have three different representations.
   //
-  // If the part sizes for weight dimension w are all the same, then:
+  // If the part sizes for weight index w are all the same, then:
   //    pSizeUniform_[w] = true
   //    pCompactIndex_[w].size() = 0
   //    pSize_[w].size() = 0
   //
   // and the size for part p is 1.0 / nparts.
   //
-  // If part sizes differ for each part in weight dimension w, but there
+  // If part sizes differ for each part in weight index w, but there
   // are no more than 64 distinct sizes:
   //    pSizeUniform_[w] = false
   //    pCompactIndex_[w].size() = number of parts
@@ -689,7 +689,7 @@ private:
   //
   // and the size for part p is pSize_[pCompactIndex_[p]].
   //
-  // If part sizes differ for each part in weight dimension w, and there
+  // If part sizes differ for each part in weight index w, and there
   // are more than 64 distinct sizes:
   //    pSizeUniform_[w] = false
   //    pCompactIndex_[w].size() = 0
@@ -731,30 +731,30 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim)
+    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights)
     : env_(env), comm_(comm), idMap_(idMap),
       partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
-      localFraction_(0),  weightDim_(),
+      localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_()
 {
-  weightDim_ = (userWeightDim ? userWeightDim : 1);
+  nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY??  WHY NOT ZERO?
 
   setPartDistribution();
 
   // We must call setPartSizes() because part sizes may have
   // been provided by the user on other processes.
 
-  ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [weightDim_];
-  ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [weightDim_];
-  ArrayRCP<ArrayRCP<partId_t> > ids(noIds, 0, weightDim_, true);
-  ArrayRCP<ArrayRCP<scalar_t> > sizes(noSizes, 0, weightDim_, true);
+  ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [nWeightsPerObj_];
+  ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [nWeightsPerObj_];
+  ArrayRCP<ArrayRCP<partId_t> > ids(noIds, 0, nWeightsPerObj_, true);
+  ArrayRCP<ArrayRCP<scalar_t> > sizes(noSizes, 0, nWeightsPerObj_, true);
 
-  setPartSizes(ids.view(0, weightDim_), sizes.view(0, weightDim_));
+  setPartSizes(ids.view(0, nWeightsPerObj_), sizes.view(0, nWeightsPerObj_));
 
   env_->memory("After construction of solution");
 }
@@ -763,20 +763,20 @@ template <typename Adapter>
   PartitioningSolution<Adapter>::PartitioningSolution(
     RCP<const Environment> &env,
     RCP<const Comm<int> > &comm,
-    RCP<const IdentifierMap<user_t> > &idMap, int userWeightDim,
+    RCP<const IdentifierMap<user_t> > &idMap, int nUserWeights,
     ArrayView<ArrayRCP<partId_t> > reqPartIds,
     ArrayView<ArrayRCP<scalar_t> > reqPartSizes)
     : env_(env), comm_(comm), idMap_(idMap),
       partBoxes(),comXAdj_(), comAdj_(),
       nGlobalParts_(0), nLocalParts_(0),
-      localFraction_(0),  weightDim_(),
+      localFraction_(0),  nWeightsPerObj_(),
       onePartPerProc_(false), partDist_(), procDist_(),
       procDistEquallySpread_(false),
       pSizeUniform_(), pCompactIndex_(), pSize_(),
       gids_(), parts_(), haveSolution_(false), nGlobalPartsSolution_(0),
       procs_()
 {
-  weightDim_ = (userWeightDim ? userWeightDim : 1);
+  nWeightsPerObj_ = (nUserWeights ? nUserWeights : 1);  // TODO:  WHY?? WHY NOT ZERO?
 
   setPartDistribution();
 
@@ -847,7 +847,7 @@ template <typename Adapter>
     nLocalParts_ = procDist_[rank+1] - procDist_[rank];
   }
   else {
-    throw logic_error("partToProc error");
+    throw std::logic_error("partToProc error");
   }
 
 }
@@ -856,15 +856,15 @@ template <typename Adapter>
   void PartitioningSolution<Adapter>::setPartSizes(
     ArrayView<ArrayRCP<partId_t> > ids, ArrayView<ArrayRCP<scalar_t> > sizes)
 {
-  int wdim = weightDim_;
+  int widx = nWeightsPerObj_;
   bool fail=false;
 
-  size_t *countBuf = new size_t [wdim*2];
-  ArrayRCP<size_t> counts(countBuf, 0, wdim*2, true);
+  size_t *countBuf = new size_t [widx*2];
+  ArrayRCP<size_t> counts(countBuf, 0, widx*2, true);
 
-  fail = ((ids.size() != wdim) || (sizes.size() != wdim));
+  fail = ((ids.size() != widx) || (sizes.size() != widx));
 
-  for (int w=0; !fail && w < wdim; w++){
+  for (int w=0; !fail && w < widx; w++){
     counts[w] = ids[w].size();
     if (ids[w].size() != sizes[w].size()) fail=true;
   }
@@ -874,15 +874,15 @@ template <typename Adapter>
 
   // Are all part sizes the same?  This is the common case.
 
-  ArrayRCP<scalar_t> *emptySizes= new ArrayRCP<scalar_t> [wdim];
-  pSize_ = arcp(emptySizes, 0, wdim);
+  ArrayRCP<scalar_t> *emptySizes= new ArrayRCP<scalar_t> [widx];
+  pSize_ = arcp(emptySizes, 0, widx);
 
-  ArrayRCP<unsigned char> *emptyIndices= new ArrayRCP<unsigned char> [wdim];
-  pCompactIndex_ = arcp(emptyIndices, 0, wdim);
+  ArrayRCP<unsigned char> *emptyIndices= new ArrayRCP<unsigned char> [widx];
+  pCompactIndex_ = arcp(emptyIndices, 0, widx);
 
-  bool *info = new bool [wdim];
-  pSizeUniform_ = arcp(info, 0, wdim);
-  for (int w=0; w < wdim; w++)
+  bool *info = new bool [widx];
+  pSizeUniform_ = arcp(info, 0, widx);
+  for (int w=0; w < widx; w++)
     pSizeUniform_[w] = true;
 
   if (nGlobalParts_ == 1){
@@ -890,17 +890,17 @@ template <typename Adapter>
   }
 
   size_t *ptr1 = counts.getRawPtr();
-  size_t *ptr2 = counts.getRawPtr() + wdim;
+  size_t *ptr2 = counts.getRawPtr() + widx;
 
   try{
-    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, wdim, ptr1, ptr2);
+    reduceAll<int, size_t>(*comm_, Teuchos::REDUCE_MAX, widx, ptr1, ptr2);
   }
   Z2_THROW_OUTSIDE_ERROR(*env_);
 
   bool zero = true;
 
-  for (int w=0; w < wdim; w++)
-    if (counts[wdim+w] > 0){
+  for (int w=0; w < widx; w++)
+    if (counts[widx+w] > 0){
       zero = false;
       pSizeUniform_[w] = false;
     }
@@ -914,7 +914,7 @@ template <typename Adapter>
   int nprocs = comm_->getSize();
   int rank = comm_->getRank();
 
-  for (int w=0; w < wdim; w++){
+  for (int w=0; w < widx; w++){
     if (pSizeUniform_[w]) continue;
 
     // Send all ids and sizes to one process.
@@ -977,11 +977,11 @@ template <typename Adapter>
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::broadcastPartSizes(int wdim)
+  void PartitioningSolution<Adapter>::broadcastPartSizes(int widx)
 {
   env_->localBugAssertion(__FILE__, __LINE__, "preallocations",
-    pSize_.size()>wdim &&
-    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim,
+    pSize_.size()>widx &&
+    pSizeUniform_.size()>widx && pCompactIndex_.size()>widx,
     COMPLEX_ASSERTION);
 
   int rank = comm_->getRank();
@@ -994,9 +994,9 @@ template <typename Adapter>
   char flag=0;
 
   if (rank == 0){
-    if (pSizeUniform_[wdim] == true)
+    if (pSizeUniform_[widx] == true)
       flag = 1;
-    else if (pCompactIndex_[wdim].size() > 0)
+    else if (pCompactIndex_[widx].size() > 0)
       flag = 2;
     else
       flag = 3;
@@ -1009,7 +1009,7 @@ template <typename Adapter>
 
   if (flag == 1){
     if (rank > 0)
-      pSizeUniform_[wdim] = true;
+      pSizeUniform_[widx] = true;
 
     return;
   }
@@ -1026,8 +1026,8 @@ template <typename Adapter>
     }
     else{
       env_->localBugAssertion(__FILE__, __LINE__, "index list size",
-        pCompactIndex_[wdim].size() == nparts, COMPLEX_ASSERTION);
-      idxbuf = pCompactIndex_[wdim].getRawPtr();
+        pCompactIndex_[widx].size() == nparts, COMPLEX_ASSERTION);
+      idxbuf = pCompactIndex_[widx].getRawPtr();
     }
 
     try{
@@ -1038,7 +1038,7 @@ template <typename Adapter>
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
     if (rank > 0)
-      pCompactIndex_[wdim] = arcp(idxbuf, 0, nparts, true);
+      pCompactIndex_[widx] = arcp(idxbuf, 0, nparts, true);
 
     // broadcast the list of different part sizes
 
@@ -1056,9 +1056,9 @@ template <typename Adapter>
     }
     else{
       env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes",
-        numSizes == pSize_[wdim].size(), COMPLEX_ASSERTION);
+        numSizes == pSize_[widx].size(), COMPLEX_ASSERTION);
 
-      sizeList = pSize_[wdim].getRawPtr();
+      sizeList = pSize_[widx].getRawPtr();
     }
 
     try{
@@ -1067,7 +1067,7 @@ template <typename Adapter>
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
     if (rank > 0)
-      pSize_[wdim] = arcp(sizeList, 0, numSizes, true);
+      pSize_[widx] = arcp(sizeList, 0, numSizes, true);
 
     return;
   }
@@ -1084,9 +1084,9 @@ template <typename Adapter>
     }
     else{
       env_->localBugAssertion(__FILE__, __LINE__, "wrong number of sizes",
-        nparts == pSize_[wdim].size(), COMPLEX_ASSERTION);
+        nparts == pSize_[widx].size(), COMPLEX_ASSERTION);
 
-      sizeList = pSize_[wdim].getRawPtr();
+      sizeList = pSize_[widx].getRawPtr();
     }
 
     try{
@@ -1095,20 +1095,20 @@ template <typename Adapter>
     Z2_THROW_OUTSIDE_ERROR(*env_);
 
     if (rank > 0)
-      pSize_[wdim] = arcp(sizeList, 0, nparts);
+      pSize_[widx] = arcp(sizeList, 0, nparts);
 
     return;
   }
 }
 
 template <typename Adapter>
-  void PartitioningSolution<Adapter>::computePartSizes(int wdim,
+  void PartitioningSolution<Adapter>::computePartSizes(int widx,
     ArrayView<partId_t> ids, ArrayView<scalar_t> sizes)
 {
   int len = ids.size();
 
   if (len == 0){
-    pSizeUniform_[wdim] = true;
+    pSizeUniform_[widx] = true;
     return;
   }
 
@@ -1116,11 +1116,11 @@ template <typename Adapter>
     len>0 && sizes.size()==len, COMPLEX_ASSERTION);
 
   env_->localBugAssertion(__FILE__, __LINE__, "bad index",
-    wdim>=0 && wdim<weightDim_, COMPLEX_ASSERTION);
+    widx>=0 && widx<nWeightsPerObj_, COMPLEX_ASSERTION);
 
   env_->localBugAssertion(__FILE__, __LINE__, "preallocations",
-    pSize_.size()>wdim &&
-    pSizeUniform_.size()>wdim && pCompactIndex_.size()>wdim,
+    pSize_.size()>widx &&
+    pSizeUniform_.size()>widx && pCompactIndex_.size()>widx,
     COMPLEX_ASSERTION);
 
   // Check ids and sizes and find min, max and average sizes.
@@ -1180,14 +1180,14 @@ template <typename Adapter>
     for (int i=0; i < len; i++)
       buf[ids[i]] = 0;            // index to part size zero
 
-    pSize_[wdim] = sizeArray;
-    pCompactIndex_[wdim] = partIdx;
+    pSize_[widx] = sizeArray;
+    pCompactIndex_[widx] = partIdx;
 
     return;
   }
 
   if (max - min <= epsilon){
-    pSizeUniform_[wdim] = true;
+    pSizeUniform_[widx] = true;
     return;
   }
 
@@ -1299,8 +1299,8 @@ template <typename Adapter>
       sizeArray[i] /= sum;
     }
 
-    pCompactIndex_[wdim] = partIdx;
-    pSize_[wdim] = sizeArray;
+    pCompactIndex_[widx] = partIdx;
+    pSize_[widx] = sizeArray;
   }
   else{
     // To have access to part sizes, we must store nparts scalar_ts on
@@ -1319,7 +1319,7 @@ template <typename Adapter>
       tmp[ids[i]] = sizes[i]/sum;
     }
 
-    pSize_[wdim] = arcp(tmp, 0, nparts);
+    pSize_[widx] = arcp(tmp, 0, nparts);
   }
 }
 
@@ -1758,8 +1758,8 @@ template <typename Adapter>
   bool PartitioningSolution<Adapter>::criteriaHaveSamePartSizes(
     int c1, int c2) const
 {
-  if (c1 < 0 || c1 >= weightDim_ || c2 < 0 || c2 >= weightDim_ )
-    throw logic_error("criteriaHaveSamePartSizes error");
+  if (c1 < 0 || c1 >= nWeightsPerObj_ || c2 < 0 || c2 >= nWeightsPerObj_ )
+    throw std::logic_error("criteriaHaveSamePartSizes error");
 
   bool theSame = false;
 
@@ -2005,9 +2005,9 @@ void PartitioningSolution<Adapter>::RemapParts()
 
   if (np < nGlobalParts_) {
     if (me == 0)
-      cout << "Remapping not yet supported for "
+      std::cout << "Remapping not yet supported for "
            << "num_global_parts " << nGlobalParts_
-           << " > num procs " << np << endl;
+           << " > num procs " << np << std::endl;
     return;
   }
   // Build edges of a bipartite graph with np + nGlobalParts_ vertices,
@@ -2106,16 +2106,16 @@ void PartitioningSolution<Adapter>::RemapParts()
 
 #ifdef KDDKDD_DEBUG
     cout << "IDX ";
-    for (partId_t i = 0; i <= tnVtx; i++) cout << idx[i] << " ";
-    cout << endl;
+    for (partId_t i = 0; i <= tnVtx; i++) std::cout << idx[i] << " ";
+    std::cout << std::endl;
 
-    cout << "ADJ ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << adj[i] << " ";
-    cout << endl;
+    std::cout << "ADJ ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) std::cout << adj[i] << " ";
+    std::cout << std::endl;
 
-    cout << "WGT ";
-    for (partId_t i = 0; i < idx[tnVtx]; i++) cout << wgt[i] << " ";
-    cout << endl;
+    std::cout << "WGT ";
+    for (partId_t i = 0; i < idx[tnVtx]; i++) std::cout << wgt[i] << " ";
+    std::cout << std::endl;
 #endif
 
     // Perform matching on the graph
@@ -2125,13 +2125,13 @@ void PartitioningSolution<Adapter>::RemapParts()
              Zoltan2::GreedyMWM<partId_t, long>(idx, adj, wgt, tnVtx, match);
 
 #ifdef KDDKDD_DEBUG
-    cout << "After matching:  " << nmatches << " found" << endl;
+    std::cout << "After matching:  " << nmatches << " found" << std::endl;
     for (partId_t i = 0; i < tnVtx; i++)
-      cout << "match[" << i << "] = " << match[i]
+      std::cout << "match[" << i << "] = " << match[i]
            << ((match[i] != i &&
                (i < np && match[i] != i+np))
                   ? " *" : " ")
-           << endl;
+           << std::endl;
 #endif
 
     // See whether there were nontrivial changes in the matching.
@@ -2185,18 +2185,18 @@ void PartitioningSolution<Adapter>::RemapParts()
 #ifdef KDDKDD_DEBUG
     cout << "Remap vector: ";
     for (partId_t i = 0; i < nGlobalParts_; i++) cout << remap[i] << " ";
-    cout << endl;
+    std::cout << std::endl;
 #endif
 
     long newgstaying = Zoltan2::measure_stays(remap, idx, adj, wgt,
                                               nGlobalParts_, np);
     doRemap = (newgstaying > gstaying);
-    cout << "gstaying " << gstaying << " measure(input) "
+    std::cout << "gstaying " << gstaying << " measure(input) "
          << Zoltan2::measure_stays(NULL, idx, adj, wgt,
                                    nGlobalParts_, np)
          << " newgstaying " << newgstaying
          << " nontrivial " << nontrivial
-         << " doRemap " << doRemap << endl;
+         << " doRemap " << doRemap << std::endl;
   }
   delete [] idx;
   delete [] sizes;

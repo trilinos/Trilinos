@@ -57,6 +57,9 @@ IdentitySolver (const Teuchos::RCP<const row_matrix_type>& A)
     numInitialize_ (0),
     numCompute_ (0),
     numApply_ (0),
+    initializeTime_(0.0),
+    computeTime_(0.0),
+    applyTime_(0.0),
     condEst_ (-Teuchos::ScalarTraits<magnitude_type>::one ())
 {
 }
@@ -301,5 +304,8 @@ setMatrix (const Teuchos::RCP<const row_matrix_type>& A)
 
 } // namespace Ifpack2
 
-#endif // IFPACK2_IDENTITY_SOLVER_DEF_HPP
+#define IFPACK2_IDENTITYSOLVER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::IdentitySolver< Tpetra::CrsMatrix<S, LO, GO, N> >; \
+  template class Ifpack2::IdentitySolver< Tpetra::RowMatrix<S, LO, GO, N> >;
 
+#endif // IFPACK2_IDENTITY_SOLVER_DEF_HPP

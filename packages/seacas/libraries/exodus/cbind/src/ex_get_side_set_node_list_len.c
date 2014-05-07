@@ -49,13 +49,16 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-
-static void *safe_free(void *array);
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR
 
 /*!
  * This routine is designed to read the Exodus II V 2.0 side set side 
@@ -482,7 +485,7 @@ int ex_get_side_set_node_list_len(int exoid,
     {
       exerrval = EX_BADPARAM;
       sprintf(errmsg,
-             "Error: Invalid element number "ST_ZU" found in side set %"PRId64" in file %d",
+             "Error: Invalid element number %"ST_ZU" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
       safe_free(elem_blk_parms);
       safe_free(elem_blk_ids);
@@ -568,8 +571,3 @@ int ex_get_side_set_node_list_len(int exoid,
   return(EX_NOERR);
 }
 
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}

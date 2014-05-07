@@ -99,6 +99,7 @@ namespace Tpetra {
     typedef typename crs_graph_type::t_RowPtrs t_RowPtrs;
     typedef typename crs_graph_type::t_LocalOrdinal_1D t_LocalOrdinal_1D;
     typedef Kokkos::View<Scalar*, typename node_type::device_type> t_ValuesType;
+    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type,void,size_t> k_local_matrix_type;
 
     //@}
     //! @name Constructors and destructor
@@ -311,7 +312,7 @@ namespace Tpetra {
     ///   default values.
     CrsMatrix (const RCP<const map_type>& rowMap,
                const RCP<const map_type>& colMap,
-               const Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type, void, size_t>& lclMatrix,
+               const k_local_matrix_type& lclMatrix,
                const RCP<Teuchos::ParameterList>& params = null);
 
 
@@ -2131,8 +2132,6 @@ namespace Tpetra {
     typedef typename LocalMatOps::template bind_scalar<Scalar>::other_type                    sparse_ops_type;
     typedef typename sparse_ops_type::template graph<LocalOrdinal,node_type>::graph_type          local_graph_type;
     typedef typename sparse_ops_type::template matrix<Scalar,LocalOrdinal,node_type>::matrix_type local_matrix_type;
-  public:
-    typedef Kokkos::CrsMatrix<Scalar,LocalOrdinal,typename node_type::device_type,void,size_t> k_local_matrix_type;
   protected:
 
     typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;

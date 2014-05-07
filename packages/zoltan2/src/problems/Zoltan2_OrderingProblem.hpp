@@ -63,7 +63,6 @@
 #include <bitset>
 
 using Teuchos::rcp_dynamic_cast;
-using namespace std;
 
 namespace Zoltan2{
 
@@ -195,7 +194,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   // TODO: Use rcm if graph model is defined, otherwise use natural.
   // Need some exception handling here, too.
 
-  string method = this->params_->template get<string>("order_method", "rcm");
+  std::string method = this->params_->template get<std::string>("order_method", "rcm");
 
   // TODO: Ignore case
   try
@@ -222,7 +221,7 @@ void OrderingProblem<Adapter>::solve(bool newData)
   }
   else if (method.compare("minimum_degree") == 0)
   {
-      string pkg = this->params_->template get<string>("order_package", "amd");
+      std::string pkg = this->params_->template get<std::string>("order_package", "amd");
       if (pkg.compare("amd") == 0)
       {
           AlgAMD<base_adapter_t> alg;
@@ -300,11 +299,11 @@ void OrderingProblem<Adapter>::createOrderingProblem()
   //   ALGORITHM = rcm, random, amd
 
   ModelType modelType = IdentifierModelType; //default, change later
-  string method = this->params_->template get<string>("order_method", "rcm");
+  std::string method = this->params_->template get<std::string>("order_method", "rcm");
 
-  if ((method == string("rcm")) || 
-      (method == string("sorted_degree")) || 
-      (method == string("minimum_degree"))) {
+  if ((method == std::string("rcm")) || 
+      (method == std::string("sorted_degree")) || 
+      (method == std::string("minimum_degree"))) {
     modelType = GraphModelType;
   }
 

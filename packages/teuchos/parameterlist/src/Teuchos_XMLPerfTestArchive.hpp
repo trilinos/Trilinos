@@ -42,13 +42,14 @@
 #ifndef TEUCHOS_XMLPERFTESTARCHIVE_HPP
 #define TEUCHOS_XMLPERFTESTARCHIVE_HPP
 
-#include <iostream>
-#include <fstream>
-#include <unistd.h>
-#include <cstring>
-#include <cstdlib>
-#include <Teuchos_XMLObject.hpp>
+/// \file Teuchos_XMLPerfTestArchive.hpp
+/// \brief Tools for an XML-based performance test archive
+
+#include <Teuchos_ConfigDefs.hpp>
 #include <Teuchos_FileInputSource.hpp>
+#include <Teuchos_XMLObject.hpp>
+#include <sstream>
+
 //----------------------------------------------------------------------------
 //-------- Identify Compiler Version -----------------------------------------
 //----------------------------------------------------------------------------
@@ -121,10 +122,6 @@
   #define TEUCHOS_DEVICE_COMPILER_VERSION TEUCHOS_COMPILER_VERSION
 #endif
 
-/*! \file Teuchos_XMLPerfTestArchive.hpp
-    \brief Classes and Functions to support a XML based performance-test
-           archive.
-*/
 namespace Teuchos {
   /**
    * \brief ValueTolerance is a struct to keep a tuple of value and a tolerance.
@@ -152,9 +149,12 @@ struct ValueTolerance {
 
 
 /**
- * \brief XMLTestNode is a derivative of XMLObject which generates an XML list
- * in a style more fitting for the Performance Test Archive. It also provides
- * a number of convenience functions helpful for working with a test archive.
+ * \class XMLTestNode
+ * \brief Subclass of XMLObject used by the performance archive.
+ *
+ * This subclass of XMLObject generates an XML list in a style more
+ * suitable for a performance test archive. It also provides a number
+ * of convenience functions helpful for working with a test archive.
  */
 class XMLTestNode : public XMLObject {
 public:
@@ -162,21 +162,24 @@ public:
   XMLTestNode(const std::string &tag);
   XMLTestNode(XMLObjectImplem *ptr);
   XMLTestNode(XMLObject obj);
-  void  addDouble (const std::string &name, double val);
-  void  addInt (const std::string &name, int val);
-  void  addBool (const std::string &name, bool val);
-  void  addValueTolerance(const std::string &name, ValueTolerance val);
-  void  addString (const std::string &name, std::string val);
-  template<class T >
-  void  addAttribute (const std::string &name, T val) {
-    for (size_t i = 0; i < name.length(); i++) {
-      if( name[i] ==' ' ) return;
+  void addDouble (const std::string& name, double val);
+  void addInt (const std::string& name, int val);
+  void addBool (const std::string& name, bool val);
+  void addValueTolerance(const std::string& name, ValueTolerance val);
+  void addString (const std::string& name, std::string val);
+
+  template<class T>
+  void addAttribute (const std::string& name, T val) {
+    for (size_t i = 0; i < name.length (); i++) {
+      if (name[i] == ' ') {
+        return;
+      }
     }
     std::ostringstream strs;
     strs << val;
-    XMLTestNode entry(name);
-    entry.addContent(strs.str());
-    XMLObject::addChild(entry);
+    XMLTestNode entry (name);
+    entry.addContent (strs.str ());
+    XMLObject::addChild (entry);
   }
 
   bool hasChild(const std::string &name) const;
@@ -219,35 +222,57 @@ enum PerfTestResult {PerfTestFailed, PerfTestPassed,
                      PerfTestUpdatedTest};
 
 /**
- * \brief PerfTest_CheckOrAdd_Test checks whether a test is present and matches an existing one in a test archive.
+ * \brief Check whether a test is present and match an existing test
+ *   in an archive.
  *
- * \details PerfTest_CheckOrAdd_Test eats a machine configuration XMLTestNode and a test entry XMLTestNode.
- * It will attempt to read from an existing file containing a test archive, or generate a new one.
- * Optionally a hostname override can be provided, which is for example useful when running on clusters,
- * where the cluster name should be used for the test entries instead of the compute node name.
- * PerfTest_CheckOrAdd_Test will go through the test archive and search for a matching machine name with matching
- * machine configuration and matching test configuration. If one is found the result values will be compared,
- * if not a new test entry is generated and the result written back to the file.
- * Input arguments are:
- * @param[in] machine_config An XMLTestNode describing the machine configuration.
- * @param[in] new_test       An XMLTestNode describing the test.
- * @param[in] filename       The name of a file containing a performance test archive.
- * @param[in] ext_hostname   An optional hostname to be used instead of the one provided by the OS.
+ * This function consumes a machine configuration XMLTestNode and a
+ * test entry XMLTestNode.  It will attempt to read from an existing
+ * file containing a test archive, or generate a new one.  Optionally
+ * a hostname override can be provided, which is for example useful
+ * when running on clusters, where the cluster name should be used for
+ * the test entries instead of the compute node name.
+ * PerfTest_CheckOrAdd_Test will go through the test archive and
+ * search for a matching machine name with matching machine
+ * configuration and matching test configuration. If one is found the
+ * result values will be compared, if not a new test entry is
+ * generated and the result written back to the file.
  *
- * \result The function returns whether a matching test is found or if it was added to an archive:
- * \retval PerfTestFailed {Matching configuration found, but results are deviating more than the allowed tolerance}
- * \retval PerfTestPassed {Matching configuration found, results are within tolerances.}
- * \retval PerfTestNewMachine {The test archive didn't contain an entry with the same machine name. A new entry is generated.}
- * \retval PerfTestNewConfiguration {No matching machine configuration was found. A new entry is generated.}
- * \retval PerfTestNewTest {No matching testname was found. A new entry is generated.{
- * \retval PerfTestNewTestConfiguration {A matching testname was found, but different parameters were used. A new entry is generated.}
- * \retval PerfTestUpdatedTest {A matching test is found but more result values are give then previously found. The entry is updated.
- *                This will only happen if all the old result values are present in the new ones, and are within their
- *                respective tolerances.}
+ * \param machine_config [in] An XMLTestNode describing the machine
+ *   configuration.
+ * \param new_test [in] An XMLTestNode describing the test.
+ * \param filename [in] The name of a file containing a performance
+ *   test archive.
+ * \param ext_hostname [in] An optional hostname to be used instead of
+ *   the one provided by the OS.
  *
+ * \return Whether a matching test is found, or if it was added to an
+ *   archive.
+ *
+ * Here is the list of valid return values:
+ *
+ * - PerfTestFailed: Matching configuration found, but results are
+ *   deviating more than the allowed tolerance.
+ * - PerfTestPassed: Matching configuration found, and results are
+ *   within tolerances.
+ * - PerfTestNewMachine: The test archive didn't contain an entry with
+ *   the same machine name. A new entry was generated.
+ * - PerfTestNewConfiguration: No matching machine configuration was
+ *   found. A new entry was generated.
+ * - PerfTestNewTest: No matching testname was found. A new entry was
+ *   generated.
+ * - PerfTestNewTestConfiguration: A matching testname was found, but
+ *   different parameters were used. A new entry was generated.
+ * - PerfTestUpdatedTest: A matching test was found but more result
+ *   values were given then previously found. The entry is updated.
+ *   This will only happen if all the old result values are present in
+ *   the new ones, and are within their respective tolerances.
  */
-PerfTestResult PerfTest_CheckOrAdd_Test(XMLTestNode machine_config, XMLTestNode new_test,
-                                        const std::string filename,
-                                        const std::string ext_hostname = std::string());
-}
+PerfTestResult
+PerfTest_CheckOrAdd_Test (XMLTestNode machine_config,
+                          XMLTestNode new_test,
+                          const std::string filename,
+                          const std::string ext_hostname = std::string ());
+
+} // namespace Teuchos
+
 #endif

@@ -111,7 +111,12 @@ namespace Teuchos {
 
 namespace {
 
-  using Tpetra::TestingUtilities::getNode;
+  template<class NodeType>
+  Teuchos::RCP<NodeType> getNode () {
+    Teuchos::ParameterList defaultParams;
+    return Teuchos::rcp (new NodeType (defaultParams));
+  }
+
   using Tpetra::TestingUtilities::getDefaultComm;
 
   using std::endl;
@@ -153,25 +158,6 @@ namespace {
 
   using Tpetra::createContigMapWithNode;
   using Tpetra::createLocalMapWithNode;
-
-  using KokkosClassic::SerialNode;
-  RCP<SerialNode> snode;
-#ifdef HAVE_KOKKOSCLASSIC_TBB
-  using KokkosClassic::TBBNode;
-  RCP<TBBNode> tbbnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  using KokkosClassic::TPINode;
-  RCP<TPINode> tpinode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_OPENMP
-  using KokkosClassic::OpenMPNode;
-  RCP<OpenMPNode> ompnode;
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  using KokkosClassic::ThrustGPUNode;
-  RCP<ThrustGPUNode> thrustnode;
-#endif
 
   double errorTolSlack = 1.0e+2;
 
@@ -1372,8 +1358,8 @@ namespace {
         TEST_COMPARE_FLOATING_ARRAYS(b2,a2,tol);
         TEST_COMPARE_FLOATING_ARRAYS(b3,a3,tol);
         TEST_COMPARE_ARRAYS(changed(), zeros());
-        for (size_t i=0; i<numVectors; ++i) {
-          TEST_EQUALITY_CONST( aw[i] < bw[i] + tol, true ); // shrunk
+        for (size_t ii = 0; ii < numVectors; ++ii) {
+          TEST_EQUALITY_CONST( aw[ii] < bw[ii] + tol, true ); // shrunk
         }
       }
     }

@@ -535,7 +535,7 @@ xfer_client_main (struct xfer_args &args, nssi_service &xfer_svc, MPI_Comm clien
     double time;
     double start_time;
     std::ofstream result_stream;
-    log_level debug_level = LOG_WARN;
+    log_level debug_level = args.debug_level;
     int client_rank, client_size;
 
     /* the array of results (for async experiments) */

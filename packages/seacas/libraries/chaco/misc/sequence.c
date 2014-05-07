@@ -2,12 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <string.h>
-#include "params.h"
-#include "defs.h"
-#include "structs.h"
-#include "smalloc.h"
+#include <stdio.h>                      // for NULL, fprintf, printf, etc
+#include "params.h"                     // for MAXDIMS
+#include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"                    // for vtx_data
 
 
 void 

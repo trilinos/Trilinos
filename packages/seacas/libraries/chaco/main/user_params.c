@@ -2,8 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include "params.h"
-#include "smalloc.h"
+#include "params.h"                     // for NAME_LENGTH
 
 #define  TRUE  1
 #define  FALSE 0

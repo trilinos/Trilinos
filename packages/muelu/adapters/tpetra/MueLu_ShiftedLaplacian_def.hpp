@@ -78,6 +78,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPa
   ncycles_             = paramList->get("MueLu: cycles",         1);
   iters_               = paramList->get("MueLu: iterations",   500);
   solverType_          = paramList->get("MueLu: solver type",    1);
+  restart_size_        = paramList->get("MueLu: restart size", 100);
+  recycle_size_        = paramList->get("MueLu: recycle size",  25);
   isSymmetric_         = paramList->get("MueLu: symmetric",   true);
   ilu_leveloffill_     = paramList->get("MueLu: level-of-fill",  5);
   ilu_abs_thresh_      = paramList->get("MueLu: abs thresh",   0.0);
@@ -113,8 +115,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
-  if(BelosLinearProblem_!=Teuchos::null)
-    BelosLinearProblem_ -> setOperator ( TpetraA_ );
+  if(LinearProblem_!=Teuchos::null)
+    LinearProblem_ -> setOperator ( TpetraA_ );
   
 }
   
@@ -125,8 +127,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
   ProblemMatrixSet_=true;
   GridTransfersExist_=false;
 
-  if(BelosLinearProblem_!=Teuchos::null)
-    BelosLinearProblem_ -> setOperator ( TpetraA_ );
+  if(LinearProblem_!=Teuchos::null)
+    LinearProblem_ -> setOperator ( TpetraA_ );
 
 }
 
@@ -142,7 +144,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPr
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setPreconditioningMatrix(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraP) {
  
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraP) );
   P_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   PreconditioningMatrixSet_=true;
@@ -162,7 +164,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setst
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setstiff(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraK) {
 
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraK) );
   K_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   StiffMatrixSet_=true;
@@ -182,7 +184,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setma
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setmass(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraM) {
 
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraM) );
   M_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   MassMatrixSet_=true;
@@ -202,7 +204,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setda
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setdamp(RCP< Tpetra::CrsMatrix<SC,LO,GO,NO,LMO> >& TpetraC) {
   
-  RCP< Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
+  RCP< Xpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node> > Atmp
     = rcp( new Xpetra::TpetraCrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node>(TpetraC) );
   C_= rcp( new Xpetra::CrsMatrixWrap<Scalar, LocalOrdinal, GlobalOrdinal, Node>(Atmp) );
   DampMatrixSet_=true;
@@ -272,7 +274,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -319,7 +321,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
@@ -403,6 +405,8 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::initi
   BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   BelosList_ -> set("Output Frequency",1);
   BelosList_ -> set("Output Style",Belos::Brief);
+  BelosList_ -> set("Num Blocks",restart_size_);
+  BelosList_ -> set("Num Recycled Blocks",recycle_size_);
 
 }
 
@@ -421,18 +425,19 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     // Define Preconditioner and Operator
     MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
     // Belos Linear Problem
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
-    BelosLinearProblem_ -> setOperator (  TpetraA_  );
-    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(LinearProblem_==Teuchos::null)
+      LinearProblem_ = rcp( new LinearProblem );
+    LinearProblem_ -> setOperator (  TpetraA_  );
+    LinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(SolverManager_==Teuchos::null) {
+      std::string solverName;
+      SolverFactory_= rcp( new SolverFactory() );
+      if(solverType_==0)      { solverName="CG";               }
+      else if(solverType_==1) { solverName="Block GMRES";      }
+      else if(solverType_==2) { solverName="Recycling GMRES";  }
+      else                    { solverName="Flexible GMRES";   }
+      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
+      SolverManager_ -> setProblem( LinearProblem_ );
     }
   }
 
@@ -460,18 +465,19 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     // Define Preconditioner and Operator
     MueLuOp_ = rcp( new MueLu::ShiftedLaplacianOperator<SC,LO,GO,NO>(Hierarchy_, A_, ncycles_, subiters_, option_, tol_) );
     // Belos Linear Problem
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
-    BelosLinearProblem_ -> setOperator (  TpetraA_  );
-    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(LinearProblem_==Teuchos::null)
+      LinearProblem_ = rcp( new LinearProblem );
+    LinearProblem_ -> setOperator (  TpetraA_  );
+    LinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(SolverManager_==Teuchos::null) {
+      std::string solverName;
+      SolverFactory_= rcp( new SolverFactory() );
+      if(solverType_==0)      { solverName="CG";               }
+      else if(solverType_==1) { solverName="Block GMRES";      }
+      else if(solverType_==2) { solverName="Recycling GMRES";  }
+      else                    { solverName="Flexible GMRES";   }
+      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
+      SolverManager_ -> setProblem( LinearProblem_ );
     }
   }
 
@@ -499,7 +505,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
   else {
     Manager_   -> SetFactory("P", PgPfact_);
     Manager_   -> SetFactory("R", Rfact_);
-    solverType_ = 1;
+    solverType_ = 10;
   }
   Manager_   -> SetFactory("Ptent", TentPfact_);
   Teuchos::ParameterList params;
@@ -544,7 +550,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     precList_.set("krylov: block size",1);
     precList_.set("krylov: preconditioner type", krylov_preconditioner_);
     precList_.set("relaxation: sweeps",1);
-    solverType_=2;
+    solverType_=10;
   }
   else if(Smoother_=="ilut") {
     precType_ = "ILUT";
@@ -626,19 +632,22 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setup
     BelosList_ -> set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
     BelosList_ -> set("Output Frequency",1);
     BelosList_ -> set("Output Style",Belos::Brief);
+    BelosList_ -> set("Num Blocks",restart_size_);
+    BelosList_ -> set("Num Recycled Blocks",recycle_size_);
     // Belos Linear Problem and Solver Manager
-    BelosLinearProblem_ = rcp( new BelosLinearProblem );
-    BelosLinearProblem_ -> setOperator (  TpetraA_  );
-    BelosLinearProblem_ -> setRightPrec(  MueLuOp_  );
-    if(solverType_==0) {
-      BelosSolverManager_ = rcp( new BelosCG(BelosLinearProblem_, BelosList_) );
-    }
-    else if(solverType_==1) {
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
-    }
-    else {
-      BelosList_ -> set("Flexible Gmres", true);
-      BelosSolverManager_ = rcp( new BelosGMRES(BelosLinearProblem_, BelosList_) );
+    if(LinearProblem_==Teuchos::null)
+      LinearProblem_ = rcp( new LinearProblem );
+    LinearProblem_ -> setOperator (  TpetraA_  );
+    LinearProblem_ -> setRightPrec(  MueLuOp_  );
+    if(SolverManager_==Teuchos::null) {
+      std::string solverName;
+      SolverFactory_= rcp( new SolverFactory() );
+      if(solverType_==0)      { solverName="CG";               }
+      else if(solverType_==1) { solverName="Block GMRES";      }
+      else if(solverType_==2) { solverName="Recycling GMRES";  }
+      else                    { solverName="Flexible GMRES";   }
+      SolverManager_ = SolverFactory_->create( solverName, BelosList_ );
+      SolverManager_ -> setProblem( LinearProblem_ );
     }
   }
 
@@ -648,7 +657,7 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetLinearProblem()
 {
   if(useKrylov_==true) {
-    BelosLinearProblem_ -> setOperator (  TpetraA_  );
+    LinearProblem_ -> setOperator (  TpetraA_  );
   }
 }
 
@@ -658,10 +667,10 @@ int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::solve(
 {
   if(useKrylov_==true) {
     // Set left and right hand sides for Belos
-    BelosLinearProblem_ -> setProblem(X, B);
+    LinearProblem_ -> setProblem(X, B);
     // iterative solve
-    //Belos::ReturnType convergenceStatus = BelosSolverManager_ -> solve();
-    BelosSolverManager_ -> solve();
+    //Belos::ReturnType convergenceStatus = SolverManager_ -> solve();
+    SolverManager_ -> solve();
     /*if(convergenceStatus == Belos::Converged) {
       return 0;
       }
@@ -702,11 +711,24 @@ template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, clas
 int ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetIterations()
 {
   if(useKrylov_==true) {
-    int numiters = BelosSolverManager_ -> getNumIters();
+    int numiters = SolverManager_ -> getNumIters();
     return numiters;
   }
   else {
     return 0;
+  }
+}
+
+// Get most recent solver tolerance achieved
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+double ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::GetResidual()
+{
+  if(useKrylov_==true) {
+    double residual = SolverManager_ -> achievedTol();
+    return residual;
+  }
+  else {
+    return 0.0;
   }
 }
 

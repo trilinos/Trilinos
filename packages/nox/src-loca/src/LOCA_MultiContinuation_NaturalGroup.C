@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,32 +61,32 @@ LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
       const Teuchos::RCP<LOCA::MultiPredictor::AbstractStrategy>& pred,
       const std::vector<int>& paramIDs)
   : LOCA::MultiContinuation::ExtendedGroup(global_data, topParams,
-					   continuationParams,
-					   grp, pred, paramIDs)
+                       continuationParams,
+                       grp, pred, paramIDs)
 {
   bool skip_dfdp = continuationParams->get("Skip Parameter Derivative", true);
-  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons 
+  Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> cons
     = Teuchos::rcp(new LOCA::MultiContinuation::NaturalConstraint(
-	globalData, Teuchos::rcp(this, false)));
+    globalData, Teuchos::rcp(this, false)));
   LOCA::MultiContinuation::ExtendedGroup::setConstraints(cons, skip_dfdp);
 }
 
 LOCA::MultiContinuation::NaturalGroup::NaturalGroup(
-			 const LOCA::MultiContinuation::NaturalGroup& source,
-			 NOX::CopyType type)
+             const LOCA::MultiContinuation::NaturalGroup& source,
+             NOX::CopyType type)
   : LOCA::MultiContinuation::ExtendedGroup(source, type)
 {
   Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::NaturalConstraint>(conGroup->getConstraints())->setNaturalGroup(Teuchos::rcp(this, false));
 }
 
 
-LOCA::MultiContinuation::NaturalGroup::~NaturalGroup() 
+LOCA::MultiContinuation::NaturalGroup::~NaturalGroup()
 {
 }
 
 NOX::Abstract::Group&
 LOCA::MultiContinuation::NaturalGroup::operator=(
-					  const NOX::Abstract::Group& source)
+                      const NOX::Abstract::Group& source)
 {
   copy(source);
   return *this;
@@ -99,7 +99,7 @@ LOCA::MultiContinuation::NaturalGroup::clone(NOX::CopyType type) const
 }
 
 void
-LOCA::MultiContinuation::NaturalGroup::copy(const NOX::Abstract::Group& src) 
+LOCA::MultiContinuation::NaturalGroup::copy(const NOX::Abstract::Group& src)
 {
 
   // Protect against A = A

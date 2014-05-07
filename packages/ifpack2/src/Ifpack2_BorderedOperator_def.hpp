@@ -45,6 +45,8 @@
 #define IFPACK2_BORDEREDOPERATOR_DEF_HPP
 
 #include "Ifpack2_BorderedOperator_decl.hpp"
+#include "Tpetra_MultiVector.hpp"
+#include "Teuchos_TestForException.hpp"
 
 namespace Ifpack2 {
 
@@ -99,5 +101,7 @@ apply (const Tpetra::MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node >& X,
 
 } // namespace Ifpack2
 
-#endif /* IFPACK2_BorderedOperator_DEF_HPP */
+#define IFPACK2_BORDEREDOPERATOR_INSTANT(S,LO,GO,N) \
+  template class Ifpack2::BorderedOperator< S, LO, GO, N >;
 
+#endif /* IFPACK2_BorderedOperator_DEF_HPP */

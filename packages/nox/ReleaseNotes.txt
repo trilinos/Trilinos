@@ -1,9 +1,9 @@
 Trilinos development
 ====================
 
-* Added two safeguarded line searches.  One is general and works for any nox group/vector.  The second one specifically requires a new thyra rtop and thus is only valid for thyra vectors.  The safeguarded line searches allow the user to cap individual elements in the solution vector for each nonlinear solve step.  This is used for example, to limit the change in one or more of the solution varibles if a large change might result in unphysical bounds.  This is implemeted as a line search because it essentially damps a solver step.
+* Added two safeguarded line searches.  One is general and works for any nox group/vector.  The second one specifically requires a new thyra rtop and thus is only valid for thyra vectors.  The safeguarded line searches allow the user to cap individual elements in the solution vector for each nonlinear solve step.  This is used for example, to limit the change in one or more of the solution variables if a large change might result in unphysical bounds.  This is implemeted as a line search because it essentially damps a solver step.
 
-Trilinos 11.6 
+Trilinos 11.6
 =============
 
 * Added a Fixed-point Anderson Acceleration solver.  Unit tests exist for Epetra and Thyra adapters.

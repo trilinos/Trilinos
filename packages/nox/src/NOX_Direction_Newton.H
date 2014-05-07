@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #define NOX_DIRECTION_NEWTON_H
 
 #include "NOX_Direction_Generic.H" // base class
-#include "Teuchos_ParameterList.hpp"	   // class data element 
+#include "Teuchos_ParameterList.hpp"       // class data element
 #include "Teuchos_RCP.hpp"
 
 // Forward declaration
@@ -68,10 +68,10 @@ namespace NOX {
 namespace Direction {
 
 //! %Newton direction computation
-/*! 
+/*!
   Computes the %Newton direction by solving the %Newton system.
-  \f[ 
-  Jd = -F 
+  \f[
+  Jd = -F
   \f]
 
   Here \f$J\f$ is the n x n Jacobian matrix at the current
@@ -87,7 +87,7 @@ namespace Direction {
   \f[
   \frac{\|J_k d_k - (-F_k)\|}{\|F_k\|} \leq \eta_k.
   \f]
-  Here \f$\eta_k\f$ is the forcing term for iteration \f$k\f$. 
+  Here \f$\eta_k\f$ is the forcing term for iteration \f$k\f$.
 
   \note This solution tolerance is to be enforced by the user's
   implementation of NOX::Abstract::Group::computeNewton; it is passed
@@ -98,7 +98,7 @@ namespace Direction {
   (1998). We have two choices for adjustable forcing terms:
 
   <ul>
-  <li><b>Type 1</b> 
+  <li><b>Type 1</b>
 
   \f[
   \eta_k = \left\vert \frac{\| F_k \| - \|J_{k-1} d_{k-1} - (-F_{k-1}) \| }
@@ -193,32 +193,32 @@ class Newton : public Generic {
 public:
 
   //! Constructor
-  Newton(const Teuchos::RCP<NOX::GlobalData>& gd, 
-	 Teuchos::ParameterList& params);
+  Newton(const Teuchos::RCP<NOX::GlobalData>& gd,
+     Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Newton();
 
   // derived
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params);
+             Teuchos::ParameterList& params);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 protected:
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
-  virtual bool resetForcingTerm(const NOX::Abstract::Group& soln, 
-				const NOX::Abstract::Group& oldSoln, 
-				int niter, 
-				const NOX::Solver::Generic& solver);
+  virtual bool resetForcingTerm(const NOX::Abstract::Group& soln,
+                const NOX::Abstract::Group& oldSoln,
+                int niter,
+                const NOX::Solver::Generic& solver);
 
 
 private:
@@ -236,13 +236,13 @@ private:
   Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
-  /*! 
+  /*!
     \note This is pointer rather than a reference to allow for the
-    reset function. 
+    reset function.
    */
   Teuchos::ParameterList* paramsPtr;
 
-  //! Determined based on "Rescue Bad %Newton Solve". 
+  //! Determined based on "Rescue Bad %Newton Solve".
   bool doRescue;
 
   //! Vector containing the predicted RHS
@@ -256,7 +256,7 @@ private:
 
   //! Current linear solve tolerance.
   double eta_k;
-  
+
   //! Minimum linear solve tolerance.
   double eta_min;
 
@@ -268,7 +268,7 @@ private:
 
   //! Name of the method used for calculating the inexact forcing term.
   std::string method;
-  
+
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;
 

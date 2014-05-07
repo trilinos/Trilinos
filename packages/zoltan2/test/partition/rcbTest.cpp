@@ -85,7 +85,7 @@ void testFromDataFile(
   std::string fname(filename);
   UserInputForTests uinput(testDataFilePath, fname, comm, true);
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
+  RCP<tMVector_t> coords = uinput.getUICoordinates();
   if (me == 0)
     cout << "Multivector length = " << coords->getGlobalLength()
          << " Num vectors = " << coords->getNumVectors() << endl;
@@ -146,7 +146,7 @@ void serialTest(int numParts, bool doRemap)
   ArrayRCP<gno_t> globalIds(ids, 0, numCoords, true);
 
   Array<ArrayRCP<scalar_t> > randomCoords(3);
-  UserInputForTests::getRandomData(555, numCoords, 0, 10,
+  UserInputForTests::getUIRandomData(555, numCoords, 0, 10,
     randomCoords.view(0,3));
 
   typedef Zoltan2::BasicVectorAdapter<myTypes_t> inputAdapter_t;
@@ -180,9 +180,9 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   int xdim = 40;
   int ydim = 60;
   int zdim = 20;
-  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true);
+  UserInputForTests uinput(xdim, ydim, zdim, string("Laplace3D"), comm, true, true);
 
-  RCP<tMVector_t> coords = uinput.getCoordinates();
+  RCP<tMVector_t> coords = uinput.getUICoordinates();
 
   size_t localCount = coords->getLocalLength();
 
@@ -201,8 +201,7 @@ void meshCoordinatesTest(const RCP<const Teuchos::Comm<int> > & comm)
   params.set("rectilinear_blocks", "yes");
 
 #ifdef HAVE_ZOLTAN2_MPI
-  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params,
-    MPI_COMM_WORLD);
+  Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params, MPI_COMM_WORLD);
 #else
   Zoltan2::PartitioningProblem<inputAdapter_t> problem(&ia, &params);
 #endif
@@ -229,7 +228,7 @@ int main(int argc, char *argv[])
   cmdp.setOption("remap", "no-remap", &doRemap, "Remap part numbers.");
   cmdp.parse(argc, argv);
 
-  //meshCoordinatesTest(tcomm);
+  meshCoordinatesTest(tcomm);
 
   testFromDataFile(tcomm, nParts, filename, doRemap);
 

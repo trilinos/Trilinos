@@ -1,4 +1,4 @@
-#include <cstdlib>
+#include <stddef.h>                     // for size_t
 
 namespace SEAMS {
   class Stats {

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -77,21 +77,21 @@ namespace LOCA {
   }
 }
 
-namespace LOCA { 
+namespace LOCA {
 
-  namespace MultiContinuation { 
+  namespace MultiContinuation {
 
     /*!
-     * \brief Base class for all continuation groups. 
+     * \brief Base class for all continuation groups.
      */
     /*!
-     * %Continuation is defined as computing some curve 
+     * %Continuation is defined as computing some curve
      * \f$(x(s),p(s))\in\Re^{n+1}\f$ such that \f$F(x(s),p(s))=0\f$ for some
      * parameterization \f$s\f$.  Given some point \f$(x_0,p_0)\f$ on the
-     * curve, another nearby point on the curve is calculated by first 
-     * computing a predictor direction \f$v\in\Re^{n+1}\f$ and the 
-     * approximate point \f$(x^\ast,p^\ast) = (x_0,p_0) + v\Delta s\f$ 
-     * where \f$\Delta s\f$ is the step size.  Then the next point on the 
+     * curve, another nearby point on the curve is calculated by first
+     * computing a predictor direction \f$v\in\Re^{n+1}\f$ and the
+     * approximate point \f$(x^\ast,p^\ast) = (x_0,p_0) + v\Delta s\f$
+     * where \f$\Delta s\f$ is the step size.  Then the next point on the
      * curve is computed by solving the extended set of equations
      *  \f[
      *      \begin{array}{cc}
@@ -99,44 +99,44 @@ namespace LOCA {
      *         g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s) &= 0
      *      \end{array}
      *  \f]
-     *  for \f$(x,p)\f$.  The equation 
-     *  \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ is called the 
+     *  for \f$(x,p)\f$.  The equation
+     *  \f$g(x,p,x_0,p_0,x^\ast,p^\ast,v,\Delta s)=0\f$ is called the
      *  continuation equation
      *  and different choices of \f$g\f$ yield different continuation methods.
      *
-     * Mathematically, this computation amounts to repeatedly computing 
-     * solutions to a constrained nonlinear system.  This class provides 
-     * a common implementation for all continuation groups in terms of the 
+     * Mathematically, this computation amounts to repeatedly computing
+     * solutions to a constrained nonlinear system.  This class provides
+     * a common implementation for all continuation groups in terms of the
      * LOCA::MultiContinuation::ConstrainedGroup using a supplied group
      * to represent \f$F\f$ and an implementation of
      * LOCA::MultiContinuation::ConstraintInterface to represent \f$g\f$.
      *
-     * Note that this class has no public constructor other than the 
+     * Note that this class has no public constructor other than the
      * copy constructor since it is intended to only provide an implemenation
-     * of much of the continuation work.  Each derived class that 
+     * of much of the continuation work.  Each derived class that
      * implements a specific continuation strategy should provide its own
      * public constructor.
      */
-    class ExtendedGroup : 
+    class ExtendedGroup :
       public virtual LOCA::MultiContinuation::AbstractStrategy,
       public virtual LOCA::BorderedSystem::AbstractGroup {
 
     public:
 
       //! Copy constructor
-      ExtendedGroup(const ExtendedGroup& source, 
-		    NOX::CopyType type = NOX::DeepCopy);
+      ExtendedGroup(const ExtendedGroup& source,
+            NOX::CopyType type = NOX::DeepCopy);
 
       //! Destructor.
       virtual ~ExtendedGroup();
 
-      /*! 
-       * @name Implementation of NOX::Abstract::Group virtual methods 
+      /*!
+       * @name Implementation of NOX::Abstract::Group virtual methods
        */
       //@{
 
       //! Assignment operator
-      virtual NOX::Abstract::Group& 
+      virtual NOX::Abstract::Group&
       operator=(const NOX::Abstract::Group& source);
 
       //! Cloning function
@@ -146,15 +146,15 @@ namespace LOCA {
       //! Set the solution vector to y.
       virtual void setX(const NOX::Abstract::Vector& y);
 
-      /*! 
-       * \brief Compute and return solution vector, x, where 
+      /*!
+       * \brief Compute and return solution vector, x, where
        * this.x = grp.x + step * d.
        */
-      virtual void computeX(const NOX::Abstract::Group& g, 
-			    const NOX::Abstract::Vector& d,
-			    double step);
+      virtual void computeX(const NOX::Abstract::Group& g,
+                const NOX::Abstract::Vector& d,
+                double step);
 
-      //! Compute extended continuation equations 
+      //! Compute extended continuation equations
       virtual NOX::Abstract::Group::ReturnType computeF();
 
       //! Compute extended continuation jacobian
@@ -164,62 +164,62 @@ namespace LOCA {
       virtual NOX::Abstract::Group::ReturnType computeGradient();
 
       //! Compute Newton direction for extended continuation system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computeNewton(Teuchos::ParameterList& params);
 
       //! Applies Jacobian for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobian(const NOX::Abstract::Vector& input, 
-		    NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobian(const NOX::Abstract::Vector& input,
+            NOX::Abstract::Vector& result) const;
 
       //! Jacobian transpose not defined for this system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianTranspose(const NOX::Abstract::Vector& input, 
-			     NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianTranspose(const NOX::Abstract::Vector& input,
+                 NOX::Abstract::Vector& result) const;
 
       //! Applies Jacobian inverse for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianInverse(Teuchos::ParameterList& params, 
-			   const NOX::Abstract::Vector& input, 
-			   NOX::Abstract::Vector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianInverse(Teuchos::ParameterList& params,
+               const NOX::Abstract::Vector& input,
+               NOX::Abstract::Vector& result) const;
 
       //! Applies Jacobian for extended system
-      virtual NOX::Abstract::Group::ReturnType 
-      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input, 
-			       NOX::Abstract::MultiVector& result) const;
+      virtual NOX::Abstract::Group::ReturnType
+      applyJacobianMultiVector(const NOX::Abstract::MultiVector& input,
+                   NOX::Abstract::MultiVector& result) const;
 
       //! Jacobian transpose not defined for this system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianTransposeMultiVector(
-				     const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& result) const;
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const;
 
       //! Applies Jacobian inverse for extended system
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyJacobianInverseMultiVector(
-				    Teuchos::ParameterList& params, 
-				    const NOX::Abstract::MultiVector& input, 
-				    NOX::Abstract::MultiVector& result) const;
+                    Teuchos::ParameterList& params,
+                    const NOX::Abstract::MultiVector& input,
+                    NOX::Abstract::MultiVector& result) const;
 
       //! Return \c true if extended residual is valid.
       virtual bool isF() const;
 
       //! Return \c true if the extended Jacobian is valid.
       virtual bool isJacobian() const;
-      
+
       //! Always returns false
       virtual bool isGradient() const;
-      
+
       //! Return \c true if the extended Newton direction is valid
       virtual bool isNewton() const;
 
-      //! Return extended solution vector.  
+      //! Return extended solution vector.
       virtual const NOX::Abstract::Vector& getX() const;
 
       //! Return extended residual
       virtual const NOX::Abstract::Vector& getF() const;
 
-      //! Return 2-norm of extended residual. 
+      //! Return 2-norm of extended residual.
       virtual double getNormF() const;
 
       //! Gradient is never valid
@@ -228,7 +228,7 @@ namespace LOCA {
       //! Return extended Newton direction.
       virtual const NOX::Abstract::Vector& getNewton() const;
 
-      //! Return extended solution vector.  
+      //! Return extended solution vector.
       virtual Teuchos::RCP< const NOX::Abstract::Vector > getXPtr() const;
 
       //! Return extended residual
@@ -245,27 +245,27 @@ namespace LOCA {
 
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::Extended::MultiAbstractGroup 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::Extended::MultiAbstractGroup
+       * virtual methods
        */
       //@{
 
       //! Return underlying group
-      virtual 
+      virtual
       Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup() const;
-      
+
       //! Return underlying group
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
       getUnderlyingGroup();
 
       //@}
 
-      /*! 
-       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy 
-       * virtual methods 
+      /*!
+       * @name Implementation of LOCA::MultiContinuation::AbstractStrategy
+       * virtual methods
        */
       //@{
 
@@ -280,21 +280,21 @@ namespace LOCA {
        * The \c stepStatus argument indicates whether the previous step was
        * successful.
        */
-      virtual void 
+      virtual void
       preProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
        * The \c stepStatus argument indicates whether the step was
        * successful.
        */
-      virtual void 
+      virtual void
       postProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus);
+             LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Compute predictor directions
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computePredictor();
 
       //! Is Predictor valid
@@ -305,13 +305,13 @@ namespace LOCA {
 
       //! Sets tangent to predictor
       /*!
-       * This is required by MF which takes the tangent space, 
+       * This is required by MF which takes the tangent space,
        * orthogonalizes it, and then sets it back in the group.
        */
       virtual void
       setPredictorTangentDirection(
-			    const LOCA::MultiContinuation::ExtendedVector& v,
-			    int i);
+                const LOCA::MultiContinuation::ExtendedVector& v,
+                int i);
 
       //! Returns tangent to predictor
       virtual const LOCA::MultiContinuation::ExtendedMultiVector&
@@ -325,7 +325,7 @@ namespace LOCA {
       virtual void setPrevX(const NOX::Abstract::Vector& y);
 
       //! Gets the previous solution vector
-      virtual const LOCA::MultiContinuation::ExtendedVector& 
+      virtual const LOCA::MultiContinuation::ExtendedVector&
       getPrevX() const ;
 
       //! Set step size for continuation constraint equation \em i
@@ -357,22 +357,22 @@ namespace LOCA {
 
       //! Computes a scaled dot product between two continuation vectors
       virtual double computeScaledDotProduct(
-			       const NOX::Abstract::Vector& x, 
-			       const NOX::Abstract::Vector& y) const;
+                   const NOX::Abstract::Vector& x,
+                   const NOX::Abstract::Vector& y) const;
 
       //! Returns dimension of project to draw array
       virtual int projectToDrawDimension() const;
 
       //! Fills the project to draw array
       virtual void projectToDraw(
-			    const LOCA::MultiContinuation::ExtendedVector& x, 
-			    double *px) const;
+                const LOCA::MultiContinuation::ExtendedVector& x,
+                double *px) const;
 
       //@}
 
-      /*! 
-       * @name Implementation of 
-       * LOCA::BorderedSystem::AbstractGroup virtual methods 
+      /*!
+       * @name Implementation of
+       * LOCA::BorderedSystem::AbstractGroup virtual methods
        */
       //@{
 
@@ -398,16 +398,16 @@ namespace LOCA {
        */
       virtual void
       extractSolutionComponent(const NOX::Abstract::MultiVector& v,
-			       NOX::Abstract::MultiVector& v_x) const;
-      
+                   NOX::Abstract::MultiVector& v_x) const;
+
       /*!
        * Given the vector \c v, extract the parameter components of all
        * of the nested subvectors in \c v down to the solution component
        * for the unbordered group.
        */
-      virtual void 
+      virtual void
       extractParameterComponent(
-			   bool use_transpose,
+               bool use_transpose,
                            const NOX::Abstract::MultiVector& v,
                            NOX::Abstract::MultiVector::DenseMatrix& v_p) const;
 
@@ -418,8 +418,8 @@ namespace LOCA {
        */
       virtual void
       loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-			   NOX::Abstract::MultiVector& v) const;
+               const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+               NOX::Abstract::MultiVector& v) const;
 
       //! Fill the combined A block as described above
       virtual void fillA(NOX::Abstract::MultiVector& A) const;

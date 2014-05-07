@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -102,13 +102,13 @@ namespace LineSearch {
 
   The algorithm is designed to find a step which satisfies one of two
   sufficient decrease conditions:
-  
+
   (1) Armijo-Goldstein Condition
   \f[
   f(x + {\rm stp} \; s) \le f(x) + {\rm ftol} \; {\rm stp} \; (\nabla f(x)^T s),
   \f]
 
-  or 
+  or
 
   (2) Ared/Pred Condtition
   \f[
@@ -140,10 +140,10 @@ namespace LineSearch {
 
   This line search is used if "More'-Thuente2" is the "Method" in the
   "Line Search" sublist. (See NOX::LineSearch::Manager for details.)
- 
+
   The following parameters can be specified for this line search in
   the "More'-Thuente2" sublist of the "Line Search" sublist:
- 
+
   - "Sufficient Decrease Condition" - Choice to use for the sufficient decrease condition. Options are "Ared/Pred" or "Armijo-Goldstein" (defaults to "Armijo-Goldstein").<br>
   1. "Armijo-Goldstein" conditions: \f$ f(x_{n-1}+ \lambda s) \le f(x_{n-1}) +\alpha \lambda f'(x_{n-1}) \f$ <br>
   2. "Ared/Pred" conditions: \f$ \| F(x_{n-1}+ \lambda s) \| \le \| F(x_{n-1}) \| (1-\alpha(1-\eta)) \f$ where \f$ \eta \f$ is the linear solve tolerance in the inexact Newton method. <br><br>
@@ -154,17 +154,17 @@ namespace LineSearch {
   - "Curvature Condition" - The gtol in the curvature condition
     (defaults to 0.9999)
 
-  - "Optimize Slope Calculation" - Boolean value.  If set to true the value of \f$ s^TJ^TF \f$ is estimated using a directional derivative in a call to NOX::LineSearch::Common::computeSlopeWithOutJac.  If false the slope computation is computed with the NOX::LineSearch::Common::computeSlope method.  Setting this to true eliminates having to compute the Jacobian at each inner iteration of the More'-Thuente line search (defaults to false).  
+  - "Optimize Slope Calculation" - Boolean value.  If set to true the value of \f$ s^TJ^TF \f$ is estimated using a directional derivative in a call to NOX::LineSearch::Common::computeSlopeWithOutJac.  If false the slope computation is computed with the NOX::LineSearch::Common::computeSlope method.  Setting this to true eliminates having to compute the Jacobian at each inner iteration of the More'-Thuente line search (defaults to false).
 
-  - "User Defined Norm" - The user can redefine the norm that is used in the 
-    Ared/Pred sufficient decrease condition by supplying a 
-    NOX::Parameter::UserNorm derived object in the parameter list with 
+  - "User Defined Norm" - The user can redefine the norm that is used in the
+    Ared/Pred sufficient decrease condition by supplying a
+    NOX::Parameter::UserNorm derived object in the parameter list with
     this key.
 
   - "Merit Function" - The user can supply their own merit function to the
     line search by supplying a NOX::Parameter::MeritFunction derived object
     with this key.
-    
+
   - "Interval Width" - The maximum width of the interval containing
     the minimum of the modified function (defaults to 1.0e-15)
 
@@ -177,17 +177,17 @@ namespace LineSearch {
 
   - "Default Step" - starting step length (defaults to 1.0)
 
-  - "Recovery Step Type" - Determines the step size to take when the 
+  - "Recovery Step Type" - Determines the step size to take when the
     line search fails.  Choices are:
 
      <ul>
      <li> "Constant" [default] - Uses a constant value set in "Recovery Step".
-     <li> "Last Computed Step" - Uses the last value computed by the 
-                                 line search algorithm. 
+     <li> "Last Computed Step" - Uses the last value computed by the
+                                 line search algorithm.
      </ul>
 
-  - "Recovery Step" - The value of the step to take when the line 
-    search fails. Only used if the "Recovery Step Type" is set to 
+  - "Recovery Step" - The value of the step to take when the line
+    search fails. Only used if the "Recovery Step Type" is set to
     "Constant". Defaults to value for "Default Step".
 
   <B> Output Parameters </B> <br>
@@ -195,7 +195,7 @@ A sublist for output parameters will be created called "Output" in the parameter
 
   - "Total Number of Line Search Calls" - Total number of calls to the compute() method of this line search.
 
-  - "Total Number of Non-trivial Line Searches" - The total number of steps that could not directly take a full step and meet the required "Convergence Criteria" (i.e. The line search had to reduce the step length using inner iteration calculations over iterate \f$ k \f$). 
+  - "Total Number of Non-trivial Line Searches" - The total number of steps that could not directly take a full step and meet the required "Convergence Criteria" (i.e. The line search had to reduce the step length using inner iteration calculations over iterate \f$ k \f$).
 
   - "Total Number of Failed Line Searches" - total number of line searches that failed and used a recovery step.
 
@@ -211,19 +211,19 @@ public:
 
   //! Constructor
   MoreThuente(const Teuchos::RCP<NOX::GlobalData>& gd,
-	      Teuchos::ParameterList& params);
-  
+          Teuchos::ParameterList& params);
+
   //! Destructor
   ~MoreThuente();
-  
-  // derived
-  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
 
   // derived
-  bool compute(NOX::Abstract::Group& newgrp, double& step, 
-	       const NOX::Abstract::Vector& dir,
-	       const NOX::Solver::Generic& s);
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+         Teuchos::ParameterList& params);
+
+  // derived
+  bool compute(NOX::Abstract::Group& newgrp, double& step,
+           const NOX::Abstract::Vector& dir,
+           const NOX::Solver::Generic& s);
 
 
 private:
@@ -241,25 +241,25 @@ private:
 %
 %     Subroutine cvsrch
 %
-%     The purpose of cvsrch is to find a step which satisfies 
+%     The purpose of cvsrch is to find a step which satisfies
 %     a sufficient decrease condition and a curvature condition.
 %     The user must provide a subroutine which calculates the
 %     function and the gradient.
 %
 %     At each stage the subroutine updates an interval of
 %     uncertainty with endpoints stx and sty. The interval of
-%     uncertainty is initially chosen so that it contains a 
+%     uncertainty is initially chosen so that it contains a
 %     minimizer of the modified function
 %
 %          f(x+stp*s) - f(x) - ftol*stp*(gradf(x)'s).
 %
-%     If a step is obtained for which the modified function 
-%     has a nonpositive function value and nonnegative derivative, 
-%     then the interval of uncertainty is chosen so that it 
+%     If a step is obtained for which the modified function
+%     has a nonpositive function value and nonnegative derivative,
+%     then the interval of uncertainty is chosen so that it
 %     contains a minimizer of f(x+stp*s).
 %
-%     The algorithm is designed to find a step which satisfies 
-%     the sufficient decrease condition 
+%     The algorithm is designed to find a step which satisfies
+%     the sufficient decrease condition
 %
 %           f(x+stp*s) <= f(x) + ftol*stp*(gradf(x)'s),
 %
@@ -271,7 +271,7 @@ private:
 %     is bounded below, then there is always a step which satisfies
 %     both conditions. If no step can be found which satisfies both
 %     conditions, then the algorithm usually stops when rounding
-%     errors prevent further progress. In this case stp only 
+%     errors prevent further progress. In this case stp only
 %     satisfies the sufficient decrease condition.
 %
 %     The subroutine statement is
@@ -280,42 +280,42 @@ private:
 %                          stpmin,stpmax,maxfev,info,nfev,wa)
 %     where
 %
-%	fcn is the name of the user-supplied subroutine which
-%         calculates the function and the gradient.  fcn must 
-%      	  be declared in an external statement in the user 
+%    fcn is the name of the user-supplied subroutine which
+%         calculates the function and the gradient.  fcn must
+%            be declared in an external statement in the user
 %         calling program, and should be written as follows.
 %
-%	  subroutine fcn(n,x,f,g)
+%      subroutine fcn(n,x,f,g)
 %         integer n
 %         f
 %         x(n),g(n)
-%	  ----------
+%      ----------
 %         Calculate the function at x and
 %         return this value in the variable f.
 %         Calculate the gradient at x and
 %         return this vector in g.
-%	  ----------
-%	  return
-%	  end
+%      ----------
+%      return
+%      end
 %
 %       n is a positive integer input variable set to the number
-%	  of variables.
+%      of variables.
 %
-%	x is an array of length n. On input it must contain the
-%	  base point for the line search. On output it contains 
+%    x is an array of length n. On input it must contain the
+%      base point for the line search. On output it contains
 %         x + stp*s.
 %
-%	f is a variable. On input it must contain the value of f
+%    f is a variable. On input it must contain the value of f
 %         at x. On output it contains the value of f at x + stp*s.
 %
-%	g is an array of length n. On input it must contain the
+%    g is an array of length n. On input it must contain the
 %         gradient of f at x. On output it contains the gradient
 %         of f at x + stp*s.
 %
-%	s is an input array of length n which specifies the
+%    s is an input array of length n which specifies the
 %         search direction.
 %
-%	stp is a nonnegative variable. On input stp contains an
+%    stp is a nonnegative variable. On input stp contains an
 %         initial estimate of a satisfactory step. On output
 %         stp contains the final estimate.
 %
@@ -323,34 +323,34 @@ private:
 %         occurs when the sufficient decrease condition and the
 %         directional derivative condition are satisfied.
 %
-%	xtol is a nonnegative input variable. Termination occurs
-%         when the relative width of the interval of uncertainty 
-%	  is at most xtol.
+%    xtol is a nonnegative input variable. Termination occurs
+%         when the relative width of the interval of uncertainty
+%      is at most xtol.
 %
-%	stpmin and stpmax are nonnegative input variables which 
-%	  specify lower and upper bounds for the step.
+%    stpmin and stpmax are nonnegative input variables which
+%      specify lower and upper bounds for the step.
 %
-%	maxfev is a positive integer input variable. Termination
+%    maxfev is a positive integer input variable. Termination
 %         occurs when the number of calls to fcn is at least
 %         maxfev by the end of an iteration.
 %
-%	info is an integer output variable set as follows:
-%	  
-%	  info = 0  Improper input parameters.
+%    info is an integer output variable set as follows:
 %
-%	  info = 1  The sufficient decrease condition and the
+%      info = 0  Improper input parameters.
+%
+%      info = 1  The sufficient decrease condition and the
 %                   directional derivative condition hold.
 %
-%	  info = 2  Relative width of the interval of uncertainty
-%		    is at most xtol.
+%      info = 2  Relative width of the interval of uncertainty
+%            is at most xtol.
 %
-%	  info = 3  Number of calls to fcn has reached maxfev.
+%      info = 3  Number of calls to fcn has reached maxfev.
 %
-%	  info = 4  The step is at the lower bound stpmin.
+%      info = 4  The step is at the lower bound stpmin.
 %
-%	  info = 5  The step is at the upper bound stpmax.
+%      info = 5  The step is at the upper bound stpmax.
 %
-%	  info = 6  Rounding errors prevent further progress.
+%      info = 6  Rounding errors prevent further progress.
 %                   There may not be a step which satisfies the
 %                   sufficient decrease and curvature conditions.
 %                   Tolerances may be too small.
@@ -358,16 +358,16 @@ private:
 %       nfev is an integer output variable set to the number of
 %         calls to fcn.
 %
-%	wa is a work array of length n.
+%    wa is a work array of length n.
 %
 %     Subprograms called
 %
-%	user-supplied......fcn
+%    user-supplied......fcn
 %
-%	MINPACK-supplied...cstep
+%    MINPACK-supplied...cstep
 %
-%	FORTRAN-supplied...abs,max,min
-%	  
+%    FORTRAN-supplied...abs,max,min
+%
 %     Argonne National Laboratory. MINPACK Project. June 1983
 %     Jorge J. More', David J. Thuente
 %
@@ -375,16 +375,16 @@ private:
 
 
    */
-  int cvsrch(NOX::Abstract::Group& newgrp, double& step, 
-	     const NOX::Abstract::Group& oldgrp, 
-	     const NOX::Abstract::Vector& dir, 
-	     const Solver::Generic& s);
+  int cvsrch(NOX::Abstract::Group& newgrp, double& step,
+         const NOX::Abstract::Group& oldgrp,
+         const NOX::Abstract::Vector& dir,
+         const Solver::Generic& s);
 
 
   //! More'-Thuente's cstep subroutine.
   /*!
     \verbatim
-%   Translation of minpack subroutine cstep 
+%   Translation of minpack subroutine cstep
 %   Dianne O'Leary   July 1991
 %     **********
 %
@@ -405,18 +405,18 @@ private:
 %
 %       subroutine cstep(stx,fx,dx,sty,fy,dy,stp,fp,dp,brackt,
 %                        stpmin,stpmax,info)
-% 
+%
 %     where
 %
 %       stx, fx, and dx are variables which specify the step,
 %         the function, and the derivative at the best step obtained
 %         so far. The derivative must be negative in the direction
-%         of the step, that is, dx and stp-stx must have opposite 
+%         of the step, that is, dx and stp-stx must have opposite
 %         signs. On output these parameters are updated appropriately.
 %
 %       sty, fy, and dy are variables which specify the step,
 %         the function, and the derivative at the other endpoint of
-%         the interval of uncertainty. On output these parameters are 
+%         the interval of uncertainty. On output these parameters are
 %         updated appropriately.
 %
 %       stp, fp, and dp are variables which specify the step,
@@ -429,7 +429,7 @@ private:
 %         then on input brackt must be set false. If the minimizer
 %         is bracketed then on output brackt is set true.
 %
-%       stpmin and stpmax are input variables which specify lower 
+%       stpmin and stpmax are input variables which specify lower
 %         and upper bounds for the step.
 %
 %       info is an integer output variable set as follows:
@@ -447,9 +447,9 @@ private:
     \endverbatim
   */
   int cstep(double& stx, double& fx, double& dx,
-	    double& sty, double& fy, double& dy,
-	    double& stp, double& fp, double& dp,
-	    bool& brackt, double stmin, double stmax);
+        double& sty, double& fy, double& dy,
+        double& stp, double& fp, double& dp,
+        bool& brackt, double stmin, double stmax);
 
   //! max
   double max(double a, double b);
@@ -499,21 +499,21 @@ private:
     LastComputedStep
   };
 
-  //! Choice of the recovery step type; uses "Recovery Step Type" parameter 
+  //! Choice of the recovery step type; uses "Recovery Step Type" parameter
   RecoveryStepType recoveryStepType;
 
   //! Default step length
   double defaultstep;
   //! Recovery step if linesearch fails
   double recoverystep;
- 
+
   //! Options for sufficient decrease criteria
   enum SufficientDecreaseCondition {ArmijoGoldstein, AredPred};
 
   //! Chioce for the sufficient decrease criteria
   SufficientDecreaseCondition suffDecrCond;
 
-  //! If set to true the value of \f$ s^TJ^Tf \f$ is estimated using a directional derivative.  This eliminates having to compute the Jacobian at each inner iteration of the line search.  
+  //! If set to true the value of \f$ s^TJ^Tf \f$ is estimated using a directional derivative.  This eliminates having to compute the Jacobian at each inner iteration of the line search.
   bool useOptimizedSlopeCalc;
 
   //! Stores the merit function.

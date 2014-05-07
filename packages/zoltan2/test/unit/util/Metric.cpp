@@ -72,7 +72,7 @@ using std::cout;
 typedef zoltan2_partId_t partId_t;
 
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
-  int weightDim, int numLocalParts, bool givePartSizes);
+  int nWeights, int numLocalParts, bool givePartSizes);
 
 int main(int argc, char *argv[])
 {
@@ -100,7 +100,7 @@ int main(int argc, char *argv[])
 // Assumes numLocalObj is the same on every process.
 
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
-  int weightDim, int numLocalParts, bool givePartSizes)
+  int nWeights, int numLocalParts, bool givePartSizes)
 {
   int rank = comm->getRank();
   int nprocs = comm->getSize();
@@ -124,7 +124,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   if (rank == 0){
     cout << endl;
-    cout << "Test: weight dimension " << weightDim;
+    cout << "Test: number of weights " << nWeights;
     cout << ", desired number of parts " << numGlobalParts;
     if (givePartSizes)
       cout << ", with differing part sizes." << endl;
@@ -157,7 +157,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   // Part sizes.  Usually supplied by the user to the Problem.
   // Then the problem supplies them to the Solution.
 
-  int partSizeDim = (givePartSizes ? (weightDim ? weightDim : 1) : 0);
+  int partSizeDim = (givePartSizes ? (nWeights ? nWeights : 1) : 0);
   ArrayRCP<ArrayRCP<partId_t> > ids(partSizeDim);
   ArrayRCP<ArrayRCP<scalar_t> > sizes(partSizeDim);
 
@@ -187,7 +187,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   std::vector<const scalar_t *> weights;
   std::vector<int> strides;   // default to 1
 
-  int len = numLocalObj*weightDim;
+  int len = numLocalObj*nWeights;
   ArrayRCP<scalar_t> wgtBuf;
   scalar_t *wgts = NULL;
 
@@ -198,7 +198,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
       wgts[i] = (scalar_t(rand()) / scalar_t(RAND_MAX)) + 1.0;
   }
 
-  for (int i=0; i < weightDim; i++, wgts+=numLocalObj)
+  for (int i=0; i < nWeights; i++, wgts+=numLocalObj)
     weights.push_back(wgts);
 
   RCP<const idInput_t> ia;
@@ -219,11 +219,11 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   try{
     if (givePartSizes)
       solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
-        env, comm, idMap, weightDim,
+        env, comm, idMap, nWeights,
         ids.view(0,partSizeDim), sizes.view(0,partSizeDim)));
     else
       solution = rcp(new Zoltan2::PartitioningSolution<idInput_t>(
-        env, comm, idMap, weightDim));
+        env, comm, idMap, nWeights));
   }
   catch (std::exception &e){
     fail=1;
@@ -270,10 +270,10 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   TEST_FAIL_AND_EXIT(*comm, fail==0, "getObjectCountImbalance", 1);
 
-  if (rank==0 && weightDim > 0){
+  if (rank==0 && nWeights > 0){
     scalar_t imb;
     try{
-      for (int i=0; i < weightDim; i++){
+      for (int i=0; i < nWeights; i++){
         metricObject->getWeightImbalance(imb, i);
         cout << "Weight " << i << " imbalance: " << imb << endl;
       }
@@ -281,7 +281,7 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
     catch (std::exception &e){
       fail=10;
     }
-    if (!fail && weightDim > 1){
+    if (!fail && nWeights > 1){
       try{
         metricObject->getNormedImbalance(imb);
         cout << "Normed weight imbalance: " << imb << endl;

@@ -48,6 +48,147 @@
 
 namespace Tpetra {
 
+  /// \brief Describes a parallel distribution of objects over
+  ///   processes (Kokkos refactor specialization of Map).
+  ///
+  /// \tparam LocalOrdinal The type of local indices.  Should be an
+  ///   integer, and generally should be signed.  A good model of
+  ///   <tt>LocalOrdinal</tt> is \c int.  (In Epetra, this is always
+  ///   just \c int.)
+  ///
+  /// \tparam GlobalOrdinal The type of global indices.  Should be an
+  ///   integer, and generally should be signed.  Also,
+  ///   <tt>sizeof(GlobalOrdinal)</tt> should be greater than to equal
+  ///   to <tt>sizeof(LocalOrdinal)</tt>.  For example, if
+  ///   <tt>LocalOrdinal</tt> is \c int, good models of
+  ///   <tt>GlobalOrdinal</tt> are \c int, \c long, <tt>long long</tt>
+  ///   (if the configure-time option
+  ///   <tt>Teuchos_ENABLE_LONG_LONG_INT</tt> was set), or
+  ///   <tt>ptrdiff_t</tt>.
+  ///
+  /// \tparam DeviceType The Kokkos Device type.
+  ///
+  /// This class describes a distribution of data elements over one or
+  /// more processes in a communicator.  Each element has a global
+  /// index (of type \c GlobalOrdinal) uniquely associated to it.
+  /// Each global index in the Map is "owned" by one or more processes
+  /// in the Map's communicator.  The user gets to decide what an
+  /// "element" means; examples include a row or column of a sparse
+  /// matrix (as in CrsMatrix), or a row of one or more vectors (as in
+  /// MultiVector).
+  ///
+  /// \section Tpetra_Map_prereq Prerequisites
+  ///
+  /// Before reading the rest of this documentation, it helps to know
+  /// something about the Teuchos memory management classes, in
+  /// particular Teuchos::RCP, Teuchos::ArrayRCP, and
+  /// Teuchos::ArrayView, as well as Kokkos::View.  You should also
+  /// know a little bit about MPI (the Message Passing Interface for
+  /// distributed-memory programming).  You won't have to use MPI
+  /// directly to use Map, but it helps to be familiar with the
+  /// general idea of distributed storage of data over a communicator.
+  ///
+  /// \section Tpetra_Map_concepts Map concepts
+  ///
+  /// \subsection Tpetra_Map_local_vs_global Local and global indices
+  ///
+  /// The distinction between local and global indices and types might
+  /// confuse new Tpetra users.  <i>Global</i> indices represent the
+  /// elements of a distributed object (such as rows or columns of a
+  /// CrsMatrix, or rows of a MultiVector) uniquely over the entire
+  /// object, which may be distributed over multiple processes.
+  /// <i>Local</i> indices are local to the process that owns them.
+  /// If global index G is owned by process P, then there is a unique
+  /// local index L on process P corresponding to G.  If the local
+  /// index L is valid on process P, then there is a unique global
+  /// index G owned by P corresponding to the pair (L, P).  However,
+  /// multiple processes might own the same global index (an
+  /// "overlapping Map"), so a global index G might correspond to
+  /// multiple (L, P) pairs.  In summary, local indices on a process
+  /// correspond to object elements (e.g., sparse matrix rows or
+  /// columns) owned by that process.
+  ///
+  /// Tpetra differs from Epetra in that local and global indices may
+  /// have different types.  In Epetra, local and global indices both
+  /// have type \c int.  In Tpetra, you get to pick the type of each.
+  /// For example, you can use a 64-bit integer \c GlobalOrdinal type
+  /// to solve problems with more than \f$2^{31}\f$ unknowns, but a
+  /// 32-bit integer \c LocalOrdinal type to save bandwidth in sparse
+  /// matrix-vector multiply.
+  ///
+  /// \subsection Tpetra_Map_contig Contiguous or noncontiguous
+  ///
+  /// A <i>contiguous</i> Map divides an interval of global indices
+  /// over the processes in its communicator, such that each process
+  /// gets a contiguous interval of zero or more of those global
+  /// indices, with the indices owned by a process p strictly greater
+  /// than those owned by process q if \f$p > q\f$.  Formally, we call
+  /// a Map contiguous when all of the following hold:
+  /// <ol>
+  /// <li>the set of global indices (over all processes) forms an
+  ///   interval, </li>
+  /// <li>every global index in that interval is owned by exactly one
+  ///   process in the Map's communicator, <li>
+  /// <li>the (ordered) list of global indices on each process p in
+  ///   the Map's communicator forms a contiguous interval, and </li>
+  /// <li>if process p owns a global index \f$g_p\f$ and process q
+  ///   owns a global index \f$g_q\f$, and if \f$p > q\f$, then
+  ///   \f$g_p > g_q\f$. </li>
+  /// </ol>
+  /// Different processes may own different numbers of global indices.
+  /// We call a Map <i>uniform</i> if it is contiguous, <i>and</i> if
+  /// the user let the Map divide a global count of indices evenly
+  /// over the Map's communicator's processes.  The latter happens by
+  /// calling the version of Map's constructor that takes a global
+  /// count of indices, rather than a local count or an arbitrary list
+  /// of indices.
+  ///
+  /// Map optimizes for the contiguous case.  For example,
+  /// noncontiguous Maps always require communication in order to
+  /// figure out which process owns a particular global index.  (This
+  /// communication happens in getRemoteIndexList().)  Contiguous but
+  /// nonuniform Maps may also require communication in this case,
+  /// though we may only need to perform that communication once (at
+  /// Map setup time).  Contiguous Maps also can convert between
+  /// global and local indices more efficiently.
+  ///
+  /// \subsection Tpetra_Map_dist_repl Globally distributed or locally replicated
+  ///
+  /// <i>Globally distributed</i> means that <i>all</i> of the
+  /// following are true:
+  /// <ol>
+  /// <li> The map's communicator has more than one process. </li>
+  /// <li>There is at least one process in the map's communicator,
+  ///     whose local number of elements does not equal the number of
+  ///     global elements.  (That is, not all the elements are
+  ///     replicated over all the processes.) </li>
+  /// </ol>
+  /// If at least one of the above are not true, then the map is
+  /// <i>locally replicated.</i> (The two are mutually exclusive.)
+  ///
+  /// Globally distributed objects are partitioned across multiple
+  /// processes in a communicator.  Each process owns at least one
+  /// element in the object's Map that is not owned by another
+  /// process.  For locally replicated objects, each element in the
+  /// object's Map is owned redundantly by all processes in the
+  /// object's communicator.  Some algorithms use objects that are too
+  /// small to be distributed across all processes.  The upper
+  /// Hessenberg matrix in a GMRES iterative solve is a good example.
+  /// In other cases, such as with block iterative methods, block dot
+  /// product functions produce small dense matrices that are required
+  /// by all images.  Replicated local objects handle these
+  /// situations.
+  ///
+  /// \section Tpetra_Map_dev Host and device views
+  ///
+  /// Like all Tpetra objects that use the new Kokkos back-end, Map
+  /// has "dual view" semantics.  This means that the data live in the
+  /// preferred memory space of the \c DeviceType Kokkos device, but
+  /// are also mirrored in host memory, if host memory is a different
+  /// memory space.  Map is immutable, though, so it does not
+  /// implement the synch() or modify() methods that let users
+  /// transfer data between host and device memory, or mark either
+  /// data set as modified.
   template <class LocalOrdinal,
             class GlobalOrdinal,
             class DeviceType>
@@ -68,29 +209,197 @@ namespace Tpetra {
     //! The type of the Kokkos Device (more useful than node_type).
     typedef DeviceType device_type;
 
+  private:
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
+    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
+    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_device_type> host_impl_type;
+
+  public:
+
+    /** \brief Constructor with Tpetra-defined contiguous uniform distribution.
+     *
+     * This constructor produces a Map with the following contiguous
+     * range of <tt>numGlobalElements</tt> elements: <tt>indexBase,
+     * indexBase + 1, ..., numGlobalElements + indexBase - 1</tt>.
+     * Depending on the \c lg argument, the elements will either be
+     * distributed evenly over all the processes in the given
+     * communicator \c comm, or replicated on all processes in the
+     * communicator.
+     *
+     * Preconditions on \c numGlobalElements and \c indexBase will
+     * only be checked in a debug build (when Trilinos was configured
+     * with CMake option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     * checks are enabled and any check fails, the constructor will
+     * throw std::invalid_argument on all processes in the given
+     * communicator.
+     *
+     * \param numGlobalElements [in] Number of elements in the Map
+     *   (over all processes).
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the
+     *   communicator.  The index base will also be the smallest
+     *   global index in the Map.  (If you don't know what this should
+     *   be, use zero.)
+     *
+     * \param lg [in] Either <tt>GloballyDistributed</tt> or
+     *   <tt>LocallyReplicated</tt>.  If <tt>GloballyDistributed</tt>
+     *   and the communicator contains P processes, then each process
+     *   will own either <tt>numGlobalElements/P</tt> or
+     *   <tt>numGlobalElements/P + 1</tt> nonoverlapping contiguous
+     *   elements.  If <tt>LocallyReplicated</tt>, then all processes
+     *   will get the same set of elements, namely <tt>indexBase,
+     *   indexBase + 1, ..., numGlobalElements + indexBase - 1</tt>.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   elements.
+     *
+     * \param node [in/out] Kokkos Node instance.  The type of this
+     *   object must match the type of the Node template parameter.
+     */
     Map (const global_size_t globalNumIndices,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const LocalGlobal lg = GloballyDistributed,
          const Teuchos::RCP<node_type> &node = KokkosClassic::Details::getNode<node_type> ());
 
+    /** \brief Constructor with a user-defined contiguous distribution.
+     *
+     * If N is the sum of \c numLocalElements over all processes, then
+     * this constructor produces a nonoverlapping Map with N elements
+     * distributed over all the processes in the given communicator
+     * <tt>comm</tt>, with either \c numLocalElements or
+     * <tt>numLocalElements+1</tt> contiguous elements on the calling
+     * process.
+     *
+     * Preconditions on \c numGlobalElements, \c numLocalElements, and
+     * \c indexBase will only be checked in a debug build (when
+     * Trilinos was configured with CMake option
+     * <tt>TEUCHOS_ENABLE_DEBUG:BOOL=ON</tt>).  If checks are enabled
+     * and any check fails, the constructor will throw
+     * std::invalid_argument on all processes in the given
+     * communicator.
+     *
+     * \param numGlobalElements [in] If <tt>numGlobalElements ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   then the number of global elements will be computed (via a
+     *   global communication) as the sum of numLocalElements over all
+     *   processes.  Otherwise, it must equal the sum of
+     *   numLocalElements over all processes.
+     *
+     * \param numLocalElements [in] Number of elements that the
+     *   calling process will own in the Map.
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the given
+     *   communicator.  For this Map constructor, the index base will
+     *   also be the smallest global index in the Map.  If you don't
+     *   know what this should be, use zero.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   elements.
+     *
+     * \param node [in/out] Kokkos Node instance.  The type of this
+     *   object must match the type of the Node template parameter.
+     */
     Map (const global_size_t globalNumIndices,
          const size_t myNumIndices,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const Teuchos::RCP<node_type> &node = KokkosClassic::Details::getNode<node_type> ());
 
+    /** \brief Constructor with user-defined arbitrary (possibly
+     *    noncontiguous) distribution.
+     *
+     * Call this constructor if you have an arbitrary list of global
+     * indices for each process in the given communicator.  Those
+     * indices need not be contiguous, and the sets of global indices
+     * on different processes may overlap.  This is the constructor to
+     * use to make a general overlapping distribution.
+     *
+     * \param globalNumIndices [in] If <tt>globalNumIndices ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   the number of global elements will be computed (via a global
+     *   communication) as the sum of the counts of local elements.
+     *   Otherwise, it must equal the sum of the local elements over
+     *   all processes.  This will only be checked if Trilinos'
+     *   Teuchos package was built with debug support (CMake Boolean
+     *   option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     *   verification fails, the constructor will throw
+     *   std::invalid_argument.
+     *
+     * \param myGlobalIndices [in] List of global indices owned by the
+     *   calling process.
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the given
+     *   communicator.  Currently, Map requires that this equal the
+     *   global minimum index over all processes' \c myGlobalIndices
+     *   inputs.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   elements.
+     *
+     * \param node [in/out] Kokkos Node instance.  The type of this
+     *   object must match the type of the Node template parameter.
+     */
     Map (const global_size_t globalNumIndices,
          const Kokkos::View<const GlobalOrdinal*, device_type>& myGlobalIndices,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const Teuchos::RCP<node_type> &node = KokkosClassic::Details::getNode<node_type> ());
 
+    /** \brief Constructor with user-defined arbitrary (possibly
+     *    noncontiguous) distribution, as a Teuchos::ArrayView.
+     *
+     * This is like the previous noncontiguous constructor, except
+     * that it takes the input list of global indices as a
+     * Teuchos::ArrayView, rather than as a Kokkos::View.  We provide
+     * this constructor for backwards compatibility.
+     *
+     * \param globalNumIndices [in] If <tt>globalNumIndices ==
+     *   Teuchos::OrdinalTraits<Tpetra::global_size_t>::invalid()</tt>,
+     *   the number of global elements will be computed (via a global
+     *   communication) as the sum of the counts of local elements.
+     *   Otherwise, it must equal the sum of the local elements over
+     *   all processes.  This will only be checked if Trilinos'
+     *   Teuchos package was built with debug support (CMake Boolean
+     *   option <tt>Teuchos_ENABLE_DEBUG:BOOL=ON</tt>).  If
+     *   verification fails, the constructor will throw
+     *   std::invalid_argument.
+     *
+     * \param myGlobalIndices [in] List of global indices owned by the
+     *   calling process.
+     *
+     * \param indexBase [in] The base of the global indices in the
+     *   Map.  This must be the same on every process in the given
+     *   communicator.  Currently, Map requires that this equal the
+     *   global minimum index over all processes' \c myGlobalIndices
+     *   inputs.
+     *
+     * \param comm [in] Communicator over which to distribute the
+     *   elements.
+     *
+     * \param node [in/out] Kokkos Node instance.  The type of this
+     *   object must match the type of the Node template parameter.
+     */
     Map (const global_size_t globalNumIndices,
          const Teuchos::ArrayView<const GlobalOrdinal>& myGlobalIndices,
          const GlobalOrdinal indexBase,
          const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
          const Teuchos::RCP<node_type>& node = KokkosClassic::Details::getNode<node_type> ());
+
+    /// \brief Default constructor (that does nothing).
+    ///
+    /// This only exists to support view semantics of Map.  That is,
+    /// one can create an empty Map, and then assign a nonempty Map to
+    /// it using operator=.
+    ///
+    /// This constructor is also useful in methods like clone() and
+    /// removeEmptyProcesses(), where we have the information to
+    /// initialize the Map more efficiently ourselves, without going
+    /// through one of the three usual Map construction paths.
+    Map ();
 
     //@}
     /// \name Methods safe to call in a Kokkos parallel kernel on the host.
@@ -100,7 +409,7 @@ namespace Tpetra {
     /// host.  If DeviceType is not a host device (e.g., if it is
     /// Kokkos::Cuda), then you must get the underlying "device Map"
     /// object out in order to call these methods in a Kokkos parallel
-    /// kernel on the device.  To do this, call getDeviceMap().
+    /// kernel on the device.  To do this, call getDeviceView().
     //@{
 
     /// \brief An invalid global index.
@@ -242,11 +551,40 @@ namespace Tpetra {
     /// You may <i>not</i> call them in a Kokkos parallel kernel.
     //@{
 
-    /// \brief Get the device-memory version of the Map's implementation.
+    /// \brief Whether the Map is one to one.
     ///
-    /// The returned object has shallow-copy (handle or view) semantics.
-    Details::Map<LocalOrdinal, GlobalOrdinal, device_type> getDeviceMap () {
-      return mapDevice_;
+    /// This must be called collectively over all processes in the
+    /// Map's communicator.
+    bool isOneToOne () const;
+
+    /// \fn getDeviceView
+    /// \brief Get the version of the Map's implementation for the given Kokkos device.
+    /// \tparam OutDeviceType The Kokkos device type of the returned object.
+    ///
+    /// This method will only compile if one of two conditions is met:
+    /// <ol>
+    /// <li> \c OutDeviceType is the same as \c device_type (this Map's
+    ///      original Kokkos device type) </il>
+    /// <li> \c OutDeviceType is compatible with
+    ///      <tt>device_type::host_mirror_device_type</tt> </li>
+    /// </ol>
+    ///
+    /// \return A Map implementation object of type
+    ///   <tt>Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType></tt>.
+    ///   It has shallow-copy (handle or view) semantics.
+    ///
+    /// This method has a handy side effect: if it can do so cheaply,
+    /// it initializes either the host or device Map implementation of
+    /// this object, if it is not yet initialized but the other is.
+    /// This is why the method is marked nonconst.
+    template<class OutDeviceType>
+    Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType>
+    getDeviceView () {
+      // MapMirrorer finds which of mapDevice_ or mapHost_ (if either)
+      // is initialized, and returns a mirror of that.  It's a shallow
+      // copy if the device types are the same, else it's a deep copy.
+      return Details::MapMirrorer<Details::Map<LocalOrdinal, GlobalOrdinal, OutDeviceType>,
+        device_impl_type, host_impl_type>::mirror (mapDevice_, mapHost_);
     }
 
     /// \brief Return the process ranks and corresponding local
@@ -497,14 +835,6 @@ namespace Tpetra {
     // implement clone() without exposing the details of Map to users.
     template <class LO, class GO, class N> friend class Map;
 
-    /// \brief Default constructor (that does nothing).
-    ///
-    /// We use this in clone() and removeEmptyProcesses(), where we
-    /// have the information to initialize the Map more efficiently
-    /// ourselves, without going through one of the three usual Map
-    /// construction paths.
-    Map () {}
-
   private:
     template<class OutMapType, class InMapType>
     friend struct Details::MapCloner;
@@ -518,6 +848,12 @@ namespace Tpetra {
     /// getRemoteIndexList() to create the Directory on demand.
     void setupDirectory () const;
 
+    /// \brief Is the given Map locally the same as the input Map?
+    ///
+    /// "Locally the same" means that on the calling process, the two
+    /// Maps' global indices are the same and occur in the same order.
+    bool locallySameAs (const Map<LocalOrdinal, GlobalOrdinal, node_type>& map) const;
+
     //! The communicator over which this Map is distributed.
     Teuchos::RCP<const Teuchos::Comm<int> > comm_;
 
@@ -527,10 +863,6 @@ namespace Tpetra {
     /// to downstream classes such as MultiVector, Vector, CrsGraph
     /// and CrsMatrix.
     Teuchos::RCP<node_type> node_;
-
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, device_type> device_impl_type;
-    typedef typename device_type::host_mirror_device_type host_mirror_device_type;
-    typedef Details::Map<LocalOrdinal, GlobalOrdinal, host_mirror_device_type> host_impl_type;
 
     /// \brief Device-memory version of the Map's implementation.
     ///
@@ -544,7 +876,7 @@ namespace Tpetra {
     /// This has to be declared \c mutable, because Kokkos' idea of
     /// what methods should be const differs from current Tpetra's
     /// idea.
-    mutable device_impl_type mapHost_;
+    mutable host_impl_type mapHost_;
 
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
@@ -587,30 +919,28 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, OutNodeType> out_map_type;
       typedef Tpetra::Map<LO, GO, in_node_type> in_map_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::rcp;
-
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), lg, nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), lg, nodeOut);
         }
         else if (mapIn.isContiguous ()) {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
         else {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeElementList (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeElementList (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
       }
     };
@@ -623,30 +953,28 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, out_node_type> out_map_type;
       typedef Tpetra::Map<LO, GO, in_node_type> in_map_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::rcp;
-
         if (mapIn.isUniform ()) {
           const Tpetra::LocalGlobal lg = mapIn.isDistributed () ?
             Tpetra::GloballyDistributed : Tpetra::LocallyReplicated;
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), lg, nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), lg, nodeOut);
         }
         else if (mapIn.isContiguous ()) {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeNumElements (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeNumElements (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
         else {
-          return rcp (new out_map_type (mapIn.getGlobalNumElements (),
-                                        mapIn.getNodeElementList (),
-                                        mapIn.getIndexBase (),
-                                        mapIn.getComm (), nodeOut));
+          return out_map_type (mapIn.getGlobalNumElements (),
+                               mapIn.getNodeElementList (),
+                               mapIn.getIndexBase (),
+                               mapIn.getComm (), nodeOut);
         }
       }
     };
@@ -659,28 +987,25 @@ namespace Tpetra {
       typedef Tpetra::Map<LO, GO, Kokkos::Compat::KokkosDeviceWrapperNode<InDeviceType> > in_map_type;
       typedef Kokkos::Compat::KokkosDeviceWrapperNode<OutDeviceType> out_node_type;
 
-      static Teuchos::RCP<const out_map_type>
+      static out_map_type
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
-        using Teuchos::RCP;
-        typedef typename OutDeviceType::host_mirror_device_type
-          host_mirror_device_type;
-        RCP<out_map_type> mapOut (new out_map_type ()); // Make an empty Map.
+        out_map_type mapOut; // Make an empty Map.
 
-        mapOut->comm_ = mapIn.comm_;
-        mapOut->node_ = nodeOut;
-        mapOut->mapDevice_.template create_copy_view<OutDeviceType> (mapIn.mapDevice_);
-        mapOut->mapHost_.template create_copy_view<host_mirror_device_type> (mapIn.mapHost_);
+        mapOut.comm_ = mapIn.comm_;
+        mapOut.node_ = nodeOut;
+        mapOut.mapDevice_.template create_copy_view<InDeviceType> (mapIn.mapDevice_);
+        mapOut.mapHost_.template create_copy_view<typename InDeviceType::host_mirror_device_type> (mapIn.mapHost_);
 
         // mfh 02 Apr 2013: While Map only needs to create the Directory
         // on demand in getRemoteIndexList, we have a Directory here that
         // we can clone inexpensively, so there is no harm in creating it
         // here.
         if (! mapIn.directory_.is_null ()) {
-          mapOut->directory_ = mapIn.directory_->template clone<out_node_type> (*mapOut);
+          mapOut.directory_ = mapIn.directory_->template clone<out_node_type> (mapOut);
         } else {
-          mapOut->directory_ = Teuchos::null; // created on demand
+          mapOut.directory_ = Teuchos::null; // created on demand
         }
         return mapOut;
       }
@@ -697,7 +1022,9 @@ namespace Tpetra {
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<InDeviceType> in_node_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, in_node_type> in_map_type;
     typedef Tpetra::Map<LocalOrdinal, GlobalOrdinal, OutNodeType> out_map_type;
-    return Details::MapCloner<out_map_type, in_map_type>::clone (*this, outNode);
+    typedef Tpetra::Details::MapCloner<out_map_type, in_map_type> cloner_type;
+    // Copy constructor does a shallow copy.
+    return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, outNode)));
   }
 
 } // namespace Tpetra

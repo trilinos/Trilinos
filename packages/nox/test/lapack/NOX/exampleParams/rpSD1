@@ -8,7 +8,7 @@
 @@
 
 @ "Line Search"
-"Method"  string "Backtrack" 
+"Method"  string "Backtrack"
 @@
 
 @ "Printing"

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,11 +51,11 @@
 #ifndef NOX_DIRECTION_BROYDEN_H
 #define NOX_DIRECTION_BROYDEN_H
 
-#include "NOX_Common.H"		   
+#include "NOX_Common.H"
 
 #include "NOX_Direction_Generic.H" // base class
 #include "NOX_Direction_Utils_InexactNewton.H" // class data element
-#include "Teuchos_ParameterList.hpp"	   // class data element 
+#include "Teuchos_ParameterList.hpp"       // class data element
 #include "Teuchos_RCP.hpp" // class data element
 
 // Forward declaration
@@ -69,13 +69,13 @@ namespace NOX {
 namespace NOX {
 namespace Direction {
 
-//! %Broyden direction 
-/*!  
-  
+//! %Broyden direction
+/*!
+
   We will calculate a limited-memory %Broyden direction of the form
 
-  &nbsp;&nbsp; 
-  \f$d_k = -B_k^{-1} F_k.\f$ 
+  &nbsp;&nbsp;
+  \f$d_k = -B_k^{-1} F_k.\f$
 
   Here \f$B_k\f$ is a limited-memory %Broyden approximation to the
   Jacobian of \f$F\f$ at \f$x_k\f$, and \f$F_k = F(x_k)\f$. It is
@@ -91,7 +91,7 @@ namespace Direction {
   <ul>
   <li> C. T. Kelley, <em>Iterative Methods for %Linear and Nonlinear Equations</em>, SIAM, 1995.
   </ul>
-  
+
 
   <b>Parameters</b>
 
@@ -122,24 +122,24 @@ namespace Direction {
 
   <li>"Linear Solver"/"Tolerance" - Desired tolerance for linear
       solve. Defaults to 1.0e-4. The tolerance can be computed using
-      adaptive forcing terms. See NOX::Direction::Utils::InexactNewton 
+      adaptive forcing terms. See NOX::Direction::Utils::InexactNewton
       for additional options.
 
   </ul>
 
- */  
+ */
 
 class Broyden : public Generic {
 
 public:
-  
+
   //----------------------------------------------------------------------
   // MemoryUnit helper class
   //----------------------------------------------------------------------
-  
-  /*! 
+
+  /*!
     \brief Utility class for NOX::Direction::Broyden::BroydenMemory
-    
+
     Stores an \f$s\f$-vector and associated information for the limited-memory Broyden update.
 
     Throughout the docuementation of this class, we make the following associations.
@@ -148,25 +148,25 @@ public:
     - #snormsqr stores the values of \f$\|s\|_2^2\f$
   */
   class BroydenMemoryUnit {
-    
+
   public:
-    
-    /*! 
+
+    /*!
       \brief Constructor
-      
+
       Sets #sptr to NULL, and #lambda and #snormsqr to zero.
     */
     BroydenMemoryUnit();
-    
-    /*! 
+
+    /*!
       \brief Destuctor
-      
+
       Deletes #sptr.
     */
     ~BroydenMemoryUnit();
-    
 
-    /*! 
+
+    /*!
       \brief Reset this memory unit with a new update vector.
 
       Let the vector \f$d\f$ represent the input argument.
@@ -174,15 +174,15 @@ public:
       Also recalculates \f$\|s\|_2^2\f$ and sets \f$\lambda = 0\f$.
 
       \note
-      If #sptr is NULL, space is allocated by cloning the input vector 
+      If #sptr is NULL, space is allocated by cloning the input vector
       (see NOX::Abstract::Vector::clone).
     */
     void reset(const NOX::Abstract::Vector& d);
-    
-     /*! 
+
+     /*!
        \brief Update the step length
 
-       Set \f$ \lambda \f$ to the input argument. 
+       Set \f$ \lambda \f$ to the input argument.
        If \f$ \lambda \neq 1 \f$, then
        reset \f$ s = \lambda s \f$ and \f$ \|s\|_2^2 = \lambda^2 \|s\|_2^2 \f$.
      */
@@ -190,40 +190,40 @@ public:
 
     //! Get pointer to \f$s\f$
     Teuchos::RCP<const NOX::Abstract::Vector> sPtr() const;
-    
+
     //! Get the step, \f$\lambda\f$
     double step() const;
-    
+
     //! Get \f$\|s\|_2^2 \f$
     double sNormSqr() const;
-    
+
   private:
-    
+
     //! A pointer to the \f$s\f$-vector
     Teuchos::RCP<NOX::Abstract::Vector> sptr;
-    
-    /*! 
+
+    /*!
         \brief The associated step length, i.e., \f$\lambda\f$
 
         The step is zero if the direction has not yet been scaled via
         setStep().
     */
     double lambda;
-    
+
     //! The norm of \f$s\f$ squared, i.e., \f$s^Ts\f$
     double snormsqr;
-    
+
   };
-  
+
   //----------------------------------------------------------------------
   // Memory helper class
   //----------------------------------------------------------------------
-  
-  /*! 
-    \brief 
+
+  /*!
+    \brief
     Utility class for NOX::Direction::Broyden method
     to manage the information stored in "limited" memory.
-    
+
     Store up to \f$m\f$ MemoryUnit objects where \f$m\f$ is passed to
     reset().  Every time push() is called, a new
     MemoryUnit is added. If there are already \f$m\f$ MemoryUnit's, the
@@ -235,38 +235,38 @@ public:
     to users of this class.
   */
   class BroydenMemory {
-    
+
   public:
-    
-    //! Constructor. 
-    /*! 
+
+    //! Constructor.
+    /*!
       Does nothing.
     */
     BroydenMemory();
-    
-    //! Destructor. 
-    /*! 
+
+    //! Destructor.
+    /*!
       Does nothing.
     */
     ~BroydenMemory();
-    
+
     //! Reset the memory
-    /*! 
+    /*!
       Sets #mMax to the value of \c m.
       Sets the size of the #memory vector to be at least mMax.
       Sets the capacity of the #index vector to be at least mMax.
       Sets the size of the #index vector to be zero.
     */
     void reset(int m);
-    
+
     //! Reset the memory
-    /*! 
+    /*!
       Sets the size of the #index vector to be zero.
     */
     void reset();
-    
+
     //! Add new information to the memory
-    /*!  
+    /*!
       We need to calculate where the new udpate should be stored in
       #memory and update the information in #index.
 
@@ -281,22 +281,22 @@ public:
       entry points to the newest update.
      */
     void push(const NOX::Abstract::Vector& d);
-    
+
     //! Returns true if the memory is empty
     bool empty() const;
-    
+
     //! Number of items in memory
     int size() const;
-    
-    //! Return the ith MemoryUnit (unchecked access) 
-    /*! 
+
+    //! Return the ith MemoryUnit (unchecked access)
+    /*!
       The zero entry is the oldest memory.
       The m-1 entry is the newest entry (where m denotes the memory size).
     */
     BroydenMemoryUnit& operator[](int i);
-    
+
   private:
-    
+
     //! Maximum number of updates that can be stored
     int mMax;
 
@@ -310,18 +310,18 @@ public:
       </ul>
      */
     std::vector<int> index;
-    
+
     //! Memory
-    /*! 
+    /*!
       The size of this vector is greater than or equal to #mMax. We
       never decrease the size of memory on a reset() call because we
       want to reserve the potential to reuse memory that has already
-      been allocated. 
+      been allocated.
     */
-    
+
     std::vector<BroydenMemoryUnit> memory;
   };
-  
+
 //----------------------------------------------------------------------
 // END HELPER CLASSES
 //----------------------------------------------------------------------
@@ -329,28 +329,28 @@ public:
 public:
 
   //! Constructor
-  Broyden(const Teuchos::RCP<NOX::GlobalData>& gd, 
-	  Teuchos::ParameterList& params);
+  Broyden(const Teuchos::RCP<NOX::GlobalData>& gd,
+      Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~Broyden();
 
   // derived
-  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
-		     Teuchos::ParameterList& params);
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+             Teuchos::ParameterList& params);
 
   //! Not supported for this direction - only works for line search based solver
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 private:
 
   //! Print an error message and throw an error
-  /*!  
+  /*!
     If error printing is enabled for this process (see NOX::Utils),
     prints the following where \<functionName\> and \<errorMsg\> are
     replaced by the std::strings that are passed in.
@@ -369,13 +369,13 @@ NOX::Direction::Broyden::<functionName> - <errorMsg>
     <ul>
     <li> It's the very first iteration
     <li> The current Jacobian has been used #cntMax times
-    <li> \f$ \frac{ \|F_{new}\|}{\|F_{old}\|} > \alpha \f$ where 
-         \f$ \alpha \f$ is the maximum convergence rate that is 
+    <li> \f$ \frac{ \|F_{new}\|}{\|F_{old}\|} > \alpha \f$ where
+         \f$ \alpha \f$ is the maximum convergence rate that is
          specified in the parameter list (defaults to 1.0).
     </ul>
   */
-  bool doRestart(NOX::Abstract::Group& soln, 
-		       const NOX::Solver::LineSearchBased& solver);
+  bool doRestart(NOX::Abstract::Group& soln,
+               const NOX::Solver::LineSearchBased& solver);
 
 private:
 
@@ -386,7 +386,7 @@ private:
   Teuchos::RCP<NOX::Utils> utils;
 
   //! "Linear Solver" sublist from "Direction"/"Broyden"
-  /*! 
+  /*!
     \note This is pointer rather than a reference to allow for the
     reset function. It should not be deleted in the destructor.
    */
@@ -395,16 +395,16 @@ private:
   //! Group to hold the "old" Jacobian
   Teuchos::RCP<NOX::Abstract::Group> oldJacobianGrpPtr;
 
-  /*! 
+  /*!
     \brief Counter of how many times the Jacobian associated with
-    #oldJacobianGrpPtr has been used since its last update 
+    #oldJacobianGrpPtr has been used since its last update
   */
   int cnt;
 
-  /*! 
-    \brief Maximum number of times the Jacboian should be used between updates. 
-    \note Should only be changed by reset() 
-  */ 
+  /*!
+    \brief Maximum number of times the Jacboian should be used between updates.
+    \note Should only be changed by reset()
+  */
   int cntMax;
 
   //! Last computed convergence rate.

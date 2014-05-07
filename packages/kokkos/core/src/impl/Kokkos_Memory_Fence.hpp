@@ -53,7 +53,7 @@ void memory_fence()
 {
 #if defined( KOKKOS_ATOMICS_USE_CUDA )
   __threadfence();
-#elif defined( KOKKOS_ATOMICS_USE_GCC ) && !defined( __INTEL_COMPILER )
+#elif defined( KOKKOS_ATOMICS_USE_GCC ) && ( !defined( __INTEL_COMPILER ) || defined ( KOKKOS_HAVE_CUDA ) )
   __sync_synchronize();
 #elif defined( __INTEL_COMPILER ) || defined( KOKKOS_ATOMICS_USE_INTEL )
   _mm_mfence();

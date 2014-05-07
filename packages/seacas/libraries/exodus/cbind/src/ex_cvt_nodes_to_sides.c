@@ -33,17 +33,15 @@
  *
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 static int64_t get_node(void_int *connect, size_t index, size_t int_size)
 {
@@ -1035,7 +1033,8 @@ int ex_cvt_nodes_to_sides(int exoid,
   safe_free(elem_blk_parms);
   safe_free(elem_blk_ids);
   safe_free(ss_elem_ndx);
-
+  safe_free(same_elem_type);
+  
   return (err_stat);
 }
 

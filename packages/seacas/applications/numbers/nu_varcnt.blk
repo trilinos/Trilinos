@@ -1,0 +1,16 @@
+C $Id: varcnt.blk,v 1.2 1999/02/16 21:38:02 gdsjaar Exp $
+C $Log: varcnt.blk,v $
+C Revision 1.2  1999/02/16 21:38:02  gdsjaar
+C Converted to read exodusII database format.  Somewhat tested, not
+C ready for production yet.
+C
+C Revision 1.1.1.1  1991/02/21 15:46:15  gdsjaar
+C NUMBERS: Greg Sjaardema, initial Unix release
+C
+CRevision 1.1  1991/02/21  15:46:14  gdsjaar
+CInitial revision
+C
+      COMMON /VARCNT/ NVARGL, NVARNP, NVAREL
+C       NVARGL  INTEGER         Number of GLOBAL variables
+C       NVARNP  INTEGER         Number of NODAL variables
+C       NVAREL  INTEGER         Number of ELEMENT variables

@@ -176,7 +176,7 @@ namespace {
 	}
 	norm = (x1[n] - x2[n2])*(x1[n] - x2[n2]);
 
-	if (file1.Dimension() > 1) {
+	if (file1.Dimension() > 1 && file2.Dimension() > 1) {
 	  double dy = interface.coord_tol.Delta(y1[n], y2[n2]);
 	  if (dy > interface.coord_tol.value) {
 	    sprintf(buf, "   y coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
@@ -188,7 +188,7 @@ namespace {
 	  norm += (y1[n] - y2[n2])*(y1[n] - y2[n2]);
 	}
 	
-	if (file1.Dimension() > 2) {
+	if (file1.Dimension() > 2 && file2.Dimension() > 2) {
 	  double dz = interface.coord_tol.Delta(z1[n], z2[n2]);
 	  if (dz > interface.coord_tol.value) {
 	    sprintf(buf, "   z coord %s diff: %14.7e ~ %14.7e =%12.5e (node "ST_ZU")",
@@ -378,7 +378,7 @@ namespace {
     }
 
 
-    // Do the following check(s) only if there are nodeset varibles...
+    // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
     if (!interface.ns_var_names.empty() || interface.pedantic) {
@@ -463,7 +463,7 @@ namespace {
     }
 
 
-    // Do the following check(s) only if there are sideset varibles... (or -pedantic)
+    // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.
     // Eventually need to be able to map the order...
     if (!interface.ss_var_names.empty() || interface.pedantic) {

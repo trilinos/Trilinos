@@ -221,7 +221,7 @@ int getDim(void *data, int *ierr)
 //////////////////////////
 void getObjList(void *data, int numGid, int numLid,
   ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
-  int wgt_dim, float *obj_wgts, int *ierr)
+  int num_wgts, float *obj_wgts, int *ierr)
 {
   *ierr = 0;
   DOTS *dots = (DOTS *) data;
@@ -236,16 +236,16 @@ void getObjList(void *data, int numGid, int numLid,
     for (size_t i=0; i < localLen; i++)
       gids[i] = static_cast<ZOLTAN_ID_TYPE>(ids[i]);
 
-  if (wgt_dim > 0){
+  if (num_wgts > 0){
     float *wgts = obj_wgts;
     for (size_t i=0; i < localLen; i++)
-      for (int w=0; w < wgt_dim; w++)
+      for (int w=0; w < num_wgts; w++)
         *wgts++ = dots->weights[w][i];
   }
 }
 
 //////////////////////////
-void getCoordinates(void *data, int numGid, int numLid,
+void getCoords(void *data, int numGid, int numLid,
   int numObj, ZOLTAN_ID_PTR gids, ZOLTAN_ID_PTR lids,
   int dim, double *coords, int *ierr)
 {
@@ -437,6 +437,7 @@ tMVector_t* makeMeshCoordinates(
   ArrayView<const scalar_t> xArray(x, numLocalCoords*3);
   tMVector_t *dots = new tMVector_t(idMap, xArray, numLocalCoords, 3);
 
+  delete [] x;
   return dots;
 }
 
@@ -458,7 +459,7 @@ int main(int argc, char *argv[])
 
   // Default values
   gno_t numGlobalCoords = 1000;
-  int weightDim = 0;
+  int nWeights = 0;
   int debugLevel=2;
   string memoryOn("memoryOn");
   string memoryOff("memoryOff");
@@ -491,7 +492,7 @@ int main(int argc, char *argv[])
     "Approximate number of global coordinates.");
   commandLine.setOption("numParts", &numGlobalParts,
     "Number of parts (default is one per proc).");
-  commandLine.setOption("weightDim", &weightDim,
+  commandLine.setOption("nWeights", &nWeights,
     "Number of weights per coordinate, zero implies uniform weights.");
   commandLine.setOption("debug", &debugLevel, "Zoltan1 debug level");
   commandLine.setOption("remap", "no-remap", &remap,
@@ -553,13 +554,13 @@ int main(int argc, char *argv[])
       }
 #endif
 
-      if (weightDim > 0){
+      if (nWeights > 0){
 
-          dots.weights.resize(weightDim);
+          dots.weights.resize(nWeights);
 
           int wt = 0;
           float scale = 1.0;
-          for (int i=0; i < weightDim; i++){
+          for (int i=0; i < nWeights; i++){
               dots.weights[i].resize(numLocalCoords);
               makeWeights(comm, dots.weights[i], weightTypes(wt++), scale, rank);
 
@@ -576,7 +577,7 @@ int main(int argc, char *argv[])
       GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t> *gg = new GeometricGen::GeometricGenerator<scalar_t, lno_t, gno_t, node_t>(geoparams,comm);
 
       int coord_dim = gg->getCoordinateDimension();
-      weightDim = gg->getWeightDimension();
+      nWeights = gg->getNumWeights();
       numLocalCoords = gg->getNumLocalCoords();
       numGlobalCoords = gg->getNumGlobalCoords();
       scalar_t **coords = new scalar_t * [coord_dim];
@@ -585,9 +586,9 @@ int main(int argc, char *argv[])
       }
       gg->getLocalCoordinatesCopy(coords);
       scalar_t **weight = NULL;
-      if(weightDim){
-          weight= new scalar_t * [weightDim];
-          for(int i = 0; i < weightDim; ++i){
+      if(nWeights){
+          weight= new scalar_t * [nWeights];
+          for(int i = 0; i < nWeights; ++i){
               weight[i] = new scalar_t[numLocalCoords];
           }
           gg->getLocalWeightsCopy(weight);
@@ -612,17 +613,17 @@ int main(int argc, char *argv[])
       tMVector_t *tmVector = new tMVector_t( mp, coordView.view(0, coord_dim), coord_dim);
 
       dots.coordinates = tmVector;
-      dots.weights.resize(weightDim);
+      dots.weights.resize(nWeights);
 
-      if(weightDim){
-          for (int i = 0; i < weightDim;++i){
+      if(nWeights){
+          for (int i = 0; i < nWeights;++i){
               for (lno_t j = 0; j < lno_t(numLocalCoords); ++j){
                   dots.weights[i].push_back(weight[i][j]);
               }
           }
       }
-      if(weightDim){
-          for(int i = 0; i < weightDim; ++i)
+      if(nWeights){
+          for(int i = 0; i < nWeights; ++i)
               delete [] weight[i];
           delete [] weight;
       }
@@ -630,7 +631,7 @@ int main(int argc, char *argv[])
   else {
 
       UserInputForTests uinput(testDataFilePath, inputFile, comm, true);
-      RCP<tMVector_t> coords = uinput.getCoordinates();
+      RCP<tMVector_t> coords = uinput.getUICoordinates();
       tMVector_t *newMulti = new tMVector_t(*coords);
       dots.coordinates = newMulti;
       numLocalCoords = coords->getLocalLength();
@@ -672,7 +673,7 @@ int main(int argc, char *argv[])
 
   if (objective != balanceCount){
     oss.str("");
-    oss << weightDim;
+    oss << nWeights;
     Zoltan_Set_Param(zz, "OBJ_WEIGHT_DIM", oss.str().c_str());
 
     if (objective == mcnorm1)
@@ -689,7 +690,7 @@ int main(int argc, char *argv[])
   Zoltan_Set_Num_Obj_Fn(zz, getNumObj, &dots);
   Zoltan_Set_Obj_List_Fn(zz, getObjList, &dots);
   Zoltan_Set_Num_Geom_Fn(zz, getDim, &dots);
-  Zoltan_Set_Geom_Multi_Fn(zz, getCoordinates, &dots);
+  Zoltan_Set_Geom_Multi_Fn(zz, getCoords, &dots);
 
   int changes, numGidEntries, numLidEntries, numImport, numExport;
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids;
@@ -715,7 +716,7 @@ int main(int argc, char *argv[])
   for (int i = 0; i < numGlobalParts; i++) sumWgtPerPart[i] = 0.;
 
   for (size_t i = 0; i < numLocalCoords; i++)
-    sumWgtPerPart[exportToPart[i]] += (weightDim ? dots.weights[0][i]: 1.);
+    sumWgtPerPart[exportToPart[i]] += (nWeights ? dots.weights[0][i]: 1.);
 
   Teuchos::reduceAll<int, float>(*comm, Teuchos::REDUCE_SUM, numGlobalParts,
                                   sumWgtPerPart, gsumWgtPerPart);
@@ -755,7 +756,7 @@ int main(int argc, char *argv[])
   MEMORY_CHECK(doMemory && rank==0, "After Zoltan_Destroy");
 
   delete dots.coordinates;
-  for (int i = 0; i < weightDim; i++)
+  for (int i = 0; i < nWeights; i++)
     dots.weights[i].clear();
   dots.weights.clear();
 

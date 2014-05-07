@@ -67,7 +67,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy()
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), lib_(Xpetra::UseTpetra), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     AddLevel(rcp(new Level));
@@ -75,7 +75,7 @@ namespace MueLu {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Hierarchy(const RCP<Matrix> & A)
-    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), implicitPRrebalance_(!GetDefaultPRrebalance()),
+    : maxCoarseSize_(GetDefaultMaxCoarseSize()), implicitTranspose_(false), doPRrebalance_(GetDefaultPRrebalance()),
       isPreconditioner_(true), Cycle_(GetDefaultCycle()), isDumpingEnabled_(false), dumpLevel_(-1)
   {
     lib_ = A->getRowMap()->lib();
@@ -186,6 +186,14 @@ namespace MueLu {
     if (fineLevelManager == Teuchos::null) isFinestLevel = true;
     if (nextLevelManager == Teuchos::null) isLastLevel   = true;
 
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    // Record the communicator on the level (used for timers sync)
+    if (isFinestLevel) {
+      RCP<Matrix> A = level.Get< RCP<Matrix> >("A");
+      level.SetComm(A->getRowMap()->getComm());
+    }
+#endif
+
     // Attach FactoryManager to the fine level
     RCP<SetFactoryManager> SFMFine;
     if (!isFinestLevel)
@@ -258,6 +266,12 @@ namespace MueLu {
     RCP<Matrix> Ac = Teuchos::null;
     if (level.IsAvailable("A"))
       Ac = level.Get<RCP<Matrix> >("A");
+
+#ifdef HAVE_MUELU_TIMER_SYNCHRONIZATION
+    // Record the communicator on the level (used for timers sync)
+    if (!Ac.is_null())
+      level.SetComm(Ac->getRowMap()->getComm());
+#endif
 
     // Test if we reach the end of the hierarchy
     bool isOrigLastLevel = isLastLevel;
@@ -520,7 +534,7 @@ namespace MueLu {
         if (Coarse->IsAvailable("Importer"))
           importer = Coarse->Get< RCP<const Import> >("Importer");
 
-        if (!implicitPRrebalance_ || importer.is_null()) {
+        if (doPRrebalance_ || importer.is_null()) {
           coarseX = MultiVectorFactory::Build(coarseRhs->getMap(), X.getNumVectors(), initializeWithZeros);
 
         } else {
@@ -557,7 +571,7 @@ namespace MueLu {
           coarseX->replaceMap(origXMap);
         }
 
-        if (implicitPRrebalance_ && !importer.is_null()) {
+        if (!doPRrebalance_ && !importer.is_null()) {
           RCP<TimeMonitor> ITime      = rcp(new TimeMonitor(*this, prefix + "Solve : export (total)"      , Timings0));
           RCP<TimeMonitor> ILevelTime = rcp(new TimeMonitor(*this, prefix + "Solve : export" + levelSuffix, Timings0));
 
@@ -704,6 +718,9 @@ namespace MueLu {
     double operatorComplexity = Teuchos::as<double>(totalNnz) / Levels_[0]->template Get< RCP<Matrix> >("A")->getGlobalNumEntries();
 
     if (verbLevel & (Statistics0 | Test)) {
+      // save ostream flags
+      std::ios::fmtflags flags(out.flags());
+
       out << "\n--------------------------------------------------------------------------------\n" <<
                "---                            Multigrid Summary                             ---\n"
                "--------------------------------------------------------------------------------" << std::endl;
@@ -736,6 +753,7 @@ namespace MueLu {
           preSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PreSmoother");
         if (Levels_[i]->IsAvailable("PostSmoother"))
           postSmoo = Levels_[i]->template Get< RCP<SmootherBase> >("PostSmoother");
+
         if (preSmoo != null && preSmoo == postSmoo)
           out << "Smoother (level " << i << ") both : " << preSmoo->description() << std::endl;
         else {
@@ -747,7 +765,9 @@ namespace MueLu {
 
         out << std::endl;
 
-      } //for (int i=0; i<GetNumLevels(); ++i)
+        // restore ostream flags
+        out.flags(flags);
+      }
     }
 
     if (verbLevel & Statistics2) {
@@ -813,59 +833,57 @@ namespace MueLu {
 #endif
   }
 
+  // Enforce that coordinate vector's map is consistent with that of A
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReplaceCoordinateMap(Level &level) {
-    RCP<Matrix> A = level.Get<RCP<Matrix> >("A");
-    // Enforce that coordinate vector's map is consistent with that of A
-    RCP<MultiVector> Coordinates = level.Get<RCP<MultiVector> >("Coordinates");
-    size_t blkSize   = A->GetFixedBlockSize();
-    RCP<const Map> nodeMap;
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::ReplaceCoordinateMap(Level& level) {
+    RCP<Matrix>      A       = level.Get<RCP<Matrix> >     ("A");
+    RCP<MultiVector> coords  = level.Get<RCP<MultiVector> >("Coordinates");
 
-    bool canReplaceMap = false;
-    // TODO For nontrivial strided maps, the map will not be replaced.
-    if (blkSize == 1)
-      canReplaceMap = true;
-    else if (blkSize > 1) {
-      if (A->IsView("stridedMaps") && Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null)
-      {
-        Xpetra::viewLabel_t oldView = A->SwitchToView("stridedMaps");
-        RCP<const StridedMap> stridedRowMap = Teuchos::rcp_dynamic_cast<const StridedMap>(A->getRowMap());
-        TEUCHOS_TEST_FOR_EXCEPTION(stridedRowMap == Teuchos::null,Exceptions::BadCast,
-                                   "Hierarchy::ReplaceCoordinateMap : cast to strided row map failed.");
-        if (stridedRowMap->getFixedBlockSize() == blkSize && stridedRowMap->getOffset() == 0)
-          canReplaceMap = true;
-        oldView = A->SwitchToView(oldView);
-      } else
-        canReplaceMap = true;
+    size_t           blkSize = A->GetFixedBlockSize();
+
+    if (A->getRowMap()->isSameAs(*(coords->getMap())))
+      return;
+
+    bool replaceMap = true;
+    if (A->IsView("stridedMaps") && rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps")) != Teuchos::null) {
+      RCP<const StridedMap> stridedRowMap = rcp_dynamic_cast<const StridedMap>(A->getRowMap("stridedMaps"));
+
+      if (stridedRowMap->getStridedBlockId() != -1 || stridedRowMap->getOffset() == 0)
+        replaceMap = false;
     }
 
-    if (canReplaceMap) {
+    if (replaceMap) {
       GetOStream(Runtime1) << "Replacing coordinate map" << std::endl;
-      if (blkSize == 1)
-        nodeMap = A->getRowMap();
-      else {
+
+      RCP<const Map> nodeMap = A->getRowMap();
+      if (blkSize > 1) {
         // Create a nodal map, as coordinates have not been expanded to a DOF map yet.
-        RCP<const Map> dofMap = A->getRowMap();
-        GO indexBase = dofMap->getIndexBase();
-        size_t numLocalDOFs = dofMap->getNodeNumElements();
-        Teuchos::Array<GO> nodeGIDs;
-        nodeGIDs.reserve(numLocalDOFs/blkSize);
-        for (size_t i=0; i<numLocalDOFs; i+=blkSize) {
-          GO dofGID = dofMap->getGlobalElement(i);
-          nodeGIDs.push_back( ((GlobalOrdinal) dofGID - indexBase) / blkSize + indexBase );
-        }
-        nodeMap = MapFactory::Build(dofMap->lib(), Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid(), nodeGIDs(), indexBase, dofMap->getComm());
+        RCP<const Map> dofMap       = A->getRowMap();
+        GO             indexBase    = dofMap->getIndexBase();
+        size_t         numLocalDOFs = dofMap->getNodeNumElements();
+        TEUCHOS_TEST_FOR_EXCEPTION(numLocalDOFs % blkSize, Exceptions::RuntimeError, "Some trouble with map");
+
+        ArrayView<const GO> GIDs = dofMap->getNodeElementList();
+
+        Array<GO> nodeGIDs(numLocalDOFs/blkSize);
+        for (size_t i = 0; i < numLocalDOFs; i += blkSize)
+          nodeGIDs[i/blkSize] = (GIDs[i] - indexBase)/blkSize + indexBase;
+
+        Xpetra::global_size_t INVALID = Teuchos::OrdinalTraits<Xpetra::global_size_t>::invalid();
+        nodeMap = MapFactory::Build(dofMap->lib(), INVALID, nodeGIDs(), indexBase, dofMap->getComm());
       }
-      Teuchos::Array<Teuchos::ArrayView<const Scalar> > coordDataView;
-      std::vector<Teuchos::ArrayRCP<const Scalar> > coordData;
-      for (size_t i=0; i < Coordinates->getNumVectors(); ++i) {
-        coordData.push_back( Coordinates->getData(i) );
-        coordDataView.push_back( coordData[i]() );
+
+      Array<ArrayView<const Scalar> >      coordDataView;
+      std::vector<ArrayRCP<const Scalar> > coordData;
+      for (size_t i = 0; i < coords->getNumVectors(); i++) {
+        coordData.push_back(coords->getData(i));
+        coordDataView.push_back(coordData[i]());
       }
-      RCP<MultiVector> newCoordinates = MultiVectorFactory::Build(nodeMap, coordDataView(), Coordinates->getNumVectors());
-      level.Set("Coordinates", newCoordinates);
+
+      RCP<MultiVector> newCoords = MultiVectorFactory::Build(nodeMap, coordDataView(), coords->getNumVectors());
+      level.Set("Coordinates", newCoords);
     }
-  } //ReplaceCoordinateMap()
+  }
 
 } //namespace MueLu
 

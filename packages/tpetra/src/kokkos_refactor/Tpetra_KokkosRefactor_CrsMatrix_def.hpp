@@ -185,7 +185,8 @@ namespace Tpetra {
 
   template <class Scalar,
             class LocalOrdinal,
-            class GlobalOrdinal, class DeviceType>
+            class GlobalOrdinal,
+            class DeviceType>
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   CrsMatrix (const RCP<const map_type>& rowMap,
              const RCP<const map_type>& colMap,
@@ -248,12 +249,10 @@ namespace Tpetra {
     DistObject<char, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (rowMap),
     k_lclMatrix_(lclMatrix)
   {
-#ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "CrsMatrix(rowMap,colMap,lclMatrix,params)";
-#endif // HAVE_TPETRA_DEBUG
 
     try {
-      myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph,params));
+      myGraph_ = rcp (new Graph (rowMap, colMap, lclMatrix.graph, params));
     }
     catch (std::exception &e) {
       TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
@@ -264,10 +263,19 @@ namespace Tpetra {
     computeGlobalConstants();
 
     lclMatrix_ = null;
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
+      ": The local graph ({my,static}Graph_->getLocalGraph()) is null.  "
+      "Please report this bug to the Tpetra developers.");
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), params));
     lclMatrix_->setValues (Teuchos::arcp(k_lclMatrix_.values.ptr_on_device(), 0, k_lclMatrix_.values.dimension_0(),
         Kokkos::Compat::deallocator(k_lclMatrix_.values), false));
 
+    k_values1D_ = k_lclMatrix_.values;
+
+    values1D_ = arcp (k_lclMatrix_.values.ptr_on_device (), 0,
+                      k_lclMatrix_.values.dimension_0 (),
+                      Kokkos::Compat::deallocator (k_lclMatrix_.values), false);
     //
     // Set up the local sparse kernels.
     //
@@ -282,9 +290,10 @@ namespace Tpetra {
     // keep the local graph if the parameters tell us to do so.
     lclMatrix_ = null;
     if (myGraph_ != null) {
-      bool preserveLocalGraph = false;
+      bool preserveLocalGraph = true;
       if (params != null) {
-        preserveLocalGraph = params->get ("Preserve Local Graph", false);
+        preserveLocalGraph =
+          params->get ("Preserve Local Graph", preserveLocalGraph);
       }
       if (! preserveLocalGraph) {
         myGraph_->lclGraph_ = null;
@@ -323,7 +332,7 @@ namespace Tpetra {
            class GlobalOrdinal, class DeviceType>
   RCP<Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::getNode() const {
-    return staticGraph_->getNode ();
+    return getCrsGraph ()->getNode ();
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -584,17 +593,27 @@ namespace Tpetra {
             class DeviceType>
   void
   CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  getAllValues(ArrayRCP<const size_t> & rowPointers,ArrayRCP<const LocalOrdinal> & columnIndices, ArrayRCP<const Scalar> & values) const
+  getAllValues (ArrayRCP<const size_t>& rowPointers,
+                ArrayRCP<const LocalOrdinal>& columnIndices,
+                ArrayRCP<const Scalar>& values) const
   {
-    const char tfecfFuncName[] = "getAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "getAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      " requires that columnIndices and values are the same size.");
+
+    RCP<const crs_graph_type> relevantGraph = getCrsGraph ();
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      relevantGraph.is_null (), std::runtime_error,
+      " requires that getCrsGraph() is not null.");
     try {
-      rowPointers   = myGraph_->getNodeRowPtrs();
-      columnIndices = myGraph_->getNodePackedIndices();
+      rowPointers = relevantGraph->getNodeRowPtrs ();
+      columnIndices = relevantGraph->getNodePackedIndices ();
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->getAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error,
+        ": Caught exception while calling getCrsGraph()->getAllIndices().");
     }
     values = values1D_;
   }
@@ -615,6 +634,17 @@ namespace Tpetra {
     // This Function: inds ptrs lclInds1D_ lclInds2D_ row_ptrs // k_ptrs k_inds k_lclInds1D_ k_rowPtrs
 
     typedef LocalOrdinal LO;
+
+    // fillComplete() only calls fillLocalGraphAndMatrix() if the
+    // matrix owns the graph, which means myGraph_ is not null.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      myGraph_.is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "fillLocalGraphAndMatrix: The nonconst graph (myGraph_) is null.  This "
+      "means that the matrix has a const (a.k.a. \"static\") graph.  This in "
+      "turn means that fillComplete has a bug, since it should never call "
+      "fillLocalGraphAndMatrix in that case.  Please report this bug to the "
+      "Tpetra developers.");
+
     const map_type& rowMap = * (getRowMap ());
     RCP<node_type> node = rowMap.getNode ();
 
@@ -884,6 +914,11 @@ namespace Tpetra {
     // The local matrix should be null, but we delete it first so that
     // any memory can be freed before we allocate the new one.
     lclMatrix_ = null;
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      staticGraph_->getLocalGraph ().is_null (), std::logic_error,
+      "Tpetra::CrsMatrix::fillLocalGraphAndMatrix: The local graph "
+      "(staticGraph_->getLocalGraph()) is null.  Please report this bug to the "
+      "Tpetra developers.");
     lclMatrix_ = rcp (new local_matrix_type (staticGraph_->getLocalGraph (), lclparams));
     lclMatrix_->setValues (vals);
     k_lclMatrix_ = k_local_matrix_type ("Tpetra::CrsMatrix::k_lclMatrix_",
@@ -1116,7 +1151,6 @@ namespace Tpetra {
       lclparams = sublist (params, "Local Matrix");
     }
 
-#ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION(
       staticGraph_->getLocalGraph ().is_null (), std::runtime_error,
       "Tpetra::CrsMatrix::fillLocalMatrix (called by fillComplete with a const "
@@ -1125,7 +1159,6 @@ namespace Tpetra {
       "CrsMatrix A, and A is fill complete.  You can prevent this error by "
       "setting the bool parameter \"Preserve Local Graph\" to true when "
       "calling fillComplete on the original CrsMatrix A.");
-#endif // HAVE_TPETRA_DEBUG
 
     // The local matrix should be null at this point.  Just in case it
     // isn't (future-proofing), delete it first in order to free
@@ -1163,7 +1196,8 @@ namespace Tpetra {
     // memory if multiple matrices share the same structure, and it
     // allows the graph (and therefore the storage layout of the
     // matrix's values) to be precomputed.
-    sparse_ops_type::finalizeMatrix (*staticGraph_->getLocalGraph (), *lclMatrix_, lclparams);
+    sparse_ops_type::finalizeMatrix (* (staticGraph_->getLocalGraph ()),
+                                     *lclMatrix_, lclparams);
   }
 
   /////////////////////////////////////////////////////////////////////////////
@@ -1945,16 +1979,27 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const t_RowPtrs & rowPointers,const t_LocalOrdinal_1D & columnIndices, const t_ValuesType & values)
+  void
+  CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>, typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setAllValues (const t_RowPtrs& rowPointers,
+                const t_LocalOrdinal_1D& columnIndices,
+                const t_ValuesType& values)
   {
-    const char tfecfFuncName[] = "setAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "setAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      ": columnIndices and values must have the same size.  columnIndices.size() = "
+      << columnIndices.size () << " != values.size() = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+
     try {
-      myGraph_->setAllIndices(rowPointers,columnIndices);
+      myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error, ": Caught exception while calling myGraph_->"
+        "setAllIndices(): " << e.what ());
     }
     k_values1D_  = values;
     values1D_    = Kokkos::Compat::persistingView(k_values1D_);
@@ -1964,16 +2009,26 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::setAllValues(const ArrayRCP<size_t> & rowPointers,const ArrayRCP<LocalOrdinal> & columnIndices, const ArrayRCP<Scalar> & values)
+  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  setAllValues (const ArrayRCP<size_t>& rowPointers,
+                const ArrayRCP<LocalOrdinal>& columnIndices,
+                const ArrayRCP<Scalar>& values)
   {
-    const char tfecfFuncName[] = "setAllValues()";
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(columnIndices.size()!=values.size(),std::runtime_error," requires that columnIndices and values are the same size.");
-    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(myGraph_==Teuchos::null,std::runtime_error," requires that myGraph_ != Teuchos::null.");
+    const char tfecfFuncName[] = "setAllValues";
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      columnIndices.size () != values.size (), std::runtime_error,
+      ": columnIndices and values must have the same size.  columnIndices.size() = "
+      << columnIndices.size () << " != values.size() = " << values.size () << ".");
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      myGraph_.is_null (), std::runtime_error, ": myGraph_ must not be null.");
+
     try {
-      myGraph_->setAllIndices(rowPointers,columnIndices);
+      myGraph_->setAllIndices (rowPointers, columnIndices);
     }
     catch (std::exception &e) {
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(true, std::runtime_error," caught exception while allocating calling myGraph_->setAllIndices().");
+      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+        true, std::runtime_error, ": Caught exception while calling myGraph_->"
+        "setAllIndices(): " << e.what ());
     }
     k_values1D_  = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(values());
     values1D_    = values;
@@ -2771,7 +2826,16 @@ namespace Tpetra {
             class GlobalOrdinal, class DeviceType>
   void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
   fillComplete (const RCP<ParameterList> &params) {
-    fillComplete (getRowMap (), getRowMap (), params);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      getCrsGraph ().is_null (), std::logic_error, "Tpetra::CrsMatrix::"
+      "fillComplete(0-1 args): getCrsGraph() returns null.  This should not "
+      "happen at this point.  Please report this bug to the Tpetra developers.");
+
+    if (isStaticGraph () && getCrsGraph ()->isFillComplete ()) {
+      fillComplete (getCrsGraph ()->getDomainMap (), getCrsGraph ()->getRangeMap (), params);
+    } else {
+      fillComplete (getRowMap (), getRowMap (), params);
+    }
   }
 
   template<class Scalar,
@@ -2890,9 +2954,9 @@ namespace Tpetra {
     // keep the local graph if the parameters tell us to do so.
     lclMatrix_ = null;
     if (myGraph_ != null) {
-      bool preserveLocalGraph = false;
+      bool preserveLocalGraph = true;
       if (params != null) {
-        preserveLocalGraph = params->get ("Preserve Local Graph", false);
+        preserveLocalGraph = params->get ("Preserve Local Graph", preserveLocalGraph);
       }
       if (! preserveLocalGraph) {
         myGraph_->lclGraph_ = null;
@@ -2946,9 +3010,9 @@ namespace Tpetra {
     // they will persist in the local sparse ops if necessary.  We
     // keep the local graph if the parameters tell us to do so.
     lclMatrix_ = null;
-    bool preserveLocalGraph = false;
+    bool preserveLocalGraph = true;
     if (params != null) {
-      preserveLocalGraph = params->get ("Preserve Local Graph", false);
+      preserveLocalGraph = params->get ("Preserve Local Graph", true);
     }
     if (! preserveLocalGraph) {
       myGraph_->lclGraph_ = null;
@@ -3933,18 +3997,39 @@ namespace Tpetra {
     if (beta == RST::zero()) {
       // Y = alpha*op(M)*X with overwrite semantics
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(RST::zero(),Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if (mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (RST::zero (),
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else { // mode == NO_TRANS
+        Kokkos::MV_Multiply (Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
     else {
       // Y = alpha*op(M) + beta*Y
 
-      if(mode != NO_TRANS)
-      Kokkos::MV_MultiplyTranspose(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
-      else
-      Kokkos::MV_Multiply(beta,Y.getLocalView().d_view,alpha,k_lclMatrix_,X.getLocalView().d_view);
+      // FIXME (mfh 27 Mar 2014) What about CONJ_TRANS???
+      if(mode != NO_TRANS) {
+        Kokkos::MV_MultiplyTranspose (beta,
+                                      Y.template getLocalView<DeviceType> (),
+                                      alpha,
+                                      k_lclMatrix_,
+                                      X.template getLocalView<DeviceType> ());
+      }
+      else {
+        Kokkos::MV_Multiply (beta,
+                             Y.template getLocalView<DeviceType> (),
+                             alpha,
+                             k_lclMatrix_,
+                             X.template getLocalView<DeviceType> ());
+      }
     }
   }
 
@@ -4033,11 +4118,7 @@ namespace Tpetra {
     using Teuchos::as;
     using Teuchos::RCP;
     using Teuchos::rcp;
-    typedef typename
-      KokkosClassic::DefaultKernels<T, LocalOrdinal, node_type>::SparseOps
-      sparse_ops_type;
-    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type,
-                      sparse_ops_type> out_mat_type;
+    typedef CrsMatrix<T, LocalOrdinal, GlobalOrdinal, node_type, typename KokkosClassic::DefaultKernels<T, LocalOrdinal, node_type>::SparseOps> out_mat_type;
     typedef ArrayRCP<size_t>::size_type size_type;
     const char tfecfFuncName[] = "convert";
 

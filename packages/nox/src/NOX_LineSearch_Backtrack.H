@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -77,10 +77,10 @@ namespace LineSearch {
   we take the step defined by "Recovery Step".
 
   This line search can be called via NOX::LineSearch::Manager.
- 
+
   The following parameters can be specified for this line search in
   the "Backtrack" sublist of the "Line Search" sublist.
- 
+
 <ul>
 <li> "Default Step" - starting step length (defaults to 1.0)
 <li> "Minimum Step" - minimum acceptable step length (defaults to 1.0e-12)
@@ -89,7 +89,7 @@ namespace LineSearch {
 <li> "Max Iters" - maximum number of iterations (i.e., RHS computations)
 <li> "Reduction Factor" - A multiplier between zero and one that reduces the step size between line search iterations
 </ul>
- */  
+ */
 
 class Backtrack : public Generic {
 
@@ -97,22 +97,22 @@ public:
 
   //! Constructor
   Backtrack(const Teuchos::RCP<NOX::GlobalData>& gd,
-	    Teuchos::ParameterList& params);
+        Teuchos::ParameterList& params);
 
   //! Destructor
   ~Backtrack();
-  
-  // derived
-  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-	     Teuchos::ParameterList& params);
 
   // derived
-  bool compute(NOX::Abstract::Group& newgrp, double& step, 
-	       const NOX::Abstract::Vector& dir,
-	       const NOX::Solver::Generic& s);
-  
+  bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+         Teuchos::ParameterList& params);
+
+  // derived
+  bool compute(NOX::Abstract::Group& newgrp, double& step,
+           const NOX::Abstract::Vector& dir,
+           const NOX::Solver::Generic& s);
+
 private:
-  
+
   //! Printing Utilities
   Teuchos::RCP<NOX::Utils> utils;
 
@@ -121,7 +121,7 @@ private:
 
    //! Minimum step length (i.e., when we give up)
   double minStep;
- 
+
  //! Default step
   double defaultStep;
 
@@ -132,7 +132,7 @@ private:
 
   //! Maximum number of iterations
   int maxIters;
-  
+
 };
 } // namespace LineSearch
 } // namespace NOX

@@ -368,7 +368,7 @@ void parse_input(
       printf( "                                                                \n" );
       printf( "DESCRIPTION                                                     \n" );
       printf( "                                                                \n" );
-      printf( "This program creates a 2-D mesh for performance benchmarking.   \n" );
+      printf( "This program creates a 3-D mesh for performance benchmarking.   \n" );
       printf( "The EXODUSII II database file(s) created by this       \n" );
       printf( "prrogram is/are read by the rd_wt_mesh program to perform the   \n" );
       printf( "actual benchmark.                                               \n" );

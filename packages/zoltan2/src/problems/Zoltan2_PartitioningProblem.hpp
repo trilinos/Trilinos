@@ -150,17 +150,17 @@ public:
   };
 
   /*! \brief Returns the imbalance of the solution.
-   *   \param dim If there are multiple weights per object,
-   *      specify the dimension for which the imbalance
+   *   \param idx If there are multiple weights per object,
+   *      specify the index for which the imbalance
    *      is desired, ranging from zero to one less then
    *     number of weights per object. 
    *   Imbalance was only computed if user requested
    *   metrics with a parameter.
    */
-  const scalar_t getImbalance(int dim=0) const {
+  const scalar_t getWeightImbalance(int idx=0) const {
     scalar_t imb = 0;
     if (!metrics_.is_null())
-      metrics_->getWeightImbalance(imb, dim);
+      metrics_->getWeightImbalance(imb, idx);
 
     return imb;
   }
@@ -183,7 +183,7 @@ public:
    *   Metrics were only computed if user requested
    *   metrics with a parameter.
    */
-  void printMetrics(ostream &os) const {
+  void printMetrics(std::ostream &os) const {
     if (metrics_.is_null())
       os << "No metrics available." << endl;
     else
@@ -222,8 +222,8 @@ public:
    * setPartSizesForCriteria.
    *
    * \todo A user should be able to give us one set of part sizes
-   *            that applies to all weight dimensions.  Right now
-   *            for each weight dimension that does not have
+   *            that applies to all weight indices.  Right now
+   *            for each weight index that does not have
    *            uniform part sizes, the user has to give us the
    *            part sizes once for each.
    */
@@ -237,7 +237,7 @@ public:
   /*! \brief Set or reset the relative sizes (per weight) for the parts
    *    that Zoltan2 will create.
    *
-   *  \param criteria the criteria (weight dimension) for which these 
+   *  \param criteria the criteria for which these 
    *      part sizes apply.  Criteria range from zero to one less than
    *     the number of weights per object specified in the 
    *     caller's InputAdapter.
@@ -431,7 +431,7 @@ template <typename Adapter>
   partSizes_ = arcp(noSizes, 0, numberOfCriteria_, true);
 
   if (this->env_->getDebugLevel() >= DETAILED_STATUS){
-    ostringstream msg;
+    std::ostringstream msg;
     msg << problemComm_->getSize() << " procs,"
       << numberOfWeights_ << " user-defined weights\n";
     this->env_->debug(DETAILED_STATUS, msg.str());
@@ -530,33 +530,26 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
   // Call the algorithm
 
   try {
-    if (algorithm_ == string("scotch")){
+    if (algorithm_ == std::string("scotch")){
       AlgPTScotch<Adapter>(this->envConst_, problemComm_,
 #ifdef HAVE_ZOLTAN2_MPI
         mpiComm_,
 #endif
         this->graphModel_, solution_);
     }
-    else if (algorithm_ == string("block")){
-      AlgBlock<Adapter>(this->envConst_, problemComm_,
+    else if (algorithm_ == std::string("block")){
+      AlgBlock<Adapter> algblock(this->envConst_, problemComm_,
         this->identifierModel_, solution_);
+      algblock.partition();
     }
-    else if (algorithm_ == string("rcb")){
+    else if (algorithm_ == std::string("rcb")){
       AlgRCB<Adapter>(this->envConst_, problemComm_,
         this->coordinateModel_, solution_);
     }
-    else if (algorithm_ == string("multijagged")){
-      Zoltan2_AlgMJ<Adapter> *alg_mj = new Zoltan2_AlgMJ<Adapter>();
-      alg_mj->multi_jagged_part(
-    		  this->envConst_,
-    		  problemComm_,
-    		  this->coordinateModel_,
-    		  solution_);
-      delete alg_mj;
-      /*
-      AlgPQJagged<Adapter>(this->envConst_, problemComm_,
-    	        this->coordinateModel_, solution_);
-       */
+    else if (algorithm_ == std::string("multijagged")){
+      Zoltan2_AlgMJ<Adapter> alg_mj;
+      alg_mj.partition( this->envConst_, problemComm_,
+         this->coordinateModel_, solution_);
     }
     else{
       throw std::logic_error("partitioning algorithm not supported yet");
@@ -674,7 +667,7 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   Environment &env = *(this->env_);
   ParameterList &pl = env.getParametersNonConst();
 
-  string defString("default");
+  std::string defString("default");
 
   // Did the user ask for computation of quality metrics?
 
@@ -687,17 +680,17 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Did the user specify a computational model?
 
-  string model(defString);
+  std::string model(defString);
   pe = pl.getEntryPtr("model");
   if (pe)
-    model = pe->getValue<string>(&model);
+    model = pe->getValue<std::string>(&model);
 
   // Did the user specify an algorithm?
 
-  string algorithm(defString);
+  std::string algorithm(defString);
   pe = pl.getEntryPtr("algorithm");
   if (pe)
-    algorithm = pe->getValue<string>(&algorithm);
+    algorithm = pe->getValue<std::string>(&algorithm);
 
   // Possible algorithm requirements that must be conveyed to the model:
 
@@ -710,34 +703,34 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   
   if (algorithm != defString){
     // Figure out the model required by the algorithm
-    if (algorithm == string("block") ||
-        algorithm == string("random") ||
-        algorithm == string("cyclic") ){
+    if (algorithm == std::string("block") ||
+        algorithm == std::string("random") ||
+        algorithm == std::string("cyclic") ){
 
       modelType_ = IdentifierModelType;
       algorithm_ = algorithm;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == string("rcb") ||
-             algorithm == string("rib") ||
-             algorithm == string("multijagged") ||
-             algorithm == string("hsfc")){
+    else if (algorithm == std::string("rcb") ||
+             algorithm == std::string("rib") ||
+             algorithm == std::string("multijagged") ||
+             algorithm == std::string("hsfc")){
 
       modelType_ = CoordinateModelType;
       algorithm_ = algorithm;
     }
-    else if (algorithm == string("metis") ||
-             algorithm == string("parmetis") ||
-             algorithm == string("scotch") ||
-             algorithm == string("ptscotch")){
+    else if (algorithm == std::string("metis") ||
+             algorithm == std::string("parmetis") ||
+             algorithm == std::string("scotch") ||
+             algorithm == std::string("ptscotch")){
 
       modelType_ = GraphModelType;
       algorithm_ = algorithm;
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
     }
-    else if (algorithm == string("patoh") ||
-             algorithm == string("phg")){
+    else if (algorithm == std::string("patoh") ||
+             algorithm == std::string("phg")){
 
       if ((modelType_ != GraphModelType) &&
           (modelType_ != HypergraphModelType) ){
@@ -753,48 +746,48 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
   }
   else if (model != defString){
     // Figure out the algorithm suggested by the model.
-    if (model == string("hypergraph")){
+    if (model == std::string("hypergraph")){
       modelType_ = HypergraphModelType;
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("phg"); 
+        algorithm_ = std::string("phg"); 
       else
-        algorithm_ = string("patoh"); 
+        algorithm_ = std::string("patoh"); 
       needConsecutiveGlobalIds = true;
     }
-    else if (model == string("graph")){
+    else if (model == std::string("graph")){
       modelType_ = GraphModelType;
 #ifdef HAVE_ZOLTAN2_SCOTCH
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("ptscotch"); 
+        algorithm_ = std::string("ptscotch"); 
       else
-        algorithm_ = string("scotch"); 
+        algorithm_ = std::string("scotch"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
 #ifdef HAVE_ZOLTAN2_PARMETIS
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("parmetis"); 
+        algorithm_ = std::string("parmetis"); 
       else
-        algorithm_ = string("metis"); 
+        algorithm_ = std::string("metis"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #else
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("phg"); 
+        algorithm_ = std::string("phg"); 
       else
-        algorithm_ = string("patoh"); 
+        algorithm_ = std::string("patoh"); 
       removeSelfEdges = true;
       needConsecutiveGlobalIds = true;
 #endif
 #endif
     }
-    else if (model == string("geometry")){
+    else if (model == std::string("geometry")){
       modelType_ = CoordinateModelType;
-      algorithm_ = string("rcb");
+      algorithm_ = std::string("rcb");
     }
-    else if (model == string("ids")){
+    else if (model == std::string("ids")){
       modelType_ = IdentifierModelType;
-      algorithm_ = string("block");
+      algorithm_ = std::string("block");
       needConsecutiveGlobalIds = true;
     }
     else{
@@ -811,27 +804,27 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
     if (inputType_ == MatrixAdapterType){
       modelType_ = HypergraphModelType;
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("phg"); 
+        algorithm_ = std::string("phg"); 
       else
-        algorithm_ = string("patoh"); 
+        algorithm_ = std::string("patoh"); 
     }
     else if (inputType_ == GraphAdapterType ||
         inputType_ == MeshAdapterType){
       modelType_ = GraphModelType;
       if (problemComm_->getSize() > 1)
-        algorithm_ = string("phg"); 
+        algorithm_ = std::string("phg"); 
       else
-        algorithm_ = string("patoh"); 
+        algorithm_ = std::string("patoh"); 
     }
     else if (inputType_ == CoordinateAdapterType){
       modelType_ = CoordinateModelType;
-      if(algorithm_ != string("multijagged"))
-      algorithm_ = string("rcb");
+      if(algorithm_ != std::string("multijagged"))
+      algorithm_ = std::string("rcb");
     }
     else if (inputType_ == VectorAdapterType ||
              inputType_ == IdentifierAdapterType){
       modelType_ = IdentifierModelType;
-      algorithm_ = string("block");
+      algorithm_ = std::string("block");
     }
     else{
       // This should never happen
@@ -870,10 +863,10 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
   // Object to be partitioned? (rows, columns, etc)
 
-  string objectOfInterest(defString);
+  std::string objectOfInterest(defString);
   pe = pl.getEntryPtr("objects_to_partition");
   if (pe)
-    objectOfInterest = pe->getValue<string>(&objectOfInterest);
+    objectOfInterest = pe->getValue<std::string>(&objectOfInterest);
 
   ///////////////////////////////////////////////////////////////////
   // Set model creation flags, if any.
@@ -883,13 +876,13 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     // Any parameters in the graph sublist?
 
-    string symParameter(defString);
+    std::string symParameter(defString);
     pe = pl.getEntryPtr("symmetrize_graph");
     if (pe){
-      symParameter = pe->getValue<string>(&symParameter);
-      if (symParameter == string("transpose"))
+      symParameter = pe->getValue<std::string>(&symParameter);
+      if (symParameter == std::string("transpose"))
         graphFlags_.set(SYMMETRIZE_INPUT_TRANSPOSE);
-      else if (symParameter == string("bipartite"))
+      else if (symParameter == std::string("bipartite"))
         graphFlags_.set(SYMMETRIZE_INPUT_BIPARTITE);
     } 
 
@@ -913,19 +906,19 @@ void PartitioningProblem<Adapter>::createPartitioningProblem(bool newData)
 
     if (inputType_ == MatrixAdapterType){
       if (objectOfInterest == defString ||
-          objectOfInterest == string("matrix_rows") )
+          objectOfInterest == std::string("matrix_rows") )
         graphFlags_.set(VERTICES_ARE_MATRIX_ROWS);
-      else if (objectOfInterest == string("matrix_columns"))
+      else if (objectOfInterest == std::string("matrix_columns"))
         graphFlags_.set(VERTICES_ARE_MATRIX_COLUMNS);
-      else if (objectOfInterest == string("matrix_nonzeros"))
+      else if (objectOfInterest == std::string("matrix_nonzeros"))
         graphFlags_.set(VERTICES_ARE_MATRIX_NONZEROS);
     }
 
     else if (inputType_ == MeshAdapterType){
       if (objectOfInterest == defString ||
-          objectOfInterest == string("mesh_nodes") )
+          objectOfInterest == std::string("mesh_nodes") )
         graphFlags_.set(VERTICES_ARE_MESH_NODES);
-      else if (objectOfInterest == string("mesh_elements"))
+      else if (objectOfInterest == std::string("mesh_elements"))
         graphFlags_.set(VERTICES_ARE_MESH_ELEMENTS);
     } 
   }

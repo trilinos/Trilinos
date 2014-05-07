@@ -245,7 +245,7 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   MaxNumEntriesA_ = A_->getNodeMaxNumRowEntries ();
 
   // Allocate temporary arrays for getLocalRowCopy().
-  Indices_.resize (MaxNumEntries_);
+  localIndices_.resize (MaxNumEntries_);
   Values_.resize (MaxNumEntries_);
 
   // now compute:
@@ -260,8 +260,8 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
   for (size_t i = 0; i < numRows; ++i) {
     NumEntries_[i] = 0;
     size_t Nnz, NewNnz = 0;
-    A_->getLocalRowCopy (i, Indices_, Values_, Nnz);
-    for (size_t j = 0 ; j < Nnz ; ++j) {
+    A_->getLocalRowCopy (i, localIndices_, Values_, Nnz);
+    for (size_t j = 0; j < Nnz; ++j) {
       // FIXME (mfh 03 Apr 2013) This assumes the following:
       //
       // 1. Row Map, range Map, and domain Map are all the same.
@@ -271,9 +271,9 @@ LocalFilter (const Teuchos::RCP<const row_matrix_type>& A) :
       //    for any GID in the domain Map on this process, its LID in
       //    the domain Map (and therefore in the row Map, by (1)) is
       //    the same as its LID in the column Map.  (Hence the
-      //    less-than test, which if true, means that Indices_[j]
+      //    less-than test, which if true, means that localIndices_[j]
       //    belongs to the row Map.)
-      if (Teuchos::as<size_t> (Indices_[j]) < numRows) {
+      if (Teuchos::as<size_t> (localIndices_[j]) < numRows) {
         ++NewNnz;
       }
     }
@@ -419,8 +419,17 @@ size_t
 LocalFilter<MatrixType>::
 getNumEntriesInGlobalRow (global_ordinal_type globalRow) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-    "Ifpack2::LocalFilter does not implement getNumEntriesInGlobalRow.");
+  const local_ordinal_type localRow = getRowMap ()->getLocalElement (globalRow);
+  if (localRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid ()) {
+    // NOTE (mfh 26 Mar 2014) We return zero if globalRow is not in
+    // the row Map on this process, since "get the number of entries
+    // in the global row" refers only to what the calling process owns
+    // in that row.  In this case, it owns no entries in that row,
+    // since it doesn't own the row.
+    return 0;
+  } else {
+    return NumEntries_[localRow];
+  }
 }
 
 
@@ -429,7 +438,16 @@ size_t
 LocalFilter<MatrixType>::
 getNumEntriesInLocalRow (local_ordinal_type localRow) const
 {
-  return NumEntries_[localRow];
+  if (getRowMap ()->isNodeLocalElement (localRow)) {
+    return NumEntries_[localRow];
+  } else {
+    // NOTE (mfh 26 Mar 2014) We return zero if localRow is not in the
+    // row Map on this process, since "get the number of entries in
+    // the local row" refers only to what the calling process owns in
+    // that row.  In this case, it owns no entries in that row, since
+    // it doesn't own the row.
+    return 0;
+  }
 }
 
 
@@ -506,13 +524,41 @@ bool LocalFilter<MatrixType>::isFillComplete () const
 template<class MatrixType>
 void
 LocalFilter<MatrixType>::
-getGlobalRowCopy (global_ordinal_type GlobalRow,
-                  const Teuchos::ArrayView<global_ordinal_type> &Indices,
-                  const Teuchos::ArrayView<scalar_type> &Values,
-                  size_t &NumEntries) const
+getGlobalRowCopy (global_ordinal_type globalRow,
+                  const Teuchos::ArrayView<global_ordinal_type>& globalIndices,
+                  const Teuchos::ArrayView<scalar_type>& values,
+                  size_t& numEntries) const
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-    "Ifpack2::LocalFilter does not implement getGlobalRowCopy.");
+  const local_ordinal_type localRow = getRowMap ()->getLocalElement (globalRow);
+  if (localRow == Teuchos::OrdinalTraits<local_ordinal_type>::invalid ()) {
+    // NOTE (mfh 26 Mar 2014) We return no entries if globalRow is not
+    // in the row Map on this process, since "get a copy of the
+    // entries in the global row" refers only to what the calling
+    // process owns in that row.  In this case, it owns no entries in
+    // that row, since it doesn't own the row.
+    numEntries = 0;
+  }
+  else {
+    // First get a copy of the current row using local indices.  Then,
+    // convert to global indices using the input matrix's column Map.
+    //
+    numEntries = getNumEntriesInLocalRow (localRow);
+    // FIXME (mfh 26 Mar 2014) If local_ordinal_type ==
+    // global_ordinal_type, we could just alias the input array
+    // instead of allocating a temporary array.
+    Teuchos::Array<local_ordinal_type> localIndices (numEntries);
+    getLocalRowCopy (localRow, localIndices (), values, numEntries);
+
+    const map_type& colMap = * (getColMap ());
+
+    typedef typename Teuchos::Array<local_ordinal_type>::size_type size_type;
+    // Don't fill the output array beyond its size.
+    const size_type numEnt =
+      std::min (static_cast<size_type> (numEntries), globalIndices.size ());
+    for (size_type k = 0; k < numEnt; ++k) {
+      globalIndices[k] = colMap.getGlobalElement (localIndices[k]);
+    }
+  }
 }
 
 
@@ -549,19 +595,19 @@ getLocalRowCopy (local_ordinal_type LocalRow,
     << " for local row " << LocalRow << " on process " << myRank << ".");
 
   size_t A_NumEntries=0;
-  // Always extract using the object Values_ and Indices_.  This is
+  // Always extract using the object Values_ and localIndices_.  This is
   // because I may need more space than that given by the user.  The
   // users expects only the local (in the domain Map) column indices,
   // but I have to extract both local and remote (not in the domain
   // Map) column indices.
-  A_->getLocalRowCopy (LocalRow, Indices_ (), Values_ (), A_NumEntries);
+  A_->getLocalRowCopy (LocalRow, localIndices_ (), Values_ (), A_NumEntries);
 
   // populate the user's vectors
   NumEntries = 0;
   for (size_t j = 0 ; j < A_NumEntries; ++j) {
     // only local indices
-    if ((size_t) Indices_[j] < numRows) {
-      Indices[NumEntries] = Indices_[j];
+    if ((size_t) localIndices_[j] < numRows) {
+      Indices[NumEntries] = localIndices_[j];
       Values[NumEntries]  = Values_[j];
       NumEntries++;
     }
@@ -598,25 +644,13 @@ void
 LocalFilter<MatrixType>::
 getLocalDiagCopy (Tpetra::Vector<scalar_type,local_ordinal_type,global_ordinal_type,node_type>& diag) const
 {
-  using Teuchos::ArrayRCP;
-  using Teuchos::as;
+  using Teuchos::RCP;
   typedef Tpetra::Vector<scalar_type, local_ordinal_type,
                          global_ordinal_type, node_type> vector_type;
-
-  vector_type temp (A_->getRowMap ());
-  A_->getLocalDiagCopy (temp);
-
-  // FIXME (mfh 12 July 2013) WHY DO WE NEED ANYTHING MORE AFTER THE
-  // ABOVE???  AND WHY CAN'T WE USE Vector::operator= INSTEAD OF
-  // COPYING ALL THE DATA BY HAND???
-
-  ArrayRCP<ArrayRCP<scalar_type> >       d_ptr = diag.get2dViewNonConst();
-  ArrayRCP<ArrayRCP<const scalar_type> > t_ptr = temp.get2dView();
-
-  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
-  for (size_t i = 0; i < numRows; ++i) {
-    d_ptr[0][i] = t_ptr[0][i];
-  }
+  // This is always correct, and doesn't require a collective check
+  // for sameness of Maps.
+  RCP<vector_type> diagView = diag.offsetViewNonConst (A_->getRowMap (), 0);
+  A_->getLocalDiagCopy (*diagView);
 }
 
 
@@ -649,55 +683,142 @@ apply (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_t
        scalar_type alpha,
        scalar_type beta) const
 {
-  using Teuchos::as;
-  typedef Teuchos::ScalarTraits<scalar_type> STS;
-
+  typedef Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> MV;
   TEUCHOS_TEST_FOR_EXCEPTION(
     X.getNumVectors() != Y.getNumVectors(), std::runtime_error,
     "Ifpack2::LocalFilter::apply: X and Y must have the same number of columns.  "
     "X has " << X.getNumVectors () << " columns, but Y has "
     << Y.getNumVectors () << " columns.");
 
-  const scalar_type zero = STS::zero();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
-  Teuchos::ArrayRCP<Teuchos::ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
+  if (&X == &Y) {
+    // FIXME (mfh 23 Apr 2014) We have to do more work to figure out
+    // if X and Y alias one another.  For example, we should check
+    // whether one is a noncontiguous view of the other.
+    //
+    // X and Y alias one another, so we have to copy X.
+    MV X_copy = Tpetra::createCopy (X);
+    applyNonAliased (X_copy, Y, mode, alpha, beta);
+  } else {
+    applyNonAliased (X, Y, mode, alpha, beta);
+  }
+}
+
+template<class MatrixType>
+void
+LocalFilter<MatrixType>::
+applyNonAliased (const Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &X,
+                 Tpetra::MultiVector<scalar_type,local_ordinal_type,global_ordinal_type,node_type> &Y,
+                 Teuchos::ETransp mode,
+                 scalar_type alpha,
+                 scalar_type beta) const
+{
+  using Teuchos::as;
+  using Teuchos::ArrayView;
+  using Teuchos::ArrayRCP;
+  typedef Teuchos::ScalarTraits<scalar_type> STS;
+
+  const scalar_type zero = STS::zero ();
+  const scalar_type one = STS::one ();
 
   if (beta == zero) {
     Y.putScalar (zero);
   }
-  else {
+  else if (beta != one) {
     Y.scale (beta);
   }
 
-  const size_t NumVectors = Y.getNumVectors();
+  const size_t NumVectors = Y.getNumVectors ();
+  const size_t numRows = localRowMap_->getNodeNumElements ();
 
-  // FIXME (mfh 12 July 2013) This would be a good candidate for
-  // parallelization via Kokkos.
+  // FIXME (mfh 14 Apr 2014) At some point, we would like to
+  // parallelize this using Kokkos.  This would require a
+  // Kokkos-friendly version of getLocalRowCopy, perhaps with
+  // thread-local storage.
 
-  const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
-  for (size_t i = 0; i < numRows; ++i) {
-    size_t Nnz;
-    // Use this class's getrow to make the below code simpler
-    getLocalRowCopy (i, Indices_ (), Values_ (), Nnz);
-    if (mode == Teuchos::NO_TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][i] += alpha * Values_[j] * x_ptr[k][Indices_[j]];
+  const bool constantStride = X.isConstantStride () && Y.isConstantStride ();
+  if (constantStride) {
+    // Since both X and Y have constant stride, we can work with "1-D"
+    // views of their data.
+    const size_t              x_stride = X.getStride();
+    const size_t              y_stride = Y.getStride();
+    ArrayRCP<scalar_type>        y_rcp = Y.get1dViewNonConst();
+    ArrayRCP<const scalar_type>  x_rcp = X.get1dView();
+    ArrayView<scalar_type>       y_ptr = y_rcp();
+    ArrayView<const scalar_type> x_ptr = x_rcp();
+    for (size_t i = 0; i < numRows; ++i) {
+      size_t Nnz;
+      // Use this class's getrow to make the below code simpler
+      getLocalRowCopy (i, localIndices_ (), Values_ (), Nnz);
+      if (mode == Teuchos::NO_TRANS) {
+        for (size_t j = 0; j < Nnz; ++j) {
+          const local_ordinal_type col = localIndices_[j];
+          for (size_t k = 0; k < NumVectors; ++k) {
+            y_ptr[i + y_stride*k] +=
+              alpha * Values_[j] * x_ptr[col + x_stride*k];
+          }
+        }
+      }
+      else if (mode == Teuchos::TRANS) {
+        for (size_t j = 0; j < Nnz; ++j) {
+          const local_ordinal_type col = localIndices_[j];
+          for (size_t k = 0; k < NumVectors; ++k) {
+            y_ptr[col + y_stride*k] +=
+              alpha * Values_[j] * x_ptr[i + x_stride*k];
+          }
+        }
+      }
+      else { //mode==Teuchos::CONJ_TRANS
+        for (size_t j = 0; j < Nnz; ++j) {
+          const local_ordinal_type col = localIndices_[j];
+          for (size_t k = 0; k < NumVectors; ++k) {
+            y_ptr[col + y_stride*k] +=
+              alpha * STS::conjugate (Values_[j]) * x_ptr[i + x_stride*k];
+          }
+        }
+      }
     }
-    else if (mode == Teuchos::TRANS){
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += alpha * Values_[j] * x_ptr[k][i];
-    }
-    else { //mode==Teuchos::CONJ_TRANS
-      for (size_t j = 0 ; j < Nnz ; ++j)
-        for (size_t k = 0 ; k < NumVectors ; ++k)
-          y_ptr[k][Indices_[j]] += alpha * STS::conjugate(Values_[j]) * x_ptr[k][i];
+  }
+  else {
+    // At least one of X or Y does not have constant stride.
+    // This means we must work with "2-D" views of their data.
+    ArrayRCP<ArrayRCP<const scalar_type> > x_ptr = X.get2dView();
+    ArrayRCP<ArrayRCP<scalar_type> >       y_ptr = Y.get2dViewNonConst();
+
+    for (size_t i = 0; i < numRows; ++i) {
+      size_t Nnz;
+      // Use this class's getrow to make the below code simpler
+      getLocalRowCopy (i, localIndices_ (), Values_ (), Nnz);
+      if (mode == Teuchos::NO_TRANS) {
+        for (size_t k = 0; k < NumVectors; ++k) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+          ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+          for (size_t j = 0; j < Nnz; ++j) {
+            y_local[i] += alpha * Values_[j] * x_local[localIndices_[j]];
+          }
+        }
+      }
+      else if (mode == Teuchos::TRANS) {
+        for (size_t k = 0; k < NumVectors; ++k) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+          ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+          for (size_t j = 0; j < Nnz; ++j) {
+            y_local[localIndices_[j]] += alpha * Values_[j] * x_local[i];
+          }
+        }
+      }
+      else { //mode==Teuchos::CONJ_TRANS
+        for (size_t k = 0; k < NumVectors; ++k) {
+          ArrayView<const scalar_type> x_local = (x_ptr())[k]();
+          ArrayView<scalar_type>       y_local = (y_ptr())[k]();
+          for (size_t j = 0; j < Nnz; ++j) {
+            y_local[localIndices_[j]] +=
+              alpha * STS::conjugate (Values_[j]) * x_local[i];
+          }
+        }
+      }
     }
   }
 }
-
-
 
 template<class MatrixType>
 bool LocalFilter<MatrixType>::hasTransposeApply () const
@@ -721,9 +842,11 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   using Teuchos::as;
   typedef Teuchos::ScalarTraits<scalar_type> STS;
   typedef Teuchos::ScalarTraits<magnitude_type> STM;
+  typedef typename Teuchos::Array<scalar_type>::size_type size_type;
 
-  Teuchos::ArrayView<local_ordinal_type> ind;
-  Teuchos::ArrayView<scalar_type> val;
+  const size_type maxNumRowEnt = getNodeMaxNumRowEntries ();
+  Teuchos::Array<local_ordinal_type> ind (maxNumRowEnt);
+  Teuchos::Array<scalar_type> val (maxNumRowEnt);
   const size_t numRows = as<size_t> (localRowMap_->getNodeNumElements ());
 
   // FIXME (mfh 03 Apr 2013) Scale during sum to avoid overflow.
@@ -731,8 +854,8 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   if (STS::isComplex) {
     for (size_t i = 0; i < numRows; ++i) {
       size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind, val, numEntries);
-      for (size_t k = 0; k < numEntries; ++k) {
+      this->getLocalRowCopy (i, ind (), val (), numEntries);
+      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
         sumSquared += STS::real (val[k]) * STS::real (val[k]) +
           STS::imag (val[k]) * STS::imag (val[k]);
       }
@@ -741,9 +864,10 @@ LocalFilter<MatrixType>::getFrobeniusNorm () const
   else {
     for (size_t i = 0; i < numRows; ++i) {
       size_t numEntries = 0;
-      this->getLocalRowCopy (i, ind, val, numEntries);
-      for (size_t k = 0; k < numEntries; ++k) {
-        sumSquared += STS::magnitude(val[k]) * STS::magnitude(val[k]);
+      this->getLocalRowCopy (i, ind (), val (), numEntries);
+      for (size_type k = 0; k < static_cast<size_type> (numEntries); ++k) {
+        const magnitude_type v_k_abs = STS::magnitude (val[k]);
+        sumSquared += v_k_abs * v_k_abs;
       }
     }
   }
@@ -835,5 +959,8 @@ describe (Teuchos::FancyOStream &out,
 
 
 } // namespace Ifpack2
+
+#define IFPACK2_LOCALFILTER_INSTANT(S,LO,GO,N)                            \
+  template class Ifpack2::LocalFilter< Tpetra::CrsMatrix<S, LO, GO, N> >;
 
 #endif

@@ -8,18 +8,18 @@ Trilinos_Util::CommandLineParser: A class for managing the input
 arguments and variables.
 
 Using Trilinos_Util::CommandLineParser, it is easy to handle input
-line arguments and shell varibles. For instance, the user can write  $
+line arguments and shell variables. For instance, the user can write  $
 ./a.out -nx 10 -tol 1e-6 -solver=cg and then easily retrive the value
 of nx, tol, and solver.
 
-A simple code using this class is as follows:  int main(int argc, char
-*argv[])   { Trilinos_Util::CommandLineParser CLP(argc,argv);    int
-nx = CLP.GetInt(\"-nx\", 123);    int ny = CLP.GetInt(\"-ny\", 145);
-double tol = CLP.GetDouble(\"-tol\", 1e-12);    string solver =
-CLP.GetInt(\"-solver\");     cout << \"nx = \" << nx << endl;    cout
-<< \"ny = \" << ny << \" (default value)\" << endl;    cout << \"tol =
-\" << tol << endl;    cout << \"solver = \" << solver << endl; return
-0;      }
+A simple code using this class is as follows:int main(int argc, char
+*argv[])  { Trilinos_Util::CommandLineParser CLP(argc,argv);   int nx
+= CLP.GetInt(\"-nx\", 123);   int ny = CLP.GetInt(\"-ny\", 145);
+double tol = CLP.GetDouble(\"-tol\", 1e-12);   string solver =
+CLP.GetInt(\"-solver\");    cout << \"nx = \" << nx << endl;   cout <<
+\"ny = \" << ny << \" (default value)\" << endl;   cout << \"tol = \"
+<< tol << endl;   cout << \"solver = \" << solver << endl;    return
+0;    }
 
 Each line option can have a value or not. For options with a value,
 the user can specify this values as follows. Let -tolerance be the
@@ -32,7 +32,7 @@ Options are indentified with one or more dashes (`-'). Each option
 cannot have more than one value.
 
 Note that the user can specify some values without giving them a name.
-This can be done as follows:   $ ./a.out value1 value2 value 3 -nx 10
+This can be done as follows: $ ./a.out value1 value2 value 3 -nx 10
 -tol 1e-6 -solver=cg Here, valueX, (X=1,...,9) is stored in the
 database entry ARGV_X.
 
@@ -116,7 +116,7 @@ the variable does not exists, returns \"\". ";
 
 %feature("docstring")
 Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
-const Epetra_Comm &comm)
+const Epetra_Comm &comm, bool UseLongLong=false)
 
 Triutils_Gallery Constructor.
 
@@ -405,7 +405,7 @@ const Epetra_Map &map) ";
 
 %feature("docstring")
 Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery "Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery(const string name,
-const Epetra_Comm &Comm) ";
+const Epetra_Comm &Comm, bool UseLongLong=false) ";
 
 %feature("docstring")
 Trilinos_Util::VbrMatrixGallery::~VbrMatrixGallery "Trilinos_Util::VbrMatrixGallery::~VbrMatrixGallery() ";
@@ -461,6 +461,10 @@ Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix "void
 Trilinos_Util::VbrMatrixGallery::CreateVbrMatrix(void) ";
 
 %feature("docstring")
+Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix "void
+Trilinos_Util::VbrMatrixGallery::TCreateVbrMatrix(void) ";
+
+%feature("docstring")
 Trilinos_Util::VbrMatrixGallery::GetVbrLinearProblem "Epetra_LinearProblem *
 Trilinos_Util::VbrMatrixGallery::GetVbrLinearProblem()
 
@@ -513,14 +517,30 @@ Trilinos_Util_read_coo(char *data_file, int MyPID, int *N_global, int
 *n_nonzeros, double **val, int **bindx, double **x, double **b, double
 **xexact) ";
 
+%feature("docstring")  Trilinos_Util_ReadHb2Epetra_internal "void
+Trilinos_Util_ReadHb2Epetra_internal(char *data_file, const
+Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
+FakeLongLong) ";
+
 %feature("docstring")  Trilinos_Util_ReadHb2Epetra "void
 Trilinos_Util_ReadHb2Epetra(char *data_file, const Epetra_Comm &comm,
 Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
 Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
+%feature("docstring")  Trilinos_Util_ReadHb2Epetra64 "void
+Trilinos_Util_ReadHb2Epetra64(char *data_file, const Epetra_Comm
+&comm, Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
+Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 %feature("docstring")  Trilinos_Util_ReadHpc2Epetra "void
 Trilinos_Util_ReadHpc2Epetra(char *data_file, const Epetra_Comm &comm,
 Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
+Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
+%feature("docstring")  Trilinos_Util_ReadHpc2Epetra64 "void
+Trilinos_Util_ReadHpc2Epetra64(char *data_file, const Epetra_Comm
+&comm, Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
 Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
 %feature("docstring")  Trilinos_Util_ReadHb2EpetraVbr "void
@@ -637,6 +657,18 @@ Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int
 Epetra_CrsMatrix *&A, Epetra_MultiVector *&x, Epetra_MultiVector *&b,
 Epetra_MultiVector *&xexact, int indexBase=0) ";
 
+%feature("docstring")  Trilinos_Util_GenerateCrsProblem64 "void
+Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int
+*xoff, int *yoff, const Epetra_Comm &comm, Epetra_Map *&map,
+Epetra_CrsMatrix *&A, Epetra_Vector *&x, Epetra_Vector *&b,
+Epetra_Vector *&xexact, long long indexBase=0) ";
+
+%feature("docstring")  Trilinos_Util_GenerateCrsProblem64 "void
+Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int
+*xoff, int *yoff, int nrhs, const Epetra_Comm &comm, Epetra_Map *&map,
+Epetra_CrsMatrix *&A, Epetra_MultiVector *&x, Epetra_MultiVector *&b,
+Epetra_MultiVector *&xexact, long long indexBase=0) ";
+
 %feature("docstring")  Trilinos_Util_GenerateVbrProblem "void
 Trilinos_Util_GenerateVbrProblem(int nx, int ny, int npoints, int
 *xoff, int *yoff, int nsizes, int *sizes, const Epetra_Comm &comm,
@@ -656,10 +688,12 @@ Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
 NonUniformMap=false, bool TimDavisHeader=false, bool ZeroBased=false)
 ";
 
-%feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra "int
-Trilinos_Util_ReadMatrixMarket2Epetra(char *data_file, const
-Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
-Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+%feature("docstring")  Trilinos_Util_ReadTriples2Epetra64 "int
+Trilinos_Util_ReadTriples2Epetra64(char *data_file, bool symmetric,
+const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
+NonUniformMap=false, bool TimDavisHeader=false, bool ZeroBased=false)
+";
 
 %feature("docstring")  Trilinos_Util_write_vec "void
 Trilinos_Util_write_vec(const char *filename, int n_equations, double
@@ -683,9 +717,19 @@ double *ao, int *jao, int *iao) ";
 
 
 // File: Trilinos__Util__CountMatrixMarket_8cpp.xml
+%feature("docstring")  TTrilinos_Util_CountMatrixMarket "void
+TTrilinos_Util_CountMatrixMarket(const char *data_file, std::vector<
+int > &non_zeros, int_type &N_rows, int_type &nnz, const Epetra_Comm
+&comm) ";
+
 %feature("docstring")  Trilinos_Util_CountMatrixMarket "void
 Trilinos_Util_CountMatrixMarket(const char *data_file, std::vector<
 int > &non_zeros, int &N_rows, int &nnz, const Epetra_Comm &comm) ";
+
+%feature("docstring")  Trilinos_Util_CountMatrixMarket "void
+Trilinos_Util_CountMatrixMarket(const char *data_file, std::vector<
+int > &non_zeros, long long &N_rows, long long &nnz, const Epetra_Comm
+&comm) ";
 
 
 // File: Trilinos__Util__CountMatrixMarket_8h.xml
@@ -693,12 +737,29 @@ int > &non_zeros, int &N_rows, int &nnz, const Epetra_Comm &comm) ";
 Trilinos_Util_CountMatrixMarket(const char *data_file, std::vector<
 int > &non_zeros, int &N_rows, int &nnz, const Epetra_Comm &comm) ";
 
+%feature("docstring")  Trilinos_Util_CountMatrixMarket "void
+Trilinos_Util_CountMatrixMarket(const char *data_file, std::vector<
+int > &non_zeros, long long &N_rows, long long &nnz, const Epetra_Comm
+&comm) ";
+
 
 // File: Trilinos__Util__CountTriples_8cpp.xml
+%feature("docstring")  Trilinos_Util_CountTriples_internal "void
+Trilinos_Util_CountTriples_internal(const char *data_file, bool
+symmetric, std::vector< int > &non_zeros, int_type &N_rows, int_type
+&nnz, const Epetra_Comm &comm, bool TimDavisHeader=false, bool
+ZeroBased=false) ";
+
 %feature("docstring")  Trilinos_Util_CountTriples "void
 Trilinos_Util_CountTriples(const char *data_file, bool symmetric,
 std::vector< int > &non_zeros, int &N_rows, int &nnz, const
 Epetra_Comm &comm, bool TimDavisHeader=false, bool ZeroBased=false) ";
+
+%feature("docstring")  Trilinos_Util_CountTriples "void
+Trilinos_Util_CountTriples(const char *data_file, bool symmetric,
+std::vector< int > &non_zeros, long long &N_rows, long long &nnz,
+const Epetra_Comm &comm, bool TimDavisHeader=false, bool
+ZeroBased=false) ";
 
 
 // File: Trilinos__Util__CountTriples_8h.xml
@@ -706,6 +767,12 @@ Epetra_Comm &comm, bool TimDavisHeader=false, bool ZeroBased=false) ";
 Trilinos_Util_CountTriples(const char *data_file, bool symmetric,
 std::vector< int > &non_zeros, int &N_rows, int &nnz, const
 Epetra_Comm &comm, bool TimDavisHeader=false, bool ZeroBased=false) ";
+
+%feature("docstring")  Trilinos_Util_CountTriples "void
+Trilinos_Util_CountTriples(const char *data_file, bool symmetric,
+std::vector< int > &non_zeros, long long &N_rows, long long &nnz,
+const Epetra_Comm &comm, bool TimDavisHeader=false, bool
+ZeroBased=false) ";
 
 
 // File: Trilinos__Util__create__vbr_8cpp.xml
@@ -780,11 +847,29 @@ Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int
 Epetra_CrsMatrix *&A, Epetra_Vector *&x, Epetra_Vector *&b,
 Epetra_Vector *&xexact, int indexBase) ";
 
+%feature("docstring")  Trilinos_Util_GenerateCrsProblem64 "void
+Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int
+*xoff, int *yoff, const Epetra_Comm &comm, Epetra_Map *&map,
+Epetra_CrsMatrix *&A, Epetra_Vector *&x, Epetra_Vector *&b,
+Epetra_Vector *&xexact, long long indexBase) ";
+
+%feature("docstring")  TTrilinos_Util_GenerateCrsProblem "void
+TTrilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int
+*xoff, int *yoff, int nrhs, const Epetra_Comm &comm, Epetra_Map *&map,
+Epetra_CrsMatrix *&A, Epetra_MultiVector *&x, Epetra_MultiVector *&b,
+Epetra_MultiVector *&xexact, int_type indexBase) ";
+
 %feature("docstring")  Trilinos_Util_GenerateCrsProblem "void
 Trilinos_Util_GenerateCrsProblem(int nx, int ny, int npoints, int
 *xoff, int *yoff, int nrhs, const Epetra_Comm &comm, Epetra_Map *&map,
 Epetra_CrsMatrix *&A, Epetra_MultiVector *&x, Epetra_MultiVector *&b,
 Epetra_MultiVector *&xexact, int indexBase) ";
+
+%feature("docstring")  Trilinos_Util_GenerateCrsProblem64 "void
+Trilinos_Util_GenerateCrsProblem64(int nx, int ny, int npoints, int
+*xoff, int *yoff, int nrhs, const Epetra_Comm &comm, Epetra_Map *&map,
+Epetra_CrsMatrix *&A, Epetra_MultiVector *&x, Epetra_MultiVector *&b,
+Epetra_MultiVector *&xexact, long long indexBase) ";
 
 
 // File: Trilinos__Util__GenerateVbrProblem_8cpp.xml
@@ -856,9 +941,20 @@ Trilinos_Util_read_vec(const char *filename, int n_equations, double
 
 
 // File: Trilinos__Util__ReadHb2Epetra_8cpp.xml
+%feature("docstring")  Trilinos_Util_ReadHb2Epetra_internal "void
+Trilinos_Util_ReadHb2Epetra_internal(char *data_file, const
+Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
+FakeLongLong) ";
+
 %feature("docstring")  Trilinos_Util_ReadHb2Epetra "void
 Trilinos_Util_ReadHb2Epetra(char *data_file, const Epetra_Comm &comm,
 Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
+Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
+%feature("docstring")  Trilinos_Util_ReadHb2Epetra64 "void
+Trilinos_Util_ReadHb2Epetra64(char *data_file, const Epetra_Comm
+&comm, Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
 Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
 
@@ -870,29 +966,73 @@ Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
 
 // File: Trilinos__Util__ReadHpc2Epetra_8cpp.xml
+%feature("docstring")  Trilinos_Util_ReadHpc2Epetra_internal "void
+Trilinos_Util_ReadHpc2Epetra_internal(char *data_file, const
+Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 %feature("docstring")  Trilinos_Util_ReadHpc2Epetra "void
 Trilinos_Util_ReadHpc2Epetra(char *data_file, const Epetra_Comm &comm,
 Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
 Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
+%feature("docstring")  Trilinos_Util_ReadHpc2Epetra64 "void
+Trilinos_Util_ReadHpc2Epetra64(char *data_file, const Epetra_Comm
+&comm, Epetra_Map *&map, Epetra_CrsMatrix *&A, Epetra_Vector *&x,
+Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 
 // File: Trilinos__Util__ReadMatrixMarket2Epetra_8cpp.xml
+%feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra_internal
+"int Trilinos_Util_ReadMatrixMarket2Epetra_internal(char *data_file,
+const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 %feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra "int
 Trilinos_Util_ReadMatrixMarket2Epetra(char *data_file, const
+Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
+%feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra64 "int
+Trilinos_Util_ReadMatrixMarket2Epetra64(char *data_file, const
 Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
 Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
 
 // File: Trilinos__Util__ReadMatrixMarket2Epetra_8h.xml
+%feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra_internal
+"int Trilinos_Util_ReadMatrixMarket2Epetra_internal(char *data_file,
+const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 %feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra "int
 Trilinos_Util_ReadMatrixMarket2Epetra(char *data_file, const
 Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
 Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
 
+%feature("docstring")  Trilinos_Util_ReadMatrixMarket2Epetra64 "int
+Trilinos_Util_ReadMatrixMarket2Epetra64(char *data_file, const
+Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact) ";
+
 
 // File: Trilinos__Util__ReadTriples2Epetra_8cpp.xml
+%feature("docstring")  Trilinos_Util_ReadTriples2Epetra_internal "int
+Trilinos_Util_ReadTriples2Epetra_internal(char *data_file, bool
+symmetric, const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix
+*&A, Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact,
+bool NonUniformMap=false, bool TimDavisHeader=false, bool
+ZeroBased=false) ";
+
 %feature("docstring")  Trilinos_Util_ReadTriples2Epetra "int
 Trilinos_Util_ReadTriples2Epetra(char *data_file, bool symmetric,
+const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
+Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
+NonUniformMap=false, bool TimDavisHeader=false, bool ZeroBased=false)
+";
+
+%feature("docstring")  Trilinos_Util_ReadTriples2Epetra64 "int
+Trilinos_Util_ReadTriples2Epetra64(char *data_file, bool symmetric,
 const Epetra_Comm &comm, Epetra_Map *&map, Epetra_CrsMatrix *&A,
 Epetra_Vector *&x, Epetra_Vector *&b, Epetra_Vector *&xexact, bool
 NonUniformMap=false, bool TimDavisHeader=false, bool ZeroBased=false)
@@ -932,7 +1072,8 @@ int *bindx, int *rpntr, int *cpntr, int *bpntrb, int *bpntre, double
 
 
 // File: Trilinos__Util__Version_8h.xml
-%feature("docstring")  Triutils_Version "string Triutils_Version() ";
+%feature("docstring")  Triutils_Version "std::string
+Triutils_Version() ";
 
 
 // File: Trilinos__Util__write__vec_8cpp.xml
@@ -941,8 +1082,8 @@ Trilinos_Util_write_vec(const char *filename, int n_equations, double
 *x) ";
 
 
-// File: dir_ccd16f4eccc8a36977f5bf34522cb7ca.xml
+// File: dir_43a0632af20e06fe8926be2b973af258.xml
 
 
-// File: dir_4d2fcaa613bbf780dbda4770b833601f.xml
+// File: dir_4680dba6f871fbe610df2a819276f702.xml
 

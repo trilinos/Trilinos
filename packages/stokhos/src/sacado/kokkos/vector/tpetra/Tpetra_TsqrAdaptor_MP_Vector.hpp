@@ -46,7 +46,7 @@
 
 #ifdef HAVE_TPETRA_TSQR
 
-#include "Stokhos_Sacado_Kokkos.hpp"
+#include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
 
 #  include <Tsqr_NodeTsqrFactory.hpp> // create intranode TSQR object
 #  include <Tsqr.hpp> // full (internode + intranode) TSQR
@@ -69,8 +69,7 @@ namespace Tpetra {
   ///
   /// This specialization works be extracting the underlying array within the
   /// multivector and converting to a standard scalar type.  Currently this
-  /// only works for the StaticFixedStorage, but would work generally once
-  /// this has been setup to use Kokkos::View specializations.
+  /// only works for the StaticFixedStorage.
   template <class Storage, class LO, class GO, class Node>
   class TsqrAdaptor< Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
                                           LO, GO, Node > > :
@@ -374,9 +373,7 @@ namespace Tpetra {
   /// \author Eric Phipps
   ///
   /// This specialization works be extracting the underlying array within the
-  /// multivector and converting to a standard scalar type.  Currently this
-  /// only works for the StaticFixedStorage, but would work generally once
-  /// this has been setup to use Kokkos::View specializations.
+  /// multivector and converting to a standard scalar type.
   template <class Storage, class LO, class GO, class Device>
   class TsqrAdaptor< Tpetra::MultiVector< Sacado::MP::Vector<Storage>,
                                           LO, GO,
@@ -643,15 +640,14 @@ namespace Tpetra {
                                  "inputs that do not have constant stride.");
 
       typedef typename Teuchos::ArrayRCP<mp_scalar_type>::size_type size_type;
-      typedef typename MV::view_type view_type;
+      typedef typename MV::dual_view_type view_type;
       typedef typename view_type::t_dev::array_type flat_array_type;
 
       // Create new Kokkos::MultiVector reinterpreting the data as a longer
-      // array of the base scalar type (currently only works for statically
-      // sized MP array)
+      // array of the base scalar type
 
       // Create new ArrayRCP holding data
-      view_type mp_mv = A.getLocalView();
+      view_type mp_mv = A.getDualView();
       flat_array_type flat_mv = mp_mv.d_view;
       const size_t num_rows = flat_mv.dimension_0();
       const size_t num_cols = flat_mv.dimension_1();

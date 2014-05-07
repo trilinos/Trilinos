@@ -175,13 +175,13 @@ namespace Stokhos {
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Load values to an array of values
     KOKKOS_INLINE_FUNCTION
     void load(pointer v) volatile {
-      ss::copy(coeff_, v, Num);
+      ss::copy(v, coeff_, Num);
     }
 
     //! Resize to new size (values are preserved)
@@ -262,7 +262,13 @@ namespace Stokhos {
   private:
 
     //! Coefficient values
+#if defined(__INTEL_COMPILER) && defined(__MIC__)
+    value_type coeff_[Num] __attribute__((aligned(64)));
+#elif defined(__INTEL_COMPILER) && defined(__AVX__)
+    value_type coeff_[Num] __attribute__((aligned(32)));
+#else
     value_type coeff_[Num];
+#endif
 
   };
 

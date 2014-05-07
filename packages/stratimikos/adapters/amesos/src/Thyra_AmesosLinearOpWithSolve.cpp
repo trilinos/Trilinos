@@ -251,7 +251,7 @@ bool AmesosLinearOpWithSolve::solveSupportsImpl(EOpTransp M_trans) const
   // NOTE: Amesos_BaseSolver makes you change the state of the object to
   // determine if the object supports an adjoint solver.  This is a bad design
   // but I have no control over that.  This is why you see this hacked
-  // oldUseTranspose varible and logic.  NOTE: This function meets the basic
+  // oldUseTranspose variable and logic.  NOTE: This function meets the basic
   // guarantee but if setUseTransplse(...) throws, then the state of
   // UseTranspose() may be different.
   const bool oldUseTranspose = amesosSolver_->UseTranspose();

@@ -81,8 +81,11 @@ using Teuchos::Array;
 using Teuchos::ArrayView;
 using Teuchos::as;
 using Teuchos::Comm;
+using Teuchos::outArg;
 using Teuchos::ParameterList;
 using Teuchos::RCP;
+using Teuchos::REDUCE_MAX;
+using Teuchos::reduceAll;
 using Teuchos::tuple;
 using std::cerr;
 using std::endl;
@@ -94,6 +97,9 @@ using std::cin;
 // processes.
 TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 {
+  int locallyThrew = 0;
+  int globallyThrew = 0;
+
   RCP<const Comm<int> > comm = Teuchos::DefaultComm<int>::getComm ();
   const int myRank = comm->getRank ();
   const int numProcs = comm->getSize ();
@@ -118,7 +124,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   }
 #endif // HAVE_TEUCHOS_LONG_LONG_INT
   typedef int LO;
-  typedef KokkosClassic::SerialNode NT;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType NT;
   typedef Tpetra::Map<LO, GO, NT> map_type;
 
   // Proc 0 gets [0, 3B, 3B+2, 3B+4, 3B+8, 3B+10] (6 GIDs).
@@ -156,8 +162,8 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
 
   RCP<NT> node;
   {
-    ParameterList junk;
-    node = rcp (new NT (junk));
+    Teuchos::ParameterList defaultParams;
+    node = Teuchos::rcp (new NT (defaultParams));
   }
   // if (myRank == 0) {
   //   std::cout << "type '0' and hit enter" << std::endl;
@@ -169,10 +175,20 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   const GO indexBase = 0L;
   out << "Constructing the Map" << endl;
   RCP<const map_type> map;
-  {
+  try {
     TEUCHOS_FUNC_TIME_MONITOR("Construct Map");
-    map = rcp(new map_type (globalNumElts, myGids (), indexBase, comm, node));
+    map = rcp (new map_type (globalNumElts, myGids (), indexBase, comm, node));
   }
+  catch (std::exception& e) {
+    locallyThrew = 1;
+    std::ostringstream os;
+    os << "Proc " << myRank << ": At Map creation, locally threw exception: "
+       << e.what () << endl;
+    cerr << os.str ();
+  }
+  globallyThrew = 0;
+  reduceAll<int, int> (*comm, REDUCE_MAX, locallyThrew, outArg (globallyThrew));
+  TEST_EQUALITY_CONST( globallyThrew, 0 );
 
   cerr << myRank << ": Querying the Map for local elements" << endl;
   {
@@ -193,66 +209,79 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
     Array<int> remotePids (numRemoteGids, -1);
     Array<LO> remoteLids (numRemoteGids, Teuchos::OrdinalTraits<LO>::invalid ());
     if (myRank == 0) {
-      Array<int> expectedRemotePids (numRemoteGids);
-      std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 1);
-      Array<int> expectedRemoteLids (numRemoteGids);
-      expectedRemoteLids[0] = 0;
-      expectedRemoteLids[1] = 1;
-      expectedRemoteLids[2] = 2;
-      expectedRemoteLids[3] = 3;
-      expectedRemoteLids[4] = 4;
-      remoteGids[0] = threeBillion + 12;
-      remoteGids[1] = threeBillion + 14;
-      remoteGids[2] = threeBillion + 16;
-      remoteGids[3] = threeBillion + 18;
-      remoteGids[4] = threeBillion + 20;
+      try {
+        Array<int> expectedRemotePids (numRemoteGids);
+        std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 1);
+        Array<int> expectedRemoteLids (numRemoteGids);
+        expectedRemoteLids[0] = 0;
+        expectedRemoteLids[1] = 1;
+        expectedRemoteLids[2] = 2;
+        expectedRemoteLids[3] = 3;
+        expectedRemoteLids[4] = 4;
+        remoteGids[0] = threeBillion + 12;
+        remoteGids[1] = threeBillion + 14;
+        remoteGids[2] = threeBillion + 16;
+        remoteGids[3] = threeBillion + 18;
+        remoteGids[4] = threeBillion + 20;
 
-      comm->barrier ();
-      cerr << myRank << ": Calling getRemoteIndexList" << endl;
-      comm->barrier ();
-      map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+        comm->barrier ();
+        cerr << myRank << ": Calling getRemoteIndexList" << endl;
+        comm->barrier ();
+        map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
 
-      TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
-      TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
-    } else if (myRank == 1) {
-      Array<int> expectedRemotePids (numRemoteGids);
-      std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 0);
-      Array<int> expectedRemoteLids (numRemoteGids);
-      expectedRemoteLids[0] = 0;
-      expectedRemoteLids[1] = 1;
-      expectedRemoteLids[2] = 2;
-      expectedRemoteLids[3] = 3;
-      expectedRemoteLids[4] = 4;
-      expectedRemoteLids[5] = 5;
-      remoteGids[0] = 0;
-      remoteGids[1] = threeBillion;
-      remoteGids[2] = threeBillion + 2;
-      remoteGids[3] = threeBillion + 4;
-      remoteGids[4] = threeBillion + 8;
-      remoteGids[5] = threeBillion + 10;
-
-      comm->barrier ();
-      cerr << myRank << ": Calling getRemoteIndexList" << endl;
-      comm->barrier ();
-      map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
-
-      TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
-      TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
-    } else {
-      comm->barrier ();
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Should never get here!");
-      //comm->barrier ();
+        TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+        TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+      }
+      catch (std::exception& e) {
+        locallyThrew = 1;
+        std::ostringstream os;
+        os << "Proc " << myRank << ": getRemoteIndexList locally threw "
+          "exception: " << e.what () << endl;
+        cerr << os.str ();
+      }
     }
+    else if (myRank == 1) {
+      try {
+        Array<int> expectedRemotePids (numRemoteGids);
+        std::fill (expectedRemotePids.begin (), expectedRemotePids.end (), 0);
+        Array<int> expectedRemoteLids (numRemoteGids);
+        expectedRemoteLids[0] = 0;
+        expectedRemoteLids[1] = 1;
+        expectedRemoteLids[2] = 2;
+        expectedRemoteLids[3] = 3;
+        expectedRemoteLids[4] = 4;
+        expectedRemoteLids[5] = 5;
+        remoteGids[0] = 0;
+        remoteGids[1] = threeBillion;
+        remoteGids[2] = threeBillion + 2;
+        remoteGids[3] = threeBillion + 4;
+        remoteGids[4] = threeBillion + 8;
+        remoteGids[5] = threeBillion + 10;
+
+        comm->barrier ();
+        cerr << myRank << ": Calling getRemoteIndexList" << endl;
+        comm->barrier ();
+        map->getRemoteIndexList (remoteGids (), remotePids (), remoteLids ());
+
+        TEST_COMPARE_ARRAYS( remotePids (), expectedRemotePids () );
+        TEST_COMPARE_ARRAYS( remoteLids (), expectedRemoteLids () );
+      }
+      catch (std::exception& e) {
+        locallyThrew = 1;
+        std::ostringstream os;
+        os << "Proc " << myRank << ": getRemoteIndexList locally threw "
+          "exception: " << e.what () << endl;
+        cerr << os.str ();
+      }
+    }
+
+    reduceAll<int, int> (*comm, REDUCE_MAX, locallyThrew, outArg (globallyThrew));
+    TEST_EQUALITY_CONST( globallyThrew, 0 );
   }
 
-  cerr << myRank << ": Done with getRemoteIndexList" << endl;
   cout << endl; // make TimeMonitor output neat on test line
   Teuchos::TimeMonitor::summarize();
 }
-
-
-
-
 
 #endif  //DO_COMPILATION
 

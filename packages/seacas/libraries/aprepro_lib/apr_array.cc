@@ -1,4 +1,5 @@
-#include "aprepro.h"
+#include <vector>                       // for vector
+#include "aprepro.h"                    // for array, Aprepro, etc
 
 namespace SEAMS {
   extern SEAMS::Aprepro *aprepro;
@@ -11,6 +12,11 @@ namespace SEAMS {
      * (0.0 -> rows-1) (0.0 -> cols-1)
      */
   
+    if (aprepro->ap_options.one_based_index) {
+      row--;
+      col--;
+    }
+
     int irl = row;
     int irh = irl+1;
     int icl = col;
@@ -38,6 +44,11 @@ namespace SEAMS {
 
   double array_value(array *arr, double row, double col)
   {
+    if (aprepro->ap_options.one_based_index) {
+      row--;
+      col--;
+    }
+
     double value = 0.0;
     int cols = arr->cols;
     int rows = arr->rows;

@@ -388,6 +388,9 @@ namespace Tpetra {
     //! \name Constructors and destructor
     //@{
 
+    //! Default constructor: makes a MultiVector with no rows or columns.
+    MultiVector ();
+
     /// \brief Basic constuctor.
     ///
     /// \param map [in] Map describing the distribution of rows.
@@ -398,8 +401,32 @@ namespace Tpetra {
                  size_t NumVectors,
                  bool zeroOut=true);
 
-    //! Copy constructor (performs a deep copy).
+    /// \brief Copy constructor.
+    ///
+    /// Whether this does a deep copy or a shallow copy depends on
+    /// whether \c source has "view semantics."  See discussion in the
+    /// documentation of the two-argument copy constructor below.
     MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
+
+    /// \brief Copy constructor, with option to do shallow copy and
+    ///   mark the result as having "view semantics."
+    ///
+    /// If copyOrView is Teuchos::View, this constructor marks the
+    /// result as having "view semantics."  This means that copy
+    /// construction or assignment (operator=) with the resulting
+    /// object will always do a shallow copy, and will transmit view
+    /// semantics to the result of the shallow copy.  If copyOrView is
+    /// Teuchos::Copy, this constructor <i>always</i> does a deep copy
+    /// and marks the result as not having view semantics, whether or
+    /// not \c source has view semantics.
+    ///
+    /// View semantics are a "forwards compatibility" measure for
+    /// porting to the Kokkos refactor version of Tpetra.  The latter
+    /// only ever has view semantics.  The "classic" version of Tpetra
+    /// does not currently have view semantics by default, but this
+    /// will change.
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+                 const Teuchos::DataAccess copyOrView);
 
     /// \brief Create multivector by copying two-dimensional array of local data.
     ///
@@ -612,14 +639,20 @@ namespace Tpetra {
     /// \pre isDistributed() == false
     void reduce();
 
-    /// \brief Assign the contents of \c source to this multivector (deep copy).
+    /// \brief Assignment operator.
     ///
-    /// \pre The two multivectors must have the same communicator.
-    /// \pre The input multivector's Map must be compatible with this
+    /// If this MultiVector (the left-hand side of the assignment) has
+    /// view semantics (<tt>getCopyOrView() == Teuchos::View</tt>),
+    /// then this does a shallow copy.  Otherwise, it does a deep
+    /// copy.  The latter is the default behavior.
+    ///
+    /// A deep copy has the following prerequisites:
+    ///
+    /// \pre The input MultiVector's Map must be compatible with this
     ///      multivector's Map.  That is, \code
     ///      this->getMap ()->isCompatible (source.getMap ());
     ///      \endcode
-    /// \pre The two multivectors must have the same number of columns.
+    /// \pre Both MultiVectors must have the same number of columns.
     ///
     /// \note This method must always be called as a collective
     ///   operation on all processes over which the multivector is
@@ -1043,7 +1076,29 @@ namespace Tpetra {
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
 
+    /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    void setCopyOrView (const Teuchos::DataAccess copyOrView) {
+      hasViewSemantics_ = (copyOrView == Teuchos::View);
+    }
+
+    /// \brief Get whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    Teuchos::DataAccess getCopyOrView () const {
+      return hasViewSemantics_ ? Teuchos::View : Teuchos::Copy;
+    }
+
   protected:
+
+    // template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+    // friend MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
+    // createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src);
 
     typedef KokkosClassic::MultiVector<Scalar,Node> KMV;
     typedef KokkosClassic::DefaultArithmetic<KMV>   MVT;
@@ -1064,6 +1119,19 @@ namespace Tpetra {
     /// between columns of this multivector is a constant: thus,
     /// isConstantStride() returns true.
     Array<size_t> whichVectors_;
+
+    /// \brief Whether this MultiVector has view semantics.
+    ///
+    /// "View semantics" means that if this MultiVector is on the
+    /// right side of an operator=, the left side gets a shallow copy,
+    /// and acquires view semantics.  The Kokkos refactor version of
+    /// MultiVector only ever has view semantics.  The "classic"
+    /// version of MultiVector currently does not have view semantics
+    /// by default, but this will change.
+    ///
+    /// You can set this for now by calling one of the constructors
+    /// that accepts a Teuchos::DataAccess enum value.
+    bool hasViewSemantics_;
 
     //! \name View constructors, used only by nonmember constructors.
     //@{

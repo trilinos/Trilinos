@@ -238,8 +238,10 @@ test_scalar_spmv(const int ensemble_length,
   //------------------------------
 
   // One iteration to warm up
-  for (int e=0; e<ensemble_length; ++e) {
-    Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+  for (int iter = 0; iter < iterCount; ++iter) {
+    for (int e=0; e<ensemble_length; ++e) {
+      Kokkos::MV_Multiply( y[e], matrix[e], x[e] );
+    }
   }
 
   device_type::fence();

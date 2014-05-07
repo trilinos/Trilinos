@@ -33,7 +33,8 @@
  * 
  */
 
-#include "exodusII.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_set_param, etc
 
 /*!
 \deprecated Use ex_put_set_param()(exoid, EX_NODE_SET, node_set_id, num_nodes_in_set, num_dist_in_set)

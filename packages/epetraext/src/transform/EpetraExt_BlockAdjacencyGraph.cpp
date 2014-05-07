@@ -105,6 +105,7 @@ namespace EpetraExt {
     int i= 0, j = 0, k, l = 0, p, pm, q = -1, ns;
     int tree_height;
     int error = -1;    /* error detected, possibly a problem with the input */
+    (void) error; // silence "set but not used" warning
     int nrr;           /* number of rows in B */
     int nzM = 0;       /* number of edges in graph */
     int m = 0;         /* maximum number of nonzeros in any block row of B */

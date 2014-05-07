@@ -33,30 +33,38 @@
 #ifndef IOSS_Iohb_DatabaseIO_h
 #define IOSS_Iohb_DatabaseIO_h
 
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_IOFactory.h>             // for IOFactory
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <iostream>                     // for ostream
+#include <string>                       // for string
+#include "Ioss_State.h"                 // for State
 #include <Ioss_CodeTypes.h>
-#include <Ioss_DatabaseIO.h>
-#include <Ioss_IOFactory.h>
-#include <Ioss_Field.h>
-#include <Ioss_DBUsage.h>
+namespace Iohb { class Layout; }
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class PropertyManager; }
+namespace Ioss { class Region; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 
-#include <string>
-#include <assert.h>
-#include <iostream>
 
 namespace Ioss {
   class GroupingEntity;
-  class Region;
   class EntityBlock;
-  class NodeBlock;
-  class SideBlock;
-  class ElementBlock;
-  class NodeSet;
-  class SideSet;
-  class CommSet;
 }
 
 namespace Iohb {
-  class Layout;
 }
 
 namespace Iohb {

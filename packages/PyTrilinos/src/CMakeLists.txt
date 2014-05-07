@@ -20,7 +20,7 @@
 #
 # You should have received a copy of the GNU Lesser General Public
 # License along with this library; if not, write to the Free Software
-# Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+# Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 # USA
 # Questions? Contact Bill Spotz (wfspotz@sandia.gov)
 #
@@ -191,11 +191,11 @@ TRIBITS_ADD_LIBRARY(pytrilinos
   SOURCES ${SOURCES}
   )
 
-# Link against the Python library to prevent undefined
-# symbols for shared builds with -Wl,--no-undefined.
-TARGET_LINK_LIBRARIES(pytrilinos
-  ${PYTHON_LIBRARIES}
-  )
+# # Link against the Python library to prevent undefined
+# # symbols for shared builds with -Wl,--no-undefined.
+# TARGET_LINK_LIBRARIES(pytrilinos
+#   ${PYTHON_LIBRARIES}
+#   )
 
 SET_TARGET_PROPERTIES(pytrilinos
   PROPERTIES LINK_FLAGS "${EXTRA_LINK_ARGS}"
@@ -262,6 +262,7 @@ FOREACH(MODULE ${PyTrilinos_MODULES})
     "${MODULE}.i"
     "${MODULE_OUTDIR}"
     "${MODULE_NAME}")
+  SET_PROPERTY(TARGET ${PyTrilinos_TARGET_NAME} PROPERTY NO_SONAME 1)
   SWIG_LINK_LIBRARIES(${PyTrilinos_TARGET_NAME} pytrilinos)
   # Add the header file to the list of additional "make clean" files
   LIST(APPEND ADDITIONAL_CLEAN_FILES "${MODULE}PYTHON_wrap.h")

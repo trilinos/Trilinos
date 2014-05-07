@@ -71,7 +71,7 @@ private:
   std::bitset<NUM_TIMING_OPTIONS> typeSelector_;
 
   Array<RCP<Teuchos::Time> > timers_;
-  std::map<string, int> timerMap_;
+  std::map<std::string, int> timerMap_;
   int stopHint_;
 
 public:
@@ -92,11 +92,11 @@ public:
 
   /*! \brief Start the named timer.
    */
-  void start(TimerType tt, const string &name);
+  void start(TimerType tt, const std::string &name);
 
   /*! \brief Stop the named timer.
    */
-  void stop(TimerType tt, const string &name);
+  void stop(TimerType tt, const std::string &name);
 
   /*! \brief Print out global summary of timers and reset timers to zero.
    */

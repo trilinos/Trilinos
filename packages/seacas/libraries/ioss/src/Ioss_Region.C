@@ -174,10 +174,6 @@ namespace Ioss {
     properties.add(Property(this,
 			    "database_name",       Property::STRING));
 
-    if (iodatabase->usage() == Ioss::WRITE_HISTORY &&
-	!(iodatabase->is_input() || iodatabase->open_create_behavior() == Ioss::DB_APPEND)) {
-      Ioss::Utils::generate_history_mesh(this);
-    }
   }
 
   Region::~Region()
@@ -400,6 +396,14 @@ namespace Ioss {
     // cleanup/data checking/manipulations it needs to do.
     if (success) {
       DatabaseIO *db = (DatabaseIO*)get_database();
+
+      if (new_state == STATE_DEFINE_TRANSIENT && db->usage() == Ioss::WRITE_HISTORY &&
+	  !(db->is_input() || db->open_create_behavior() == Ioss::DB_APPEND)) {
+	set_state(STATE_CLOSED);
+	Ioss::Utils::generate_history_mesh(this);
+	set_state(new_state);
+      }
+
       success = db->begin(new_state);
     }
 
