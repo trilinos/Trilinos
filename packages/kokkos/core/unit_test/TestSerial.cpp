@@ -63,6 +63,7 @@
 #include <TestReduce.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
+#include <TestCXX11.hpp>
 
 namespace Test {
 
@@ -260,6 +261,16 @@ TEST_F( serial , compiler_macros )
 {
   ASSERT_TRUE( ( TestCompilerMacros::Test< Kokkos::Serial >() ) );
 }
+
+
+
+//----------------------------------------------------------------------------
+#if defined (KOKKOS_HAVE_CXX11) && (defined KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL)
+TEST_F( serial , cxx11 )
+{
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
+}
+#endif
 
 } // namespace test
 
