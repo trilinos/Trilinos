@@ -68,7 +68,8 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector () :
     DO (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, Node> ())),
-    lclMV_ (this->getMap ()->getNode ())
+    lclMV_ (this->getMap ()->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
@@ -77,7 +78,8 @@ namespace Tpetra {
                size_t NumVectors,
                bool zeroOut) : /* default is true */
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::ArrayRCP;
     using Teuchos::RCP;
@@ -108,37 +110,120 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
   MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source) :
     DO (source),
-    lclMV_ (MVT::getNode (source.lclMV_))
+    lclMV_ (MVT::getNode (source.lclMV_)),
+    hasViewSemantics_ (source.hasViewSemantics_)
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
-
-    // copy data from the source MultiVector into this multivector
-    RCP<Node> node = MVT::getNode(source.lclMV_);
-    const LocalOrdinal myLen = source.getLocalLength();
-    const size_t numVecs = source.getNumVectors();
-
-    // On host-type Kokkos Nodes, allocBuffer() just calls the
-    // one-argument version of arcp to allocate memory.  This should
-    // not fill the memory by default, otherwise we would lose the
-    // first-touch allocation optimization.
-    ArrayRCP<Scalar> data = (myLen > 0) ?
-      node->template allocBuffer<Scalar> (myLen * numVecs) :
-      Teuchos::null;
-    const size_t stride = (myLen > 0) ? myLen : size_t (0);
-
-    // This just sets the dimensions, pointer, and stride of lclMV_.
-    MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
-    // This actually copies the data.  It uses the Node's
-    // parallel_for to copy, which should ensure first-touch
-    // allocation on systems that support it.
-    if (source.isConstantStride ()) {
-      MVT::Assign (lclMV_, source.lclMV_);
+    if (source.hasViewSemantics_) {
+      // Shallow copy.  The const_cast is ugly but does no harm:
+      // ArrayRCP is a pointer, so there's no reason why a method that
+      // returns it can't be marked const.  (If you're not changing
+      // the pointer itself, e.g., by reallocating, the pointer is
+      // const.  It doesn't matter whether or not you can change the
+      // values to which the pointer points.)
+      MVT::initializeValues (lclMV_, source.lclMV_.getNumRows (),
+                             source.lclMV_.getNumCols (),
+                             const_cast<KMV&> (source.lclMV_).getValuesNonConst (),
+                             source.lclMV_.getStride (),
+                             source.lclMV_.getOrigNumRows (),
+                             source.lclMV_.getOrigNumCols ());
+      // Don't forget to copy whichVectors_ (for non-constant-stride view).
+      if (source.whichVectors_.size () > 0) {
+        whichVectors_ = source.whichVectors_; // Array::op= does a deep copy
+      }
     }
     else {
-      MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
+      using Teuchos::ArrayRCP;
+      using Teuchos::RCP;
+
+      // copy data from the source MultiVector into this multivector
+      RCP<Node> node = MVT::getNode(source.lclMV_);
+      const LocalOrdinal myLen = source.getLocalLength();
+      const size_t numVecs = source.getNumVectors();
+
+      // On host-type Kokkos Nodes, allocBuffer() just calls the
+      // one-argument version of arcp to allocate memory.  This should
+      // not fill the memory by default, otherwise we would lose the
+      // first-touch allocation optimization.
+      ArrayRCP<Scalar> data = (myLen > 0) ?
+        node->template allocBuffer<Scalar> (myLen * numVecs) :
+        Teuchos::null;
+      const size_t stride = (myLen > 0) ? myLen : size_t (0);
+
+      // This just sets the dimensions, pointer, and stride of lclMV_.
+      MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+      // This actually copies the data.  It uses the Node's
+      // parallel_for to copy, which should ensure first-touch
+      // allocation on systems that support it.
+      if (source.isConstantStride ()) {
+        MVT::Assign (lclMV_, source.lclMV_);
+      }
+      else {
+        MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
+      }
     }
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+               const Teuchos::DataAccess copyOrView) :
+    DO (source),
+    lclMV_ (MVT::getNode (source.lclMV_)),
+    hasViewSemantics_ (copyOrView == Teuchos::View)
+  {
+    if (copyOrView == Teuchos::View) {
+      // Shallow copy.  The const_cast is ugly but does no harm:
+      // ArrayRCP is a pointer, so there's no reason why a method that
+      // returns it can't be marked const.  (If you're not changing
+      // the pointer itself, e.g., by reallocating, the pointer is
+      // const.  It doesn't matter whether or not you can change the
+      // values to which the pointer points.)
+      MVT::initializeValues (lclMV_, source.lclMV_.getNumRows (),
+                             source.lclMV_.getNumCols (),
+                             const_cast<KMV&> (source.lclMV_).getValuesNonConst (),
+                             source.lclMV_.getStride (),
+                             source.lclMV_.getOrigNumRows (),
+                             source.lclMV_.getOrigNumCols ());
+      // Don't forget to copy whichVectors_ (for non-constant-stride view).
+      if (source.whichVectors_.size () > 0) {
+        whichVectors_ = source.whichVectors_; // Array::op= does a deep copy
+      }
+    }
+    else if (copyOrView == Teuchos::Copy) {
+      using Teuchos::ArrayRCP;
+      using Teuchos::RCP;
+
+      // copy data from the source MultiVector into this multivector
+      RCP<Node> node = MVT::getNode(source.lclMV_);
+      const LocalOrdinal myLen = source.getLocalLength();
+      const size_t numVecs = source.getNumVectors();
+
+      ArrayRCP<Scalar> data = (myLen > 0) ?
+        node->template allocBuffer<Scalar> (myLen * numVecs) :
+        Teuchos::null;
+      const size_t stride = (myLen > 0) ? myLen : size_t (0);
+
+      // This just sets the dimensions, pointer, and stride of lclMV_.
+      MVT::initializeValues (lclMV_, myLen, numVecs, data, stride);
+      // This actually copies the data.  It uses the Node's
+      // parallel_for to copy, which should ensure first-touch
+      // allocation on systems that support it.
+      if (source.isConstantStride ()) {
+        MVT::Assign (lclMV_, source.lclMV_);
+      }
+      else {
+        MVT::Assign (lclMV_, source.lclMV_, source.whichVectors_);
+      }
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Tpetra::MultiVector copy constructor: "
+        "The second argument 'copyOrView' has an invalid value " << copyOrView
+        << ".  Valid values include Teuchos::Copy = " << Teuchos::Copy <<
+        " and Teuchos::View = " << Teuchos::View << ".");
+    }
+  }
+
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
@@ -146,7 +231,8 @@ namespace Tpetra {
                const KokkosClassic::MultiVector<Scalar,Node>& localMultiVector,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (localMultiVector)
+    lclMV_ (localMultiVector),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -166,7 +252,8 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateHostViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -194,7 +281,8 @@ namespace Tpetra {
                size_t NumVectors,
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -222,7 +310,8 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (map->getNode ()),
-    whichVectors_ (WhichVectors)
+    whichVectors_ (WhichVectors),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -260,7 +349,8 @@ namespace Tpetra {
                const size_t LDA,
                const size_t numVecs) :
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     const char tfecfFuncName[] = "MultiVector(map,data,LDA,numVecs)";
     const size_t numRows = this->getLocalLength ();
@@ -277,7 +367,8 @@ namespace Tpetra {
                EPrivateComputeViewConstructor /* dummy */) :
     DO (map),
     lclMV_ (localMultiVector),
-    whichVectors_ (WhichVectors)
+    whichVectors_ (WhichVectors),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     const size_t localNumElts = map->getNodeNumElements ();
     TEUCHOS_TEST_FOR_EXCEPTION(
@@ -312,7 +403,8 @@ namespace Tpetra {
                size_t LDA,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -362,7 +454,8 @@ namespace Tpetra {
                const Teuchos::ArrayView<const ArrayView<const Scalar> >& ArrayOfPtrs,
                size_t NumVectors) :
     DO (map),
-    lclMV_ (map->getNode ())
+    lclMV_ (map->getNode ()),
+    hasViewSemantics_ (false) // for now, not for long though
   {
     using Teuchos::as;
     using Teuchos::ArrayRCP;
@@ -1918,58 +2011,85 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>&
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
-  operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source)
+  operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source)
   {
-#ifdef HAVE_TPETRA_DEBUG
-    using Teuchos::outArg;
-    using Teuchos::REDUCE_MIN;
-    using Teuchos::reduceAll;
-    using std::endl;
-#endif // HAVE_TPETRA_DEBUG
+    if (source.hasViewSemantics_) {
+      // The right-hand side of the assignment transmits view
+      // semantics to the left-hand side.
 
-    const char tfecfFuncName[] = "operator=";
-    // Check for special case of this=Source, in which case we do nothing.
-    if (this != &source) {
-      // Whether the input and *this are compatible on the calling process.
-      const int locallyCompat =
-        (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
-#ifdef HAVE_TPETRA_DEBUG
-      int globallyCompat = 1; // innocent until proven guilty
-      reduceAll<int, int> (* (this->getMap ()->getComm ()), REDUCE_MIN,
-                           locallyCompat, outArg (globallyCompat));
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        globallyCompat == 0, std::invalid_argument,
-        ": MultiVectors do not have the same local length on all processes.");
-#else
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        locallyCompat == 0, std::invalid_argument,
-        ": MultiVectors do not have the same local length on the calling "
-        "process " << this->getMap ()->getComm ()->getSize () << ".  *this "
-        "has " << this->getLocalLength () << " local rows, and source has "
-        << source.getLocalLength () << " rows.");
-#endif // HAVE_TPETRA_DEBUG
+      this->map_ = source.map_; // "op=" for DistObject
 
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        source.getNumVectors() != getNumVectors(), std::invalid_argument,
-        ": MultiVectors must have the same number of vectors.");
+      // Shallow copy.  The const_cast is ugly but does no harm:
+      // ArrayRCP is a pointer, so there's no reason why a method that
+      // returns it can't be marked const.  (If you're not changing
+      // the pointer itself, e.g., by reallocating, the pointer is
+      // const.  It doesn't matter whether or not you can change the
+      // values to which the pointer points.)
+      MVT::initializeValues (lclMV_, source.lclMV_.getNumRows (),
+                             source.lclMV_.getNumCols (),
+                             const_cast<KMV&> (source.lclMV_).getValuesNonConst (),
+                             source.lclMV_.getStride (),
+                             source.lclMV_.getOrigNumRows (),
+                             source.lclMV_.getOrigNumCols ());
 
-      Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-      const size_t numVecs = getNumVectors();
-      if (isConstantStride () && source.isConstantStride () &&
-          getLocalLength () == getStride () &&
-          source.getLocalLength ()== source.getStride ()) {
-        // Both multivectors' data are stored contiguously, so we can
-        // copy in one call.
-        node->template copyBuffers<Scalar> (getLocalLength () * numVecs,
-                                            MVT::getValues (source.lclMV_),
-                                            MVT::getValuesNonConst (lclMV_));
+      // Don't forget to copy whichVectors_ (for non-constant-stride view).
+      if (source.whichVectors_.size () > 0) {
+        whichVectors_ = source.whichVectors_; // Array::op= does a deep copy
       }
-      else {
-        // We have to copy the columns one at a time.
-        for (size_t j=0; j < numVecs; ++j) {
-          node->template copyBuffers<Scalar> (getLocalLength (),
-                                              source.getSubArrayRCP (MVT::getValues (source.lclMV_), j),
-                                              getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
+      hasViewSemantics_ = true;
+    }
+    else {
+#ifdef HAVE_TPETRA_DEBUG
+      using Teuchos::outArg;
+      using Teuchos::REDUCE_MIN;
+      using Teuchos::reduceAll;
+      using std::endl;
+#endif // HAVE_TPETRA_DEBUG
+
+      const char tfecfFuncName[] = "operator=";
+      // Check for special case of this=Source, in which case we do nothing.
+      if (this != &source) {
+        // Whether the input and *this are compatible on the calling process.
+        const int locallyCompat =
+          (this->getLocalLength () == source.getLocalLength ()) ? 1 : 0;
+#ifdef HAVE_TPETRA_DEBUG
+        int globallyCompat = 1; // innocent until proven guilty
+        reduceAll<int, int> (* (this->getMap ()->getComm ()), REDUCE_MIN,
+                             locallyCompat, outArg (globallyCompat));
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          globallyCompat == 0, std::invalid_argument,
+          ": MultiVectors do not have the same local length on all processes.");
+#else
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          locallyCompat == 0, std::invalid_argument,
+          ": MultiVectors do not have the same local length on the calling "
+          "process " << this->getMap ()->getComm ()->getSize () << ".  *this "
+          "has " << this->getLocalLength () << " local rows, and source has "
+          << source.getLocalLength () << " rows.");
+#endif // HAVE_TPETRA_DEBUG
+
+        TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+          source.getNumVectors() != getNumVectors(), std::invalid_argument,
+          ": MultiVectors must have the same number of vectors.");
+
+        Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+        const size_t numVecs = getNumVectors();
+        if (isConstantStride () && source.isConstantStride () &&
+            getLocalLength () == getStride () &&
+            source.getLocalLength ()== source.getStride ()) {
+          // Both multivectors' data are stored contiguously, so we can
+          // copy in one call.
+          node->template copyBuffers<Scalar> (getLocalLength () * numVecs,
+                                              MVT::getValues (source.lclMV_),
+                                              MVT::getValuesNonConst (lclMV_));
+        }
+        else {
+          // We have to copy the columns one at a time.
+          for (size_t j=0; j < numVecs; ++j) {
+            node->template copyBuffers<Scalar> (getLocalLength (),
+                                                source.getSubArrayRCP (MVT::getValues (source.lclMV_), j),
+                                                getSubArrayRCP (MVT::getValuesNonConst(lclMV_), j));
+          }
         }
       }
     }
@@ -3012,14 +3132,41 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>
   createCopy (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node >& src) {
-    return src;
+    typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> MV;
+
+    if (src.getCopyOrView () == Teuchos::View) {
+      // If src has view semantics, then neither the one-argument copy
+      // constructor nor operator= will do a deep copy.  However, we
+      // want the result to inherit the view semantics of src.  Thus, we
+      // use the two-argument copy constructor to do a deep copy, then
+      // set the result to have view semantics, and return it.
+      MV dst (src, Teuchos::Copy); // This always creates a deep copy.
+      dst.setCopyOrView (Teuchos::View);
+      return dst;
+    }
+    else {
+      return src; // copy ctor and op= both do a deep copy in this case.
+    }
   }
 
   template <class DS, class DL, class DG, class DN, class SS, class SL, class SG, class SN>
   void
   deep_copy (MultiVector<DS,DL,DG,DN>& dst, const MultiVector<SS,SL,SG,SN>& src)
   {
-    dst = src;
+    if (src.getCopyOrView () == Teuchos::Copy) {
+      dst = src; // op= does a deep copy in this case.
+    }
+    else {
+      // Remember the original semantics of dst.
+      const Teuchos::DataAccess origMode = dst.getCopyOrView ();
+
+      MultiVector<DS,DL,DG,DN> dst_temp (src, Teuchos::Copy); // deep copy
+      dst_temp.setCopyOrView (Teuchos::View);
+      dst = dst_temp; // shallow copy of dst_temp, thus a deep copy of src
+
+      // Restore the original semantics of dst.
+      dst.setCopyOrView (origMode);
+    }
   }
 } // namespace Tpetra
 

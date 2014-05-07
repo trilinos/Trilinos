@@ -373,6 +373,17 @@ namespace Tpetra {
     //! Copy constructor (shallow copy!).
     MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> &source);
 
+    /// \brief Copy constructor, with option to do deep or shallow copy.
+    ///
+    /// The Kokkos refactor version of Tpetra, unlike the "classic"
+    /// version, always has view semantics.  Thus, copyOrView =
+    /// Teuchos::View has no effect, and copyOrView = Teuchos::Copy
+    /// does not mark this MultiVector as having copy semantics.
+    /// However, copyOrView = Teuchos::Copy will make the resulting
+    /// MultiVector a deep copy of the input MultiVector.
+    MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source,
+                 const Teuchos::DataAccess copyOrView);
+
     /// \brief Create multivector by copying two-dimensional array of local data.
     ///
     /// \param map [in] The Map describing the distribution of rows of
@@ -1120,6 +1131,39 @@ namespace Tpetra {
     ///   will be null on excluded processes.
     virtual void
     removeEmptyProcessesInPlace (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> >& newMap);
+
+    /// \brief Set whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \warning The Kokkos refactor version of MultiVector
+    ///   <i>only</i> implements view semantics.  If you attempt to
+    ///   call this method with copyOrView == Teuchos::Copy, it will
+    ///   throw std::invalid_argument.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    void setCopyOrView (const Teuchos::DataAccess copyOrView) {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        copyOrView == Teuchos::Copy, std::invalid_argument,
+        "Tpetra::MultiVector::setCopyOrView: The Kokkos refactor version of "
+        "MultiVector _only_ implements view semantics.  You may not call this "
+        "method with copyOrView = Teuchos::Copy.  The only valid argument is "
+        "Teuchos::View.");
+    }
+
+    /// \brief Get whether this has copy (copyOrView = Teuchos::Copy)
+    ///   or view (copyOrView = Teuchos::View) semantics.
+    ///
+    /// \note The Kokkos refactor version of MultiVector <i>only</i>
+    ///   implements view semantics.  This is not currently true for
+    ///   the "classic" version of MultiVector, though that will
+    ///   change in the near future.
+    ///
+    /// \warning This method is only for expert use.  It may change or
+    ///   disappear at any time.
+    Teuchos::DataAccess getCopyOrView () const {
+      return Teuchos::View;
+    }
 
   protected:
     template <class S, class LO, class GO, class D>

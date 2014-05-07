@@ -126,7 +126,6 @@ namespace Tpetra {
     whichVectors_(source.whichVectors_)
   {
     using Teuchos::ArrayRCP;
-    using Teuchos::RCP;
 
     const LocalOrdinal myLen = source.getLocalLength ();
     const size_t numVecs = source.getNumVectors ();
@@ -143,6 +142,51 @@ namespace Tpetra {
     // This is only a shallow copy.
     MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
   }
+
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  MultiVector (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& source,
+               const Teuchos::DataAccess copyOrView) :
+    base_type (source),
+    lclMV_ (MVT::getNode (source.lclMV_)),
+    view_ (source.view_),
+    whichVectors_(source.whichVectors_)
+  {
+    if (copyOrView == Teuchos::View) {
+      // Reuse the conveniently already existing function that creates
+      // a deep copy.
+      MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,node_type> cpy =
+        createCopy (source);
+      this->lclMV_ = cpy.lclMV_;
+      this->view_ = cpy.view_;
+      this->whichVectors_ = cpy.whichVectors_;
+    }
+    else if (copyOrView == Teuchos::Copy) {
+      const LocalOrdinal myLen = source.getLocalLength ();
+      const size_t numVecs = source.getNumVectors ();
+      Teuchos::ArrayRCP<Scalar> data = (myLen > 0) ?
+        Kokkos::Compat::persistingView (view_.d_view) :
+        Teuchos::null;
+      // Get stride of view: if second dimension is 0, the
+      // stride might be 0, so take view_dimension instead.
+      size_t stride[8];
+      view_.stride (stride);
+      const size_t LDA = (view_.dimension_1 () > 1) ? stride[1] : view_.dimension_0 ();
+
+      // This just sets the dimensions, pointer, and stride of lclMV_.
+      // This is only a shallow copy.
+      MVT::initializeValues (lclMV_, myLen, numVecs, data, LDA);
+    }
+    else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::invalid_argument, "Tpetra::MultiVector copy constructor: "
+        "The second argument 'copyOrView' has an invalid value " << copyOrView
+        << ".  Valid values include Teuchos::Copy = " << Teuchos::Copy <<
+        " and Teuchos::View = " << Teuchos::View << ".");
+    }
+  }
+
 
 
 
