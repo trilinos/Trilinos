@@ -104,6 +104,51 @@ BlockMultiVector (const map_type& meshMap,
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
+BlockMultiVector (const mv_type& X_mv,
+                  const map_type& meshMap,
+                  const LO blockSize) :
+  dist_object_type (Teuchos::rcp (new map_type (meshMap))), // shallow copy
+  meshMap_ (meshMap),
+  mvData_ (NULL), // just for now
+  blockSize_ (blockSize)
+{
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    X_mv.getCopyOrView () != Teuchos::View, std::invalid_argument,
+    "Tpetra::Experimental::BlockMultiVector constructor: "
+    "The input MultiVector must have view semantics.  "
+    "Call X_mv.setCopyOrView(Teuchos::View) to change the input MultiVector to "
+    "view semantics.  We don't do it ourselves, because that would be a side "
+    "effect which might surprise users.");
+  try {
+    if (! X_mv.getMap ().is_null ()) {
+      pointMap_ = * (X_mv.getMap ());
+    }
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "Tpetra::Experimental::BlockMultiVector constructor: "
+      "operator* on X_mv.getMap() threw an exception: " << e.what ());
+  }
+  try {
+    mv_ = X_mv; // shallow copy, since X_mv has view semantics.
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "Tpetra::Experimental::BlockMultiVector constructor: "
+      "Multivector::operator= threw an exception: " << e.what ());
+  }
+  try {
+    mvData_ = mv_.get1dViewNonConst ().getRawPtr ();
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      true, std::logic_error,
+      "Tpetra::Experimental::BlockMultiVector constructor: "
+      "Multivector::get1dViewNonConst() threw an exception: " << e.what ());
+  }
+}
+
+template<class Scalar, class LO, class GO, class Node>
+BlockMultiVector<Scalar, LO, GO, Node>::
 BlockMultiVector () :
   dist_object_type (Teuchos::null),
   mvData_ (NULL),

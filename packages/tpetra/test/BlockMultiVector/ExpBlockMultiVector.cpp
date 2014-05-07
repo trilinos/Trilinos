@@ -69,7 +69,7 @@ namespace {
   // UNIT TESTS
   //
 
-  // Make sure that BlockMultiVector's constructor actually compiles.
+  // Test BlockMultiVector's constructors.
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, ctor, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
@@ -92,15 +92,18 @@ namespace {
     const LO blockSize = 4;
     const LO numVecs = 3;
 
+    // Exercise the three-argument constructor (that makes a point Map).
     BMV X (meshMap, blockSize, numVecs);
     TEST_EQUALITY( X.getBlockSize (), blockSize );
     TEST_EQUALITY( X.getNumVectors (), numVecs );
-    TEST_EQUALITY_CONST( X.getMap ().is_null (), false );
+    TEST_ASSERT( ! X.getMap ().is_null () );
     TEST_ASSERT( ! X.getMap ().is_null () && X.getMap ()->isSameAs (meshMap) );
 
     map_type pointMap = BMV::makePointMap (meshMap, blockSize);
     TEST_ASSERT( pointMap.isSameAs (X.getPointMap ()) );
 
+    // Exercise the four-argument constructor (that uses an existing
+    // point Map).
     BMV Y (meshMap, pointMap, blockSize, numVecs);
     TEST_EQUALITY( Y.getBlockSize (), blockSize );
     TEST_EQUALITY( Y.getNumVectors (), numVecs );
@@ -109,11 +112,26 @@ namespace {
 
     TEST_ASSERT( Y.getPointMap ().isSameAs (X.getPointMap ()) );
 
-    BMV Z; // Exercise the default constructor.
-
+    // Exercise the default constructor.
+    BMV Z;
     TEST_ASSERT( Z.getMap ().is_null () );
     TEST_EQUALITY_CONST( Z.getBlockSize (), static_cast<LO> (0) );
     TEST_EQUALITY_CONST( Z.getNumVectors (), static_cast<LO> (0) );
+
+    // Exercise the other three-argument constructor (that views an
+    // existing MultiVector).
+    typename BMV::mv_type X_mv;
+    TEST_NOTHROW( X_mv = X.getMultiVectorView () );
+    TEST_ASSERT( ! X_mv.getMap ().is_null () );
+    if (X_mv.getMap ().is_null ()) {
+      TEST_ASSERT( ! X_mv.getMap ()->getNode ().is_null () );
+    }
+    // Make sure X_mv has view semantics, before we give it to W's ctor.
+    TEST_ASSERT( X_mv.getCopyOrView () == Teuchos::View );
+    BMV W (X_mv, meshMap, blockSize);
+    // TEST_ASSERT( ! W.getMap ().is_null () );
+    // TEST_ASSERT( ! W.getMap ().is_null () && W.getMap ()->isSameAs (meshMap) );
+    // TEST_ASSERT( W.getPointMap ().isSameAs (X.getPointMap ()) );
   }
 
   // Test BlockMultiVector::getMultiVectorView.  It must return a

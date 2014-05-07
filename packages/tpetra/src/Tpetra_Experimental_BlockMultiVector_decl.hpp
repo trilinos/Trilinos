@@ -221,6 +221,22 @@ public:
                     const LO blockSize,
                     const LO numVecs);
 
+  /// \brief View an existing MultiVector.
+  ///
+  /// \param X_mv [in/out] The MultiVector to view.  It MUST have view
+  ///   semantics; otherwise this constructor throws.  Its Map must be
+  ///   the same (in the sense of isSameAs) as the point Map
+  ///   corresponding to the given mesh Map and block size.
+  ///
+  /// \param meshMap [in] The mesh Map to use for interpreting the
+  ///   given MultiVector (in place) as a BlockMultiVector.
+  ///
+  /// \param blockSize [in] The number of degrees of freedom per mesh
+  ///   point.  We assume that this is the same for all mesh points.
+  BlockMultiVector (const mv_type& X_mv,
+                    const map_type& meshMap,
+                    const LO blockSize);
+
   /// \brief Default constructor.
   ///
   /// Creates an empty BlockMultiVector (with zero rows and columns,
@@ -444,7 +460,7 @@ private:
   /// this will become a Kokkos::View.  It's safe to keep this,
   /// because the data belong to the Vector, which we keep for the
   /// lifetime of the BlockMultiVector.
-  Scalar* const mvData_;
+  Scalar* mvData_;
 
   //! The number of degrees of freedom per mesh point.
   const LO blockSize_;
