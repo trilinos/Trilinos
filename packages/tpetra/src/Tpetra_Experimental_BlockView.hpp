@@ -269,6 +269,23 @@ public:
     return true;
   }
 
+  //! <tt>(*this) := (*this) + alpha * A * X</tt> (matrix-vector multiply).
+  template<class LittleBlockType, class LittleVectorType>
+  void
+  matvecUpdate (const Scalar& alpha,
+                const LittleBlockType& A,
+                const LittleVectorType& X) const
+  {
+    // FIXME (mfh 07 May 2014) This is suitable for column major, not
+    // for row major.  Of course, we'll have to change other loops
+    // above as well to make row major faster.
+    for (LO j = 0; j < blockSize_; ++j) {
+      for (LO i = 0; i < blockSize_; ++i) {
+        (*this)(i) += alpha * A(i,j) * X(j);
+      }
+    }
+  }
+
 private:
   Scalar* const A_;
   const LO blockSize_;
