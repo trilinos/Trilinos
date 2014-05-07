@@ -1047,6 +1047,19 @@ std::string AdditiveSchwarz<MatrixType,LocalInverseType>::description () const
       << ", Computed: " << (isComputed () ? "true" : "false")
       << ", Overlap level: " << OverlapLevel_
       << ", Subdomain reordering: \"" << ReorderingAlgorithm_ << "\"";
+  out << ", Combine mode: \"";
+  if (CombineMode_ == Tpetra::INSERT) {
+    out << "INSERT";
+  } else if (CombineMode_ == Tpetra::ADD) {
+    out << "ADD";
+  } else if (CombineMode_ == Tpetra::REPLACE) {
+    out << "REPLACE";
+  } else if (CombineMode_ == Tpetra::ABSMAX) {
+    out << "ABSMAX";
+  } else if (CombineMode_ == Tpetra::ZERO) {
+    out << "ZERO";
+  }
+  out << "\"";
   if (Matrix_.is_null ()) {
     out << ", Matrix: null";
   }
