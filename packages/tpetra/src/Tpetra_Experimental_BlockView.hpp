@@ -204,16 +204,16 @@ public:
   }
 
   //! <tt>*this := *this + alpha * X</tt>.
-  template<class LittleBlockType>
-  void update (const Scalar& alpha, const LittleBlockType& X) const {
+  template<class LittleVectorType>
+  void update (const Scalar& alpha, const LittleVectorType& X) const {
     for (LO i = 0; i < blockSize_; ++i) {
       (*this)(i) += alpha * X(i);
     }
   }
 
   //! <tt>*this := X</tt>.
-  template<class LittleBlockType>
-  void assign (const LittleBlockType& X) const {
+  template<class LittleVectorType>
+  void assign (const LittleVectorType& X) const {
     for (LO i = 0; i < blockSize_; ++i) {
       (*this)(i) = X(i);
     }
@@ -237,12 +237,23 @@ public:
   ///   for all (i,j).
   ///
   /// Tpetra uses this operation to implement the ABSMAX CombineMode.
-  template<class LittleBlockType>
-  void absmax (const LittleBlockType& X) const {
+  template<class LittleVectorType>
+  void absmax (const LittleVectorType& X) const {
     for (LO i = 0; i < blockSize_; ++i) {
       Scalar& Y_i = (*this)(i);
       Y_i = std::max (STS::magnitude (Y_i), STS::magnitude (X (i)));
     }
+  }
+
+  //! true if and only if all entries of this equal all entries of X.
+  template<class LittleVectorType>
+  bool equal (const LittleVectorType& X) const {
+    for (LO i = 0; i < blockSize_; ++i) {
+      if ((*this)(i) != X(i)) {
+        return false;
+      }
+    }
+    return true;
   }
 
 private:

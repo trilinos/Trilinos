@@ -336,6 +336,13 @@ public:
   ///
   /// \warning This method's interface may change or disappear at any
   ///   time.  Please do not rely on it in your code yet.
+  ///
+  /// The preferred way to refer to little_vec_type is to get it from
+  /// BlockMultiVector's typedef.  This is because different
+  /// specializations of BlockMultiVector reserve the right to use
+  /// different types to implement little_vec_type.  This gives us a
+  /// porting strategy to move from "classic" Tpetra to the Kokkos
+  /// refactor version.
   little_vec_type
   getLocalBlock (const LO localRowIndex, const LO colIndex) const;
   //@}
