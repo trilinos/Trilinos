@@ -239,8 +239,12 @@ public:
   ///
   /// This is how you can give a BlockMultiVector to Trilinos' solvers
   /// and preconditioners.
-  mv_type getMultiVector () const {
-    return mv_; // shallow copy (???) (FIXME (mfh 05 May 2014) WRONG)
+  mv_type getMultiVectorView () {
+    // Make sure that mv_ has view semantics.
+    mv_.setCopyOrView (Teuchos::View);
+    // Now the one-argument copy constructor will make a shallow copy,
+    // and those view semantics will persist in all of its offspring.
+    return mv_;
   }
 
   //@}
