@@ -185,6 +185,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, Teuchos::null);
@@ -205,6 +207,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, Teuchos::null);
@@ -225,6 +229,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, plist);
@@ -246,6 +252,8 @@ namespace Tpetra {
     , maxSendLength_ (0)
     , numReceives_ (0)
     , totalReceiveLength_ (0)
+    , lastRoundBytesSend_ (0)
+    , lastRoundBytesRecv_ (0)
     , useDistinctTags_ (useDistinctTags_default)
   {
     init (comm, plist);
@@ -269,6 +277,8 @@ namespace Tpetra {
     , indicesTo_ (distributor.indicesTo_)
     , numReceives_ (distributor.numReceives_)
     , totalReceiveLength_ (distributor.totalReceiveLength_)
+    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
+    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
     , lengthsFrom_ (distributor.lengthsFrom_)
     , imagesFrom_ (distributor.imagesFrom_)
     , startsFrom_ (distributor.startsFrom_)
@@ -332,6 +342,8 @@ namespace Tpetra {
     std::swap (indicesTo_, rhs.indicesTo_);
     std::swap (numReceives_, rhs.numReceives_);
     std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
+    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
+    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
     std::swap (lengthsFrom_, rhs.lengthsFrom_);
     std::swap (imagesFrom_, rhs.imagesFrom_);
     std::swap (startsFrom_, rhs.startsFrom_);
