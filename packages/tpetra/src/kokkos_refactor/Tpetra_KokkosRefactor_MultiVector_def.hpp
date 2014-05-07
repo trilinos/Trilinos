@@ -66,10 +66,10 @@ namespace Tpetra {
     return (VectorIndex < 1 && VectorIndex != 0) || VectorIndex >= getNumVectors();
   }
 
-  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node>
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   MultiVector () :
-    base_type (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, Node> ())),
+    base_type (Teuchos::rcp (new Map<LocalOrdinal, GlobalOrdinal, node_type> ())),
     lclMV_ (this->getMap ()->getNode ())
   {}
 
