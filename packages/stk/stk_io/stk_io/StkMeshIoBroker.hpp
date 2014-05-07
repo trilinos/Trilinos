@@ -381,6 +381,8 @@ namespace stk {
       double read_defined_input_fields(double time,
 				       std::vector<stk::io::MeshField> *missing=NULL);
 
+      bool read_input_field(stk::io::MeshField &mf);
+      
       void get_global_variable_names(std::vector<std::string> &names);
       bool get_global(const std::string &variableName,
 		      boost::any &value,
