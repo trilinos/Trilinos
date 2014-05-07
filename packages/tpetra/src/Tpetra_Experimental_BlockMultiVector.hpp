@@ -107,6 +107,30 @@ namespace Experimental {
 /// shallow copies, and its default constructor (that takes no
 /// arguments) compiles and succeeds, creating a meaningful empty
 /// object.
+///
+/// Design philosophy of the new block objects:
+///
+///   1. Each mesh point has the same number of degrees of freedom
+///   2. A BlockMultiVector might <i>have</i> a MultiVector, but <i>is
+///      not</i> a MultiVector (i.e., is not a subclass of MultiVector)
+///
+/// Point 1 lets us omit the whole untested and probably broken
+/// infrastructure of Tpetra::BlockMap.  Users fill by mesh points,
+/// not degrees of freedom.  Thus, they mainly care about the
+/// distribution of mesh points, not so much about what GID we assign
+/// to which degree of freedom.  The latter is just another Map from
+/// their perspective, if they care at all.  Preconditioners that
+/// respect the block structure also just want the mesh Map.
+/// Iterative linear solvers treat the matrix and preconditioner as
+/// black-box operators.  This means that they only care about the
+/// domain and range point Maps.
+///
+/// The latter motivates Point 2.  BlockMultiVector views a
+/// MultiVector, and iterative solvers (and users) can access the
+/// MultiVector and work with it directly, along with its (point) Map.
+/// It doesn't make sense for BlockMultiVector to implement
+/// MultiVector, because the desired fill interfaces of the two
+/// classes are different.
 template<class Scalar,
          class LO = int,
          class GO = LO,
