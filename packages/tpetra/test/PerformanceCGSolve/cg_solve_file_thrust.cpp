@@ -40,53 +40,12 @@
 // ************************************************************************
 // @HEADER
 */
-
 #include "cg-solve_file.hpp"
-#ifdef KOKKOS_HAVE_CUDA
-  int run_cudawrapper(int& argc, char* argv[]);
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-  int run_openmpwrapper(int& argc, char* argv[]);
-#endif
-#ifdef KOKKOS_HAVE_PTHREAD
-  int run_threadswrapper(int& argc, char* argv[]);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  int run_tpi(int& argc, char* argv[]);
-#endif
 
 #ifdef HAVE_KOKKOSCLASSIC_THRUST
-  int run_thrust(int& argc, char* argv[]);
-#endif
-
-int main(int argc, char *argv[]) {
-  Teuchos::oblackholestream blackhole;
-  Teuchos::GlobalMPISession mpiSession(&argc,&argv,&blackhole);
-
-  //
-  // Specify types used in this example
-  //
-
-#ifdef KOKKOS_HAVE_CUDA
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_cudawrapper(argc,argv);
-#endif
-#ifdef KOKKOS_HAVE_OPENMP
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_openmpwrapper(argc,argv);
-#endif
-#ifdef KOKKOS_HAVE_PTHREAD
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_threadswrapper(argc,argv);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THREADPOOL
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_tpi(argc,argv);
-#endif
-#ifdef HAVE_KOKKOSCLASSIC_THRUST
-  std::cout << std::endl << "----------------------------------------------------"<< std::endl<<std::endl;
-  run_thrust(argc,argv);
-#endif
-
-  return 0;
+int run_thrust(int& argc, char* argv[]) {
+  typedef KokkosClassic::ThrustGPUNode                Node;
+  std::cout << "Running: KokkosClassic::ThrustGPUNode" << std::endl;
+  return run<Node>(argc,argv);
 }
+#endif
