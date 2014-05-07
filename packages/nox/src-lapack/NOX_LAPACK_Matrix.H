@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@ namespace NOX {
   namespace LAPACK {
 
     //! A simple square matrix class for use by NOX::LAPACK::Group.
-    /*! 
+    /*!
      * The matrix is stored as a std::vector<T> array. It is templated so
      * it can store entries of different types.  For example, the LOCA
      * LAPACK group stores a complex matrix for Hopf tracking.
@@ -76,7 +76,7 @@ namespace NOX {
 
       //! Copy constructor
       Matrix(const Matrix& a) :
-	p(a.p), q(a.q), entries(a.entries) {}
+    p(a.p), q(a.q), entries(a.entries) {}
 
       //! Destructor
       ~Matrix() {}
@@ -88,23 +88,23 @@ namespace NOX {
       const T& operator()(int i, int j) const { return entries[i + (p*j)]; }
 
       //! Scale the matrix by a constant value.
-      /*! This is needed to manipulate matrices in the LOCA library 
-	routines. 
+      /*! This is needed to manipulate matrices in the LOCA library
+    routines.
       */
       void scale(T v ) {
-	for (int i=0; i<p*q; i++)
-	  entries[i] *= v;
+    for (int i=0; i<p*q; i++)
+      entries[i] *= v;
       }
 
-      //! Prints out the matrix 
+      //! Prints out the matrix
       bool print(std::ostream& stream) const {
-	for (int i=0; i<p; i++) {
-	  stream << "[ ";
-	  for (int j=0; j<q; j++)
-	    stream << operator()(i,j) << " ";
-	  stream << "]" << std::endl;
-	}
-	return stream;
+    for (int i=0; i<p; i++) {
+      stream << "[ ";
+      for (int j=0; j<q; j++)
+        stream << operator()(i,j) << " ";
+      stream << "]" << std::endl;
+    }
+    return stream;
       }
 
       //! Returns the number of rows in the matrix
@@ -120,7 +120,7 @@ namespace NOX {
 
       //! Entries of the matrix
       std::vector<T> entries;
-  
+
     };
 
   } // namespace LAPACK

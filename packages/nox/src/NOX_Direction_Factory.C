@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -81,13 +81,13 @@ NOX::Direction::Factory::~Factory()
 // ************************************************************************
 Teuchos::RCP<NOX::Direction::Generic> NOX::Direction::Factory::
 buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
-	       Teuchos::ParameterList& params)
+           Teuchos::ParameterList& params)
 {
-  
+
   Teuchos::RCP<NOX::Direction::Generic> direction;
-  
+
   std::string method = params.get("Method", "Newton");
-  
+
   if (method == "Newton")
     direction = Teuchos::rcp(new Newton(gd, params));
   else if (method == "Steepest Descent")
@@ -107,12 +107,12 @@ buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
   else if (method == "User Defined") {
     using namespace Teuchos;
     if (isParameterType< RCP<NOX::Direction::UserDefinedFactory> >
-	(params, "User Defined Direction Factory")) {
-      
-      RCP<NOX::Direction::UserDefinedFactory> user_factory = 
-	getParameter< Teuchos::RCP<NOX::Direction::UserDefinedFactory> >
-	(params, "User Defined Direction Factory");
-      
+    (params, "User Defined Direction Factory")) {
+
+      RCP<NOX::Direction::UserDefinedFactory> user_factory =
+    getParameter< Teuchos::RCP<NOX::Direction::UserDefinedFactory> >
+    (params, "User Defined Direction Factory");
+
       direction = user_factory->buildDirection(gd, params);
     }
     else {
@@ -124,7 +124,7 @@ buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
     std::string msg = "Error - NOX::Direction::Facotry::buildDirection() - Invalid choice for \"Method\" in \"Direction\" sublist!";
     TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, msg);
   }
-  
+
   return direction;
 }
 
@@ -133,7 +133,7 @@ buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
 // nonmember function
 Teuchos::RCP<NOX::Direction::Generic> NOX::Direction::
 buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
-		Teuchos::ParameterList& params)
+        Teuchos::ParameterList& params)
 {
   NOX::Direction::Factory factory;
   return factory.buildDirection(gd, params);

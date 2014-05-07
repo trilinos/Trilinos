@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,12 +51,12 @@
 #ifndef NOX_EPETRA_GROUP_H
 #define NOX_EPETRA_GROUP_H
 
-#include "NOX_Abstract_Group.H"	// base class
-#include "NOX_Epetra_Vector.H"	// class data element
+#include "NOX_Abstract_Group.H"    // base class
+#include "NOX_Epetra_Vector.H"    // class data element
 #include "NOX_Utils.H"          // class data element
 #include "NOX_Common.H"         // class data element (std::string)
-#include "NOX_Epetra_LinearSystem.H"  // class data element 
-#include "NOX_SharedObjectTemplate.H"  // class data element 
+#include "NOX_Epetra_LinearSystem.H"  // class data element
+#include "NOX_SharedObjectTemplate.H"  // class data element
 #include "Teuchos_RCP.hpp"  // class data element
 
 // Forward declares
@@ -96,20 +96,20 @@ public:
     limited to simple algorithms like nonlinear-CG with no
     preconditioning.
   */
-  Group(Teuchos::ParameterList& printingParams, 
-	const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
-	const NOX::Epetra::Vector& initialGuess);
+  Group(Teuchos::ParameterList& printingParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
+    const NOX::Epetra::Vector& initialGuess);
 
   //! Standard Constructor.
-  Group(Teuchos::ParameterList& printingParams, 
-	const Teuchos::RCP<NOX::Epetra::Interface::Required>& i, 
-	const NOX::Epetra::Vector& initialGuess, 
-	const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys);
+  Group(Teuchos::ParameterList& printingParams,
+    const Teuchos::RCP<NOX::Epetra::Interface::Required>& i,
+    const NOX::Epetra::Vector& initialGuess,
+    const Teuchos::RCP<NOX::Epetra::LinearSystem>& linSys);
 
   /*! \brief Copy constructor. If type is DeepCopy, takes ownership of
     valid shared linear system. */
-  Group(const NOX::Epetra::Group& source, 
-	NOX::CopyType type = NOX::DeepCopy);
+  Group(const NOX::Epetra::Group& source,
+    NOX::CopyType type = NOX::DeepCopy);
 
   //! Destructor.
   virtual ~Group();
@@ -125,12 +125,12 @@ public:
   virtual void setX(const NOX::Epetra::Vector& y);
   virtual void setX(const NOX::Abstract::Vector& y);
 
-  virtual void computeX(const Group& grp, 
-			const NOX::Epetra::Vector& d, 
-			double step);
+  virtual void computeX(const Group& grp,
+            const NOX::Epetra::Vector& d,
+            double step);
   virtual void computeX(const NOX::Abstract::Group& grp,
-			const NOX::Abstract::Vector& d, 
-			double step);
+            const NOX::Abstract::Vector& d,
+            double step);
 
   virtual NOX::Abstract::Group::ReturnType computeF();
 
@@ -148,32 +148,32 @@ public:
    * matrix-free scenarios. */
 
   //@{
-  
-  virtual NOX::Abstract::Group::ReturnType 
+
+  virtual NOX::Abstract::Group::ReturnType
   applyJacobian(const NOX::Epetra::Vector& input, NOX::Epetra::Vector& result) const;
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   applyJacobian(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const;
 
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   applyJacobianTranspose(const NOX::Epetra::Vector& input, NOX::Epetra::Vector& result) const;
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   applyJacobianTranspose(const NOX::Abstract::Vector& input, NOX::Abstract::Vector& result) const;
 
      /*!
      \brief Applies the inverse of the Jacobian matrix to the given
      input vector and puts the answer in result.
- 
+
      Computes
      \f[ v = J^{-1} u, \f]
      where \f$J\f$ is the Jacobian, \f$u\f$ is the input vector, and \f$v\f$ is
 the result vector.
- 
+
      The "Tolerance" parameter specifies that the
      solution should be such that
      \f[
      \frac{\| J v - u \|_2}{\max \{ 1, \|u\|_2\} } < \mbox{Tolerance}
      \f]
- 
+
      \return
      <ul>
      <li> NOX::Abstract::Group::NotDefined - Returned by default implementation
@@ -183,31 +183,31 @@ in NOX::Abstract::Group
      <li> NOX::Abstract::Group::Failed - If the computation fails
      <li> NOX::Abstract::Group::Ok - Otherwise
      </ul>
- 
+
      The parameter "Tolerance" may be added/modified in the list of
      parameters - this is the ideal solution tolerance for an iterative
      linear solve.
 
      The parameter "Reuse Preconditioner" is a boolean that tells the group to turn off control of preconditioner recalculation.  This is a dangerous flag but can really speed the computations if the user knows what they are doing.  Toggling this flag is left to the user (ideally it should be done through a status test).  Defaults to false.
    */
-  virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result) 
+  virtual NOX::Abstract::Group::ReturnType
+  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Epetra::Vector &input, NOX::Epetra::Vector &result)
     const;
-  virtual NOX::Abstract::Group::ReturnType 
-  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Abstract::Vector &input, NOX::Abstract::Vector &result) 
+  virtual NOX::Abstract::Group::ReturnType
+  applyJacobianInverse(Teuchos::ParameterList &params, const NOX::Abstract::Vector &input, NOX::Abstract::Vector &result)
     const;
 
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   applyRightPreconditioning(bool useTranspose,
-			    Teuchos::ParameterList& params, 
-			    const NOX::Epetra::Vector& input, 
-			    NOX::Epetra::Vector& result) const;
+                Teuchos::ParameterList& params,
+                const NOX::Epetra::Vector& input,
+                NOX::Epetra::Vector& result) const;
 
-  virtual NOX::Abstract::Group::ReturnType 
-  applyRightPreconditioning(bool useTranspose, 
-			    Teuchos::ParameterList& params, 
-			    const NOX::Abstract::Vector& input, 
-			    NOX::Abstract::Vector& result) const;
+  virtual NOX::Abstract::Group::ReturnType
+  applyRightPreconditioning(bool useTranspose,
+                Teuchos::ParameterList& params,
+                const NOX::Abstract::Vector& input,
+                NOX::Abstract::Vector& result) const;
 
   //@}
 
@@ -226,24 +226,24 @@ in NOX::Abstract::Group
 
   /*! \brief Returns true if the value of the Norm of the linear model
   for a full Newton step ||Js + f|| is valid with respect to the
-  current solution vector. 
+  current solution vector.
   */
 
   virtual bool isNormNewtonSolveResidual() const;
 
   /*! \brief Returns true if an explicitly constructed preconditioner
   exists (i.e. one that is computed and saved for further use in
-  multiple calls to applyRightPreconditioner).  
+  multiple calls to applyRightPreconditioner).
   */
   virtual bool isPreconditioner() const;
 
-  /*! \brief Returns true if the condition number has been computed.  
+  /*! \brief Returns true if the condition number has been computed.
   */
   virtual bool isConditionNumber() const;
 
   //@}
 
-  /** @name "Get" functions 
+  /** @name "Get" functions
    *
    * Note that these function do not check whether or not the vectors
    * are valid. Must use the "Is" functions for that purpose. */
@@ -252,7 +252,7 @@ in NOX::Abstract::Group
   virtual const NOX::Abstract::Vector& getX() const;
 
   virtual const NOX::Abstract::Vector& getF() const;
-  
+
   virtual double getNormF() const;
 
   virtual const NOX::Abstract::Vector& getGradient() const;
@@ -267,26 +267,26 @@ in NOX::Abstract::Group
 
   inline virtual Teuchos::RCP< const NOX::Abstract::Vector > getNewtonPtr() const {return NewtonVectorPtr;};
 
-  /*! 
+  /*!
     \brief
     Returns the 2-norm of the residual of the linear model used in the
     Newton solve computation, ||Js+f||.  This does not account for
     line search adjustments to the step length!
   */
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   getNormLastLinearSolveResidual(double & residual) const;
 
   //@}
 
-  virtual Teuchos::RCP<NOX::Abstract::Group> 
+  virtual Teuchos::RCP<NOX::Abstract::Group>
   clone(CopyType type = DeepCopy) const;
 
   //! Return the userInterface.
-  virtual Teuchos::RCP<NOX::Epetra::Interface::Required> 
+  virtual Teuchos::RCP<NOX::Epetra::Interface::Required>
   getRequiredInterface();
 
   //! Return the Linear System.
-  virtual Teuchos::RCP<const NOX::Epetra::LinearSystem> 
+  virtual Teuchos::RCP<const NOX::Epetra::LinearSystem>
   getLinearSystem() const;
 
   //! Return the Linear System.
@@ -298,28 +298,28 @@ in NOX::Abstract::Group
      maxIters are used to control the GMRES iterations.  Typically the
      solves do not have to be tight to get the estimate.
   */
-  virtual NOX::Abstract::Group::ReturnType 
+  virtual NOX::Abstract::Group::ReturnType
   computeJacobianConditionNumber(int maxIters, double tolerance,
-				 int krylovSubspaceSize=100, 
-				 bool printOutput=false);
+                 int krylovSubspaceSize=100,
+                 bool printOutput=false);
 
   //! Returns the condition number of the Jacobian matrix.
   virtual double getJacobianConditionNumber() const;
 
-  /*! 
-    \brief 
-    Sets option to disable linear resid computation. If disabled, 
+  /*!
+    \brief
+    Sets option to disable linear resid computation. If disabled,
     this saves on a MatVec per Newton but disallows inexact Newton methods
   */
   virtual void disableLinearResidualComputation(const bool disableChoice);
- 
+
 protected:
 
   //! resets the isValid flags to false
   virtual void resetIsValid();
 
-  /*! 
-    \brief 
+  /*!
+    \brief
     Computes the 2-norm of the residual of the linear model used in
     the Newton solve computation, ||Js+f||.
   */
@@ -352,8 +352,8 @@ protected:
   mutable Teuchos::RCP<Epetra_Vector> tmpVectorPtr;
   //@}
 
-  /** @name IsValid flags 
-   *  
+  /** @name IsValid flags
+   *
    * True if the current solution is up-to-date with respect to the
    * currect xVector. */
   //@{
@@ -366,7 +366,7 @@ protected:
   mutable bool isValidSolverJacOp;
   bool isValidConditionNumber;
   //@}
-  
+
   //! 2-Norm of the Newton solve residual: ||Js+f||
   double normNewtonSolveResidual;
 
@@ -378,13 +378,13 @@ protected:
 
   /** @name Shared Operators */
   //@{
-  //! Pointer to shared Jacobian matrix 
-  Teuchos::RCP< 
-    NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group> 
+  //! Pointer to shared Jacobian matrix
+  Teuchos::RCP<
+    NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>
     > sharedLinearSystemPtr;
 
-  //! Reference to shared Jacobian matrix 
-  NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>& 
+  //! Reference to shared Jacobian matrix
+  NOX::SharedObject<NOX::Epetra::LinearSystem, NOX::Epetra::Group>&
   sharedLinearSystem;
 
   //@}

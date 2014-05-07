@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 #define LOCA_ANASAZIOPERATOR_JACOBIANINVERSE_H
 
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_AnasaziOperator_AbstractStrategy.H"  // base class
 
@@ -66,23 +66,23 @@ namespace LOCA {
 namespace LOCA {
 
   namespace AnasaziOperator {
-    
+
     //! Anasazi operator for computing eigenvalues of the inverse-Jacobian
-    /*! 
-     * This class implements the LOCA::AnasaziOperator::AbstractStrategy 
+    /*!
+     * This class implements the LOCA::AnasaziOperator::AbstractStrategy
      * interface for computing eigenvalues of the inverse-Jacobian.
      */
     class JacobianInverse : public LOCA::AnasaziOperator::AbstractStrategy {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       JacobianInverse(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RCP<NOX::Abstract::Group>& grp);
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+    const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
       //! Destructor
       virtual ~JacobianInverse();
@@ -91,26 +91,26 @@ namespace LOCA {
        * \brief Return name of this operator
        */
       virtual const std::string& label() const;
-  
-      /*! 
+
+      /*!
        * \brief Apply the operator.
        *
        * Computes \f$\mbox{output} = J^{-1}\mbox{input}\f$.
        */
       virtual void
-      apply(const NOX::Abstract::MultiVector& input, 
-	    NOX::Abstract::MultiVector& output) const;
+      apply(const NOX::Abstract::MultiVector& input,
+        NOX::Abstract::MultiVector& output) const;
 
-      /*! 
+      /*!
        * \brief  Begin PostProcessing of eigenvalues
        *
-       * Compute Jacobian matrix once, for use in subsequent 
+       * Compute Jacobian matrix once, for use in subsequent
        * repeated calls to rayleighQuotient
        */
       virtual void
       beginPostProcessing();
 
-      /*! 
+      /*!
        * \brief Transform eigenvalue.
        *
        * Transforms the given eigenvalue to the eigenvalue of the Jacobian
@@ -125,10 +125,10 @@ namespace LOCA {
        * Computes the Rayleigh quotient \f$z^T J z\f$ for
        * the eigenvector \f$z\f$.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       rayleighQuotient(NOX::Abstract::Vector& evec_r,
-		       NOX::Abstract::Vector& evec_i,
-		       double& rq_r, double& rq_i) const;
+               NOX::Abstract::Vector& evec_i,
+               double& rq_r, double& rq_i) const;
 
     protected:
 

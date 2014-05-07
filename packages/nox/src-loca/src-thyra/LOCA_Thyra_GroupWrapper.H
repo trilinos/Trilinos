@@ -69,11 +69,11 @@ namespace LOCA {
 
       //! Constructor
       GroupWrapper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-	    const LOCA::ParameterVector& p,
-	    int p_index,
-	    bool implement_dfdp = false);
+        const NOX::Thyra::Vector& initial_guess,
+        const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+        const LOCA::ParameterVector& p,
+        int p_index,
+        bool implement_dfdp = false);
 
       /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of

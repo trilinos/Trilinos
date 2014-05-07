@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -50,7 +50,7 @@
 
 /*!
   \file UserDefinedObjects.C
-  
+
   This is a test for the "User Defined" direction and "User Defined"
   line searches.  It relies on the Broyden problem written by Brett
   Bader described below.
@@ -93,17 +93,17 @@
 class Broyden : public NOX::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor
-  Broyden(int m, double lambdaVal=0) : 
+  Broyden(int m, double lambdaVal=0) :
     initialGuess(m),
     solution(m)
   {
     n = m;
     lambda = lambdaVal;
 
-    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n"; 
-    
+    std::cout << "Broyden ill-conditioning: lambda = " << lambda << "\n";
+
     for (int i=0; i<n; i++) {
       // initialGuess(i) = -100;   // Case for lambdaBar != 1.0
       initialGuess(i) = 0;      // General testing
@@ -130,7 +130,7 @@ public:
   bool computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x)
   {
     double fn;
-    
+
     f(0) = (3-2*x(0))*x(0) - 2*x(1) + 1;
     for (int i=1; i<n-1; i++)
       f(i) = (3-2*x(i))*x(i) - x(i-1) - 2*x(i+1) + 1;
@@ -141,13 +141,13 @@ public:
     fevals++;
     return true;
   }
-  
-  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		       const NOX::LAPACK::Vector & x)
+
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J,
+               const NOX::LAPACK::Vector & x)
   {
     double fn;
     double dfndxn;
-    
+
     // F(0) = (3-2*x(0))*x(0) - 2*x(1) + 1;
     J(0,0) = 3 - 4*x(0);
     J(0,1) = -2;
@@ -169,7 +169,7 @@ public:
   }
 
 private:
-  
+
   //! Problem size
   int n;
   //! Number of calls to computeF
@@ -199,14 +199,14 @@ int main(int argc, char *argv[])
   RCP<ParameterList> solverParametersPtr = rcp(new ParameterList);
   ParameterList& solverParameters = *solverParametersPtr;
   solverParameters.set("Nonlinear Solver", "Line Search Based");
-  
+
   // Create a user defined direction using the template builder
   ParameterList& dl = solverParametersPtr->sublist("Direction");
   dl.set("Method", "User Defined");
   RCP<NOX::Direction::UserDefinedFactory> uddf =
     rcp(new NOX::Direction::UserDefinedFactoryT<NOX::Direction::Newton>);
   dl.set("User Defined Direction Factory", uddf);
-  
+
   // Create a user defined line search using the template builder
   ParameterList& lsl = solverParametersPtr->sublist("Line Search");
   lsl.set("Method", "User Defined");
@@ -217,12 +217,12 @@ int main(int argc, char *argv[])
   ParameterList& printParams = solverParameters.sublist("Printing");
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
-  printParams.set("Output Information", 
-		  NOX::Utils::OuterIteration + 
-		  NOX::Utils::OuterIterationStatusTest + 
-		  NOX::Utils::InnerIteration +
-		  NOX::Utils::Details + 
-		  NOX::Utils::Warning);
+  printParams.set("Output Information",
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::Details +
+          NOX::Utils::Warning);
 
   Teuchos::ParameterList stl;
   stl.set("Test Type", "Combo");
@@ -262,20 +262,20 @@ int main(int argc, char *argv[])
   Broyden broyden(100, 0.99);
   RCP<NOX::LAPACK::Group> grp = rcp(new NOX::LAPACK::Group(broyden));
 
-  RCP<NOX::Solver::Generic> solver = 
+  RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grp, status_tests, solverParametersPtr);
 
   NOX::StatusTest::StatusType status = solver->solve();
 
   std::cout << *solverParametersPtr << std::endl;
 
-  if (status != NOX::StatusTest::Converged || 
+  if (status != NOX::StatusTest::Converged ||
       solver->getNumIterations() != 12) {
     final_status_value += 1;
     std::cout << "\nTest failed!\n" << std::endl;
   }
-  else 
-    std::cout << "\nTest passed!\n" << std::endl;    
-    
+  else
+    std::cout << "\nTest passed!\n" << std::endl;
+
   return final_status_value;
 }

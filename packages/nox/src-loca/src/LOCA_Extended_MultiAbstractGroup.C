@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,21 +55,21 @@ Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
 LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup() const
 {
   // First get the underlying group
-  Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> ulg = 
+  Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> ulg =
     getUnderlyingGroup();
 
   // Cast underlying group to an extended group
-  Teuchos::RCP<const LOCA::Extended::MultiAbstractGroup> ulgPtr = 
+  Teuchos::RCP<const LOCA::Extended::MultiAbstractGroup> ulgPtr =
     Teuchos::rcp_dynamic_cast<const LOCA::Extended::MultiAbstractGroup>(ulg);
 
   if (ulgPtr.get() == NULL) {
     // Underlying group is not extended, therefore return it
-    return ulg;       
+    return ulg;
   }
 
   else {
     // Underlying group is extended, therefore return its baselevel group
-    return ulgPtr->getBaseLevelUnderlyingGroup(); 
+    return ulgPtr->getBaseLevelUnderlyingGroup();
   }
 
 }
@@ -78,21 +78,21 @@ Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>
 LOCA::Extended::MultiAbstractGroup::getBaseLevelUnderlyingGroup()
 {
   // First get the underlying group
-  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> ulg = 
+  Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> ulg =
     getUnderlyingGroup();
 
   // Cast underlying group to an extended group
-  Teuchos::RCP<LOCA::Extended::MultiAbstractGroup> ulgPtr = 
+  Teuchos::RCP<LOCA::Extended::MultiAbstractGroup> ulgPtr =
     Teuchos::rcp_dynamic_cast<LOCA::Extended::MultiAbstractGroup>(ulg);
 
   if (ulgPtr.get() == NULL) {
     // Underlying group is not extended, therefore return it
-    return ulg;       
+    return ulg;
   }
 
   else {
     // Underlying group is extended, therefore return its baselevel group
-    return ulgPtr->getBaseLevelUnderlyingGroup(); 
+    return ulgPtr->getBaseLevelUnderlyingGroup();
   }
 
 }

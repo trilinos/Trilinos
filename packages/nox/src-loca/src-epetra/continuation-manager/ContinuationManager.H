@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -69,14 +69,14 @@ class ContinuationManager {
     enum SolutionFileAttribute { NoPrint, Print };
 
     // Constructor
-    ContinuationManager( 
-	//const Teuchos::RCP< Epetra_MpiComm > & aComm ,
-	const Teuchos::RCP< Epetra_Comm > & aComm ,
-	const std::string & taskFileName);
+    ContinuationManager(
+    //const Teuchos::RCP< Epetra_MpiComm > & aComm ,
+    const Teuchos::RCP< Epetra_Comm > & aComm ,
+    const std::string & taskFileName);
 
     // Destructor
     ~ContinuationManager();
-      
+
     // Instantiante the LOCA stepper
     bool BuildLOCAStepper();
 
@@ -90,7 +90,7 @@ class ContinuationManager {
     bool RunLOCAStepper();
 
     // Print Statistics
-    bool PrintLOCAStepperStatistics(); 
+    bool PrintLOCAStepperStatistics();
 
     // Returns the name of the actual solution file
     std::string GetSolutionFileName() const;
@@ -98,31 +98,31 @@ class ContinuationManager {
     // Returns the name of the continuation file
     std::string GetContinuationFileName() const;
 
-    // Returns the stepper id 
+    // Returns the stepper id
     int GetStepID() const;
 
-    // Getting the Task list it will 
+    // Getting the Task list it will
     // be shared with a ProblemLOCAPrototype problem
     Teuchos::RCP <Teuchos::ParameterList> GetTaskList() const;
 
     // Determine whether a solution file is to be printed
     SolutionFileAttribute GetSolutionFileAttribute() const;
 
-    // Set the ProblemLOCAPrototype problem 
-    bool SetLOCAProblem( 
-	const Teuchos::RCP <ProblemLOCAPrototype> & aProblem );
+    // Set the ProblemLOCAPrototype problem
+    bool SetLOCAProblem(
+    const Teuchos::RCP <ProblemLOCAPrototype> & aProblem );
 
-    // Set the ProblemLOCAPrototype problem 
-    bool SetLOCAConstraint( 
-	const Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> &
-	anInterfaceConstraint);
+    // Set the ProblemLOCAPrototype problem
+    bool SetLOCAConstraint(
+    const Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> &
+    anInterfaceConstraint);
 
     // Setting the task list
     bool SetTaskList( Teuchos::RCP <Teuchos::ParameterList> aTaskList );
 
     // Makes a std::string from a given integer
-    std::string StringifyInt( const int & intNumber , 
-	const int & digits) const;
+    std::string StringifyInt( const int & intNumber ,
+    const int & digits) const;
 
   private:
 

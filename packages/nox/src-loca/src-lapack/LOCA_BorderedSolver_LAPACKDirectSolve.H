@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -73,9 +73,9 @@ namespace LOCA {
 namespace LOCA {
 
   namespace BorderedSolver {
-    
+
     //! Bordered system solver strategy based on direct factorization
-    /*! 
+    /*!
      * This class solves the extended system of equations
      * \f[
      *     \begin{bmatrix}
@@ -84,8 +84,8 @@ namespace LOCA {
      *     \end{bmatrix}
      *     \begin{bmatrix}
      *        X \\
-     *        Y 
-     *     \end{bmatrix} = 
+     *        Y
+     *     \end{bmatrix} =
      *     \begin{bmatrix}
      *        F \\
      *        G
@@ -100,17 +100,17 @@ namespace LOCA {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       /*!
        * \param global_data [in] Global data object
-       * \param topParams [in] Parsed top-level parameter list 
+       * \param topParams [in] Parsed top-level parameter list
        * \param solverParams [in] Bordered solver parameters.  Currently none
        * are referenced.
        */
       LAPACKDirectSolve(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	 const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	 const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data,
+     const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+     const Teuchos::RCP<Teuchos::ParameterList>& solverParams);
 
       //! Destructor
       virtual ~LAPACKDirectSolve();
@@ -123,27 +123,27 @@ namespace LOCA {
        */
       virtual void setMatrixBlocks(
           const Teuchos::RCP<const LOCA::BorderedSolver::AbstractOperator>& op,
-	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
-	  const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
-	  const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
+      const Teuchos::RCP<const NOX::Abstract::MultiVector>& blockA,
+      const Teuchos::RCP<const LOCA::MultiContinuation::ConstraintInterface>& blockB,
+      const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix>& blockC);
 
       //! Intialize solver for a solve
       /*!
-       * This should be called after setMatrixBlocks(), but before 
+       * This should be called after setMatrixBlocks(), but before
        * applyInverse().
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       initForSolve();
 
       //! Intialize solver for a transpose solve
       /*!
-       * This should be called after setMatrixBlocks(), but before 
+       * This should be called after setMatrixBlocks(), but before
        * applyInverseTranspose().
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       initForTransposeSolve();
-  
-      /*! 
+
+      /*!
        * \brief Computed extended matrix-multivector product
        */
       /*!
@@ -152,28 +152,28 @@ namespace LOCA {
        *     \begin{bmatrix}
        *        U \\
        *        V
-       *     \end{bmatrix} = 
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *          J & A    \\
        *        B^T & C
        *     \end{bmatrix}
        *     \begin{bmatrix}
        *        X \\
-       *        Y 
-       *     \end{bmatrix} = 
+       *        Y
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *          J*X + A*Y \\
        *        B^T*X + C*Y
        *     \end{bmatrix}.
        * \f]
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       apply(const NOX::Abstract::MultiVector& X,
-	    const NOX::Abstract::MultiVector::DenseMatrix& Y,
-	    NOX::Abstract::MultiVector& U,
-	    NOX::Abstract::MultiVector::DenseMatrix& V) const;
+        const NOX::Abstract::MultiVector::DenseMatrix& Y,
+        NOX::Abstract::MultiVector& U,
+        NOX::Abstract::MultiVector::DenseMatrix& V) const;
 
-      /*! 
+      /*!
        * \brief Computed extended matrix transpose-multivector product
        */
       /*!
@@ -182,28 +182,28 @@ namespace LOCA {
        *     \begin{bmatrix}
        *        U \\
        *        V
-       *     \end{bmatrix} = 
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *        J^T & B    \\
        *        A^T & C
        *     \end{bmatrix}
        *     \begin{bmatrix}
        *        X \\
-       *        Y 
-       *     \end{bmatrix} = 
+       *        Y
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *        J^T*X + B*Y \\
        *        A^T*X + C^T*Y
        *     \end{bmatrix}.
        * \f]
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyTranspose(const NOX::Abstract::MultiVector& X,
-		     const NOX::Abstract::MultiVector::DenseMatrix& Y,
-		     NOX::Abstract::MultiVector& U,
-		     NOX::Abstract::MultiVector::DenseMatrix& V) const;
+             const NOX::Abstract::MultiVector::DenseMatrix& Y,
+             NOX::Abstract::MultiVector& U,
+             NOX::Abstract::MultiVector::DenseMatrix& V) const;
 
-      /*! 
+      /*!
        * \brief Solves the extended system as defined above using
        * Gaussian Elimination
        */
@@ -212,36 +212,36 @@ namespace LOCA {
        * \em isZeroF or \em isZeroG is true, than the corresponding
        * \em F or \em G pointers may be NULL.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyInverse(Teuchos::ParameterList& params,
-		   const NOX::Abstract::MultiVector* F,
-		   const NOX::Abstract::MultiVector::DenseMatrix* G,
-		   NOX::Abstract::MultiVector& X,
-		   NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+           const NOX::Abstract::MultiVector* F,
+           const NOX::Abstract::MultiVector::DenseMatrix* G,
+           NOX::Abstract::MultiVector& X,
+           NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-      /*! 
+      /*!
        * \brief Solves the transpose of the extended system as defined above
        */
       /*!
-       * The \em params argument is the linear solver parameters. 
+       * The \em params argument is the linear solver parameters.
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       applyInverseTranspose(Teuchos::ParameterList& params,
-			    const NOX::Abstract::MultiVector* F,
-			    const NOX::Abstract::MultiVector::DenseMatrix* G,
-			    NOX::Abstract::MultiVector& X,
-			    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+                const NOX::Abstract::MultiVector* F,
+                const NOX::Abstract::MultiVector::DenseMatrix* G,
+                NOX::Abstract::MultiVector& X,
+                NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
     protected:
 
       //! Solve linear system
-      NOX::Abstract::Group::ReturnType 
-      solve(bool trans, 
-	    Teuchos::ParameterList& params,
-	    const NOX::Abstract::MultiVector* F,
-	    const NOX::Abstract::MultiVector::DenseMatrix* G,
-	    NOX::Abstract::MultiVector& X,
-	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+      NOX::Abstract::Group::ReturnType
+      solve(bool trans,
+        Teuchos::ParameterList& params,
+        const NOX::Abstract::MultiVector* F,
+        const NOX::Abstract::MultiVector::DenseMatrix* G,
+        NOX::Abstract::MultiVector& X,
+        NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
     private:
 

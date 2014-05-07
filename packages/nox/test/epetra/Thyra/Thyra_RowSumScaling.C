@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-          
+
 // NOX Objects
 #include "NOX.H"
 #include "NOX_Thyra.H"
@@ -84,9 +84,9 @@ int main(int argc, char *argv[])
 {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv);
- 
+
   int status = 0;
-  
+
   // Parse the command line
   using Teuchos::CommandLineProcessor;
   CommandLineProcessor  clp;
@@ -94,14 +94,14 @@ int main(int argc, char *argv[])
   clp.addOutputSetupOptions(true);
   bool verbose = false;
   clp.setOption( "v", "disable-verbosity", &verbose, "Enable verbosity" );
-  
+
   CommandLineProcessor::EParseCommandLineReturn
     parse_return = clp.parse(argc,argv,&std::cerr);
-  
+
   if( parse_return != CommandLineProcessor::PARSE_SUCCESSFUL )
     return parse_return;
 
-  if (verbose) 
+  if (verbose)
     std::cout << "Verbosity Activated" << std::endl;
   else
     std::cout << "Verbosity Disabled" << std::endl;
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
   // for more than one proc
   if (Comm.NumProc() > 1) {
     std::cerr << "Error!  Problem can only be run with at most 1 processor!"
-	      << std::endl;
+          << std::endl;
     return -1;
   }
 
@@ -127,13 +127,13 @@ int main(int argc, char *argv[])
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel =
     Teuchos::rcp(new ModelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),
-						 d,p0,p1,x00,x01));
+                         d,p0,p1,x00,x01));
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   {
     p->set("Linear Solver Type", "AztecOO");
@@ -148,7 +148,7 @@ int main(int argc, char *argv[])
 
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   thyraModel->set_W_factory(lowsFactory);
@@ -160,40 +160,40 @@ int main(int argc, char *argv[])
   nl_params->sublist("Line Search").set("Method", "Polynomial");
 
   Teuchos::ParameterList& printParams = nl_params->sublist("Printing");
-  printParams.set("Output Information", 
-		  NOX::Utils::OuterIteration + 
-		  NOX::Utils::OuterIterationStatusTest + 
-		  NOX::Utils::InnerIteration +
-		  NOX::Utils::LinearSolverDetails +
-		  NOX::Utils::Parameters + 
-		  NOX::Utils::Details + 
-		  NOX::Utils::Warning +
-		  NOX::Utils::Debug +
-		  NOX::Utils::TestDetails +
-		  NOX::Utils::Error);
+  printParams.set("Output Information",
+          NOX::Utils::OuterIteration +
+          NOX::Utils::OuterIterationStatusTest +
+          NOX::Utils::InnerIteration +
+          NOX::Utils::LinearSolverDetails +
+          NOX::Utils::Parameters +
+          NOX::Utils::Details +
+          NOX::Utils::Warning +
+          NOX::Utils::Debug +
+          NOX::Utils::TestDetails +
+          NOX::Utils::Error);
 
   nl_params->sublist("Solver Options").set("Status Test Check Type", "Complete");
 
   // Enable row sum scaling
   nl_params->sublist("Thyra Group Options").set("Function Scaling", "Row Sum");
-  
+
   // Create Status Tests
   {
     Teuchos::ParameterList& st = nl_params->sublist("Status Tests");
     st.set("Test Type", "Combo");
     st.set("Combo Type", "OR");
     st.set("Number of Tests", 3);
-    
+
     {
       Teuchos::ParameterList& conv = st.sublist("Test 0");
       conv.set("Test Type", "Combo");
       conv.set("Combo Type", "AND");
       conv.set("Number of Tests", 2);
-      
+
       Teuchos::ParameterList& normF_rel = conv.sublist("Test 0");
       normF_rel.set("Test Type", "RelativeNormF");
       normF_rel.set("Tolerance", 1.0e-4);
-      
+
       Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
       normWRMS.set("Test Type", "NormWRMS");
       normWRMS.set("Absolute Tolerance", 1.0e-8);
@@ -204,7 +204,7 @@ int main(int argc, char *argv[])
       normWRMS.set("Beta", 0.5);
       normWRMS.set("Disable Implicit Weighting", true);
     }
-    
+
     {
       Teuchos::ParameterList& fv = st.sublist("Test 1");
       fv.set("Test Type", "FiniteValue");
@@ -217,13 +217,13 @@ int main(int argc, char *argv[])
       maxiters.set("Test Type", "MaxIters");
       maxiters.set("Maximum Iterations", 20);
     }
-    
+
   }
 
   // Create a Thyra nonlinear solver
-  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver = 
+  Teuchos::RCP< ::Thyra::NonlinearSolverBase<double> > solver =
     Teuchos::rcp(new ::Thyra::NOXNonlinearSolver);
-  
+
   solver->setParameterList(nl_params);
   solver->setModel(thyraModel);
 
@@ -239,7 +239,7 @@ int main(int argc, char *argv[])
   {
     // Problem converges in 7 nonlinear iterations with NO scaling
     // Problem converges in 6 nonlinear iterations with RS scaling (bad test problem - too easy)
-    Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver = 
+    Teuchos::RCP< ::Thyra::NOXNonlinearSolver> thyra_nox_solver =
       Teuchos::rcp_dynamic_cast< ::Thyra::NOXNonlinearSolver>(solver);
     TEUCHOS_ASSERT(thyra_nox_solver->getNOXSolver()->getNumIterations() == 6);
   }

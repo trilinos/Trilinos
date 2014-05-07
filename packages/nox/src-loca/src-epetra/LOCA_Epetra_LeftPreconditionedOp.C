@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,8 +53,8 @@
 #include "LOCA_Epetra_LeftPreconditionedOp.H"
 
 LOCA::Epetra::LeftPreconditionedOp::LeftPreconditionedOp(
-	const Teuchos::RCP<Epetra_Operator>& jacOperator, 
-	const Teuchos::RCP<Epetra_Operator>& precOperator) :
+    const Teuchos::RCP<Epetra_Operator>& jacOperator,
+    const Teuchos::RCP<Epetra_Operator>& precOperator) :
   label("LOCA::Epetra::LeftPreconditionedOp"),
   J(jacOperator),
   M(precOperator),
@@ -66,8 +66,8 @@ LOCA::Epetra::LeftPreconditionedOp::~LeftPreconditionedOp()
 {
 }
 
-int 
-LOCA::Epetra::LeftPreconditionedOp::SetUseTranspose(bool UseTranspose) 
+int
+LOCA::Epetra::LeftPreconditionedOp::SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   int res_1 = J->SetUseTranspose(UseTranspose);
@@ -76,9 +76,9 @@ LOCA::Epetra::LeftPreconditionedOp::SetUseTranspose(bool UseTranspose)
   return res_1 + res_2;
 }
 
-int 
-LOCA::Epetra::LeftPreconditionedOp::Apply(const Epetra_MultiVector& Input, 
-					  Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::LeftPreconditionedOp::Apply(const Epetra_MultiVector& Input,
+                      Epetra_MultiVector& Result) const
 {
   // Create temporary multivector
   Epetra_MultiVector tmp(Input);
@@ -88,10 +88,10 @@ LOCA::Epetra::LeftPreconditionedOp::Apply(const Epetra_MultiVector& Input,
 
     // Compute J*Input
     res_1 = J->Apply(Input, tmp);
-    
+
     // Compute M^-1*J*Input
     res_2 = M->ApplyInverse(tmp, Result);
-    
+
   }
   else {
 
@@ -100,16 +100,16 @@ LOCA::Epetra::LeftPreconditionedOp::Apply(const Epetra_MultiVector& Input,
 
     // Compute J^T*M^-T*Input
     res_2 = J->Apply(tmp, Result);
-    
+
   }
 
   return res_1 + res_2;
 }
 
-int 
+int
 LOCA::Epetra::LeftPreconditionedOp::ApplyInverse(
-					const Epetra_MultiVector& Input, 
-					Epetra_MultiVector& Result) const
+                    const Epetra_MultiVector& Input,
+                    Epetra_MultiVector& Result) const
 {
   // Create temporary multivector
   Epetra_MultiVector tmp(Input);
@@ -122,13 +122,13 @@ LOCA::Epetra::LeftPreconditionedOp::ApplyInverse(
 
     // Compute J^-1*M*Input
     res_2 = J->ApplyInverse(tmp, Result);
-    
+
   }
   else {
 
     // Compute J^-T*Input
     res_1 = J->ApplyInverse(Input, tmp);
-    
+
     // Compute M^T*J^-T*Input
     res_2 = M->Apply(tmp, Result);
 
@@ -137,43 +137,43 @@ LOCA::Epetra::LeftPreconditionedOp::ApplyInverse(
   return res_1 + res_2;
 }
 
-double 
+double
 LOCA::Epetra::LeftPreconditionedOp::NormInf() const
 {
   return J->NormInf() + 1.0/M->NormInf();
 }
 
 
-const char* 
+const char*
 LOCA::Epetra::LeftPreconditionedOp::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 LOCA::Epetra::LeftPreconditionedOp::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 LOCA::Epetra::LeftPreconditionedOp::HasNormInf() const
 {
   return J->HasNormInf() && M->HasNormInf();
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 LOCA::Epetra::LeftPreconditionedOp::Comm() const
 {
   return J->Comm();
 }
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::LeftPreconditionedOp::OperatorDomainMap() const
 {
   return J->OperatorDomainMap();
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::LeftPreconditionedOp::OperatorRangeMap() const
 {
   return M->OperatorDomainMap();

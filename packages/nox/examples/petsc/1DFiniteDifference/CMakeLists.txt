@@ -4,7 +4,7 @@ INCLUDE(TribitsAddExecutableAndTest)
 INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 IF(NOX_ENABLE_ABSTRACT_IMPLEMENTATION_PETSC)
-  
+
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     petsc_1DFiniteDifference_example
     SOURCES Example.C FiniteDifference.H FiniteDifference.C Problem_Interface.H Problem_Interface.C

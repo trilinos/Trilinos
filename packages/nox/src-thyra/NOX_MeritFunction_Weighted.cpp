@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,8 +52,8 @@
 #include "Teuchos_Assert.hpp"
 
 NOX::Thyra::WeightedMeritFunction::
-WeightedMeritFunction(const Teuchos::RCP<const ::Thyra::VectorBase<double> > weights, 
-		      bool optimizeSlope) :
+WeightedMeritFunction(const Teuchos::RCP<const ::Thyra::VectorBase<double> > weights,
+              bool optimizeSlope) :
   name_("WeightedMeritFunction"),
   optimizeSlopeCalc_(optimizeSlope)
 {
@@ -94,9 +94,9 @@ computef(const NOX::Abstract::Group& group) const
 {
   using Teuchos::RCP;
   using Teuchos::rcp;
-  
+
   TEUCHOS_ASSERT(group.isF());
-  
+
   RCP<const NOX::Thyra::Vector> f =
     Teuchos::rcp_dynamic_cast<const NOX::Thyra::Vector>(group.getFPtr(),true);
 
@@ -112,7 +112,7 @@ computef(const NOX::Abstract::Group& group) const
 
 double NOX::Thyra::WeightedMeritFunction::
 computeSlope(const NOX::Abstract::Vector& dir,
-	     const NOX::Abstract::Group& group) const
+         const NOX::Abstract::Group& group) const
 {
   double value = 0.0;
 
@@ -122,16 +122,16 @@ computeSlope(const NOX::Abstract::Vector& dir,
 
     if ( is_null(tmpGrpPtr) ) {
       tmpGrpPtr = Teuchos::rcp_dynamic_cast<NOX::Thyra::Group>
-	(group.clone(NOX::ShapeCopy),true);
+    (group.clone(NOX::ShapeCopy),true);
     }
-    
+
     // these norms are implicitly weighted
     double numerator = group.getX().norm();
     double denominator = dir.norm();
- 
+
     if (denominator < 1.0e-12) {
       std::cout << "WARNING: NOX::Thyra::WeightedMeritFunction::computeSlope()\n"
-		<< "denominator in perturbation < 1.0e-12! Setting to 1.0!" << std::endl;
+        << "denominator in perturbation < 1.0e-12! Setting to 1.0!" << std::endl;
       denominator = 1.0;
     }
 
@@ -140,24 +140,24 @@ computeSlope(const NOX::Abstract::Vector& dir,
     *tmp1_ = dir;
 
     tmpGrpPtr->computeX(group, dir, eta);
-    
+
     tmpGrpPtr->computeF();
 
     *tmp1_ = tmpGrpPtr->getF();
 
     tmp1_->update(-1.0, group.getF(), 1.0);
-    
+
     tmp1_->scale(1.0/eta);
 
-//     scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(), 
-// 			   tmp1_->getEpetraVector());
+//     scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(),
+//                tmp1_->getEpetraVector());
 
     ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp1_->getThyraVector()));
 
     *tmp2_ = group.getF();
 
-//     scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(), 
-// 			   tmp2_->getEpetraVector());
+//     scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(),
+//                tmp2_->getEpetraVector());
 
     ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp2_->getThyraVector()));
 
@@ -168,16 +168,16 @@ computeSlope(const NOX::Abstract::Vector& dir,
   else {   // explicitly compute F^T Js
 
     group.applyJacobian(dir, *tmp1_);
-    
-//     scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(), 
-// 			   tmp1_->getEpetraVector());
+
+//     scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(),
+//                tmp1_->getEpetraVector());
 
     ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp1_->getThyraVector()));
 
     *tmp2_ = group.getF();
 
-//     scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(), 
-// 			   tmp2_->getEpetraVector());
+//     scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(),
+//                tmp2_->getEpetraVector());
 
     ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp2_->getThyraVector()));
 
@@ -190,36 +190,36 @@ computeSlope(const NOX::Abstract::Vector& dir,
 
 void NOX::Thyra::WeightedMeritFunction::
 computeGradient(const NOX::Abstract::Group& group,
-		NOX::Abstract::Vector& result) const
+        NOX::Abstract::Vector& result) const
 {
   TEUCHOS_ASSERT(group.isF());
   TEUCHOS_ASSERT(group.isJacobian());
 
-  const NOX::Thyra::Vector& f = 
+  const NOX::Thyra::Vector& f =
     dynamic_cast<const NOX::Thyra::Vector&>(group.getF());
-  
+
   NOX::Thyra::Vector& tResult = dynamic_cast<NOX::Thyra::Vector&>(result);
 
   // Apply D squared
-//   scalingPtr->applyLeftScaling(fVec.getEpetraVector(), 
-// 			   tmp1_->getEpetraVector());
-//   scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(), 
-// 			   tmp1_->getEpetraVector());
+//   scalingPtr->applyLeftScaling(fVec.getEpetraVector(),
+//                tmp1_->getEpetraVector());
+//   scalingPtr->applyLeftScaling(tmp1_->getEpetraVector(),
+//                tmp1_->getEpetraVector());
 
   ::Thyra::copy(f.getThyraVector(), outArg(tmp1_->getThyraVector()));
   ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp1_->getThyraVector()));
   ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp1_->getThyraVector()));
 
-  NOX::Abstract::Group::ReturnType status = 
+  NOX::Abstract::Group::ReturnType status =
     group.applyJacobianTranspose(*tmp1_, tResult);
 
   TEUCHOS_TEST_FOR_EXCEPTION(status != NOX::Abstract::Group::Ok, std::logic_error,
-			     "applyJacobianTranspose() failed!");
+                 "applyJacobianTranspose() failed!");
 }
 
 double NOX::Thyra::WeightedMeritFunction::
 computeQuadraticModel(const NOX::Abstract::Vector& dir,
-		      const NOX::Abstract::Group& group) const
+              const NOX::Abstract::Group& group) const
 {
   double f = this->computef(group);
 
@@ -229,29 +229,29 @@ computeQuadraticModel(const NOX::Abstract::Vector& dir,
 
   group.applyJacobian(dir, *tmp2_);
 
-//   scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(), 
-// 			   tmp2_->getEpetraVector());
+//   scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(),
+//                tmp2_->getEpetraVector());
 
   ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp2_->getThyraVector()));
-  
+
   double dTgrad2fd = 0.5 * tmp2_->innerProduct(*tmp2_);
 
-  double m = f + gradfTd + dTgrad2fd; 
+  double m = f + gradfTd + dTgrad2fd;
 
   return m;
 }
 
 void NOX::Thyra::WeightedMeritFunction::
-computeQuadraticMinimizer(const NOX::Abstract::Group &grp, 
-			  NOX::Abstract::Vector &result) const
+computeQuadraticMinimizer(const NOX::Abstract::Group &grp,
+              NOX::Abstract::Vector &result) const
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-			     "NOX::Thyra::WeightedMeritFunction::computeQuadraticMinimizer() method has not been implemented yet!");
+                 "NOX::Thyra::WeightedMeritFunction::computeQuadraticMinimizer() method has not been implemented yet!");
 }
 
 bool NOX::Thyra::WeightedMeritFunction::
 computeSteepestDescentDir(const NOX::Abstract::Group& group,
-			  NOX::Abstract::Vector& result) const
+              NOX::Abstract::Vector& result) const
 {
   TEUCHOS_ASSERT(group.isF());
   TEUCHOS_ASSERT(group.isJacobian());
@@ -266,14 +266,14 @@ computeSteepestDescentDir(const NOX::Abstract::Group& group,
   // Scale by the quadratic minimization model
   status = group.applyJacobian(dir, *tmp2_);
   TEUCHOS_TEST_FOR_EXCEPTION(status != NOX::Abstract::Group::Ok, std::logic_error,
-			     "applyJacobian() failed!");
+                 "applyJacobian() failed!");
 
-//   scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(), 
-//   		   tmp2_->getEpetraVector());
+//   scalingPtr->applyLeftScaling(tmp2_->getEpetraVector(),
+//              tmp2_->getEpetraVector());
 
   ::Thyra::ele_wise_scale(weights_->getThyraVector(), outArg(tmp2_->getThyraVector()));
-  
+
   dir.scale( -1.0 * dir.innerProduct(dir) / tmp2_->innerProduct(*tmp2_) );
-  
+
   return true;
 }

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,9 +68,9 @@ namespace Direction {
    For example, if a user writes their own direction object:
    \code
    class MyDirection : public NOX::Direction::Generic {
-   
+
      // Ctor that takes the standard direction arguments.
-     MyDirection(const Teuchos::RCP<NOX::GlobalData>& gd, 
+     MyDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
                  Teuchos::ParameterList& params);
 
      .
@@ -89,12 +89,12 @@ namespace Direction {
      rcp(new NOX::Direction::UserDefinedFactoryT<MyDirection>);
    dl.set("User Defined Direction Factory", uddf);
    \endcode
-   
+
    It is critical that the user defined factory be set in the
    parameter list as a base class type object:
    NOX::Direction::UserDefinedFactory.
 
- */  
+ */
 template <typename T>
 class UserDefinedFactoryT : public NOX::Direction::UserDefinedFactory {
 
@@ -106,9 +106,9 @@ public:
   //! Destructor
   ~UserDefinedFactoryT() {}
 
-  Teuchos::RCP<NOX::Direction::Generic> 
+  Teuchos::RCP<NOX::Direction::Generic>
   buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
-		  Teuchos::ParameterList& params) const 
+          Teuchos::ParameterList& params) const
   {
     using namespace Teuchos;
     RCP<NOX::Direction::Generic> ls = rcp(new T(gd, params));

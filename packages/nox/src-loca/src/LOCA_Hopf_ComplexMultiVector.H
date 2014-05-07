@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,8 +64,8 @@ namespace LOCA {
 
   namespace Hopf {
 
-    /*! 
-     * \brief Multi-vector class to hold two multi-vectors to represent a 
+    /*!
+     * \brief Multi-vector class to hold two multi-vectors to represent a
      * complex multi-vector.
      */
     /*!
@@ -77,31 +77,31 @@ namespace LOCA {
     class ComplexMultiVector : public LOCA::Extended::MultiVector {
 
       /*!
-       * \brief Declare LOCA::Hopf::ComplexVector as 
+       * \brief Declare LOCA::Hopf::ComplexVector as
        * a friend class so it can call protected methods.
        */
       friend class ComplexVector;
 
     public:
-      
-      //! Constructor.  
+
+      //! Constructor.
       /*!
        * Generates a multivector with \em nColumns columns from \em cloneVec
        */
       ComplexMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& cloneVec,
-		    int nColumns);
-  
-      //! Constructor.  
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::Vector& cloneVec,
+            int nColumns);
+
+      //! Constructor.
       ComplexMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::MultiVector& realVec,
-		    const NOX::Abstract::MultiVector& imagVec);
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::MultiVector& realVec,
+            const NOX::Abstract::MultiVector& imagVec);
 
       //! Copy constructor.
-      ComplexMultiVector(const ComplexMultiVector& source, 
-			 NOX::CopyType type = NOX::DeepCopy);
+      ComplexMultiVector(const ComplexMultiVector& source,
+             NOX::CopyType type = NOX::DeepCopy);
 
       /*!
        * \brief Copy constructor that creates a new multivector with
@@ -110,92 +110,92 @@ namespace LOCA {
       ComplexMultiVector(const ComplexMultiVector& source, int nColumns);
 
       /*!
-       * \brief Copy constructor that creates a sub copy or view of the 
+       * \brief Copy constructor that creates a sub copy or view of the
        * given multivector
        */
-      ComplexMultiVector(const ComplexMultiVector& source, 
-			 const std::vector<int>& index, bool view);
+      ComplexMultiVector(const ComplexMultiVector& source,
+             const std::vector<int>& index, bool view);
 
       //! Destructor.
       virtual ~ComplexMultiVector();
-      
+
       //! Assignment operator
-      virtual ComplexMultiVector& 
+      virtual ComplexMultiVector&
       operator=(const ComplexMultiVector& y);
 
       //! Assignment operator
-      virtual LOCA::Extended::MultiVector& 
+      virtual LOCA::Extended::MultiVector&
       operator=(const LOCA::Extended::MultiVector& y);
 
       //! Assignment operator
-      virtual NOX::Abstract::MultiVector& 
+      virtual NOX::Abstract::MultiVector&
       operator=(const NOX::Abstract::MultiVector& y);
 
-      /*! 
+      /*!
        * \brief Create a new multi-vector of the same underlying type by
-       * cloning "this", and return a pointer to the new vector.  
+       * cloning "this", and return a pointer to the new vector.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(NOX::CopyType type = NOX::DeepCopy) const;
-      
+
       //! Creates a new multi-vector with \c numvecs columns
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       clone(int numvecs) const;
 
-      /*! 
-       * \brief Creates a new multi-vector with \c index.size() columns 
-       * whose columns are copies of the columns of \c *this given by 
+      /*!
+       * \brief Creates a new multi-vector with \c index.size() columns
+       * whose columns are copies of the columns of \c *this given by
        * \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subCopy(const std::vector<int>& index) const;
 
-      /*! 
-       * \brief Creates a new multi-vector with \c index.size() columns that 
+      /*!
+       * \brief Creates a new multi-vector with \c index.size() columns that
        * shares the columns of \c *this given by \c index.
        */
       virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       subView(const std::vector<int>& index) const;
 
       //! Returns the real component of extended multivector
-      virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<const NOX::Abstract::MultiVector>
       getRealMultiVec() const;
 
       //! Returns the real component of extended multivector
-      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       getRealMultiVec();
 
       //! Returns the imaginary component of extended multivector
-      virtual Teuchos::RCP<const NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<const NOX::Abstract::MultiVector>
       getImagMultiVec() const;
 
       //! Returns the imaginary component of extended multivector
-      virtual Teuchos::RCP<NOX::Abstract::MultiVector> 
+      virtual Teuchos::RCP<NOX::Abstract::MultiVector>
       getImagMultiVec();
 
       //! Returns ith column as an extended vector
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::Hopf::ComplexVector>
       getColumn(int i);
 
       //! Returns ith column as an extended vector
-      virtual 
+      virtual
       Teuchos::RCP<const LOCA::Hopf::ComplexVector>
       getColumn(int i) const;
 
     protected:
 
-      //! Constructor.  
+      //! Constructor.
       /*!
        * Creates an empty multivector with \em nColumns columns
        */
       ComplexMultiVector(
-		     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		     int nColumns);
+             const Teuchos::RCP<LOCA::GlobalData>& global_data,
+             int nColumns);
 
       //! Generate a derived extended vector
       /*!
-       * Returns a vector of type 
+       * Returns a vector of type
        * LOCA::Hopf::ComplexVector
        */
       virtual Teuchos::RCP<LOCA::Extended::Vector>

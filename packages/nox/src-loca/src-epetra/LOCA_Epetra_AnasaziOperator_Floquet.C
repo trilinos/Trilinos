@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,11 +52,11 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
-	const Teuchos::RCP<NOX::Abstract::Group>& grp_)
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams_,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams_,
+    const Teuchos::RCP<NOX::Abstract::Group>& grp_)
   : globalData(global_data),
     myLabel("Floquet Transformation"),
     eigenParams(eigenParams_),
@@ -80,7 +80,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::Floquet(
   else std::cout << callingFunction << "  xyztInterface cast succeeded." << std::endl;
 
   // make sure Jacobian is up-to-date
-  
+
   xyztInterface->setFloquetFillFlag(true);  //Thhis setting is undone in destructor
   status = grp->computeJacobian();
 
@@ -101,8 +101,8 @@ LOCA::Epetra::AnasaziOperator::Floquet::label() const
 }
 
 void
-LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& input, 
-				     NOX::Abstract::MultiVector& output) const
+LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& output) const
 {
 
   // Apply first part of monodromy operator on input vector
@@ -114,7 +114,7 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 
     xyztInterface->beginFloquetOperatorApplication(eV);
   }
-    
+
   // Now apply the main part of the monodromy matrix
   NOX::Abstract::Group::ReturnType status =
     grp->applyJacobianInverseMultiVector(*solverParams, *(tmpVec.get()), output);
@@ -158,19 +158,19 @@ LOCA::Epetra::AnasaziOperator::Floquet::apply(const NOX::Abstract::MultiVector& 
 }
 
 void
-LOCA::Epetra::AnasaziOperator::Floquet::transformEigenvalue(double& ev_r, 
-						   double& ev_i) const
+LOCA::Epetra::AnasaziOperator::Floquet::transformEigenvalue(double& ev_r,
+                           double& ev_i) const
 {
   // Floquet multipliers need no transformations
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient(
-				         NOX::Abstract::Vector& evec_r,
-					 NOX::Abstract::Vector& evec_i,
-					 double& rq_r, double& rq_i) const
+                         NOX::Abstract::Vector& evec_r,
+                     NOX::Abstract::Vector& evec_i,
+                     double& rq_r, double& rq_i) const
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient()";
 
   // create two-column  multivector of two eigenvectors
@@ -186,5 +186,5 @@ LOCA::Epetra::AnasaziOperator::Floquet::rayleighQuotient(
   rq_r = (Ax.innerProduct(evec_r) +  Ay.innerProduct(evec_i)) / mag ;
   rq_i = (Ay.innerProduct(evec_r) -  Ax.innerProduct(evec_i)) / mag ;
 
-  return NOX::Abstract::Group::Ok; 
+  return NOX::Abstract::Group::Ok;
 }

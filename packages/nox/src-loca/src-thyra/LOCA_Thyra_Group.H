@@ -69,17 +69,17 @@ namespace LOCA {
 
     //! Extension of the NOX::Thyra::Group to %LOCA.
     class Group : public virtual NOX::Thyra::Group,
-		  public virtual LOCA::Abstract::Group {
+          public virtual LOCA::Abstract::Group {
 
     public:
 
       //! Constructor
       Group(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-	    const LOCA::ParameterVector& p,
-	    int p_index,
-	    bool implement_dfdp = false);
+        const NOX::Thyra::Vector& initial_guess,
+        const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+        const LOCA::ParameterVector& p,
+        int p_index,
+        bool implement_dfdp = false);
 
       /*!
        * \brief Copy constructor. If type is DeepCopy, takes ownership of
@@ -154,22 +154,22 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       computeDfDpMulti(const std::vector<int>& paramIDs,
-		       NOX::Abstract::MultiVector& dfdp,
-		       bool isValidF);
+               NOX::Abstract::MultiVector& dfdp,
+               bool isValidF);
 
       //! Perform any preprocessing before a continuation step starts.
       virtual void
       preProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+                 LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Perform any postprocessing after a continuation step finishes.
       virtual void
       postProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus);
+                 LOCA::Abstract::Iterator::StepStatus stepStatus);
 
       //! Projects solution to a few scalars for multiparameter continuation
       virtual void projectToDraw(const NOX::Abstract::Vector& x,
-				 double *px) const;
+                 double *px) const;
 
       //! Returns the dimension of the project to draw array
       virtual int projectToDrawDimension() const;
@@ -181,7 +181,7 @@ namespace LOCA {
        */
       virtual double
       computeScaledDotProduct(const NOX::Abstract::Vector& a,
-			      const NOX::Abstract::Vector& b) const;
+                  const NOX::Abstract::Vector& b) const;
 
       //! Call the user interface print() routine, solution vector
       virtual void printSolution(const double conParam) const;
@@ -212,13 +212,13 @@ namespace LOCA {
       //! Multiply the shifted matrix by a vector.
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrix(const NOX::Abstract::Vector& input,
-			 NOX::Abstract::Vector& result) const;
+             NOX::Abstract::Vector& result) const;
 
       //! Multiply the shifted matrix by a multi-vector.
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrixMultiVector(
-				const NOX::Abstract::MultiVector& input,
-				NOX::Abstract::MultiVector& result) const;
+                const NOX::Abstract::MultiVector& input,
+                NOX::Abstract::MultiVector& result) const;
 
       /*!
        * \brief Apply the inverse of the shifted matrix by a multi-vector, as
@@ -226,14 +226,14 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       applyShiftedMatrixInverseMultiVector(
-			        Teuchos::ParameterList& params,
-				const NOX::Abstract::MultiVector& input,
-				NOX::Abstract::MultiVector& result) const;
+                    Teuchos::ParameterList& params,
+                const NOX::Abstract::MultiVector& input,
+                NOX::Abstract::MultiVector& result) const;
       //@}
 
       //! Set strategy object for saving continuation data
       void setSaveDataStrategy(
-			 const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s);
+             const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s);
 
     protected:
 

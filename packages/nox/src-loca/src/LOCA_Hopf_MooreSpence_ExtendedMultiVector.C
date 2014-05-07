@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,20 +48,20 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H" 
-#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"  
+#include "LOCA_Hopf_MooreSpence_ExtendedMultiVector.H"
+#include "LOCA_Hopf_MooreSpence_ExtendedVector.H"
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    const NOX::Abstract::Vector& cloneVec,
-		    int nColumns) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            const NOX::Abstract::Vector& cloneVec,
+            int nColumns) :
   LOCA::Extended::MultiVector(global_data, nColumns, 3, 2)
 {
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv1 = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv1 =
     cloneVec.createMultiVector(nColumns, NOX::ShapeCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv2 = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv2 =
     cloneVec.createMultiVector(nColumns, NOX::ShapeCopy);
-  Teuchos::RCP<NOX::Abstract::MultiVector> mv3 = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> mv3 =
     cloneVec.createMultiVector(nColumns, NOX::ShapeCopy);
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, mv1);
   LOCA::Extended::MultiVector::setMultiVectorPtr(1, mv2);
@@ -69,12 +69,12 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 }
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-		  const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		  const NOX::Abstract::MultiVector& xVec,
-		  const NOX::Abstract::MultiVector& realEigenVec,
-		  const NOX::Abstract::MultiVector& imagEigenVec,
-		  const NOX::Abstract::MultiVector::DenseMatrix& freqs,
-		  const NOX::Abstract::MultiVector::DenseMatrix& bifParams) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const NOX::Abstract::MultiVector& xVec,
+          const NOX::Abstract::MultiVector& realEigenVec,
+          const NOX::Abstract::MultiVector& imagEigenVec,
+          const NOX::Abstract::MultiVector::DenseMatrix& freqs,
+          const NOX::Abstract::MultiVector::DenseMatrix& bifParams) :
   LOCA::Extended::MultiVector(global_data, xVec.numVectors(), 3, 2)
 {
   LOCA::Extended::MultiVector::setMultiVectorPtr(0, xVec.clone(NOX::DeepCopy));
@@ -85,22 +85,22 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
 }
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-	  const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source, 
-	  NOX::CopyType type) :
+      const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source,
+      NOX::CopyType type) :
   LOCA::Extended::MultiVector(source, type)
 {
 }
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-	   const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source, 
-	   int nColumns) :
+       const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source,
+       int nColumns) :
   LOCA::Extended::MultiVector(source, nColumns)
 {
 }
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-	   const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source, 
-	   const std::vector<int>& index, bool view) :
+       const LOCA::Hopf::MooreSpence::ExtendedMultiVector& source,
+       const std::vector<int>& index, bool view) :
   LOCA::Extended::MultiVector(source, index, view)
 {
 }
@@ -109,25 +109,25 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::~ExtendedMultiVector()
 {
 }
 
-LOCA::Extended::MultiVector& 
+LOCA::Extended::MultiVector&
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::operator=(
-					 const LOCA::Extended::MultiVector& y)
+                     const LOCA::Extended::MultiVector& y)
 {
   operator=(dynamic_cast<const LOCA::Hopf::MooreSpence::ExtendedMultiVector&>(y));
   return *this;
 }
 
-NOX::Abstract::MultiVector& 
+NOX::Abstract::MultiVector&
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::operator=(
-					 const NOX::Abstract::MultiVector& y)
+                     const NOX::Abstract::MultiVector& y)
 {
   operator=(dynamic_cast<const LOCA::Hopf::MooreSpence::ExtendedMultiVector&>(y));
   return *this;
 }
 
-LOCA::Hopf::MooreSpence::ExtendedMultiVector& 
-LOCA::Hopf::MooreSpence::ExtendedMultiVector::operator=(const 
-		      LOCA::Hopf::MooreSpence::ExtendedMultiVector& y)
+LOCA::Hopf::MooreSpence::ExtendedMultiVector&
+LOCA::Hopf::MooreSpence::ExtendedMultiVector::operator=(const
+              LOCA::Hopf::MooreSpence::ExtendedMultiVector& y)
 {
   LOCA::Extended::MultiVector::operator=(y);
   return *this;
@@ -136,30 +136,30 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::operator=(const
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::clone(NOX::CopyType type) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, type));
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::clone(int numvecs) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, numvecs));
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::subCopy(
-					       const std::vector<int>& index) const
+                           const std::vector<int>& index) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, index, false));
 }
 
 Teuchos::RCP<NOX::Abstract::MultiVector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::subView(
-					      const std::vector<int>& index) const
+                          const std::vector<int>& index) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedMultiVector(*this, index, true));
 }
 
@@ -224,18 +224,18 @@ LOCA::Hopf::MooreSpence::ExtendedMultiVector::getBifParams()
 }
 
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::ExtendedMultiVector(
-		    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		    int nColumns) :
+            const Teuchos::RCP<LOCA::GlobalData>& global_data,
+            int nColumns) :
   LOCA::Extended::MultiVector(global_data, nColumns, 3, 2)
 {
 }
 
 Teuchos::RCP<LOCA::Extended::Vector>
 LOCA::Hopf::MooreSpence::ExtendedMultiVector::generateVector(
-							int nVecs, 
-							int nScalarRows) const
+                            int nVecs,
+                            int nScalarRows) const
 {
-  return 
+  return
     Teuchos::rcp(new LOCA::Hopf::MooreSpence::ExtendedVector(globalData));
 }
 

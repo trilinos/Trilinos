@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,9 +55,9 @@
 //=============================================================================
 LOCA::Epetra::ShiftInvertOperator::ShiftInvertOperator(
                    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		   const Teuchos::RCP<LOCA::Epetra::Group>& grp, 
-		   const Teuchos::RCP<const Epetra_Operator>& jac, 
-		   double shift) :
+           const Teuchos::RCP<LOCA::Epetra::Group>& grp,
+           const Teuchos::RCP<const Epetra_Operator>& jac,
+           double shift) :
   globalData(global_data),
   locagrp(grp),
   jacOper(jac),
@@ -81,42 +81,42 @@ LOCA::Epetra::ShiftInvertOperator::SetUseTranspose(bool UseTranspose)
     return 0;
   else {
     globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::ShiftInvert::SetUseTranspose",
-	  "Operator does not support transpose");
+      "LOCA::Epetra::ShiftInvert::SetUseTranspose",
+      "Operator does not support transpose");
     return -1;
   }
 }
 
-int 
-LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X, 
-					 Epetra_MultiVector& Y) const
+int
+LOCA::Epetra::ShiftInvertOperator::Apply(const Epetra_MultiVector& X,
+                     Epetra_MultiVector& Y) const
 {
   // Create NOX multivectors out of X and Y (views)
   NOX::Epetra::MultiVector nox_X(
-		       Teuchos::rcp(&const_cast<Epetra_MultiVector&>(X),false),
-		       NOX::DeepCopy,
-		       NOX::Epetra::MultiVector::CreateView);
+               Teuchos::rcp(&const_cast<Epetra_MultiVector&>(X),false),
+               NOX::DeepCopy,
+               NOX::Epetra::MultiVector::CreateView);
   NOX::Epetra::MultiVector nox_Y(Teuchos::rcp(&Y,false),
-				 NOX::DeepCopy,
-				 NOX::Epetra::MultiVector::CreateView);
+                 NOX::DeepCopy,
+                 NOX::Epetra::MultiVector::CreateView);
 
   // Apply shifted matrix
-  NOX::Abstract::Group::ReturnType result = 
+  NOX::Abstract::Group::ReturnType result =
     locagrp->applyShiftedMatrixMultiVector(nox_X, nox_Y);
-  
+
   if (result == NOX::Abstract::Group::Ok)
     return 0;
-  else 
+  else
     return -1;
-} 
+}
 
-int 
-LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X, 
-						Epetra_MultiVector&Y) const
+int
+LOCA::Epetra::ShiftInvertOperator::ApplyInverse(const Epetra_MultiVector& X,
+                        Epetra_MultiVector&Y) const
 {
   globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",
-	  "Operator does not support ApplyInverse");
+      "LOCA::Epetra::ShiftInvertOperator::ApplyInverse",
+      "Operator does not support ApplyInverse");
   return -1;
 }
 
@@ -124,8 +124,8 @@ double
 LOCA::Epetra::ShiftInvertOperator::NormInf() const
 {
   globalData->locaErrorCheck->throwError(
-	  "LOCA::Epetra::ShiftInvertOperator::NormInf",
-	  "Operator does not support NormInf");
+      "LOCA::Epetra::ShiftInvertOperator::NormInf",
+      "Operator does not support NormInf");
   return -1;
 }
 

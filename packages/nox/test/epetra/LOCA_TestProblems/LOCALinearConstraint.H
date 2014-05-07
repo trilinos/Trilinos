@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,38 +58,38 @@
  * This class implements the LOCA::MultiContinuation::ConstraintInterfaceMVDX
  * constraint interface for a simple linear constraint:
  * \f[
- *      g(x,p) = \frac{dg}{dx}*x 
+ *      g(x,p) = \frac{dg}{dx}*x
  * \f]
  * where \f$x\f$ is the solution vector.
  */
-class LinearConstraint : 
+class LinearConstraint :
   public LOCA::MultiContinuation::ConstraintInterfaceMVDX {
-  
+
 public:
-  
+
   //! Constructor
   LinearConstraint(int NumConstraints, const LOCA::ParameterVector& pVec,
-		   NOX::Abstract::Vector& cloneVec);
+           NOX::Abstract::Vector& cloneVec);
 
   //! Copy constructor
-  LinearConstraint(const LinearConstraint& source, 
-		   NOX::CopyType type = NOX::DeepCopy);
+  LinearConstraint(const LinearConstraint& source,
+           NOX::CopyType type = NOX::DeepCopy);
 
   //! Destructor
   virtual ~LinearConstraint();
 
-  /*! 
+  /*!
    * @name Implementation of LOCA::MultiContinuation::ConstraintInterfaceMVDX
-   * virtual methods 
+   * virtual methods
    */
   //@{
 
   //! Copy
-  virtual void 
+  virtual void
   copy(const LOCA::MultiContinuation::ConstraintInterface& source);
 
   //! Cloning function
-  virtual 
+  virtual
   Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
   clone(NOX::CopyType type = NOX::DeepCopy) const;
 
@@ -103,8 +103,8 @@ public:
   virtual void setParam(int paramID, double val);
 
   //! Sets parameters indexed by paramIDs
-  virtual void setParams(const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals);
+  virtual void setParams(const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals);
 
   //! Compute continuation constraint equations
   virtual NOX::Abstract::Group::ReturnType
@@ -121,13 +121,13 @@ public:
    * \c true, then the \c dgdp contains \f$g\f$ on input.
    */
   virtual NOX::Abstract::Group::ReturnType
-  computeDP(const std::vector<int>& paramIDs, 
-	    NOX::Abstract::MultiVector::DenseMatrix& dp, 
-	    bool isValidG);
+  computeDP(const std::vector<int>& paramIDs,
+        NOX::Abstract::MultiVector::DenseMatrix& dp,
+        bool isValidG);
 
   //! Return \c true if constraint residuals are valid
   virtual bool isConstraints() const;
-  
+
   //! Return \c true if derivative of constraint w.r.t. x is valid
   virtual bool isDX() const;
 
@@ -139,8 +139,8 @@ public:
   virtual const NOX::Abstract::MultiVector*
   getDX() const;
 
-  /*! 
-   * \brief Return \c true if solution component of constraint 
+  /*!
+   * \brief Return \c true if solution component of constraint
    * derivatives is zero
    */
   virtual bool isDXZero() const;
@@ -154,7 +154,7 @@ public:
   void setDgDp(const NOX::Abstract::MultiVector::DenseMatrix& A);
 
   /*!
-   * \brief Set the flag determinging whether isDXZero() 
+   * \brief Set the flag determinging whether isDXZero()
    * returns true or false.  This is for testing bordered solvers when B
    * is zero.
    */

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -49,17 +49,17 @@
 
 /* Solves the nonlinear equation:
  *
- * dT       d2T    
+ * dT       d2T
  * --- - D1 --- - alpha + (beta+1)*T - C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * T(t,0) = T(t,1) = alpha = 0.6
  * T(0,x) = alpha + sinusoidal perturbation
  *
  *
- * dC       d2C    
+ * dC       d2C
  * --- - D2 --- - beta*T + C*T**2 = 0
- * dt       dx2   
+ * dt       dx2
  *
  * C(t,0) = C(t,1) = beta / alpha = 2.0 / 0.6
  * C(0,x) = beta / alpha + sinusoidal perturbation
@@ -71,7 +71,7 @@
  */
 
 /* This version tests the "Shift-Invert 2 Matrix" eigensolver, which
- * requires a second matrix A2 passed to the shiftedLinSys and the 
+ * requires a second matrix A2 passed to the shiftedLinSys and the
  * declareSeparateMatricMemory() call to the LOCA::Epetra::Group.
  *
  */
@@ -100,12 +100,12 @@
 // Added to allow timings
 #include "Epetra_Time.h"
 
-// Headers needed for FD coloring 
-#include <vector> 
+// Headers needed for FD coloring
+#include <vector>
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
-#include "Brusselator.H"              
+#include "Brusselator.H"
 
 int main(int argc, char *argv[])
 {
@@ -137,9 +137,9 @@ int main(int argc, char *argv[])
 
     // Check for verbose output
     bool verbose = false;
-    if (argc>1) 
-      if (argv[1][0]=='-' && argv[1][1]=='v') 
-	verbose = true;
+    if (argc>1)
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+    verbose = true;
 
     // Get the number of elements from the command line
     int NumGlobalNodes = 0;
@@ -147,20 +147,20 @@ int main(int argc, char *argv[])
       NumGlobalNodes = atoi(argv[2]) + 1;
     else if ((argc > 1) && (!verbose))
       NumGlobalNodes = atoi(argv[1]) + 1;
-    else 
+    else
       NumGlobalNodes = 101;
 
-    // The number of unknowns must be at least equal to the 
+    // The number of unknowns must be at least equal to the
     // number of processors.
     if (NumGlobalNodes < NumProc) {
-      std::cout << "numGlobalNodes = " << NumGlobalNodes 
-		<< " cannot be < number of processors = " << NumProc 
-		<< std::endl;
+      std::cout << "numGlobalNodes = " << NumGlobalNodes
+        << " cannot be < number of processors = " << NumProc
+        << std::endl;
       exit(1);
     }
 
     // Create the Brusselator problem class.  This creates all required
-    // Epetra objects for the problem and allows calls to the 
+    // Epetra objects for the problem and allows calls to the
     // function (F) and Jacobian evaluation routines.
     Brusselator Problem(NumGlobalNodes, Comm);
 
@@ -207,7 +207,7 @@ int main(int argc, char *argv[])
 #endif
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = 
+    Teuchos::ParameterList& predictorList =
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Constant");
 
@@ -223,21 +223,21 @@ int main(int argc, char *argv[])
 
     // Set the printing parameters in the "Printing" sublist
     Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-    printParams.set("MyPID", MyPID); 
+    printParams.set("MyPID", MyPID);
     printParams.set("Output Precision", 3);
     printParams.set("Output Processor", 0);
      if (verbose)
-      printParams.set("Output Information", 
-		      NOX::Utils::OuterIteration + 
-		      NOX::Utils::OuterIterationStatusTest + 
-		      NOX::Utils::InnerIteration +
-		      NOX::Utils::Details + 
-		      NOX::Utils::Warning +
-		      NOX::Utils::TestDetails + 
-		      NOX::Utils::Error + 
-		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails +
-		      NOX::Utils::StepperParameters);
+      printParams.set("Output Information",
+              NOX::Utils::OuterIteration +
+              NOX::Utils::OuterIterationStatusTest +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Details +
+              NOX::Utils::Warning +
+              NOX::Utils::TestDetails +
+              NOX::Utils::Error +
+              NOX::Utils::StepperIteration +
+              NOX::Utils::StepperDetails +
+              NOX::Utils::StepperParameters);
      else
        printParams.set("Output Information", NOX::Utils::Error);
 
@@ -245,25 +245,25 @@ int main(int argc, char *argv[])
     Teuchos::ParameterList& dirParams = nlParams.sublist("Direction");
     Teuchos::ParameterList& newtonParams = dirParams.sublist("Newton");
     Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-    lsParams.set("Aztec Solver", "GMRES");  
-    lsParams.set("Max Iterations", 800);  
+    lsParams.set("Aztec Solver", "GMRES");
+    lsParams.set("Max Iterations", 800);
     lsParams.set("Tolerance", 1e-6);
-    lsParams.set("Output Frequency", 50);    
-    lsParams.set("Preconditioner", "Ifpack"); 
+    lsParams.set("Output Frequency", 50);
+    lsParams.set("Preconditioner", "Ifpack");
 
     // Create the interface between the test problem and the nonlinear solver
-    Teuchos::RCP<Problem_Interface> interface = 
+    Teuchos::RCP<Problem_Interface> interface =
       Teuchos::rcp(new Problem_Interface(Problem));
 
     // Create the Epetra_RowMatrixfor the Jacobian/Preconditioner
-    Teuchos::RCP<Epetra_RowMatrix> A = 
+    Teuchos::RCP<Epetra_RowMatrix> A =
       Teuchos::rcp(&Problem.getJacobian(),false);
     // Clone matrix for separate memory -- used in 2 Matrix eigensolver
-    Teuchos::RCP<Epetra_RowMatrix> A2 = 
+    Teuchos::RCP<Epetra_RowMatrix> A2 =
       Teuchos::rcp(new Epetra_CrsMatrix(Problem.getJacobian()));
 
     // Use an Epetra Scaling object if desired
-    Teuchos::RCP<Epetra_Vector> scaleVec = 
+    Teuchos::RCP<Epetra_Vector> scaleVec =
       Teuchos::rcp(new Epetra_Vector(soln));
     NOX::Epetra::Scaling scaling;
     scaling.addRowSumScaling(NOX::Epetra::Scaling::Left, scaleVec);
@@ -272,18 +272,18 @@ int main(int argc, char *argv[])
 
     // Create the Linear System
     Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-							iReq, iJac, A, soln));
+                            iReq, iJac, A, soln));
                                                         //&scaling);
-    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys = 
+    Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> shiftedLinSys =
       Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-							iReq, iJac, A2, soln));
+                            iReq, iJac, A2, soln));
 
     // Create initial guess
-    NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false), 
-				     NOX::Epetra::Vector::CreateView,
-				     NOX::DeepCopy);
+    NOX::Epetra::Vector initialGuess(Teuchos::rcp(&soln,false),
+                     NOX::Epetra::Vector::CreateView,
+                     NOX::DeepCopy);
 
     // Create and initialize the parameter vector
     LOCA::ParameterVector pVector;
@@ -297,18 +297,18 @@ int main(int argc, char *argv[])
       Teuchos::rcp(new LOCA::Epetra::Factory);
 
     // Create global data object
-    Teuchos::RCP<LOCA::GlobalData> globalData = 
+    Teuchos::RCP<LOCA::GlobalData> globalData =
       LOCA::createGlobalData(paramList, epetraFactory);
 
     // Create the Group
     Teuchos::RCP<LOCA::Epetra::Interface::TimeDependent> iTime = interface;
     Teuchos::RCP<LOCA::Epetra::Group> grp =
       Teuchos::rcp(new LOCA::Epetra::Group(globalData, printParams,
-					   iTime, initialGuess, linSys, 
-					   shiftedLinSys, pVector));
+                       iTime, initialGuess, linSys,
+                       shiftedLinSys, pVector));
 
     // Set flag in group to indicate that linSys and shiftedLinSys in Group constructor
-    // (line above) use separate memory for the matrix. This allows algorithms to 
+    // (line above) use separate memory for the matrix. This allows algorithms to
     // compute and store 2 different matrices. Currently used by Shift-Invert 2 Matrix
     // eigensolver.
     grp->declareSeparateMatrixMemory();
@@ -316,10 +316,10 @@ int main(int argc, char *argv[])
     grp->computeF();
 
     // Create the convergence tests
-    Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8, 
-					   NOX::StatusTest::NormF::Unscaled));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+    Teuchos::RCP<NOX::StatusTest::NormF> absresid =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8,
+                       NOX::StatusTest::NormF::Unscaled));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
     Teuchos::RCP<NOX::StatusTest::Combo> combo =
       Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
@@ -334,55 +334,55 @@ int main(int argc, char *argv[])
     if (status != LOCA::Abstract::Iterator::Finished) {
       ierr = 1;
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+    globalData->locaUtils->out()
+      << "Stepper failed to converge!" << std::endl;
     }
 
     // Get the final solution from the stepper
-    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup = 
+    Teuchos::RCP<const LOCA::Epetra::Group> finalGroup =
       Teuchos::rcp_dynamic_cast<const LOCA::Epetra::Group>(stepper.getSolutionGroup());
-    const NOX::Epetra::Vector& finalSolution = 
+    const NOX::Epetra::Vector& finalSolution =
       dynamic_cast<const NOX::Epetra::Vector&>(finalGroup->getX());
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }
 
     // Check some statistics on the solution
-    NOX::TestCompare testCompare(globalData->locaUtils->out(), 
-				 *(globalData->locaUtils));
-  
+    NOX::TestCompare testCompare(globalData->locaUtils->out(),
+                 *(globalData->locaUtils));
+
     if (globalData->locaUtils->isPrintType(NOX::Utils::TestDetails))
-      globalData->locaUtils->out() 
-	<< std::endl 
-	<< "***** Checking solution statistics *****" 
-	<< std::endl;
+      globalData->locaUtils->out()
+    << std::endl
+    << "***** Checking solution statistics *****"
+    << std::endl;
 
     // Check number of continuation steps
     int numSteps = stepper.getStepNumber();
     int numSteps_expected = 11;
     ierr += testCompare.testValue(numSteps, numSteps_expected, 0.0,
-				  "number of continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check number of failed steps
     int numFailedSteps = stepper.getNumFailedSteps();
     int numFailedSteps_expected = 0;
     ierr += testCompare.testValue(numFailedSteps, numFailedSteps_expected, 0.0,
-				  "number of failed continuation steps",
-				  NOX::TestCompare::Absolute);
+                  "number of failed continuation steps",
+                  NOX::TestCompare::Absolute);
 
     // Check final value of continuation parameter
     double beta_final = finalGroup->getParam("beta");
     double beta_expected = 1.6;
     ierr += testCompare.testValue(beta_final, beta_expected, 1.0e-14,
-				  "final value of continuation parameter", 
-				  NOX::TestCompare::Relative);
+                  "final value of continuation parameter",
+                  NOX::TestCompare::Relative);
 
     // Check final of solution
     NOX::Epetra::Vector final_x_expected(finalSolution);
@@ -391,9 +391,9 @@ int main(int argc, char *argv[])
       final_x_expected.getEpetraVector()[2*i] = alpha;
       final_x_expected.getEpetraVector()[2*i+1] = beta_final/alpha;
     }
-    ierr += testCompare.testVector(finalSolution, final_x_expected, 
-				   1.0e-6, 1.0e-6,
-				   "value of final solution");
+    ierr += testCompare.testVector(finalSolution, final_x_expected,
+                   1.0e-6, 1.0e-6,
+                   "value of final solution");
 
     LOCA::destroyGlobalData(globalData);
   }

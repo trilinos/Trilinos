@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -52,7 +52,7 @@
 #include "LOCA_Solver_Wrapper.H"
 
 LOCA::StatusTest::Wrapper::Wrapper(
-		    const Teuchos::RCP<NOX::StatusTest::Generic>& s) :
+            const Teuchos::RCP<NOX::StatusTest::Generic>& s) :
   statusTestPtr(s)
 {
 }
@@ -61,16 +61,16 @@ LOCA::StatusTest::Wrapper::~Wrapper()
 {
 }
 
-NOX::StatusTest::StatusType 
-LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem, 
-				       NOX::StatusTest::CheckType checkType)
+NOX::StatusTest::StatusType
+LOCA::StatusTest::Wrapper::checkStatus(const NOX::Solver::Generic& problem,
+                       NOX::StatusTest::CheckType checkType)
 {
   LOCA::Solver::Wrapper problemWrapper(Teuchos::rcp(&problem,false));
 
   return statusTestPtr->checkStatus(problemWrapper, checkType);
 }
 
-NOX::StatusTest::StatusType 
+NOX::StatusTest::StatusType
 LOCA::StatusTest::Wrapper::getStatus() const
 {
   return statusTestPtr->getStatus();
@@ -82,7 +82,7 @@ std::ostream& LOCA::StatusTest::Wrapper::print(std::ostream& stream, int indent)
 }
 
 Teuchos::RCP<NOX::StatusTest::Generic>
-LOCA::StatusTest::Wrapper::getUnderlyingStatusTest() 
+LOCA::StatusTest::Wrapper::getUnderlyingStatusTest()
 {
   return statusTestPtr;
 }

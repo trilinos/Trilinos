@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,12 +68,12 @@ namespace LOCA {
 
   namespace MultiContinuation {
 
-    /*! 
-     * \brief Abstract interface for the constraint portion of a constrained 
+    /*!
+     * \brief Abstract interface for the constraint portion of a constrained
      * nonlinear system.
      */
     /*!
-     * This class is used in conjunction with 
+     * This class is used in conjunction with
      * LOCA::MultiContinuation::ConstrainedGroup to represent a constrained
      * nonlinear system:
      * \f[
@@ -89,7 +89,7 @@ namespace LOCA {
      * This class provides an interface to evaluate \f$g(x,y)\f$, compute
      * the derivatives \f$g_x\f$ and \f$g_y\f$, and apply the derivative
      * \f$g_x\f$ to arbitrary multi-vectors (the implementation is never
-     * required to explicitly store \f$g_x\f$ which is impractical in 
+     * required to explicitly store \f$g_x\f$ which is impractical in
      * many situations).
      */
     class ConstraintInterface {
@@ -106,7 +106,7 @@ namespace LOCA {
       virtual void copy(const ConstraintInterface& source) = 0;
 
       //! Cloning function
-      virtual 
+      virtual
       Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>
       clone(NOX::CopyType type = NOX::DeepCopy) const = 0;
 
@@ -120,8 +120,8 @@ namespace LOCA {
       virtual void setParam(int paramID, double val) = 0;
 
       //! Sets parameters indexed by paramIDs
-      virtual void setParams(const std::vector<int>& paramIDs, 
-		     const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
+      virtual void setParams(const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals) = 0;
 
       //! Compute constraint residuals
       virtual NOX::Abstract::Group::ReturnType
@@ -138,9 +138,9 @@ namespace LOCA {
        * \c true, then the \c dgdp contains \f$g\f$ on input.
        */
       virtual NOX::Abstract::Group::ReturnType
-      computeDP(const std::vector<int>& paramIDs, 
-		NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-		bool isValidG) = 0;
+      computeDP(const std::vector<int>& paramIDs,
+        NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+        bool isValidG) = 0;
 
       //! Return \c true if constraint residuals are valid
       virtual bool isConstraints() const = 0;
@@ -161,9 +161,9 @@ namespace LOCA {
        * \endcode
        */
       virtual NOX::Abstract::Group::ReturnType
-      multiplyDX(double alpha, 
-	      const NOX::Abstract::MultiVector& input_x,
-	      NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
+      multiplyDX(double alpha,
+          const NOX::Abstract::MultiVector& input_x,
+          NOX::Abstract::MultiVector::DenseMatrix& result_p) const = 0;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
       /*!
@@ -174,13 +174,13 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       addDX(Teuchos::ETransp transb,
-	      double alpha, 
-	      const NOX::Abstract::MultiVector::DenseMatrix& b,
-	      double beta,
-	      NOX::Abstract::MultiVector& result_x) const = 0;
+          double alpha,
+          const NOX::Abstract::MultiVector::DenseMatrix& b,
+          double beta,
+          NOX::Abstract::MultiVector& result_x) const = 0;
 
-      /*! 
-       * \brief Return \c true if solution component of constraint 
+      /*!
+       * \brief Return \c true if solution component of constraint
        * derivatives is zero
        */
       virtual bool isDXZero() const = 0;
@@ -190,18 +190,18 @@ namespace LOCA {
        * The \c stepStatus argument indicates whether the previous step was
        * successful.  The default implementation is empty.
        */
-      virtual void 
+      virtual void
       preProcessContinuationStep(
-			   LOCA::Abstract::Iterator::StepStatus stepStatus) {}
-	
+               LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+
       //! Perform any postprocessing after a continuation step finishes.
       /*!
        * The \c stepStatus argument indicates whether the step was
        * successful.  The default implementation is empty.
        */
-      virtual void 
+      virtual void
       postProcessContinuationStep(
-			   LOCA::Abstract::Iterator::StepStatus stepStatus) {}
+               LOCA::Abstract::Iterator::StepStatus stepStatus) {}
 
     }; // Class ConstraintInterface
 

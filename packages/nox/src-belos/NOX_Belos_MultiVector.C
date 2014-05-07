@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,7 +63,7 @@ NOX::Belos::MultiVector::MultiVector(const NOX::Belos::MultiVector& source)
 }
 
 NOX::Belos::MultiVector::MultiVector(NOX::Abstract::MultiVector& noxMultiVec,
-			       bool ownsVecFlag)
+                   bool ownsVecFlag)
   : vecPtr(&noxMultiVec),
     ownsVec(ownsVecFlag)
 {
@@ -106,7 +106,7 @@ NOX::Belos::MultiVector::CloneCopy(int index[], int numvecs)
   NOX::Abstract::MultiVector *newVec = vecPtr->subCopy(idx).release();
   return new NOX::Belos::MultiVector(*newVec, true);
 }
- 
+
 ::Belos::MultiVec<double>*
 NOX::Belos::MultiVector::CloneView(int index[], int numvecs)
 {
@@ -128,51 +128,51 @@ NOX::Belos::MultiVector::GetNumberVecs() const
 }
 
 void
-NOX::Belos::MultiVector::MvTimesMatAddMv(double alpha, 
-				   ::Belos::MultiVec<double>& A, 
-				   Teuchos::SerialDenseMatrix<int,double>& B,
-				   double beta)
+NOX::Belos::MultiVector::MvTimesMatAddMv(double alpha,
+                   ::Belos::MultiVec<double>& A,
+                   Teuchos::SerialDenseMatrix<int,double>& B,
+                   double beta)
 {
   // Cast A to a NOX::Belos::MultiVector
-  NOX::Belos::MultiVector& nox_belos_A = 
+  NOX::Belos::MultiVector& nox_belos_A =
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
   vecPtr->update(Teuchos::NO_TRANS, alpha, *(nox_belos_A.vecPtr), B, beta);
 }
 
 void
-NOX::Belos::MultiVector:: MvAddMv(double alpha, 
-			       ::Belos::MultiVec<double>& A, 
-			       double beta, 
-			       ::Belos::MultiVec<double>& B)
+NOX::Belos::MultiVector:: MvAddMv(double alpha,
+                   ::Belos::MultiVec<double>& A,
+                   double beta,
+                   ::Belos::MultiVec<double>& B)
 {
   // Cast A to a NOX::Belos::MultiVector
-  NOX::Belos::MultiVector& nox_belos_A = 
+  NOX::Belos::MultiVector& nox_belos_A =
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
   // Cast B to a NOX::Belos::MultiVector
-  NOX::Belos::MultiVector& nox_belos_B = 
+  NOX::Belos::MultiVector& nox_belos_B =
     dynamic_cast<NOX::Belos::MultiVector&>(B);
 
   vecPtr->update(alpha, *(nox_belos_A.vecPtr), beta, *(nox_belos_B.vecPtr),
-		 0.0);
+         0.0);
 }
 
 void
-NOX::Belos::MultiVector::MvTransMv(double alpha, 
-				::Belos::MultiVec<double>& A, 
-				Teuchos::SerialDenseMatrix<int,double>& B)
+NOX::Belos::MultiVector::MvTransMv(double alpha,
+                ::Belos::MultiVec<double>& A,
+                Teuchos::SerialDenseMatrix<int,double>& B)
 {
   // Cast A to a NOX::Belos::MultiVector
-  NOX::Belos::MultiVector& nox_belos_A = 
+  NOX::Belos::MultiVector& nox_belos_A =
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
   vecPtr->multiply(alpha, *(nox_belos_A.vecPtr), B);
 }
 
-::Belos::ReturnType 
-NOX::Belos::MultiVector::MvNorm(double *normvec, 
-				::Belos::NormType norm_type)
+::Belos::ReturnType
+NOX::Belos::MultiVector::MvNorm(double *normvec,
+                ::Belos::NormType norm_type)
 {
   NOX::Abstract::Vector::NormType nox_norm_type;
   if (norm_type == ::Belos::OneNorm)
@@ -192,13 +192,13 @@ NOX::Belos::MultiVector::MvNorm(double *normvec,
 }
 
 void
-NOX::Belos::MultiVector::SetBlock(::Belos::MultiVec<double>& A, int index[], 
-				  int numvecs)
+NOX::Belos::MultiVector::SetBlock(::Belos::MultiVec<double>& A, int index[],
+                  int numvecs)
 {
   std::vector<int> idx(index, index+numvecs);
 
   // Cast A to a NOX::Belos::MultiVector
-  NOX::Belos::MultiVector& nox_belos_A = 
+  NOX::Belos::MultiVector& nox_belos_A =
     dynamic_cast<NOX::Belos::MultiVector&>(A);
 
   vecPtr->setBlock(*(nox_belos_A.vecPtr), idx);
@@ -236,7 +236,7 @@ NOX::Belos::MultiVector::getNoxMultiVector() const
 
 ::Belos::ReturnType
 NOX::Belos::MultiVector::noxReturnTypeToBelos(
-			    NOX::Abstract::Group::ReturnType noxStatus) const
+                NOX::Abstract::Group::ReturnType noxStatus) const
 {
   if (noxStatus == NOX::Abstract::Group::Ok ||
       noxStatus == NOX::Abstract::Group::NotConverged)
@@ -247,4 +247,4 @@ NOX::Belos::MultiVector::noxReturnTypeToBelos(
     return ::Belos::Error;
 }
 
-  
+

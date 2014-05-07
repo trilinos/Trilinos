@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -59,8 +59,8 @@
 // *****************************************************************
 // *****************************************************************
 NOX::Epetra::ModelEvaluatorInterface::
-ModelEvaluatorInterface(const 
-			Teuchos::RCP<EpetraExt::ModelEvaluator>& m) :
+ModelEvaluatorInterface(const
+            Teuchos::RCP<EpetraExt::ModelEvaluator>& m) :
   model_(m)
 {
   inargs_ = model_->createInArgs();
@@ -80,27 +80,27 @@ computeF(const Epetra_Vector& x, Epetra_Vector& F, const FillType fillFlag)
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 
   inargs_.set_x( Teuchos::rcp(&x, false) );
- 
+
   Teuchos::RCP<Epetra_Vector> f = Teuchos::rcp(&F, false);
 
   if (fillFlag == NOX::Epetra::Interface::Required::Residual)
-    eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT); 
+    eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_EXACT);
   else if (fillFlag == NOX::Epetra::Interface::Required::Jac)
     eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_APPROX_DERIV);
   else
     eval_f_.reset(f, EpetraExt::ModelEvaluator::EVAL_TYPE_VERY_APPROX_DERIV);
-     
+
   outargs.set_f(eval_f_);
 
   model_->evalModel(inargs_, outargs);
 
   inargs_.set_x(Teuchos::null);
- 
+
   return true;
 }
-   
+
 // *****************************************************************
-// ***************************************************************** 
+// *****************************************************************
 bool NOX::Epetra::ModelEvaluatorInterface::
 computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
 {
@@ -119,9 +119,9 @@ computeJacobian(const Epetra_Vector& x, Epetra_Operator& Jaco)
 // *****************************************************************
 // *****************************************************************
 bool NOX::Epetra::ModelEvaluatorInterface::
-computePreconditioner(const Epetra_Vector& x, 
-		      Epetra_Operator& M,
-		      Teuchos::ParameterList* precParams)
+computePreconditioner(const Epetra_Vector& x,
+              Epetra_Operator& M,
+              Teuchos::ParameterList* precParams)
 {
   EpetraExt::ModelEvaluator::OutArgs outargs = model_->createOutArgs();
 

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,8 +54,8 @@
 #include "Teuchos_RCP.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // for status
-#include "Teuchos_ParameterList.hpp"	       // class data element
-#include "NOX_Solver_Generic.H"	       // class data element
+#include "Teuchos_ParameterList.hpp"           // class data element
+#include "NOX_Solver_Generic.H"           // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
@@ -72,13 +72,13 @@ namespace LOCA {
 
 namespace LOCA {
 
-  /*! 
+  /*!
     \brief Implementation of LOCA::Abstract::Iterator for computing points
     along a continuation curve.
   */
   /*!
-    The %Stepper class implements the pure virtual methods of the 
-    LOCA::Abstract::Iterator for iteratively computing points along a 
+    The %Stepper class implements the pure virtual methods of the
+    LOCA::Abstract::Iterator for iteratively computing points along a
     continuation curve.
   */
 
@@ -86,31 +86,31 @@ namespace LOCA {
 
   public:
 
-    //! Constructor 
+    //! Constructor
     MultiStepper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		 const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	       const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-	       const Teuchos::RCP<Teuchos::ParameterList>& p);
-    
+         const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+           const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+           const Teuchos::RCP<Teuchos::ParameterList>& p);
+
     //! Destructor
     virtual ~MultiStepper();
 
     //! Reset the Stepper to start a new continuation run
     virtual bool reset(
-	  const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
-	  const Teuchos::RCP<NOX::StatusTest::Generic>& t,
-	  const Teuchos::RCP<Teuchos::ParameterList>& p);
+      const Teuchos::RCP<LOCA::GlobalData>& global_data,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+      const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+      const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Run continuation
     virtual LOCA::Abstract::Iterator::IteratorStatus run();
 
     //! Return the current solution group.
-    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
     getSolutionGroup();
 
-    //! Return the output parameters from the stepper algorithm. 
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    //! Return the output parameters from the stepper algorithm.
+    virtual Teuchos::RCP<const Teuchos::ParameterList>
     getList() const;
 
   protected:
