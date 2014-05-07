@@ -1585,13 +1585,12 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
   # OpenMP isn't really a TPL because support is built into the compiler.
-
   IF(${PROJECT_NAME}_ENABLE_OpenMP)
-    INCLUDE(FindOpenMP)
+    FIND_PACKAGE(OpenMP)
     IF(OPENMP_FOUND)
       SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${OpenMP_CXX_FLAGS}")
       SET(CMAKE_C_FLAGS "${CMAKE_C_FLAGS} ${OpenMP_C_FLAGS}")
-  #    # FindOpenMP.cmake doesn't find Fortran flags.  Mike H said this is safe.
+      # FindOpenMP.cmake doesn't find Fortran flags.  Mike H said this is safe.
       SET(CMAKE_Fortran_FLAGS "${CMAKE_Fortran_FLAGS} ${OpenMP_C_FLAGS}")
     ELSE()
       MESSAGE(FATAL_ERROR "Could not find OpenMP, try setting OpenMP_C_FLAGS and OpenMP_CXX_FLAGS directly")
