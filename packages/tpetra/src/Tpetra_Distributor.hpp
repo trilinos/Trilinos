@@ -747,7 +747,7 @@ namespace Tpetra {
     /// \brief Information on the last call to do/doReverse
     ///
     /// Returns the amount of data sent & recv'd on this processor in bytes
-    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd){
+    void getLastDoStatistics(size_t & bytes_sent,  size_t & bytes_recvd) const{
       bytes_sent  = lastRoundBytesSend_;
       bytes_recvd = lastRoundBytesRecv_;
     }

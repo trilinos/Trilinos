@@ -277,13 +277,13 @@ namespace Tpetra {
     , indicesTo_ (distributor.indicesTo_)
     , numReceives_ (distributor.numReceives_)
     , totalReceiveLength_ (distributor.totalReceiveLength_)
-    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
-    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
     , lengthsFrom_ (distributor.lengthsFrom_)
     , imagesFrom_ (distributor.imagesFrom_)
     , startsFrom_ (distributor.startsFrom_)
     , indicesFrom_ (distributor.indicesFrom_)
     , reverseDistributor_ (distributor.reverseDistributor_)
+    , lastRoundBytesSend_ (distributor.lastRoundBytesSend_)
+    , lastRoundBytesRecv_ (distributor.lastRoundBytesRecv_)
     , useDistinctTags_ (distributor.useDistinctTags_)
   {
     using Teuchos::ParameterList;
@@ -342,13 +342,13 @@ namespace Tpetra {
     std::swap (indicesTo_, rhs.indicesTo_);
     std::swap (numReceives_, rhs.numReceives_);
     std::swap (totalReceiveLength_, rhs.totalReceiveLength_);
-    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
-    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
     std::swap (lengthsFrom_, rhs.lengthsFrom_);
     std::swap (imagesFrom_, rhs.imagesFrom_);
     std::swap (startsFrom_, rhs.startsFrom_);
     std::swap (indicesFrom_, rhs.indicesFrom_);
     std::swap (reverseDistributor_, rhs.reverseDistributor_);
+    std::swap (lastRoundBytesSend_, rhs.lastRoundBytesSend_);
+    std::swap (lastRoundBytesRecv_, rhs.lastRoundBytesRecv_);
     std::swap (useDistinctTags_, rhs.useDistinctTags_);
 
     // Swap verbosity levels.

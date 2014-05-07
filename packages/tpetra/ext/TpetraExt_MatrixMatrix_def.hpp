@@ -60,6 +60,9 @@
 
 //#define USE_NEW_TRANSPOSE_CODE
 
+//#define COMPUTE_NEW_TRANSPOSE_STATISTICS
+
+
 /*! \file TpetraExt_MatrixMatrix_def.hpp
 
     The implementations for the members of class Tpetra::MatrixMatrixMultiply and related non-member constructors.
@@ -954,6 +957,52 @@ void mult_AT_B_newmatrix(
     C.doExport(*Ctemp,*Ctemp->getGraph()->getExporter(),Tpetra::ADD);
     C.fillComplete(B.getDomainMap(),A.getDomainMap());
   }
+
+#ifdef COMPUTE_NEW_TRANSPOSE_STATISTICS
+  if(needs_final_export) {
+    RCP<const Export<LocalOrdinal,GlobalOrdinal,Node > > Exporter = Ctemp->getGraph()->getExporter();
+    const Distributor & Distor  = Exporter->getDistributor();
+
+    size_t rows_send   = Exporter->getNumExportIDs();
+    size_t rows_recv   = Exporter->getNumRemoteIDs();
+
+    size_t round1_send = Exporter->getNumExportIDs() * sizeof(size_t);
+    size_t round1_recv = Exporter->getNumRemoteIDs() * sizeof(size_t);
+    size_t num_send_neighbors = Distor.getNumSends();
+    size_t num_recv_neighbors = Distor.getNumReceives();
+    size_t round2_send, round2_recv;
+    Distor.getLastDoStatistics(round2_send,round2_recv);
+    
+    int myPID = A.getComm()->getRank();
+    int NumProcs = A.getComm()->getSize();
+
+    // Processor by processor statistics
+    //    printf("[%d] AT*B MMM Statistics: neigh[s/r]=%d/%d rows[s/r]=%d/%d r1bytes[s/r]=%d/%d r2bytes[s/r]=%d/%d\n",
+    //	   myPID,num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv);
+
+    // Global statistics
+    size_t lstats[8] = {num_send_neighbors,num_recv_neighbors,rows_send,rows_recv,round1_send,round1_recv,round2_send,round2_recv};
+    size_t gstats_min[8], gstats_max[8];
+
+    double lstats_avg[8], gstats_avg[8];
+    for(int i=0; i<8; i++)
+      lstats_avg[i] = ((double)lstats[i])/NumProcs;
+
+    Teuchos::reduceAll(*A.getComm(),Teuchos::REDUCE_MIN,8,lstats,gstats_min);
+    Teuchos::reduceAll(*A.getComm(),Teuchos::REDUCE_MAX,8,lstats,gstats_max);
+    Teuchos::reduceAll(*A.getComm(),Teuchos::REDUCE_SUM,8,lstats_avg,gstats_avg);
+
+    if(!myPID) {
+      printf("AT*B Send Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n",
+	     (int)gstats_min[0],gstats_avg[0],(int)gstats_max[0], (int)gstats_min[2],gstats_avg[2],(int)gstats_max[2],
+	     (int)gstats_min[4],gstats_avg[4],(int)gstats_max[4], (int)gstats_min[6],gstats_avg[6],(int)gstats_max[6]);
+      printf("AT*B Recv Statistics[min/avg/max]: neigh=%d/%4.1f/%d rows=%d/%4.1f/%d round1=%d/%4.1f/%d round2=%d/%4.1f/%d\n",
+	     (int)gstats_min[1],gstats_avg[1],(int)gstats_max[1], (int)gstats_min[3],gstats_avg[3],(int)gstats_max[3],
+	     (int)gstats_min[5],gstats_avg[5],(int)gstats_max[5], (int)gstats_min[7],gstats_avg[7],(int)gstats_max[7]);
+    }
+  }
+#endif
+
 }
 
 
