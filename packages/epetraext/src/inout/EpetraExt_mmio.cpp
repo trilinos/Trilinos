@@ -553,57 +553,58 @@ int mm_write_mtx_crd(char fname[], int M, int N, int nz, int I[], int J[],
 
  void mm_typecode_to_str(MM_typecode matcode, char * buffer)
 {
-    char *types[4];
+    char type0[20];
+    char type1[20];
+    char type2[20];
+    char type3[20];
     int error =0;
 
     /* check for MTX type */
     if (mm_is_matrix(matcode))
-        types[0] = MM_MTX_STR;
+        strcpy(type0, MM_MTX_STR);
     else
         error=1;
 
     /* check for CRD or ARR matrix */
     if (mm_is_sparse(matcode))
-        types[1] = MM_SPARSE_STR;
+        strcpy(type1, MM_SPARSE_STR);
     else
     if (mm_is_dense(matcode))
-        types[1] = MM_DENSE_STR;
+        strcpy(type1, MM_DENSE_STR);
     else
         return;
 
     /* check for element data type */
     if (mm_is_real(matcode))
-        types[2] = MM_REAL_STR;
+        strcpy(type2, MM_REAL_STR);
     else
     if (mm_is_complex(matcode))
-        types[2] = MM_COMPLEX_STR;
+        strcpy(type2, MM_COMPLEX_STR);
     else
     if (mm_is_pattern(matcode))
-        types[2] = MM_PATTERN_STR;
+        strcpy(type2, MM_PATTERN_STR);
     else
     if (mm_is_integer(matcode))
-        types[2] = MM_INT_STR;
+        strcpy(type2, MM_INT_STR);
     else
         return;
-
 
     /* check for symmetry type */
     if (mm_is_general(matcode))
-        types[3] = MM_GENERAL_STR;
+        strcpy(type3, MM_GENERAL_STR);
     else
     if (mm_is_symmetric(matcode))
-        types[3] = MM_SYMM_STR;
+        strcpy(type3, MM_SYMM_STR);
     else
     if (mm_is_hermitian(matcode))
-        types[3] = MM_HERM_STR;
+        strcpy(type3, MM_HERM_STR);
     else
     if (mm_is_skew(matcode))
-        types[3] = MM_SKEW_STR;
+        strcpy(type3, MM_SKEW_STR);
     else
         return;
 
-    sprintf(buffer,"%s %s %s %s", types[0], types[1], types[2], types[3]);
+    sprintf(buffer,"%s %s %s %s", type0, type1, type2, type3);
     return;
-
 }
 } // namespace EpetraExt
