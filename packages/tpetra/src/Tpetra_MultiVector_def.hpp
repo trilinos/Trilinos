@@ -2014,28 +2014,17 @@ namespace Tpetra {
   operator= (const MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>& source)
   {
     if (source.hasViewSemantics_) {
-      // The right-hand side of the assignment transmits view
-      // semantics to the left-hand side.
-
       this->map_ = source.map_; // "op=" for DistObject
-
-      // Shallow copy.  The const_cast is ugly but does no harm:
-      // ArrayRCP is a pointer, so there's no reason why a method that
-      // returns it can't be marked const.  (If you're not changing
-      // the pointer itself, e.g., by reallocating, the pointer is
-      // const.  It doesn't matter whether or not you can change the
-      // values to which the pointer points.)
-      MVT::initializeValues (lclMV_, source.lclMV_.getNumRows (),
-                             source.lclMV_.getNumCols (),
-                             const_cast<KMV&> (source.lclMV_).getValuesNonConst (),
-                             source.lclMV_.getStride (),
-                             source.lclMV_.getOrigNumRows (),
-                             source.lclMV_.getOrigNumCols ());
+      lclMV_ = source.lclMV_; // Shallow copy
 
       // Don't forget to copy whichVectors_ (for non-constant-stride view).
       if (source.whichVectors_.size () > 0) {
         whichVectors_ = source.whichVectors_; // Array::op= does a deep copy
       }
+      // View semantics are "contagious" for the "classic" version of
+      // MultiVector.  That is, the right-hand side of the assignment
+      // transmits view semantics to the left-hand side.  (The Kokkos
+      // refactor version of MultiVector always has view semantics.)
       hasViewSemantics_ = true;
     }
     else {
