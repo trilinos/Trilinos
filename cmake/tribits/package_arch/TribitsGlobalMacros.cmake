@@ -86,14 +86,14 @@ MACRO(TRIBITS_ASSERT_AND_SETUP_PROJECT_BINARY_DIR_AND_VARS)
       "  $ cmake [OPTIONS] .."
       )
   ENDIF()
-  
+
   STRING(TOUPPER ${PROJECT_NAME} PROJECT_NAME_UC)
   SET(PROJECT_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR} CACHE INTERNAL "")
   SET(PROJECT_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR} CACHE INTERNAL "")
   PRINT_VAR(PROJECT_SOURCE_DIR)
   PRINT_VAR(PROJECT_BINARY_DIR)
   # Above, we put these in the cache so we can grep them out of the cache file
-  
+
   MESSAGE("-- " "CMAKE_VERSION = ${CMAKE_VERSION}")
 
 ENDMACRO()
@@ -139,16 +139,16 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   SET( ${PROJECT_NAME}_ENABLE_ALL_PACKAGES OFF CACHE BOOL
     "Enable all packages (Primary Stable and perhaps Secondary Stable packages)." )
-  
+
   SET(${PROJECT_NAME}_ENABLE_ALL_OPTIONAL_PACKAGES ON CACHE BOOL
     "Recursively enable all optional packages for set of enabled packages." )
 
   SET( ${PROJECT_NAME}_INSTALL_EXECUTABLES ON CACHE BOOL
     "Enable the installation of executables provided by the ${PROJECT_NAME} packages." )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_ALL_FORWARD_DEP_PACKAGES OFF CACHE BOOL
     "Recursively enable all packages that have required or optional dependencies for set of enabled packages." )
-  
+
   IF (${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT STREQUAL "")
     SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT OFF)
   ENDIF()
@@ -156,13 +156,13 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     ${${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT}
     CACHE BOOL
     "Disable (and printing warning) for enabled packages that have hard-disabled upstream dependencies.  Otherwise, is to raises a fatal configure failure." )
-  
+
   SET_CACHE_ON_OFF_EMPTY( ${PROJECT_NAME}_ENABLE_TESTS ""
     "Enable tests in all packages  (set to ON, OFF, or leave empty)." )
-  
+
   SET_CACHE_ON_OFF_EMPTY(${PROJECT_NAME}_ENABLE_EXAMPLES ""
     "Enable examples in all packages  (set to ON, OFF, or leave empty).  If left empty, then this will be set to ON if ${PROJECT_NAME}_ENABLE_TESTS=ON" )
-  
+
   IF (${PROJECT_NAME}_ENABLE_TESTS AND ${PROJECT_NAME}_ENABLE_EXAMPLES STREQUAL "")
     MESSAGE(STATUS "Setting ${PROJECT_NAME}_ENABLE_EXAMPLES=ON because ${PROJECT_NAME}_ENABLE_TESTS=ON")
     SET(${PROJECT_NAME}_ENABLE_EXAMPLES ON)
@@ -174,11 +174,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_OPTION(${PROJECT_NAME}_REMOVE_DEFAULT_PACKAGE_DISABLES
     "Removes all default disables from the packages list.  Used for testing etc."
     OFF )
-  
+
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_C
     "Enable the C compiler and related code"
     ON )
-  
+
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX
     "Enable the C++ compiler and related code"
     ON )
@@ -192,11 +192,11 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ELSE()
     SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT ON)
   ENDIF()
-  
+
   OPTION(${PROJECT_NAME}_ENABLE_Fortran
     "Enable the Fortran compiler and related code"
     ${${PROJECT_NAME}_ENABLE_Fortran_DEFAULT} )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_EXTRA_LINK_FLAGS ""
     CACHE STRING
     "Extra flags added to the end of every linked executable"
@@ -209,17 +209,17 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ENDIF()
   SET(${PROJECT_NAME}_ENABLE_DEBUG ${${PROJECT_NAME}_ENABLE_DEBUG_DEFAULT} CACHE BOOL
     "Enable debug checking for ${PROJECT_NAME} packages.  Off by default unless CMAKE_BUILD_TYPE=\"DEBUG\"." )
-  
+
   SET(${PROJECT_NAME}_ENABLE_TEUCHOS_TIME_MONITOR ON
     CACHE BOOL
     "Enable support for Teuchos Time Monitors in all Trilinos packages that support it."
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS ON
     CACHE BOOL
     "Show warnings about deprecated code"
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_HIDE_DEPRECATED_CODE OFF
     CACHE BOOL
     "Show warnings about deprecated code"
@@ -229,14 +229,14 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Make the ${PROJECT_NAME} configure process verbose."
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPLICIT_INSTANTIATION OFF
     CACHE BOOL
     "Enable explicit template instanitation in all packages that support it"
     )
-  
+
   ADVANCED_OPTION(BUILD_SHARED_LIBS "Build shared libraries." OFF)
-  
+
   ADVANCED_SET(TPL_FIND_SHARED_LIBS ON CACHE BOOL
     "If ON, then the TPL system will find shared libs if the exist, otherwise will only find static libs." )
 
@@ -245,22 +245,22 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     ADVANCED_SET(${PROJECT_NAME}_LINK_SEARCH_START_STATIC OFF CACHE BOOL
       "If on, then the properter LINK_SEARCH_START_STATIC will be added to all executables." )
   ENDIF()
-  
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_INCLUDE_DIR "include"
     CACHE PATH
     "Location where the headers will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'include'"
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_LIB_DIR "lib"
     CACHE PATH
     "Location where the libraries will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'lib'"
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_RUNTIME_DIR "bin"
     CACHE PATH
     "Location where the runtime DLLs and designated programs will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'bin'"
     )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_INSTALL_EXAMPLE_DIR "example"
     CACHE PATH
     "Location where assorted examples will be installed.  If given as a relative path, it will be relative to ${CMAKE_INSTALL_PREFIX}.  If given as an absolute path, it will used as such.  Default is 'example'"
@@ -276,25 +276,25 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     CACHE BOOL
     "Install libraries and headers (default is ${${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS_DEFAULT}).  NOTE: Shared libraries are always installed since they are needed by executables."
     )
-  
+
   IF(WIN32 AND NOT CYGWIN)
     SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT OFF)
   ELSE()
     SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT ON)
   ENDIF()
-  
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES
     ${${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES_DEFAULT}
     CACHE BOOL
     "Determines if export makefiles will be create and installed."
     )
- 
+
   # Creating <Package>Config.cmake files is currently *very* expensive for large
   # TriBITS projects so we disable this by default for TriBITS.
   IF ("${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT OFF)
   ENDIF()
- 
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES
     ${${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES_DEFAULT}
     CACHE BOOL
@@ -330,7 +330,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_CPACK_PACKAGING
      ${${PROJECT_NAME}_ENABLE_CPACK_PACKAGING_DEFAULT}
      CACHE BOOL
-    "Eanble support for creating a distribution using CPack" ) 
+    "Eanble support for creating a distribution using CPack" )
 
   IF ("${${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT}" STREQUAL "")
     SET(${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION_DEFAULT TRUE)
@@ -342,7 +342,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ADVANCED_SET( ${PROJECT_NAME}_ENABLE_SECONDARY_STABLE_CODE OFF CACHE BOOL
     "Allow secondary stable packages and code to be implicitly enabled." )
-  
+
   ADVANCED_SET(${PROJECT_NAME}_TEST_CATEGORIES NIGHTLY CACHE STRING
     "List of categories of tests to enable: '${${PROJECT_NAME}_VALID_CATEGORIES_STR}' (default NIGHLY)."
     )
@@ -350,7 +350,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ADVANCED_SET(${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE OFF CACHE BOOL
     "Generate a <ProjectName>RepoVersion.txt file.")
-  
+
   ADVANCED_SET(${PROJECT_NAME}_REL_CPU_SPEED 1.0 CACHE STRING
     "Relative CPU speed of the computer used to scale performance tests (default 1.0)."
     )
@@ -416,7 +416,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "Output XML file containing ${PROJECT_NAME} dependenices used by tools (if not empty)." )
-  
+
   IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
     ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
     )
@@ -429,7 +429,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE_DEFAULT}"
     CACHE STRING
     "Output XML file used by CDash in ${PROJECT_NAME}-independent format (if not empty)." )
-  
+
   IF(${PROJECT_NAME}_DEPS_DEFAULT_OUTPUT_DIR AND
     ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE AND PYTHON_EXECUTABLE
     )
@@ -449,7 +449,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
 
   ASSERT_DEFINED(${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME)
 
-  SET(DEFAULT_EXTRA_REPOS_FILE 
+  SET(DEFAULT_EXTRA_REPOS_FILE
     "${PROJECT_SOURCE_DIR}/cmake/${${PROJECT_NAME}_EXTRA_EXTERNAL_REPOS_FILE_NAME}")
 
   IF (EXISTS ${DEFAULT_EXTRA_REPOS_FILE})
@@ -503,7 +503,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ELSE()
     SET(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING_DEFAULT ON)
   ENDIF()
-  
+
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
     ${${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING_DEFAULT}
     CACHE STRING
@@ -513,7 +513,7 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
   ADVANCED_SET(${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING
     FALSE CACHE BOOL
    "Set to 'ON' to see configure times (Unix/Linux systems only)" )
-  
+
   MARK_AS_ADVANCED(BUILD_TESTING)
   MARK_AS_ADVANCED(CMAKE_BACKWARDS_COMPATIBILITY)
   MARK_AS_ADVANCED(DART_TESTING_TIMEOUT)
@@ -640,7 +640,7 @@ FUNCTION(TRIBITS_WRITE_DEPS_TO_XML_STRING PACKAGE_NAME LIST_TYPE
 
     APPEND_STRING_VAR(LOC_XML
       "    <${LIST_TYPE}/>\n" )
-    
+
   ELSE()
 
     SET(VALUE_STR "")
@@ -688,7 +688,7 @@ FUNCTION(TRIBITS_DUMP_DEPS_XML_FILE)
     #PRINT_VAR(PACKAGE_IDX)
     #PRINT_VAR(TRIBITS_PACKAGE)
     #PRINT_VAR(PACKAGE_DIR)
-    
+
     APPEND_STRING_VAR(DEPS_XML
       "  <Package name=\"${TRIBITS_PACKAGE}\" dir=\"${PACKAGE_DIR}\" type=\"${${TRIBITS_PACKAGE}_CLASSIFICATION}\">\n")
 
@@ -737,7 +737,7 @@ MACRO(TRIBITS_WRITE_XML_DEPENDENCY_FILES)
   IF (${PROJECT_NAME}_ENABLE_CONFIGURE_TIMING)
     TIMER_GET_RAW_SECONDS(WRITE_DEPENDENCY_FILES_TIME_START_SECONDS)
   ENDIF()
-  
+
   #PRINT_VAR(${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE})
@@ -748,7 +748,7 @@ MACRO(TRIBITS_WRITE_XML_DEPENDENCY_FILES)
     MESSAGE("Dumping the XML dependencies file ${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE} ..." )
     TRIBITS_DUMP_DEPS_XML_FILE()
   ENDIF()
-  
+
   #PRINT_VAR(${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE})
@@ -763,7 +763,7 @@ MACRO(TRIBITS_WRITE_XML_DEPENDENCY_FILES)
         --input-xml-deps-file=${${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE}
         --output-html-deps-file=${${PROJECT_NAME}_DEPS_HTML_OUTPUT_FILE} )
   ENDIF()
-  
+
   #PRINT_VAR(${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE)
   IF (${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE AND ${PROJECT_NAME}_DEPS_XML_OUTPUT_FILE)
     IF (NOT IS_ABSOLUTE ${${PROJECT_NAME}_CDASH_DEPS_XML_OUTPUT_FILE})
@@ -851,8 +851,8 @@ MACRO(TRIBITS_COPY_INSTALLER_RESOURCE _varname _source _destination)
     FILE(REMOVE_RECURSE "${_destination}")
   ENDIF ()
   CONFIGURE_FILE(
-    "${_source}" 
-    "${_destination}" 
+    "${_source}"
+    "${_destination}"
     COPYONLY)
 ENDMACRO()
 
@@ -921,7 +921,7 @@ FUNCTION(TRIBITS_GENERATE_SINGLE_REPO_VERSION_STRING  GIT_REPO_DIR
       SET(GIT_SUMMARY_STR "${GIT_OUTPUT_STRIPPED}")
     ENDIF()
   ENDIF()
-  
+
   SET(${SINGLE_REPO_VERSION_STRING_OUT}
     "${GIT_VERSION_INFO}\n${GIT_SUMMARY_STR}" PARENT_SCOPE)
 
@@ -1020,7 +1020,7 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
   #
   # A) Create the ${PROJECT_NAME}RepoVersion.txt file if requested
   #
-  
+
   IF (${PROJECT_NAME}_GENERATE_REPO_VERSION_FILE)
 
     # A) Make sure that there is a .git dir in the project before generating
@@ -1033,7 +1033,7 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
       # Find git first here so we  don't have to find it in called function so
       # it can be unit tested.
       FIND_PROGRAM(GIT_EXEC ${GIT_NAME})
-      # Get repo versions, print to stdout and write file 
+      # Get repo versions, print to stdout and write file
       TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE()
       # Add install target for this file
       INSTALL(
@@ -1041,7 +1041,7 @@ FUNCTION(TRIBITS_GENERATE_REPO_VERSION_OUTPUT_AND_FILE_AND_INSTALL)
         DESTINATION "." )
     ELSE()
       MESSAGE("\nNOTE: Skipping generation of ${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}"
-        " because project source is not a git repo!") 
+        " because project source is not a git repo!")
     ENDIF()
 
     # B) Install the repo version file if it is in source tree which it will
@@ -1092,31 +1092,31 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     #
     # B.1) Define the lists of all ${NATIVE_REPO_NAME} native packages and TPLs
     #
-    
+
     # B.1.a) Read the core ${NATIVE_REPO_NAME} packages
-  
+
     SET(${NATIVE_REPO_NAME}_PACKAGES_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_PACKAGES_FILE_NAME}")
-  
+
     MESSAGE("")
     MESSAGE("Reading the list of packages from ${${NATIVE_REPO_NAME}_PACKAGES_FILE}")
     MESSAGE("")
-    
+
     INCLUDE(${${NATIVE_REPO_NAME}_PACKAGES_FILE})
-    
+
     TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
-    
+
     # B.1.b) Read the core TPLs dependencies
-  
+
     SET(${NATIVE_REPO_NAME}_TPLS_FILE
       "${${NATIVE_REPO_NAME}_SOURCE_DIR}/${${PROJECT_NAME}_TPLS_FILE_NAME}")
-    
+
     MESSAGE("")
     MESSAGE("Reading the list of TPLs from ${${NATIVE_REPO_NAME}_TPLS_FILE}")
     MESSAGE("")
-    
+
     INCLUDE(${${NATIVE_REPO_NAME}_TPLS_FILE})
-    
+
     TRIBITS_PROCESS_TPLS_LISTS(${NATIVE_REPO_NAME} ${NATIVE_REPO_DIR})
 
   ENDFOREACH()
@@ -1142,7 +1142,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     IF (${PROJECT_NAME}_VERBOSE_CONFIGURE)
       PRINT_VAR(${EXTRA_REPO}_SOURCE_DIR)
     ENDIF()
- 
+
     SET(EXTRAREPO_PACKSTAT "")
     IF (${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS)
       LIST(GET ${PROJECT_NAME}_EXTRA_REPOSITORIES_PACKSTATS ${EXTRAREPO_IDX}
@@ -1150,11 +1150,11 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
     ENDIF()
 
     IF (EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
-        
+
       MESSAGE("")
       MESSAGE("Skipping reading packages and TPLs for extra repo ${EXTRA_REPO} because marked NOPACKAGES ... ")
       MESSAGE("")
-  
+
     ELSE()
 
       # Read in the add-on packages from the extra repo
@@ -1167,11 +1167,11 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
         SET(EXTRAREPO_PACKAGES_FILE
           "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_PACKAGES_FILE_NAME}")
       ENDIF()
-  
+
       MESSAGE("")
       MESSAGE("Reading a list of extra packages from ${EXTRAREPO_PACKAGES_FILE} ... ")
       MESSAGE("")
-  
+
       IF (NOT EXISTS "${EXTRAREPO_PACKAGES_FILE}")
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
@@ -1187,16 +1187,16 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
         SET(APPEND_TO_PACKAGES_LIST TRUE)
         TRIBITS_PROCESS_PACKAGES_AND_DIRS_LISTS(${EXTRA_REPO} ${EXTRA_REPO})  # Reads the variable ???
       ENDIF()
-  
+
       # Read in the add-on TPLs from the extra repo
-  
+
       SET(EXTRAREPO_TPLS_FILE
         "${${EXTRA_REPO}_SOURCE_DIR}/${${PROJECT_NAME}_EXTRA_TPLS_FILE_NAME}")
-  
+
       MESSAGE("")
       MESSAGE("Reading a list of extra TPLs from ${EXTRAREPO_TPLS_FILE} ... ")
       MESSAGE("")
-  
+
       IF (NOT EXISTS "${EXTRAREPO_TPLS_FILE}")
         IF (${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES)
           MESSAGE(
@@ -1214,7 +1214,7 @@ MACRO(TRIBITS_READ_PACKAGES_PROCESS_DEPENDENCIES_WRITE_XML)
       ENDIF()
 
     ENDIF()
-  
+
     MATH(EXPR EXTRAREPO_IDX "${EXTRAREPO_IDX}+1")
 
   ENDFOREACH()
@@ -1394,10 +1394,10 @@ MACRO(TRIBITS_PROCESS_ENABLED_TPLS)
         PRINT_VAR(${TPL_NAME}_FINDMOD)
       ENDIF()
       IF (IS_ABSOLUTE ${${TPL_NAME}_FINDMOD})
-        #MESSAGE("${${TPL_NAME}_FINDMOD} is absolute!") 
+        #MESSAGE("${${TPL_NAME}_FINDMOD} is absolute!")
         SET(CURRENT_TPL_PATH "${${TPL_NAME}_FINDMOD}")
       ELSE()
-        #MESSAGE("${${TPL_NAME}_FINDMOD} is *NOT* absolute!") 
+        #MESSAGE("${${TPL_NAME}_FINDMOD} is *NOT* absolute!")
         SET(CURRENT_TPL_PATH "${PROJECT_SOURCE_DIR}/${${TPL_NAME}_FINDMOD}")
       ENDIF()
       #PRINT_VAR(CURRENT_TPL_PATH)
@@ -1430,7 +1430,7 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
   # Set to release build by default
-  
+
   IF (NOT CMAKE_BUILD_TYPE)
     MESSAGE(STATUS "Setting CMAKE_BUILD_TYPE=RELEASE since it was not set ...")
     SET(CMAKE_BUILD_TYPE RELEASE CACHE STRING
@@ -1453,7 +1453,7 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
   # Enable compilers
-  
+
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_C)
   IF (${PROJECT_NAME}_ENABLE_C)
     ENABLE_LANGUAGE(C)
@@ -1462,7 +1462,7 @@ MACRO(TRIBITS_SETUP_ENV)
     # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
     # directory for a listing of known compiler types.
   ENDIF()
-  
+
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_CXX)
   IF (${PROJECT_NAME}_ENABLE_CXX)
     ENABLE_LANGUAGE(CXX)
@@ -1471,20 +1471,20 @@ MACRO(TRIBITS_SETUP_ENV)
     # See CMake/Modules/CMakeCXXCompilerId.cpp.in in the CMake source
     # directory for a listing of known compiler types.
   ENDIF()
-  
+
   ASSERT_DEFINED(${PROJECT_NAME}_ENABLE_Fortran)
   IF (${PROJECT_NAME}_ENABLE_Fortran)
     ENABLE_LANGUAGE(Fortran)
   ENDIF()
 
   # Set up for strong compiler warnings and warnings as errors
- 
+
   INCLUDE(TribitsSetupBasicCompileLinkFlags)
   TRIBITS_SETUP_BASIC_COMPILE_LINK_FLAGS()
 
   # Find the host site name used in selecting or deselecting tests by the
   # TRIBITS_ADD_TEST(...) function.
-  
+
   SITE_NAME(${PROJECT_NAME}_HOSTNAME)
   MARK_AS_ADVANCED(${PROJECT_NAME}_HOSTNAME)
   PRINT_VAR(${PROJECT_NAME}_HOSTNAME)
@@ -1497,12 +1497,12 @@ MACRO(TRIBITS_SETUP_ENV)
   # Set up Windows interface stuff
 
   IF (MSVC)
-    ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE 
+    ADD_DEFINITIONS(-D_CRT_SECURE_NO_DEPRECATE
       -D_CRT_NONSTDC_NO_DEPRECATE  -D_SCL_SECURE_NO_WARNINGS)
     INCLUDE_DIRECTORIES(
       ${${PROJECT_NAME}_TRIBITS_DIR}/common_tools/win_interface/include)
   ENDIF()
-  
+
   IF (WIN32 AND NOT CYGWIN)
     SET(NATIVE_MS_WINDOWS TRUE)
   ELSE()
@@ -1510,14 +1510,14 @@ MACRO(TRIBITS_SETUP_ENV)
   ENDIF()
 
   # Probe for non-standard headers
-  
+
   IF (${PROJECT_NAME}_ENABLE_CXX)
     CHECK_INCLUDE_FILE_CXX(sys/time.h HAVE_SYS_TIME_H)
     CHECK_INCLUDE_FILE_CXX(time.h HAVE_TIME_H)
     CHECK_INCLUDE_FILE_CXX(stdint.h HAVE_STDINT_H)
     CHECK_INCLUDE_FILE_CXX(inttypes.h HAVE_INTTYPES_H)
   ENDIF()
-  
+
   SET(HAVE_ALGORITHM TRUE)
   SET(HAVE_CASSERT TRUE)
   SET(HAVE_CCTYPE TRUE)
@@ -1547,45 +1547,45 @@ MACRO(TRIBITS_SETUP_ENV)
   SET(HAVE_STDEXCEPT TRUE)
   SET(HAVE_STRING TRUE)
   SET(HAVE_VECTOR TRUE)
-  
+
   # 2008/12/20: rabartl: Above: All of these defines should be removed
   # because we decided that we were going to assume that all compilers
   # have these C++98 standard features.  We will deal with cases where
   # this is not true but we should not assume the worst right from the
   # beginning.
-  
+
   # Find Perl
-  
+
   FIND_PACKAGE(Perl)
 
   # Do Fortran stuff
-  
+
   INCLUDE(TribitsFortranMangling)
-  
+
   # Get BLAS name mangling
   #
   # ToDo: Make this a project-specific specialization
-   
+
   INCLUDE(TribitsBLASMangling)
-  
+
   # Determine C++-0x supported features
-  
+
   IF (${PROJECT_NAME}_ENABLE_CXX11)
     INCLUDE(TribitsCXX11Support)
     TRIBITS_CHECK_CXX11_SUPPORT(${PROJECT_NAME}_ENABLE_CXX11)
     MESSAGE("-- ${PROJECT_NAME}_ENABLE_CXX11=${${PROJECT_NAME}_ENABLE_CXX11}")
   ENDIF()
-  
+
   # Set up some MPI info
-  
+
   IF (TPL_ENABLE_MPI)
     SET(HAVE_MPI TRUE)
   ELSE()
     SET(HAVE_MPI FALSE)
   ENDIF()
-  
+
   # OpenMP isn't really a TPL because support is built into the compiler.
-  
+
   IF(${PROJECT_NAME}_ENABLE_OpenMP)
     INCLUDE(FindOpenMP)
     IF(OPENMP_FOUND)
@@ -1597,17 +1597,17 @@ MACRO(TRIBITS_SETUP_ENV)
       MESSAGE(FATAL_ERROR "Could not find OpenMP, try setting OpenMP_C_FLAGS and OpenMP_CXX_FLAGS directly")
     ENDIF(OPENMP_FOUND)
   ENDIF(${PROJECT_NAME}_ENABLE_OpenMP)
-  
+
   # Check if we need the math library or not and find the right one
   IF (NOT NATIVE_MS_WINDOWS)
     INCLUDE(MathLibraryNeeded)
   ENDIF()
-  
+
   # Check for isnan and isinf support
   IF (${PROJECT_NAME}_ENABLE_CXX)
     INCLUDE(FiniteValue)
   ENDIF()
-  
+
   # Check for Doxygen/dot - We can use variables set in this check to
   # enable/disable the grapical dependency graphs in doxygen Doxyfiles.
   INCLUDE(FindDoxygen)
@@ -1723,7 +1723,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
 
     # Read the copyright header info
     FILE(READ "${REPOSITORY_COPYRIGHT_FILE}" REPOSITORY_COPYRIGHT_HEADER)
-    
+
     # Read the version variables and translate into standard form
     INCLUDE(${REPOSITORY_VERSION_FILE})
     SET(REPOSITORY_MAJOR_VERSION ${${REPOSITORY_NAME}_MAJOR_VERSION})
@@ -1742,7 +1742,7 @@ FUNCTION(TRIBITS_REPOSITORY_CONFIGURE_VERSION_HEADER_FILE
       ENDIF()
       SET(INSTALL_HEADERS OFF)
     ENDIF()
-      
+
     IF (INSTALL_HEADERS)
       # Install version header file
       INSTALL(
@@ -1840,7 +1840,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
 
   SET(CONFIGURED_A_PACKAGE FALSE)
   SET(ENABLED_PACKAGE_LIBS_TARGETS)
-  
+
   SET(PACKAGE_IDX 0)
   FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_PACKAGES})
 
@@ -1947,7 +1947,7 @@ MACRO(TRIBITS_CONFIGURE_ENABLED_PACKAGES)
   #
   # E) Process the global variables and other cleanup
   #
-  
+
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_INCLUDE_DIRS)
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_LIBRARY_DIRS)
   REMOVE_GLOBAL_DUPLICATES(${PROJECT_NAME}_LIBRARIES)
@@ -2000,7 +2000,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
 
   # K.1.b) Run callback function for the base project.
   TRIBITS_PROJECT_DEFINE_PACKAGING_RUNNER()
-   
+
   # K.2) Removing any packages or SE packages not enabled from the tarball
 
   IF (${PROJECT_NAME}_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION)
@@ -2014,7 +2014,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
   TRIBITS_GET_ENABLED_LIST_LIST(
     _SE_OR_FULL_PACKAGES ${PROJECT_NAME}
     OFF  # ENABLED_FLAG
-    TRUE  # INCLUDE_EMPTY 
+    TRUE  # INCLUDE_EMPTY
     NON_ENABLED_SE_OR_FULL_PACKAGES  NUM_NON_ENABLED_SE_OR_FULL_PACKAGES)
   #PRINT_VAR(NON_ENABLED_SE_OR_FULL_PACKAGES)
 
@@ -2029,7 +2029,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
       LIST(FIND _SE_OR_FULL_PACKAGES ${TRIBITS_PACKAGE} PACKAGE_IDX)
       LIST(GET _SE_OR_FULL_PACKAGE_DIRS ${PACKAGE_IDX} PACKAGE_DIR)
       # ToDo: Repalce the above O(N) LIST(FIND ...) with a O(1) lookup ...
-      
+
       # Checking if we have a relative path to the package's files. Since the
       # exclude is a regular expression any "../" will be interpretted as <any
       # char><any char>/ which would never match the package's actual
@@ -2044,7 +2044,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
         SET(CPACK_SOURCE_IGNORE_FILES "${PROJECT_SOURCE_DIR}/${PACKAGE_DIR}/"
           ${CPACK_SOURCE_IGNORE_FILES})
       ELSE()
-        FIND_PATH(ABSOLUTE_PATH  CMakeLists.txt  PATHS 
+        FIND_PATH(ABSOLUTE_PATH  CMakeLists.txt  PATHS
           ${PROJECT_SOURCE_DIR}/${PACKAGE_DIR} NO_DEFAULT_PATH)
         IF("${ABSOLUTE_PATH}" STREQUAL "ABSOLUTE_PATH-NOTFOUND")
           MESSAGE(AUTHOR_WARNING "Relative path found for disabled package"
@@ -2080,7 +2080,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
   TRIBITS_GET_ENABLED_LIST_LIST(
     ${PROJECT_NAME}_PACKAGES  ${PROJECT_NAME}
     ON  # ENABLED_FLAG
-    FALSE  # INCLUDE_EMPTY 
+    FALSE  # INCLUDE_EMPTY
     ENABLED_PACKAGES  NUM_ENABLED)
   #message("ENABLED PACKAGES: ${ENABLED_PACKAGES} ${NUM_ENABLED}")
 
@@ -2125,7 +2125,7 @@ MACRO(TRIBITS_SETUP_PACKAGING_AND_DISTRIBUTION)
         "${CMAKE_COMMAND} -E copy '${PROJECT_REPO_VERSION_FILE}' '${CMAKE_CURRENT_BINARY_DIR}/_CPack_Packages/Linux-Source/${SOURCE_GEN}/${CPACK_PACKAGE_NAME}-${${PROJECT_NAME}_VERSION}-Source/${${PROJECT_NAME}_REPO_VERSION_FILE_NAME}'")
     ENDFOREACH()
   ENDIF()
- 
+
   # K.7) Finally process with CPack
   INCLUDE(CPack)
 
@@ -2151,11 +2151,11 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
       OR ${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES)
     AND NOT ${PROJECT_NAME}_ENABLE_INSTALLATION_TESTING
     )
-  
+
     INCLUDE(TribitsWriteClientExportFiles)
-  
+
     TRIBITS_WRITE_PROJECT_CLIENT_EXPORT_FILES()
-  
+
     IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
       # TEMPORARY: Install a compatibility copy of ${PROJECT_NAME}Config.cmake
       # where was previously installed to warn and load the new file.
@@ -2170,13 +2170,13 @@ MACRO(TRIBITS_SETUP_FOR_INSTALLATION)
         DESTINATION "${${PROJECT_NAME}_INSTALL_INCLUDE_DIR}"
         )
     ENDIF()
-  
+
   ENDIF()
 
   # Export the library dependencies. This will let client projects
   # refer to all TPLs used by ${PROJECT_NAME}. (KRL, 26 Nov 2009)
   #
-  
+
   IF (${PROJECT_NAME}_ENABLE_INSTALL_CMAKE_CONFIG_FILES)
     MESSAGE("")
     MESSAGE("Exporting library dependencies ...")
@@ -2193,9 +2193,9 @@ ENDMACRO()
 #  builds and PS for release builds
 #.
 #  The OUTPUT_VAR is set to ON or OFF based on the configure state. In
-#  development mode it will be set to ON only if SS code is enabled, 
+#  development mode it will be set to ON only if SS code is enabled,
 #  otherwise it is set to OFF. In release mode it is always set to ON.
-#  This allows some sections of PROJECT_NAME to be considered SS for 
+#  This allows some sections of PROJECT_NAME to be considered SS for
 #  development mode reducing testing time, while still having important
 #  functionality available to users by default
 MACRO(TRIBITS_SET_SS_FOR_DEV_MODE OUTPUT_VAR)
@@ -2223,25 +2223,25 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
 
     ADVANCED_SET(CTEST_PARALLEL_LEVEL "" CACHE STRING
       "Sets CTEST_PARALLEL_LEVEL on the env before invoking 'ctest -S'." )
-  
+
     # H.1) Enable all packages that are enabled and have tests enabled
-  
+
     SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
     SET(${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST)
     FOREACH(TRIBITS_PACKAGE ${${PROJECT_NAME}_SE_PACKAGES})
       IF (${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE} AND ${TRIBITS_PACKAGE}_ENABLE_TESTS)
         IF (${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
           SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST
-            "${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}\;${TRIBITS_PACKAGE}") 
+            "${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}\;${TRIBITS_PACKAGE}")
         ELSE()
-          SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST "${TRIBITS_PACKAGE}") 
+          SET(${PROJECT_NAME}_ENABLED_PACKAGES_LIST "${TRIBITS_PACKAGE}")
         ENDIF()
         SET(${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST
           ${${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST} -D${PROJECT_NAME}_ENABLE_${TRIBITS_PACKAGE}=ON)
       ENDIF()
     ENDFOREACH()
     #PRINT_VAR(${PROJECT_NAME}_ENABLED_PACKAGES_LIST)
-    
+
     SET(EXPR_CMND_ARGS)
 
     # Hard override options used by basic build and tests
@@ -2284,25 +2284,25 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
       ${${PROJECT_NAME}_EXTRA_REPOSITORIES})
     APPEND_SET(EXPR_CMND_ARGS
       ${PROJECT_NAME}_EXTRA_REPOSITORIES=${${PROJECT_NAME}_EXTRA_REPOSITORIES_JOINED})
-  
+
     #PRINT_VAR(EXPR_CMND_ARGS)
 
     # H.2) Add the custom target to enable all the packages with tests enabled
-    
+
     ADD_CUSTOM_TARGET(dashboard
-  
+
       VERBATIM
-    
+
       # WARNING: The echoed command and the actual commands are duplicated!  You have to reproduce them!
-  
+
       COMMAND echo
       COMMAND echo "***************************************************"
-      COMMAND echo "*** Running incremental experimental dashboard ***" 
+      COMMAND echo "*** Running incremental experimental dashboard ***"
       COMMAND echo "***************************************************"
       COMMAND echo
       COMMAND echo ${PROJECT_NAME}_ENABLED_PACKAGES_LIST=${${PROJECT_NAME}_ENABLED_PACKAGES_LIST}
       COMMAND echo
-  
+
       COMMAND echo
       COMMAND echo "***"
       COMMAND echo "*** A) Clean out the list of packages"
@@ -2313,11 +2313,11 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
       COMMAND echo
       COMMAND ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
         -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_SOURCE_DIR}
-  
+
       # NOTE: Above, if ${PROJECT_NAME}_ENABLE_ALL_PACKAGES was set in CMakeCache.txt, then setting
       # -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF will turn it off in the cache.  Note that it will
       # never be turned on again which means that the list of packages will be set explicitly below.
-    
+
       COMMAND echo
       COMMAND echo "***"
       COMMAND echo "*** B) Run the dashboard command setting the list of packages"
@@ -2334,11 +2334,11 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
         PROJECT_SOURCE_DIR=${PROJECT_SOURCE_DIR}
         ${CMAKE_CTEST_COMMAND} ${${PROJECT_NAME}_DASHBOARD_CTEST_ARGS} -S
           ${${PROJECT_NAME}_TRIBITS_DIR}/ctest/experimental_build_test.cmake || echo
-  
+
       # 2009/07/05: rabartl: Above, I added the ending '|| echo' to always make
       # the command pass so that 'make' will not stop and avoid this last command
       # to set back the enabled packages.
-  
+
       COMMAND echo
       COMMAND echo "***"
       COMMAND echo "*** C) Clean out the list of packages again to clean the cache file"
@@ -2349,7 +2349,7 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
       COMMAND echo
       COMMAND ${CMAKE_COMMAND} -D${PROJECT_NAME}_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
         -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON -D${PROJECT_NAME}_ENABLE_ALL_PACKAGES:BOOL=OFF ${PROJECT_SOURCE_DIR}
-    
+
       COMMAND echo
       COMMAND echo "***"
       COMMAND echo "*** D) Reconfigure with the original package list"
@@ -2360,13 +2360,13 @@ MACRO(TRIBITS_ADD_DASHBOARD_TARGET)
       COMMAND echo
       COMMAND ${CMAKE_COMMAND} ${${PROJECT_NAME}_ENABLED_PACKAGES_CMAKE_ARG_LIST}
         -D${PROJECT_NAME}_ALLOW_NO_PACKAGES:BOOL=ON ${PROJECT_SOURCE_DIR}
-  
+
       COMMAND echo
       COMMAND echo "See the results at http://${CTEST_DROP_SITE}${CTEST_DROP_LOCATION}&display=project\#Experimental"
       COMMAND echo
-   
+
       )
-  
+
   ENDIF()
 
 ENDMACRO()
@@ -2374,9 +2374,9 @@ ENDMACRO()
 
 MACRO(TRIBITS_EXCLUDE_FILES)
   SET(FILES_TO_EXCLUDE ${ARGN})
-  
+
   #need to add "/<project source dir>/<package dir>/" to each file this is to prevent
-  #someone from trying to exclude a file like "readme" and having it 
+  #someone from trying to exclude a file like "readme" and having it
   #inadvertently exclude a file matching that name in another package.
   SET(MODIFIED_FILES_TO_EXCLUDE "")
 
@@ -2397,7 +2397,7 @@ MACRO(TRIBITS_EXCLUDE_FILES)
       LIST(APPEND MODIFIED_FILES_TO_EXCLUDE ${FILE})
     ENDIF()
   ENDFOREACH()
- 
+
 #Leaving in for debugging purposes
 #  MESSAGE("List of files being excluded for package ${PACKAGE_NAME}")
 #  FOREACH(NEW_FILE ${MODIFIED_FILES_TO_EXCLUDE})
@@ -2416,7 +2416,7 @@ ENDMACRO()
 #
 
 MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
-  SET(AUTOTOOLS_FILES 
+  SET(AUTOTOOLS_FILES
     configure.ac$
     configure$
     Makefile.am$
@@ -2428,9 +2428,9 @@ MACRO(TRIBITS_EXCLUDE_AUTOTOOLS_FILES) # PACKAGE_NAME LIST_RETURN)
 
   SET(FILES_TO_EXCLUDE)
   FOREACH(FILE ${AUTOTOOLS_FILES})
-    LIST(APPEND FILES_TO_EXCLUDE ${FILE} \(.*/\)*${FILE}) 
+    LIST(APPEND FILES_TO_EXCLUDE ${FILE} \(.*/\)*${FILE})
   ENDFOREACH()
 
-  TRIBITS_EXCLUDE_FILES(${FILES_TO_EXCLUDE}) 
+  TRIBITS_EXCLUDE_FILES(${FILES_TO_EXCLUDE})
 
 ENDMACRO()
