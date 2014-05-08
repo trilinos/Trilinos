@@ -190,6 +190,9 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     virtual void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    virtual void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView<GlobalOrdinal> &indices, const ArrayView<Scalar> &values, size_t &numEntries) const = 0;
+
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     virtual void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const = 0;
 

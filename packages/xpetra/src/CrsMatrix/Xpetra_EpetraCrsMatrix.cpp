@@ -235,8 +235,16 @@ namespace Xpetra {
   void EpetraCrsMatrix::getLocalRowCopy(int LocalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const {
     XPETRA_MONITOR("EpetraCrsMatrix::getLocalRowCopy");
 
-    int numEntries=-1;
+    int numEntries = -1;
     XPETRA_ERR_CHECK(mtx_->ExtractMyRowCopy(LocalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
+    NumEntries = numEntries;
+  }
+
+  void EpetraCrsMatrix::getGlobalRowCopy(int GlobalRow, const ArrayView<int> &Indices, const ArrayView<double> &Values, size_t &NumEntries) const {
+    XPETRA_MONITOR("EpetraCrsMatrix::getGlobalRowCopy");
+
+    int numEntries = -1;
+    XPETRA_ERR_CHECK(mtx_->ExtractGlobalRowCopy(GlobalRow, Indices.size(), numEntries, Values.getRawPtr(), Indices.getRawPtr()));
     NumEntries = numEntries;
   }
 

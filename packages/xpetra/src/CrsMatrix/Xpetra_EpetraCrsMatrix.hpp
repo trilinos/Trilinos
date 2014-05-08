@@ -239,6 +239,9 @@ namespace Xpetra {
     //! Extract a list of entries in a specified local row of the matrix. Put into storage allocated by calling routine.
     void getLocalRowCopy(LocalOrdinal LocalRow, const ArrayView< LocalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
 
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &Indices, const ArrayView< Scalar > &Values, size_t &NumEntries) const;
+
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const;
 
