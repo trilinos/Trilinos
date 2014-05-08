@@ -96,11 +96,11 @@ int main(int argc, char *argv[]) {
   const global_size_t numGlobalElements = 5;
   //const global_size_t numGlobalNonZeros = 12;
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
 
   const Ordinal indexBase = 0;
-  Teuchos::RCP<const Tpetra::Map<Ordinal> > map; 
+  Teuchos::RCP<const Tpetra::Map<Ordinal> > map;
   map = Teuchos::rcp( new Tpetra::Map<Ordinal>(numGlobalElements, indexBase, comm) );
 
   // Get update list and number of local equations from newly created map.
@@ -128,7 +128,7 @@ int main(int argc, char *argv[]) {
   //       0 -1 -3  2  0;...
   //       0  0  1  0  0;...
   //       0  4  2  0  1];
-  // x = [1; 2; 3; 4; 5]; 
+  // x = [1; 2; 3; 4; 5];
   // b = [8; 45; -3; 3; 19];
 
   const Teuchos::Array<Ordinal> ColPtr = Teuchos::tuple<Ordinal>(0, 2, 5, 9, 10, 12);
