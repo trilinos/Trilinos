@@ -991,6 +991,10 @@ namespace Tpetra {
       clone (const in_map_type& mapIn,
              const Teuchos::RCP<out_node_type>& nodeOut)
       {
+        typedef ::Tpetra::Directory<typename out_map_type::local_ordinal_type,
+                                    typename out_map_type::global_ordinal_type,
+                                    typename out_map_type::node_type> out_dir_type;
+
         out_map_type mapOut; // Make an empty Map.
 
         mapOut.comm_ = mapIn.comm_;
@@ -1005,7 +1009,9 @@ namespace Tpetra {
         if (! mapIn.directory_.is_null ()) {
           mapOut.directory_ = mapIn.directory_->template clone<out_node_type> (mapOut);
         } else {
-          mapOut.directory_ = Teuchos::null; // created on demand
+          // It's created here, but not initialized yet.  The output
+          // Map will initialize it on demand, if needed.
+          mapOut.directory_ = Teuchos::rcp (new out_dir_type ());
         }
         return mapOut;
       }
