@@ -431,10 +431,13 @@ void Tpetra::Import_Util::unpackAndCombineIntoCrsArrays(const CrsMatrix<Scalar, 
   TargetPids.assign(mynnz,-1);
 
   // Grab pointers for SourceMatrix
-  ArrayRCP<const size_t> Source_rowptr;
-  ArrayRCP<const LO>     Source_colind;
-  ArrayRCP<const Scalar> Source_vals;
+  ArrayRCP<const size_t> Source_rowptr_RCP;
+  ArrayRCP<const LO>     Source_colind_RCP;
+  ArrayRCP<const Scalar> Source_vals_RCP;
   SourceMatrix.getAllValues(Source_rowptr,Source_colind,Source_vals);
+  ArrayRCP<const size_t> Source_rowptr = Source_rowptr_RCP();
+  ArrayRCP<const LO>     Source_colind = Source_colind_RCP();
+  ArrayRCP<const Scalar> Source_vals   = Source_vals_RCP();
 
   const map_type& sourceColMap = * (SourceMatrix.getColMap());
   ArrayView<const GO> globalColElts = sourceColMap.getNodeElementList();
