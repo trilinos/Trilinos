@@ -155,7 +155,6 @@ namespace {
     // the BMV views.
   }
 
-
 //
 // INSTANTIATIONS
 //
