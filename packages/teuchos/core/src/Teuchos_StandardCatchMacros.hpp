@@ -125,7 +125,7 @@
      ...
    }
    TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
-   return ( success ? 0 : 1 );
+   return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
  }
  \endcode
  *
