@@ -246,6 +246,119 @@ namespace {
     }
   }
 
+  // Make sure that Import works with BlockMultiVector.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockMultiVector, Import, Scalar, LO, GO, Node )
+  {
+    using Tpetra::TestingUtilities::getNode;
+    using Tpetra::TestingUtilities::getDefaultComm;
+    using Teuchos::Comm;
+    using Teuchos::outArg;
+    using Teuchos::REDUCE_MIN;
+    using Teuchos::reduceAll;
+    using Teuchos::RCP;
+    typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    typedef typename BMV::little_vec_type little_vec_type;
+    typedef Tpetra::Map<LO, GO, Node> map_type;
+    typedef Tpetra::Import<LO, GO, Node> import_type;
+    typedef Tpetra::global_size_t GST;
+    typedef Teuchos::ScalarTraits<Scalar> STS;
+
+    RCP<const Comm<int> > comm = getDefaultComm ();
+    // const int myRank = comm->getRank ();
+    // const int numProcs = comm->getSize ();
+    RCP<Node> node = getNode<Node> ();
+    const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+
+    const size_t numLocalMeshPoints = 2;
+    const LO blockSize = 5;
+    const LO numVecs = 3;
+    const GO indexBase = 0;
+    map_type meshMap (INVALID, numLocalMeshPoints, indexBase, comm, node);
+    //RCP<const map_type> mapPtr = Teuchos::rcpFromRef (map); // nonowning RCP
+
+    Teuchos::Array<GO> overlappingGIDs (numLocalMeshPoints + 1);
+    for (LO lid = 0; lid < static_cast<LO> (numLocalMeshPoints); ++lid) {
+      overlappingGIDs[lid] = meshMap.getGlobalElement (lid);
+    }
+    // Every process gets exactly one overlapping GID.  In the
+    // (nonoverlapping) mesh Map on the calling process, my min GID
+    // overlaps with exactly one process ((myRank + 1) % numProcs) in
+    // the overlapping mesh Map.
+    overlappingGIDs[numLocalMeshPoints] =
+      overlappingGIDs[numLocalMeshPoints-1] %
+      static_cast<GO> (meshMap.getGlobalNumElements ());
+    map_type overlappingMeshMap (INVALID, overlappingGIDs (), indexBase, comm, node);
+
+    BMV X (meshMap, blockSize, numVecs);
+    BMV Y (overlappingMeshMap, blockSize, numVecs);
+
+    //
+    // Fill X with meaningful things to test Import with REPLACE combine mode.
+    //
+    // Fill just the "outgoing" blocks of X, in column 1 only, with
+    // 1,2,3,4,5.  Due to how we constructed the overlapping mesh Map,
+    // the first GID on the calling process in the mesh Map overlaps
+    // with one GID on exactly one process.
+    const LO colToModify = 1;
+    little_vec_type X_overlap =
+      X.getLocalBlock (meshMap.getLocalElement (meshMap.getMinGlobalIndex ()), colToModify);
+    TEST_ASSERT( X_overlap.getRawPtr () != NULL );
+    TEST_EQUALITY_CONST( X_overlap.getBlockSize (), blockSize );
+    // FIXME (mfh 07 May 2014) May have to fix this if strides change
+    // in the future.
+    TEST_EQUALITY_CONST( X_overlap.getStride (), static_cast<LO> (1) );
+
+    // {
+    //   std::ostringstream os;
+    //   os << "Proc " << myRank
+    //      << ": X_overlap.getRawPtr() = " << X_overlap.getRawPtr ()
+    //      << ", X_overlap.getBlockSize() = " << X_overlap.getBlockSize ()
+    //      << ", meshMap.getMinGlobalIndex() = " << meshMap.getMinGlobalIndex ()
+    //      << std::endl;
+    //   std::cerr << os.str ();
+    // }
+
+    {
+      const int lclOk = (X_overlap.getRawPtr () != NULL &&
+                         X_overlap.getBlockSize () == blockSize) ? 1 : 0;
+      int gblOk = 1;
+      reduceAll<int, int> (*comm, REDUCE_MIN, lclOk, outArg (gblOk));
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        gblOk == 0, std::logic_error, "Some process reported that X_overlap "
+        "is an empty block.");
+    }
+
+    for (LO i = 0; i < blockSize; ++i) {
+      X_overlap(i) = static_cast<Scalar> (i+1);
+    }
+
+    import_type import (rcpFromRef (meshMap), rcpFromRef (overlappingMeshMap));
+    Y.doImport (X, import, Tpetra::REPLACE);
+
+    little_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
+
+    Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
+    little_vec_type zeroLittleVector (zeroArray.getRawPtr (), blockSize, 1);
+
+    for (LO col = 0; col < numVecs; ++col) {
+      for (LO localMeshRow = meshMap.getMinLocalIndex ();
+           localMeshRow < meshMap.getMaxLocalIndex (); ++localMeshRow) {
+        little_vec_type Y_cur = Y.getLocalBlock (localMeshRow, col);
+        if (col != colToModify) {
+          TEST_ASSERT( Y_cur.equal (zeroLittleVector) && zeroLittleVector.equal (Y_cur) );
+          TEST_ASSERT( ! Y_cur.equal (X_overlap) && ! X_overlap.equal (Y_cur) );
+        }
+        if (localMeshRow != meshMap.getMinLocalIndex ()) {
+          TEST_ASSERT( Y_cur.equal (zeroLittleVector) && zeroLittleVector.equal (Y_cur) );
+          TEST_ASSERT( ! Y_cur.equal (X_overlap) && ! X_overlap.equal (Y_cur) );
+        }
+        if (col == colToModify && localMeshRow == meshMap.getMinLocalIndex ()) {
+          TEST_ASSERT( Y_cur.equal (X_overlap) && X_overlap.equal (Y_cur) );
+        }
+      }
+    }
+  }
+
 //
 // INSTANTIATIONS
 //
@@ -253,6 +366,7 @@ namespace {
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, ctor, SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, MVView, SCALAR, LO, GO, NODE ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockMultiVector, Import, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 

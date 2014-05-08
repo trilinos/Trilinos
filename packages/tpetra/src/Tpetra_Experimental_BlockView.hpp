@@ -188,14 +188,24 @@ public:
   /// \brief Constructor
   /// \param A [in] Pointer to the vector's entries
   /// \param blockSize [in] Dimension of the vector
-  /// \param strideX [in] Stride between consecutive entries
-  LittleVector (Scalar* const A, const LO blockSize, const LO strideX) :
-    A_ (A), blockSize_ (blockSize), strideX_ (strideX)
+  /// \param stride [in] Stride between consecutive entries
+  LittleVector (Scalar* const A, const LO blockSize, const LO stride) :
+    A_ (A), blockSize_ (blockSize), strideX_ (stride)
   {}
 
   //! Pointer to the block's entries.
   Scalar* getRawPtr () const {
     return A_;
+  }
+
+  //! The block size (number of degrees of freedom per mesh point).
+  LO getBlockSize () const {
+    return blockSize_;
+  }
+
+  //! Stride between consecutive entries.
+  LO getStride () const {
+    return strideX_;
   }
 
   //! Reference to entry (i) of the vector.
@@ -248,6 +258,9 @@ public:
   //! true if and only if all entries of this equal all entries of X.
   template<class LittleVectorType>
   bool equal (const LittleVectorType& X) const {
+    if (getBlockSize () != X.getBlockSize ()) {
+      return false;
+    }
     for (LO i = 0; i < blockSize_; ++i) {
       if ((*this)(i) != X(i)) {
         return false;

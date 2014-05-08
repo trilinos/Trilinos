@@ -470,10 +470,16 @@ private:
   static Teuchos::RCP<const mv_type>
   getMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject&);
 
-  static Teuchos::RCP<BlockMultiVector<Scalar, LO, GO, Node> >
-  getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject&)
+  static Teuchos::RCP<const BlockMultiVector<Scalar, LO, GO, Node> >
+  getBlockMultiVectorFromSrcDistObject (const Tpetra::SrcDistObject& src)
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "NOT IMPLEMENTED");
+    typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
+    const BMV* src_bmv = dynamic_cast<const BMV*> (&src);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src_bmv == NULL, std::invalid_argument, "Tpetra::Experimental::"
+      "BlockMultiVector: The source object of an Import or Export to a "
+      "BlockMultiVector, must also be a BlockMultiVector.");
+    return Teuchos::rcp (src_bmv, false); // nonowning RCP
   }
 };
 
@@ -670,7 +676,8 @@ BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
                    const LO colIndex) const
 {
-  if (! meshMap_.isNodeLocalElement (localRowIndex)) {
+  if (! meshMap_.isNodeLocalElement (localRowIndex) ||
+      localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
     return little_vec_type (NULL, 0, 0);
   } else {
     const size_t offset = colIndex * mv_.getStride () +
@@ -735,11 +742,11 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
     << ".");
 
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    ! srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": Input argument must be a BlockMultiVector, Tpetra::Vector, or Tpetra::"
-    "::MultiVector with exactly one column.");
+    srcAsBmvPtr.is_null (), std::invalid_argument,
+    ": The source of an Import or Export to a BlockMultiVector "
+    "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
   // FIXME (mfh 23 Apr 2014) This implementation is sequential and
@@ -776,11 +783,11 @@ packAndPrepare (const Tpetra::SrcDistObject& source,
   typedef typename Kokkos::View<Scalar*, device_type>::size_type size_type;
 
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    ! srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": Input argument must be a BlockMultiVector, Tpetra::Vector, or Tpetra::"
-    "::MultiVector with exactly one column.");
+    srcAsBmvPtr.is_null (), std::invalid_argument,
+    ": The source of an Import or Export to a BlockMultiVector "
+    "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
   const LO numVecs = getNumVectors ();
@@ -814,7 +821,9 @@ unpackAndCombine (const Kokkos::View<const LO*, device_type>& importLIDs,
                   Tpetra::Distributor& distor,
                   Tpetra::CombineMode CM)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "NOT IMPLEMENTED");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    true, std::logic_error, "Tpetra::Experimental::unpackAndCombine: "
+    "NOT IMPLEMENTED");
 }
 
 #else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
@@ -834,11 +843,11 @@ copyAndPermute (const Tpetra::SrcDistObject& src,
     << " != permuteFromLIDs.size() = " << permuteFromLIDs.size () << ".");
 
   typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    ! srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": Input argument must be a BlockMultiVector, Tpetra::Vector, or Tpetra::"
-    "::MultiVector with exactly one column.");
+    srcAsBmvPtr.is_null (), std::invalid_argument,
+    ": The source of an Import or Export to a BlockMultiVector "
+    "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
   // FIXME (mfh 23 Apr 2014) This implementation is sequential and
@@ -876,11 +885,11 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
   const char tfecfFuncName[] = "packAndPrepare";
 
-  Teuchos::RCP<BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
+  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
   TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    ! srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": Input argument must be a BlockMultiVector, Tpetra::Vector, or Tpetra::"
-    "::MultiVector with exactly one column.");
+    srcAsBmvPtr.is_null (), std::invalid_argument,
+    ": The source of an Import or Export to a BlockMultiVector "
+    "must also be a BlockMultiVector.");
   const BMV& srcAsBmv = *srcAsBmvPtr;
 
   const LO numVecs = getNumVectors ();
@@ -889,19 +898,31 @@ packAndPrepare (const Tpetra::SrcDistObject& src,
   // Number of things to pack per LID is the block size, times the
   // number of columns.  Input LIDs correspond to the mesh points, not
   // the degrees of freedom (DOFs).
-  constantNumPackets = static_cast<size_t> (blockSize) * static_cast<size_t> (numVecs);
+  constantNumPackets =
+    static_cast<size_t> (blockSize) * static_cast<size_t> (numVecs);
   const size_type numMeshLIDs = exportLIDs.size ();
 
-  size_type curExportPos = 0;
-  for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-    for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
-      const LO meshLid = exportLIDs[meshLidIndex];
-      Scalar* const curExportPtr = &exports[curExportPos];
-      little_vec_type X_dst (curExportPtr, blockSize, 1);
-      little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
+  const size_type requiredExportsSize = numMeshLIDs *
+    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
+  exports.resize (requiredExportsSize);
 
-      X_dst.assign (X_src);
+  try {
+    size_type curExportPos = 0;
+    for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
+      for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
+        const LO meshLid = exportLIDs[meshLidIndex];
+        Scalar* const curExportPtr = &exports[curExportPos];
+        little_vec_type X_dst (curExportPtr, blockSize, 1);
+        little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
+
+        X_dst.assign (X_src);
+      }
     }
+  } catch (std::exception& e) {
+    TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+      true, std::logic_error, ": Oh no!  packAndPrepare on Process "
+      << meshMap_.getComm ()->getRank () << " raised the following exception: "
+      << e.what ());
   }
 }
 
@@ -915,15 +936,15 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
                   Tpetra::CombineMode CM)
 {
   typedef typename Teuchos::ArrayView<const LO>::size_type size_type;
+  const char tfecfFuncName[] = "unpackAndCombine";
 
-  TEUCHOS_TEST_FOR_EXCEPTION(
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
     CM != ADD && CM != REPLACE && CM != INSERT && CM != ABSMAX && CM != ZERO,
-    std::invalid_argument, "BlockMultiVector::unpackAndCombine: Invalid CombineMode: "
-    << CM << ".  Valid CombineMode values are ADD, REPLACE, INSERT, ABSMAX, and "
-    "ZERO.");
+    std::invalid_argument, ": Invalid CombineMode: " << CM << ".  Valid "
+    "CombineMode values are ADD, REPLACE, INSERT, ABSMAX, and ZERO.");
 
   if (CM == ZERO) {
-    return;
+    return; // Combining does nothing, so we don't have to combine anything.
   }
 
   // Number of things to pack per LID is the block size.
@@ -931,6 +952,13 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
   const size_type numMeshLIDs = importLIDs.size ();
   const LO blockSize = getBlockSize ();
   const LO numVecs = getNumVectors ();
+
+  const size_type requiredImportsSize = numMeshLIDs *
+    static_cast<size_type> (blockSize) * static_cast<size_type> (numVecs);
+  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
+    imports.size () < requiredImportsSize, std::logic_error,
+    ": imports.size () = " << imports.size ()
+    << " < requiredImportsSize = " << requiredImportsSize << ".");
 
   size_type curImportPos = 0;
   for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
