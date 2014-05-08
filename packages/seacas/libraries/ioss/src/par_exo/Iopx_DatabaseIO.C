@@ -143,7 +143,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Iopx_DatabaseIO.C 2012/04/19 gdsjaar";}
+  const char *Version() {return "Iopx_DatabaseIO.C 2014/05/08";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -156,33 +156,7 @@ namespace {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "ExodusII error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Parallel Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
         << " in file '" << Version()
         << "' Please report to gdsjaar@sandia.gov if you need help.";
 
