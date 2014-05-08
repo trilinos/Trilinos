@@ -154,7 +154,8 @@ LOCA::MultiContinuation::MultiVecConstraint::computeDP(
 {
    std::string callingFunction =
     "LOCA::MultiContinuation::MultiVecConstraint::computeDP()";
-  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType status =
+    NOX::Abstract::Group::NotDefined;
 
   // Compute constraints if necessary
   if (!isValidG && !isValidConstraints)

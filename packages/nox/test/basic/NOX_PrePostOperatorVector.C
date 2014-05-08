@@ -116,7 +116,7 @@ namespace NOX_UNIT_TEST {
 
     const NOX::Abstract::Group& getPreviousSolutionGroup() const{}
 
-    int getNumIterations() const{}
+    int getNumIterations() const{return 0;}
 
     const Teuchos::ParameterList& getList() const {}
 

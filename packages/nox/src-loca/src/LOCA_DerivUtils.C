@@ -247,7 +247,9 @@ LOCA::DerivUtils::computeDJnDxa(LOCA::MultiContinuation::AbstractGroup& grp,
 {
   std::string callingFunction =
     "LOCA::DerivUtils::computeDJnDxa()";
-  NOX::Abstract::Group::ReturnType status, finalStatus;
+  NOX::Abstract::Group::ReturnType status;
+  NOX::Abstract::Group::ReturnType finalStatus =
+    NOX::Abstract::Group::NotDefined;
 
   // Copy original solution vector
   Teuchos::RCP<NOX::Abstract::Vector> Xvec =

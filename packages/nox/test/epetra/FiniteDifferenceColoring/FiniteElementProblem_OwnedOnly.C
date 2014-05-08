@@ -144,6 +144,7 @@ FiniteElementProblem::~FiniteElementProblem()
   delete Importer;
   delete OverlapMap;
   delete StandardMap;
+  delete [] nonlinearUnknowns;
 }
 
 // Matrix and Residual Fills
