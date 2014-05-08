@@ -1,7 +1,7 @@
 //  This program computes the linear solution using Belos and a laplacian matrix.
-//  NOTE:  The laplacian matrix generated has row and column ids larger than INT_MAX 
+//  NOTE:  The laplacian matrix generated has row and column ids larger than INT_MAX
 //         to test Epetra64 functionality with Belos solvers.
-//  
+//
 //  Karen Devine, April 2012
 //  Erik Boman, May 2012
 //  K. Devine & H. Thornquist, January 2013
@@ -36,26 +36,26 @@
 #include "build_simple_matrices.hpp"
 
 #include <stdio.h>
- 
+
 ////////////////////////////////////////////////////////////////////////////
 
-int main(int narg, char *arg[]) 
+int main(int narg, char *arg[])
 {
   using std::cout;
 
-#ifdef EPETRA_MPI  
-  // Initialize MPI  
-  MPI_Init(&narg,&arg);   
-  Epetra_MpiComm Comm( MPI_COMM_WORLD );  
-#else  
-  Epetra_SerialComm Comm;  
+#ifdef EPETRA_MPI
+  // Initialize MPI
+  MPI_Init(&narg,&arg);
+  Epetra_MpiComm Comm( MPI_COMM_WORLD );
+#else
+  Epetra_SerialComm Comm;
 #endif
-  
+
   int MyPID = Comm.MyPID();
 
   bool verbose = true;
   int verbosity = 1;
-  
+
   bool testEpetra64 = true;
 
   // Matrix properties
@@ -72,12 +72,12 @@ int main(int narg, char *arg[])
   int maxiterations = -1;
   int gensize = 25;  // Needs to be long long to test with > INT_MAX rows
   double tol = 1.0e-5;
-  
+
   // Echo the command line
   if (MyPID == 0)  {
     for (int i = 0; i < narg; i++)
-      cout << arg[i] << " ";
-    cout << endl;
+      std::cout << arg[i] << " ";
+    std::cout << std::endl;
   }
 
   // Command-line processing
@@ -110,9 +110,9 @@ int main(int narg, char *arg[])
   // Print the most essential options (not in the MyPL parameters later)
   verbose = (verbosity>0);
   if (verbose && MyPID==0){
-    cout << "verbosity = " << verbosity << endl;
-    cout << "method = " << method << endl;
-    cout << "numrhs = " << numrhs << endl;
+    std::cout << "verbosity = " << verbosity << std::endl;
+    std::cout << "method = " << method << std::endl;
+    std::cout << "numrhs = " << numrhs << std::endl;
   }
 
   // Make sure Epetra was built with 64-bit global indices enabled.
@@ -122,7 +122,7 @@ int main(int narg, char *arg[])
 #endif
 
   Epetra_CrsMatrix *A = NULL;
-  
+
   // Read matrix from file or generate a matrix
   if ((gensize > 0 && testEpetra64)) {
     // Generate the matrix using long long for global indices
@@ -138,12 +138,12 @@ int main(int narg, char *arg[])
   }
 
   if (verbose && (A->NumGlobalRows64() < TINYMATRIX)) {
-    if (MyPID == 0) cout << "Input matrix:  " << endl;
-    A->Print(cout);
+    if (MyPID == 0) std::cout << "Input matrix:  " << std::endl;
+    A->Print(std::cout);
   }
 
   // Set Belos verbosity level
-  if (MyPID == 0) cout << "Setting up the problem..." << endl;
+  if (MyPID == 0) std::cout << "Setting up the problem..." << std::endl;
 
   int belos_verbosity = Belos::Errors + Belos::Warnings;
   if (verbosity >= 1)  // low
@@ -154,7 +154,7 @@ int main(int narg, char *arg[])
     belos_verbosity += Belos::StatusTestDetails
                        + Belos::OrthoDetails
                        + Belos::Debug;
-  
+
   // Create parameter list to pass into solver
 
   Teuchos::ParameterList MyPL;
@@ -165,7 +165,7 @@ int main(int narg, char *arg[])
   // For the following, use Belos's defaults unless explicitly specified.
   if (numblocks > 0) MyPL.set( "Num Blocks", numblocks);
   if (maxrestarts > 0) MyPL.set( "Maximum Restarts", maxrestarts);
-  if (maxiterations <= 0) 
+  if (maxiterations <= 0)
     maxiterations = Teuchos::asSafe<int>( gensize );
   MyPL.set( "Maximum Iterations", maxiterations);
   if (blockSize > 0) MyPL.set( "Block Size", blockSize );
@@ -174,17 +174,17 @@ int main(int narg, char *arg[])
   typedef Epetra_Operator OP;
   typedef Belos::MultiVecTraits<double, MV> MVT;
   typedef Belos::OperatorTraits<double, MV, OP> OPT;
-    
+
 
   // Create the linear problem to be solved.
-    
-  Teuchos::RCP<Epetra_MultiVector> X = 
+
+  Teuchos::RCP<Epetra_MultiVector> X =
     Teuchos::rcp(new Epetra_MultiVector(A->Map(), numrhs));
-  Teuchos::RCP<Epetra_MultiVector> B = 
+  Teuchos::RCP<Epetra_MultiVector> B =
     Teuchos::rcp(new Epetra_MultiVector(A->Map(), numrhs));
 
   Teuchos::RCP<Belos::LinearProblem<double, MV, OP> > MyProblem;
-  MyProblem = 
+  MyProblem =
     Teuchos::rcp(new Belos::LinearProblem<double, MV, OP>(Teuchos::rcp(A,false), X, B) );
 
   // Inform the linear problem whether A is Hermitian
@@ -193,7 +193,7 @@ int main(int narg, char *arg[])
 
   int iter = 0;
 
-  // Set random seed to have consistent initial vectors between experiments.  
+  // Set random seed to have consistent initial vectors between experiments.
   X->SetSeed(2*(MyPID) +1); // Odd seed
   MVT::MvRandom( *X );
   OPT::Apply( *A, *X, *B );
@@ -203,40 +203,40 @@ int main(int narg, char *arg[])
   bool boolret = MyProblem->setProblem();
   if (boolret != true) {
     if (verbose && MyPID == 0) {
-      cout << "Belos::LinearProblem::setProblem() returned with error." 
-           << endl;
+      std::cout << "Belos::LinearProblem::setProblem() returned with error."
+           << std::endl;
     }
     FINALIZE;
     return -1;
   }
- 
+
   Teuchos::RCP<Belos::SolverManager<double, MV, OP> > MySolverMgr;
- 
+
   if (method == "BlockCG") {
     // Initialize the Block CG solver
     MySolverMgr = Teuchos::rcp( new Belos::BlockCGSolMgr<double, MV, OP>(MyProblem,Teuchos::rcp(&MyPL, false)) );
   }
   else
-    cout << "Unknown solver method!" << endl;
+    std::cout << "Unknown solver method!" << std::endl;
 
-  if (verbose && MyPID==0) MyPL.print(cout);
-      
+  if (verbose && MyPID==0) MyPL.print(std::cout);
+
   // Solve the problem to the specified tolerances or length
-  if (MyPID == 0) cout << "Beginning the " << method << " solve..." << endl;
+  if (MyPID == 0) std::cout << "Beginning the " << method << " solve..." << std::endl;
 
-  int numfailed = 0; 
+  int numfailed = 0;
   Belos::ReturnType returnCode = MySolverMgr->solve();
   if (returnCode != Belos::Converged && MyPID==0) {
     ++numfailed;
-    cout << "Belos::SolverManager::solve() returned unconverged." << endl;
+    std::cout << "Belos::SolverManager::solve() returned unconverged." << std::endl;
   }
   iter = MySolverMgr->getNumIters();
-  
+
   if (MyPID == 0) {
-    cout << "Iterations in this solve: " << iter << endl; 
-    cout << "Solve complete; beginning post-processing..."<< endl;
+    std::cout << "Iterations in this solve: " << iter << std::endl;
+    std::cout << "Solve complete; beginning post-processing..."<< std::endl;
   }
-  
+
   // Compute residuals.
   bool badRes = false;
   std::vector<double> actual_resids( numrhs );
@@ -246,7 +246,7 @@ int main(int narg, char *arg[])
   MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
-  if (MyPID==0) 
+  if (MyPID==0)
     std::cout<< "---------- Actual Residuals (normalized) ----------"<<std::endl<<std::endl;
   for ( int i=0; i<numrhs; i++) {
     double actRes = actual_resids[i]/rhs_norm[i];
@@ -254,12 +254,12 @@ int main(int narg, char *arg[])
       std::cout<<"Problem "<<i<<" : \t"<< actRes <<std::endl;
     if (actRes > tol) badRes = true;
   }
- 
+
   FINALIZE;
 
   if (badRes || numfailed) {
     if (MyPID == 0) {
-      cout << "End Result: TEST FAILED" << endl;
+      std::cout << "End Result: TEST FAILED" << std::endl;
     }
     return -1;
   }
@@ -267,7 +267,7 @@ int main(int narg, char *arg[])
   // Default return value
   //
   if (MyPID == 0) {
-    cout << "End Result: TEST PASSED" << endl;
-  } 
+    std::cout << "End Result: TEST PASSED" << std::endl;
+  }
   return 0;
-} 
+}
