@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -78,7 +78,7 @@ typedef void * EPETRA_OBJECT_REF;
 
 
 #endif
- 
+
 #ifdef EPETRA_FORTRAN
 #if defined(TRILINOS_HAVE_NO_FORTRAN_UNDERSCORE)
 #define MANGLE(x) x
@@ -119,32 +119,32 @@ extern "C" {
 
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1)(EPETRA_INT numGlobalEquations,
                  EPETRA_INT indexBase,
                  EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2)(EPETRA_INT numGlobalEquations,
                  EPETRA_INT numMyElements,
                  EPETRA_INT indexBase,
                  EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3)(EPETRA_INT numGlobalEquations,
                  EPETRA_INT numlocalEquations,
                  int *updateList, EPETRA_INT indexBase,
                  EPETRA_OBJECT_REF comm);
 #endif
 
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_64)(EPETRA_LONG_LONG numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create1_64)(EPETRA_LONG_LONG numGlobalEquations,
                  EPETRA_LONG_LONG indexBase,
                  EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_64)(EPETRA_LONG_LONG numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create2_64)(EPETRA_LONG_LONG numGlobalEquations,
                  EPETRA_INT numMyElements,
                  EPETRA_INT indexBase,
                  EPETRA_OBJECT_REF comm);
 
-  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3_64)(EPETRA_LONG_LONG numGlobalEquations, 
+  EPETRA_OBJECT_PTR MANGLE(epetra_map_create3_64)(EPETRA_LONG_LONG numGlobalEquations,
                  EPETRA_INT numlocalEquations,
                  long long *updateList, EPETRA_INT indexBase,
                  EPETRA_OBJECT_REF comm);
@@ -223,16 +223,16 @@ extern "C" {
 
   int  MANGLE(epetra_crs_matrix_allocate)(EPETRA_OBJECT_REF A, int* rowLengths);
 
-  int MANGLE(epetra_crs_matrix_putrow)(EPETRA_OBJECT_REF A, EPETRA_INT row, 
+  int MANGLE(epetra_crs_matrix_putrow)(EPETRA_OBJECT_REF A, EPETRA_INT row,
           EPETRA_INT num_nz,
           double* vals, int* col_inds);
 
-  int MANGLE(epetra_crs_matrix_sumintodiagonal)(EPETRA_OBJECT_REF A, 
+  int MANGLE(epetra_crs_matrix_sumintodiagonal)(EPETRA_OBJECT_REF A,
              double* diagonal);
 
   int MANGLE(epetra_crs_matrix_fillcomplete)(EPETRA_OBJECT_REF A);
 
-  int MANGLE(epetra_crs_matrix_matvec)(EPETRA_OBJECT_REF A, EPETRA_VECTOR x, 
+  int MANGLE(epetra_crs_matrix_matvec)(EPETRA_OBJECT_REF A, EPETRA_VECTOR x,
           EPETRA_VECTOR y);
 
   int MANGLE(epetra_crs_matrix_matmultivec)(EPETRA_OBJECT_REF A,
@@ -267,20 +267,20 @@ extern "C" {
 
   /* creates a new multivector from numvector number of vectors of an existing
    * multivector where the vectors to be copied are listed in
-   * vecIndices.  
+   * vecIndices.
    */
-  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create5)(EPETRA_MULTIVECTOR 
+  EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create5)(EPETRA_MULTIVECTOR
                 in_multivector, EPETRA_INT numvectors, int *vecIndices);
 
   EPETRA_OBJECT_PTR MANGLE(epetra_multivector_create6)(EPETRA_MULTIVECTOR
                 in_multiVector, EPETRA_INT startindex, EPETRA_INT numvectors);
 
-  int MANGLE(epetra_multivector_putmultivector)(EPETRA_MULTIVECTOR multivector, 
+  int MANGLE(epetra_multivector_putmultivector)(EPETRA_MULTIVECTOR multivector,
             double **in_multivector);
 
   /* Allocates space for a multivector created by the default
    * constructor */
-  int MANGLE(epetra_multivector_allocate)(EPETRA_MULTIVECTOR multivector, 
+  int MANGLE(epetra_multivector_allocate)(EPETRA_MULTIVECTOR multivector,
             EPETRA_OBJECT_REF map, EPETRA_INT numvectors);
 
   int MANGLE(epetra_multivector_putscalar)(EPETRA_MULTIVECTOR multivector, EPETRA_DOUBLE scalar);
@@ -297,7 +297,7 @@ extern "C" {
   double *scalar);
 
   int MANGLE(epetra_multivector_addvec)
-       (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar, 
+       (EPETRA_MULTIVECTOR multiVector, EPETRA_DOUBLE scalar,
   EPETRA_MULTIVECTOR multiVector_in);
 
   int MANGLE(epetra_multivector_norm1)(EPETRA_MULTIVECTOR multivector, double *result);
@@ -305,7 +305,7 @@ extern "C" {
   int MANGLE(epetra_multivector_norm2)(EPETRA_MULTIVECTOR multivector, double *result);
 
   int MANGLE(epetra_multivector_lincomb)(EPETRA_MULTIVECTOR multivector,
-           EPETRA_MULTIVECTOR b, 
+           EPETRA_MULTIVECTOR b,
            EPETRA_DOUBLE scalar, EPETRA_MULTIVECTOR c);
 
   int MANGLE(epetra_multivector_random)(EPETRA_MULTIVECTOR multivector);

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -46,13 +46,13 @@
 
 //! Epetra_Map: A class for partitioning vectors and matrices.
 
-/*! It is often the case that multiple matrix and vector objects have an identical distribution 
-  of elements on a parallel machine. The Epetra_Map class keep information that describes 
-  this distribution for matrices and vectors.  
+/*! It is often the case that multiple matrix and vector objects have an identical distribution
+  of elements on a parallel machine. The Epetra_Map class keep information that describes
+  this distribution for matrices and vectors.
 
   Epetra_Map allows the storage and retrieval of the following information.  Depending on the
-  constructor that is used, some of the information is defined by the user and some is 
-  determined by the constructor.  Once a Epetra_Map is constructed any of the following attributes can 
+  constructor that is used, some of the information is defined by the user and some is
+  determined by the constructor.  Once a Epetra_Map is constructed any of the following attributes can
   be obtained
   by calling a query function that has the name as the attribute, e.g. to get the
   value of NumGlobalElements, you can call a function NumGlobalElements().  For attributes that
@@ -60,15 +60,15 @@
 
   <ul>
   <li> NumGlobalElements - The total number of elements across all processors. If this parameter and
-       NumMyElements are both passed into the constructor, one of the three cases will apply: 
-       <ol> 
+       NumMyElements are both passed into the constructor, one of the three cases will apply:
+       <ol>
        <li> If NumGlobalElements = NumMyElements (and not equal to zero)
             the map is defined to be a local replicated
             map.  In this case, objects constructed using this map will be identically replicated across
       all processors in the communicator.
        <li> If NumGlobalElements = -1 and NumMyElements is passed in then NumGlobalElements will
             be computed as the sum of NumMyElements across all processors.
-       <li> If neither of the above is true, NumGlobalElements will be checked against the sum of 
+       <li> If neither of the above is true, NumGlobalElements will be checked against the sum of
             NumMyElements across all processors.  An error is issued if the comparison is not equal.
        </ol>
   <li> NumMyElements - The number of elements owned by the calling processor.
@@ -96,7 +96,7 @@
   <li> MaxLID - The maximum local index value on the calling processor.
   </ul>
 
-  The following functions allow boolean tests for certain properties.    
+  The following functions allow boolean tests for certain properties.
 
   <ul>
   <li> LinearMap() - Returns true if the elements are distributed linear across processors, i.e.,
@@ -117,7 +117,7 @@
 #include "Epetra_BlockMap.h"
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
-    
+
   public:
 
   //! Epetra_Map constructor for a Epetra-defined uniform linear distribution of elements.
@@ -127,18 +127,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 
     \param In
             NumGlobalElements - Number of elements to distribute.
-    
+
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
       C/C++ and 1 for Fortran.
-      
+
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
       processors.
 
     \return Pointer to a Epetra_Map object.
 
-  */ 
+  */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
@@ -164,18 +164,18 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 
     \param In
             NumMyElements - Number of elements owned by the calling processor.
-    
+
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
       C/C++ and 1 for Fortran.
-      
+
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
       processors.
 
     \return Pointer to a Epetra_Map object.
 
-  */ 
+  */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int NumMyElements, int IndexBase, const Epetra_Comm& Comm);
 #endif
@@ -190,8 +190,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 
   //! Epetra_Map constructor for a user-defined arbitrary distribution of elements.
   /*! Creates a map that puts NumMyElements on the calling processor. The indices of the elements
-      are determined from the list MyGlobalElements.  If 
-       NumGlobalElements=-1, the number of global elements will be 
+      are determined from the list MyGlobalElements.  If
+       NumGlobalElements=-1, the number of global elements will be
        the computed sum of NumMyElements across all processors in the
        Epetra_Comm communicator.
 
@@ -202,7 +202,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
 
     \param In
             NumMyElements - Number of elements owned by the calling processor.
-    
+
     \param In
             MyGlobalElements - Integer array of length NumMyElements.  The ith entry contains the
       global index value of the ith element on this processor.  Index values are not required to
@@ -213,14 +213,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
     \param In
             IndexBase - Minimum index value used for arrays that use this map.  Typically 0 for
       C/C++ and 1 for Fortran.
-      
+
     \param In
             Comm - Epetra_Comm communicator containing information on the number of
       processors.
 
     \return Pointer to a Epetra_Map object.
 
-  */ 
+  */
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobalElements, int NumMyElements,
              const int *MyGlobalElements,
@@ -234,7 +234,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
              const long long *MyGlobalElements,
              long long IndexBase, const Epetra_Comm& Comm);
 #endif
-  
+
 #if defined(EPETRA_NO_32BIT_GLOBAL_INDICES) && defined(EPETRA_NO_64BIT_GLOBAL_INDICES)
   // default implementation so that no compiler/linker error in case neither 32 nor 64
   // bit indices present.
@@ -246,38 +246,38 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Map : public Epetra_BlockMap {
    */
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
   Epetra_Map(long long NumGlobal_Elements, int NumMy_Elements,
-	     const long long * myGlobalElements, 
+	     const long long * myGlobalElements,
 	     int indexBase,
 	     const Epetra_Comm& comm,
 	     bool UserIsDistributedGlobal,
 	     long long UserMinAllGID, long long UserMaxAllGID);
   Epetra_Map(long long NumGlobal_Elements, int NumMy_Elements,
-	     const long long * myGlobalElements, 
+	     const long long * myGlobalElements,
 	     long long indexBase,
 	     const Epetra_Comm& comm,
 	     bool UserIsDistributedGlobal,
 	     long long UserMinAllGID, long long UserMaxAllGID);
 #endif
-  
+
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
   Epetra_Map(int NumGlobal_Elements, int NumMy_Elements,
-	     const int * myGlobalElements, 
+	     const int * myGlobalElements,
 	     int indexBase,
 	     const Epetra_Comm& comm,
 	     bool UserIsDistributedGlobal,
 	     int UserMinAllGID, int UserMaxAllGID);
 #endif
 
- 
+
   //! Epetra_Map copy constructor.
   Epetra_Map(const Epetra_Map& map);
-  
+
   //! Epetra_Map destructor.
   virtual ~Epetra_Map(void);
 
   //! Assignment Operator
   Epetra_Map & operator=(const Epetra_Map & map);
-  
+
   /// \brief Return a new BlockMap with processes with zero elements removed.
   ///
   /// \warning This method is only for expert users.  Understanding

@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  FEVbrMatrix_test  
+  FEVbrMatrix_test
   SOURCES cxx_main.cpp ExecuteTestProblems.cpp
   DEPLIBS  epetratest
   ARGS -v

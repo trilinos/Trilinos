@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -58,7 +58,7 @@ template<typename value_type> class Epetra_HashTable;
 
 //! Epetra_BlockMapData:  The Epetra BlockMap Data Class.
 /*! The Epetra_BlockMapData class is an implementation detail of Epetra_BlockMap.
-    It is reference-counted, and can be shared by multiple Epetra_BlockMap instances. 
+    It is reference-counted, and can be shared by multiple Epetra_BlockMap instances.
     It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
@@ -68,7 +68,7 @@ class Epetra_BlockMapData : public Epetra_Data {
  private:
 
   //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_BlockMapData Default Constructor.
   Epetra_BlockMapData(long long NumGlobalElements, int ElementSize, long long IndexBase, const Epetra_Comm & Comm, bool IsLongLong);
@@ -92,7 +92,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   Epetra_IntSerialDenseVector FirstPointInElementList_;
   Epetra_IntSerialDenseVector ElementSizeList_;
   Epetra_IntSerialDenseVector PointToElementList_;
-  
+
   long long NumGlobalElements_;
   int NumMyElements_;
   long long IndexBase_;
@@ -109,7 +109,7 @@ class Epetra_BlockMapData : public Epetra_Data {
   int MaxLID_;
   long long NumGlobalPoints_;
   int NumMyPoints_;
-  
+
   bool ConstantElementSize_;
   bool LinearMap_;
   bool DistributedGlobal_;

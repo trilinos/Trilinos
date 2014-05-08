@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -69,8 +69,8 @@ int main(int argc, char *argv[]) {
 
    NumGlobalElements = 2*NumProc;
    Map = epetra_map_create1(NumGlobalElements, 0, Comm);
-  
- 
+
+
   X = epetra_vector_create1(Map);
   Y = epetra_vector_create1(Map);
 
@@ -83,7 +83,7 @@ int main(int argc, char *argv[]) {
   printf("Contents of Y vector\n");
   epetra_vector_print(Y);
 
-  /* Add X and Y (need to pass Y twice for now, since this is the only update 
+  /* Add X and Y (need to pass Y twice for now, since this is the only update
      interface wrapped by C at this time) */
   epetra_vector_update(X, 1.0, Y, 0.0, Y, 1.0);
 
@@ -94,7 +94,7 @@ int main(int argc, char *argv[]) {
   epetra_vector_destroy(Y);
   epetra_map_destroy(Map);
   epetra_comm_destroy(Comm);
-  
+
 #ifdef EPETRA_MPI
   MPI_Finalize() ;
 #endif

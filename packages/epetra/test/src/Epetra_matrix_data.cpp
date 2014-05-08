@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -281,17 +281,17 @@ bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)
       if (rowLen != rowlengths_[row]) {
         return(false);
       }
- 
+
       int* indices = new int[rowLen];
       double* values = new double[rowLen];
       A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
- 
+
       util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
- 
+
       bool same = true;
       int* this_indices = colindices_[row];
       double* this_coefs = coefs_[row];
- 
+
       for(int j=0; j<rowLen; ++j) {
         if (indices[j] != this_indices[j]) {
           same = false; break;
@@ -300,10 +300,10 @@ bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)
           same = false; break;
         }
       }
- 
+
       delete [] indices;
       delete [] values;
- 
+
       if (!same) return(false);
     }
 
@@ -320,17 +320,17 @@ bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)
       if (rowLen != rowlengths_[row]) {
         return(false);
       }
- 
+
       long long* indices = new long long[rowLen];
       double* values = new double[rowLen];
       A.ExtractGlobalRowCopy(row, rowLen, rowLen, values, indices);
- 
+
       util.Sort(true, rowLen, indices, 1, &values, 0, 0, 0, 0);
- 
+
       bool same = true;
       int* this_indices = colindices_[row];
       double* this_coefs = coefs_[row];
- 
+
       for(int j=0; j<rowLen; ++j) {
         if (indices[j] != this_indices[j]) {
           same = false; break;
@@ -339,10 +339,10 @@ bool matrix_data::compare_local_data(const Epetra_CrsMatrix& A)
           same = false; break;
         }
       }
- 
+
       delete [] indices;
       delete [] values;
- 
+
       if (!same) return(false);
     }
 

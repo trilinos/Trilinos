@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -66,7 +66,7 @@
 int power_method(Epetra_CrsMatrix& A, double & lambda, int niters, double tolerance,
 		 bool verbose);
 
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i;
@@ -97,7 +97,7 @@ int main(int argc, char *argv[])
   // Get the number of local equations from the command line
   if (argc!=2)
    {
-     if (verbose) 
+     if (verbose)
        std::cout << "Usage: " << argv[0] << " number_of_equations" << std::endl;
     std::exit(1);
    }
@@ -106,16 +106,16 @@ int main(int argc, char *argv[])
   if (NumGlobalElements < NumProc)
       {
      if (verbose)
-       std::cout << "numGlobalBlocks = " << NumGlobalElements 
+       std::cout << "numGlobalBlocks = " << NumGlobalElements
 	    << " cannot be < number of processors = " << NumProc << std::endl;
      std::exit(1);
       }
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
 
   Epetra_Map Map(NumGlobalElements, 0LL, Comm);
-  
+
   // Get update list and number of local equations from newly created Map.
 
   int NumMyElements = Map.NumMyElements();
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
     Map.MyGlobalElements(&MyGlobalElements[0]);
 
   // Create an integer vector NumNz that is used to build the Petra Matrix.
-  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation 
+  // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation
   // on this processor
 
     std::vector<int> NumNz(NumMyElements);
@@ -141,7 +141,7 @@ int main(int argc, char *argv[])
   // Create a Epetra_Matrix
 
   Epetra_CrsMatrix A(Copy, Map, &NumNz[0]);
-  
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -152,7 +152,7 @@ int main(int argc, char *argv[])
   std::vector<long long> Indices(2);
   double two = 2.0;
   int NumEntries;
-  
+
   for (i=0; i<NumMyElements; i++)
     {
     if (MyGlobalElements[i]==0)
@@ -177,7 +177,7 @@ int main(int argc, char *argv[])
      ierr = A.InsertGlobalValues(MyGlobalElements[i], 1, &two, &MyGlobalElements[i]);
      assert(ierr==0);
     }
-   
+
   // Finish up
   ierr = A.FillComplete();
   assert(ierr==0);
@@ -199,11 +199,11 @@ int main(int argc, char *argv[])
   double total_flops =counter.Flops();
   double MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) 
+  if (verbose)
     std::cout << "\n\nTotal MFLOPs for first solve = " << MFLOPs << std::endl<< std::endl;
 
   // Increase diagonal dominance
-  if (verbose) 
+  if (verbose)
     std::cout << "\nIncreasing magnitude of first diagonal term, solving again\n\n"
 		    << std::endl;
 
@@ -216,7 +216,7 @@ int main(int argc, char *argv[])
 
     A.ReplaceGlobalValues(0, numvals, &Rowvals[0], &Rowinds[0]);
   }
- 
+
   // Iterate (again)
   lambda = 0.0;
   timer.ResetStartTime();
@@ -226,7 +226,7 @@ int main(int argc, char *argv[])
   total_flops = counter.Flops();
   MFLOPs = total_flops/elapsed_time/1000000.0;
 
-  if (verbose) 
+  if (verbose)
     std::cout << "\n\nTotal MFLOPs for second solve = " << MFLOPs << std::endl<< std::endl;
 
 
@@ -240,8 +240,8 @@ int main(int argc, char *argv[])
 return ierr ;
 }
 
-int power_method(Epetra_CrsMatrix& A, double &lambda, int niters, 
-		 double tolerance, bool verbose) {  
+int power_method(Epetra_CrsMatrix& A, double &lambda, int niters,
+		 double tolerance, bool verbose) {
 
   Epetra_Vector q(A.RowMap());
   Epetra_Vector z(A.RowMap());
@@ -272,10 +272,10 @@ int power_method(Epetra_CrsMatrix& A, double &lambda, int niters,
 	{
 	  resid.Update(1.0, z, -lambda, q, 0.0); // Compute A*q - lambda*q
 	  resid.Norm2(&residual);
-	  if (verbose) std::cout << "Iter = " << iter << "  Lambda = " << lambda 
-			    << "  Residual of A*q - lambda*q = " 
+	  if (verbose) std::cout << "Iter = " << iter << "  Lambda = " << lambda
+			    << "  Residual of A*q - lambda*q = "
 			    << residual << std::endl;
-	} 
+	}
       if (residual < tolerance) {
 	ierr = 0;
 	break;

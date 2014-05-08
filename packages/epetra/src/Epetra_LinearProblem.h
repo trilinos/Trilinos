@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -51,8 +51,8 @@ enum ProblemDifficultyLevel {easy, moderate, hard, unsure};
 #endif
 
 //! Epetra_LinearProblem:  The Epetra Linear Problem Class.
-/*! The Epetra_LinearProblem class is a wrapper that encapsulates the 
-  general information needed for solving a linear system of equations.  
+/*! The Epetra_LinearProblem class is a wrapper that encapsulates the
+  general information needed for solving a linear system of equations.
   Currently it accepts a Epetra matrix, initial guess and RHS and
   returns the solution.
   the elapsed time for each calling processor.
@@ -60,10 +60,10 @@ enum ProblemDifficultyLevel {easy, moderate, hard, unsure};
 
 
 class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
-    
+
   public:
     //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //!  Epetra_LinearProblem Default Constructor.
   /*! Creates an empty Epetra_LinearProblem instance. The operator A, left-hand-side X
       and right-hand-side B must be set use the SetOperator(), SetLHS() and SetRHS()
@@ -72,13 +72,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
   Epetra_LinearProblem(void);
 
   //!  Epetra_LinearProblem Constructor to pass in an operator as a matrix.
-  /*! Creates a Epetra_LinearProblem instance where the operator is passed in as a matrix. 
+  /*! Creates a Epetra_LinearProblem instance where the operator is passed in as a matrix.
   */
   Epetra_LinearProblem(Epetra_RowMatrix * A, Epetra_MultiVector * X,
 			 Epetra_MultiVector * B);
 
   //!  Epetra_LinearProblem Constructor to pass in a basic Epetra_Operator.
-  /*! Creates a Epetra_LinearProblem instance for the case where an operator is not necessarily a matrix. 
+  /*! Creates a Epetra_LinearProblem instance for the case where an operator is not necessarily a matrix.
   */
   Epetra_LinearProblem(Epetra_Operator * A, Epetra_MultiVector * X,
                        Epetra_MultiVector * B);
@@ -88,24 +88,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
   Epetra_LinearProblem(const Epetra_LinearProblem& Problem);
 
   //! Epetra_LinearProblem Destructor.
-  /*! Completely deletes a Epetra_LinearProblem object.  
+  /*! Completely deletes a Epetra_LinearProblem object.
   */
   virtual ~Epetra_LinearProblem(void);
   //@}
-  
+
   //! @name Integrity check method
-  //@{ 
+  //@{
 
   //! Check input parameters for existence and size consistency.
-  /*! Returns 0 if all input parameters are valid.  Returns +1 if operator is not a matrix. 
+  /*! Returns 0 if all input parameters are valid.  Returns +1 if operator is not a matrix.
       This is not necessarily an error, but no scaling can be done if the user passes in an
-      Epetra_Operator that is not an Epetra_Matrix 
+      Epetra_Operator that is not an Epetra_Matrix
   */
   int CheckInput() const;
   //@}
-  
+
   //! @name Set methods
-  //@{ 
+  //@{
 
   void AssertSymmetric(){OperatorSymmetric_ = true;};
 #ifdef DOXYGEN_SHOULD_SKIP_THIS
@@ -140,26 +140,26 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
   */
   void SetRHS(Epetra_MultiVector * B) {B_ = B;}
   //@}
-  
+
   //! @name Computational methods
-  //@{ 
+  //@{
   //! Perform left scaling of a linear problem.
   /*! Applies the scaling vector D to the left side of the matrix A() and
     to the right hand side B().  Note that the operator must be an Epetra_RowMatrix,
       not just an Epetra_Operator (the base class of Epetra_RowMatrix).
     \param In
-           D - Vector containing scaling values.  D[i] will be applied 
+           D - Vector containing scaling values.  D[i] will be applied
                to the ith row of A() and B().
     \return Integer error code, set to 0 if successful. Return -1 if operator is not a matrix.
   */
   int LeftScale(const Epetra_Vector & D);
 
-  //! Perform right scaling of a linear problem. 
+  //! Perform right scaling of a linear problem.
   /*! Applies the scaling vector D to the right side of the matrix A().
       Apply the inverse of D to the initial guess.  Note that the operator must be an Epetra_RowMatrix,
       not just an Epetra_Operator (the base class of Epetra_RowMatrix).
     \param In
-           D - Vector containing scaling values.  D[i] will be applied 
+           D - Vector containing scaling values.  D[i] will be applied
                to the ith row of A().  1/D[i] will be applied to the
                ith row of B().
     \return Integer error code, set to 0 if successful. Return -1 if operator is not a matrix.
@@ -168,7 +168,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LinearProblem {
   //@}
 
   //! @name Accessor methods
-  //@{ 
+  //@{
   //! Get a pointer to the operator A.
   Epetra_Operator * GetOperator() const {return(Operator_);};
   //! Get a pointer to the matrix A.

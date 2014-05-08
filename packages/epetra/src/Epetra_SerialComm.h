@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -59,10 +59,10 @@ class Epetra_Distributor;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virtual Epetra_Comm {
-    
+
   public:
     //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_SerialComm Serial Constructor.
   /*! Builds an instance of a serial communicator.  Even
@@ -84,7 +84,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
 	};
 
   //! Epetra_SerialComm Destructor.
-  /*! Completely deletes a Epetra_SerialComm object.  
+  /*! Completely deletes a Epetra_SerialComm object.
     \warning Note:  All objects that depend
     on a Epetra_SerialComm instance should be destroyed prior to calling this
     function.
@@ -93,7 +93,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Barrier Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm Barrier function.
   /*! A no-op for a serial communicator.
   */
@@ -101,7 +101,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Broadcast Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm Broadcast function.
   /*! A no-op for a serial communicator.
     \param MyVals InOut
@@ -174,7 +174,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Gather Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm All Gather function.
   /*! A copy for a serial communicator.
     \param MyVals In
@@ -225,7 +225,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Sum Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm Global Sum function.
   /*! A copy for a serial communicator.
     \param PartialSums In
@@ -277,7 +277,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Max/Min Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm Global Max function.
   /*! A copy for a serial communicator.
     \param PartialMaxs In
@@ -376,7 +376,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Parallel Prefix Methods
-  //@{ 
+  //@{
   //! Epetra_SerialComm Scan Sum function.
   /*! A copy for a serial communicator.
     \param MyVals In
@@ -423,21 +423,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Attribute Accessor Methods
-  //@{ 
-  
-  //! Return my process ID. 
+  //@{
+
+  //! Return my process ID.
   /*! In MPI mode returns the rank of the calling process.  In serial mode
     returns 0.
   */
   int MyPID() const {return(SerialCommData_->MyPID_);};
-  
-  //! Returns total number of processes (always returns 1 for SerialComm). 
+
+  //! Returns total number of processes (always returns 1 for SerialComm).
   int NumProc() const {return(SerialCommData_->NumProc_);};
 
   //@}
 
   //! @name Gather/Scatter and Directory Constructors
-  //@{ 
+  //@{
   //! Create a distributor object.
   Epetra_Distributor * CreateDistributor() const;
   //! Create a directory object for the given Epetra_BlockMap.
@@ -445,24 +445,24 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   //! Print method that implements Epetra_Object virtual Print method
   inline void Print(std::ostream & os) const {
 #ifdef EPETRA_HAVE_OMP
-#pragma omp parallel 
+#pragma omp parallel
 {
   int numThreads = omp_get_num_threads();
   int threadNum = omp_get_thread_num();
 #pragma omp single
                os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors.";
 #pragma omp critical
-                os << "\n   Thread " << threadNum << " of " << numThreads << " total threads."; 
+                os << "\n   Thread " << threadNum << " of " << numThreads << " total threads.";
 }
 #else
-		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors."; 
+		os << "::Processor "<< MyPID()<<" of " << NumProc() << " total processors.";
 #endif
 
-		return; 
+		return;
 	}
   //! Print method that implements Epetra_Comm virtual PrintInfo method
   void PrintInfo(std::ostream & os) const {
@@ -472,13 +472,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
   //@}
 
   //! @name Expert Users and Developers Only
-  //@{ 
+  //@{
 
 	//! Returns the reference count of SerialCommData.
 	/*! (Intended for testing purposes.) */
 	int ReferenceCount() const;
 
-	//! Returns a pointer to the SerialCommData instance this SerialComm uses. 
+	//! Returns a pointer to the SerialCommData instance this SerialComm uses.
 	/*! (Intended for developer use only for testing purposes.) */
 	const Epetra_SerialCommData * DataPtr() const {return(SerialCommData_);};
 
@@ -491,6 +491,6 @@ class EPETRA_LIB_DLL_EXPORT Epetra_SerialComm: public Epetra_Object, public virt
 
 	void CleanupData();
 	Epetra_SerialCommData * SerialCommData_;
-  
+
 };
 #endif /* EPETRA_SERIALCOMM_H */
