@@ -61,6 +61,7 @@
 #include <TestTile.hpp>
 #include <TestCrsArray.hpp>
 #include <TestReduce.hpp>
+#include <TestScan.hpp>
 #include <TestAggregate.hpp>
 #include <TestCompilerMacros.hpp>
 #include <TestCXX11.hpp>
@@ -109,6 +110,13 @@ TEST_F( serial, double_reduce_dynamic ) {
 TEST_F( serial, long_reduce_dynamic_view ) {
   TestReduceDynamicView< long ,   Kokkos::Serial >( 1000000 );
 }
+
+TEST_F( serial , scan )
+{
+  TestScan< Kokkos::Serial >( 10 );
+  TestScan< Kokkos::Serial >( 10000 );
+}
+
 
 TEST_F( serial , view_remap )
 {

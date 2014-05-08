@@ -43,41 +43,6 @@
 #include <Kokkos_Parallel.hpp>
 namespace TestCXX11 {
 
-#if defined (KOKKOS_HAVE_CXX11)
-template<class DeviceType>
-double AddTestLambda() {
-  Kokkos::View<double**,DeviceType> a("A",100,5);
-  Kokkos::View<double**,DeviceType> b("B",100,5);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_a = Kokkos::create_mirror_view(a);
-  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
-     h_b = Kokkos::create_mirror_view(b);
-
-  for(int i=0;i<100;i++) {
-    for(int j=0;j<5;j++)
-       h_a(i,j) = 0.1*i/(1.1*j+1.0) + 0.5*j;
-  }
-  Kokkos::deep_copy(a,h_a);
-
-  Kokkos::parallel_for(100,[=](const int& i)  {
-    b(i,0) = a(i,1) + a(i,2);
-    b(i,1) = a(i,0) - a(i,3);
-    b(i,2) = a(i,4) + a(i,0);
-    b(i,3) = a(i,2) - a(i,1);
-    b(i,4) = a(i,3) + a(i,4);
-  });
-  Kokkos::deep_copy(h_b,b);
-
-  double result = 0;
-  for(int i=0;i<100;i++) {
-      for(int j=0;j<5;j++)
-         result += h_b(i,j);
-    }
-
-  return result;
-}
-#endif
-
 template<class DeviceType>
 struct FunctorAddTest{
   typedef Kokkos::View<double**,DeviceType> view_type;
@@ -127,6 +92,47 @@ double TestVariantFunctor(int test) {
   }
   return 0;
 }
+
+#if defined (KOKKOS_HAVE_CXX11)
+template<class DeviceType>
+double AddTestLambda() {
+  Kokkos::View<double**,DeviceType> a("A",100,5);
+  Kokkos::View<double**,DeviceType> b("B",100,5);
+  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
+     h_a = Kokkos::create_mirror_view(a);
+  Kokkos::View<double**,typename DeviceType::host_mirror_device_type>
+     h_b = Kokkos::create_mirror_view(b);
+
+  for(int i=0;i<100;i++) {
+    for(int j=0;j<5;j++)
+       h_a(i,j) = 0.1*i/(1.1*j+1.0) + 0.5*j;
+  }
+  Kokkos::deep_copy(a,h_a);
+
+  Kokkos::parallel_for(100,[=](const int& i)  {
+    b(i,0) = a(i,1) + a(i,2);
+    b(i,1) = a(i,0) - a(i,3);
+    b(i,2) = a(i,4) + a(i,0);
+    b(i,3) = a(i,2) - a(i,1);
+    b(i,4) = a(i,3) + a(i,4);
+  });
+  Kokkos::deep_copy(h_b,b);
+
+  double result = 0;
+  for(int i=0;i<100;i++) {
+      for(int j=0;j<5;j++)
+         result += h_b(i,j);
+    }
+
+  return result;
+}
+#else
+template<class DeviceType>
+double AddTestLambda() {
+  return AddTestFunctor<DeviceType>();
+}
+#endif
+
 
 template<class DeviceType>
 double TestVariantLambda(int test) {

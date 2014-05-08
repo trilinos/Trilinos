@@ -206,6 +206,28 @@ public:
   void wait() {}
 };
 
+template< class FunctorType , class WorkSpec >
+class ParallelScan< FunctorType , WorkSpec , Kokkos::Serial >
+{
+public:
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  inline
+  ParallelScan( const FunctorType & functor , const size_t work_count )
+  {
+    pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+    functor.init( Reduce::reference( result ) );
+
+    for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
+      functor( iwork , Reduce::reference( result ) , true );
+    }
+  }
+
+  void wait() {}
+};
+
 //----------------------------------------------------------------------------
 
 } // namespace Impl
