@@ -41,8 +41,10 @@
 //@HEADER
 */
 
-/// \file Kokkos_Serial.hpp
+/// \file Kokkos_Vectorization.hpp
 /// \brief Declaration and definition of Kokkos::Vectorization interface.
+#ifndef KOKKOS_VECTORIZATION_HPP
+#define KOKKOS_VECTORIZATION_HPP
 
 #include <Kokkos_Macros.hpp>
 
@@ -81,3 +83,4 @@ struct Vectorization {
 #include <Cuda/Kokkos_Cuda_Vectorization.hpp>
 #endif
 
+#endif
