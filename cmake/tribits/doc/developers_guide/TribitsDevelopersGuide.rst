@@ -6632,8 +6632,7 @@ executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
 
-.. ToDo: Edited and spell-checked up through TRIBITS_ADD_LIBRARY() on
-.. 05/02/2014!
+.. ToDo: Edited and spell-checked up through TRIBITS_ADD_TEST() on 05/09/2014!
 
 
 General Utility Macros and Functions

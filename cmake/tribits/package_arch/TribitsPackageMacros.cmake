@@ -403,10 +403,11 @@ ENDMACRO()
 #
 #   TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 #
-# This option is given the
-# default``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then
-# looked for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated
-# warnings to deprecated parts of a package.
+# This macro should be called in the package's <packageDir>/CMakeLists.txt`_
+# file.  This option is given the default value
+# ``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then looked
+# for in `TRIBITS_CONFIGURE_FILE()`_ to add macros to add deprecated warnings
+# to deprecated parts of a package.
 #
 MACRO(TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION)
   ADVANCED_SET(

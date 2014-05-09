@@ -8057,14 +8057,16 @@ package.</p>
 <pre class="literal-block">
 TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()
 </pre>
-<p>This option is given the
-default``${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}``.  This option is then
-looked for in <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a> to add macros to add deprecated
-warnings to deprecated parts of a package.</p>
+<p>This macro should be called in the package's &lt;packageDir&gt;/CMakeLists.txt`_
+file.  This option is given the default value
+<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_SHOW_DEPRECATED_WARNINGS}</span></tt>.  This option is then looked
+for in <a class="reference internal" href="#tribits-configure-file">TRIBITS_CONFIGURE_FILE()</a> to add macros to add deprecated warnings
+to deprecated parts of a package.</p>
 </div>
 <div class="section" id="tribits-add-test">
 <h3><a class="toc-backref" href="#id108">TRIBITS_ADD_TEST()</a></h3>
-<p>Add a test or a set of tests for a single executable or command.</p>
+<p>Add a test or a set of tests for a single executable or command using CTest
+<tt class="docutils literal">ADD_TEST()</tt>.</p>
 <p>Usage:</p>
 <pre class="literal-block">
 TRIBITS_ADD_TEST(
@@ -8105,51 +8107,56 @@ TRIBITS_ADD_TEST(
 <blockquote>
 <p><tt class="docutils literal">&lt;exeRootName&gt;</tt></p>
 <blockquote>
-The name of the exectuble or path to the exectuable to run for the test
+The name of the executable or path to the executable to run for the test
 (see <a class="reference internal" href="#determining-the-executable-or-command-to-run-tribits-add-test">Determining the Executable or Command to Run
 (TRIBITS_ADD_TEST())</a>).  This name is also the default root name for
 the test (see <a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name (TRIBITS_ADD_TEST())</a>).</blockquote>
 <p><tt class="docutils literal">NOEXEPREFIX</tt></p>
 <blockquote>
-If specified, then the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> is not assumed to be
-prepended to <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</blockquote>
+If specified, then the prefix <tt class="docutils literal">${PACKAGE_NAME}_</tt> is assumed <strong>not</strong> to
+be prepended to <tt class="docutils literal">&lt;exeRootName&gt;</tt> (see <a class="reference internal" href="#determining-the-executable-or-command-to-run-tribits-add-test">Determining the Executable or
+Command to Run (TRIBITS_ADD_TEST())</a>).</blockquote>
 <p><tt class="docutils literal">NOEXESUFFIX</tt></p>
 <blockquote>
 If specified, then the postfix
-<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is not assumed to be
-post-pended to <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</blockquote>
+<tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}</span></tt> is assumed <strong>not</strong> to be
+post-pended to <tt class="docutils literal">&lt;exeRootName&gt;</tt> (see <a class="reference internal" href="#determining-the-executable-or-command-to-run-tribits-add-test">Determining the Executable or
+Command to Run (TRIBITS_ADD_TEST())</a>).</blockquote>
 <p><tt class="docutils literal">NAME &lt;testRootName&gt;</tt></p>
 <blockquote>
-If specified, gives the root name of the test.
-If not specified, then <tt class="docutils literal">&lt;testRootName&gt;</tt> is taken to be
-<tt class="docutils literal">&lt;exeRootName&gt;</tt>.  The actual test name will always prefixed as
-<tt class="docutils literal">${PACKAGE_NAME}_&lt;testRootName&gt;</tt> passed into the call to the built-in
-CMake command <tt class="docutils literal"><span class="pre">ADD_TEST(...)</span></tt>.  The main purpose of this argument is to
-allow multiple tests to be defined for the same executable.  CTest
-requires all test names to be globally unique in a single project.</blockquote>
+If specified, gives the root name of the test.  If not specified, then
+<tt class="docutils literal">&lt;testRootName&gt;</tt> is taken to be <tt class="docutils literal">&lt;exeRootName&gt;</tt>.  The actual test
+name passed to <tt class="docutils literal">ADD_TEST()</tt> will always be prefixed as
+<tt class="docutils literal">${PACKAGE_NAME}_&lt;testRootName&gt;</tt>.  The main purpose of this argument
+is to allow multiple tests to be defined for the same executable.  CTest
+requires all test names to be globally unique in a single project.  See
+<a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name (TRIBITS_ADD_TEST())</a>.</blockquote>
 <p><tt class="docutils literal">NAME_POSTFIX &lt;testNamePostfix&gt;</tt></p>
 <blockquote>
 If specified, gives a postfix that will be added to the standard test
 name based on <tt class="docutils literal">&lt;exeRootName&gt;</tt> (appended as <tt class="docutils literal">_&lt;NAME_POSTFIX&gt;</tt>).  If
-the <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> argument is given, this argument is ignored.</blockquote>
+the <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> argument is given, this argument is ignored.
+See <a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name (TRIBITS_ADD_TEST())</a>.</blockquote>
 <p><tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt></p>
 <blockquote>
 If specified, then the executable is assumed to be in the directory
-given by by <tt class="docutils literal">&lt;dir&gt;</tt>.  The directory <tt class="docutils literal">&lt;dir&gt;</tt> can either be a relative
-or absolute path.  If not specified, the executable is assumed to be in
-the current bindary directory.</blockquote>
+given by <tt class="docutils literal">&lt;dir&gt;</tt>.  The directory <tt class="docutils literal">&lt;dir&gt;</tt> can either be a relative or
+absolute path.  If not specified, the executable is assumed to be in the
+current binary directory <tt class="docutils literal">${CMAKE_CURRENT_BINARY_DIR}</tt>.  See
+<a class="reference internal" href="#determining-the-executable-or-command-to-run-tribits-add-test">Determining the Executable or Command to Run (TRIBITS_ADD_TEST())</a>.</blockquote>
 <p><tt class="docutils literal">ADD_DIR_TO_NAME</tt></p>
 <blockquote>
 If specified, then the directory name that this test resides in will be
 added into the name of the test after the package name is added and
-before the root test name (see below).  The directory will have the
-package's base directory stripped off so only the unique part of the
-test directory will be used.  All directory seperators will be changed
-into underscores.</blockquote>
+before the root test name (see <a class="reference internal" href="#determining-the-full-test-name-tribits-add-test">Determining the Full Test Name
+(TRIBITS_ADD_TEST())</a>).  The directory name will have the package's
+base directory stripped off so only the unique part of the test
+directory will be used.  All directory separators <tt class="docutils literal">&quot;/&quot;</tt> will be
+changed into underscores <tt class="docutils literal">&quot;_&quot;</tt>.</blockquote>
 <p><tt class="docutils literal">RUN_SERIAL</tt></p>
 <blockquote>
 If specified then no other tests will be allowed to run while this test
-is running. This is useful for devices(like cuda cards) that require
+is running. This is useful for devices (like CUDA GPUs) that require
 exclusive access for processes/threads.  This just sets the CTest test
 property <tt class="docutils literal">RUN_SERIAL</tt> using the built-in CMake function
 <tt class="docutils literal">SET_TESTS_PROPERTIES()</tt>.</blockquote>
@@ -8160,8 +8167,8 @@ multiple groups of arguments are passed in different quoted clusters of
 arguments then a different test will be added for each set of arguments.
 In this way, many different tests can be added for a single executable
 in a single call to this function.  Each of these separate tests will be
-named <tt class="docutils literal">${TEST_NAME}_xy</tt> where <tt class="docutils literal">xy</tt> = <tt class="docutils literal">00</tt>, <tt class="docutils literal">01</tt>, <tt class="docutils literal">02</tt>, and so
-on.  <strong>WARNING:</strong> When defining multiple tests it is prefered to use the
+named <tt class="docutils literal">&lt;fullTestName&gt;_xy</tt> where <tt class="docutils literal">xy</tt> = <tt class="docutils literal">00</tt>, <tt class="docutils literal">01</tt>, <tt class="docutils literal">02</tt>, and so
+on.  <strong>WARNING:</strong> When defining multiple tests it is preferred to use the
 <tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> form instead.  <strong>WARNING:</strong> Multiple
 arguments passed to a single test invocation must be quoted or multiple
 tests taking single arguments will be created instead!  See <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding
@@ -8180,174 +8187,191 @@ POSTIFX_AND_ARGS_2 postfix2  --arg2=&quot;bags&quot;
 <p>This will create three different test cases with the postfix names
 <tt class="docutils literal">postfix0</tt>, <tt class="docutils literal">postfix1</tt>, and <tt class="docutils literal">postfix2</tt>.  The indexes must be
 consecutive starting a <tt class="docutils literal">0</tt> and going up to (currently) <tt class="docutils literal">19</tt>.  The
-main advantages of using these arguments instead of just 'ARGS' are that
-you can give meaningful name to each test case and you can specify
-multiple arguments without having to quote them and you can allow long
-argument lists to span multiple lines.  See <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding Multiple Tests
-(TRIBITS_ADD_TEST())</a> for more details and exmaples.</p>
+main advantages of using these arguments instead of just <tt class="docutils literal">ARGS</tt> are
+that one can give a meaningful name to each test case and one can
+specify multiple arguments without having to quote them and one can
+allow long argument lists to span multiple lines.  See <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding Multiple
+Tests (TRIBITS_ADD_TEST())</a> for more details and exmaples.</p>
 </blockquote>
 <p><tt class="docutils literal">COMM [serial] [mpi]</tt></p>
 <blockquote>
-If specified, selects if the test will be added in serial and/or MPI
+If specified, determines if the test will be added in serial and/or MPI
 mode.  If the <tt class="docutils literal">COMM</tt> argument is missing, the test will be added in
-both serial and MPI builds of the code.</blockquote>
+both serial and MPI builds of the code.  That is if <tt class="docutils literal">COMM mpi</tt> is
+passed in, then the test will <strong>not</strong> be added if
+<tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>.  Likewise, if <tt class="docutils literal">COMM serial</tt> is passed in, then
+the test will <strong>not</strong> be added if <tt class="docutils literal">TPL_ENABLE_MPI=ON</tt>.  If <tt class="docutils literal">COMM
+serial mpi</tt> or <tt class="docutils literal">COMM mpi serial</tt> is passed in, then the value of
+<tt class="docutils literal">TPL_ENABLE_MPI</tt> does not determine if the test is added or not.</blockquote>
 <p><tt class="docutils literal">NUM_MPI_PROCS &lt;numProcs&gt;</tt></p>
 <blockquote>
-If specified, gives the number of processes that the test will be
-defined to run.  If <tt class="docutils literal">&lt;numProcs&gt;</tt> is greater than
-<tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt> then the test will be excluded.  If not
-specified, then the default number of processes for an MPI build will be
-<tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.  For serial builds, this argument is
+If specified, gives the number of MPI processes used to run the test
+with the MPI exec program <tt class="docutils literal">${MPI_EXEC}</tt>.  If <tt class="docutils literal">&lt;numProcs&gt;</tt> is greater
+than <tt class="docutils literal">${MPI_EXEC_MAX_NUMPROCS}</tt> then the test will be excluded.  If
+not specified, then the default number of processes for an MPI build
+(i.e. <tt class="docutils literal">TPL_ENABLE_MPI=ON</tt>) will be <tt class="docutils literal">${MPI_EXEC_DEFAULT_NUMPROCS}</tt>.
+For serial builds (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>), this argument is
 ignored.</blockquote>
+<p><tt class="docutils literal">CATEGORIES &lt;category0&gt; &lt;category1&gt; ...</tt></p>
+<blockquote>
+If specified, gives the specific categories of the test.  Valid test
+categories include <tt class="docutils literal">BASIC</tt>, <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, <tt class="docutils literal">WEEKLY</tt>
+and <tt class="docutils literal">PERFORMANCE</tt>.  If not specified, the default category is
+<tt class="docutils literal">BASIC</tt>.  When the test category does not match
+<tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt>, then the test is <strong>not</strong> added.
+When <tt class="docutils literal">CATEGORIES</tt> contains <tt class="docutils literal">BASIC</tt> it will match
+<tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> equal to <tt class="docutils literal">CONTINUOUS</tt>,
+<tt class="docutils literal">NIGHTLY</tt>, and <tt class="docutils literal">WEEKLY</tt>.  When <tt class="docutils literal">CATEGORIES</tt> contains
+<tt class="docutils literal">CONTINUOUS</tt> it will match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> equal
+to <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, and <tt class="docutils literal">WEEKLY</tt>.  When <tt class="docutils literal">CATEGORIES</tt>
+contains <tt class="docutils literal">NIGHTLY</tt> it will match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt>
+equal to <tt class="docutils literal">NIGHTLY</tt> and <tt class="docutils literal">WEEKLY</tt>.  When <tt class="docutils literal">CATEGORIES</tt> contains
+<tt class="docutils literal">PERFORMANCE</tt> it will match
+<tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE</tt> only.</blockquote>
 <p><tt class="docutils literal">HOST &lt;host0&gt; &lt;host1&gt; ...</tt></p>
 <blockquote>
 If specified, gives a list of hostnames where the test will be included.
 The current hostname is determined by the built-in CMake command
 <tt class="docutils literal"><span class="pre">SITE_NAME(${PROJECT_NAME}_HOSTNAME)</span></tt>.  On Linux/Unix systems, this is
-typically the value returned by 'uname -n'.  If this list is given, the
-value of <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_HOSTNAME}</span></tt> must equal one of the listed
-host names <tt class="docutils literal">&lt;hosti&gt;</tt> or test will not be added.  The value of
-<tt class="docutils literal">${PROJECT_NAME}_HOSTNAME</tt> gets printed out in the TriBITS cmake
-output under the section <tt class="docutils literal">Probing the environment</tt>.</blockquote>
+typically the value returned by <tt class="docutils literal">uname <span class="pre">-n</span></tt>.  If this list is given,
+the value of <tt class="docutils literal"><span class="pre">${${PROJECT_NAME}_HOSTNAME}</span></tt> must equal one of the
+listed host names <tt class="docutils literal">&lt;hosti&gt;</tt> or test will <strong>not</strong> be added.  The value
+of <tt class="docutils literal">${PROJECT_NAME}_HOSTNAME</tt> gets printed out in the TriBITS cmake
+output under the section <tt class="docutils literal">Probing the environment</tt> (see <a class="reference internal" href="#full-processing-of-tribits-project-files">Full
+Processing of TriBITS Project Files</a>).</blockquote>
 <p><tt class="docutils literal">XHOST &lt;host0&gt; &lt;host1&gt; ...</tt></p>
 <blockquote>
-If specified, gives a list of hostnames (see <tt class="docutils literal">HOST</tt> argument) where
-the test will <em>not</em> be added.  This check is performed after the check
+If specified, gives a list of hostnames (see <tt class="docutils literal">HOST</tt> argument) on which
+the test will <strong>not</strong> be added.  This check is performed after the check
 for the hostnames in the <tt class="docutils literal">HOST</tt> list if it should exist.  Therefore,
-this list exclusion list overrides the 'HOST' inclusion list.</blockquote>
-<p><tt class="docutils literal">CATEGORIES &lt;category0&gt; &lt;category1&gt; ...</tt></p>
-<blockquote>
-If specified, gives the specific categories of the test.  Valid test
-categories include <tt class="docutils literal">BASIC</tt>, <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, <tt class="docutils literal">WEEKLY</tt>
-and <tt class="docutils literal">PERFORMANCE</tt>.  By default, the category is <tt class="docutils literal">BASIC</tt>.  When the
-test category does not match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt>, then
-the test is not added.  When the <tt class="docutils literal">CATEGORIES</tt> is <tt class="docutils literal">BASIC</tt> it will
-match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> eqaual to <tt class="docutils literal">CONTINUOUS</tt>,
-<tt class="docutils literal">NIGHTLY</tt>, and <tt class="docutils literal">WEEKLY</tt>.  When the <tt class="docutils literal">CATEGORIES</tt> contains
-<tt class="docutils literal">CONTINUOUS</tt> it will match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> equal
-to <tt class="docutils literal">CONTINUOUS</tt>, <tt class="docutils literal">NIGHTLY</tt>, and <tt class="docutils literal">WEEKLY</tt>.  When the <tt class="docutils literal">CATEGORIES</tt>
-is <tt class="docutils literal">NIGHTLY</tt> it will match <tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES</tt> equal
-to <tt class="docutils literal">NIGHTLY</tt> and <tt class="docutils literal">WEEKLY</tt>.  When the <tt class="docutils literal">CATEGORIES</tt> is
-<tt class="docutils literal">PERFORMANCE</tt> it will match
-<tt class="docutils literal">${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE</tt> only.</blockquote>
+this exclusion list overrides the <tt class="docutils literal">HOST</tt> inclusion list.</blockquote>
 <p><tt class="docutils literal">HOSTTYPE &lt;hosttype0&gt; &lt;hosttype1&gt; ...</tt></p>
 <blockquote>
-If specified, gives the names of the host system type (given by
-<tt class="docutils literal">CMAKE_HOST_SYSTEM_NAME</tt> which is printed in the TriBITS cmake
-confgiure output in the section <tt class="docutils literal">Probing the environment</tt>) to include
-the test.  Typical host system type names include <tt class="docutils literal">Linux</tt>,
-<tt class="docutils literal">Darwain</tt>, <tt class="docutils literal">Windows</tt>, etc.</blockquote>
+If specified, gives the names of the host system type (given by the
+built-in CMake cache variable <tt class="docutils literal">CMAKE_HOST_SYSTEM_NAME</tt> which is
+printed in the TriBITS cmake configure output in the section <tt class="docutils literal">Probing
+the environment</tt>) for which the test is allowed to be added.  If
+<tt class="docutils literal">HOSTTYPE</tt> is specified and <tt class="docutils literal">CMAKE_HOST_SYSTEM_NAME</tt> is not equal to
+one of the values of <tt class="docutils literal">&lt;hosttypei&gt;</tt>, then the test will <strong>not</strong> be
+added.  Typical host system type names include <tt class="docutils literal">Linux</tt>, <tt class="docutils literal">Darwain</tt>,
+<tt class="docutils literal">Windows</tt>, etc.</blockquote>
 <p><tt class="docutils literal">XHOSTTYPE &lt;hosttype0&gt; &lt;hosttype1&gt; ...</tt></p>
 <blockquote>
-If specified, gives the names of the host system type to <em>not</em> include
-the test.  This check is performed after the check for the host system
-names in the <tt class="docutils literal">HOSTTYPE</tt> list if it should exist.  Therefore, this list
-exclusion list overrides the <tt class="docutils literal">HOSTTYPE</tt> inclusion list.</blockquote>
+If specified, gives the names of the host system type (see the
+<tt class="docutils literal">HOSTTYPE</tt> argument above) for which <strong>not</strong> to include the test on.
+This check is performed after the check for the host system names in the
+<tt class="docutils literal">HOSTTYPE</tt> list if it should exist.  Therefore, this exclusion list
+overrides the <tt class="docutils literal">HOSTTYPE</tt> inclusion list.</blockquote>
 <p><tt class="docutils literal">STANDARD_PASS_OUTPUT</tt></p>
 <blockquote>
-If specified, then the standard test output <tt class="docutils literal">End Result: TEST PASSED</tt>
-is greped for to determine success.  This is needed for MPI tests on
-some platforms since the return value is unreliable.  This is set using
-the built-in ctest property <tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt>.</blockquote>
+If specified, then the standard test output string <tt class="docutils literal">End Result: TEST
+PASSED</tt> is grepped in the test stdout for to determine success.  This
+is needed for MPI tests on some platforms since the return value from
+MPI executables is unreliable.  This is set using the built-in CTest
+property <tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt>.</blockquote>
 <p><tt class="docutils literal">PASS_REGULAR_EXPRESSION <span class="pre">&quot;&lt;regex0&gt;;&lt;regex1&gt;;...&quot;</span></tt></p>
 <blockquote>
-If specified, then a test will be assumed to pass only if one of the
-regular expressions <tt class="docutils literal">&lt;regex0&gt;</tt>, <tt class="docutils literal">&lt;regex1&gt;</tt> etc. match the output.
-Otherwise, the test will fail.  This is set using the built-in test
-property <tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt>.  Consult standard CMake
-documentation.</blockquote>
+If specified, then the test will be assumed to pass only if one of the
+regular expressions <tt class="docutils literal">&lt;regex0&gt;</tt>, <tt class="docutils literal">&lt;regex1&gt;</tt> etc. match the output
+send to stdout.  Otherwise, the test will fail.  This is set using the
+built-in CTest property <tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt>.  Consult standard
+CMake documentation for full behavior.</blockquote>
 <p><tt class="docutils literal">FAIL_REGULAR_EXPRESSION <span class="pre">&quot;&lt;regex0&gt;;&lt;regex1&gt;;...&quot;</span></tt></p>
 <blockquote>
 If specified, then a test will be assumed to fail if one of the regular
-expressions <tt class="docutils literal">&lt;regex0&gt;</tt>, <tt class="docutils literal">&lt;regex1&gt;</tt> etc. match the output.
-Otherwise, the test will pass.  This is set using the built-in test
-property <tt class="docutils literal">FAIL_REGULAR_EXPRESSION</tt>.</blockquote>
+expressions <tt class="docutils literal">&lt;regex0&gt;</tt>, <tt class="docutils literal">&lt;regex1&gt;</tt> etc. match the output send to
+stdout.  Otherwise, the test will pass.  This is set using the built-in
+CTest property <tt class="docutils literal">FAIL_REGULAR_EXPRESSION</tt>.  Consult standard CMake
+documentation for full behavior.</blockquote>
 <p><tt class="docutils literal">WILL_FAIL</tt></p>
 <blockquote>
 If passed in, then the pass/fail criteria will be inverted.  This is set
-using the built-in test property <tt class="docutils literal">WILL_FAIL</tt>.</blockquote>
+using the built-in CTest property <tt class="docutils literal">WILL_FAIL</tt>.  Consult standard CMake
+documentation for full behavior.</blockquote>
 <p><tt class="docutils literal">ENVIRONMENT <span class="pre">&lt;var0&gt;=&lt;value0&gt;</span> <span class="pre">&lt;var1&gt;=&lt;value1&gt;</span> ...</tt></p>
 <blockquote>
-If passed in, the listed environment varaibles will be set before
-calling the test.  This is set using the built-in test property
+If passed in, the listed environment variables will be set before
+calling the test.  This is set using the built-in CTest property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
 <p><tt class="docutils literal">TIMEOUT &lt;maxSeconds&gt;</tt></p>
 <blockquote>
 If passed in, gives maximum number of seconds the test will be allowed
-to run beforebeing timed-out.  This sets the test property <tt class="docutils literal">TIMEOUT</tt>.
-<strong>WARNING:</strong> Rather than just increasing the timeout for an expensive
-test, please try to either make the test run faster or relegate the test
-to being run less often (i.e. set <tt class="docutils literal">CATEGORIES NIGHTLY</tt> or even
-<tt class="docutils literal">WEEKLY</tt> for extremently expensive tests).  Expensive tests are one of
-the worse forms of technical debt that a project can have!</blockquote>
+to run before being timed-out.  This sets the CTest property
+<tt class="docutils literal">TIMEOUT</tt>.  <strong>WARNING:</strong> Rather than just increasing the timeout for
+an expensive test, please try to either make the test run faster or
+relegate the test to being run less often (i.e. set <tt class="docutils literal">CATEGORIES
+NIGHTLY</tt> or even <tt class="docutils literal">WEEKLY</tt> for extremely expensive tests).  Expensive
+tests are one of the worse forms of technical debt that a project can
+have!</blockquote>
 </blockquote>
 <p>In the end, this function just calls the built-in CMake commands
 <tt class="docutils literal"><span class="pre">ADD_TEST(${TEST_NAME}</span> <span class="pre">...)</span></tt> and <tt class="docutils literal"><span class="pre">SET_TESTS_PROPERTIES(${TEST_NAME}</span>
 <span class="pre">...)</span></tt> to set up a executable process for <tt class="docutils literal">ctest</tt> to run, determine
 pass/fail criteria, and set some other test properties.  Therefore, this
-wrapper funtion does not provide any fundamentally new features that are
-already avaiable in the basic usage if CMake/CTest.  However, this wrapper
-function takes care of many of the details and boiler-plate CMake code that
-it takes to add such a test (or tests) and enforces consistency across a
-large project for how tests are defined, run, and named (to avoid test name
-clashes).</p>
+wrapper function does not provide any fundamentally new features that are
+not already available in the basic usage if CMake/CTest.  However, this
+wrapper function takes care of many of the details and boiler-plate CMake
+code that it takes to add such a test (or tests) and enforces consistency
+across a large project for how tests are defined, run, and named (to avoid
+test name clashes).</p>
 <p>If more flexibility or control is needed when defining tests, then the
-function <tt class="docutils literal">TRIBITS_ADD_ADVANCED_TEST()</tt> should be used instead.</p>
+function <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a> should be used instead.</p>
 <p>In the following subsections, more details on how tests are defined and run
 is given.</p>
 <p id="determining-the-executable-or-command-to-run-tribits-add-test"><strong>Determining the Executable or Command to Run (TRIBITS_ADD_TEST())</strong></p>
-<p>This funtion is primarily designed to make it easy to run tests for
-exectaubles built using the function <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>.  To set up
+<p>This function is primarily designed to make it easy to run tests for
+executables built using the function <a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>.  To set up
 tests to run arbitrary executables, see below.</p>
-<p>By default, the command to run for the executable is determined by first
-getting the exectuable name which by default is assumed to be
-<tt class="docutils literal">&lt;fullExeName</tt>&gt; =</p>
+<p>By default, the executable to run is determined by first getting the
+executable name which by default is assumed to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;exeRootName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
+&lt;fullExeName&gt; =
+  ${PACKAGE_NAME}_&lt;exeRootName&gt;${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 </pre>
-<p>which is (by no coincidence) idential to how it is selected in
-<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>.  This name can be alterned by passing in
+<p>which is (by no coincidence) identical to how it is selected in
+<a class="reference internal" href="#tribits-add-executable">TRIBITS_ADD_EXECUTABLE()</a>.  This name can be altered by passing in
 <tt class="docutils literal">NOEXEPREFIX</tt>, <tt class="docutils literal">NOEXESUFFIX</tt>, and <tt class="docutils literal">ADD_DIR_TO_NAME</tt> as described in
 <a class="reference internal" href="#executable-and-target-name-tribits-add-executable">Executable and Target Name (TRIBITS_ADD_EXECUTABLE())</a>.</p>
 <p>By default, this executable is assumed to be in the current CMake binary
 directory <tt class="docutils literal">${CMAKE_CURRENT_BINARY_DIR}</tt> but the directory location can be
 changed using the <tt class="docutils literal">DIRECTORY &lt;dir&gt;</tt> argument.</p>
-<p>If an arbitrary exectuable is to be run for the test, then pass in
-<tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> and set <tt class="docutils literal">&lt;exeRootName&gt;</tt> to the
-relative or absolute path of the exeutable to be run.  If <tt class="docutils literal">&lt;exeRootName&gt;</tt>
-is not an absolute path, then <tt class="docutils literal"><span class="pre">${CMAKE_CURRENT_BINARY_DIR}/&lt;exeRootName&gt;</span></tt>
-is set as the executable to run.</p>
+<p>If an arbitrary executable is to be run (i.e. not build inside of the
+project), then pass in <tt class="docutils literal">NOEXEPREFIX</tt> and <tt class="docutils literal">NOEXESUFFIX</tt> and set
+<tt class="docutils literal">&lt;exeRootName&gt;</tt> to the relative or absolute path of the executable to be
+run.  If <tt class="docutils literal">&lt;exeRootName&gt;</tt> is not an absolute path, then
+<tt class="docutils literal"><span class="pre">${CMAKE_CURRENT_BINARY_DIR}/&lt;exeRootName&gt;</span></tt> is set as the executable to
+run in this case.</p>
 <p>Whatever executable path is specified using this logic, if the executable is
 not found, then when <tt class="docutils literal">ctest</tt> goes to run the test, it will mark it as
 <tt class="docutils literal">NOT RUN</tt>.</p>
 <p id="determining-the-full-test-name-tribits-add-test"><strong>Determining the Full Test Name (TRIBITS_ADD_TEST())</strong></p>
-<p>By default, the base test name is selected to be <tt class="docutils literal">&lt;fullTestName&gt;</tt> =</p>
+<p>By default, the base test name is selected to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;exeRootName&gt;
+&lt;fullTestName&gt; = ${PACKAGE_NAME}_&lt;exeRootName&gt;
 </pre>
 <p>If <tt class="docutils literal">NAME &lt;testRootName&gt;</tt> is passed in, then <tt class="docutils literal">&lt;testRootName&gt;</tt> is used
-instead of <tt class="docutils literal">&lt;exeRootName&gt;</tt>.</p>
+instead of <tt class="docutils literal">&lt;exeRootName&gt;</tt> above.</p>
 <p>If <tt class="docutils literal">NAME_POSTFIX &lt;testNamePostfix&gt;</tt> is passed in, then the base test name
-is selected to be <tt class="docutils literal">&lt;fullTestName</tt> =</p>
+is selected to be:</p>
 <pre class="literal-block">
-${PACKAGE_NAME}_&lt;exeRootName&gt;_&lt;testNamePostfix&gt;
+&lt;fullTestName&gt; = ${PACKAGE_NAME}_&lt;exeRootName&gt;_&lt;testNamePostfix&gt;
 </pre>
-<p>If <tt class="docutils literal">ADD_DIR_TO_NAME</tt> is passed in, then the directory name realtive to the
-package directory name is added to the name as well to help disambiguate the
+<p>If <tt class="docutils literal">ADD_DIR_TO_NAME</tt> is passed in, then the directory name relative to the
+package base directory is added to the name as well to help disambiguate the
 test name (see the above).</p>
-<p>Let the test name determined by this process be <tt class="docutils literal">TEST_NAME</tt>.  If no
-arguments or one set of arguments are passed in through <tt class="docutils literal">ARGS</tt>, then this
-is the test name actaully passed in to <tt class="docutils literal">ADD_TEST()</tt>.  If multiple tests
-are defined, then this name becomes the base test name for each of the
-tests. See below.</p>
+<p>Let the test name determined as described above be <tt class="docutils literal">&lt;fullTestName&gt;</tt>.  If
+no arguments or only a single set of arguments are passed in through
+<tt class="docutils literal">ARGS</tt>, then this is the test name actually passed in to <tt class="docutils literal">ADD_TEST()</tt>.
+If multiple tests are defined, then this name becomes the base test name for
+each of the tests (see <a class="reference internal" href="#adding-multiple-tests-tribits-add-test">Adding Multiple Tests (TRIBITS_ADD_TEST())</a>).</p>
 <p>Finally, for any test that gets defined, if MPI is enabled
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=ON</tt>), then the terminal suffix
-<cite>_MPI_${NUM_MPI_PROCS}</cite> will be added to the end of the test name (even for
-multiple tests).  No such prefix is added for the serial case
+<tt class="docutils literal"><span class="pre">_MPI_${NUM_MPI_PROCS}</span></tt> will be added to the end of the test name (even
+for multiple tests).  No such prefix is added for the serial case
 (i.e. <tt class="docutils literal">TPL_ENABLE_MPI=OFF</tt>).</p>
 <p id="adding-multiple-tests-tribits-add-test"><strong>Adding Multiple Tests  (TRIBITS_ADD_TEST())</strong></p>
-<p>Using this function, one can add exectuable arguments and can even add
-multiple tests in one of two ways.  One can either pass in 1 or more
+<p>Using this function, one can add executable arguments and can even add
+multiple tests in one of two ways.  One can either pass in one or more
 <strong>quoted</strong> clusters of arguments using:</p>
 <pre class="literal-block">
 ARGS &quot;&lt;arg0&gt; &lt;arg1&gt; ...&quot; &quot;&lt;arg2&gt; &lt;arg3&gt; ...&quot; ...
@@ -8363,8 +8387,8 @@ POSTFIX_AND_ARGS_1 &lt;postfix1&gt; &lt;arg2&gt; ...
 ARGS &quot;&lt;arg0&gt; &lt;arg1&gt;&quot;
 </pre>
 <p>may be preferable since it will not add any postfix name to the test.  To
-add more than one test case using <tt class="docutils literal">ARGS</tt>, you use more than one quoted set
-of arugments such as with:</p>
+add more than one test case using <tt class="docutils literal">ARGS</tt>, one will use more than one
+quoted set of arugments such as with:</p>
 <pre class="literal-block">
 ARGS &quot;&lt;arg0&gt; &lt;arg1&gt;&quot; &quot;&lt;arg2&gt; &lt;arg2&gt;&quot;
 </pre>
@@ -8384,37 +8408,37 @@ the individual tests can be given more understandable names.</p>
 arugments <tt class="docutils literal">&lt;arg0&gt;</tt>, <tt class="docutils literal">&lt;arg1&gt;</tt>, ... do not need to be quoted and can
 therefore be extended over multiple lines like:</p>
 <pre class="literal-block">
-POSTFOX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
+POSTFIX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
   --this-is-the-second-long-arg=verylong
 </pre>
-<p>If you don't use quotes when using <tt class="docutils literal">ARGS</tt> you actually get more than one
-test.  For example, if you pass in:</p>
+<p>If one does not use quotes when using <tt class="docutils literal">ARGS</tt> one will actually get more
+than one test.  For example, if one passes in:</p>
 <pre class="literal-block">
 ARGS --this-is-the-first-long-arg=very
   --this-is-the-second-long-arg=verylong
 </pre>
-<p>you actually get two tests, not one test.  This is a common mistake that
+<p>one actually gets two tests, not one test.  This is a common mistake that
 people make when using the <tt class="docutils literal">ARGS</tt> form of passing arguments.  This can't
 be fixed or it will break backward compatibility.  If this could be designed
 fresh, the <tt class="docutils literal">ARGS</tt> argument would only create a single test and the
 arguments would not be quoted.</p>
 <p id="determining-pass-fail-tribits-add-test"><strong>Determining Pass/Fail (TRIBITS_ADD_TEST())</strong></p>
-<p>The only means to determine pass/fail is to use the built-in test properties
-<tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt> and <tt class="docutils literal">FAIL_REGULAR_EXPRESSION</tt> which can only
-grep STDOUT/STDERR or to check for a 0 return value (or invert these using
-<tt class="docutils literal">WILL_FAIL</tt>).  For simple tests, that is enough.  However, for more
-complex executables, one may need to examine the output files to determine
-pass fail.  Raw CMake/CTest cant' do this.  In this case, one should use
-<a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a>.</p>
+<p>The only means to determine pass/fail is to use the built-in CTest
+properties <tt class="docutils literal">PASS_REGULAR_EXPRESSION</tt> and <tt class="docutils literal">FAIL_REGULAR_EXPRESSION</tt> which
+can only grep the test's STDOUT/STDERR or to check for a 0 return value (or
+invert these using <tt class="docutils literal">WILL_FAIL</tt>).  For simple tests, that is enough.
+However, for more complex executables, one may need to examine one or more
+output files to determine pass/fail.  Raw CMake/CTest cannot do this.  In
+this case, one should use <a class="reference internal" href="#tribits-add-advanced-test">TRIBITS_ADD_ADVANCED_TEST()</a> instead to add the
+test.</p>
 <p id="setting-additional-test-properties-tribits-add-test"><strong>Setting additional test properties (TRIBITS_ADD_TEST())</strong></p>
 <p>After this function returns, any tests that get added using <tt class="docutils literal">ADD_TEST()</tt>
 can have additional properties set and changed using
 <tt class="docutils literal">SET_TEST_PROPERTIES()</tt>.  Therefore, any tests properties that are not
-directly supported by this function and passed through this wrapper function
-can be set in the outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to
-<tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
-<p>ToDo: Describe how to use new variable ADDED_TESTS_OUT to get the list of
-tests actually added (if they are added) in order to make it easy to set
+directly supported and passed through this wrapper function can be set in
+the outer <tt class="docutils literal">CMakeLists.txt</tt> file after the call to <tt class="docutils literal">TRIBITS_ADD_TEST()</tt>.</p>
+<p>ToDo: Describe how to use new variable <tt class="docutils literal">ADDED_TESTS_OUT</tt> to get the list
+of tests actually added (if they are added) in order to make it easy to set
 additional test properties.</p>
 <p id="debugging-and-examining-test-generation-tribits-add-test"><strong>Debugging and Examining Test Generation (TRIBITS_ADD_TEST())</strong></p>
 <p>In order to see what tests are getting added and to debug some issues in
@@ -8424,17 +8448,22 @@ of some information about the test getting added or not.</p>
 <p>Also, CMake writes a file <tt class="docutils literal">CTestTestfile.cmake</tt> in the current binary
 directory which contains all of the added tests and test properties that are
 set.  This is the file that is read by <tt class="docutils literal">ctest</tt> when it runs to determine
-what tests to run.  In that file, one can see the exact <tt class="docutils literal">ADD_TEST()</tt> and
+what tests to run, determine pass/fail and adjust other behvaior using test
+properties.  In this file, one can see the exact <tt class="docutils literal">ADD_TEST()</tt> and
 <tt class="docutils literal">SET_TEST_PROPERTIES()</tt> commands.  The is the ultimate way to debug
-exactly what tests are getting added by this function.</p>
+exactly what tests are getting added by this function (or if the test is
+even being added at all).</p>
 <p id="disabling-tests-externally-tribits-add-test"><strong>Disabling Tests Externally (TRIBITS_ADD_TEST())</strong></p>
 <p>The test can be disabled externally by setting the CMake cache variable
-<tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt>.  This allows tests to be disable on a
-case-by-case basis.  This is the <em>exact</em> name that shows up in 'ctest -N'
-when running the test.  If multiple tests are added in this funtion through
+<tt class="docutils literal">&lt;fullTestName&gt;_DISABLE=TRUE</tt>.  This allows tests to be disabled on a
+case-by-case basis by the user (for whatever reason).  Here,
+<tt class="docutils literal">&lt;fullTestName&gt;</tt> must be the <em>exact</em> name that shows up in 'ctest -N' when
+running the test.  If multiple tests are added in this function through
 multiple argument sets to <tt class="docutils literal">ARGS</tt> or through multiple
-<tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> arguments, then
-<tt class="docutils literal">${FULL_TEST_NAME}_DISABLE=TRUE</tt> must be set for each test individually.</p>
+<tt class="docutils literal">POSTFIX_AND_ARGS_&lt;IDX&gt;</tt> arguments, then <tt class="docutils literal">&lt;fullTestName&gt;_DISABLE=TRUE</tt>
+must be set for each test individually.  When a test is disabled in this
+way, TriBITS will always print a warning to the <tt class="docutils literal">cmake</tt> stdout at
+configure time warning that the test is being disabled.</p>
 </div>
 <div class="section" id="tribits-add-test-directories">
 <h3><a class="toc-backref" href="#id109">TRIBITS_ADD_TEST_DIRECTORIES()</a></h3>
@@ -9456,8 +9485,7 @@ the fly during a one-pass configure.</p>
 <p>NOTE: This function does <em>not</em> contain the the INSTALL() commands because
 CMake will not allow those to even be present in scripting mode that is used
 for unit testing this function.</p>
-<!-- ToDo: Edited and spell-checked up through TRIBITS_ADD_LIBRARY() on -->
-<!-- 05/02/2014! -->
+<!-- ToDo: Edited and spell-checked up through TRIBITS_ADD_TEST() on 05/09/2014! -->
 </div>
 </div>
 <div class="section" id="general-utility-macros-and-functions">
