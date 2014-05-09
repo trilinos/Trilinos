@@ -471,9 +471,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   typedef Sacado::UQ::PCE<Storage> PCE;
   typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
-  typedef typename host_view_type::array_type host_array_type;
-  typedef typename ViewType::array_type array_type;
   typedef typename PCE::cijk_type Cijk;
 
   // Build Cijk tensor

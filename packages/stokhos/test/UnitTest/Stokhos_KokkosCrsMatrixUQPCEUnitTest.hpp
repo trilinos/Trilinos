@@ -389,7 +389,6 @@ struct AddDiagonalValuesAtomicKernel {
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, ReplaceValues, MatrixScalar )
 {
-  typedef typename MatrixScalar::value_type Value;
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::device_type Device;
   typedef typename MatrixScalar::cijk_type Cijk;
@@ -416,7 +415,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValues, MatrixScalar )
 {
-  typedef typename MatrixScalar::value_type Value;
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::device_type Device;
   typedef typename MatrixScalar::cijk_type Cijk;
@@ -443,7 +441,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL(
   Kokkos_CrsMatrix_PCE, SumIntoValuesAtomic, MatrixScalar )
 {
-  typedef typename MatrixScalar::value_type Value;
   typedef typename MatrixScalar::ordinal_type Ordinal;
   typedef typename MatrixScalar::device_type Device;
   typedef typename MatrixScalar::cijk_type Cijk;

@@ -622,7 +622,6 @@ void multiply(const CrsMatrix<MatrixValue,Device,Layout>& A,
               SingleColumnMultivectorMultiply)
 {
   typedef CrsMatrix<MatrixValue,Device,Layout> MatrixType;
-  typedef std::vector<OrdinalType> ColumnIndicesType;
 
   typedef Kokkos::View<typename InputMultiVectorType::value_type*, typename InputMultiVectorType::array_layout, Device, Kokkos::MemoryUnmanaged> InputVectorType;
   typedef Kokkos::View<typename OutputMultiVectorType::value_type*, typename OutputMultiVectorType::array_layout, Device, Kokkos::MemoryUnmanaged> OutputVectorType;

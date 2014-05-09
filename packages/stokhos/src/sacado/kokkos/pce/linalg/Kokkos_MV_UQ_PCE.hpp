@@ -123,10 +123,6 @@ V_Add( const Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM >& r,
        const Kokkos::View< Sacado::UQ::PCE<YS>*, YL, YD, YM >& y,
        int n = -1)
 {
-  typedef Kokkos::View< Sacado::UQ::PCE<RS>*, RL, RD, RM > RVector;
-  typedef Kokkos::View< Sacado::UQ::PCE<XS>*, XL, XD, XM > XVector;
-  typedef Kokkos::View< Sacado::UQ::PCE<YS>*, YL, YD, YM > YVector;
-
   if (Impl::is_pce_constant(av) && Impl::is_pce_constant(bv)) {
    return V_Add( r, av.fastAccessCoeff(0), x, bv.fastAccessCoeff(0), y, n );
   }
@@ -174,10 +170,6 @@ MV_Add( const Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM >& r,
         const Kokkos::View< Sacado::UQ::PCE<YS>**, YL, YD, YM >& y,
         int n = -1)
 {
-  typedef Kokkos::View< Sacado::UQ::PCE<RS>**, RL, RD, RM > RVector;
-  typedef Kokkos::View< Sacado::UQ::PCE<XS>**, XL, XD, XM > XVector;
-  typedef Kokkos::View< Sacado::UQ::PCE<YS>**, YL, YD, YM > YVector;
-
   if (Impl::is_pce_constant(av) && Impl::is_pce_constant(bv)) {
     return MV_Add( r, av.fastAccessCoeff(0), x, bv.fastAccessCoeff(0), y, n );
   }

@@ -323,7 +323,6 @@ namespace Stokhos {
 
     typedef Sacado::MP::Vector<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
 
     // MP size
@@ -454,10 +453,8 @@ namespace Stokhos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Sacado::MP::Vector<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
     typedef typename FlatVector::dual_view_type flat_view_type;
 
@@ -486,10 +483,8 @@ namespace Stokhos {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
-    typedef Sacado::MP::Vector<Storage> Scalar;
     typedef typename Storage::value_type BaseScalar;
     typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> Node;
-    typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> Vector;
     typedef Tpetra::MultiVector<BaseScalar,LocalOrdinal,GlobalOrdinal,Node> FlatVector;
     typedef typename FlatVector::dual_view_type flat_view_type;
 

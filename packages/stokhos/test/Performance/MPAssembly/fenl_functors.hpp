@@ -289,7 +289,6 @@ public:
   KOKKOS_INLINE_FUNCTION
   void fill_elem_graph_map( const unsigned ielem ) const
   {
-    typedef typename CrsGraphType::size_type size_type;
     typedef typename CrsGraphType::data_type entry_type;
     for ( unsigned row_local_node = 0 ; row_local_node < elem_node_id.dimension_1() ; ++row_local_node ) {
 
