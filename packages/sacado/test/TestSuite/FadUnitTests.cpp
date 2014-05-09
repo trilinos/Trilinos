@@ -34,7 +34,7 @@
 #include "Sacado_Fad_SimpleFad.hpp"
 
 void FAD::error(const char *msg) {
-  std::cout << msg << endl;
+  std::cout << msg << std::endl;
 }
 
 typedef FadOpsUnitTest<Sacado::Fad::DFad<double>,double> DFadDoubleTest;
