@@ -39,6 +39,7 @@ Ifpack2_UnitTestParameters.cpp
 Ifpack2_UnitTestPartitioning.cpp
 Ifpack2_UnitTestRelaxation.cpp
 Ifpack2_UnitTestAmesos2solver.cpp
+Ifpack2_UnitTestRILUK.cpp
 )
 
 TRIBITS_COPY_FILES_TO_BINARY_DIR(UnitTestsIfpack2_cp
