@@ -65,12 +65,12 @@
                       elem_blk_parms[i].elem_type,\
                       elem_blk_parms[i].num_nodes_per_elem);\
               ex_err("ex_get_side_set_node_count",errmsg,EX_MSG);\
-              safe_free(elem_blk_ids); \
-              safe_free(side_set_ids); \
-              safe_free(ss_elem_ndx); \
-              safe_free(side_set_elem_list); \
-              safe_free(side_set_side_list); \
-              safe_free(elem_blk_parms); \
+              ex_safe_free(elem_blk_ids); \
+              ex_safe_free(side_set_ids); \
+              ex_safe_free(ss_elem_ndx); \
+              ex_safe_free(side_set_elem_list); \
+              ex_safe_free(side_set_side_list); \
+              ex_safe_free(elem_blk_parms); \
               return(EX_FATAL);
 /*! \endcond */
 
@@ -616,27 +616,27 @@ int ex_get_concat_side_set_node_count(int exoid,
 	goto error_ret;
       }
     }
-    ss_elem_ndx        = safe_free(ss_elem_ndx);
-    side_set_elem_list = safe_free(side_set_elem_list);
-    side_set_side_list = safe_free(side_set_side_list);
+    ss_elem_ndx        = ex_safe_free(ss_elem_ndx);
+    side_set_elem_list = ex_safe_free(side_set_elem_list);
+    side_set_side_list = ex_safe_free(side_set_side_list);
     ioff += tot_num_ss_elem;
   }
     
   /* All done: release allocated memory */
-  safe_free(elem_blk_ids);
-  safe_free(side_set_ids);
-  safe_free(ss_elem_ndx);
-  safe_free(side_set_elem_list);
-  safe_free(side_set_side_list);
-  safe_free(elem_blk_parms);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(side_set_ids);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(side_set_elem_list);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(elem_blk_parms);
   return(EX_NOERR);
 
  error_ret:
-  safe_free(elem_blk_ids);
-  safe_free(side_set_ids);
-  safe_free(ss_elem_ndx);
-  safe_free(side_set_elem_list);
-  safe_free(side_set_side_list);
-  safe_free(elem_blk_parms);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(side_set_ids);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(side_set_elem_list);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(elem_blk_parms);
   return (EX_FATAL);
 }

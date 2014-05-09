@@ -191,7 +191,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to locate " TNAME " block status in file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
-	safe_free(GSTAT);                                               \
+	ex_safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\
@@ -203,7 +203,7 @@ int ex_put_concat_all_blocks (int    exoid,
 		"Error: failed to store " TNAME " block status array to file id %d", \
 		exoid);							\
 	ex_err("ex_put_concat_all_blocks",errmsg,exerrval);		\
-	safe_free(GSTAT);                                               \
+	ex_safe_free(GSTAT);                                               \
 	return (EX_FATAL);						\
       }									\
 									\

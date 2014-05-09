@@ -1,8 +1,10 @@
 EXODUS_PY_COPYRIGHT_AND_LICENSE = """ 
 
-exodus.py v 1.0 (beta) is a python wrapper of some of the exodus II library
+exodus.py v 1.01 (beta) is a python wrapper of some of the exodus II library
 
-Copyright (c) 2013 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains certain rights in this software.
+Copyright (c) 2013, 2014 Sandia Corporation. Under the terms of
+Contract DE-AC04-94AL85000 with Sandia Corporation, the
+U.S. Government retains certain rights in this software.
 
 Redistribution and use in source and binary forms, with or without modification, are permitted provided that the following conditions are met:
 
@@ -16,17 +18,18 @@ THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND 
 
 """
 
-EXODUS_PY_VERSION = "1.0 (beta)"
+EXODUS_PY_VERSION = "1.01 (beta)"
 
 EXODUS_PY_COPYRIGHT = """
-You are using exodus.py v 1.0 (beta), a python wrapper of some of the exodus II library.
-Copyright (c) 2013 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains certain rights in this software.
+You are using exodus.py v 1.01 (beta), a python wrapper of some of the exodus II library.
+Copyright (c) 2013,2014 Sandia Corporation. Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation, the U.S. Government retains certain rights in this software.
 """
 
 EXODUS_PY_CONTACTS = """
 Authors:  Timothy Shelton  (trshelt@sandia.gov)
           Michael Veilleux (mgveill@sandia.gov)
           David Littlewood (djlittl@sandia.gov)
+          Greg Sjaardema   (gdsjaar@sandia.gov) 
 """
 
 import sys
@@ -93,11 +96,14 @@ else:
 NETCDF_LIB = cdll.LoadLibrary(NETCDF_SO)
 EXODUS_LIB = cdll.LoadLibrary(EXODUS_SO)
   
-# set exodus error output option
-exErrPrintMode = c_int(1) # VERBOSE
-EXODUS_LIB.ex_opts(exErrPrintMode)
-
 EX_API_VERSION_NODOT = getExodusVersion()
+EX_VERBOSE           = 1       #verbose mode message flag 
+if (EX_API_VERSION_NODOT >= 608):
+  EX_READ              = 0x0002  # ex_open(): open file for reading (default)
+else:
+  EX_READ              = 0x0000  # ex_open(): open file for reading (default)
+EX_WRITE             = 0x0001  # ex_open(): open existing file for appending.
+
 EX_NOCLOBBER         = 0x0004  # does not overwrite existing exodus file
 EX_CLOBBER           = 0x0008  # overwrites existing exodus file
 MAX_STR_LENGTH       = 32      # match exodus default
@@ -106,6 +112,10 @@ EX_MAPS_INT64_API    = 0x2000  # all maps (id, order, ...) store int64_t values
 EX_IDS_INT64_API     = 0x4000  # all entity ids (sets, blocks, maps) are int64_t
 EX_BULK_INT64_API    = 0x8000  # all integer bulk data (not ids) are int64_t
 EX_INQ_INT64_API     = 0x10000 # integers passed to/from ex_inquire are int64_t
+
+# set exodus error output option
+exErrPrintMode = c_int(EX_VERBOSE)
+EXODUS_LIB.ex_opts(exErrPrintMode)
 
 def ex_inquiry(inquiry):
   # create dictionary for return types
@@ -1736,8 +1746,8 @@ class exodus:
 
   def __open(self, io_size=0):
     print "Opening exodus file: " + self.fileName
-    self.mode = 0
-    if self.modeChar.lower() == "a": self.mode = 1
+    self.mode = EX_READ
+    if self.modeChar.lower() == "a": self.mode = EX_WRITE
     if self.modeChar.lower() in ["a","r"] and not os.path.isfile(self.fileName):
       raise Exception, ("ERROR: Cannot open " + self.fileName + " for read. Does not exist.")
     elif self.modeChar.lower() == "w" and os.path.isfile(self.fileName):

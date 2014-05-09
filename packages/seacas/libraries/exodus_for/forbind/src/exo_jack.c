@@ -427,7 +427,7 @@ F2C(exgqa,EXGQA) (int *idexo,
     *ierr = EX_FATAL;
     return;
   }
-  
+
   /* Allocate space for the QA string ptr array */
   if (!(sptr = malloc((num_qa_records * alen + 1) * sizeof(char *)))) {
     *ierr = EX_MEMFAIL;
@@ -640,11 +640,21 @@ F2C(expcon,EXPCON) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
   /* do ExodusII C call to find out how many dimensions  */
   ndim = ex_inquire_int(*idexo, EX_INQ_DIM);
+  if (ndim < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
 
   /* Allocate space for the name ptr array */
   if (!(aptr = malloc((ndim + 1) * sizeof(char *)))) {
@@ -694,11 +704,21 @@ F2C(exgcon,EXGCON) (int *idexo,
   *ierr = 0;                    /* default no error */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (coord_nameslen < slen) {
     slen = coord_nameslen;
   }
   /* do ExodusII C call to find out how many dimensions */
   ndim = ex_inquire_int(*idexo, EX_INQ_DIM);
+  if (ndim < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
 
   /* allocate memory to stage the coordinate name ptrs into */
   if (!(aptr = malloc((ndim + 1) * sizeof(char *)))) {
@@ -781,6 +801,10 @@ F2C(expclb,EXPCLB) (int *idexo,
   *ierr = 0;                    /* default no error */
 
   num_elem_blk = ex_inquire_int(*idexo, EX_INQ_ELEM_BLK);
+  if (num_elem_blk < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   slen = MAX_STR_LENGTH;        /* max str size */
   if (elem_typelen != MAX_STR_LENGTH) {
@@ -1005,6 +1029,11 @@ F2C(exgean,EXGEAN) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1060,6 +1089,11 @@ F2C(expean,EXPEAN) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1109,6 +1143,11 @@ F2C(expnams,EXPNAMS) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1157,6 +1196,11 @@ F2C(exgnams,EXGNAMS) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (nameslen < slen) {
     slen = nameslen;
   }
@@ -1212,6 +1256,11 @@ F2C(exppn,EXPPN) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_nameslen < slen) {
     slen = prop_nameslen;
   }
@@ -1268,6 +1317,11 @@ F2C(exgpn,EXGPN) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_nameslen < slen) {
     slen = prop_nameslen;
   }
@@ -1363,6 +1417,11 @@ F2C(expp,EXPP) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1397,6 +1456,11 @@ F2C(exgp,EXGP) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1432,6 +1496,11 @@ F2C(exgpa,EXGPA) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1470,6 +1539,11 @@ F2C(exppa,EXPPA) (int *idexo,
   *ierr = 0;
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (prop_namelen < slen) {
     slen = prop_namelen;
   }
@@ -1605,6 +1679,10 @@ F2C(expcns,EXPCNS) (int *idexo,
   *ierr = 0;
 
   num_node_sets = ex_inquire_int(*idexo, EX_INQ_NODE_SETS);
+  if (num_node_sets < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   int_size = sizeof(int);
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
@@ -1665,6 +1743,10 @@ F2C(exgcns,EXGCNS) (int *idexo,
 				  node_sets_dist_fact);
 
   num_node_sets = ex_inquire_int(*idexo, EX_INQ_NODE_SETS);
+  if (num_node_sets < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
     for (i = 0; i < num_node_sets; i++) { /* change from 0-based to 1 index */
@@ -1808,6 +1890,10 @@ F2C(expcss,EXPCSS) (int *idexo,
   *ierr = 0;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
+  if (num_side_sets < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   int_size = sizeof(int);
   if (ex_int64_status(*idexo) & EX_BULK_INT64_API) {
@@ -1867,6 +1953,10 @@ F2C(exgcss,EXGCSS) (int *idexo,
   *ierr = 0;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
+  if (num_side_sets < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
 				  num_dist_per_set, side_sets_elem_index,
@@ -1903,6 +1993,10 @@ F2C(exgcssf,EXGCSSF) (int *idexo,
   int i, num_side_sets;
 
   num_side_sets = ex_inquire_int(*idexo, EX_INQ_SIDE_SETS);
+  if (num_side_sets < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
 
   *ierr = ex_get_concat_side_sets(*idexo, side_set_ids, num_elem_per_set,
 				  num_dist_per_set, side_sets_elem_index,
@@ -1968,6 +2062,11 @@ F2C(expvan,EXPVAN) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (var_nameslen < slen) {
     slen = var_nameslen;
   }
@@ -2016,6 +2115,11 @@ F2C(exgvan,EXGVAN) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (var_nameslen < slen) {
     slen = var_nameslen;
   }
@@ -2769,6 +2873,11 @@ F2C(exgvnm,EXGVNM) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_MAX_READ_NAME_LENGTH); /* max string size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (var_namelen < slen) {
     slen = var_namelen;
   }
@@ -2888,6 +2997,11 @@ F2C(expvnm,EXPVNM) (int *idexo,
   *ierr = 0;                    /* default no errror */
 
   slen = ex_inquire_int(*idexo, EX_INQ_DB_MAX_ALLOWED_NAME_LENGTH);     /* max str size */
+  if (slen < 0) {
+    *ierr = EX_FATAL;
+    return;
+  }
+
   if (var_namelen < slen) {
     slen = var_namelen;
   }

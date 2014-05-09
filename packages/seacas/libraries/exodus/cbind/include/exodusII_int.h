@@ -744,5 +744,5 @@ int ne_id_lkup(int            neid,		/* NetCDF/Exodus file ID */
    */
   extern int ex_default_max_name_length; 
 				    
-  void *safe_free(void *array);
+  void *ex_safe_free(void *array);
 #endif

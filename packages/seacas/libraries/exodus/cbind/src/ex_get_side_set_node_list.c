@@ -299,8 +299,8 @@ int ex_get_side_set_node_list(int exoid,
 
   if (ex_get_set(exoid, EX_SIDE_SET, side_set_id, 
 		 side_set_elem_list, side_set_side_list) == -1) {
-    safe_free(side_set_elem_list);
-    safe_free(side_set_side_list);
+    ex_safe_free(side_set_elem_list);
+    ex_safe_free(side_set_side_list);
     sprintf(errmsg,
 	    "Error: failed to get side set %"PRId64" in file id %d",
 	    side_set_id, exoid);
@@ -662,7 +662,7 @@ int ex_get_side_set_node_list(int exoid,
     if (elem > elem_ctr) {
       /* release connectivity array space and get next one */
       if (elem_ctr > 0) {
-        safe_free(connect);
+        ex_safe_free(connect);
       }
 
       /* Allocate space for the connectivity array for new element block */
@@ -1024,14 +1024,14 @@ int ex_get_side_set_node_list(int exoid,
   /* All done: release connectivity array space, element block ids array,
      element block parameters array, and side set element index array */
  cleanup:
-  safe_free(connect);
-  safe_free(ss_parm_ndx);
-  safe_free(elem_blk_ids);
-  safe_free(elem_blk_parms);
-  safe_free(ss_elem_ndx);
-  safe_free(ss_elem_node_ndx);
-  safe_free(side_set_side_list);
-  safe_free(side_set_elem_list);
+  ex_safe_free(connect);
+  ex_safe_free(ss_parm_ndx);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(elem_blk_parms);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(ss_elem_node_ndx);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(side_set_elem_list);
 
   return(err_stat);
 }

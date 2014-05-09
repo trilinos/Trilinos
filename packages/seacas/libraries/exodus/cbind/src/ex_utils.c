@@ -1554,7 +1554,7 @@ void ex_compress_variable(int exoid, int varid, int type)
 #endif
 }
 
-void *safe_free(void *array)
+void *ex_safe_free(void *array)
 {
   if (array != 0) free(array);
   return 0;

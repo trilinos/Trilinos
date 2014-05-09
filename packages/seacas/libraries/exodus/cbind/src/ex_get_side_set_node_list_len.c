@@ -190,7 +190,7 @@ int ex_get_side_set_node_list_len(int exoid,
 
     /* Allocate space for the side set side list */
     if (!(side_set_side_list=malloc(tot_num_ss_elem*int_size))) {
-      safe_free(side_set_elem_list);
+      ex_safe_free(side_set_elem_list);
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
 	      "Error: failed to allocate space for side set side list for file id %d",
@@ -201,8 +201,8 @@ int ex_get_side_set_node_list_len(int exoid,
 
     if (ex_get_side_set(exoid, side_set_id, 
 			side_set_elem_list, side_set_side_list) != NC_NOERR) {
-      safe_free(side_set_elem_list);
-      safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
+      ex_safe_free(side_set_side_list);
       sprintf(errmsg,
 	      "Error: failed to get side set %"PRId64" in file id %d",
 	      side_set_id, exoid);
@@ -218,8 +218,8 @@ int ex_get_side_set_node_list_len(int exoid,
     }
 
     if (ss_elem_ndx_64==NULL && ss_elem_ndx == NULL) {
-      safe_free(side_set_elem_list);
-      safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
+      ex_safe_free(side_set_side_list);
       exerrval = EX_MEMFAIL;
       sprintf(errmsg,
 	      "Error: failed to allocate space for side set elem sort array for file id %d",
@@ -250,10 +250,10 @@ int ex_get_side_set_node_list_len(int exoid,
 
     if (!(elem_blk_ids=malloc(num_elem_blks*int_size))) {
       exerrval = EX_MEMFAIL;
-      safe_free(ss_elem_ndx);
-      safe_free(ss_elem_ndx_64);
-      safe_free(side_set_side_list);
-      safe_free(side_set_elem_list);
+      ex_safe_free(ss_elem_ndx);
+      ex_safe_free(ss_elem_ndx_64);
+      ex_safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
       sprintf(errmsg,
 	      "Error: failed to allocate space for element block ids for file id %d",
 	      exoid);
@@ -263,11 +263,11 @@ int ex_get_side_set_node_list_len(int exoid,
   }
   
   if (ex_get_elem_blk_ids(exoid, elem_blk_ids)) {
-    safe_free(elem_blk_ids);
-    safe_free(ss_elem_ndx);
-    safe_free(ss_elem_ndx_64);
-    safe_free(side_set_side_list);
-    safe_free(side_set_elem_list);
+    ex_safe_free(elem_blk_ids);
+    ex_safe_free(ss_elem_ndx);
+    ex_safe_free(ss_elem_ndx_64);
+    ex_safe_free(side_set_side_list);
+    ex_safe_free(side_set_elem_list);
     sprintf(errmsg,
 	    "Error: failed to get element block ids in file id %d",
             exoid);
@@ -277,11 +277,11 @@ int ex_get_side_set_node_list_len(int exoid,
 
   /* Allocate space for the element block params */
   if (!(elem_blk_parms=malloc(num_elem_blks*sizeof(struct elem_blk_parm)))) {
-    safe_free(elem_blk_ids);
-    safe_free(ss_elem_ndx);
-    safe_free(ss_elem_ndx_64);
-    safe_free(side_set_side_list);
-    safe_free(side_set_elem_list);
+    ex_safe_free(elem_blk_ids);
+    ex_safe_free(ss_elem_ndx);
+    ex_safe_free(ss_elem_ndx_64);
+    ex_safe_free(side_set_side_list);
+    ex_safe_free(side_set_elem_list);
     exerrval = EX_MEMFAIL;
     sprintf(errmsg,
       "Error: failed to allocate space for element block params for file id %d",
@@ -303,12 +303,12 @@ int ex_get_side_set_node_list_len(int exoid,
 
     /* read in an element block parameter */
     if ((ex_get_block_param (exoid, &block)) != NC_NOERR) {
-      safe_free(elem_blk_parms);
-      safe_free(elem_blk_ids);
-      safe_free(ss_elem_ndx);
-      safe_free(ss_elem_ndx_64);
-      safe_free(side_set_side_list);
-      safe_free(side_set_elem_list);
+      ex_safe_free(elem_blk_parms);
+      ex_safe_free(elem_blk_ids);
+      ex_safe_free(ss_elem_ndx);
+      ex_safe_free(ss_elem_ndx_64);
+      ex_safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
       sprintf(errmsg,
              "Error: failed to get element block %"PRId64" parameters in file id %d",
               block.id, exoid);
@@ -487,12 +487,12 @@ int ex_get_side_set_node_list_len(int exoid,
       sprintf(errmsg,
              "Error: Invalid element number %"ST_ZU" found in side set %"PRId64" in file %d",
               elem, side_set_id, exoid);
-      safe_free(elem_blk_parms);
-      safe_free(elem_blk_ids);
-      safe_free(ss_elem_ndx);
-      safe_free(ss_elem_ndx_64);
-      safe_free(side_set_side_list);
-      safe_free(side_set_elem_list);
+      ex_safe_free(elem_blk_parms);
+      ex_safe_free(elem_blk_ids);
+      ex_safe_free(ss_elem_ndx);
+      ex_safe_free(ss_elem_ndx_64);
+      ex_safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
       ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
       return (EX_FATAL);
     }
@@ -541,12 +541,12 @@ int ex_get_side_set_node_list_len(int exoid,
       sprintf(errmsg,
              "Error: %s in elem block %"PRId64" is an unsupported element type",
               elem_blk_parms[i].elem_type, elem_blk_parms[i].elem_blk_id);
-      safe_free(elem_blk_parms);
-      safe_free(elem_blk_ids);
-      safe_free(ss_elem_ndx);
-      safe_free(ss_elem_ndx_64);
-      safe_free(side_set_side_list);
-      safe_free(side_set_elem_list);
+      ex_safe_free(elem_blk_parms);
+      ex_safe_free(elem_blk_ids);
+      ex_safe_free(ss_elem_ndx);
+      ex_safe_free(ss_elem_ndx_64);
+      ex_safe_free(side_set_side_list);
+      ex_safe_free(side_set_elem_list);
       ex_err("ex_get_side_set_node_list_len",errmsg,EX_MSG);
       return (EX_FATAL);
     }
@@ -561,12 +561,12 @@ int ex_get_side_set_node_list_len(int exoid,
 
   /* All done: release element block ids array,
      element block parameters array, and side set element index array */
-  safe_free(elem_blk_ids);
-  safe_free(elem_blk_parms);
-  safe_free(ss_elem_ndx);
-  safe_free(ss_elem_ndx_64);
-  safe_free(side_set_side_list);
-  safe_free(side_set_elem_list);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(elem_blk_parms);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(ss_elem_ndx_64);
+  ex_safe_free(side_set_side_list);
+  ex_safe_free(side_set_elem_list);
 
   return(EX_NOERR);
 }
