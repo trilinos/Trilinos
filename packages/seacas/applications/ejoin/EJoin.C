@@ -1257,8 +1257,9 @@ namespace {
 
       if (field_name != "ids" &&
           (prefix.length() == 0 || std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
-        assert(oge->field_exists(field_name));
-        transfer_field_data_internal(ige, oge, field_name);
+        if (oge->field_exists(field_name)) {
+	  transfer_field_data_internal(ige, oge, field_name);
+	}
       }
     }
   }
