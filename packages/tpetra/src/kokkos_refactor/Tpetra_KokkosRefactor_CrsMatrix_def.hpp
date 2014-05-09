@@ -1401,6 +1401,7 @@ namespace Tpetra {
         // Uh oh!  Not allowed to insert into owned rows in that case.
         std::ostringstream err;
         const int myRank = getRowMap ()->getComm ()->getRank ();
+        const int numProcs = getRowMap ()->getComm ()->getSize ();
 
         err << "Tpetra::CrsMatrix::insertGlobalValues: The matrix was "
           "constructed with a constant (\"static\") graph, yet the given "
