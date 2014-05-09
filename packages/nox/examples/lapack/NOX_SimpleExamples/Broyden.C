@@ -79,6 +79,7 @@
 #include "NOX_Common.H"
 #include "NOX_Utils.H"
 #include "NOX_LAPACK_Group.H"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //! Interface to modified Broyden problem defined in Broyden.C
 class Broyden : public NOX::LAPACK::Interface {
@@ -177,114 +178,124 @@ private:
 //! Main subroutine of Broyden.C
 int main()
 {
-  // Set up the problem interface
-  Broyden broyden(100,0.99);
+  bool verbose = true;
+  bool success = true;
+  try {
+    // Set up the problem interface
+    Broyden broyden(100,0.99);
 
-  // Create a group which uses that problem interface. The group will
-  // be initialized to contain the default initial guess for the
-  // specified problem.
-  Teuchos::RCP<NOX::LAPACK::Group> grp =
-    Teuchos::rcp(new NOX::LAPACK::Group(broyden));
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RCP<NOX::LAPACK::Group> grp =
+      Teuchos::rcp(new NOX::LAPACK::Group(broyden));
 
-  // Create the top level parameter list
-  Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
-    Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::ParameterList& solverParameters = *solverParametersPtr;
+    // Create the top level parameter list
+    Teuchos::RCP<Teuchos::ParameterList> solverParametersPtr =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& solverParameters = *solverParametersPtr;
 
-  // Set the nonlinear solver method
-  //solverParameters.set("Nonlinear Solver", "Tensor-Krylov Based");
-  solverParameters.set("Nonlinear Solver", "Tensor Based");
+    // Set the nonlinear solver method
+    //solverParameters.set("Nonlinear Solver", "Tensor-Krylov Based");
+    solverParameters.set("Nonlinear Solver", "Tensor Based");
 
-  // Sublist for printing parameters
-  Teuchos::ParameterList& printParams = solverParameters.sublist("Printing");
-  //printParams.set("MyPID", 0);
-  printParams.set("Output Precision", 3);
-  printParams.set("Output Processor", 0);
-  printParams.set("Output Information",
-            NOX::Utils::OuterIteration +
-            NOX::Utils::OuterIterationStatusTest +
-            NOX::Utils::InnerIteration +
-            NOX::Utils::Parameters +
-            NOX::Utils::Details +
-            NOX::Utils::Warning);
-  NOX::Utils utils(printParams);
+    // Sublist for printing parameters
+    Teuchos::ParameterList& printParams = solverParameters.sublist("Printing");
+    //printParams.set("MyPID", 0);
+    printParams.set("Output Precision", 3);
+    printParams.set("Output Processor", 0);
+    printParams.set("Output Information",
+              NOX::Utils::OuterIteration +
+              NOX::Utils::OuterIterationStatusTest +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Parameters +
+              NOX::Utils::Details +
+              NOX::Utils::Warning);
+    NOX::Utils utils(printParams);
 
-  // Sublist for direction parameters
-  Teuchos::ParameterList& directionParameters =
-    solverParameters.sublist("Direction");
-  directionParameters.set("Method","Tensor");
+    // Sublist for direction parameters
+    Teuchos::ParameterList& directionParameters =
+      solverParameters.sublist("Direction");
+    directionParameters.set("Method","Tensor");
 
-  // Sublist for local solver parameters
-  //Teuchos::ParameterList& localSolverParameters =
-  //directionParameters.sublist("Tensor").sublist("Linear Solver");
-  //localSolverParameters.set("Tolerance", 1e-4);
-  //localSolverParameters.set("Reorthogonalize","Always");
-  //localSolverParameters.set("Output Frequency",1);
-  //localSolverParameters.set("Max Restarts", 2);
-  //localSolverParameters.set("Size of Krylov Subspace", 15);
-  //localSolverParameters.set("Preconditioning","Tridiagonal");
-  //localSolverParameters.set("Preconditioning Side","None");
-  //localSolverParameters.set("Use Shortcut Method",false);
+    // Sublist for local solver parameters
+    //Teuchos::ParameterList& localSolverParameters =
+    //directionParameters.sublist("Tensor").sublist("Linear Solver");
+    //localSolverParameters.set("Tolerance", 1e-4);
+    //localSolverParameters.set("Reorthogonalize","Always");
+    //localSolverParameters.set("Output Frequency",1);
+    //localSolverParameters.set("Max Restarts", 2);
+    //localSolverParameters.set("Size of Krylov Subspace", 15);
+    //localSolverParameters.set("Preconditioning","Tridiagonal");
+    //localSolverParameters.set("Preconditioning Side","None");
+    //localSolverParameters.set("Use Shortcut Method",false);
 
-  // Sublist for line search parameters
-  Teuchos::ParameterList& globalStrategyParameters =
-    solverParameters.sublist("Line Search");
-  globalStrategyParameters.set("Method","Curvilinear");
+    // Sublist for line search parameters
+    Teuchos::ParameterList& globalStrategyParameters =
+      solverParameters.sublist("Line Search");
+    globalStrategyParameters.set("Method","Curvilinear");
 
-  // Sublist for line search parameters
-  Teuchos::ParameterList& lineSearchParameters =
-    globalStrategyParameters.sublist(globalStrategyParameters.
-                     get("Method","Curvilinear"));
+    // Sublist for line search parameters
+    Teuchos::ParameterList& lineSearchParameters =
+      globalStrategyParameters.sublist(globalStrategyParameters.
+                       get("Method","Curvilinear"));
 
-  lineSearchParameters.set("Lambda Selection","Halving");
-  lineSearchParameters.set("Max Iters",20);
+    lineSearchParameters.set("Lambda Selection","Halving");
+    lineSearchParameters.set("Max Iters",20);
 
 
-  // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12,
-                        NOX::StatusTest::NormF::Unscaled));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
-  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
-                        statusTestA, statusTestB));
+    // Create the convergence tests
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-12,
+                          NOX::StatusTest::NormF::Unscaled));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(50));
+    Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                          statusTestA, statusTestB));
 
-  // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver =
-    NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
+    // Create the solver
+    Teuchos::RCP<NOX::Solver::Generic> solver =
+      NOX::Solver::buildSolver(grp, statusTestsCombo, solverParametersPtr);
 
-  // Print the starting point
-  grp->computeF();
-  std::cout << "\n" << "-- Starting Point --" << "\n";
-  std::cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << std::endl;
-  // grp.print();
+    // Print the starting point
+    grp->computeF();
+    std::cout << "\n" << "-- Starting Point --" << "\n";
+    std::cout << "|| F(x0) || = " << utils.sciformat(grp->getNormF()) << std::endl;
+    // grp.print();
 
-  // Solve the nonlinear system
-  NOX::StatusTest::StatusType status = solver->solve();
+    // Solve the nonlinear system
+    NOX::StatusTest::StatusType status = solver->solve();
 
-  // Get the answer
-  NOX::LAPACK::Group solnGrp =
-    dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
+    // Get the answer
+    NOX::LAPACK::Group solnGrp =
+      dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
 
-  // Output the parameter list
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    std::cout << "\n" << "-- Parameter List Used in Solver --" << std::endl;
-    solver->getList().print(std::cout);
-    std::cout << std::endl;
+    // Output the parameter list
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
+      std::cout << "\n" << "-- Parameter List Used in Solver --" << std::endl;
+      solver->getList().print(std::cout);
+      std::cout << std::endl;
+    }
+
+    // Print the answer
+    if (utils.isPrintType(NOX::Utils::Parameters)) {
+      std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
+      std::cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << std::endl;
+      // solnGrp.print();
+    }
+
+    // Warn user if solve failed
+    if (status == NOX::StatusTest::Converged) {
+      std::cout << "\nExample Passed!\n" << std::endl;
+      success = true;
+    }
+    else {
+      std::cout << "Error: Solve failed to converge!" << std::endl;
+      success = false;
+    }
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // Print the answer
-  if (utils.isPrintType(NOX::Utils::Parameters)) {
-    std::cout << "\n" << "-- Final Solution From Solver --" << "\n";
-    std::cout << "|| F(x*) || = " << utils.sciformat(solnGrp.getNormF()) << std::endl;
-    // solnGrp.print();
-  }
-
-  // Warn user if solve failed
-  if (status == NOX::StatusTest::Converged)
-    std::cout << "\nExample Passed!\n" << std::endl;
-  else
-    std::cout << "Error: Solve failed to converge!" << std::endl;
-
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }

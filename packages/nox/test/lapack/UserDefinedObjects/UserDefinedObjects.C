@@ -84,6 +84,7 @@
 #ifdef HAVE_TEUCHOS_EXTENDED
 #include "Teuchos_XMLParameterListHelpers.hpp"
 #endif
+#include "Teuchos_StandardCatchMacros.hpp"
 
 //! These wil represent the user defined objects
 #include "NOX_Direction_Newton.H"
@@ -192,90 +193,96 @@ int main(int argc, char *argv[])
   using Teuchos::ParameterList;
   using namespace NOX::StatusTest;
 
-  std::cout << "Started" << std::endl;
+  bool success = true;
+  const bool verbose = true;
+  try {
+    std::cout << "Started" << std::endl;
 
-  int final_status_value = 0; // zero = success, !0 = failed
+    RCP<ParameterList> solverParametersPtr = rcp(new ParameterList);
+    ParameterList& solverParameters = *solverParametersPtr;
+    solverParameters.set("Nonlinear Solver", "Line Search Based");
 
-  RCP<ParameterList> solverParametersPtr = rcp(new ParameterList);
-  ParameterList& solverParameters = *solverParametersPtr;
-  solverParameters.set("Nonlinear Solver", "Line Search Based");
+    // Create a user defined direction using the template builder
+    ParameterList& dl = solverParametersPtr->sublist("Direction");
+    dl.set("Method", "User Defined");
+    RCP<NOX::Direction::UserDefinedFactory> uddf =
+      rcp(new NOX::Direction::UserDefinedFactoryT<NOX::Direction::Newton>);
+    dl.set("User Defined Direction Factory", uddf);
 
-  // Create a user defined direction using the template builder
-  ParameterList& dl = solverParametersPtr->sublist("Direction");
-  dl.set("Method", "User Defined");
-  RCP<NOX::Direction::UserDefinedFactory> uddf =
-    rcp(new NOX::Direction::UserDefinedFactoryT<NOX::Direction::Newton>);
-  dl.set("User Defined Direction Factory", uddf);
+    // Create a user defined line search using the template builder
+    ParameterList& lsl = solverParametersPtr->sublist("Line Search");
+    lsl.set("Method", "User Defined");
+    RCP<NOX::LineSearch::UserDefinedFactory> udlsf =
+      rcp(new NOX::LineSearch::UserDefinedFactoryT<NOX::LineSearch::Polynomial>);
+    lsl.set("User Defined Line Search Factory", udlsf);
 
-  // Create a user defined line search using the template builder
-  ParameterList& lsl = solverParametersPtr->sublist("Line Search");
-  lsl.set("Method", "User Defined");
-  RCP<NOX::LineSearch::UserDefinedFactory> udlsf =
-    rcp(new NOX::LineSearch::UserDefinedFactoryT<NOX::LineSearch::Polynomial>);
-  lsl.set("User Defined Line Search Factory", udlsf);
+    ParameterList& printParams = solverParameters.sublist("Printing");
+    printParams.set("Output Precision", 3);
+    printParams.set("Output Processor", 0);
+    printParams.set("Output Information",
+            NOX::Utils::OuterIteration +
+            NOX::Utils::OuterIterationStatusTest +
+            NOX::Utils::InnerIteration +
+            NOX::Utils::Details +
+            NOX::Utils::Warning);
 
-  ParameterList& printParams = solverParameters.sublist("Printing");
-  printParams.set("Output Precision", 3);
-  printParams.set("Output Processor", 0);
-  printParams.set("Output Information",
-          NOX::Utils::OuterIteration +
-          NOX::Utils::OuterIterationStatusTest +
-          NOX::Utils::InnerIteration +
-          NOX::Utils::Details +
-          NOX::Utils::Warning);
+    Teuchos::ParameterList stl;
+    stl.set("Test Type", "Combo");
+    stl.set("Combo Type", "OR");
+    stl.set("Number of Tests", 3);
+    Teuchos::ParameterList& conv = stl.sublist("Test 0");
+    Teuchos::ParameterList& fv = stl.sublist("Test 1");
+    Teuchos::ParameterList& maxiters = stl.sublist("Test 2");
 
-  Teuchos::ParameterList stl;
-  stl.set("Test Type", "Combo");
-  stl.set("Combo Type", "OR");
-  stl.set("Number of Tests", 3);
-  Teuchos::ParameterList& conv = stl.sublist("Test 0");
-  Teuchos::ParameterList& fv = stl.sublist("Test 1");
-  Teuchos::ParameterList& maxiters = stl.sublist("Test 2");
+    conv.set("Test Type", "Combo");
+    conv.set("Combo Type", "AND");
+    conv.set("Number of Tests", 2);
+    Teuchos::ParameterList& normF = conv.sublist("Test 0");
+    Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
+    normF.set("Test Type", "NormF");
+    normF.set("Tolerance", 1.0e-12);
+    normF.set("Norm Type", "Two Norm");
+    normF.set("Scale Type", "Unscaled");
+    normWRMS.set("Test Type", "NormWRMS");
+    normWRMS.set("Absolute Tolerance", 1.0e-8);
+    normWRMS.set("Relative Tolerance", 1.0e-5);
+    normWRMS.set("Tolerance", 1.0);
+    normWRMS.set("BDF Multiplier", 1.0);
+    normWRMS.set("Alpha", 1.0);
+    normWRMS.set("Beta", 0.5);
 
-  conv.set("Test Type", "Combo");
-  conv.set("Combo Type", "AND");
-  conv.set("Number of Tests", 2);
-  Teuchos::ParameterList& normF = conv.sublist("Test 0");
-  Teuchos::ParameterList& normWRMS = conv.sublist("Test 1");
-  normF.set("Test Type", "NormF");
-  normF.set("Tolerance", 1.0e-12);
-  normF.set("Norm Type", "Two Norm");
-  normF.set("Scale Type", "Unscaled");
-  normWRMS.set("Test Type", "NormWRMS");
-  normWRMS.set("Absolute Tolerance", 1.0e-8);
-  normWRMS.set("Relative Tolerance", 1.0e-5);
-  normWRMS.set("Tolerance", 1.0);
-  normWRMS.set("BDF Multiplier", 1.0);
-  normWRMS.set("Alpha", 1.0);
-  normWRMS.set("Beta", 0.5);
+    fv.set("Test Type", "FiniteValue");
+    fv.set("Vector Type", "F Vector");
+    fv.set("Norm Type", "Two Norm");
 
-  fv.set("Test Type", "FiniteValue");
-  fv.set("Vector Type", "F Vector");
-  fv.set("Norm Type", "Two Norm");
+    maxiters.set("Test Type", "MaxIters");
+    maxiters.set("Maximum Iterations", 20);
 
-  maxiters.set("Test Type", "MaxIters");
-  maxiters.set("Maximum Iterations", 20);
+    NOX::Utils utils(printParams);
+    RCP<NOX::StatusTest::Generic> status_tests = buildStatusTests(stl, utils);
 
-  NOX::Utils utils(printParams);
-  RCP<NOX::StatusTest::Generic> status_tests = buildStatusTests(stl, utils);
+    Broyden broyden(100, 0.99);
+    RCP<NOX::LAPACK::Group> grp = rcp(new NOX::LAPACK::Group(broyden));
 
-  Broyden broyden(100, 0.99);
-  RCP<NOX::LAPACK::Group> grp = rcp(new NOX::LAPACK::Group(broyden));
+    RCP<NOX::Solver::Generic> solver =
+      NOX::Solver::buildSolver(grp, status_tests, solverParametersPtr);
 
-  RCP<NOX::Solver::Generic> solver =
-    NOX::Solver::buildSolver(grp, status_tests, solverParametersPtr);
+    NOX::StatusTest::StatusType status = solver->solve();
 
-  NOX::StatusTest::StatusType status = solver->solve();
+    std::cout << *solverParametersPtr << std::endl;
 
-  std::cout << *solverParametersPtr << std::endl;
-
-  if (status != NOX::StatusTest::Converged ||
-      solver->getNumIterations() != 12) {
-    final_status_value += 1;
-    std::cout << "\nTest failed!\n" << std::endl;
+    if (status != NOX::StatusTest::Converged ||
+        solver->getNumIterations() != 12) {
+      success = false;
+      std::cout << "\nTest failed!\n" << std::endl;
+    }
+    else
+    {
+      success = true;
+      std::cout << "\nTest passed!\n" << std::endl;
+    }
   }
-  else
-    std::cout << "\nTest passed!\n" << std::endl;
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  return final_status_value;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
