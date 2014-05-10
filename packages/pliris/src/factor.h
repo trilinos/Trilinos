@@ -48,12 +48,12 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void	factor(DATA_TYPE *);
 
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

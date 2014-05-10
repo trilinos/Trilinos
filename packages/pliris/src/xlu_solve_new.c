@@ -72,12 +72,12 @@ double  timing(double secs, int type);
 #define PERMTYPE ((1 << 5) + (1 << 4))
 
 
-void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr, 
+void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
     DATA_TYPE *rhsides, int *num_rhs, double *secs)
 {
- 
+
   DATA_TYPE *mat;
- 
+
   int begin_rhs;                /* Beginning index for the RHS   */
   double run_secs;              /* time (in secs) during which the prog ran */
   double seconds();             /* function to generate timings */
@@ -136,7 +136,7 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
 
   /* Beginning position in array for the RHS   */
 
-  begin_rhs = my_cols * my_rows; 
+  begin_rhs = my_cols * my_rows;
 
   /* allocate arrays for factor/solve */
 
@@ -198,16 +198,16 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
 
     /* Delele Unneccesary temp variables  */
 
-   
+
     free(row2);
 
     /* Perform the backsolve  */
-     
+
       back_solve6(mat, rhs);
 
     /* Permute the results -- undo the torus map    */
- 
-    perm1_((mat+begin_rhs),&my_rhs);        
+
+    perm1_((mat+begin_rhs),&my_rhs);
   }
   tsecs = seconds(tsecs);
   run_secs = (double) tsecs;
@@ -215,17 +215,17 @@ void XLU_SOLVE_ (DATA_TYPE *matrix, int *matrix_size, int *num_procsr,
   /* Solve time secs */
 
   *secs = run_secs;
-  
+
   free(col1);
   free(col2);
   free(row1);
- 
+
   free(row3);
   free(pivot_vec);
 }
 
 
-/*  Permutes -- unwraps the torus-wrap for the solution  
+/*  Permutes -- unwraps the torus-wrap for the solution
 
     using the communication buffer             */
 
@@ -236,14 +236,14 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
   int one=1;
   int my_rhs;
 
- 
+
   int bytes;
   int dest;
   int type;
 
   int global_index;
   int local_index;
-  
+
 
   int col_offset, row_offset;
   int ncols_proc1, ncols_proc2, nprocs_row1;
@@ -259,18 +259,18 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
   MPI_Request msgrequest;
   MPI_Status msgstatus;
 
- 
+
   DATA_TYPE *ptr1;
- 
+
   DATA_TYPE *temp_s;
   DATA_TYPE *rhs_temp;
 
   DATA_TYPE *my_rhs_temp;
 
-  
+
    my_rhs=*num_my_rhs;
 
-   temp_s = (DATA_TYPE *) malloc((my_rhs + 1) 
+   temp_s = (DATA_TYPE *) malloc((my_rhs + 1)
                                     * sizeof(DATA_TYPE));
     if (temp_s == NULL) {
 	fprintf(stderr, "Node %d: Out of memory for temp_s vector\n", me);
@@ -285,7 +285,7 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
 	exit(-1);
     }
 
-    
+
     my_rhs_temp = (DATA_TYPE *) malloc((my_rows*(my_rhs+1)) * sizeof(DATA_TYPE));
 
     if (my_rhs_temp == NULL) {
@@ -294,7 +294,7 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
     }
 
 
-  
+
 
 
   if (my_rhs > 0) {
@@ -315,7 +315,7 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
     change_nosend = 0;
     next = 0;
     change_send = 0;
-    next_s = 0; 
+    next_s = 0;
     num = my_rhs*my_rows;
 
     /* XCOPY(num,(vec),one,rhs_temp,one);  */
@@ -360,11 +360,11 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
           change_nosend++;
 
           next = change_nosend * (my_rhs + 1);
-    
+
 	}
 
         if( dest !=me ) {
-         
+
           bytes = (my_rhs + 1)*sizeof(DATA_TYPE);
 
           MPI_Irecv( (char *)(rhs_temp +next_s),bytes,MPI_CHAR,MPI_ANY_SOURCE,
@@ -376,12 +376,12 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
 #else
          *(temp_s+my_rhs) = local_index + 0.1;
 #endif
-       
+
          type = PERMTYPE+change_send;
          MPI_Send((char *) temp_s,bytes,MPI_CHAR,dest,
                  type,MPI_COMM_WORLD);
          change_send++;
-        
+
          next_s = change_send * (my_rhs+1);
 
          MPI_Wait(&msgrequest,&msgstatus);
@@ -403,10 +403,10 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
       local_index = *(rhs_temp +next_s+my_rhs);
 #endif
       XCOPY(my_rhs,(rhs_temp + next_s),one,(vec+local_index),my_rows);
-      
+
        inc++;
        next_s = inc * (my_rhs+1);
-       }  
+       }
 
     /* Unpack my changes */
     next = 0;
@@ -421,13 +421,13 @@ void perm1_(DATA_TYPE *vec, int *num_my_rhs)
        inc++;
        next = inc * (my_rhs+1);
     }
-    
-    
+
+
   }
   free(my_rhs_temp);
   free(rhs_temp);
   free(temp_s);
-} 
+}
 
 
 

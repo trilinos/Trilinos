@@ -132,7 +132,7 @@ ENDIF()
 
 #
 # C) Define the targets for package's library(s)
-# 
+#
 
 # Using options to allow the compilation of all the possible libraries
 # this is not what is done in the makefile.am, but what is done there

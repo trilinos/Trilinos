@@ -48,7 +48,7 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 
 
@@ -64,4 +64,4 @@ double seconds_(double *);
 }
 #endif
 
-#endif  
+#endif
