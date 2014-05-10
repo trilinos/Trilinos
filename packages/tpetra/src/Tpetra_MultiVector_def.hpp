@@ -2481,10 +2481,20 @@ namespace Tpetra {
   Teuchos::ArrayRCP<const Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dView () const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
-      "Tpetra::MultiVector::get1dView() requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBuffer<Scalar>( getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValues(lclMV_) );
+    if (getLocalLength () == 0 || getNumVectors () == 0) {
+      return Teuchos::null;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! isConstantStride (), std::runtime_error, "Tpetra::MultiVector::"
+        "get1dView: This MultiVector does not have constant stride, so it is "
+        "not possible to view its data as a single array.  You may check "
+        "whether a MultiVector has constant stride by calling "
+        "isConstantStride().");
+      Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+      return node->template viewBuffer<Scalar> (getStride () * (getNumVectors () - 1) +
+                                                getLocalLength (),
+                                                MVT::getValues (lclMV_));
+    }
   }
 
 
@@ -2492,12 +2502,21 @@ namespace Tpetra {
   Teuchos::ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node>::get1dViewNonConst ()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
-      "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
-                                                      getStride () * (getNumVectors () - 1) + getLocalLength (),
-                                                      MVT::getValuesNonConst (lclMV_));
+    if (getLocalLength () == 0 || getNumVectors () == 0) {
+      return Teuchos::null;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! isConstantStride (), std::runtime_error, "Tpetra::MultiVector::"
+        "get1dViewNonConst: This MultiVector does not have constant stride, so "
+        "it is not possible to view its data as a single array.  You may check "
+        "whether a MultiVector has constant stride by calling "
+        "isConstantStride().");
+      Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+      return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
+                                                        getStride () * (getNumVectors () - 1) +
+                                                        getLocalLength (),
+                                                        MVT::getValuesNonConst (lclMV_));
+    }
   }
 
 

@@ -1487,20 +1487,74 @@ namespace Tpetra {
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   getData (size_t j) const
   {
-    Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-    return node->template viewBuffer<Scalar> (getLocalLength (),
-                                              getSubArrayRCP (MVT::getValues (lclMV_), j));
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef typename dual_view_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::t_host host_view_type;
+
+    // NOTE (mfh 09 2014) Any MultiVector method that called the
+    // (classic) Kokkos Node's viewBuffer or viewBufferNonConst
+    // methods always implied a device->host synchronization.  Thus,
+    // we synchronize here as well, though might want to change this
+    // in the future.
+    view_.template sync<host_type> ();
+
+    // Get a host view of the entire MultiVector's data.
+    host_view_type hostView = view_.template view<host_type> ();
+    // Get a subview of column j.
+    host_view_type hostView_j;
+    if (isConstantStride ()) {
+      hostView_j = subview<host_view_type> (hostView, ALL (), j);
+    } else {
+      hostView_j = subview<host_view_type> (hostView, ALL (), whichVectors_[j]);
+    }
+
+    // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
+    Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+      Kokkos::Compat::persistingView (hostView_j);
+    return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
+
+    // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+    // return node->template viewBuffer<Scalar> (getLocalLength (),
+    //                                           getSubArrayRCP (MVT::getValues (lclMV_), j));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Teuchos::ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  getDataNonConst(size_t j)
+  getDataNonConst (size_t j)
   {
-    Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
-    return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
-                                                      getLocalLength (),
-                                                      getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
+    using Kokkos::ALL;
+    using Kokkos::subview;
+    typedef typename dual_view_type::host_mirror_device_type host_type;
+    typedef typename dual_view_type::t_host host_view_type;
+
+    // NOTE (mfh 09 2014) Any MultiVector method that called the
+    // (classic) Kokkos Node's viewBuffer or viewBufferNonConst
+    // methods always implied a device->host synchronization.  Thus,
+    // we synchronize here as well, though might want to change this
+    // in the future.
+    view_.template sync<host_type> ();
+
+    // Get a host view of the entire MultiVector's data.
+    host_view_type hostView = view_.template view<host_type> ();
+    // Get a subview of column j.
+    host_view_type hostView_j;
+    if (isConstantStride ()) {
+      hostView_j = subview<host_view_type> (hostView, ALL (), j);
+    } else {
+      hostView_j = subview<host_view_type> (hostView, ALL (), whichVectors_[j]);
+    }
+
+    // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
+    Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+      Kokkos::Compat::persistingView (hostView_j);
+    return dataAsArcp;
+
+    // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+    // return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
+    //                                                   getLocalLength (),
+    //                                                   getSubArrayRCP (MVT::getValuesNonConst (lclMV_), j));
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -1904,10 +1958,31 @@ namespace Tpetra {
   Teuchos::ArrayRCP<const Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::get1dView () const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
-      "Tpetra::MultiVector::get1dView() requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBuffer<Scalar>( getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValues(lclMV_) );
+    if (getLocalLength () == 0 || getNumVectors () == 0) {
+      return Teuchos::null;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! isConstantStride (), std::runtime_error, "Tpetra::MultiVector::"
+        "get1dView: This MultiVector does not have constant stride, so it is "
+        "not possible to view its data as a single array.  You may check "
+        "whether a MultiVector has constant stride by calling "
+        "isConstantStride().");
+      // NOTE (mfh 09 2014) get1dView() and get1dViewNonConst() have
+      // always been device->host synchronization points.  We might
+      // want to change this in the future.
+      typedef typename dual_view_type::host_mirror_device_type host_type;
+      view_.template sync<host_type> ();
+      // Both get1dView() and get1dViewNonConst() return a host view
+      // of the data.
+      Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+        Kokkos::Compat::persistingView (view_.template view<host_type> ());
+      return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
+
+      // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+      // return node->template viewBuffer<Scalar> (getStride () * (getNumVectors () - 1) +
+      //                                           getLocalLength (),
+      //                                           MVT::getValues (lclMV_));
+    }
   }
 
 
@@ -1915,10 +1990,32 @@ namespace Tpetra {
   Teuchos::ArrayRCP<Scalar>
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::get1dViewNonConst ()
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(!isConstantStride(), std::runtime_error,
-      "Tpetra::MultiVector::get1dViewNonConst(): requires that this MultiVector have constant stride.");
-    Teuchos::RCP<Node> node = MVT::getNode(lclMV_);
-    return node->template viewBufferNonConst<Scalar>( KokkosClassic::ReadWrite, getStride()*(getNumVectors()-1)+getLocalLength(), MVT::getValuesNonConst(lclMV_) );
+    if (getLocalLength () == 0 || getNumVectors () == 0) {
+      return Teuchos::null;
+    } else {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! isConstantStride (), std::runtime_error, "Tpetra::MultiVector::"
+        "get1dViewNonConst: This MultiVector does not have constant stride, so "
+        "it is not possible to view its data as a single array.  You may check "
+        "whether a MultiVector has constant stride by calling "
+        "isConstantStride().");
+      // NOTE (mfh 09 2014) get1dView() and get1dViewNonConst() have
+      // always been device->host synchronization points.  We might
+      // want to change this in the future.
+      typedef typename dual_view_type::host_mirror_device_type host_type;
+      view_.template sync<host_type> ();
+      // Both get1dView() and get1dViewNonConst() return a host view
+      // of the data.
+      Teuchos::ArrayRCP<scalar_type> dataAsArcp =
+        Kokkos::Compat::persistingView (view_.template view<host_type> ());
+      return dataAsArcp;
+
+      // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
+      // return node->template viewBufferNonConst<Scalar> (KokkosClassic::ReadWrite,
+      //                                                   getStride () * (getNumVectors () - 1) +
+      //                                                   getLocalLength (),
+      //                                                   MVT::getValuesNonConst (lclMV_));
+    }
   }
 
 

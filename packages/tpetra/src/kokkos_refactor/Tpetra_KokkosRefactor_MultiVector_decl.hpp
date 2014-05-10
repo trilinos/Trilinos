@@ -1184,8 +1184,13 @@ namespace Tpetra {
     /// The latter owns the MultiVector's data.
     KMV lclMV_;
 
-    //! The Kokkos::DualView containing the MultiVector's data.
-    dual_view_type view_;
+    /// \brief The Kokkos::DualView containing the MultiVector's data.
+    ///
+    /// This has to be declared \c mutable, so that get1dView() can
+    /// retain its current \c const marking, even though it has always
+    /// implied a device->host synchronization.  Lesson to the reader:
+    /// Use \c const sparingly!
+    mutable dual_view_type view_;
 
     /// \brief Indices of columns this multivector is viewing.
     ///
