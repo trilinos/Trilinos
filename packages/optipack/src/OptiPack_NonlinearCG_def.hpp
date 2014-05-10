@@ -546,6 +546,7 @@ NonlinearCG<Scalar>::doSolve(
             beta_k = beta_PR;
           else // beta_PR > beta_FR
             beta_k = beta_FR;
+          break;
         }
         case NCGU::NONLINEAR_CG_HS: {
           beta_k = beta_HS;
