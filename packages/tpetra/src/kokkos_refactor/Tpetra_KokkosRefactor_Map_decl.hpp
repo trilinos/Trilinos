@@ -1006,7 +1006,12 @@ namespace Tpetra {
         // on demand in getRemoteIndexList, we have a Directory here that
         // we can clone inexpensively, so there is no harm in creating it
         // here.
-        if (! mapIn.directory_.is_null ()) {
+        //
+        // FIXME (mfh 09 May 2014) clone() doesn't quite work -- the
+        // Directory has the wrong implementation type, for some
+        // reason -- but it's always correct to let the output Map
+        // initialize the Directory on its own.
+        if (false && ! mapIn.directory_.is_null ()) {
           mapOut.directory_ = mapIn.directory_->template clone<out_node_type> (mapOut);
         } else {
           // It's created here, but not initialized yet.  The output

@@ -61,7 +61,8 @@ namespace Tpetra {
        const LocalGlobal lOrG,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     // Start with a host Map implementation, since this will make this
     // class' public (host) methods work.  If users want device
@@ -72,8 +73,6 @@ namespace Tpetra {
     // the host and device Maps to be separate.
     mapHost_ = host_impl_type (Teuchos::as<GlobalOrdinal> (globalNumIndices),
                                indexBase, *comm, lOrG);
-
-    // Create the Directory on demand in getRemoteIndexList().
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -84,7 +83,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
@@ -114,7 +114,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type>& node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     const global_size_t GSTI = Teuchos::OrdinalTraits<global_size_t>::invalid ();
@@ -143,7 +144,8 @@ namespace Tpetra {
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
        const Teuchos::RCP<node_type> &node) :
     comm_ (comm),
-    node_ (node)
+    node_ (node),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {
     typedef GlobalOrdinal GO;
     typedef Kokkos::View<const GlobalOrdinal*, device_type,
@@ -181,7 +183,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Map ()
+  Map () :
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
   {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
