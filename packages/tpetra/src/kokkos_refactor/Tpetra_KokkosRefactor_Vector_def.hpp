@@ -81,8 +81,16 @@ namespace Tpetra {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const dual_view_type view)
+          const dual_view_type& view)
   : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view)
+  {}
+
+  template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+          const dual_view_type& view,
+          const dual_view_type& origView)
+    : MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > (map, view, origView)
   {}
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -116,8 +124,12 @@ namespace Tpetra {
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   typename Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot_type
-  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::dot(const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const {
+  Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  dot (const Vector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &a) const
+  {
     using Teuchos::outArg;
+    using Teuchos::REDUCE_SUM;
+    using Teuchos::reduceAll;
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION( !this->getMap()->isCompatible(*a.getMap()), std::runtime_error,
         "Tpetra::Vector::dots(): Vectors do not have compatible Maps:" << std::endl
@@ -132,7 +144,8 @@ namespace Tpetra {
     Kokkos::MV_Dot(&gbldot,this->view_.d_view,a.view_.d_view);
     if (this->isDistributed()) {
       dot_type lcldot = gbldot;
-      Teuchos::reduceAll(*this->getMap()->getComm(),Teuchos::REDUCE_SUM,lcldot,outArg(gbldot));
+      reduceAll<int, dot_type> (* (this->getMap ()->getComm ()), REDUCE_SUM,
+                                lcldot, outArg (gbldot));
     }
     return gbldot;
   }
@@ -335,28 +348,26 @@ namespace Tpetra {
     using Kokkos::ALL;
     using Kokkos::subview;
     using Teuchos::rcp;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > vec_type;
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;
 
     const size_t newNumRows = subMap->getNodeNumElements ();
-    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
+    const bool tooManyElts = newNumRows + offset > this->getOrigNumLocalRows ();
     if (tooManyElts) {
       const int myRank = this->getMap ()->getComm ()->getRank ();
       TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows + offset > MVT::getNumRows (this->lclMV_),
-        std::runtime_error,
-        "Tpetra::Vector::offsetView: Invalid input Map.  The Map owns "
-        << subMap->getNodeNumElements () << " elements on process " << myRank
-        << ".  offset = " << offset << ".  Yet, the Vector contains only "
-        << this->lclMV_.getOrigNumRows () << " on this process.");
+        newNumRows + offset > this->getLocalLength (), std::runtime_error,
+        "Tpetra::Vector::offsetView(NonConst): Invalid input Map.  The input "
+        "Map owns " << newNumRows << " entries on process " << myRank << ".  "
+        "offset = " << offset << ".  Yet, the Vector contains only "
+        << this->getOrigNumLocalRows () << " rows on this process.");
     }
 
-    const std::pair<size_t, size_t> rowRange (offset, newNumRows);
-    dual_view_type localVec =
-      subview<dual_view_type> (this->view_, rowRange, ALL ());
-    return rcp (new vec_type (subMap, localVec));
-
-    // FIXME (mfh 31 Mar 2014) What about whichVectors_ ???
-    // The "classic" version of this method didn't deal with that either.
+    const std::pair<size_t, size_t> offsetPair (offset, offset + newNumRows);
+    // Need 'this->' to get view_ and origView_ from parent class.
+    return rcp (new V (subMap,
+                       subview<dual_view_type> (this->view_, offsetPair, ALL ()),
+                       this->origView_));
   }
 
 
@@ -373,31 +384,9 @@ namespace Tpetra {
   offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > >& subMap,
                       size_t offset)
   {
-    using Kokkos::ALL;
-    using Kokkos::subview;
-    using Teuchos::rcp;
-    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > vec_type;
-
-    const size_t newNumRows = subMap->getNodeNumElements ();
-    const bool tooManyElts = newNumRows + offset > this->lclMV_.getOrigNumRows ();
-    if (tooManyElts) {
-      const int myRank = this->getMap ()->getComm ()->getRank ();
-      TEUCHOS_TEST_FOR_EXCEPTION(
-        newNumRows + offset > MVT::getNumRows (this->lclMV_),
-        std::runtime_error,
-        "Tpetra::Vector::offsetViewNonConst: Invalid input Map.  The Map owns "
-        << subMap->getNodeNumElements () << " elements on process " << myRank
-        << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
-        << this->lclMV_.getOrigNumRows () << " on this process.");
-    }
-
-    const std::pair<size_t, size_t> rowRange (offset, newNumRows);
-    dual_view_type localVec =
-      subview<dual_view_type> (this->view_, rowRange, ALL ());
-    return rcp (new vec_type (subMap, localVec));
-
-    // FIXME (mfh 31 Mar 2014) What about whichVectors_ ???
-    // The "classic" version of this method didn't deal with that either.
+    typedef Vector<Scalar, LocalOrdinal, GlobalOrdinal,
+      Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > V;
+    return Teuchos::rcp_const_cast<V> (this->offsetView (subMap, offset));
   }
 
 } // namespace Tpetra

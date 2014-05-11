@@ -91,16 +91,38 @@ public:
   //! \brief Set vector values from an existing array (copy)
   Vector(const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> > &map, const ArrayView<const Scalar> &A);
 
-  /// \brief Expert mode constructor.
+  /// \brief Expert mode constructor, that takes a Kokkos::DualView of
+  ///   the Vector's data, and returns a Vector that views those data.
   ///
   /// \warning This constructor is only for expert users.  We make
   ///   no promises about backwards compatibility for this interface.
   ///   It may change or go away at any time.
   ///
+  /// See the documentation of the MultiVector (parent class)
+  /// constructor that takes the same arguments.
+  ///
   /// \param map [in] Map describing the distribution of rows.
-  /// \param view [in] Device view to the data (shallow copy)
+  /// \param view [in] View of the data (shallow copy).
   Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
-          const dual_view_type view);
+          const dual_view_type& view);
+
+  /// \brief Expert mode constructor, that takes a Kokkos::DualView of
+  ///   the Vector's data and the "original" Kokkos::DualView of the
+  ///   data, and returns a Vector that views those data.
+  ///
+  /// \warning This constructor is only for expert users.  We make
+  ///   no promises about backwards compatibility for this interface.
+  ///   It may change or go away at any time.
+  ///
+  /// See the documentation of the MultiVector (parent class)
+  /// constructor that takes the same arguments.
+  ///
+  /// \param map [in] Map describing the distribution of rows.
+  /// \param view [in] View of the data (shallow copy).
+  /// \param origView [in] "Original" view of the data (shallow copy).
+  Vector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+          const dual_view_type& view,
+          const dual_view_type& origView);
 
   //! Destructor.
   virtual ~Vector();
@@ -117,12 +139,9 @@ public:
   RCP<Vector<Scalar, LocalOrdinal, GlobalOrdinal, Node2> >
   clone (const RCP<Node2> &node2);
 
-
   //@}
   //! @name Post-construction modification routines
   //@{
-
-
 
   //! Replace current value at the specified location with specified value.
   /** \pre \c globalRow must be a valid global element on this node, according to the row map.

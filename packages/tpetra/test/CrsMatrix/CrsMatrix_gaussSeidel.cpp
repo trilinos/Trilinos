@@ -328,7 +328,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, gaussSeidelSerial, LocalOrdinalTyp
         D_data[k] = STS::one() / D_data[k];
       }
     }
-    TEST_INEQUALITY_CONST(zeroDiagEltIndex, -1);
+    TEST_EQUALITY_CONST(zeroDiagEltIndex, static_cast<size_type> (-1));
     // TEUCHOS_TEST_FOR_EXCEPTION(
     //   zeroDiagEltIndex != -1,
     //   std::logic_error,
@@ -709,11 +709,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( CrsMatrix, reorderedGaussSeidelSerial, LocalO
         D_data[k] = STS::one() / D_data[k];
       }
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      zeroDiagEltIndex != -1,
-      std::logic_error,
-      "On Process " << comm->getRank () << ", diagonal element "
-      << zeroDiagEltIndex << ", possibly among others, is zero.");
+    TEST_EQUALITY_CONST(zeroDiagEltIndex, static_cast<size_type> (-1));
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   zeroDiagEltIndex != -1,
+    //   std::logic_error,
+    //   "On Process " << comm->getRank () << ", diagonal element "
+    //   << zeroDiagEltIndex << ", possibly among others, is zero.");
   }
 
   if (myRank == 0) {
