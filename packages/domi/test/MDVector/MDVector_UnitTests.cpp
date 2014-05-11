@@ -200,15 +200,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -292,15 +293,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -379,15 +381,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -447,15 +450,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -532,15 +536,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -634,15 +639,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -736,15 +742,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector > epetraVector = mdVector.getEpetraVector();
+    Teuchos::RCP< Epetra_Vector > epetraVectorView =
+      mdVector.getEpetraVectorView();
   }
   else
-    TEST_THROW(mdVector.getEpetraVector(), Domi::TypeError);
+    TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
 #endif
 
 #ifdef HAVE_TPETRA
-  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVector =
-    mdVector.template getTpetraVector< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
+    mdVector.template getTpetraVectorView< int, int >();
 #endif
 }
 
@@ -794,27 +801,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
 #ifdef HAVE_EPETRA
   if (strncmp(typeid(Sca).name(), "double", 6) == 0)
   {
-    Teuchos::RCP< Epetra_Vector      > ev1  = mdv1.getEpetraVector();
-    Teuchos::RCP< Epetra_MultiVector > emv2 = mdv2.getEpetraMultiVector();
-    Teuchos::RCP< Epetra_MultiVector > emv3 = mdv3.getEpetraMultiVector();
+    Teuchos::RCP< Epetra_Vector      > ev1  = mdv1.getEpetraVectorView();
+    Teuchos::RCP< Epetra_MultiVector > emv2 = mdv2.getEpetraMultiVectorView();
+    Teuchos::RCP< Epetra_MultiVector > emv3 = mdv3.getEpetraMultiVectorView();
     TEST_EQUALITY_CONST(emv2->NumVectors(), 2);
     TEST_EQUALITY_CONST(emv3->NumVectors(), 5);
   }
   else
   {
-    TEST_THROW(mdv1.getEpetraVector()     , Domi::TypeError);
-    TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
-    TEST_THROW(mdv2.getEpetraMultiVector(), Domi::TypeError);
+    TEST_THROW(mdv1.getEpetraVectorView()     , Domi::TypeError);
+    TEST_THROW(mdv2.getEpetraMultiVectorView(), Domi::TypeError);
+    TEST_THROW(mdv2.getEpetraMultiVectorView(), Domi::TypeError);
   }
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1  =
-    mdv1.template getTpetraVector< int >();
+    mdv1.template getTpetraVectorView< int >();
   Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2 =
-    mdv2.template getTpetraMultiVector< int >();
+    mdv2.template getTpetraMultiVectorView< int >();
   Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3 =
-    mdv3.template getTpetraMultiVector< int >();
+    mdv3.template getTpetraMultiVectorView< int >();
   TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
 #endif
