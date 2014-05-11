@@ -492,14 +492,14 @@ public:
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
    * will be thrown, as Epetra_Vectors are contiguous, and this is
    * intended as a view transform.  Non-contiguous data is the result
-   * of slicing a parent MDVector, and getEpetraVector() should be
+   * of slicing a parent MDVector, and getEpetraVectorView() should be
    * called on the parent instead.
    *
    * The MDVector Scalar template must be the same type as an
    * Epetra_Vector, i.e. double, or a Domi::TypeError exception will
    * be thrown.
    */
-  Teuchos::RCP< Epetra_Vector > getEpetraVector() const;
+  Teuchos::RCP< Epetra_Vector > getEpetraVectorView() const;
 
   /** \brief Return this MDVector as an Epetra_MultiVector
    *
@@ -522,7 +522,7 @@ public:
    * Epetra_MultiVector, i.e. double, or a Domi::TypeError exception
    * will be thrown.
    */
-  Teuchos::RCP< Epetra_MultiVector > getEpetraMultiVector() const;
+  Teuchos::RCP< Epetra_MultiVector > getEpetraMultiVectorView() const;
 
 #endif
 
@@ -535,12 +535,12 @@ public:
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
    * will be thrown, as Tpetra::Vectors are contiguous, and this is
    * intended as a view transform.  Non-contiguous data is the result
-   * of slicing a parent MDVector, and getTpetraVector() should be
+   * of slicing a parent MDVector, and getTpetraVectorView() should be
    * called on the parent instead.
    */
   template< class LocalOrdinal >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
-  getTpetraVector() const;
+  getTpetraVectorView() const;
 
   /** \brief Return this MDVector as an Tpetra::Vector
    *
@@ -549,13 +549,13 @@ public:
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
    * will be thrown, as Tpetra::Vectors are contiguous, and this is
    * intended as a view transform.  Non-contiguous data is the result
-   * of slicing a parent MDVector, and getTpetraVector() should be
+   * of slicing a parent MDVector, and getTpetraVectorView() should be
    * called on the parent instead.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
-  getTpetraVector() const;
+  getTpetraVectorView() const;
 
   /** \brief Return this MDVector as an Tpetra::Vector
    *
@@ -564,14 +564,14 @@ public:
    * MDVector is non-contiguous, a Domi::MDMapNoncontiguous exception
    * will be thrown, as Tpetra::Vectors are contiguous, and this is
    * intended as a view transform.  Non-contiguous data is the result
-   * of slicing a parent MDVector, and getTpetraVector() should be
+   * of slicing a parent MDVector, and getTpetraVectorView() should be
    * called on the parent instead.
    */
   template< class LocalOrdinal,
             class GlobalOrdinal,
             class Node2 >
   Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
-  getTpetraVector() const;
+  getTpetraVectorView() const;
 
   /** \brief Return this MDVector as an Tpetra::MultiVector
    *
@@ -595,7 +595,7 @@ public:
                                      LocalOrdinal,
                                      LocalOrdinal,
                                      Node > >
-  getTpetraMultiVector() const;
+  getTpetraMultiVectorView() const;
 
   /** \brief Return this MDVector as an Tpetra::MultiVector
    *
@@ -620,7 +620,7 @@ public:
                                      LocalOrdinal,
                                      GlobalOrdinal,
                                      Node > >
-  getTpetraMultiVector() const;
+  getTpetraMultiVectorView() const;
 
   /** \brief Return this MDVector as an Tpetra::MultiVector
    *
@@ -646,7 +646,7 @@ public:
                                      LocalOrdinal,
                                      GlobalOrdinal,
                                      Node2 > >
-  getTpetraMultiVector() const;
+  getTpetraMultiVectorView() const;
 
 #endif
 
@@ -1476,18 +1476,18 @@ isContiguous() const
 
 #ifdef HAVE_EPETRA
 
-// The getEpetraVector() method only makes sense for Scalar=double,
-// because Epetra_Vectors store data buffers of type double only.
-// There is no convenient way to specialize just one (or a small
-// handfull of) methods, instead you have to specialize the whole
-// class.  So we allow getEpetraVector() to compile for any Scalar,
-// but we will throw an exception if Scalar is not double.
+// The getEpetraVectorView() method only makes sense for Scalar =
+// double, because Epetra_Vectors store data buffers of type double
+// only.  There is no convenient way to specialize just one (or a
+// small handfull of) methods, instead you have to specialize the
+// whole class.  So we allow getEpetraVectorView() to compile for any
+// Scalar, but we will throw an exception if Scalar is not double.
 
 template< class Scalar,
           class Node >
 Teuchos::RCP< Epetra_Vector >
 MDVector< Scalar, Node >::
-getEpetraVector() const
+getEpetraVectorView() const
 {
   // Throw an exception if Scalar is not double
   const char * scalarType = typeid(Scalar).name();
@@ -1522,19 +1522,18 @@ getEpetraVector() const
 
 #ifdef HAVE_EPETRA
 
-// The getEpetraMultiVector() method only makes sense for
-// Scalar=double, because Epetra_MultiVectors store data buffers of
-// type double only.  There is no convenient way to specialize just
-// one (or a small handfull of) methods, instead you have to
-// specialize the whole class.  So we allow getEpetraVector() to
-// compile for any Scalar, but we will throw an exception if Scalar is
-// not double.
+// The getEpetraMultiVectorView() method only makes sense for Scalar =
+// double, because Epetra_MultiVectors store data buffers of type
+// double only.  There is no convenient way to specialize just one (or
+// a small handfull of) methods, instead you have to specialize the
+// whole class.  So we allow getEpetraVectorView() to compile for any
+// Scalar, but we will throw an exception if Scalar is not double.
 
 template< class Scalar,
           class Node >
 Teuchos::RCP< Epetra_MultiVector >
 MDVector< Scalar, Node >::
-getEpetraMultiVector() const
+getEpetraMultiVectorView() const
 {
   // Throw an exception if Scalar is not double
   const char * scalarType = typeid(Scalar).name();
@@ -1602,9 +1601,9 @@ template< class Scalar, class Node >
 template< class LocalOrdinal >
 Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, LocalOrdinal, Node > >
 MDVector< Scalar, Node >::
-getTpetraVector() const
+getTpetraVectorView() const
 {
-  return getTpetraVector< LocalOrdinal, LocalOrdinal, Node >();
+  return getTpetraVectorView< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -1618,9 +1617,9 @@ template< class LocalOrdinal,
           class GlobalOrdinal >
 Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node > >
 MDVector< Scalar, Node >::
-getTpetraVector() const
+getTpetraVectorView() const
 {
-  return getTpetraVector< LocalOrdinal, GlobalOrdinal, Node >();
+  return getTpetraVectorView< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -1635,7 +1634,7 @@ template< class LocalOrdinal,
           class Node2 >
 Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
 MDVector< Scalar, Node >::
-getTpetraVector() const
+getTpetraVectorView() const
 {
   // Throw an exception if this MDVector's MDMap is not contiguous
   TEUCHOS_TEST_FOR_EXCEPTION(
@@ -1671,9 +1670,9 @@ Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    LocalOrdinal,
                                    Node > >
 MDVector< Scalar, Node >::
-getTpetraMultiVector() const
+getTpetraMultiVectorView() const
 {
-  return getTpetraMultiVector< LocalOrdinal, LocalOrdinal, Node >();
+  return getTpetraMultiVectorView< LocalOrdinal, LocalOrdinal, Node >();
 }
 
 #endif
@@ -1690,9 +1689,9 @@ Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    GlobalOrdinal,
                                    Node > >
 MDVector< Scalar, Node >::
-getTpetraMultiVector() const
+getTpetraMultiVectorView() const
 {
-  return getTpetraMultiVector< LocalOrdinal, GlobalOrdinal, Node >();
+  return getTpetraMultiVectorView< LocalOrdinal, GlobalOrdinal, Node >();
 }
 
 #endif
@@ -1710,7 +1709,7 @@ Teuchos::RCP< Tpetra::MultiVector< Scalar,
                                    GlobalOrdinal,
                                    Node2 > >
 MDVector< Scalar, Node >::
-getTpetraMultiVector() const
+getTpetraMultiVectorView() const
 {
   // Determine the vector axis and related info
   int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
