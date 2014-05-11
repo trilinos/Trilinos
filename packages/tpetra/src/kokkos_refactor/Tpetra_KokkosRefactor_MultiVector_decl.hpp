@@ -421,21 +421,69 @@ namespace Tpetra {
                  const Teuchos::ArrayView<const Teuchos::ArrayView<const Scalar> >&ArrayOfPtrs,
                  const size_t NumVectors);
 
-    /// \brief Expert mode constructor.
+    /// \brief Expert mode constructor for contiguous ("constant
+    ///   stride") views.
     ///
     /// \warning This constructor is only for expert users.  We make
     ///   no promises about backwards compatibility for this interface.
     ///   It may change or go away at any time.
     ///
     /// \param map [in] Map describing the distribution of rows.
-    /// \param view [in] Device view to the data (shallow copy)
+    /// \param view [in] Device view to the data (shallow copy).
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const dual_view_type view);
 
-    //! Advanced constructor for non-contiguous views.
+    /// \brief Expert mode constructor for contiguous ("constant
+    ///   stride") views, with original dimensions.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] Device view to the data (shallow copy).
+    /// \param origNumRows [in] "Original" number of rows in the view.
+    /// \param origNumRows [in] "Original" number of columns in the view.
+    ///
+    /// Keeping the "original" dimensions lets us safely construct a
+    /// column Map view of a (domain Map view of a (column Map
+    /// MultiVector)).  The result of a Kokkos::subview does not
+    /// remember the original dimensions of the view; MultiVector
+    /// does.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type view,
+                 const size_t origNumRows,
+                 const size_t origNumCols);
+
+    /// \brief Expert mode constructor for noncontiguous ("not
+    ///   constant stride") views.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] Device view to the data (shallow copy).
+    /// \param whichVectors [in] Which columns (vectors) to view.
     MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
                  const dual_view_type view,
                  const Teuchos::ArrayView<const size_t>& whichVectors);
+
+    /// \brief Expert mode constructor for noncontiguous ("not
+    ///   constant stride") views, with original dimensions.
+    ///
+    /// \warning This constructor is only for expert users.  We make
+    ///   no promises about backwards compatibility for this interface.
+    ///   It may change or go away at any time.
+    ///
+    /// \param map [in] Map describing the distribution of rows.
+    /// \param view [in] Device view to the data (shallow copy).
+    /// \param whichVectors [in] Which columns (vectors) to view.
+    MultiVector (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& map,
+                 const dual_view_type view,
+                 const Teuchos::ArrayView<const size_t>& whichVectors,
+                 const size_t origNumRows,
+                 const size_t origNumCols);
 
     //! Return a deep copy of <tt>*this</tt>, for a different Kokkos Node type.
     template <class Node2>
