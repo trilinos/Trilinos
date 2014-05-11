@@ -1688,6 +1688,8 @@ namespace Tpetra {
   offsetViewNonConst (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& subMap,
                       size_t offset)
   {
+    using Kokkos::ALL;
+    using Kokkos::subview;
     using Teuchos::RCP;
     using Teuchos::rcp;
     typedef MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > MV;
@@ -1704,15 +1706,40 @@ namespace Tpetra {
         << ".  offset = " << offset << ".  Yet, the MultiVector contains only "
         << lclMV_.getOrigNumRows () << " on this process.");
     }
+
+    // FIXME (mfh 10 May 2014) The trouble with these Kokkos::DualView
+    // constructors is that they lose the "origNumRows" value in
+    // KokkosClassic::MultiVector.  This means that we can't have a
+    // column Map view of a (domain Map view of a (column Map
+    // MultiVector)).  The Gauss-Seidel test depends on this behavior.
+    // It's also useful behavior for speeding up the Import for sparse
+    // matrix-vector multiply.  We should fix this in Tpetra, not in
+    // Kokkos, since Kokkos doesn't really need this feature.
+    //
+    // Two ways to fix this:
+    //
+    //   1. Have MultiVector keep the "original Map" as well as its
+    //      current Map
+    //
+    //   2. Have MultiVector, instead of KokkosClassic::MultiVector,
+    //      keep origNumRows and origNumCols.
+    //
+    // #1 is the most abstract approach.  In that approach, the
+    // constructors that take a DualView should also have overloads
+    // that take the original Map as well as the new Map.  However, #1
+    // does not account for origNumCols.
+    const std::pair<size_t, size_t> offsetPair (offset, offset + newNumRows);
     RCP<MV> subViewMV;
     if (isConstantStride()) {
-      subViewMV = rcp (new MV (subMap,
-          Kokkos::subview<dual_view_type> (view_,std::make_pair(offset,offset+newNumRows),Kokkos::ALL())));
+      subViewMV =
+        rcp (new MV (subMap,
+                     subview<dual_view_type> (view_, offsetPair, ALL ())));
     }
     else {
-      subViewMV = rcp (new MV (subMap,
-          Kokkos::subview<dual_view_type> (view_,std::make_pair(offset,offset+newNumRows),Kokkos::ALL()),
-          whichVectors_()));
+      subViewMV =
+        rcp (new MV (subMap,
+                     subview<dual_view_type> (view_, offsetPair, ALL ()),
+                     whichVectors_ ()));
     }
     return subViewMV;
   }
@@ -2455,9 +2482,19 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  const KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >&
-  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalMV() const {
-    return lclMV_;
+  KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >
+  MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalMV () const
+  {
+    KMV kmv (this->getMap ()->getNode ());
+    size_t stride[8];
+    view_.stride (stride);
+    const size_t LDA = view_.dimension_1 () > 1 ? stride[1] : view_.dimension_0 ();
+    MVT::initializeValues (kmv, getLocalLength (), getNumVectors (),
+                           Kokkos::Compat::persistingView (view_.d_view),
+                           LDA,
+                           lclMV_.getOrigNumRows (),
+                           lclMV_.getOrigNumCols ());
+    return kmv;
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
@@ -2467,6 +2504,7 @@ namespace Tpetra {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  TEUCHOS_DEPRECATED
   KokkosClassic::MultiVector<Scalar,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >&
   MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::getLocalMVNonConst() {
     return lclMV_;
