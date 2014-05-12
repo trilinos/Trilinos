@@ -252,7 +252,7 @@ namespace Xpetra {
         for (size_t c = 0; c < Cols(); ++c) {
           Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
 
-          if (!Ablock->isFillComplete())
+          if (Ablock != Teuchos::null && !Ablock->isFillComplete())
             Ablock->fillComplete(getDomainMap(c), getRangeMap(r), params);
         }
 
@@ -268,9 +268,11 @@ namespace Xpetra {
         // copy all local column lids of all block rows to colset
         std::set<GO> colset;
         for (size_t r = 0; r < Rows(); ++r) {
-          if (getMatrix(r,c) != Teuchos::null) {
-            Teuchos::ArrayView<const GO> colElements = getMatrix(r,c)->getColMap()->getNodeElementList();
-            Teuchos::RCP<const Map> colmap = getMatrix(r,c)->getColMap();
+          Teuchos::RCP<CrsMatrix> Ablock = getMatrix(r,c);
+
+          if (Ablock != Teuchos::null) {
+            Teuchos::ArrayView<const GO> colElements = Ablock->getColMap()->getNodeElementList();
+            Teuchos::RCP<const Map>      colmap      = Ablock->getColMap();
             copy(colElements.getRawPtr(), colElements.getRawPtr() + colElements.size(), inserter(colset, colset.begin()));
           }
         }
@@ -302,8 +304,12 @@ namespace Xpetra {
     global_size_t getGlobalNumRows() const {
       global_size_t globalNumRows = 0;
 
-      for (size_t r = 0; r < Rows(); ++r)
-        globalNumRows += getMatrix(r,0)->getGlobalNumRows();
+      for (size_t row = 0; row < Rows(); row++)
+        for (size_t col = 0; col < Cols(); col++)
+          if (!getMatrix(row,col).is_null()) {
+            globalNumRows += getMatrix(row,col)->getGlobalNumRows();
+            break; // we need only one non-null matrix in a row
+          }
 
       return globalNumRows;
     }
@@ -314,8 +320,12 @@ namespace Xpetra {
     global_size_t getGlobalNumCols() const {
       global_size_t globalNumCols = 0;
 
-      for (size_t c = 0; c < Cols(); ++c)
-        globalNumCols += getMatrix(0,c)->getGlobalNumCols();
+      for (size_t col = 0; col < Cols(); col++)
+        for (size_t row = 0; row < Rows(); row++)
+          if (!getMatrix(row,col).is_null()) {
+            globalNumCols += getMatrix(row,col)->getGlobalNumCols();
+            break; // we need only one non-null matrix in a col
+          }
 
       return globalNumCols;
     }
@@ -324,8 +334,12 @@ namespace Xpetra {
     size_t getNodeNumRows() const {
       global_size_t nodeNumRows = 0;
 
-      for (size_t r = 0; r < Rows(); ++r)
-        nodeNumRows += getMatrix(r,0)->getNodeNumRows();
+      for (size_t row = 0; row < Rows(); ++row)
+        for (size_t col = 0; col < Cols(); col++)
+          if (!getMatrix(row,col).is_null()) {
+            nodeNumRows += getMatrix(row,col)->getNodeNumRows();
+            break; // we need only one non-null matrix in a row
+          }
 
       return nodeNumRows;
     }
@@ -334,9 +348,10 @@ namespace Xpetra {
     global_size_t getGlobalNumEntries() const {
       global_size_t globalNumEntries = 0;
 
-      for (size_t r = 0; r < Rows(); ++r)
-        for (size_t c = 0; c < Cols(); ++c)
-          globalNumEntries += getMatrix(r,c)->getGlobalNumEntries();
+      for (size_t row = 0; row < Rows(); ++row)
+        for (size_t col = 0; col < Cols(); ++col)
+          if (!getMatrix(row,col).is_null())
+            globalNumEntries += getMatrix(row,col)->getGlobalNumEntries();
 
       return globalNumEntries;
     }
@@ -345,9 +360,10 @@ namespace Xpetra {
     size_t getNodeNumEntries() const {
       global_size_t nodeNumEntries = 0;
 
-      for (size_t r = 0; r < Rows(); ++r)
-        for (size_t c = 0; c < Cols(); ++c)
-          nodeNumEntries += getMatrix(r,c)->getNodeNumEntries();
+      for (size_t row = 0; row < Rows(); ++row)
+        for (size_t col = 0; col < Cols(); ++col)
+          if (!getMatrix(row,col).is_null())
+            nodeNumEntries += getMatrix(row,col)->getNodeNumEntries();
 
       return nodeNumEntries;
     }
@@ -392,7 +408,7 @@ namespace Xpetra {
      */
     bool isLocallyIndexed() const {
       for (size_t i = 0; i < blocks_.size(); ++i)
-        if (!blocks_[i]->isLocallyIndexed())
+        if (blocks_[i] != Teuchos::null && !blocks_[i]->isLocallyIndexed())
           return false;
       return true;
     }
@@ -403,7 +419,7 @@ namespace Xpetra {
      */
     bool isGloballyIndexed() const {
       for (size_t i = 0; i < blocks_.size(); i++)
-        if (!blocks_[i]->isGloballyIndexed())
+        if (blocks_[i] != Teuchos::null && !blocks_[i]->isGloballyIndexed())
           return false;
       return true;
     }
@@ -411,7 +427,7 @@ namespace Xpetra {
     //! Returns \c true if fillComplete() has been called and the matrix is in compute mode.
     bool isFillComplete() const {
       for (size_t i = 0; i < blocks_.size(); i++)
-        if (!blocks_[i]->isFillComplete())
+        if (blocks_[i] != Teuchos::null && !blocks_[i]->isFillComplete())
           return false;
       return true;
     }
@@ -675,7 +691,7 @@ namespace Xpetra {
     Teuchos::RCP<CrsMatrix> getMatrix(size_t r, size_t c) const       { return blocks_[r*Cols()+c]; }
 
     /// set matrix block
-    void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix>& mat) {
+    void setMatrix(size_t r, size_t c, Teuchos::RCP<CrsMatrix> mat) {
       // TODO: if filled -> return error
 
       TEUCHOS_TEST_FOR_EXCEPTION(r > Rows(), std::out_of_range, "Error, r = " << Rows() << " is too big");
@@ -696,9 +712,10 @@ namespace Xpetra {
       RCP<CrsMatrix> sparse = CrsMatrixFactory::Build(fullrowmap_, 33);
 
       for (size_t i = 0; i < blocks_.size(); i++)
-        this->Add(*blocks_[i], one, *sparse, one);
+        if (blocks_[i] != Teuchos::null)
+          this->Add(*blocks_[i], one, *sparse, one);
 
-      sparse->fillComplete(getDomainMap(),getRangeMap());
+      sparse->fillComplete(getDomainMap(), getRangeMap());
 
       return sparse;
     }
