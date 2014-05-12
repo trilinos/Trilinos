@@ -102,8 +102,8 @@ namespace MueLu {
 
     LO numVertices, numAggregates;
     ifs >> numVertices >> numAggregates;
-    TEUCHOS_TEST_FOR_EXCEPTION(numVertices   > 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
-    TEUCHOS_TEST_FOR_EXCEPTION(numAggregates > 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(numVertices   <= 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(numAggregates <= 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
 
     Xpetra::UnderlyingLib  lib       = currentLevel.lib();
     const int              indexBase = 0;
