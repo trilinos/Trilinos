@@ -5,6 +5,7 @@
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_io/StkMeshIoBroker.hpp>
 #include <stk_mesh/base/FEMHelpers.hpp>
+#include <exampleMeshes/StkMeshFromGeneratedMesh.h>
 
 namespace {
 
@@ -17,44 +18,7 @@ public:
     KeyProcVector getKeys() const { return m_key_usage ; }
 };
 
-class StkMeshCreator
-{
 
-public:
-    StkMeshCreator(const std::string& generatedMeshSpec, MPI_Comm communicator) :
-    m_stkMeshMetaData(NULL), m_stkMeshBulkData(NULL)
-    {
-        const int spatialDim = 3;
-        m_stkMeshMetaData = new stk::mesh::MetaData(spatialDim);
-        m_stkMeshBulkData = new stk::mesh::BulkData(*m_stkMeshMetaData, communicator);
-
-        readExodusFileIntoStkMesh(generatedMeshSpec, *m_stkMeshBulkData, communicator);
-    }
-
-    ~StkMeshCreator()
-    {
-        delete m_stkMeshBulkData;
-        delete m_stkMeshMetaData;
-    }
-
-    stk::mesh::MetaData* getMetaData() { return m_stkMeshMetaData; }
-    stk::mesh::BulkData* getBulkData() { return m_stkMeshBulkData; }
-
-private:
-
-    void readExodusFileIntoStkMesh(const std::string& generatedMeshSpecification, stk::mesh::BulkData &stkMeshBulkData, MPI_Comm communicator)
-    {
-        stk::io::StkMeshIoBroker exodusFileReader(communicator);
-        exodusFileReader.set_bulk_data(stkMeshBulkData);
-        exodusFileReader.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
-        exodusFileReader.create_input_mesh();
-        exodusFileReader.populate_bulk_data();
-    }
-
-private:
-    stk::mesh::MetaData *m_stkMeshMetaData;
-    stk::mesh::BulkData *m_stkMeshBulkData;
-};
 
 void updateDistributedIndexUsingStkMesh(stk::mesh::BulkData &stkMeshBulkData, const int myProc, stk::parallel::DistributedIndex& distributedIndex)
 {
@@ -104,7 +68,7 @@ TEST( UnderstandingDistributedIndex, WithoutStkMeshBulkData)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::MetaData &stkMeshMetaData = *stkMesh.getMetaData();
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
@@ -187,7 +151,7 @@ TEST( UnderstandingDistributedIndex, ViaStkMeshBulkData)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -266,7 +230,7 @@ TEST(UnderstandingDistributedIndex, TestSharedAndGhostedAndOwnedEntitiesWithoutA
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x2|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -395,7 +359,7 @@ TEST(UnderstandingDistributedIndex, GhostAnElement)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -470,7 +434,7 @@ TEST(UnderstandingDistributedIndex, KillAGhostedElement)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -540,7 +504,7 @@ TEST(UnderstandingDistributedIndex, CreateDisconnectedElement)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -632,7 +596,7 @@ TEST(UnderstandingDistributedIndex, MoveAnElement)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -726,7 +690,7 @@ TEST(UnderstandingDistributedIndex, GhostANode)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         stk::mesh::BulkData &stkMeshBulkData = *stkMesh.getBulkData();
 
@@ -959,7 +923,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostings)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         int owningProc = 0;
         int ghostReceivingProc = 1;
@@ -1007,7 +971,7 @@ TEST(UnderstandingDistributedIndex, MultipleCustomGhostingsWithDestroy)
     if(procCount == 2)
     {
         const std::string generatedMeshSpec = "generated:2x2x4|sideset:xXyYzZ|nodeset:xXyYzZ";
-        StkMeshCreator stkMesh(generatedMeshSpec, communicator);
+        unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
 
         int owningProc = 0;
         int ghostReceivingProc = 1;
