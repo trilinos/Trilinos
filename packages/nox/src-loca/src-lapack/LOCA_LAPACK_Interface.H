@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,18 +63,18 @@ namespace LOCA {
 namespace LOCA {
   namespace LAPACK {
 
-    /*! 
+    /*!
       \brief Virtual interface for LOCA::LAPACK::Group to provide a
-      link to the external code for RHS and Jacobian fills. 
+      link to the external code for RHS and Jacobian fills.
     */
     /*!
-      This interface is derived from the NOX::LAPACK::Interface and 
+      This interface is derived from the NOX::LAPACK::Interface and
       and additionally provides a method for setting problem parameters.
     */
     class Interface : public NOX::LAPACK::Interface {
 
     public:
- 
+
       //! Constructor
       Interface() {}
 
@@ -89,39 +89,39 @@ namespace LOCA {
                                  const double conParam) {}
 
       /*!
-       * \brief Compute shifted matrix alpha*J + beta*M where J is the 
-       * Jacobian matrix and M is the mass matrix.  Returns true if 
+       * \brief Compute shifted matrix alpha*J + beta*M where J is the
+       * Jacobian matrix and M is the mass matrix.  Returns true if
        * computation was successful.
        */
       /*!
-       * The default implementation assumes the mass matrix is the 
+       * The default implementation assumes the mass matrix is the
        * identity matrix.
        */
       virtual bool computeShiftedMatrix(
-				   double alpha, double beta,
-				   const NOX::LAPACK::Vector& x,
-				   NOX::LAPACK::Matrix<double>& A) 
-      { 
-	bool res = true;
-	if (alpha != 0.0) {
-	  res = computeJacobian(A, x);
-	  A.scale(alpha);
-	}
-	else
-	  A.scale(0.0);
-	if (beta != 0.0)
-	  for (int i=0; i<A.numRows(); i++)
-	    if (i < A.numCols())
-	      A(i,i) += beta;
-	return res;
+                   double alpha, double beta,
+                   const NOX::LAPACK::Vector& x,
+                   NOX::LAPACK::Matrix<double>& A)
+      {
+    bool res = true;
+    if (alpha != 0.0) {
+      res = computeJacobian(A, x);
+      A.scale(alpha);
+    }
+    else
+      A.scale(0.0);
+    if (beta != 0.0)
+      for (int i=0; i<A.numRows(); i++)
+        if (i < A.numCols())
+          A(i,i) += beta;
+    return res;
       }
 
       //! Projects solution to a few scalars for multiparameter continuation
-      /*! Default implementation is the max norm 
+      /*! Default implementation is the max norm
        */
       virtual void projectToDraw(const NOX::LAPACK::Vector& x,
-				 double *px) const {
-	px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
+                 double *px) const {
+    px[0] = x.norm(NOX::Abstract::Vector::MaxNorm);
       }
 
       //! Returns the dimension of the project to draw array

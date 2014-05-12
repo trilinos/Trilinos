@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -70,15 +70,15 @@ namespace LineSearch {
 
 class Generic;
 
-/*! 
+/*!
 
-  \brief Factory to build line search objects derived from NOX::LineSearch::Generic.  
+  \brief Factory to build line search objects derived from NOX::LineSearch::Generic.
 
   <b>Parameters</b>
-  
+
    <ul>
    <li> "Method" <std::string> Name of the line search. Valid choices are:
-     <ul> 
+     <ul>
      <li> "Full Step" (NOX::LineSearch::FullStep)
      <li> "Backtrack" (NOX::LineSearch::Backtrack)
      <li> "Polynomial" (NOX::LineSearch::Polynomial)
@@ -101,9 +101,9 @@ The user has the option of passing in a user-defined line search.  First, they m
 
 \code
    class MyLineSearch : public NOX::LineSearch::Generic {
-   
+
      // Ctor that takes the standard line search arguments.
-     MyLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd, 
+     MyLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
                   Teuchos::ParameterList& params);
 
      .
@@ -140,7 +140,7 @@ ls_params.set("User Defined Line Search Factory", ls_factory);
 It is critical that the user defined factory be set in the parameter
 list as a base class type object: NOX::LineSearch::UserDefinedFactory.
 
- */  
+ */
 class Factory {
 
 public:
@@ -157,9 +157,9 @@ public:
       @param params Sublist with line search construction parameters.
 
   */
-  Teuchos::RCP<NOX::LineSearch::Generic> 
+  Teuchos::RCP<NOX::LineSearch::Generic>
   buildLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
-		  Teuchos::ParameterList& params);
+          Teuchos::ParameterList& params);
 
 };
 
@@ -168,10 +168,10 @@ public:
   \relates NOX::LineSearch::Factory
 
   */
-  Teuchos::RCP<NOX::LineSearch::Generic> 
+  Teuchos::RCP<NOX::LineSearch::Generic>
   buildLineSearch(const Teuchos::RCP<NOX::GlobalData>& gd,
-		  Teuchos::ParameterList& params);
-  
+          Teuchos::ParameterList& params);
+
 
 } // namespace LineSearch
 } // namespace NOX

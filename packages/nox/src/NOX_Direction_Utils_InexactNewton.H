@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -75,7 +75,7 @@ namespace Direction {
 namespace Utils {
 
 //! %Inexact Newton Utilities
-/*! 
+/*!
 
   If we use an iterative linear solver for a %Newton-based  solve, then
   this is called an <b>inexact %Newton method</b>.  The tolerance used
@@ -85,7 +85,7 @@ namespace Utils {
   \f[
   \frac{\|J_k d_k - (-F_k)\|}{\|F_k\|} \leq \eta_k.
   \f]
-  Here \f$\eta_k\f$ is the forcing term for iteration \f$k\f$. 
+  Here \f$\eta_k\f$ is the forcing term for iteration \f$k\f$.
 
   \note This solution tolerance is to be enforced by the user's
   implementation of NOX::Abstract::Group::computeNewton; it is passed
@@ -96,7 +96,7 @@ namespace Utils {
   (1998). We have two choices for adjustable forcing terms:
 
   <ul>
-  <li><b>Type 1</b> 
+  <li><b>Type 1</b>
 
   \f[
   \eta_k = \left\vert \frac{\| F_k \| - \|J_{k-1} d_{k-1} - (-F_{k-1}) \| }
@@ -190,25 +190,25 @@ public:
 
   //! Constructor
   InexactNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-		Teuchos::ParameterList& directionSublist);
+        Teuchos::ParameterList& directionSublist);
 
   //! Destructor
   virtual ~InexactNewton();
 
   //! Reset the utilities
-  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd, 
-		     Teuchos::ParameterList& directionSublist);
+  virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
+             Teuchos::ParameterList& directionSublist);
 
   //! Called each iteration to reset the forcing term (ie, the
   //! convergence tolerance for the linear solver).
   /*!  if the user supplied eta_last then it will use this value for
     eta_km1 instead of looking for it in the "Linear Solver" sublist.
   */
-  virtual double computeForcingTerm(const NOX::Abstract::Group& soln, 
-				    const NOX::Abstract::Group& oldSoln, 
-				    int niter, 
-				    const NOX::Solver::Generic& solver,
-				    double eta_last = -1.0);
+  virtual double computeForcingTerm(const NOX::Abstract::Group& soln,
+                    const NOX::Abstract::Group& oldSoln,
+                    int niter,
+                    const NOX::Solver::Generic& solver,
+                    double eta_last = -1.0);
 
 private:
 
@@ -237,9 +237,9 @@ private:
   ForcingTermType forcingTermMethod;
 
   //! "Inexact Newton" sublist with parameters for the direction vector
-  /*! 
+  /*!
     \note This is a pointer rather than a reference to allow for the
-    reset function. 
+    reset function.
    */
   Teuchos::ParameterList* paramsPtr;
 
@@ -251,7 +251,7 @@ private:
 
   //! Current linear solve tolerance.
   double eta_k;
-  
+
   //! Minimum linear solve tolerance.
   double eta_min;
 
@@ -263,10 +263,10 @@ private:
 
   //! Name of the method used for calculating the inexact forcing term.
   std::string method;
-  
+
   //! Name of the direction method that forcing terms will be used by.
   std::string directionMethod;
-  
+
   //! Parameter used for Type 2 forcing term calculation.
   double alpha;
 

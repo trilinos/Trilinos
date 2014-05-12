@@ -1,13 +1,18 @@
-#include <cstdio>
-#include <iostream>
-#include <cstring>
-#include <cstdlib>
-#include <unistd.h>
-#include <errno.h>
-#include <sys/stat.h>
 
-#include "aprepro.h"
-#include "aprepro_parser.h"
+#include <ctype.h>                      // for isalnum, isalpha, isupper, etc
+#include <errno.h>                      // for errno, EDOM, ERANGE
+#include <stddef.h>                     // for size_t
+#include <sys/stat.h>                   // for stat, S_ISDIR
+#include <unistd.h>                     // for close
+#include <cstdio>                       // for perror
+#include <cstdlib>                      // for mkstemp
+#include <cstring>                      // for strlen, strcpy, memcpy, etc
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <stack>                        // for stack
+#include <string>                       // for operator<<, string
+#include <vector>                       // for vector
+#include "aprepro.h"                    // for file_rec, Aprepro, symrec, etc
+#include "aprepro_parser.h"             // for Parser, Parser::token, etc
 
 namespace {
   std::vector<char*> allocations;

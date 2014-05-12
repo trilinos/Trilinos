@@ -62,6 +62,7 @@ ENDIF()
 
 
 IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
+  SET(NETCDF_NCDUMP ${${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP})
   SET( cbind_OLDTESTS
     testwt
     testwtd
@@ -109,7 +110,7 @@ IF (${PACKAGE_NAME}_Netcdf_EXECUTABLE_NCDUMP)
   #       when built with shareable libraries on some platforms....
 
   FOREACH ( testName ${cbind_OLDTESTS} )
-    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
+    TRIBITS_ADD_EXECUTABLE( ${testName} NOEXEPREFIX NOEXESUFFIX SOURCES ${testName}.c LINKER_LANGUAGE CXX DEPLIBS exodus)
   ENDFOREACH ( testName )
 
   TRIBITS_ADD_ADVANCED_TEST(

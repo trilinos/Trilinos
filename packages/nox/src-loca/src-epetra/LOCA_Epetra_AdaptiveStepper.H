@@ -55,8 +55,8 @@
 #include "Teuchos_RCP.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // base class
-#include "Teuchos_ParameterList.hpp"	       // class data element
-#include "NOX_Solver_Generic.H"	       // class data element
+#include "Teuchos_ParameterList.hpp"           // class data element
+#include "NOX_Solver_Generic.H"           // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 
@@ -171,7 +171,7 @@ namespace Epetra {
     //! Compute a new step size based on results from the previous step
     LOCA::Abstract::Iterator::StepStatus
       computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
-		    double& stepSize);
+            double& stepSize);
 
     //! Print to the screen the initialization information
     virtual void printInitializationInfo();

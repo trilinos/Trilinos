@@ -2,9 +2,7 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <math.h>
-#include <stdio.h>
-#include "structs.h"
+#include <stdio.h>                      // for printf
 
 int       PROJECTION_AXIS = 0;	/* axis to flatten geometry */
 				/* => long regions, good for SnRad */

@@ -52,9 +52,7 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_var_params, etc
 
 /*!
  * defines the number of global, nodal, element, nodeset, and sideset variables 

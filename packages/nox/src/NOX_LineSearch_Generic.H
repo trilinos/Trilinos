@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -74,7 +74,7 @@ namespace NOX {
 namespace LineSearch {
 
 /*!  \brief Base class line search interface
-  
+
   Every line search should respect the following Parameter:
 
   - "Max Iters" - maximum number of iterations (i.e., RHS computations)
@@ -91,16 +91,16 @@ public:
 
   //! Perform a line search
   /*!
-    
-  On input: 
+
+  On input:
   @param grp The initial solution vector, \f$x_{\rm old}\f$.
   @param dir A vector of directions to be used in the line search, \f$d\f$.
   @param s The nonlinear solver.
-  
+
   On output:
   @param step The distance the direction was scaled, \f$ \lambda \f$.
   @param grp The \c grp is updated with a new solution, \f$ x_{\rm new} \f$, resulting from the linesearch.  Normally, for a single direction line search, this is computed as:
-  
+
     \f[
     x_{\rm new} = x_{\rm old} + \lambda d.
     \f]
@@ -116,10 +116,10 @@ public:
   Return value is true for a successful line search computation.
 
    */
-  virtual bool compute(NOX::Abstract::Group& grp, 
-		       double& step,
-		       const NOX::Abstract::Vector& dir, 
-		       const NOX::Solver::Generic& s) = 0;
+  virtual bool compute(NOX::Abstract::Group& grp,
+               double& step,
+               const NOX::Abstract::Vector& dir,
+               const NOX::Solver::Generic& s) = 0;
 
 };
 } // namespace LineSearch

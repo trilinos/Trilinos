@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,8 +49,8 @@
   information and services needed for other Epetra classes to perform gather/scatter
   operations on a parallel computer.
   An Epetra_Distributor object is actually produced by calling a method in the Epetra_Comm class.
-  
-  Epetra_Distributor has default implementations, via Epetra_SerialDistributor and 
+
+  Epetra_Distributor has default implementations, via Epetra_SerialDistributor and
   Epetra_MpiDistributor, for both serial execution and MPI
   distributed memory execution.  It is meant to insulate the user from
   the specifics of communication that are not required for normal
@@ -59,14 +59,14 @@
 
 #include "Epetra_Object.h"
 class Epetra_Distributor {
-    
+
   public:
     //! @name Constructor and Destructor
-  //@{ 
+  //@{
   //! Epetra_Distributor clone constructor.
   virtual Epetra_Distributor * Clone() = 0;
 
-  //! Create and extract the reverse version of the distributor.  
+  //! Create and extract the reverse version of the distributor.
   /*! This is not a const method since a reverse distributor might need to be created.
     This works like Clone, returning a new object the user must deallocate.
    */
@@ -77,9 +77,9 @@ class Epetra_Distributor {
 
   //@}
 
-  
+
   //! @name Gather/Scatter Constructors
-  //@{ 
+  //@{
   //! Create Distributor object using list of process IDs to which we export
   /*! Take a list of Process IDs and construct a plan for efficiently scattering to these processes.
       Return the number of IDs being sent to me.
@@ -133,7 +133,7 @@ class Epetra_Distributor {
   //@}
 
   //! @name Execute Gather/Scatter Operations (Constant size objects)
-  //@{ 
+  //@{
 
   //! Execute plan on buffer of export objects in a single step
   virtual int Do( char * export_objs,
@@ -148,7 +148,7 @@ class Epetra_Distributor {
                          char *& import_objs ) = 0;
 
   //! Post buffer of export objects (can do other local work before executing Waits)
-  virtual int DoPosts( char * export_objs, 
+  virtual int DoPosts( char * export_objs,
                        int obj_size,
                        int & len_import_objs,
                        char *& import_objs ) = 0;
@@ -167,7 +167,7 @@ class Epetra_Distributor {
   //@}
 
   //! @name Execute Gather/Scatter Operations (Non-constant size objects)
-  //@{ 
+  //@{
 
   //! Execute plan on buffer of export objects in a single step (object size may vary)
   virtual int Do( char * export_objs,
@@ -199,7 +199,7 @@ class Epetra_Distributor {
   //@}
 
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   virtual void Print(std::ostream & os) const = 0;
   //@}
 };

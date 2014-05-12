@@ -127,7 +127,10 @@ public:
   /// device have completed.
   static void fence() {}
 
-  static void initialize() {}
+  static void initialize( unsigned threads_count = 1 ,
+                          unsigned use_numa_count = 0 ,
+                          unsigned use_cores_per_numa = 0 ,
+                          bool allow_asynchronous_threadpool = false) {}
 
   static int is_initialized() { return 1 ; }
 
@@ -199,6 +202,28 @@ public:
 
       Reduce::final( functor , result );
     }
+
+  void wait() {}
+};
+
+template< class FunctorType , class WorkSpec >
+class ParallelScan< FunctorType , WorkSpec , Kokkos::Serial >
+{
+public:
+  typedef ReduceAdapter< FunctorType >   Reduce ;
+  typedef typename Reduce::pointer_type  pointer_type ;
+
+  inline
+  ParallelScan( const FunctorType & functor , const size_t work_count )
+  {
+    pointer_type result = (pointer_type ) Serial::resize_reduce_scratch( Reduce::value_size( functor ) );
+
+    functor.init( Reduce::reference( result ) );
+
+    for ( size_t iwork = 0 ; iwork < work_count ; ++iwork ) {
+      functor( iwork , Reduce::reference( result ) , true );
+    }
+  }
 
   void wait() {}
 };

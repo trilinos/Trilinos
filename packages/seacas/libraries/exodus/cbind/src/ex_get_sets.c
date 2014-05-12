@@ -33,9 +33,10 @@
  * 
  */
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdlib.h>                     // for NULL
+#include "exodusII.h"                   // for ex_set, ex_get_set_param, etc
+#include "exodusII_int.h"               // for EX_FATAL, EX_NOERR
 
 int ex_get_sets (int   exoid,
 		 size_t set_count,

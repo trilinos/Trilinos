@@ -1397,11 +1397,29 @@ namespace Tpetra {
       insertNonownedGlobalValues (globalRow, indices, values);
     }
     else { // globalRow _is_ owned by calling process
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->isStaticGraph(), std::runtime_error,
-        ": The CrsMatrix was constructed with a static (i.e., const) graph."
-        << endl << "In that case, it is not allowed to insert new entries into "
-        "rows owned by the calling process.");
+      if (this->isStaticGraph ()) {
+        // Uh oh!  Not allowed to insert into owned rows in that case.
+        std::ostringstream err;
+        const int myRank = getRowMap ()->getComm ()->getRank ();
+        const int numProcs = getRowMap ()->getComm ()->getSize ();
+
+        err << "Tpetra::CrsMatrix::insertGlobalValues: The matrix was "
+          "constructed with a constant (\"static\") graph, yet the given "
+          "global row index " << globalRow << " is in the row Map on the "
+          "calling process (with rank " << myRank << ", of " << numProcs <<
+          " process(es)).  In this case, you may not insert new entries into "
+          "rows owned by the calling process.";
+
+        if (! getRowMap ()->isNodeGlobalElement (globalRow)) {
+          err << "  Furthermore, GID->LID conversion with the row Map claims that "
+            "the global row index is owned on the calling process, yet "
+            "getRowMap()->isNodeGlobalElement(globalRow) returns false.  That's"
+            " weird!  This might indicate a Map bug.  Please report this to the"
+            " Tpetra developers.";
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(this->isStaticGraph (), std::runtime_error, err.str ());
+      }
+
       if (! myGraph_->indicesAreAllocated ()) {
         allocateValues (GlobalIndices, GraphNotYetAllocated);
       }
@@ -3966,8 +3984,8 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
 #ifdef HAVE_TPETRA_DEBUG
-    const KokkosClassic::MultiVector<DomainScalar,node_type> *lclX = &X.getLocalMV();
-    KokkosClassic::MultiVector<RangeScalar,node_type>        *lclY = &Y.getLocalMVNonConst();
+    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
       std::runtime_error, " X is not distributed according to the appropriate map.");
@@ -3990,7 +4008,8 @@ namespace Tpetra {
       X.isConstantStride() == false || Y.isConstantStride() == false,
       std::runtime_error, ": X and Y must be constant stride.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclX==lclY, std::runtime_error, ": X and Y may not alias one another.");
+      lclX.getValues ().getRawPtr () == lclY.getValues ().getRawPtr (),
+      std::runtime_error, ": X and Y may not alias one another.");
 #endif
     //
     // Call the matvec
@@ -4046,9 +4065,9 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
 
     lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
@@ -4066,9 +4085,9 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
 
     lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d, rowIndices, dampingFactor, direction);
   }
@@ -4077,18 +4096,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::localSolve(
-                                    const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >  &Y,
-                                          MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
-                                          Teuchos::ETransp mode) const
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+            typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >  &Y,
+              MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
+              Teuchos::ETransp mode) const
   {
     using Teuchos::NO_TRANS;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "localSolve()";
 #endif // HAVE_TPETRA_DEBUG
 
-    const KokkosClassic::MultiVector<RangeScalar,node_type> *lclY = &Y.getLocalMV();
-    KokkosClassic::MultiVector<DomainScalar,node_type>      *lclX = &X.getLocalMVNonConst();
+    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
@@ -4099,10 +4120,10 @@ namespace Tpetra {
     //
     // Call the solve
     if (mode == Teuchos::NO_TRANS) {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, *lclY, *lclX);
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, lclY, lclX);
     }
     else {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, *lclY, *lclX);
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, lclY, lclX);
     }
   }
 

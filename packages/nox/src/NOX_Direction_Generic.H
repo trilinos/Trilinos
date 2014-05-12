@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -88,8 +88,8 @@ class Generic {
 
 public:
 
-  //! Constructor. 
-  /*! 
+  //! Constructor.
+  /*!
     Constructors of derived objects should look like reset().
    */
   Generic() {};
@@ -99,11 +99,11 @@ public:
 
   //! Reset direction based on possibly new parameters.
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params) = 0;
-  
+             Teuchos::ParameterList& params) = 0;
+
   /*!
     \brief Compute the direction vector, \c dir, for a specific method given
-    the current group, \c grp. 
+    the current group, \c grp.
 
     The \c grp is not const so that we can compute the F vector, the
     Jacobian matrix, the %Newton vector, and so on.
@@ -112,8 +112,8 @@ public:
     information such as the past solution, the iteration number, and
     so on.
   */
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver) = 0;
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver) = 0;
 
   /*!
 
@@ -127,8 +127,8 @@ public:
     If it is not redefined in the derived class, it will just call the
     compute with the NOX::Solver::Generic argument.
   */
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 };
 } // namespace Direction
 } // namespace NOX

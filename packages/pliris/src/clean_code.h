@@ -46,11 +46,11 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void cleancode_ ( ) ;
 
 #ifdef __cplusplus
 }
-#endif 
+#endif
 #endif

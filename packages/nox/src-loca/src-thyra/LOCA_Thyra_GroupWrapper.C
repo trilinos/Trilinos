@@ -47,15 +47,15 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Thyra_GroupWrapper.H"	          // class definition
+#include "LOCA_Thyra_GroupWrapper.H"              // class definition
 
 LOCA::Thyra::GroupWrapper::GroupWrapper(
-	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-	    const LOCA::ParameterVector& p,
-	    int p_index,
-	    bool impl_dfdp) :
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+        const NOX::Thyra::Vector& initial_guess,
+        const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+        const LOCA::ParameterVector& p,
+        int p_index,
+        bool impl_dfdp) :
   NOX::Thyra::Group(initial_guess, model),
   LOCA::Abstract::Group(global_data),
   LOCA::Thyra::Group(global_data, initial_guess, model, p, p_index, impl_dfdp)
@@ -63,7 +63,7 @@ LOCA::Thyra::GroupWrapper::GroupWrapper(
 }
 
 LOCA::Thyra::GroupWrapper::GroupWrapper(const LOCA::Thyra::GroupWrapper& source,
-			   NOX::CopyType type) :
+               NOX::CopyType type) :
   NOX::Thyra::Group(source, type),
   LOCA::Abstract::Group(source, type),
   LOCA::Thyra::Group(source, type)

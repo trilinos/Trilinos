@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -50,7 +50,7 @@
 
 #include "NOX_StatusTest_Generic.H"  // base class
 #include "NOX_Multiphysics_DataExchange_Interface.H"
-#include "NOX_Solver_Generic.H"  
+#include "NOX_Solver_Generic.H"
 
 // Forward declarations
 namespace NOX {
@@ -67,7 +67,7 @@ namespace NOX {
 namespace NOX {
 namespace Multiphysics {
 
-/*! 
+/*!
   \brief %NOX nonlinear solvers namespace.
 
   The Generic class spells out the interface. The Manager class can
@@ -76,12 +76,12 @@ namespace Multiphysics {
 */
 namespace Solver {
 
-/*! 
+/*!
   \brief %Abstract nonlinear solver method interface.
 
-  Defines the type of access methods into the iterative nonlinear solvers. 
+  Defines the type of access methods into the iterative nonlinear solvers.
 
-  <ul> 
+  <ul>
   <li>Instantiate or reset() the solver.
   <li>Find the solution via solve() or perform a single iterations via iterate().
   <li>Get information about the current solver state via
@@ -95,13 +95,13 @@ class Generic : virtual public NOX::Solver::Generic {
 
 public:
 
-  //! Constructor (does nothing) 
+  //! Constructor (does nothing)
   Generic() {};
 
   //! Destructor (does nothing)
   virtual ~Generic() {};
 
-  /*! 
+  /*!
     \brief Reset the nonlinear solver for a new solve
 
     \param tests Status tests to check for convergence or
@@ -110,7 +110,7 @@ public:
     \param params List of parameters. These parameters will be
     modified by the solver.
 
-    \note All the objects passed to reset() will be modified. 
+    \note All the objects passed to reset() will be modified.
 
     \note The group object will be cloned via
     NOX::Abstract::Group::clone(), and the vectors within will also be
@@ -121,20 +121,20 @@ public:
     iterate() and solve() are completely undefined. To remedy this,
     call reset() again with the modified objects.
   */
-  virtual bool 
-  reset(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers, 
-	const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface, 
-	const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-	const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
+  virtual bool
+  reset(const Teuchos::RCP<std::vector<Teuchos::RCP<NOX::Solver::Generic> > >& solvers,
+    const Teuchos::RCP<NOX::Multiphysics::DataExchange::Interface>& interface,
+    const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+    const Teuchos::RCP<Teuchos::ParameterList>& params) = 0;
 
   //! reset methods inherited from NOX::Solver::Generic and needed here to avoid hiding this overloaded virtual method
 
-  virtual void 
+  virtual void
   reset(const NOX::Abstract::Vector& initialGuess) = 0;
 
-  virtual void 
-  reset(const NOX::Abstract::Vector& initialGuess, 
-	const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
+  virtual void
+  reset(const NOX::Abstract::Vector& initialGuess,
+    const Teuchos::RCP<NOX::StatusTest::Generic>& tests) = 0;
 
 };
 } // namespace Solver

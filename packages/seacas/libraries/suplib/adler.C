@@ -25,6 +25,7 @@
 //   jloup@gzip.org          madler@alumni.caltech.edu
 
 #include "adler.h"
+#include <stdlib.h>                     // for NULL
 
 #define DO1(buf,i)  {s1 += buf[i]; s2 += s1;}
 #define DO2(buf,i)  DO1(buf,i); DO1(buf,i+1);

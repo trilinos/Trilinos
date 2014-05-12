@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -95,17 +95,17 @@ namespace NOX {
   - "Output Precision" - Specifis the default number of decimal places
     to be used when printing floating point numbers. The default is 4.
 
-  - "Output Stream" - A Teuchos::RCP<std::ostream> object that 
-    will be used for standard output. 
+  - "Output Stream" - A Teuchos::RCP<std::ostream> object that
+    will be used for standard output.
 
-  - "Error Stream" - A Teuchos::RCP<std::ostream> object that 
-    will be used for output of error information. 
+  - "Error Stream" - A Teuchos::RCP<std::ostream> object that
+    will be used for output of error information.
 
   The public variables should never be modified directly.
 */
 class Utils {
 
-public:				// types
+public:                // types
 
   //! Fill object - used to print the given character the number of times specified.
   class Fill {
@@ -129,7 +129,7 @@ public:				// types
     ~Sci() {};
     //! Value to be printed
     double d;
-    //! Precision 
+    //! Precision
     int p;
   };
 
@@ -141,23 +141,23 @@ public:				// types
     important. They can be added together to specify which messages
     you wish to receive.
   */
-  enum MsgType { 
+  enum MsgType {
     //! Errors are always printed
-    Error = 0,			     
+    Error = 0,
     //! 2^0
-    Warning = 0x1,		     
+    Warning = 0x1,
     //! 2^1
-    OuterIteration = 0x2,	     
+    OuterIteration = 0x2,
     //! 2^2
-    InnerIteration = 0x4,	     
+    InnerIteration = 0x4,
     //! 2^3
-    Parameters = 0x8,		     
+    Parameters = 0x8,
     //! 2^4
-    Details = 0x10,		     
+    Details = 0x10,
     //! 2^5
-    OuterIterationStatusTest = 0x20, 
+    OuterIterationStatusTest = 0x20,
     //! 2^6
-    LinearSolverDetails = 0x40,   
+    LinearSolverDetails = 0x40,
     //! 2^7
     TestDetails = 0x80,
     //! 2^8 -- For LOCA
@@ -171,9 +171,9 @@ public:				// types
   };
 
 
-public:		
+public:
 
-  /*!  
+  /*!
     \brief Creates a Fill object which can be used in an output stream
     to insert an arbitrary number of a given character. The default
     character is an asterick.
@@ -188,26 +188,26 @@ public:
 
 public:
 
-  //! Constructor.  
+  //! Constructor.
   /*!The final two arguments are a reference counted pointers to
     std::ostreams.  This defaults to std::cout and std::cerr if not
     supplied.  Users should only supply this argument if they want
     output directed to a std::ostream other than the defaults.  If so,
     they must wrap the std::ostream in a reference counted pointer for safe
     memory management. */
-  Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0, 
-	int outputPrecision=3, 
-	const Teuchos::RCP<std::ostream>& outputStream=
-	Teuchos::null,
-	const Teuchos::RCP<std::ostream>& errorStream=
-	Teuchos::null);
+  Utils(int outputInformation=0xf, int MyPID=0, int outputProcess=0,
+    int outputPrecision=3,
+    const Teuchos::RCP<std::ostream>& outputStream=
+    Teuchos::null,
+    const Teuchos::RCP<std::ostream>& errorStream=
+    Teuchos::null);
 
   //! Constructor via a parameter list
   Utils(Teuchos::ParameterList& p);
 
   //! Copy constructor
   Utils(const NOX::Utils& u);
-  
+
   //! Destructor
   ~Utils();
 
@@ -227,21 +227,21 @@ public:
   std::ostream& out(NOX::Utils::MsgType type) const;
 
   //! Returns the std::ostream for printing regardless of the print processor.  Only use this call if you want all processes to print to the std::ostream.
-  std::ostream& pout() const; 
+  std::ostream& pout() const;
 
   //! Returns the std::ostream for printing if the print type matches.  Only use this call if you want all processes to print to the std::ostream for the print type.
-  std::ostream& pout(NOX::Utils::MsgType type) const; 
+  std::ostream& pout(NOX::Utils::MsgType type) const;
 
   //! Returns the error stream for printing if this is the print process.
   std::ostream& err() const;
 
   //! Returns the error stream for printing to all processors.  Only use this call if you want all processes to print to the error stream.
   std::ostream& perr() const;
-  
+
   //! Print this object
   void print(std::ostream& os) const;
 
-  /*! 
+  /*!
     \brief Creates a Sci object which can be used in an output stream
     for printing a double precision number in scientific format with
     an arbitrary precision. The precision is that specificed
@@ -264,14 +264,14 @@ private:
 
   //! Output precision for floats and doubles.
   int precision;
-  
+
   //! Processor ID.
   int myPID;
-  
-  //! Output test. 
+
+  //! Output test.
   int printTest;
 
-  //! Processor responsible for output. 
+  //! Processor responsible for output.
   int printProc;
 
   //! std::ostream derived object that deletes the output.

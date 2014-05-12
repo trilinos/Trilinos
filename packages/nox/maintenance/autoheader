@@ -36,12 +36,12 @@ $cnt = 0;
 while (<INFILE>) {
 
     if (/$key/) {
-	print OUTFILE $_;
-	$cnt = $cnt + 1;
-	($cnt == 1) && (&insert_header);
+    print OUTFILE $_;
+    $cnt = $cnt + 1;
+    ($cnt == 1) && (&insert_header);
     }
     elsif ($cnt != 1) {
-	print OUTFILE $_;
+    print OUTFILE $_;
     }
 }
 
@@ -57,8 +57,8 @@ if ($cnt < 2) {
 #diff check
 @diff = `diff $filename $tmpname`;
 if ($#diff >= 0) {
-    rename($tmpname, $filename) or 
-	die "Autoheader failed to replace old file with new file for $filename.\n";
+    rename($tmpname, $filename) or
+    die "Autoheader failed to replace old file with new file for $filename.\n";
 }
 else {
     unlink $tmpname;
@@ -69,10 +69,10 @@ sub insert_header{
 
     if ($type =~ /^auto$/) {
 
-	(($filename =~ /.ac$/) && ($type = "plain")) or
-	(($filename =~ /.[CH]$/) && ($type = "C++")) or
-	(($filename =~ /.[ch]$/) && ($type = "C")) or
-	($type = "plain");
+    (($filename =~ /.ac$/) && ($type = "plain")) or
+    (($filename =~ /.[CH]$/) && ($type = "C++")) or
+    (($filename =~ /.[ch]$/) && ($type = "C")) or
+    ($type = "plain");
     }
 
     $begin = "";
@@ -80,14 +80,14 @@ sub insert_header{
     $end = "";
 
     if ($type =~ /^C\+\+$/) {
-	$per = "// ";
+    $per = "// ";
     }
     elsif ($type =~ /^C$/) {
-	$begin = "/*\n";
-	$end = "*/\n";
+    $begin = "/*\n";
+    $end = "*/\n";
     }
     else {
-	$per = "# ";
+    $per = "# ";
     }
 
     @header = `cat $headerfile`;
@@ -95,7 +95,7 @@ sub insert_header{
     print OUTFILE "$begin";
     foreach (@header) {
 
-	print OUTFILE "$per$_";
+    print OUTFILE "$per$_";
 
     }
     print OUTFILE "$end";

@@ -52,11 +52,9 @@
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
-
+#include <sys/types.h>                  // for int64_t
 #include "exodusII.h"
-#include "exodusII_int.h"
+
 
 /*!
  * \deprecated Use ex_get_partial_set_dist_fact() instead

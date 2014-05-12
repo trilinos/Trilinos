@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,8 +55,8 @@
 #include "LOCA_Epetra_IdentityOp.H"
 
 LOCA::Epetra::IdentityOp::IdentityOp(
-			 const Teuchos::RCP<const Epetra_Comm>& comm_,
-			 const Teuchos::RCP<const Epetra_Map>& map_) :
+             const Teuchos::RCP<const Epetra_Comm>& comm_,
+             const Teuchos::RCP<const Epetra_Map>& map_) :
   label("LOCA::Epetra::IdentityOp"),
   comm(comm_),
   map(map_),
@@ -68,68 +68,68 @@ LOCA::Epetra::IdentityOp::~IdentityOp()
 {
 }
 
-int 
-LOCA::Epetra::IdentityOp::SetUseTranspose(bool UseTranspose) 
+int
+LOCA::Epetra::IdentityOp::SetUseTranspose(bool UseTranspose)
 {
   useTranspose = UseTranspose;
   return 0;
 }
 
-int 
-LOCA::Epetra::IdentityOp::Apply(const Epetra_MultiVector& Input, 
-				Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::IdentityOp::Apply(const Epetra_MultiVector& Input,
+                Epetra_MultiVector& Result) const
 {
   Result.Scale(1.0, Input);
 
   return 0;
 }
 
-int 
-LOCA::Epetra::IdentityOp::ApplyInverse(const Epetra_MultiVector& Input, 
-				       Epetra_MultiVector& Result) const
+int
+LOCA::Epetra::IdentityOp::ApplyInverse(const Epetra_MultiVector& Input,
+                       Epetra_MultiVector& Result) const
 {
   Result.Scale(1.0, Input);
 
   return 0;
 }
 
-double 
+double
 LOCA::Epetra::IdentityOp::NormInf() const
 {
   return 1.0;
 }
 
 
-const char* 
+const char*
 LOCA::Epetra::IdentityOp::Label () const
 {
   return const_cast<char*>(label.c_str());
 }
-  
-bool 
+
+bool
 LOCA::Epetra::IdentityOp::UseTranspose() const
 {
   return useTranspose;
 }
 
-bool 
+bool
 LOCA::Epetra::IdentityOp::HasNormInf() const
 {
   return true;
 }
 
-const Epetra_Comm & 
+const Epetra_Comm &
 LOCA::Epetra::IdentityOp::Comm() const
 {
   return *comm;
 }
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::IdentityOp::OperatorDomainMap() const
 {
   return *map;
 }
 
-const Epetra_Map& 
+const Epetra_Map&
 LOCA::Epetra::IdentityOp::OperatorRangeMap() const
 {
   return *map;

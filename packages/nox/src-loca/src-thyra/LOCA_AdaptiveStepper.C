@@ -130,8 +130,8 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
     startValue = stepperList->get("Initial Value", 0.0);
   else {
     globalData->locaErrorCheck->throwError(
-		   "LOCA::AdaptiveStepper::reset()",
-		   "\"Initial Value\" of continuation parameter is not set!");
+           "LOCA::AdaptiveStepper::reset()",
+           "\"Initial Value\" of continuation parameter is not set!");
   }
 
   // Get the continuation parameter name
@@ -140,8 +140,8 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
   }
   else {
      globalData->locaErrorCheck->throwError(
-			      "LOCA::AdaptiveStepper::reset()",
-			      "\"Continuation Parameter\" name is not set!");
+                  "LOCA::AdaptiveStepper::reset()",
+                  "\"Continuation Parameter\" name is not set!");
   }
 
   // Get the max and min values of the continuation parameter
@@ -149,15 +149,15 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
     maxValue = stepperList->get("Max Value", 0.0);
   else {
      globalData->locaErrorCheck->throwError(
-		   "LOCA::AdaptiveStepper::reset()",
-		   "\"Maximum Value\" of continuation parameter is not set!");
+           "LOCA::AdaptiveStepper::reset()",
+           "\"Maximum Value\" of continuation parameter is not set!");
   }
   if (stepperList->isParameter("Min Value"))
     minValue = stepperList->get("Min Value", 0.0);
   else {
     globalData->locaErrorCheck->throwError(
-		   "LOCA::AdaptiveStepper::reset()",
-		   "\"Minimum Value\" of continuation parameter is not set!");
+           "LOCA::AdaptiveStepper::reset()",
+           "\"Minimum Value\" of continuation parameter is not set!");
   }
 
 
@@ -171,7 +171,7 @@ LOCA::AdaptiveStepper::AdaptiveStepper(
   tangentFactor = 1.0;
   doTangentFactorScaling =
     stepperList->get("Enable Tangent Factor Step Size Scaling",
-			      false);
+                  false);
   minTangentFactor = stepperList->get("Min Tangent Factor",0.1);
   tangentFactorExponent =
     stepperList->get("Tangent Factor Exponent",1.0);
@@ -211,20 +211,20 @@ LOCA::AdaptiveStepper::buildLOCAFactory(){
   Teuchos::RCP<Teuchos::ParameterList> predictorParams =
     parsedParams->getSublist("Predictor");
   predictor = globalData->locaFactory->createPredictorStrategy(
-							      parsedParams,
-							      predictorParams);
+                                  parsedParams,
+                                  predictorParams);
 
   // Create eigensolver
   Teuchos::RCP<Teuchos::ParameterList> eigenParams =
     parsedParams->getSublist("Eigensolver");
   eigensolver = globalData->locaFactory->createEigensolverStrategy(
-								parsedParams,
-								eigenParams);
+                                parsedParams,
+                                eigenParams);
 
   // Create strategy to save eigenvectors/values
   saveEigenData = globalData->locaFactory->createSaveEigenDataStrategy(
-								parsedParams,
-								eigenParams);
+                                parsedParams,
+                                eigenParams);
 
   // Create step size strategy
   Teuchos::RCP<Teuchos::ParameterList> stepsizeParams =
@@ -232,8 +232,8 @@ LOCA::AdaptiveStepper::buildLOCAFactory(){
 
    if(Teuchos::is_null(stepSizeStrategyPtr))
      stepSizeStrategyPtr = globalData->locaFactory->createStepSizeStrategy(
-							     parsedParams,
-							     stepsizeParams);
+                                 parsedParams,
+                                 stepsizeParams);
 
 }
 
@@ -253,17 +253,17 @@ LOCA::AdaptiveStepper::setSolutionGroup(
 
   // Create bifurcation group
   bifGroupPtr = globalData->locaFactory->createBifurcationStrategy(
-						       parsedParams,
-						       bifurcationParams,
-						       constraintsGrp);
+                               parsedParams,
+                               bifurcationParams,
+                               constraintsGrp);
 
   // Create continuation strategy
   curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							firstStepperParams,
-							bifGroupPtr,
+                            parsedParams,
+                            firstStepperParams,
+                            bifGroupPtr,
                             predictor,
-							conParamIDs);
+                            conParamIDs);
 
   // Set step size
   curGroupPtr->setStepSize(0.0);
@@ -273,7 +273,7 @@ LOCA::AdaptiveStepper::setSolutionGroup(
 
   // Create solver using initial conditions
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-				       parsedParams->getSublist("NOX"));
+                       parsedParams->getSublist("NOX"));
 
   return;
 
@@ -322,11 +322,11 @@ LOCA::AdaptiveStepper::start() {
 
   // Create continuation strategy
   curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							stepperList,
-							underlyingGroup,
-							predictor,
-							conParamIDs);
+                            parsedParams,
+                            stepperList,
+                            underlyingGroup,
+                            predictor,
+                            conParamIDs);
 
   // Do printing (stepNumber==0 case) after continuation group set up
 
@@ -343,7 +343,7 @@ LOCA::AdaptiveStepper::start() {
 
   prevGroupPtr =
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::AbstractStrategy>(
-	curGroupPtr->clone());
+    curGroupPtr->clone());
 
   if (solverStatus != NOX::StatusTest::Converged)
 
@@ -359,8 +359,8 @@ LOCA::AdaptiveStepper::start() {
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(
-				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-				 evals_r, evals_i, evecs_r, evecs_i);
+                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
+                 evals_r, evals_i, evecs_r, evecs_i);
 
     saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
@@ -370,7 +370,7 @@ LOCA::AdaptiveStepper::start() {
     curGroupPtr->computePredictor();
 
   globalData->locaErrorCheck->checkReturnType(predictorStatus,
-					      callingFunction);
+                          callingFunction);
 
   curPredictorPtr =
     Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(
@@ -382,7 +382,7 @@ LOCA::AdaptiveStepper::start() {
 
   // Create new solver using new continuation groups and combo status test
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-				       parsedParams->getSublist("NOX"));
+                       parsedParams->getSublist("NOX"));
 
   // We're not done yet, just finished the equilibration step
   return LOCA::Abstract::Iterator::NotFinished;
@@ -430,8 +430,8 @@ LOCA::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
     // change default method to constant to avoid infinite stack recursion
     lastStepPredictorParams->get("Method", "Constant");
     predictor = globalData->locaFactory->createPredictorStrategy(
-						     parsedParams,
-						     lastStepPredictorParams);
+                             parsedParams,
+                             lastStepPredictorParams);
 
     // Make a copy of the parameter list, change continuation method to
     // natural
@@ -441,11 +441,11 @@ LOCA::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     // Create continuation strategy
     curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							  parsedParams,
-							  lastStepperParams,
-							  underlyingGrp,
-							  predictor,
-							  conParamIDs);
+                              parsedParams,
+                              lastStepperParams,
+                              underlyingGrp,
+                              predictor,
+                              conParamIDs);
 
     // Set step size
     stepSize = targetValue - value;
@@ -456,7 +456,7 @@ LOCA::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
       curGroupPtr->computePredictor();
 
     globalData->locaErrorCheck->checkReturnType(predictorStatus,
-						callingFunction);
+                        callingFunction);
 
     *curPredictorPtr = curGroupPtr->getPredictorTangent()[0];
 
@@ -473,7 +473,7 @@ LOCA::AdaptiveStepper::finish(LOCA::Abstract::Iterator::IteratorStatus itStatus)
 
     // Create new solver
     solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-					 parsedParams->getSublist("NOX"));
+                     parsedParams->getSublist("NOX"));
 
     // Solve step
     NOX::StatusTest::StatusType solverStatus = solverPtr->solve();
@@ -563,11 +563,11 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Create continuation strategy
   curGroupPtr = globalData->locaFactory->createContinuationStrategy(
-							parsedParams,
-							stepperList,
-							underlyingGroup,
-							predictor,
-							conParamIDs);
+                            parsedParams,
+                            stepperList,
+                            underlyingGroup,
+                            predictor,
+                            conParamIDs);
 
   // Do printing (relaxation case) after continuation group set up
 // GAH end equilibration
@@ -610,8 +610,8 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(
-  		 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-  		 evals_r, evals_i, evecs_r, evecs_i);
+           *curGroupPtr->getBaseLevelUnderlyingGroup(),
+           evals_r, evals_i, evecs_r, evecs_i);
 
     saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
@@ -653,7 +653,7 @@ LOCA::AdaptiveStepper::adapt(LOCA::Abstract::Iterator::StepStatus stepStatus)
 
   // Reset solver to compute new solution
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-				       parsedParams->getSublist("NOX"));
+                       parsedParams->getSublist("NOX"));
 
   return stepStatus;
 
@@ -693,7 +693,7 @@ LOCA::AdaptiveStepper::preprocess(LOCA::Abstract::Iterator::StepStatus stepStatu
 
   // Reset solver to compute new solution
   solverPtr = NOX::Solver::buildSolver(curGroupPtr, noxStatusTestPtr,
-				       parsedParams->getSublist("NOX"));
+                       parsedParams->getSublist("NOX"));
 
   return stepStatus;
 
@@ -862,24 +862,24 @@ LOCA::AdaptiveStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStat
   NOX::Abstract::Group::ReturnType predictorStatus =
     curGroupPtr->computePredictor();
   globalData->locaErrorCheck->checkReturnType(predictorStatus,
-					      callingFunction);
+                          callingFunction);
   *curPredictorPtr = curGroupPtr->getPredictorTangent()[0];
 
   if (doTangentFactorScaling && (getStepNumber() > 1)) {
     tangentFactor = curGroupPtr->computeScaledDotProduct(*curPredictorPtr,
-							 *prevPredictorPtr) /
+                             *prevPredictorPtr) /
       sqrt(curGroupPtr->computeScaledDotProduct(*curPredictorPtr,
-						*curPredictorPtr) *
-	   curGroupPtr->computeScaledDotProduct(*prevPredictorPtr,
-						 *prevPredictorPtr));
+                        *curPredictorPtr) *
+       curGroupPtr->computeScaledDotProduct(*prevPredictorPtr,
+                         *prevPredictorPtr));
 
     if (tangentFactor < minTangentFactor) {
       if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
-	globalData->locaUtils->out()
-	  << "\n\tTangent factor scaling:  Failing step!  Tangent factor "
-	  << "less than" << std::endl << "\t\tspecified bound: "
-	  << globalData->locaUtils->sciformat(tangentFactor) << " < "
-	  << globalData->locaUtils->sciformat(minTangentFactor) << std::endl;
+    globalData->locaUtils->out()
+      << "\n\tTangent factor scaling:  Failing step!  Tangent factor "
+      << "less than" << std::endl << "\t\tspecified bound: "
+      << globalData->locaUtils->sciformat(tangentFactor) << " < "
+      << globalData->locaUtils->sciformat(minTangentFactor) << std::endl;
       }
       return LOCA::Abstract::Iterator::Unsuccessful;
     }
@@ -895,8 +895,8 @@ LOCA::AdaptiveStepper::postprocess(LOCA::Abstract::Iterator::StepStatus stepStat
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_r;
     Teuchos::RCP< NOX::Abstract::MultiVector > evecs_i;
     eigensolver->computeEigenvalues(
-				 *curGroupPtr->getBaseLevelUnderlyingGroup(),
-				 evals_r, evals_i, evecs_r, evecs_i);
+                 *curGroupPtr->getBaseLevelUnderlyingGroup(),
+                 evals_r, evals_i, evecs_r, evecs_i);
 
     saveEigenData->save(evals_r, evals_i, evecs_r, evecs_i);
   }
@@ -1003,7 +1003,7 @@ LOCA::AdaptiveStepper::buildConstrainedGroup(
       get< Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface> >("Constraint Object");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
+      "\"Constraint Object\" parameter is not of type Teuchos::RCP<LOCA::MultiContinuation::ConstraintInterface>!");
 
   // Get parameter names for constraints
   if ((*constraintsList).INVALID_TEMPLATE_QUALIFIER
@@ -1012,7 +1012,7 @@ LOCA::AdaptiveStepper::buildConstrainedGroup(
       get< Teuchos::RCP< std::vector<std::string> > > ("Constraint Parameter Names");
   else
     globalData->locaErrorCheck->throwError(methodName,
-	  "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
+      "\"Constraint Parameter Names\" parameter is not of type Teuchos::RCP< std::vector<std::string> >!");
 
   // Convert names to integer IDs
   std::vector<int> constraintParamIDs(constraintParamNames->size());
@@ -1023,21 +1023,21 @@ LOCA::AdaptiveStepper::buildConstrainedGroup(
   // Create constrained group
   return
     Teuchos::rcp(new LOCA::MultiContinuation::ConstrainedGroup(
-							globalData,
-							parsedParams,
-							constraintsList,
-							grp,
-							constraints,
-							constraintParamIDs));
+                            globalData,
+                            parsedParams,
+                            constraintsList,
+                            grp,
+                            constraints,
+                            constraintParamIDs));
 }
 
 LOCA::Abstract::Iterator::StepStatus
 LOCA::AdaptiveStepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
-			       double& stepSz)
+                   double& stepSz)
 {
   NOX::Abstract::Group::ReturnType res =
     stepSizeStrategyPtr->computeStepSize(*curGroupPtr, *curPredictorPtr,
-					 *solverPtr, stepStatus, *this, stepSz);
+                     *solverPtr, stepStatus, *this, stepSz);
 
   if (res == NOX::Abstract::Group::Failed)
     return LOCA::Abstract::Iterator::Provisional;
@@ -1045,10 +1045,10 @@ LOCA::AdaptiveStepper::computeStepSize(LOCA::Abstract::Iterator::StepStatus step
   if (doTangentFactorScaling) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails)) {
       globalData->locaUtils->out()
-	<< "\n\tTangent factor scaling:  Rescaling step size by "
-	<< globalData->locaUtils->sciformat(pow(fabs(tangentFactor),
-						tangentFactorExponent))
-	<< std::endl;
+    << "\n\tTangent factor scaling:  Rescaling step size by "
+    << globalData->locaUtils->sciformat(pow(fabs(tangentFactor),
+                        tangentFactorExponent))
+    << std::endl;
     }
 
     stepSz *= pow(fabs(tangentFactor), tangentFactorExponent);
@@ -1094,8 +1094,8 @@ LOCA::AdaptiveStepper::getSolver() const
 {
   if (solverPtr.get() == NULL) {
     globalData->locaErrorCheck->throwError(
-				    "LOCA_AdaptiveStepper::getSolver()",
-				    "Solver has not been constructed yet!");
+                    "LOCA_AdaptiveStepper::getSolver()",
+                    "Solver has not been constructed yet!");
   }
 
   return solverPtr;
@@ -1147,32 +1147,32 @@ LOCA::AdaptiveStepper::printStartStep()
       << "Start of Continuation Step " << stepNumber << " : ";
     if (stepNumber==0) {
       globalData->locaUtils->out()
-	<< "Attempting to converge initial guess at initial parameter "
-	<< "values." << std::endl;
+    << "Attempting to converge initial guess at initial parameter "
+    << "values." << std::endl;
     }
     else if (isTargetStep) {
       globalData->locaUtils->out()
-	<< "Attempting to hit final target value "
-	<< globalData->locaUtils->sciformat(targetValue) << std::endl;
+    << "Attempting to hit final target value "
+    << globalData->locaUtils->sciformat(targetValue) << std::endl;
     }
     else {
       globalData->locaUtils->out()
-	<< "Parameter: " << conParamName
-	<< " = "
-	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter())
-	<< " from "
-	<< globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter())
-	<< std::endl;
+    << "Parameter: " << conParamName
+    << " = "
+    << globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter())
+    << " from "
+    << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter())
+    << std::endl;
       globalData->locaUtils->out()
-	<< "Continuation Method: "
-	<< stepperList->get("Continuation Method", "Arc Length")
-	<< std::endl;
+    << "Continuation Method: "
+    << stepperList->get("Continuation Method", "Arc Length")
+    << std::endl;
       globalData->locaUtils->out()
-	<< "Current step size  = "
-	<< globalData->locaUtils->sciformat(stepSize) << "   "
-	<< "Previous step size = "
-	<< globalData->locaUtils->sciformat(stepSizeStrategyPtr->getPrevStepSize())
-	<< std::endl;
+    << "Current step size  = "
+    << globalData->locaUtils->sciformat(stepSize) << "   "
+    << "Previous step size = "
+    << globalData->locaUtils->sciformat(stepSizeStrategyPtr->getPrevStepSize())
+    << std::endl;
     }
     globalData->locaUtils->out()
       << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
@@ -1191,8 +1191,8 @@ LOCA::AdaptiveStepper::printRelaxationStep()
       << "Start of Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl;
 
     globalData->locaUtils->out()
-	<< "Attempting to converge the remeshed solution at current parameter "
-	<< "values." << std::endl;
+    << "Attempting to converge the remeshed solution at current parameter "
+    << "values." << std::endl;
 
     globalData->locaUtils->out()
       << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
@@ -1206,21 +1206,21 @@ LOCA::AdaptiveStepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepSta
     // Print results of successful continuation step
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
       globalData->locaUtils->out()
-	<< "End of Continuation Step " << stepNumber << " : "
-	<< "Parameter: " << conParamName << " = "
-	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
+    << "End of Continuation Step " << stepNumber << " : "
+    << "Parameter: " << conParamName << " = "
+    << globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
       if (stepNumber != 0)
         globalData->locaUtils->out()
-	  << " from "
-	  << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter());
+      << " from "
+      << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter());
       globalData->locaUtils->out()
-	<< std::endl << "--> Step Converged in "
-	<< solverPtr->getNumIterations()
-	<<" Nonlinear Solver Iterations!\n";
+    << std::endl << "--> Step Converged in "
+    << solverPtr->getNumIterations()
+    <<" Nonlinear Solver Iterations!\n";
       globalData->locaUtils->out()
-	<< globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
+    << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
     }
   }
   else {
@@ -1228,21 +1228,21 @@ LOCA::AdaptiveStepper::printEndStep(LOCA::Abstract::Iterator::StepStatus stepSta
       // RPP: We may not need this, the failure info should be
       // at the method level!
       globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
       globalData->locaUtils->out()
-	<< "Continuation Step Number " << stepNumber
-	<< " experienced a convergence failure in\n"
-	<< "the nonlinear solver after "<< solverPtr->getNumIterations()
-	<<" Iterations\n";
+    << "Continuation Step Number " << stepNumber
+    << " experienced a convergence failure in\n"
+    << "the nonlinear solver after "<< solverPtr->getNumIterations()
+    <<" Iterations\n";
       globalData->locaUtils->out()
-	<< "Value of continuation parameter at failed step = "
-	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
+    << "Value of continuation parameter at failed step = "
+    << globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
       if (stepNumber != 0)
         globalData->locaUtils->out()
-	  << " from "
-	  << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter());
+      << " from "
+      << globalData->locaUtils->sciformat(prevGroupPtr->getContinuationParameter());
       globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
     }
   }
 }
@@ -1254,18 +1254,18 @@ LOCA::AdaptiveStepper::printRelaxationEndStep(LOCA::Abstract::Iterator::StepStat
     // Print results of successful continuation step
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperIteration)) {
       globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
       globalData->locaUtils->out()
-	<< "End of Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl
-	<< "Parameter: " << conParamName << " = "
-	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
+    << "End of Relaxation (Equilibration) Step " << stepNumber << " : " << std::endl
+    << "Parameter: " << conParamName << " = "
+    << globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
 
      globalData->locaUtils->out()
-	<< std::endl << "--> Step Converged in "
-	<< solverPtr->getNumIterations()
-	<<" Nonlinear Solver Iterations!\n";
+    << std::endl << "--> Step Converged in "
+    << solverPtr->getNumIterations()
+    <<" Nonlinear Solver Iterations!\n";
       globalData->locaUtils->out()
-	<< globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
+    << globalData->locaUtils->fill(72, '~') << std::endl << std::endl;
     }
   }
   else {
@@ -1273,17 +1273,17 @@ LOCA::AdaptiveStepper::printRelaxationEndStep(LOCA::Abstract::Iterator::StepStat
       // RPP: We may not need this, the failure info should be
       // at the method level!
       globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
       globalData->locaUtils->out()
-	<< "Relaxation Step Number " << stepNumber
-	<< " experienced a convergence failure in\n"
-	<< "the nonlinear solver after "<< solverPtr->getNumIterations()
-	<<" Iterations\n";
+    << "Relaxation Step Number " << stepNumber
+    << " experienced a convergence failure in\n"
+    << "the nonlinear solver after "<< solverPtr->getNumIterations()
+    <<" Iterations\n";
       globalData->locaUtils->out()
-	<< "Value of continuation parameter at failed step = "
-	<< globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
+    << "Value of continuation parameter at failed step = "
+    << globalData->locaUtils->sciformat(curGroupPtr->getContinuationParameter());
      globalData->locaUtils->out()
-	<< std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
+    << std::endl << globalData->locaUtils->fill(72, '~') << std::endl;
     }
   }
 }

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -72,7 +72,7 @@ int main()
     outFile << n << std::endl;
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -87,7 +87,7 @@ int main()
     stepperList.set("Min Value", 0.0);
     stepperList.set("Max Steps", 100);
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
-    
+
     // Use LAPACK solver for arclength bordered solves for efficiency
     stepperList.set("Bordered Solver Method", "LAPACK Direct Solve");
 
@@ -101,7 +101,7 @@ int main()
     // Create predictor sublist.  We use the constant predictor because the
     // solution is linear in the continuation parameter.  Using Secant or
     // Tangent is not very interesting, but are perfectly valid
-    Teuchos::ParameterList& predictorList = 
+    Teuchos::ParameterList& predictorList =
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Constant");
     //predictorList.set("Method", "Tangent");
@@ -118,17 +118,17 @@ int main()
     // Create the "Solver" parameters sublist to be used with NOX Solvers
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
-    nlPrintParams.set("Output Information", 
-		      NOX::Utils::Details +
-		      NOX::Utils::OuterIteration + 
-		      NOX::Utils::InnerIteration + 
-		      NOX::Utils::Warning + 
-		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails +
-		      NOX::Utils::StepperParameters);
+    nlPrintParams.set("Output Information",
+              NOX::Utils::Details +
+              NOX::Utils::OuterIteration +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Warning +
+              NOX::Utils::StepperIteration +
+              NOX::Utils::StepperDetails +
+              NOX::Utils::StepperParameters);
 
     // Create LAPACK Factory (necessary for LAPACK eigensolver)
-    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
@@ -136,52 +136,52 @@ int main()
       LOCA::createGlobalData(paramList, lapackFactory);
 
     // Set up the problem interface
-    BrusselatorProblemInterface brus(globalData, n, alpha, beta, D1, D2, 
-				     outFile);
+    BrusselatorProblemInterface brus(globalData, n, alpha, beta, D1, D2,
+                     outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
     p.addParameter("D1",D1);
     p.addParameter("D2",D2);
-  
+
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp = 
+    Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup> grp =
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, brus));
 
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RCP<NOX::StatusTest::NormF> normF = 
+    Teuchos::RCP<NOX::StatusTest::NormF> normF =
       Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters = 
+    Teuchos::RCP<NOX::StatusTest::MaxIters> maxIters =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RCP<NOX::StatusTest::Generic> comboOR = 
-      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
-					      normF, 
-					      maxIters));
+    Teuchos::RCP<NOX::StatusTest::Generic> comboOR =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                          normF,
+                          maxIters));
 
-    // Create the stepper  
+    // Create the stepper
     LOCA::Stepper stepper(globalData, grp, comboOR, paramList);
 
     // Perform continuation run
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
     // Check for convergence
-    if (status == LOCA::Abstract::Iterator::Finished) 
+    if (status == LOCA::Abstract::Iterator::Finished)
       std::cout << "All examples passed" << std::endl;
     else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+    globalData->locaUtils->out()
+      << "Stepper failed to converge!" << std::endl;
     }
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,15 +49,15 @@
     (Linear Algebra Package).  LAPACK provides portable, high-
     performance implementations of linear, eigen, SVD, etc solvers.
 
-    The standard LAPACK interface is Fortran-specific.  Unfortunately, the 
+    The standard LAPACK interface is Fortran-specific.  Unfortunately, the
     interface between C++ and Fortran is not standard across all computer
     platforms.  The Epetra_LAPACK class provides C++ wrappers for the LAPACK
     kernels in order to insulate the rest of Epetra from the details of C++ to Fortran
     translation.
     A Epetra_LAPACK object is essentially nothing, but allows access to the LAPACK wrapper
     functions.
-  
-    Epetra_LAPACK is a serial interface only.  This is appropriate since the standard 
+
+    Epetra_LAPACK is a serial interface only.  This is appropriate since the standard
     LAPACK are only specified for serial execution (or shared memory parallel).
 */
 
@@ -65,10 +65,10 @@
 #include "Epetra_Object.h"
 
 class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
-    
+
   public:
     //! @name Constructors/destructors
-  //@{ 
+  //@{
   //! Epetra_LAPACK Constructor.
   /*! Builds an instance of a serial LAPACK object.
    */
@@ -86,8 +86,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
 
 
   //! @name Symmetric Positive Definite linear system routines
-  //@{ 
-  
+  //@{
+
   //! Epetra_LAPACK factorization for positive definite matrix (SPOTRF)
   void POTRF( const char UPLO, const int N, float * A, const int LDA, int * INFO) const;
   //! Epetra_LAPACK factorization for positive definite matrix (DPOTRF)
@@ -104,10 +104,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void POTRI( const char UPLO, const int N, double * A, const int LDA, int * INFO) const;
 
   //! Epetra_LAPACK condition number estimator for positive definite matrix (SPOCON)
-  void POCON( const char UPLO, const int N, const float * A, const int LDA, const float ANORM, 
+  void POCON( const char UPLO, const int N, const float * A, const int LDA, const float ANORM,
 			  float * RCOND, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK condition number estimator for positive definite matrix (DPOCON)
-  void POCON( const char UPLO, const int N, const double * A, const int LDA, const double ANORM, 
+  void POCON( const char UPLO, const int N, const double * A, const int LDA, const double ANORM,
 			  double * RCOND, double * WORK, int * IWORK, int * INFO) const;
 
   //! Epetra_LAPACK factor and solve for positive definite matrix (SPOSV)
@@ -121,29 +121,29 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void POEQU(const int N, const double * A, const int LDA, double * S, double * SCOND, double * AMAX, int * INFO) const;
 
   //! Epetra_LAPACK solve driver for positive definite matrix (SPOSVX)
-  void PORFS(const char UPLO, const int N, const int NRHS, const float * A, const int LDA, const float * AF, const int LDAF, 
-	     const float * B, const int LDB, float * X, const int LDX, 
+  void PORFS(const char UPLO, const int N, const int NRHS, const float * A, const int LDA, const float * AF, const int LDAF,
+	     const float * B, const int LDB, float * X, const int LDX,
 	     float * FERR, float * BERR, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK solve driver for positive definite matrix (DPOSVX)
-  void PORFS(const char UPLO, const int N, const int NRHS, const double * A, const int LDA, const double * AF, const int LDAF, 
+  void PORFS(const char UPLO, const int N, const int NRHS, const double * A, const int LDA, const double * AF, const int LDAF,
 	     const double * B, const int LDB, double * X, const int LDX,
 	     double * FERR, double * BERR, double * WORK, int * IWORK, int * INFO) const;
 
   //! Epetra_LAPACK solve driver for positive definite matrix (SPOSVX)
-  void POSVX(const char FACT, const char UPLO, const int N, const int NRHS, float * A, const int LDA, float * AF, const int LDAF, 
-	     const char EQUED, float * S, float * B, const int LDB, float * X, const int LDX, float * RCOND, 
+  void POSVX(const char FACT, const char UPLO, const int N, const int NRHS, float * A, const int LDA, float * AF, const int LDAF,
+	     const char EQUED, float * S, float * B, const int LDB, float * X, const int LDX, float * RCOND,
 	     float * FERR, float * BERR, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK solve driver for positive definite matrix (DPOSVX)
-  void POSVX(const char FACT, const char UPLO, const int N, const int NRHS, double * A, const int LDA, double * AF, const int LDAF, 
-	     const char EQUED, double * S, double * B, const int LDB, double * X, const int LDX, double * RCOND, 
+  void POSVX(const char FACT, const char UPLO, const int N, const int NRHS, double * A, const int LDA, double * AF, const int LDAF,
+	     const char EQUED, double * S, double * B, const int LDB, double * X, const int LDX, double * RCOND,
 	     double * FERR, double * BERR, double * WORK, int * IWORK, int * INFO) const;
   //@}
 
   //! @name General linear system routines
-  //@{ 
+  //@{
 
   //! Epetra_LAPACK simple driver to solve least-squares systems
-  void GELS( const char TRANS, const int M, const int N, const int NRHS, double* A, const int LDA, 
+  void GELS( const char TRANS, const int M, const int N, const int NRHS, double* A, const int LDA,
 	  double* B, const int LDB, double* WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK factorization for general matrix (SGETRF)
   void GETRF( const int M, const int N, float * A, const int LDA, int * IPIV, int * INFO) const;
@@ -166,10 +166,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void GETRI( const int N, double * A, const int LDA, int * IPIV, double * WORK, const int * LWORK, int * INFO) const;
 
   //! Epetra_LAPACK condition number estimator for general matrix (SGECON)
-  void GECON( const char NORM, const int N, const float * A, const int LDA, const float ANORM, 
+  void GECON( const char NORM, const int N, const float * A, const int LDA, const float ANORM,
 			  float * RCOND, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK condition number estimator for general matrix (DGECON)
-  void GECON( const char NORM, const int N, const double * A, const int LDA, const double ANORM, 
+  void GECON( const char NORM, const int N, const double * A, const int LDA, const double ANORM,
 			  double * RCOND, double * WORK, int * IWORK, int * INFO) const;
 
   //! Epetra_LAPACK factor and solve for general matrix (SGESV)
@@ -183,21 +183,21 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void GEEQU(const int M, const int N, const double * A, const int LDA, double * R, double * C, double * ROWCND, double * COLCND, double * AMAX, int * INFO) const;
 
   //! Epetra_LAPACK Refine solution (GERFS)
-  void GERFS(const char TRANS, const int N, const int NRHS, const float * A, const int LDA, const float * AF, const int LDAF, 
-	     const int * IPIV, const float * B, const int LDB, float * X, const int LDX, 
+  void GERFS(const char TRANS, const int N, const int NRHS, const float * A, const int LDA, const float * AF, const int LDAF,
+	     const int * IPIV, const float * B, const int LDB, float * X, const int LDX,
 	     float * FERR, float * BERR, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK Refine solution (GERFS)
-  void GERFS(const char TRANS, const int N, const int NRHS, const double * A, const int LDA, const double * AF, const int LDAF, 
+  void GERFS(const char TRANS, const int N, const int NRHS, const double * A, const int LDA, const double * AF, const int LDAF,
 	     const int * IPIV, const double * B, const int LDB, double * X, const int LDX,
 	     double * FERR, double * BERR, double * WORK, int * IWORK, int * INFO) const;
 
   //! Epetra_LAPACK solve driver for general matrix (SGESVX)
-  void GESVX(const char FACT, const char TRANS, const int N, const int NRHS, float * A, const int LDA, float * AF, const int LDAF, int * IPIV, 
-	     const char EQUED, float * R, float * C, float * B, const int LDB, float * X, const int LDX, float * RCOND, 
+  void GESVX(const char FACT, const char TRANS, const int N, const int NRHS, float * A, const int LDA, float * AF, const int LDAF, int * IPIV,
+	     const char EQUED, float * R, float * C, float * B, const int LDB, float * X, const int LDX, float * RCOND,
 	     float * FERR, float * BERR, float * WORK, int * IWORK, int * INFO) const;
   //! Epetra_LAPACK solve driver for general matrix (DGESVX)
-  void GESVX(const char FACT, const char TRANS, const int N, const int NRHS, double * A, const int LDA, double * AF, const int LDAF, int * IPIV, 
-	     const char EQUED, double * R, double * C, double * B, const int LDB, double * X, const int LDX, double * RCOND, 
+  void GESVX(const char FACT, const char TRANS, const int N, const int NRHS, double * A, const int LDA, double * AF, const int LDAF, int * IPIV,
+	     const char EQUED, double * R, double * C, double * B, const int LDB, double * X, const int LDX, double * RCOND,
 	     double * FERR, double * BERR, double * WORK, int * IWORK, int * INFO) const;
 
 
@@ -208,7 +208,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   //@}
 
   //! @name Hessenberg routines
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper for computing the eigenvalues of a real upper Hessenberg matrix (SHSEQR)
   void HSEQR( const char JOB, const char COMPZ, const int N, const int ILO, const int IHI, float * H, const int LDH, float * WR, float * WI,
 	      float * Z, const int LDZ, float * WORK, const int LWORK, int * INFO) const;
@@ -218,7 +218,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   //@}
 
   //! @name Orthogonal matrix routines
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper for generating a m x n real matrix Q with orthonormal columns, defined as the product of k elementary reflectors. (SORGQR)
   void ORGQR( const int M, const int N, const int K, float * A, const int LDA, float * TAU, float * WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK wrapper for generating a m x n real matrix Q with orthonormal columns, defined as the product of k elementary reflectors. (DORGQR)
@@ -230,11 +230,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void ORGHR( const int N, const int ILO, const int IHI, double * A, const int LDA, double * TAU, double * WORK, const int LWORK, int * INFO) const;
 
   //! Epetra_LAPACK wrapper for applying an orthogonal matrix in-place (SORMHR)
-  void ORMHR( const char SIDE, const char TRANS, const int M, const int N, const int ILO, const int IHI, const float * A, const int LDA, 
+  void ORMHR( const char SIDE, const char TRANS, const int M, const int N, const int ILO, const int IHI, const float * A, const int LDA,
 	      const float * TAU, float * C,
 	      const int LDC, float * WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK wrapper for applying an orthogonal matrix in-place (DORMHR)
-  void ORMHR( const char SIDE, const char TRANS, const int M, const int N, const int ILO, const int IHI, const double * A, const int LDA, 
+  void ORMHR( const char SIDE, const char TRANS, const int M, const int N, const int ILO, const int IHI, const double * A, const int LDA,
 	      const double * TAU, double * C,
 	      const int LDC, double * WORK, const int LWORK, int * INFO) const;
   //! Epetra_LAPACK for forming the triangular factor of a product of elementary Householder reflectors (SLARFT).
@@ -244,7 +244,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   //@}
 
   //! @name Triangular matrix routines
-  //@{ 
+  //@{
 
   //! Epetra_LAPACK wrapper for computing eigenvectors of a quasi-triangular/triagnular matrix (STREVC)
   /*! \warning HOWMNY = 'S" is not supported.
@@ -258,15 +258,15 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
 	      double * VR, const int LDVR, const int MM, int  *M, double * WORK, int * INFO) const;
 
   //! Epetra_LAPACK wrapper for reordering the real-Schur/Schur factorization of a matrix (STREXC)
-  void TREXC( const char COMPQ, const int N, float * T, const int LDT, float * Q, const int LDQ, int IFST, int ILST, 
+  void TREXC( const char COMPQ, const int N, float * T, const int LDT, float * Q, const int LDQ, int IFST, int ILST,
 	      float * WORK, int * INFO) const;
   //! Epetra_LAPACK wrapper for reordering the real-Schur/Schur factorization of a matrix (DTREXC)
-  void TREXC( const char COMPQ, const int N, double * T, const int LDT, double * Q, const int LDQ, int IFST, int ILST, 
+  void TREXC( const char COMPQ, const int N, double * T, const int LDT, double * Q, const int LDQ, int IFST, int ILST,
 	      double * WORK, int * INFO) const;
   //@}
 
   //! @name Singular Value Decomposition matrix routines
-  //@{ 
+  //@{
 
   //! Epetra_LAPACK wrapper for computing the singular value decomposition (SGESVD)
   void GESVD( const char JOBU, const char JOBVT, const int M, const int N, float * A, const int LDA, float * S, float * U,
@@ -286,12 +286,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
    //@}
 
    //! @name Eigenvalue/Eigenvector routines
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric matrix A, the eigenvalues and, optionally, the left and/or right eigenvectors
-  void GEEV(const char JOBVL, const char JOBVR, const int N, double* A, const int LDA, double* WR, double* WI, 
+  void GEEV(const char JOBVL, const char JOBVR, const int N, double* A, const int LDA, double* WR, double* WI,
 			double* VL, const int LDVL, double* VR, const int LDVR, double* WORK, const int LWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute for an N-by-N real nonsymmetric matrix A, the eigenvalues and, optionally, the left and/or right eigenvectors
-  void GEEV(const char JOBVL, const char JOBVR, const int N, float* A, const int LDA, float* WR, float* WI, 
+  void GEEV(const char JOBVL, const char JOBVR, const int N, float* A, const int LDA, float* WR, float* WI,
 			float* VL, const int LDVL, float* VR, const int LDVR, float* WORK, const int LWORK, int* INFO) const;
 
   //! Epetra_LAPACK wrapper to compute all the eigenvalues and, optionally, eigenvectors of a real symmetric matrix A in packed storage
@@ -310,42 +310,42 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   void SYEV(const char JOBZ, const char UPLO, const int N, float* A, const int LDA, float* W, float* WORK, const int LWORK, int* INFO) const;
 
   //! Epetra_LAPACK wrapper to compute  all  eigenvalues and, optionally, eigenvectors of a real symmetric matrix A
-  void SYEVD(const char JOBZ, const char UPLO,  const int N,  double* A,  const int LDA,  double* W,  
+  void SYEVD(const char JOBZ, const char UPLO,  const int N,  double* A,  const int LDA,  double* W,
 	     double* WORK,  const int LWORK,  int* IWORK, const int LIWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute  all  eigenvalues and, optionally, eigenvectors of a real symmetric matrix A
-  void SYEVD(const char JOBZ, const char UPLO,  const int N,  float* A,  const int LDA,  float* W,  
+  void SYEVD(const char JOBZ, const char UPLO,  const int N,  float* A,  const int LDA,  float* W,
 	     float* WORK,  const int LWORK,  int* IWORK, const int LIWORK, int* INFO) const;
 
   //! Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally, eigenvectors of a real symmetric matrix A
-  void SYEVX(const char JOBZ, const char RANGE, const char UPLO,  const int N,  double* A,  const int LDA,  
+  void SYEVX(const char JOBZ, const char RANGE, const char UPLO,  const int N,  double* A,  const int LDA,
 	     const double* VL,  const double* VU,  const int* IL,  const int* IU,
-	     const double ABSTOL,  int * M,  double* W,  double* Z,  const int LDZ, double* WORK, 
+	     const double ABSTOL,  int * M,  double* W,  double* Z,  const int LDZ, double* WORK,
 	     const int LWORK, int* IWORK, int* IFAIL,
 	     int* INFO) const;
   //! Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally, eigenvectors of a real symmetric matrix A
-  void SYEVX(const char JOBZ, const char RANGE, const char UPLO,  const int N,  float* A,  const int LDA,  
+  void SYEVX(const char JOBZ, const char RANGE, const char UPLO,  const int N,  float* A,  const int LDA,
 	     const float* VL,  const float* VU,  const int* IL,  const int* IU,
-	     const float ABSTOL,  int * M,  float* W,  float* Z,  const int LDZ, float* WORK, 
+	     const float ABSTOL,  int * M,  float* W,  float* Z,  const int LDZ, float* WORK,
 	     const int LWORK, int* IWORK, int* IFAIL,
 	     int* INFO) const;
 
   //! Epetra_LAPACK wrapper to compute all the eigenvalues, and optionally, the eigenvectors of a real generalized symmetric-definite eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x
-  void SYGV(const int ITYPE, const char JOBZ, const char UPLO, const int N, double* A, const int LDA, double* B, 
+  void SYGV(const int ITYPE, const char JOBZ, const char UPLO, const int N, double* A, const int LDA, double* B,
 	    const int LDB, double* W, double* WORK, const int LWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute all the eigenvalues, and optionally, the eigenvectors of a real generalized symmetric-definite eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x
-  void SYGV(const int ITYPE, const char JOBZ, const char UPLO, const int N, float* A, const int LDA, float* B, 
+  void SYGV(const int ITYPE, const char JOBZ, const char UPLO, const int N, float* A, const int LDA, float* B,
 	    const int LDB, float* W, float* WORK, const int LWORK, int* INFO) const;
 
   //! Epetra_LAPACK wrapper to compute selected eigenvalues, and optionally, eigenvectors of a  real generalized symmetric-definite eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x
-  void SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N, 
+  void SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N,
 	     double* A, const int LDA, double* B, const int LDB, const double* VL, const double* VU,
-	     const int* IL, const int* IU, const double ABSTOL, int* M, double* W, double* Z, 
+	     const int* IL, const int* IU, const double ABSTOL, int* M, double* W, double* Z,
 	     const int LDZ,  double* WORK,  const int LWORK,  int* IWORK,
 	     int* IFAIL, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute selected eigenvalues, and optionally, eigenvectors of a  real generalized symmetric-definite eigenproblem, of the form A*x=(lambda)*B*x, A*Bx=(lambda)*x, or B*A*x=(lambda)*x
-  void SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N, 
+  void SYGVX(const int ITYPE, const char JOBZ, const char RANGE, const char UPLO, const int N,
 	     float* A, const int LDA, float* B, const int LDB, const float* VL, const float* VU,
-	     const int* IL, const int* IU, const float ABSTOL, int* M, float* W, float* Z, 
+	     const int* IL, const int* IU, const float ABSTOL, int* M, float* W, float* Z,
 	     const int LDZ,  float* WORK,  const int LWORK,  int* IWORK,
 	     int* IFAIL, int* INFO) const;
 
@@ -354,9 +354,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
                           const double ABSTOL,  int* M,  double* W,  double* Z, const int LDZ, int* ISUPPZ, double* WORK, const int LWORK, int* IWORK,
                           const int LIWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute selected eigenvalues and, optionally, eigenvectors of a real symmetric matrix T
-  void SYEVR(const char JOBZ, const char RANGE, const char UPLO,  const int N,  float* A,  const int LDA,  
+  void SYEVR(const char JOBZ, const char RANGE, const char UPLO,  const int N,  float* A,  const int LDA,
 	     const float* VL,  const float* VU,  const int *IL,  const int *IU,
-	     const float ABSTOL,  int* M,  float* W,  float* Z, const int LDZ, int* ISUPPZ, 
+	     const float ABSTOL,  int* M,  float* W,  float* Z, const int LDZ, int* ISUPPZ,
 	     float* WORK, const int LWORK, int* IWORK,
 	     const int LIWORK, int* INFO) const;
 
@@ -372,7 +372,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
   //! Epetra_LAPACK wrapper to compute the singular value decomposition (SVD) of a real M-by-N matrix A, optionally computing the left and right singular vectors
   void GESDD(const char JOBZ, const int M, const int N, double* A, const int LDA,  double* S,  double* U,  const int LDU,  double* VT,  const int LDVT,  double* WORK,
 	     const int LWORK, int* IWORK, int* INFO) const;
-  //! Epetra_LAPACK wrapper to 
+  //! Epetra_LAPACK wrapper to
   void GESDD(const char JOBZ, const int M, const int N, float* A, const int LDA,  float* S,  float* U,  const int LDU,  float* VT,  const int LDVT,  float* WORK,
 	     const int LWORK, int* IWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to compute for a pair of N-by-N real nonsymmetric matrices (A,B) the generalized eigenvalues, and optionally, the left and/or right generalized eigenvectors.
@@ -386,17 +386,17 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
     //@}
 
     //! @name Linear Least Squares
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper to solve the linear equality-constrained least squares (LSE) problem
-  void GGLSE(const int M, const int N, const int P, double* A, const int LDA, double* B, const int LDB, 
+  void GGLSE(const int M, const int N, const int P, double* A, const int LDA, double* B, const int LDB,
 	     double* C, double* D, double* X, double* WORK, const int LWORK, int* INFO) const;
   //! Epetra_LAPACK wrapper to solve the linear equality-constrained least squares (LSE) problem
-  void GGLSE(const int M, const int N, const int P, float* A, const int LDA, float* B, const int LDB, 
+  void GGLSE(const int M, const int N, const int P, float* A, const int LDA, float* B, const int LDB,
 	     float* C, float* D, float* X, float* WORK, const int LWORK, int* INFO) const;
     //@}
 
     //! @name Machine characteristics routines
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper for DLAMCH routine.  On out, T holds machine double precision floating point characteristics.  This information is returned by the Lapack routine.
   void LAMCH ( const char CMACH, float & T) const;
   //! Epetra_LAPACK wrapper for SLAMCH routine.  On out, T holds machine single precision floating point characteristics.  This information is returned by the Lapack routine.
@@ -406,13 +406,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_LAPACK {
     //@}
 
     //! @name Triangular solve
-  //@{ 
+  //@{
   //! Epetra_LAPACK wrapper for TRTRS routine.
   void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const float *A,
-                         const int LDA, float *B, const int LDB, int *INFO) const; 
+                         const int LDA, float *B, const int LDB, int *INFO) const;
   //! Epetra_LAPACK wrapper for TRTRS routine.
   void TRTRS(const char UPLO, const char TRANS, const char DIAG, const int N, const int NRHS, const double *A,
-                         const int LDA, double *B, const int LDB, int *INFO) const; 
+                         const int LDA, double *B, const int LDB, int *INFO) const;
 };
 
 // Epetra_LAPACK constructor

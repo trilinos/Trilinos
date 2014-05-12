@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,14 +34,14 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 
 #include "checkmap.h"
-int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElements, 
+int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElements,
 	     long long *MyGlobalElements, int ElementSize, int * ElementSizeList,
 	     long long NumGlobalPoints, int NumMyPoints,
 	     long long IndexBase, Epetra_Comm& Comm,
@@ -59,7 +59,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
     }
   else
     EPETRA_TEST_ERR(Map.ConstantElementSize(),ierr);
-  
+
   EPETRA_TEST_ERR(DistributedGlobal!=Map.DistributedGlobal(),ierr);
 
   EPETRA_TEST_ERR(IsOneToOne!=Map.IsOneToOne(),ierr);
@@ -69,12 +69,12 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
   if (ElementSizeList==0)
     {
       EPETRA_TEST_ERR(Map.ElementSize()!=ElementSize,ierr);
-      
+
       MyElementSizeList = new int[NumMyElements];
-      
+
       EPETRA_TEST_ERR(Map.ElementSizeList(MyElementSizeList)!=0,ierr);
       forierr = 0;
-      for (i=0; i<NumMyElements; i++) 
+      for (i=0; i<NumMyElements; i++)
         forierr += MyElementSizeList[i]!=ElementSize;
       EPETRA_TEST_ERR(forierr,ierr);
 
@@ -100,7 +100,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
 	forierr += Map.ElementSize(Map.LID(MyGlobalElements[i])) != ElementSizeList[i];
       }
       EPETRA_TEST_ERR(forierr,ierr);
-   
+
       EPETRA_TEST_ERR(MaxSize !=Map.MaxMyElementSize(),ierr);
       EPETRA_TEST_ERR(MinSize !=Map.MinMyElementSize(),ierr);
     }
@@ -147,10 +147,10 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
 
   long long * MyGlobalElements1 = new long long[NumMyElements];
   EPETRA_TEST_ERR(Map.MyGlobalElements(MyGlobalElements1)!=0,ierr);
-  
+
   forierr = 0;
   if (MyGlobalElements==0) {
-    for (i=0; i<NumMyElements; i++) 
+    for (i=0; i<NumMyElements; i++)
       forierr += MyGlobalElements1[i]!=MinMyGID+i;
     EPETRA_TEST_ERR(forierr,ierr);
   }
@@ -160,10 +160,10 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
     EPETRA_TEST_ERR(forierr,ierr);
   }
   EPETRA_TEST_ERR(Map.NumGlobalElements64()!=NumGlobalElements,ierr);
-  
+
   EPETRA_TEST_ERR(Map.NumGlobalPoints64()!=NumGlobalPoints,ierr);
-  
-  EPETRA_TEST_ERR(Map.NumMyElements()!=NumMyElements,ierr);  
+
+  EPETRA_TEST_ERR(Map.NumMyElements()!=NumMyElements,ierr);
 
   EPETRA_TEST_ERR(Map.NumMyPoints()!=NumMyPoints,ierr);
 
@@ -301,7 +301,7 @@ int checkmap(Epetra_BlockMap & Map, long long NumGlobalElements, int NumMyElemen
     int * PIDList = new int[3];
     int * LIDList = new int[3];
     int MyPID = Map.Comm().MyPID();
-  
+
     int NumIDs = 0;
     //GIDList[NumIDs++] = Map.MaxAllGID()+1; // Should return -1 for both PID and LID
     if (Map.MinMyGID64()-1>=Map.MinAllGID64()) GIDList[NumIDs++] = Map.MinMyGID64()-1;

@@ -33,9 +33,10 @@
 #ifndef IOSS_Ioss_ParallelUtils_h
 #define IOSS_Ioss_ParallelUtils_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
-#include <vector>
+#include <Ioss_CodeTypes.h>             // for Int64Vector, IntVector
+#include <stddef.h>                     // for size_t
+#include <string>                       // for string
+#include <vector>                       // for vector
 
 namespace Ioss {
 

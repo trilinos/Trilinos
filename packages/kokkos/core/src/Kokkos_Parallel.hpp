@@ -52,6 +52,81 @@
 #include <Kokkos_View.hpp>
 #include <impl/Kokkos_Traits.hpp>
 
+namespace Kokkos {
+#if   defined ( KOKKOS_HAVE_CUDA )
+class Cuda ;
+#endif
+#if   defined ( KOKKOS_HAVE_OPENMP )
+class OpenMP ;
+#endif
+#if   defined ( KOKKOS_HAVE_PTHREAD )
+class Threads ;
+#endif
+#if   defined ( KOKKOS_HAVE_SERIAL )
+class Serial ;
+#endif
+} // namespace Kokkos
+
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+namespace Kokkos {
+namespace Impl {
+  #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
+    typedef Cuda DefaultDeviceType;
+  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
+    typedef OpenMP DefaultDeviceType;
+  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
+    typedef Threads DefaultDeviceType;
+  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
+       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA )
+    typedef Serial DefaultDeviceType;
+  #else
+    #if   defined ( KOKKOS_HAVE_CUDA )
+      typedef Kokkos::Cuda DefaultDeviceType;
+      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA
+    #elif defined ( KOKKOS_HAVE_OPENMP )
+      typedef OpenMP DefaultDeviceType;
+      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP
+    #elif defined ( KOKKOS_HAVE_PTHREAD )
+      typedef Threads DefaultDeviceType;
+      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS
+    #else
+      typedef Serial DefaultDeviceType;
+      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL
+    #endif
+  #endif
+}
+}
+
+namespace Kokkos {
+namespace Impl {
+
+template< class FunctorType , class Enable = void >
+struct FunctorHasDeviceType : public false_type {};
+
+template< class FunctorType >
+struct FunctorHasDeviceType< FunctorType , typename
+   enable_if< ! is_same<typename FunctorType::device_type,int>::value >::type >
+  : public true_type {};
+}
+}
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -113,11 +188,21 @@ namespace Kokkos {
 template< class FunctorType >
 inline
 void parallel_for( const size_t        work_count ,
-                   const FunctorType & functor )
+                   const FunctorType & functor ,
+     typename Impl::enable_if<Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
 {
   Impl::ParallelFor< FunctorType , size_t > tmp( functor , work_count );
 }
 
+template< class FunctorType >
+inline
+void parallel_for( const size_t        work_count ,
+                   const FunctorType & functor ,
+                   typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
+{
+  Impl::ParallelFor< FunctorType , size_t, Impl::DefaultDeviceType >
+    tmp( functor , work_count );
+}
 
 /** \brief Execute \c functor \c work_count times in parallel, with vectorization.
  *

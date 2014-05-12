@@ -49,8 +49,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_put_num_map, etc
 
 /*!
  * writes an element map; this is a vector of integers of length number

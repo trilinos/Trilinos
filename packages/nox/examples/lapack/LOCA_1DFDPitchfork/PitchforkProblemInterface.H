@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,19 +57,19 @@
   \brief LOCA-LAPACK problem interface for a 1D finite difference discretization of a simple PDE exhibiting a pitchfork bifurcation.
 */
 /*!
-  %PitchforkProblemInterface implements the LOCA::LAPACK::Interface for a 
+  %PitchforkProblemInterface implements the LOCA::LAPACK::Interface for a
   1D finite-difference discretization of the PDE:
   \f[
       \frac{d^2 T}{d x^2} + \lambda T - \alpha T^2 + \beta T^3 = 0
   \f]
-   subject to the boundar conditions \f$T(-1) = T(1) = \beta\f$.  The 
-   parameters are \f$\alpha\f$, \f$\beta\f$, \f$\lambda\f$, and \f$n\f$, the 
-   size of the discretization.  
+   subject to the boundar conditions \f$T(-1) = T(1) = \beta\f$.  The
+   parameters are \f$\alpha\f$, \f$\beta\f$, \f$\lambda\f$, and \f$n\f$, the
+   size of the discretization.
 */
 class PitchforkProblemInterface : public LOCA::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor.  Also generates an initial guess
   PitchforkProblemInterface(int N, double a, double b, double l);
 
@@ -82,11 +82,11 @@ public:
   //! Evaluates residual
   bool
   computeF(NOX::LAPACK::Vector& f, const NOX::LAPACK::Vector &x);
-  
+
   //! Evalues jacobian
   bool
-  computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		  const NOX::LAPACK::Vector & x);
+  computeJacobian(NOX::LAPACK::Matrix<double>& J,
+          const NOX::LAPACK::Vector & x);
 
   //! Sets parameters
   void setParams(const LOCA::ParameterVector& p);

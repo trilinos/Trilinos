@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,32 +67,32 @@ namespace Direction {
 class Generic;
 
 /*!  \brief Pure virtual interface for users to supply their own direction objects.
-  
-*/  
+
+*/
 class UserDefinedFactory {
-    
+
 public:
-  
+
   //! Constructor
   UserDefinedFactory() {}
-  
+
   //! Destructor
   virtual ~UserDefinedFactory() {}
-  
+
   /*! \brief Builds a user defined direction object.
-    
+
     @param gd A global data pointer that contains the top level
     parameter list.  Without storing this inside the direction object,
     there is no guarantee that the second parameter \c params will
     still exist.  It can be deleted by the top level RCP.
-  
+
     @param params Sublist with direction construction parameters.
-      
+
   */
-  virtual Teuchos::RCP<NOX::Direction::Generic> 
+  virtual Teuchos::RCP<NOX::Direction::Generic>
   buildDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
-		 Teuchos::ParameterList& params) const = 0;
-  
+         Teuchos::ParameterList& params) const = 0;
+
 };
 } // namespace Direction
 } // namespace NOX

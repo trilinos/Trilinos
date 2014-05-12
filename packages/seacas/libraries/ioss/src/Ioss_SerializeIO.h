@@ -32,12 +32,10 @@
 #ifndef IOSS_Ioss_SerializeIO_h
 #define IOSS_Ioss_SerializeIO_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+namespace Ioss { class DatabaseIO; }
 
 namespace Ioss {
 
-class DatabaseIO;
 
 /**
  * @brief Class <code>SerializeIO</code> is a sentry class which performs serialization

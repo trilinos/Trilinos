@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -55,14 +55,14 @@ extern "C" {
 	  It provides an interface to access the initialization and finalize routines of OSKI.
 
 		All functions are public to allow access to methods needed by programs using OSKI.
-		There are no data members of the class as all data is kept in the matrix, vector, 
+		There are no data members of the class as all data is kept in the matrix, vector,
 		multi-vector, error and permutation classes.
 */
 
 class Epetra_OskiUtils {
   public:
 	//! @name Constructors/Destructor
-        //@{        
+        //@{
 	//! Default Constructor
 	Epetra_OskiUtils();
 

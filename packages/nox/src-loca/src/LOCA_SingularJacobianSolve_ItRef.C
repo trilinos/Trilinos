@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@ LOCA::SingularJacobianSolve::ItRef::ItRef(Teuchos::ParameterList& params)
 }
 
 LOCA::SingularJacobianSolve::ItRef::ItRef(
-			  const LOCA::SingularJacobianSolve::ItRef& source)
+              const LOCA::SingularJacobianSolve::ItRef& source)
 {
 }
 
@@ -67,41 +67,41 @@ LOCA::SingularJacobianSolve::ItRef::~ItRef()
 }
 
 LOCA::SingularJacobianSolve::Generic*
-LOCA::SingularJacobianSolve::ItRef::clone() const 
+LOCA::SingularJacobianSolve::ItRef::clone() const
 {
   return new ItRef(*this);
 }
 
 LOCA::SingularJacobianSolve::Generic&
 LOCA::SingularJacobianSolve::ItRef::operator=(
-			  const LOCA::SingularJacobianSolve::Generic& source)
+              const LOCA::SingularJacobianSolve::Generic& source)
 {
   return operator=(dynamic_cast<const LOCA::SingularJacobianSolve::ItRef&>(source));
 }
 
 LOCA::SingularJacobianSolve::ItRef&
 LOCA::SingularJacobianSolve::ItRef::operator=(
-			  const LOCA::SingularJacobianSolve::ItRef& source)
+              const LOCA::SingularJacobianSolve::ItRef& source)
 {
   return *this;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::ItRef::reset(Teuchos::ParameterList& params) 
+NOX::Abstract::Group::ReturnType
+LOCA::SingularJacobianSolve::ItRef::reset(Teuchos::ParameterList& params)
 {
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::ItRef::compute(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector& input,
-			        const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector& result) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector& input,
+                    const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector& result)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::SingularJacobianSolve::ItRef::compute()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -111,9 +111,9 @@ LOCA::SingularJacobianSolve::ItRef::compute(
   NOX::Abstract::Vector* remainder = input.clone(NOX::ShapeCopy);
 
   status = grp.applyJacobian(result, *remainder);
-  finalStatus = 
+  finalStatus =
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+                         callingFunction);
 
   // r = b-Ax
   remainder->update(1.0, input, -1.0);
@@ -122,30 +122,30 @@ LOCA::SingularJacobianSolve::ItRef::compute(
 
   // Ay=r
   status = grp.applyJacobianInverse(params, *remainder, *refinement);
-  finalStatus = 
+  finalStatus =
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+                         callingFunction);
 
   // x+=y
   result.update(1.0, *refinement, 1.0);
-  
+
   delete remainder;
   delete refinement;
 
   return finalStatus;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::ItRef::computeMulti(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector*const* inputs,
-				const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector** results,
-				int nVecs) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector*const* inputs,
+                const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector** results,
+                int nVecs)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::SingularJacobianSolve::ItRef::computeMulti()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
 
@@ -160,20 +160,20 @@ LOCA::SingularJacobianSolve::ItRef::computeMulti(
     refinements[i] = inputs[i]->clone(NOX::ShapeCopy);
 
     status = grp.applyJacobian(*(results[i]), *(remainders[i]));
-    finalStatus = 
+    finalStatus =
       LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						   callingFunction);
+                           callingFunction);
 
     // r = b-Ax
     remainders[i]->update(1.0, *(inputs[i]), -1.0);
   }
 
   // Ay=r
-  status = grp.applyJacobianInverseMulti(params, remainders, refinements, 
-					 nVecs);
-  finalStatus = 
+  status = grp.applyJacobianInverseMulti(params, remainders, refinements,
+                     nVecs);
+  finalStatus =
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+                         callingFunction);
 
   // x+=y
   for (int i=0; i<nVecs; i++) {
@@ -181,7 +181,7 @@ LOCA::SingularJacobianSolve::ItRef::computeMulti(
     delete remainders[i];
     delete refinements[i];
   }
-  
+
   delete [] remainders;
   delete [] refinements;
 

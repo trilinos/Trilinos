@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                 TriUtils: Trilinos Utilities Package
 //                 Copyright (2011) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -57,7 +57,7 @@ class Epetra_LinearProblem;
 
 namespace Trilinos_Util {
 
-class CrsMatrixGallery 
+class CrsMatrixGallery
 {
 public:
 
@@ -70,7 +70,7 @@ public:
 
   \note The matrix name can be empty (""), and set later using, for example,
   Set("matrix_name","laplace_2d");
-  
+
   An example of program using this class is reported below.
 
   \code
@@ -89,7 +89,7 @@ int main(int argc, char *argv[])
 
   // set the name of the matrix
   Gallery.Set("matrix name", "bcsstk14.rsa");
-  
+
   Epetra_CrsMatrix * A;
   Epetra_Vector * ExactSolution;
   Epetra_Vector * RHS;
@@ -102,21 +102,21 @@ int main(int argc, char *argv[])
   // at this point the RHS is allocated and filled
   RHS = Gallery.GetRHS();
   StartingSolution = Gallery.GetStartingSolution();
-  
+
   // create linear problem
   Epetra_LinearProblem Problem(A,StartingSolution,RHS);
   // create AztecOO instance
   AztecOO Solver(Problem);
 
-  Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );  
+  Solver.SetAztecOption( AZ_precond, AZ_dom_decomp );
   Solver.Iterate(1000,1E-9);
 
   // compute residual
   double residual;
-  
+
   Gallery.ComputeResidual(&residual);
   if( Comm.MyPID()==0 ) cout << "||b-Ax||_2 = " << residual << endl;
-  
+
   Gallery.ComputeDiffBetweenStartingAndExactSolutions(&residual);
   if( Comm.MyPID()==0 ) cout << "||x_exact - x||_2 = " << residual << endl;
 
@@ -125,7 +125,7 @@ int main(int argc, char *argv[])
 #endif
 
 return 0 ;
-  } 
+  }
   \endcode
 
   Class CommandLineParser can be used as well. In this case, one may
@@ -138,17 +138,17 @@ return 0 ;
   G.Set(CLP);
   // continue with your code...
   \endcode
-  
+
   \param In
   comm - Epetra communicator
   */
-  CrsMatrixGallery( const string name, const Epetra_Comm & comm, bool UseLongLong
+  CrsMatrixGallery( const std::string name, const Epetra_Comm & comm, bool UseLongLong
 #if defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
-	  = true
+    = true
 #else
-	  = false
+    = false
 #endif
-	  );
+    );
 
 
   //! Creates an Triutils_Gallery object using a given map.
@@ -161,29 +161,29 @@ return 0 ;
     \param In
     map - Epetra_Map
   */
-  CrsMatrixGallery( const string name, const Epetra_Map & map );
-  
+  CrsMatrixGallery( const std::string name, const Epetra_Map & map );
+
   //! Triutils_Gallery destructor
   ~CrsMatrixGallery();
 
   //@}
 
   //@{ \name Setting methods
- 
+
   //! Sets a gallery options using an interger value.
-  int Set(const string parameter, const int value);
+  int Set(const std::string parameter, const int value);
 
   //!  Sets a gallery options using a C++ string .
-  int Set(const string parameter, const string value );
+  int Set(const std::string parameter, const std::string value );
 
   //! Sets a gallery options using an double value.
-  int Set(const string parameter, const double value);
+  int Set(const std::string parameter, const double value);
 
   //! Sets a gallery options using an Epetra_Vector.
   /*! Sets a gallery options using an Epetra_Vector. The Epetra_Vector
   is copied into internal structures, and freed by the destructor.
   */
-  int Set(const string parameter, const Epetra_Vector & value);
+  int Set(const std::string parameter, const Epetra_Vector & value);
 
   //! Sets gallery options using values passed from the shell
   int Set(Trilinos_Util::CommandLineParser & CLP);
@@ -199,7 +199,7 @@ return 0 ;
 
   //! Returns a pointer to the exact solution.
   /*! Returns a pointer to the exact solution.
-    
+
     Some choices are available to define the exact solution, using
     Set("exact solution", value). value can be:
     - constant: the exact solution vector is made up of 1's.
@@ -214,17 +214,17 @@ return 0 ;
     while reading a HB problem. However, the user can set a starting
     solution using Set("starting solution", "value"). Value can be
     - zero
-    - random 
+    - random
   */
   Epetra_MultiVector * GetStartingSolution();
-  
+
   //! Returns a pointer to the rhs corresponding to the selected exact solution.
   Epetra_MultiVector * GetRHS();
 
   //! Returns a pointer the internally stored Map.
   const Epetra_Map * GetMap();
 
-  const Epetra_Map & GetMapRef();  
+  const Epetra_Map & GetMapRef();
 
   // ==================== //
   // LINEAR PROBLEM STUFF //
@@ -240,26 +240,26 @@ return 0 ;
   void ComputeDiffBetweenStartingAndExactSolutions(double* residual);
 
   //! Print out matrix and vectors
-  void PrintMatrixAndVectors(ostream & os);
+  void PrintMatrixAndVectors(std::ostream & os);
 
   void PrintMatrixAndVectors();
 
   //! Get pointers to double vectors containing coordinates of points.
   void GetCartesianCoordinates(double * & x, double * & y, double * & z);
-  
+
   //! Print out detailed information about the problem at hand
-  friend ostream & operator << (ostream& os,
-				const Trilinos_Util::CrsMatrixGallery & G );
-				
+  friend std::ostream & operator << (std::ostream& os,
+        const Trilinos_Util::CrsMatrixGallery & G );
+
   //! Print matrix on file in MATLAB format
-  int WriteMatrix( const string & FileName, const bool UseSparse=true );
-  
+  int WriteMatrix( const std::string & FileName, const bool UseSparse=true );
+
   //@}
 
 protected:
 
   //@{ \name Creation methods.
-  
+
   //! Creates a map.
   /*! Creates an Epetra_Map. Before calling this function, the problem
   size must have been specified.
@@ -277,16 +277,16 @@ protected:
   process i%NumProcs.
 
   - random: assign each node to a random process
-  
+
   - greedy: (only for HB matrices) implements a greedy algorithm to
     decompose the graph of the HB matrix among the processes
-    
+
   */
   void CreateMap();
 
   template<typename int_type>
   void TCreateMap();
-  
+
   //! Creates the CrdMatrix.
   void CreateMatrix();
 
@@ -302,12 +302,12 @@ protected:
   //! Creates the starting solution.
   void CreateStartingSolution();
 
-  //! Create the RHS corresponding to the desired exact solution.  
+  //! Create the RHS corresponding to the desired exact solution.
   template<typename int_type>
   void TCreateRHS();
 
   void CreateRHS();
-  
+
   // Create an identity matrix.
   template<typename int_type>
   void CreateEye();
@@ -315,19 +315,19 @@ protected:
   // Creates a diagonal matrix. Elements on the diagonal are called `a'.
   template<typename int_type>
   void CreateMatrixDiag();
-    
+
   // Creates a tridiagonal matrix. Elements on the diagonal are called `a',
   // elements on the sub-diagonal 'b', and on the super-diagonal 'c'.
   template<typename int_type>
   void CreateMatrixTriDiag();
-  
+
   // Create a matrix for a Laplacian in 1D
   template<typename int_type>
   void CreateMatrixLaplace1d();
-  
+
   template<typename int_type>
   void CreateMatrixLaplace1dNeumann();
-  
+
   template<typename int_type>
   void CreateMatrixCrossStencil2d();
 
@@ -351,13 +351,13 @@ protected:
 
   template<typename int_type>
   void CreateMatrixRecirc2dDivFree();
-  
+
   template<typename int_type>
   void CreateMatrixLaplace2dNeumann();
-  
+
   template<typename int_type>
   void CreateMatrixUniFlow2d();
-  
+
   template<typename int_type>
   void CreateMatrixLaplace3d();
 
@@ -393,7 +393,7 @@ protected:
 
   template<typename int_type>
   void CreateMatrixKMS();
-  
+
   template<typename int_type>
   void CreateMatrixParter();
 
@@ -405,21 +405,21 @@ protected:
 
   template<typename int_type>
   void CreateMatrixVander();
-  
+
   // read an HB matrix. This function requires other Trilinos util files
   template<typename int_type>
   void TReadMatrix();
 
   // returns the neighbors of a given node. The node is supposed to be on
-  // a 2D Cartesian grid 
+  // a 2D Cartesian grid
   void  GetNeighboursCartesian2d( const int i, const int nx, const int ny,
-				  int & left, int & right, 
-				  int & lower, int & upper);
+          int & left, int & right,
+          int & lower, int & upper);
   // returns the neighbors of a given node. The node is supposed to be on
-  // a 3D Cartesian grid   
+  // a 3D Cartesian grid
   void  GetNeighboursCartesian3d( const int i, const int nx, const int ny, const int nz,
-				  int & left, int & right, int & lower, int & upper,
-				  int & below, int & above );
+          int & left, int & right, int & lower, int & upper,
+          int & below, int & above );
 
   template<typename int_type>
   void TGetCartesianCoordinates(double * & x, double * & y, double * & z);
@@ -432,18 +432,18 @@ protected:
   void SetupCartesianGrid3D();
 
   void ExactSolQuadXY(double x, double y, double & u);
-  
+
   void ExactSolQuadXY(double x, double y, double & u,
-		      double & ux, double & uy,
-		      double & uxx, double & uyy);
-  
-  
+          double & ux, double & uy,
+          double & uxx, double & uyy);
+
+
   //@}
-  
+
   // ======================== //
   // I N T E R N A L  D A T A //
   // ======================== //
-  
+
   const Epetra_Comm * comm_;
 
   // matrix and vectors (scalar)
@@ -457,7 +457,7 @@ protected:
   Epetra_LinearProblem * LinearProblem_;
 
   // information about the problem to generate
-  string name_;
+  std::string name_;
   long long NumGlobalElements_;
   int NumMyElements_;
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
@@ -468,34 +468,34 @@ protected:
   long long * MyGlobalElements_LL_;
   std::vector<long long> MapMap_LL_;
 #endif
-  string MapType_;
+  std::string MapType_;
   bool ContiguousMap_;
-  string ExactSolutionType_;
-  string StartingSolutionType_;
-  string ExpandType_;
-  string RhsType_;
-  
+  std::string ExactSolutionType_;
+  std::string StartingSolutionType_;
+  std::string ExpandType_;
+  std::string RhsType_;
+
   // parameters
   int nx_, ny_, nz_;
   int mx_, my_, mz_;
 
   double lx_, ly_, lz_;
-  
+
   int NumPDEEqns_;
   int NumVectors_;
-  
+
   Epetra_Vector * VectorA_, * VectorB_, * VectorC_, * VectorD_, * VectorE_, *VectorF_, * VectorG_;
-  
+
   double a_, b_, c_, d_, e_, f_, g_;
   double alpha_, beta_, gamma_, delta_;
   double conv_, diff_, source_;
   double epsilon_;
-  
-  string FileName_;
+
+  std::string FileName_;
 
   // others
-  string ErrorMsg;
-  string OutputMsg;
+  std::string ErrorMsg;
+  std::string OutputMsg;
   bool verbose_;
 
   bool UseLongLong_;
@@ -528,7 +528,7 @@ class VbrMatrixGallery : public CrsMatrixGallery
 
 public:
 
-  VbrMatrixGallery(const string name, const Epetra_Map & map) :
+  VbrMatrixGallery(const std::string name, const Epetra_Map & map) :
     CrsMatrixGallery(name,map),
     VbrMatrix_(0),
     VbrExactSolution_(0),
@@ -539,13 +539,13 @@ public:
     VbrLinearProblem_(0)
    {} ;
 
-  VbrMatrixGallery(const string name, const Epetra_Comm & Comm, bool UseLongLong
+  VbrMatrixGallery(const std::string name, const Epetra_Comm & Comm, bool UseLongLong
 #if defined(EPETRA_NO_32BIT_GLOBAL_INDICES)
-	  = true
+    = true
 #else
-	  = false
+    = false
 #endif
-	  ) :
+    ) :
     CrsMatrixGallery(name,Comm,UseLongLong),
     VbrMatrix_(0),
     VbrExactSolution_(0),
@@ -556,17 +556,17 @@ public:
     VbrLinearProblem_(0)
   {} ;
 
-  ~VbrMatrixGallery(); 
-  
+  ~VbrMatrixGallery();
+
   // ========= //
   // VBR STUFF //
   // ========= //
-  
+
   //! Returns a pointer the internally stored BlockMap.
   const Epetra_BlockMap * GetBlockMap();
 
   const Epetra_BlockMap & GetBlockMapRef();
-  
+
   //! Returns a VbrMatrix, starting from the CsrMatrix.
   /*! Returns a VbrMatrix, starting from the CsrMatrix. This vbr matrix
     is formally equivalent to the CrsMatrix returned by
@@ -593,8 +593,8 @@ public:
   Epetra_MultiVector * GetVbrStartingSolution();
 
 
-  // create the Vbr matrix. 
-  void CreateVbrMatrix(void);  
+  // create the Vbr matrix.
+  void CreateVbrMatrix(void);
 
   template<typename int_type>
   void TCreateVbrMatrix(void);
@@ -605,11 +605,11 @@ public:
   //! Computes the 2-norm of the residual for the VBR problem
   void ComputeResidualVbr(double* residual);
 
-  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem  
+  //! Computes the 2-norm of the difference between the starting solution and the exact solution for the VBR problem
   void ComputeDiffBetweenStartingAndExactSolutionsVbr(double* residual);
 
   //! Print out Vbr matrix and vectors
-  void PrintVbrMatrixAndVectors(ostream & os);
+  void PrintVbrMatrixAndVectors(std::ostream & os);
 
   void PrintVbrMatrixAndVectors();
 
@@ -617,7 +617,7 @@ protected:
 
   // Creates a block map, based on map, wich NumPDEEqns equations on each node.
   void CreateBlockMap(void);
-  
+
   template<typename int_type>
   void TCreateBlockMap(void);
 
@@ -626,7 +626,7 @@ protected:
 
   //! Creates the starting solution for Vbr.
   void CreateVbrStartingSolution();
-  
+
   //!  Create the RHS corresponding to the desired exact solution for the Vbr problem.
   void CreateVbrRHS();
 
@@ -638,7 +638,7 @@ protected:
   Epetra_BlockMap * BlockMap_;
   int MaxBlkSize_;
 
-  // linear problem  
+  // linear problem
   Epetra_LinearProblem * VbrLinearProblem_;
 };
 

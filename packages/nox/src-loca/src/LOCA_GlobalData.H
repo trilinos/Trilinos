@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -82,7 +82,7 @@ namespace LOCA {
    * is needed, it can be added here without modifying the rest of the
    * code.  This is an alternative to true global or static objects which are
    * note safe in many contexts.  In particular, this approach allows multiple
-   * %LOCA "invocations" to be in memory at the same time. Note that all data 
+   * %LOCA "invocations" to be in memory at the same time. Note that all data
    * members are declared public.
    */
   class GlobalData {
@@ -91,8 +91,8 @@ namespace LOCA {
 
     //! Constructor taking a ref-count pointer to each global object
     GlobalData(const Teuchos::RCP<NOX::Utils>& loca_utils,
-	       const Teuchos::RCP<LOCA::ErrorCheck>& loca_error_check,
-	       const Teuchos::RCP<LOCA::Factory>& loca_factory);
+           const Teuchos::RCP<LOCA::ErrorCheck>& loca_error_check,
+           const Teuchos::RCP<LOCA::Factory>& loca_factory);
 
     //! Destructor
     virtual ~GlobalData();
@@ -122,7 +122,7 @@ namespace LOCA {
   //! Creates and initializes a LOCA::GlobalData object
   Teuchos::RCP<LOCA::GlobalData>
   createGlobalData(const Teuchos::RCP<Teuchos::ParameterList>& paramList,
-		   const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory = Teuchos::null);
+           const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory = Teuchos::null);
 
   //! De-initializes a LOCA::GlobalData object for destruction
   /*!

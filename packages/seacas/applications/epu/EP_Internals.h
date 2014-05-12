@@ -35,8 +35,12 @@
 #ifndef SEACAS_Internals_h
 #define SEACAS_Internals_h
 
-#include <vector>
-#include <smart_assert.h>               // for SMART_ASSERT
+#include <vector>                       // for vector
+namespace Excn { class Block; }
+namespace Excn { class CommunicationMetaData; }
+namespace Excn { class Mesh; }
+namespace Excn { template <typename INT> class NodeSet; }
+namespace Excn { template <typename INT> class SideSet; }
 
   /*!
    * This set of classes provides a thin wrapper around the exodusII
@@ -72,11 +76,6 @@
    */
 
 namespace Excn {
-  class Mesh;
-  class Block;
-  template <typename INT>class NodeSet;
-  template <typename INT>class SideSet;
-  class CommunicationMetaData;
   
   class Redefine
   {

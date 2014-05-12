@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,7 +63,7 @@ namespace LOCA {
      * \brief An interface for groups that are bordered systems
      */
     /*!
-     * This class provides an interface for groups whose Jacobian is of 
+     * This class provides an interface for groups whose Jacobian is of
      * the form
      * \f[
      *     \begin{bmatrix}
@@ -83,14 +83,14 @@ namespace LOCA {
 
     public:
 
-      //! Constructor 
+      //! Constructor
       AbstractGroup() {}
 
       //! Destructor.
       virtual ~AbstractGroup() {}
 
-      /*! 
-       * @name Pure virtual methods 
+      /*!
+       * @name Pure virtual methods
        * These methods must be defined by any concrete implementation
        */
       //@{
@@ -117,17 +117,17 @@ namespace LOCA {
        */
       virtual void
       extractSolutionComponent(const NOX::Abstract::MultiVector& v,
-			       NOX::Abstract::MultiVector& v_x) const = 0;
+                   NOX::Abstract::MultiVector& v_x) const = 0;
 
       /*!
        * Given the vector \c v, extract the parameter components of all
        * of the nested subvectors in \c v down to the solution component
        * for the unbordered group.
        */
-      virtual void 
+      virtual void
       extractParameterComponent(
-		       bool use_transpose,
-		       const NOX::Abstract::MultiVector& v,
+               bool use_transpose,
+               const NOX::Abstract::MultiVector& v,
                        NOX::Abstract::MultiVector::DenseMatrix& v_p) const = 0;
 
       /*!
@@ -137,8 +137,8 @@ namespace LOCA {
        */
       virtual void
       loadNestedComponents(const NOX::Abstract::MultiVector& v_x,
-			   const NOX::Abstract::MultiVector::DenseMatrix& v_p,
-			   NOX::Abstract::MultiVector& v) const = 0;
+               const NOX::Abstract::MultiVector::DenseMatrix& v_p,
+               NOX::Abstract::MultiVector& v) const = 0;
 
       //! Fill the combined A block as described above
       virtual void fillA(NOX::Abstract::MultiVector& A) const = 0;

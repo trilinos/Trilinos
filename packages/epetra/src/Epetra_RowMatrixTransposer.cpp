@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -114,8 +114,8 @@ void Epetra_RowMatrixTransposer::DeleteData (){
     delete [] Indices_;
     delete [] Values_;
   }
-  
-  
+
+
   for(i=0; i<NumMyCols_; i++) {
     int NumIndices = TransNumNz_[i];
     if (NumIndices>0) {
@@ -130,8 +130,8 @@ void Epetra_RowMatrixTransposer::DeleteData (){
 }
 
 //=========================================================================
-int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous, 
-             Epetra_CrsMatrix *& TransposeMatrix, 
+int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
+             Epetra_CrsMatrix *& TransposeMatrix,
              Epetra_Map * TransposeRowMap_in) {
 
 // FIXME long long
@@ -143,12 +143,12 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   if (TransposeRowMap_in==0)
     TransposeRowMap_ = (Epetra_Map *) &(OrigMatrix_->OperatorDomainMap()); // Should be replaced with refcount =
   else
-    TransposeRowMap_ = TransposeRowMap_in; 
+    TransposeRowMap_ = TransposeRowMap_in;
 
   // This routine will work for any RowMatrix object, but will attempt cast the matrix to a CrsMatrix if
   // possible (because we can then use a View of the matrix and graph, which is much cheaper).
 
-  // First get the local indices to count how many nonzeros will be in the 
+  // First get the local indices to count how many nonzeros will be in the
   // transpose graph on each processor
 
 
@@ -191,7 +191,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
     for (i=0;i<NumMyCols_; i++) TransNumNz_[i] = 0;
     for (i=0; i<NumMyRows_; i++) {
       // Get ith row
-      EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_)); 
+      EPETRA_CHK_ERR(OrigMatrix_->ExtractMyRowCopy(i, MaxNumEntries_, NumIndices, Values_, Indices_));
       for (j=0; j<NumIndices; j++) ++TransNumNz_[Indices_[j]];
     }
   }
@@ -242,7 +242,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
 
   for (i=0; i<NumMyCols_; i++)
     {
-      EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+      EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i],
                 TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
   // Note: The following call to FillComplete is currently necessary because
@@ -263,7 +263,7 @@ int Epetra_RowMatrixTransposer::CreateTranspose (const bool MakeDataContiguous,
   TransposeExporter_ = new Epetra_Export(TransMap, *TransposeRowMap_);
 
   EPETRA_CHK_ERR(TransposeMatrix_->Export(TempTransA1, *TransposeExporter_, Add));
-  
+
   EPETRA_CHK_ERR(TransposeMatrix_->FillComplete(range_map, domain_map));
 
   if (MakeDataContiguous) {
@@ -294,7 +294,7 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
 
   Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<Epetra_CrsMatrix *>(MatrixWithNewValues);
 
-  
+
   OrigMatrixIsCrsMatrix_ = (OrigCrsMatrix!=0); // If this pointer is non-zero, the cast to CrsMatrix worked
 
 
@@ -330,7 +330,7 @@ int Epetra_RowMatrixTransposer::UpdateTransposeValues(Epetra_RowMatrix * MatrixW
 
   for (i=0; i<NumMyCols_; i++)
     {
-      EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i], 
+      EPETRA_CHK_ERR(TempTransA1.InsertGlobalValues(TransMyGlobalEquations_[i],
                 TransNumNz_[i], TransValues_[i], TransIndices_[i]));
     }
   // Note: The following call to FillComplete is currently necessary because

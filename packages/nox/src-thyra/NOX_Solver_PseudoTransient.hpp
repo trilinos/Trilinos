@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,11 +51,11 @@
 #ifndef NOX_SOLVER_PSEUDO_TRANSIENT_HPP
 #define NOX_SOLVER_PSEUDO_TRANSIENT_HPP
 
-#include "NOX_Solver_Generic.H"	         // base class
+#include "NOX_Solver_Generic.H"             // base class
 #include "Teuchos_ParameterListAcceptorDefaultBase.hpp" // base class
 #include "NOX_Solver_PrePostOperator.H"  // class data element
-#include "Teuchos_ParameterList.hpp"	         // class data element
-#include "NOX_Utils.H"		         // class data element
+#include "Teuchos_ParameterList.hpp"             // class data element
+#include "NOX_Utils.H"                 // class data element
 #include "Teuchos_RCP.hpp"       // class data element
 
 // Forward declarations
@@ -90,20 +90,20 @@ namespace Solver {
 */
   class PseudoTransient :
     public NOX::Solver::Generic,
-    public Teuchos::ParameterListAcceptorDefaultBase 
+    public Teuchos::ParameterListAcceptorDefaultBase
 {
 
 public:
-  
-  PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
-		  const Teuchos::RCP<NOX::StatusTest::Generic>& tests, 
-		  const Teuchos::RCP<Teuchos::ParameterList>& params);
+
+  PseudoTransient(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+          const Teuchos::RCP<NOX::StatusTest::Generic>& tests,
+          const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   void setParameterList(const Teuchos::RCP<Teuchos::ParameterList>& paramList);
   Teuchos::RCP<const Teuchos::ParameterList> getValidParameters() const;
-  
-  void reset(const NOX::Abstract::Vector& initialGuess, 
-	     const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
+
+  void reset(const NOX::Abstract::Vector& initialGuess,
+         const Teuchos::RCP<NOX::StatusTest::Generic>& tests);
   void reset(const NOX::Abstract::Vector& initialGuess);
   NOX::StatusTest::StatusType getStatus();
   NOX::StatusTest::StatusType step();
@@ -119,48 +119,48 @@ public:
   Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const;
 
 protected:
-  
+
   virtual void init();
 
   virtual void printUpdate();
 
 protected:
-  
+
   //! Pointer to the global data object.
   Teuchos::RCP<NOX::GlobalData> globalDataPtr;
 
   //! Utils
   Teuchos::RCP<NOX::Utils> utilsPtr;
-  
-  //! Current solution.
-  Teuchos::RCP<NOX::Abstract::Group> solnPtr;		
 
-  //! Previous solution pointer. 
-  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;	
+  //! Current solution.
+  Teuchos::RCP<NOX::Abstract::Group> solnPtr;
+
+  //! Previous solution pointer.
+  Teuchos::RCP<NOX::Abstract::Group> oldSolnPtr;
 
   //! Group used to evaluate a transient residual
-  Teuchos::RCP<NOX::Abstract::Group> transientResidualGroup;	
+  Teuchos::RCP<NOX::Abstract::Group> transientResidualGroup;
 
   //! Current search direction pointer.
   Teuchos::RCP<NOX::Abstract::Vector> dirPtr;
 
   //! Stopping test.
-  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;		
+  Teuchos::RCP<NOX::StatusTest::Generic> testPtr;
 
   //! Input parameters.
-  //Teuchos::RCP<Teuchos::ParameterList> paramsPtr;	
+  //Teuchos::RCP<Teuchos::ParameterList> paramsPtr;
 
-  //! Linesearch. 
-  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr; 
+  //! Linesearch.
+  Teuchos::RCP<NOX::LineSearch::Generic> lineSearchPtr;
 
-  //! %Search %Direction. 
-  Teuchos::RCP<NOX::Direction::Generic> directionPtr; 
+  //! %Search %Direction.
+  Teuchos::RCP<NOX::Direction::Generic> directionPtr;
 
   //! Current step.
-  double stepSize;			
+  double stepSize;
 
   //! Number of nonlinear iterations.
-  int nIter;                    
+  int nIter;
 
   //! %Status of nonlinear solver.
   NOX::StatusTest::StatusType status;
@@ -174,12 +174,12 @@ protected:
 
 
 
-  //! Pointer to solnPtr casted back to a thyra group 
-  Teuchos::RCP<NOX::Thyra::Group> thyraSolnGroup; 
-  //! Pointer to oldSolnPtr casted back to a thyra group 
-  Teuchos::RCP<NOX::Thyra::Group> thyraOldSolnGroup; 
+  //! Pointer to solnPtr casted back to a thyra group
+  Teuchos::RCP<NOX::Thyra::Group> thyraSolnGroup;
+  //! Pointer to oldSolnPtr casted back to a thyra group
+  Teuchos::RCP<NOX::Thyra::Group> thyraOldSolnGroup;
   //! Group used to evaluate a transient residual
-  Teuchos::RCP<NOX::Thyra::Group> thyraTransientResidualGroup; 
+  Teuchos::RCP<NOX::Thyra::Group> thyraTransientResidualGroup;
 
   //! Step size for pseudo-transient stepping
   double delta;
@@ -201,7 +201,7 @@ protected:
   //! If set to true, the candidate direction will use the transient residual instead of the steady-state residual.  This is a modification of the Kelley-Keyes paper.
   bool use_transient_residual;
 
-  //! Maximum number of iterations before pseudo-transient is disabled and the algorithm switches to a line search-based direct to steady state solve. 
+  //! Maximum number of iterations before pseudo-transient is disabled and the algorithm switches to a line search-based direct to steady state solve.
   int max_pseudo_transient_iterations;
 
   //! Parameters that are valid for this solver

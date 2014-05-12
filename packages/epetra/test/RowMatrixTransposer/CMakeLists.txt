@@ -1,7 +1,7 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  RowMatrixTransposer_test  
+  RowMatrixTransposer_test
   SOURCES cxx_main.cpp
   ARGS -v
   COMM mpi serial

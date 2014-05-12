@@ -33,9 +33,13 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include <string.h>                     // for strcpy, memset, strcmp, etc
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_id_lkup, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_set_fill, etc
 
 /*!
   

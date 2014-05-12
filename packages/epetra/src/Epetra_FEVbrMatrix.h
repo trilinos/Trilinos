@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -52,19 +52,19 @@
     non-local rows (which could correspond to shared finite-element nodes for
     example). This class inherits Epetra_VbrMatrix, and so all Epetra_VbrMatrix
     functionality is also available.
-*/    
+*/
 
 class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
  public:
 
    //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Epetra_FEVbrMatrix constuctor with variable number of indices per row.
-  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
-    
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.
+
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
+    \param In
            RowMap - A Epetra_BlockMap listing the block rows that this processor
 	   will contribute to.
     \param In
@@ -76,13 +76,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     const Epetra_BlockMap& RowMap,
 		     int *NumBlockEntriesPerRow,
 		     bool ignoreNonLocalEntries=false);
-  
+
   //! Epetra_FEVbrMatrix constuctor with fixed number of indices per row.
-  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
-    
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.
+
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
+    \param In
            RowMap - An Epetra_BlockMap listing the block rows that this
 	   processor will contribute to.
     \param In
@@ -97,14 +97,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     bool ignoreNonLocalEntries=false);
 
   //! Epetra_FEVbrMatrix constuctor with variable number of indices per row.
-  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
-    
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.
+
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
+    \param In
            RowMap - A Epetra_BlockMap listing the block rows that this processor
 	   will contribute to.
-    \param In 
+    \param In
            ColMap - A Epetra_BlockMap listing the block columns to be contained
 	   on this processor.
     \param In
@@ -117,16 +117,16 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
 		     const Epetra_BlockMap& ColMap,
 		     int *NumBlockEntriesPerRow,
 		     bool ignoreNonLocalEntries=false);
-  
+
   //! Epetra_FEVbrMatrix constuctor with fixed number of indices per row.
-  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.  
-    
+  /*! Creates a Epetra_FEVbrMatrix object and allocates storage.
+
     \param In
            CV - A Epetra_DataAccess enumerated type set to Copy or View.
-    \param In 
+    \param In
            RowMap - An Epetra_BlockMap listing the block rows that this
 	   processor will contribute to.
-    \param In 
+    \param In
            ColMap - An Epetra_BlockMap listing the block columns to be contained
 	   on this processor.
     \param In
@@ -153,9 +153,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
   //! Epetra_VbrMatrix Destructor
   virtual ~Epetra_FEVbrMatrix();
   //@}
-  
+
   //! @name Insertion/Replace/SumInto methods
-  //@{ 
+  //@{
 
   Epetra_FEVbrMatrix& operator=(const Epetra_FEVbrMatrix& src);
 
@@ -215,7 +215,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
     /* Submit a block entry that will recorded in the block row that was initiated by one of the
        Begin routines listed above.  Once a one of the following routines: BeginInsertGlobalValues(),
        BeginInsertMyValues(), BeginReplaceGlobalValues(), BeginReplaceMyValues(), BeginSumIntoGlobalValues(),
-       BeginSumIntoMyValues(), you \e must call SubmitBlockEntry() NumBlockEntries times to register the values 
+       BeginSumIntoMyValues(), you \e must call SubmitBlockEntry() NumBlockEntries times to register the values
        corresponding to the block indices passed in to the Begin routine.  If the Epetra_VbrMatrix constuctor
        was called in Copy mode, the values will be copied.  However, no copying will be done until the EndSubmitEntries()
        function is call to complete submission of the current block row.  If the constructor was called in View mode, all
@@ -239,7 +239,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
     int SubmitBlockEntry(double *Values, int LDA, int NumRows, int NumCols);
 
     //! Completes processing of all data passed in for the current block row.
-    /*! This function completes the processing of all block entries submitted via SubmitBlockEntry().  
+    /*! This function completes the processing of all block entries submitted via SubmitBlockEntry().
         It also checks to make sure that SubmitBlockEntry was called the correct number of times as
 	specified by the Begin routine that initiated the entry process.
     */
@@ -251,7 +251,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_FEVbrMatrix: public Epetra_VbrMatrix {
  private:
     int SetupForNonlocalSubmits(int BlockRow,
 				int NumBlockEntries,
-				int * BlockIndices, 
+				int * BlockIndices,
 				bool IndicesAreLocal,
 				Epetra_CombineMode SubmitMode);
 

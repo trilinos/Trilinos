@@ -33,9 +33,12 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, ex_id_lkup, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_varid, etc
 
 /*! write out the connectivity array */
 #define EX_WRITE_CONN(TNAME,VARCONN,VARCONNVAL) \

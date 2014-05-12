@@ -70,7 +70,7 @@ jdkotul@sandia.gov
 #include <mpi.h>
 #include "distribute.h"
 
-void distmat_( 
+void distmat_(
                 int *nprocsr,
                 int *ncols,
                 int *nrhs,
@@ -80,7 +80,7 @@ void distmat_(
                 int *my_first_col,
                 int *my_rhs,
                 int *my_row,
-                int *my_col) 
+                int *my_col)
 {
 
     int me,nprocs;
@@ -94,7 +94,7 @@ void distmat_(
     MPI_Comm_size(MPI_COMM_WORLD, &nprocs);
 
     nrows = *ncols;
-    
+
     nprocs_row = *nprocsr;
 
     nprocs_col = nprocs/(*nprocsr) ;
@@ -102,7 +102,7 @@ void distmat_(
     /* Distribute the rows and columns   */
 
     *my_row = me/(*nprocsr);
-    *my_col = me %(nprocs_row);  
+    *my_col = me %(nprocs_row);
 
 
     *my_rows = nrows / nprocs_col;
@@ -134,7 +134,7 @@ void distmat_(
 
 
 
-} 
+}
 
 
 

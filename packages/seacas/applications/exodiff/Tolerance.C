@@ -31,11 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 // 
 #include "Tolerance.h"
-#include <cmath>
-#include <cstdlib>
-#include <stdint.h>
+#include <sys/types.h>                  // for int32_t, int64_t
+#include <cstdlib>                      // for abs
 
-#include "smart_assert.h"
 
 namespace {
   /* See

@@ -22,7 +22,7 @@ Note: Points do not have global IDs.
 
 BlockMap Element and Point associations:
 
-Block Map    VbrMatrix      CrsMatrix        CrsGraph        MultiVector     Vector 
+Block Map    VbrMatrix      CrsMatrix        CrsGraph        MultiVector     Vector
 
 Element      Block Row/     Row/Column       Global          Block Row       Contiguous
              Block Column   Global Index     Vertex Index    Global Index    range of vector

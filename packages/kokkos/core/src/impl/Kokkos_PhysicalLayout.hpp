@@ -66,6 +66,7 @@ struct PhysicalLayout {
       for(int i=0;i<8;i++) stride[i] = 0;
       view.stride( stride );
     }
+  #ifdef KOKKOS_HAVE_CUDA
   template< class T , class L , class D , class M >
   PhysicalLayout( const View<T,L,D,M,ViewCudaTexture> & view )
     : layout_type( is_same< typename View<T,L,D,M>::array_layout , LayoutLeft  >::value ? Left : (
@@ -75,6 +76,7 @@ struct PhysicalLayout {
       for(int i=0;i<8;i++) stride[i] = 0;
       view.stride( stride );
     }
+  #endif
 };
 
 }

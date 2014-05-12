@@ -141,7 +141,7 @@ namespace Tpetra {
     ///
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit Directory (const map_type& map);
+    explicit TEUCHOS_DEPRECATED Directory (const map_type& map);
 
     /// \brief Constructor (using a tie break class to decide ownership).
     ///
@@ -150,8 +150,9 @@ namespace Tpetra {
     ///
     /// \note This constructor is NOT invoked by Map's constructor,
     ///   and for now only works with noncontiguous Maps.
-    explicit Directory (const map_type& map,
-                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
+    explicit TEUCHOS_DEPRECATED
+    Directory (const map_type& map,
+               const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
 
     /// \brief Constructor (preserved for backwards compatibility with 11.4).
     ///
@@ -160,8 +161,25 @@ namespace Tpetra {
     explicit TEUCHOS_DEPRECATED
     Directory (const Teuchos::RCP<const map_type>& map);
 
+    /// \brief Default constructor: the only one you should use.
+    ///
+    /// To initialize the Directory, call the appropriate initialize()
+    /// overload.
+    Directory ();
+
     //! Destructor.
     ~Directory ();
+
+    //! Initialize the Directory with its Map.
+    void initialize (const map_type& map);
+
+    //! Initialize the Directory, with its Map and a TieBreak object.
+    void
+    initialize (const map_type& map,
+                const Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal>& tieBreak);
+
+    //! Whether the Directory is initialized.
+    bool initialized () const;
 
     /// \brief Clone the Directory for a different Node type, using a cloned Map.
     /// \warning This is an advanced method for use by experts only.
@@ -338,10 +356,10 @@ namespace Tpetra {
     /// \brief Whether the Directory's input Map is (globally) one to one.
     ///
     /// This method should always be treated as a collective on all
-    /// processes in the given communicator, which must be the same
-    /// as the input Map's communicator.  Not all implementations
+    /// processes in the given Map's communicator, which must be the
+    /// same as the input Map's communicator.  Not all implementations
     /// necessarily communicate.
-    bool isOneToOne (const Teuchos::Comm<int>& comm) const;
+    bool isOneToOne (const map_type& map) const;
 
     //@}
   private:
@@ -353,7 +371,10 @@ namespace Tpetra {
     ///   contiguous or noncontiguous).
     typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
-    //! Implementation of this object.
+    /// \brief Implementation of this object.
+    ///
+    /// Directory creates this impl_ object either lazily, or on
+    /// request (in initialize()), and caches it.
     const base_type* impl_;
 
     //! Copy constructor: declared private but not defined on purpose.
@@ -361,13 +382,9 @@ namespace Tpetra {
 
     template <class LO, class GO, class N> friend class Directory;
 
-    //! Empty constructor, for delayed initialization by clone()
-    Directory ();
-
     //! Assignment operator: declared private but not defined on purpose.
     Directory<LocalOrdinal, GlobalOrdinal, Node>&
     operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
-
   }; // class Directory
 } // namespace Tpetra
 

@@ -1195,11 +1195,29 @@ namespace Tpetra {
       insertNonownedGlobalValues (globalRow, indices, values);
     }
     else { // globalRow _is_ owned by calling process
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->isStaticGraph(), std::runtime_error,
-        ": The CrsMatrix was constructed with a static (i.e., const) graph."
-        << endl << "In that case, it is not allowed to insert new entries into "
-        "rows owned by the calling process.");
+      if (this->isStaticGraph ()) {
+        // Uh oh!  Not allowed to insert into owned rows in that case.
+        std::ostringstream err;
+        const int myRank = getRowMap ()->getComm ()->getRank ();
+        const int numProcs = getRowMap ()->getComm ()->getSize ();
+
+        err << "Tpetra::CrsMatrix::insertGlobalValues: The matrix was "
+          "constructed with a constant (\"static\") graph, yet the given "
+          "global row index " << globalRow << " is in the row Map on the "
+          "calling process (with rank " << myRank << ", of " << numProcs <<
+          " process(es)).  In this case, you may not insert new entries into "
+          "rows owned by the calling process.";
+
+        if (! getRowMap ()->isNodeGlobalElement (globalRow)) {
+          err << "  Furthermore, GID->LID conversion with the row Map claims that "
+            "the global row index is owned on the calling process, yet "
+            "getRowMap()->isNodeGlobalElement(globalRow) returns false.  That's"
+            " weird!  This might indicate a Map bug.  Please report this to the"
+            " Tpetra developers.";
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(this->isStaticGraph (), std::runtime_error, err.str ());
+      }
+
       if (! myGraph_->indicesAreAllocated ()) {
         allocateValues (GlobalIndices, GraphNotYetAllocated);
       }

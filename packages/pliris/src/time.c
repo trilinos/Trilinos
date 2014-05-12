@@ -45,10 +45,10 @@
 #include <mpi.h>
 #include "defines.h"
 double  seconds(double );
-double  timing(double , int ); 
+double  timing(double , int );
 #include "mytime.h"
 
-double 
+double
 seconds(double start)
 {
     double time;		/* total seconds */
@@ -65,7 +65,7 @@ seconds(double start)
 ** type:        type of message to collect
 */
 
-double 
+double
 timing(double secs, int type)
 {
 
@@ -90,7 +90,7 @@ timing(double secs, int type)
 	fprintf(stderr, "%.4f (avg), %.4f (max on processor %d).\n",
 		avgtime, max_out.val, max_out.proc);
     }
-    
+
     return avgtime;
 }
 
@@ -112,7 +112,7 @@ void showtime(char *label, double *value)
     min_in.val = *value;
     min_in.proc = me;
     MPI_Allreduce(&min_in,&min_out,1,MPI_DOUBLE_INT,MPI_MINLOC,MPI_COMM_WORLD);
-   
+
     MPI_Allreduce(value,&avgtime,1,MPI_DOUBLE,MPI_SUM,MPI_COMM_WORLD);
 
     avgtime /= nprocs_cube;

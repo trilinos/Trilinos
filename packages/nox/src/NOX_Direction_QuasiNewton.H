@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,12 +51,12 @@
 #ifndef NOX_DIRECTION_QUASINEWTON_H
 #define NOX_DIRECTION_QUASINEWTON_H
 
-#include "NOX_Common.H"		   
+#include "NOX_Common.H"
 
 #ifdef WITH_PRERELEASE
 
 #include "NOX_Direction_Generic.H" // base class
-#include "Teuchos_ParameterList.hpp"	   // class data element 
+#include "Teuchos_ParameterList.hpp"       // class data element
 #include "Teuchos_RCP.hpp" // class data element
 
 // Forward declaration
@@ -68,20 +68,20 @@ namespace NOX {
 namespace NOX {
 namespace Direction {
 
-//! %Quasi-Newton direction 
-/*!  
-  
+//! %Quasi-Newton direction
+/*!
+
   We will calculate a quasi-Newton direction for the related minimization problem
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$
   f(x) = \frac{1}{2} \|F(x)\|^2.
   \f$
 
-  We compute the direction 
+  We compute the direction
 
-  &nbsp;&nbsp; 
-  \f$d_k = -H_k g_k.\f$ 
+  &nbsp;&nbsp;
+  \f$d_k = -H_k g_k.\f$
 
   Here \f$H_k\f$ is a limited-memory BFGS (L-BFGS) approximation to
   the <em>inverse</em> Hessian of \f$f\f$ at \f$x_k\f$, and \f$g_k =
@@ -93,7 +93,7 @@ namespace Direction {
   \f$i=0,\dots,m-1\f$.  Here \f$(s_0,y_0)\f$ denotes the <em>oldest</em>
   information, i.e.,
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$
   s_0 = x_{k+1-m} - x_{k-m}
   \quad\mbox{and}\quad
@@ -102,7 +102,7 @@ namespace Direction {
 
   Likewise, \f$(s_m,y_m)\f$ denotes the <em>newest</em> information, i.e.,
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$
   s_{m-1} = x_{k+1} - x_{k}
   \quad\mbox{and}\quad
@@ -110,7 +110,7 @@ namespace Direction {
   \f$
 
   The two-loop recursion formula for computing \f$ d = -H_k g_k\f$ is
-  then given as follows. 
+  then given as follows.
 
   <ol>
 
@@ -118,10 +118,10 @@ namespace Direction {
 
   <li> For \f$ i=m-1,\dots,0 \f$
 
-  &nbsp;&nbsp; 
-  \f$\alpha_i = \rho_i s_i^T d \quad \mbox{(store $\alpha_i$)}  \f$ 
+  &nbsp;&nbsp;
+  \f$\alpha_i = \rho_i s_i^T d \quad \mbox{(store $\alpha_i$)}  \f$
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$d \;\leftarrow\; d - \alpha_i y_i\f$
 
 
@@ -129,14 +129,14 @@ namespace Direction {
 
   <li> For \f$ i=0,\dots,m-1 \f$
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$\beta = \rho_i y_i^T d\f$
 
-  &nbsp;&nbsp; 
+  &nbsp;&nbsp;
   \f$d \;\leftarrow\; d + (\alpha_i - \beta) s_i\f$
 
   </ol>
-  
+
   <b>References</b>
 
   <ul>
@@ -146,7 +146,7 @@ namespace Direction {
   <li> J. Nocedal, Updating quasi-Newton matrices with limited storage,
        <em>Mathematics of Computation</em> 35 (1980): 773-782.
   </ul>
-  
+
 
   <b>Parameters</b>
 
@@ -161,131 +161,131 @@ namespace Direction {
 
   - "Memory" - Number of saved updates, defaults to 5.
 
- */  
+ */
 
 class QuasiNewton : public Generic {
 
 public:
-  
+
   //----------------------------------------------------------------------
   // MemoryUnit helper class
   //----------------------------------------------------------------------
-  
-  /*! 
+
+  /*!
     \brief Utility class for NOX::Direction::QuasiNewton method
-    
-    Stores an (s,y)-pair for the limited-memory BFGS update 
+
+    Stores an (s,y)-pair for the limited-memory BFGS update
   */
   class MemoryUnit {
-    
+
   public:
-    
+
     //! Constructor
     MemoryUnit();
-    
+
     //! Destuctor
     ~MemoryUnit();
-    
+
     //! Reset s and y with new vectors
     /*! Sets
       \f[
-      s = x_{\rm new} - x_{\rm old}, 
+      s = x_{\rm new} - x_{\rm old},
       \quad
-      y = g_{\rm new} - g_{\rm old} 
+      y = g_{\rm new} - g_{\rm old}
       \f]
     */
-    void reset(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX, 
-	       const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
-    
+    void reset(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX,
+           const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
+
     //! Get s
     const NOX::Abstract::Vector& s() const;
-    
+
     //! Get y
     const NOX::Abstract::Vector& y() const;
-    
+
     //! Get \f$s^T y \f$
     double sdoty() const;
-    
+
     //! Get \f$y^T y \f$
     double ydoty() const;
-    
+
     //! Get \f$\rho = 1 / s^T y\f$
     double rho() const;
-    
+
   private:
-    
+
     //! s-vector pointer
     Teuchos::RCP<NOX::Abstract::Vector> sPtr;
-    
+
     //! y-vector pointer
     Teuchos::RCP<NOX::Abstract::Vector> yPtr;
-    
+
     //! \f$s^Ty\f$
     double sdotyValue;
-    
+
     //! \f$y^Ty\f$
     double ydotyValue;
-    
+
     //! \f$\rho = 1 / s^T y\f$
     double rhoValue;
-    
+
   };
-  
+
   //----------------------------------------------------------------------
   // Memory helper class
   //----------------------------------------------------------------------
-  
-  /*! 
-    \brief 
+
+  /*!
+    \brief
     Utility class for NOX::Direction::QuasiNewton method
     to manage the information stored in "limited" memory.
-    
+
     Store up to \f$m\f$ MemoryUnit objects where \f$m\f$ was passed to
     the constructor or to reset().  Every time add() is called, a new
     MemoryUnit is added. If there are already \f$m\f$ MemoryUnit's, the
     oldest is bumped off the list. The zero entry is always the oldest.
   */
   class Memory {
-    
+
   public:
-    
+
     //! Constructor. Maximum number of MemoryUnit's is \c m.
     Memory(int m = 0);
-    
+
     //! Destructor
     ~Memory();
-    
+
     //! Reset the memory
     void reset(int m = 0);
-    
+
     //! Add new information to the memory
-    void add(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX, 
-	     const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
-    
+    void add(const NOX::Abstract::Vector& newX, const NOX::Abstract::Vector& oldX,
+         const NOX::Abstract::Vector& newG, const NOX::Abstract::Vector& oldG);
+
     //! Returns true if the memory is empty
     bool empty() const;
-    
+
     //! Number of items in memory
     int size() const;
-    
-    /*! 
-      \brief Return the ith MemoryUnit (unchecked access) 
-      
+
+    /*!
+      \brief Return the ith MemoryUnit (unchecked access)
+
       The zero entry is the oldest memory.
-      
+
       The m-1 entry is the newest entry (where m denotes the memory size).
     */
     const MemoryUnit& operator[](int i) const;
-    
+
   private:
-    
+
     //! Index Into memory vector
     std::vector<int> index;
-    
+
     //! Memory
     std::vector<MemoryUnit> memory;
   };
-  
+
 //----------------------------------------------------------------------
 // END HELPER CLASSES
 //----------------------------------------------------------------------
@@ -294,22 +294,22 @@ public:
 
   //! Constructor
   QuasiNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-	      Teuchos::ParameterList& params);
+          Teuchos::ParameterList& params);
 
   //! Destructor
   virtual ~QuasiNewton();
 
   // derived
   virtual bool reset(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params);
+             Teuchos::ParameterList& params);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::Generic& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::Generic& solver);
 
   // derived
-  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp, 
-		       const NOX::Solver::LineSearchBased& solver);
+  virtual bool compute(NOX::Abstract::Vector& dir, NOX::Abstract::Group& grp,
+               const NOX::Solver::LineSearchBased& solver);
 
 private:
 
@@ -325,7 +325,7 @@ private:
   Teuchos::RCP<NOX::Utils> utils;
 
   //! "Direction" sublist with parameters for the direction vector
-  /*! 
+  /*!
     \note This is pointer rather than a reference to allow for the
     reset function. It should not be deleted.
    */

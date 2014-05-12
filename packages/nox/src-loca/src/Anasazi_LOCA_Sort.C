@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -66,8 +66,8 @@ Anasazi::LOCASort::~LOCASort()
 }
 
 void
-Anasazi::LOCASort::sort(std::vector<double>& evals, 
-			                  Teuchos::RCP<std::vector<int> > perm, 
+Anasazi::LOCASort::sort(std::vector<double>& evals,
+                              Teuchos::RCP<std::vector<int> > perm,
                         int n) const
 {
   if (n == -1) {
@@ -78,16 +78,16 @@ Anasazi::LOCASort::sort(std::vector<double>& evals,
 }
 
 void
-Anasazi::LOCASort::sort(std::vector<double>& r_evals, 
-			                  std::vector<double>& i_evals, 
-			                  Teuchos::RCP<std::vector<int> > perm, 
+Anasazi::LOCASort::sort(std::vector<double>& r_evals,
+                              std::vector<double>& i_evals,
+                              Teuchos::RCP<std::vector<int> > perm,
                         int n) const
 {
   if (n == -1) {
     n = r_evals.size();
   }
-  NOX::Abstract::Group::ReturnType res = 
+  NOX::Abstract::Group::ReturnType res =
     strategy->sort(n, &r_evals[0], &i_evals[0], perm.get());
   globalData->locaErrorCheck->checkReturnType(res,
-					      "Anasazi::LOCASort::sort()");
+                          "Anasazi::LOCASort::sort()");
 }

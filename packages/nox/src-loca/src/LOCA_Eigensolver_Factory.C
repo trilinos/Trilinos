@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -60,7 +60,7 @@
 #endif
 
 LOCA::Eigensolver::Factory::Factory(
-	        const Teuchos::RCP<LOCA::GlobalData>& global_data) : 
+            const Teuchos::RCP<LOCA::GlobalData>& global_data) :
   globalData(global_data)
 {
 }
@@ -81,48 +81,48 @@ LOCA::Eigensolver::Factory::create(
   const std::string& name = strategyName(*eigenParams);
 
   if (name == "Default")
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::Eigensolver::DefaultStrategy(globalData,
-							  topParams,
-							  eigenParams));
+                              topParams,
+                              eigenParams));
   else if (name == "Anasazi") {
 #ifdef HAVE_LOCA_ANASAZI
-    strategy = 
+    strategy =
       Teuchos::rcp(new LOCA::Eigensolver::AnasaziStrategy(globalData,
-							  topParams,
-							  eigenParams));
+                              topParams,
+                              eigenParams));
 #else
     globalData->locaErrorCheck->throwError(methodName,
-					   "Anasazi strategy requested, but LOCA was not configured with Anasazi support enabled.");
+                       "Anasazi strategy requested, but LOCA was not configured with Anasazi support enabled.");
 #endif
   }
   else if (name == "User-Defined") {
 
     // Get name of user-defined strategy
     std::string userDefinedName = eigenParams->get("User-Defined Name",
-						       "???");
+                               "???");
     if ((*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	isType< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
+    isType< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName))
       strategy = (*eigenParams).INVALID_TEMPLATE_QUALIFIER
-	get< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName);
+    get< Teuchos::RCP<LOCA::Eigensolver::AbstractStrategy> >(userDefinedName);
     else
        globalData->locaErrorCheck->throwError(
-				       methodName,
-				       "Cannot find user-defined strategy: " + 
-				       userDefinedName);
+                       methodName,
+                       "Cannot find user-defined strategy: " +
+                       userDefinedName);
   }
   else
     globalData->locaErrorCheck->throwError(
-				      methodName,
-				      "Invalid eigensolver strategy: " + 
-				      name);
+                      methodName,
+                      "Invalid eigensolver strategy: " +
+                      name);
 
   return strategy;
 }
 
 const std::string&
 LOCA::Eigensolver::Factory::strategyName(
-				  Teuchos::ParameterList& eigenParams) const
+                  Teuchos::ParameterList& eigenParams) const
 {
   return eigenParams.get("Method", "Default");
 }

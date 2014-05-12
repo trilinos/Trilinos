@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,9 +44,9 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // NOX headers
-#include "NOX.H"  
+#include "NOX.H"
 #include "NOX_Epetra.H"
 #include "NOX_TestCompare.H" // Test Suite headers
 #include "NOX_Epetra_DebugTools.H"
@@ -66,7 +66,7 @@
 #include "AztecOO.h"
 
 
-int main(int argc, char *argv[]) 
+int main(int argc, char *argv[])
 {
   // Initialize MPI
 #ifdef HAVE_MPI
@@ -79,7 +79,7 @@ int main(int argc, char *argv[])
 #else
   Epetra_SerialComm Comm;
 #endif
- 
+
   int * testInt = new int[100];
   delete [] testInt;
 
@@ -100,21 +100,21 @@ int main(int argc, char *argv[])
   // Set up the printing utilities
   // Only print output if the "-v" flag is set on the command line
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 5);
   printParams.set("Output Processor", 0);
   if( verbose )
-    printParams.set("Output Information", 
-		NOX::Utils::OuterIteration + 
-		NOX::Utils::OuterIterationStatusTest + 
-		NOX::Utils::InnerIteration +
-		NOX::Utils::Parameters + 
-		NOX::Utils::Details + 
-		NOX::Utils::Warning +
-		NOX::Utils::TestDetails);
+    printParams.set("Output Information",
+        NOX::Utils::OuterIteration +
+        NOX::Utils::OuterIterationStatusTest +
+        NOX::Utils::InnerIteration +
+        NOX::Utils::Parameters +
+        NOX::Utils::Details +
+        NOX::Utils::Warning +
+        NOX::Utils::TestDetails);
   else
     printParams.set("Output Information", NOX::Utils::Error +
-		NOX::Utils::TestDetails);
+        NOX::Utils::TestDetails);
 
   Teuchos::RCP<NOX::Utils> printing = Teuchos::rcp( new NOX::Utils(printParams) );
 
@@ -124,7 +124,7 @@ int main(int argc, char *argv[])
 
   // Identify processor information
 #ifdef HAVE_MPI
-  if (printing->isPrintType(NOX::Utils::TestDetails)) 
+  if (printing->isPrintType(NOX::Utils::TestDetails))
   {
     printing->out() << "Parallel Run" << std::endl;
     printing->out() << "Number of processors = " << NumProc << std::endl;
@@ -172,7 +172,7 @@ int main(int argc, char *argv[])
 
   broydenWorkGraph.FillComplete();
 
-  Teuchos::RCP<Epetra_CrsMatrix> broydenWorkMatrix = 
+  Teuchos::RCP<Epetra_CrsMatrix> broydenWorkMatrix =
     Teuchos::rcp( new Epetra_CrsMatrix( Copy, broydenWorkGraph ) );
 
   // Create an identity matrix
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
   broydenWorkVec[1] = -1.0;
   broydenWorkVec[2] =  2.0;
   broydenOp.setStepVector( broydenWorkVec );
-  
+
   broydenWorkVec[0] =  2.0;
   broydenWorkVec[1] =  1.0;
   broydenWorkVec[2] =  3.0;
@@ -245,7 +245,7 @@ int main(int argc, char *argv[])
   broydenWorkVec[1] = -1.0;
   broydenWorkVec[2] =  2.0;
   broydenOp2.setStepVector( broydenWorkVec );
-  
+
   broydenWorkVec[0] =  2.0;
   broydenWorkVec[1] =  1.0;
   broydenWorkVec[2] =  3.0;
@@ -309,10 +309,10 @@ int main(int argc, char *argv[])
                               "Broyden Sparse Operator Update Test (Entry Removal)", false );
 
 
-  // Summarize test results  
+  // Summarize test results
   if( status == 0 )
     printing->out() << "Test passed!" << std::endl;
-  else 
+  else
     printing->out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI

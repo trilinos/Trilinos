@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -53,24 +53,24 @@
 
 //! Epetra_VbrRowMatrix: A class for using an existing Epetra_VbrMatrix object as an Epetra_RowMatrix object.
 
-/*! The Epetra_VbrRowMatrix class takes an existing Epetra_VbrMatrix object and allows its 
+/*! The Epetra_VbrRowMatrix class takes an existing Epetra_VbrMatrix object and allows its
     use as an Epetra_RowMatrix without allocating additional storage.  Although the Epetra_VbrMatrix itself
-    inherits from Epetra_RowMatrix, a design flaw in the inheritance structure of Epetra prohibits the use of 
+    inherits from Epetra_RowMatrix, a design flaw in the inheritance structure of Epetra prohibits the use of
     an Epetra_VbrMatrix object as an Epetra_RowMatrix in some important situations.  Therefore we recommend the
     use of this class to wrap an Epetra_VbrMatrix object.
 
     \warning This class takes a pointer to an existing Epetra_VbrMatrix object.  It is assumed that the user
     will pass in a pointer to a valid Epetra_VbrMatrix object, and will retain it throughout the life of the
     Epetra_VbrRowMatrix object.
-    
-*/    
+
+*/
 
 class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
-      
+
  public:
 
    //! @name Constructors/Destructor
-  //@{ 
+  //@{
   //! Epetra_VbrRowMatrix constuctor.
   /* The constructor for this class requires a pointer to a fully constructed instance of an Epetra_VbrMatrix
      object.
@@ -88,15 +88,15 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
   //! Epetra_VbrRowMatrix Destructor
     virtual ~Epetra_VbrRowMatrix(){}
   //@}
-  
+
   //! @name Post-construction modifications
-  //@{ 
+  //@{
   //! Update the matrix to which this object points.
   /* Updates the matrix that the Epetra_VbrRowMatrix will use to satisfy the Epetra_RowMatrix functionality.
      \param Matrix (In) A pointer to an existing, fully constructed Epetra_VbrMatrix.
      \pre Matrix must have Matrix->Filled()==true.
-  */ 
-  int UpdateMatrix(Epetra_VbrMatrix * Matrix){ 
+  */
+  int UpdateMatrix(Epetra_VbrMatrix * Matrix){
     if (Matrix ==0) {
       EPETRA_CHK_ERR(-1);
     }
@@ -104,33 +104,33 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
     return(0);
   }
   //@}
-  
+
   //! @name Methods required for implementing Epetra_BasicRowMatrix
-  //@{ 
+  //@{
 
     //! Returns a copy of the specified local row in user-provided arrays.
-    /*! 
+    /*!
     \param MyRow (In) - Local row to extract.
     \param Length (In) - Length of Values and Indices.
     \param NumEntries (Out) - Number of nonzero entries extracted.
     \param Values (Out) - Extracted values for this row.
     \param Indices (Out) - Extracted global column indices for the corresponding values.
-	  
+	
     \return Integer error code, set to 0 if successful, set to -1 if MyRow not valid, -2 if Length is too short (NumEntries will have required length).
   */
   int ExtractMyRowCopy(int MyRow, int Length, int & NumEntries, double *Values, int * Indices) const {
-  
+
     EPETRA_CHK_ERR(matrix_->ExtractMyRowCopy(MyRow, Length, NumEntries, Values, Indices));
     return(0);
   }
 
     //! Returns a reference to the ith entry in the matrix, along with its row and column index
-    /*! 
+    /*!
     \param CurEntry (In) - Local entry to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
-	  
+	
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
     int ExtractMyEntryView(int CurEntry, double * &Value, int & RowIndex, int & ColIndex) {
@@ -138,15 +138,15 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
     }
 
     //! Returns a const reference to the ith entry in the matrix, along with its row and column index.
-    /*! 
+    /*!
     \param CurEntry (In) - Local entry to extract.
     \param Value (Out) - Extracted reference to current values.
     \param RowIndex (Out) - Row index for current entry.
     \param ColIndex (Out) - Column index for current entry.
-	  
+	
     \return Integer error code, set to 0 if successful, set to -1 if CurEntry not valid.
   */
-    int ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const { 
+    int ExtractMyEntryView(int CurEntry, double const * & Value, int & RowIndex, int & ColIndex) const {
       return(-1);
     }
 
@@ -155,7 +155,7 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
       and error checking is done on the input value MyRow.
       \param MyRow - (In) Local row.
       \param NumEntries - (Out) Number of nonzero values.
-      
+
       \return Integer error code, set to 0 if successful, set to -1 if MyRow not valid.
       \pre None.
       \post Unchanged.
@@ -168,7 +168,7 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
     //@}
 
     //! @name Computational methods
-  //@{ 
+  //@{
 
     //! Scales the Epetra_VbrMatrix on the right with a Epetra_Vector x.
     /*! The \e this matrix will be scaled such that A(i,j) = x(j)*A(i,j) where i denotes the global row number of A
@@ -201,7 +201,7 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
     }
 
     //! Returns the result of a Epetra_VbrRowMatrix multiplied by a Epetra_MultiVector X in Y.
-    /*! 
+    /*!
     \param In
 	   TransA -If true, multiply by the transpose of matrix, otherwise just use matrix.
     \param In
@@ -217,7 +217,7 @@ class Epetra_VbrRowMatrix: public Epetra_BasicRowMatrix {
     }
 
     //! Returns the result of a Epetra_VbrRowMatrix solve with a Epetra_MultiVector X in Y (not implemented).
-    /*! 
+    /*!
     \param In
 	   Upper -If true, solve Ux = y, otherwise solve Lx = y.
     \param In

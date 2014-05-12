@@ -11,5 +11,6 @@
 /* #undef KOKKOS_HAVE_Winthread */
 /* #undef KOKKOS_HAVE_OPENMP */
 /* #undef KOKKOS_HAVE_HWLOC */
+/* #undef KOKKOS_EXPRESSION_CHECK */
 
 #endif

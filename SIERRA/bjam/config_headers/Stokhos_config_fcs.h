@@ -72,8 +72,11 @@
 /* Define if KokkosCore is enabled */
 /* #undef HAVE_STOKHOS_KOKKOSCORE */
 
-/* Define if KokkosCore is enabled */
+/* Define if KokkosLinAlg is enabled */
 /* #undef HAVE_STOKHOS_KOKKOSLINALG */
+
+/* Define if KokkosMpiCom is enabled */
+/* #undef HAVE_STOKHOS_KOKKOSMPICOMM */
 
 /* Define if MueLu is enabled */
 #define HAVE_STOKHOS_MUELU

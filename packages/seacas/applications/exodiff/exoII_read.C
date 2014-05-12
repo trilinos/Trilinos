@@ -776,7 +776,7 @@ template <typename INT>
 string ExoII_Read<INT>::Load_Global_Results(int t1, int t2, double proportion)
 {
   SMART_ASSERT(Check_State());
-  SMART_ASSERT(t1 > 0 && t2 <= num_times);
+  SMART_ASSERT(t1 > 0 && t1 <= num_times);
   SMART_ASSERT(t2 > 0 && t2 <= num_times);
   
   if (!Open()) return "WARNING:  File not open!";

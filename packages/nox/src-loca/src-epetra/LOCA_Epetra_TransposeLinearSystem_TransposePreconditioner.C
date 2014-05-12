@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,9 +56,9 @@
 
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 TransposePreconditioner(
-	     const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	     const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	     const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
+         const Teuchos::RCP<LOCA::GlobalData>& global_data,
+         const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+         const Teuchos::RCP<NOX::Epetra::LinearSystem>& linsys_) :
   globalData(global_data),
   linsys(linsys_),
   jac(),
@@ -67,7 +67,7 @@ TransposePreconditioner(
 {
   // Get transpose scaling object
   if (solverParams->isParameter("Transpose Scaling"))
-    scaling_trans = (*solverParams).INVALID_TEMPLATE_QUALIFIER 
+    scaling_trans = (*solverParams).INVALID_TEMPLATE_QUALIFIER
       get< Teuchos::RCP<NOX::Epetra::Scaling> >("Transpose Scaling");
 }
 
@@ -78,10 +78,10 @@ LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 
 bool
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
-applyJacobianTransposeInverse(Teuchos::ParameterList &params, 
-			      const NOX::Epetra::Vector &input, 
-			      NOX::Epetra::Vector &result)
-{  
+applyJacobianTransposeInverse(Teuchos::ParameterList &params,
+                  const NOX::Epetra::Vector &input,
+                  NOX::Epetra::Vector &result)
+{
   // Replace operators with transposed operators
   linsys->setJacobianOperatorForSolve(jac);
   if (linsys->hasPreconditioner())
@@ -117,8 +117,8 @@ createJacobianTranspose()
 
 bool
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
-createTransposePreconditioner(const NOX::Epetra::Vector& x, 
-			      Teuchos::ParameterList& p)
+createTransposePreconditioner(const NOX::Epetra::Vector& x,
+                  Teuchos::ParameterList& p)
 {
   // We're done if the linear system doesn't define a preconditioner
   if (!linsys->hasPreconditioner())
@@ -147,14 +147,14 @@ createTransposePreconditioner(const NOX::Epetra::Vector& x,
   return res1 && res2;
 }
 
-Teuchos::RCP<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator>
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 getJacobianTransposeOperator()
 {
   return jac;
 }
 
-Teuchos::RCP<Epetra_Operator> 
+Teuchos::RCP<Epetra_Operator>
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 getTransposePreconditioner()
 {
@@ -164,7 +164,7 @@ getTransposePreconditioner()
 void
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 setJacobianTransposeOperator(
-	       const Teuchos::RCP<Epetra_Operator>& new_jac_trans)
+           const Teuchos::RCP<Epetra_Operator>& new_jac_trans)
 {
   jac = new_jac_trans;
 }
@@ -172,7 +172,7 @@ setJacobianTransposeOperator(
 void
 LOCA::Epetra::TransposeLinearSystem::TransposePreconditioner::
 setTransposePreconditioner(
-	      const Teuchos::RCP<Epetra_Operator>& new_prec_trans)
+          const Teuchos::RCP<Epetra_Operator>& new_prec_trans)
 {
   prec = new_prec_trans;
 }

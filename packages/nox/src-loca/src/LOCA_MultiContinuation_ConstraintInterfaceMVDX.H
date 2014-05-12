@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,8 +57,8 @@ namespace LOCA {
 
   namespace MultiContinuation {
 
-    /*! 
-     * \brief Abstract interface for the constraint portion of a constrained 
+    /*!
+     * \brief Abstract interface for the constraint portion of a constrained
      * nonlinear system for constraints that support computing a solution
      * component derivative as a multi-vector.
      */
@@ -71,7 +71,7 @@ namespace LOCA {
      * Additionally, it implements the applyConstraintDerivativesX() methods
      * using standard multi-vector operations.
      */
-    class ConstraintInterfaceMVDX : 
+    class ConstraintInterfaceMVDX :
       public virtual LOCA::MultiContinuation::ConstraintInterface {
 
     public:
@@ -95,9 +95,9 @@ namespace LOCA {
        * and the NOX::Abstract::MultiVector::multiply() method.
        */
       virtual NOX::Abstract::Group::ReturnType
-      multiplyDX(double alpha, 
-		 const NOX::Abstract::MultiVector& input_x,
-		 NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
+      multiplyDX(double alpha,
+         const NOX::Abstract::MultiVector& input_x,
+         NOX::Abstract::MultiVector::DenseMatrix& result_p) const;
 
       //! Compute result_x = alpha * dg/dx^T * op(b) + beta * result_x
       /*!
@@ -106,10 +106,10 @@ namespace LOCA {
        */
       virtual NOX::Abstract::Group::ReturnType
       addDX(Teuchos::ETransp transb,
-	    double alpha, 
-	    const NOX::Abstract::MultiVector::DenseMatrix& b,
-	    double beta,
-	    NOX::Abstract::MultiVector& result_x) const;
+        double alpha,
+        const NOX::Abstract::MultiVector::DenseMatrix& b,
+        double beta,
+        NOX::Abstract::MultiVector& result_x) const;
 
     }; // Class ConstraintInterfaceMVDX
 

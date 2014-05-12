@@ -79,16 +79,16 @@ extern int my_rhs;             /* num of right hand side I own */
 
 
 void  X_PERMUTE_ (DATA_TYPE *mat, int *permutations)
-{    
+{
 
 #ifdef TIMING0
 
    double ex_time,p_mat,t1;
 
 #endif
- 
 
-  /* Exchange Pivoting Information 
+
+  /* Exchange Pivoting Information
        Now all processors have complete pivot information  */
 
 #ifdef TIMING0

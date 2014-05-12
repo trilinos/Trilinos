@@ -33,9 +33,9 @@
  * 
  */
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include <string.h>                     // for strncpy
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_init_params, etc
 
 /*!
 

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -45,7 +45,7 @@
 // ************************************************************************
 //@HEADER
 
-// Tests the NOX's Printing object NOX::Utils 
+// Tests the NOX's Printing object NOX::Utils
 
 #include "NOX.H"
 
@@ -73,7 +73,7 @@ int main(int argc, char *argv[])
     if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
-  int outputInfo = NOX::Utils::Error + NOX::Utils::Warning + 
+  int outputInfo = NOX::Utils::Error + NOX::Utils::Warning +
     NOX::Utils::InnerIteration;
   int printProc = 0;
 
@@ -82,12 +82,12 @@ int main(int argc, char *argv[])
     std::cout << "***************" << std::endl;
     std::cout << "\nBuilding utils1 using ctor #1...";
   }
-  Teuchos::RCP<std::ostream> outputstream = 
+  Teuchos::RCP<std::ostream> outputstream =
     Teuchos::rcp(&(std::cout), false);
-  Teuchos::RCP<std::ostream> errorstream = 
+  Teuchos::RCP<std::ostream> errorstream =
     Teuchos::rcp(&(std::cerr), false);
-  NOX::Utils utils1(outputInfo, myPID, printProc, 6, outputstream, 
-		    errorstream);
+  NOX::Utils utils1(outputInfo, myPID, printProc, 6, outputstream,
+            errorstream);
   if (myPID == printProc)
     std::cout << "Done!\n" << std::endl;
 
@@ -117,7 +117,7 @@ int main(int argc, char *argv[])
   // even if not verbose, lets test the print capability
   std::cout << utils2 << std::endl;
   std::cout.flush();
-  
+
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -128,9 +128,9 @@ int main(int argc, char *argv[])
     std::cout << "**************************" << std::endl;
   }
   NOX::Utils utils3(utils1);
-  
+
   if (myPID == printProc)
-    std::cout << "Printing utils3 - should be copy of utils1" << std::endl; 
+    std::cout << "Printing utils3 - should be copy of utils1" << std::endl;
   std::cout << utils3 << std::endl;
   std::cout.flush();
 
@@ -141,8 +141,8 @@ int main(int argc, char *argv[])
   if (myPID == printProc) {
     std::cout << "Test #4: Testing reset with plist" << std::endl;
     std::cout << "*********************************" << std::endl;
-    std::cout << "Testing reset capability on utils3 - should be copy of utils2" 
-	 << std::endl;
+    std::cout << "Testing reset capability on utils3 - should be copy of utils2"
+     << std::endl;
   }
   utils3.reset(p);
 
@@ -163,7 +163,7 @@ int main(int argc, char *argv[])
     printtest = "Test Failed!";
   utils1.out() << printtest << std::endl;
   utils1.out().flush();
-  
+
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -178,7 +178,7 @@ int main(int argc, char *argv[])
   utils1.out(NOX::Utils::OuterIteration) << printtest << std::endl;
   utils1.out(NOX::Utils::InnerIteration) << printtest << std::endl;
   utils1.out().flush();
-  
+
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -188,7 +188,7 @@ int main(int argc, char *argv[])
     std::cout << "*************************************" << std::endl;
   }
   utils1.pout() << "MyPID = " << myPID
-		<< "  responded!" << std::endl;
+        << "  responded!" << std::endl;
   utils1.pout().flush();
 
 #ifdef HAVE_MPI
@@ -201,7 +201,7 @@ int main(int argc, char *argv[])
   }
   utils1.pout(NOX::Utils::OuterIteration) << "Test Failed!" << std::endl;
   utils1.pout(NOX::Utils::InnerIteration) << "MyPID = " << myPID
-					  << "  responded!" << std::endl;
+                      << "  responded!" << std::endl;
   utils1.pout().flush();
 
 #ifdef HAVE_MPI
@@ -217,7 +217,7 @@ int main(int argc, char *argv[])
   if (myPID != printProc)
     printtest = "Test Failed!";
   utils1.err() << printtest << std::endl;
-  
+
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -227,7 +227,7 @@ int main(int argc, char *argv[])
     std::cout << "*************************************" << std::endl;
   }
   utils1.perr() << "MyPID = " << myPID
-		<< "  responded!" << std::endl;
+        << "  responded!" << std::endl;
 
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
@@ -236,29 +236,29 @@ int main(int argc, char *argv[])
   if (myPID == printProc) {
     std::cout << "\nTest #11: Testing output to a file:" << std::endl;
     std::cout << "******************************************" << std::endl;
-  
-    Teuchos::RCP<std::ostream> fileStream = 
+
+    Teuchos::RCP<std::ostream> fileStream =
       Teuchos::rcp(new std::ofstream("testfile.out"));
     p.set("Output Stream", fileStream);
     NOX::Utils utils4(p);
-    
+
     std::string testLine = "Supercalifragilisticexpialidocious";
     utils4.out() << testLine << std::endl;
-    
+
     std::ifstream inStream("testfile.out");
     std::string read;
     inStream >> read;
-    
+
     utils1.out() << "Text output to file: " << testLine << std::endl;
     utils1.out() << "Text read from file: " << read << std::endl;
-  
+
     if (!testLine.compare(read)) {
       utils1.out() << "File output works correctly!" << std::endl;
     }
     else
       status = 1;
   }
-  
+
 #ifdef HAVE_MPI
   MPI_Barrier(MPI_COMM_WORLD);
 #endif
@@ -292,7 +292,7 @@ int main(int argc, char *argv[])
 #endif
 
   if (myPID == printProc) {
-    if (status == 0) 
+    if (status == 0)
       std::cout << "\nTest passed!" << std::endl;
     else
       std::cout << "\nTest Failed!" << std::endl;

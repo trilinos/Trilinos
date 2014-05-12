@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -52,13 +52,13 @@
 /*! The Epetra_Object class provides capabilities common to all Epetra objects,
     such as a label that identifies an object instance, constant definitions,
     enum types.
-  
+
 */
 class EPETRA_LIB_DLL_EXPORT Epetra_Object {
-    
+
   public:
     //! @name Constructors/destructor
-  //@{ 
+  //@{
   //! Epetra_Object Constructor.
   /*! Epetra_Object is the primary base class in Epetra.  All Epetra class
       are derived from it, directly or indirectly.  This class is seldom
@@ -77,27 +77,27 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
   Epetra_Object(const Epetra_Object& Object);
 
   //! Epetra_Object Destructor.
-  /*! Completely deletes a Epetra_Object object.  
+  /*! Completely deletes a Epetra_Object object.
   */
   virtual ~Epetra_Object();
   //@}
-  
+
   //! @name Attribute set/get methods
-  //@{ 
+  //@{
 
   //! Epetra_Object Label definition using char *.
-  /*! Defines the label used to describe the \e this object.  
+  /*! Defines the label used to describe the \e this object.
   */
   virtual void SetLabel(const char * const Label);
 
   //! Epetra_Object Label access funtion.
-  /*! Returns the string used to define this object.  
+  /*! Returns the string used to define this object.
   */
   virtual const char * Label() const;
 
   //! Set the value of the Epetra_Object error traceback report mode.
-  /*! Sets the integer error traceback behavior.  
-      TracebackMode controls whether or not traceback information is printed when run time 
+  /*! Sets the integer error traceback behavior.
+      TracebackMode controls whether or not traceback information is printed when run time
       integer errors are detected:
 
       <= 0 - No information report
@@ -119,7 +119,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
   //@}
 
   //! @name Miscellaneous
-  //@{ 
+  //@{
 
   //! Print object to an output stream
   //! Print method
@@ -129,8 +129,8 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
   virtual int ReportError(const std::string Message, int ErrorCode) const;
   //@}
 
-  
-// TracebackMode controls how much traceback information is printed when run time 
+
+// TracebackMode controls how much traceback information is printed when run time
 // integer errors are detected:
 // = 0 - No information report
 // = 1 - Fatal (negative) values are reported
@@ -158,7 +158,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Object {
      sprintf(s, "%g", x);
      return std::string(s);
 }
-  
+
 
  private:
   Epetra_Object& operator=(const Epetra_Object& src) {
@@ -189,14 +189,14 @@ inline std::ostream& operator<<(std::ostream& os, const Epetra_Object& obj)
     os << obj.Label();
     obj.Print(os);
   }
-  
+
   return os;
 }
 
 /** \brief Macro for testing for and throwing and int exception for objects
  * derived from Epetra_Object.
  *
- * This macro adds the file name and line number to teh 
+ * This macro adds the file name and line number to teh
  */
 #define EPETRA_TEST_FOR_EXCEPTION(throw_exception_test,errCode,msg) \
 { \

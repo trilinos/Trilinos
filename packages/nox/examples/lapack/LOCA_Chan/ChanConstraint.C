@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -63,8 +63,8 @@ ChanConstraint::ChanConstraint(int N, const LOCA::ParameterVector& pVec) :
   x = xx.createMultiVector(1);
 }
 
-ChanConstraint::ChanConstraint(const ChanConstraint& source, 
-			       NOX::CopyType type) :
+ChanConstraint::ChanConstraint(const ChanConstraint& source,
+                   NOX::CopyType type) :
   n(source.n),
   constraints(source.constraints),
   isValidConstraints(false),
@@ -121,8 +121,8 @@ ChanConstraint::setParam(int paramID, double val)
 
 void
 ChanConstraint::setParams(
-			 const std::vector<int>& paramIDs, 
-			 const NOX::Abstract::MultiVector::DenseMatrix& vals)
+             const std::vector<int>& paramIDs,
+             const NOX::Abstract::MultiVector::DenseMatrix& vals)
 {
   for (unsigned int i=0; i<paramIDs.size(); i++)
     p[paramIDs[i]] = vals(i,0);
@@ -145,9 +145,9 @@ ChanConstraint::computeDX()
 }
 
 NOX::Abstract::Group::ReturnType
-ChanConstraint::computeDP(const std::vector<int>& paramIDs, 
-			  NOX::Abstract::MultiVector::DenseMatrix& dgdp, 
-			  bool isValidG)
+ChanConstraint::computeDP(const std::vector<int>& paramIDs,
+              NOX::Abstract::MultiVector::DenseMatrix& dgdp,
+              bool isValidG)
 {
   if (!isValidG) {
     dgdp(0,0) = constraints(0,0);
@@ -185,9 +185,9 @@ ChanConstraint::getConstraints() const
 
 NOX::Abstract::Group::ReturnType
 ChanConstraint::multiplyDX(
-		    double alpha, 
-		    const NOX::Abstract::MultiVector& input_x,
-		    NOX::Abstract::MultiVector::DenseMatrix& result_p) const
+            double alpha,
+            const NOX::Abstract::MultiVector& input_x,
+            NOX::Abstract::MultiVector::DenseMatrix& result_p) const
 {
   input_x.multiply(alpha/n, *x, result_p);
   return NOX::Abstract::Group::Ok;
@@ -195,10 +195,10 @@ ChanConstraint::multiplyDX(
 
 NOX::Abstract::Group::ReturnType
 ChanConstraint::addDX(Teuchos::ETransp transb,
-		      double alpha, 
-		      const NOX::Abstract::MultiVector::DenseMatrix& b,
-		      double beta,
-		      NOX::Abstract::MultiVector& result_x) const
+              double alpha,
+              const NOX::Abstract::MultiVector::DenseMatrix& b,
+              double beta,
+              NOX::Abstract::MultiVector& result_x) const
 {
   result_x.update(transb, alpha/n, *x, b, beta);
   return NOX::Abstract::Group::Ok;

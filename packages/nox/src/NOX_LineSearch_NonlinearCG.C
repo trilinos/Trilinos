@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@
 
 NOX::LineSearch::NonlinearCG::
 NonlinearCG(const Teuchos::RCP<NOX::GlobalData>& gd,
-	    Teuchos::ParameterList& params) :
+        Teuchos::ParameterList& params) :
   finiteValueTester( Teuchos::rcp(new StatusTest::FiniteValue()) )
 {
   reset(gd, params);
@@ -72,21 +72,21 @@ NOX::LineSearch::NonlinearCG::~NonlinearCG()
 bool NOX::LineSearch::NonlinearCG::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
-{ 
+{
   utils = gd->getUtils();
   //Teuchos::ParameterList& p = params.sublist("NonlinearCG");
   return true;
 }
 
-bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp, 
-			       double& step, 
-			       const Abstract::Vector& dir,
-			       const Solver::Generic& s) 
+bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
+                   double& step,
+                   const Abstract::Vector& dir,
+                   const Solver::Generic& s)
 {
   if (utils->isPrintType(NOX::Utils::InnerIteration))
   {
-    utils->out() << "\n" << NOX::Utils::fill(72) << "\n" 
-		<< "-- NonlinearCG Line Search -- \n";
+    utils->out() << "\n" << NOX::Utils::fill(72) << "\n"
+        << "-- NonlinearCG Line Search -- \n";
   }
 
   const Abstract::Group& oldgrp = s.getPreviousSolutionGroup();
@@ -94,7 +94,7 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
   // Perform single-step linesearch
 
   // Note that the following could be wrapped with a while loop to allow
-  // iterations to be attempted 
+  // iterations to be attempted
 
   double numerator = oldgrp.getF().innerProduct(dir);
   double denominator = computeDirectionalDerivative(dir, oldgrp).innerProduct(dir);
@@ -108,9 +108,9 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
 
   step = - numerator / denominator;
   newgrp.computeX(oldgrp, dir, step);
-  newgrp.computeF(); 
+  newgrp.computeF();
 
-  double checkOrthogonality = fabs( newgrp.getF().innerProduct(dir) ); 
+  double checkOrthogonality = fabs( newgrp.getF().innerProduct(dir) );
 
   if (utils->isPrintType(Utils::InnerIteration)) {
     utils->out() << std::setw(3) << "1" << ":";
@@ -118,14 +118,14 @@ bool NOX::LineSearch::NonlinearCG::compute(Abstract::Group& newgrp,
     utils->out() << " orth = " << utils->sciformat(checkOrthogonality);
     utils->out() << "\n" << NOX::Utils::fill(72) << "\n" << std::endl;
   }
-  
+
   return true;
 }
 
 
 NOX::Abstract::Vector& NOX::LineSearch::NonlinearCG::
 computeDirectionalDerivative(const Abstract::Vector& dir,
-			     const Abstract::Group& grp)
+                 const Abstract::Group& grp)
 {
   // Allocate space for vecPtr and grpPtr if necessary
   if (Teuchos::is_null(vecPtr))

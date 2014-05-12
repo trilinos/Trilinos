@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -61,7 +61,7 @@
 
 NOX::Direction::ModifiedNewton::
 ModifiedNewton(const Teuchos::RCP<NOX::GlobalData>& gd,
-	       Teuchos::ParameterList& p)
+           Teuchos::ParameterList& p)
 {
   reset(gd, p);
   ageOfJacobian = -1;
@@ -79,7 +79,7 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 {
   globalDataPtr = gd;
   utils = gd->getUtils();
-  
+
   paramsPtr = &params;
 
   Teuchos::ParameterList& p = params.sublist("Modified-Newton");
@@ -92,9 +92,9 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 }
 
 bool NOX::Direction::ModifiedNewton::
-compute(NOX::Abstract::Vector& dir, 
-	NOX::Abstract::Group& soln, 
-	const NOX::Solver::Generic& solver)
+compute(NOX::Abstract::Vector& dir,
+    NOX::Abstract::Group& soln,
+    const NOX::Solver::Generic& solver)
 {
   NOX::Abstract::Group::ReturnType status;
 
@@ -109,20 +109,20 @@ compute(NOX::Abstract::Vector& dir,
     oldJacobianGrpPtr = soln.clone(DeepCopy);
   }
   NOX::Abstract::Group& oldJacobianGrp = *oldJacobianGrpPtr;
-  
+
   status = NOX::Abstract::Group::Failed;
   while (status != NOX::Abstract::Group::Ok) {
     // Conditionally compute Jacobian at current solution.
     if ( (ageOfJacobian == -1) || (ageOfJacobian == maxAgeOfJacobian) ) {
 
-      if (ageOfJacobian > 0) 
+      if (ageOfJacobian > 0)
         oldJacobianGrp = soln;
       status = oldJacobianGrp.computeJacobian();
-      if (status != NOX::Abstract::Group::Ok) 
+      if (status != NOX::Abstract::Group::Ok)
         throwError("compute", "Unable to compute Jacobian");
       ageOfJacobian = 1;
-    } 
-    else 
+    }
+    else
       ageOfJacobian++;
 
     // Compute the Modified Newton direction
@@ -149,8 +149,8 @@ compute(NOX::Abstract::Vector& dir,
   return true;
 }
 
-bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir, 
-                                             NOX::Abstract::Group& soln, 
+bool NOX::Direction::ModifiedNewton::compute(NOX::Abstract::Vector& dir,
+                                             NOX::Abstract::Group& soln,
                                              const NOX::Solver::LineSearchBased& solver)
 {
   return NOX::Direction::Generic::compute( dir, soln, solver );
@@ -165,19 +165,19 @@ bool  NOX::Direction::ModifiedNewton::rescueBadNewtonSolve(const NOX::Abstract::
   //! See if the group has compute the accuracy
   double accuracy;
   NOX::Abstract::Group::ReturnType status = oldJacobianGrpPtr->getNormLastLinearSolveResidual(accuracy);
-    
+
   // If this functionality is not supported in the group, return false
   /* NOTE FROM TAMMY: We could later modify this to acutally caluclate
      the error itself if it's just a matter of the status being
      NotDefined. */
-  if (status != NOX::Abstract::Group::Ok) 
+  if (status != NOX::Abstract::Group::Ok)
     return false;
 
   // Check if there is any improvement in the relative residual
   double normF = grp.getNormF();
 
   // If we can't reduce the relative norm at all, we're not happy
-  if (accuracy >= normF) 
+  if (accuracy >= normF)
     return false;
 
   // Otherwise, we just print a warning and keep going

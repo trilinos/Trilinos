@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,15 +35,15 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
 #include "Epetra_Flops.h"
 
 //=============================================================================
-Epetra_Flops::Epetra_Flops(void) 
+Epetra_Flops::Epetra_Flops(void)
   : Flops_(0.0)
 {
 }
@@ -54,7 +54,7 @@ Epetra_Flops::Epetra_Flops(const Epetra_Flops& Flops_in)
   (void)Flops_in; //prevents unused variable compiler-warning
 }
 //=============================================================================
-Epetra_Flops::~Epetra_Flops(void)  
+Epetra_Flops::~Epetra_Flops(void)
 {
   Flops_ = 0.0;
 }

@@ -1,6 +1,6 @@
 INCLUDE(TribitsAddExecutableAndTest)
 
-IF (Trilinos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
+IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
 
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
   INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
@@ -16,9 +16,11 @@ IF (Trilinos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       CUDA_INCLUDE_DIRECTORIES( ${MPI_BASE_DIR}/include )
     ENDIF()
 
+    CUDA_INCLUDE_DIRECTORIES( ${Tpetra_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosCore_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
+    CUDA_INCLUDE_DIRECTORIES( ${KokkosCompat_INCLUDE_DIRS} )
 
     CUDA_COMPILE( OBJECTS_CUDA fenl.cpp.cu )
 
@@ -30,7 +32,6 @@ IF (Trilinos_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     fenl
     SOURCES ${SOURCES}
     COMM serial mpi
-    DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
     )
 ENDIF ()
 

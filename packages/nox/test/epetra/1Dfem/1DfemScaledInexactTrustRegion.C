@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,11 +44,11 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                    
+
 // 1D Finite Element Test Problem
 /* Solves the nonlinear equation:
  *
- * d2u 
+ * d2u
  * --- - k * u**2 = 0
  * dx2
  *
@@ -73,8 +73,8 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
-#include "1DfemInterface.H" 
+// User's application specific files
+#include "1DfemInterface.H"
 #include "1DfemPrePostOperator.H"
 
 #include "Teuchos_ParameterList.hpp"
@@ -83,7 +83,7 @@ using namespace std;
 
 int main(int argc, char *argv[])
 {
- 
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -112,21 +112,21 @@ int main(int argc, char *argv[])
     NumGlobalElements = atoi(argv[2]) + 1;
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
-  else 
+  else
     NumGlobalElements = 101;
 
-  // The number of unknowns must be at least equal to the 
+  // The number of unknowns must be at least equal to the
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements
+     << " cannot be < number of processors = " << NumProc << std::endl;
     std::cout << "Test failed!" << std::endl;
     throw "NOX Error";
   }
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<Interface> interface = 
+  Teuchos::RCP<Interface> interface =
     Teuchos::rcp(new Interface(NumGlobalElements, Comm));
 
   // Set the PDE factor (for nonlinear forcing term).  This could be specified
@@ -135,26 +135,26 @@ int main(int argc, char *argv[])
 
   // Use a scaled vector space.  The scaling must also be registered
   // with the linear solver so the linear system is consistent!
-  Teuchos::RCP<Epetra_Vector> scaleVec = 
+  Teuchos::RCP<Epetra_Vector> scaleVec =
     Teuchos::rcp(new Epetra_Vector( *(interface->getSolution())));
   scaleVec->PutScalar(2.0);
-  Teuchos::RCP<NOX::Epetra::Scaling> scaling = 
+  Teuchos::RCP<NOX::Epetra::Scaling> scaling =
     Teuchos::rcp(new NOX::Epetra::Scaling);
   scaling->addUserScaling(NOX::Epetra::Scaling::Left, scaleVec);
 
   // Use a weighted vector space for scaling all norms
-  Teuchos::RCP<NOX::Epetra::VectorSpace> weightedVectorSpace = 
+  Teuchos::RCP<NOX::Epetra::VectorSpace> weightedVectorSpace =
     Teuchos::rcp(new NOX::Epetra::VectorSpaceScaledL2(scaling));
 
   // Get the vector from the Problem
   Teuchos::RCP<Epetra_Vector> soln = interface->getSolution();
-  Teuchos::RCP<NOX::Epetra::Vector> noxSoln = 
-    Teuchos::rcp(new NOX::Epetra::Vector(soln, 
-					 NOX::Epetra::Vector::CreateCopy,
-					 NOX::DeepCopy,
-					 weightedVectorSpace));
+  Teuchos::RCP<NOX::Epetra::Vector> noxSoln =
+    Teuchos::rcp(new NOX::Epetra::Vector(soln,
+                     NOX::Epetra::Vector::CreateCopy,
+                     NOX::DeepCopy,
+                     weightedVectorSpace));
 
-  // Initial Guess 
+  // Initial Guess
   noxSoln->init(2.0);
 
   // Begin Nonlinear Solver ************************************
@@ -171,7 +171,7 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  
+
   // RPP: Commenting this line out.  There is now a default for MPI
   // specific builds.  We are testing that it works here.
   // //printParams.set("MyPID", MyPID);
@@ -179,20 +179,20 @@ int main(int argc, char *argv[])
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   if (verbose)
-    printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
-			     NOX::Utils::Warning +
+    printParams.set("Output Information",
+                 NOX::Utils::OuterIteration +
+                 NOX::Utils::OuterIterationStatusTest +
+                 NOX::Utils::InnerIteration +
+                 NOX::Utils::LinearSolverDetails +
+                 NOX::Utils::Parameters +
+                 NOX::Utils::Details +
+                 NOX::Utils::Warning +
                              NOX::Utils::Debug +
-			     NOX::Utils::TestDetails +
-			     NOX::Utils::Error);
+                 NOX::Utils::TestDetails +
+                 NOX::Utils::Error);
   else
     printParams.set("Output Information", NOX::Utils::Error +
-			     NOX::Utils::TestDetails);
+                 NOX::Utils::TestDetails);
 
   // Create a print class for controlling output below
   NOX::Utils printing(printParams);
@@ -205,8 +205,8 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
   lsParams.set("Tolerance", 1e-4);
 
   // Various Preconditioner options
@@ -223,8 +223,8 @@ int main(int argc, char *argv[])
   // Add a user defined pre/post operator object
   Teuchos::RCP<NOX::Abstract::PrePostOperator> ppo =
     Teuchos::rcp(new UserPrePostOperator(printing));
-  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator", 
-					 ppo);
+  nlParams.sublist("Solver Options").set("User Defined Pre/Post Operator",
+                     ppo);
 
   // Let's force all status tests to do a full check
   nlParams.sublist("Solver Options").set("Status Test Check Type", "Complete");
@@ -235,19 +235,19 @@ int main(int argc, char *argv[])
   // Create the linear system
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq,
-						      iJac, Analytic, 
-						      *noxSoln,
-						      scaling));
-  
+                              iReq,
+                              iJac, Analytic,
+                              *noxSoln,
+                              scaling));
+
   // Create the Group
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					*noxSoln, 
-					linSys));  
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams,
+                    iReq,
+                    *noxSoln,
+                    linSys));
   NOX::Epetra::Group& grp = *grpPtr;
 
   // uncomment the following for loca supergroups
@@ -255,9 +255,9 @@ int main(int argc, char *argv[])
   //FD->setGroupForComputeF(*grpPtr);
 
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
@@ -269,27 +269,27 @@ int main(int argc, char *argv[])
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(200));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);
   combo->addStatusTest(maxiters);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
   // End Nonlinear Solver **************************************
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = 
+  const NOX::Epetra::Group& finalGroup =
     dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
+  const Epetra_Vector& finalSolution =
     (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).
     getEpetraVector();
 
@@ -297,7 +297,7 @@ int main(int argc, char *argv[])
   if (verbose) {
     if (printing.isPrintType(NOX::Utils::Parameters)) {
       printing.out() << std::endl << "Final Parameters" << std::endl
-	   << "****************" << std::endl;
+       << "****************" << std::endl;
       solver->getList().print(printing.out());
       printing.out() << std::endl;
     }
@@ -316,14 +316,14 @@ int main(int argc, char *argv[])
 
   // Tests
   int status = 0; // Converged
-  
+
   // 1. Convergence
   if (solvStatus != NOX::StatusTest::Converged) {
       status = 1;
       if (printing.isPrintType(NOX::Utils::Error))
-	printing.out() << "Nonlinear solver failed to converge!" << std::endl;
+    printing.out() << "Nonlinear solver failed to converge!" << std::endl;
   }
-#ifndef HAVE_MPI 
+#ifndef HAVE_MPI
   // 2. Linear solve iterations (14) - SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 14) {
@@ -352,12 +352,12 @@ int main(int argc, char *argv[])
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Trust Region").sublist("Output").get("Number of Newton Steps", 0) != 14)
     status = 6;
 
-  // Summarize test results 
+  // Summarize test results
   if (status == 0)
     printing.out() << "Test passed!" << std::endl;
-  else 
+  else
     printing.out() << "Test failed!" << std::endl;
-  
+
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif

@@ -30,15 +30,8 @@
 // (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-#include <Ioss_DatabaseIO.h>
 #include <Ioss_CoordinateFrame.h>
-#include <assert.h>
-#include <stddef.h>
-#include <string>
 
-#include "Ioss_EntityBlock.h"
-#include "Ioss_FieldManager.h"
-#include "Ioss_PropertyManager.h"
 
 namespace Ioss {
   CoordinateFrame::CoordinateFrame(int64_t my_id,

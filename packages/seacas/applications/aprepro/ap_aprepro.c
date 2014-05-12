@@ -51,15 +51,16 @@ static char *qainfo[] =
   "Revision: 3.04"
 };
 
-#include <stdlib.h>
-#include <ctype.h>
-#include "getopt.h"
-#include "my_aprepro.h"
-#include "y.tab.h"
-#include <sys/types.h>
-#include <time.h>
+#include <ctype.h>                      // for isdigit
+#include <stdio.h>                      // for fprintf, stderr, setbuf, etc
+#include <stdlib.h>                     // for NULL, exit, EXIT_SUCCESS, etc
+#include <string.h>                     // for strchr, strrchr, strlen
+#include <time.h>                       // for asctime, localtime, time, etc
+#include "add_to_log.h"                 // for add_to_log
+#include "getopt.h"                     // for getopt_long, option
+#include "my_aprepro.h"                 // for aprepro_options, True, etc
+#include "y.tab.h"                      // for VAR, yyparse, IMMSVAR, etc
 
-#include "add_to_log.h"
 
 aprepro_options ap_options;
 int state_immutable = False;

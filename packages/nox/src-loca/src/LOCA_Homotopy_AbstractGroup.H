@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -53,42 +53,42 @@
 
 #include "LOCA_MultiContinuation_AbstractGroup.H"    // base class
 
-namespace LOCA { 
+namespace LOCA {
 
   namespace Homotopy {
 
-    /*!  
+    /*!
      * \brief Interface to underlying groups for homotopy calculations
      */
     /*!
      * This abstract class provides an interface for a homotopy technique
-     * for solving nonlinear equations.  See LOCA::Homotopy::Group for a 
+     * for solving nonlinear equations.  See LOCA::Homotopy::Group for a
      * description of the technique used.  This class provides a single
      * pure virtual method, augmentJacobianForHomotopy(), which scales the
      * diagonal of the Jacobian by a constant times the identity matrix.
      */
-    class AbstractGroup : 
+    class AbstractGroup :
       public virtual LOCA::MultiContinuation::AbstractGroup {
 
     public:
-  
+
       //! Default constructor.
       AbstractGroup() {}
- 
+
       //! Destructor
       virtual ~AbstractGroup() {}
 
-      /*! 
-       * @name Pure virtual methods 
+      /*!
+       * @name Pure virtual methods
        * These methods must be defined by any concrete implementation
        */
       //@{
 
-      /*! 
-       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is 
+      /*!
+       * \brief Replace Jacobian \f$J\f$ by \f$aJ+bI\f$ where \f$I\f$ is
        * the identity matrix
        */
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       augmentJacobianForHomotopy(double a, double b) = 0;
 
       //@}
