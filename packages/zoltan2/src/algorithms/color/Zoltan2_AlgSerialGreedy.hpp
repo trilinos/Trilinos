@@ -64,7 +64,6 @@ class AlgSerialGreedy
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
     typedef typename Adapter::scalar_t scalar_t;
-    typedef int color_t; // TODO get from adapter
   
   public:
   AlgSerialGreedy()
@@ -99,7 +98,7 @@ class AlgSerialGreedy
   
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
-    ArrayRCP<color_t> colors = solution->getColorsRCP();
+    ArrayRCP<int> colors = solution->getColorsRCP();
 
     // Find max degree, since (max degree)+1 is an upper bound.
     lno_t maxDegree = 0; 
@@ -111,10 +110,10 @@ class AlgSerialGreedy
     // First-fit greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
-    color_t maxColor = 0;
+    int maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
-    Teuchos::Array<color_t> forbidden(maxDegree+1, 0);
+    Teuchos::Array<int> forbidden(maxDegree+1, 0);
 
     for (lno_t i=0; i<nVtx; i++){
       lno_t v=i; // TODO: Use ordering here.
@@ -126,7 +125,7 @@ class AlgSerialGreedy
         }
       }
       // Pick first (smallest) available color > 0
-      color_t c=1;
+      int c=1;
       while (forbidden[c]==v) c++;
       colors[v] = c;
       if (c > maxColor){
