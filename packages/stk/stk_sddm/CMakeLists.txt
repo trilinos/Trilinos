@@ -1,0 +1,12 @@
+INCLUDE(TribitsPackageMacros)
+INCLUDE(TribitsSubPackageMacros)
+
+TRIBITS_SUBPACKAGE(Sddm)
+
+
+ADD_SUBDIRECTORY(stk_sddm)
+
+TRIBITS_ADD_TEST_DIRECTORIES(unit_tests)
+
+
+TRIBITS_SUBPACKAGE_POSTPROCESS()
