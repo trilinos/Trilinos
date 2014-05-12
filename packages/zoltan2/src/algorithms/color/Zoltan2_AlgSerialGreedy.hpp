@@ -64,17 +64,21 @@ class AlgSerialGreedy
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
     typedef typename Adapter::scalar_t scalar_t;
+    // Class member variables
+    RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
+    RCP<Teuchos::Comm<int> > comm_;
   
   public:
-  AlgSerialGreedy()
+  AlgSerialGreedy(
+    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+    const RCP<Teuchos::Comm<int> > &comm
+  ) : model_(model), comm_(comm)
   {
   }
 
   void color(
-    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<ColoringSolution<Adapter> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
+    const RCP<Teuchos::ParameterList> &pl
   )
   {
     HELLO;
@@ -85,15 +89,15 @@ class AlgSerialGreedy
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const lno_t nVtx = model->getLocalNumVertices();
-    model->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
+    const lno_t nVtx = model_->getLocalNumVertices();
+    model_->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
     // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
-    cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
-    cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
-    cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
+    cout << "rank " << comm_->getRank() << ": nVtx= " << nVtx << endl;
+    cout << "rank " << comm_->getRank() << ": edgeIds: " << edgeIds << endl;
+    cout << "rank " << comm_->getRank() << ": offsets: " << offsets << endl;
 #endif
   
     // Get color array to fill.

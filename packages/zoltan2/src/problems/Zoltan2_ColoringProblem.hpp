@@ -193,8 +193,8 @@ void ColoringProblem<Adapter>::solve(bool newData)
   // TODO: Ignore case
   if (method.compare("SerialGreedy") == 0)
   {
-      AlgSerialGreedy<Adapter> alg;
-      alg.color(this->graphModel_, this->solution_, this->params_, problemComm_);
+      AlgSerialGreedy<Adapter> alg(this->graphModel_, problemComm_);
+      alg.color(this->solution_, this->params_);
   }
 #if 0 // TODO later
   else if (method.compare("JP") == 0)
