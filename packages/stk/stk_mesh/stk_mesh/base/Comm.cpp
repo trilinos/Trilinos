@@ -22,46 +22,72 @@ namespace stk { namespace mesh { class Part; } }
 namespace stk {
 namespace mesh {
 
-bool comm_mesh_counts( const BulkData & M ,
-                       std::vector<size_t> & counts ,
-                       bool local_flag,
+void fillNumEntitiesPerRankOnThisProc(const BulkData & M, std::vector<size_t>&local, const Selector *selector)
+{
+    const MetaData & S = MetaData::get(M);
+    const EntityRank entity_rank_count = static_cast<EntityRank>(S.entity_rank_count());
+    size_t numEntityRanks = entity_rank_count;
+    local.clear();
+    local.resize(numEntityRanks,0);
+
+    Selector owns = S.locally_owned_part();
+    for(EntityRank i = stk::topology::NODE_RANK; i < numEntityRanks; ++i)
+    {
+        const BucketVector & ks = M.buckets(i);
+        BucketVector::const_iterator ik;
+
+        for(ik = ks.begin(); ik != ks.end(); ++ik)
+        {
+            if(selector && !(*selector)(**ik))
+                continue;
+            if(owns(**ik))
+            {
+                local[i] += (*ik)->size();
+            }
+        }
+    }
+}
+
+void comm_mesh_counts( const BulkData & M ,
+                       std::vector<size_t> & globalCounts ,
                        const Selector *selector)
 {
-  const size_t zero = 0 ;
+    std::vector<size_t> localCounts;
+    fillNumEntitiesPerRankOnThisProc(M, localCounts, selector);
 
-  // Count locally owned entities
+    size_t numEntityRanks = localCounts.size();
+    globalCounts.resize(numEntityRanks, 0);
 
-  const MetaData & S = MetaData::get(M);
-  const EntityRank entity_rank_count = static_cast<EntityRank>(S.entity_rank_count());
-  const size_t     comm_count        = entity_rank_count + 1 ;
+    all_reduce_sum(M.parallel(), &localCounts[0], &globalCounts[0], numEntityRanks);
 
-  std::vector<size_t> local(  comm_count , zero );
-  std::vector<size_t> global( comm_count , zero );
+    return;
+}
 
-  ParallelMachine comm = M.parallel();
-  Selector owns = S.locally_owned_part();
+void comm_mesh_counts( const BulkData & M ,
+                       std::vector<size_t> & globalCounts,
+                       std::vector<size_t> & min_counts,
+                       std::vector<size_t> & max_counts,
+                       const Selector *selector)
+{
+    std::vector<size_t> localEntityCounts;
+    fillNumEntitiesPerRankOnThisProc(M, localEntityCounts, selector);
 
-  for ( EntityRank i = stk::topology::NODE_RANK ; i < entity_rank_count ; ++i ) {
-    const BucketVector & ks = M.buckets( i );
+    size_t numEntityRanks = localEntityCounts.size();
+    globalCounts.resize(numEntityRanks, 0);
+    min_counts.resize(numEntityRanks, 0);
+    max_counts.resize(numEntityRanks, 0);
 
-    BucketVector::const_iterator ik ;
+    all_reduce_sum(M.parallel(), &localEntityCounts[0], &globalCounts[0], numEntityRanks);
 
-    for ( ik = ks.begin() ; ik != ks.end() ; ++ik ) {
-      if (selector && !(*selector)(**ik)) 
-        continue;
-      if ( owns(**ik) ) {
-        local[i] += (*ik)->size();
-      }
-    }
-  }
+#if defined( STK_HAS_MPI )
+    all_reduce_min(M.parallel(), &localEntityCounts[0], &min_counts[0], numEntityRanks);
+    all_reduce_max(M.parallel(), &localEntityCounts[0], &max_counts[0], numEntityRanks);
+#else
+    min_counts = globalCounts;
+    max_counts = globalCounts;
+#endif
 
-  local[ entity_rank_count ] = local_flag ;
-
-  all_reduce_sum( comm , & local[0] , & global[0] , comm_count );
-
-  counts.assign( global.begin() , global.begin() + entity_rank_count );
-
-  return 0 < global[ entity_rank_count ] ;
+    return;
 }
 
 //----------------------------------------------------------------------

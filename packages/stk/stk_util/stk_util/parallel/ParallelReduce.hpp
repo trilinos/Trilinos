@@ -85,6 +85,13 @@ void all_reduce_min( ParallelMachine ,
 void all_reduce_min( ParallelMachine ,
                      const int * local , int * global , unsigned count );
 
+void all_reduce_min( ParallelMachine comm ,
+                     const int64_t * local , int64_t * global , unsigned count );
+
+/** \brief  Parallel summation to all processors */
+void all_reduce_min( ParallelMachine ,
+                     const size_t * local , size_t * global , unsigned count );
+
 /** Aggregated parallel in-place reduce-to-all-processors operations.
  *
  *  example:
