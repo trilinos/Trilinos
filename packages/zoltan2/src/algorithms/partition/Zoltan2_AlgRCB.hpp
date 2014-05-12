@@ -98,6 +98,7 @@ void AlgRCB(
   typedef typename Adapter::node_t node_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   // Make a copy of communicator because
@@ -340,8 +341,8 @@ void AlgRCB(
   ////////////////////////////////////////////////////////
 
   env->debug(DETAILED_STATUS, "Beginning algorithm");
-  partId_t part0 = 0;
-  partId_t part1 = numGlobalParts-1;
+  part_t part0 = 0;
+  part_t part1 = numGlobalParts-1;
   int sanityCheck = numGlobalParts;
   int groupSize = comm->getSize();
   int rank = comm->getRank();
@@ -367,7 +368,7 @@ void AlgRCB(
     scalar_t cutValue=0;  // TODO eventually save this for user
     int cutDimension=0;
     scalar_t imbalance=0, weightLeft=0, weightRight=0;
-    partId_t leftHalfNumParts=0;
+    part_t leftHalfNumParts=0;
 
     env->timerStart(MICRO_TIMERS, "Find cut", iteration, 2);
 
@@ -494,10 +495,10 @@ void AlgRCB(
   env->localBugAssertion(__FILE__, __LINE__, "partitioning failure", 
     sanityCheck, BASIC_ASSERTION);
 
-  ArrayRCP<partId_t> partId;
+  ArrayRCP<part_t> partId;
 
   if (numLocalCoords > 0){
-    partId_t *tmp = new partId_t [numLocalCoords];
+    part_t *tmp = new part_t [numLocalCoords];
     env->localMemoryAssertion(__FILE__, __LINE__, numLocalCoords, tmp);
     partId = arcp(tmp, 0, numLocalCoords, true);
   }

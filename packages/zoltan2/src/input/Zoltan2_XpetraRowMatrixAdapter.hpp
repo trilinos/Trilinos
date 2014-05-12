@@ -85,6 +85,7 @@ public:
   typedef typename InputTraits<User>::lno_t    lno_t;
   typedef typename InputTraits<User>::gno_t    gno_t;
   typedef typename InputTraits<User>::gid_t    gid_t;
+  typedef typename InputTraits<User>::part_t   part_t;
   typedef typename InputTraits<User>::node_t   node_t;
   typedef Xpetra::RowMatrix<scalar_t, lno_t, gno_t, node_t> xmatrix_t;
   typedef MatrixAdapter<User,UserCoord> base_adapter_t;
@@ -348,9 +349,9 @@ template <typename User, typename UserCoord>
 
   size_t len = solution.getLocalNumberOfIds();
   const gid_t *gids = solution.getIdList();
-  const partId_t *parts = solution.getPartList();
+  const part_t *parts = solution.getPartList();
   ArrayRCP<gid_t> gidList = arcp(const_cast<gid_t *>(gids), 0, len, false); 
-  ArrayRCP<partId_t> partList = arcp(const_cast<partId_t *>(parts), 0, len, 
+  ArrayRCP<part_t> partList = arcp(const_cast<part_t *>(parts), 0, len, 
     false); 
   ArrayRCP<lno_t> dummyIn;
   ArrayRCP<gid_t> importList;

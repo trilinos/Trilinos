@@ -49,7 +49,6 @@
 #include <Zoltan2_PartitioningSolution.hpp>
 #include <Zoltan2_Util.hpp>
 
-typedef zoltan2_partId_t partId_t;
 
 #ifndef HAVE_ZOLTAN2_SCOTCH
 
@@ -308,6 +307,7 @@ void AlgPTScotch(
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::part_t part_t;
 
   size_t numGlobalParts = solution->getTargetGlobalNumberOfParts();
 
@@ -405,9 +405,9 @@ void AlgPTScotch(
     !ierr, BASIC_ASSERTION, problemComm);
 
   // Create array for Scotch to return results in.
-  ArrayRCP<partId_t> partList(new partId_t [nVtx], 0, nVtx,true);
+  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx,true);
   SCOTCH_Num *partloctab = NULL;
-  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(partId_t))) {
+  if (nVtx && (sizeof(SCOTCH_Num) == sizeof(part_t))) {
     // Can write directly into the solution's memory
     partloctab = (SCOTCH_Num *) partList.getRawPtr();
   }
@@ -475,7 +475,7 @@ void AlgPTScotch(
 
   // Load answer into the solution.
 
-  if ((sizeof(SCOTCH_Num) != sizeof(partId_t)) || (nVtx == 0)) {
+  if ((sizeof(SCOTCH_Num) != sizeof(part_t)) || (nVtx == 0)) {
     for (size_t i = 0; i < nVtx; i++) partList[i] = partloctab[i];
     delete [] partloctab;
   }
@@ -506,7 +506,7 @@ void AlgPTScotch(
   ArrayView<StridedData<lno_t, scalar_t> > vwgts;
   size_t nVtx = model->getVertexList(vtxID, xyz, vwgts);
 
-  ArrayRCP<partId_t> partList(new partId_t[nVtx], 0, nVtx, true);
+  ArrayRCP<part_t> partList(new part_t[nVtx], 0, nVtx, true);
   for (size_t i = 0; i < nVtx; i++) partList[i] = 0;
 
   ArrayRCP<const gno_t> gnos = arcpFromArrayView(vtxID);

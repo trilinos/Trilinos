@@ -58,6 +58,7 @@
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
 typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
 typedef Zoltan2::PartitioningSolutionQuality<idInput_t> quality_t;
+typedef idInput_t::part_t part_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -69,7 +70,6 @@ using namespace std;
 using std::endl;
 using std::cout;
 
-typedef zoltan2_partId_t partId_t;
 
 void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   int nWeights, int numLocalParts, bool givePartSizes);
@@ -158,15 +158,15 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
   // Then the problem supplies them to the Solution.
 
   int partSizeDim = (givePartSizes ? (nWeights ? nWeights : 1) : 0);
-  ArrayRCP<ArrayRCP<partId_t> > ids(partSizeDim);
+  ArrayRCP<ArrayRCP<part_t> > ids(partSizeDim);
   ArrayRCP<ArrayRCP<scalar_t> > sizes(partSizeDim);
 
   if (givePartSizes && numLocalParts > 0){
-    partId_t *myParts = new partId_t [numLocalParts];
+    part_t *myParts = new part_t [numLocalParts];
     myParts[0] = rank * numLocalParts;
     for (int i=1; i < numLocalParts; i++)
       myParts[i] = myParts[i-1] + 1;
-    ArrayRCP<partId_t> partNums(myParts, 0, numLocalParts, true);
+    ArrayRCP<part_t> partNums(myParts, 0, numLocalParts, true);
 
     scalar_t sizeFactor = nprocs/2 - rank;
     if (sizeFactor < 0) sizeFactor *= -1;
@@ -233,8 +233,8 @@ void doTest(RCP<const Comm<int> > comm, int numLocalObj,
 
   // Part assignment for my objects: The algorithm usually calls this. 
 
-  partId_t *partNum = new partId_t [numLocalObj];
-  ArrayRCP<partId_t> partAssignment(partNum, 0, numLocalObj, true);
+  part_t *partNum = new part_t [numLocalObj];
+  ArrayRCP<part_t> partAssignment(partNum, 0, numLocalObj, true);
   for (int i=0; i < numLocalObj; i++)
     partNum[i] = rank;
 

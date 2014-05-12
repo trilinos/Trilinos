@@ -365,7 +365,7 @@ const RCP<tMVector_t> getMeshCoordinates(
 }
 
 
-void getArgVals(int argc, char **argv,   partId_t &numParts,
+void getArgVals(int argc, char **argv,   int &numParts,
     std::string &paramFile){
 
   for(int i = 0; i < argc; ++i){

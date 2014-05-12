@@ -100,6 +100,7 @@ public:
   typedef typename Adapter::gid_t gid_t;
   typedef typename Adapter::gno_t gno_t;
   typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::part_t part_t;
   typedef typename Adapter::user_t user_t;
   typedef typename Adapter::base_adapter_t base_adapter_t;
 
@@ -228,7 +229,7 @@ public:
    *            part sizes once for each.
    */
 
-  void setPartSizes(int len, partId_t *partIds, scalar_t *partSizes, 
+  void setPartSizes(int len, part_t *partIds, scalar_t *partSizes, 
     bool makeCopy=true) 
   { 
     setPartSizesForCriteria(0, len, partIds, partSizes, makeCopy);
@@ -268,7 +269,7 @@ public:
    * setPartSizesForCriteria.
    */
 
-  void setPartSizesForCriteria(int criteria, int len, partId_t *partIds,
+  void setPartSizesForCriteria(int criteria, int len, part_t *partIds,
     scalar_t *partSizes, bool makeCopy=true) ;
 /*
   void setMachine(MachineRepresentation<typename Adapter::base_adapter_t::scalar_t> *machine);
@@ -316,7 +317,7 @@ private:
 
   int numberOfWeights_;
 
-  // Suppose Array<partId_t> partIds = partIds_[w].  If partIds.size() > 0
+  // Suppose Array<part_t> partIds = partIds_[w].  If partIds.size() > 0
   // then the user supplied part sizes for weight index "w", and the sizes
   // corresponding to the Ids in partIds are partSizes[w].
   //
@@ -325,7 +326,7 @@ private:
   // but they can still specify part sizes. 
   // So numberOfCriteria_ is numberOfWeights_ or one, whichever is greater.
 
-  ArrayRCP<ArrayRCP<partId_t> > partIds_;
+  ArrayRCP<ArrayRCP<part_t> > partIds_;
   ArrayRCP<ArrayRCP<scalar_t> > partSizes_;
   int numberOfCriteria_;
 
@@ -424,7 +425,7 @@ template <typename Adapter>
   // The Caller can specify part sizes in setPartSizes().  If he/she
   // does not, the part size arrays are empty.
 
-  ArrayRCP<partId_t> *noIds = new ArrayRCP<partId_t> [numberOfCriteria_];
+  ArrayRCP<part_t> *noIds = new ArrayRCP<part_t> [numberOfCriteria_];
   ArrayRCP<scalar_t> *noSizes = new ArrayRCP<scalar_t> [numberOfCriteria_];
 
   partIds_ = arcp(noIds, 0, numberOfCriteria_, true);
@@ -442,7 +443,7 @@ template <typename Adapter>
 
 template <typename Adapter>
   void PartitioningProblem<Adapter>::setPartSizesForCriteria(
-    int criteria, int len, partId_t *partIds, scalar_t *partSizes, bool makeCopy) 
+    int criteria, int len, part_t *partIds, scalar_t *partSizes, bool makeCopy) 
 {
   this->env_->localInputAssertion(__FILE__, __LINE__, "invalid length", 
     len>= 0, BASIC_ASSERTION);
@@ -451,7 +452,7 @@ template <typename Adapter>
     criteria >= 0 && criteria < numberOfCriteria_, BASIC_ASSERTION);
 
   if (len == 0){
-    partIds_[criteria] = ArrayRCP<partId_t>();
+    partIds_[criteria] = ArrayRCP<part_t>();
     partSizes_[criteria] = ArrayRCP<scalar_t>();
     return;
   }
@@ -463,15 +464,15 @@ template <typename Adapter>
   // by the PartitioningSolution, which computes global part distribution and
   // part sizes.
 
-  partId_t *z2_partIds = NULL;
+  part_t *z2_partIds = NULL;
   scalar_t *z2_partSizes = NULL;
   bool own_memory = false;
 
   if (makeCopy){
-    z2_partIds = new partId_t [len];
+    z2_partIds = new part_t [len];
     z2_partSizes = new scalar_t [len];
     this->env_->localMemoryAssertion(__FILE__, __LINE__, len, z2_partSizes);
-    memcpy(z2_partIds, partIds, len * sizeof(partId_t));
+    memcpy(z2_partIds, partIds, len * sizeof(part_t));
     memcpy(z2_partSizes, partSizes, len * sizeof(scalar_t));
     own_memory=true;
   }
@@ -567,9 +568,10 @@ void PartitioningProblem<Adapter>::solve(bool updateInputData)
 
   if (mapping_type == 0){
 
-    //partId_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
-    Zoltan2::CoordinateTaskMapper <Adapter, zoltan2_partId_t> *ctm=
-                  new Zoltan2::CoordinateTaskMapper<Adapter,zoltan2_partId_t>(
+    //part_t *task_communication_xadj = NULL, *task_communication_adj = NULL;
+
+    Zoltan2::CoordinateTaskMapper <Adapter, part_t> *ctm=
+                  new Zoltan2::CoordinateTaskMapper<Adapter,part_t>(
                           problemComm_.getRawPtr(),
                           machine_.getRawPtr(),
                           this->coordinateModel_.getRawPtr(),

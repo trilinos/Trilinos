@@ -194,9 +194,9 @@ int main(int argc, char *argv[])
 
   int nWeights = 1;
 
-  zoltan2_partId_t *p = new zoltan2_partId_t [vlen];
-  memset(p, 0, sizeof(zoltan2_partId_t) * vlen);
-  ArrayRCP<zoltan2_partId_t> solnParts(p, 0, vlen, true);
+  int *p = new int [vlen];
+  memset(p, 0, sizeof(int) * vlen);
+  ArrayRCP<int> solnParts(p, 0, vlen, true);
 
   std::vector<const scalar_t *> emptyWeights;
   std::vector<int> emptyStrides;
