@@ -56,19 +56,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   )
 
-
-TRIBITS_ADD_EXECUTABLE_AND_TEST(
-  ExportBug6126
-  SOURCES
-    ExportBug6126
-    ${SMIT_OBJECTS_CUDA}
-    ${TEUCHOS_STD_UNIT_TEST_MAIN}
-  COMM mpi
-  NUM_MPI_PROCS 2
-  STANDARD_PASS_OUTPUT
-  )
-
-
 IF (${PROJECT_NAME}_ENABLE_Epetra)
   # Tpetra bug 5430:
   # https://software.sandia.gov/bugzilla/show_bug.cgi?id=5430
