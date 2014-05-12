@@ -43,8 +43,8 @@
 //
 // @HEADER
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-#ifndef _ZOLTAN2_ALGFIRSTFIT_HPP_
-#define _ZOLTAN2_ALGFIRSTFIT_HPP_
+#ifndef _ZOLTAN2_ALGSERIALGREEDY_HPP_
+#define _ZOLTAN2_ALGSERIALGREEDY_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
@@ -99,6 +99,9 @@ class AlgSerialGreedy
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
     ArrayRCP<int> colors = solution->getColorsRCP();
+    for (lno_t i=0; i<nVtx; i++){
+      colors[i] = 0;
+    }
 
     // Find max degree, since (max degree)+1 is an upper bound.
     lno_t maxDegree = 0; 
@@ -113,23 +116,30 @@ class AlgSerialGreedy
     int maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
-    Teuchos::Array<int> forbidden(maxDegree+1, 0);
+    Teuchos::Array<int> forbidden(maxDegree+2, 0);
 
     for (lno_t i=0; i<nVtx; i++){
+      //std::cout << "Debug: i= " << i << std::endl;
       lno_t v=i; // TODO: Use ordering here.
       for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
         lno_t nbor = edgeIds[j];
+        //std::cout << "Debug: nbor= " << nbor << ", color= " << colors[nbor] << std::endl;
         if (colors[nbor] > 0){
           // Neighbors' colors are forbidden
           forbidden[colors[nbor]] = v;
         }
       }
       // Pick first (smallest) available color > 0
-      int c=1;
-      while (forbidden[c]==v) c++;
-      colors[v] = c;
-      if (c > maxColor){
-        maxColor = c;
+      for (int c=1; c < forbidden.length(); c++){
+        if (forbidden[c] != v){ 
+          colors[v] = c;
+          break;
+        }
+      }
+      if (colors[v]==0) colors[v]=1; // Corner case for first vertex
+      //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
+      if (colors[v] > maxColor){
+        maxColor = colors[v];
       }
     }
   
