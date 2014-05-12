@@ -5650,7 +5650,18 @@ namespace Tpetra {
     /**** 5) Sort                                   ****/
     /***************************************************/
     Import_Util::sortCrsEntries(CSR_rowptr(),CSR_colind_LID(),CSR_vals());
-
+    if((!reverseMode && typeid(TransferType)==typeid(Import<LO,GO,NT>)) || (reverseMode && typeid(TransferType)==typeid(Export<LO,GO,NT>))) {
+      Import_Util::sortCrsEntries(CSR_rowptr(),CSR_colind_LID(),CSR_vals());
+    }
+    else if((!reverseMode && typeid(TransferType)==typeid(Export<LO,GO,NT>)) || (reverseMode && typeid(TransferType)==typeid(Import<LO,GO,NT>))){
+      Import_Util::sortAndMergeCrsEntries(CSR_rowptr(),CSR_colind_LID(),CSR_vals());      
+      if(CSR_rowptr[N]!=mynnz) {
+	CSR_colind_LID.resize(CSR_rowptr[N]);
+	CSR_vals.resize(CSR_rowptr[N]);
+      }
+    }
+    else TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+                                      "Tpetra::Crs_Matrix::transferAndFillComplete TransferType must be Import or Export.");
     /***************************************************/
     /**** 6) Reset the colmap and the arrays        ****/
     /***************************************************/
