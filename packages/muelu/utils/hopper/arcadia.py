@@ -264,7 +264,11 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_epetra = []
                         for epetra_file in sort_nicely(glob.glob(analysis_run + "*.epetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + epetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('")
+                            if (parsefunc == ""):
+                                theCommand = "grep -i \"" + s + "\" " + epetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('"
+                            else:
+                                theCommand = parsefunc(epetra_file,s)
+                            r = commands.getstatusoutput(theCommand)
                             if r[0] != 0:
                                 return "Error reading \"" + analysis_run + ".epetra"
 
@@ -285,7 +289,12 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                     try:
                         rtime_tpetra = []
                         for tpetra_file in sort_nicely(glob.glob(analysis_run + "*.tpetra")):
-                            r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('")
+                            if (parsefunc == ""):
+                                theCommand = "grep -i \"" + s + "\" " + tpetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('"
+                            else:
+                                theCommand = parsefunc(tpetra_file,s)
+                            r = commands.getstatusoutput(theCommand)
+                            #r = commands.getstatusoutput("grep -i \"" + s + "\" " + tpetra_file + " | tail -n 1 | cut -f3 -d')' | cut -f1 -d'('")
                             if r[0] != 0:
                                 return "Error reading \"" + analysis_run + ".tpetra"
 
@@ -299,7 +308,7 @@ def analyze(petra, analysis_runs, labels, timelines, parsefunc):
                         fullstr += "%13.2f %7.2f%%" % (time_tpetra[s], eff_tpetra[s])
 
                     except (RuntimeError, ValueError):
-                        # print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, tpetra_file))
+                        #print("Problem converting \"%s\" to float for timeline \"%s\" in \"%s\"" % (r[1], s, tpetra_file))
                         fullstr += "           -   -"
 
                 if has_ml:
