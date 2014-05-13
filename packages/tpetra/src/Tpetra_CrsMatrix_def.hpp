@@ -5351,14 +5351,15 @@ namespace Tpetra {
             class GlobalOrdinal,
             class Node,
             class LocalMatOps>
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
+  importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & destMat,
+			 const Import<LocalOrdinal, GlobalOrdinal, Node>& importer,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    return transferAndFillComplete<Import<LocalOrdinal, GlobalOrdinal, Node> >(importer,domainMap,rangeMap,params);
+    transferAndFillComplete<Import<LocalOrdinal, GlobalOrdinal, Node> >(destMat,importer,domainMap,rangeMap,params);
   }
 
 
@@ -5367,14 +5368,15 @@ namespace Tpetra {
             class GlobalOrdinal,
             class Node,
             class LocalMatOps>
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
+  exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & destMat,
+			 const Export<LocalOrdinal, GlobalOrdinal, Node>& exporter,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    return transferAndFillComplete<Export<LocalOrdinal, GlobalOrdinal, Node> >(exporter,domainMap,rangeMap,params);
+    transferAndFillComplete<Export<LocalOrdinal, GlobalOrdinal, Node> >(destMat,exporter,domainMap,rangeMap,params);
   }
 
 
@@ -5385,9 +5387,10 @@ namespace Tpetra {
             class Node,
             class LocalMatOps>
   template <class TransferType>
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> >
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::
-  transferAndFillComplete(const TransferType & RowTransfer,
+  transferAndFillComplete(Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps> > & destMat,
+			  const TransferType & RowTransfer,
                           const Teuchos::RCP<const map_type>& domainMap,
                           const Teuchos::RCP<const map_type>& rangeMap,
                           const Teuchos::RCP<Teuchos::ParameterList>& params) const
@@ -5455,11 +5458,18 @@ namespace Tpetra {
     RCP<const map_type> ReducedRowMap,ReducedColMap,ReducedDomainMap,ReducedRangeMap;
     RCP<const Comm<int> > ReducedComm;
 
-    // New matrix
-    RCP<this_type> destMat;
-
-    // Fire off the initial constructor for the new matrix.  We'll replace the colMap later
-    destMat = rcp(new this_type(MyRowMap,0, StaticProfile, matrixparams));
+    // If destMat has been provided, then check for acceptability, otherwise, fire off the initial 
+    // constructor for the new matrix.  Either way, We'll replace the colMap later.
+    if(destMat.is_null())
+      destMat = rcp(new this_type(MyRowMap,0, StaticProfile, matrixparams));
+    else {
+      bool NewFlag=!destMat->getGraph()->isLocallyIndexed() && !destMat->getGraph()->isGloballyIndexed();
+      if(!NewFlag || !destMat->getRowMap()->isSameAs(*MyRowMap))
+	TEUCHOS_TEST_FOR_EXCEPTION(1,std::invalid_argument,
+				   "Tpetra::Crs_Matrix::transferAndFillComplete only allows an input destMat if "
+				   "!destMat->getGraph()->isLocallyIndexed() && !destMat->getGraph()->isGloballyIndexed() "
+				   "and destMat->getRowMap().isSameAs(MyRowMap).");
+    }
 
     /***************************************************/
     /***** 1) First communicator restriction phase ****/
@@ -5644,7 +5654,7 @@ namespace Tpetra {
     // NOTE: Epetra replaces modifies all "removed" processors so they have a dummy (serial) map that doesn't touch the original
     // communicator.  Duplicating that here might be a good idea.
     if(ReducedComm.is_null())
-      return destMat;
+      return;
 
     /***************************************************/
     /**** 5) Sort                                   ****/
@@ -5676,7 +5686,6 @@ namespace Tpetra {
     // RCP<Tpetra::Import<LO,GO,NT> > MyImport = rcp(new Tpetra::Import<LO,GO,NT>(MyDomainMap,MyColMap));
     destMat->expertStaticFillComplete(MyDomainMap,MyRangeMap,MyImport);
 
-    return destMat;
 }// end transferAndFillComplete
 
 
