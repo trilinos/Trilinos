@@ -566,13 +566,12 @@ long long Inline_Mesh_Desc::Populate_Sideset_Info(std::map <long long, long long
     long long * the_faces = side_set_faces[nsct];
     long long * the_nodes = side_set_nodes[nsct];
     long long * the_node_counter = side_set_node_counter[nsct];
-
-    Topo_Loc the_location = (*setit)->location;
-    //Sidesets allowed only on faces of block, not on edges or corners
-
+    
 
     for(unsigned elct = 0; elct < sideset_vectors[nsct].size();elct ++){
       long long the_element = sideset_vectors[nsct][elct].first;
+      Topo_Loc the_location =  sideset_vectors[nsct][elct].second;
+
       // These are the indices of the element in the entire domain
       long long gl_k = the_element/(kestride);
       long long gl_j = (the_element-gl_k*(kestride))/(jestride);
@@ -825,8 +824,9 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
 {
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id;
       long long bmax = numBlocks();
       if (bid < 1 || bid > bmax){
         error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
@@ -837,10 +837,13 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
 	return 1;
       }
     }
+    }
   }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id;
       long long bmax = numBlocks();
       if (bid < 1 || bid > bmax){
         error_stream << "Terminating from Inline_Mesh_Desc::Check_Block_BC_Sets,block index ";
@@ -850,6 +853,7 @@ long long Inline_Mesh_Desc::Check_Block_BC_Sets()
         error_stream << ".";
 	return 1;
        }
+    }
     }
   }
   return Rename_Block_BC_Sets();
@@ -878,52 +882,56 @@ void Inline_Mesh_Desc::Size_BC_Sets(long long nnx,
   //Nodesets
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
-    Topo_Loc the_location = (*setit)->location;
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
-      long long kind = bid/(inline_bx*inline_by);
-      long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-      long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
-      
-      (*setit)->limits = getLimits(the_location,
-				   c_inline_nx[iind],c_inline_nx[iind+1]+1,
-				   c_inline_ny[jind],c_inline_ny[jind+1]+1,
-				   c_inline_nz[kind],c_inline_nz[kind+1]+1,
-				   nnx, 
-				   nny);
-    }
-    else{
-      (*setit)->limits = getLimits(the_location,
-                                   0,nnx,
-                                   0,nny,
-                                   0,nnz,
-				   nnx,
-				   nny);
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+      Topo_Loc the_location = (*setit)->the_locs[ict].location;
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id-1;
+	long long kind = bid/(inline_bx*inline_by);
+	long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
+	long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+	
+	(*setit)->the_locs[ict].limits = getLimits(the_location,
+						   c_inline_nx[iind],c_inline_nx[iind+1]+1,
+						   c_inline_ny[jind],c_inline_ny[jind+1]+1,
+						   c_inline_nz[kind],c_inline_nz[kind+1]+1,
+						   nnx, 
+						   nny);
+      }
+      else{
+	(*setit)->the_locs[ict].limits = getLimits(the_location,
+						   0,nnx,
+						   0,nny,
+						   0,nnz,
+						   nnx,
+						   nny);
+      }
     }
   }
   //Sidesets
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
-    Topo_Loc the_location = (*setit)->location;
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
-      long long kind = bid/(inline_bx*inline_by);
-      long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
-      long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
-      (*setit)->limits = getLimits(the_location,
-                                   c_inline_nx[iind],c_inline_nx[iind+1],
-                                   c_inline_ny[jind],c_inline_ny[jind+1],
-                                   c_inline_nz[kind],c_inline_nz[kind+1],
-                                   nelx_tot, 
-				   nely_tot);
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+      Topo_Loc the_location = (*setit)->the_locs[ict].location;
+      if((*setit)->the_locs[ict].block_boundary_set){
+	long long bid = (*setit)->the_locs[ict].block_id-1;
+	long long kind = bid/(inline_bx*inline_by);
+	long long jind = (bid-kind*(inline_bx * inline_by))/inline_bx;
+	long long iind = bid - jind *(inline_bx) - kind*(inline_bx * inline_by);
+	(*setit)->the_locs[ict].limits = getLimits(the_location,
+						   c_inline_nx[iind],c_inline_nx[iind+1],
+						   c_inline_ny[jind],c_inline_ny[jind+1],
+						   c_inline_nz[kind],c_inline_nz[kind+1],
+						   nelx_tot, 
+						   nely_tot);
+      }
+      else{
+	(*setit)->the_locs[ict].limits = getLimits(the_location,
+						   0,nelx_tot,
+						   0,nely_tot,
+						   0,nelz_tot,
+						   nelx_tot,
+						   nely_tot);
+      } 
     }
-    else{
-      (*setit)->limits = getLimits(the_location,
-                                   0,nelx_tot,
-                                   0,nely_tot,
-                                   0,nelz_tot,
-				   nelx_tot,
-				   nely_tot);
-    } 
   }
 }
 
@@ -1946,56 +1954,55 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
   // The loop limits are the index bounds that allow traversal of the nodes of interest.
   //DMHMOD
 
-  if(nodeset_list.size() > 0)nodeset_vectors = new std::vector <long long> [nodeset_list.size()];
-
-  std::list < PG_BC_Specification *> ::iterator setit;
-  long long nsct = 0;
-  for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
-    LoopLimits ll = (*setit)->limits;
-    std::list < long long > nodes_vector;
-
     // SET_INTERSECT
-    std::list < long long > tnodes_vector;
-    std::list < long long > tglobal_nodes_vector;
-
-    std::set < long long > global_nodes_set;
+  std::list < long long > tnodes_vector;
+  std::list < long long > tglobal_nodes_vector;
+  
+  std::set < long long > global_nodes_set;
+  
+  if(nodeset_list.size() > 0){
+    nodeset_vectors = new std::vector <long long> [nodeset_list.size()];
 
     for(unsigned the_nct = 0; the_nct < global_node_vector.size();the_nct++){
       tglobal_nodes_vector.push_back(global_node_vector[the_nct]);
     }
-
+    
     tglobal_nodes_vector.sort();
     tglobal_nodes_vector.unique();
     global_nodes_set.insert(tglobal_nodes_vector.begin(),tglobal_nodes_vector.end());
-   
+  }
 
-    if(dimension == 3){
-      for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+  std::list < PG_BC_Specification *> ::iterator setit;
+  long long nsct = 0;
+  for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+      LoopLimits ll = (*setit)->the_locs[ict].limits;
+      if(dimension == 3){
+	for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+	  for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+	    for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
+	      long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	      if(global_nodes_set.find(global_node_id) != global_nodes_set.end())
+		nodeset_vectors[nsct].push_back(global_node_id);
+	    }
+	  }
+	}
+      }
+      else{
+	long long _nk_ = 0;
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
 	    long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
 	    if(global_nodes_set.find(global_node_id) != global_nodes_set.end())
-	       nodeset_vectors[nsct].push_back(global_node_id);
+	      nodeset_vectors[nsct].push_back(global_node_id);
 	  }
 	}
       }
     }
-    else{
-      long long _nk_ = 0;
-      for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
- 	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++){ 
-	  long long global_node_id = get_node_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	  if(global_nodes_set.find(global_node_id) != global_nodes_set.end())
-	     nodeset_vectors[nsct].push_back(global_node_id);
-	}
-      }
-    }
-
     std::vector < long long > :: iterator vit;
-          std::sort  (nodeset_vectors[nsct].begin(),nodeset_vectors[nsct].end());
+    std::sort  (nodeset_vectors[nsct].begin(),nodeset_vectors[nsct].end());
     vit = std::unique(nodeset_vectors[nsct].begin(),nodeset_vectors[nsct].end());
     nodeset_vectors[nsct].resize(vit-nodeset_vectors[nsct].begin());
-
   }
   // END OF NODESETS
 
@@ -2024,13 +2031,28 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
   if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
-     Topo_Loc the_location = (*setit)->location;
-    //Sidesets allowed only on faces of block, not on edges or corners
-
-    LoopLimits ll = (*setit)->limits;
-
-    if(dimension == 3){
-      for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+      
+      LoopLimits ll = (*setit)->the_locs[ict].limits;
+      Topo_Loc the_location =  (*setit)->the_locs[ict].location;
+      //Sidesets allowed only on faces of block, not on edges or corners
+            
+      if(dimension == 3){
+	for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
+	  for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
+	    for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
+	      long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
+	      long long the_proc_id = Element_Proc(elnumber);
+	      if(the_proc_id == my_rank){// add only if on this proc	  
+		std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
+		sideset_vectors[nsct].push_back(el_loc_pair);
+	      }
+	    }
+	  }
+	}
+      }
+      else{
+	long long _nk_ = 0;
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	    long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
@@ -2039,19 +2061,6 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 	      std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 	      sideset_vectors[nsct].push_back(el_loc_pair);
 	    }
-	  }
-	}
-      }
-    }
-    else{
-      long long _nk_ = 0;
-      for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
-	for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
-	  long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	  long long the_proc_id = Element_Proc(elnumber);
-	  if(the_proc_id == my_rank){// add only if on this proc	  
-	    std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
-	    sideset_vectors[nsct].push_back(el_loc_pair);
 	  }
 	}
       }

@@ -1668,8 +1668,10 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
   std::list < PG_BC_Specification *> ::iterator setit;
   long long nsct = 0;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++,nsct ++){
-    LoopLimits ll = (*setit)->limits;
-    Topo_Loc the_location = (*setit)->location;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+    LoopLimits ll = (*setit)->the_locs[ict].limits;
+    Topo_Loc the_location = (*setit)->the_locs[ict].location;
 
     std::list < long long > nodes_vector;
 
@@ -1700,13 +1702,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	}
       }
     }
-    if((!(*setit)->block_boundary_set) || 
-       ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
+    if((!(*setit)->the_locs[ict].block_boundary_set) || 
+       ((*setit)->the_locs[ict].block_boundary_set && (((*setit)->the_locs[ict].block_id-1)%inline_bx == 0))){
       // need to do trisect blocks now
       for(long long i = 0; i < trisection_blocks; i ++){
 	Topo_Loc new_location;
 	long long is_nodes = 1;
-	LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
+	LoopLimits tll = get_tri_block_limits((*setit)->the_locs[ict].block_boundary_set,(*setit)->the_locs[ict].block_id,i,the_location,new_location,is_nodes);
 
 	if(dimension == 3){
 	  for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1750,6 +1752,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
         if((*nit) == global_node_vector[the_nct])nodeset_vectors[nsct].push_back((*nit));
       }
     }
+    }
   }
   // END OF NODESETS
 
@@ -1778,10 +1781,12 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
   if(sideset_list.size() > 0)sideset_vectors = new std::vector < std::pair <long long ,Topo_Loc > > [sideset_list.size()];  
 
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++,nsct ++){
-     Topo_Loc the_location = (*setit)->location;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+     Topo_Loc the_location =  (*setit)->the_locs[ict].location;
     //Sidesets allowed only on faces of block, not on edges or corners
 
-    LoopLimits ll = (*setit)->limits;
+    LoopLimits ll = (*setit)->the_locs[ict].limits;
 	if(dimension == 3){
 	  for ( long long _nk_ = ll.ks; _nk_ < ll.ke; _nk_ ++){ 
 	    for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
@@ -1810,13 +1815,13 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	  }
 	}
 	
-	if((!(*setit)->block_boundary_set) || 
-	   ((*setit)->block_boundary_set && (((*setit)->block_id-1)%inline_bx == 0))){
+	if((!(*setit)->the_locs[ict].block_boundary_set) || 
+	   ((*setit)->the_locs[ict].block_boundary_set && (((*setit)->the_locs[ict].block_id-1)%inline_bx == 0))){
 	// need to do trisect blocks now
 	for(long long i = 0; i < trisection_blocks; i ++){
 	  Topo_Loc new_location;
 	  long long is_nodes = 0;
-	  LoopLimits tll = get_tri_block_limits((*setit)->block_boundary_set,(*setit)->block_id,i,the_location,new_location,is_nodes);
+	  LoopLimits tll = get_tri_block_limits((*setit)->the_locs[ict].block_boundary_set,(*setit)->the_locs[ict].block_id,i,the_location,new_location,is_nodes);
 	  
 	  if(dimension == 3){
 	    for ( long long _nk_ = tll.ks; _nk_ < tll.ke; _nk_ ++){ 
@@ -1847,6 +1852,7 @@ void Radial_Trisection_Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_pa
 	  }
 	}
 	}
+    }
   }
   //END of SIDESETS
 }
@@ -1857,8 +1863,10 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 {
   std::list < PG_BC_Specification * > ::iterator setit;
   for(setit = nodeset_list.begin(); setit != nodeset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id-1;
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
@@ -1871,13 +1879,15 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 	if (jind){
 	  iind =1+ ((jord-1)-jind*(inline_bx-1));
 	}
-	(*setit)->block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
+	(*setit)->the_locs[ict].block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
       }
     }
   }
+  }
   for(setit = sideset_list.begin(); setit != sideset_list.end();setit++){
-    if((*setit)->block_boundary_set){
-      long long bid = (*setit)->block_id-1;
+    for(unsigned ict = 0;ict < (*setit)->the_locs.size();ict ++){
+    if((*setit)->the_locs[ict].block_boundary_set){
+      long long bid = (*setit)->the_locs[ict].block_id-1;
       long long kind = bid/(blockKstride());
       long long jord = (bid-kind*blockKstride());
       //interior
@@ -1890,10 +1900,11 @@ long long Radial_Trisection_Inline_Mesh_Desc::Rename_Block_BC_Sets()
 	if (jind){
 	  iind =1+ ((jord-1)-jind*(inline_bx-1));
 	}
-	(*setit)->block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
+	(*setit)->the_locs[ict].block_id = 1 + iind + jind*inline_bx + kind * inline_bx*inline_by;
       }
 
     }
+  }
   }
   return 0;
 }

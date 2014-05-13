@@ -758,14 +758,14 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
       if(sdimension == 2 && (the_loc == MINUS_K || the_loc == PLUS_K))break;
 
-      if(Inline_Mesh_Desc::im_static_storage->getNodeset_by_id(the_id)){
-	std::stringstream ss;
-	ss << "Nodeset ids may not be reused " << the_id;
-	token_stream->Semantics_Error(ss.str());   
+      PG_BC_Specification * the_ns = Inline_Mesh_Desc::im_static_storage->getNodeset_by_id(the_id);
+      if(the_ns){
+	the_ns->addEntry(the_loc,false,0);
       }
-      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
-      Inline_Mesh_Desc::im_static_storage->nodeset_list.push_back(bcs);
-
+      else{
+	PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
+	Inline_Mesh_Desc::im_static_storage->nodeset_list.push_back(bcs);
+      }
 
       break;}
     case P_BLOCK_NODESET:{
@@ -828,13 +828,14 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
       
       if(sdimension == 2 && (the_loc == MINUS_K || the_loc == PLUS_K))break;
 
-      if(Inline_Mesh_Desc::im_static_storage->getNodeset_by_id(the_id)){
-	std::stringstream ss;
-	ss << "Nodeset ids may not be reused " << the_id;
-	token_stream->Semantics_Error(ss.str());   
+      PG_BC_Specification * the_ns = Inline_Mesh_Desc::im_static_storage->getNodeset_by_id(the_id);
+      if(the_ns){
+	the_ns->addEntry(the_loc,true,the_block);
       }
-      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
-      Inline_Mesh_Desc::im_static_storage->nodeset_list.push_back(bcs);
+      else{
+	PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
+	Inline_Mesh_Desc::im_static_storage->nodeset_list.push_back(bcs);
+      }
       break;}
     case P_SIDESET:{
       const char* type_token;
@@ -882,15 +883,16 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 
       if(sdimension == 2 && (the_loc == MINUS_K || the_loc == PLUS_K))break;
 
-      if(Inline_Mesh_Desc::im_static_storage->getSideset_by_id(the_id)){
-	std::stringstream ss;
-	ss << "Sideset ids may not be reused " << the_id;
-	token_stream->Semantics_Error(ss.str());   
+      PG_BC_Specification * the_ss = Inline_Mesh_Desc::im_static_storage->getSideset_by_id(the_id);
+      if(the_ss){
+	the_ss->addEntry(the_loc,false,0);
+      }
+      else{
+	PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
+	Inline_Mesh_Desc::im_static_storage->sideset_list.push_back(bcs);
       }
       
-      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,false,0);
-
-      Inline_Mesh_Desc::im_static_storage->sideset_list.push_back(bcs);
+ 
       break;}
     case P_BLOCK_SIDESET:{
       const char* type_token;
@@ -938,14 +940,15 @@ Token Parse_Inline_Mesh_Tok(Token_Stream *token_stream, int value)
 	}
       }
 
-      if(Inline_Mesh_Desc::im_static_storage->getSideset_by_id(the_id)){
-	std::stringstream ss;
-	ss << "Sideset ids may not be reused " << the_id;
-	token_stream->Semantics_Error(ss.str());   
-      }
-      PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
+      PG_BC_Specification * the_ss = Inline_Mesh_Desc::im_static_storage->getSideset_by_id(the_id);
 
-      Inline_Mesh_Desc::im_static_storage->sideset_list.push_back(bcs);
+      if(the_ss){
+	the_ss->addEntry(the_loc,true,the_block);
+      }
+      else{
+	PG_BC_Specification * bcs = new PG_BC_Specification(the_id,the_loc,true,the_block);
+	Inline_Mesh_Desc::im_static_storage->sideset_list.push_back(bcs);
+      }
       break;}
     default:{
       std::stringstream ss;
