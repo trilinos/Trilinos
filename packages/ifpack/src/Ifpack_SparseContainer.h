@@ -343,16 +343,16 @@ Ifpack_SparseContainer(const Ifpack_SparseContainer<T>& rhs) :
   SerialComm_ = Teuchos::rcp( new Epetra_SerialComm );
 #endif
 
-  if (rhs.Map())
+  if (!rhs.Map().is_null())
     Map_ = Teuchos::rcp( new Epetra_Map(*rhs.Map()) );
 
-  if (rhs.Matrix())
+  if (!rhs.Matrix().is_null())
     Matrix_ = Teuchos::rcp( new Epetra_CrsMatrix(*rhs.Matrix()) );
 
-  if (rhs.LHS())
+  if (!rhs.LHS().is_null())
     LHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.LHS()) );
 
-  if (rhs.RHS())
+  if (!rhs.RHS().is_null())
     RHS_ = Teuchos::rcp( new Epetra_MultiVector(*rhs.RHS()) );
 
 }
