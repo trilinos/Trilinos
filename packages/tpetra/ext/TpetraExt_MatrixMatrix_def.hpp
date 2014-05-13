@@ -997,14 +997,12 @@ void mult_AT_B_newmatrix(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T exportAndFillComplete")));
 #endif
-
-  // FIXME: The actual exportAndFillCompleteCrsMatrix function does not support combining entries.
-  // This needs to be fixed and this code needs to be replaced.
-  if(needs_final_export) {
-    C.doExport(*Ctemp,*Ctemp->getGraph()->getExporter(),Tpetra::ADD);
-    C.fillComplete(B.getDomainMap(),A.getDomainMap());
-  }
-
+  
+  Teuchos::RCP<Tpetra::CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> > Crcp(&C,false);
+  if(needs_final_export) 
+    Ctemp->exportAndFillComplete(Crcp,*Ctemp->getGraph()->getExporter(),
+				 B.getDomainMap(),A.getDomainMap());
+  
 #ifdef COMPUTE_MMM_STATISTICS
   printMultiplicationStatistics(Ctemp->getGraph()->getExporter(),std::string("AT_B MMM"));
 #endif
