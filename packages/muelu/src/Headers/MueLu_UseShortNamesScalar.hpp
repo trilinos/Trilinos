@@ -130,6 +130,10 @@ typedef MueLu::HierarchyFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatO
 typedef MueLu::Ifpack2Smoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Ifpack2Smoother;
 #endif
 
+#ifdef MUELU_INDEFBLOCKEDDIAGONALSMOOTHER_SHORT
+typedef MueLu::IndefBlockedDiagonalSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> IndefBlockedDiagonalSmoother;
+#endif
+
 #ifdef MUELU_LOCALPERMUTATIONSTRATEGY_SHORT
 typedef MueLu::LocalPermutationStrategy<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> LocalPermutationStrategy;
 #endif
@@ -317,4 +321,8 @@ typedef MueLu::UserPFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> 
 #ifdef MUELU_UTILITIES_SHORT
 typedef MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils;
 typedef MueLu::Utils2<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> Utils2;
+#endif
+
+#ifdef MUELU_UZAWASMOOTHER_SHORT
+typedef MueLu::UzawaSmoother<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> UzawaSmoother;
 #endif

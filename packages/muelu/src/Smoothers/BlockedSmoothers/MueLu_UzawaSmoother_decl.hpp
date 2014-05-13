@@ -44,14 +44,14 @@
 //
 // @HEADER
 /*
- * MueLu_SimpleSmoother_decl.hpp
+ * MueLu_UzawaSmoother_decl.hpp
  *
- *  Created on: 19.03.2013
+ *  Created on: 13 May 2014
  *      Author: wiesner
  */
 
-#ifndef MUELU_SIMPLESMOOTHER_DECL_HPP_
-#define MUELU_SIMPLESMOOTHER_DECL_HPP_
+#ifndef MUELU_UZAWASMOOTHER_DECL_HPP_
+#define MUELU_UZAWASMOOTHER_DECL_HPP_
 
 
 #include "MueLu_ConfigDefs.hpp"
@@ -65,7 +65,7 @@
 #include <Xpetra_Matrix_fwd.hpp>
 
 //MueLu
-#include "MueLu_SimpleSmoother_fwd.hpp"
+#include "MueLu_UzawaSmoother_fwd.hpp"
 #include "MueLu_SmootherPrototype.hpp"
 #include "MueLu_FactoryBase_fwd.hpp"
 #include "MueLu_FactoryManagerBase_fwd.hpp"
@@ -81,17 +81,17 @@
 namespace MueLu {
 
   /*!
-    @class SimpleSmoother
-    @brief SIMPLE smoother for 2x2 block matrices
+    @class UzawaSmoother
+    @brief Block triangle Uzawa smoother for 2x2 block matrices
 
   */
 
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps> //TODO: or BlockSparseOp ?
-  class SimpleSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
+  class UzawaSmoother : public SmootherPrototype<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>
   {
     typedef Xpetra::MapExtractor<Scalar, LocalOrdinal, GlobalOrdinal, Node> MapExtractorClass;
 
-#undef MUELU_SIMPLESMOOTHER_SHORT
+#undef MUELU_UZAWASMOOTHER_SHORT
 #include "MueLu_UseShortNames.hpp"
 
   public:
@@ -101,10 +101,10 @@ namespace MueLu {
 
     /*! @brief Constructor
     */
-    SimpleSmoother();
+    UzawaSmoother();
 
     //! Destructor
-    virtual ~SimpleSmoother();
+    virtual ~UzawaSmoother();
     //@}
 
     //! Input
@@ -171,10 +171,10 @@ namespace MueLu {
 
     //! matrices
     Teuchos::RCP<Vector>                  diagFinv_;                      //!< inverse diagonal of fluid operator (vector).
-    Teuchos::RCP<Matrix>                F_;                             //!< fluid operator
-    Teuchos::RCP<Matrix>                G_;                             //!< pressure gradient operator
-    Teuchos::RCP<Matrix>                D_;                             //!< divergence operator
-    Teuchos::RCP<Matrix>                Z_;                             //!< pressure stabilization term or null block
+    Teuchos::RCP<Matrix>                  F_;                             //!< fluid operator
+    Teuchos::RCP<Matrix>                  G_;                             //!< pressure gradient operator
+    Teuchos::RCP<Matrix>                  D_;                             //!< divergence operator
+    Teuchos::RCP<Matrix>                  Z_;                             //!< pressure stabilization term or null block
 
     Teuchos::RCP<SmootherBase>            velPredictSmoo_;              //!< smoother for velocity prediction
     Teuchos::RCP<SmootherBase>            schurCompSmoo_;               //!< smoother for SchurComplement equation
@@ -187,10 +187,10 @@ namespace MueLu {
      */
     std::vector<Teuchos::RCP<const FactoryManagerBase> > FactManager_;
 
-  }; // class Amesos2Smoother
+  }; // class UzawaSmoother
 
 } // namespace MueLu
 
-#define MUELU_SIMPLESMOOTHER_SHORT
+#define MUELU_UZAWASMOOTHER_SHORT
 
-#endif /* MUELU_SIMPLESMOOTHER_DECL_HPP_ */
+#endif /* MUELU_UZAWASMOOTHER_DECL_HPP_ */
