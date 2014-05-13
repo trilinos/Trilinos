@@ -1066,7 +1066,7 @@ protected:
 
 	/*! \brief creates and returns the subcommunicator for the processor group.
 	 */
-	RCP<Comm<int> > create_subCommunicatior(){
+	RCP<Comm<int> > create_subCommunicator(){
 		int procDim = this->proc_task_comm->proc_coord_dim;
 		int taskDim = this->proc_task_comm->task_coord_dim;
 
@@ -1094,7 +1094,7 @@ protected:
 		}
 		int myGroupSize = myGroupEnd - myGroupBegin;
 
-		int *myGroup = allocMemory<int>(myGroupSize);
+		part_t *myGroup = allocMemory<part_t>(myGroupSize);
 		for (int i = 0; i < myGroupSize; ++i){
 			myGroup[i] = myGroupBegin + i;
 		}
@@ -1103,7 +1103,7 @@ protected:
 		ArrayView<const part_t> myGroupView(myGroup, myGroupSize);
 
 		RCP<Comm<int> > subComm = this->comm->createSubcommunicator(myGroupView);
-		freeArray<int>(myGroup);
+		freeArray<part_t>(myGroup);
 		return subComm;
 	}
 
@@ -1112,7 +1112,7 @@ protected:
 	 */
 	void getBestMapping(){
 		//create the sub group.
-		RCP<Comm<int> > subComm = this->create_subCommunicatior();
+		RCP<Comm<int> > subComm = this->create_subCommunicator();
 		//calculate cost.
 		double myCost = this->proc_task_comm->getCommunicationCostMetric();
 		//cout << "me:" << this->comm->getRank() << " myCost:" << myCost << endl;
@@ -1770,7 +1770,7 @@ public:
 	 *  \param numProcs (output), the number of processor the part is assigned to.
 	 *  \param procs (output), the list of processors assigned to given part..
 	 */
-	virtual void getProcsForPart(part_t taskId, int &numProcs, int *procs) const{
+	virtual void getProcsForPart(part_t taskId, part_t &numProcs, part_t *procs) const{
 		numProcs = 1;
 		procs = this->task_to_proc.getRawPtr() + taskId;
 	}

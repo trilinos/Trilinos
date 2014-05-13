@@ -182,12 +182,14 @@ int main(int argc, char *argv[])
 
   int nWeights = 1;
 
-  int *p = new int [nvtx];
-  memset(p, 0, sizeof(int) * nvtx);
-  ArrayRCP<int> solnParts(p, 0, nvtx, true);
-
   typedef Zoltan2::XpetraCrsGraphAdapter<tgraph_t>  adapter_t;
   typedef Zoltan2::PartitioningSolution<adapter_t> soln_t;
+  typedef adapter_t::part_t part_t;
+
+  part_t *p = new part_t [nvtx];
+  memset(p, 0, sizeof(part_t) * nvtx);
+  ArrayRCP<part_t> solnParts(p, 0, nvtx, true);
+
   soln_t solution(env, comm, idMap, nWeights);
   solution.setParts(gidArray, solnParts, true);
 

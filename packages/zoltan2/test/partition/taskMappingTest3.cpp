@@ -184,11 +184,11 @@ int main(int argc, char *argv[]){
     //    cout << "Usage: " << argv[0] << " PART=partGeoParams.txt PROC=procGeoParams.txt" << endl;
     //    exit(1);
     //}
-    int numParts = 0;
+    part_t numParts = 0;
     scalar_t **partCenters = NULL;
     int coordDim = 0;
 
-    int numProcs = 0;
+    part_t numProcs = 0;
     scalar_t **procCoordinates = NULL;
     int procDim = 0;
 
@@ -227,7 +227,7 @@ int main(int argc, char *argv[]){
             task_communication_adj_ = new part_t [numParts * 6];
 
             int prevNCount = 0;
-            for (int i = 0; i < numParts; ++i) {
+            for (part_t i = 0; i < numParts; ++i) {
               int x = i % jobX;
               int y = (i / (jobX)) % jobY;
               int z = (i / (jobX)) / jobY;
@@ -265,7 +265,7 @@ int main(int argc, char *argv[]){
             for(int i = 0; i < procDim; ++i){
                 procCoordinates[i] = new scalar_t[numParts];
             }
-            int i = 0;
+            part_t i = 0;
             while(i < numProcs){
                 m >> procCoordinates[0][i] >> procCoordinates[1][i] >> procCoordinates[2][i];
                 //cout << "i:" <<i << endl;
@@ -289,19 +289,19 @@ int main(int argc, char *argv[]){
 
         */
         RCP<const Teuchos::Comm<int> > tcomm = Teuchos::DefaultComm<int>::getComm();
-        int *proc_to_task_xadj_ = new int[numProcs];
-        int *proc_to_task_adj_ = new int[numParts];
+        part_t *proc_to_task_xadj_ = new part_t[numProcs];
+        part_t *proc_to_task_adj_ = new part_t[numParts];
 /*
         cout << "procDim:" << procDim <<
                 " numProcs:" << numProcs <<
                 " coordDim:" << coordDim <<
                 " numParts" << numParts << endl;
 
-        for(int j = 0; j < numProcs; ++j){
+        for(part_t j = 0; j < numProcs; ++j){
             cout << "proc - coord:" << j << " " << procCoordinates[0][j]<< " " << procCoordinates[1][j]<< " " << procCoordinates[2][j] << endl;
         }
 
-        for(int j = 0; j < numParts; ++j){
+        for(part_t j = 0; j < numParts; ++j){
             cout << "part - coord:" << j << " " << partCenters[0][j]<< " " << partCenters[1][j]<< " " << partCenters[2][j] << endl;
         }
 */
@@ -311,15 +311,15 @@ int main(int argc, char *argv[]){
         partArray[1] = 4;
         partArray[2] = 16;
         */
-        int *partArray = NULL;
+        part_t *partArray = NULL;
         int partArraysize = -1;
-        int hopper[3];
+        part_t hopper[3];
         hopper[0] = 17;
         hopper[1] = 8;
         hopper[2] = 24;
-        int *machineDimensions = NULL;
+        part_t *machineDimensions = NULL;
         //machineDimensions = hopper;
-        Zoltan2::coordinateTaskMapperInterface<int, scalar_t, scalar_t>(
+        Zoltan2::coordinateTaskMapperInterface<part_t, scalar_t, scalar_t>(
                 tcomm,
                 procDim,
                 numProcs,

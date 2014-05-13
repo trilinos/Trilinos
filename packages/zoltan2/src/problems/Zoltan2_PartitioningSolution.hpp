@@ -612,7 +612,7 @@ public:
    * parts, it's possible that a part will be divided across more than
    * one process.
    */
-  void getProcsForPart(part_t partId, int &procMin, int &procMax) const
+  void getProcsForPart(part_t partId, part_t &procMin, part_t &procMax) const
   {
     env_->localInputAssertion(__FILE__, __LINE__, "invalid part id",
       partId >= 0 && partId < nGlobalParts_, BASIC_ASSERTION);
@@ -1926,7 +1926,7 @@ template <typename Adapter>
       throw(std::bad_alloc());
     }
 
-    int *procArray = &procDist_[0];
+    part_t *procArray = &procDist_[0];
 
     try{
       part_t tmp = part_t(numLocalParts);
@@ -1983,7 +1983,7 @@ template <typename Adapter>
         throw(std::bad_alloc());
       }
 
-      int *procArray = &procDist_[0];
+      part_t *procArray = &procDist_[0];
 
       double each = floor(fParts / fProcs);
       double extra = fmod(fParts, fProcs);

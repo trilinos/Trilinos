@@ -157,7 +157,7 @@ public:
    */
   // TODO:  KDDKDD Arguments should be count and array, not min and max.
   // TODO:  KDDKDD Could require O(nGlobalParts) storage
-  virtual void getProcsForPart(part_t partId, int &numProcs, int *procs) const = 0;
+  virtual void getProcsForPart(part_t partId, part_t &numProcs, part_t *procs) const = 0;
 
 private:
 };

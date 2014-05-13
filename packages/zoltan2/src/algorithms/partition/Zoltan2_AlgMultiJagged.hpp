@@ -382,7 +382,7 @@ private:
 
     //get mj specific parameters.
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
-    int max_concurrent_part_calculation; // how many parts we can calculate concurrently.
+    mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
 
     int mj_run_as_rcb; //if this is set, then recursion depth is adjusted to its maximum value.
     int mj_user_recursion_depth; //the recursion depth value provided by user.
@@ -3929,7 +3929,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
 
 
     //Allocate memory for sorting data structure.
-    uSortItem<mj_part_t, mj_lno_t> * sort_item_num_part_points_in_procs = allocMemory <uSortItem<mj_part_t, mj_part_t> > (num_procs);
+    uSortItem<mj_part_t, mj_gno_t> * sort_item_num_part_points_in_procs = allocMemory <uSortItem<mj_part_t, mj_gno_t> > (num_procs);
     for(mj_part_t i = 0; i < num_parts; ++i){
         //the algorithm tries to minimize the cost of migration,
     	//by assigning the processors with highest number of coordinates on that part.
@@ -3950,7 +3950,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
     		}
     	}
         //sort the processors in the part.
-        uqsort<mj_part_t, mj_part_t>(num_procs, sort_item_num_part_points_in_procs);
+        uqsort<mj_part_t, mj_gno_t>(num_procs, sort_item_num_part_points_in_procs);
 
         mj_part_t required_proc_count =  num_procs_assigned_to_each_part[i];
         mj_gno_t total_num_points_in_part = global_num_points_in_parts[i];
@@ -3983,7 +3983,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
         }
         if(did_change_sign){
             //resort the processors in the part for the rest of the processors that is not assigned.
-            uqsort<mj_part_t, mj_part_t>(num_procs - required_proc_count, sort_item_num_part_points_in_procs);
+            uqsort<mj_part_t, mj_gno_t>(num_procs - required_proc_count, sort_item_num_part_points_in_procs);
         }
 
         //check if this processors is one of the procs assigned to this part.
@@ -4105,7 +4105,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_assign_proc_to_parts(
     freeArray<mj_part_t>(part_assignment_proc_begin_indices);
     freeArray<mj_part_t>(processor_chains_in_parts);
     freeArray<mj_part_t>(processor_part_assignments);
-    freeArray<uSortItem<mj_part_t, mj_part_t> > (sort_item_num_part_points_in_procs);
+    freeArray<uSortItem<mj_part_t, mj_gno_t> > (sort_item_num_part_points_in_procs);
     freeArray<mj_part_t > (num_procs_assigned_to_each_part);
 
 }
@@ -4500,7 +4500,7 @@ void AlgMJ<mj_scalar_t, mj_lno_t, mj_gno_t, mj_part_t>::mj_migrate_coords(
 	//if num procs is less than num parts,
 	//we need the part assigment arrays as well, since
 	//there will be multiple parts in processor.
-	mj_part_t *new_parts = allocMemory<int>(num_incoming_gnos);
+	mj_part_t *new_parts = allocMemory<mj_part_t>(num_incoming_gnos);
 	if(num_procs < num_parts){
 		message_tag++;
 		ierr = Zoltan_Comm_Do(
@@ -5992,7 +5992,7 @@ private:
     mj_scalar_t **mj_part_sizes; //target part weight sizes.
 
     bool distribute_points_on_cut_lines; //if partitioning can distribute points on same coordiante to different parts.
-    int max_concurrent_part_calculation; // how many parts we can calculate concurrently.
+    mj_part_t max_concurrent_part_calculation; // how many parts we can calculate concurrently.
     int check_migrate_avoid_migration_option; //whether to migrate=1, avoid migrate=2, or leave decision to MJ=0
     mj_scalar_t minimum_migration_imbalance; //when MJ decides whether to migrate, the minimum imbalance for migration.
     int mj_keep_part_boxes; //if the boxes need to be kept.

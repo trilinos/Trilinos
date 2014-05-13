@@ -66,7 +66,12 @@ namespace Zoltan2{
 
 typedef int default_lno_t;
 
-typedef int default_part_t;  // Default part number type
+typedef int default_part_t;  // Default part number type.
+                             // Restrictions in MPI interface will make it
+                             // somewhat difficult to change default_part_t to
+                             // long long, since we use part_t for ranks
+                             // and we sometimes broadcast arrays whose
+                             // size has type part_t.
 
 #ifdef HAVE_ZOLTAN2_INST_FLOAT_INT_LONG
 typedef float default_scalar_t;
