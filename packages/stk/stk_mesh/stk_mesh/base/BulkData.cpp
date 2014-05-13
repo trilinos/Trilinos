@@ -355,9 +355,11 @@ void BulkData::gather_and_print_mesh_partitioning() const
     }
 
     if (phase == 0) { //allocation phase
+      BABBLE_STK_PARALLEL_COMM(world, "          gather_and_print_mesh_partitioning calling allocate_buffers");
       comm_all.allocate_buffers( m_parallel_size / 4 );
     }
     else { // communication phase
+      BABBLE_STK_PARALLEL_COMM(world, "          gather_and_pring_mesh_partitioning calling allocate_buffers");
       comm_all.communicate();
     }
   }
@@ -2105,10 +2107,12 @@ bool comm_mesh_verify_parallel_consistency(
 
     pack_owned_verify( all , M );
 
+    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling allocate_buffers");
     all.allocate_buffers( all.parallel_size() / 4 );
 
     pack_owned_verify( all , M );
 
+    BABBLE_STK_PARALLEL_COMM(M.parallel(), "          comm_mesh_verify_parallel_consistency calling communicate");
     all.communicate();
 
     result = unpack_not_owned_verify( all , M , error_log );
@@ -3112,9 +3116,11 @@ void generate_parallel_change( const BulkData & mesh ,
       }
     }
     if (phase == 0) { // allocation phase
+      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling allocate_buffers");
       comm.allocate_buffers( p_size / 4 , 0 );
     }
     else { // communication phase
+      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          generate_parallel_change calling communicate");
       comm.communicate();
     }
   }
@@ -3292,6 +3298,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       }
     }
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          change_entity_owner calling allocate_buffers");
     comm.allocate_buffers( p_size / 4 );
 
     for ( std::set<EntityProc,EntityLess>::iterator
@@ -3302,6 +3309,7 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
       pack_field_values(*this, buffer , entity );
     }
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          change_entity_owner calling communicate");
     comm.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
@@ -3579,6 +3587,8 @@ void BulkData::internal_change_ghosting(
 {
   Trace_("stk::mesh::BulkData::internal_change_ghosting");
 
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_change_ghosting");
+
   const MetaData & meta = m_mesh_meta_data ;
   const unsigned rank_count = meta.entity_rank_count();
   const int p_size = m_parallel_size ;
@@ -3748,9 +3758,11 @@ void BulkData::internal_change_ghosting(
       }
 
       if (phase == 0) {
+        BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "          internal_change_ghosting calling allocate_buffers");
         comm.allocate_buffers( p_size / 4 );
       }
       else {
+        BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "          internal_change_ghosting calling communicate");
         comm.communicate();
       }
     }
@@ -3848,6 +3860,8 @@ void BulkData::internal_change_ghosting(
   }
 
   ghosts.m_sync_count = m_sync_count ;
+
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine,"    exiting internal_change_ghosting");
 }
 
 //----------------------------------------------------------------------
@@ -3908,9 +3922,11 @@ void comm_recv_to_send(
       all.send_buffer( owner ).pack<EntityKey>( key );
     }
     if (phase == 0) { //allocation phase
+      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling allocate_buffers");
       all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
     }
     else { //communication phase
+      BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_recv_to_send calling communicate");
       all.communicate();
     }
   }
@@ -3949,6 +3965,7 @@ void comm_sync_send_recv(
     }
   }
 
+  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_sync_send_recv calling allocate_buffers");
   all.allocate_buffers( parallel_size / 4 , false /* Not symmetric */ );
 
   // Communication packing (with message content comments):
@@ -3982,6 +3999,7 @@ void comm_sync_send_recv(
     }
   }
 
+  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          comm_sync_send_recv calling communicate");
   all.communicate();
 
   // Communication unpacking:
@@ -4069,6 +4087,7 @@ void insert_upward_relations(const BulkData& bulk_data, Entity rel_entity,
 void BulkData::internal_regenerate_shared_aura()
 {
   Trace_("stk::mesh::BulkData::internal_regenerate_shared_aura");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_regenerate_shared_aura");
 
   require_ok_to_modify();
 
@@ -4117,6 +4136,9 @@ void BulkData::internal_regenerate_shared_aura()
   // Add new aura, remove all of the old aura.
   // The change_ghosting figures out what to actually delete and add.
   internal_change_ghosting( shared_aura() , send , std::vector<EntityKey>(), true /*full regen*/ );
+
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  exiting internal_regenerate_shared_aura");
+
 }
 
 
@@ -4210,6 +4232,7 @@ void communicate_entity_modification( const BulkData & mesh ,
                                       const bool shared ,
                                       std::vector<EntityParallelState > & data )
 {
+  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "      entered communicate_entity_modification");
   CommAll comm( mesh.parallel() );
   const int p_size = comm.parallel_size();
 
@@ -4217,6 +4240,7 @@ void communicate_entity_modification( const BulkData & mesh ,
   const bool local_mod = pack_entity_modification( mesh , shared , comm );
 
   // Allocation of send and receive buffers:
+  BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          communicate_entity_modification calling allocate_buffers")
   const bool global_mod =
     comm.allocate_buffers( comm.parallel_size() / 4 , false , local_mod );
 
@@ -4226,6 +4250,7 @@ void communicate_entity_modification( const BulkData & mesh ,
     // Packing send buffers:
     pack_entity_modification( mesh , shared , comm );
 
+    BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "          communicate_entity_modification calling communicate")
     comm.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
@@ -4248,6 +4273,8 @@ void communicate_entity_modification( const BulkData & mesh ,
   }
 
   std::sort( data.begin() , data.end() );
+
+  // BABBLE_STK_PARALLEL_COMM(mesh.parallel(), "     exiting communicate_entity_modification");
 }
 
 }
@@ -4265,6 +4292,7 @@ void BulkData::internal_update_distributed_index(
   std::vector<Entity> & shared_new )
 {
   Trace_("stk::mesh::BulkData::internal_update_distributed_index");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      entered internal_update_distributed_index");
 
   parallel::DistributedIndex::KeyTypeVector
     local_created_or_modified ; // only store locally owned/shared entities
@@ -4345,6 +4373,7 @@ void BulkData::internal_update_distributed_index(
       }
     }
   }
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      exiting internal_update_distributed_index");
 }
 
 //----------------------------------------------------------------------
@@ -4429,6 +4458,7 @@ void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 void BulkData::internal_resolve_shared_modify_delete()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_shared_modify_delete");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_shared_modify_delete");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -4540,6 +4570,8 @@ void BulkData::internal_resolve_shared_modify_delete()
       entity_comm_erase( i->key, *m_ghosting[0] );
     }
   }
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  exiting internal_resolve_shared_modify_delete");
+
 }
 
 
@@ -4555,6 +4587,8 @@ void BulkData::internal_resolve_shared_modify_delete()
 void BulkData::internal_resolve_ghosted_modify_delete()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_ghosted_modify_delete");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_ghosted_modify_delete");
+
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   // Resolve modifications for ghosted entities:
@@ -4655,6 +4689,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 
   std::vector< int > ghosting_change_flags_global( ghosting_count , 0 );
 
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      internal_resolve_ghosted_modify_delete calling all_reduce_sum");
   all_reduce_sum( m_parallel_machine ,
                   & ghosting_change_flags[0] ,
                   & ghosting_change_flags_global[0] ,
@@ -4665,6 +4700,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
       m_ghosting[ic]->m_sync_count = m_sync_count ;
     }
   }
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  exiting internal_resolve_ghosted_modify_delete");
 }
 
 //----------------------------------------------------------------------
@@ -4676,6 +4712,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 void BulkData::internal_resolve_parallel_create()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -4706,9 +4743,11 @@ void BulkData::internal_resolve_parallel_create()
     }
 
     if (phase == 0) { //allocation phase
+      BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      calling allocate_buffers from internal_resolve_parallel_create");
       comm_all.allocate_buffers( m_parallel_size / 4 );
     }
     else { // communication phase
+      BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "      calling communicate from internal_resolve_parallel_create");
       comm_all.communicate();
     }
   }
@@ -4827,6 +4866,8 @@ void BulkData::internal_resolve_parallel_create()
 
     internal_sync_comm_list_owners();
   }
+
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  exiting internal_resolve_parallel_create");
 }
 
 //----------------------------------------------------------------------
@@ -5253,6 +5294,7 @@ void pack_part_memberships( BulkData& meshbulk, CommAll & comm ,
 void BulkData::internal_resolve_shared_membership()
 {
   Trace_("stk::mesh::BulkData::internal_resolve_shared_membership");
+  BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  entered internal_resolve_shared_membership");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -5291,10 +5333,12 @@ void BulkData::internal_resolve_shared_membership()
 
     pack_induced_memberships( *this, comm , m_entity_comm_list );
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling allocate_buffers");
     comm.allocate_buffers( p_size / 4 );
 
     pack_induced_memberships( *this, comm , m_entity_comm_list );
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling communicate");
     comm.communicate();
 
     OrdinalVector empty , induced_parts , current_parts , remove_parts ;
@@ -5374,10 +5418,12 @@ void BulkData::internal_resolve_shared_membership()
 
     pack_part_memberships( *this, comm , send_list );
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling allocate_buffers");
     comm.allocate_buffers( p_size / 4 );
 
     pack_part_memberships( *this, comm , send_list );
 
+    BABBLE_STK_PARALLEL_COMM(p_comm, "          internal_resolve_shared_membership calling communicate");
     comm.communicate();
 
     for ( int p = 0 ; p < p_size ; ++p ) {
@@ -5416,6 +5462,7 @@ void BulkData::internal_resolve_shared_membership()
       }
     }
   }
+  // BABBLE_STK_PARALLEL_COMM(m_parallel_machine, "  exiting internal_resolve_shared_membership");
 }
 
 void BulkData::internal_update_fast_comm_maps()
@@ -5871,16 +5918,16 @@ void BulkData::internal_propagate_part_changes(
         }
 
 
-	PartVector addParts, delParts, emptyParts;
+        PartVector addParts, delParts, emptyParts;
 
-	addParts.reserve(to_add.size());
-	for(unsigned ipart=0; ipart<to_add.size(); ++ipart) {
-	  addParts.push_back(&m_mesh_meta_data.get_part(to_add[ipart]));
-	}
-	delParts.reserve(to_del.size());
-	for(unsigned ipart=0; ipart<to_del.size(); ++ipart) {
-	  delParts.push_back(&m_mesh_meta_data.get_part(to_del[ipart]));
-	}
+        addParts.reserve(to_add.size());
+        for(unsigned ipart=0; ipart<to_add.size(); ++ipart) {
+          addParts.push_back(&m_mesh_meta_data.get_part(to_add[ipart]));
+        }
+        delParts.reserve(to_del.size());
+        for(unsigned ipart=0; ipart<to_del.size(); ++ipart) {
+          delParts.push_back(&m_mesh_meta_data.get_part(to_del[ipart]));
+        }
 
 
 
