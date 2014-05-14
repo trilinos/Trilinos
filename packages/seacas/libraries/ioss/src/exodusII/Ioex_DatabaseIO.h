@@ -414,6 +414,12 @@ namespace Ioex {
       mutable std::vector<std::vector<bool> > blockAdjacency;
       mutable std::vector<unsigned char> nodeConnectivityStatus;
 
+      // For a database with omitted blocks, this map contains the indices of the
+      // active nodes for each nodeset.  If the nodeset is not reduced in size,
+      // the map's vector will be empty for that nodeset. If the vector is not
+      // empty, then some nodes on that nodeset are only connected to omitted elements.
+      mutable std::map<std::string, Int64Vector> activeNodesetNodesIndex;
+	
       time_t timeLastFlush;
 
       mutable bool fileExists; // False if file has never been opened/created
