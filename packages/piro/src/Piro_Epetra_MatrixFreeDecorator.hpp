@@ -147,7 +147,7 @@ class MatrixFreeOperator
   ~MatrixFreeOperator();
 
   //!  Method to save base solution and residual
-  void setBase(const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
+  void setBase(const EpetraExt::ModelEvaluator::InArgs & modelInArgs_,
                Teuchos::RCP<Epetra_Vector> fBase,
                const bool haveXdot_, const bool haveXdotdot_);
 

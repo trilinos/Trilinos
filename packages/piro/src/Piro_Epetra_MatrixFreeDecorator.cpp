@@ -278,7 +278,7 @@ Piro::Epetra::MatrixFreeOperator::MatrixFreeOperator(
 }
 
 void Piro::Epetra::MatrixFreeOperator::setBase(
-             const EpetraExt::ModelEvaluator::InArgs modelInArgs_,
+             const EpetraExt::ModelEvaluator::InArgs & modelInArgs_,
              Teuchos::RCP<Epetra_Vector> fBase_,
              const bool haveXdot_, const bool haveXdotdot_)
 {
