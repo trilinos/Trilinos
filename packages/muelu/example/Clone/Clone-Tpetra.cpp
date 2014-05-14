@@ -295,7 +295,7 @@ int main(int argc, char *argv[]) {
   if (amgAsSolver) {
 
     H->IsPreconditioner(false);
-    H->Iterate(*B, 25, *X);
+    H->Iterate(*B, *X, 25);
 
   } else if (amgAsPrecond) {
 

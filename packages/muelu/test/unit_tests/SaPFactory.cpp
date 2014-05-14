@@ -271,7 +271,7 @@ namespace MueLuTests {
             {
               X->putScalar( (SC) 0.0);
 
-              H->Iterate(*RHS,its,*X);
+              H->Iterate(*RHS,*X,its);
 
               X->norm2(norms);
               if (comm->getRank() == 0)

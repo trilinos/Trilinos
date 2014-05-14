@@ -93,7 +93,7 @@ Listing \ref{amgassolver} demonstrates how to do $25$ sweeps with the previously
 \begin{center} 
 \begin{lstlisting}[language=C++,label=listing:AmgAsSolver]
 H->IsPreconditioner(false);
-H->Iterate(*B, 25, *X);
+H->Iterate(*B, *X, 25);
 \end{lstlisting}
 \caption{Use AMG as solver.} 
 \label{listing:amgassolver}

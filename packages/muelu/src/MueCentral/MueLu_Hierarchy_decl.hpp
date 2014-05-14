@@ -220,7 +220,7 @@ namespace MueLu {
       @param InitialGuessIsZero Indicates whether the initial guess is zero
       @param Cycle Supports VCYCLE and WCYCLE types.
     */
-    void Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+    void Iterate(const MultiVector& B, MultiVector& X, LO nIts = 1,
                  bool InitialGuessIsZero = false, LO startLevel = 0);
 
     /*!

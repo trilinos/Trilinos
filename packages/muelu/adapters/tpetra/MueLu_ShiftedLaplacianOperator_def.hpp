@@ -123,7 +123,7 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
 
   try {
     tY.putScalar(0.0);
-    Hierarchy_->Iterate(tX, cycles_, tY, true);
+    Hierarchy_->Iterate(tX, tY, cycles_, true);
   }
 
   catch(std::exception& e) {
@@ -151,7 +151,7 @@ void ShiftedLaplacianOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps
   }
 
   try {
-    Hierarchy_->Iterate(tX, 1, tY, false);
+    Hierarchy_->Iterate(tX, tY, 1, false);
   }
 
   catch(std::exception& e) {

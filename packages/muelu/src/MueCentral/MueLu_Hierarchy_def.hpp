@@ -401,7 +401,7 @@ namespace MueLu {
   // ---------------------------------------- Iterate -------------------------------------------------------
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const MultiVector& B, LO nIts, MultiVector& X, //TODO: move parameter nIts and default value = 1
+  void Hierarchy<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::Iterate(const MultiVector& B, MultiVector& X, LO nIts,
                                                                                   bool InitialGuessIsZero, LO startLevel) {
     // These timers work as follows. "iterateTime" records total time spent in
     // iterate. "levelTime" records time on a per level basis. The label is
@@ -560,10 +560,10 @@ namespace MueLu {
           {
             iterateLevelTime = Teuchos::null; // stop timing this level
 
-            Iterate(*coarseRhs, 1, *coarseX, true, startLevel+1);
+            Iterate(*coarseRhs, *coarseX, 1, true, startLevel+1);
             // ^^ zero initial guess
             if (Cycle_ == WCYCLE)
-              Iterate(*coarseRhs, 1, *coarseX, false, startLevel+1);
+              Iterate(*coarseRhs, *coarseX, 1, false, startLevel+1);
             // ^^ nonzero initial guess
 
             iterateLevelTime = rcp(new TimeMonitor(*this, iterateLevelTimeLabel));  // restart timing this level

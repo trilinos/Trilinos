@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
         H->IsPreconditioner(false);
-        H->Iterate(*B, 25, *X);
+        H->Iterate(*B, *X, 25);
 
       } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS

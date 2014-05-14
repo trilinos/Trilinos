@@ -247,7 +247,7 @@ int main(int argc, char *argv[]) {
 /*
       H->IsPreconditioner(false);
       int numAMGIterations=1;
-      H->Iterate(*B, numAMGIterations, *X);
+      H->Iterate(*B, *X, numAMGIterations);
 */
     }
 

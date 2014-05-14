@@ -687,7 +687,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
 {
 
   // Set left and right hand sides for Belos
-  Hierarchy_ -> Iterate(*B, 1, *X, true, 0);
+  Hierarchy_ -> Iterate(*B, *X, 1, true, 0);
 
 }
 
@@ -702,7 +702,7 @@ void ShiftedLaplacian<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::multi
     = Teuchos::rcp( new Xpetra::TpetraMultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>(B) );
 
   // Set left and right hand sides for Belos
-  Hierarchy_ -> Iterate(*XpetraB, 1, *XpetraX, true, 0);
+  Hierarchy_ -> Iterate(*XpetraB, *XpetraX, 1, true, 0);
 
 }
 

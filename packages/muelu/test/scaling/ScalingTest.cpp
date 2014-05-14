@@ -528,7 +528,7 @@ int main(int argc, char *argv[]) {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
     H->IsPreconditioner(false);
-    H->Iterate(*B, optIts, *X);
+    H->Iterate(*B, *X, optIts);
 
   } // optFixedPt
 
