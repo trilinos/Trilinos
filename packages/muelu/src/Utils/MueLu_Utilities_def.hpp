@@ -558,32 +558,46 @@ namespace MueLu {
 
     RCP<BlockedCrsMatrix> C = rcp(new BlockedCrsMatrix(rgmapextractor, domapextractor, 33 /* TODO fix me */));
 
+    RCP<Teuchos::FancyOStream> out = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
+
     for (size_t i = 0; i < A.Rows(); ++i) { // loop over all block rows of A
       for (size_t j = 0; j < B.Cols(); ++j) { // loop over all block columns of B
-        // empty CrsMatrixWrap
-        RCP<Matrix> Cij = MatrixFactory::Build(A.getRangeMap(i), 33 /* TODO fix me */);
+        RCP<Matrix> Cij;
 
         for (size_t l = 0; l < B.Rows(); ++l) { // loop for calculating entry C_{ij}
           RCP<CrsMatrix> crmat1 = A.getMatrix(i,l);
           RCP<CrsMatrix> crmat2 = B.getMatrix(l,j);
+
+          if (crmat1.is_null() || crmat2.is_null()) {
+            continue;
+          }
+
           RCP<CrsMatrixWrap> crop1 = rcp(new CrsMatrixWrap(crmat1));
           RCP<CrsMatrixWrap> crop2 = rcp(new CrsMatrixWrap(crmat2));
 
-          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false,
-          *(Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout))));
+          RCP<Matrix> temp = MueLu::Utils<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Multiply(*crop1, false, *crop2, false, *out);
 
-          // sum up
-          MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*temp, false, 1.0, *Cij, 1.0);
+          if (Cij.is_null())
+            Cij = temp;
+          else
+            MueLu::Utils2<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::TwoMatrixAdd(*temp, false, 1.0, *Cij, 1.0);
         }
 
-        Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
+        if (!Cij.is_null())  {
+          if (Cij->isFillComplete())
+            Cij->resumeFill();
+          Cij->fillComplete(B.getDomainMap(j), A.getRangeMap(i));
 
-        RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
-        TEUCHOS_TEST_FOR_EXCEPTION( Cij==Teuchos::null, Xpetra::Exceptions::BadCast,
-                                    "MatrixFactory failed in generating a CrsMatrixWrap." );
+          RCP<CrsMatrixWrap> crsCij = Teuchos::rcp_dynamic_cast<CrsMatrixWrap>(Cij);
+          TEUCHOS_TEST_FOR_EXCEPTION(Cij.is_null(), Xpetra::Exceptions::BadCast,
+                                      "MatrixFactory failed in generating a CrsMatrixWrap." );
 
-        RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
-        C->setMatrix(i, j, crsMatCij);
+          RCP<CrsMatrix> crsMatCij = crsCij->getCrsMatrix();
+          C->setMatrix(i, j, crsMatCij);
+
+        } else {
+          C->setMatrix(i, j, Teuchos::null);
+        }
       }
     }
 
