@@ -742,6 +742,8 @@ set in this top-level ``CMakeLists.txt`` file are those that do not impact the
 list of package enables/disables.  The latter type of defaults should set in
 other files (see below).
 
+.. _${PROJECT_NAME}_TRIBITS_DIR:
+
 In this example project, a CMake cache variable
 ``${PROJECT_NAME}_TRIBITS_DIR`` must be set by the user to define where the
 base ``tribits`` source directory is located.  With this variable set
@@ -6193,6 +6195,31 @@ After that, all deprecated code is removed and the next period of incremental
 change and deprecation begins.
 
 
+Installation and Backward Compatibility Testing
+-----------------------------------------------
+
+TriBITS has some built-in support for installation testing and backward
+compatibility testing.  The way it works is that one can install the headers,
+libraries, and executables for a TriBITS project and then configure the tests
+and examples in the TriBITS project against the installed
+headers/libraries/executables.  In this mode, the TriBITS project's libraries
+and executables are **not** build and the header file locations to local
+source are not included.
+
+When the same version of the project sources are used to build the
+tests/examples against the installed headers/libraries/executables, then this
+constitutes *installation testing*.  When an older version of the project is
+used to build and run tests and examples against the
+headers/libraries/executables for a version of the project, then this
+constitutes *backward compatibility testing* which also includes installation
+testing of course.
+
+ToDo: Describe how the installation testing and backward compatibility testing
+process works with some examples.
+
+ToDo: Discuss how this fits into the TriBITS lifecycle model.
+
+
 Wrapping Externally Configured/Built Software
 ---------------------------------------------
 
@@ -6632,7 +6659,8 @@ executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
 
-.. ToDo: Edited and spell-checked up through TRIBITS_ADD_TEST() on 05/09/2014!
+.. ToDo: Edited and spell-checked all of the above extracted documentation
+.. blocks on 5/14/2014.
 
 
 General Utility Macros and Functions

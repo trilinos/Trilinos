@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -65,21 +65,21 @@ INCLUDE(TribitsProjectImpl)
 #
 # @MACRO: TRIBITS_PROJECT()
 #
-# Defines and processes a TriBITS project.
+# Processes a `TriBITS Project`_'s files and configures its software which is
+# called from the project's top-level `<projectDir>/CMakeLists.txt`_ file.
 #
 # Usage::
 #
 #   TRIBITS_PROJECT()
 #
-# Requires that the project name variable ``PROJECT_NAME`` be defined before
-# calling this macro.  Also, all default values for project settings should be
-# set before calling this (see `TriBITS Global Project Settings`_).  Also, the
-# variable ``${PROJECT_NAME}_TRIBITS_DIR`` must be set as well.
+# This macro requires that the variable `PROJECT_NAME`_ be defined before
+# calling this macro.  All default values for project settings should be set
+# before calling this macro (see `TriBITS Global Project Settings`_).  Also,
+# the variable `${PROJECT_NAME}_TRIBITS_DIR`_ must be set as well.
 #
-# This macro then adds all of the necssary paths to ``CMAKE_MODULE_PATH`` and
-# then performs all processing of the TriBITS project files (see ???).
-#
-# ToDo: Give documentation!
+# This macro then adds all of the necessary paths to ``CMAKE_MODULE_PATH`` and
+# then performs all processing of the TriBITS project files (see `Full TriBITS
+# Project Configuration`_).
 #
 MACRO(TRIBITS_PROJECT)
   TRIBITS_PROJECT_IMPL(${ARGN})
