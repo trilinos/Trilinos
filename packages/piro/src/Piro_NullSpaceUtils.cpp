@@ -129,7 +129,7 @@ MLRigidBodyModes::informML(){
 
   if (numElasticityDim > 0 ) {
 
-//    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: " 
+//    std::cout << "\nEEEEE setting ML Null Space for Elasticity-type problem of Dimension: "
 //          << numElasticityDim <<  " nodes  " << x.size() << " nullspace  " << nullSpaceDim << std::endl;
 //    std::cout << "\nIKIKIK number scalar dofs: " <<numScalar <<  ", number PDEs  " << numPDEs << std::endl;
 
@@ -152,12 +152,12 @@ MLRigidBodyModes::informML(){
 }
 
 //The following function returns the rigid body modes for elasticity problems.
-//It is a modification of the ML function ml_rbm.c, extended to the case that 
+//It is a modification of the ML function ml_rbm.c, extended to the case that
 //NscalarDof scalar PDEs are coupled to an elasticity problem
 //Extended by IK, Feb. 2012
 
-void 
-MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes, 
+void
+MLRigidBodyModes::Piro_ML_Coord2RBM(int Nnodes,
                                     double x[], double y[], double z[], double rbm[], int Ndof, int NscalarDof, int NSdim)
 {
 
