@@ -1009,12 +1009,12 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
       const Epetra_CrsGraph& graph = tempMat_->Graph();
       Epetra_CrsGraph& nonconst_graph = const_cast<Epetra_CrsGraph&>(graph);
       nonconst_graph.SetIndicesAreGlobal(true);
-
+	}
+	}
       //Now we need to call FillComplete on our temp matrix. We need to
       //pass a DomainMap and RangeMap, which are not the same as the RowMap
       //and ColMap that we constructed the matrix with.
       EPETRA_CHK_ERR(tempMat_->FillComplete(domain_map, range_map));
-    }
 
     if (exporter_ == NULL)
       exporter_ = new Epetra_Export(tempMat_->RowMap(), RowMap());
@@ -1032,8 +1032,6 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
         nonlocalCoefs_[i].resize(0);
       }
     }
-
-  }
 
   if (!save_off_and_reuse_map_exporter) {
     delete exporter_;
