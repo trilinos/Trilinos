@@ -158,7 +158,7 @@ namespace MueLu {
       subBlockPRangeMaps.push_back(rangeMap);
 
       // Use plain range map to determine the DOF ids
-      ArrayView<const GO> nodeRangeMap = subBlockP.back()->getRangeMap()->getNodeElementList(); // subBlockPRangeMaps.back()->getNodeElementList();
+      ArrayView<const GO> nodeRangeMap = rangeMap->getNodeElementList(); // subBlockPRangeMaps.back()->getNodeElementList();
       fullRangeMapVector.insert(fullRangeMapVector.end(), nodeRangeMap.begin(), nodeRangeMap.end());
       sort(fullRangeMapVector.begin(), fullRangeMapVector.end());
 
@@ -167,7 +167,7 @@ namespace MueLu {
       subBlockPDomainMaps.push_back(domainMap);
 
       // Use plain domain map to determine the DOF ids
-      ArrayView<const GO> nodeDomainMap = subBlockP.back()->getDomainMap()->getNodeElementList(); // subBlockPDomainMaps.back()->getNodeElementList();
+      ArrayView<const GO> nodeDomainMap = domainMap->getNodeElementList(); // subBlockPDomainMaps.back()->getNodeElementList();
       fullDomainMapVector.insert(fullDomainMapVector.end(), nodeDomainMap.begin(), nodeDomainMap.end());
       sort(fullDomainMapVector.begin(), fullDomainMapVector.end());
     }
@@ -241,16 +241,21 @@ namespace MueLu {
                             A->getDomainMap()->getComm());
     }
 
+
     // Build map extractors
     RCP<const MapExtractor> rangeMapExtractor  = MapExtractorFactory::Build(fullRangeMap,  subBlockPRangeMaps);
     RCP<const MapExtractor> domainMapExtractor = MapExtractorFactory::Build(fullDomainMap, subBlockPDomainMaps);
 
     RCP<BlockedCrsMatrix> P = rcp(new BlockedCrsMatrix(rangeMapExtractor, domainMapExtractor, 10));
-    for (size_t i = 0; i < subBlockPRangeMaps.size(); i++) {
-      RCP<CrsMatrixWrap> crsOpii  = rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
-      RCP<CrsMatrix>     crsMatii = crsOpii->getCrsMatrix();
-      P->setMatrix(i, i, crsMatii);
-    }
+    for (size_t i = 0; i < subBlockPRangeMaps.size(); i++)
+      for (size_t j = 0; j < subBlockPRangeMaps.size(); j++)
+        if (i == j) {
+          RCP<CrsMatrixWrap> crsOpii  = rcp_dynamic_cast<CrsMatrixWrap>(subBlockP[i]);
+          RCP<CrsMatrix>     crsMatii = crsOpii->getCrsMatrix();
+          P->setMatrix(i, i, crsMatii);
+        } else {
+          P->setMatrix(i, j, Teuchos::null);
+        }
 
     P->fillComplete();
 
