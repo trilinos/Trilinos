@@ -558,8 +558,11 @@ namespace Belos {
         return normalize (X, Teuchos::null, B);
       }
 
-      // Fix warning about hiding OrthoManager::projectAndNormalize()
-      using Belos::OrthoManager<Scalar, MV>::projectAndNormalize;
+      // Attempted fix for a warning about hiding
+      // OrthoManager::projectAndNormalize(). Unfortunately, this fix turns out
+      // to produce a compilation error with cray++, see bug #6129,
+      // <https://software.sandia.gov/bugzilla/show_bug.cgi?id=6129>.
+      //using Belos::OrthoManager<Scalar, MV>::projectAndNormalize;
 
       int
         projectAndNormalize (MV &X,
