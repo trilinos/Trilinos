@@ -46,11 +46,6 @@
 #ifndef MUELU_SAPFACTORY_DEF_HPP
 #define MUELU_SAPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 
 #include "MueLu_SaPFactory_decl.hpp"

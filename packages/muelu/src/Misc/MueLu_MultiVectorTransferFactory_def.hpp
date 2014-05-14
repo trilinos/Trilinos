@@ -46,11 +46,6 @@
 #ifndef MUELU_MULTIVECTORTRANSFER_FACTORY_DEF_HPP
 #define MUELU_MULTIVECTORTRANSFER_FACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_MultiVectorTransferFactory_decl.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 

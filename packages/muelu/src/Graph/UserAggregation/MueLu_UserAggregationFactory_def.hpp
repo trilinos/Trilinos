@@ -46,11 +46,6 @@
 #ifndef MUELU_USERAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_USERAGGREGATIONFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>

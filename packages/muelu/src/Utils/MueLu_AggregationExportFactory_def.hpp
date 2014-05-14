@@ -53,11 +53,6 @@
 #ifndef MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 #define MUELU_AGGREGATIONEXPORTFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_CrsMatrixWrap.hpp>
 
