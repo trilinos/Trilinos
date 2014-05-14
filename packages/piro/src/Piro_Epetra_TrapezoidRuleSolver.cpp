@@ -302,7 +302,10 @@ Piro::Epetra::TrapezoidRuleSolver::getValidTrapezoidRuleParameters() const
 
 Piro::Epetra::TrapezoidDecorator::TrapezoidDecorator(
                           Teuchos::RCP<EpetraExt::ModelEvaluator>& model_) :
-  model(model_)
+  model(model_),
+  fdt2(0.0),
+  tdt(0.0),
+  time(0.0)
 {
   using Teuchos::RCP;
   using Teuchos::rcp;

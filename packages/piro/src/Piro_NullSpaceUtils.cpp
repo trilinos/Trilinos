@@ -50,6 +50,7 @@ namespace Piro {
     : numPDEs(numPDEs_),
     numElasticityDim(0),
     nullSpaceDim(0),
+    numSpaceDim(0),
     numScalar(0),
     mlUsed(false)
   {
