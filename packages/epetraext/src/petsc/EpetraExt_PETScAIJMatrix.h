@@ -305,7 +305,7 @@ class Epetra_PETScAIJMatrix: public Epetra_Object, public Epetra_CompObject, pub
   //@{ 
 
   //! Print method
-  virtual void Print(ostream & os) const;
+  virtual void Print(std::ostream & os) const;
   //@}
 
   //! @name Additional methods required to support the Epetra_Operator interface
