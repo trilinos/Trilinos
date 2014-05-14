@@ -1036,6 +1036,8 @@ namespace {
   ////
   TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( MultiVector, CopyView, LO , GO , Scalar , Node )
   {
+    using std::endl;
+
     RCP<Node> node = getNode<Node>();
     typedef typename ScalarTraits<Scalar>::magnitudeType Mag;
     typedef Tpetra::MultiVector<Scalar,LO,GO,Node> MV;
@@ -1184,20 +1186,22 @@ namespace {
     }
     {
       A.randomize();
+
+      out << "Check that get1dView and get1dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<const Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
-        view = A.get1dView();
-        A.get1dCopy(copy(),numLocal);
+        TEST_NOTHROW( view = A.get1dView() );
+        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
       }
+
+      out << "Check that get1dViewNonConst and get1dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<Scalar> view;
         Array<Scalar> copy(numLocal*numVectors);
-        view = A.get1dViewNonConst();
-        A.get1dCopy(copy(),numLocal);
+        TEST_NOTHROW( view = A.get1dViewNonConst() );
+        TEST_NOTHROW( A.get1dCopy(copy(),numLocal) );
         TEST_COMPARE_FLOATING_ARRAYS(view,copy,M0);
         // clear view, ensure that A is zero
         std::fill(view.begin(), view.end(), S0);
@@ -1206,31 +1210,34 @@ namespace {
         A.norm1(norms());
         TEST_COMPARE_FLOATING_ARRAYS(norms,zeros,M0);
       }
+
       A.randomize();
+
+      out << "Check that get2dView and get2dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<ArrayRCP<const Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dView();
-        A.get2dCopy(copies());
+        TEST_NOTHROW( views = A.get2dView() );
+        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
       }
+
+      out << "Check that get2dViewNonConst and get2dCopy have the same values" << endl;
       {
-        // check that 1dView and 1dCopy have the same values
         ArrayRCP<ArrayRCP<Scalar> > views;
         Array<Scalar> copyspace(numLocal*numVectors);
         Array<ArrayView<Scalar> > copies(numVectors);
         for (size_t j=0; j < numVectors; ++j) {
           copies[j] = copyspace(numLocal*j,numLocal);
         }
-        views = A.get2dViewNonConst();
-        A.get2dCopy(copies());
+        TEST_NOTHROW( views = A.get2dViewNonConst() );
+        TEST_NOTHROW( A.get2dCopy(copies()) );
         for (size_t j=0; j < numVectors; ++j) {
           TEST_COMPARE_FLOATING_ARRAYS(views[j],copies[j],M0);
         }
