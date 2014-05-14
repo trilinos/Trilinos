@@ -397,7 +397,7 @@ namespace {
     // - the first will be over-written (by 1.0) from the source, while
     // - the second will be "combined", i.e., abs(max(1.0,3.0)) = 3.0 from the dest
     RCP<const Tpetra::Import<int,int,Node> > importer =
-      Tpetra::createImport<int>(smap,dmap);
+      Tpetra::createImport<int, int, Node> (smap, dmap);
     dstVec->doImport(*srcVec,*importer,Tpetra::ABSMAX);
     TEST_COMPARE_ARRAYS( tuple<double>(-1.0,3.0), dstVec->get1dView() )
     // All procs fail if any proc fails

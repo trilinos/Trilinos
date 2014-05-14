@@ -80,8 +80,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   void
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  init (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-        const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  init (const Teuchos::RCP<const map_type>& source,
+        const Teuchos::RCP<const map_type>& target,
         bool useRemotePIDs,
         Teuchos::Array<int> & remotePIDs,
         const Teuchos::RCP<Teuchos::ParameterList>& plist)
@@ -137,8 +137,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
+  Import (const RCP<const map_type >& source,
+          const RCP<const map_type >& target) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraImportDebugDefault)
   {
@@ -148,8 +148,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Import (const RCP<const map_type >& source,
+          const RCP<const map_type >& target,
           const RCP<Teuchos::FancyOStream>& out) :
     out_ (out),
     debug_ (tpetraImportDebugDefault)
@@ -160,8 +160,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Import (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraImportDebugDefault)
@@ -172,8 +172,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Import (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           const RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (out),
@@ -185,8 +185,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Import<LocalOrdinal,GlobalOrdinal,Node>::
-  Import (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Import (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           Teuchos::Array<int> & remotePIDs) :
     debug_ (tpetraImportDebugDefault)
   {
@@ -320,13 +320,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const typename Import<LocalOrdinal,GlobalOrdinal,Node>::map_type>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
     return ImportData_->source_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const typename Import<LocalOrdinal,GlobalOrdinal,Node>::map_type>
   Import<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
     return ImportData_->target_;
   }
@@ -429,8 +429,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const GO>::size_type size_type;
-    const Map<LO,GO,Node>& source = * (getSourceMap ());
-    const Map<LO,GO,Node>& target = * (getTargetMap ());
+    const map_type& source = * (getSourceMap ());
+    const map_type& target = * (getTargetMap ());
     ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
     ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
@@ -516,7 +516,7 @@ namespace Tpetra {
       getSourceMap ().is_null (), std::logic_error, "Tpetra::Import::"
       "setupExport: Source Map is null.  Please report this bug to the Tpetra "
       "developers.");
-    const Map<LO, GO, Node>& source = * (getSourceMap ());
+    const map_type& source = * (getSourceMap ());
 
     Teuchos::OSTab tab (out_);
 
@@ -1364,43 +1364,48 @@ namespace Tpetra {
   Import<LocalOrdinal,GlobalOrdinal,Node>::
   createRemoteOnlyImport(const Teuchos::RCP<const map_type>& remoteTarget) const
   {
-    size_t NumRemotes = getNumRemoteIDs();
-    // Sanity Check
-    if(NumRemotes != remoteTarget->getNodeNumElements())
-      throw std::runtime_error("createRemoteOnlyImporter: remoteTarget map ID count doesn't match.");
+    using Teuchos::rcp;
+    typedef Import<LocalOrdinal,GlobalOrdinal,Node> import_type;
+
+    const size_t NumRemotes = getNumRemoteIDs ();
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      NumRemotes != remoteTarget->getNodeNumElements (),
+      std::runtime_error, "Tpetra::createRemoteOnlyImport: "
+      "remoteTarget map ID count doesn't match.");
 
     // Compute the new Remote LIDs
-    Teuchos::ArrayView<const LocalOrdinal> oldRemoteLIDs = getRemoteLIDs();
-    Teuchos::Array<LocalOrdinal>           newRemoteLIDs(NumRemotes);
-    for(size_t i=0; i < NumRemotes; i++) {
-      newRemoteLIDs[i] = remoteTarget->getLocalElement(getTargetMap()->getGlobalElement(oldRemoteLIDs[i]));
-
+    Teuchos::ArrayView<const LocalOrdinal> oldRemoteLIDs = getRemoteLIDs ();
+    Teuchos::Array<LocalOrdinal> newRemoteLIDs (NumRemotes);
+    for (size_t i = 0; i < NumRemotes; ++i) {
+      newRemoteLIDs[i] = remoteTarget->getLocalElement (getTargetMap ()->getGlobalElement (oldRemoteLIDs[i]));
       // Now we make sure these guys are in sorted order (AztecOO-ML ordering)
-      if(i>0 && newRemoteLIDs[i] < newRemoteLIDs[i-1])
-        throw std::runtime_error("createRemoteOnlyImporter: this and remoteTarget order don't match.");
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        i > 0 && newRemoteLIDs[i] < newRemoteLIDs[i-1],
+        std::runtime_error, "Tpetra::createRemoteOnlyImport: "
+        "this and remoteTarget order don't match.");
     }
 
     // Copy ExportPIDs and such
-    // NOTE: Be careful: The Import constructor we use does a "swap" for most of the LID/PID lists and the Distributor, meaning it
-    // ruins the existing object if we pass things in directly.  Hence we copy them first.
-    Teuchos::Array<int> newExportPIDs(getExportPIDs());
-    Teuchos::Array<int> newExportLIDs(getExportLIDs());
+    // NOTE: Be careful: The Import constructor we use does a "swap"
+    // for most of the LID/PID lists and the Distributor, meaning it
+    // ruins the existing object if we pass things in directly.  Hence
+    // we copy them first.
+    Teuchos::Array<int> newExportPIDs (getExportPIDs ());
+    Teuchos::Array<int> newExportLIDs (getExportLIDs ());
     Teuchos::Array<LocalOrdinal> dummy;
-    Teuchos::RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > newImport;
-    Distributor newDistor(getDistributor());
+    Distributor newDistor (getDistributor ());
 
-    newImport = Teuchos::rcp(new Import<LocalOrdinal,GlobalOrdinal,Node>(getSourceMap(),remoteTarget,
-                                                                         Teuchos::as<size_t>(0),
-                                                                         dummy,
-                                                                         dummy,
-                                                                         newRemoteLIDs,
-                                                                         newExportLIDs,
-                                                                         newExportPIDs,
-                                                                         newDistor));
-    return newImport;
+    return rcp (new import_type (getSourceMap (), remoteTarget,
+                                 static_cast<size_t> (0), dummy, dummy,
+                                 newRemoteLIDs, newExportLIDs,
+                                 newExportPIDs, newDistor));
   }
 
 } // namespace Tpetra
+
+#define TPETRA_IMPORT_CLASS_INSTANT(LO, GO, NODE) \
+  \
+  template class Import< LO , GO , NODE >;
 
 // Explicit instantiation macro.
 // Only invoke this when in the Tpetra namespace.
@@ -1410,7 +1415,6 @@ namespace Tpetra {
 // GO: The global ordinal type.
 // NODE: The Kokkos Node type.
 #define TPETRA_IMPORT_INSTANT(LO, GO, NODE) \
-  \
-  template class Import< LO , GO , NODE >;
+  TPETRA_IMPORT_CLASS_INSTANT(LO, GO, NODE)
 
 #endif // TPETRA_IMPORT_DEF_HPP
