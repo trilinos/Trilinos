@@ -1897,10 +1897,9 @@ namespace Tpetra {
     /// put that function's implementation inside the CrsMatrix class,
     /// so that we don't have to put much code in the _decl header
     /// file.
-    template<class TransferType>
     void
     transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
-                             const TransferType& rowTransfer,
+                             const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, node_type>& rowTransfer,
                              const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                              const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                              const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const

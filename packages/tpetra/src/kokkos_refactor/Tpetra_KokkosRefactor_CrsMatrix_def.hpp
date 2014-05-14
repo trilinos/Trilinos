@@ -5534,9 +5534,7 @@ namespace Tpetra {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    typedef Import<LocalOrdinal, GlobalOrdinal, node_type> import_type;
-    return transferAndFillComplete<import_type> (destMatrix, importer,
-                                                 domainMap, rangeMap, params);
+    transferAndFillComplete (destMatrix, importer, domainMap, rangeMap, params);
   }
 
 
@@ -5551,9 +5549,7 @@ namespace Tpetra {
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    typedef Export<LocalOrdinal, GlobalOrdinal, node_type> export_type;
-    return transferAndFillComplete<export_type> (destMatrix, exporter,
-                                                 domainMap, rangeMap, params);
+    transferAndFillComplete (destMatrix, exporter, domainMap, rangeMap, params);
   }
 
 } // namespace Tpetra
