@@ -180,6 +180,7 @@ namespace Piro {
                 rbm[offset] = (ii==jj) ? 1.0 : 0.0;
               }
             }
+            break;
 
           case 3:
             for(ii=0;ii<3+NscalarDof;ii++){ /* upper left = [ I ] */
@@ -205,6 +206,7 @@ namespace Piro {
             ii = 1; jj = 3+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             ii = 2; jj = 4+NscalarDof; offset = dof+ii+jj*vec_leng; rbm[offset] *= -1.0;
             break;
+
           case 2:
             for(ii=0;ii<2+NscalarDof;ii++){ /* upper left = [ I ] */
               for(jj=0;jj<2+NscalarDof;jj++){
@@ -223,6 +225,7 @@ namespace Piro {
               }
             }
             break;
+
           case 1:
             for (ii = 0; ii<1+NscalarDof; ii++) {
               for (jj=0; jj<1+NscalarDof; jj++) {
@@ -233,9 +236,11 @@ namespace Piro {
             break;
 
           default:
-
-            TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error,
-                "Piro_ML_Coord2RBM: Ndof = " << Ndof << " not implemented\n");
+            TEUCHOS_TEST_FOR_EXCEPTION(
+                true,
+                std::logic_error,
+                "Piro_ML_Coord2RBM: Ndof = " << Ndof << " not implemented\n"
+                );
         } /*switch*/
 
       } /*for( node = 0 ; node < Nnodes; node++ )*/
