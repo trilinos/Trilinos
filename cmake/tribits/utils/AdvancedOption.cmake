@@ -47,9 +47,9 @@
 #
 #   ADVANCED_OPTION(<varName> [other arguments])
 #
-# This is identical to::
+# This just calls the built-in CMake commands::
 #
-#   ADVANCED_OPTION(<varName> [other arguments])
+#   OPTION(<varName> [other arguments])
 #   MARK_AS_ADVANCED(<varName>)
 # 
 MACRO(ADVANCED_OPTION VARNAME)

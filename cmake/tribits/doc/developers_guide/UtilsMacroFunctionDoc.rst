@@ -6,12 +6,18 @@
 ADD_SUBDIRECTORIES()
 ++++++++++++++++++++
 
-Macro that adds a list of subdirectories all at once (removed boiler-place
+Macro that adds a list of subdirectories all at once (removes boiler-place
 code).
 
 Usage::
 
   ADD_SUBDIRECTORIES(<dir1> <dir2> ...)
+
+instead of::
+
+  ADD_SUBDIRECTORY(<dir1>)
+  ADD_SUBDIRECTORY(<dir2>)
+  ...
 
 ADVANCED_OPTION()
 +++++++++++++++++
@@ -23,9 +29,9 @@ Usage::
 
   ADVANCED_OPTION(<varName> [other arguments])
 
-This is identical to::
+This just calls the built-in CMake commands::
 
-  ADVANCED_OPTION(<varName> [other arguments])
+  OPTION(<varName> [other arguments])
   MARK_AS_ADVANCED(<varName>)
 
 ADVANCED_SET()
@@ -38,16 +44,16 @@ Usage::
 
   ADVANCED_SET(<varName> [other arguments])
 
-This is identical to::
+This just calls the built-in commands::
 
-  ADVANCED_SET(<varName> [other arguments])
+  SET(<varName> [other arguments])
   MARK_AS_ADVANCED(<varName>)
 
 APPEND_CMNDLINE_ARGS()
 ++++++++++++++++++++++
 
 Utility function that appends command-line arguments to a variable of
-command-line options.
+command-line arguments.
 
 Usage::
 
@@ -55,7 +61,7 @@ Usage::
 
 This function just appends the command-line arguments in the string
 ``"<extraArgs>"`` but does not add an extra space if ``<var>`` is empty on
-input.
+input.  This just makes the formatting of command-line arguments easier.
 
 APPEND_GLOB()
 +++++++++++++
@@ -85,16 +91,19 @@ To set it empty initially use `GLOBAL_NULL_SET()`_.
 APPEND_SET()
 ++++++++++++
 
-Utility function to append elements to a varible (reduces boiler-plate
+Utility function to append elements to a variable (reduces boiler-plate
 code).
 
 Usage::
 
   APPEND_SET(<varName> <arg0> <arg1> ...)
 
-Just calls::
+This just calls::
 
   LIST(APPEND <varName> <arg0> <arg1> ...)
+
+There is better error reporting if one misspells ``APPEND_SET`` than if one
+misspells ``APPEND``.
 
 APPEND_STRING_VAR()
 +++++++++++++++++++
@@ -104,13 +113,12 @@ reduces mistakes).
 
 Usage::
 
-  APPEND_STIRNG_VAR(<stringVar> "<string1>" "<string2>" ...)
+  APPEND_STRING_VAR(<stringVar> "<string1>" "<string2>" ...)
 
 Note that the usage of the characters ``'['``, ``']'``, ``'{'``, ``'}'`` are
 taken by CMake to bypass the meaning of ';' to separate string characters.
-
-If you want to ignore the meaning of these special characters and are okay with
-just adding one string at a time use `APPEND_STRING_VAR_EXT()`_.
+If one wants to ignore the meaning of these special characters and are okay
+with just adding one string at a time, then use `APPEND_STRING_VAR_EXT()`_.
 
 APPEND_STRING_VAR_EXT()
 +++++++++++++++++++++++
@@ -120,18 +128,20 @@ boiler-place code and reduces mistakes).
 
 Usage::
 
-  APPEND_STIRNG_VAR_EXT(<stringVar> "<string>")
+  APPEND_STRING_VAR_EXT(<stringVar> "<string>")
 
-Simply sets ``<stringVar> = "${<stringVar>}<string>"``.
+Simply sets ``<stringVar> = "${<stringVar>}<string>"`` and leaves in ``';'``
+without creating new array elements.
 
 APPEND_STRING_VAR_WITH_SEP()
 ++++++++++++++++++++++++++++
 
-Append strings to a given string varible, joining them using a seperator.
+Append strings to a given string variable, joining them using a separator
+string.
 
 Usage::
 
-  APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str>" ...)
+  APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str1>" ...)
 
 Each of the strings ``<stri>`` are appended to ``<stringVar>`` using the
 separation string ``<sepStr>``.
@@ -139,40 +149,44 @@ separation string ``<sepStr>``.
 ASSERT_DEFINED()
 ++++++++++++++++
 
-Assert that a varaible is defined and if not call ``MESSAGE(SEND_ERROR ...)``.
+Assert that a variable is defined and if not call ``MESSAGE(SEND_ERROR
+...)``.
 
 Usage::
 
   ASSERT_DEFINED(<varName>)
 
 This is used to get around the problem of CMake not asserting the
-defreferencing of undefined varibles.  For example, how do you know if you
-did not mispell the name of a varible in an if statement like::
+dereferencing of undefined variables.  For example, how does one know if one
+did not misspell the name of a variable in an if statement like::
 
   IF (SOME_VARBLE)
     ...
   ENDIF()
 
-?  If you mispelled the varible ``SOME_VARBLE`` (which you likely did in
- this case), the the if statement will always be false.  To avoid this
- problem when you always expect the explicitly set, instead do::
+?
+
+ If one misspelled the variable ``SOME_VARBLE`` (which is likely in this
+ case), then the if statement will always be false!  To avoid this problem
+ when one always expects that a variable is explicitly set, instead do::
 
   ASSERT_DEFINED(SOME_VARBLE)
   IF (SOME_VARBLE)
     ...
   ENDIF()
 
-Now if you misspell the varible, it will asset and stop processing.  This is
-not a perfect solution since you can mispell the varible name in the
-following if statemnt but typically you would always just copy and paste
-between the two statements so they are always the same.  This is the best we
-can do in CMake unfortunately.
+Now if one misspells this variable, then CMake will asset and stop
+processing.  This is not a perfect solution since one can misspell the
+variable name in the following if statement but typically one would always
+just copy and paste between the two statements so these names are always the
+same.  This is the best that can be done in CMake unfortunately to catch
+usage of misspelled undefined variables.
 
 COMBINED_OPTION()
 +++++++++++++++++
 
-Set up a bool cache variable (i.e. an option) based on a set of dependent
-options.
+Set up a ``BOOL`` cache variable (i.e. an option) based on a set of
+dependent options.
 
 Usage::
 
@@ -181,27 +195,28 @@ Usage::
     DOCSTR "<docstr0>" "<docstr1" ...
     )
 
-This sets up a bool cache variable ``<combinedOptionName>`` which is
-defaulted to ``ON`` if all of the listed dependent option varaibles
+This sets up a ``BOOL`` cache variable ``<combinedOptionName>`` which is
+defaulted to ``ON`` if all of the listed dependent option variables
 ``<depOpName0>``, ``<depOptName1>``, ... are all ``ON``.  However, if
 ``<combinedOptionName>`` is set to ``ON`` by the user and not all of the
-dependent option varibles are also true, this results in a fatal eror and
-alll processing stops.
+dependent option variables are also ``ON``, then this results in a fatal
+error and all processing stops.
 
-This is used by a CMake project to by default automatically turn on a
-feature that requires a set of other features to also be turned on but
-allows a user to disable the feature if desired.
+This is used by a CMake project to automatically turn on a feature that
+requires a set of other features (when they are all enabled) but allows a
+user to disable the feature if desired.
 
 CONCAT_STRINGS()
 ++++++++++++++++
 
-Concatenate a set of string argumnets.
+Concatenate a set of string arguments.
 
 Usage::
 
   CONCAT_STRINGS(<outputVar> "<str0>" "<str1>" ...)
 
-On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.
+On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.  This makes it
+easier to format a long string over multiple CMake source code lines.
 
 DUAL_SCOPE_APPEND_CMNDLINE_ARGS()
 +++++++++++++++++++++++++++++++++
@@ -219,7 +234,8 @@ DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()
 ++++++++++++++++++++++++++++++++++
 
 Utility function that prepends command-line arguments to a variable of
-command-line options and sets the result in current scope and parent scope.
+command-line arguments and sets the result in current scope and parent
+scope.
 
 Usage::
 
@@ -237,27 +253,28 @@ Usage::
 
    DUAL_SCOPE_SET(<varName> [other args])
 
-It turns out that when you call ``ADD_SUBDIRECTORY(<someDir>)`` or enter a
-FUNCTION that CMake actaully creates a copy of all of the regular non-cache
-varaibles in the current scope in order to create a new set of variables for
-the ``CMakeLists.txt`` file in ``<someDir>``.  This means that if you call
-``SET(SOMEVAR Blah PARENT_SCOPE)`` that it will not affect the value of
-``SOMEVAR`` in the current scope.  This macro therefore is designed to set
-the value of the variable in the current scope and the parent scope in one
-shot to avoid confusion.
+It turns out that when one calls ``ADD_SUBDIRECTORY(<someDir>)`` or enters a
+``FUNCTION`` that CMake actually creates a copy of all of the regular
+non-cache variables in the current scope in order to create a new set of
+variables for the ``CMakeLists.txt`` file in ``<someDir>``.  This means that
+if you call ``SET(SOMEVAR Blah PARENT_SCOPE)`` that it will not affect the
+value of ``SOMEVAR`` in the current scope!  This macro therefore is designed
+to set the value of the variable in the current scope and the parent scope
+in one shot to avoid confusion.
 
-Global variables are different.  When you move to a subordinate
-``CMakeLists.txt`` file or enter a function, a local copy of the variable is
-*not* created.  If you set the value name locally, it will shadow the global
-variable.  However, if you set the globlal value with SET(SOMEVAR someValue
-CACHE INTERNAL ""), then the value will get changed in the current
-subordinate scope and in all parent scopes all in one shot!
+Global variables are different.  When one moves to a subordinate
+``CMakeLists.txt`` file or enters a ``FUNCTION``, then a local copy of the
+variable is *not* created.  If one sets the variable locally, it will shadow
+the global variable.  However, if one sets the global cache value with
+``SET(SOMEVAR someValue CACHE INTERNAL "")``, then the value will get
+changed in the current subordinate scope and in all parent scopes all in one
+shot!
 
 GLOBAL_NULL_SET()
 +++++++++++++++++
 
-Set a variable as a null internal global (cache) variable (removes boiler
-plate).
+Set a variable as a null internal global (cache) variable (removes
+boiler-plate code).
 
 Usage::
 
@@ -267,11 +284,13 @@ This just calls::
 
   SET(<varName> "" CACHE INTERNAL "")
 
+This avoid problems with misspelling ``CACHE``.
+
 GLOBAL_SET()
 ++++++++++++
 
-Set a variable as an internal global (cache) variable (removes boiler
-plate).
+Set a variable as an internal global (cache) variable (removes boiler-plate
+code).
 
 Usage::
 
@@ -281,6 +300,8 @@ This just calls::
 
   SET(<varName> [other args] CACHE INTERNAL "")
 
+This avoid misspelling ``CACHE``.
+
 JOIN()
 ++++++
 
@@ -288,8 +309,8 @@ Join a set of strings into a single string using a join string.
 
 Usage::
 
-  JOIN(<outputStrVar> <sepStr> <quoteElements> 
-    "<string0>" "<string1"> ...)
+  JOIN(<outputStrVar> "<sepStr>" <quoteElements> 
+    "<string0>" "<string1>" ...)
 
 Arguments:
 
@@ -297,20 +318,24 @@ Arguments:
 
     The name of a variable that will hold the output string.
 
-  ``<sepStr>``
+  ``"<sepStr>"``
 
     A string to use to join the list of strings.
 
   ``<quoteElements>``
 
-    If TRUE, then each ``<stingi>`` is quoted using an escaped quote char
-     ``\"``.  If ``FALSE`` then no escaped quote is used.
+    If ``TRUE``, then each ``<stringi>`` is quoted using an escaped quote
+     char ``\"``.  If ``FALSE`` then no escaped quote is used.
 
-On output the variable ``<outputStrVar>`` is set to::
+  ``"<string0>" "<string1>" ...``
+
+    Zero or more string arguments to be joined.
+
+On output, the variable ``<outputStrVar>`` is set to::
 
   "<string0><sepStr><string1><sepStr>..."
 
-If ``<quoteElements>=TRUE``, then it is set to::
+If ``<quoteElements>=TRUE``, then ``<outputStrVar>`` is set to::
 
   "\"<string0>\"<sepStr>\"<string1>\"<sepStr>..."
 
@@ -320,30 +345,34 @@ arguments given a CMake array like::
   JOIN(CMND_LINE_ARGS " " TRUE ${CMND_LINE_ARRAY})
 
 WARNING: Be careful to quote string arguments that have spaces because CMake
-interpet those ase array boundaries.
+interprets those as array boundaries.
 
 MESSAGE_WRAPPER()
 +++++++++++++++++
 
 Function that wraps the standard CMake/CTest ``MESSAGE()`` function call in
-order to allow unit testing to intercept the call.
+order to allow unit testing to intercept the output.
 
 Usage::
 
-  MESSAGE_WRAPPER(<arg0> <arg1> ...)
+  MESSAGE_WRAPPER(...)
 
-This function takes exactly the same argumnets as built-in ``MESSAGE()``.
-When the varible ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is set to ``TRUE``, then
-this function will not call ``MESSAGE(<arg0> <arg1> ...)`` but instead will
-prepend set to global varible ``MESSAGE_WRAPPER_INPUT`` that input
-argumnets.  To capture just this call's input, first call
-``GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT(MESSAGE_WRAPPER_INPUT)`` before
-calling this function.
+This function takes exactly the same arguments as built-in ``MESSAGE()``
+function.  However, when the variable ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is
+set to ``TRUE``, then this function will not call ``MESSAGE(...)`` but
+instead will prepend set to the global variable ``MESSAGE_WRAPPER_INPUT``
+the input argument that would have gon to ``MESSAGE()``.  To capture just
+this call's input, first call::
+
+  GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT)
+
+before calling this function (or the functions/macros that call this
+function).
 
 This function allows one to unit test other user-defined CMake macros and
-functions that call this to catch error conditions wihtout stopping the
-CMake program.  Otherwise, this is used to capture print messages to verify
-that they say the right thing.
+functions that call this function to catch error conditions without stopping
+the CMake program.  Otherwise, this is used to capture print messages to
+verify that they say the right thing.
 
 MULTILINE_SET()
 +++++++++++++++
@@ -362,13 +391,16 @@ On output, the local variables ``<outputStrVar>`` is set to::
 
   "<string0><string1>..."
 
-The purpose of this is to make it easier to set longer strings without going
-to far to the right.
+The purpose of this is function to make it easier to set longer strings over
+multiple lines.
+
+This function is exactly the same as `CONCAT_STRINGS()`_ and should not even
+exist :-(
 
 PARSE_ARGUMENTS()
 +++++++++++++++++
 
-Parse a set of macro/functon input arguments into different lists.  This
+Parse a set of macro/function input arguments into different lists.  This
 allows the easy implementation of keyword-based user-defined macros and
 functions.
 
@@ -379,7 +411,7 @@ Usage::
     <inputArgsList>
     )
 
-Arguments to this macro:
+Arguments to this macro are:
 
   ``<prefix>``
 
@@ -389,27 +421,28 @@ Arguments to this macro:
   ``<argNamesList>``
 
     Quoted array of list arguments (e.g. ``"<argName0>;<argName1>;..."``).
-    For each varaible name ``<argNamei>``, a local varible will be created
+    For each variable name ``<argNamei>``, a local variable will be created
     in the current scope with the name ``<prefix>_<argNamei>`` which gives
-    the list of varibles parsed out of ``<inputArgsList>``.
+    the list of variables parsed out of ``<inputArgsList>``.
 
   ``<optionNamesList>``
 
-    Quoted array of list arguments (e.g. ``"<optName0>;<optName1>;..."``).
-    For each varaible name ``<optNamei>``, a local varible will be created
-    in the current scope with the name ``<prefix>_<optNamei>`` that is
-    either set to ``TRUE`` or ``FALSE`` depending if ``<optNamei>`` apears
-    in ``<inputArgsList>`` or not.
+    Quoted array of list options (e.g. ``"<optName0>;<optName1>;..."``)
+    typically pass in as ``${ARGN}`` in the outer function/macro.  For each
+    variable name ``<optNamei>``, a local variable will be created in the
+    current scope with the name ``<prefix>_<optNamei>`` that is either set
+    to ``TRUE`` or ``FALSE`` depending if ``<optNamei>`` appears in
+    ``<inputArgsList>`` or not.
 
   ``<inputArgsList>``
 
-    List of arguments keyword-based arguments passed in for the outer macro
-    or function to be parsed out into the different argument and option
-    lists.
+    List of arguments keyword-based arguments passed in through the outer
+    macro or function to be parsed out into the different argument and
+    option lists.
 
 What this macro does is very simple yet very useful.  What it does is to
-allow you to create your own user-defined keyword-based macros and functions
-like is used by some built-in CMake comamnds..
+allow one to create one's own user-defined keyword-based macros and
+functions like is used by some built-in CMake commands.
 
 For example, consider the following user-defined macro that uses both
 positional and keyword-based arguments using ``PARSE_ARGUMENTS()``::
@@ -432,7 +465,7 @@ Calling this macro as::
 
   PARSE_SPECIAL_VARS(MyVar ARG0 a b ARG2 c OPT1)
 
-sets the following varibles in the current scope::
+sets the following variables in the current scope::
 
   MyVar_ARG0="a;b"
   MyVar_ARG1=""
@@ -440,34 +473,35 @@ sets the following varibles in the current scope::
   MyVar_OPT0="FALSE"
   MyVar_OPT1="TRUE"
 
-This allows you to define user-defined macros and functions that have a
-mixture of positional arguments and keyword-based arguments like you can do
-in other languages.  The keyword-based arguments can be passed in any
-order and those that are missing are empty (or false) by default.
+This allows one to define user-defined macros and functions that have a
+mixture of positional arguments and keyword-based arguments like one can do
+in other languages.  The keyword-based arguments can be passed in any order
+and those that are missing are empty (or false for options) by default.
 
-Any initial arguments that are not recongnised as ``<argNamesList>`` or
-``<optionNamesList>`` keyword arguments will be put into the local varible
-``<prefix>_DEFAULT_ARGS``.  If no arguments in ``${ARGN}`` match any in
-``<argNamesList>``, then all non-option arguments are point into
-``<prefix>_DEFAULT_ARGS``.  For example, if you pass in::
+Any initial arguments that are not recognized as ``<argNamesList>`` or
+``<optionNamesList>`` keyword arguments will be put into the local variable
+``<prefix>_DEFAULT_ARGS``.  If no arguments in ``<inputArgsList>``
+(typically ``${ARGN}``) match any in ``<argNamesList>``, then all non-option
+arguments are put into ``<prefix>_DEFAULT_ARGS``.  For example, if one
+passes in::
 
   PARSE_SPECIAL_VARS(MyVar ARG5 a b c)
 
 you will get::
 
-  MyVar_DEFAULT_ARGS="a;b;c"
+  MyVar_DEFAULT_ARGS="ARG5;a;b;c"
   MyVar_ARG0=""
   MyVar_ARG1=""
   MyVar_ARG2=""
   MyVar_OPT0="FALSE"
   MyVar_OPT1="FALSE"
 
-Multiple occurances of keyword arguments in ``${ARGN}`` is allowed but only
-the last one listed will be recored.  For example, if you call::
+Multiple occurrences of keyword arguments in ``<inputArgsList>`` is allowed
+but only the last one listed will be recorded.  For example, if one calls::
 
   PARSE_SPECIAL_VARS(MyVar ARG1 a b ARG1 c)
 
-then this wil set::
+then this will set::
 
   MyVar_ARG0=""
   MyVar_ARG1="c"
@@ -475,16 +509,16 @@ then this wil set::
   MyVar_OPT0="FALSE"
   MyVar_OPT1="FALSE"
 
-This is actually consistent with the way that most arugment list parsers
+This is actually consistent with the way that most argument list parsers
 behave with respect to multiple instances of the same argument so hopefully
 this will not be a surprise to anyone.
 
-If you put an option keyword in the middle of a keyword argument list, the
-option keyword will get pulled out of the list.  For exmaple, if you call::
+If one puts an option keyword in the middle of a keyword argument list, the
+option keyword will get pulled out of the list.  For example, if one calls::
 
   PARSE_SPECIAL_VARS(MyVar ARG0 a OPT0 c)
 
-then this wil set::
+then this will set::
 
   MyVar_ARG0="a;c"
   MyVar_ARG1=""
@@ -492,22 +526,25 @@ then this wil set::
   MyVar_OPT0="TRUE"
   MyVar_OPT1="FALSE"
 
-If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED``is set to ``TRUE``, then a bunch
-of detailed debug info will be printed.  This should only lbe used in the
-most desparate of debug situations because it will print a *lot* of output!
+This is confusing behavior so users would be smart not to mix option
+arguments inside of list arguments.
+
+If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED`` is set to ``TRUE``, then a bunch
+of detailed debug info will be printed.  This should only be used in the
+most desperate of debug situations because it will print a *lot* of output!
 
 **PERFORMANCE:** This function will scale as::
 
   O( (len(<argNamesList>) * len(<optionNamesList>)) * len(<inputArgsList>) )
 
-Therefore, this could scale very badly for large lests of argument and
-option names and input argument lists.
+Therefore, this could scale very badly for large sets of argument and option
+names and input argument list names.
 
 PREPEND_CMNDLINE_ARGS()
 +++++++++++++++++++++++
 
 Utility function that prepends command-line arguments to a variable of
-command-line options.
+command-line arguments.
 
 Usage::
 
@@ -527,22 +564,8 @@ Usage::
 
   PREPEND_GLOBAL_SET(<varName> <arg0> <arg1> ...)
 
-NOTE: The variable ``<varName>`` must exist before calling this function.
-To set it empty initially use `GLOBAL_NULL_SET()`_.
-
-APPEND_SET()
-++++++++++++
-
-Utility function to append elements to a varible (reduces boiler-plate
-code).
-
-Usage::
-
-  APPEND_SET(<varName> <arg0> <arg1> ...)
-
-Just calls::
-
-  LIST(APPEND <varName> <arg0> <arg1> ...)
+The variable ``<varName>`` must exist before calling this function.  To set
+it empty initially use `GLOBAL_NULL_SET()`_.
 
 PRINT_NONEMPTY_VAR()
 ++++++++++++++++++++
@@ -559,7 +582,7 @@ PRINT_NONEMPTY_VAR_WITH_SPACES()
 ++++++++++++++++++++++++++++++++
 
 Print a defined variable giving its name then value printed with spaces
-instead of ';' but only if it is not empty.
+instead of ``';'`` but only if it is not empty.
 
 Usage::
 
@@ -588,29 +611,33 @@ an explicit "-- " line prefix so that it prints nice even on Windows CMake.
 REMOVE_GLOBAL_DUPLICATES()
 ++++++++++++++++++++++++++
 
-Remove duplicate elements from a global list variable.
+Remove duplicate elements from a global list variable (removes boiler-plate
+code and errors).
 
 Usage::
 
   REMOVE_GLOBAL_DUPLICATES(<globalVarName>)
 
 This function is necessary in order to preserve the "global" nature of the
-variable.  If you just call LIST(REMOVE_DUPLICATES ...) it will actually
-create a local variable of the same name and shadow the global variable!
-That is a fun bug to track down!
+variable.  If one just calls ``LIST(REMOVE_DUPLICATES ...)`` it will
+actually create a local variable of the same name and shadow the global
+variable!  That is a fun bug to track down!  The variable
+``<globalVarName>`` must be defined before this function is called.  If
+``<globalVarName>`` is actually not a global cache variable before this
+function is called it will be after it completes.
 
 SET_AND_INC_DIRS()
 ++++++++++++++++++
 
-Set a variable to an include dir and call ``INCLUDE_DIRECTORIES()`` (removes
-boiler plate).
+Set a variable to an include directory and call ``INCLUDE_DIRECTORIES()``
+(removes boiler-plate code).
 
 Usage:
 
   SET_AND_INC_DIRS(<dirVarName> <includeDir>)
 
-On output, this justs ``<dirVarName>`` to ``<includeDir>`` in the local
-scope and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
+On output, this sets ``<dirVarName>`` to ``<includeDir>`` in the local scope
+and calls ``INCLUDE_DIRECTORIES(<includeDir>)``.
 
 SET_CACHE_ON_OFF_EMPTY()
 ++++++++++++++++++++++++
@@ -620,55 +647,58 @@ Usage::
   SET_CACHE_ON_OFF_EMPTY(<varName> <initialVal> "<docString>" [FORCE])
 
 Sets a special string cache variable with possible values "", "ON", or
-"OFF".  This results in a nice dropdown box in the CMake cache manipulation
+"OFF".  This results in a nice drop-down box in the CMake cache manipulation
 GUIs.
 
 SET_DEFAULT()
 +++++++++++++
 
-Give a local variable a default if a non-empty value is not already set.
+Give a local variable a default value if a non-empty value is not already
+set.
 
 Usage::
 
   SET_DEFAULT(<varName> <arg0> <arg1> ...)
 
 If on input ``"${<varName>}"==""``, then ``<varName>`` is set to the given
-default.  Otherwise, the existing non-empty value is preserved.
+default ``<arg0> <arg1> ...``.  Otherwise, the existing non-empty value is
+preserved.
 
 SET_DEFAULT_AND_FROM_ENV()
 ++++++++++++++++++++++++++
 
-Set a default value for a local variable and override from an env var of the
-same name if it is set.
+Set a default value for a local variable and override from an environment
+variable of the same name if it is set.
 
 Usage::
 
   SET_DEFAULT_AND_FROM_ENV(<varName> <defaultVal>)
 
 First calls ``SET_DEFAULT(<varName> <defaultVal>)`` and then looks for an
-environment variable named ``<varName>`` and if non-empty, then overrides
-the value of ``<varName>``.
+environment variable named ``<varName>``, and if non-empty then overrides
+the value of the local variable ``<varName>``.
 
 This macro is primarily used in CTest code to provide a way to pass in the
 value of CMake variables.  Older versions of ``ctest`` did not support the
-option ``-D <var>:<type>=<value>`` to allow varaibles to be set through the
-commandline like ``cmake`` always allowed.
+option ``-D <var>:<type>=<value>`` to allow variables to be set through the
+command-line like ``cmake`` always allowed.
 
 SPLIT()
 +++++++
 
-Split a string varible into a string array/list variable.
+Split a string variable into a string array/list variable.
 
 Usage::
 
   SPLIT("<inputStr>" "<sepStr>" <outputStrListVar>)
 
 The ``<sepStr>`` string is used with ``STRING(REGEX ...)`` to replace all
-occurrences of ``<sepStr>` in ``<inputStr>`` with ";" and writing into
+occurrences of ``<sepStr>`` in ``<inputStr>`` with ``";"`` and writing into
 ``<outputStrListVar>``.
 
-WARNING: ``<sepStr>`` is interpreted as a regular expression so keep that in
-mind when considering special regex chars like ``'*'``, ``'.'``, etc!
+WARNING: ``<sepStr>`` is interpreted as a regular expression (regex) so keep
+that in mind when considering special regex chars like ``'*'``, ``'.'``,
+etc!
 
 TIMER_GET_RAW_SECONDS()
 +++++++++++++++++++++++
@@ -686,10 +716,10 @@ profiling purposes.  See `TIMER_PRINT_REL_TIME()`_ for more details and an
 example.
 
 NOTE: This function runs an external process to run the ``date`` command.
-Therefsore, it only works on Unix/Linux type systems that have a standard
-``date`` command.  Since this runs an external process, this function should
-only be used to time very course grained operations (i.e. that take longer
-than a second).
+Therefore, it only works on Unix/Linux and other systems that have a
+standard ``date`` command.  Since this runs an external process, this
+function should only be used to time very course-grained operations
+(i.e. that take longer than a second).
 
 TIMER_GET_REL_SECONDS()
 +++++++++++++++++++++++
@@ -701,7 +731,7 @@ Usage::
   TIMER_GET_REL_SECONDS(<startSeconds> <endSeconds> <relSecondsOutVar>)
 
 This simple function computes the relative number of seconds between
-``<startSeconds>`` and ``<endSeconds>`` (i.e. from
+``<startSeconds>`` and ``<endSeconds>`` (returned from
 `TIMER_GET_RAW_SECONDS()`_) and sets the result in the local variable
 ``<relSecondsOutVar>``.
 
@@ -711,7 +741,7 @@ TIMER_PRINT_REL_TIME()
 Print the relative time between start and stop timers in ``<min>m<sec>s``
 format.
 
-Usage:
+Usage::
 
   TIMER_PRINT_REL_TIME(<startSeconds> <endSeconds> "<messageStr>")
 
@@ -738,7 +768,7 @@ This will print something like::
   REAL_EXPENSIVE() time: 0m5s
 
 Again, don't try to time something that takes less than 1 second as it will
-be recored as ``0m0s``.
+be recorded as ``0m0s``.
   
 UNITTEST_COMPARE_CONST()
 ++++++++++++++++++++++++
@@ -765,11 +795,11 @@ Usage::
 
   UNITTEST_STRING_REGEX(
     <inputString>
-    REGEX_STRINGS <str0> <str1> ...
+    REGEX_STRINGS "<str0>" "<str1>" ...
     )
 
-If the ``<inputString>`` matches all of the of the regexs ``<str0>``,
-''<str1>``, ..., then the test passes.  Otherwise it fails.
+If the ``<inputString>`` matches all of the of the regexs ``"<str0>"``,
+``"<str1>"``, ..., then the test passes.  Otherwise it fails.
 
 This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
@@ -784,7 +814,7 @@ Usage::
 
   UNITTEST_FILE_REGEX(
     <inputFileName>
-    REGEX_STRINGS <str1> <str2> ...
+    REGEX_STRINGS "<str1>" "<str2>" ...
     )
 
 The contents of ``<inputFileName>`` are read into a string and then passed
@@ -793,7 +823,7 @@ to `UNITTEST_STRING_REGEX()`_ to assess pass/fail.
 UNITTEST_FINAL_RESULT()
 +++++++++++++++++++++++
 
-Print final statstics from all tests and assert final pass/fail
+Print final statistics from all tests and assert final pass/fail
 
 Usage::
 
@@ -805,14 +835,15 @@ passed and string::
 
  "Final UnitTests Result: PASSED"
 
-is printed.  Otherwise, the overall tets program is determined to have
+is printed.  Otherwise, the overall test program is determined to have
 failed, the string::
 
  "Final UnitTests Result: FAILED"
 
-is printed and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
+is printed, and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
 
 The reason that we require passing in the expected number of passed tests is
-an an extra precaution to make sure that important unit tests are not left
-out.  CMake is a loosely typed language and it pays to be a little paranoid.
+as an extra precaution to make sure that important unit tests are not left
+out.  CMake is a very loosely typed language and it pays to be a little
+paranoid.
 

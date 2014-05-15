@@ -44,7 +44,7 @@ INCLUDE(AppendStringVarWithSep)
 # @FUNCTION: PRINT_NONEMPTY_VAR_WITH_SPACES()
 #
 # Print a defined variable giving its name then value printed with spaces
-# instead of ';' but only if it is not empty.
+# instead of ``';'`` but only if it is not empty.
 #
 # Usage::
 #

@@ -41,7 +41,7 @@
 # @FUNCTION: PREPEND_CMNDLINE_ARGS()
 #
 # Utility function that prepends command-line arguments to a variable of
-# command-line options.
+# command-line arguments.
 #
 # Usage::
 #

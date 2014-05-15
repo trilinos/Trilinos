@@ -42,11 +42,12 @@ INCLUDE(ConcatStrings)
 #
 # @FUNCTION: APPEND_STRING_VAR_WITH_SEP()
 #
-# Append strings to a given string varible, joining them using a seperator.
+# Append strings to a given string variable, joining them using a separator
+# string.
 #
 # Usage::
 #
-#   APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str>" ...)
+#   APPEND_STRING_VAR_WITH_SEP(<stringVar> "<sepStr>" "<str0>" "<str1>" ...)
 #
 # Each of the strings ``<stri>`` are appended to ``<stringVar>`` using the
 # separation string ``<sepStr>``.

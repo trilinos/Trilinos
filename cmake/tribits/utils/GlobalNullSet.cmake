@@ -40,8 +40,8 @@
 #
 # @MACRO: GLOBAL_NULL_SET()
 #
-# Set a variable as a null internal global (cache) variable (removes boiler
-# plate).
+# Set a variable as a null internal global (cache) variable (removes
+# boiler-plate code).
 #
 # Usage::
 #
@@ -50,6 +50,8 @@
 # This just calls::
 #
 #   SET(<varName> "" CACHE INTERNAL "")
+#
+# This avoid problems with misspelling ``CACHE``.
 #
 MACRO(GLOBAL_NULL_SET VARNAME)
   SET(${VARNAME} "" CACHE INTERNAL "")

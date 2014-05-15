@@ -44,7 +44,8 @@ INCLUDE(DualScopeSet)
 # @MACRO: DUAL_SCOPE_PREPEND_CMNDLINE_ARGS()
 #
 # Utility function that prepends command-line arguments to a variable of
-# command-line options and sets the result in current scope and parent scope.
+# command-line arguments and sets the result in current scope and parent
+# scope.
 #
 # Usage::
 #

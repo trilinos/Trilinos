@@ -40,18 +40,19 @@
 #
 # @FUNCTION: SPLIT()
 #
-# Split a string varible into a string array/list variable.
+# Split a string variable into a string array/list variable.
 #
 # Usage::
 #
 #   SPLIT("<inputStr>" "<sepStr>" <outputStrListVar>)
 #
 # The ``<sepStr>`` string is used with ``STRING(REGEX ...)`` to replace all
-# occurrences of ``<sepStr>` in ``<inputStr>`` with ";" and writing into
+# occurrences of ``<sepStr>`` in ``<inputStr>`` with ``";"`` and writing into
 # ``<outputStrListVar>``.
 #
-# WARNING: ``<sepStr>`` is interpreted as a regular expression so keep that in
-# mind when considering special regex chars like ``'*'``, ``'.'``, etc!
+# WARNING: ``<sepStr>`` is interpreted as a regular expression (regex) so keep
+# that in mind when considering special regex chars like ``'*'``, ``'.'``,
+# etc!
 #
 FUNCTION(SPLIT  INPUT_STRING  SEP_STR  OUTPUT_STRING_VAR)
   STRING(REGEX REPLACE "${SEP_STR}" ";" OUTPUT_STRING "${INPUT_STRING}")
