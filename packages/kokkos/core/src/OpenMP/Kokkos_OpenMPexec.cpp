@@ -41,14 +41,14 @@
 //@HEADER
 */
 
-#ifdef KOKKOS_HAVE_OPENMP
-
 #include <stdio.h>
 #include <limits>
 #include <iostream>
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <iostream>
+
+#ifdef KOKKOS_HAVE_OPENMP
 
 namespace Kokkos {
 namespace Impl {
