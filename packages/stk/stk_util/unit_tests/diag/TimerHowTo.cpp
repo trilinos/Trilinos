@@ -1,4 +1,5 @@
 #include <gtest/gtest.h>
+#include <bitset>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 
@@ -61,9 +62,9 @@ bool areStringsEqualWithNumberTolerance(const std::string &expectedString, const
     return isEqual;
 }
 
-TEST(StkDiagTimerHowTo, useTheSimplestTimer)
+TEST(StkDiagTimerHowTo, useTheRootTimer)
 {
-    unsigned enabledTimerMask = 1;
+    unsigned enabledTimerMask = 0;
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
 
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
@@ -83,45 +84,17 @@ TEST(StkDiagTimerHowTo, useTheSimplestTimer)
     stk::diag::deleteRootTimer(rootTimer);
 }
 
-TEST(StkDiagTimerHowTo, printTwice)
-{
-    unsigned enabledTimerMask = 1;
-    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
-
-    stk::diag::TimeBlock totalTestRuntime(rootTimer);
-    doWork();
-
-    std::ostringstream outputStream;
-    bool printTimingsOnlySinceLastPrint = false;
-    stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
-
-    doWork();
-    stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
-
-    std::string expectedOutput = "                                                                      \
-                 Timer                   Count       CPU Time              Wall Time                    \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.000  SKIP        0.100 (100.0%)     \
-                                                                                                        \
-                             Timer                   Count       CPU Time              Wall Time        \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.001 SKIP        0.200 (100.0%)      \
-            ";
-    EXPECT_TRUE(areStringsEqualWithNumberTolerance(expectedOutput, outputStream.str(), tolerance));
-
-    stk::diag::deleteRootTimer(rootTimer);
-}
-
 TEST(StkDiagTimerHowTo, useChildTimers)
 {
-    unsigned enabledTimerMask = 3;
+    enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
+    unsigned enabledTimerMask = CHILDMASK1 | CHILDMASK2;
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
-    unsigned child1TimerMask = 1;
+    unsigned child1TimerMask = CHILDMASK1;
     const std::string childName1 = "childTimer1";
     stk::diag::Timer childTimer1(childName1, child1TimerMask, rootTimer);
-    unsigned child2TimerMask = 2;
+    unsigned child2TimerMask = CHILDMASK2;
     const std::string childName2 = "childTimer2";
     stk::diag::Timer childTimer2(childName2, child2TimerMask, rootTimer);
 
@@ -162,16 +135,15 @@ TEST(StkDiagTimerHowTo, useChildTimers)
 
 TEST(StkDiagTimerHowTo, disableChildTimers)
 {
-    unsigned enabledTimerMask = 1;
+    enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
+    unsigned enabledTimerMask = CHILDMASK2;
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
-    unsigned enabledCHhildTimerMask = enabledTimerMask;
-    unsigned disabledCHhildTimerMask = 2;
     const std::string disabledTimerString = "disabledTimer";
-    stk::diag::Timer disabledTimer(disabledTimerString, disabledCHhildTimerMask, rootTimer);
+    stk::diag::Timer disabledTimer(disabledTimerString, CHILDMASK1, rootTimer);
     const std::string enabledTimerString = "enabledTimer";
-    stk::diag::Timer enabledTimer(enabledTimerString, enabledCHhildTimerMask, rootTimer);
+    stk::diag::Timer enabledTimer(enabledTimerString, CHILDMASK2, rootTimer);
 
     {
         stk::diag::TimeBlock timeStuffInThisScope(disabledTimer);
