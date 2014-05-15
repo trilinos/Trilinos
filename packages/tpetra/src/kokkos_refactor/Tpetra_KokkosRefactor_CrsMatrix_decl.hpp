@@ -1855,14 +1855,20 @@ namespace Tpetra {
                                                                  typename CrsMatrixType::node_type> >& rangeMap,
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
-    /// \brief Import from <tt>this</tt> to the result, and fillComplete the result.
+  public:
+    /// \brief Import from <tt>this</tt> to \c destMatrix, and
+    ///   makes the result fill complete.
     ///
-    /// This method implements the nonmember "constructor"
-    /// importAndFillCompleteCrsMatrix.  It's convenient to put that
-    /// function's implementation inside the CrsMatrix class, so that
-    /// we don't have to put much code in the _decl header file.
-    Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >
-    importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal, node_type>& importer,
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix and assigns
+    /// it to destMatrix.  Otherwise, it checks for "pristine" status
+    /// and throws if that is not the case.  Use of the "non-member
+    /// constructor" version is preferred for user applications.
+    void
+    importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
+                           const Import<LocalOrdinal, GlobalOrdinal, node_type>& importer,
                            const Teuchos::RCP<const map_type>& domainMap,
                            const Teuchos::RCP<const map_type>& rangeMap,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
@@ -1873,13 +1879,37 @@ namespace Tpetra {
     /// exportAndFillCompleteCrsMatrix.  It's convenient to put that
     /// function's implementation inside the CrsMatrix class, so that
     /// we don't have to put much code in the _decl header file.
-    Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> >
-    exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal, node_type>& exporter,
+    void
+    exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
+                           const Export<LocalOrdinal, GlobalOrdinal, node_type>& exporter,
                            const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
   private:
+    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to
+    ///   destMatrix, and fillComplete the result.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix, otherwise
+    /// it checks for "pristine" status and throws if that is not the
+    /// case.  This method implements the nonmember "constructors"
+    /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to
+    /// put that function's implementation inside the CrsMatrix class,
+    /// so that we don't have to put much code in the _decl header
+    /// file.
+    void
+    transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
+                             const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, node_type>& rowTransfer,
+                             const Teuchos::RCP<const map_type>& domainMap = Teuchos::null,
+                             const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
+                             const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const
+    {
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        true, std::logic_error, "Tpetra::CrsMatrix::transferAndFillComplete: "
+        "Not implemented in the Kokkos refactor version of Tpetra.  Please ask "
+        "a Tpetra developer to port this from the classic version of Tpetra.");
+    }
+
     // We forbid copy construction by declaring this method private
     // and not implementing it.
     CrsMatrix (const CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> &rhs);

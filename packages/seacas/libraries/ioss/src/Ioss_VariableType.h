@@ -33,17 +33,17 @@
 #ifndef IOSS_Ioss_VariableType_h
 #define IOSS_Ioss_VariableType_h
 
-#include <Ioss_CodeTypes.h>
-#include <string>
+#include <cstring>                      // for strncmp, strncpy
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <string>                       // for string, operator<
+#include <vector>                       // for vector
+namespace Ioss { class VariableType; }
 
-#include <cstring>
-#include <vector>
-#include <map>
 
 namespace Ioss {
   typedef std::vector<std::string> NameList;
 
-  class VariableType;
   
   typedef std::map<std::string, VariableType*, std::less<std::string> > VariableTypeMap;
   typedef VariableTypeMap::value_type VTM_ValuePair;

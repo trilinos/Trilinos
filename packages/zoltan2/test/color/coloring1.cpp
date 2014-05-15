@@ -77,16 +77,14 @@ using namespace std;
 typedef lno_t z2TestLO;
 typedef gno_t z2TestGO;
 typedef scalar_t Scalar;
-typedef int color_t; // TODO
 
 typedef KokkosClassic::DefaultNode::DefaultNodeType Node;
 typedef Tpetra::CrsMatrix<Scalar, z2TestLO, z2TestGO> SparseMatrix;
 typedef Tpetra::Vector<Scalar, z2TestLO, z2TestGO> Vector;
 
 typedef Zoltan2::XpetraCrsMatrixAdapter<SparseMatrix> SparseMatrixAdapter;
-//typedef SparseMatrixAdapter::color_t color_t;
 
-int validateColoring(RCP<SparseMatrix> A, color_t *color)
+int validateColoring(RCP<SparseMatrix> A, int *color)
 // returns 0 if coloring is valid, negative if invalid
 {
   int nconflicts = 0;
@@ -99,8 +97,10 @@ int validateColoring(RCP<SparseMatrix> A, color_t *color)
   for (lno_t i=0; i<n; i++) {
     A->getLocalRowView(i, indices, values);
     for (lno_t j=0; j<indices.size(); j++) {
-      if ((indices[j]<n) && (color[i]==color[indices[j]]))
+      if ((indices[j]<n) && (indices[j]!=i) && (color[i]==color[indices[j]])){
         nconflicts++;
+        //std::cout << "Debug: found conflict (" << i << ", " << indices[j] << ")" << std::endl;
+      }
     }
   } 
   
@@ -197,7 +197,7 @@ int main(int narg, char** arg)
 
   ////// Basic metric checking of the coloring solution
   size_t checkLength;
-  color_t *checkColoring;
+  int *checkColoring;
   Zoltan2::ColoringSolution<SparseMatrixAdapter> *soln = problem.getSolution();
 
   cout << "Going to get results" << endl;

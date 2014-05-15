@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -50,7 +50,7 @@ class Epetra_Map;
 
 //! Epetra_Vector: A class for constructing and using dense vectors on a parallel computer.
 
-/*! The Epetra_Vector class enables the construction and use of real-valued, 
+/*! The Epetra_Vector class enables the construction and use of real-valued,
     double-precision dense vectors in a distributed memory environment.  The distribution of the dense
     vector is determined in part by a Epetra_Comm object and a Epetra_Map (or Epetra_LocalMap
     or Epetra_BlockMap).
@@ -61,8 +61,8 @@ class Epetra_Map;
 <b> Distributed Global vs. Replicated Local</b>
 <ul>
   <li> Distributed Global Vectors - In most instances, a multi-vector will be partitioned
-       across multiple memory images associated with multiple processors.  In this case, there is 
-       a unique copy of each element and elements are spread across all processors specified by 
+       across multiple memory images associated with multiple processors.  In this case, there is
+       a unique copy of each element and elements are spread across all processors specified by
        the Epetra_Comm communicator.
   <li> Replicated Local Vectors - Some algorithms use vectors that are too small to
        be distributed across all processors.  Replicated local vectors handle
@@ -72,7 +72,7 @@ class Epetra_Map;
 <b>Constructing Epetra_Vectors</b>
 
 There are four Epetra_Vector constructors.  The first is a basic constructor that allocates
-space and sets all values to zero, the second is a 
+space and sets all values to zero, the second is a
 copy constructor. The third and fourth constructors work with user data.  These constructors have
 two data access modes:
 <ol>
@@ -83,11 +83,11 @@ two data access modes:
 </ol>
 
 \warning View mode is \e extremely dangerous from a data hiding perspective.
-Therefore, we strongly encourage users to develop code using Copy mode first and 
+Therefore, we strongly encourage users to develop code using Copy mode first and
 only use the View mode in a secondary optimization phase.
 
 All Epetra_Vector constructors require a map argument that describes the layout of elements
-on the parallel machine.  Specifically, 
+on the parallel machine.  Specifically,
 \c map is a Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object describing the desired
 memory layout for the vector.
 
@@ -106,7 +106,7 @@ a view of them.
 
 \warning ExtractView functions are \e extremely dangerous from a data hiding perspective.
 For both ExtractView fuctions, there is a corresponding ExtractCopy function.  We
-strongly encourage users to develop code using ExtractCopy functions first and 
+strongly encourage users to develop code using ExtractCopy functions first and
 only use the ExtractView functions in a secondary optimization phase.
 
 There are two Extract functions:
@@ -129,11 +129,11 @@ the vector.  Specifically:
 
 The final useful function is Flops().  Each Epetra_Vector object keep track of the number
 of \e serial floating point operations performed using the specified object as the \e this argument
-to the function.  The Flops() function returns this number as a double precision number.  Using this 
+to the function.  The Flops() function returns this number as a double precision number.  Using this
 information, in conjunction with the Epetra_Time class, one can get accurate parallel performance
 numbers.
 
-\warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all 
+\warning A Epetra_Map, Epetra_LocalMap or Epetra_BlockMap object is required for all
   Epetra_Vector constructors.
 
 */
@@ -144,13 +144,13 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   public:
 
     //! @name Constructors/destructors
-  //@{ 
+  //@{
   //! Basic Epetra_Vector constuctor.
-  /*! Creates a Epetra_Vector object and fills with zero values.  
+  /*! Creates a Epetra_Vector object and fills with zero values.
 
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
-    \param In 
+    \param In
            zeroOut - If <tt>true</tt> then the allocated memory will be zeroed
                      out initialy.  If <tt>false</tt> then this memory will not
                      be touched which can be significantly faster.
@@ -165,14 +165,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   Epetra_Vector(const Epetra_BlockMap& Map, bool zeroOut = true);
 
   //! Epetra_Vector copy constructor.
-  
+
   Epetra_Vector(const Epetra_Vector& Source);
-  
+
   //! Set vector values from user array.
   /*!
-    \param In 
+    \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
            V - Pointer to an array of double precision numbers..
@@ -185,14 +185,14 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
 
   //! Set vector values from a vector in an existing Epetra_MultiVector.
   /*!
-    \param In 
+    \param In
            Epetra_DataAccess - Enumerated type set to Copy or View.
-    \param In 
+    \param In
            Map - A Epetra_LocalMap, Epetra_Map or Epetra_BlockMap.
     \param In
            Source - An existing fully constructed Epetra_MultiVector.
     \param In
-           Index - Index of vector to access.  
+           Index - Index of vector to access.
 
     \return Integer error code, set to 0 if successful.
 
@@ -200,12 +200,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   */
   Epetra_Vector(Epetra_DataAccess CV, const Epetra_MultiVector& Source, int Index);
 
-  //! Epetra_Vector destructor.  
+  //! Epetra_Vector destructor.
     virtual ~Epetra_Vector ();
   //@}
-  
+
   //! @name Post-construction modification routines
-  //@{ 
+  //@{
 
   //! Replace values in a vector with a given indexed list of values, indices are in global index space.
   /*!
@@ -281,7 +281,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Replace values in a vector with a given indexed list of values at the specified BlockOffset, indices are in global index space.
   /*!
      Replace the Indices[i] entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
-     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation,
      an index value is associated with one or more vector entries, depending on the element size of the given index.
      The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
      the given index.  The offset is used for each entry in the input list.
@@ -302,7 +302,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Replace values in a vector with a given indexed list of values at the specified BlockOffset, indices are in local index space.
   /*!
      Replace the (Indices[i], BlockOffset) entry in the \e this object with Values[i], for i=0; i<NumEntries.  The indices
-     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation,
      an index value is associated with one or more vector entries, depending on the element size of the given index.
      The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
      the given index.  The offset is used for each entry in the input list.
@@ -323,7 +323,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Sum values into a vector with a given indexed list of values at the specified BlockOffset, indices are in global index space.
   /*!
      Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
-     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     are in global index space.  This method is intended for vector that are defined using block maps.  In this situation,
      an index value is associated with one or more vector entries, depending on the element size of the given index.
      The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
      the given index.  The offset is used for each entry in the input list.
@@ -344,7 +344,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Sum values into a vector with a given indexed list of values at the specified BlockOffset, indices are in local index space.
   /*!
      Sum Values[i] into the Indices[i] entry in the \e this object, for i=0; i<NumEntries.  The indices
-     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation, 
+     are in local index space.  This method is intended for vector that are defined using block maps.  In this situation,
      an index value is associated with one or more vector entries, depending on the element size of the given index.
      The BlockOffset argument indicates which vector entry to modify as an offset from the first vector entry associated with
      the given index.  The offset is used for each entry in the input list.
@@ -364,7 +364,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //@}
 
   //! @name Extraction methods
-  //@{ 
+  //@{
 
   //Let the compiler know we intend to overload the base-class ExtractCopy
   //function, rather than hide it.
@@ -373,12 +373,12 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Put vector values into user-provided array.
   /*!
     \param Out
-           V - Pointer to memory space that will contain the vector values.  
+           V - Pointer to memory space that will contain the vector values.
 
     \return Integer error code, set to 0 if successful.
   */
   int ExtractCopy(double *V) const;
-  
+
   //Let the compiler know we intend to overload the base-class ExtractView
   //function, rather than hide it.
   using Epetra_MultiVector::ExtractView;
@@ -386,7 +386,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Set user-provided address of V.
   /*!
     \param Out
-           V - Address of a pointer to that will be set to point to the values of the vector.  
+           V - Address of a pointer to that will be set to point to the values of the vector.
 
     \return Integer error code, set to 0 if successful.
   */
@@ -394,7 +394,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //@}
 
   //! @name Overloaded operators
-  //@{ 
+  //@{
 
   //! Element access function.
   /*!
@@ -429,9 +429,9 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
       return Values_[index];
     }
     //@}
-    
+
     //! @name Expert-only unsupported methods
-  //@{ 
+  //@{
 
   //Let the compiler know we intend to overload the base-class ResetView
   //function, rather than hide it.
@@ -440,7 +440,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Vector : public Epetra_MultiVector {
   //! Reset the view of an existing vector to point to new user data.
   /*! Allows the (very) light-weight replacement of multivector values for an
       existing vector that was constructed using an Epetra_DataAccess mode of View.
-      No checking is performed to see if the values passed in contain valid 
+      No checking is performed to see if the values passed in contain valid
       data.  It is assumed that the user has verified the integrity of data before calling
       this method. This method is useful for situations where a vector is needed
       for use with an Epetra operator or matrix and the user is not passing in a multivector,

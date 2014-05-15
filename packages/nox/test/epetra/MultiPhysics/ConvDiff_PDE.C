@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #include "NOX_Common.H"
 #include "Epetra_Comm.h"
 #include "Epetra_Map.h"
@@ -57,7 +57,7 @@
 #include "Problem_Manager.H"
 #include "ConvDiff_PDE.H"
 
-// Constructor - creates the Epetra objects (maps and vectors) 
+// Constructor - creates the Epetra objects (maps and vectors)
 ConvDiff_PDE::ConvDiff_PDE(
             Epetra_Comm& Comm_           ,
             double peclet_               ,
@@ -89,7 +89,7 @@ ConvDiff_PDE::ConvDiff_PDE(
   xptr = Teuchos::rcp( new Epetra_Vector(*StandardMap) );
   dx   = (xmax - xmin) / ( (double) NumGlobalNodes - 1 );
 
-  for( int i = 0; i < NumMyNodes; ++i ) 
+  for( int i = 0; i < NumMyNodes; ++i )
     (*xptr)[i]=xmin + dx*((double) StandardMap->MinMyGID()+i);
 
   // Create extra vector needed for transient problem interface
@@ -128,7 +128,7 @@ ConvDiff_PDE::~ConvDiff_PDE()
 //-----------------------------------------------------------------------------
 
 // Initialize method
-void 
+void
 ConvDiff_PDE::initialize()
 {
   // Verify we have only one dependent problem and that it is of the appropriate type
@@ -143,7 +143,7 @@ ConvDiff_PDE::initialize()
   depProbPtr = dynamic_cast<ConvDiff_PDE *>(&depProb);
   if( NULL == depProbPtr )
   {
-    std::string msg = "ERROR: ConvDiff_PDE::initialize : Dependent problem \"" 
+    std::string msg = "ERROR: ConvDiff_PDE::initialize : Dependent problem \""
                     + depProb.getName() + "\" is not of type ConvDiff_PDE.";
     throw msg;
   }
@@ -186,7 +186,7 @@ ConvDiff_PDE::initialize()
 
   if( 1.e-20 < fabs(peclet) )
   {
-    for( int i = 0; i < NumMyNodes; ++i ) 
+    for( int i = 0; i < NumMyNodes; ++i )
     {
       (*exactSolution)[i] = (T1_exact - Tleft*exp(peclet) + (Tleft - T1_exact)*exp(peclet*(x[i]-xmin))) /
                             ( 1.0 - exp(peclet) );
@@ -196,17 +196,17 @@ ConvDiff_PDE::initialize()
   }
   else
   {
-    for( int i = 0; i < NumMyNodes; ++i ) 
+    for( int i = 0; i < NumMyNodes; ++i )
     {
       (*exactSolution)[i] = (Tright - T1_exact)*(x[i] - xmax) + Tright  ;
       (*dTdx         )[i] =  Tright - T1_exact                          ;
     }
   }
 
-  ostringstream sval; 
-  sval << myId << flush; 
-  std::string fileName1 = "analytic_" + sval.str(); 
-  std::string fileName2 = "dTdx_"     + sval.str(); 
+  ostringstream sval;
+  sval << myId << flush;
+  std::string fileName1 = "analytic_" + sval.str();
+  std::string fileName2 = "dTdx_"     + sval.str();
 
   std::ofstream outFile1(fileName1.c_str());
   std::ofstream outFile2(fileName2.c_str());
@@ -217,7 +217,7 @@ ConvDiff_PDE::initialize()
     throw msg;
   }
 
-  for( int i = 0; i < NumMyNodes; ++i ) 
+  for( int i = 0; i < NumMyNodes; ++i )
   {
     outFile1 << i << "  " << x[i] << "  " << (*exactSolution)[i] << std::endl;
     outFile2 << i << "  " << x[i] << "  " << (*dTdx         )[i] << std::endl;
@@ -227,7 +227,7 @@ ConvDiff_PDE::initialize()
 //-----------------------------------------------------------------------------
 
 // Set initialSolution to desired initial condition
-void 
+void
 ConvDiff_PDE::initializeSolution(double val)
 {
   // Aliases for convenience
@@ -240,21 +240,21 @@ ConvDiff_PDE::initializeSolution(double val)
   //perturb.Scale(0.20);
 
   //soln.Update(1.0, perturb, 1.0);
-  
+
   *oldSolution = soln;
-} 
+}
 
 //-----------------------------------------------------------------------------
 
 // Matrix and Residual Fills
-bool 
+bool
 ConvDiff_PDE::evaluate(
                     NOX::Epetra::Interface::Required::FillType flag,
-		    const Epetra_Vector * soln, 
-		    Epetra_Vector * rhs)
+            const Epetra_Vector * soln,
+            Epetra_Vector * rhs)
 {
 
-  if( rhs == 0 ) 
+  if( rhs == 0 )
   {
     std::string msg = "ERROR: ConvDiff_PDE::evaluate : callback appears to be other than a residual fill.  Others are not support for this type.";
     throw msg;
@@ -303,7 +303,7 @@ ConvDiff_PDE::evaluate(
   int row;
 
   double * xx    = new double[2];
-  double * uu    = new double[2]; 
+  double * uu    = new double[2];
   double * uuold = new double[2];
   std::vector<double*> ddep(numDep);
   for( int i = 0; i < numDep; ++i)
@@ -325,16 +325,16 @@ ConvDiff_PDE::evaluate(
   for( int ne = 0; ne < OverlapNumMyNodes-1; ++ne )
   {
     // Loop Over Gauss Points
-    for( int gp = 0; gp < 2; ++gp ) 
+    for( int gp = 0; gp < 2; ++gp )
     {
-      // Get the solution and coordinates at the nodes 
+      // Get the solution and coordinates at the nodes
       xx[0]=xvec[ne];
       xx[1]=xvec[ne+1];
       uu[0] = u[ne];
       uu[1] = u[ne+1];
       uuold[0] = uold[ne];
       uuold[1] = uold[ne+1];
-      for( int i = 0; i < numDep; ++i ) 
+      for( int i = 0; i < numDep; ++i )
       {
         ddep[i][0] = (*dep[i])[ne];
         ddep[i][1] = (*dep[i])[ne+1];
@@ -345,24 +345,24 @@ ConvDiff_PDE::evaluate(
       // Loop over Nodes in Element
       for( int i = 0; i < 2; ++i )
       {
-	row = OverlapMap->GID(ne+i);
-	if( StandardMap->MyGID(row) ) 
+    row = OverlapMap->GID(ne+i);
+    if( StandardMap->MyGID(row) )
         {
           (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))] +=
             + basis.wt * basis.dx
-            * ( peclet * (basis.duu / basis.dx) * basis.phi[i] 
+            * ( peclet * (basis.duu / basis.dx) * basis.phi[i]
             +   kappa * (1.0/(basis.dx*basis.dx)) * basis.duu * basis.dphide[i] );
-	}
+    }
       }
     }
-  } 
+  }
 
   //if( NOX::Epetra::Interface::Required::Residual == flag )
   //{
   //  int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-  //  std::cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0] 
+  //  std::cout << "\t\"" << myName << "\" u[0] = " << (*soln)[0]
   //       << "\tu[N] = " << (*soln)[lastDof] << std::endl;
-  //  std::cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0] 
+  //  std::cout << "\t\"" << myName << "\" RHS[0] = " << (*rhs)[0]
   //       << "\tRHS[N] = " << (*rhs)[lastDof] << std::endl << std::endl;
   //}
 
@@ -391,7 +391,7 @@ ConvDiff_PDE::evaluate(
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   A->FillComplete();
 
 #ifdef DEBUG
@@ -415,7 +415,7 @@ ConvDiff_PDE::evaluate(
 //-----------------------------------------------------------------------------
 
 // Initialize method
-void 
+void
 ConvDiff_PDE::getOffBlockIndices( map<int, std::vector<int> > & indices )
 {
 
@@ -444,7 +444,7 @@ ConvDiff_PDE::getOffBlockIndices( map<int, std::vector<int> > & indices )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 ConvDiff_PDE::prepare_data_for_transfer()
 {
   // Redirect to compute heat fluxes
@@ -454,10 +454,10 @@ ConvDiff_PDE::prepare_data_for_transfer()
 //-----------------------------------------------------------------------------
 
 // A fill specialized to the single node at the coupling interface
-void 
+void
 ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
 {
-  
+
   int numDep = depProblems.size();
 
   // Create the overlapped solution and position vectors
@@ -492,7 +492,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   // Declare required variables
   int row;
   double * xx = new double[2];
-  double * uu = new double[2]; 
+  double * uu = new double[2];
   double * uuold = new double[2];
   std::vector<double*> ddep(numDep);
   for( int i = 0; i < numDep; ++i)
@@ -510,16 +510,16 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   myFlux = 0.0;
 
   // Loop Over Gauss Points
-  for( int gp = 0; gp < 2; ++gp ) 
+  for( int gp = 0; gp < 2; ++gp )
   {
-    // Get the solution and coordinates at the nodes 
+    // Get the solution and coordinates at the nodes
     xx[0]=xvec[interface_elem];
     xx[1]=xvec[interface_elem+1];
     uu[0] = u[interface_elem];
     uu[1] = u[interface_elem+1];
     uuold[0] = uold[interface_elem];
     uuold[1] = uold[interface_elem+1];
-    for( int i = 0; i < numDep; ++i ) 
+    for( int i = 0; i < numDep; ++i )
     {
       ddep[i][0] = (*dep[i])[interface_elem];
       ddep[i][1] = (*dep[i])[interface_elem+1];
@@ -530,18 +530,18 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
 
     row = OverlapMap->GID( interface_elem + local_node );
 
-    if( StandardMap->MyGID(row) ) 
+    if( StandardMap->MyGID(row) )
     {
-      myFlux += 
+      myFlux +=
         + basis.wt * basis.dx
-        * ( peclet * (basis.duu / basis.dx) * basis.phi[local_node] 
+        * ( peclet * (basis.duu / basis.dx) * basis.phi[local_node]
         +   kappa * (1.0/(basis.dx*basis.dx)) * basis.duu * basis.dphide[local_node] );
     }
   }
 
   // Sync up processors to be safe
   Comm->Barrier();
- 
+
   // Cleanup
   for( int i = 0; i < numDep; ++i)
   {
@@ -554,7 +554,7 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
   delete [] uuold ;
 
   //int lastDof = StandardMap->LID(StandardMap->MaxAllGID());
-  //cout << "\t\"" << myName << "\" u[0] = " << u[0] 
+  //cout << "\t\"" << myName << "\" u[0] = " << u[0]
   //     << "\tu[N] = " << u[lastDof] << std::endl;
   //cout << u << std::endl;
   //cout << "\t\"" << myName << "\" myFlux = " << myFlux << std::endl << std::endl;
@@ -570,10 +570,10 @@ ConvDiff_PDE::computeHeatFlux( const Epetra_Vector * soln )
 
 //-----------------------------------------------------------------------------
 
-double 
+double
 ConvDiff_PDE::getInterfaceTemp()
 {
-  
+
   if( LEFT == myInterface )
     return (*initialSolution)[0];
   else
@@ -585,7 +585,7 @@ ConvDiff_PDE::getInterfaceTemp()
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 ConvDiff_PDE::process_transferred_data()
 {
   // Now that each problem has computed its fluxes, get these as well as boundary
@@ -596,10 +596,10 @@ ConvDiff_PDE::process_transferred_data()
 
 //-----------------------------------------------------------------------------
 
-void 
-ConvDiff_PDE::outputStatus( std::ostream & os ) 
+void
+ConvDiff_PDE::outputStatus( std::ostream & os )
 {
-  
+
   std::string location = ( myInterface == LEFT ) ? "Left" : "Right";
 
   os << "\"" << myName << "\" couples at an interface with Problem \"" << depProbPtr->getName()
@@ -610,28 +610,28 @@ ConvDiff_PDE::outputStatus( std::ostream & os )
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 ConvDiff_PDE::generateGraph()
 {
-  
+
   // Declare required variables
   int row, column;
   int OverlapNumMyNodes = OverlapMap->NumMyElements();
-  
+
   // Loop Over # of Finite Elements on Processor
-  for( int ne = 0; ne < OverlapNumMyNodes - 1; ++ne) 
+  for( int ne = 0; ne < OverlapNumMyNodes - 1; ++ne)
   {
     // Loop over Nodes in Element
-    for( int i = 0; i < 2; ++i ) 
+    for( int i = 0; i < 2; ++i )
     {
       // If this node is owned by current processor, add indices
-      if (StandardMap->MyGID(OverlapMap->GID(ne+i))) 
+      if (StandardMap->MyGID(OverlapMap->GID(ne+i)))
       {
         // Loop over unknowns in Node
         row = OverlapMap->GID(ne+i);
 
         // Loop over supporting nodes
-        for( int j = 0; j < 2; ++j) 
+        for( int j = 0; j < 2; ++j)
         {
           // Loop over unknowns at supporting nodes
           column = OverlapMap->GID(ne+j);
@@ -642,16 +642,16 @@ ConvDiff_PDE::generateGraph()
     }
   }
   AA->FillComplete();
-  
+
   return;
 }
 
 //-----------------------------------------------------------------------------
 
-void 
+void
 ConvDiff_PDE::doTransfer()
 {
-  
+
   depProbPtr->computeHeatFlux();
 
   return;
@@ -659,7 +659,7 @@ ConvDiff_PDE::doTransfer()
 
 //-----------------------------------------------------------------------------
 
-double 
+double
 ConvDiff_PDE::computeAnalyticInterfaceTemp(
                   double radiation      ,
                   double T_left         ,
@@ -667,11 +667,11 @@ ConvDiff_PDE::computeAnalyticInterfaceTemp(
                   double kappa          ,
                   double peclet           )
 {
-  
+
   int    nIters         = 0;            // iteration counter
   double T_int          = 1.0;          // initial guess
   double tol            = 1.e-12;       // solve tolerance
-  double residual       = radiation*( pow(T_int, 4) - pow(T_right, 4) ) 
+  double residual       = radiation*( pow(T_int, 4) - pow(T_right, 4) )
                           + (T_left - T_int)*peclet*exp(peclet)/(1.0 - exp(peclet))
                           - kappa*(T_right - T_int);
   double dfdT           = 0.0;
@@ -694,7 +694,7 @@ ConvDiff_PDE::computeAnalyticInterfaceTemp(
 
     T_int = T_int - residual/dfdT;
 
-    residual = radiation*( pow(T_int, 4) - pow(T_right, 4) ) 
+    residual = radiation*( pow(T_int, 4) - pow(T_right, 4) )
                + (T_left - T_int)*peclet*exp(peclet)/(1.0 - exp(peclet))
                - kappa*(T_right - T_int);
   }

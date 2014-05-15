@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef NOX_STATUS_NORM_WRMS_H
 #define NOX_STATUS_NORM_WRMS_H
 
-#include "NOX_StatusTest_Generic.H"	// base class
+#include "NOX_StatusTest_Generic.H"    // base class
 #include "Teuchos_RCP.hpp"
 
 // Forward declarations
@@ -82,7 +82,7 @@ namespace StatusTest {
   \f[
   ||\delta x^k||_{wrms} < \mbox{tolerance}
   \f]
- 
+
   where
 
  \f[
@@ -122,7 +122,7 @@ namespace StatusTest {
 
   The motivation for this test is to avoid detecting stagnation when
   in fact the true problem is that the linear solve tolerance was not
-  accurate enough. 
+  accurate enough.
 
   The value of \f$\beta\f$ is set in the constructor via the argument
   \c beta. Setting \f$\beta\f$ to 1.0 effectively eliminates this
@@ -131,11 +131,11 @@ namespace StatusTest {
   \note This criteria will only be used if the "Achieved Tolerance"
   parameter (the value of \f$ \eta^k \f$) is set by the linear solver
   in the "Newton"/"Linear Solver"/"Output" sublist.  The
-  checkStatus() method will search for this parameter.  
+  checkStatus() method will search for this parameter.
 
 </ol>
 
-  References: 
+  References:
 
   <ol>
 
@@ -156,30 +156,30 @@ class NormWRMS : public Generic {
 public:
 
   //! Constructor where ATOL is a scalar
-  NormWRMS(double rtol, 
-	   double atol, 
-	   double BDFMultiplier = 1.0, 
-	   double tolerance = 1.0,
-	   double alpha = 1.0,
-	   double beta = 0.5,
-	   bool disable_implicit_weighting = true);
+  NormWRMS(double rtol,
+       double atol,
+       double BDFMultiplier = 1.0,
+       double tolerance = 1.0,
+       double alpha = 1.0,
+       double beta = 0.5,
+       bool disable_implicit_weighting = true);
 
   //! Constructor where ATOL is a vector
   NormWRMS(double rtol,
-	   const Teuchos::RCP<const NOX::Abstract::Vector>& atol,
-	   double BDFMultiplier = 1.0, 
-	   double tolerance = 1.0,
-	   double alpha = 1.0,
-	   double beta = 0.5,
-	   bool disable_implicit_weighting = true);
+       const Teuchos::RCP<const NOX::Abstract::Vector>& atol,
+       double BDFMultiplier = 1.0,
+       double tolerance = 1.0,
+       double alpha = 1.0,
+       double beta = 0.5,
+       bool disable_implicit_weighting = true);
 
   //! Destructor.
   virtual ~NormWRMS();
 
   // Derived classes
-  virtual StatusType 
+  virtual StatusType
   checkStatus(const NOX::Solver::Generic& problem,
-	      NOX::StatusTest::CheckType checkType);
+          NOX::StatusTest::CheckType checkType);
   virtual StatusType getStatus() const;
   virtual std::ostream& print(std::ostream& stream, int indent = 0) const;
 
@@ -191,7 +191,7 @@ public:
 
   //! Returns the value of WRMS norm.
   virtual double getNormWRMS() const;
-   
+
   //! Returns the requested tolerance set in the constructor.
   virtual double getTolerance() const;
 
@@ -217,7 +217,7 @@ public:
 
 private:
 
-  //! Current value of the WRMS norm (Must be less than 'tolerance' for convergence).  
+  //! Current value of the WRMS norm (Must be less than 'tolerance' for convergence).
   double value;
 
   //! Relative tolerance for convergence.
@@ -243,7 +243,7 @@ private:
 
   //! Actual step size used during line search.
   double computedStepSize;
-  
+
   //! Maximum linear solve tolerance allowed for WRMS norm to be flagged as converged.
   double beta;
 

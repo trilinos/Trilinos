@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -56,8 +56,8 @@
 #include "LOCA_MultiContinuation_ExtendedMultiVector.H"
 
 LOCA::MultiPredictor::Random::Random(
-	      const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	      const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
+          const Teuchos::RCP<LOCA::GlobalData>& global_data,
+          const Teuchos::RCP<Teuchos::ParameterList>& predParams) :
   globalData(global_data),
   predictor(),
   secant(),
@@ -71,8 +71,8 @@ LOCA::MultiPredictor::Random::~Random()
 }
 
 LOCA::MultiPredictor::Random::Random(
-				 const LOCA::MultiPredictor::Random& source,
-				 NOX::CopyType type) :
+                 const LOCA::MultiPredictor::Random& source,
+                 NOX::CopyType type) :
   globalData(source.globalData),
   predictor(),
   secant(),
@@ -88,9 +88,9 @@ LOCA::MultiPredictor::Random::Random(
 
 LOCA::MultiPredictor::AbstractStrategy&
 LOCA::MultiPredictor::Random::operator=(
-			  const LOCA::MultiPredictor::AbstractStrategy& s)
+              const LOCA::MultiPredictor::AbstractStrategy& s)
 {
-  const LOCA::MultiPredictor::Random& source = 
+  const LOCA::MultiPredictor::Random& source =
     dynamic_cast<const LOCA::MultiPredictor::Random&>(s);
 
   if (this != &source) {
@@ -114,15 +114,15 @@ LOCA::MultiPredictor::Random::clone(NOX::CopyType type) const
   return Teuchos::rcp(new Random(*this, type));
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Random::compute(
-	      bool baseOnSecant, const std::vector<double>& stepSize,
-	      LOCA::MultiContinuation::ExtendedGroup& grp,
-	      const LOCA::MultiContinuation::ExtendedVector& prevXVec,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec)
+          bool baseOnSecant, const std::vector<double>& stepSize,
+          LOCA::MultiContinuation::ExtendedGroup& grp,
+          const LOCA::MultiContinuation::ExtendedVector& prevXVec,
+          const LOCA::MultiContinuation::ExtendedVector& xVec)
 {
   if (globalData->locaUtils->isPrintType(NOX::Utils::StepperDetails))
-    globalData->locaUtils->out() << 
+    globalData->locaUtils->out() <<
       "\n\tCalling Predictor with method: Random" << std::endl;
 
   // Number of continuation parameters
@@ -132,7 +132,7 @@ LOCA::MultiPredictor::Random::compute(
 
     // Allocate predictor vector
     predictor = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedMultiVector>(xVec.createMultiVector(numParams, NOX::ShapeCopy));
-    
+
     // Allocate secant
     secant = Teuchos::rcp_dynamic_cast<LOCA::MultiContinuation::ExtendedVector>(xVec.clone(NOX::ShapeCopy));
 
@@ -142,9 +142,9 @@ LOCA::MultiPredictor::Random::compute(
   predictor->init(0.0);
 
   // Get references to solution components
-  Teuchos::RCP<NOX::Abstract::MultiVector> v_x = 
+  Teuchos::RCP<NOX::Abstract::MultiVector> v_x =
     predictor->getXMultiVec();
-  const LOCA::MultiContinuation::ExtendedVector mx = 
+  const LOCA::MultiContinuation::ExtendedVector mx =
     dynamic_cast<const LOCA::MultiContinuation::ExtendedVector&>(xVec);
   Teuchos::RCP<const NOX::Abstract::Vector> x_x = mx.getXVec();
 
@@ -165,17 +165,17 @@ LOCA::MultiPredictor::Random::compute(
     predictor->getScalar(i,i) = 1.0;
 
   // Set orientation based on parameter change
-  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXVec, 
-			  xVec, *secant, *predictor);
+  setPredictorOrientation(baseOnSecant, stepSize, grp, prevXVec,
+              xVec, *secant, *predictor);
 
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Random::evaluate(
-	      const std::vector<double>& stepSize,
-	      const LOCA::MultiContinuation::ExtendedVector& xVec,
-	      LOCA::MultiContinuation::ExtendedMultiVector& result) const
+          const std::vector<double>& stepSize,
+          const LOCA::MultiContinuation::ExtendedVector& xVec,
+          LOCA::MultiContinuation::ExtendedMultiVector& result) const
 {
   // Number of continuation parameters
   int numParams = stepSize.size();
@@ -186,9 +186,9 @@ LOCA::MultiPredictor::Random::evaluate(
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::MultiPredictor::Random::computeTangent(
-			LOCA::MultiContinuation::ExtendedMultiVector& v)
+            LOCA::MultiContinuation::ExtendedMultiVector& v)
 {
   v = *predictor;
 

@@ -53,16 +53,16 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <stdint.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for EX_FATAL, EX_NOERR, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_inq_varid, etc
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, NULL
+#include <stdlib.h>                     // for malloc
+#include <string.h>                     // for strcpy, strlen
+#include <sys/types.h>                  // for int64_t
 
-#include <string.h>
-#include <math.h>
 
-#include <netcdf.h>
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 /* Global variables */
 char *ne_ret_string;

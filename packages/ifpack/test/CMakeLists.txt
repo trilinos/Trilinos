@@ -39,7 +39,7 @@ ADD_SUBDIRECTORIES(
   IHSS-SORa_LL
   IlukGraph_LL
   OverlappingRowMatrix_LL
-#  PreconditionerFactory_LL
+  PreconditionerFactory_LL
   Relaxation_LL
   SetParameters_LL
   TestAll_LL

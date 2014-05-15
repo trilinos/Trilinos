@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -168,9 +168,9 @@ void MFLOCANVPrint(FILE *ifp, void *u, MFErrorHandler err)
 MFNVector MFCloneLOCANVector(void *data, MFErrorHandler err)
 {
   LOCANVectorData *vec_data = (LOCANVectorData*) data;
-  Teuchos::RCP<LMCEV> u2 = 
+  Teuchos::RCP<LMCEV> u2 =
     Teuchos::rcp_dynamic_cast<LMCEV>(vec_data->u_ptr->clone(),true);
-  
+
   return MFCreateLOCANVectorWithData(u2, err);
 }
 
@@ -180,8 +180,8 @@ void MFFreeLOCANVectorData(void *data, MFErrorHandler err)
   delete vec_data;
 }
 
-MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u, 
-				      MFErrorHandler err)
+MFNVector MFCreateLOCANVectorWithData(const Teuchos::RCP<LMCEV>& u,
+                      MFErrorHandler err)
 {
   MFNVector cthis;
 

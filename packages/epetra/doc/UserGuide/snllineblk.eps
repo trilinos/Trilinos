@@ -14,9 +14,9 @@
 %AI3_ColorUsage: Black&White
 %%CMYKCustomColor: 0 0.23 0.38 0 (PANTONE 473 CV)
 %%+ 1 0.51 0 0.305 (PANTONE 541 CV)
-%%AI6_ColorSeparationSet: 1 1 (AI6 Default Color Separation Set) 
+%%AI6_ColorSeparationSet: 1 1 (AI6 Default Color Separation Set)
 %%+ Options: 1 16 0 1 0 1 1 1 0 1 1 1 1 18 0 0 0 0 0 0 0 0 -1 -1
-%%+ PPD: 1 21 0 0 60 45 2 2 1 0 0 1 0 0 0 0 0 0 0 0 0 0 () 
+%%+ PPD: 1 21 0 0 60 45 2 2 1 0 0 1 0 0 0 0 0 0 0 0 0 0 ()
 %AI3_TemplateBox: 306 396 306 396
 %AI3_TileBox: 30 31 582 761
 %AI3_DocumentPreview: Macintosh_ColorPic
@@ -80,7 +80,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 		} bind def
 		/setcustomcolor
 		{
-			exch 
+			exch
 			aload pop dup
 			(AI8_CMYK_CustomColor) eq
 			{
@@ -100,7 +100,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 					3
 					{
 						1 exch sub
-						3 index mul 
+						3 index mul
 						1 exch sub
 						3 1 roll
 					} repeat
@@ -163,7 +163,7 @@ userdict /Adobe_level2_AI5 26 dict dup begin
 		} if
  end
 } bind def
-userdict /currentScreenFreq  
+userdict /currentScreenFreq
 	level2? {currenthalftone level2ScreenFreq} {currentscreen pop pop} ifelse put
 level2? not
 	{
@@ -251,10 +251,10 @@ level2? not
 %%BeginProcSet: Adobe_ColorImage_AI6 1.2 0
 userdict /Adobe_ColorImage_AI6 known not
 {
-	userdict /Adobe_ColorImage_AI6 50 dict put 
+	userdict /Adobe_ColorImage_AI6 50 dict put
 } if
 userdict /Adobe_ColorImage_AI6 get begin
-/initialize { 
+/initialize {
 	Adobe_ColorImage_AI6 begin
 	Adobe_ColorImage_AI6 {
 		dup type /arraytype eq {
@@ -341,16 +341,16 @@ currentdict /_colorimage known not {
 			0 0 1 0 setcmykcolor systemdict /currentgray get exec 1 exch sub
 			0 0 0 1 setcmykcolor systemdict /currentgray get exec 1 exch sub
 			grestore
-			1 0 0 0 FourEqual { 
+			1 0 0 0 FourEqual {
 				/plateindex 0 def
 			}{
-				0 1 0 0 FourEqual { 
+				0 1 0 0 FourEqual {
 					/plateindex 1 def
 				}{
 					0 0 1 0 FourEqual {
 						/plateindex 2 def
 					}{
-						0 0 0 1 FourEqual { 
+						0 0 0 1 FourEqual {
 							/plateindex 3 def
 						}{
 							0 0 0 0 FourEqual {
@@ -390,7 +390,7 @@ currentdict /_colorimage known not {
 	} ifelse
 } def
 /clrspaceissepn {
-	type /arraytype eq 
+	type /arraytype eq
 } def
 /clrspacegetname {
 	dup clrspaceissepn {dup length 2 sub get}{pop ()} ifelse
@@ -564,10 +564,10 @@ currentdict /_colorimage known not {
 	pop 1 add
 } def
 /RGBToGrayImageProc {	
-	Adobe_ColorImage_AI6_Vars begin 
+	Adobe_ColorImage_AI6_Vars begin
 		sourcearray 0 get exec
 		dup length 3 idiv string
-		dup 3 1 roll 
+		dup 3 1 roll
 		
 		/StuffRGBIntoGrayString load exch
 		WalkRGBString
@@ -577,7 +577,7 @@ currentdict /_colorimage known not {
 	Adobe_ColorImage_AI6_Vars begin
 		sourcearray 0 get exec
 		dup length 4 idiv string
-		dup 3 1 roll 
+		dup 3 1 roll
 		
 		/StuffCMYKIntoGrayString load exch
 		WalkCMYKString

@@ -97,7 +97,7 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
   int  j;                      /* loop counters */
 
   int end_row;                  /* row num to end column operations */
-  
+
 
   DATA_TYPE *ptr2;             /* running ptrs into mat and update cols */
   DATA_TYPE *ptr3, *ptr4;       /* running ptrs to diagonal and pivot rows */
@@ -107,7 +107,7 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
   int root;                     /* root processor for fanout */
   int type[16];                 /* mesage type for messages */
   int dest[16];                 /* dest for message sends */
- 
+
 
   int one = 1;                  /* constant for the daxpy routines */
 
@@ -115,7 +115,7 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
   DATA_TYPE d_min_one = CONST_MINUS_ONE; /* constant for the daxpy routines */
 
   int j1,j2;
- 
+
   double diag_mag;              /* magnitude of matrix diagonal */
 
   int n_rhs_this;               /* num rhs that I currently own */
@@ -164,7 +164,7 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
    if (row2 == NULL) {
     fprintf(stderr, "Node %d: Out of memory\n", me);
     exit(-1);
-   } 
+   }
 
 
   n_rhs_this = my_rhs;
@@ -173,7 +173,7 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
   my_pos = my_first_col - col_offset;
   if (my_pos < 0) my_pos += nprocs_row;
   extra = (nprocs_row - (col_offset-1))%nprocs_row;
-  
+
   act_col = my_cols-1;
   if (my_pos != 0) act_col++;
 
@@ -214,12 +214,12 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
         /* added this barrier for CPLANT operation  */
 
         MPI_Barrier(col_comm);
- 
+
        /* Changed XGEMM_ to XGEMM   removed all &   */
 
-        XGEMM_(&transA, &transB, &end_row, &n_rhs_this, &one, &d_min_one, 
+        XGEMM_(&transA, &transB, &end_row, &n_rhs_this, &one, &d_min_one,
                ptr5, &my_rows,
-               row1, &one, &d_one, 
+               row1, &one, &d_one,
                rhs, &my_rows);
       }
     }
@@ -238,9 +238,9 @@ back_solve6(DATA_TYPE *fseg, DATA_TYPE *rhs)
         bytes[1] = 0;
         type[1] = SOHSTYPE+j;
 
-	 MPI_Recv((char *) rhs, bytes[1], MPI_CHAR, dest[1], type[1],MPI_COMM_WORLD,&msgstatus); 
+	 MPI_Recv((char *) rhs, bytes[1], MPI_CHAR, dest[1], type[1],MPI_COMM_WORLD,&msgstatus);
 
-         */      
+         */
 
 	/*   dest[1] = dest_left;
         bytes[1] = n_rhs_this * sizeof(DATA_TYPE) * my_rows;
@@ -288,7 +288,7 @@ void collect_vector(DATA_TYPE *vec)
   int bytes;
   int dest;
   int type;
-  
+
   MPI_Status msgstatus;
 
   for (j=0; j<ncols_matrix; j++) {
@@ -327,5 +327,5 @@ void collect_vector(DATA_TYPE *vec)
         }
       }
     }
-  }      
+  }
 }

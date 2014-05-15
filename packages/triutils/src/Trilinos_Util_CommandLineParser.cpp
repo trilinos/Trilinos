@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                 TriUtils: Trilinos Utilities Package
 //                 Copyright (2011) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -45,13 +45,15 @@
 #include "Trilinos_Util_CommandLineParser.h"
 #include <cstring>
 
+using namespace std;
+
 Trilinos_Util_Map::Trilinos_Util_Map(void)
 {
 
   SetLabel("Trilinos_Util_Map");
-  
+
   return;
-  
+
 }
 
 void Trilinos_Util_Map::Reset(void)
@@ -65,7 +67,7 @@ void Trilinos_Util_Map::Reset(void)
   }
 */
   return;
-  
+
 }
 
 // ================================================ ====== ==== ==== == =
@@ -90,7 +92,7 @@ Trilinos_Util::CommandLineParser::CommandLineParser(int argc, char *argv[])
 
   int N_args = 0;
   int i=1;
-  
+
   for( i=1 ; i<argc ; ++i ) {
     if( *(argv[i]) == '-' ) break;
     N_args++;
@@ -105,29 +107,29 @@ Trilinos_Util::CommandLineParser::CommandLineParser(int argc, char *argv[])
 
   // now only arguments with a dash (possibly followed by one
   // other specifier)
-  
+
   for( ; i<argc ; ++i ) {
     // check if the option has a `=' inside.
     // If so, split the string into two substrings
-    char * pos = strchr( argv[i], '='); 
+    char * pos = strchr( argv[i], '=');
     if( pos != NULL ) {
       *pos = '\0';
       param = argv[i], value = pos+1;
       Set(param,value);
     } else if( i<argc-1 ) {
       if( *(argv[i+1]) != '-' ) {
-	param = argv[i], value = argv[i+1];
-	Set(param,value);
-	++i;
+  param = argv[i], value = argv[i+1];
+  Set(param,value);
+  ++i;
       } else {
-	param = argv[i], value = "";
-	Set(param,value);
+  param = argv[i], value = "";
+  Set(param,value);
       }
     } else {
       param = argv[i], value = "";
       Set(param,value);
     }
-    
+
   }
 
 }
@@ -136,15 +138,15 @@ Trilinos_Util::CommandLineParser::CommandLineParser(int argc, char *argv[])
 
 int Trilinos_Util_Map::Get( const string input, const int def_value)
 {
-  
+
   for( map<string,string>::const_iterator ci = Map_.begin();
        ci != Map_.end() ; ++ci ) {
-    if( (*ci).first == input ) 
+    if( (*ci).first == input )
       return( atoi(Map_[input].c_str()) );
   }
-  
+
   return def_value;
-   
+
 }
 
 // ================================================ ====== ==== ==== == =
@@ -154,10 +156,10 @@ double Trilinos_Util_Map::Get( const string input, const double def_value)
 
   for( map<string,string>::const_iterator ci = Map_.begin();
        ci != Map_.end() ; ++ci ) {
-    if( (*ci).first == input ) 
+    if( (*ci).first == input )
       return( atof(Map_[input].c_str()) );
   }
-  
+
   return def_value;
 
 }
@@ -169,44 +171,44 @@ string Trilinos_Util_Map::Get( const string input, const string def_value)
 
   for( map<string,string>::const_iterator ci = Map_.begin();
        ci != Map_.end() ; ++ci ) {
-    if( (*ci).first == input ) 
+    if( (*ci).first == input )
       return( Map_[input] );
   }
 
   return def_value;
-  
+
 }
 
 // ================================================ ====== ==== ==== == =
 
 bool Trilinos_Util_Map::Has( const string input)
 {
-  
+
   for( map<string,string>::const_iterator ci = Map_.begin();
        ci != Map_.end() ; ++ci ) {
-    if( (*ci).first == input ) 
+    if( (*ci).first == input )
       return true;
   }
   return false;
-  
+
 }
 
 // ================================================ ====== ==== ==== == =
 
-void Trilinos_Util_Map::ShowAll() const 
+void Trilinos_Util_Map::ShowAll() const
 {
 
   cout << "\n" << Label_ << " :: \n";
-  
+
   for( map<string,string>::const_iterator ci = Map_.begin();
        ci != Map_.end() ; ++ci ) {
-    if( (*ci).first.at(0) != '_' ) 
+    if( (*ci).first.at(0) != '_' )
       cout << (*ci).first << " = " << (*ci).second << endl;
   }
-  
+
 } /* ShowAll */
 
-void Trilinos_Util_Map::ShowReallyAll() const 
+void Trilinos_Util_Map::ShowReallyAll() const
 {
 
   cout << "\nTrilinos_Util_CommandLineParser :: \n";
@@ -215,7 +217,7 @@ void Trilinos_Util_Map::ShowReallyAll() const
        ci != Map_.end() ; ++ci ) {
     cout << (*ci).first << " = " << (*ci).second << endl;
   }
-  
+
 } /* ShowReallyAll */
 
 bool Trilinos_Util_Map::Add( const string input, const string value )
@@ -226,7 +228,7 @@ bool Trilinos_Util_Map::Add( const string input, const string value )
     return false;
 
   Map_[input] = value;
-  
+
   return true;
 
 } /* AddOption */
@@ -260,7 +262,7 @@ bool Trilinos_Util_Map::Set( const string input, const char * value )
 {
 
   string val(value);
-  
+
   Map_[input] = val;
 
   return true;
@@ -270,7 +272,7 @@ bool Trilinos_Util_Map::Set( const string input, const char * value )
 string Trilinos_Util::CommandLineParser::GetProgramName( void )
 {
   return( Get("_PROGRAM_NAME_", "UNDEFINED" ) );
-  
+
 }
 
 int Trilinos_Util::CommandLineParser::GetIntShellVariable( const char *str )
@@ -283,7 +285,7 @@ int Trilinos_Util::CommandLineParser::GetIntShellVariable( const char *str )
     return( atoi(buffer) );
 
   return 0;
-  
+
 } /* GetIntShellVariable */
 
 double Trilinos_Util::CommandLineParser::GetDoubleShellVariable( const char *str )
@@ -296,10 +298,10 @@ double Trilinos_Util::CommandLineParser::GetDoubleShellVariable( const char *str
     return( atoi(buffer) );
 
   return 0.0;
-  
+
 } /* GetDoubleShellVariable */
 
-string Trilinos_Util::CommandLineParser::GetStringShellVariable( const char *str ) 
+string Trilinos_Util::CommandLineParser::GetStringShellVariable( const char *str )
 {
 
   char * buffer;
@@ -309,13 +311,13 @@ string Trilinos_Util::CommandLineParser::GetStringShellVariable( const char *str
     return( "" );
 
   return( buffer );
-  
+
 } /* GetCharShellVariable */
 
 // ================================================ ====== ==== ==== == =
 
 ostream & operator << (ostream & os,
-		       const Trilinos_Util_Map & S)
+           const Trilinos_Util_Map & S)
 {
   S.ShowAll();
   return os;
@@ -329,15 +331,15 @@ Trilinos_Util::InputFileReader::InputFileReader(const char FileName[]) :
 {
 }
 
-Trilinos_Util::InputFileReader::~InputFileReader() 
+Trilinos_Util::InputFileReader::~InputFileReader()
 {
-  
+
   FileName_ = "";
   CommentChars_ = "";
   SeparationChars_ = "";
   Reset();
   FileHasBeenRead_ = false;
-  
+
 }
 
 string Trilinos_Util::InputFileReader::GetFileName() const
@@ -360,7 +362,7 @@ void Trilinos_Util::InputFileReader::SetSeparationChars(const string c)
 #include <iostream>
 #include <fstream>
 
-int Trilinos_Util::InputFileReader::ReadFile(const char * FileName) 
+int Trilinos_Util::InputFileReader::ReadFile(const char * FileName)
 {
   FileName_ = FileName;
 
@@ -369,7 +371,7 @@ int Trilinos_Util::InputFileReader::ReadFile(const char * FileName)
 
 int Trilinos_Util::InputFileReader::ReadFile()
 {
-  
+
   ifstream File(FileName_.c_str());
 
   if( File.good() == false ) {
@@ -382,36 +384,31 @@ int Trilinos_Util::InputFileReader::ReadFile()
   string Option, Value;
 
   while( File.eof() == false ) {
-    
+
     File.getline(line,255);
     string StrLine = line;
     for( int k=0 ; k<(int)CommentChars_.length() ; ++k ) {
       int CommentPos = StrLine.find(CommentChars_.at(k));
       if( CommentPos != -1 ) {
-	StrLine = StrLine.substr(0,CommentPos);
+  StrLine = StrLine.substr(0,CommentPos);
       }
     }
     int Length = StrLine.length();
-    for( int k=0 ; k< (int) SeparationChars_.length() ; ++k ) {    
+    for( int k=0 ; k< (int) SeparationChars_.length() ; ++k ) {
       int SepPos = StrLine.find(SeparationChars_.at(k));
       if( SepPos > 0 ) {
-	Option = StrLine.substr(0,SepPos);
-	Value = StrLine.substr(SepPos+1,Length);
-	// ~!@ to erase spaces...
-	if( Option.length() > 0 ) Set(Option,Value);
-	break;
+  Option = StrLine.substr(0,SepPos);
+  Value = StrLine.substr(SepPos+1,Length);
+  // ~!@ to erase spaces...
+  if( Option.length() > 0 ) Set(Option,Value);
+  break;
       }
     }
   }
-  
+
   // close file
   File.close();
 
   return 0;
-  
+
 }
-
-
-  
-
-  

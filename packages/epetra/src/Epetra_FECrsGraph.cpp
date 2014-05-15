@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -187,7 +187,7 @@ int Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const long long* rows, i
 //----------------------------------------------------------------------------
 int Epetra_FECrsGraph::GlobalAssemble(bool callFillComplete)
 {
-  return GlobalAssemble (static_cast<Epetra_Map&>(this->CrsGraphData_->RowMap_), 
+  return GlobalAssemble (static_cast<Epetra_Map&>(this->CrsGraphData_->RowMap_),
       static_cast<Epetra_Map&>(this->CrsGraphData_->RowMap_),
       callFillComplete);
 }
@@ -218,7 +218,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   const int numRows = (int) nonlocalRowData_var.size();
   int_type * presentRowIndices = new int_type[numRows];
-  typename std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >::iterator nonlocalRows 
+  typename std::map<int_type,Epetra_CrsGraphData::EntriesInOneRow<int_type> >::iterator nonlocalRows
     = nonlocalRowData<int_type>().begin();
   for (int i=0 ; nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows, ++i)
     presentRowIndices[i] = (int_type) nonlocalRows->first;
@@ -243,7 +243,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   //occur in our nonlocal rows. This is most easily done using the
   //EntriesInOneRow struct, since that is sorted.
   Epetra_CrsGraphData::EntriesInOneRow<int_type> allColumns;
-  for (nonlocalRows = nonlocalRowData_var.begin(); 
+  for (nonlocalRows = nonlocalRowData_var.begin();
        nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     allColumns.AddEntries((int) nonlocalRows->second.entries_.size(),
        &nonlocalRows->second.entries_[0]);
@@ -258,7 +258,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   int * rowLengths = new int[numRows];
   {
     int i = 0;
-    for (nonlocalRows = nonlocalRowData_var.begin(); 
+    for (nonlocalRows = nonlocalRowData_var.begin();
   nonlocalRows != nonlocalRowData_var.end() ; ++nonlocalRows, ++i)
       rowLengths[i] = (int) nonlocalRows->second.entries_.size();
   }
@@ -277,7 +277,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
 
   tempGrph->SetIndicesAreGlobal(true);
 
-  for (nonlocalRows = nonlocalRowData_var.begin(); 
+  for (nonlocalRows = nonlocalRowData_var.begin();
        nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     EPETRA_CHK_ERR( tempGrph->InsertGlobalIndices(nonlocalRows->first,
              (int) nonlocalRows->second.entries_.size(),
@@ -301,7 +301,7 @@ int Epetra_FECrsGraph::GlobalAssemble(const Epetra_Map& domain_map,
   }
 
   //now reset the values in our nonlocal data
-  for (nonlocalRows = nonlocalRowData_var.begin(); 
+  for (nonlocalRows = nonlocalRowData_var.begin();
        nonlocalRows != nonlocalRowData_var.end(); ++nonlocalRows)
     nonlocalRows->second.entries_.clear();
   nonlocalRowData_var.clear();

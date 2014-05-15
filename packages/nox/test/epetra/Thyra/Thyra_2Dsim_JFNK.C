@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -102,7 +102,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel = 
+  Teuchos::RCP<ModelEvaluator2DSim<double> > thyraModel =
     modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
 
   // Create the linear solver type with Stratimikos
@@ -110,15 +110,15 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
   //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->set("Preconditioner Type", "Ifpack");
   //p->set("Enable Delayed Solver Construction", true);
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   thyraModel->set_W_factory(lowsFactory);
@@ -128,7 +128,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     initial_guess = thyraModel->getNominalValues().get_x()->clone_v();
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel));
 
   nox_group->computeF();
@@ -140,36 +140,36 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     // Create the JFNK operator
     Teuchos::ParameterList printParams;
     Teuchos::RCP<Teuchos::ParameterList> jfnkParams = Teuchos::parameterList();
-    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
       Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
     jfnkOp->setParameterList(jfnkParams);
     jfnkParams->print(out);
-    
+
     jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
-    
+
     // Experiment with JFNK object
     Teuchos::RCP< ::Thyra::VectorBase<double> > input = initial_guess->clone_v();
     Teuchos::RCP< ::Thyra::VectorBase<double> > output = initial_guess->clone_v();
     ::Thyra::put_scalar(1.0,input.ptr());
     ::Thyra::put_scalar(0.0,output.ptr());
     ::Thyra::apply(*jfnkOp,::Thyra::NOTRANS,*input,output.ptr());
-    
+
     output->describe(out,Teuchos::VERB_EXTREME);
-    
+
     const double tol_mach_eps = 10.0 * std::numeric_limits<double>::epsilon();
     TEST_FLOATING_EQUALITY(jfnkOp->getLambda(),1.0e-6,tol_mach_eps);
-    
-    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd = 
+
+    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd =
       Teuchos::rcp_dynamic_cast< ::Thyra::SpmdVectorBase<double> >(output);
     Teuchos::ArrayRCP<const double> data;
     output_spmd->getLocalData(Teuchos::ptrFromRef(data));
     const double tol_perturb = 10.0 * jfnkOp->getDelta();
     TEST_FLOATING_EQUALITY(data[0],3.0,tol_perturb);
     TEST_FLOATING_EQUALITY(data[1],-10.0,tol_perturb);
-    
+
     TEST_THROW(jfnkOp->setUserDefinedDelta(1.0e-8),std::logic_error);
 
-    double delta_expected = jfnkOp->getLambda() * (jfnkOp->getLambda() + ::Thyra::norm(*initial_guess) / ::Thyra::norm(*input)); 
+    double delta_expected = jfnkOp->getLambda() * (jfnkOp->getLambda() + ::Thyra::norm(*initial_guess) / ::Thyra::norm(*input));
     TEST_FLOATING_EQUALITY(jfnkOp->getDelta(),delta_expected,tol_mach_eps);
   }
 
@@ -183,24 +183,24 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     jfnkParams->set("Difference Type","Forward");
     jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
     jfnkParams->set("lambda",1.0e-4);
-    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
       Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
     jfnkOp->setParameterList(jfnkParams);
     jfnkParams->print(out);
-    
+
     jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
-    
+
     // Experiment with JFNK object
     Teuchos::RCP< ::Thyra::VectorBase<double> > input = initial_guess->clone_v();
     Teuchos::RCP< ::Thyra::VectorBase<double> > output = initial_guess->clone_v();
     ::Thyra::put_scalar(1.0,input.ptr());
     ::Thyra::put_scalar(0.0,output.ptr());
     ::Thyra::apply(*jfnkOp,::Thyra::NOTRANS,*input,output.ptr());
-    
+
     const double tol_mach_eps = 10.0 * std::numeric_limits<double>::epsilon();
     TEST_FLOATING_EQUALITY(jfnkOp->getLambda(),1.0e-4,tol_mach_eps);
-    
-    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd = 
+
+    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd =
       Teuchos::rcp_dynamic_cast< ::Thyra::SpmdVectorBase<double> >(output);
     Teuchos::ArrayRCP<const double> data;
     output_spmd->getLocalData(Teuchos::ptrFromRef(data));
@@ -225,24 +225,24 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     jfnkParams->set("Difference Type","Forward");
     jfnkParams->set("Perturbation Algorithm","Knoll Keyes JCP 2004");
     jfnkParams->set("lambda",1.0e-6);
-    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
       Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
     jfnkOp->setParameterList(jfnkParams);
     jfnkParams->print(out);
-    
+
     jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
-    
+
     // Experiment with JFNK object
     Teuchos::RCP< ::Thyra::VectorBase<double> > input = initial_guess->clone_v();
     Teuchos::RCP< ::Thyra::VectorBase<double> > output = initial_guess->clone_v();
     ::Thyra::put_scalar(1.0,input.ptr());
     ::Thyra::put_scalar(0.0,output.ptr());
     ::Thyra::apply(*jfnkOp,::Thyra::NOTRANS,*input,output.ptr());
-    
+
     const double tol_mach_eps = 10.0 * std::numeric_limits<double>::epsilon();
     const double tol_perturb = 10.0 * jfnkOp->getDelta();
-    
-    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd = 
+
+    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd =
       Teuchos::rcp_dynamic_cast< ::Thyra::SpmdVectorBase<double> >(output);
     Teuchos::ArrayRCP<const double> data;
     output_spmd->getLocalData(Teuchos::ptrFromRef(data));
@@ -265,24 +265,24 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
     jfnkParams->set("Perturbation Algorithm","User Defined");
     jfnkParams->set("lambda",1.0e-4);
     jfnkParams->set("User Defined delta Value",1.0e-5);
-    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+    Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
       Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
     jfnkOp->setParameterList(jfnkParams);
     jfnkParams->print(std::cout);
-    
+
     jfnkOp->setBaseEvaluationToNOXGroup(nox_group);
-    
+
     // Experiment with JFNK object
     Teuchos::RCP< ::Thyra::VectorBase<double> > input = initial_guess->clone_v();
     Teuchos::RCP< ::Thyra::VectorBase<double> > output = initial_guess->clone_v();
     ::Thyra::put_scalar(1.0,input.ptr());
     ::Thyra::put_scalar(0.0,output.ptr());
     ::Thyra::apply(*jfnkOp,::Thyra::NOTRANS,*input,output.ptr());
-    
+
     const double tol_mach_eps = 10.0 * std::numeric_limits<double>::epsilon();
     TEST_FLOATING_EQUALITY(jfnkOp->getLambda(),1.0e-4,tol_mach_eps);
-    
-    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd = 
+
+    Teuchos::RCP< ::Thyra::SpmdVectorBase<double> > output_spmd =
       Teuchos::rcp_dynamic_cast< ::Thyra::SpmdVectorBase<double> >(output);
     Teuchos::ArrayRCP<const double> data;
     output_spmd->getLocalData(Teuchos::ptrFromRef(data));
@@ -302,7 +302,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, perturbation_unit_tests)
 
   Teuchos::TimeMonitor::summarize();
 }
-  
+
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 {
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -324,7 +324,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > model = 
+  Teuchos::RCP<ModelEvaluator2DSim<double> > model =
     modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
 
   // Create the linear solver type with Stratimikos
@@ -332,8 +332,8 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1.0e-1);
@@ -343,7 +343,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   //p->set("Enable Delayed Solver Construction", true);
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -358,21 +358,21 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   jfnkParams->set("Difference Type","Forward");
   jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
   jfnkParams->set("lambda",1.0e-4);
-  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
     Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
   jfnkOp->setParameterList(jfnkParams);
   jfnkParams->print(out);
-  
+
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
 
   // Wrap model in logger decrator for unit testing
-  Teuchos::RCP<NOX_TEST::ModelEvaluatorLoggerDecorator<double> > loggedModel = 
+  Teuchos::RCP<NOX_TEST::ModelEvaluatorLoggerDecorator<double> > loggedModel =
     Teuchos::rcp(new NOX_TEST::ModelEvaluatorLoggerDecorator<double>(thyraModel));
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, loggedModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
@@ -407,7 +407,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
   nl_params->set("Nonlinear Solver", "Line Search Based");
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -419,7 +419,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_no_prec)
 
   Teuchos::TimeMonitor::summarize();
 }
-  
+
 TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
 {
   Teuchos::TimeMonitor::zeroOutTimers();
@@ -441,7 +441,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   double p1 = 0.0;
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator2DSim<double> > model = 
+  Teuchos::RCP<ModelEvaluator2DSim<double> > model =
     modelEvaluator2DSim<double>(Teuchos::rcp(&Comm,false),d,p0,p1,x00,x01);
 
   // Create the linear solver type with Stratimikos
@@ -449,8 +449,8 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   //lowsFactory = rcp(new Thyra::AmesosLinearOpWithSolveFactory());
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").set("Tolerance",1.0e-1);
@@ -460,7 +460,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   //p->set("Enable Delayed Solver Construction", true);
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -475,21 +475,21 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   jfnkParams->set("Difference Type","Forward");
   jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
   jfnkParams->set("lambda",1.0e-4);
-  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
     Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
   jfnkOp->setParameterList(jfnkParams);
   jfnkParams->print(out);
-  
+
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
 
   // Create the Preconditioner operator
-  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp = 
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp =
     thyraModel->create_W_prec();
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null));
 
   nox_group->computeF();
@@ -526,7 +526,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_2DSim_JFNK, solve_Jacobi_prec_using_ME)
   nl_params->set("Nonlinear Solver", "Line Search Based");
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 

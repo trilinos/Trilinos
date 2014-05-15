@@ -56,9 +56,7 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include "exodusII.h"                   // for ex_set_specs, void_int, etc
 
 /*!
  * writes the side set ID's, side set element count array,

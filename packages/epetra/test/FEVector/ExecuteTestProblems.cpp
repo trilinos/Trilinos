@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -53,18 +53,18 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   (void)NumVectors;
   const Epetra_Comm & Comm = Map.Comm();
   int ierr = 0;
-  
+
   /* get number of processors and the name of this processor */
-  
+
   // int NumProc = Comm.getNumProc();
   int MyPID   = Comm.MyPID();
-  
+
   // Construct FEVector
-  
+
   if (verbose&&MyPID==0) cout << "constructing Epetra_FEVector" << endl;
 
   Epetra_FEVector A(Map, 1);
- 
+
   //For an extreme test, we'll have each processor sum-in a 1.0 for All
   //global ids.
 
@@ -215,23 +215,23 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
 
   const int Num = 4;
   int Indices[Num];
- 
+
   double Values[Num];
- 
+
 // Create vectors
 
   Epetra_FEVector b(Map, NumVectors);
   Epetra_FEVector x0(Map, NumVectors);
- 
+
 // source terms
- 
+
   if(MyPID==0)  // indices corresponding to element 0 on processor 0
   {
     Indices[0] = 0;
     Indices[1] = 1;
     Indices[2] = 4;
     Indices[3] = 5;
- 
+
     Values[0] = 1./2.;
     Values[1] = 1./2.;
     Values[2] = 1./2.;
@@ -244,7 +244,7 @@ int fevec1(Epetra_Comm& Comm, bool verbose)
     Indices[1] = 2;
     Indices[2] = 3;
     Indices[3] = 4;
- 
+
     Values[0] = 0;
     Values[1] = 0;
     Values[2] = 0;
@@ -322,22 +322,22 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
   for(int i=0; i<NumCols; ++i) {
     numValuesPerID[i] = elemSize;
   }
- 
+
   double* Values = new double[NumCols*elemSize];
- 
+
 // Create vectors
 
   Epetra_FEVector b(Map, 1);
   Epetra_FEVector x0(Map, 1);
- 
+
 // source terms
   NumCols = 2;
- 
+
   if(MyPID==0)  // indices corresponding to element 0 on processor 0
   {
     Indices[0] = 0;
     Indices[1] = 3;
- 
+
     Values[0] = 1./2.;
     Values[1] = 1./2.;
     Values[2] = 1./2.;
@@ -350,7 +350,7 @@ int fevec2(Epetra_Comm& Comm, bool verbose)
    {
     Indices[0] = 1;
     Indices[1] = 2;
- 
+
     Values[0] = 0;
     Values[1] = 0;
     Values[2] = 0;
@@ -409,22 +409,22 @@ int fevec3(Epetra_Comm& Comm, bool verbose)
   for(int i=0; i<NumCols; ++i) {
     numValuesPerID[i] = elemSize;
   }
- 
+
   double* Values = new double[NumCols*elemSize];
- 
+
 // Create vectors
 
   Epetra_FEVector b(Map, 1);
   Epetra_FEVector x0(Map, 1);
- 
+
 // source terms
   NumCols = 2;
- 
+
   if(MyPID==0)  // indices corresponding to element 0 on processor 0
   {
     Indices[0] = 0;
     Indices[1] = 3;
- 
+
     for(int ii=0; ii<NumCols*elemSize; ++ii) {
       Values[ii] = 1./2.;
     }
@@ -434,7 +434,7 @@ int fevec3(Epetra_Comm& Comm, bool verbose)
   {
     Indices[0] = 1;
     Indices[1] = 2;
- 
+
     for(int ii=0; ii<NumCols*elemSize; ++ii) {
       Values[ii] = 0.;
     }
@@ -519,7 +519,7 @@ int fevec5(Epetra_Comm& Comm, bool verbose)
   x1.ReplaceGlobalValues(1, &GID, &value);
   x1.GlobalAssemble (Insert);
   if (Comm.MyPID()==0)
-    std::cout << "Entry " << GID << " after construct & set: " 
+    std::cout << "Entry " << GID << " after construct & set: "
         << x1[0][0] << std::endl;
 
         // copy vector
@@ -537,7 +537,7 @@ int fevec5(Epetra_Comm& Comm, bool verbose)
   x2.GlobalAssemble (Insert);
 
   if (Comm.MyPID()==0)
-    std::cout << "Entry " << GID << " after copy & set:      " 
+    std::cout << "Entry " << GID << " after copy & set:      "
         << x2[0][0] << std::endl;
 
   return 0;
@@ -556,7 +556,7 @@ int fevec6(Epetra_Comm& Comm, bool verbose)
   x1.ReplaceGlobalValues(1, &GID, &value);
   x1.GlobalAssemble (Insert);
   if (Comm.MyPID()==0)
-    std::cout << "Entry " << GID << " after construct & set: " 
+    std::cout << "Entry " << GID << " after construct & set: "
         << x1[0][0] << std::endl;
 
   x1.PutScalar(0);
@@ -571,7 +571,7 @@ int fevec6(Epetra_Comm& Comm, bool verbose)
   x1.GlobalAssemble (Insert);
 
   if (Comm.MyPID()==0) {
-    std::cout << "Entry " << GID << " after PutScalar & set:      " 
+    std::cout << "Entry " << GID << " after PutScalar & set:      "
         << x1[0][0] << std::endl;
     if (x1[0][0] != value) return -1;
   }

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // NOX headers
 #include "NOX.H"  // Required headers
 #include "NOX_Epetra.H" // Epetra Interface headers
@@ -73,7 +73,7 @@ int main(int argc, char *argv[]) {
 #else
   Epetra_SerialComm Comm;
 #endif
- 
+
   int globalLength = 100; // This should suffice
 
   bool verbose = false;
@@ -91,21 +91,21 @@ int main(int argc, char *argv[]) {
   Teuchos::ParameterList& noxParams = *(noxParamsPtr.get());
   // Only print output if the "-v" flag is set on the command line
   Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 5);
   printParams.set("Output Processor", 0);
   if( verbose )
-    printParams.set("Output Information", 
-		NOX::Utils::OuterIteration + 
-		NOX::Utils::OuterIterationStatusTest + 
-		NOX::Utils::InnerIteration +
-		NOX::Utils::Parameters + 
-		NOX::Utils::Details + 
-		NOX::Utils::Warning +
-		NOX::Utils::TestDetails);
+    printParams.set("Output Information",
+        NOX::Utils::OuterIteration +
+        NOX::Utils::OuterIterationStatusTest +
+        NOX::Utils::InnerIteration +
+        NOX::Utils::Parameters +
+        NOX::Utils::Details +
+        NOX::Utils::Warning +
+        NOX::Utils::TestDetails);
   else
     printParams.set("Output Information", NOX::Utils::Error);
-  
+
   NOX::Utils printing(printParams);
 
   // Identify the test problem
@@ -132,7 +132,7 @@ int main(int argc, char *argv[]) {
 
   // Create a map describing data distribution
   Epetra_Map * standardMap = new Epetra_Map(globalLength, 0, Comm);
-  
+
   // Return value
   int status = 0;
 
@@ -148,7 +148,7 @@ int main(int argc, char *argv[]) {
   noxVec2->init(1.0);
 
   // Test our norms
-  NOX::Abstract::Vector::NormType 
+  NOX::Abstract::Vector::NormType
     oneNorm = NOX::Abstract::Vector::OneNorm,
     twoNorm = NOX::Abstract::Vector::TwoNorm,
     infNorm = NOX::Abstract::Vector::MaxNorm;
@@ -209,7 +209,7 @@ int main(int argc, char *argv[]) {
 
   if (status == 0)
     printing.out() << "Test passed!" << std::endl;
-  else 
+  else
     printing.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI

@@ -37,6 +37,13 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   )
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_CXX11
+  KOKKOS_HAVE_CXX11
+  "Enable C++11 support in Kokkos."
+  "${Trilinos_ENABLE_CXX11}"
+  )
+  
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_HWLOC
   KOKKOS_HAVE_HWLOC
   "Enable HWLOC support in Kokkos."

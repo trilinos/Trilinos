@@ -46,11 +46,6 @@
 #ifndef MUELU_USERAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_USERAGGREGATIONFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Map.hpp>
 #include <Xpetra_Vector.hpp>
 #include <Xpetra_VectorFactory.hpp>
@@ -102,8 +97,8 @@ namespace MueLu {
 
     LO numVertices, numAggregates;
     ifs >> numVertices >> numAggregates;
-    TEUCHOS_TEST_FOR_EXCEPTION(numVertices   > 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
-    TEUCHOS_TEST_FOR_EXCEPTION(numAggregates > 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(numVertices   <= 0, Exceptions::InvalidArgument, "Number of vertices   must be > 0");
+    TEUCHOS_TEST_FOR_EXCEPTION(numAggregates <= 0, Exceptions::InvalidArgument, "Number of aggregates must be > 0");
 
     Xpetra::UnderlyingLib  lib       = currentLevel.lib();
     const int              indexBase = 0;

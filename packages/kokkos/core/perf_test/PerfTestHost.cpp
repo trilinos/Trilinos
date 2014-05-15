@@ -43,12 +43,34 @@
 
 #include <gtest/gtest.h>
 
+#include <Kokkos_Macros.hpp>
 #include <Kokkos_View.hpp>
+#include <Kokkos_hwloc.hpp>
 
-#include <impl/Kokkos_Timer.hpp>
+#if defined( KOKKOS_HAVE_PTHREAD )
 
 #include <Kokkos_Threads.hpp>
-#include <Kokkos_hwloc.hpp>
+
+typedef Kokkos::Threads TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Threads" ;
+
+#elif defined( KOKKOS_HAVE_OPENMP )
+
+#include <Kokkos_OpenMP.hpp>
+
+typedef Kokkos::OpenMP TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::OpenMP" ;
+
+#else
+
+#include <Kokkos_Serial.hpp>
+
+typedef Kokkos::Serial TestHostDevice ;
+const char TestHostDeviceName[] = "Kokkos::Serial" ;
+
+#endif
+
+#include <impl/Kokkos_Timer.hpp>
 
 #include <PerfTestHexGrad.hpp>
 #include <PerfTestBlasKernels.hpp>
@@ -66,21 +88,21 @@ protected:
     const unsigned team_count = Kokkos::hwloc::get_available_numa_count();
     const unsigned threads_per_team = 4 ;
 
-    Kokkos::Threads::initialize( team_count * threads_per_team );
+    TestHostDevice::initialize( team_count * threads_per_team );
   }
 
   static void TearDownTestCase()
   {
-    Kokkos::Threads::finalize();
+    TestHostDevice::finalize();
   }
 };
 
 TEST_F( host, hexgrad ) {
-  EXPECT_NO_THROW(run_test_hexgrad< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
+  EXPECT_NO_THROW(run_test_hexgrad< TestHostDevice>( 10, 20, TestHostDeviceName ));
 }
 
 TEST_F( host, gramschmidt ) {
-  EXPECT_NO_THROW(run_test_gramschmidt< Kokkos::Threads>( 10, 20, "Kokkos::Threads" ));
+  EXPECT_NO_THROW(run_test_gramschmidt< TestHostDevice>( 10, 20, TestHostDeviceName ));
 }
 
 } // namespace Test

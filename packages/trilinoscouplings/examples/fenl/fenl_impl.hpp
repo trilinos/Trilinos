@@ -181,6 +181,7 @@ void build_lid_to_gid(const Map& lid_to_gid, const Fixture& fixture) {
 template < class Device , BoxElemPart::ElemOrder ElemOrder >
 Perf fenl(
   const ::Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const ::Teuchos::RCP<  typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Device> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -396,9 +397,6 @@ Perf fenl(
     const ::Teuchos::ParameterList params();
 
     // Create Distributed Objects
-
-    // Create Node
-    RCP<NodeType> node = rcp (new NodeType());
 
     // Create Maps
     typedef ::Kokkos::View<int*,Device> lid_to_gid_type;

@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -200,7 +200,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
 }
-   
+
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
               const Epetra_FECrsGraph& graph,
@@ -220,7 +220,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
     nonlocalCoefs_(),
     workData_(128),
     useNonlocalMatrix_ (graph.UseNonlocalGraph() && graph.nonlocalGraph_ != 0),
-    nonlocalMatrix_ (useNonlocalMatrix_ ? 
+    nonlocalMatrix_ (useNonlocalMatrix_ ?
     		new Epetra_CrsMatrix(Copy,*graph.nonlocalGraph_) : NULL),
     sourceMap_(NULL),
     colMap_(NULL),
@@ -230,7 +230,7 @@ Epetra_FECrsMatrix::Epetra_FECrsMatrix(Epetra_DataAccess CV,
   myFirstRow_ = RowMap().MinMyGID64();
   myNumRows_ = RowMap().NumMyElements();
 }
-   
+
 //----------------------------------------------------------------------------
 Epetra_FECrsMatrix::Epetra_FECrsMatrix(const Epetra_FECrsMatrix& src)
  : Epetra_CrsMatrix(src),
@@ -1028,7 +1028,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
     //now reset the values in our nonlocal data
     if (!useNonlocalMatrix_) {
       for(size_t i=0; i<nonlocalRows_var.size(); ++i) {
-        nonlocalCols_var[i].resize(0); 
+        nonlocalCols_var[i].resize(0);
         nonlocalCoefs_[i].resize(0);
       }
     }
@@ -1038,7 +1038,7 @@ int Epetra_FECrsMatrix::GlobalAssemble(const Epetra_Map& domain_map,
   if (!save_off_and_reuse_map_exporter) {
     delete exporter_;
     exporter_ = NULL;
-    if (!useNonlocalMatrix_) 
+    if (!useNonlocalMatrix_)
       delete tempMat_;
     tempMat_ = NULL;
   }

@@ -4,15 +4,15 @@
 //
 // SUMMARY: Templatized Oriented Object Finte Element Method
 //          TOOFEM
-// RELEASE: 0.1     
-// USAGE  : You may copy freely these files and use it for    
-//          teaching or research. These or part of these may   
-//          not be sold or used for a commercial purpose with- 
+// RELEASE: 0.1
+// USAGE  : You may copy freely these files and use it for
+//          teaching or research. These or part of these may
+//          not be sold or used for a commercial purpose with-
 //          out our consent : fax (33)1 44 27 72 00
-//			
+//
 // AUTHOR : Nicolas Di cesare
-// ORG    :          
-// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr     
+// ORG    :
+// E-MAIL : Nicolas.Dicesare@ann.jussieu.fr
 //
 // ORIG-DATE: September 98
 // LAST-MOD : 15/09/98
@@ -123,14 +123,14 @@ TinyVector< T, Num >& TinyVector< T, Num >::operator -= (const TinyVector< T, Nu
   return *this;
 }
 
-template < class T,  int Num > inline 
-ostream& operator << (ostream& os, const TinyVector< T, Num >& v)
+template < class T,  int Num > inline
+std::ostream& operator << (std::ostream& os, const TinyVector< T, Num >& v)
 {
-  os.setf(ios::fixed,ios::floatfield);
+  os.setf(std::ios::fixed,std::ios::floatfield);
 
   for (int i=0; i<Num; ++i)
-    os << setw(12) << v[i];
-  os << endl;
+    os << std::setw(12) << v[i];
+  os << std::endl;
 
   return os;
 }

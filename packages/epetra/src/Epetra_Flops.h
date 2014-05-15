@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,15 +48,15 @@
 
 //! Epetra_Flops:  The Epetra Floating Point Operations Class.
 /*! The Epetra_Flops class provides basic support and consistent interfaces
-    for counting and reporting floating point operations performed in 
+    for counting and reporting floating point operations performed in
     the Epetra computational classes.  All classes based on the Epetra_CompObject
     can count flops by the user creating an Epetra_Flops object and calling the SetFlopCounter()
     method for an Epetra_CompObject.
-  
+
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
-    
+
   public:
   //! Epetra_Flops Constructor.
   /*! Creates a Epetra_Flops instance. This instance can be queried for
@@ -77,7 +77,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
   void ResetFlops() {Flops_=0.0;};
 
   //! Epetra_Flops Destructor.
-  /*! Completely deletes a Epetra_Flops object.  
+  /*! Completely deletes a Epetra_Flops object.
   */
   virtual ~Epetra_Flops(void);
 
@@ -101,10 +101,10 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Flops {
   void UpdateFlops(double Flops_in) const {Flops_ += Flops_in;};
   //! Increment Flop count for \e this object from a float
   void UpdateFlops(float Flops_in) const {Flops_ +=(double) Flops_in;};
-  
+
 
  private:
-  
+
 };
 
 #endif /* EPETRA_FLOPS_H */

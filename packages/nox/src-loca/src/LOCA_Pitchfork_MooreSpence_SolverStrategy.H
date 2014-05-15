@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_PITCHFORK_MOORESPENCE_SOLVERSTRATEGY_H
 #define LOCA_PITCHFORK_MOORESPENCE_SOLVERSTRATEGY_H
 
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 
 #include "NOX_Abstract_Group.H"  // for ReturnType
 
@@ -71,8 +71,8 @@ namespace LOCA {
   namespace Pitchfork {
 
     namespace MooreSpence {
- 
-      /*! 
+
+      /*!
        * \brief Abstract strategy for solving the Moore-Spence pitchfork
        * equations.
        */
@@ -91,7 +91,7 @@ namespace LOCA {
        *        Y \\
        *        w \\
        *        z
-       *     \end{bmatrix} = 
+       *     \end{bmatrix} =
        *     \begin{bmatrix}
        *        F \\
        *        G \\
@@ -107,59 +107,59 @@ namespace LOCA {
 
       public:
 
-	//! Constructor
-	SolverStrategy() {}
+    //! Constructor
+    SolverStrategy() {}
 
-	//! Destructor
-	virtual ~SolverStrategy() {}
+    //! Destructor
+    virtual ~SolverStrategy() {}
 
-	//! Set blocks in extended linear system
-	/*!
-	 * \param group [in] Underlying group representing J
-	 * \param pfGroup [in] Pitchfork group representing the pitchfork 
-	 *                     equations.  
-	 * \param asymMultiVector [in] Multivector representing the 
-	 *                             asymmetric vector
-	 * \param nullVector [in] Vector representing v
-	 * \param JnVector [in] Vector representing Jv
-	 * \param dfdp [in] Vector representing df/dp
-	 * \param dJndp [in] Vector representing d(Jv)/dp
-	 */
-	virtual void setBlocks(
-	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
-	  const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
-	  const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
-	  const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp) = 0;
+    //! Set blocks in extended linear system
+    /*!
+     * \param group [in] Underlying group representing J
+     * \param pfGroup [in] Pitchfork group representing the pitchfork
+     *                     equations.
+     * \param asymMultiVector [in] Multivector representing the
+     *                             asymmetric vector
+     * \param nullVector [in] Vector representing v
+     * \param JnVector [in] Vector representing Jv
+     * \param dfdp [in] Vector representing df/dp
+     * \param dJndp [in] Vector representing d(Jv)/dp
+     */
+    virtual void setBlocks(
+      const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::AbstractGroup>& group,
+      const Teuchos::RCP<LOCA::Pitchfork::MooreSpence::ExtendedGroup>& pfGroup,
+      const Teuchos::RCP<const NOX::Abstract::MultiVector>& asymMultiVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& nullVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& JnVector,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& dfdp,
+      const Teuchos::RCP<const NOX::Abstract::Vector>& dJndp) = 0;
 
-	/*! 
-	 * \brief Solves the extended system as defined above
-	 */
-	/*!
-	 * The \em params argument is the linear solver parameters. 
-	 */
-	virtual NOX::Abstract::Group::ReturnType 
-	solve(
-	  Teuchos::ParameterList& params,
-	  const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
+    /*!
+     * \brief Solves the extended system as defined above
+     */
+    /*!
+     * The \em params argument is the linear solver parameters.
+     */
+    virtual NOX::Abstract::Group::ReturnType
+    solve(
+      Teuchos::ParameterList& params,
+      const LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& input,
           LOCA::Pitchfork::MooreSpence::ExtendedMultiVector& result) const = 0;
 
       private:
 
-	//! Private to prohibit copying
-	SolverStrategy(const SolverStrategy&);
-	
-	//! Private to prohibit copying
-	SolverStrategy& operator = (const SolverStrategy&);
+    //! Private to prohibit copying
+    SolverStrategy(const SolverStrategy&);
+
+    //! Private to prohibit copying
+    SolverStrategy& operator = (const SolverStrategy&);
 
       }; // Class SolverStrategy
-      
+
     } // Namespace MooreSpence
 
   } // Namespace TurningPont
-    
+
 } // Namespace LOCA
 
 #endif // LOCA_PITCHFORK_MOORESPENCE_SOLVERSTRATEGY_H

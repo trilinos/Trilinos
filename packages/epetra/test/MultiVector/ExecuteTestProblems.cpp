@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -60,10 +60,10 @@
 
 
     // Test GEMM first.  7 cases:
-    
+
     //                                       Num
     //     OPERATIONS                        case  Notes
-    // 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No Comm needed) 
+    // 1) C(local) = A^X(local) * B^X(local)  4   (X=Trans or Not, No Comm needed)
     // 2) C(local) = A^T(distr) * B  (distr)  1   (2D dot product, replicate C)
     // 3) C(distr) = A  (distr) * B^X(local)  2   (2D vector update, no Comm needed)
 
@@ -81,7 +81,7 @@
     Epetra_MultiVector C_GEMM(Map2d, NumVectors);
 
     double **App, **Bpp, **Cpp;
-    
+
     Epetra_MultiVector *Ap, *Bp, *Cp;
 
     // For testing non-strided mode, create MultiVectors that are scattered throughout memory
@@ -92,13 +92,13 @@
     for (i=0; i<NumVectors; i++) App[i] = new double[A.MyLength()+i];
     for (i=0; i<NumVectors; i++) Bpp[i] = new double[B.MyLength()+i];
     for (i=0; i<NumVectors; i++) Cpp[i] = new double[C.MyLength()+i];
-    
+
     Epetra_MultiVector A1(View, LocalMap, App, NumVectors);
     Epetra_MultiVector B1(View, LocalMap, Bpp, NumVectors);
     Epetra_MultiVector C1(View, Map2d, Cpp, NumVectors);
 
     for (int strided = 0; strided<2; strided++) {
-   
+
     // Loop through all trans cases using a variety of values for alpha and beta
     for (i=0; i<4; i++)  {
 	char transa = 'N'; if (i>1) transa = 'T';
@@ -118,12 +118,12 @@
 	      B.ExtractCopy(Bpp); Bp = &B1;
 	      C.ExtractCopy(Cpp); Cp = &C1;
 	    }
-	  
+	
 	  localierr = Cp->Multiply(transa, transb, alpha, *Ap, *Bp, beta);
 	  if (localierr!=-2) { // -2 means the shapes didn't match and we skip the tests
 	    ierr += Cp->Update(-1.0, C_GEMM, 1.0);
 	    ierr += Cp->Norm2(residual);
-	    
+	
 	    if (verbose)
 	      {
 		cout << "XXXXX Replicated Local MultiVector GEMM tests";
@@ -150,7 +150,7 @@
     delete [] Bpp;
     delete [] Cpp;
     }
-      
+
     // ====================================
     // Case 5  (A, B distributed C  local)
     // ====================================
@@ -182,8 +182,8 @@
 	}
       if (BadResidual(verbose,residual, NumVectors)) return(-1);
     }
-    
-  }      
+
+  }
     // ====================================
     // Case 6-7  (A, C distributed, B local)
     // ====================================
@@ -217,7 +217,7 @@
 	if (BadResidual(verbose,residual, NumVectors)) return(-1);
       }
 
-    
+
   }
     // ====================================
     // LocalMap Tests
@@ -225,7 +225,7 @@
 
     // Construct MultiVectors
   {
-    
+
         int localLength = 10;
         double *localMinValue = new double[localLength];
         double *localMaxValue = new double[localLength];
@@ -287,7 +287,7 @@
   }
 
     delete [] residual;
-    
+
     return(ierr);
   }
 
@@ -296,15 +296,15 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   const Epetra_Comm & Comm = Map.Comm();
   int ierr = 0, i;
   double *residual = new double[NumVectors];
-  
+
   Epetra_BLAS BLAS;
   /* get number of processors and the name of this processor */
-  
+
   // int NumProc = Comm.getNumProc();
   int MyPID   = Comm.MyPID();
-  
+
   // Construct MultiVectors
-  
+
   Epetra_MultiVector A(Map, NumVectors);
   Epetra_MultiVector sqrtA(Map, NumVectors);
   Epetra_MultiVector B(Map, NumVectors);
@@ -313,7 +313,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   Epetra_MultiVector C_alphaAplusB(Map, NumVectors);
   Epetra_MultiVector C_plusB(Map, NumVectors);
   Epetra_MultiVector Weights(Map, NumVectors);
-  
+
   // Construct double vectors
   double *dotvec_AB   = new double[NumVectors];
   double *norm1_A     = new double[NumVectors];
@@ -323,14 +323,14 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *minval_A = new double[NumVectors];
   double *maxval_A = new double[NumVectors];
   double *meanval_A = new double[NumVectors];
-  
-  // Generate data 
 
-  
+  // Generate data
+
+
   EPETRA_TEST_ERR(C.Random(),ierr); // Fill C with random numbers.
   double alpha = 2.0;
   BuildMultiVectorTests (C,alpha, A, sqrtA, B, C_alphaA, C_alphaAplusB,
-			     C_plusB, dotvec_AB, norm1_A, norm2_sqrtA, norminf_A, 
+			     C_plusB, dotvec_AB, norm1_A, norm2_sqrtA, norminf_A,
 			     normw_A, Weights, minval_A, maxval_A, meanval_A);
 
   int err = 0;
@@ -353,7 +353,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   EPETRA_TEST_ERR(alphaAplusB.Update(1.0, B, alpha, A, 0.0),err);
   EPETRA_TEST_ERR(alphaAplusB.Update(-1.0, C_alphaAplusB, 1.0),err);
   EPETRA_TEST_ERR(alphaAplusB.Norm2(residual),err);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -366,7 +366,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   EPETRA_TEST_ERR(plusB.Update(1.0, B, 1.0),err);
   EPETRA_TEST_ERR(plusB.Update(-1.0, C_plusB, 1.0),err);
   EPETRA_TEST_ERR(plusB.Norm2(residual),err);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -378,7 +378,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *dotvec = residual;
   EPETRA_TEST_ERR(A.Dot(B,dotvec),err);
   BLAS.AXPY(NumVectors,-1.0,dotvec_AB,dotvec);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -390,11 +390,11 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *norm1 = residual;
   EPETRA_TEST_ERR(A.Norm1(norm1),err);
   BLAS.AXPY(NumVectors,-1.0,norm1_A,norm1);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
-  }  
+  }
 
   err = 0;
   if (verbose) cout << "XXXXX Testing norm2_sqrtA     ";
@@ -402,7 +402,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *norm2 = residual;
   EPETRA_TEST_ERR(sqrtA.Norm2(norm2),err);
   BLAS.AXPY(NumVectors,-1.0,norm2_sqrtA,norm2);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -414,31 +414,31 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *norminf = residual;
   EPETRA_TEST_ERR(A.NormInf(norminf),err);
   BLAS.AXPY(NumVectors,-1.0,norminf_A,norminf);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
   }
-  
+
   err = 0;
   if (verbose) cout << "XXXXX Testing normw_A     ";
   // Test A.NormWeighted()
   double *normw = residual;
   EPETRA_TEST_ERR(A.NormWeighted(Weights, normw),err);
   BLAS.AXPY(NumVectors,-1.0,normw_A,normw);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
   }
-  
+
   err = 0;
   if (verbose) cout << "XXXXX Testing minval_A     ";
   // Test A.MinValue()
   double *minval = residual;
   EPETRA_TEST_ERR(A.MinValue(minval),err);
   BLAS.AXPY(NumVectors,-1.0,minval_A,minval);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -462,7 +462,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   double *meanval = residual;
   EPETRA_TEST_ERR(A.MeanValue(meanval),err);
   BLAS.AXPY(NumVectors,-1.0,meanval_A,meanval);
-  
+
   if (err) ierr += err;
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
@@ -480,7 +480,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   else {
     EPETRA_TEST_ERR(BadResidual(verbose,residual, NumVectors),ierr);
   }
-  
+
   err = 0;
   if (verbose) cout << "XXXXX Testing random_A (Test1) ";
   // Test A.Random()
@@ -489,7 +489,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   EPETRA_TEST_ERR(Rand1_A.Random(),err);
   EPETRA_TEST_ERR(Rand2_A.Random(),err);
   // Rand2_A = Rand1_A - Rand2_A (should be nonzero since Random() should give different vectors > 0)
-  EPETRA_TEST_ERR(Rand2_A.Update(1.0, Rand1_A, -1.0),err); 
+  EPETRA_TEST_ERR(Rand2_A.Update(1.0, Rand1_A, -1.0),err);
   EPETRA_TEST_ERR(Rand2_A.Norm2(residual),err);
 
   if (err) ierr += err;
@@ -503,8 +503,8 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   // Next test that each column of the multivector is different from all other columns by testing the first value
   // of each vector against the first value of every other vector.
   int randvalsdiffer = 1; // Assume they all differ
-  for (i=0; i< NumVectors; i++) 
-    for (int j=i+1; j<NumVectors; j++) 
+  for (i=0; i< NumVectors; i++)
+    for (int j=i+1; j<NumVectors; j++)
       if (Rand1_A[i][0]==Rand1_A[j][0]) randvalsdiffer = 0; // make false if equal
   int allrandvals = 0;
   Comm.MinAll(&randvalsdiffer, &allrandvals, 1); // get min of all values across all processors
@@ -525,7 +525,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 
   // Next test that the first element on each processor of the first column of Rand1_A is different from all others
   // First we will gather them all to PE 0
-  
+
 
   Epetra_Map RandstartsMap(-1, 1, 0, Comm); // This Map has a single element on each PE
   int itmp = 0;
@@ -543,15 +543,15 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   // Next test that this is true.
   randvalsdiffer = 1; // Assume they all differ
   if (MyPID==0) {
-    for (i=0; i< NumVectors; i++) 
+    for (i=0; i< NumVectors; i++)
       for (int irand=0; irand<nproc; irand++)
-	for (int jrand=irand+1; jrand<nproc; jrand++) 
+	for (int jrand=irand+1; jrand<nproc; jrand++)
 	  if (Allrandstarts[i][irand]==Allrandstarts[i][jrand]) randvalsdiffer = 0; // make false if equal
   }
   allrandvals = 0;
   Comm.MinAll(&randvalsdiffer, &allrandvals, 1); // get min of all values across all processors
 
-  EPETRA_TEST_ERR(1-allrandvals, err); // If allrandvals is anything but 1, this will cause an error 
+  EPETRA_TEST_ERR(1-allrandvals, err); // If allrandvals is anything but 1, this will cause an error
   locerr = err;
   Comm.MinAll(&locerr, &err, 1);
   if (verbose) {
@@ -563,7 +563,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   }
 
   // Delete everything
-  
+
   delete [] dotvec_AB;
   delete [] norm1_A;
   delete [] norm2_sqrtA;
@@ -577,7 +577,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   //*******************************************************************
   // Post-construction modification tests
   //*******************************************************************
-  
+
   if (verbose) cout <<  "\n\nXXXXX Testing Post-construction modification of a multivector"
 		    <<endl<<endl;
 
@@ -630,7 +630,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   }
   else
     if (locerr!=1) err++; // Test for GID out of range error (=1)
-  
+
   // ========================================================================
   // Test int SumIntoGlobalValue (int GlobalRow, int VectorIndex, double ScalarValue)
   // ========================================================================
@@ -644,13 +644,13 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
 		      <<  X[testVecIndex][FirstEntryOfGID]
 		      << " should = " << newGIDValue << endl;
   }
-  else 
+  else
     if (locerr!=1) err++; // Test for GID out of range error (=1)
-    
+
   // ========================================================================
   // Test int SumIntoGlobalValue (int GlobalRow, intBlockRowOffset, int VectorIndex, double ScalarValue)
   // ========================================================================
-    
+
   newGIDValue = 1.0;
   locerr = X.ReplaceGlobalValue(testGID, GIDSize-1, testVecIndex, newGIDValue);
   locerr = X.SumIntoGlobalValue(testGID, GIDSize-1, testVecIndex, newGIDValue);
@@ -667,7 +667,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   // ========================================================================
   // Test Local "My" versions of same routine (less complicated)
   // ========================================================================
-  
+
   // Pick middle range values for LID
   int testLID = Map.NumMyElements()/2;
 
@@ -682,7 +682,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
   if (verbose) cout << "X["<<testVecIndex<<"]["<<FirstEntryOfLID<<"] = "
 		    <<  X[testVecIndex][FirstEntryOfLID]
 		    << " should = " << newLIDValue << endl;
-  
+
   newLIDValue = 8.0;
   locerr = X.ReplaceMyValue(testLID, LIDSize-1, testVecIndex, newLIDValue);
   if (X[testVecIndex][FirstEntryOfLID+LIDSize-1]!=newLIDValue) err++;
@@ -737,7 +737,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
       FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
       if ((*x)[FirstEntryOfGID]!=VecValues[i]) err++;
       if (verbose) cout << "x["<<FirstEntryOfGID<<"] = "
-			<< (*x)[FirstEntryOfGID] 
+			<< (*x)[FirstEntryOfGID]
 			<< " should = " << VecValues[i] << endl;
     }
     else
@@ -759,7 +759,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
       FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
       if ((*x)[FirstEntryOfGID+GIDSize-1]!=VecValues[i]) err++;
       if (verbose) cout << "x["<<FirstEntryOfGID+GIDSize-1<<"] = "
-			<< (*x)[FirstEntryOfGID+GIDSize-1] 
+			<< (*x)[FirstEntryOfGID+GIDSize-1]
 			<< " should = " << VecValues[i] << endl;
     }
     else
@@ -781,7 +781,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
       FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
       if ((*x)[FirstEntryOfGID]!=(VecValues[i]+VecValues[i])) err++;
       if (verbose) cout << "x["<<FirstEntryOfGID<<"] = "
-			<< (*x)[FirstEntryOfGID] 
+			<< (*x)[FirstEntryOfGID]
 			<< " should = " << (VecValues[i]+VecValues[i]) << endl;
     }
     else
@@ -802,7 +802,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
       FirstEntryOfGID = Map.FirstPointInElement(LIDOfGID);
       if ((*x)[FirstEntryOfGID+GIDSize-1]!=(VecValues[i]+VecValues[i])) err++;
       if (verbose) cout << "x["<<FirstEntryOfGID+GIDSize-1<<"] = "
-			<< (*x)[FirstEntryOfGID+GIDSize-1] 
+			<< (*x)[FirstEntryOfGID+GIDSize-1]
 			<< " should = " << (VecValues[i]+VecValues[i]) << endl;
     }
     else
@@ -825,7 +825,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
     if ((*x)[FirstEntryOfLID]!=VecValues[i]) err++;
     if (verbose) cout << "x["<<FirstEntryOfLID<<"] = "
-		      << (*x)[FirstEntryOfLID] 
+		      << (*x)[FirstEntryOfLID]
 		      << " should = " << VecValues[i] << endl;
   }
 
@@ -838,7 +838,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
     if ((*x)[FirstEntryOfLID+LIDSize-1]!=VecValues[i]) err++;
     if (verbose) cout << "x["<<FirstEntryOfLID+LIDSize-1<<"] = "
-		      << (*x)[FirstEntryOfLID+LIDSize-1] 
+		      << (*x)[FirstEntryOfLID+LIDSize-1]
 		      << " should = " << VecValues[i] << endl;
   }
 
@@ -852,7 +852,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
     if ((*x)[FirstEntryOfLID]!=(VecValues[i]+VecValues[i])) err++;
     if (verbose) cout << "x["<<FirstEntryOfLID<<"] = "
-		      << (*x)[FirstEntryOfLID] 
+		      << (*x)[FirstEntryOfLID]
 		      << " should = " << (VecValues[i]+VecValues[i]) << endl;
   }
 
@@ -866,7 +866,7 @@ int MultiVectorTests(const Epetra_BlockMap & Map, int NumVectors, bool verbose)
     FirstEntryOfLID = Map.FirstPointInElement(testLID);
     if ((*x)[FirstEntryOfLID+LIDSize-1]!=(VecValues[i]+VecValues[i])) err++;
     if (verbose) cout << "x["<<FirstEntryOfLID+LIDSize-1<<"] = "
-		      << (*x)[FirstEntryOfLID+LIDSize-1] 
+		      << (*x)[FirstEntryOfLID+LIDSize-1]
 		      << " should = " << (VecValues[i]+VecValues[i]) << endl;
   }
 
@@ -889,7 +889,7 @@ int BadResidual(bool verbose, double * Residual, int NumVectors)
   }
   if (verbose)
     if (ierr==0) cout << "\t Checked OK" << endl;
-  
+
   return(ierr);
 }
 
@@ -906,6 +906,6 @@ int BadResidual1(bool verbose, double * Residual, int NumVectors)
   }
   if (verbose)
     if (ierr==0) cout << "\t Checked OK" << endl;
-  
+
   return(ierr);
 }

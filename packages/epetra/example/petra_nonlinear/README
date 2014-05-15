@@ -1,4 +1,4 @@
-You can run a simple example by copying the directory 
+You can run a simple example by copying the directory
 
 ~mheroux/Trilinos/test/petra_power_method
 
@@ -10,6 +10,6 @@ setenv TRILINOS_COMM SERIAL
 
 Then type "make" in the petra_power_method directory.
 
-Running "petra_power_method 100"  will generate a tridiagonal 
-matrix of dimension 100 and find the largest eigenvalue via the 
+Running "petra_power_method 100"  will generate a tridiagonal
+matrix of dimension 100 and find the largest eigenvalue via the
 power method.

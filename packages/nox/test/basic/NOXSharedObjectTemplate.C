@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -80,67 +80,67 @@ int main(int argc, char *argv[])
   if (verbose)
     outputInfo += NOX::Utils::Debug;
   int printProc = 0;
-  Teuchos::RCP<std::ostream> outputstream = 
+  Teuchos::RCP<std::ostream> outputstream =
     Teuchos::rcp(&(std::cout), false);
-  Teuchos::RCP<std::ostream> errorstream = 
+  Teuchos::RCP<std::ostream> errorstream =
     Teuchos::rcp(&(std::cerr), false);
-  Teuchos::RCP<NOX::Utils> u = 
-    Teuchos::rcp(new NOX::Utils(outputInfo, myPID, printProc, 6, outputstream, 
-				errorstream));
+  Teuchos::RCP<NOX::Utils> u =
+    Teuchos::rcp(new NOX::Utils(outputInfo, myPID, printProc, 6, outputstream,
+                errorstream));
 
   // Let's share a merit function between status tests
-  Teuchos::RCP<NOX::MeritFunction::Generic> mf = 
+  Teuchos::RCP<NOX::MeritFunction::Generic> mf =
     Teuchos::rcp(new NOX::MeritFunction::SumOfSquares(u));
-  Teuchos::RCP<NOX::StatusTest::Generic> test1 = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND, 
-					    u.get()));
-  Teuchos::RCP<NOX::StatusTest::Generic> test2 = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND, 
-					    u.get()));
-  
+  Teuchos::RCP<NOX::StatusTest::Generic> test1 =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
+                        u.get()));
+  Teuchos::RCP<NOX::StatusTest::Generic> test2 =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::AND,
+                        u.get()));
+
   NOX::SharedObject<NOX::MeritFunction::Generic,NOX::StatusTest::Generic> sharedObject(mf);
-  
-  u->out(NOX::Utils::Debug) 
+
+  u->out(NOX::Utils::Debug)
     << "Testing isOwner() via non-const get(*newOwner)...";
 
   sharedObject.getObject(test1.get());
 
   if ( !(sharedObject.isOwner(test1.get())) )
     status +=1;
-  
+
   if ( sharedObject.isOwner(test2.get()) )
     status += 1;
 
   if (status == 0)
     u->out(NOX::Utils ::Debug) << "passed!" << std::endl;
-  else 
+  else
     u->out(NOX::Utils ::Debug) << "failed!" << std::endl;
-    
+
   u->out(NOX::Utils::Debug) << "Testing isOwner() via const get()...";
 
   sharedObject.getObject(test2.get());  // change ownership to test 2
-  Teuchos::RCP<const NOX::MeritFunction::Generic> tmpPtr = 
+  Teuchos::RCP<const NOX::MeritFunction::Generic> tmpPtr =
     sharedObject.getObject();
 
   if ( !(sharedObject.isOwner(test2.get())) )
     status +=1;
-  
+
   if ( sharedObject.isOwner(test1.get()) )
     status += 1;
 
   if (status == 0)
     u->out(NOX::Utils ::Debug) << "passed!" << std::endl;
-  else 
+  else
     u->out(NOX::Utils ::Debug) << "failed!" << std::endl;
-    
-  
+
+
 
 #ifdef HAVE_MPI
   MPI_Finalize();
 #endif
 
   if (myPID == printProc) {
-    if (status == 0) 
+    if (status == 0)
       std::cout << "\nTest passed!" << std::endl;
     else
       std::cout << "\nTest Failed!" << std::endl;

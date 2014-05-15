@@ -2,9 +2,9 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <assert.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for NULL, fprintf, printf, FILE, etc
+#include <stdlib.h>                     // for malloc, free, realloc
 
 #if defined(__STDC_VERSION__)
 #  if (__STDC_VERSION__ >= 199901L)

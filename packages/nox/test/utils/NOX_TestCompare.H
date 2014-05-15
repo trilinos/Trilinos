@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -84,7 +84,7 @@ namespace NOX {
 
     //! Destructor
     virtual ~TestCompare();
-    
+
     //! Compare two values
     /*!
      * @param \c value [in] Computed value
@@ -94,8 +94,8 @@ namespace NOX {
      * @param \c compareType [in] Type of comparison (Absolute or Relative)
      * @return Returns 0 for is values are within tolerance, 1 otherwise.
      */
-    virtual int testValue(double value, double value_expected, 
-                          double tolerance, const std::string& name, 
+    virtual int testValue(double value, double value_expected,
+                          double tolerance, const std::string& name,
                           NOX::TestCompare::CompareType compareType);
 
     //! Compare two vectors
@@ -111,8 +111,8 @@ namespace NOX {
      * \f]
      * for each $i$, and 1 otherwise.
      */
-    virtual int testVector(const NOX::Abstract::Vector& vec, 
-                           const NOX::Abstract::Vector& vec_expected, 
+    virtual int testVector(const NOX::Abstract::Vector& vec,
+                           const NOX::Abstract::Vector& vec_expected,
                            double rtol, double atol, const std::string& name);
 
     //! Compare two matrices
@@ -128,7 +128,7 @@ namespace NOX {
      * \f]
      * for each $i$, $j$, and 1 otherwise.
      */
-    virtual int testMatrix(const NOX::Abstract::MultiVector::DenseMatrix& mat, 
+    virtual int testMatrix(const NOX::Abstract::MultiVector::DenseMatrix& mat,
                            const NOX::Abstract::MultiVector::DenseMatrix& mat_expected,
                            double rtol, double atol, const std::string& name);
 
@@ -145,8 +145,8 @@ namespace NOX {
      * \f]
      * for each $i$, $j$, and 1 otherwise.
      */
-    virtual int testMultiVector(const NOX::Abstract::MultiVector& mvec, 
-                                const NOX::Abstract::MultiVector& mvec_expected, 
+    virtual int testMultiVector(const NOX::Abstract::MultiVector& mvec,
+                                const NOX::Abstract::MultiVector& mvec_expected,
                                 double rtol, double atol, const std::string& name);
 
     /*!
@@ -155,8 +155,8 @@ namespace NOX {
      *     \max_i \frac{|vec_i - vec_expected_i|}{\epsilon_a + \epsilon_r|vec_expected_i|}
      * \f]
      */
-    virtual double computeVectorNorm(const NOX::Abstract::Vector& vec, 
-                                     const NOX::Abstract::Vector& vec_expected, 
+    virtual double computeVectorNorm(const NOX::Abstract::Vector& vec,
+                                     const NOX::Abstract::Vector& vec_expected,
                                      double rtol, double atol);
 
   protected:

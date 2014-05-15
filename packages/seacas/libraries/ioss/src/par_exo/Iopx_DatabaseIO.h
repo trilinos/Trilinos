@@ -34,40 +34,44 @@
 #ifndef IOSS_Iopx_DatabaseIO_h
 #define IOSS_Iopx_DatabaseIO_h
 
-#include <Ioss_DatabaseIO.h>
-#include <par_exo/Iopx_DecompositionData.h>
-#include <Ioss_Field.h>
-#include <Ioss_DBUsage.h>
-#include <Ioss_Map.h>
-#include <Ioss_Utils.h>
+#include <Ioss_DBUsage.h>               // for DatabaseUsage
+#include <Ioss_DatabaseIO.h>            // for DatabaseIO
+#include <Ioss_Map.h>                   // for Map
+#include <exodusII.h>                   // for ex_entity_type, etc
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <time.h>                       // for NULL, time_t
+#include <functional>                   // for less
+#include <map>                          // for map, map<>::value_compare
+#include <set>                          // for set
+#include <string>                       // for string, operator<
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "Ioss_State.h"                 // for State
+#include "mpi.h"                        // for MPI_Comm
+namespace Iopx { class DecompositionDataBase; }
+namespace Iopx { template <typename INT> class DecompositionData; }
+namespace Ioss { class CommSet; }
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementBlock; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class EntitySet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
+namespace Ioss { class Field; }
+namespace Ioss { class GroupingEntity; }
+namespace Ioss { class NodeBlock; }
+namespace Ioss { class NodeSet; }
+namespace Ioss { class PropertyManager; }
+namespace Ioss { class Region; }
+namespace Ioss { class SideBlock; }
+namespace Ioss { class SideSet; }
 
-#include <exodusII.h>
 
-#include <stdint.h>
-#include <string>
-#include <vector>
-#include <map>
-#include <set>
-#include <algorithm>
-#include <sstream>
-#include <time.h>
 
 namespace Ioss {
-   class GroupingEntity;
-   class Region;
    class EntityBlock;
-   class NodeBlock;
-   class EdgeBlock;
-   class FaceBlock;
-   class ElementBlock;
-   class EntitySet;
-   class NodeSet;
-   class EdgeSet;
-   class FaceSet;
-   class ElementSet;
-   class SideBlock;
-   class SideSet;
-   class CommSet;
    class ElementTopology;
 }
 

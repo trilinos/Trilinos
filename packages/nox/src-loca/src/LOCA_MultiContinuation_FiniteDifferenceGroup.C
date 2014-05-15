@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -55,22 +55,22 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup()
 }
 
 LOCA::MultiContinuation::FiniteDifferenceGroup::FiniteDifferenceGroup(
-                const LOCA::MultiContinuation::FiniteDifferenceGroup& source, 
-		NOX::CopyType type)
+                const LOCA::MultiContinuation::FiniteDifferenceGroup& source,
+        NOX::CopyType type)
 {
   if (source.derivPtr != Teuchos::null)
     derivPtr = source.derivPtr->clone(type);
 }
 
-LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup() 
+LOCA::MultiContinuation::FiniteDifferenceGroup::~FiniteDifferenceGroup()
 {
 }
 
 void
 LOCA::MultiContinuation::FiniteDifferenceGroup::copy(
-					    const NOX::Abstract::Group& src)
+                        const NOX::Abstract::Group& src)
 {
-  const LOCA::MultiContinuation::FiniteDifferenceGroup& source = 
+  const LOCA::MultiContinuation::FiniteDifferenceGroup& source =
     dynamic_cast<const LOCA::MultiContinuation::FiniteDifferenceGroup&>(src);
 
   if (this != &source)
@@ -80,7 +80,7 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::copy(
 
 NOX::Abstract::Group&
 LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
-					    const NOX::Abstract::Group& source)
+                        const NOX::Abstract::Group& source)
 {
   copy(source);
   return *this;
@@ -88,16 +88,16 @@ LOCA::MultiContinuation::FiniteDifferenceGroup::operator=(
 
 void
 LOCA::MultiContinuation::FiniteDifferenceGroup::setDerivUtils(
-			  const Teuchos::RCP<LOCA::DerivUtils>& deriv)
+              const Teuchos::RCP<LOCA::DerivUtils>& deriv)
 {
   derivPtr = deriv;
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::MultiContinuation::FiniteDifferenceGroup::computeDfDpMulti(
-					  const std::vector<int>& paramIDs, 
-					  NOX::Abstract::MultiVector& dfdp, 
-					  bool isValidF)
+                      const std::vector<int>& paramIDs,
+                      NOX::Abstract::MultiVector& dfdp,
+                      bool isValidF)
 {
   return derivPtr->computeDfDp(*this, paramIDs, dfdp, isValidF);
 }

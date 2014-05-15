@@ -50,6 +50,7 @@ namespace FENL {
 template
 Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP<  typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
@@ -59,6 +60,7 @@ Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemLinear >(
 template
 Perf fenl< Kokkos::Cuda , Kokkos::Example::BoxElemPart::ElemQuadratic >(
   const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
+  const Teuchos::RCP<  typename ::Kokkos::Compat::KokkosDeviceWrapperNode<Kokkos::Cuda> >& node,
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,

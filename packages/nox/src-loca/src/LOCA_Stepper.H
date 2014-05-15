@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -54,8 +54,8 @@
 #include "Teuchos_RCP.hpp"
 
 #include "LOCA_Abstract_Iterator.H"    // base class
-#include "Teuchos_ParameterList.hpp"	       // class data element
-#include "NOX_Solver_Generic.H"	       // class data element
+#include "Teuchos_ParameterList.hpp"           // class data element
+#include "NOX_Solver_Generic.H"           // class data element
 #include "NOX_StatusTest_Generic.H"    // for enum StatusType
 #include "NOX_Common.H"                // for <string> class
 #include "LOCA_StatusTest_Abstract.H"  // for LOCA::StatusTest::Abstract
@@ -113,10 +113,10 @@ namespace LOCA {
 
     //! Constructor with LOCA::StatusTest
     Stepper(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+        const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
             const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
-	    const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
-	    const Teuchos::RCP<Teuchos::ParameterList>& p);
+        const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+        const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Obsolete constructor without LOCA::StatusTest.
     //! @deprecated Use the constructor with LOCA::StatusTest instead.
@@ -131,12 +131,12 @@ namespace LOCA {
 
     //! Reset the Stepper to start a new continuation run.
     //! Version with LOCA::StatusTest
-    virtual bool 
+    virtual bool
     reset(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	  const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
+      const Teuchos::RCP<LOCA::MultiContinuation::AbstractGroup>& initialGuess,
           const Teuchos::RCP<LOCA::StatusTest::Abstract>& lt,
-	  const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
-	  const Teuchos::RCP<Teuchos::ParameterList>& p);
+      const Teuchos::RCP<NOX::StatusTest::Generic>& nt,
+      const Teuchos::RCP<Teuchos::ParameterList>& p);
 
     //! Reset the Stepper to start a new continuation run.
     //! Obsolete version without LOCA::StatusTest.
@@ -153,7 +153,7 @@ namespace LOCA {
     eigensolverReset( Teuchos::RCP<Teuchos::ParameterList> & newEigensolverList );
 
     //! Return the current solution group.
-    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
     getSolutionGroup() const;
 
     //! Return the current bifurcation group.
@@ -162,18 +162,18 @@ namespace LOCA {
      * is the same as getSolutionGroup(), otherwise this method returns the
      * current bifurcation group (e.g., a turning point group).
      */
-    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup> 
+    virtual Teuchos::RCP<const LOCA::MultiContinuation::AbstractGroup>
     getBifurcationGroup() const;
 
     //! Return the output parameters from the stepper algorithm.
-    virtual Teuchos::RCP<const Teuchos::ParameterList> 
+    virtual Teuchos::RCP<const Teuchos::ParameterList>
     getList() const;
 
     /*! @brief Return the current nonlinear solver pointer.
      *
      * Will throw an error if the solver does not exist yet.
      */
-    virtual Teuchos::RCP<const NOX::Solver::Generic> 
+    virtual Teuchos::RCP<const NOX::Solver::Generic>
     getSolver() const;
 
     /*! @brief Return the current continuation parameter from the underlying LOCA::MultiContinuation::AbstractStrategy.
@@ -224,7 +224,7 @@ namespace LOCA {
     //! Compute a new step size based on results from the previous step
     LOCA::Abstract::Iterator::StepStatus
     computeStepSize(LOCA::Abstract::Iterator::StepStatus stepStatus,
-		    double& stepSize);
+            double& stepSize);
 
     //! Print to the screen the initialization information
     virtual void printInitializationInfo();
@@ -242,7 +242,7 @@ namespace LOCA {
     virtual bool withinThreshold();
 
   private:
-    
+
     //! Private to prohibit copying
     Stepper(const Stepper&);
 

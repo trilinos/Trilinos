@@ -53,43 +53,6 @@
  * Most functions only work on the host (it will not compile if called from device kernel)
  *
  */
-#ifndef KOKKOS_HAVE_CUDA
-  #ifdef KOKKOS_HAVE_PTHREAD
-    #include <Kokkos_Threads.hpp>
-  namespace Kokkos {
-  namespace Impl {
-    typedef Threads DefaultDeviceType;
-  }
-  }
-  #else
-    #ifdef KOKKOS_HAVE_OPENMP
-      #include <Kokkos_OpenMP.hpp>
-    namespace Kokkos {
-    namespace Impl {
-      typedef OpenMP DefaultDeviceType;
-    }
-    }
-    #else
-      #ifdef KOKKOS_HAVE_SERIAL
-        #include <Kokkos_Serial.hpp>
-      namespace Kokkos {
-      namespace Impl {
-        typedef Serial DefaultDeviceType;
-      }
-      }
-      #else
-        #error "No Kokkos Host Device defined"
-      #endif
-    #endif
-  #endif
-#else
-  #include <Kokkos_Cuda.hpp>
-  namespace Kokkos {
-  namespace Impl {
-    typedef Cuda DefaultDeviceType;
-  }
-  }
-#endif
   namespace Kokkos {
 
 template <typename Scalar, class Device=Impl::DefaultDeviceType>

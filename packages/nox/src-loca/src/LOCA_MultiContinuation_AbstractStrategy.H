@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -51,7 +51,7 @@
 #ifndef LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 #define LOCA_MULTICONTINUATION_ABSTRACTSTRATEGY_H
 
-#include "Teuchos_RCP.hpp" 
+#include "Teuchos_RCP.hpp"
 
 #include "LOCA_Extended_MultiAbstractGroup.H" // base class
 #include "LOCA_Abstract_Iterator.H" // for StepStatus
@@ -67,15 +67,15 @@ namespace LOCA {
 namespace LOCA {
 
   namespace MultiContinuation {
-    
+
     //! Abstract interface class for continuation strategies
     /*!
-     * AbstractStrategy defines an abstract interface for continuation 
+     * AbstractStrategy defines an abstract interface for continuation
      * strategies.  This interface is used by the LOCA::Stepper to manipulate
-     * continuation groups in a consistent manner.  It defines a number 
+     * continuation groups in a consistent manner.  It defines a number
      * pure virtual methods that all continuation groups must implement.
      */
-    class AbstractStrategy : 
+    class AbstractStrategy :
       public virtual LOCA::Extended::MultiAbstractGroup {
 
     public:
@@ -97,21 +97,21 @@ namespace LOCA {
        * The \c stepStatus argument indicates whether the previous step was
        * successful.
        */
-      virtual void 
+      virtual void
       preProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
+             LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
 
       //! Perform any postprocessing after a continuation step finishes.
       /*!
        * The \c stepStatus argument indicates whether the step was
        * successful.
        */
-      virtual void 
+      virtual void
       postProcessContinuationStep(
-			 LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
+             LOCA::Abstract::Iterator::StepStatus stepStatus) = 0;
 
       //! Compute predictor directions
-      virtual NOX::Abstract::Group::ReturnType 
+      virtual NOX::Abstract::Group::ReturnType
       computePredictor() = 0;
 
       //! Is Predictor valid
@@ -122,13 +122,13 @@ namespace LOCA {
 
       //! Sets tangent to predictor
       /*!
-       * This is required by MF which takes the tangent space, 
+       * This is required by MF which takes the tangent space,
        * orthogonalizes it, and then sets it back in the group.
        */
       virtual void
       setPredictorTangentDirection(
-			    const LOCA::MultiContinuation::ExtendedVector& v,
-			    int i) = 0;
+                const LOCA::MultiContinuation::ExtendedVector& v,
+                int i) = 0;
 
       //! Returns tangent to predictor
       virtual const LOCA::MultiContinuation::ExtendedMultiVector&
@@ -142,7 +142,7 @@ namespace LOCA {
       virtual void setPrevX(const NOX::Abstract::Vector& y) = 0;
 
       //! Gets the previous solution vector
-      virtual const LOCA::MultiContinuation::ExtendedVector& 
+      virtual const LOCA::MultiContinuation::ExtendedVector&
       getPrevX() const = 0;
 
       //! Set step size for continuation constraint equation \em i
@@ -174,16 +174,16 @@ namespace LOCA {
 
       //! Computes a scaled dot product between two continuation vectors
       virtual double computeScaledDotProduct(
-			       const NOX::Abstract::Vector& x, 
-			       const NOX::Abstract::Vector& y) const = 0;
+                   const NOX::Abstract::Vector& x,
+                   const NOX::Abstract::Vector& y) const = 0;
 
       //! Returns dimension of project to draw array
       virtual int projectToDrawDimension() const = 0;
 
       //! Fills the project to draw array
       virtual void projectToDraw(
-			    const LOCA::MultiContinuation::ExtendedVector& x, 
-			    double *px) const = 0;
+                const LOCA::MultiContinuation::ExtendedVector& x,
+                double *px) const = 0;
 
       //! Bring NOX::Abstract::Group::operator=() into scope
       using NOX::Abstract::Group::operator=;

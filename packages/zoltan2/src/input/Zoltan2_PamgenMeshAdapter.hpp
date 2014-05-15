@@ -218,6 +218,10 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
+int find_surnd_elems()
+{
+}
+
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   dimension_(0)
@@ -261,6 +265,7 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   Acoords_ = new double [num_elem_ * dimension_];
   long long a = 0;
+  std::vector<std::vector<long long> > sur_elem:
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];

@@ -39,13 +39,13 @@
 // ***********************************************************************
 // @HEADER
 
-#include "MueLu_ConfigDefs.hpp"
-#ifdef HAVE_MUELU_EXPERIMENTAL
+
+
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
-#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+#if 0 && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
@@ -65,4 +65,4 @@ INSTANTIATE_TPETRA_UQ_PCE_OPENMP(MUELU_INST_N)
 
 #endif
 
-#endif
+

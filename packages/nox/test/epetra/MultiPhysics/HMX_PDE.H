@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,12 +44,12 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // Finite Element Problem Class
-/* Provides function (F) and Jacobian evaluations for the following equation 
+/* Provides function (F) and Jacobian evaluations for the following equation
  * via a 1D linear finite element discretization with Epetra objects.
  *
- * d2u 
+ * d2u
  * --- - k * u**2 = 0
  * dx2
  *
@@ -63,22 +63,22 @@
 
 // Single PDE Equation Problem Class for HMX Cook-off problem
 
-class HMX_PDE : public GenericEpetraProblem { 
+class HMX_PDE : public GenericEpetraProblem {
 
 public:
 
   // Constructor
-  HMX_PDE(Epetra_Comm& Comm, 
+  HMX_PDE(Epetra_Comm& Comm,
           double diffCoef,
           double Const_R,
           double Steric_C,
-	  double PreExp_A,
-	  double ActEnergy,
-	  map<string, double> SrcTermExponent,
-	  map<string, double> SrcTermWeight,
+      double PreExp_A,
+      double ActEnergy,
+      map<string, double> SrcTermExponent,
+      map<string, double> SrcTermWeight,
           int NumGlobalUnknowns = 0,
           std::string name = "");
-  
+
   // Destructor
   ~HMX_PDE();
 
@@ -87,16 +87,16 @@ public:
   void reset(const Epetra_Vector& x);
 
   void reset(); // Empty reset method needed here to prevent hiding base
-                // class method.  
+                // class method.
 
   // Set initial condition for solution vector
   void initializeSolution(double val = 0.0);
 
-  // Evaluates the function (F) and/or the Jacobian using the solution 
+  // Evaluates the function (F) and/or the Jacobian using the solution
   // values in solnVector.
   bool evaluate( NOX::Epetra::Interface::Required::FillType fill,
-                const Epetra_Vector *solnVector, 
-		Epetra_Vector *rhsVector);
+                const Epetra_Vector *solnVector,
+        Epetra_Vector *rhsVector);
 
   // Set name of field to use for temperature field
   void setTempFieldName(std::string name)
@@ -106,7 +106,7 @@ public:
   void computeSourceTerm(map<string, Epetra_Vector*>, Epetra_Vector&);
 
   // Compute my Source term - double* arguments
-  void computeSourceTerm(int arraySize, map<string, double*>, 
+  void computeSourceTerm(int arraySize, map<string, double*>,
                          double*&);
 
   // FUTURE stuff....

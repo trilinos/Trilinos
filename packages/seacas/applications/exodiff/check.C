@@ -233,7 +233,7 @@ namespace {
 	    is_same = false;
 	  }
 	}
-	if (block2 != NULL) {
+	if (block1 != NULL && block2 != NULL) {
 	  if (!Check_Elmt_Block_Params(block1, block2)) {
 	    is_same = false;
 	  } else {
@@ -367,6 +367,17 @@ namespace {
       }
     }
 
+    for (int b = 0; b < file2.Num_Node_Sets(); ++b) {
+      Node_Set<INT>* set2 = file2.Get_Node_Set_by_Index(b);
+      if (set2 == NULL) {
+	std::cout << "exodiff: ERROR .. Nodeset id " << set2->Id()
+		  << " exists in second file but not the first.\n";
+	if (interface.pedantic)
+	  is_same = false;
+      }
+    }
+
+
     // Do the following check(s) only if there are nodeset variables...
     // For each nodeset, check that the order of the nodeset nodes is the same.
     // Eventually need to be able to map the order...
@@ -440,6 +451,17 @@ namespace {
 	}
       }
     }
+
+    for (int b = 0; b < file2.Num_Side_Sets(); ++b) {
+      Side_Set<INT>* set2 = file2.Get_Side_Set_by_Index(b);
+      if (set2 == NULL) {
+	std::cout << "exodiff: ERROR .. Sideset id " << set2->Id()
+		  << " exists in second file but not the first.\n";
+	if (interface.pedantic)
+	  is_same = false;
+      }
+    }
+
 
     // Do the following check(s) only if there are sideset variables... (or -pedantic)
     // For each sideset, check that the order of the sideset sides is the same.

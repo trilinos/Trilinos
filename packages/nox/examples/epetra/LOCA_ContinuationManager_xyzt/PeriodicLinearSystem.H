@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -81,62 +81,62 @@ class PeriodicLinearSystem:
       // virtual methods  ---------------------------------------
       //
       // Compute F
-      virtual bool ComputeF(const Epetra_Vector & x, 
+      virtual bool ComputeF(const Epetra_Vector & x,
           Epetra_Vector & f);
-      
+
       // Compute the Jacobian of F
       virtual bool ComputeJacF(const Epetra_Vector & x);
-      
+
       // Returns a pointer to the Jacobian of F
-      virtual Teuchos::RefCountPtr <Epetra_CrsMatrix> 
-	GetJacF() const;
+      virtual Teuchos::RefCountPtr <Epetra_CrsMatrix>
+    GetJacF() const;
 
       // Returns a pointer to the initial guess
-      virtual Teuchos::RefCountPtr <Epetra_Vector> 
-	GetInitialGuess() const;
+      virtual Teuchos::RefCountPtr <Epetra_Vector>
+    GetInitialGuess() const;
 
       // Implementation of ProblemLOCAPrototype
       // virtual methods  --------------------------------------
-      //                                                         
+      //
       // Pointer to the continuable parameter list
-      virtual LOCA::ParameterVector 
-	GetContinuableParams() const;
+      virtual LOCA::ParameterVector
+    GetContinuableParams() const;
 
       // Setting one continuation parameter
       virtual bool SetContinuableParameter(std::string label,
-	  double value);
+      double value);
 
       // Updates the continuation file
-      virtual bool UpdateContinuationFile( 
-	  const std::string & fileName,
+      virtual bool UpdateContinuationFile(
+      const std::string & fileName,
           const int & idStep,
           const Teuchos::ParameterList & continuationFileParams);
-  
+
       // Setting the continuation file parameters
       virtual bool SetContinuationFileParameters(const Epetra_Vector & x);
-  
+
       // Getting the continuation file parameters
-      virtual Teuchos::RefCountPtr <Teuchos::ParameterList> 
-	GetContinuationFileParameters();
+      virtual Teuchos::RefCountPtr <Teuchos::ParameterList>
+    GetContinuationFileParameters();
 
       // Printing the solution at each step
-      virtual bool PrintSolutionFile(const std::string & fileName, 
-	  const Epetra_Vector & x,
-	  const Teuchos::ParameterList & xParams);
+      virtual bool PrintSolutionFile(const std::string & fileName,
+      const Epetra_Vector & x,
+      const Teuchos::ParameterList & xParams);
 
     private:
 
       // Internally stored variables ----------------------
       //
-      // Communicator 
+      // Communicator
       Teuchos::RefCountPtr <Epetra_Comm> comm;
 
       // Continuable parameter list
       LOCA::ParameterVector continuableParams;
 
       // The continuation file parameters
-      Teuchos::RefCountPtr <Teuchos::ParameterList> 
-	continuationFileParams;
+      Teuchos::RefCountPtr <Teuchos::ParameterList>
+    continuationFileParams;
 
       // Initial Guess
       Teuchos::RefCountPtr <Epetra_Vector> initialGuess;

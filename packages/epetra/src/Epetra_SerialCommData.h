@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,7 +48,7 @@
 
 //! Epetra_SerialCommData:  The Epetra Serial Communication Data Class.
 /*! The Epetra_SerialCommData class is an implementation detail of Epetra_SerialComm.
-    It is reference-counted, and can be shared by multiple Epetra_SerialComm instances. 
+    It is reference-counted, and can be shared by multiple Epetra_SerialComm instances.
 		It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
@@ -56,7 +56,7 @@ class Epetra_SerialCommData : public Epetra_Data {
 	friend class Epetra_SerialComm;
  private:
   //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_SerialCommData Default Constructor.
   Epetra_SerialCommData();
@@ -72,6 +72,6 @@ class Epetra_SerialCommData : public Epetra_Data {
 	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   Epetra_SerialCommData(const Epetra_SerialCommData & CommData);
 	Epetra_SerialCommData& operator=(const Epetra_SerialCommData & CommData);
-  
+
 };
 #endif /* EPETRA_SERIALCOMMDATA_H */

@@ -46,11 +46,6 @@
 #ifndef MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 #define MUELU_REBALANCETRANSFERFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Teuchos_Tuple.hpp>
 
 #include "Xpetra_Vector.hpp"

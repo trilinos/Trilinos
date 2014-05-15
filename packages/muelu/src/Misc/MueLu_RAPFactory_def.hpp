@@ -46,11 +46,6 @@
 #ifndef MUELU_RAPFACTORY_DEF_HPP
 #define MUELU_RAPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 
 #include <sstream>
 

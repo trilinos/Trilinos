@@ -59,11 +59,11 @@ namespace Zoltan2 {
 /*! \brief The class containing coloring solution.
 
     Template parameters:
-    \li \c adapter    input adapter, which must contain color_t
+    \li \c adapter    input adapter
 
 The coloring solution contains an array of colors, one per id.
-Colors are represented as color_t, typically integers. A special value,
-currently 0, is used for vertices that have not been colored.
+Colors are represented as int (sufficient for any reasonable use case). 
+A special value, currently 0, is used for vertices that have not been colored.
 
 */
 
@@ -75,8 +75,6 @@ private:
   typedef typename Adapter::scalar_t scalar_t;
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gid_t gid_t;
-  //typedef typename Adapter::color_t color_t;
-  typedef int color_t; // TODO change to above?
 
 public:
 
@@ -88,7 +86,7 @@ public:
   {
     HELLO;
     length_ = length;
-    colors_  = ArrayRCP<color_t>(length_);
+    colors_  = ArrayRCP<int>(length_);
   }
 
   //////////////////////////////////////////////
@@ -102,24 +100,24 @@ public:
 
   /*! \brief Get (local) color array by RCP.
    */
-  inline ArrayRCP<color_t>  &getColorsRCP()  {return colors_;}
+  inline ArrayRCP<int>  &getColorsRCP()  {return colors_;}
 
   /*! \brief Get (local) color array by raw pointer (no RCP).
    */
-  inline color_t * getColors()  {return &(*colors_);}
+  inline int * getColors()  {return &(*colors_);}
 
   /*! \brief Get local number of colors.
    */
-  inline color_t getNumColors()  {return numColors_;} 
+  inline int getNumColors()  {return numColors_;} 
 
   /*! \brief Get global number of colors.
    */
-  //color_t getGlobalNumColors(); // TODO
+  //int getGlobalNumColors(); // TODO
  
   //////////////////////////////////////////////
   // Set methods, allowing algorithms to store data.
   //
-  void setNumColors(color_t nc)
+  void setNumColors(int nc)
   {
     numColors_ = nc;
   }
@@ -127,9 +125,9 @@ public:
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
-  ArrayRCP<color_t> colors_;   // zero-based local color array
-  color_t numColors_;          // Number of colors (local on this proc)
-  //color_t numColorsGlobal_;  // For future distributed coloring
+  ArrayRCP<int> colors_;   // zero-based local color array
+  int numColors_;          // Number of colors (local on this proc)
+  //int numColorsGlobal_;  // For future distributed coloring
 };
 
 }

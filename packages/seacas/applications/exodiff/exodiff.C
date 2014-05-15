@@ -1619,7 +1619,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
         
 	size_t ncount = nset1->Size();
-	if (nset2->Size() == ncount) {
+	if (interface.summary_flag || nset2->Size() == ncount) {
 	  for (size_t e = 0; e < ncount; ++e) {
 	    int idx1 = nset1->Node_Index(e);
 	    int idx2 = 0;
@@ -1780,7 +1780,7 @@ void do_diffs(ExoII_Read<INT>& file1, ExoII_Read<INT>& file2, int time_step1, Ti
 	}
         
 	size_t ecount = sset1->Size();
-	if (sset2->Size() == ecount) {
+	if (interface.summary_flag || sset2->Size() == ecount) {
 	  for (size_t e = 0; e < ecount; ++e) {
 	    size_t ind1 = sset1->Side_Index(e);
 	    size_t ind2 = 0;

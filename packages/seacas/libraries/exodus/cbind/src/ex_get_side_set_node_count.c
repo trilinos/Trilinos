@@ -48,12 +48,16 @@
 *
 *****************************************************************************/
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include <assert.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <assert.h>                     // for assert
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for free, malloc
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 /* Generic error message for element type/node count mapping...*/
 static int el_node_count_error(struct elem_blk_parm elem_blk_parms)
@@ -335,6 +339,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[2] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[3] = 3;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -367,6 +376,11 @@ int ex_get_side_set_node_count(int exoid,
 	    elem_blk_parms[i].num_nodes_per_side[3] = 3;
 	    elem_blk_parms[i].num_nodes_per_side[4] = 3;
 	  } else {
+	    free(elem_blk_parms);
+	    free(elem_blk_ids);
+	    free(ss_elem_ndx);
+	    free(side_set_side_list);
+	    free(side_set_elem_list);
 	    return el_node_count_error(elem_blk_parms[i]);
 	  }
 	}
@@ -399,6 +413,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[4] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[5] = 3;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -443,6 +462,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[4] = 9;
 	  elem_blk_parms[i].num_nodes_per_side[5] = 9;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -467,6 +491,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[2] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -487,6 +516,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[4] = 6;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -507,6 +541,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[3] = 6;
 	  elem_blk_parms[i].num_nodes_per_side[4] = 8;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -522,6 +561,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[0] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[1] = 3;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }
@@ -539,6 +583,11 @@ int ex_get_side_set_node_count(int exoid,
 	  elem_blk_parms[i].num_nodes_per_side[0] = 3;
 	  elem_blk_parms[i].num_nodes_per_side[1] = 3;
 	} else {
+	  free(elem_blk_parms);
+	  free(elem_blk_ids);
+	  free(ss_elem_ndx);
+	  free(side_set_side_list);
+	  free(side_set_elem_list);
 	  return el_node_count_error(elem_blk_parms[i]);
 	}
       }

@@ -2,10 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <math.h>
-#include "defs.h"
-#include "params.h"
+#include <math.h>                       // for fabs, sqrt
+#include "params.h"                     // for MAXDIMS
 
 int SRES_SWITCHES = 0;	/* # switchs to backup routine for computing evec of T */
 

@@ -1,15 +1,15 @@
-// $Id$ 
+// $Id$
 // $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -105,13 +105,13 @@ int main()
       Teuchos::rcp(&phi,false);
 
     // Create initial values for a and b for minimally augmented method
-    Teuchos::RCP<NOX::Abstract::Vector> a_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_real =
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RCP<NOX::Abstract::Vector> a_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> a_vec_imag =
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RCP<NOX::Abstract::Vector> b_vec_real = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_real =
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
-    Teuchos::RCP<NOX::Abstract::Vector> b_vec_imag = 
+    Teuchos::RCP<NOX::Abstract::Vector> b_vec_imag =
       Teuchos::rcp(new NOX::LAPACK::Vector(2*n));
     *a_vec_real = *y_vec;
     *a_vec_imag = *z_vec;
@@ -119,7 +119,7 @@ int main()
     *b_vec_imag = *z_vec;
 
     // Create parameter list
-    Teuchos::RCP<Teuchos::ParameterList> paramList = 
+    Teuchos::RCP<Teuchos::ParameterList> paramList =
       Teuchos::rcp(new Teuchos::ParameterList);
 
     // Create LOCA sublist
@@ -137,7 +137,7 @@ int main()
     stepperList.set("Max Nonlinear Iterations", maxNewtonIters);
 
     // Create bifurcation sublist
-    Teuchos::ParameterList& bifurcationList = 
+    Teuchos::ParameterList& bifurcationList =
       locaParamsList.sublist("Bifurcation");
     bifurcationList.set("Type", "Hopf");
     bifurcationList.set("Bifurcation Parameter", "beta");        // Must set
@@ -145,7 +145,7 @@ int main()
 
 //     // For Moore-Spence Formulation
 //     bifurcationList.set("Formulation", "Moore-Spence");          // Default
-//     bifurcationList.set("Solver Method", "Salinger Bordering");  // Default    
+//     bifurcationList.set("Solver Method", "Salinger Bordering");  // Default
 //     bifurcationList.set("Length Normalization Vector", phi_vec); // Must set
 //     bifurcationList.set("Initial Real Eigenvector", y_vec);      // Must set
 //     bifurcationList.set("Initial Imaginary Eigenvector", z_vec); // Must set
@@ -163,24 +163,24 @@ int main()
     bifurcationList.set("Bordered Solver Method",  "LAPACK Direct Solve");
     // Combine arc-length and turning point bordered rows & columns
     stepperList.set("Bordered Solver Method", "Nested");
-    Teuchos::ParameterList& nestedList = 
+    Teuchos::ParameterList& nestedList =
       stepperList.sublist("Nested Bordered Solver");
     // Direct solve of combined bordered system
     nestedList.set("Bordered Solver Method", "LAPACK Direct Solve");
 
     // Create predictor sublist
-    Teuchos::ParameterList& predictorList = 
+    Teuchos::ParameterList& predictorList =
       locaParamsList.sublist("Predictor");
     predictorList.set("Method", "Secant");     // Default
 
 //     // Should use w/Secant predictor & Moore-Spence formulation
-//     Teuchos::ParameterList& firstStepPredictor 
+//     Teuchos::ParameterList& firstStepPredictor
 //       = predictorList.sublist("First Step Predictor");
 //     firstStepPredictor.set("Method", "Random");
 //     firstStepPredictor.set("Epsilon", 1.0e-3);
 
 //     // Should use w/Secant predictor & Moore-Spence fomulation
-//     Teuchos::ParameterList& lastStepPredictor 
+//     Teuchos::ParameterList& lastStepPredictor
 //       = predictorList.sublist("Last Step Predictor");
 //     lastStepPredictor.set("Method", "Random");
 //     lastStepPredictor.set("Epsilon", 1.0e-3);
@@ -197,22 +197,22 @@ int main()
     Teuchos::ParameterList& nlParams = paramList->sublist("NOX");
     Teuchos::ParameterList& nlPrintParams = nlParams.sublist("Printing");
     nlPrintParams.set("Output Precision", 3);
-    nlPrintParams.set("Output Information", 
-		      NOX::Utils::OuterIteration + 
-		      NOX::Utils::OuterIterationStatusTest + 
-		      NOX::Utils::InnerIteration +
-		      NOX::Utils::Details + 
-		      NOX::Utils::Warning + 
-		      NOX::Utils::StepperIteration +
-		      NOX::Utils::StepperDetails +
-		      NOX::Utils::StepperParameters);
+    nlPrintParams.set("Output Information",
+              NOX::Utils::OuterIteration +
+              NOX::Utils::OuterIterationStatusTest +
+              NOX::Utils::InnerIteration +
+              NOX::Utils::Details +
+              NOX::Utils::Warning +
+              NOX::Utils::StepperIteration +
+              NOX::Utils::StepperDetails +
+              NOX::Utils::StepperParameters);
 
     // Create the "Line Search" sublist for the "Line Search Based" solver
     Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
     searchParams.set("Method", "Full Step");
 
     // Create LAPACK Factory
-    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory = 
+    Teuchos::RCP<LOCA::LAPACK::Factory> lapackFactory =
       Teuchos::rcp(new LOCA::LAPACK::Factory);
 
     // Create global data object
@@ -220,8 +220,8 @@ int main()
       LOCA::createGlobalData(paramList, lapackFactory);
 
      // Set up the problem interface
-    BrusselatorProblemInterface brus(globalData, n, alpha, beta, D1, D2, 
-				     outFile);
+    BrusselatorProblemInterface brus(globalData, n, alpha, beta, D1, D2,
+                     outFile);
     LOCA::ParameterVector p;
     p.addParameter("alpha",alpha);
     p.addParameter("beta",beta);
@@ -231,40 +231,40 @@ int main()
     // Create a group which uses that problem interface. The group will
     // be initialized to contain the default initial guess for the
     // specified problem.
-    Teuchos::RCP<LOCA::LAPACK::Group> grp = 
+    Teuchos::RCP<LOCA::LAPACK::Group> grp =
       Teuchos::rcp(new LOCA::LAPACK::Group(globalData, brus));
 
     grp->setParams(p);
 
     // Set up the status tests
-    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
-      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10, 
-					      NOX::StatusTest::NormF::Scaled));
-    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-10,
+                          NOX::StatusTest::NormF::Scaled));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
       Teuchos::rcp(new NOX::StatusTest::MaxIters(maxNewtonIters));
-    Teuchos::RCP<NOX::StatusTest::Combo> combo = 
-      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
-					      statusTestA, statusTestB));
+    Teuchos::RCP<NOX::StatusTest::Combo> combo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                          statusTestA, statusTestB));
 
-    // Create the stepper  
+    // Create the stepper
     LOCA::Stepper stepper(globalData, grp, combo, paramList);
 
     // Solve the nonlinear system
     LOCA::Abstract::Iterator::IteratorStatus status = stepper.run();
 
-    if (status == LOCA::Abstract::Iterator::Finished) 
+    if (status == LOCA::Abstract::Iterator::Finished)
       std::cout << "All examples passed" << std::endl;
     else {
       if (globalData->locaUtils->isPrintType(NOX::Utils::Error))
-	globalData->locaUtils->out() 
-	  << "Stepper failed to converge!" << std::endl;
+    globalData->locaUtils->out()
+      << "Stepper failed to converge!" << std::endl;
     }
 
     // Output the parameter list
     if (globalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-      globalData->locaUtils->out() 
-	<< std::endl << "Final Parameters" << std::endl
-	<< "****************" << std::endl;
+      globalData->locaUtils->out()
+    << std::endl << "Final Parameters" << std::endl
+    << "****************" << std::endl;
       stepper.getList()->print(globalData->locaUtils->out());
       globalData->locaUtils->out() << std::endl;
     }

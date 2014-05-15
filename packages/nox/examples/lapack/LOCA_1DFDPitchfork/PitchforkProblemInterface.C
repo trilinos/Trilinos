@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -50,15 +50,15 @@
 
 #include "PitchforkProblemInterface.H"
 
-PitchforkProblemInterface::PitchforkProblemInterface(int N, double a, 
-						     double b, double l)  : 
+PitchforkProblemInterface::PitchforkProblemInterface(int N, double a,
+                             double b, double l)  :
   initialGuess(N),
   alpha(a),
   beta(b),
   lambda(l),
   n(N)
 {
-  for (int i=0; i<n; i++) 
+  for (int i=0; i<n; i++)
     initialGuess(i) = lambda/alpha + 0.01;
 }
 
@@ -69,8 +69,8 @@ PitchforkProblemInterface::getInitialGuess()
 }
 
 bool
-PitchforkProblemInterface::computeF(NOX::LAPACK::Vector& f, 
-				    const NOX::LAPACK::Vector &x)
+PitchforkProblemInterface::computeF(NOX::LAPACK::Vector& f,
+                    const NOX::LAPACK::Vector &x)
 {
   double h = 2.0 / static_cast<double>(n-1);
 
@@ -78,16 +78,16 @@ PitchforkProblemInterface::computeF(NOX::LAPACK::Vector& f,
   f(n-1) = 2.0*(x(n-2) - x(n-1)) + h*h*source_term(x(n-1));
   for (int i=1; i<n-1; i++)
     f(i) = x(i-1) - 2.0*x(i) + x(i+1) + h*h*source_term(x(i));
-  
+
   return true;
 }
 
 bool
-PitchforkProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-					   const NOX::LAPACK::Vector & x)
+PitchforkProblemInterface::computeJacobian(NOX::LAPACK::Matrix<double>& J,
+                       const NOX::LAPACK::Vector & x)
 {
   double h = 2.0 / static_cast<double>(n-1);
-  
+
   J(0,0) = -2.0 + h*h*source_deriv(x(0));
   J(0,1) = 2.0;
   J(n-1,n-1) = -2.0 + h*h*source_deriv(x(n-1));
@@ -119,7 +119,7 @@ PitchforkProblemInterface::source_deriv(double x) {
 
 void
 PitchforkProblemInterface::printSolution(const NOX::LAPACK::Vector &x,
-					 const double conParam)
+                     const double conParam)
 {
 
    std::cout << "At parameter value: " << conParam << "   the solution vector is\n";

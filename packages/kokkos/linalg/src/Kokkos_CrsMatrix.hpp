@@ -948,123 +948,7 @@ generateHostGraph ( OrdinalType nrows,
 
 }
 
-// FIXME (mfh 09 Aug 2013) These "shuffle" operations need to move
-// into kokkos/core, because they are fundamental to Kokkos and not
-// specific to sparse matrices.
-//
-// Shuffle only makes sense on >= Kepler GPUs; it doesn't work on CPUs
-// or other GPUs.  We provide a generic definition (which is trivial
-// and doesn't do what it claims to do) because we don't actually use
-// this function unless we are on a suitable GPU, with a suitable
-// Scalar type.  (For example, in the mat-vec, the "ThreadsPerRow"
-// internal parameter depends both on the Device and the Scalar type,
-// and it controls whether shfl_down() gets called.)
-template<typename Scalar>
-KOKKOS_INLINE_FUNCTION
-Scalar shfl_down(const Scalar &val, const int& delta, const int& width){
-  return val;
-}
 
-template<>
-KOKKOS_INLINE_FUNCTION
-unsigned int shfl_down<unsigned int>(const unsigned int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    unsigned int tmp1 = val;
-    int tmp = *reinterpret_cast<int*>(&tmp1);
-    tmp = __shfl_down(tmp,delta,width);
-    return *reinterpret_cast<unsigned int*>(&tmp);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-int shfl_down<int>(const int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    return __shfl_down(val,delta,width);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-float shfl_down<float>(const float &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    return __shfl_down(val,delta,width);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-double shfl_down<double>(const double &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(val);
-    int hi = __double2hiint(val);
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    return __hiloint2double(hi,lo);
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-long int shfl_down<long int>(const long int &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(*reinterpret_cast<const double*>(&val));
-    int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    const double tmp = __hiloint2double(hi,lo);
-    return *(reinterpret_cast<const long int*>(&tmp));
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
-
-template<>
-KOKKOS_INLINE_FUNCTION
-unsigned long shfl_down<unsigned long>(const unsigned long &val, const int& delta, const int& width){
-#ifdef __CUDA_ARCH__
-  #if (__CUDA_ARCH__ >= 300)
-    int lo = __double2loint(*reinterpret_cast<const double*>(&val));
-    int hi = __double2hiint(*reinterpret_cast<const double*>(&val));
-    lo = __shfl_down(lo,delta,width);
-    hi = __shfl_down(hi,delta,width);
-    const double tmp = __hiloint2double(hi,lo);
-    return *(reinterpret_cast<const unsigned long*>(&tmp));
-  #else
-    return val;
-  #endif
-#else
-  return val;
-#endif
-}
 
 //----------------------------------------------------------------------------
 
@@ -1287,7 +1171,7 @@ struct MV_MultiplyFunctor {
     if (vectorization::is_lane_0(dev)) {
 
       if(doalpha == -1)
-        sum *= -1;
+        sum *= value_type(-1);
       else if(doalpha * doalpha != 1) {
         sum *= alpha(0);
       }
@@ -1453,7 +1337,7 @@ struct MV_MultiplyFunctor {
 
 
       if (vectorization::is_lane_0(dev)) {
-        if (doalpha == -1) sum *= -1;
+        if (doalpha == -1) sum *= value_type(-1);
         else if (doalpha * doalpha != 1) {
           sum *= alpha(0);
         }
@@ -1963,7 +1847,7 @@ MV_MultiplyTranspose (typename RangeVector::const_value_type s_b,
               V_MulScalar(y,betav,y);
       }
       else {
-              V_MulScalar(y,dobeta,y);
+              V_MulScalar(y,typename RangeVector::value_type(dobeta),y);
       }
       return;
     } else {

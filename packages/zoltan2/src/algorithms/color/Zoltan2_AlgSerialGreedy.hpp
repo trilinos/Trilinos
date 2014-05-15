@@ -43,8 +43,8 @@
 //
 // @HEADER
 #ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-#ifndef _ZOLTAN2_ALGFIRSTFIT_HPP_
-#define _ZOLTAN2_ALGFIRSTFIT_HPP_
+#ifndef _ZOLTAN2_ALGSERIALGREEDY_HPP_
+#define _ZOLTAN2_ALGSERIALGREEDY_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
@@ -64,18 +64,21 @@ class AlgSerialGreedy
     typedef typename Adapter::lno_t lno_t;
     typedef typename Adapter::gno_t gno_t;
     typedef typename Adapter::scalar_t scalar_t;
-    typedef int color_t; // TODO get from adapter
+    // Class member variables
+    RCP<GraphModel<typename Adapter::base_adapter_t> > model_;
+    RCP<Teuchos::Comm<int> > comm_;
   
   public:
-  AlgSerialGreedy()
+  AlgSerialGreedy(
+    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
+    const RCP<Teuchos::Comm<int> > &comm
+  ) : model_(model), comm_(comm)
   {
   }
 
   void color(
-    const RCP<GraphModel<typename Adapter::base_adapter_t> > &model,
     const RCP<ColoringSolution<Adapter> > &solution,
-    const RCP<Teuchos::ParameterList> &pl,
-    const RCP<Teuchos::Comm<int> > &comm
+    const RCP<Teuchos::ParameterList> &pl
   )
   {
     HELLO;
@@ -86,20 +89,23 @@ class AlgSerialGreedy
     ArrayView<const lno_t> offsets;
     ArrayView<StridedData<lno_t, scalar_t> > wgts; // Not used; needed by getLocalEdgeList
   
-    const lno_t nVtx = model->getLocalNumVertices();
-    model->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
+    const lno_t nVtx = model_->getLocalNumVertices();
+    model_->getLocalEdgeList(edgeIds, offsets, wgts); // Don't need wgts
   
 #if 0
     // Debug
     cout << "Debug: Local graph from getLocalEdgeList" << endl;
-    cout << "rank " << comm->getRank() << ": nVtx= " << nVtx << endl;
-    cout << "rank " << comm->getRank() << ": edgeIds: " << edgeIds << endl;
-    cout << "rank " << comm->getRank() << ": offsets: " << offsets << endl;
+    cout << "rank " << comm_->getRank() << ": nVtx= " << nVtx << endl;
+    cout << "rank " << comm_->getRank() << ": edgeIds: " << edgeIds << endl;
+    cout << "rank " << comm_->getRank() << ": offsets: " << offsets << endl;
 #endif
   
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
-    ArrayRCP<color_t> colors = solution->getColorsRCP();
+    ArrayRCP<int> colors = solution->getColorsRCP();
+    for (lno_t i=0; i<nVtx; i++){
+      colors[i] = 0;
+    }
 
     // Find max degree, since (max degree)+1 is an upper bound.
     lno_t maxDegree = 0; 
@@ -111,26 +117,33 @@ class AlgSerialGreedy
     // First-fit greedy coloring.
     // Use natural order for now. 
     // TODO: Support better orderings (e.g., Smallest-Last)
-    color_t maxColor = 0;
+    int maxColor = 0;
  
     // array of size #colors: forbidden[i]=v means color[v]=i so i is forbidden
-    Teuchos::Array<color_t> forbidden(maxDegree+1, 0);
+    Teuchos::Array<int> forbidden(maxDegree+2, 0);
 
     for (lno_t i=0; i<nVtx; i++){
+      //std::cout << "Debug: i= " << i << std::endl;
       lno_t v=i; // TODO: Use ordering here.
       for (lno_t j=offsets[v]; j<offsets[v+1]; j++){
         lno_t nbor = edgeIds[j];
+        //std::cout << "Debug: nbor= " << nbor << ", color= " << colors[nbor] << std::endl;
         if (colors[nbor] > 0){
           // Neighbors' colors are forbidden
           forbidden[colors[nbor]] = v;
         }
       }
       // Pick first (smallest) available color > 0
-      color_t c=1;
-      while (forbidden[c]==v) c++;
-      colors[v] = c;
-      if (c > maxColor){
-        maxColor = c;
+      for (int c=1; c < forbidden.length(); c++){
+        if (forbidden[c] != v){ 
+          colors[v] = c;
+          break;
+        }
+      }
+      if (colors[v]==0) colors[v]=1; // Corner case for first vertex
+      //std::cout << "Debug: colors[i]= " << colors[v] << std::endl;
+      if (colors[v] > maxColor){
+        maxColor = colors[v];
       }
     }
   

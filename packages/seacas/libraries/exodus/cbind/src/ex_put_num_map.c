@@ -49,9 +49,12 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include "exodusII.h"                   // for ex_err, exerrval, etc
+#include "exodusII_int.h"               // for EX_FATAL, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_inq_dimid, etc
 
 /*!
  * writes a map; this is a vector of integers of the same length as the

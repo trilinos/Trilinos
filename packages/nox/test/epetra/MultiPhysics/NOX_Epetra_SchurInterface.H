@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_EPETRA_SCHURINTERFACE_H
 #define NOX_EPETRA_SCHURINTERFACE_H
 
@@ -74,7 +74,7 @@ public:
   virtual bool applyBlockInverseAction( int rowBlock, int colBlock, const Epetra_Vector & x, Epetra_Vector & result ) = 0;
 
   //! Get the communicator
-  virtual const Epetra_Comm & getComm() = 0; 
+  virtual const Epetra_Comm & getComm() = 0;
 
   //! Query availability of explicit operator
   virtual bool hasExplicitOperator( int rowBlock, int colBlock )

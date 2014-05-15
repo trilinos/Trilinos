@@ -1921,7 +1921,6 @@ int nssi_service_start_wfn(
 
     char *req_buf;
 
-    NNTI_buffer_t req_queue;
     NNTI_status_t status;
 
     progress_callback progress_cb       =NULL;
@@ -1937,7 +1936,6 @@ int nssi_service_start_wfn(
 
     log_debug(debug_level, "starting single-threaded rpc service");
 
-    req_queue = svc->req_addr;
     /* initialize indices and counters */
     req_count = 0; /* number of reqs processed */
 
@@ -1971,7 +1969,7 @@ int nssi_service_start_wfn(
 
         trios_start_timer(call_time);
         rc=NNTI_wait(
-                &req_queue,
+                &svc->req_addr,
                 NNTI_RECV_QUEUE,
                 progress_timeout,
                 &status);

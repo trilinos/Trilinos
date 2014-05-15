@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTAN2INTERFACE_DEF_HPP
 #define MUELU_ZOLTAN2INTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <sstream>
 #include <set>
 

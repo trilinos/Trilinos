@@ -31,10 +31,9 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <heartbeat/Iohb_Layout.h>
-#include <iomanip>
-#include <ostream>
-#include <string>
-#include <vector>
+#include <iomanip>                      // for operator<<, setw, etc
+#include <string>                       // for operator<<, string, etc
+#include <vector>                       // for vector, vector<>::size_type
 
 namespace Iohb {
   Layout::Layout(bool show_labels, int precision, const std::string &separator, int field_width)

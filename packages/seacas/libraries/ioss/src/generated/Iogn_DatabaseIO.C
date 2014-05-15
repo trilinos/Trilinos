@@ -31,13 +31,39 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_DatabaseIO.h>
-#include <generated/Iogn_GeneratedMesh.h>
+#include <Ioss_CodeTypes.h>             // for Int64Vector, IntVector
+#include <Ioss_SideBlock.h>             // for SideBlock
+#include <Ioss_Utils.h>                 // for Utils, IOSS_ERROR
+#include <assert.h>                     // for assert
+#include <generated/Iogn_GeneratedMesh.h>  // for GeneratedMesh
+#include <math.h>                       // for sqrt
+#include <algorithm>                    // for copy
+#include <iostream>                     // for ostringstream, operator<<, etc
+#include <string>                       // for string, operator==, etc
+#include <utility>                      // for pair
+#include "Ioss_CommSet.h"               // for CommSet
+#include "Ioss_DBUsage.h"               // for DatabaseUsage
+#include "Ioss_DatabaseIO.h"            // for DatabaseIO
+#include "Ioss_ElementBlock.h"          // for ElementBlock
+#include "Ioss_EntityType.h"            // for EntityType, etc
+#include "Ioss_Field.h"                 // for Field, etc
+#include "Ioss_GroupingEntity.h"        // for GroupingEntity
+#include "Ioss_IOFactory.h"             // for IOFactory
+#include "Ioss_Map.h"                   // for Map, MapContainer
+#include "Ioss_NodeBlock.h"             // for NodeBlock
+#include "Ioss_NodeSet.h"               // for NodeSet
+#include "Ioss_ParallelUtils.h"         // for ParallelUtils
+#include "Ioss_Property.h"              // for Property
+#include "Ioss_PropertyManager.h"       // for PropertyManager
+#include "Ioss_Region.h"                // for Region
+#include "Ioss_SideSet.h"               // for SideSet
+#include "Ioss_VariableType.h"          // for VariableType
+namespace Ioss { class EdgeBlock; }
+namespace Ioss { class EdgeSet; }
+namespace Ioss { class ElementSet; }
+namespace Ioss { class FaceBlock; }
+namespace Ioss { class FaceSet; }
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_SubSystem.h>
-#include <Ioss_Utils.h>
-#include <Ioss_SideBlock.h>
-#include <string>
 
 namespace {
   template <typename INT>

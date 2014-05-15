@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -57,7 +57,7 @@
 #include "Petra_Map.h"
 #include "Petra_Time.h"
 #include "Petra_RDP_CRS_Matrix.h"
- 
+
 int main(int argc, char *argv[])
 {
   int ierr = 0, i, j;
@@ -115,11 +115,11 @@ int main(int argc, char *argv[])
   int IndexBase = 0;
   bool DistributedGlobal = (NumGlobalPoints>NumMyPoints);
 
-  // Construct a Source Map that puts approximately the same Number of equations on each processor in 
+  // Construct a Source Map that puts approximately the same Number of equations on each processor in
   // uniform global ordering
 
   Petra_Map& SourceMap = *new Petra_Map(NumGlobalPoints, NumMyPoints, 0, Comm);
-  
+
   // Get update list and number of local equations from newly created Map
   int NumMyElements = SourceMap.NumMyElements();
   int * SourceMyGlobalElements = new int[NumMyElements];
@@ -182,7 +182,7 @@ int main(int argc, char *argv[])
   for (j=0; j < NumVectors; j++)
     for (i=0; i < NumMyElements; i++) {
       if (TargetMultiVector[j][i]!= (double) TargetMyGlobalElements[i]*(j+1))
-	cout << "TargetMultiVector["<<i<<"]["<<j<<"] = " << TargetMultiVector[j][i] 
+	cout << "TargetMultiVector["<<i<<"]["<<j<<"] = " << TargetMultiVector[j][i]
 	     <<  "  TargetMyGlobalElements[i]*(j+1) = " <<  TargetMyGlobalElements[i]*(j+1) << endl;
       assert(TargetMultiVector[j][i]== (double) TargetMyGlobalElements[i]*(j+1));
     }
@@ -207,9 +207,9 @@ int main(int argc, char *argv[])
   int *ExportPIDs = Importer.ExportPIDs();
 
   for (i=0; i < NumSameIDs; i++) ExpectedTarget[i] = (double) (MyPID+1);
-  for (i=0; i < NumPermuteIDs; i++) ExpectedTarget[PermuteFromLIDs[i]] = 
+  for (i=0; i < NumPermuteIDs; i++) ExpectedTarget[PermuteFromLIDs[i]] =
 				      (double) (MyPID+1);
-  for (i=0; i < NumExportIDs; i++) ExpectedTarget[ExportLIDs[i]] += 
+  for (i=0; i < NumExportIDs; i++) ExpectedTarget[ExportLIDs[i]] +=
 				     (double) (ExportPIDs[i]+1);
 
   for (i=0; i < NumMyElements; i++) SourceVector[i] =  (double) (MyPID+1);
@@ -218,7 +218,7 @@ int main(int argc, char *argv[])
 
     for (i=0; i < NumMyElements; i++) {
       if (TargetVector[i]!= ExpectedTarget[i])
-	cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i] 
+	cout <<  "     TargetVector["<<i<<"] = " << TargetVector[i]
 	     <<  "   ExpectedTarget["<<i<<"] = " <<  ExpectedTarget[i] << " on PE " << MyPID << endl;
       assert(TargetVector[i]== ExpectedTarget[i]);
     }
@@ -237,11 +237,11 @@ int main(int argc, char *argv[])
 
 
 
-  // Construct a Standard Map that puts approximately the same number of equations on each processor in 
+  // Construct a Standard Map that puts approximately the same number of equations on each processor in
   // uniform global ordering
 
   Petra_Map& StandardMap = *new Petra_Map(NumGlobalPoints, NumMyPoints, 0, Comm);
-  
+
   // Get update list and number of local equations from newly created Map
   NumMyElements = StandardMap.NumMyElements();
   int * StandardMyGlobalElements = new int[NumMyElements];
@@ -253,7 +253,7 @@ int main(int argc, char *argv[])
   Petra_CRS_Graph& StandardGraph = *new Petra_CRS_Graph(Copy, StandardMap, 3);
   assert(!StandardGraph.IndicesAreGlobal());
   assert(!StandardGraph.IndicesAreLocal());
-  
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -261,7 +261,7 @@ int main(int argc, char *argv[])
 
   int *Indices = new int[2];
   int NumEntries;
-  
+
   for (i=0; i<NumMyPoints; i++)
     {
     if (StandardMyGlobalElements[i]==0)
@@ -283,7 +283,7 @@ int main(int argc, char *argv[])
      assert(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], NumEntries, Indices)==0);
      assert(StandardGraph.InsertGlobalIndices(StandardMyGlobalElements[i], 1, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
     }
-  
+
   // Finish up
   assert(StandardGraph.IndicesAreGlobal());
   assert(StandardGraph.FillComplete()==0);
@@ -300,7 +300,7 @@ int main(int argc, char *argv[])
   Petra_RDP_CRS_Matrix& StandardMatrix = *new Petra_RDP_CRS_Matrix(Copy, StandardGraph);
   assert(!StandardMatrix.IndicesAreGlobal());
   assert(StandardMatrix.IndicesAreLocal());
-  
+
   // Add  rows one-at-a-time
   // Need some vectors to help
   // Off diagonal Values will always be -1
@@ -309,7 +309,7 @@ int main(int argc, char *argv[])
   double *Values = new double[2];
   Values[0] = -1.0; Values[1] = -1.0;
   double two = 2.0;
-  
+
   for (i=0; i<NumMyPoints; i++)
     {
     if (StandardMyGlobalElements[i]==0)
@@ -331,7 +331,7 @@ int main(int argc, char *argv[])
      assert(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], NumEntries, Values, Indices)==0);
      assert(StandardMatrix.ReplaceGlobalValues(StandardMyGlobalElements[i], 1, &two, StandardMyGlobalElements+i)==0); // Put in the diagonal entry
     }
-  
+
   // Finish up
   assert(StandardMatrix.IndicesAreLocal());
   assert(StandardMatrix.FillComplete()==0);
@@ -362,7 +362,7 @@ int main(int argc, char *argv[])
   Petra_RDP_CRS_Matrix& OverlapMatrix = *new Petra_RDP_CRS_Matrix(Copy, OverlapMap, 4);
   assert(!OverlapMatrix.IndicesAreGlobal());
   assert(!OverlapMatrix.IndicesAreLocal());
-  
+
   // Add  matrix element one cell at a time.
   // Each cell does an incoming and outgoing flux calculation
 
@@ -382,7 +382,7 @@ int main(int argc, char *argv[])
       }
       if (i<OverlapNumMyElements-1) {
 	assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
-	if (node_right<NumGlobalPoints) 
+	if (node_right<NumGlobalPoints)
 	  assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &neg_one, &node_right)==0);
       }
     }
@@ -396,7 +396,7 @@ int main(int argc, char *argv[])
     int node_center = OverlapMyGlobalElements[OverlapNumMyElements-1];
     assert(OverlapMatrix.InsertGlobalValues(node_center, 1, &pos_one, &node_center)==0);
   }
-    
+
   assert(OverlapMatrix.FillComplete()==0);
 
   // Make a gathered matrix from OverlapMatrix.  It should be identical to StandardMatrix
@@ -427,10 +427,10 @@ int main(int argc, char *argv[])
       assert(StandardNumEntries==GatheredNumEntries);
       for (j=0; j < StandardNumEntries; j++) {
 	//if (StandardIndices[j]!=GatheredIndices[j])
-	// cout << "MyPID = " << MyPID << " i = " << i << "   StandardIndices[" << j << "] = " << StandardIndices[j] 
+	// cout << "MyPID = " << MyPID << " i = " << i << "   StandardIndices[" << j << "] = " << StandardIndices[j]
 	//      << "   GatheredIndices[" << j << "] = " << GatheredIndices[j] << endl;
 	//if (StandardValues[j]!=GatheredValues[j])
-	//cout << "MyPID = " << MyPID << " i = " << i << "    StandardValues[" << j << "] = " <<  StandardValues[j] 
+	//cout << "MyPID = " << MyPID << " i = " << i << "    StandardValues[" << j << "] = " <<  StandardValues[j]
 	//     << "    GatheredValues[" << j << "] = " <<  GatheredValues[j] << endl;
 	assert(StandardIndices[j]==GatheredIndices[j]);
 	assert(StandardValues[j]==GatheredValues[j]);

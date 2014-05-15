@@ -284,14 +284,7 @@ public:
  *   of representation.
  */
 template<class TypeTo, class TypeFrom>
-inline TypeTo as( const TypeFrom& t )
-{
-#ifdef HAVE_TEUCHOS_DEBUG
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
-#else
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::convert(t);
-#endif // HAVE_TEUCHOS_DEBUG
-}
+inline TypeTo as( const TypeFrom& t );
 
 
 /** \brief Convert from one value type to another, with validity checks if appropriate.
@@ -360,10 +353,7 @@ inline TypeTo as( const TypeFrom& t )
  *   of representation.
  */
 template<class TypeTo, class TypeFrom>
-inline TypeTo asSafe( const TypeFrom& t )
-{
-  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
-}
+inline TypeTo asSafe( const TypeFrom& t );
 
 
 /// \class asFunc
@@ -2792,6 +2782,21 @@ public:
 
 // ToDo: Add more specializations as needed!
 
+template<class TypeTo, class TypeFrom>
+inline TypeTo as( const TypeFrom& t )
+{
+#ifdef HAVE_TEUCHOS_DEBUG
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
+#else
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::convert(t);
+#endif // HAVE_TEUCHOS_DEBUG
+}
+
+template<class TypeTo, class TypeFrom>
+inline TypeTo asSafe( const TypeFrom& t )
+{
+  return ValueTypeConversionTraits<TypeTo,TypeFrom>::safeConvert(t);
+}
 
 } // end namespace Teuchos
 

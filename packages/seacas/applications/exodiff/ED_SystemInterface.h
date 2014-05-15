@@ -32,15 +32,15 @@
 #ifndef Sierra_SystemInterface_h
 #define Sierra_SystemInterface_h
 
-#include "GetLongOpt.h"
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+#include "GetLongOpt.h"                 // for GetLongOption
+#include "Tolerance.h"                  // for Tolerance, etc
+#include "map.h"                        // for MAP_TYPE_enum
 
-#include "Tolerance.h"
-#include "map.h"
 
-#include <string>
-#include <vector>
 
-#include <iosfwd>
 
 #define DEFAULT_MAX_NUMBER_OF_NAMES 1000
 

@@ -83,7 +83,7 @@
 namespace MueLu {
 
   //! Helper functions to compare two paramter lists
-  static bool areSame(const ParameterList& list1, const ParameterList& list2);
+  static inline bool areSame(const ParameterList& list1, const ParameterList& list2);
 
 
   // This macro is tricky. The use case is when we do not have a level specific parameter, so we
@@ -592,7 +592,7 @@ namespace MueLu {
 
     return true;
   }
-  static bool areSame(const ParameterList& list1, const ParameterList& list2) {
+  static inline bool areSame(const ParameterList& list1, const ParameterList& list2) {
     return compare(list1, list2) && compare(list2, list1);
   }
 

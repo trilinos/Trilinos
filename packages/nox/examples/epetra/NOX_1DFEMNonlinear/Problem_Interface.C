@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // ----------   Includes   ----------
 #include <iostream>
 #include "Problem_Interface.H"
@@ -70,7 +70,7 @@ bool Problem_Interface::computeJacobian(const Epetra_Vector& x, Epetra_Operator&
   Epetra_RowMatrix* Jacobian = dynamic_cast<Epetra_RowMatrix*>(&Jac);
   if (Jacobian == NULL) {
     std::cout << "ERROR: Problem_Interface::computeJacobian() - The supplied"
-	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << std::endl;
+     << "Epetra_Operator is NOT an Epetra_RowMatrix!" << std::endl;
     throw;
   }
   return problem.evaluate(MATRIX_ONLY, &x, NULL, Jacobian);
@@ -81,7 +81,7 @@ bool Problem_Interface::computePrecMatrix(const Epetra_Vector& x, Epetra_RowMatr
   Epetra_RowMatrix* precMatrix = dynamic_cast<Epetra_RowMatrix*>(&M);
   if (precMatrix == NULL) {
     std::cout << "ERROR: Problem_Interface::computePreconditioner() - The supplied"
-	 << "Epetra_Operator is NOT an Epetra_RowMatrix!" << std::endl;
+     << "Epetra_Operator is NOT an Epetra_RowMatrix!" << std::endl;
     throw;
   }
   return problem.evaluate(MATRIX_ONLY, &x, NULL, precMatrix);

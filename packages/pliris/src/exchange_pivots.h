@@ -47,11 +47,11 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void	exchange_pivots(int *);
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

@@ -37,10 +37,10 @@ Niagara-2 & 1 & 8 & 64 & 1.4 Ghz & 4 M per core & Sun \\
 \end{table}
 
 These machines were chosen for their diversity and potential for use at Sandia.
-The Clovertown is one of Intel's latest processors, and the Niagara is an example of an extremely parallel chip.  
+The Clovertown is one of Intel's latest processors, and the Niagara is an example of an extremely parallel chip.
 %Barcelona is similar
-%to the new nodes that will be added to the Red Storm supercomputer, C3 uses Intel's latest 
-%processor, and Hypnotoad is an example of an extremely parallel chip.  
+%to the new nodes that will be added to the Red Storm supercomputer, C3 uses Intel's latest
+%processor, and Hypnotoad is an example of an extremely parallel chip.
 
 On each machine, tests were run on three matrices arising from Sandia applications.
 The first matrix is from a finite element discretization within a magnetics simulation.
@@ -111,12 +111,12 @@ Niagara & 58.3/69.9/20.7 & 56/66.4/20.3 & 57.1/68.1/20.5 & 57.1/68.1/20.5 \\
 
 On the Clovertown, OSKI produced large speedups over Epetra for all matrices in serial,
 as shown in Figure \ref{IK:fig:C3serial}.
-The stock kernels demonstrated speedups of $1.8$ to $2.8$.  Tuning improved the block matrices by about one third 
+The stock kernels demonstrated speedups of $1.8$ to $2.8$.  Tuning improved the block matrices by about one third
 when compared to the stock kernels. The composed algorithms demonstrated even more significant speedups of up to
 5.5, when composing and blocking were combined.
 Tuning did not improve the runtime of point matrices, except when a composed
 kernel was used.  In the
-case of the Citeseer matrix, a composed kernel resulted in either no performance gain or performance 
+case of the Citeseer matrix, a composed kernel resulted in either no performance gain or performance
 degradation.
 
 %\begin{figure}[htbp]
@@ -155,14 +155,14 @@ For structured matrices, composing results in a 25\% to 60\% gain over the faste
 Even if the tuning gains shown above are large, the amount of time it takes to tune a matrix at runtime is important in determining whether
 tuning will result in performance gains.  Tables \ref{IK:fig:tuningcostspoint}, \ref{IK:fig:tuningcostsblock}
 and \ref{IK:fig:tuningcostsciteseer} show the cost of tuning and the number of matrix-vector calls needed to amortize that cost for the point, block, and Citeseer matrices, respectively.
- The tuning and retuning costs are expressed in terms of 
+ The tuning and retuning costs are expressed in terms of
 the number of matrix-vector multiplies that could be performed in the time it takes to tune.
 {\it Tuning cost} is the amount of time it takes to tune a matrix the first time, and includes
 time to analyze the matrix to determine what optimizations are beneficial.
 {\it Retuning cost} is the amount of time it takes to tune the matrix if the optimizations
 to be performed are already known.  All comparisons are to the faster of the Epetra and OSKI matrix-vector
 multiplies.  The amortize columns show the number of calls to the tuned kernel needed to realize
-tuning gains.  When N/A is listed in an amortize column, it is never better to tune 
+tuning gains.  When N/A is listed in an amortize column, it is never better to tune
 because the tuned kernels are no faster than the untuned kernels.
 We note that the tuning cost depends only on the matrix structure, not on the matrix kernel to be
 performed.
@@ -227,7 +227,7 @@ of the initial tuning, so saving transformations for later use could be profitab
 matrices require the smallest number of calls to recover tuning costs, and when combined with
 composed kernels, this number drops even more.
 For point matrices tuning the matrix-vector
-multiply is never profitable, but the tuning of composed kernels can be profitable 
+multiply is never profitable, but the tuning of composed kernels can be profitable
 for structured matrices.
 
 While serial performance is important to application performance, most scientific simulations are
@@ -262,7 +262,7 @@ shows that on the Clovertown that Epetra has better scaling than OSKI. Table
 better to that of Epetra.
 The better scaling for Epetra comes from its slower performance in the single processor case, which allows
 for more improvement within a limited memory bandwidth situation.
-% When most of the matrix fits in cache performance improves faster than 
+% When most of the matrix fits in cache performance improves faster than
 %the number of processors due to increased processing power and decreased memory cost.
 For the point matrix, both Epetra and OSKI improve significantly
 until each is running at about 735 Mflops on 4 cores.
@@ -292,7 +292,7 @@ Niagara multiple threads/core & 4767/4321 & 3447/4847 & 23.2/23.2 \\
 \end{table}
 
 
-Figure \ref{IK:fig:hypstrong} shows that on the Niagara both the point and block matrix algorithms scale linearly with the number 
+Figure \ref{IK:fig:hypstrong} shows that on the Niagara both the point and block matrix algorithms scale linearly with the number
 of cores.  Essentially, there is enough memory bandwidth to feed each core.  As seen in Figure \ref{IK:fig:hypstrongthread},
  adding more threads per core to the calculating power leads to approximately linear speedup for all matrices.
 This begins to tail off at 5 threads for block matrices, and 7 threads for point matrices.  The Citeseer matrix once
@@ -305,7 +305,7 @@ linear or slightly better with the number of processors.  This result is expecte
 a local computation with no communication between processors.  As seen in Figure \ref{IK:fig:niagthreadtuningScal},
 increasing
 the number of threads per Niagara processor initially leads to improved performance, before dropping off at 6
-or  more threads per processor. 
+or  more threads per processor.
 The dropoff is most likely due to threads competing for processor resources.  Results for the Citeseer matrix were
 not shown, as OSKI does not tune its matrix-vector multiply kernel for the Citeseer matrix.  Finally, note
 that the retune function demonstrates better scaling than the same tune function in all cases.

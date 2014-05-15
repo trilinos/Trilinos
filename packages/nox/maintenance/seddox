@@ -6,5 +6,5 @@ set FILENAME = `echo "$3" | sed "s|$PKGDIR/doc/html/||"`
 
 #echo $FILENAME
 
-sed 's/\.\.\/images/images/g' $3 >! $INSTALLDIR/$FILENAME 
+sed 's/\.\.\/images/images/g' $3 >! $INSTALLDIR/$FILENAME
 

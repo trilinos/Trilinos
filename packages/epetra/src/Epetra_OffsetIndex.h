@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -58,39 +58,39 @@ class Epetra_Distributor;
 */
 
 class EPETRA_LIB_DLL_EXPORT Epetra_OffsetIndex: public Epetra_Object {
-    
+
  public:
 
   //! Constructs a Epetra_OffsetIndex object from the graphs and an importer.
   Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
                       const Epetra_CrsGraph & TargetGraph,
                       Epetra_Import & Importer );
-  
+
   //! Constructs a Epetra_OffsetIndex object from the graphs and an exporter.
   Epetra_OffsetIndex( const Epetra_CrsGraph & SourceGraph,
                       const Epetra_CrsGraph & TargetGraph,
                       Epetra_Export & Exporter );
 
-  //! Epetra_OffsetIndex copy constructor. 
+  //! Epetra_OffsetIndex copy constructor.
   Epetra_OffsetIndex(const Epetra_OffsetIndex & Indexor);
-  
+
   //! Epetra_OffsetIndex destructor.
   virtual ~Epetra_OffsetIndex(void);
 
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   virtual void Print(std::ostream & os) const;
   //@}
 
   //! Accessor
   int ** SameOffsets() const { return SameOffsets_; }
- 
+
   //! Accessor
   int ** PermuteOffsets() const { return PermuteOffsets_; }
- 
+
   //! Accessor
   int ** RemoteOffsets() const { return RemoteOffsets_; }
- 
+
  private:
 
   template<typename int_type>
@@ -105,7 +105,7 @@ class EPETRA_LIB_DLL_EXPORT Epetra_OffsetIndex: public Epetra_Object {
                                const int * RemoteLIDs,
                                Epetra_Distributor & Distor );
 
-  //! Epetra_OffsetIndex copy constructor. 
+  //! Epetra_OffsetIndex copy constructor.
   Epetra_OffsetIndex & operator=(const Epetra_OffsetIndex & Indexor);
  public:
 

@@ -2,11 +2,11 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"structs.h"
-#include	"params.h"
-#include	"defs.h"
-#include        "smalloc.h"
+#include <stdio.h>                      // for printf, fprintf, NULL, FILE
+#include "defs.h"                       // for FALSE
+#include "params.h"                     // for MAXSETS
+#include "smalloc.h"                    // for sfree
+struct bilist;
 
 /* Think hard about space.
    Put active list into each routine.

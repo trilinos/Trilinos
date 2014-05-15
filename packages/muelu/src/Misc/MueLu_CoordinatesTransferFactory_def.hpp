@@ -46,11 +46,6 @@
 #ifndef MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 #define MUELU_COORDINATESTRANSFER_FACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "Xpetra_ImportFactory.hpp"
 #include "Xpetra_MultiVectorFactory.hpp"
 #include "Xpetra_MapFactory.hpp"

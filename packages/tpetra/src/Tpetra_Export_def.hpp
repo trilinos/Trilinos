@@ -76,8 +76,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target) :
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraExportDebugDefault)
   {
@@ -120,8 +120,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           const RCP<Teuchos::FancyOStream>& out) :
     out_ (out),
     debug_ (tpetraExportDebugDefault)
@@ -165,8 +165,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
     debug_ (tpetraExportDebugDefault)
@@ -219,8 +219,8 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Export<LocalOrdinal,GlobalOrdinal,Node>::
-  Export (const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& source,
-          const Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >& target,
+  Export (const Teuchos::RCP<const map_type >& source,
+          const Teuchos::RCP<const map_type >& target,
           const RCP<Teuchos::FancyOStream>& out,
           const Teuchos::RCP<Teuchos::ParameterList>& plist) :
     out_ (Teuchos::getFancyOStream (Teuchos::rcpFromRef (std::cerr))),
@@ -359,13 +359,13 @@ namespace Tpetra {
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const typename Export<LocalOrdinal,GlobalOrdinal,Node>::map_type>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getSourceMap() const {
     return ExportData_->source_;
   }
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  Teuchos::RCP<const typename Export<LocalOrdinal,GlobalOrdinal,Node>::map_type>
   Export<LocalOrdinal,GlobalOrdinal,Node>::getTargetMap() const {
     return ExportData_->target_;
   }
@@ -464,8 +464,8 @@ namespace Tpetra {
     typedef LocalOrdinal LO;
     typedef GlobalOrdinal GO;
     typedef typename ArrayView<const GO>::size_type size_type;
-    const Map<LO,GO,Node>& source = * (getSourceMap ());
-    const Map<LO,GO,Node>& target = * (getTargetMap ());
+    const map_type& source = * (getSourceMap ());
+    const map_type& target = * (getTargetMap ());
     ArrayView<const GO> sourceGIDs = source.getNodeElementList ();
     ArrayView<const GO> targetGIDs = target.getNodeElementList ();
 
@@ -602,7 +602,7 @@ namespace Tpetra {
   Export<LocalOrdinal,GlobalOrdinal,Node>::setupRemote(Teuchos::Array<GlobalOrdinal> & exportGIDs)
   {
     using std::endl;
-    const Map<LocalOrdinal,GlobalOrdinal,Node>& target = * (getTargetMap ());
+    const map_type& target = * (getTargetMap ());
     const int myRank = target.getComm ()->getRank ();
 
     if (! out_.is_null ()) {
@@ -676,6 +676,7 @@ namespace Tpetra {
       out_->popTab ();
     }
   }
+
 } // namespace Tpetra
 
 // Explicit instantiation macro.

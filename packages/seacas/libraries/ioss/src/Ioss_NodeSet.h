@@ -33,12 +33,16 @@
 #ifndef IOSS_Ioss_NodeSet_h
 #define IOSS_Ioss_NodeSet_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_EntitySet.h>
-#include <string>
+#include <Ioss_EntitySet.h>             // for EntitySet
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include "Ioss_EntityType.h"            // for EntityType, etc
+#include "Ioss_Property.h"              // for Property
+namespace Ioss { class DatabaseIO; }
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class DatabaseIO;
 
   class NodeSet : public EntitySet {
   public:

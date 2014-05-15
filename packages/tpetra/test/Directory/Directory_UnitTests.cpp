@@ -128,7 +128,7 @@ namespace {
     const GO numEntries = 2;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
 
     Array<int> imageIDs(2);
     Array<LO> localIDs(2);
@@ -154,7 +154,7 @@ namespace {
     const GO numEntries = 1;
     RCP<M> map = rcp( new M(numEntries,0,comm) );
     // create a directory
-    D dir (*map);
+    D dir;
     {
       LookupStatus stat;
       Array<int> imageIDs(numEntries);
@@ -199,7 +199,7 @@ namespace {
     const GO numEntries = 2*numImages + remainder;
     RCP<M> map = rcp(new M(numEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -268,7 +268,7 @@ namespace {
     const LO numMyEntries = (myImageID == numImages-1 ? 2 : 1);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs;
     allGIDs.reserve(numEntries);
@@ -336,7 +336,7 @@ namespace {
     const GO numEntries = as<GO>((numImages*numImages+numImages)/2);
     RCP<M> map = rcp(new M(numEntries,numMyEntries,0,comm));
     // create a directory
-    D dir (*map);
+    D dir;
     // all GIDs
     Array<GO> allGIDs(numEntries);
     for (GO gid = 0; gid < numEntries; ++gid) {
@@ -404,7 +404,7 @@ namespace {
     RCP<M> map = rcp (new M (numEntries, tuple<GO> (myImageID, myImageID+numImages, myImageID+2*numImages), 0, comm));
 
     out << "Creating Directory" << endl;
-    D dir (*map);
+    D dir;
 
     out << "Create array of GIDs to look up" << endl;
     Array<GO> allGIDs;

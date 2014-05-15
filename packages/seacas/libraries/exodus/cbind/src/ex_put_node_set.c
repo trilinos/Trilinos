@@ -33,7 +33,8 @@
  * 
  */
 
-#include "exodusII.h"
+#include <stddef.h>                     // for NULL
+#include "exodusII.h"                   // for ex_put_set, ex_entity_id, etc
 
 /*!
 \deprecated Use ex_put_set()(exoid, EX_NODE_SET, node_set_id, node_set_node_list, NULL)

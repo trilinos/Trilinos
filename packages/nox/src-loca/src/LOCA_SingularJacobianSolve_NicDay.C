@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -58,7 +58,7 @@ LOCA::SingularJacobianSolve::NicDay::NicDay(Teuchos::ParameterList& params)
 }
 
 LOCA::SingularJacobianSolve::NicDay::NicDay(
-			  const LOCA::SingularJacobianSolve::NicDay& source)
+              const LOCA::SingularJacobianSolve::NicDay& source)
 {
 }
 
@@ -67,41 +67,41 @@ LOCA::SingularJacobianSolve::NicDay::~NicDay()
 }
 
 LOCA::SingularJacobianSolve::Generic*
-LOCA::SingularJacobianSolve::NicDay::clone() const 
+LOCA::SingularJacobianSolve::NicDay::clone() const
 {
   return new NicDay(*this);
 }
 
 LOCA::SingularJacobianSolve::Generic&
 LOCA::SingularJacobianSolve::NicDay::operator=(
-			  const LOCA::SingularJacobianSolve::Generic& source)
+              const LOCA::SingularJacobianSolve::Generic& source)
 {
   return operator=(dynamic_cast<const LOCA::SingularJacobianSolve::NicDay&>(source));
 }
 
 LOCA::SingularJacobianSolve::NicDay&
 LOCA::SingularJacobianSolve::NicDay::operator=(
-			  const LOCA::SingularJacobianSolve::NicDay& source)
+              const LOCA::SingularJacobianSolve::NicDay& source)
 {
   return *this;
 }
 
-NOX::Abstract::Group::ReturnType 
-LOCA::SingularJacobianSolve::NicDay::reset(Teuchos::ParameterList& params) 
+NOX::Abstract::Group::ReturnType
+LOCA::SingularJacobianSolve::NicDay::reset(Teuchos::ParameterList& params)
 {
   return NOX::Abstract::Group::Ok;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::NicDay::compute(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector& input,
-			        const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector& result) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector& input,
+                    const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector& result)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::SingularJacobianSolve::NicDay::compute()";
   NOX::Abstract::Group::ReturnType finalStatus;
 
@@ -121,17 +121,17 @@ LOCA::SingularJacobianSolve::NicDay::compute(
   return finalStatus;
 }
 
-NOX::Abstract::Group::ReturnType 
+NOX::Abstract::Group::ReturnType
 LOCA::SingularJacobianSolve::NicDay::computeMulti(
-				Teuchos::ParameterList& params,
-				LOCA::Continuation::AbstractGroup& grp,
-				const NOX::Abstract::Vector*const* inputs,
-				const NOX::Abstract::Vector& approxNullVec,
-				const NOX::Abstract::Vector& jacApproxNullVec,
-				NOX::Abstract::Vector** results,
-				int nVecs) 
+                Teuchos::ParameterList& params,
+                LOCA::Continuation::AbstractGroup& grp,
+                const NOX::Abstract::Vector*const* inputs,
+                const NOX::Abstract::Vector& approxNullVec,
+                const NOX::Abstract::Vector& jacApproxNullVec,
+                NOX::Abstract::Vector** results,
+                int nVecs)
 {
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::SingularJacobianSolve::NicDay::computeMulti()";
   NOX::Abstract::Group::ReturnType status, finalStatus;
   finalStatus = NOX::Abstract::Group::Ok;
@@ -148,9 +148,9 @@ LOCA::SingularJacobianSolve::NicDay::computeMulti(
   }
 
   status = grp.applyJacobianInverseMulti(params, tmpInputs, results, nVecs);
-  finalStatus = 
+  finalStatus =
     LOCA::ErrorCheck::combineAndCheckReturnTypes(status, finalStatus,
-						 callingFunction);
+                         callingFunction);
 
   for (int i=0; i<nVecs; i++) {
     results[i]->update(alphas[i], approxNullVec, 1.0);

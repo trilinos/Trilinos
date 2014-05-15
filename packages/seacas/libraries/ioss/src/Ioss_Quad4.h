@@ -33,12 +33,10 @@
 #ifndef IOSS_Ioss_Quad4_h
 #define IOSS_Ioss_Quad4_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <string>
+#include <Ioss_CodeTypes.h>             // for IntVector
+#include <Ioss_ElementTopology.h>       // for ElementTopology
 
 // STL Includes
-#include <vector>
 
 namespace Ioss {
   class Quad4 : public Ioss::ElementTopology {

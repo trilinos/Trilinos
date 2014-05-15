@@ -15,7 +15,7 @@ int main(int argCount, char **argValue)
   Epetra_MpiComm Comm(MPI_COMM_WORLD);
   const int rank = Comm.MyPID();
 
-  // Construct a Map 
+  // Construct a Map
   int nGlobalElements = 1000000;
   Epetra_Map Map(nGlobalElements, 0, Comm);
 
@@ -40,7 +40,7 @@ int main(int argCount, char **argValue)
   std::cerr << "About to insert row " << globalRowIdx << "\n";
       }
 
-      ierr = b.ReplaceGlobalValues(1, (const int *)&indices[0], 
+      ierr = b.ReplaceGlobalValues(1, (const int *)&indices[0],
            (const double *)&values[0]);
       assert(ierr==0);
     }

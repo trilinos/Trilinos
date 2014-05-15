@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,25 +68,25 @@ namespace Epetra {
 
   */
   class VectorSpace {
-    
+
   public:
-    
+
     //! Constructor
     VectorSpace() {};
-    
+
     //! Destructor
     virtual ~VectorSpace() {};
-    
-    //! Computes the inner product: <a,b>. 
-    virtual double innerProduct(const Epetra_Vector& a, 
-				const Epetra_Vector& b) const = 0;
+
+    //! Computes the inner product: <a,b>.
+    virtual double innerProduct(const Epetra_Vector& a,
+                const Epetra_Vector& b) const = 0;
 
     //! Computes the norm.
     /*! For an L2 norm, the computation is: sqrt( <a,a> ). */
     virtual double norm(const Epetra_Vector& a,
-			NOX::Abstract::Vector::NormType = 
-			NOX::Abstract::Vector::TwoNorm) const = 0;
-    
+            NOX::Abstract::Vector::NormType =
+            NOX::Abstract::Vector::TwoNorm) const = 0;
+
   };
 } // namespace Epetra
 } // namespace NOX

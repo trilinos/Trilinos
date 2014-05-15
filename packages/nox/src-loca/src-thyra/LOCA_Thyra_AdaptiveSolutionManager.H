@@ -71,8 +71,8 @@ public:
   void initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
                   const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy> &saveDataStrategy,
                   const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	              const Teuchos::RCP<LOCA::ParameterVector>& p,
-	              int p_index);
+                  const Teuchos::RCP<LOCA::ParameterVector>& p,
+                  int p_index);
 
   //! Build the LOCA solution group
   void buildSolutionGroup();

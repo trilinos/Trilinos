@@ -33,17 +33,15 @@
  *
  */
 
-#include <ctype.h>
-#include <string.h>
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
-
-static void *safe_free(void *array)
-{
-  if (array != 0) free(array);
-  return 0;
-}
+#include <ctype.h>                      // for toupper
+#include <inttypes.h>                   // for PRId64
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for malloc, NULL, free
+#include <string.h>                     // for strncmp, strlen
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_err, exerrval, ex_block, etc
+#include "exodusII_int.h"               // for elem_blk_parm, EX_FATAL, etc
 
 static int64_t get_node(void_int *connect, size_t index, size_t int_size)
 {
@@ -754,7 +752,7 @@ int ex_cvt_nodes_to_sides(int exoid,
 	{
 	  /* release connectivity array space and get next one */
 	  if (elem_ctr > 0)
-	    safe_free(connect);
+	    ex_safe_free(connect);
 
 	  /* Allocate space for the connectivity array for new element block */
 	  if (!(connect= malloc(elem_blk_parms[p_ndx].num_elem_in_blk*
@@ -1029,13 +1027,14 @@ int ex_cvt_nodes_to_sides(int exoid,
   /* All done: release connectivity array space, element block ids array,
      element block parameters array, and side set element index array */
  cleanup:
-  safe_free(connect);
-  safe_free(ss_elem_node_ndx);
-  safe_free(ss_parm_ndx);
-  safe_free(elem_blk_parms);
-  safe_free(elem_blk_ids);
-  safe_free(ss_elem_ndx);
-
+  ex_safe_free(connect);
+  ex_safe_free(ss_elem_node_ndx);
+  ex_safe_free(ss_parm_ndx);
+  ex_safe_free(elem_blk_parms);
+  ex_safe_free(elem_blk_ids);
+  ex_safe_free(ss_elem_ndx);
+  ex_safe_free(same_elem_type);
+  
   return (err_stat);
 }
 

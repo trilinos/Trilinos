@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,13 +44,13 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef LOCA_EPETRA_AUGMENTEDOP_H
 #define LOCA_EPETRA_AUGMENTEDOP_H
 
 #include "Teuchos_RCP.hpp"
 
-#include "Epetra_Operator.h"	       // base class
+#include "Epetra_Operator.h"           // base class
 #include "Epetra_LocalMap.h"           // class data element
 #include "Epetra_MultiVector.h"        // class data element
 
@@ -86,11 +86,11 @@ namespace LOCA {
      * It is assumed the Epetra_Map's for \f$A\f$, \f$B\f$, and
      * \f$J\f$ are the same and the corresponding map for the bordered
      * matrix is constructed from this map by storing the additional components
-     * on processor 0.  The buildEpetraAugmentedMultiVec() method can be used 
-     * to construct an Epetra_MultiVector using this map, a supplied 
-     * length \f$n\f$ Epetra_MultiVector and an \f$m\times m\f$ matrix, while 
-     * setEpetraAugmentedMultiVec() splits an extended multivector into its 
-     * length \f$n\f$ and \f$m\f$ components.  The 
+     * on processor 0.  The buildEpetraAugmentedMultiVec() method can be used
+     * to construct an Epetra_MultiVector using this map, a supplied
+     * length \f$n\f$ Epetra_MultiVector and an \f$m\times m\f$ matrix, while
+     * setEpetraAugmentedMultiVec() splits an extended multivector into its
+     * length \f$n\f$ and \f$m\f$ components.  The
      * Apply() method performs the \f$n+m\times n+m\f$ matrix multiplication
      * while ApplyInverse() uses a block-elimination algorithm to compute
      * the inverse using the ApplyInverse() method of the underlying operator
@@ -109,7 +109,7 @@ namespace LOCA {
      *       G
      *     \end{bmatrix}
      * \f]
-     * can be solved in a matrix-free mode using the Apply() method.  This 
+     * can be solved in a matrix-free mode using the Apply() method.  This
      * operator can also represent a preconditioner of the form
      * \f[
      *     \begin{bmatrix}
@@ -117,39 +117,39 @@ namespace LOCA {
      *        B^T & C
      *     \end{bmatrix}
      * \f]
-     * using the ApplyInvese() method, where \f$M\f$ is a preconditioner 
-     * for \f$J\f$.  Note that if \f$J\f$ is nearly singular, the 
+     * using the ApplyInvese() method, where \f$M\f$ is a preconditioner
+     * for \f$J\f$.  Note that if \f$J\f$ is nearly singular, the
      * preconditioner should not be too good because otherwise the
      * preconditining operation represented by ApplyInverse() becomes unstable.
      */
     class AugmentedOp : public Epetra_Operator {
-      
+
     public:
 
-      //! Constructor 
+      //! Constructor
       /*!
-       * Builds the bordered operator using the supplied operator \em jac 
+       * Builds the bordered operator using the supplied operator \em jac
        * and Epetra_Vector's \em a and \em b.  It is assumed \em a, \em b,
        * and \em jac all have the same map.
        */
       AugmentedOp(const Teuchos::RCP<LOCA::GlobalData>& global_data,
-		  const Teuchos::RCP<Epetra_Operator>& jac, 
-		  const Teuchos::RCP<const Epetra_MultiVector>& a, 
-		  const Teuchos::RCP<const Epetra_MultiVector>& b,
+          const Teuchos::RCP<Epetra_Operator>& jac,
+          const Teuchos::RCP<const Epetra_MultiVector>& a,
+          const Teuchos::RCP<const Epetra_MultiVector>& b,
                   const Teuchos::RCP<const NOX::Abstract::MultiVector::DenseMatrix> c);
 
       //! Destructor
       virtual ~AugmentedOp();
 
       //! If set true, transpose of this operator will be applied.
-      /*! 
+      /*!
        * Note that is only valid if the underlying operator \f$J\f$
        * supports a transpose.
        */
       virtual int SetUseTranspose(bool UseTranspose);
 
-      /*! 
-       * \brief Returns the result of a Epetra_Operator applied to a 
+      /*!
+       * \brief Returns the result of a Epetra_Operator applied to a
        * Epetra_MultiVector Input in Result.
        */
       /*!
@@ -170,11 +170,11 @@ namespace LOCA {
        * \f]
        * or its transpose if UseTranpose() is \em true.
        */
-      virtual int Apply(const Epetra_MultiVector& Input, 
-			Epetra_MultiVector& Result) const;
+      virtual int Apply(const Epetra_MultiVector& Input,
+            Epetra_MultiVector& Result) const;
 
       /*!
-       * \brief Returns the result of a Epetra_Operator inverse applied to 
+       * \brief Returns the result of a Epetra_Operator inverse applied to
        * an Epetra_MultiVector Input in Result.
        */
       /*!
@@ -193,54 +193,54 @@ namespace LOCA {
        *       G
        *     \end{bmatrix}
        * \f]
-       * using the following block-elimination algorithm:  
+       * using the following block-elimination algorithm:
        * \f[
        *  \begin{split}
        *    X_1 &= J^{-1} F, \\
        *    X_2 &= J^{-1} A, \\
-       *    Y &= (C-B^T X_2)^{-1}(G-B^T X_1), \\ 
+       *    Y &= (C-B^T X_2)^{-1}(G-B^T X_1), \\
        *    X &= X_1 - X_2 Y
        *  \end{split}
        * \f]
        * If UseTranpose() is \em true, the tranpose of the system is solved.
        */
-      virtual int ApplyInverse(const Epetra_MultiVector& X, 
-			       Epetra_MultiVector& Y) const;
-  
+      virtual int ApplyInverse(const Epetra_MultiVector& X,
+                   Epetra_MultiVector& Y) const;
+
       //! Returns the infinity norm of the bordered matrix.
       /*!
        * This is defined only if %NormInf() of the underlying operator \f$J\f$
-       * is defined and is given by 
+       * is defined and is given by
        * \f$\|J\|_\infty+\|A\|_\infty+\|B\|_\infty\f$.
        */
       virtual double NormInf() const;
-    
+
       //! Returns a character std::string describing the operator
       virtual const char* Label () const;
-  
+
       //! Returns the current UseTranspose setting.
       virtual bool UseTranspose() const;
 
-      /*! 
-       * \brief Returns true if the \e this object can provide an 
+      /*!
+       * \brief Returns true if the \e this object can provide an
        * approximate Inf-norm, false otherwise.
        */
       virtual bool HasNormInf() const;
 
-      /*! 
-       * \brief Returns a reference to the Epetra_Comm communicator 
+      /*!
+       * \brief Returns a reference to the Epetra_Comm communicator
        * associated with this operator.
        */
       virtual const Epetra_Comm & Comm() const;
 
       /*!
-       * \brief Returns the Epetra_Map object associated with the 
+       * \brief Returns the Epetra_Map object associated with the
        * domain of this matrix operator.
        */
       virtual const Epetra_Map& OperatorDomainMap () const;
 
-      /*! 
-       * \brief Returns the Epetra_Map object associated with the 
+      /*!
+       * \brief Returns the Epetra_Map object associated with the
        * range of this matrix operator.
        */
       virtual const Epetra_Map& OperatorRangeMap () const;
@@ -254,14 +254,14 @@ namespace LOCA {
       /*!
        * Builds an extended vector using the map representing the bordered
        * matrix.  If \em doCopy is \em true, the contents of \em x are
-       * copied into the extended vector, otherwise only space for the 
+       * copied into the extended vector, otherwise only space for the
        * extended vector is created.
        */
-      virtual Teuchos::RCP<Epetra_MultiVector> 
+      virtual Teuchos::RCP<Epetra_MultiVector>
       buildEpetraAugmentedMultiVec(
-			     const Epetra_MultiVector& x,
-			     const NOX::Abstract::MultiVector::DenseMatrix *y, 
-			     bool doCopy) const;
+                 const Epetra_MultiVector& x,
+                 const NOX::Abstract::MultiVector::DenseMatrix *y,
+                 bool doCopy) const;
 
       /*!
        * \brief Sets components from extended vector
@@ -270,21 +270,21 @@ namespace LOCA {
        * Splits the extended vector \em augMultiVec into components \em x and
        * \em y by copying values out of \em extVec.
        */
-      virtual void 
-      setEpetraAugmentedMultiVec(Epetra_MultiVector& x, 
-				 NOX::Abstract::MultiVector::DenseMatrix& y, 
-				 const Epetra_MultiVector& augMultiVec) const;
+      virtual void
+      setEpetraAugmentedMultiVec(Epetra_MultiVector& x,
+                 NOX::Abstract::MultiVector::DenseMatrix& y,
+                 const Epetra_MultiVector& augMultiVec) const;
 
     protected:
 
       //! Builds extended domain, range maps
       void buildExtendedMap(const Epetra_BlockMap& map,
-			    Epetra_Map*& extMapPtr, bool buildImporter, 
-			    bool haveParam);
-	
+                Epetra_Map*& extMapPtr, bool buildImporter,
+                bool haveParam);
+
       //! Converts a block map to an equivalent point map
       int blockMap2PointMap(const Epetra_BlockMap& BlockMap,
-			    Epetra_Map*& PointMap) const;
+                Epetra_Map*& PointMap) const;
 
     private:
 
@@ -301,7 +301,7 @@ namespace LOCA {
 
       //! Label for operator
       std::string label;
-    
+
       //! Stores operator representing \f$J\f$
       Teuchos::RCP<Epetra_Operator> jacOperator;
 
@@ -313,7 +313,7 @@ namespace LOCA {
 
       //! Local map for generating Epetra matrices
       Epetra_LocalMap localMap;
-  
+
       //! Stores pointer to a multivector
       Teuchos::RCP<const Epetra_MultiVector> a;
 
@@ -360,4 +360,4 @@ namespace LOCA {
   } // namespace Epetra
 } // namespace LOCA
 
-#endif 
+#endif

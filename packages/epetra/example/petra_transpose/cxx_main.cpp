@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -68,7 +68,7 @@
 
 int main(int argc, char *argv[])
 {
-  
+
   int ierr = 0, i, j;
   bool debug = false;
 
@@ -99,7 +99,7 @@ int main(int argc, char *argv[])
   */
 
 
- 
+
   char tmp;
   if (rank==0) cout << "Press any key to continue..."<< endl;
   if (rank==0) cin >> tmp;
@@ -115,10 +115,10 @@ int main(int argc, char *argv[])
   if (verbose && rank!=0) verbose = false;
 
 
-  if(argc != 2) cout << "Error: Enter name of data file on command line." << endl; 
+  if(argc != 2) cout << "Error: Enter name of data file on command line." << endl;
 
-  /* Read matrix file and distribute among processors.  
-     Returns with this processor's set of rows */ 
+  /* Read matrix file and distribute among processors.
+     Returns with this processor's set of rows */
 
   int NumGlobalEquations, n_nonzeros, *bindx;
   double * val, * xguess, * b, * xexact = 0;
@@ -138,14 +138,14 @@ int main(int argc, char *argv[])
   for (i=0; i<NumMyEquations; i++) NumNz[i] = bindx[i+1] - bindx[i] + 1;
 
 
-  Epetra_Map Map(NumGlobalEquations, NumMyEquations, 
+  Epetra_Map Map(NumGlobalEquations, NumMyEquations,
 			MyGlobalEquations, 0, Comm);
- 
+
   Epetra_Time timer(Comm);
 
   double start = timer.ElapsedTime();
   Epetra_CrsMatrix A(Copy, Map, NumNz);
-  
+
   /* Add  rows one-at-a-time */
 
   int NumIndices;
@@ -158,9 +158,9 @@ int main(int argc, char *argv[])
      assert(A.InsertGlobalValues(MyGlobalEquations[i], NumIndices, Values, Indices)==0);
      assert(A.InsertGlobalValues(MyGlobalEquations[i], 1, val+i, MyGlobalEquations+i)==0);
     }
-  
+
   assert(A.FillComplete()==0);
-  
+
   if (verbose) cout << "\nTime to construct A                = " << timer.ElapsedTime() - start << endl;
   double * xexactt = xexact;
   Epetra_Vector xx(Copy, Map, xexactt);
@@ -171,8 +171,8 @@ int main(int argc, char *argv[])
 
   // Sanity check
   assert(A.Multiply(false, xx, bcomp)==0);
-  Epetra_Vector resid(Map); 
- 
+  Epetra_Vector resid(Map);
+
   assert(resid.Update(1.0, bb, -1.0, bcomp, 0.0)==0);
 
   double residual;
@@ -185,7 +185,7 @@ int main(int argc, char *argv[])
   //        cannot do in Way 2.
 
   // Extract newly constructed matrix one row at a time
-  // 1) First get the local indices to count how many nonzeros will be in the 
+  // 1) First get the local indices to count how many nonzeros will be in the
   //    transpose graph on each processor
 
   start = timer.ElapsedTime();
@@ -233,15 +233,15 @@ int main(int argc, char *argv[])
   Epetra_CrsMatrix TempTransA1(View, TransMap, TransNumNz);
   int * TransMyGlobalEquations = new int[NumMyCols];
   TransMap.MyGlobalElements(TransMyGlobalEquations);
-  
+
   /* Add  rows one-at-a-time */
 
   for (i=0; i<NumMyCols; i++)
     {
-     assert(TempTransA1.InsertGlobalValues(TransMyGlobalEquations[i], 
+     assert(TempTransA1.InsertGlobalValues(TransMyGlobalEquations[i],
 				      TransNumNz[i], TransValues[i], TransIndices[i])==0);
     }
- 
+
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
   assert(TempTransA1.FillComplete()==0);
@@ -256,13 +256,13 @@ int main(int argc, char *argv[])
   Epetra_Export Export(TransMap, Map);
 
   assert(TransA1.Export(TempTransA1, Export, Add)==0);
-  
+
   assert(TransA1.FillComplete()==0);
 
 
   if (verbose) cout << "\nTime to construct TransA1          = " << timer.ElapsedTime() - start << endl;
 
-  // Now compute b = A' * x using the transpose option on Multiply and using 
+  // Now compute b = A' * x using the transpose option on Multiply and using
   // created transpose matrix
 
   Epetra_Vector x(Map);
@@ -272,7 +272,7 @@ int main(int argc, char *argv[])
   assert(A.Multiply(true, x, b1)==0);
   Epetra_Vector b2(Map);
   assert(TransA1.Multiply(false, x, b2)==0);
- 
+
   assert(resid.Update(1.0, b1, -1.0, b2, 0.0)==0);
 
   assert(b1.Norm2(&residual)==0);
@@ -284,7 +284,7 @@ int main(int argc, char *argv[])
 
 
   // Way 2: This approach is probably the simplest to code, but is probably slower.
-  //        We compute the transpose by dumping entries one-at-a-time.  
+  //        We compute the transpose by dumping entries one-at-a-time.
 
   // Extract newly constructed matrix one entry at a time and
   //  build Transpose matrix with some rows being shared across processors.
@@ -307,7 +307,7 @@ int main(int argc, char *argv[])
   }
 
 
-  
+
   // Note: The following call to FillComplete is currently necessary because
   //       some global constants that are needed by the Export () are computed in this routine
   assert(TempTransA2.FillComplete()==0);
@@ -324,10 +324,10 @@ int main(int argc, char *argv[])
   // Epetra_Export Export(TransMap, Map); // Export already built
 
   assert(TransA2.Export(TempTransA2, Export, Add)==0);
-  
+
   assert(TransA2.FillComplete()==0);
 
-  // Now compute b = A' * x using the transpose option on Multiply and using 
+  // Now compute b = A' * x using the transpose option on Multiply and using
   // created transpose matrix
 
   // Epetra_Vector x(Map);
@@ -337,7 +337,7 @@ int main(int argc, char *argv[])
   assert(A.Multiply(true, x, b1)==0);
   // Epetra_Vector b2(Map);
   assert(TransA2.Multiply(false, x, b2)==0);
- 
+
   assert(resid.Update(1.0, b1, -1.0, b2, 0.0)==0);
 
   assert(b1.Norm2(&residual)==0);

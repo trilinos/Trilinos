@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -57,8 +57,8 @@
 #include "Teuchos_Assert.hpp"
 
 NOX::StatusTest::NStep::
-NStep(int numberOfStepsForConvergence, 
-      int numberOfNonlinearSolvesInRampingPhase, 
+NStep(int numberOfStepsForConvergence,
+      int numberOfNonlinearSolvesInRampingPhase,
       int rampingPhaseNumberOfStepsForConvergence,
       const NOX::Utils* u) :
   status_(Unconverged),
@@ -75,8 +75,8 @@ NStep(int numberOfStepsForConvergence,
 
 NOX::StatusTest::StatusType NOX::StatusTest::NStep::
 checkStatus(const NOX::Solver::Generic& problem,
-	    NOX::StatusTest::CheckType checkType)
-{ 
+        NOX::StatusTest::CheckType checkType)
+{
 
   if (problem.getNumIterations() == 0)
     currentNumberOfNonlinearSolves_ += 1;
@@ -115,8 +115,8 @@ std::ostream& NOX::StatusTest::NStep::print(std::ostream& stream, int indent) co
   stream << status_;
 
   if (inRampingPhase_) {
-    stream << "N-Step (in ramping phase " << currentNumberOfNonlinearSolves_ 
-	   << "/" << numberOfNonlinearSolvesInRampingPhase_ << "): " << currentNumberOfSteps_;
+    stream << "N-Step (in ramping phase " << currentNumberOfNonlinearSolves_
+       << "/" << numberOfNonlinearSolvesInRampingPhase_ << "): " << currentNumberOfSteps_;
     if (status_ == Converged)
       stream << " = " << rampingPhaseNumberOfStepsForConvergence_ << std::endl;
     else
@@ -126,7 +126,7 @@ std::ostream& NOX::StatusTest::NStep::print(std::ostream& stream, int indent) co
     stream << "N-Step: " << currentNumberOfSteps_;
     if (status_ == Converged)
       stream << " = " << numberOfStepsForConvergence_ << std::endl;
-    else 
+    else
       stream << " < " << numberOfStepsForConvergence_ << std::endl;
   }
 

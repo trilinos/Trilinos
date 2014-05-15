@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,32 +62,32 @@
 #include "Laplace2D.H"
 
 // this is required to know the number of lower, upper, left and right
-// node for each node of the Cartesian grid (composed by nx \timex ny 
+// node for each node of the Cartesian grid (composed by nx \timex ny
 // elements)
 
 void
 Laplace2D::get_myNeighbours( const int i, const int nx, const int ny,
-			     int & left, int & right, 
-			     int & lower, int & upper) 
+                 int & left, int & right,
+                 int & lower, int & upper)
 {
 
   int ix, iy;
   ix = i%nx;
   iy = (i - ix)/nx;
 
-  if( ix == 0 ) 
+  if( ix == 0 )
     left = -1;
-  else 
+  else
     left = i-1;
-  if( ix == nx-1 ) 
+  if( ix == nx-1 )
     right = -1;
   else
     right = i+1;
-  if( iy == 0 ) 
+  if( iy == 0 )
     lower = -1;
   else
     lower = i-nx;
-  if( iy == ny-1 ) 
+  if( iy == ny-1 )
     upper = -1;
   else
     upper = i+nx;
@@ -98,17 +98,17 @@ Laplace2D::get_myNeighbours( const int i, const int nx, const int ny,
 
 // This function creates a CrsMatrix, whose elements corresponds
 // to the discretization of a Laplacian over a Cartesian grid,
-// with nx grid point along the x-axis and and ny grid points 
+// with nx grid point along the x-axis and and ny grid points
 // along the y-axis. For the sake of simplicity, I suppose that
 // all the nodes in the matrix are internal nodes (Dirichlet
 // boundary nodes are supposed to have been already condensated)
 
-Epetra_CrsMatrix * 
+Epetra_CrsMatrix *
 Laplace2D::CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm)
 {
 
   int NumGlobalElements = nx * ny;
-    
+
   // create a map
   Epetra_Map * Map = new Epetra_Map(NumGlobalElements,0,*Comm);
   // local number of rows
@@ -123,41 +123,41 @@ Laplace2D::CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm
   double off_lower = -1.0/(hy*hy);
   double off_upper = -1.0/(hy*hy);
   double diag      =  2.0/(hx*hx) + 2.0/(hy*hy);
-  
+
   int left, right, lower, upper;
-    
+
   // a bit overestimated the nonzero per row
-  
+
   Epetra_CrsMatrix * A = new Epetra_CrsMatrix(Copy,*Map,5);
-    
+
   // Add  rows one-at-a-time
-    
+
   double * Values = new double[4];
   int *   Indices = new int[4];
-    
-  for( int i = 0; i < NumMyElements; ++i ) 
+
+  for( int i = 0; i < NumMyElements; ++i )
   {
     int NumEntries=0;
     get_myNeighbours(  MyGlobalElements[i], nx, ny, left, right, lower, upper );
-    if( left != -1 ) 
+    if( left != -1 )
     {
       Indices[NumEntries] = left;
       Values[NumEntries] = off_left;
       ++NumEntries;
     }
-    if( right != -1 ) 
+    if( right != -1 )
     {
       Indices[NumEntries] = right;
       Values[NumEntries] = off_right;
       ++NumEntries;
     }
-    if( lower != -1 ) 
+    if( lower != -1 )
     {
       Indices[NumEntries] = lower;
       Values[NumEntries] = off_lower;
       ++NumEntries;
     }
-    if( upper != -1 ) 
+    if( upper != -1 )
     {
       Indices[NumEntries] = upper;
       Values[NumEntries] = off_upper;
@@ -177,7 +177,7 @@ Laplace2D::CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm
   delete    Map;
 
   return A;
-  
+
 } /* createJacobian */
 
 // ==========================================================================
@@ -198,7 +198,7 @@ Laplace2D::CreateLaplacian( const int nx, const int ny, const Epetra_Comm * Comm
 // (to define a Map, which is a linear map in this case)
 PDEProblem::PDEProblem(const int nx, const int ny, const double lambda,
            const Epetra_Comm * Comm) :
-  nx_(nx), ny_(ny), lambda_(lambda) 
+  nx_(nx), ny_(ny), lambda_(lambda)
 {
   hx_ = 1.0/(nx_-1);
   hy_ = 1.0/(ny_-1);
@@ -206,7 +206,7 @@ PDEProblem::PDEProblem(const int nx, const int ny, const double lambda,
 }
 
 // destructor
-PDEProblem::~PDEProblem() 
+PDEProblem::~PDEProblem()
 {
   delete Matrix_;
 }
@@ -220,8 +220,8 @@ void PDEProblem::ComputeF( const Epetra_Vector & x, Epetra_Vector & f )
   int NumMyElements = Matrix_->Map().NumMyElements();
   // get update list
   int * MyGlobalElements = Matrix_->Map().MyGlobalElements();
-  
-  for( int i = 0; i < NumMyElements; ++i ) 
+
+  for( int i = 0; i < NumMyElements; ++i )
   {
     // Put in the diagonal entry
     Matrix_->ReplaceGlobalValues(MyGlobalElements[i], 1, &diag, MyGlobalElements+i);
@@ -230,7 +230,7 @@ void PDEProblem::ComputeF( const Epetra_Vector & x, Epetra_Vector & f )
   Matrix_->Multiply( false, x, f );
 
   // add diagonal contributions
-  for( int i = 0; i < NumMyElements; ++i ) 
+  for( int i = 0; i < NumMyElements; ++i )
   {
     // Put in the diagonal entry
     f[i] += lambda_*exp(x[i]);
@@ -246,7 +246,7 @@ void PDEProblem::UpdateJacobian( const Epetra_Vector & x )
   // get update list
   int * MyGlobalElements = Matrix_->Map().MyGlobalElements();
 
-  for( int i = 0; i < NumMyElements; ++i ) 
+  for( int i = 0; i < NumMyElements; ++i )
   {
     // Put in the diagonal entry
     double newdiag = diag + lambda_*exp(x[i]);

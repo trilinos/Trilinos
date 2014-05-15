@@ -123,7 +123,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Ioex_DatabaseIO.C 2012/04/19 gdsjaar";}
+  const char *Version() {return "Ioex_DatabaseIO.C 2014/05/08";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -136,33 +136,7 @@ namespace {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "ExodusII error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
         << " in file '" << Version()
         << "' Please report to gdsjaar@sandia.gov if you need help.";
 
@@ -364,7 +338,7 @@ namespace Ioex {
 
     if (!is_input()) {
       // Check whether appending to existing file...
-      if (open_create_behavior() == Ioss::DB_APPEND) {
+      if (open_create_behavior() == Ioss::DB_APPEND || open_create_behavior() == Ioss::DB_APPEND_GROUP) {
         // Append to file if it already exists -- See if the file exists.
         std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
         Ioss::FileInfo file = Ioss::FileInfo(decoded_filename);
@@ -398,6 +372,11 @@ namespace Ioex {
       if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
         exodusMode |= EX_NETCDF4;
       }
+    }
+
+    if (properties.exists("ENABLE_FILE_GROUPS")) {
+        exodusMode |= EX_NETCDF4;
+        exodusMode |= EX_NOCLASSIC;
     }
 
     if (properties.exists("MAXIMUM_NAME_LENGTH")) {
@@ -642,6 +621,9 @@ namespace Ioex {
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
 
+      if (!m_groupName.empty()) {
+       ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
+      }
     }
     assert(exodusFilePtr >= 0);
     fileExists = true;
@@ -655,6 +637,59 @@ namespace Ioex {
     exodusFilePtr = -1;
 
     return exodusFilePtr;
+  }
+
+  bool DatabaseIO::open_group(const std::string &group_name)
+  {
+    // Get existing file pointer...
+    bool success = false;
+
+    int exoid = get_file_pointer();
+
+    m_groupName = group_name;
+    ex_get_group_id(exoid, m_groupName.c_str(), &exodusFilePtr);
+
+    if (exodusFilePtr < 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not open group named '" << m_groupName
+            << "' in file '" << get_filename() << "'.\n";
+      IOSS_ERROR(errmsg);
+    } else {
+      success = true;
+    }
+    return success;
+  }
+
+  bool DatabaseIO::create_subgroup(const std::string &group_name)
+  {
+    bool success = false;
+    if (!is_input()) {
+      // Get existing file pointer...
+      int exoid = get_file_pointer();
+
+      // Check name for '/' which is not allowed since it is the
+      // separator character in a full group path
+      if (group_name.find('/') != std::string::npos) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Invalid group name '" << m_groupName
+              << "' contains a '/' which is not allowed.\n";
+       IOSS_ERROR(errmsg);
+      }
+
+      m_groupName = group_name;
+      exoid = ex_create_group(exoid, m_groupName.c_str());
+      if (exoid < 0) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Could not create group named '" << m_groupName
+              << "' in file '" << get_filename() << "'.\n";
+       IOSS_ERROR(errmsg);
+      }
+      else {
+       exodusFilePtr = exoid;
+       success = true;
+      }
+    }
+    return success;
   }
 
   void DatabaseIO::put_qa()

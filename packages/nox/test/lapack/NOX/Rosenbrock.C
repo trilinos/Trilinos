@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -94,15 +94,16 @@
    \f]
 #include "NOX_LAPACK_Group.H"
 */
-                                                                                
+
 #include "NOX_Common.H"
 #include "NOX.H"  // NOX headers
 #include "NOX_LAPACK.H" // NOX LAPACK Interface headers
 #include "NOX_TestUtils.H" // NOX test parameter input headers
+#include "Teuchos_StandardCatchMacros.hpp"
 
 #ifdef HAVE_MPI
 #include <mpi.h>
-#else 
+#else
 #endif
 
 
@@ -110,9 +111,9 @@
 class Rosenbrock : public NOX::LAPACK::Interface {
 
 public:
- 
+
   //! Constructor
-  Rosenbrock() : 
+  Rosenbrock() :
     initialGuess(2),
     solution(2)
   {
@@ -142,9 +143,9 @@ public:
     f(1) = 1 - x(0);
     return true;
   };
-  
-  bool computeJacobian(NOX::LAPACK::Matrix<double>& J, 
-		       const NOX::LAPACK::Vector & x)
+
+  bool computeJacobian(NOX::LAPACK::Matrix<double>& J,
+               const NOX::LAPACK::Vector & x)
   {
     J(0,0) = -20 * x(0);
     J(0,1) = 10;
@@ -164,105 +165,105 @@ private:
 
 int main(int argc, char *argv[]) {
 
-  // Set up the printing utilities
-  Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr =
-    Teuchos::rcp(new Teuchos::ParameterList);
-  Teuchos::ParameterList& noxParams = *noxParamsPtr.get();
-  Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
-  printParams.set("Output Precision", 5);
-       
-  std::string paramFilename;     
-  bool   usingParamInputFile = false;
+  bool success = true;
+  bool verbose = true;
+  try {
+    // Set up the printing utilities
+    Teuchos::RCP<Teuchos::ParameterList> noxParamsPtr =
+      Teuchos::rcp(new Teuchos::ParameterList);
+    Teuchos::ParameterList& noxParams = *noxParamsPtr.get();
+    Teuchos::ParameterList& printParams = noxParams.sublist("Printing");
+    printParams.set("Output Precision", 5);
 
-  if (argc > 1) { 
-    if (argv[1][0]=='-' && argv[1][1]=='v')
-       printParams.set("Output Information", 
-			NOX::Utils::OuterIteration + 
-			NOX::Utils::OuterIterationStatusTest + 
-			NOX::Utils::InnerIteration +
-			NOX::Utils::Parameters + 
-			NOX::Utils::Details + 
-			NOX::Utils::Warning +
-			NOX::Utils::TestDetails);
-    else if (argv[1][0]=='-' && argv[1][1]=='p')
-      {
+    std::string paramFilename;
+    bool   usingParamInputFile = false;
 
-       if (argc < 3)
-         {
-            std::cout << "Error: An input parameter file was expected but not found. \n" << std::endl;
-            printParams.set("Output Information", NOX::Utils::Error);
-	    NOX::Utils printing(printParams);
-            return 1;
-         }
+    if (argc > 1) {
+      if (argv[1][0]=='-' && argv[1][1]=='v')
+        printParams.set("Output Information",
+             NOX::Utils::OuterIteration +
+             NOX::Utils::OuterIterationStatusTest +
+             NOX::Utils::InnerIteration +
+             NOX::Utils::Parameters +
+             NOX::Utils::Details +
+             NOX::Utils::Warning +
+             NOX::Utils::TestDetails);
+      else if (argv[1][0]=='-' && argv[1][1]=='p') {
+        if (argc < 3) {
+          std::cout << "Error: An input parameter file was expected but not found. \n" << std::endl;
+          printParams.set("Output Information", NOX::Utils::Error);
+          NOX::Utils printing(printParams);
+          return EXIT_FAILURE;
+          }
+        paramFilename = argv[2];
+        std::cout << "Reading parameter information from file \"" << paramFilename << "\""<< std::endl;
+        usingParamInputFile = true;
+        }
+      else
+        printParams.set("Output Information", NOX::Utils::Error);
+    }
+    NOX::Utils printing(printParams);
 
-       paramFilename = argv[2];
-       std::cout << "Reading parameter information from file \"" << paramFilename << "\""<< std::endl;
-       usingParamInputFile = true;
+    // Identify the test
+    if (printing.isPrintType(NOX::Utils::TestDetails)) {
+      std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
+    }
 
-      }
-    else
-       printParams.set("Output Information", NOX::Utils::Error);
+    // Final return value (0 = succefull, non-zero = failure)
+    //int status = 0;
+
+    // *** Insert your testing here! ***
+
+    // Set up the problem interface
+    Rosenbrock rosenbrock;
+
+    // Create a group which uses that problem interface. The group will
+    // be initialized to contain the default initial guess for the
+    // specified problem.
+    Teuchos::RCP<NOX::LAPACK::Group> grp =
+      Teuchos::rcp(new NOX::LAPACK::Group(rosenbrock));
+
+    // Set up the status tests
+    Teuchos::RCP<NOX::StatusTest::NormF> statusTestA =
+      Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
+    Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB =
+      Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
+    Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo =
+      Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                          statusTestA, statusTestB));
+
+    // Read parameters from file paramFilename - command line arg#1
+    if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, noxParams))
+       std::cout << "Using unchanged parameters " << std::endl;
+
+    // Create the solver
+    Teuchos::RCP<NOX::Solver::Generic> solver =
+      NOX::Solver::buildSolver(grp, statusTestsCombo, noxParamsPtr);
+
+    // Solve the nonlinesar system
+    NOX::StatusTest::StatusType status = solver->solve();
+
+    // Print the answer
+    std::cout << "\n" << "-- Parameter List From Solver --" << "\n";
+    solver->getList().print(std::cout);
+
+    // Get the answer
+    NOX::LAPACK::Group solnGrp =
+      dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
+
+    // Final return value (0 = succefull, non-zero = failure)
+    if (status == NOX::StatusTest::Converged) {
+      std::cout << "Test passed!" << std::endl;
+      success = true;
+    }
+    else {
+      std::cout << "Test failed!" << std::endl;
+      success = false;
+    }
   }
-  NOX::Utils printing(printParams);
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // Identify the test
-  if (printing.isPrintType(NOX::Utils::TestDetails)) {
-    std::cout << "Starting lapack/NOX_NewTest/NOX_NewTest.exe" << std::endl;
-  }
-
-  // Final return value (0 = succefull, non-zero = failure)
-  //int status = 0;
-
-  // *** Insert your testing here! ***
-
-  // Set up the problem interface
-  Rosenbrock rosenbrock;
-  
-  // Create a group which uses that problem interface. The group will
-  // be initialized to contain the default initial guess for the
-  // specified problem.
-  Teuchos::RCP<NOX::LAPACK::Group> grp = 
-    Teuchos::rcp(new NOX::LAPACK::Group(rosenbrock));
-
-  // Set up the status tests
-  Teuchos::RCP<NOX::StatusTest::NormF> statusTestA = 
-    Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-4));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> statusTestB = 
-    Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
-  Teuchos::RCP<NOX::StatusTest::Combo> statusTestsCombo = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
-					    statusTestA, statusTestB));
-
-  // Read parameters from file paramFilename - command line arg#1
-  if (usingParamInputFile && !NOX::parseTextInputFile(paramFilename, noxParams))
-     std::cout << "Using unchanged parameters " << std::endl;
-  
-  // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
-    NOX::Solver::buildSolver(grp, statusTestsCombo, noxParamsPtr);
-
-  // Solve the nonlinesar system
-  NOX::StatusTest::StatusType status = solver->solve();
-
-  // Print the answer
-  std::cout << "\n" << "-- Parameter List From Solver --" << "\n";
-  solver->getList().print(std::cout);
-
-  // Get the answer
-  NOX::LAPACK::Group solnGrp = 
-    dynamic_cast<const NOX::LAPACK::Group&>(solver->getSolutionGroup());
-  
-  // Final return value (0 = succefull, non-zero = failure)
-  //return status;
-  int returnValue = 1;
-  if (status == NOX::StatusTest::Converged) {
-    std::cout << "Test passed!" << std::endl;
-    returnValue = 0;
-  }
-  else
-    std::cout << "Test failed!" << std::endl;
-  
-  return returnValue;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
 
 /*

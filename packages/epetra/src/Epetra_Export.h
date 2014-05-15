@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -76,8 +76,8 @@ Builds an export object that will transfer objects built with SourceMap to objec
 
     A Epetra_Export object categorizes the elements of the target map into three sets as follows:
     <ol>
-    <li> All elements in the target map that have the same GID as the corresponding element of the source map, 
-         starting with the first 
+    <li> All elements in the target map that have the same GID as the corresponding element of the source map,
+         starting with the first
          element in the target map, going up to the first element that is different from the source map.  The number of
 	 these IDs is returned by NumSameIDs().
     <li> All elements that are local to the processor, but are not part of the first set of elements.  These elements
@@ -86,14 +86,14 @@ Builds an export object that will transfer objects built with SourceMap to objec
 	 is returned by NumPermutedIDs().  The list of elements (local IDs) in the source map that are permuted can be
 	 found in the list PermuteFromLIDs().  The list of elements (local IDs) in the target map that are the new locations
 	 of the source elements can be found in the list PermuteToLIDs().
-    <li> All remaining elements of the target map correspond to global IDs that are owned by remote processors.  The number 
+    <li> All remaining elements of the target map correspond to global IDs that are owned by remote processors.  The number
          of these elements is returned by NumRemoteIDs() and the list of these is returned by RemoteLIDs().
     </ol>
 
 Given the above information, the Epetra_Export constructor builds a list of elements that must be communicated to other
 processors as a result of export requests.  The number of exported elements (where multiple sends of the same element
-to different processors is counted) is returned by NumExportIDs().  The local IDs to be sent are returned by the list 
-ExportLIDs().  The processors to which each of the elements will be sent in returned in a list of the same length by 
+to different processors is counted) is returned by NumExportIDs().  The local IDs to be sent are returned by the list
+ExportLIDs().  The processors to which each of the elements will be sent in returned in a list of the same length by
 ExportPIDs().
 
 The total number of elements that will be sent by the calling processor is returned by NumSend().  The total number of
@@ -110,12 +110,12 @@ Assume we have 3 processors and 9 global elements with each processor owning 3 e
 
 The above layout essentially defines the target map argument of the export object.
 
-This could correspond to a 9-entry forcing vector with the first three entries on PE 0, and so on.  
+This could correspond to a 9-entry forcing vector with the first three entries on PE 0, and so on.
 Suppose that the entries of this forcing vector are computed by integrating over linear "hat" functions:
 
 \verbatim
 ^  ^  ^  ^  ^  ^  ^  ^  ^
- \/ \/ \/ \/ \/ \/ \/ \/ 
+ \/ \/ \/ \/ \/ \/ \/ \/
  /\ /\ /\ /\ /\ /\ /\ /\
 +--+--+--+--+--+--+--+--+
 0  1  2  3  4  5  6  7  8
@@ -206,7 +206,7 @@ NumRecv         = 1
 <b> Using Epetra_Export Objects </b>
 
 Once a Epetra_Export object has been constructed, it can be used by any of the Epetra classes that support distributed global
-objects, namely Epetra_Vector, Epetra_MultiVector, Epetra_CrsGraph, Epetra_CrsMatrix and Epetra_VbrMatrix.  
+objects, namely Epetra_Vector, Epetra_MultiVector, Epetra_CrsGraph, Epetra_CrsMatrix and Epetra_VbrMatrix.
 All of these classes have Export and Export methods that will fill new objects whose distribution is described by
 the target map, taking elements from the source object whose distribution is described by the source map.  Details of usage
 for each class is given in the appropriate class documentation.
@@ -224,19 +224,19 @@ would send replicated values to x_integrate:
 \verbatim
 x_integrate.Import(x_force, exporter, Insert);
 \endverbatim
-At the end of this operation, x_integrate would have replicated values from x_force of entries 2 and 3 on PEs 0 and 1, 
+At the end of this operation, x_integrate would have replicated values from x_force of entries 2 and 3 on PEs 0 and 1,
 and entries 5 and 6 on PEs 1 and 2.
 
-  */ 
+  */
   Epetra_Export( const Epetra_BlockMap & SourceMap, const Epetra_BlockMap & TargetMap );
-  
-  //! Epetra_Export copy constructor. 
+
+  //! Epetra_Export copy constructor.
   Epetra_Export(const Epetra_Export& Exporter);
 
   //! Epetra_Export pseudo-copy constructor.  Creates an Epetra_Export in the reverse direction of the Epetra_Import argument.
   Epetra_Export(const Epetra_Import& Exporter);
-  
-  //! Epetra_Export destructor. 
+
+  //! Epetra_Export destructor.
   virtual ~Epetra_Export(void);
 
   //! Returns the number of elements that are identical between the source and target maps, up to the first different ID
@@ -252,7 +252,7 @@ and entries 5 and 6 on PEs 1 and 2.
 
   //! Returns the number of elements that are not on the calling processor.
   int NumRemoteIDs() const {return(NumRemoteIDs_);};
-  
+
   //! List of elements in the target map that are coming from other processors.
   int * RemoteLIDs() const {return(RemoteLIDs_);};
 
@@ -280,7 +280,7 @@ and entries 5 and 6 on PEs 1 and 2.
   Epetra_Distributor & Distributor() const {return(*Distor_);};
 
   //! @name Print object to an output stream
-  //@{ 
+  //@{
   virtual void Print(std::ostream & os) const;
   //@}
  protected:
@@ -308,7 +308,7 @@ and entries 5 and 6 on PEs 1 and 2.
   int NumRecv_;
 
   Epetra_Distributor * Distor_;
-  
+
   template<typename int_type>
   void Construct(const Epetra_BlockMap & SourceMap, const Epetra_BlockMap & TargetMap);
 

@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -70,11 +70,11 @@ class Epetra_HashTable : public Epetra_Object
   long long Size_;
   unsigned int Seed_;
 
-  int Func( const long long key ) { 
+  int Func( const long long key ) {
     int intkey = (int) ((key & 0x000000007fffffffLL) + ((key & 0x7fffffff80000000LL) >> 31));
     return (int) ((Seed_ ^ intkey)%Size_);
-  } 
-     
+  }
+
  public:
 
   Epetra_HashTable( const int size, const unsigned int seed = (2654435761U) )

@@ -97,21 +97,21 @@ permute_mat(DATA_TYPE *mat, int *permutations)
 
   int J;			/* global column index */
 
-  
+
   MPI_Status msgstatus;
- 
+
   int pivot_row, k_row;
   DATA_TYPE tmpv;
 
- 
+
   col_len = my_rows;    /* length of column in remaining local matrix */
 
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including 
+  row_len = my_cols + my_rhs;  /* length of row in local matrix including
 			          rhs's*/
 
- 
-  /* BJD starts here */ 
+
+  /* BJD starts here */
   for (j=0;j<=my_cols-1;j++)
   {
     J=j*nprocs_row+mycol;

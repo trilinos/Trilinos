@@ -12,11 +12,11 @@ template<class Scalar> class ModelEvaluator2DSim;
 template<class Scalar>
 Teuchos::RCP<ModelEvaluator2DSim<Scalar> >
 modelEvaluator2DSim(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const Scalar d = 10.0,
-		    const Scalar p0 = 2.0,
-		    const Scalar p1 = 0.0,
-		    const Scalar x0 = 0.0,
-		    const Scalar x1 = 1.0);
+            const Scalar d = 10.0,
+            const Scalar p0 = 2.0,
+            const Scalar p1 = 0.0,
+            const Scalar x0 = 0.0,
+            const Scalar x1 = 1.0);
 
 
 /** \brief Simple 2d simulation only ModelEvaluator for f(x) = 0.
@@ -45,11 +45,11 @@ class ModelEvaluator2DSim
 public:
 
   ModelEvaluator2DSim(const Teuchos::RCP<const Epetra_Comm>& comm,
-		      const Scalar d = 10.0,
-		      const Scalar p0 = 2.0,
-		      const Scalar p1 = 0.0,
-		      const Scalar x0 = 0.0,
-		      const Scalar x1 = 1.0);
+              const Scalar d = 10.0,
+              const Scalar p0 = 2.0,
+              const Scalar p1 = 0.0,
+              const Scalar x0 = 0.0,
+              const Scalar x1 = 1.0);
 
   /** \name Initializers/Accessors */
   //@{
@@ -86,7 +86,7 @@ public:
   /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
-  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const; 
+  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const;
   //@}
 
 private:
@@ -115,7 +115,7 @@ private: // data members
   Teuchos::RCP<const Epetra_Map>   f_epetra_map_;
 
   Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
-  
+
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
 
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> nominalValues_;

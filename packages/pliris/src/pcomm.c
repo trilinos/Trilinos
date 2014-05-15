@@ -47,7 +47,7 @@
 #include "defines.h"
 #include "macros.h"
 
-#define DEBUG1 0   
+#define DEBUG1 0
 /*  define variables to avoid compiler error    */
 
 int one = 1;
@@ -69,7 +69,7 @@ void initcomm(){
   my_col_id = mesh_col(me);
   my_row_id = mesh_row(me);
 
-  
+
   col_id = my_col_id + 1;
   if (col_id >= nprocs_row) col_id = 0;
   ringnext = proc_num(my_row_id,col_id);
@@ -118,7 +118,7 @@ void initcomm(){
 #endif
 }
 
-double 
+double
 max_all(double buf, int type)
 {
 

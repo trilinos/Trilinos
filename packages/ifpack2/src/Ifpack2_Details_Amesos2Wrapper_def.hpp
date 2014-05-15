@@ -261,6 +261,9 @@ void Amesos2Wrapper<MatrixType>::initialize ()
 
     // FIXME (10 Dec 2013) This (the Amesos2 solver type) should be a
     // run-time parameter through the input ParameterList.
+    // (9 May 2014) JJH Ifpack2 also shouldn't be checking the availability direct solvers.
+    // It's up to Amesos2 to test for this and throw an exception
+    // (which it does in Amesos2::Factory::create).
 
     std::string solverType;
 
@@ -274,6 +277,10 @@ void Amesos2Wrapper<MatrixType>::initialize ()
     solverType = "cholmod";
 #elif defined(HAVE_AMESOS2_LAPACK)
     solverType = "lapack";
+#else
+    // FIXME (9 May 2014) JJH Amesos2 does not yet expose KLU2, its internal direct solver.
+    // This means there's no fallback option, thus we throw an exception here.
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::invalid_argument, "Amesos2 has not been configured with any direct solver support.");
 #endif
 
     // FIXME (10 Dec 2013) It shouldn't be necessary to recreate the

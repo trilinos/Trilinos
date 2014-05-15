@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -85,20 +85,20 @@ namespace LOCA {
      * <li> "Operator" -- [string] (default: "Jacobian inverse") Operator
      *      to compute eigenvalues of.
      * <li> "Block Size" -- [int] (default: 1) Block size
-     * <li> "Num Blocks" -- [int] (default: 30) Maximum number of blocks 
+     * <li> "Num Blocks" -- [int] (default: 30) Maximum number of blocks
      *       (equals the maximum length of the Arnoldi factorization
-     * <li> "Num Eigenvalues" -- [int] (default: 4) Number of requested 
+     * <li> "Num Eigenvalues" -- [int] (default: 4) Number of requested
      *       eigenvalues
-     * <li> "Convergence Tolerance" -- [double] (default: 1.0e-7) Tolerance 
+     * <li> "Convergence Tolerance" -- [double] (default: 1.0e-7) Tolerance
      *       for the converged eigenvalues
-     * <li> "Step Size" -- [int] (default: 1) Checks convergence 
+     * <li> "Step Size" -- [int] (default: 1) Checks convergence
      *       every so many steps
      * <li> "Maximum Restarts" -- [int] (default: 1) Number of restarts allowed
      * <li> "Symmetric" -- [bool] (default:  false) Is the operator symmetric
-     * <li> "Verbosity" -- [Anasazi::MsgType] 
+     * <li> "Verbosity" -- [Anasazi::MsgType]
      *       (default: Anasazi::Errors+Anasazi::Warnings+Anasazi::FinalSummary)
      *       Verbosity level
-     * <li> "Sorting Order" -- [string" (default: "LM") Sorting order of 
+     * <li> "Sorting Order" -- [string" (default: "LM") Sorting order of
      *       printed eigenvalues
      * </ul>
      */
@@ -115,25 +115,25 @@ namespace LOCA {
        * solver.
        */
       AnasaziStrategy(
-	const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
-      
+    const Teuchos::RCP<LOCA::GlobalData>& global_data,
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams);
+
       //! Destructor
       virtual ~AnasaziStrategy();
 
       //! Compute eigenvalues/eigenvectors
       /*!
-       * The implementation here the sets up and calls the Anasazi 
+       * The implementation here the sets up and calls the Anasazi
        * BlockKrylovSchur solver for computing eigenvalues.
        */
       virtual NOX::Abstract::Group::ReturnType
       computeEigenvalues(
-	      NOX::Abstract::Group& group,
-	      Teuchos::RCP< std::vector<double> >& evals_r,
-	      Teuchos::RCP< std::vector<double> >& evals_i,
-	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
-	      Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i);
+          NOX::Abstract::Group& group,
+          Teuchos::RCP< std::vector<double> >& evals_r,
+          Teuchos::RCP< std::vector<double> >& evals_i,
+          Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_r,
+          Teuchos::RCP< NOX::Abstract::MultiVector >& evecs_i);
 
     private:
 

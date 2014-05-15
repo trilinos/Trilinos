@@ -21,6 +21,9 @@
 #include <Kokkos_Threads.hpp>
 #endif
 
+#include <Kokkos_Serial.hpp>
+
+
 #include <KokkosCompat_View.hpp>
 /*namespace KokkosClassic {
       enum ReadWriteOption {
@@ -50,34 +53,38 @@ namespace Kokkos {
         Teuchos::ParameterList params = getDefaultParameters();
         params.setParameters(pl);
         const int curNumThreads = params.get<int>("Num Threads");
-        const int curNumTeams = params.get<int>("Num Teams");
+        const int curNumNUMA = params.get<int>("Num NUMA");
+        const int curNumCoresPerNUMA = params.get<int>("Num CoresPerNUMA");
         const int curDevice = params.get<int>("Device");
         int verboseInt = params.get<int>("Verbose");
         bool verbose = (verboseInt != 0);
         if (verbose) {
           std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-                    << curNumThreads << ", \"numteams\" = " << curNumTeams
+                    << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
+                    << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
                     << " \"device\" = " << curDevice << std::endl;
         }
         if(count==0)
-          init (curNumTeams,curNumThreads,curDevice);
+          init (curNumThreads,curNumNUMA,curNumCoresPerNUMA,curDevice);
         count++;
       }
 
       KokkosDeviceWrapperNode() {
         Teuchos::ParameterList params = getDefaultParameters();
         const int curNumThreads = params.get<int>("Num Threads");
-        const int curNumTeams = params.get<int>("Num Teams");
+        const int curNumNUMA = params.get<int>("Num NUMA");
+        const int curNumCoresPerNUMA = params.get<int>("Num CoresPerNUMA");
         const int curDevice = params.get<int>("Device");
         int verboseInt = params.get<int>("Verbose");
         bool verbose = (verboseInt != 0);
         if (verbose) {
           std::cout << "DeviceWrapperNode initializing with \"numthreads\" = "
-              << curNumThreads << ", \"numteams\" = " << curNumTeams
+              << curNumThreads << ", \"numNUMA\" = " << curNumNUMA
+              << ", \"numCorePerNUMA\" = " << curNumCoresPerNUMA
               << " \"device\" = " << curDevice << std::endl;
         }
         if(count==0)
-          init (curNumTeams,curNumThreads,curDevice);
+          init (curNumThreads,curNumNUMA,curNumCoresPerNUMA,curDevice);
         count++;
       }
 
@@ -87,12 +94,13 @@ namespace Kokkos {
         Teuchos::ParameterList params;
         params.set("Verbose",     0);
         params.set("Num Threads", 1);
-        params.set("Num Teams", 1);
+        params.set("Num NUMA", -1);
+        params.set("Num CoresPerNUMA", -1);
         params.set("Device", 0);
         return params;
       }
 
-      void init(int numteams, int numthreads, int device);
+      void init(int numthreads, int numnuma, int numcorespernuma, int device);
 
       template <class WDP>
       struct FunctorParallelFor {
@@ -307,6 +315,8 @@ namespace Kokkos {
   #ifdef KOKKOS_HAVE_PTHREAD
     typedef  KokkosDeviceWrapperNode<Kokkos::Threads> KokkosThreadsWrapperNode;
   #endif
+
+    typedef  KokkosDeviceWrapperNode<Kokkos::Serial> KokkosSerialWrapperNode;
   }
 } // end of namespace Kokkos
 #endif

@@ -46,11 +46,6 @@
 #ifndef MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_BrickAggregationFactory_decl.hpp"
 #ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>

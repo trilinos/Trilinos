@@ -119,7 +119,7 @@ int main(int argc, char *argv[])
     NNTI_result_t rc;
     char server_url[NNTI_URL_LEN];
 
-    logger_init(LOG_DEBUG, "nntiselfsend.log");
+    logger_init(LOG_ERROR, "nntiselfsend.log");
 
     pthread_barrier_init(&barrier, NULL, 2);
 

@@ -46,8 +46,8 @@
 #  include "Tpetra_KokkosRefactor_CrsMatrix_decl.hpp"
 #endif
 
-
 namespace Tpetra {
+
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal,
@@ -1397,11 +1397,29 @@ namespace Tpetra {
       insertNonownedGlobalValues (globalRow, indices, values);
     }
     else { // globalRow _is_ owned by calling process
-      TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-        this->isStaticGraph(), std::runtime_error,
-        ": The CrsMatrix was constructed with a static (i.e., const) graph."
-        << endl << "In that case, it is not allowed to insert new entries into "
-        "rows owned by the calling process.");
+      if (this->isStaticGraph ()) {
+        // Uh oh!  Not allowed to insert into owned rows in that case.
+        std::ostringstream err;
+        const int myRank = getRowMap ()->getComm ()->getRank ();
+        const int numProcs = getRowMap ()->getComm ()->getSize ();
+
+        err << "Tpetra::CrsMatrix::insertGlobalValues: The matrix was "
+          "constructed with a constant (\"static\") graph, yet the given "
+          "global row index " << globalRow << " is in the row Map on the "
+          "calling process (with rank " << myRank << ", of " << numProcs <<
+          " process(es)).  In this case, you may not insert new entries into "
+          "rows owned by the calling process.";
+
+        if (! getRowMap ()->isNodeGlobalElement (globalRow)) {
+          err << "  Furthermore, GID->LID conversion with the row Map claims that "
+            "the global row index is owned on the calling process, yet "
+            "getRowMap()->isNodeGlobalElement(globalRow) returns false.  That's"
+            " weird!  This might indicate a Map bug.  Please report this to the"
+            " Tpetra developers.";
+        }
+        TEUCHOS_TEST_FOR_EXCEPTION(this->isStaticGraph (), std::runtime_error, err.str ());
+      }
+
       if (! myGraph_->indicesAreAllocated ()) {
         allocateValues (GlobalIndices, GraphNotYetAllocated);
       }
@@ -3966,8 +3984,8 @@ namespace Tpetra {
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
 #ifdef HAVE_TPETRA_DEBUG
-    const KokkosClassic::MultiVector<DomainScalar,node_type> *lclX = &X.getLocalMV();
-    KokkosClassic::MultiVector<RangeScalar,node_type>        *lclY = &Y.getLocalMVNonConst();
+    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
       std::runtime_error, " X is not distributed according to the appropriate map.");
@@ -3990,7 +4008,8 @@ namespace Tpetra {
       X.isConstantStride() == false || Y.isConstantStride() == false,
       std::runtime_error, ": X and Y must be constant stride.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-      lclX==lclY, std::runtime_error, ": X and Y may not alias one another.");
+      lclX.getValues ().getRawPtr () == lclY.getValues ().getRawPtr (),
+      std::runtime_error, ": X and Y may not alias one another.");
 #endif
     //
     // Call the matvec
@@ -4046,9 +4065,9 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
 
     lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
@@ -4066,9 +4085,9 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,node_type>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,node_type>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,node_type> d = D.getLocalMV ();
 
     lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d, rowIndices, dampingFactor, direction);
   }
@@ -4077,18 +4096,20 @@ namespace Tpetra {
   /////////////////////////////////////////////////////////////////////////////
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   template <class DomainScalar, class RangeScalar>
-  void CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::localSolve(
-                                    const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >  &Y,
-                                          MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
-                                          Teuchos::ETransp mode) const
+  void
+  CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType>,
+            typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
+  localSolve (const MultiVector<RangeScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >  &Y,
+              MultiVector<DomainScalar,LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > &X,
+              Teuchos::ETransp mode) const
   {
     using Teuchos::NO_TRANS;
 #ifdef HAVE_TPETRA_DEBUG
     const char tfecfFuncName[] = "localSolve()";
 #endif // HAVE_TPETRA_DEBUG
 
-    const KokkosClassic::MultiVector<RangeScalar,node_type> *lclY = &Y.getLocalMV();
-    KokkosClassic::MultiVector<DomainScalar,node_type>      *lclX = &X.getLocalMVNonConst();
+    KokkosClassic::MultiVector<RangeScalar,node_type> lclY = Y.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,node_type> lclX = X.getLocalMV ();
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
@@ -4099,10 +4120,10 @@ namespace Tpetra {
     //
     // Call the solve
     if (mode == Teuchos::NO_TRANS) {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, *lclY, *lclX);
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::NO_TRANS, lclY, lclX);
     }
     else {
-      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, *lclY, *lclX);
+      lclMatOps_->template solve<DomainScalar,RangeScalar>(Teuchos::CONJ_TRANS, lclY, lclX);
     }
   }
 
@@ -5505,210 +5526,30 @@ namespace Tpetra {
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal, class DeviceType>
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> >
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  importAndFillComplete (const Import<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& importer,
+  importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
+                         const Import<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& importer,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-    using Teuchos::Comm;
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef node_type NT;
-    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
-
-    // FIXME (mfh 11 Apr 2012) The current implementation of this
-    // method doesn't actually fuse the Import with fillComplete().
-    // This will change in the future.
-
-    // Are we in reverse mode?
-    bool reverseMode = false;
-    if (! params.is_null ()) {
-      reverseMode = params->get ("Reverse Mode", reverseMode);
-    }
-
-    // Cache the maps
-    RCP<const map_type> sourceMap = reverseMode ?
-      importer.getTargetMap () : importer.getSourceMap ();
-    RCP<const map_type> targetMap = reverseMode ?
-      importer.getSourceMap () : importer.getTargetMap ();
-
-    // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
-    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst (0);
-    for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
-      nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
-    }
-    if (reverseMode) {
-      targetNnzPerRowVec.doExport (sourceNnzPerRowVec, importer, Tpetra::ADD);
-    } else {
-      targetNnzPerRowVec.doImport (sourceNnzPerRowVec, importer, Tpetra::INSERT);
-    }
-
-    ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
-
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
-    for (size_t i = 0; i < targetNnzPerRowVec.getLocalLength (); ++i) {
-      MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
-    }
-
-    RCP<ParameterList> matrixparams;
-    if (! params.is_null ()) {
-      matrixparams = sublist (params, "CrsMatrix");
-    }
-
-    RCP<this_type> destMat =
-      rcp (new this_type (targetMap, MyNnz, StaticProfile, matrixparams));
-    if (reverseMode) {
-      destMat->doExport (*this, importer, Tpetra::ADD);
-    } else {
-      destMat->doImport (*this, importer, Tpetra::INSERT);
-    }
-
-    // Use the source matrix's domain Map as the default.
-    RCP<const map_type> theDomainMap =
-      domainMap.is_null () ? this->getDomainMap () : domainMap;
-    // Use the source matrix's range Map as the default.
-    RCP<const map_type> theRangeMap =
-      rangeMap.is_null () ? this->getRangeMap () : rangeMap;
-
-    // Do we need to restrict the communicator?
-    bool restrictComm = false;
-    if (! params.is_null ()) {
-      restrictComm = params->get ("Restrict Communicator", restrictComm);
-    }
-
-    if (restrictComm) {
-      // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses ();
-      RCP<const Comm<int> > newComm = newRowMap.is_null () ?
-        Teuchos::null : newRowMap->getComm();
-
-      destMat->removeEmptyProcessesInPlace (newRowMap);
-      theDomainMap = theDomainMap->replaceCommWithSubset (newComm);
-      theRangeMap = theRangeMap->replaceCommWithSubset (newComm);
-      if (! newComm.is_null ()) {
-        destMat->fillComplete (theDomainMap, theRangeMap);
-      }
-    }
-    else {
-      destMat->fillComplete (theDomainMap, theRangeMap);
-    }
-
-    return destMat;
+    transferAndFillComplete (destMatrix, importer, domainMap, rangeMap, params);
   }
 
 
   template <class Scalar,
             class LocalOrdinal,
             class GlobalOrdinal, class DeviceType>
-  Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps> >
+  void
   CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> ,  typename KokkosClassic::DefaultKernels<Scalar,LocalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::SparseOps>::
-  exportAndFillComplete (const Export<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& exporter,
+  exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, node_type, LocalMatOps> >& destMatrix,
+                         const Export<LocalOrdinal, GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >& exporter,
                          const Teuchos::RCP<const map_type>& domainMap,
                          const Teuchos::RCP<const map_type>& rangeMap,
                          const Teuchos::RCP<Teuchos::ParameterList>& params) const
   {
-    using Teuchos::ArrayRCP;
-    using Teuchos::as;
-    using Teuchos::Comm;
-    using Teuchos::ParameterList;
-    using Teuchos::RCP;
-    using Teuchos::rcp;
-    using Teuchos::sublist;
-    typedef LocalOrdinal LO;
-    typedef GlobalOrdinal GO;
-    typedef node_type NT;
-    typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
-
-    // FIXME (mfh 11 Apr 2012) The current implementation of this
-    // method doesn't actually fuse the Export with fillComplete().
-    // This will change in the future.
-
-    // Are we in reverse mode?
-    bool reverseMode = false;
-    if (! params.is_null ()) {
-      reverseMode = params->get ("Reverse Mode", reverseMode);
-    }
-
-    // Cache the maps
-    RCP<const map_type> sourceMap = reverseMode ?
-      exporter.getTargetMap () : exporter.getSourceMap ();
-    RCP<const map_type> targetMap = reverseMode ?
-      exporter.getSourceMap () : exporter.getTargetMap ();
-
-    // Pre-count the nonzeros to allow a build w/ Static Profile
-    Tpetra::Vector<LO, LO, GO, NT> sourceNnzPerRowVec (sourceMap);
-    Tpetra::Vector<LO, LO, GO, NT> targetNnzPerRowVec (targetMap);
-    ArrayRCP<int> nnzPerRow = sourceNnzPerRowVec.getDataNonConst(0);
-    for (size_t i = 0; i < this->getNodeNumRows (); ++i) {
-      nnzPerRow[i] = as<LO> (this->getNumEntriesInLocalRow (i));
-    }
-
-    if (reverseMode) {
-      targetNnzPerRowVec.doImport (sourceNnzPerRowVec, exporter, Tpetra::INSERT);
-    } else {
-      targetNnzPerRowVec.doExport (sourceNnzPerRowVec, exporter, Tpetra::ADD);
-    }
-    ArrayRCP<size_t> MyNnz (targetMap->getNodeNumElements ());
-
-    ArrayRCP<const int> targetNnzPerRow = targetNnzPerRowVec.getData (0);
-    for (size_t i=0; i<targetNnzPerRowVec.getLocalLength(); ++i) {
-      MyNnz[i] = as<size_t> (targetNnzPerRow[i]);
-    }
-
-    RCP<ParameterList> matrixparams;
-    if (! params.is_null ()) {
-      matrixparams = sublist (params, "CrsMatrix");
-    }
-
-    RCP<this_type> destMat =
-      rcp (new this_type (targetMap, MyNnz, StaticProfile, matrixparams));
-
-    if (reverseMode) {
-      destMat->doImport (*this, exporter, Tpetra::ADD);
-    } else {
-      destMat->doExport (*this, exporter, Tpetra::INSERT);
-    }
-
-    // Use the source matrix's domain Map as the default.
-    RCP<const map_type> theDomainMap =
-      domainMap.is_null () ? this->getDomainMap () : domainMap;
-    // Use the source matrix's range Map as the default.
-    RCP<const map_type> theRangeMap =
-      rangeMap.is_null () ? this->getRangeMap () : rangeMap;
-
-    // Do we need to restrict the communicator?
-    bool restrictComm = false;
-    if (! params.is_null ()) {
-      restrictComm = params->get ("Restrict Communicator", restrictComm);
-    }
-
-    if (restrictComm) {
-      // Handle communicator restriction, if requested
-      RCP<const map_type> newRowMap = targetMap->removeEmptyProcesses ();
-      RCP<const Comm<int> > newComm = newRowMap.is_null () ?
-        Teuchos::null : newRowMap->getComm ();
-
-      destMat->removeEmptyProcessesInPlace (newRowMap);
-      theDomainMap = theDomainMap->replaceCommWithSubset (newComm);
-      theRangeMap = theRangeMap->replaceCommWithSubset (newComm);
-      if (! newComm.is_null()) {
-        destMat->fillComplete (theDomainMap, theRangeMap);
-      }
-    }
-    else {
-      destMat->fillComplete (theDomainMap, theRangeMap);
-    }
-
-    return destMat;
+    transferAndFillComplete (destMatrix, exporter, domainMap, rangeMap, params);
   }
 
 } // namespace Tpetra

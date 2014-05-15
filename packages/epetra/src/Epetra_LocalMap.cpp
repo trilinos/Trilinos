@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -47,10 +47,10 @@
 
 //============================================================================
 #ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
-Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase, 
+Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase,
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
-	: Epetra_Map(numMyElements, numMyElements, indexBase, comm) 
+	: Epetra_Map(numMyElements, numMyElements, indexBase, comm)
 {
   SetLabel("Epetra::LocalMap");
   if (CheckInput()!=0)
@@ -60,10 +60,10 @@ Epetra_LocalMap::Epetra_LocalMap(int numMyElements, int indexBase,
 //============================================================================
 #ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
 #include <limits>
-Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase, 
+Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase,
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
-	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm) 
+	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm)
 {
   assert(numMyElements <= (long long) std::numeric_limits<int>::max());
   SetLabel("Epetra::LocalMap");
@@ -71,10 +71,10 @@ Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, int indexBase,
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
 
-Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, long long indexBase, 
+Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, long long indexBase,
 				 const Epetra_Comm& comm)
   // LocalMap is just a special case of Map
-	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm) 
+	: Epetra_Map(numMyElements, static_cast<int>(numMyElements), indexBase, comm)
 {
   assert(numMyElements <= (long long) std::numeric_limits<int>::max());
   SetLabel("Epetra::LocalMap");
@@ -84,12 +84,12 @@ Epetra_LocalMap::Epetra_LocalMap(long long numMyElements, long long indexBase,
 #endif
 //============================================================================
 Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap& map)
-	: Epetra_Map(map) 
+	: Epetra_Map(map)
 {
   if (CheckInput()!=0)
     throw ReportError("Replicated Local Map not the same size on all PEs",-1);
 }
- 
+
 //============================================================================
 int Epetra_LocalMap::CheckInput() {
   int * tmp = new int[4];
@@ -101,9 +101,9 @@ int Epetra_LocalMap::CheckInput() {
   int tmp2 = - tmp[3]; // Min of all ...
   delete [] tmp;
 
-  if (tmp1==tmp2) 
+  if (tmp1==tmp2)
 		return(0);
-  else 
+  else
 		return(-1);
 }
 //=========================================================================

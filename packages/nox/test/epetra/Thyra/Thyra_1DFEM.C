@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -99,19 +99,19 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_NoPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -122,7 +122,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_NoPrec)
 
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<double>::one());
 
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
@@ -154,7 +154,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_NoPrec)
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -182,19 +182,19 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_IfpackPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
   p->set("Preconditioner Type", "Ifpack");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -205,7 +205,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_IfpackPrec)
 
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<double>::one());
 
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, model->create_W_op(), lowsFactory, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
@@ -237,7 +237,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AnalyticJacobian_IfpackPrec)
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -265,19 +265,19 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_NoPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
   p->set("Preconditioner Type", "None");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -294,17 +294,17 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_NoPrec)
   jfnkParams->set("Difference Type","Forward");
   jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
   jfnkParams->set("lambda",1.0e-4);
-  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
     Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
   jfnkOp->setParameterList(jfnkParams);
   jfnkParams->print(out);
-  
+
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, Teuchos::null, Teuchos::null));
 
   nox_group->computeF();
@@ -342,7 +342,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_NoPrec)
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -371,19 +371,19 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_UserPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
   p->set("Preconditioner Type", "Ifpack");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -400,21 +400,21 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_UserPrec)
   jfnkParams->set("Difference Type","Forward");
   jfnkParams->set("Perturbation Algorithm","KSP NOX 2001");
   jfnkParams->set("lambda",1.0e-4);
-  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp = 
+  Teuchos::RCP<NOX::Thyra::MatrixFreeJacobianOperator<double> > jfnkOp =
     Teuchos::rcp(new NOX::Thyra::MatrixFreeJacobianOperator<double>(printParams));
   jfnkOp->setParameterList(jfnkParams);
   jfnkParams->print(out);
-  
+
   // Wrap the model evaluator in a JFNK Model Evaluator
-  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel = 
+  Teuchos::RCP< ::Thyra::ModelEvaluator<double> > thyraModel =
     Teuchos::rcp(new NOX::MatrixFreeModelEvaluatorDecorator<double>(model));
 
   // Create the Preconditioner operator
-  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp = 
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp =
     thyraModel->create_W_prec();
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, thyraModel, jfnkOp, lowsFactory, precOp, Teuchos::null));
 
   nox_group->computeF();
@@ -450,7 +450,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, JFNK_UserPrec)
   nl_params->sublist("Direction").sublist("Newton").sublist("Linear Solver").set("Tolerance", 1.0e-4);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -478,7 +478,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_UserPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   // Create the initial guess
@@ -488,11 +488,11 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_UserPrec)
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<double>::one());
 
   // Create the Preconditioner operator
-  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp = 
+  Teuchos::RCP< ::Thyra::PreconditionerBase<double> > precOp =
     model->create_W_prec();
 
   // Create the NOX::Thyra::Group
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, Teuchos::null, Teuchos::null, precOp, Teuchos::null));
 
   //nox_group->computeF();
@@ -525,7 +525,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_UserPrec)
   nl_params->sublist("Anderson Parameters").sublist("Preconditioning").set("Precondition", true);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 
@@ -555,19 +555,19 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_IfpackPrec)
   // Create the model evaluator object
   double x00 = 0.0;
   double x01 = 1.0;
-  Teuchos::RCP<ModelEvaluator1DFEM<double> > model = 
+  Teuchos::RCP<ModelEvaluator1DFEM<double> > model =
     modelEvaluator1DFEM<double>(Teuchos::rcp(&Comm,false),num_elements,x00,x01);
 
   ::Stratimikos::DefaultLinearSolverBuilder builder;
-  
-  Teuchos::RCP<Teuchos::ParameterList> p = 
+
+  Teuchos::RCP<Teuchos::ParameterList> p =
     Teuchos::rcp(new Teuchos::ParameterList);
   p->set("Linear Solver Type", "AztecOO");
   p->sublist("Linear Solver Types").sublist("AztecOO").sublist("Forward Solve").sublist("AztecOO Settings").set("Output Frequency",20);
   p->set("Preconditioner Type", "Ifpack");
   builder.setParameterList(p);
 
-  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> > 
+  Teuchos::RCP< ::Thyra::LinearOpWithSolveFactoryBase<double> >
     lowsFactory = builder.createLinearSolveStrategy("");
 
   model->set_W_factory(lowsFactory);
@@ -578,7 +578,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_IfpackPrec)
 
   Thyra::V_S(initial_guess.ptr(),Teuchos::ScalarTraits<double>::one());
 
-  Teuchos::RCP<NOX::Thyra::Group> nox_group = 
+  Teuchos::RCP<NOX::Thyra::Group> nox_group =
     Teuchos::rcp(new NOX::Thyra::Group(*initial_guess, model, Teuchos::null));
 
   nox_group->computeF();
@@ -614,7 +614,7 @@ TEUCHOS_UNIT_TEST(NOX_Thyra_1DFEM, AndersonAcceleration_IfpackPrec)
   //nl_params->sublist("Printing").sublist("Output Information").set("Outer Iteration StatusTest",true);
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(nox_group, combo, nl_params);
   NOX::StatusTest::StatusType solvStatus = solver->solve();
 

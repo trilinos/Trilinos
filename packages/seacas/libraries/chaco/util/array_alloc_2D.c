@@ -2,8 +2,9 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include  <stdio.h>
-#include "smalloc.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for NULL
+#include "smalloc.h"                    // for smalloc_ret
 
 /* Dynamically allocate a 2 dimensional array. */
 /* Return instead of dying if out of space. */

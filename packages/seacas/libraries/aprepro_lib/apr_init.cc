@@ -4,11 +4,10 @@
    PURPOSE
      Initialize variables and functions Aprepro
 ***/
-#include "aprepro.h"
-#include <cstdio>
-#include <cstring>
-#include <sys/types.h>
-#include "init_structs.h"
+#include <cstring>                      // for strncpy
+#include <string>                       // for string
+#include "aprepro.h"                    // for symrec, Aprepro, etc
+#include "init_structs.h"               // for array_a_init, array_c_init, etc
 
 namespace SEAMS {
 extern SEAMS::Aprepro *aprepro;

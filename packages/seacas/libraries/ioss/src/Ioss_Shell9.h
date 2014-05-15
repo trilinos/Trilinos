@@ -33,12 +33,10 @@
 #ifndef IOSS_Ioss_Shell9_h
 #define IOSS_Ioss_Shell9_h
 
-#include <Ioss_CodeTypes.h>
-#include <Ioss_ElementTopology.h>
-#include <string>
+#include <Ioss_CodeTypes.h>             // for IntVector
+#include <Ioss_ElementTopology.h>       // for ElementTopology
 
 // STL Includes
-#include <vector>
 
 namespace Ioss {
   class Shell9 : public Ioss::ElementTopology {

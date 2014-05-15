@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "LOCA_Thyra_Group.H"	          // class definition
+#include "LOCA_Thyra_Group.H"              // class definition
 #include "NOX_Thyra_MultiVector.H"
 #include "Teuchos_Assert.hpp"
 #include "Thyra_ModelEvaluator.hpp"
@@ -60,12 +60,12 @@
 #include "LOCA_ErrorCheck.H"
 
 LOCA::Thyra::Group::Group(
-	    const Teuchos::RCP<LOCA::GlobalData>& global_data,
-	    const NOX::Thyra::Vector& initial_guess,
-	    const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
-	    const LOCA::ParameterVector& p,
-	    int p_index,
-	    bool impl_dfdp) :
+        const Teuchos::RCP<LOCA::GlobalData>& global_data,
+        const NOX::Thyra::Vector& initial_guess,
+        const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
+        const LOCA::ParameterVector& p,
+        int p_index,
+        bool impl_dfdp) :
   NOX::Thyra::Group(initial_guess, model),
   LOCA::Abstract::Group(global_data),
   globalData(global_data),
@@ -79,7 +79,7 @@ LOCA::Thyra::Group::Group(
 }
 
 LOCA::Thyra::Group::Group(const LOCA::Thyra::Group& source,
-			   NOX::CopyType type) :
+               NOX::CopyType type) :
   NOX::Thyra::Group(source, type),
   LOCA::Abstract::Group(source, type),
   globalData(source.globalData),
@@ -239,8 +239,8 @@ LOCA::Thyra::Group::getParam(std::string paramID) const
 
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
-				     NOX::Abstract::MultiVector& fdfdp,
-				     bool isValidF)
+                     NOX::Abstract::MultiVector& fdfdp,
+                     bool isValidF)
 {
   // Currently this does not work because the thyra modelevaluator is not
   // setting the parameter names correctly in the epetraext modelevalator,
@@ -251,7 +251,7 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   // it doesn't support it
   if (!implement_dfdp ||
       !out_args_.supports(::Thyra::ModelEvaluatorBase::OUT_ARG_DfDp,
-			  param_index).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
+              param_index).supports(::Thyra::ModelEvaluatorBase::DERIV_MV_BY_COL)) {
     NOX::Abstract::Group::ReturnType res =
       LOCA::Abstract::Group::computeDfDpMulti(paramIDs, fdfdp, isValidF);
     return res;
@@ -297,7 +297,7 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
   in_args_.set_p(param_index, Teuchos::null);
   out_args_.set_f(Teuchos::null);
   out_args_.set_DfDp(param_index,
-		     ::Thyra::ModelEvaluatorBase::Derivative<double>());
+             ::Thyra::ModelEvaluatorBase::Derivative<double>());
 
   if (out_args_.isFailed())
     return NOX::Abstract::Group::Failed;
@@ -307,7 +307,7 @@ LOCA::Thyra::Group::computeDfDpMulti(const std::vector<int>& paramIDs,
 
 void
 LOCA::Thyra::Group::preProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (saveDataStrategy != Teuchos::null)
     saveDataStrategy->preProcessContinuationStep(stepStatus);
@@ -315,7 +315,7 @@ LOCA::Thyra::Group::preProcessContinuationStep(
 
 void
 LOCA::Thyra::Group::postProcessContinuationStep(
-			     LOCA::Abstract::Iterator::StepStatus stepStatus)
+                 LOCA::Abstract::Iterator::StepStatus stepStatus)
 {
   if (saveDataStrategy != Teuchos::null)
     saveDataStrategy->postProcessContinuationStep(stepStatus);
@@ -323,7 +323,7 @@ LOCA::Thyra::Group::postProcessContinuationStep(
 
 void
 LOCA::Thyra::Group::projectToDraw(const NOX::Abstract::Vector& x,
-				  double *px) const
+                  double *px) const
 {
   if (saveDataStrategy != Teuchos::null)
     saveDataStrategy->projectToDraw(x, px);
@@ -339,8 +339,8 @@ LOCA::Thyra::Group::projectToDrawDimension() const
 
 double
 LOCA::Thyra::Group::computeScaledDotProduct(
-				       const NOX::Abstract::Vector& a,
-				       const NOX::Abstract::Vector& b) const
+                       const NOX::Abstract::Vector& a,
+                       const NOX::Abstract::Vector& b) const
 {
   return a.innerProduct(b) / a.length();
 }
@@ -353,7 +353,7 @@ LOCA::Thyra::Group::printSolution(const double conParam) const
 
 void
 LOCA::Thyra::Group::printSolution(const NOX::Abstract::Vector& x_,
-				  const double conParam) const
+                  const double conParam) const
 {
   if (saveDataStrategy != Teuchos::null)
     saveDataStrategy->saveSolution(x_, conParam);
@@ -405,15 +405,15 @@ LOCA::Thyra::Group::applyShiftedMatrix(const NOX::Abstract::Vector& input,
     dynamic_cast<NOX::Thyra::Vector&>(result);
 
   ::Thyra::apply(*lop_, ::Thyra::NOTRANS,
-		 thyra_input.getThyraVector(), thyra_result.getThyraRCPVector().ptr());
+         thyra_input.getThyraVector(), thyra_result.getThyraRCPVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
-				     const NOX::Abstract::MultiVector& input,
-				     NOX::Abstract::MultiVector& result) const
+                     const NOX::Abstract::MultiVector& input,
+                     NOX::Abstract::MultiVector& result) const
 {
   const NOX::Thyra::MultiVector& nt_input =
     Teuchos::dyn_cast<const NOX::Thyra::MultiVector>(input);
@@ -421,25 +421,25 @@ LOCA::Thyra::Group::applyShiftedMatrixMultiVector(
     Teuchos::dyn_cast<NOX::Thyra::MultiVector>(result);
 
   ::Thyra::apply(*lop_,
-		 ::Thyra::NOTRANS,
-		 *nt_input.getThyraMultiVector(),
-		 nt_result.getThyraMultiVector().ptr());
+         ::Thyra::NOTRANS,
+         *nt_input.getThyraMultiVector(),
+         nt_result.getThyraMultiVector().ptr());
 
   return NOX::Abstract::Group::Ok;
 }
 
 NOX::Abstract::Group::ReturnType
 LOCA::Thyra::Group::applyShiftedMatrixInverseMultiVector(
-			        Teuchos::ParameterList& lsParams,
-				const NOX::Abstract::MultiVector& input,
-				NOX::Abstract::MultiVector& result) const
+                    Teuchos::ParameterList& lsParams,
+                const NOX::Abstract::MultiVector& input,
+                NOX::Abstract::MultiVector& result) const
 {
   return this->applyJacobianInverseMultiVector(lsParams, input, result);
 }
 
 void
 LOCA::Thyra::Group::setSaveDataStrategy(
-			 const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s)
+             const Teuchos::RCP<LOCA::Thyra::SaveDataStrategy>& s)
 {
   saveDataStrategy = s;
 }

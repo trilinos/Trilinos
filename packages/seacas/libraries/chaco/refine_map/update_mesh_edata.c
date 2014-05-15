@@ -2,10 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"structs.h"
-#include	"defs.h"
-#include	"refine_map.h"
+#include <stdio.h>                      // for NULL
+#include "refine_map.h"                 // for refine_edata
 
 void 
 update_mesh_edata (
