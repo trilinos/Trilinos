@@ -6,6 +6,14 @@ SET(CMAKE_MODULE_PATH  ${CMAKE_MODULE_PATH} "${Trilinos_SOURCE_DIR}/cmake")
 
 MACRO(TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS)
 
+  MULTILINE_SET(${PROJECT_NAME}_C_STRONG_COMPILE_WARNING_FLAGS
+    "-std=c99" # Check for C99
+    " -std=c++98" # C++98 standard code
+    " -pedantic" # Adds more static checking to remove non-ANSI GNU extensions
+    " -Wall" # Enable a bunch of default warnings
+    " -Wno-long-long" # Allow long long int since it is used by MPI, SWIG, etc.
+  )
+
   #MESSAGE("TRIBITS_REPOSITORY_SETUP_EXTRA_OPTIONS got called!")
 
   SET(TPL_ENABLE_MPI OFF CACHE BOOL "Enable MPI support.")
