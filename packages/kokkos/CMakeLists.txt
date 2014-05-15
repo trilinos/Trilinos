@@ -16,6 +16,13 @@ TRIBITS_PACKAGE_DECL(Kokkos) # ENABLE_SHADOWING_WARNINGS)
 TRIBITS_ADD_DEBUG_OPTION()
 
 TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_SIERRA_BUILD
+  KOKKOS_FOR_SIERRA
+  "Configure Kokkos for building within the Sierra build system."
+  OFF
+  )
+
+TRIBITS_ADD_OPTION_AND_DEFINE(
   Kokkos_ENABLE_Cuda
   KOKKOS_HAVE_CUDA
   "Enable CUDA support in Kokkos (new)."
@@ -62,6 +69,14 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   KOKKOS_EXPRESSION_CHECK
   "Enable bounds checking support in Kokkos."
   OFF
+  )
+
+# placeholder for future device...
+TRIBITS_ADD_OPTION_AND_DEFINE(
+  Kokkos_ENABLE_Winthread
+  KOKKOS_HAVE_WINTHREAD
+  "Enable Winthread support in Kokkos."
+  "${TPL_ENABLE_Winthread}"
   )
 
 #------------------------------------------------------------------------------
