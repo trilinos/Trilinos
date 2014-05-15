@@ -1129,7 +1129,7 @@ namespace MueLu {
     }
 #endif // HAVE_MUELU_TPETRA
 
-    throw Exceptions::BadCast("Could not cast to EpetraMultiVector or TpetraMultiVector in matrix writing");
+    throw Exceptions::BadCast("Could not cast to EpetraMap or TpetraMap in map writing");
 
   } //Write
 
