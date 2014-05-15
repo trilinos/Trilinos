@@ -9258,7 +9258,7 @@ packages).  For details, see <a class="reference internal" href="#checkin-test-p
 <li><strong>CLASSIFICATION</strong> (<tt class="docutils literal">&lt;pkgi_classif&gt;</tt>): Gives the <a class="reference internal" href="#se-package-test-group">SE Package Test
 Group</a> <a class="reference internal" href="#pt">PT</a>, <a class="reference internal" href="#st">ST</a>, or <a class="reference internal" href="#ex">EX</a> and the maturity level <tt class="docutils literal">EP</tt>, <tt class="docutils literal">RS</tt>,
 <tt class="docutils literal">PG</tt>, <tt class="docutils literal">PM</tt>, <tt class="docutils literal">GRS</tt>, <tt class="docutils literal">GPG</tt>, <tt class="docutils literal">GPM</tt>, <tt class="docutils literal">UM</tt>.  These are separated
-by a coma with no space in between such as &quot;RS,PT&quot; for a &quot;Research
+by a coma with no space in between such as <tt class="docutils literal">&quot;RS,PT&quot;</tt> for a &quot;Research
 Stable&quot;, &quot;Primary Tested&quot; package.  No spaces are allowed so that CMake
 treats this a one field in the array.  The maturity level can be left off
 in which case it is assumed to be <tt class="docutils literal">UM</tt> for &quot;Unspecified Maturity&quot;.
@@ -10432,23 +10432,23 @@ Software Development, 2003</a>]).</p>
 <div class="section" id="checkin-test-py-help">
 <h2><a class="toc-backref" href="#id177">13.4&nbsp;&nbsp;&nbsp;checkin-test.py --help</a></h2>
 <p>Below is a snapshot of the output from <tt class="docutils literal"><span class="pre">checkin-test.py</span> <span class="pre">--help</span></tt>.  This
-documentation contains a lot of information about the recommended development
-workflow (mostly related to pushing commits) and outlines a number of
-different use cases for using the script.</p>
+<tt class="docutils literal"><span class="pre">--help</span></tt> output contains a lot of information about the recommended
+development workflow (mostly related to pushing commits) and outlines a number
+of different use cases for using the script.</p>
 <pre class="literal-block">
 Usage: checkin-test.py [OPTIONS]
 
-This tool does checkin testing with CMake/CTest and can actually do
-the push itself using eg/git in a safe way.  In fact, it is
-recommended that you use this script to push since it will amend the
-last commit message with a (minimal) summary of the builds and tests
-run with results.
+This tool does testing of a TriBITS-based project using CTest and this script
+can actually do the push itself using eg/git in a safe way.  In fact, it is
+recommended that one uses this script to push since it will amend the last
+commit message with a (minimal) summary of the builds and tests run with
+results and/or send out a summary email about the builds/tests performed.
 
 
 Quickstart:
 -----------
 
-In order to do a solid checkin, perform the following recommended workflow
+In order to do a safe push, perform the following recommended workflow
 (different variations on this workflow are described below):
 
 1) Commit changes in the local repo:
@@ -10945,7 +10945,7 @@ the following input arguments specifying extra builds
 
   --st-extra-builds=MPI_DEBUG_ST --extra-builds=INTEL_DEBUG
 
-with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
+with the packages Teuchos, Phalanx, and Meros where Teuchos is PT, Phalanx is
 ST, and Meros is EX.
 
 Here is what packages would be enabled in each of the builds:
@@ -11156,7 +11156,7 @@ Options:
                         COMMON.config file that defines the special build
                         options for the extra build.
   --ss-extra-builds=SSEXTRABUILDS
-                        DEPRICATED!  Use --st-extra-builds instead!.
+                        DEPRECATED!  Use --st-extra-builds instead!.
   --extra-builds=EXTRABUILDS
                         List of comma-separated extra build names.  For each
                         of the build names in --extra-
@@ -11219,7 +11219,7 @@ Options:
                         when it is desired to use a merge commit to integrate
                         changes on a branch that you wish be able to easily
                         back out.  For sophisticated users of git, this may in
-                        fact be the prefered mode.
+                        fact be the preferred mode.
   --append-test-results
                         Before the final push, amend the most recent local
                         commit by appending a summary of the test results.

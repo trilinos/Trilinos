@@ -6791,9 +6791,9 @@ checkin-test.py --help
 ----------------------
 
 Below is a snapshot of the output from ``checkin-test.py --help``.  This
-documentation contains a lot of information about the recommended development
-workflow (mostly related to pushing commits) and outlines a number of
-different use cases for using the script.
+``--help`` output contains a lot of information about the recommended
+development workflow (mostly related to pushing commits) and outlines a number
+of different use cases for using the script.
 
 .. include:: checkin-test-help.txt
    :literal:

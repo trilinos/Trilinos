@@ -1,16 +1,16 @@
 Usage: checkin-test.py [OPTIONS]
 
-This tool does checkin testing with CMake/CTest and can actually do
-the push itself using eg/git in a safe way.  In fact, it is
-recommended that you use this script to push since it will amend the
-last commit message with a (minimal) summary of the builds and tests
-run with results.
+This tool does testing of a TriBITS-based project using CTest and this script
+can actually do the push itself using eg/git in a safe way.  In fact, it is
+recommended that one uses this script to push since it will amend the last
+commit message with a (minimal) summary of the builds and tests run with
+results and/or send out a summary email about the builds/tests performed.
 
 
 Quickstart:
 -----------
 
-In order to do a solid checkin, perform the following recommended workflow
+In order to do a safe push, perform the following recommended workflow
 (different variations on this workflow are described below):
 
 1) Commit changes in the local repo:
@@ -507,7 +507,7 @@ the following input arguments specifying extra builds
 
   --st-extra-builds=MPI_DEBUG_ST --extra-builds=INTEL_DEBUG
 
-with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
+with the packages Teuchos, Phalanx, and Meros where Teuchos is PT, Phalanx is
 ST, and Meros is EX.
 
 Here is what packages would be enabled in each of the builds:
@@ -718,7 +718,7 @@ Options:
                         COMMON.config file that defines the special build
                         options for the extra build.
   --ss-extra-builds=SSEXTRABUILDS
-                        DEPRICATED!  Use --st-extra-builds instead!.
+                        DEPRECATED!  Use --st-extra-builds instead!.
   --extra-builds=EXTRABUILDS
                         List of comma-separated extra build names.  For each
                         of the build names in --extra-
@@ -781,7 +781,7 @@ Options:
                         when it is desired to use a merge commit to integrate
                         changes on a branch that you wish be able to easily
                         back out.  For sophisticated users of git, this may in
-                        fact be the prefered mode.
+                        fact be the preferred mode.
   --append-test-results
                         Before the final push, amend the most recent local
                         commit by appending a summary of the test results.

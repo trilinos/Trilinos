@@ -2259,7 +2259,7 @@ specifies a package which contains the columns (ordered 0-2):
 2. **CLASSIFICATION** (``<pkgi_classif>``): Gives the `SE Package Test
    Group`_ `PT`_, `ST`_, or `EX`_ and the maturity level ``EP``, ``RS``,
    ``PG``, ``PM``, ``GRS``, ``GPG``, ``GPM``, ``UM``.  These are separated
-   by a coma with no space in between such as "RS,PT" for a "Research
+   by a coma with no space in between such as ``"RS,PT"`` for a "Research
    Stable", "Primary Tested" package.  No spaces are allowed so that CMake
    treats this a one field in the array.  The maturity level can be left off
    in which case it is assumed to be ``UM`` for "Unspecified Maturity".
