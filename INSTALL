@@ -44,7 +44,7 @@ cmake \
 -DTPL_ENABLE_MPI=ON \
 -DMPI_BASE_DIR=<path to mpi install> \
 -DTrilinos_ENABLE_ALL_PACKAGES=ON \
--DCMAKE_INSTALL_PATH=<path to install Trilinos into> \
+-DCMAKE_INSTALL_PREFIX=<path to install Trilinos into> \
 <path to Trilinos source>
 
 make -j<n> install
