@@ -122,6 +122,10 @@ arguments (SHA1s).
 Note that the set of repos listed in the RepoVersion.txt file must be a
 super-set of those processed by this script or an error will occur and the
 script will stop.
+
+Note that this Python script only depends on the Python 2.4+ standard modules
+'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
+compatible version of 'git' at the very minimum as well of course.
 """
 
 import sys
@@ -233,21 +237,21 @@ def getCommandlineOps():
   clp.add_option(
     extraRepoArgName, dest="extraRepos", type="string",
     default="",
-    help="Comma seprated list of extra repos to forward eg/git commands to."
+    help="Comma-separated list of extra repos to forward eg/git commands to."
     +"  If the list is empty, it will look for a file called .egdist to"
-    +" get the list of extra repos seprated by newlines."
+    +" get the list of extra repos separated by newlines."
     )
   
   clp.add_option(
     notExtraRepoArgName, dest="notExtraRepos", type="string",
     default="",
-    help="Comma seprated list of extra repos to *not* forward eg/git commands to."
+    help="Comma separated list of extra repos to *not* forward eg/git commands to."
     +"  This removes any repos from being processed that would otherwise be."
     )
   
   clp.add_option(
     notBaseRepoArgName, dest="processBaseRepo", action="store_false",
-    help="If set, don't pass the eg/git conmmand on to the base git repo.",
+    help="If set, don't pass the eg/git command on to the base git repo.",
     default=True )
   
   clp.add_option(

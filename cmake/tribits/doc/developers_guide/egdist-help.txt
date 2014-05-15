@@ -121,21 +121,25 @@ Note that the set of repos listed in the RepoVersion.txt file must be a
 super-set of those processed by this script or an error will occur and the
 script will stop.
 
+Note that this Python script only depends on the Python 2.4+ standard modules
+'sys', 'os', 'subprocess', 'commands', and 're'. Also, it requires some
+compatible version of 'git' at the very minimum as well of course.
+
 
 Options:
   -h, --help            show this help message and exit
   --with-eg-git=EGGIT   The (path) to the eg/git executable to use for each
                         git repo command (default='eg')
   --dist-extra-repos=EXTRAREPOS
-                        Comma seprated list of extra repos to forward eg/git
+                        Comma-separated list of extra repos to forward eg/git
                         commands to.  If the list is empty, it will look for a
                         file called .egdist to get the list of extra repos
-                        seprated by newlines.
+                        separated by newlines.
   --dist-not-extra-repos=NOTEXTRAREPOS
-                        Comma seprated list of extra repos to *not* forward
+                        Comma separated list of extra repos to *not* forward
                         eg/git commands to.  This removes any repos from being
                         processed that would otherwise be.
-  --dist-not-base-repo  If set, don't pass the eg/git conmmand on to the base
+  --dist-not-base-repo  If set, don't pass the eg/git command on to the base
                         git repo.
   --dist-version-file=VERSIONFILE
                         Path to a file contains a list of extra repo
