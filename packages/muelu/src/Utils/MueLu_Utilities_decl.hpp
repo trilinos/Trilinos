@@ -332,6 +332,7 @@ namespace MueLu {
                                      const RCP<const Map> domainMap        = Teuchos::null,
                                      const RCP<const Map> rangeMap         = Teuchos::null,
                                      const bool           callFillComplete = true,
+                                     const bool           binary           = false,
                                      const bool           tolerant         = false,
                                      const bool           debug            = false);
     //@}
