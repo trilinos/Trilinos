@@ -75,7 +75,6 @@
 #include "MueLu_SaPFactory.hpp"
 #include "MueLu_SmootherFactory.hpp"
 #include "MueLu_TentativePFactory.hpp"
-#include "MueLu_TentativePNewFactory.hpp"
 #include "MueLu_TransPFactory.hpp"
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_ZoltanInterface.hpp"
@@ -396,12 +395,7 @@ namespace MueLu {
     manager.SetFactory("CoarseMap", coarseMap);
 
     // Tentative P
-    MUELU_READ_2LIST_PARAM(paramList, defaultList, "tentative: new", bool, false, isNewPtent);
-    RCP<Factory> Ptent;
-    if (!isNewPtent)
-      Ptent = rcp(new TentativePFactory());
-    else
-      Ptent = rcp(new TentativePNewFactory());
+    RCP<Factory> Ptent = rcp(new TentativePFactory());
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);

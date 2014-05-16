@@ -70,7 +70,6 @@ SolverBase
 SteepestDescentSolver
 SubBlockAFactory
 TentativePFactory
-TentativePNewFactory
 ThresholdAFilterFactory
 TpetraOperator
 TransPFactory

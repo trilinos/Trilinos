@@ -70,7 +70,6 @@
 #include "MueLu_SaPFactory_fwd.hpp"
 #include "MueLu_SmootherFactory_fwd.hpp"
 #include "MueLu_TentativePFactory_fwd.hpp"
-#include "MueLu_TentativePNewFactory_fwd.hpp"
 #include "MueLu_TransPFactory_fwd.hpp"
 #include "MueLu_UncoupledAggregationFactory_fwd.hpp"
 #include "MueLu_ZoltanInterface_fwd.hpp"
