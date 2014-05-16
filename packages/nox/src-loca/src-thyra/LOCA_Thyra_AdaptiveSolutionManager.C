@@ -75,8 +75,9 @@ initialize(const Teuchos::RCP< ::Thyra::ModelEvaluator<double> >& model,
            const Teuchos::RCP<LOCA::ParameterVector>& p,
            int p_index){
 
-  model_ = model;
-  saveDataStrategy_ = saveDataStrategy;
+  // Create weak RCPs for the model and data strategy to address circular RCPs in the current design
+  model_ = model.create_weak();
+  saveDataStrategy_ = saveDataStrategy.create_weak();
   globalData_ = global_data;
   paramVector_ = p;
   p_index_ = p_index;
