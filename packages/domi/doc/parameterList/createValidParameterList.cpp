@@ -55,8 +55,9 @@ using std::string;
 using Teuchos::ParameterList;
 using Teuchos::CommandLineProcessor;
 using Teuchos::RCP;
+using Teuchos::rcp;
 using Teuchos::FancyOStream;
-using Domi::getValidParameters;
+using Teuchos::VerboseObjectBase;
 
 int main(int argc, char* argv[])
 {
@@ -94,11 +95,13 @@ int main(int argc, char* argv[])
     return parse_return;
 
   //
-  // Construct the default fancy Teuchos output stream (this supports
-  // automatic indentation of heirarchical data such as our
-  // ParameterList)
+  // Construct a fancy Teuchos output stream (this supports automatic
+  // indentation of heirarchical data such as our ParameterList).
+  // Note that the filename chosen here has to match the filename that
+  // is referenced in the Doxygen documentation.
   //
-  RCP< FancyOStream > out = Teuchos::VerboseObjectBase::getDefaultOStream();
+  RCP< FancyOStream > out =
+    rcp(new FancyOStream(rcp(new std::ofstream("Domi.xml"))));
 
   //
   // Print the XSL header line if requested
