@@ -55,6 +55,14 @@ namespace Tpetra {
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
+  Map () :
+    comm_ (new Teuchos::SerialComm<int> ()),
+    node_ (KokkosClassic::Details::getNode<Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> > ()),
+    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
+  {}
+
+  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
+  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
   Map (const global_size_t globalNumIndices,
        const GlobalOrdinal indexBase,
        const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
@@ -180,12 +188,6 @@ namespace Tpetra {
 
     // Create the Directory on demand in getRemoteIndexList().
   }
-
-  template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
-  Map<LocalOrdinal,GlobalOrdinal,Kokkos::Compat::KokkosDeviceWrapperNode<DeviceType> >::
-  Map () :
-    directory_ (new Directory<LocalOrdinal, GlobalOrdinal, node_type> ())
-  {}
 
   template <class LocalOrdinal, class GlobalOrdinal, class DeviceType>
   global_size_t
