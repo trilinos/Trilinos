@@ -22,8 +22,8 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
     if(numProcs == 2)
     {
         enum {CHILDMASK1 = 1};
-        unsigned enabledTimerMask = CHILDMASK1;
-        stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
+        stk::diag::TimerSet enabledTimerSet(CHILDMASK1);
+        stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
         stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
         const std::string childName1 = "childTimer1";
@@ -49,7 +49,7 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
                     totalTestRuntime                             2        0.001 SKIP          0.000  SKIP          0.001 SKIP            0.200 SKIP            0.100 SKIP            0.100 SKIP  \
                       childTimer1                                2        0.001 SKIP          0.000  SKIP          0.001 SKIP            0.200 SKIP            0.100 SKIP            0.100 SKIP  \
                     ";
-            EXPECT_TRUE(unitTestUtils::areStringsEqualWithNumberTolerance(expectedOutput, outputStream.str(), tolerance));
+            EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
         }
 
         stk::diag::deleteRootTimer(rootTimer);

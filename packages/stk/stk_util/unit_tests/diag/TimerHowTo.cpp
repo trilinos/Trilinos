@@ -16,8 +16,8 @@ void doWork()
 
 TEST(StkDiagTimerHowTo, useTheRootTimer)
 {
-    unsigned enabledTimerMask = 0;
-    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
+    stk::diag::TimerSet enabledTimerSet(0);
+    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
 
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
     doWork();
@@ -31,7 +31,7 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
             ---------------------------------------- ----- --------------------- ---------------------  \
             totalTestRuntime                              1        0.001 SKIP        0.100 SKIP     \
             ";
-    EXPECT_TRUE(unitTestUtils::areStringsEqualWithNumberTolerance(expectedOutput, outputStream.str(), tolerance));
+    EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
     stk::diag::deleteRootTimer(rootTimer);
 }
@@ -39,8 +39,8 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
 TEST(StkDiagTimerHowTo, useChildTimers)
 {
     enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
-    unsigned enabledTimerMask = CHILDMASK1 | CHILDMASK2;
-    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
+    stk::diag::TimerSet enabledTimerSet(CHILDMASK1 | CHILDMASK2);
+    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
     const std::string childName1 = "childTimer1";
@@ -78,7 +78,7 @@ TEST(StkDiagTimerHowTo, useChildTimers)
               childTimer1                                2        0.000  SKIP        0.200 SKIP         \
               childTimer2                                1        0.000  SKIP        0.100 SKIP         \
             ";
-    EXPECT_TRUE(unitTestUtils::areStringsEqualWithNumberTolerance(expectedOutput, outputStream.str(), tolerance));
+    EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
     stk::diag::deleteRootTimer(rootTimer);
 }
@@ -86,8 +86,8 @@ TEST(StkDiagTimerHowTo, useChildTimers)
 TEST(StkDiagTimerHowTo, disableChildTimers)
 {
     enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
-    unsigned enabledTimerMask = CHILDMASK2;
-    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", stk::diag::TimerSet(enabledTimerMask));
+    stk::diag::TimerSet enabledTimerSet(CHILDMASK2);
+    stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
     stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
     const std::string disabledTimerString = "disabledTimer";
@@ -123,7 +123,7 @@ TEST(StkDiagTimerHowTo, disableChildTimers)
             totalTestRuntime                             1        0.000  SKIP        0.200 SKIP         \
               enabledTimer                               1        0.000  SKIP        0.100 SKIP         \
             ";
-    EXPECT_TRUE(unitTestUtils::areStringsEqualWithNumberTolerance(expectedOutput, outputStream.str(), tolerance));
+    EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
     stk::diag::deleteRootTimer(rootTimer);
 }
