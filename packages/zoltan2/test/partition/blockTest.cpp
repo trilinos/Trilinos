@@ -122,6 +122,7 @@ int main(int narg, char **arg)
 
   typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> mydata_t;
   typedef Zoltan2::BasicIdentifierAdapter<mydata_t> adapter_t;
+  typedef adapter_t::part_t part_t;
 
   adapter_t adapter(numMyIdentifiers, myIds, weightValues, weightStrides);
 
@@ -154,7 +155,7 @@ int main(int narg, char **arg)
   memset(totalCnt, 0, nprocs * sizeof(lno_t));
 
   const gno_t *idList = solution.getIdList();
-  const zoltan2_partId_t *partList = solution.getPartList();
+  const part_t *partList = solution.getPartList();
   const scalar_t libImbalance = problem.getWeightImbalance();
 
   for (lno_t i=0; !fail && i < numMyIdentifiers; i++){

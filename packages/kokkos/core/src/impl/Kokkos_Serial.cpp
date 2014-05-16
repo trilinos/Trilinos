@@ -52,11 +52,17 @@ namespace {
 struct Sentinel {
 
   void *   m_reduce ;
+  void *   m_shared ;
   unsigned m_reduce_size ;
+  unsigned m_shared_size ;
 
-  Sentinel() : m_reduce(0), m_reduce_size(0) {}
+  Sentinel() : m_reduce(0), m_shared(0), m_reduce_size(0), m_shared_size(0) {}
 
-  ~Sentinel() { if ( m_reduce ) { free( m_reduce ); } }
+  ~Sentinel()
+    {
+      if ( m_reduce ) { free( m_reduce ); }
+      if ( m_shared ) { free( m_shared ); }
+    }
 };
 
 }
@@ -79,6 +85,26 @@ void * Serial::resize_reduce_scratch( unsigned size )
   }
 
   return s.m_reduce ;
+}
+
+void * Serial::resize_shared_scratch( unsigned size )
+{
+  static Sentinel s ;
+
+  const unsigned rem = size % Impl::MEMORY_ALIGNMENT ;
+
+  if ( rem ) size += Impl::MEMORY_ALIGNMENT - rem ;
+
+  if ( ( 0 == size ) || ( s.m_shared_size < size ) ) {
+
+    if ( s.m_shared ) { free( s.m_shared ); }
+  
+    s.m_shared_size = size ;
+
+    s.m_shared = malloc( size );
+  }
+
+  return s.m_shared ;
 }
 
 } // namespace Kokkos

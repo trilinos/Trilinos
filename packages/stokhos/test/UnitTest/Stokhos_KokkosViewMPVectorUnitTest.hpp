@@ -377,9 +377,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
-  typedef typename host_view_type::array_type host_array_type;
-  typedef typename ViewType::array_type array_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;

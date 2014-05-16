@@ -73,7 +73,6 @@ using Teuchos::RCP;
 using Teuchos::rcp;
 using Teuchos::Tuple;
 
-typedef zoltan2_partId_t partId_t;
 
 
 void createAllParameters(Teuchos::ParameterList &pList);
@@ -336,7 +335,7 @@ void createAllParameters(Teuchos::ParameterList &pList)
   ////////// pqParts
   parameterName = string("pqParts");
 
-  RCP<const Zoltan2::IntegerRangeListValidator<partId_t> > pqRangeRangeValidatorP = rcp(new Zoltan2::IntegerRangeListValidator<partId_t>(true));
+  RCP<const Zoltan2::IntegerRangeListValidator<int> > pqRangeRangeValidatorP = rcp(new Zoltan2::IntegerRangeListValidator<int>(true));
 
   docString.str("");
   pqRangeRangeValidatorP->printDoc(

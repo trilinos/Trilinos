@@ -62,9 +62,7 @@ class OpenMP ;
 #if   defined ( KOKKOS_HAVE_PTHREAD )
 class Threads ;
 #endif
-#if   defined ( KOKKOS_HAVE_SERIAL )
 class Serial ;
-#endif
 } // namespace Kokkos
 
 

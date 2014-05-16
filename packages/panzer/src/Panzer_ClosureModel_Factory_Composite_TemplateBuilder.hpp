@@ -46,7 +46,6 @@
 #include <string>
 #include "boost/mpl/apply.hpp"
 #include "Teuchos_RCP.hpp"
-#include "Panzer_Base.hpp"
 #include "Panzer_ClosureModel_Factory_Composite.hpp"
 
 namespace panzer {
@@ -58,8 +57,8 @@ namespace panzer {
   public:
 
     template <typename EvalT>
-    Teuchos::RCP<panzer::Base> build() const {
-      return Teuchos::rcp( static_cast<panzer::Base*>
+    Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
+      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new panzer::ClosureModelFactoryComposite<EvalT>(m_factories)) );
     }
     

@@ -42,7 +42,13 @@
 */
 
 
+#include <Kokkos_Macros.hpp>
 #include <Serial/Kokkos_Serial_Task.hpp>
+
+#if 0 && defined( KOKKOS_HAVE_OPENMP )
+#include <OpenMP/Kokkos_OpenMP_Task.hpp>
+#endif
+
 #include <UnitTest_Task.hpp>
 #include <UnitTest_IntPool.hpp>
 

@@ -127,8 +127,8 @@ public:
 
   static int is_initialized();
 
-  KOKKOS_FUNCTION static unsigned league_max();
   KOKKOS_FUNCTION static unsigned team_max();
+  KOKKOS_FUNCTION static unsigned team_recommended();
   //@}
   //------------------------------------
   //! \name Function for the functor device interface */

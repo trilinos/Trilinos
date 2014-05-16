@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -47,6 +47,8 @@
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 #include <iostream>
+
+#ifdef KOKKOS_HAVE_OPENMP
 
 namespace Kokkos {
 namespace Impl {
@@ -290,19 +292,6 @@ void * OpenMPexec::get_shmem( const int size )
 namespace Kokkos {
 
 KOKKOS_FUNCTION
-unsigned OpenMP::league_max()
-{
-#ifndef __CUDA_ARCH__
-  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
-  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
-
-  return unsigned( std::numeric_limits<int>::max() );
-#else
-  return 0;
-#endif
-}
-
-KOKKOS_FUNCTION
 unsigned OpenMP::team_max()
 {
 #ifndef __CUDA_ARCH__
@@ -310,6 +299,19 @@ unsigned OpenMP::team_max()
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
   return Impl::s_threads_per_numa ;
+#else
+  return 0;
+#endif
+}
+
+KOKKOS_FUNCTION
+unsigned OpenMP::team_recommended()
+{
+#ifndef __CUDA_ARCH__
+  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_recommended" );
+  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_recommended" );
+
+  return Impl::s_threads_per_core ;
 #else
   return 0;
 #endif
@@ -423,3 +425,4 @@ void OpenMP::finalize()
 
 } // namespace Kokkos
 
+#endif //KOKKOS_HAVE_OPENMP

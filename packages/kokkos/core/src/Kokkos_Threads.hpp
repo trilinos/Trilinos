@@ -190,8 +190,7 @@ public:
    *  then some threads will idle.
    */
   KOKKOS_INLINE_FUNCTION static unsigned team_max();
-
-  KOKKOS_INLINE_FUNCTION static unsigned league_max();
+  KOKKOS_INLINE_FUNCTION static unsigned team_recommended();
 
   //@}
   /*------------------------------------------------------------------------*/

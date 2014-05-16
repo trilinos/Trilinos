@@ -1293,7 +1293,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                       View<ST,SL,SD,SM,specialize>::is_static )
                   ), const Sacado::MP::VectorPartition & >::type part )
   {
-    typedef View<ST,SL,SD,SM,specialize>   src_type ;
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
 
     // Must have: begin = i * src.m_sacado_size.value

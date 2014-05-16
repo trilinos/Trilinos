@@ -62,8 +62,8 @@ namespace panzer_stk {
        : cmf_tm_(cmf_tm), mesh_(mesh), outputList_(outputList) {}
     
     template <typename EvalT>
-    Teuchos::RCP<panzer::Base> build() const {
-      return Teuchos::rcp( static_cast<panzer::Base*>
+    Teuchos::RCP<panzer::ClosureModelFactoryBase> build() const {
+      return Teuchos::rcp( static_cast<panzer::ClosureModelFactoryBase*>
 			   (new panzer_stk::IOClosureModelFactory<EvalT>(cmf_tm_.template getAsObject<EvalT>(),mesh_,outputList_)) );
     }
     

@@ -1918,16 +1918,21 @@ namespace Tpetra {
                                     const Teuchos::RCP<Teuchos::ParameterList>& params);
 
   public:
-    /// \brief Import from <tt>this</tt> to \c destMatrix, and
-    ///   makes the result fill complete.
+    /// \brief Import from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
+    ///
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
+    ///
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
     ///
     /// \warning This method is intended for expert developer use
     ///   only, and should never be called by user code.
-    ///
-    /// If destMatrix.is_null(), this creates a new matrix and assigns
-    /// it to destMatrix.  Otherwise, it checks for "pristine" status
-    /// and throws if that is not the case.  Use of the "non-member
-    /// constructor" version is preferred for user applications.
     void
     importAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
                            const Import<LocalOrdinal, GlobalOrdinal, node_type>& importer,
@@ -1935,11 +1940,21 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
 
-    /// \brief Export from <tt>this</tt> to the destMatrix, and fillComplete the result.
-    /// If destMatrix.is_null(), this creates a new matrix, otherwise it checks for "pristine" status and throws
-    /// if that is not the case.   Use of the "non-member constructor" version is preferred for user applications.
+    /// \brief Export from <tt>this</tt> to the given destination
+    ///   matrix, and make the result fill complete.
     ///
-    ///  \warning This method is intended for expert developer use only, and should never be called by user code.
+    /// If destMatrix.is_null(), this creates a new matrix as the
+    /// destination.  (This is why destMatrix is passed in by nonconst
+    /// reference to RCP.)  Otherwise it checks for "pristine" status
+    /// and throws if that is not the case.  "Pristine" means that the
+    /// matrix has no entries and is not fill complete.
+    ///
+    /// Use of the "non-member constructor" version of this method,
+    /// exportAndFillCompleteCrsMatrix, is preferred for user
+    /// applications.
+    ///
+    /// \warning This method is intended for expert developer use
+    ///   only, and should never be called by user code.
     void
     exportAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,node_type,LocalMatOps> > & destMatrix,
                            const Export<LocalOrdinal, GlobalOrdinal, node_type>& exporter,
@@ -1947,16 +1962,26 @@ namespace Tpetra {
                            const Teuchos::RCP<const map_type>& rangeMap = Teuchos::null,
                            const Teuchos::RCP<Teuchos::ParameterList>& params = Teuchos::null) const;
   private:
-    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to
-    ///   destMat, and fillComplete the result.
+    /// \brief Transfer (e.g. Import/Export) from <tt>this</tt> to the
+    ///   given destination matrix, and make the result fill complete.
     ///
     /// If destMat.is_null(), this creates a new matrix, otherwise it
     /// checks for "pristine" status and throws if that is not the
-    /// case.  This method implements the nonmember "constructors"
-    /// [import|export]AndFillCompleteCrsMatrix.  It's convenient to
-    /// put that function's implementation inside the CrsMatrix class,
-    /// so that we don't have to put much code in the _decl header
-    /// file.
+    /// case.  This method implements importAndFillComplete and
+    /// exportAndFillComplete, which in turn implemment the nonmember
+    /// "constructors" importAndFillCompleteCrsMatrix and
+    /// exportAndFillCompleteCrsMatrix.  It's convenient to put those
+    /// nonmember constructors' implementations inside the CrsMatrix
+    /// class, so that we don't have to put much code in the _decl
+    /// header file.
+    ///
+    /// The point of this method is to fuse three tasks:
+    ///
+    ///   1. Create a destination matrix (CrsMatrix constructor)
+    ///   2. Import or Export this matrix to the destination matrix
+    ///   3. Call fillComplete on the destination matrix
+    ///
+    /// Fusing these tasks can avoid some communication and work.
     void
     transferAndFillComplete (Teuchos::RCP<CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps> > & destMat,
                              const ::Tpetra::Details::Transfer<LocalOrdinal, GlobalOrdinal, Node>& rowTransfer, // either Import or Export

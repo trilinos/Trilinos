@@ -69,13 +69,14 @@ private:
 
   typedef typename Adapter::lno_t lno_t;
   typedef typename Adapter::gid_t gid_t;
+  typedef typename Adapter::part_t part_t;
   typedef typename Adapter::scalar_t scalar_t;
 
   const RCP<const Environment> env_;
 
-  partId_t numGlobalParts_;           // desired
-  partId_t targetGlobalParts_;        // actual
-  partId_t numNonEmpty_;              // of actual
+  part_t numGlobalParts_;           // desired
+  part_t targetGlobalParts_;        // actual
+  part_t numNonEmpty_;              // of actual
 
   ArrayRCP<MetricValues<scalar_t> > metrics_;
   ArrayRCP<const MetricValues<scalar_t> > metricsConst_;
@@ -141,7 +142,7 @@ public:
   /*! \brief Print all the metrics
    */
   void printMetrics(std::ostream &os) const {
-    Zoltan2::printMetrics<scalar_t>(os, 
+    Zoltan2::printMetrics<scalar_t, part_t>(os, 
       targetGlobalParts_, numGlobalParts_, numNonEmpty_, 
       metrics_.view(0, metrics_.size()));
   }

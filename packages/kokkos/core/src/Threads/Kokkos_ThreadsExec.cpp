@@ -669,11 +669,11 @@ void ThreadsExec::print_configuration( std::ostream & s , const bool detail )
 
 //----------------------------------------------------------------------------
 
-int ThreadsExec::league_max()
-{ return std::numeric_limits<int>::max(); }
-
 int ThreadsExec::team_max()
 { return s_threads_per_numa ; }
+
+int ThreadsExec::team_recommended()
+{ return s_threads_per_core ; }
 
 //----------------------------------------------------------------------------
 

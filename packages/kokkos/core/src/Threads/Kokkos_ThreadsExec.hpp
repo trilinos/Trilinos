@@ -507,8 +507,8 @@ public:
                      int work_league_size = 0 ,
                      int work_team_size = 0 );
 
-  static int league_max();
   static int team_max();
+  static int team_recommended();
 
   static int  in_parallel();
   static void fence();
@@ -549,11 +549,11 @@ inline void Threads::print_configuration( std::ostream & s , const bool detail )
   Impl::ThreadsExec::print_configuration( s , detail );
 }
 
-KOKKOS_INLINE_FUNCTION unsigned Threads::league_max()
-{ return Impl::ThreadsExec::league_max() ; }
-
 KOKKOS_INLINE_FUNCTION unsigned Threads::team_max()
 { return Impl::ThreadsExec::team_max() ; }
+
+KOKKOS_INLINE_FUNCTION unsigned Threads::team_recommended()
+{ return Impl::ThreadsExec::team_recommended() ; }
 
 inline bool Threads::sleep()
 { return Impl::ThreadsExec::sleep() ; }

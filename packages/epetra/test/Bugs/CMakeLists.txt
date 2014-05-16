@@ -1,0 +1,2 @@
+ADD_SUBDIRECTORY(Bug_5988_FECrs_buildNonlocalGraph)
+

@@ -188,10 +188,10 @@ void readGeoGenParams(string paramFileName, Teuchos::ParameterList &geoparams, c
 }
 
 int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
-        partId_t numParts, float imbalance,
+        int numParts, float imbalance,
         std::string paramFile, std::string pqParts,
         std::string pfname,
-        partId_t k,
+        int k,
 
 
         int migration_check_option,
@@ -330,12 +330,12 @@ int GeometricGenInterface(const RCP<const Teuchos::Comm<int> > & comm,
 
 int testFromDataFile(
         const RCP<const Teuchos::Comm<int> > & comm,
-        partId_t numParts,
+        int numParts,
         float imbalance,
         std::string fname,
         std::string pqParts,
         std::string pfname,
-        partId_t k,
+        int k,
         int migration_check_option,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
@@ -405,7 +405,8 @@ int testFromDataFile(
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
-        const zoltan2_partId_t *zparts = problem->getSolution().getPartList();
+        const inputAdapter_t::part_t *zparts =
+              problem->getSolution().getPartList();
         const gno_t *zgids = problem->getSolution().getIdList();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
@@ -447,12 +448,12 @@ void getCoords(scalar_t **&coords, lno_t &numLocal, int &dim, string fileName){
 
 int testFromSeparateDataFiles(
         const RCP<const Teuchos::Comm<int> > & comm,
-        partId_t numParts,
+        int numParts,
         float imbalance,
         std::string fname,
         std::string pqParts,
         std::string pfname,
-        partId_t k,
+        int k,
         int migration_check_option,
         int migration_all_to_all_type,
         scalar_t migration_imbalance_cut_off,
@@ -568,7 +569,8 @@ int testFromSeparateDataFiles(
 
     if (coordsConst->getGlobalLength() < 40) {
         int len = coordsConst->getLocalLength();
-        const zoltan2_partId_t *zparts = problem->getSolution().getPartList();
+        const inputAdapter_t::part_t *zparts =
+                                      problem->getSolution().getPartList();
         const gno_t *zgids = problem->getSolution().getIdList();
         for (int i = 0; i < len; i++)
             cout << comm->getRank()
@@ -608,13 +610,13 @@ bool getArgumentValue(string &argumentid, double &argumentValue, string argument
 void getArgVals(
         int argc,
         char **argv,
-        partId_t &numParts,
+        int &numParts,
         float &imbalance ,
         string &pqParts,
         int &opt,
         std::string &fname,
         std::string &pfname,
-        partId_t &k,
+        int &k,
         int &migration_check_option,
         int &migration_all_to_all_type,
         scalar_t &migration_imbalance_cut_off,
@@ -755,8 +757,9 @@ int main(int argc, char *argv[])
     int rank = tcomm->getRank();
 
 
-    partId_t numParts = -10; float imbalance = -1.03;
-    partId_t k = -1;
+    int numParts = -10;
+    float imbalance = -1.03;
+    int k = -1;
 
     string pqParts = "";
     int opt = 1;

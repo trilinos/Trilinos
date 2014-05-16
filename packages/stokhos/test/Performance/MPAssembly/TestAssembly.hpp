@@ -123,9 +123,6 @@ Perf fenl_assembly(
   using Teuchos::arrayView;
   using Teuchos::ParameterList;
 
-  typedef Kokkos::Details::ArithTraits<Scalar> KAT;
-  typedef typename KAT::mag_type Magnitude;
-
   typedef Kokkos::Example::BoxElemFixture< Device , Kokkos::Example::BoxElemPart::ElemLinear > FixtureType ;
 
   typedef Kokkos::CrsMatrix< Scalar , unsigned , Device >

@@ -56,6 +56,7 @@
 
 typedef Zoltan2::BasicUserTypes<scalar_t, gno_t, lno_t, gno_t> user_t;
 typedef Zoltan2::BasicIdentifierAdapter<user_t> idInput_t;
+typedef idInput_t::part_t part_t;
 
 using Teuchos::ArrayRCP;
 using Teuchos::Array;
@@ -64,12 +65,11 @@ using Teuchos::rcp;
 using Teuchos::arcp;
 
 
-typedef zoltan2_partId_t partId_t;
 
-void makeArrays(int wdim, int *lens, partId_t **ids, scalar_t **sizes,
-  ArrayRCP<ArrayRCP<partId_t> > &idList, ArrayRCP<ArrayRCP<scalar_t> > &sizeList)
+void makeArrays(int wdim, int *lens, part_t **ids, scalar_t **sizes,
+  ArrayRCP<ArrayRCP<part_t> > &idList, ArrayRCP<ArrayRCP<scalar_t> > &sizeList)
 {
-  ArrayRCP<partId_t> *idArrays = new ArrayRCP<partId_t> [wdim];
+  ArrayRCP<part_t> *idArrays = new ArrayRCP<part_t> [wdim];
   ArrayRCP<scalar_t> *sizeArrays = new ArrayRCP<scalar_t> [wdim];
 
   for (int w=0; w < wdim; w++){
@@ -97,11 +97,11 @@ int main(int argc, char *argv[])
   int maxNumWeights = 3;
   int maxNumPartSizes = nprocs;
   int *lengths = new int [maxNumWeights];
-  partId_t **idLists = new partId_t * [maxNumWeights];
+  part_t **idLists = new part_t * [maxNumWeights];
   scalar_t **sizeLists = new scalar_t * [maxNumWeights];
 
   for (int w=0; w < maxNumWeights; w++){
-    idLists[w] = new partId_t [maxNumPartSizes];
+    idLists[w] = new part_t [maxNumPartSizes];
     sizeLists[w] = new scalar_t [maxNumPartSizes];
   }
 
@@ -130,7 +130,7 @@ int main(int argc, char *argv[])
   int numGlobalParts = nprocs;
   int nWeights = 1;
 
-  ArrayRCP<ArrayRCP<partId_t> > ids;
+  ArrayRCP<ArrayRCP<part_t> > ids;
   ArrayRCP<ArrayRCP<scalar_t> > sizes;
 
   memset(lengths, 0, sizeof(int) * maxNumWeights);
@@ -214,11 +214,11 @@ int main(int argc, char *argv[])
 
   // Test the Solution set method that is called by algorithms
 
-  partId_t *partAssignments = new partId_t [numIdsPerProc];
+  part_t *partAssignments = new part_t [numIdsPerProc];
   for (int i=0; i < numIdsPerProc; i++){
     partAssignments[i] = myGids[i] % numGlobalParts;  // round robin
   }
-  ArrayRCP<partId_t> partList = arcp(partAssignments, 0, numIdsPerProc);
+  ArrayRCP<part_t> partList = arcp(partAssignments, 0, numIdsPerProc);
 
   try{
     solution->setParts(gidArray, partList, true);
@@ -247,7 +247,7 @@ int main(int argc, char *argv[])
   }
 
   if (!fail){
-    const partId_t *parts = solution->getPartList();
+    const part_t *parts = solution->getPartList();
     for (int i=0; !fail && i < numIdsPerProc; i++){
       if (parts[i] != myGids[i] % numGlobalParts)
         fail = 13;

@@ -114,6 +114,7 @@ int main(int argc, char *argv[])
 
   // TODO explain
   typedef Zoltan2::BasicVectorAdapter<myTypes> inputAdapter_t;
+  typedef inputAdapter_t::part_t part_t;
 
   ///////////////////////////////////////////////////////////////////////
   // Create input data.
@@ -382,8 +383,8 @@ int main(int argc, char *argv[])
 
   problem1->resetParameters(&params);
 
-  zoltan2_partId_t *partIds = new zoltan2_partId_t [2];
-  scalar_t *partSizes = new scalar_t [2];
+  part_t partIds[2];
+  scalar_t partSizes[2];
 
   partIds[0] = rank*2;    partSizes[0] = 0;
   partIds[1] = rank*2+1;  partSizes[1] = 1;
@@ -405,7 +406,7 @@ int main(int argc, char *argv[])
 
   // Check it.  Part sizes should all be odd.
 
-  const zoltan2_partId_t *partAssignments = solution4.getPartList();
+  const part_t *partAssignments = solution4.getPartList();
 
   int numInEmptyParts = 0;
   for (size_t i=0; i < localCount; i++){
@@ -429,11 +430,6 @@ int main(int argc, char *argv[])
       std::cout << "fail: " << imb << std::endl;
     std::cout << std::endl;
   }
-
-  delete [] partIds;
-  partIds = NULL;
-  delete [] partSizes;
-  partSizes = NULL;
 
   if (coords)
     delete [] coords;
