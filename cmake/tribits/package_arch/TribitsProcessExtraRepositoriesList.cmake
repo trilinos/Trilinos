@@ -265,7 +265,7 @@ MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
       # not quite okay
       MESSAGE(WARNING "Warning: the repo ${EXTRAREPO_NAME} is a Mercurial repo: these are tolerated, but not fully supported.")
     ELSE()
-      MESSAGE(SEND_ERROR "Error, the repo type of '${EXTRAREPO_REPOTYPE}' for"
+      MESSAGE(FATAL_ERROR "Error, the repo type of '${EXTRAREPO_REPOTYPE}' for"
         " extra repo ${EXTRAREPO_NAME} is *not* valid.  Valid choices are 'GIT', 'HG' and 'SVN'!")
     ENDIF()
     IF (TRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG)
@@ -297,7 +297,7 @@ MACRO(TRIBITS_PROCESS_EXTRAREPOS_LISTS)
     ELSEIF(EXTRAREPO_PACKSTAT STREQUAL NOPACKAGES)
       # Okay
     ELSE()
-      MESSAGE(SEND_ERROR "Error, the PACKSTAT of '${EXTRAREPO_PACKSTAT}' for"
+      MESSAGE(FATAL_ERROR "Error, the PACKSTAT of '${EXTRAREPO_PACKSTAT}' for"
         " extra repo ${EXTRAREPO_NAME} is *not* valid.  Valid choices are '' and 'NOPACKAGES'!")
     ENDIF()
     IF (TRIBITS_PROCESS_EXTRAREPOS_LISTS_DEBUG)
@@ -377,7 +377,7 @@ FUNCTION(TRIBITS_EXTRA_REPOSITORIES_ASSERT_SUBSET_AND_ORDER_WRT_FILE)
     "${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}" EXTRA_REPOSITORIES_SORTED)
   #PRINT_VAR(EXTRA_REPOSITORIES_SORTED)
   IF (NOT "${${PROJECT_NAME}_EXTRA_REPOSITORIES}" STREQUAL "${EXTRA_REPOSITORIES_SORTED}")
-    MESSAGE(SEND_ERROR
+    MESSAGE(FATAL_ERROR
       "ERROR!  The list of extra repos passed in '${${PROJECT_NAME}_EXTRA_REPOSITORIES}'"
       " is not a subset and in the same order as read in from extra repos file '${${PROJECT_NAME}_EXTRA_REPOSITORIES_DEFAULT}'"
       )
@@ -414,7 +414,7 @@ ENDFUNCTION()
 # If ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES==TRUE, then the set of
 # repos will be filtered based on what repos are present.  If
 # ${PROJECT_NAME}_IGNORE_MISSING_EXTRA_REPOSITORIES==FALSE, then all of the
-# repos must exist or MESSSAGE(SEND_ERROR ...) is called and will fail the
+# repos must exist or MESSSAGE(FATAL_ERROR ...) is called and will fail the
 # configure.
 #
 # On output ${PROJECT_NAME}_EXTRA_REPOSITORIES will be set according to the
@@ -509,7 +509,7 @@ MACRO(TRIBITS_FILTER_OR_ASSERT_EXTRA_REPOS)
             "WARNING: Ignoring missing extra repo '${EXTRAREPO_NAME}'"
             " as requested since ${EXTRAREPO_SOURCE_DIR} does not exist" )
         ELSE()
-          MESSAGE( SEND_ERROR
+          MESSAGE( FATAL_ERROR
             "ERROR!  Skipping missing extra repo '${EXTRAREPO_NAME}'"
             " since ${EXTRAREPO_SOURCE_DIR} does not exist!\n")
         ENDIF()
