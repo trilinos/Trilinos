@@ -188,6 +188,7 @@ evaluateVolume(const panzer::AssemblyEngineInArgs& in)
       workset.alpha = in.alpha;
       workset.beta = in.beta;
       workset.time = in.time;
+      workset.gather_seeds = in.gather_seeds;
       workset.evaluate_transient_terms = in.evaluate_transient_terms;
 
       fm->template evaluateFields<EvalT>(workset);
@@ -345,7 +346,8 @@ evaluateBCs(const panzer::BCType bc_type,
 	  workset.alpha = in.alpha;
 	  workset.beta = betaValue;
 	  workset.time = in.time;
-          workset.evaluate_transient_terms = in.evaluate_transient_terms;
+      workset.gather_seeds = in.gather_seeds;
+      workset.evaluate_transient_terms = in.evaluate_transient_terms;
 	  
 	  local_side_fm.template evaluateFields<EvalT>(workset);
 

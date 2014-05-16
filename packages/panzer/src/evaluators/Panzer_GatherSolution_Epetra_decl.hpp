@@ -217,6 +217,9 @@ private:
   bool useTimeDerivativeSolutionVector_;
   bool disableSensitivities_;
   std::string globalDataKey_; // what global data does this fill?
+  int gatherSeedIndex_; // what gather seed in the workset to use
+                        // if less than zero then use alpha or beta
+                        // as appropriate
 
   Teuchos::RCP<const EpetraLinearObjContainer> epetraContainer_;
 
