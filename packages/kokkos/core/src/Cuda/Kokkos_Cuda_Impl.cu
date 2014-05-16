@@ -603,6 +603,12 @@ unsigned Cuda::team_max()
   return Impl::CudaInternal::singleton().m_maxWarpCount << Impl::CudaTraits::WarpIndexShift ;
 }
 
+unsigned Cuda::team_recommended()
+{
+  // Recommend 8 warps to hide latency and be a power of two
+  return unsigned(8) << Impl::CudaTraits::WarpIndexShift ;
+}
+
 } // namespace Kokkos
 
 //----------------------------------------------------------------------------

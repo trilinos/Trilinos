@@ -52,6 +52,8 @@
 
 #include <Kokkos_Serial.hpp>
 #include <Kokkos_Task.hpp>
+#include <Kokkos_View.hpp>
+#include <impl/Kokkos_IntPool.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -168,7 +170,7 @@ public:
 
   KOKKOS_INLINE_FUNCTION
   Task * task_dependence( int i ) const
-    { return ( STATE_EXECUTING == m_state && i < m_dep_count ) ? m_dep[i] : (Task*) 0 ; }
+    { return ( STATE_EXECUTING == m_state && 0 <= i && i < m_dep_count ) ? m_dep[i] : (Task*) 0 ; }
 
   KOKKOS_INLINE_FUNCTION
   int task_dependence() const
@@ -658,13 +660,11 @@ public:
        , FutureType const * const iend
        )
     {
-      typename int_pool_type::ClaimResult result ;
-      result.value = 0 ;
-      do {
-        result = m_task_wait.claim( result.value );
-      } while ( result.status == int_pool_type::FAIL );
+      int value = 0 ;
 
-      TaskType * const t = & m_task_pool[ result.value ];
+      while ( int_pool_type::FAIL == m_task_wait.claim( value ) );
+
+      TaskType * const t = & m_task_pool[ value ];
 
       new( & t->m_functor ) FunctorType(arg1,arg2,arg3,arg4,arg5);
 

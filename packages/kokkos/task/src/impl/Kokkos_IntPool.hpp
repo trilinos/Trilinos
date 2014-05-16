@@ -117,35 +117,32 @@ public:
                    , FULL    /* Full, no entries to claim */
                    };
 
-  struct ClaimResult {
-    int         value ;
-    ClaimStatus status ;
-  };
-
-  // 'hint' is an index nearby the index to be claimed.
-  // Claim the next available entry after 'hint'.
-  // If fail then return a new hint.
+  // Claim the next available entry.
+  // Input 'value' is a hint where to look for an available entry.
+  // If SUCCESS then 'value' is the claimed entry.
+  // If FAIL    then 'value' is a recommended hint for the next attempt.
+  // If FULL    then no entries are available.
   KOKKOS_INLINE_FUNCTION
-  ClaimResult claim( const int hint = 0 ) const
+  ClaimStatus claim( int & value ) const
     {
       int volatile * const pool = m_pool.ptr_on_device();
-
-      ClaimResult result = { -1 , FULL };
+      ClaimStatus result = FULL ;
 
       // Free list begin of the block for this hint.
 
-      for ( unsigned k = 0 , jfree = block_list_begin( unsigned(hint) % m_size ) ;
+      for ( unsigned k = 0 , jfree = block_list_begin( unsigned(value) % m_size ) ;
             k < m_pool.dimension_0() ; k += STRIDE ) {
         const int j = pool[jfree] ;
         if ( 0 <= j ) {
           if ( atomic_compare_exchange_strong( pool + jfree , j , pool[j] ) ) {
-            result.status = SUCCESS ;
+            // pool[jfree] = pool[j]
+            result = SUCCESS ;
             pool[j] = 0 ;
           }
           else {
-            result.status = FAIL ;
+            result = FAIL ;
           }
-          result.value = j - j / STRIDE ;
+          value = j - j / STRIDE ;
           break ;
         }
         if ( m_pool.dimension_0() < ( jfree += STRIDE ) ) jfree = BLOCK ;
@@ -187,12 +184,12 @@ public:
       : m_pool(v) , m_size(n) {}
 
     KOKKOS_INLINE_FUNCTION
-    void operator()( const int i ) const
+    void operator()( const int j ) const
       {
-        const int j = i % STRIDE ;
-        const int jnext = ( BLOCK == j ) ? ( i - BLOCK ) : (
-                          ( BLOCK == j + 1 ) ? -1 : ( i + 1 ) );
-        m_pool[i] = 0 <= jnext && ( jnext - jnext / STRIDE ) < int(m_size) ? jnext : -1 ;
+        const int knext = 1 + ( j % STRIDE );
+        const int jnext = ( knext <  BLOCK ) ? j + 1 : (
+                          ( knext == BLOCK ) ? -1 : j - BLOCK );
+        m_pool[j] = ( jnext - jnext / STRIDE ) < int(m_size) ? jnext : -1 ;
       }
   };
 

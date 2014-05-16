@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,31 +35,72 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
+#include <iostream>
+#include <sstream>
 
-#include <Kokkos_Macros.hpp>
-#include <Serial/Kokkos_Serial_Task.hpp>
+#include <KokkosCore_config.h>
+#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Serial.hpp>
+#include <Kokkos_Threads.hpp>
+#include <Kokkos_Cuda.hpp>
+#include <Kokkos_OpenMP.hpp>
 
-#if 0 && defined( KOKKOS_HAVE_OPENMP )
-#include <OpenMP/Kokkos_OpenMP_Task.hpp>
+#include <grow_array.hpp>
+
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
+
+#if defined( KOKKOS_HAVE_CUDA )
+void grow_array_cuda();
 #endif
 
-#include <UnitTest_Task.hpp>
-#include <UnitTest_IntPool.hpp>
-
-int main()
+int main( int argc , char ** argv )
 {
-  for ( int i = 1 ; i < 1000000 ; i = i << 1 ) Test::test_intpool<Kokkos::Serial>(i);
+  int num_threads = 4 ;
+  int use_numa = 1 ;
+  int use_core = 1 ;
 
-  Test::test_norm2<Kokkos::Serial>( 1000 );
+  if ( Kokkos::hwloc::available() ) {
+    use_numa = Kokkos::hwloc::get_available_numa_count();
+    use_core = Kokkos::hwloc::get_available_cores_per_numa() - 1 ;
+    num_threads = use_numa * use_core * Kokkos::hwloc::get_available_threads_per_core();
+  }
 
-  for ( long i = 0 ; i < 30 ; ++i ) Test::test_fib<Kokkos::Serial>(i);
-  for ( long i = 0 ; i < 40 ; ++i ) Test::test_fib2<Kokkos::Serial>(i);
+  {
+    std::cout << "Kokkos::Serial" << std::endl ;
+    Example::GrowArrayFunctor< Kokkos::Serial >( 10000 , 1000000 );
+  }
+
+#if defined( KOKKOS_HAVE_PTHREAD )
+  {
+    std::cout << "Kokkos::Threads" << std::endl ;
+    Kokkos::Threads::initialize( num_threads , use_numa , use_core );
+    Example::GrowArrayFunctor< Kokkos::Threads >( 10000 , 1000000 );
+    Kokkos::Threads::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_OPENMP )
+  {
+    std::cout << "Kokkos::OpenMP" << std::endl ;
+    Kokkos::OpenMP::initialize( num_threads , use_numa , use_core );
+    Example::GrowArrayFunctor< Kokkos::OpenMP >( 10000 , 1000000 );
+    Kokkos::OpenMP::finalize();
+  }
+#endif
+
+#if defined( KOKKOS_HAVE_CUDA )
+  {
+    std::cout << "Kokkos::Cuda" << std::endl ;
+    grow_array_cuda();
+  }
+#endif
 
   return 0 ;
 }

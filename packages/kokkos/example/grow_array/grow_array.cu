@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,32 +35,32 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
 
+#include <iostream>
+#include <sstream>
 
-#include <Kokkos_Macros.hpp>
-#include <Serial/Kokkos_Serial_Task.hpp>
+#include <KokkosCore_config.h>
+#include <Kokkos_hwloc.hpp>
+#include <Kokkos_Cuda.hpp>
 
-#if 0 && defined( KOKKOS_HAVE_OPENMP )
-#include <OpenMP/Kokkos_OpenMP_Task.hpp>
-#endif
+#include <grow_array.hpp>
 
-#include <UnitTest_Task.hpp>
-#include <UnitTest_IntPool.hpp>
+//----------------------------------------------------------------------------
+//----------------------------------------------------------------------------
 
-int main()
+#if defined( KOKKOS_HAVE_CUDA )
+void grow_array_cuda()
 {
-  for ( int i = 1 ; i < 1000000 ; i = i << 1 ) Test::test_intpool<Kokkos::Serial>(i);
-
-  Test::test_norm2<Kokkos::Serial>( 1000 );
-
-  for ( long i = 0 ; i < 30 ; ++i ) Test::test_fib<Kokkos::Serial>(i);
-  for ( long i = 0 ; i < 40 ; ++i ) Test::test_fib2<Kokkos::Serial>(i);
-
-  return 0 ;
+  Kokkos::Cuda::host_mirror_device_type::initialize(1);
+  Kokkos::Cuda::initialize();
+  Example::GrowArrayFunctor< Kokkos::Cuda >( 10000 , 1000000 );
+  Kokkos::Cuda::finalize();
+  Kokkos::Cuda::host_mirror_device_type::finalize();
 }
+#endif
 

@@ -159,9 +159,11 @@ void test_fib( long n )
 
   Kokkos::wait( f );
 
-  std::cout << "Fib(" << n << ") = " << f.get();
-  if ( f.get() != eval_fib(n) ) { std::cout << " != " << eval_fib(n); }
-  std::cout << std::endl ;
+  if ( f.get() != eval_fib(n) ) {
+    std::cout << "Fib(" << n << ") = " << f.get();
+    std::cout << " != " << eval_fib(n);
+    std::cout << std::endl ;
+  }
 }
 
 template< class Device >
@@ -171,9 +173,11 @@ void test_fib2( long n )
 
   Kokkos::wait( f );
 
-  std::cout << "Fib2(" << n << ") = " << f.get();
-  if ( f.get() != eval_fib(n) ) { std::cout << " != " << eval_fib(n); }
-  std::cout << std::endl ;
+  if ( f.get() != eval_fib(n) ) {
+    std::cout << "Fib2(" << n << ") = " << f.get();
+    std::cout << " != " << eval_fib(n);
+    std::cout << std::endl ;
+  }
 }
 
 //----------------------------------------------------------------------------
@@ -215,7 +219,9 @@ void test_norm2( const int n )
 
   Kokkos::wait( f );
 
+#if defined(PRINT)
   std::cout << "Norm2: " << f.get() << std::endl ;
+#endif
 
   delete[] x ;
 }

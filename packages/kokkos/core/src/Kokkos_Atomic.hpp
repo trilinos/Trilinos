@@ -167,7 +167,7 @@ const char * atomic_query_version()
 // Atomic fetch and and
 //
 // template<class T>
-// T atomic_fetch_or(volatile T* const dest, const T val)
+// T atomic_fetch_and(volatile T* const dest, const T val)
 // { T tmp = *dest ; *dest = tmp & val ; return tmp ; }
 
 #include "impl/Kokkos_Atomic_Fetch_And.hpp"

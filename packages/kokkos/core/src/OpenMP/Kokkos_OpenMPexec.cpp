@@ -292,19 +292,6 @@ void * OpenMPexec::get_shmem( const int size )
 namespace Kokkos {
 
 KOKKOS_FUNCTION
-unsigned OpenMP::league_max()
-{
-#ifndef __CUDA_ARCH__
-  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
-  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
-
-  return unsigned( std::numeric_limits<int>::max() );
-#else
-  return 0;
-#endif
-}
-
-KOKKOS_FUNCTION
 unsigned OpenMP::team_max()
 {
 #ifndef __CUDA_ARCH__
@@ -312,6 +299,19 @@ unsigned OpenMP::team_max()
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
   return Impl::s_threads_per_numa ;
+#else
+  return 0;
+#endif
+}
+
+KOKKOS_FUNCTION
+unsigned OpenMP::team_recommended()
+{
+#ifndef __CUDA_ARCH__
+  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_recommended" );
+  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_recommended" );
+
+  return Impl::s_threads_per_core ;
 #else
   return 0;
 #endif

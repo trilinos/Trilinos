@@ -86,34 +86,36 @@ void test_intpool<Kokkos::Serial>( const int n )
 {
   typedef Kokkos::Impl::IntPool<Kokkos::Serial> IntPool ;
 
-  IntPool::ClaimResult result ;
   {
     IntPool x( n );
 
     for ( int i = 0 ; i < n ; ++i ) {
 
-      result = x.claim(i);
+      int value = i ;
 
-      if ( IntPool::SUCCESS != result.status || i != result.value ) {
+      IntPool::ClaimStatus result = x.claim(value);
+
+      if ( IntPool::SUCCESS != result || i != value ) {
         std::cerr << "test claim FAILED " << i << std::endl ;
         x.print( std::cerr );
         return ;
       }
 
-      x.release( i );
+      x.release( value );
 
-      result = x.claim();
+      result = x.claim( value );
 
-      if ( IntPool::SUCCESS != result.status || i != result.value ) {
+      if ( IntPool::SUCCESS != result || i != value ) {
         std::cerr << "test claim FAILED " << i << std::endl ;
         x.print( std::cerr );
         return ;
       }
 
-      x[ result.value ] = 10*(i+1);
+      x[ value ] = 10*(i+1);
     }
 
-    if ( x.claim().status != IntPool::FULL ) {
+    int value = 0 ;
+    if ( x.claim( value ) != IntPool::FULL ) {
       std::cerr << "test claim full FAILED " << std::endl ;
       x.print( std::cerr );
       return ;
@@ -122,24 +124,22 @@ void test_intpool<Kokkos::Serial>( const int n )
 
   {
     IntPool x( n );
-    IntPool::ClaimResult result ;
 
-    result.value = 0 ;
+    int value = 0 ;
     for ( int i = 0 ; i < n ; ++i ) {
-      result = x.claim( result.value );
-      x[ result.value ] = 10 * ( result.value + 1 );
+      x.claim( value );
+      x[ value ] = 10 * ( value + 1 );
     }
     for ( int i = 0 ; i < n ; i += 2 ) { x.release( i ); }
 
-    result.value = 0 ;
+    value = 0 ;
     for ( int i = 0 ; i < n ; i += 2 ) {
-      result = x.claim( result.value );
-      if ( IntPool::SUCCESS != result.status ) {
+      if ( IntPool::SUCCESS != x.claim( value ) ) {
         std::cerr << "test claim repeat failed " << i << std::endl ;
         x.print( std::cerr );
         return ;
       }
-      x[ result.value ] = 10 * ( result.value + 1 );
+      x[ value ] = 10 * ( value + 1 );
     }
     for ( int i = 0 ; i < n ; ++i ) {
       if ( ! x.is_claimed(i) || x[i] != 10*(i+1) ) {
@@ -153,21 +153,23 @@ void test_intpool<Kokkos::Serial>( const int n )
   {
     IntPool x( n );
 
+    int value = 0 ;
     for ( int i = 0 ; i < n ; i += 2 ) {
 
-      result = x.claim(i);
+      IntPool::ClaimStatus result = x.claim( value );
     
-      if ( IntPool::SUCCESS != result.status || i != result.value ) {
+      if ( IntPool::SUCCESS != result || i != value ) {
         std::cerr << "test claim FAILED " << i << std::endl ;
         x.print( std::cerr );
         return ;
       }
 
       if ( i + 1 < n ) {
-        result = x.claim(i);
+        value = i ;
+        result = x.claim( value );
 
-        if ( IntPool::SUCCESS != result.status || i + 1 != result.value ) {
-          std::cerr << "test claim FAILED " << i + 1 << " " << result.value << std::endl ;
+        if ( IntPool::SUCCESS != result || i + 1 != value ) {
+          std::cerr << "test claim FAILED " << i + 1 << " " << value << std::endl ;
           x.print( std::cerr );
           return ;
         }
