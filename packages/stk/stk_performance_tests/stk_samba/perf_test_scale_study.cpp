@@ -6,7 +6,7 @@
 #include <stk_performance_test_includes/cpu_time.hpp>
 #include <stk_performance_test_includes/memory_size.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <iostream>
 #include <sys/resource.h>
@@ -95,7 +95,7 @@ void run_test(samba::mesh mesh, coordinate_field coordinates, int iterations, co
 
 } // namespace
 
-STKUNIT_UNIT_TEST(scale_study, scale_study)
+TEST(scale_study, scale_study)
 {
   const int num_iterations = 100;
 

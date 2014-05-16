@@ -9,7 +9,7 @@
 #include <iostream>                     // for operator<<, ostringstream, etc
 #include <stdexcept>                    // for runtime_error
 #include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for operator==, basic_string, etc
 
 
@@ -42,7 +42,7 @@ test_report_handler(
 
 } // namespace <empty>
 
-STKUNIT_UNIT_TEST(UnitTestReportHandler, UnitTest)
+TEST(UnitTestReportHandler, UnitTest)
 {
   // Set and restore report handler.
   stk::report("This is a test", 0);
@@ -53,13 +53,13 @@ STKUNIT_UNIT_TEST(UnitTestReportHandler, UnitTest)
   
   stk::set_report_handler(original_reh);
 
-  STKUNIT_ASSERT_THROW(stk::set_report_handler(0), std::runtime_error);
+  ASSERT_THROW(stk::set_report_handler(0), std::runtime_error);
   
-  STKUNIT_ASSERT_EQUAL((std::string("Message type 0: This is a test\n") == test_ostringstream().str()), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Test.cpp") == stk::source_relative_path("/src/Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Test.hpp") == stk::source_relative_path("/include/Test.hpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Apps_Test.cpp") == stk::source_relative_path("/Apps_Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("stk_Test.cpp") == stk::source_relative_path("/stk_Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
+  ASSERT_EQ((std::string("Message type 0: This is a test\n") == test_ostringstream().str()), true);
+  ASSERT_EQ((std::string("Test.cpp") == stk::source_relative_path("/src/Test.cpp")), true);
+  ASSERT_EQ((std::string("Test.hpp") == stk::source_relative_path("/include/Test.hpp")), true);
+  ASSERT_EQ((std::string("Apps_Test.cpp") == stk::source_relative_path("/Apps_Test.cpp")), true);
+  ASSERT_EQ((std::string("stk_Test.cpp") == stk::source_relative_path("/stk_Test.cpp")), true);
+  ASSERT_EQ((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
 }
 

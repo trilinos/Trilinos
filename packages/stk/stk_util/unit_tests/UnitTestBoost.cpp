@@ -10,7 +10,7 @@
 #include <algorithm>                    // for max
 #include <functional>                   // for equal_to
 #include <iostream>                     // for ostream, size_t, cout, endl
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/util/ci_string.hpp>  // for ci_string, operator<<
 #include <string>                       // for basic_string, operator==, etc
 #include <utility>                      // for pair
@@ -45,18 +45,18 @@ struct hash<ci_string>
   
 } // namespace boost
 
-STKUNIT_UNIT_TEST(UnitTestBoost, testUnit)
+TEST(UnitTestBoost, testUnit)
 {
   {  
     double* d = new double;
     boost::shared_ptr<double> dptr(d);
 
-    STKUNIT_ASSERT_EQUAL( dptr.get(), d);
+    ASSERT_EQ( dptr.get(), d);
 
     double* d2 = new double[1];
     boost::shared_array<double> dptr2(d2);
 
-    STKUNIT_ASSERT_EQUAL( dptr2.get(), d2);
+    ASSERT_EQ( dptr2.get(), d2);
   }
   
   // Had to comment this out because boost/tr1/array.hpp is incompatible with
@@ -66,27 +66,27 @@ STKUNIT_UNIT_TEST(UnitTestBoost, testUnit)
 
   my_array[0] = 5.0;
 
-  STKUNIT_ASSERT_EQUAL( my_array[0], 5.0 );
-  STKUNIT_ASSERT_EQUAL( my_array.size(), (boost::array<double,5>::size_type)5 );
+  ASSERT_EQ( my_array[0], 5.0 );
+  ASSERT_EQ( my_array.size(), (boost::array<double,5>::size_type)5 );
   */
 
   boost::unordered_set<int> int_set;
 
   int_set.insert(5);
 
-  STKUNIT_ASSERT_EQUAL( int_set.size(), (boost::unordered_set<int>::size_type)1 );
+  ASSERT_EQ( int_set.size(), (boost::unordered_set<int>::size_type)1 );
 
   boost::unordered_set<ci_string> ci_string_set;
 
   ci_string_set.insert("Test");
   std::pair<boost::unordered_set<ci_string>::iterator, bool> res = ci_string_set.insert("test");
 
-  STKUNIT_ASSERT_EQUAL( ci_string_set.size(), (boost::unordered_set<ci_string>::size_type)1 );
-  STKUNIT_ASSERT_EQUAL( res.second, false );
+  ASSERT_EQ( ci_string_set.size(), (boost::unordered_set<ci_string>::size_type)1 );
+  ASSERT_EQ( res.second, false );
 
   ci_string s("This is a test");
 
-  STKUNIT_ASSERT( s == "this is a test" );
+  ASSERT_TRUE( s == "this is a test" );
   
   std::cout << s << std::endl;
   

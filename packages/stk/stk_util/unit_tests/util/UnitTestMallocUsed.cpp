@@ -13,11 +13,11 @@
 #include <iomanip>                      // for operator<<, setw
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_util/environment/CPUTime.hpp>  // for cpu_time
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
+TEST(UnitTestMallocUsed, Malloc_1_8)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 8;
@@ -34,13 +34,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_8)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_16)
+TEST(UnitTestMallocUsed, Malloc_1_16)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 16;
@@ -57,13 +57,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_16)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_32)
+TEST(UnitTestMallocUsed, Malloc_1_32)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 32;
@@ -80,13 +80,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_32)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1024)
+TEST(UnitTestMallocUsed, Malloc_1_1024)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
@@ -103,13 +103,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1024)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100x1024)
+TEST(UnitTestMallocUsed, Malloc_100x1024)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
@@ -128,14 +128,14 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100x1024)
 
     size_t end = malloc_used();
 
-    STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-    STKUNIT_EXPECT_LE(start, end);
+    EXPECT_LE(bytes_to_allocate, used - start);
+    EXPECT_LE(start, end);
     std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
   }
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1M)
+TEST(UnitTestMallocUsed, Malloc_1_1M)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024*1024;
@@ -152,13 +152,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_1M)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_100M)
+TEST(UnitTestMallocUsed, Malloc_1_100M)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 100*1024*1024;
@@ -175,13 +175,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_1_100M)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_32)
+TEST(UnitTestMallocUsed, Malloc_100_32)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 32;
@@ -201,13 +201,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_32)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate*100, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate*100, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1024)
+TEST(UnitTestMallocUsed, Malloc_100_1024)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024;
@@ -227,13 +227,13 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1024)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate*100, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate*100, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
 
-STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
+TEST(UnitTestMallocUsed, Malloc_100_1M)
 {
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   static const size_t bytes_to_allocate = 1024*1024;
@@ -253,8 +253,8 @@ STKUNIT_UNIT_TEST(UnitTestMallocUsed, Malloc_100_1M)
 
   size_t end = malloc_used();
 
-  STKUNIT_EXPECT_LE(bytes_to_allocate*100, used - start);
-  STKUNIT_EXPECT_LE(start, end);
+  EXPECT_LE(bytes_to_allocate*100, used - start);
+  EXPECT_LE(start, end);
   std::cout << "start " << start << ", end " << end << ", used " << used - start << std::endl;
 #endif
 }
@@ -278,7 +278,7 @@ int rsize()
   return rv;
 }
 
-STKUNIT_UNIT_TEST(UnitTestMalloc, DISABLED_Performance)
+TEST(UnitTestMalloc, DISABLED_Performance)
 {
   void *pointers[MAXP];
   int size[MAXP];

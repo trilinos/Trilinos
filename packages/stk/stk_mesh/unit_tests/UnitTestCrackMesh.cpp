@@ -9,7 +9,7 @@
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -23,7 +23,7 @@
 
 //----------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
+TEST ( UnitTestCrackMesh , VerifyDestroy2D )
 {
   // In 2D, build a fresh 3x3 mesh each loop iteration, destroying a different
   // single element each time.
@@ -53,7 +53,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy2D )
   }
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
+TEST ( UnitTestCrackMesh , VerifyDestroy3D )
 {
   // In 3D, build a 3x3x3 mesh each loop iteration, destroying a different
   // single element each time.
@@ -87,7 +87,7 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , VerifyDestroy3D )
 
 //----------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
+TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 {
   // Start with a normal hex fixture, then crack it, and check to see
   // if all (incl ghosted) copies get updated.
@@ -156,10 +156,10 @@ STKUNIT_UNIT_TEST ( UnitTestCrackMesh , verifyBoxGhosting )
 
   if ( mesh.is_valid(right_element) ) {
     int num_node_rels = mesh.num_nodes(right_element);
-    STKUNIT_ASSERT_EQ(num_node_rels, 8);
+    ASSERT_EQ(num_node_rels, 8);
     stk::mesh::Entity new_node = mesh.begin_nodes(right_element)[right_ordinal];
-    STKUNIT_ASSERT(mesh.is_valid(new_node));
+    ASSERT_TRUE(mesh.is_valid(new_node));
 
-    STKUNIT_EXPECT_EQ ( mesh.identifier(new_node), new_node_id );
+    EXPECT_EQ ( mesh.identifier(new_node), new_node_id );
   }
 }

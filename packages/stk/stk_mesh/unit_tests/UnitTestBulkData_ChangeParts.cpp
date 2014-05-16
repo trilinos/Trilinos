@@ -12,7 +12,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
@@ -40,7 +40,7 @@ using stk::mesh::fixtures::RingFixture;
 
 //----------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
+TEST(UnitTestingOfBulkData, testChangeParts)
 {
   // This unit test tests part operations and verifies operations
   // by looking at bucket supersets. We use contrived entities
@@ -115,28 +115,28 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // just created are correct.
 
   tmp = bulk.bucket(entity_0_1).supersets();
-  STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-  STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-  STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+  ASSERT_EQ( size_t(3) , tmp.size() );
+  ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+  ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+  ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
 
   tmp = bulk.bucket(entity_1_1).supersets();
-  STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_univ) );
-  STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_owns) );
-  STKUNIT_ASSERT( bulk.bucket(entity_1_1).member(part_A_1) );
+  ASSERT_EQ( size_t(3) , tmp.size() );
+  ASSERT_TRUE( bulk.bucket(entity_1_1).member(part_univ) );
+  ASSERT_TRUE( bulk.bucket(entity_1_1).member(part_owns) );
+  ASSERT_TRUE( bulk.bucket(entity_1_1).member(part_A_1) );
 
   tmp = bulk.bucket(entity_2_1).supersets();
-  STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
-  STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_owns) );
-  STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_A_2) );
+  ASSERT_EQ( size_t(3) , tmp.size() );
+  ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_univ) );
+  ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_owns) );
+  ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_A_2) );
 
   tmp = bulk.bucket(entity_3_1).supersets();
-  STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-  STKUNIT_ASSERT( bulk.bucket(entity_3_1).member(part_univ) );
-  STKUNIT_ASSERT( bulk.bucket(entity_3_1).member(part_owns) );
-  STKUNIT_ASSERT( bulk.bucket(entity_3_1).member(part_A_3) );
+  ASSERT_EQ( size_t(3) , tmp.size() );
+  ASSERT_TRUE( bulk.bucket(entity_3_1).member(part_univ) );
+  ASSERT_TRUE( bulk.bucket(entity_3_1).member(part_owns) );
+  ASSERT_TRUE( bulk.bucket(entity_3_1).member(part_A_3) );
 
   // Add entity_0_1 to the part it was already in
   {
@@ -144,10 +144,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp[0] = & part_A_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   // Add entity_0_1 to part_B_0
@@ -156,11 +156,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_B_0) );
+    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
 
   // Remove entity_0_1 from the part it was just added to above
@@ -169,10 +169,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , PartVector() , tmp );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   // Add relation from entity_1_1 (which is in part_A_1) to
@@ -183,11 +183,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   {
     bulk.declare_relation( entity_1_1 , entity_0_1 , test_rel_id );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_1) );
+    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_1) );
   }
 
   // Remove the relationship added in the step above and
@@ -196,10 +196,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   {
     bulk.destroy_relation( entity_1_1 , entity_0_1, test_rel_id );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   // Add entity_2_1 to part_B_2
@@ -208,11 +208,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp[0] = & part_B_2 ;
     bulk.change_entity_parts( entity_2_1 , tmp );
     tmp =     bulk.bucket(entity_2_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_A_2) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_B_2) );
+    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_A_2) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_B_2) );
   }
 
   // Add relation from entity_2_1 (which is in part_A_2 and B_2) to
@@ -223,12 +223,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   {
     bulk.declare_relation( entity_2_1 , entity_0_1 , test_rel_id );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(5) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_2) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_B_2) );
+    ASSERT_EQ( size_t(5) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_2) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_2) );
   }
 
   // Remove the relationship added in the step above and
@@ -237,10 +237,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   {
     bulk.destroy_relation( entity_2_1 , entity_0_1, test_rel_id );
     tmp =     bulk.bucket(entity_0_1).supersets();
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   bulk.modification_end();
@@ -258,45 +258,45 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 4 : 3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_EQ( size_t(parallel ? 4 : 3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
-      STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+      ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
   else {
-    STKUNIT_ASSERT( parallel );
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( parallel );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   tmp = bulk.bucket(entity_2_1).supersets();
   if ( bulk.parallel_owner_rank(entity_2_1) == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_owns) );
+    ASSERT_EQ( size_t(parallel ? 5 : 4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_owns) );
     if ( parallel )
-      STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_A_2) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_B_2) );
+      ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_A_2) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_B_2) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_A_2) );
-    STKUNIT_ASSERT( bulk.bucket(entity_2_1).member(part_B_2) );
+    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_A_2) );
+    ASSERT_TRUE( bulk.bucket(entity_2_1).member(part_B_2) );
   }
 
   if ( parallel ) {
     // If parallel, check that the entities are shared across all procs.
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_0_1)).size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_1_1)).size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_2_1)).size() );
-    STKUNIT_ASSERT_EQUAL( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_3_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_0_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_1_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_2_1)).size() );
+    ASSERT_EQ( size_t(p_size - 1) , bulk.entity_comm_sharing(bulk.entity_key(entity_3_1)).size() );
   }
 
   bulk.modification_begin();
@@ -309,10 +309,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
     tmp.resize(1);
     tmp[0] = & part_B_0 ;
     bulk.change_entity_parts( entity_0_1 , tmp );
-    STKUNIT_ASSERT( ok_to_modify );
+    ASSERT_TRUE( ok_to_modify );
   }
   catch( const std::exception & x ) {
-    STKUNIT_ASSERT( ! ok_to_modify );
+    ASSERT_TRUE( ! ok_to_modify );
   }
 
   // Check that entity_0_1 is in the new part on the owning
@@ -320,19 +320,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_EQ( size_t(parallel ? 5 : 4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
-      STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_B_0) );
+      ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(3) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_EQ( size_t(3) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
   }
 
   bulk.modification_end();
@@ -342,27 +342,27 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
 
   tmp = bulk.bucket(entity_0_1).supersets();
   if ( bulk.parallel_owner_rank(entity_0_1) == p_rank ) {
-    STKUNIT_ASSERT_EQUAL( size_t(parallel ? 5 : 4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_owns) );
+    ASSERT_EQ( size_t(parallel ? 5 : 4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_owns) );
     if ( parallel )
-      STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_B_0) );
+      ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
   else {
-    STKUNIT_ASSERT_EQUAL( size_t(4) , tmp.size() );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_univ) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_shared) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_A_0) );
-    STKUNIT_ASSERT( bulk.bucket(entity_0_1).member(part_B_0) );
+    ASSERT_EQ( size_t(4) , tmp.size() );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_univ) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_shared) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_A_0) );
+    ASSERT_TRUE( bulk.bucket(entity_0_1).member(part_B_0) );
   }
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
+TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 {
   // This unit test tests part operations and verifies operations
   // by looking at bucket supersets. We use RingMesh for a slightly
@@ -386,12 +386,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
   bulk.modification_begin();
   ring_mesh.generate_mesh( );
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
                                                           false /* no aura */));
 
   bulk.modification_begin();
   ring_mesh.fixup_node_ownership();
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(bulk,
                                                           false /* no aura */));
 
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();
@@ -403,10 +403,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     const unsigned n = i + nPerProc * p_rank ;
     Entity const element = bulk.get_entity( stk::topology::ELEMENT_RANK /*entity rank*/,
                                               ring_mesh.m_element_ids[n] );
-    STKUNIT_ASSERT( bulk.is_valid(element) );
-    STKUNIT_ASSERT( bulk.bucket(element).member( part_univ ) );
-    STKUNIT_ASSERT( bulk.bucket(element).member( part_owns ) );
-    STKUNIT_ASSERT( bulk.bucket(element).member( * ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ] ) );
+    ASSERT_TRUE( bulk.is_valid(element) );
+    ASSERT_TRUE( bulk.bucket(element).member( part_univ ) );
+    ASSERT_TRUE( bulk.bucket(element).member( part_owns ) );
+    ASSERT_TRUE( bulk.bucket(element).member( * ring_mesh.m_element_parts[ n % ring_mesh.m_element_parts.size() ] ) );
   }
 
   // Check that local nodes are in the expected parts. Note that the relations
@@ -423,18 +423,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     Part * const epart_1 = ring_mesh.m_element_parts[ n0 < n1 ? n1 : n0 ];
 
     Entity const node = bulk.get_entity( stk::topology::NODE_RANK , ring_mesh.m_node_ids[n] );
-    STKUNIT_ASSERT( bulk.is_valid(node) );
+    ASSERT_TRUE( bulk.is_valid(node) );
     if ( bulk.parallel_owner_rank(node) == p_rank ) {
-      STKUNIT_ASSERT( bulk.bucket(node).member( part_univ ) );
-      STKUNIT_ASSERT( bulk.bucket(node).member( part_owns ) );
-      STKUNIT_ASSERT( bulk.bucket(node).member( *epart_0 ) );
-      STKUNIT_ASSERT( bulk.bucket(node).member( *epart_1 ) );
+      ASSERT_TRUE( bulk.bucket(node).member( part_univ ) );
+      ASSERT_TRUE( bulk.bucket(node).member( part_owns ) );
+      ASSERT_TRUE( bulk.bucket(node).member( *epart_0 ) );
+      ASSERT_TRUE( bulk.bucket(node).member( *epart_1 ) );
     }
     else {
-      STKUNIT_ASSERT( bulk.bucket(node).member( part_univ ) );
-      STKUNIT_ASSERT( ! bulk.bucket(node).member( part_owns ) );
-      STKUNIT_ASSERT( bulk.bucket(node).member( * epart_0 ) );
-      STKUNIT_ASSERT( bulk.bucket(node).member( * epart_1 ) );
+      ASSERT_TRUE( bulk.bucket(node).member( part_univ ) );
+      ASSERT_TRUE( ! bulk.bucket(node).member( part_owns ) );
+      ASSERT_TRUE( bulk.bucket(node).member( * epart_0 ) );
+      ASSERT_TRUE( bulk.bucket(node).member( * epart_1 ) );
     }
   }
 
@@ -451,9 +451,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
       Entity const element = bulk.get_entity( stk::topology::ELEMENT_RANK , ring_mesh.m_element_ids[n] );
       bulk.change_entity_parts( element , add , rem );
-      STKUNIT_ASSERT( bulk.bucket(element).member( part_univ ) );
-      STKUNIT_ASSERT( bulk.bucket(element).member( part_owns ) );
-      STKUNIT_ASSERT( bulk.bucket(element).member(ring_mesh.m_element_part_extra ) );
+      ASSERT_TRUE( bulk.bucket(element).member( part_univ ) );
+      ASSERT_TRUE( bulk.bucket(element).member( part_owns ) );
+      ASSERT_TRUE( bulk.bucket(element).member(ring_mesh.m_element_part_extra ) );
     }
   }
 
@@ -475,12 +475,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     Part * epart_1 = ep_0->mesh_meta_data_ordinal() < ep_1->mesh_meta_data_ordinal() ? ep_1 : ep_0 ;
 
     Entity const node = bulk.get_entity( stk::topology::NODE_RANK , ring_mesh.m_node_ids[n] );
-    STKUNIT_ASSERT( bulk.is_valid(node) );
+    ASSERT_TRUE( bulk.is_valid(node) );
     if ( bulk.parallel_owner_rank(node) == p_rank ) {
-      STKUNIT_ASSERT( bulk.bucket(node).member( part_owns ) );
+      ASSERT_TRUE( bulk.bucket(node).member( part_owns ) );
     }
     else {
-      STKUNIT_ASSERT( ! bulk.bucket(node).member( part_owns ) );
+      ASSERT_TRUE( ! bulk.bucket(node).member( part_owns ) );
     }
 
 #if 0
@@ -499,8 +499,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
     //// GUBED
 #endif
 
-    STKUNIT_ASSERT( bulk.bucket(node).member( part_univ ) );
-    STKUNIT_ASSERT( bulk.bucket(node).member( *epart_0 ) );
-    STKUNIT_ASSERT( bulk.bucket(node).member( *epart_1 ) );
+    ASSERT_TRUE( bulk.bucket(node).member( part_univ ) );
+    ASSERT_TRUE( bulk.bucket(node).member( *epart_0 ) );
+    ASSERT_TRUE( bulk.bucket(node).member( *epart_1 ) );
   }
 }

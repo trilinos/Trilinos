@@ -5,7 +5,7 @@
 #include <cstdlib>                      // for rand, srand, RAND_MAX
 #include <deque>                        // for deque, operator!=
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/util/BlockVector.hpp>
 #include <stk_util/util/CacheAlignedAllocator.hpp>
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
@@ -17,7 +17,7 @@
 #include "stk_util/util/AllocatorMemoryUsage.hpp"
 
 
-STKUNIT_UNIT_TEST( block_vector, basic )
+TEST( block_vector, basic )
 {
   typedef stk::block_vector<unsigned> bvector;
   typedef std::vector<unsigned> vector;
@@ -352,7 +352,7 @@ void run_performance_test(std::string const& type, size_t size, size_t stride, s
 
 } // namespace
 
-STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_int )
+TEST( block_vector, DISABLED_performance_int )
 {
   typedef std::vector<int, stk::tracking_allocator<int, VectorTag> > Vector;
   typedef std::deque<int, stk::tracking_allocator<int, DequeTag> > Deque;
@@ -373,7 +373,7 @@ STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_int )
   run_performance_test<Vector,VectorMemory,BlockVector,BlockVectorMemory,Deque,DequeMemory>("int", size, stride, 10, 8);
 }
 
-STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_size_t )
+TEST( block_vector, DISABLED_performance_size_t )
 {
   typedef std::vector<size_t, stk::tracking_allocator<size_t, VectorTag> > Vector;
   typedef std::deque<size_t, stk::tracking_allocator<size_t, DequeTag> > Deque;
@@ -394,7 +394,7 @@ STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_size_t )
   run_performance_test<Vector,VectorMemory,BlockVector,BlockVectorMemory,Deque,DequeMemory>("size_t", size, stride, 10, 8);
 }
 
-STKUNIT_UNIT_TEST( block_vector, DISABLED_performance_pair_double_size_t )
+TEST( block_vector, DISABLED_performance_pair_double_size_t )
 {
   typedef std::pair<double,size_t> MyPair;
   typedef std::vector<MyPair, stk::tracking_allocator<MyPair, VectorTag> > Vector;

@@ -11,7 +11,7 @@
 #include <stdexcept>                    // for runtime_error
 #include <stk_util/parallel/DistributedIndex.hpp>
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <utility>                      // for pair, swap
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -32,28 +32,28 @@ class UnitTestSTKParallelDistributedIndex {
 
 namespace {
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexConstructor , testUnit )
+TEST( UnitTestDistributedIndexConstructor , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_ctor(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexConstructorBad , testUnit )
+TEST( UnitTestDistributedIndexConstructorBad , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_ctor_bad(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexUpdate , testUnit )
+TEST( UnitTestDistributedIndexUpdate , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_update(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexUpdateBad , testUnit )
+TEST( UnitTestDistributedIndexUpdateBad , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_update_bad(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerate , testUnit )
+TEST( UnitTestDistributedIndexGenerate , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_generate(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerateBad , testUnit )
+TEST( UnitTestDistributedIndexGenerateBad , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_generate_bad(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexUpdateGenerate , testUnit )
+TEST( UnitTestDistributedIndexUpdateGenerate , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_update_generate(); }
 
-STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerateBig , testUnit )
+TEST( UnitTestDistributedIndexGenerateBig , testUnit )
 { UnitTestSTKParallelDistributedIndex::test_generate_big(); }
 
 // Generate spans:
@@ -95,13 +95,13 @@ void UnitTestSTKParallelDistributedIndex::test_ctor()
 
   PDIndex di( comm , partition_spans );
 
-  STKUNIT_EXPECT_EQ(   di.m_comm_rank , mpi_rank );
-  STKUNIT_EXPECT_EQ(   di.m_comm_size , mpi_size );
-  STKUNIT_EXPECT_TRUE( di.m_key_usage.empty() );
-  STKUNIT_ASSERT_EQ(   di.m_key_span.size() , partition_spans.size() );
+  EXPECT_EQ(   di.m_comm_rank , mpi_rank );
+  EXPECT_EQ(   di.m_comm_size , mpi_size );
+  EXPECT_TRUE( di.m_key_usage.empty() );
+  ASSERT_EQ(   di.m_key_span.size() , partition_spans.size() );
   for ( size_t i = 0 ; i < di.m_key_span.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( di.m_key_span[i].first , partition_spans[i].first );
-    STKUNIT_EXPECT_EQ( di.m_key_span[i].second , partition_spans[i].second );
+    EXPECT_EQ( di.m_key_span[i].first , partition_spans[i].first );
+    EXPECT_EQ( di.m_key_span[i].second , partition_spans[i].second );
   }
 
   // All queries will be empty:
@@ -111,17 +111,17 @@ void UnitTestSTKParallelDistributedIndex::test_ctor()
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_TRUE( sharing_of_local_keys.empty() );
+  EXPECT_TRUE( sharing_of_local_keys.empty() );
 
   di.query( keys_to_query , sharing_of_local_keys );
 
-  STKUNIT_EXPECT_TRUE( sharing_of_local_keys.empty() );
+  EXPECT_TRUE( sharing_of_local_keys.empty() );
 
   keys_to_query.push_back( 10 );
 
   di.query( keys_to_query , sharing_of_local_keys );
 
-  STKUNIT_EXPECT_TRUE( sharing_of_local_keys.empty() );
+  EXPECT_TRUE( sharing_of_local_keys.empty() );
 }
 
 void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
@@ -139,7 +139,7 @@ void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
     // Corrupt this span to trigger an error
     partition_spans[5].first = partition_spans[4].second ;
 
-    STKUNIT_ASSERT_THROW( PDIndex di( comm , partition_spans ) , std::runtime_error );
+    ASSERT_THROW( PDIndex di( comm , partition_spans ) , std::runtime_error );
   }
 
   {
@@ -151,7 +151,7 @@ void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
     // Corrupt this span to trigger an error
     std::swap( partition_spans[5].first , partition_spans[5].second );
 
-    STKUNIT_ASSERT_THROW( PDIndex( comm , partition_spans ) , std::runtime_error );
+    ASSERT_THROW( PDIndex( comm , partition_spans ) , std::runtime_error );
   }
 }
 
@@ -181,7 +181,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() );
 
-  STKUNIT_EXPECT_TRUE( di.m_key_usage.empty() );
+  EXPECT_TRUE( di.m_key_usage.empty() );
 
   //------------------------------
   // Update one key on all processes and
@@ -196,11 +196,11 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   // First key shared by all processes
   // Second key shared just by this process
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
 
   di.query( keys_to_add , sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
 
   //------------------------------
   // Repeat the update, should result in no changes.
@@ -211,7 +211,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   // First key shared by all processes
   // Second key shared just by this process
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
 
   //------------------------------
 
@@ -224,7 +224,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(mpi_size + 1) );
 
   //------------------------------
   // Remove shared key
@@ -238,7 +238,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(1) );
 
   //------------------------------
   // Add two shared-by-all
@@ -253,11 +253,11 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(2*mpi_size + 1) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(2*mpi_size + 1) );
 
   di.query( keys_to_add , sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , size_t(2*mpi_size) );
+  EXPECT_EQ( sharing_of_local_keys.size() , size_t(2*mpi_size) );
 
   //------------------------------
 
@@ -276,7 +276,7 @@ void UnitTestSTKParallelDistributedIndex::test_update()
   {
     size_t expected = 2 * mpi_size + 1 ;
     if ( 0 == mpi_rank % 2 ) { expected += ( mpi_size + 1 ) / 2 ; }
-    STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , expected );
+    EXPECT_EQ( sharing_of_local_keys.size() , expected );
   }
 
 }
@@ -307,7 +307,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
 
   keys_to_add.push_back( partition_spans[0].second + 1 + mpi_rank );
 
-  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
+  ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
 
   //------------------------------
 
@@ -316,7 +316,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
     keys_to_add.push_back( partition_spans[0].second + 1 );
   }
 
-  STKUNIT_ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
+  ASSERT_THROW( di.update_keys( keys_to_add.begin(), keys_to_add.end() , keys_to_remove.begin(), keys_to_remove.end() ), std::runtime_error );
 }
 
 //----------------------------------------------------------------------
@@ -342,12 +342,12 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
   di.generate_new_keys( requests , generated_keys );
 
-  STKUNIT_EXPECT_TRUE( di.m_key_usage.empty() );
+  EXPECT_TRUE( di.m_key_usage.empty() );
 
-  STKUNIT_ASSERT_EQ( generated_keys.size() , partition_spans.size() );
+  ASSERT_EQ( generated_keys.size() , partition_spans.size() );
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
-    STKUNIT_EXPECT_TRUE( generated_keys[i].empty() );
+    EXPECT_TRUE( generated_keys[i].empty() );
   }
 
   //----------------------------------------
@@ -360,15 +360,15 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
   di.generate_new_keys( requests , generated_keys );
 
-  STKUNIT_ASSERT_EQ( generated_keys.size() , partition_spans.size() );
+  ASSERT_EQ( generated_keys.size() , partition_spans.size() );
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( generated_keys[i].size() , requests[i] );
+    EXPECT_EQ( generated_keys[i].size() , requests[i] );
     for ( size_t j = 0 ; j < generated_keys[i].size() ; ++j ) {
-      STKUNIT_EXPECT_TRUE( partition_spans[i].first <= generated_keys[i][j] );
-      STKUNIT_EXPECT_TRUE( generated_keys[i][j] <= partition_spans[i].second );
+      EXPECT_TRUE( partition_spans[i].first <= generated_keys[i][j] );
+      EXPECT_TRUE( generated_keys[i][j] <= partition_spans[i].second );
       if ( 0 < j ) {
-        STKUNIT_EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
+        EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
       }
     }
   }
@@ -377,15 +377,15 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , total );
+  EXPECT_EQ( sharing_of_local_keys.size() , total );
 
   // Confirm global uniqueness
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
     di.query( generated_keys[i] , sharing_of_local_keys );
-    STKUNIT_EXPECT_EQ( generated_keys[i].size() , sharing_of_local_keys.size() );
+    EXPECT_EQ( generated_keys[i].size() , sharing_of_local_keys.size() );
     for ( size_t j = 0 ; j < sharing_of_local_keys.size() ; ++j ) {
-      STKUNIT_EXPECT_EQ( sharing_of_local_keys[j].second , mpi_rank );
+      EXPECT_EQ( sharing_of_local_keys[j].second , mpi_rank );
     }
   }
 
@@ -394,22 +394,22 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
   di.generate_new_keys( requests , generated_keys );
 
-  STKUNIT_ASSERT_EQ( generated_keys.size() , partition_spans.size() );
+  ASSERT_EQ( generated_keys.size() , partition_spans.size() );
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( generated_keys[i].size() , requests[i] );
+    EXPECT_EQ( generated_keys[i].size() , requests[i] );
     for ( size_t j = 0 ; j < generated_keys[i].size() ; ++j ) {
-      STKUNIT_EXPECT_TRUE( partition_spans[i].first <= generated_keys[i][j] );
-      STKUNIT_EXPECT_TRUE( generated_keys[i][j] <= partition_spans[i].second );
+      EXPECT_TRUE( partition_spans[i].first <= generated_keys[i][j] );
+      EXPECT_TRUE( generated_keys[i][j] <= partition_spans[i].second );
       if ( 0 < j ) {
-        STKUNIT_EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
+        EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
       }
     }
   }
 
   di.query( sharing_of_local_keys );
 
-  STKUNIT_EXPECT_EQ( sharing_of_local_keys.size() , total * 2 );
+  EXPECT_EQ( sharing_of_local_keys.size() , total * 2 );
 }
 
 //----------------------------------------------------------------------
@@ -474,7 +474,7 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
   di.generate_new_keys( requests , generated_keys );
 
   for ( size_t i = 0 ; i < requests.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( requests[i] , generated_keys[i].size() );
+    EXPECT_EQ( requests[i] , generated_keys[i].size() );
 
     const size_t old_count   = p_size * old_size_multiplier * i ;
     const size_t tot_request = p_size * requests[i] ;
@@ -482,25 +482,25 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
     PDIndex::KeyType max_gen_key = partition_spans[i].first ;
 
     if ( 0 == tot_request ) {
-      STKUNIT_EXPECT_TRUE( generated_keys[i].size() == 0 );
+      EXPECT_TRUE( generated_keys[i].size() == 0 );
     }
     else if ( tot_request < old_count ) {
       // Will only fill in gaps between odd keys
       max_gen_key += 2 * old_count ;
 
-      STKUNIT_EXPECT_TRUE( max_gen_key > generated_keys[i][ requests[i] - 1 ] );
+      EXPECT_TRUE( max_gen_key > generated_keys[i][ requests[i] - 1 ] );
     }
     else {
       // Will fill in gaps contiguously after the old max key
       max_gen_key += old_count + tot_request - 1 ;
 
-      STKUNIT_EXPECT_TRUE( max_gen_key >= generated_keys[i][ requests[i] - 1 ] );
+      EXPECT_TRUE( max_gen_key >= generated_keys[i][ requests[i] - 1 ] );
     }
 
     // Sorted
     for ( size_t j = 0 ; j < generated_keys[i].size() ; ++j ) {
       if ( 0 < j ) {
-        STKUNIT_EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
+        EXPECT_TRUE( generated_keys[i][j-1] < generated_keys[i][j] );
       }
     }
   }
@@ -535,19 +535,19 @@ void UnitTestSTKParallelDistributedIndex::test_generate_bad()
     requests.clear();
   }
 
-  STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
+  ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
 
   if( mpi_rank == mpi_size -1 ) {
     requests.push_back(2*(partition_spans[0].second - partition_spans[0].first));
   }
 
-  STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
+  ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
 
   for ( size_t i = 0 ; i < requests.size() ; ++i ) {
     requests[i] = partition_spans[i].second - partition_spans[i].first ;
   }
 
-  STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
+  ASSERT_THROW( di.generate_new_keys( requests , generated_keys ), std::runtime_error );
 
 }
 
@@ -583,10 +583,10 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
 
   di.generate_new_keys( requests , generated_keys );
 
-  STKUNIT_ASSERT_EQ( generated_keys.size() , partition_spans.size() );
+  ASSERT_EQ( generated_keys.size() , partition_spans.size() );
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( generated_keys[i].size() , requests[i] );
+    EXPECT_EQ( generated_keys[i].size() , requests[i] );
   }
 
   //----------------------------------------
@@ -600,10 +600,10 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
 
   di.generate_new_keys( requests , generated_keys );
 
-  STKUNIT_ASSERT_EQ( generated_keys.size() , partition_spans.size() );
+  ASSERT_EQ( generated_keys.size() , partition_spans.size() );
 
   for ( size_t i = 0 ; i < generated_keys.size() ; ++i ) {
-    STKUNIT_EXPECT_EQ( generated_keys[i].size() , requests[i] );
+    EXPECT_EQ( generated_keys[i].size() , requests[i] );
   }
 
   //----------------------------------------
@@ -616,7 +616,7 @@ void UnitTestSTKParallelDistributedIndex::test_generate_big()
     requests[5] = 0 ;
   }
 
-  STKUNIT_ASSERT_THROW( di.generate_new_keys( requests , generated_keys ) , std::runtime_error );
+  ASSERT_THROW( di.generate_new_keys( requests , generated_keys ) , std::runtime_error );
 
 }
 

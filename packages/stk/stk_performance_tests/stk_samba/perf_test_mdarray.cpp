@@ -2,7 +2,7 @@
 
 #if ENABLE_MDARRAY_PERF_TEST
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <samba/utility/mdarray.hpp>
 #include <stk_performance_test_includes/cpu_time.hpp>
@@ -109,7 +109,7 @@ result run_mdarray(int seed)
 
 } // namespace
 
-STKUNIT_UNIT_TEST(mdarray_perf, mdarray_perf)
+TEST(mdarray_perf, mdarray_perf)
 {
   std::cout << std::setprecision(3);
 
@@ -152,7 +152,7 @@ STKUNIT_UNIT_TEST(mdarray_perf, mdarray_perf)
     std::cout << "    total: " << m_result.fill_time + m_result.compute_time << " seconds" << std::endl << std::endl;
   }
 
-  STKUNIT_EXPECT_TRUE(c_result.det == m_result.det);
+  EXPECT_TRUE(c_result.det == m_result.det);
 }
 
 #endif

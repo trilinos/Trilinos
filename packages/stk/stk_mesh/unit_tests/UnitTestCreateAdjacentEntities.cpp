@@ -6,7 +6,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -22,7 +22,7 @@
 
 using stk::mesh::MetaData;
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
+TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
 {
   const size_t NX = 3;
   const size_t NY = 1;
@@ -37,10 +37,10 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( counts[0] , 16u ); // nodes
-    STKUNIT_EXPECT_EQ( counts[1] , 0u );  // edges
-    STKUNIT_EXPECT_EQ( counts[2] , 0u );  // faces
-    STKUNIT_EXPECT_EQ( counts[3] , 3u ); // elements
+    EXPECT_EQ( counts[0] , 16u ); // nodes
+    EXPECT_EQ( counts[1] , 0u );  // edges
+    EXPECT_EQ( counts[2] , 0u );  // faces
+    EXPECT_EQ( counts[3] , 3u ); // elements
   }
 
   stk::mesh::PartVector empty_add_parts;
@@ -51,14 +51,14 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( counts[0] , 16u );
-    STKUNIT_EXPECT_EQ( counts[1] , 28u );
-    STKUNIT_EXPECT_EQ( counts[2] , 16u );
-    STKUNIT_EXPECT_EQ( counts[3] , 3u );
+    EXPECT_EQ( counts[0] , 16u );
+    EXPECT_EQ( counts[1] , 28u );
+    EXPECT_EQ( counts[2] , 16u );
+    EXPECT_EQ( counts[3] , 3u );
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
+TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
 {
   const stk::topology::rank_t elem_rank = stk::topology::ELEMENT_RANK;
   const stk::topology::rank_t face_rank = stk::topology::FACE_RANK;
@@ -78,10 +78,10 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( counts[node_rank] , 64u ); // nodes
-    STKUNIT_EXPECT_EQ( counts[edge_rank] , 0u );  // edges
-    STKUNIT_EXPECT_EQ( counts[face_rank] , 0u );  // faces
-    STKUNIT_EXPECT_EQ( counts[elem_rank] , 27u ); // elements
+    EXPECT_EQ( counts[node_rank] , 64u ); // nodes
+    EXPECT_EQ( counts[edge_rank] , 0u );  // edges
+    EXPECT_EQ( counts[face_rank] , 0u );  // faces
+    EXPECT_EQ( counts[elem_rank] , 27u ); // elements
   }
 
   stk::mesh::PartVector empty_add_parts;
@@ -92,10 +92,10 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 64u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 144u, counts[edge_rank] );  // edges
-    STKUNIT_EXPECT_EQ( 108u, counts[face_rank] );  // faces
-    STKUNIT_EXPECT_EQ( 27u, counts[elem_rank]  ); // elements
+    EXPECT_EQ( 64u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 144u, counts[edge_rank] );  // edges
+    EXPECT_EQ( 108u, counts[face_rank] );  // faces
+    EXPECT_EQ( 27u, counts[elem_rank]  ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -106,9 +106,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 6u, b.num_faces(i) );
-      STKUNIT_EXPECT_EQ( 12u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( 8u,  b.num_nodes(i) );
+      EXPECT_EQ( 6u, b.num_faces(i) );
+      EXPECT_EQ( 12u, b.num_edges(i) );
+      EXPECT_EQ( 8u,  b.num_nodes(i) );
     }
   }
 
@@ -120,8 +120,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 4u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( 4u, b.num_nodes(i) );
+      EXPECT_EQ( 4u, b.num_edges(i) );
+      EXPECT_EQ( 4u, b.num_nodes(i) );
     }
   }
 
@@ -133,12 +133,12 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 2u, b.num_nodes(i) );
+      EXPECT_EQ( 2u, b.num_nodes(i) );
     }
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
+TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
 {
   const stk::topology::rank_t elem_rank = stk::topology::ELEMENT_RANK;
   const stk::topology::rank_t edge_rank = stk::topology::EDGE_RANK;
@@ -161,9 +161,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( counts[node_rank] , 16u ); // nodes
-    STKUNIT_EXPECT_EQ( counts[edge_rank] , 0u );  // edges
-    STKUNIT_EXPECT_EQ( counts[elem_rank] , 9u ); // elements
+    EXPECT_EQ( counts[node_rank] , 16u ); // nodes
+    EXPECT_EQ( counts[edge_rank] , 0u );  // edges
+    EXPECT_EQ( counts[elem_rank] , 9u ); // elements
   }
 
   stk::mesh::PartVector empty_add_parts;
@@ -174,9 +174,9 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 16u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 24u, counts[edge_rank] );  // edges
-    STKUNIT_EXPECT_EQ( 9u, counts[elem_rank]  ); // elements
+    EXPECT_EQ( 16u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 24u, counts[edge_rank] );  // edges
+    EXPECT_EQ( 9u, counts[elem_rank]  ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -187,8 +187,8 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 4u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( 4u, b.num_nodes(i) );
+      EXPECT_EQ( 4u, b.num_edges(i) );
+      EXPECT_EQ( 4u, b.num_nodes(i) );
     }
   }
 
@@ -200,7 +200,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , testCreateAdjacentEntities3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 2u, b.num_nodes(i) );
+      EXPECT_EQ( 2u, b.num_nodes(i) );
     }
   }
 }

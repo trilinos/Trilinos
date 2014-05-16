@@ -8,7 +8,7 @@
 
 #ifdef STK_MESH_TRACE_ENABLED
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <stk_mesh/base/EntityKey.hpp>
 #include <stk_mesh/base/Entity.hpp>
@@ -55,7 +55,7 @@ std::string create_string(bool should_see)
 }
 
 ///////////////////////////////////////////////////////////////////////////////
-STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
+TEST(UnitTestTrace, testTrace)
 ///////////////////////////////////////////////////////////////////////////////
 {
   // A simple unit-test for the stk_mesh's tracing infrastructure. Note that
@@ -142,11 +142,11 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
   const std::string trace_output_str = trace_output.str();
 
   // The not-trace tagged output should not be in the trace output
-  STKUNIT_ASSERT_EQUAL(trace_output_str.find(SHOULD_NOT_SEE_STR), std::string::npos);
+  ASSERT_EQ(trace_output_str.find(SHOULD_NOT_SEE_STR), std::string::npos);
 
   // Each occurance of should-see output should be in the trace output
   for (unsigned i = 0; i < SHOULD_SEE_COUNTER; ++i) {
-    STKUNIT_ASSERT_NE(trace_output_str.find(create_should_see_str(i)), std::string::npos);
+    ASSERT_NE(trace_output_str.find(create_should_see_str(i)), std::string::npos);
   }
 }
 

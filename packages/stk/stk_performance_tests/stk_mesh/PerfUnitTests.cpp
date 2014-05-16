@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/unit_test_support/perf_unit_util.hpp>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -28,7 +28,7 @@ namespace {
 using namespace stk::mesh;
 using stk::mesh::fixtures::HexFixture;
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, induced_part )
+TEST( stk_mesh_perf_unit_test, induced_part )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -153,7 +153,7 @@ void mesh_create_hex_with_edges_test(stk::ParallelMachine pm)
   CALLGRIND_STOP_INSTRUMENTATION;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_serial )
+TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_serial )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -162,7 +162,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_serial )
   PERFORMANCE_TEST_POSTAMBLE();
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel )
+TEST( stk_mesh_perf_unit_test, mesh_create_hex_with_edges_parallel )
 {
   PERFORMANCE_TEST_PREAMBLE(8 /*num procs*/);
 
@@ -281,7 +281,7 @@ HexFixture* create_hex_with_complex_parts(stk::ParallelMachine pm, int x_dim, in
   return mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
+TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -317,7 +317,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
             size_sum += output_buckets[j]->size();
           }
         }
-        STKUNIT_EXPECT_EQ(size_sum, z_dim);
+        EXPECT_EQ(size_sum, z_dim);
       }
     }
   }
@@ -332,7 +332,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector )
   delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
+TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -364,13 +364,13 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
             size_sum += output_buckets[j]->size();
           }
         }
-        STKUNIT_EXPECT_EQ(size_sum, z_dim);
+        EXPECT_EQ(size_sum, z_dim);
       }
     }
   }
 
-  STKUNIT_EXPECT_EQ(1000u, bulk.buckets(stk::topology::ELEMENT_RANK).size());
-  STKUNIT_EXPECT_EQ(3u,    bulk.buckets(stk::topology::NODE_RANK).size());
+  EXPECT_EQ(1000u, bulk.buckets(stk::topology::ELEMENT_RANK).size());
+  EXPECT_EQ(3u,    bulk.buckets(stk::topology::NODE_RANK).size());
 
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
@@ -380,7 +380,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_selector_fast )
   delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
+TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -412,7 +412,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
             size_sum += output_buckets[j]->size();
           }
         }
-        STKUNIT_EXPECT_EQ(size_sum, x_dim * y_dim * z_dim);
+        EXPECT_EQ(size_sum, x_dim * y_dim * z_dim);
       }
     }
   }
@@ -427,7 +427,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_single_part_selector )
   delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
+TEST( stk_mesh_perf_unit_test, frag_mesh_memory)
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -474,13 +474,13 @@ void fill_buckets_for_field_tests(BulkData const& bulk,
         for (int b = 0, be = chunk_buckets.size(); b < be; ++b) {
           chunk_size += chunk_buckets[b]->size();
         }
-        STKUNIT_EXPECT_EQ(nodes_per_chunk, chunk_size);
+        EXPECT_EQ(nodes_per_chunk, chunk_size);
       }
     }
   }
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
+TEST( stk_mesh_perf_unit_test, field_access)
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -547,14 +547,14 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access)
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
-  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
+  EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
   delete mesh;
 }
 
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
+TEST( stk_mesh_perf_unit_test, field_access_sm_style)
 {
   PERFORMANCE_TEST_PREAMBLE(1 /*num procs*/);
 
@@ -652,7 +652,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
   CALLGRIND_TOGGLE_COLLECT;
   CALLGRIND_STOP_INSTRUMENTATION;
 
-  STKUNIT_EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
+  EXPECT_EQ(dummy, nodes_per_chunk * x_chunks * y_chunks * z_chunks * num_iterations * num_fields_per_chunk);
 
   PERFORMANCE_TEST_POSTAMBLE();
 
@@ -660,7 +660,7 @@ STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, field_access_sm_style)
 }
 
 // Copied from Fperf_parallel_sum.C
-STKUNIT_UNIT_TEST( stk_mesh_perf_unit_test, parallel_sum )
+TEST( stk_mesh_perf_unit_test, parallel_sum )
 {
   PERFORMANCE_TEST_PREAMBLE(16 /*num procs*/);
 

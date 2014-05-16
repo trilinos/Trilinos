@@ -1,7 +1,7 @@
 #include <sierra/mesh/array_mesh/array_mesh.hpp>
 #include <sierra/io/array_mesh_reader.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/CPUTime.hpp>
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/util/human_bytes.hpp>
@@ -75,7 +75,7 @@ void array_mesh_gather( const array_mesh & mesh,
 
 }
 
-STKUNIT_UNIT_TEST(array_mesh, gather_centroid_hex_elem_genmesh)
+TEST(array_mesh, gather_centroid_hex_elem_genmesh)
 {
   double start_time = stk::cpu_time();
 #ifndef NDEBUG

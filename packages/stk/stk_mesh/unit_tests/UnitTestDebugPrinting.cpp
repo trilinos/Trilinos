@@ -9,7 +9,7 @@
 #include <sstream>                      // for ostringstream
 #include <stk_mesh/fixtures/GearsFixture.hpp>  // for GearsFixture, etc
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -20,7 +20,7 @@ namespace {
 
 // Test that our debug printing works
 
-STKUNIT_UNIT_TEST( UnitTestDebugDump, MetaData )
+TEST( UnitTestDebugDump, MetaData )
 {
   stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
                                             stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));
@@ -31,7 +31,7 @@ STKUNIT_UNIT_TEST( UnitTestDebugDump, MetaData )
   fixture.meta_data.dump_all_meta_info(out);
 }
 
-STKUNIT_UNIT_TEST( UnitTestDebugDump, BulkData )
+TEST( UnitTestDebugDump, BulkData )
 {
   const unsigned NX = 3;
   const unsigned NY = 1;

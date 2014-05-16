@@ -10,7 +10,7 @@
 #include <stk_mesh/base/EntityKey.hpp>  // for EntityKey
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "stk_topology/topology.hpp"    // for topology, etc
 #include <stdexcept>
 
@@ -41,7 +41,7 @@ namespace {
 
 //----------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
+TEST(UnitTestEntity,testEntityKey)
 {
   EntityKey key_bad_zero = EntityKey();
   EntityKey key_good_0_1 = EntityKey( stk::topology::NODE_RANK , 1 );
@@ -50,24 +50,24 @@ STKUNIT_UNIT_TEST(UnitTestEntity,testEntityKey)
   EntityKey key_order_1_12 = EntityKey( stk::topology::EDGE_RANK , 12 );
   EntityKey key_order_2_10 = EntityKey( stk::topology::FACE_RANK , 10 );
 
-  STKUNIT_ASSERT( ! key_bad_zero.is_valid() );
-  STKUNIT_ASSERT(   key_good_0_1.is_valid() );
-  STKUNIT_ASSERT(   key_good_1_1.is_valid() );
-  STKUNIT_ASSERT(   key_good_2_10.is_valid() );
+  ASSERT_TRUE( ! key_bad_zero.is_valid() );
+  ASSERT_TRUE(   key_good_0_1.is_valid() );
+  ASSERT_TRUE(   key_good_1_1.is_valid() );
+  ASSERT_TRUE(   key_good_2_10.is_valid() );
 
-  STKUNIT_ASSERT( stk::topology::NODE_RANK  == key_good_0_1.rank());
-  STKUNIT_ASSERT( stk::topology::EDGE_RANK  == key_good_1_1.rank() );
-  STKUNIT_ASSERT( stk::topology::FACE_RANK  == key_good_2_10.rank() );
-  STKUNIT_ASSERT( 1  == key_good_0_1.id() );
-  STKUNIT_ASSERT( 1  == key_good_1_1.id() );
-  STKUNIT_ASSERT( 10 == key_good_2_10.id() );
+  ASSERT_TRUE( stk::topology::NODE_RANK  == key_good_0_1.rank());
+  ASSERT_TRUE( stk::topology::EDGE_RANK  == key_good_1_1.rank() );
+  ASSERT_TRUE( stk::topology::FACE_RANK  == key_good_2_10.rank() );
+  ASSERT_TRUE( 1  == key_good_0_1.id() );
+  ASSERT_TRUE( 1  == key_good_1_1.id() );
+  ASSERT_TRUE( 10 == key_good_2_10.id() );
 
-  STKUNIT_ASSERT(  key_order_1_12 <  key_order_2_10);
-  STKUNIT_ASSERT( !( key_order_1_12 >  key_order_2_10));
+  ASSERT_TRUE(  key_order_1_12 <  key_order_2_10);
+  ASSERT_TRUE( !( key_order_1_12 >  key_order_2_10));
 
 #ifndef NDEBUG
-  STKUNIT_ASSERT_THROW( EntityKey( stk::topology::INVALID_RANK, 1 ) , std::logic_error );
-  STKUNIT_ASSERT_THROW( EntityKey( stk::topology::NODE_RANK , ~0ull ) , std::logic_error );
+  ASSERT_THROW( EntityKey( stk::topology::INVALID_RANK, 1 ) , std::logic_error );
+  ASSERT_THROW( EntityKey( stk::topology::NODE_RANK , ~0ull ) , std::logic_error );
 #endif // NDEBUG
 }
 

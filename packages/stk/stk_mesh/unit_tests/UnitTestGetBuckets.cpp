@@ -11,7 +11,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector
 namespace stk { namespace mesh { class Part; } }
 namespace stk { namespace mesh { class Selector; } }
@@ -37,13 +37,13 @@ void sort_and_compare_eq(std::vector<T*> results,
 {
   std::sort(expected_results.begin(), expected_results.end());
   std::sort(results.begin(), results.end());
-  STKUNIT_ASSERT_EQ(results.size(), expected_results.size());
+  ASSERT_EQ(results.size(), expected_results.size());
   for (unsigned i = 0; i < results.size(); ++i) {
-    STKUNIT_ASSERT(results[i] == expected_results[i]);
+    ASSERT_TRUE(results[i] == expected_results[i]);
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
+TEST( UnitTestGetBuckets, ExampleFixture )
 {
   // Using the SelectorFixture, test for correct bucket membership and
   // correct results from get_buckets.
@@ -55,49 +55,49 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 
   fix.m_bulk_data.modification_begin();
   fix.generate_mesh();
-  STKUNIT_ASSERT(fix.m_bulk_data.modification_end());
+  ASSERT_TRUE(fix.m_bulk_data.modification_end());
   const stk::mesh::BulkData& mesh = fix.m_bulk_data;
 
   // Check bucket membership correctness
 
   {
     const Bucket & bucket = mesh.bucket(fix.m_entity1);
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partA ) );
+    ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
     const Bucket & bucket = mesh.bucket(fix.m_entity2);
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partA ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partB ) );
+    ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
     const Bucket & bucket = mesh.bucket(fix.m_entity3);
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+    ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partB ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partC ) );
+    ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
     const Bucket & bucket = mesh.bucket(fix.m_entity4);
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_TRUE(  bucket.member( fix.m_partC ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+    ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    ASSERT_TRUE(  bucket.member( fix.m_partC ) );
+    ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
   {
     const Bucket & bucket = mesh.bucket(fix.m_entity5);
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partA ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partB ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partC ) );
-    STKUNIT_ASSERT_FALSE( bucket.member( fix.m_partD ) );
+    ASSERT_FALSE( bucket.member( fix.m_partA ) );
+    ASSERT_FALSE( bucket.member( fix.m_partB ) );
+    ASSERT_FALSE( bucket.member( fix.m_partC ) );
+    ASSERT_FALSE( bucket.member( fix.m_partD ) );
   }
 
 }

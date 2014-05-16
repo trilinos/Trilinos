@@ -1,6 +1,6 @@
 #if 0 // re-enable with 4.7.2
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <samba_fixtures/box_fixture.hpp>
 
@@ -94,7 +94,7 @@ void run_test(samba::mesh mesh, coordinate_field coordinates, int iterations, co
 
 } // namespace
 
-STKUNIT_UNIT_TEST(mesh_gather, mesh_gather)
+TEST(mesh_gather, mesh_gather)
 {
 // 01/30/12 tscoffe:  Note:  The Callgrind performance test gold standard is based on a 10x10x10 mesh with 100 iterations.
 #if defined(STK_SAMBA_CALLGRIND)

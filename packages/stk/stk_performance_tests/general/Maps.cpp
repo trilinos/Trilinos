@@ -13,7 +13,7 @@
 #include <string>
 #include <map>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/EntityKey.hpp>
@@ -170,7 +170,7 @@ struct google_stk_entity_rep_hash : public google::is_integral< EntityKey >
 
 //First map type: std
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_STD
-STKUNIT_UNIT_TEST( map_tests, stdmap)
+TEST( map_tests, stdmap)
 {
   typedef std::map<EntityKey, int> EntityMap;
   EntityMap testmap;
@@ -181,7 +181,7 @@ STKUNIT_UNIT_TEST( map_tests, stdmap)
 
 //Second map type: tr1
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TR1
-STKUNIT_UNIT_TEST( map_tests, tr1map)
+TEST( map_tests, tr1map)
 {
   typedef std::tr1::unordered_map<EntityKey, int, stk_entity_rep_hash,
                                   std::equal_to<EntityKey>, std::allocator<std::pair<EntityKey const, int> > > EntityMap;
@@ -194,7 +194,7 @@ STKUNIT_UNIT_TEST( map_tests, tr1map)
 
 //Third map type: boost
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_BOOST
-STKUNIT_UNIT_TEST( map_tests, boostmap)
+TEST( map_tests, boostmap)
 {
   typedef boost::unordered_map< EntityKey, int, stk_entity_rep_hash > EntityMap;
 
@@ -207,7 +207,7 @@ STKUNIT_UNIT_TEST( map_tests, boostmap)
 //Fourth map type: Teuchos
 //NB: include files taken from stk_percept and adapted
 #if FLAG_STK_MESH_ENTITYREPOSITORY_MAP_TYPE_TEUCHOS_HASHTABLE
-STKUNIT_UNIT_TEST( map_tests, teuchosmap)
+TEST( map_tests, teuchosmap)
 {
   typedef Teuchos::Hashtable<EntityKey, int > EntityMap;
   EntityMap testmap;
@@ -221,7 +221,7 @@ STKUNIT_UNIT_TEST( map_tests, teuchosmap)
 //Sixth map type: google sparse
 //From http://code.google.com/p/google-sparsehash
 #if FLAG_GOOGLE_SPARSE_HASH_MAP
-STKUNIT_UNIT_TEST( map_tests, googlesparsemap)
+TEST( map_tests, googlesparsemap)
 {
   typedef google::sparse_hash_map< EntityKey, int, stk_entity_rep_hash > EntityMap;
 
@@ -243,7 +243,7 @@ inline void SET_EMPTY_KEY(dense_hash_map<K,V,H,E,A>& m, EntityKey key)
   m.set_empty_key(key);
 }
 
-STKUNIT_UNIT_TEST( map_tests, googledensemap)
+TEST( map_tests, googledensemap)
 {
   typedef google::dense_hash_map< EntityKey, int, stk_entity_rep_hash > EntityMap;
 

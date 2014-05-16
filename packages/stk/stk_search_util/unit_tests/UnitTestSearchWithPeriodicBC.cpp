@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_mesh/fixtures/HexFixture.hpp>
 #include <stk_search_util/PeriodicBoundarySearch.hpp>
 #include <iostream>
@@ -330,7 +330,7 @@ private:
 
 }// namespace
 
-STKUNIT_UNIT_TEST(CoarseSearch, PeriodicBC)
+TEST(CoarseSearch, PeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
@@ -441,7 +441,7 @@ void assign_to_parts_for_two_way(const unsigned x, const unsigned y, const unsig
   bulk_data.modification_end();
 }
 
-STKUNIT_UNIT_TEST(CoarseSearch, TwoWayMultiPeriodicBC)
+TEST(CoarseSearch, TwoWayMultiPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
@@ -559,7 +559,7 @@ void assign_to_parts_for_three_way(const unsigned x, const unsigned y, const uns
   bulk_data.modification_end();
 }
 
-STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
+TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
@@ -644,7 +644,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, ThreeWayMultiPeriodicBC)
 
 
 
-STKUNIT_UNIT_TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
+TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
 {
   const unsigned x = 3, y = 3, z = 3;
 
@@ -701,7 +701,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, MultiPeriodicBCDisallowRotational)
 }
 
 
-STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
+TEST(CoarseSearch, RotationalPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 
@@ -783,7 +783,7 @@ STKUNIT_UNIT_TEST(CoarseSearch, RotationalPeriodicBC)
 }
 
 
-STKUNIT_UNIT_TEST(CoarseSearch, OffsetRotationalPeriodicBC)
+TEST(CoarseSearch, OffsetRotationalPeriodicBC)
 {
   const unsigned x = 3, y = 3, z = 3;
 

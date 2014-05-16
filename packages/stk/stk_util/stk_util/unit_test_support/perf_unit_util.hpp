@@ -3,7 +3,7 @@
 #include <stk_util/environment/memory_util.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <valgrind/callgrind.h>
 
@@ -22,7 +22,7 @@ namespace stk {
                                                         \
   const int p_size = stk::parallel_machine_size(pm);    \
                                                         \
-  STKUNIT_ASSERT_EQ(p_size, expected_np)
+  ASSERT_EQ(p_size, expected_np)
 
 
 #define PERFORMANCE_TEST_POSTAMBLE()              \
@@ -37,7 +37,7 @@ inline void print_memory_sum_all_procs(stk::ParallelMachine pm)
   size_t my_peak = stk::allocator_memory_usage<void>::peak_memory();
   size_t peak_sum = 0;
   int err = MPI_Reduce(&my_peak, &peak_sum, 1 /*size*/, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, pm);
-  STKUNIT_ASSERT_EQ(err, MPI_SUCCESS);
+  ASSERT_EQ(err, MPI_SUCCESS);
 
   if (p_rank == 0) {
     std::cout << "\nSTKPERF peak memory sum: " << peak_sum << std::endl;
@@ -46,8 +46,8 @@ inline void print_memory_sum_all_procs(stk::ParallelMachine pm)
 
 inline void check_valgrind_version()
 {
-  STKUNIT_ASSERT_EQ(__VALGRIND_MAJOR__, 3);
-  STKUNIT_ASSERT_EQ(__VALGRIND_MINOR__, 8);
+  ASSERT_EQ(__VALGRIND_MAJOR__, 3);
+  ASSERT_EQ(__VALGRIND_MINOR__, 8);
 }
 
 inline void print_debug_skip(stk::ParallelMachine pm)

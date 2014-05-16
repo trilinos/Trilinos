@@ -11,7 +11,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector, operator|, etc
 #include <stk_mesh/base/Types.hpp>      // for PartVector
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for basic_string, operator==, etc
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -35,7 +35,7 @@ void initialize(SelectorFixture& fixture)
   fixture.m_meta_data.commit();
   fixture.m_bulk_data.modification_begin();
   fixture.generate_mesh();
-  STKUNIT_ASSERT(fixture.m_bulk_data.modification_end());
+  ASSERT_TRUE(fixture.m_bulk_data.modification_end());
 }
 
 /** \defgroup stk_mesh_selector_unit "stk::mesh::Selector Unit Testing"
@@ -70,16 +70,16 @@ void initialize(SelectorFixture& fixture)
   *
   * */
 
-STKUNIT_UNIT_TEST(Verify, selectorFixtureDoesNotSegFault)
+TEST(Verify, selectorFixtureDoesNotSegFault)
 {
   {
     SelectorFixture fix;
     initialize(fix);
   }
-  STKUNIT_EXPECT_TRUE(true);
+  EXPECT_TRUE(true);
 }
 
-STKUNIT_UNIT_TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
+TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
 {
   {
     SelectorFixture fix;
@@ -89,10 +89,10 @@ STKUNIT_UNIT_TEST(Verify, twoSelectorFixturesCreatedSequetiallyDoNotSegFault)
     SelectorFixture fix;
     initialize(fix);
   }
-  STKUNIT_EXPECT_TRUE(true);
+  EXPECT_TRUE(true);
 }
 
-STKUNIT_UNIT_TEST(DISABLE_Verify, selectorCapabilitiesNotVerified)
+TEST(DISABLE_Verify, selectorCapabilitiesNotVerified)
 {
     /*
      *   bool operator<=(const Selector& rhs) const {
@@ -108,7 +108,7 @@ STKUNIT_UNIT_TEST(DISABLE_Verify, selectorCapabilitiesNotVerified)
      */
 }
 
-STKUNIT_UNIT_TEST(Verify, partASelector)
+TEST(Verify, partASelector)
 {
   SelectorFixture fix;
   initialize(fix);
@@ -121,7 +121,7 @@ STKUNIT_UNIT_TEST(Verify, partASelector)
   testSelectorWithBuckets(fix, partASelector, gold_shouldEntityBeInSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, notPartASelector)
+TEST(Verify, notPartASelector)
 {
   SelectorFixture fix;
   initialize(fix);
@@ -134,7 +134,7 @@ STKUNIT_UNIT_TEST(Verify, notPartASelector)
   testSelectorWithBuckets(fix, notPartASelector, gold_shouldEntityBeInSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, emptyPartSelector)
+TEST(Verify, emptyPartSelector)
 {
   SelectorFixture fix;
   initialize(fix);
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST(Verify, emptyPartSelector)
   testSelectorWithBuckets(fix, selector, gold_shouldEntityBeInSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, complementOfPartASelector)
+TEST(Verify, complementOfPartASelector)
 {
   SelectorFixture fix;
   initialize(fix);
@@ -163,7 +163,7 @@ STKUNIT_UNIT_TEST(Verify, complementOfPartASelector)
   testSelectorWithBuckets(fix, partAComplementSelector, gold_shouldEntityBeInSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, andedSelector)
+TEST(Verify, andedSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -181,7 +181,7 @@ STKUNIT_UNIT_TEST(Verify, andedSelector)
   testSelectorWithBuckets(fix, andedSelector, gold_shouldEntityBeInAndedSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, oredSelector)
+TEST(Verify, oredSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -199,7 +199,7 @@ STKUNIT_UNIT_TEST(Verify, oredSelector)
   testSelectorWithBuckets(fix, oredSelector, gold_shouldEntityBeInOredSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, notAndedSelector)
+TEST(Verify, notAndedSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -218,7 +218,7 @@ STKUNIT_UNIT_TEST(Verify, notAndedSelector)
   testSelectorWithBuckets(fix, notAndedSelector, gold_shouldEntityBeInAndedSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, noredSelector)
+TEST(Verify, noredSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -236,7 +236,7 @@ STKUNIT_UNIT_TEST(Verify, noredSelector)
   testSelectorWithBuckets(fix, norSelector, gold_shouldEntityBeInOredSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, differenceSelector)
+TEST(Verify, differenceSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -256,7 +256,7 @@ STKUNIT_UNIT_TEST(Verify, differenceSelector)
   testSelectorWithBuckets(fix, equivSelector, gold_shouldEntityBeInDifferenceSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, variousSelectorCombinations)
+TEST(Verify, variousSelectorCombinations)
 {
     SelectorFixture fix ;
     initialize(fix);
@@ -282,7 +282,7 @@ STKUNIT_UNIT_TEST(Verify, variousSelectorCombinations)
     testSelectorWithBuckets(fix, complexSelector, gold_shouldEntityBeInComplexSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, complementOfSelectorComplement)
+TEST(Verify, complementOfSelectorComplement)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -306,7 +306,7 @@ STKUNIT_UNIT_TEST(Verify, complementOfSelectorComplement)
   testSelectorWithBuckets(fix, (partA | partB), gold_shouldEntityBeInNotNoredSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, complementOfDefaultConstructedSelector)
+TEST(Verify, complementOfDefaultConstructedSelector)
 {
     SelectorFixture fix ;
     initialize(fix);
@@ -322,7 +322,7 @@ STKUNIT_UNIT_TEST(Verify, complementOfDefaultConstructedSelector)
     testSelectorWithBuckets(fix, complementOfDefault, goldEntityInDefaultCtorComplement);
 }
 
-STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectIntersection)
+TEST(Verify, usingPartVectorToSelectIntersection)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -342,10 +342,10 @@ STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectIntersection)
 
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_EQ("(PartA & PartB)", msg.str());
+  EXPECT_EQ("(PartA & PartB)", msg.str());
 }
 
-STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectUnion)
+TEST(Verify, usingPartVectorToSelectUnion)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -371,10 +371,10 @@ STKUNIT_UNIT_TEST(Verify, usingPartVectorToSelectUnion)
   std::ostringstream msg;
   msg << selector;
   std::cout << "msg.str() = " << msg.str() << std::endl;
-  STKUNIT_EXPECT_EQUAL( "((PartA | PartB) | PartC)", msg.str() );
+  EXPECT_EQ( "((PartA | PartB) | PartC)", msg.str() );
 }
 
-STKUNIT_UNIT_TEST(Verify, defaultConstructorForSelector)
+TEST(Verify, defaultConstructorForSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -387,7 +387,7 @@ STKUNIT_UNIT_TEST(Verify, defaultConstructorForSelector)
   testSelectorWithBuckets(fix, defaultConstructedSelector, goldEntityInDefaultCtor);
 }
 
-STKUNIT_UNIT_TEST(Verify, usingEqualityOperator)
+TEST(Verify, usingEqualityOperator)
 {
     SelectorFixture fix;
     initialize(fix);
@@ -422,7 +422,7 @@ STKUNIT_UNIT_TEST(Verify, usingEqualityOperator)
     EXPECT_FALSE(partASelector == notNotPartA);
 }
 
-STKUNIT_UNIT_TEST(Verify, usingCopyConstructor)
+TEST(Verify, usingCopyConstructor)
 {
     SelectorFixture fix;
     initialize(fix);
@@ -435,7 +435,7 @@ STKUNIT_UNIT_TEST(Verify, usingCopyConstructor)
     EXPECT_TRUE(selector == anotherSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, usingSelectField)
+TEST(Verify, usingSelectField)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -455,7 +455,7 @@ STKUNIT_UNIT_TEST(Verify, usingSelectField)
   testSelectorWithBuckets(fix, selectFieldABC, gold_shouldEntityBeInPartsABCUnionSelector);
 }
 
-STKUNIT_UNIT_TEST(Verify, selectorContainsPart)
+TEST(Verify, selectorContainsPart)
 {
     SelectorFixture fix;
     initialize(fix);
@@ -466,25 +466,25 @@ STKUNIT_UNIT_TEST(Verify, selectorContainsPart)
     stk::mesh::Part & partD = fix.m_partD;
     stk::mesh::Selector selector = partA | partB | (!partC) | partD;
     std::cout << "select_part selector = " << selector << std::endl;
-    STKUNIT_EXPECT_TRUE(selector(partA));
-    STKUNIT_EXPECT_TRUE(selector(partB));
-    STKUNIT_EXPECT_FALSE(selector(partC));
-    STKUNIT_EXPECT_TRUE(selector(partD));
+    EXPECT_TRUE(selector(partA));
+    EXPECT_TRUE(selector(partB));
+    EXPECT_FALSE(selector(partC));
+    EXPECT_TRUE(selector(partD));
 
     selector = partA | (!((partA & partB) | partC) & (!partD | partB));
-    STKUNIT_EXPECT_TRUE(selector(partA));
-    STKUNIT_EXPECT_TRUE(selector(partB));
-    STKUNIT_EXPECT_FALSE(selector(partC));
-    STKUNIT_EXPECT_FALSE(selector(partD));
+    EXPECT_TRUE(selector(partA));
+    EXPECT_TRUE(selector(partB));
+    EXPECT_FALSE(selector(partC));
+    EXPECT_FALSE(selector(partD));
 
     selector = partC & (!partD);
-    STKUNIT_EXPECT_FALSE(selector(partA));
-    STKUNIT_EXPECT_FALSE(selector(partB));
-    STKUNIT_EXPECT_TRUE(selector(partC));
-    STKUNIT_EXPECT_FALSE(selector(partD));
+    EXPECT_FALSE(selector(partA));
+    EXPECT_FALSE(selector(partB));
+    EXPECT_TRUE(selector(partC));
+    EXPECT_FALSE(selector(partD));
 }
 
-STKUNIT_UNIT_TEST(Verify, printingOfSelectorUnion)
+TEST(Verify, printingOfSelectorUnion)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -497,10 +497,10 @@ STKUNIT_UNIT_TEST(Verify, printingOfSelectorUnion)
   std::cout << "A|B|C|D = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_EQUAL( "(((PartA | PartB) | PartC) | PartD)" , msg.str() );
+  EXPECT_EQ( "(((PartA | PartB) | PartC) | PartD)" , msg.str() );
 }
 
-STKUNIT_UNIT_TEST(Verify, printingOfSelectorIntersection)
+TEST(Verify, printingOfSelectorIntersection)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -512,10 +512,10 @@ STKUNIT_UNIT_TEST(Verify, printingOfSelectorIntersection)
   std::cout << "A&B&C = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_TRUE( msg.str() == "((PartA & PartB) & PartC)" );
+  EXPECT_TRUE( msg.str() == "((PartA & PartB) & PartC)" );
 }
 
-STKUNIT_UNIT_TEST(Verify, printingOfGeneralSelector)
+TEST(Verify, printingOfGeneralSelector)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -528,10 +528,10 @@ STKUNIT_UNIT_TEST(Verify, printingOfGeneralSelector)
   std::cout << "complicated selector = " << selector << std::endl;
   std::ostringstream msg;
   msg << selector;
-  STKUNIT_EXPECT_EQUAL( "(PartA | (!(((PartA & PartB) | PartC)) & (!(PartD) | PartB)))" , msg.str() );
+  EXPECT_EQ( "(PartA | (!(((PartA & PartB) | PartC)) & (!(PartD) | PartB)))" , msg.str() );
 }
 
-STKUNIT_UNIT_TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
+TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
 {
     stk::mesh::Selector selectAll;
     selectAll.complement();
@@ -543,17 +543,17 @@ STKUNIT_UNIT_TEST(Verify, printingOfNothingForComplementOfDefaultSelector)
         stk::mesh::Selector selectAllANDAll = selectAll & anotherSelectAll;
         std::ostringstream description;
         description << selectAllANDAll;
-        STKUNIT_EXPECT_EQUAL( "(!(NOTHING) & !(NOTHING))", description.str());
+        EXPECT_EQ( "(!(NOTHING) & !(NOTHING))", description.str());
     }
     {
         stk::mesh::Selector selectAllORAll = selectAll | anotherSelectAll;
         std::ostringstream description;
         description << selectAllORAll;
-        STKUNIT_EXPECT_EQUAL( "(!(NOTHING) | !(NOTHING))", description.str());
+        EXPECT_EQ( "(!(NOTHING) | !(NOTHING))", description.str());
     }
 }
 
-STKUNIT_UNIT_TEST(Verify, usingLessThanOperator)
+TEST(Verify, usingLessThanOperator)
 {
   SelectorFixture fix ;
   initialize(fix);
@@ -568,29 +568,29 @@ STKUNIT_UNIT_TEST(Verify, usingLessThanOperator)
   const unsigned ordC = partC.mesh_meta_data_ordinal();
   const unsigned ordD = partD.mesh_meta_data_ordinal();
 
-  STKUNIT_ASSERT_TRUE(ordA < ordB && ordB < ordC && ordC < ordD);
+  ASSERT_TRUE(ordA < ordB && ordB < ordC && ordC < ordD);
 
   stk::mesh::Selector partASelector = partA;
-  STKUNIT_EXPECT_FALSE(partASelector < partASelector);
+  EXPECT_FALSE(partASelector < partASelector);
 
   stk::mesh::Selector partBSelector = partB;
-  STKUNIT_EXPECT_TRUE(partASelector < partBSelector);
+  EXPECT_TRUE(partASelector < partBSelector);
 
   stk::mesh::Selector partAIntersectPartDSelector = partA & partD;
   stk::mesh::Selector partBIntersectPartCSelector = partB & partC;
-  STKUNIT_EXPECT_TRUE(partAIntersectPartDSelector < partBIntersectPartCSelector);
+  EXPECT_TRUE(partAIntersectPartDSelector < partBIntersectPartCSelector);
 
   stk::mesh::Selector partCIntersectPartBSelectorOrderMatters = partC & partB;
   stk::mesh::Selector partDIntersectPartASelectorOrderMatters = partD & partA;
-  STKUNIT_EXPECT_TRUE(partCIntersectPartBSelectorOrderMatters < partDIntersectPartASelectorOrderMatters);
+  EXPECT_TRUE(partCIntersectPartBSelectorOrderMatters < partDIntersectPartASelectorOrderMatters);
 
   stk::mesh::Selector partAUnionPartBSelector     = partA | partB;
   stk::mesh::Selector partAIntersectPartBSelector = partA & partB;
-  STKUNIT_EXPECT_TRUE(partASelector < partAUnionPartBSelector);
-  STKUNIT_EXPECT_TRUE(partAUnionPartBSelector < partAIntersectPartBSelector);
+  EXPECT_TRUE(partASelector < partAUnionPartBSelector);
+  EXPECT_TRUE(partAUnionPartBSelector < partAIntersectPartBSelector);
 
   stk::mesh::Selector partAUnionPartBIntersectPartCSelector = partAUnionPartBSelector & partC;
-  STKUNIT_EXPECT_TRUE(partAUnionPartBSelector < partAUnionPartBIntersectPartCSelector);
+  EXPECT_TRUE(partAUnionPartBSelector < partAUnionPartBIntersectPartCSelector);
 }
 
 void testSelectorWithBuckets(const SelectorFixture &selectorFixture, const stk::mesh::Selector &selector, bool gold_shouldEntityBeInSelector[])

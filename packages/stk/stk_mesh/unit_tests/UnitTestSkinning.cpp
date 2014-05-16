@@ -18,7 +18,7 @@
 #include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -54,13 +54,13 @@ public:
 
 namespace {
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testUnit )
+TEST( UnitTestStkMeshSkinning , DISABLED_testUnit )
 {
   UnitTestStkMeshSkinning unit(MPI_COMM_WORLD);
   unit.test_skinning();
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
+TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
 {
   const int spatial_dimension = 3;
   stk::mesh::MetaData fem_meta;
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshSkinning , DISABLED_testSingleShell )
 
     // Verify that the correct 6 sides are present.
 
-    STKUNIT_ASSERT_EQUAL( num_skin_entities, 2 );
+    ASSERT_EQ( num_skin_entities, 2 );
   }
 }
 
@@ -200,7 +200,7 @@ void UnitTestStkMeshSkinning::test_skinning()
   stk::mesh::get_selected_entities(skin_selector, edge_buckets, skin_entities);
 
   unsigned num_expected_skin_entites = 16;
-  STKUNIT_EXPECT_EQUAL(num_expected_skin_entites, skin_entities.size());
+  EXPECT_EQ(num_expected_skin_entites, skin_entities.size());
 
   // Map the element id to the number of skins associated with that element
 
@@ -268,7 +268,7 @@ void UnitTestStkMeshSkinning::test_skinning()
     }
   }
 
-  STKUNIT_EXPECT_TRUE(results == expected_results);
-  STKUNIT_EXPECT_TRUE(sharing == expected_sharing);
+  EXPECT_TRUE(results == expected_results);
+  EXPECT_TRUE(sharing == expected_sharing);
 }
 

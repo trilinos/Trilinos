@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/WallTime.hpp>
@@ -253,7 +253,7 @@ void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixtu
 
 } // namespace
 
-STKUNIT_UNIT_TEST( gears_skinning, gears_skinning )
+TEST( gears_skinning, gears_skinning )
 {
   // Initialize IO system.  Registers all element types and storage
   // types and the exodusII default database type.

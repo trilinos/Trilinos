@@ -8,7 +8,7 @@
 #include <stddef.h>                     // for size_t
 #include <boost/foreach.hpp>            // for auto_any_base, etc
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, operator==
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -22,7 +22,7 @@
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine
 
 
-STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
+TEST( UnitTestChangeEntityId, change_id_small )
 {
   // change_entity_id is a broken concept in parallel:
   //   Only entity owners should have to call change-id. As it stands now,
@@ -76,15 +76,15 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_small )
     mesh.change_entity_id(new_id_for_shared_node, node2_shared_chg_id);
   }
 
-  STKUNIT_EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
+  EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
 
   mesh.modification_end();
 
-  STKUNIT_EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
-  STKUNIT_EXPECT_EQ(new_id_for_shared_node, mesh.identifier(node2_shared_chg_id));
+  EXPECT_EQ(new_id_for_local_node, mesh.identifier(node1_local_chg_id));
+  EXPECT_EQ(new_id_for_shared_node, mesh.identifier(node2_shared_chg_id));
 }
 
-STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
+TEST( UnitTestChangeEntityId, change_id_large )
 {
   using namespace stk::mesh;
 
@@ -147,12 +147,12 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id_large )
     }
   }
 
-  STKUNIT_EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
+  EXPECT_TRUE(old_ids == new_ids_minus_num_elems);
 
   BOOST_FOREACH(Bucket * b, node_buckets) {
     int* nodal_field = stk::mesh::field_data( simple_nodal_field, *b );
     for (size_t i =0; i<b->size(); ++i) {
-      STKUNIT_EXPECT_TRUE( nodal_field[i] == 1);
+      EXPECT_TRUE( nodal_field[i] == 1);
     }
   }
 }

@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/environment/Demangle.hpp>  // for demangle
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for operator==, string, etc
 #include <typeinfo>                     // for type_info
 #include <vector>                       // for vector
@@ -20,19 +20,19 @@ utest_demangle()
   return true;
 }
 
-STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
+TEST(UnitTestDemangle, UnitTest)
 {
 #if defined(__PGI)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
     std::string linux_name("bool ()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
@@ -42,20 +42,20 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
 
     std::string linux_name("std::vector<double, std::allocator<double>>");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
 #elif defined(__sun)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
     std::string linux_name("bool()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
@@ -65,20 +65,20 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
 
     std::string linux_name("std::vector<double, std::allocator<double>>");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
 #elif defined(__xlC__)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
-//    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
+//    ASSERT_EQ((linux_name == demangled_name), true);
   }
 
   {
     std::string linux_name("bool ()()");
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-//    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+//    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
@@ -88,13 +88,13 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
 
     std::string linux_name("std::vector<double, std::allocator<double> >");
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
-//    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
+//    ASSERT_EQ((linux_name == demangled_name), true);
   }
 #elif defined(__linux__)
   {
     std::string linux_name("ThisIsJunk");
     std::string demangled_name = stk::demangle(linux_name.c_str());
-    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
+    ASSERT_EQ((linux_name == demangled_name), true);
   }
 
   {
@@ -104,7 +104,7 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
     std::string linux_name("bool ()()");
 #endif
     std::string demangled_name = stk::demangle(typeid(utest_demangle).name());
-    STKUNIT_ASSERT_EQUAL(linux_name, demangled_name);
+    ASSERT_EQ(linux_name, demangled_name);
   }
 
   {
@@ -118,7 +118,7 @@ STKUNIT_UNIT_TEST(UnitTestDemangle, UnitTest)
     std::string linux_name("std::vector<double, std::allocator<double> >");
 #endif
     std::string demangled_name = stk::demangle(typeid(double_vector).name());
-    STKUNIT_ASSERT_EQUAL((linux_name == demangled_name), true);
+    ASSERT_EQ((linux_name == demangled_name), true);
   }
 #endif
 }

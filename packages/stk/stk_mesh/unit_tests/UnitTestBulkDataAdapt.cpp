@@ -10,7 +10,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
@@ -70,11 +70,11 @@ static void checkBuckets( BulkData& mesh)
   for (unsigned i=0; i < buckets.size(); i++)
     {
       Bucket* bucket = buckets[i];
-      STKUNIT_ASSERT(bucket->assert_correct());
+      ASSERT_TRUE(bucket->assert_correct());
     }
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
+TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 {
   //
   // testing if modification flags propagate properly for ghosted entities
@@ -191,9 +191,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
 
       bool did_it_elem = mesh.destroy_entity(elem1);
       did_it_elem = did_it_elem & mesh.destroy_entity(elem2);
-      STKUNIT_ASSERT(did_it_elem);
+      ASSERT_TRUE(did_it_elem);
       bool did_it = mesh.destroy_entity(node1);
-      STKUNIT_ASSERT(did_it);
+      ASSERT_TRUE(did_it);
     }
 
   mesh.modification_end();
@@ -204,7 +204,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   node1 = mesh.get_entity(stk::topology::NODE_RANK, 21);
 
   // uncomment to force failure of test
-  // STKUNIT_ASSERT(node1 == 0);
+  // ASSERT_TRUE(node1 == 0);
 
 }
 

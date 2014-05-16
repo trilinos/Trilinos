@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 #include <stk_util/environment/perf_util.hpp>
@@ -18,7 +18,7 @@ using stk::mesh::fixtures::VariableSelectorFixture;
 
 }
 
-STKUNIT_UNIT_TEST(selector_timings, selector_timings)
+TEST(selector_timings, selector_timings)
 {
   // A scaling test for selector and bucket operations
 

@@ -14,7 +14,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element, etc
 #include <stk_mesh/base/MetaData.hpp>   // for get_cell_topology, MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
@@ -92,7 +92,7 @@ TopologyHelpersTestingFixture::TopologyHelpersTestingFixture(ParallelMachine pm)
 
 namespace {
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
+TEST( testTopologyHelpers, get_cell_topology_based_on_part)
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   fix.bulk.modification_begin();
@@ -101,18 +101,18 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_based_on_part)
   PartVector tmp(1);
   tmp[0] = & fix.face_quad_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
   tmp[0] = & fix.another_generic_face_part;
   fix.bulk.change_entity_parts ( elem1 , tmp );
-  STKUNIT_ASSERT_EQUAL( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
-  STKUNIT_ASSERT_NE( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData() , shards::getCellTopologyData< shards::Wedge<15> >() );
+  ASSERT_EQ( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData(), shards::getCellTopologyData< shards::Quadrilateral<4> >() );
+  ASSERT_NE( stk::mesh::get_cell_topology(fix.bulk.bucket(elem1)).getCellTopologyData() , shards::getCellTopologyData< shards::Wedge<15> >() );
 
   fix.bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
+TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 {
   // Coverage for get_cell_topology in TopologyHelpers.cpp; (FAILED WITH MULTIPLE LOCAL TOPOLOGIES)
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
@@ -123,12 +123,12 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
   add_parts.push_back( &fix.element_tet_part );
   add_parts.push_back( &fix.element_wedge_part );
 //this test is commented out temporarily until the problems with topology checking are figured out.
-//  STKUNIT_ASSERT_THROW(fix.bulk.change_entity_parts( elem, add_parts ), std::runtime_error);
+//  ASSERT_THROW(fix.bulk.change_entity_parts( elem, add_parts ), std::runtime_error);
   fix.bulk.modification_end();
 }
 
 // No longer in the public API
-// STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_trivial )
+// TEST( testTopologyHelpers, get_adjacent_entities_trivial )
 // {
 //   // Element, elem2, has NULL topology
 //   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
@@ -143,11 +143,11 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 //     const EntityRank subcell_rank = fix.element_rank;
 //     const EntityId subcell_identifier = 1;
 //     get_adjacent_entities( elem2 , subcell_rank, subcell_identifier, adjacent_entities);
-//     STKUNIT_ASSERT_TRUE( true );
+//     ASSERT_TRUE( true );
 //   }
 // }
 //
-// STKUNIT_UNIT_TEST( testTopologyHelpers, get_adjacent_entities_invalid )
+// TEST( testTopologyHelpers, get_adjacent_entities_invalid )
 // {
 //   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 //   fix.bulk.modification_begin();
@@ -161,7 +161,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 //   {
 //     const EntityRank invalid_subcell_rank = 4;
 //     const EntityId valid_subcell_identifier = 0;
-//     STKUNIT_ASSERT_THROW(
+//     ASSERT_THROW(
 //         get_adjacent_entities( elem3 , invalid_subcell_rank, valid_subcell_identifier, adjacent_entities2),
 //         std::invalid_argument
 //         );
@@ -169,21 +169,21 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, get_cell_topology_multiple_topologies )
 //   {
 //     const EntityRank valid_subcell_rank = 1;
 //     const EntityId invalid_subcell_identifier = 8;
-//     STKUNIT_ASSERT_THROW(
+//     ASSERT_THROW(
 //       get_adjacent_entities( elem3 , valid_subcell_rank, invalid_subcell_identifier, adjacent_entities2),
 //       std::invalid_argument
 //       );
 //   }
 // }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
+TEST( testTopologyHelpers, declare_element_side_no_topology )
 {
   // Coverage for declare_element_side - TopologyHelpers.cpp - "Cannot discern element topology"
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
 
   fix.bulk.modification_begin();
   Entity elem4  = fix.create_entity( fix.element_rank , fix.generic_element_part );
-  STKUNIT_ASSERT_THROW(
+  ASSERT_THROW(
     stk::mesh::declare_element_side( fix.bulk, fix.element_rank, elem4, fix.nextEntityId(), &fix.element_wedge_part ),
     std::runtime_error
       );
@@ -198,7 +198,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
     elem_node[3] = 4;
     fix.bulk.modification_begin();
     // Cannot declare an element without a topology defined
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
       stk::mesh::declare_element(fix.bulk, fix.generic_element_part, fix.nextEntityId(), elem_node),
         std::runtime_error
         );
@@ -206,7 +206,7 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology )
   }
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
+TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
 {
   // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "BulkData for 'elem' and 'side' are different"
   TopologyHelpersTestingFixture fix1(MPI_COMM_WORLD);
@@ -218,14 +218,14 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_wrong_bulk_data)
 //  Entity elem4_2  = fix2.create_entity( fix2.element_rank , fix2.generic_element_part );
   fix2.bulk.modification_end();
 
-//  STKUNIT_ASSERT_THROW(
+//  ASSERT_THROW(
 //    stk::mesh::declare_element_side( fix1.bulk, fix1.element_rank, elem4_2, fix1.nextEntityId(), &fix1.element_wedge_part),
 //    std::logic_error
 //      );
     fix1.bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
+TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
 {
   // Coverage for verify_declare_element_side - in TopologyHelpers.cpp - "No element topology found and cell side id exceeds..."
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
@@ -239,14 +239,14 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_no_topology_2 )
   Entity element  = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node);
   const CellTopologyData * const elem_top = stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData();
   const EntityId nSideCount = elem_top->side_count + 10 ;
-  STKUNIT_ASSERT_THROW(
+  ASSERT_THROW(
     stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element, nSideCount, &fix.element_tet_part ),
     std::runtime_error
       );
   fix.bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
+TEST( testTopologyHelpers, declare_element_side_full )
 {
   // Go all way the through declare_element_side - use new element
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
@@ -266,12 +266,12 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, declare_element_side_full )
   fix.bulk.modification_end();
 
   stk::mesh::Entity const *rel2_nodes = fix.bulk.begin_nodes(face2);
-  STKUNIT_ASSERT_TRUE(rel2_nodes != 0);
+  ASSERT_TRUE(rel2_nodes != 0);
 
-  STKUNIT_ASSERT_TRUE( true );  // This test is to check compilation.
+  ASSERT_TRUE( true );  // This test is to check compilation.
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_valid )
+TEST( testTopologyHelpers, element_side_polarity_valid )
 {
   // Coverage of element_side_polarity in TopologyHelpers.cpp 168-181 and 200-215
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
@@ -288,11 +288,11 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_valid )
   fix.bulk.modification_end();
 
   const int local_side_id = 0;
-  STKUNIT_ASSERT_TRUE( fix.bulk.element_side_polarity( element, face2, local_side_id) );
+  ASSERT_TRUE( fix.bulk.element_side_polarity( element, face2, local_side_id) );
 
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
+TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   EntityId elem_node[4];
@@ -311,14 +311,14 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_1 )
 
     const unsigned invalid_local_side_id = static_cast<unsigned>(-1);
     // Hits "Unsuported local_side_id" error condition:
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
         fix.bulk.element_side_polarity( element, face, invalid_local_side_id),
         std::runtime_error
         );
   }
 }
 
-STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
+TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 {
   TopologyHelpersTestingFixture fix(MPI_COMM_WORLD);
   EntityId elem_node[4];
@@ -333,10 +333,10 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
   PartVector part_intersection;
   part_intersection.push_back ( &fix.generic_element_part);
   Entity element = fix.bulk.declare_entity(fix.element_rank, fix.nextEntityId(), part_intersection);
-  STKUNIT_ASSERT_TRUE( stk::mesh::get_cell_topology(fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
+  ASSERT_TRUE( stk::mesh::get_cell_topology(fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
 
   Entity element_with_top = stk::mesh::declare_element(fix.bulk, fix.element_tet_part, fix.nextEntityId(), elem_node );
-  STKUNIT_ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element_with_top) ).getCellTopologyData() != NULL );
+  ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element_with_top) ).getCellTopologyData() != NULL );
 
   const EntityId zero_side_count = 0;
   Entity face_with_top = stk::mesh::declare_element_side( fix.bulk, fix.nextEntityId(), element_with_top, zero_side_count);
@@ -345,8 +345,8 @@ STKUNIT_UNIT_TEST( testTopologyHelpers, element_side_polarity_invalid_2 )
 
   const int valid_local_side_id = 0;
   // Hits "Element has no defined topology" error condition:
-  STKUNIT_ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
-  STKUNIT_ASSERT_THROW(
+  ASSERT_TRUE( stk::mesh::get_cell_topology( fix.bulk.bucket(element) ).getCellTopologyData() == NULL );
+  ASSERT_THROW(
       fix.bulk.element_side_polarity( element, face_with_top, valid_local_side_id),
       std::runtime_error
       );

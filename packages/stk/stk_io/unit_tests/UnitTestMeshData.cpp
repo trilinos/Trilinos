@@ -6,7 +6,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/GetEntities.hpp>  // for get_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string
 #include <vector>                       // for vector, etc
 #include "gtest/gtest.h"                // for AssertHelper, ASSERT_TRUE
@@ -57,7 +57,7 @@ void activate_entities(stk::io::StkMeshIoBroker &fixture,
 
 }
 
-STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
+TEST( StkMeshIoBroker, iofixture )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker
 
@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, iofixture )
   // checking is left to the test XML.
 }
 
-STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
+TEST( StkMeshIoBroker, active_only )
 {
   // A simple test for reading and writing an exodus file using the StkMeshIoBroker.
 
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_only )
   // checking is left to the test XML.
 }
 
-STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
+TEST( StkMeshIoBroker, active_and_all )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -207,7 +207,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, active_and_all )
   // checking is left to the test XML.
 }
 
-STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
+TEST( StkMeshIoBroker, large_mesh_test )
 {
   // A simple test for reading and writing two exodus files using the StkMeshIoBroker.
   stk::ParallelMachine pm = MPI_COMM_WORLD;
@@ -243,7 +243,7 @@ STKUNIT_UNIT_TEST( StkMeshIoBroker, large_mesh_test )
 	// get element
 	stk::mesh::Entity elem = b[k];
 	size_t num_elem_node_rels = bulk_data.count_valid_connectivity(elem, stk::topology::NODE_RANK);
-	STKUNIT_EXPECT_EQ( 8u, num_elem_node_rels);
+	EXPECT_EQ( 8u, num_elem_node_rels);
       }
     }
   }

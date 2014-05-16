@@ -263,8 +263,8 @@ TEST_F( KokkosThreads, ParallelInitialize)
 #include <omp.h>
 #endif
 
-extern int* STKUNIT_ARGC;
-extern char** STKUNIT_ARGV;
+extern int gl_argc;
+extern char** gl_argv;
 
 double initial_value1[3] = {-1, 2, -0.3};
 
@@ -286,16 +286,16 @@ void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
 std::string getOption(const std::string& option, const std::string defaultString = "no")
 {
     std::string returnValue = defaultString;
-    if(STKUNIT_ARGV != 0)
+    if(gl_argv != 0)
     {
-        for(int i = 0; i < *STKUNIT_ARGC; i++)
+        for(int i = 0; i < gl_argc; i++)
         {
-            std::string input_argv(STKUNIT_ARGV[i]);
+            std::string input_argv(gl_argv[i]);
             if(option == input_argv)
             {
-                if((i + 1) < *STKUNIT_ARGC)
+                if((i + 1) < gl_argc)
                 {
-                    returnValue = std::string(STKUNIT_ARGV[i + 1]);
+                    returnValue = std::string(gl_argv[i + 1]);
                 }
                 break;
             }

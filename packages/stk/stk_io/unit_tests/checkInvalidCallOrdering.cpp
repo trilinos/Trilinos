@@ -5,7 +5,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string
 #include "Ioss_Field.h"                 // for Field, etc
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_THROW
@@ -13,7 +13,7 @@
 #include "stk_mesh/base/Selector.hpp"   // for Selector
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class FieldBase; } }
-STKUNIT_UNIT_TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
+TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
 {
     const std::string outputFilename = "invalid_checks.exo";
     MPI_Comm communicator = MPI_COMM_WORLD;

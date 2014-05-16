@@ -11,7 +11,7 @@
 #include <stk_mesh/base/CreateEdges.hpp>  // for create_edges
 #include <stk_mesh/base/SkinMesh.hpp>   // for skin_mesh
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_FALSE, etc
@@ -72,7 +72,7 @@ void check_equiv_conn(Bucket const& bucket_full_conn, Bucket const& bucket_min_c
   rel_entities_min = &*temp_entities.begin();
   rel_ordinals_min = &*temp_ordinals.begin();
 
-  STKUNIT_ASSERT_EQ(bucket_full_conn.num_connectivity(ord, rank), num_min_upward);
+  ASSERT_EQ(bucket_full_conn.num_connectivity(ord, rank), num_min_upward);
 
   Entity const* rel_entities_full              = bucket_full_conn.begin(ord, rank);
   ConnectivityOrdinal const* rel_ordinals_full = bucket_full_conn.begin_ordinals(ord, rank);
@@ -91,12 +91,12 @@ void check_equiv_conn(Bucket const& bucket_full_conn, Bucket const& bucket_min_c
   }
 
   for (size_t i = 0; i < num_min_upward; ++i) {
-    STKUNIT_EXPECT_EQ( rel_entities_min[i], rel_entities_full[i] );
-    STKUNIT_EXPECT_EQ( rel_ordinals_min[i], rel_ordinals_full[i] );
+    EXPECT_EQ( rel_entities_min[i], rel_entities_full[i] );
+    EXPECT_EQ( rel_ordinals_min[i], rel_ordinals_full[i] );
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
+TEST( UnitTestMinimalBackRelation, simpleHex )
 {
   fixtures::HexFixture* fixture_with_full_conn = set_up_mesh(ConnectivityMap::classic_stk_mesh());
   fixtures::HexFixture* fixture_with_min_conn  = set_up_mesh(ConnectivityMap::minimal_upward_connectivity_map());
@@ -108,30 +108,30 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
     for (EntityRank rank = stk::topology::NODE_RANK; rank < stk::topology::ELEMENT_RANK; ++rank) {
       const BucketVector & buckets_full_conn = mesh_full_conn.buckets(rank);
       const BucketVector & buckets_min_conn  = mesh_min_conn.buckets(rank);
-      STKUNIT_ASSERT_EQ(buckets_full_conn.size(), buckets_min_conn.size());
+      ASSERT_EQ(buckets_full_conn.size(), buckets_min_conn.size());
 
       for (size_t ib=0, endb=buckets_full_conn.size(); ib < endb; ++ib) {
         const Bucket & bucket_full_conn = *buckets_full_conn[ib];
         const Bucket & bucket_min_conn  = *buckets_min_conn[ib];
-        STKUNIT_ASSERT_EQ(bucket_full_conn.size(), bucket_min_conn.size());
+        ASSERT_EQ(bucket_full_conn.size(), bucket_min_conn.size());
 
         for (size_t ord=0, end=bucket_full_conn.size(); ord<end; ++ord) {
           if ( rank > stk::topology::NODE_RANK ) {
-            STKUNIT_EXPECT_EQ(bucket_min_conn.num_elements(ord),0u); // no stored back-rels to elements except for nodes
+            EXPECT_EQ(bucket_min_conn.num_elements(ord),0u); // no stored back-rels to elements except for nodes
             check_equiv_conn(bucket_full_conn, bucket_min_conn, ord, stk::topology::ELEMENT_RANK);
           }
           if ( rank < stk::topology::FACE_RANK) {
-            STKUNIT_EXPECT_EQ(bucket_min_conn.num_faces(ord),0u);    // no stored back-rels to faces
+            EXPECT_EQ(bucket_min_conn.num_faces(ord),0u);    // no stored back-rels to faces
             check_equiv_conn(bucket_full_conn, bucket_min_conn, ord, stk::topology::FACE_RANK);
           }
           if ( rank < stk::topology::EDGE_RANK) {
-            STKUNIT_EXPECT_EQ(bucket_min_conn.num_edges(ord),0u);    // no stored back-rels to edges
+            EXPECT_EQ(bucket_min_conn.num_edges(ord),0u);    // no stored back-rels to edges
             check_equiv_conn(bucket_full_conn, bucket_min_conn, ord, stk::topology::EDGE_RANK);
           }
 
           // Check that all downward rels are the same
           for (EntityRank irank = stk::topology::NODE_RANK; irank < rank; ++irank) {
-            STKUNIT_EXPECT_EQ(bucket_full_conn.num_connectivity(ord, irank), bucket_min_conn.num_connectivity(ord, irank));
+            EXPECT_EQ(bucket_full_conn.num_connectivity(ord, irank), bucket_min_conn.num_connectivity(ord, irank));
           }
         }
       }
@@ -142,7 +142,7 @@ STKUNIT_UNIT_TEST( UnitTestMinimalBackRelation, simpleHex )
   delete fixture_with_min_conn;
 }
 
-STKUNIT_UNIT_TEST( UnitTestNoUpwardConnectivity, simpleTri )
+TEST( UnitTestNoUpwardConnectivity, simpleTri )
 {
    const unsigned spatialDimension = 2;
    stk::mesh::MetaData metaData(spatialDimension, stk::mesh::entity_rank_names());

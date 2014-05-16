@@ -8,7 +8,7 @@
 #include <stk_mesh/base/Types.hpp>      // for PartOrdinal, BucketVector, etc
 #include <stk_mesh/baseImpl/Partition.hpp>  // for Partition
 #include <stk_mesh/fixtures/SelectorFixture.hpp>  // for SelectorFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -132,7 +132,7 @@ void initializeFiveEntityCollections(SelectorFixture& fixture,
   ent_id = addEntitiesToFixture(fixture, ent_id, bf_size - 1, partMembership, ec5_arg);
 
   bool me_result = fixture.m_bulk_data.modification_end();
-  STKUNIT_ASSERT(me_result);
+  ASSERT_TRUE(me_result);
 }
 
 void initializeFivePartitionsWithSixBucketsEach(SelectorFixture& fixture)
@@ -157,7 +157,7 @@ void initialize_unsorted(SelectorFixture& fixture)
   std::vector<stk::mesh::impl::Partition *> partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -256,23 +256,23 @@ void check_test_partition_invariant(const SelectorFixture& fix,
        bkt_i != partition.end(); ++bkt_i)
   {
     const stk::mesh::Bucket &bkt = **bkt_i;
-    STKUNIT_EXPECT_EQ(&partition, bkt.getPartition() );
-    STKUNIT_EXPECT_TRUE(check_bucket_ptrs(bkt));
+    EXPECT_EQ(&partition, bkt.getPartition() );
+    EXPECT_TRUE(check_bucket_ptrs(bkt));
 
     double *field_data = stk::mesh::field_data(fix.m_fieldABC, bkt, 0);
     if (field_data)
     {
-      STKUNIT_EXPECT_TRUE(check_nonempty_strictly_ordered(field_data, bkt.size()));
+      EXPECT_TRUE(check_nonempty_strictly_ordered(field_data, bkt.size()));
     }
     const unsigned *bucket_key = bkt.key();
     for (size_t k = 0; k < partition_key.size() - 1; ++k)
     {
-      STKUNIT_EXPECT_EQ(partition_key[k], bucket_key[k]);
+      EXPECT_EQ(partition_key[k], bucket_key[k]);
     }
 
     stk::mesh::impl::BucketRepository &bucket_repository =
       stk::mesh::impl::Partition::getRepository(bkt.mesh());
-    STKUNIT_EXPECT_EQ(bucket_repository.get_bucket(bkt.entity_rank(), bkt.bucket_id()), &bkt);
+    EXPECT_EQ(bucket_repository.get_bucket(bkt.entity_rank(), bkt.bucket_id()), &bkt);
   }
 }
 
@@ -286,7 +286,7 @@ unsigned checkGetBucketAndCountNonEmpty(stk::mesh::impl::BucketRepository &bucke
     if (b)
     {
       ++count;
-      STKUNIT_EXPECT_EQ(i, b->bucket_id());
+      EXPECT_EQ(i, b->bucket_id());
     }
   }
   return count;
@@ -296,10 +296,10 @@ void check_bucket_ids_testset_A(stk::mesh::impl::BucketRepository &bucket_reposi
 {
   const unsigned num_node_buckets = bucket_repository.buckets(stk::topology::NODE_RANK).size();
   unsigned numNonEmptyNodeBucketsInRepository = checkGetBucketAndCountNonEmpty(bucket_repository, stk::topology::NODE_RANK, num_node_buckets);
-  STKUNIT_EXPECT_EQ(numNonEmptyNodeBucketsInRepository, num_node_buckets);
+  EXPECT_EQ(numNonEmptyNodeBucketsInRepository, num_node_buckets);
   const unsigned num_face_buckets = bucket_repository.buckets(stk::topology::FACE_RANK).size();
   unsigned numNonEmptyFaceBucketsInRepository = checkGetBucketAndCountNonEmpty(bucket_repository, stk::topology::FACE_RANK, num_face_buckets);
-  STKUNIT_EXPECT_EQ(numNonEmptyFaceBucketsInRepository, num_face_buckets);
+  EXPECT_EQ(numNonEmptyFaceBucketsInRepository, num_face_buckets);
 }
 
 
@@ -337,7 +337,7 @@ void check_bucket_ids_testset_A(stk::mesh::impl::BucketRepository &bucket_reposi
 
 
 /// Verify we can construct the unit testing fixture.
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
+TEST( UnitTestPartition, Partition_testInitialize )
 {
   std::vector<stk::mesh::Entity> ec1;
   std::vector<stk::mesh::Entity> ec2;
@@ -362,7 +362,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
   std::vector<stk::mesh::impl::Partition *> partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -373,25 +373,25 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testInitialize )
   stk::mesh::Selector selector;
 
   selector = fix.m_partA & !fix.m_partB;
-  STKUNIT_EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec1));
+  EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec1));
 
   selector = fix.m_partA & fix.m_partB;
-  STKUNIT_EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec2));
+  EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec2));
 
   selector = fix.m_partB & fix.m_partC;
-  STKUNIT_EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec3));
+  EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec3));
 
   selector = !fix.m_partB & fix.m_partC;
-  STKUNIT_EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec4));
+  EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec4));
 
   selector = !(fix.m_partA | fix.m_partB | fix.m_partC | fix.m_partD);
-  STKUNIT_EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec5));
+  EXPECT_TRUE(areAllEntitiesSelected(fix.m_bulk_data, selector, ec5));
 
   check_bucket_ids_testset_A(bucket_repository);
 }
 
 /// Test of Partition::compress()
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
+TEST( UnitTestPartition, Partition_testCompress)
 {
   SelectorFixture fix;
 
@@ -408,7 +408,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
   std::vector<stk::mesh::impl::Partition *> partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
   size_t expectedNumPartitions = 5u;
-  STKUNIT_EXPECT_EQ(expectedNumPartitions, num_partitions);
+  EXPECT_EQ(expectedNumPartitions, num_partitions);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -416,10 +416,10 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
     size_t numEntitiesPerPartition = 3000;
     size_t bucketCapacity = bucket_repository.default_bucket_capacity;
     size_t numBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
-    STKUNIT_EXPECT_EQ(numBucketsPerPartition, partition.num_buckets());
+    EXPECT_EQ(numBucketsPerPartition, partition.num_buckets());
     partition.compress(true);
     size_t numCompressedBucketsPerPartition = (numEntitiesPerPartition + (bucket_repository.max_bucket_capacity - 1u)) / bucket_repository.max_bucket_capacity;
-    STKUNIT_EXPECT_EQ(numCompressedBucketsPerPartition, partition.num_buckets());
+    EXPECT_EQ(numCompressedBucketsPerPartition, partition.num_buckets());
     check_test_partition_invariant(fix, partition);
   }
 
@@ -427,7 +427,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testCompress)
 }
 
 /// Test Partition::sort()
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
+TEST( UnitTestPartition, Partition_testSort)
 {
   SelectorFixture fix;
 
@@ -445,7 +445,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
   std::vector<stk::mesh::impl::Partition *> partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -459,7 +459,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testSort)
 }
 
 /// Test Partition::remove(.)
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
+TEST( UnitTestPartition, Partition_testRemove)
 {
   SelectorFixture fix;
 
@@ -477,7 +477,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
   std::vector<stk::mesh::impl::Partition *> partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -500,7 +500,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
     // Need to sort before checking whether the invariant holds.
     partition.sort();
 
-    STKUNIT_EXPECT_EQ(old_size,  partition.size() + num_removed);
+    EXPECT_EQ(old_size,  partition.size() + num_removed);
     check_test_partition_invariant(fix, partition);
   }
 
@@ -512,7 +512,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
   bucket_repository.sync_from_partitions();
   partitions = bucket_repository.get_partitions(stk::topology::NODE_RANK);
   num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   for (size_t i = 0; i < num_partitions; ++i)
   {
@@ -524,7 +524,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testRemove)
 }
 
 /// Test Partition::add(.).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
+TEST( UnitTestPartition, Partition_testAdd)
 {
   SelectorFixture fix;
 
@@ -542,7 +542,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
   std::vector<stk::mesh::impl::Partition *> partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_partitions = partitions.size();
-  STKUNIT_EXPECT_EQ(num_partitions, 5u);
+  EXPECT_EQ(num_partitions, 5u);
 
   std::vector<stk::mesh::Entity> first_entities(num_partitions);
   std::vector<size_t> old_sizes(num_partitions);
@@ -585,7 +585,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
   {
     stk::mesh::impl::Partition &partition = *partitions[i];
     partition.sort();
-    STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
+    EXPECT_EQ(old_sizes[i], partition.size());
     check_test_partition_invariant(fix, partition);
   }
 
@@ -593,7 +593,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testAdd)
 }
 
 /// Test Partition::move_to(..)
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
+TEST( UnitTestPartition, Partition_testMoveTo)
 {
   SelectorFixture fix;
 
@@ -611,7 +611,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
   std::vector<stk::mesh::impl::Partition *> all_partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   const size_t num_all_partitions = all_partitions.size();
-  STKUNIT_EXPECT_EQ(num_all_partitions, 5u);
+  EXPECT_EQ(num_all_partitions, 5u);
 
   const size_t num_data_partitions = num_all_partitions - 1;
   std::vector<stk::mesh::impl::Partition *> data_partitions(num_data_partitions);
@@ -644,7 +644,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
     stk::mesh::impl::Partition &partition = *data_partitions[i];
     partition.sort();
 
-    STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
+    EXPECT_EQ(old_sizes[i], partition.size());
     check_test_partition_invariant(fix, partition);
   }
 
@@ -652,7 +652,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveTo)
 }
 
 // Test the OrdinalVector version of get_or_create_partition(..).
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
+TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 {
   SelectorFixture fix;
 
@@ -673,21 +673,21 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
   parts.push_back(fix.m_partA.mesh_meta_data_ordinal() );
   stk::mesh::impl::Partition *partitionA =
     bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(0 != partitionA);
+  ASSERT_TRUE(0 != partitionA);
   size_t numEntitiesPerPartition = 3000;
   size_t bucketCapacity = bucket_repository.default_bucket_capacity;
   size_t expectedNumBucketsPerPartition = (numEntitiesPerPartition + (bucketCapacity - 1u)) / bucketCapacity;
-  STKUNIT_EXPECT_EQ(expectedNumBucketsPerPartition, partitionA->num_buckets());
+  EXPECT_EQ(expectedNumBucketsPerPartition, partitionA->num_buckets());
 
   parts.push_back(fix.m_partC.mesh_meta_data_ordinal());
   stk::mesh::impl::Partition *partitionAC =
     bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(0 != partitionAC);
-  STKUNIT_EXPECT_EQ(0u, partitionAC->num_buckets());
+  ASSERT_TRUE(0 != partitionAC);
+  EXPECT_EQ(0u, partitionAC->num_buckets());
 
   stk::mesh::impl::Partition *partitionAC_again =
     bucket_repository.get_or_create_partition(stk::topology::NODE_RANK, parts);
-  STKUNIT_ASSERT(partitionAC == partitionAC_again);
+  ASSERT_TRUE(partitionAC == partitionAC_again);
 
   check_bucket_ids_testset_A(bucket_repository);
 }
@@ -697,7 +697,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testGetOrCreateOV)
 } // namespace
 
 /// Test Partition::move_to(..) more rigorously
-STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
+TEST( UnitTestPartition, Partition_testMoveToBetter)
 {
   SelectorFixture fix;
 
@@ -715,7 +715,7 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
   std::vector<stk::mesh::impl::Partition *> all_partitions =
     bucket_repository.get_partitions(stk::topology::NODE_RANK);
   size_t num_all_partitions = all_partitions.size();
-  STKUNIT_EXPECT_EQ(num_all_partitions, 5u);
+  EXPECT_EQ(num_all_partitions, 5u);
 
   const size_t num_data_partitions = num_all_partitions - 1;
   std::vector<stk::mesh::impl::Partition *> data_partitions(num_data_partitions);
@@ -732,13 +732,13 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
 
     size_t bkt_sz = bkt.size();
     const size_t default_bucket_capacity = stk::mesh::impl::BucketRepository::default_bucket_capacity;
-    STKUNIT_EXPECT_EQ(bkt_sz, default_bucket_capacity);
+    EXPECT_EQ(bkt_sz, default_bucket_capacity);
     for (size_t j = 0; j < bkt_sz; ++j)
     {
       entities_to_move[i].push_back(bkt[j]);
     }
     old_sizes[i] = partition.size();
-    STKUNIT_EXPECT_EQ(old_sizes[i], 3000u);
+    EXPECT_EQ(old_sizes[i], 3000u);
   }
 
   // "Rotate" the entities to another partition.
@@ -762,12 +762,12 @@ STKUNIT_UNIT_TEST( UnitTestPartition, Partition_testMoveToBetter)
     stk::mesh::impl::Partition &partition = *data_partitions[i];
     partition.sort();
 
-    STKUNIT_EXPECT_EQ(partition.size(), old_sizes[i]);
+    EXPECT_EQ(partition.size(), old_sizes[i]);
 
     // std::cout << "Check " << partition << std::endl;
     // std::cout << "source partition was " << src_partition << std::endl;
 
-    STKUNIT_EXPECT_EQ(old_sizes[i], partition.size());
+    EXPECT_EQ(old_sizes[i], partition.size());
     check_test_partition_invariant(fix, partition);
   }
 }

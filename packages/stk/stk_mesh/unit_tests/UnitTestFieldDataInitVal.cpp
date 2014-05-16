@@ -11,7 +11,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for operator!=
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -35,7 +35,7 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
+TEST(UnitTestFieldDataInitVal, test_scalar_field)
 {
   // Test that if an initial-value is set on a scalar field, that value is
   // present the first time field-data is referenced for that field.
@@ -76,10 +76,10 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_scalar_field)
 
   double* data_ptr = stk::mesh::field_data( dfield, node);
 
-  STKUNIT_ASSERT_EQUAL( *data_ptr, initial_value );
+  ASSERT_EQ( *data_ptr, initial_value );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
+TEST(UnitTestFieldDataInitVal, test_vector_field)
 {
   // Test that if an initial-value is set on a vector field, that value is
   // present the first time field-data is referenced for that field.
@@ -122,11 +122,11 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field)
 
   double* data_ptr = stk::mesh::field_data( vfield, node);
 
-  STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data_ptr[0], initial_value[0] );
+  ASSERT_EQ( data_ptr[1], initial_value[1] );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
+TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 {
   // Test that if an initial-value is set on a vector field, that value is
   // present the first time field-data is referenced for that field, and
@@ -181,17 +181,17 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
 
   //Insist that the node is now in a different bucket:
   bool in_different_bucket = old_parts != new_parts;
-  STKUNIT_ASSERT_TRUE(in_different_bucket);
+  ASSERT_TRUE(in_different_bucket);
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
   double* data_ptr = stk::mesh::field_data( vfield, node);
 
-  STKUNIT_ASSERT_EQUAL( data_ptr[0], initial_value[0] );
-  STKUNIT_ASSERT_EQUAL( data_ptr[1], initial_value[1] );
+  ASSERT_EQ( data_ptr[0], initial_value[0] );
+  ASSERT_EQ( data_ptr[1], initial_value[1] );
 }
 
-STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
+TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 {
   // Test that if an initial-value is set on a multi-state vector field, that value is
   // present the first time field-data is referenced for that field.
@@ -232,7 +232,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
 
   //now insist that data for vfield on node is equal to the initial-value specified above:
 
-  STKUNIT_ASSERT_EQUAL( vfield.number_of_states(), num_states);
+  ASSERT_EQ( vfield.number_of_states(), num_states);
 
   VectorField& vfield_new = vfield.field_of_state(stk::mesh::StateNew);
   VectorField& vfield_old = vfield.field_of_state(stk::mesh::StateOld);
@@ -241,11 +241,11 @@ STKUNIT_UNIT_TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
     double* data_ptr_new = stk::mesh::field_data( vfield_new, node);
     double* data_ptr_old = stk::mesh::field_data( vfield_old, node);
 
-    STKUNIT_ASSERT_EQUAL( data_ptr_new[0], initial_value[0] );
-    STKUNIT_ASSERT_EQUAL( data_ptr_new[1], initial_value[1] );
+    ASSERT_EQ( data_ptr_new[0], initial_value[0] );
+    ASSERT_EQ( data_ptr_new[1], initial_value[1] );
 
-    STKUNIT_ASSERT_EQUAL( data_ptr_old[0], initial_value[0] );
-    STKUNIT_ASSERT_EQUAL( data_ptr_old[1], initial_value[1] );
+    ASSERT_EQ( data_ptr_old[0], initial_value[0] );
+    ASSERT_EQ( data_ptr_old[1], initial_value[1] );
   }
 }
 

@@ -1,7 +1,7 @@
 
 #include <iterator>                     // for distance
 #include <list>                         // for list
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/util/nested_iterator.hpp>  // for nested_iterator
 #include <stk_util/util/nested_range.hpp>  // for identity
 #include <vector>                       // for vector
@@ -25,7 +25,7 @@ namespace vector_vector_int {
 }
 /// srk 12/20/12 - these tests seem to hang on boost 1.50 / Trilinos build
 #if defined(STK_BUILT_IN_SIERRA)
-STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int)
+TEST ( nested_iterator, vector_vector_int)
 {
   using namespace vector_vector_int;
 
@@ -47,19 +47,19 @@ STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int)
   nested_iterator itr(a);
   const nested_iterator end;
 
-  STKUNIT_EXPECT_EQUAL( OUTER*INNER, std::distance(itr,end));
+  EXPECT_EQ( OUTER*INNER, std::distance(itr,end));
 
   {
     int count = 0;
     for(; itr != end; ++itr) {
       *itr *= 3;
-      STKUNIT_EXPECT_EQUAL(++count*3,*itr);
+      EXPECT_EQ(++count*3,*itr);
     }
   }
 
 }
 
-STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int_nonconst_to_const)
+TEST ( nested_iterator, vector_vector_int_nonconst_to_const)
 {
   using namespace vector_vector_int;
 
@@ -84,12 +84,12 @@ STKUNIT_UNIT_TEST ( nested_iterator, vector_vector_int_nonconst_to_const)
 
   const_nested_iterator end;
 
-  STKUNIT_EXPECT_EQUAL( OUTER*INNER, std::distance(const_itr,end));
+  EXPECT_EQ( OUTER*INNER, std::distance(const_itr,end));
 
   {
     int count = 0;
     for(; const_itr != end; ++const_itr) {
-      STKUNIT_EXPECT_EQUAL(++count,*const_itr);
+      EXPECT_EQ(++count,*const_itr);
     }
   }
 
@@ -105,7 +105,7 @@ namespace list_vector_int {
                                     > nested_iterator;
 }
 
-STKUNIT_UNIT_TEST ( nested_iterator, list_vector_int)
+TEST ( nested_iterator, list_vector_int)
 {
   using namespace list_vector_int;
 
@@ -128,13 +128,13 @@ STKUNIT_UNIT_TEST ( nested_iterator, list_vector_int)
   nested_iterator itr(a);
   const nested_iterator end;
 
-  STKUNIT_EXPECT_EQUAL( OUTER*INNER, std::distance(itr,end));
+  EXPECT_EQ( OUTER*INNER, std::distance(itr,end));
 
   {
     int count = 0;
     for(; itr != end; ++itr) {
       *itr *= 3;
-      STKUNIT_EXPECT_EQUAL(++count*3,*itr);
+      EXPECT_EQ(++count*3,*itr);
     }
   }
 

@@ -15,7 +15,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_selected_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for operator==, string, etc
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
@@ -45,7 +45,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( ATAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( BTAG )
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( CTAG )
 
-STKUNIT_UNIT_TEST(UnitTestField, testCartesian)
+TEST(UnitTestField, testCartesian)
 {
   // Test the Cartesian array dimension tag
 
@@ -53,22 +53,22 @@ STKUNIT_UNIT_TEST(UnitTestField, testCartesian)
 
   std::string to_str = cartesian_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("y");
-  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
+  ASSERT_EQ( (to_str == expected_str), true);
 
   //should throw if we supply a size < 3:
-  STKUNIT_ASSERT_THROW( cartesian_tag.to_string(2 /*size*/, 1 /*idx*/),
+  ASSERT_THROW( cartesian_tag.to_string(2 /*size*/, 1 /*idx*/),
                         std::runtime_error );
 
   size_type expected_idx = 1;
   size_type idx = cartesian_tag.to_index(3 /*size*/, "y" /*dim*/);
-  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+  ASSERT_EQ( idx, expected_idx );
 
   //should throw if we supply a "z" along with size==2:
-  STKUNIT_ASSERT_THROW( cartesian_tag.to_index(2 /*size*/, "z" /*dim*/),
+  ASSERT_THROW( cartesian_tag.to_index(2 /*size*/, "z" /*dim*/),
                         std::runtime_error );
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testCylindrical)
+TEST(UnitTestField, testCylindrical)
 {
   // Test the Cylindrical array dimension tag
 
@@ -76,22 +76,22 @@ STKUNIT_UNIT_TEST(UnitTestField, testCylindrical)
 
   std::string to_str = cylindrical_tag.to_string(3 /*size*/, 1 /*idx*/);
   std::string expected_str("a");
-  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
+  ASSERT_EQ( (to_str == expected_str), true );
 
   //should throw if we supply a size < 3:
-  STKUNIT_ASSERT_THROW( cylindrical_tag.to_string(2 /*size*/, 1 /*idx*/),
+  ASSERT_THROW( cylindrical_tag.to_string(2 /*size*/, 1 /*idx*/),
                         std::runtime_error );
 
   size_type expected_idx = 1;
   size_type idx = cylindrical_tag.to_index(3 /*size*/, "a" /*dim*/);
-  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+  ASSERT_EQ( idx, expected_idx );
 
   //should throw if we supply a "z" along with size==2:
-  STKUNIT_ASSERT_THROW( cylindrical_tag.to_index(2 /*size*/, "z" /*dim*/),
+  ASSERT_THROW( cylindrical_tag.to_index(2 /*size*/, "z" /*dim*/),
                         std::runtime_error );
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
+TEST(UnitTestField, testFullTensor)
 {
   // Test the FullTensor array dimension tag
 
@@ -99,22 +99,22 @@ STKUNIT_UNIT_TEST(UnitTestField, testFullTensor)
 
   std::string to_str = fulltensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yy");
-  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true );
+  ASSERT_EQ( (to_str == expected_str), true );
 
   //should throw if we supply a size < 9:
-  STKUNIT_ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
+  ASSERT_THROW( fulltensor_tag.to_string(2 /*size*/, 1 /*idx*/),
                         std::runtime_error );
 
   size_type expected_idx = 6;
   size_type idx = fulltensor_tag.to_index(9 /*size*/, "yx" /*dim*/);
-  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+  ASSERT_EQ( idx, expected_idx );
 
   //should throw if we supply a "zz" along with size==2:
-  STKUNIT_ASSERT_THROW( fulltensor_tag.to_index(2 /*size*/, "zz" /*dim*/),
+  ASSERT_THROW( fulltensor_tag.to_index(2 /*size*/, "zz" /*dim*/),
                         std::runtime_error );
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
+TEST(UnitTestField, testSymmetricTensor)
 {
   // Test the SymmetricTensor array dimension tag
 
@@ -123,22 +123,22 @@ STKUNIT_UNIT_TEST(UnitTestField, testSymmetricTensor)
 
   std::string to_str = symmetrictensor_tag.to_string(9 /*size*/, 1 /*idx*/);
   std::string expected_str("yy");
-  STKUNIT_ASSERT_EQUAL( (to_str == expected_str), true);
+  ASSERT_EQ( (to_str == expected_str), true);
 
   //should throw if we supply a size < 9:
-  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_string(2 /*size*/, 1 /*idx*/),
+  ASSERT_THROW( symmetrictensor_tag.to_string(2 /*size*/, 1 /*idx*/),
                         std::runtime_error );
 
   size_type expected_idx = 1;
   size_type idx = symmetrictensor_tag.to_index(6 /*size*/, "yy" /*dim*/);
-  STKUNIT_ASSERT_EQUAL( idx, expected_idx );
+  ASSERT_EQ( idx, expected_idx );
 
   //should throw if we supply a "xz" along with size==5:
-  STKUNIT_ASSERT_THROW( symmetrictensor_tag.to_index(5 /*size*/, "xz" /*dim*/),
+  ASSERT_THROW( symmetrictensor_tag.to_index(5 /*size*/, "xz" /*dim*/),
                         std::runtime_error );
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
+TEST(UnitTestField, testFieldMaxSize)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;
   std::ostringstream oss; // to test printing of things w/out spamming cout
@@ -176,34 +176,34 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldMaxSize)
   meta_data.commit();
 
   // SCALAR FIELDS:
-  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::NODE_RANK), 1u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f0.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f0.max_size(stk::topology::NODE_RANK), 1u );
+  EXPECT_EQ( f0.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f0.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f0.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::NODE_RANK), 10u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f1.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f1.max_size(stk::topology::NODE_RANK), 10u );
+  EXPECT_EQ( f1.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f1.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f1.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::NODE_RANK), 200u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f2.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f2.max_size(stk::topology::NODE_RANK), 200u );
+  EXPECT_EQ( f2.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f2.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f2.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::NODE_RANK), 6000u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::EDGE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::FACE_RANK), 0u );
-  STKUNIT_EXPECT_EQUAL( f3.max_size(stk::topology::ELEMENT_RANK), 0u );
+  EXPECT_EQ( f3.max_size(stk::topology::NODE_RANK), 6000u );
+  EXPECT_EQ( f3.max_size(stk::topology::EDGE_RANK), 0u );
+  EXPECT_EQ( f3.max_size(stk::topology::FACE_RANK), 0u );
+  EXPECT_EQ( f3.max_size(stk::topology::ELEMENT_RANK), 0u );
 
-  STKUNIT_EXPECT_EQUAL( f0.field_array_rank(), 0u ); // Field Rank NOT entity rank
-  STKUNIT_EXPECT_EQUAL( f1.field_array_rank(), 1u );
-  STKUNIT_EXPECT_EQUAL( f2.field_array_rank(), 2u );
-  STKUNIT_EXPECT_EQUAL( f3.field_array_rank(), 3u );
+  EXPECT_EQ( f0.field_array_rank(), 0u ); // Field Rank NOT entity rank
+  EXPECT_EQ( f1.field_array_rank(), 1u );
+  EXPECT_EQ( f2.field_array_rank(), 2u );
+  EXPECT_EQ( f3.field_array_rank(), 3u );
 
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
+TEST(UnitTestField, testFieldWithSelector)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;
   std::ostringstream oss; // to test printing of things w/out spamming cout
@@ -250,26 +250,26 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelector)
 
   unsigned num = stk::mesh::count_selected_entities(select_p0, node_buckets);
 
-  STKUNIT_ASSERT_EQUAL( 10u, num );
+  ASSERT_EQ( 10u, num );
 
   stk::mesh::Selector select_f0 = stk::mesh::selectField(f0);
 
   std::cout <<"select_f0: "<< select_f0 << std::endl;
 
   unsigned num_f0 = stk::mesh::count_selected_entities(select_f0, node_buckets);
-  STKUNIT_ASSERT_EQUAL(10u, num_f0);
+  ASSERT_EQ(10u, num_f0);
 
   stk::mesh::BucketVector const& f0_buckets = bulk_data.get_buckets(NODE_RANK, select_p0);
   unsigned num_buckets = f0_buckets.size();
-  STKUNIT_ASSERT_EQUAL(1u, num_buckets);
+  ASSERT_EQ(1u, num_buckets);
 
   BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
     unsigned f0_size = field_bytes_per_entity(f0, *b);
-    STKUNIT_ASSERT_EQUAL(8u, f0_size);
+    ASSERT_EQ(8u, f0_size);
   }
 }
 
-STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
+TEST(UnitTestField, testFieldWithSelectorAnd)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;
   std::ostringstream oss; // to test printing of things w/out spamming cout
@@ -327,7 +327,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
 
     BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
-      STKUNIT_ASSERT_EQUAL(64u, f0_size);
+      ASSERT_EQ(64u, f0_size);
     }
   }
 
@@ -336,13 +336,13 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorAnd)
 
     BOOST_FOREACH(stk::mesh::Bucket* b, f0_buckets) {
       unsigned f0_size = field_bytes_per_entity(f0, *b);
-      STKUNIT_ASSERT_EQUAL(32u, f0_size);
+      ASSERT_EQ(32u, f0_size);
     }
   }
 }
 
 
-STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
+TEST(UnitTestField, testFieldWithSelectorInvalid)
 {
   stk::ParallelMachine pm = MPI_COMM_SELF ;
   std::ostringstream oss; // to test printing of things w/out spamming cout
@@ -369,7 +369,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
   std::cout <<"elem_hexB_selector: "<< elem_hexB_selector << std::endl;
 
   stk::mesh::put_field( f0 , elem_hexA_selector, 8u );
-  STKUNIT_ASSERT_THROW(
+  ASSERT_THROW(
     stk::mesh::put_field( f0 , elem_hexA_selector, 4u ),
     std::runtime_error
   );
@@ -383,7 +383,7 @@ STKUNIT_UNIT_TEST(UnitTestField, testFieldWithSelectorInvalid)
 
   stk::mesh::PartVector parts;
   parts.push_back(&hex8s);
-  STKUNIT_ASSERT_THROW(
+  ASSERT_THROW(
     bulk_data.declare_entity( elem_rank , 1 , parts ),
     std::runtime_error
   );

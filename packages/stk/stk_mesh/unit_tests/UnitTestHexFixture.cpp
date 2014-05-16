@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 #include <map>                          // for map, map<>::mapped_type
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData
@@ -24,7 +24,7 @@ using stk::mesh::Entity;
 using stk::mesh::EntityRank;
 using stk::mesh::EntityId;
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
+TEST( UnitTestHexFixture, elem_ids_1d_x )
 {
   // Test 3x1x1 HexFixture structure
   const unsigned NX = 3;
@@ -33,12 +33,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(1,0,0), 2u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(2,0,0), 3u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(1,0,0), 2u );
+  EXPECT_EQ( hf.elem_id(2,0,0), 3u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_x )
+TEST( UnitTestHexFixture, elem_ids_3d_x )
 {
   // Test 3x3x3 HexFixture structure
   const unsigned NX = 3;
@@ -47,12 +47,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_x )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(1,0,0), 2u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(2,0,0), 3u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(1,0,0), 2u );
+  EXPECT_EQ( hf.elem_id(2,0,0), 3u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_y )
+TEST( UnitTestHexFixture, elem_ids_1d_y )
 {
   // Test 1x3x1 HexFixture structure
   const unsigned NX = 1;
@@ -61,12 +61,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_y )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,1,0), 2u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,2,0), 3u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(0,1,0), 2u );
+  EXPECT_EQ( hf.elem_id(0,2,0), 3u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_y )
+TEST( UnitTestHexFixture, elem_ids_3d_y )
 {
   // Test 3x3x3 HexFixture structure
   const unsigned NX = 3;
@@ -75,12 +75,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_y )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,1,0), 4u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,2,0), 7u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(0,1,0), 4u );
+  EXPECT_EQ( hf.elem_id(0,2,0), 7u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_z )
+TEST( UnitTestHexFixture, elem_ids_1d_z )
 {
   // Test 1x1x3 HexFixture structure
   const unsigned NX = 1;
@@ -89,12 +89,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_z )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,1), 2u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,2), 3u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(0,0,1), 2u );
+  EXPECT_EQ( hf.elem_id(0,0,2), 3u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_z )
+TEST( UnitTestHexFixture, elem_ids_3d_z )
 {
   // Test 3x3x3 HexFixture structure
   const unsigned NX = 3;
@@ -103,12 +103,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_z )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,1), 10u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,2), 19u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(0,0,1), 10u );
+  EXPECT_EQ( hf.elem_id(0,0,2), 19u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_diag )
+TEST( UnitTestHexFixture, elem_ids_3d_diag )
 {
   // Test 3x3x3 HexFixture structure
   const unsigned NX = 3;
@@ -117,12 +117,12 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_diag )
   stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_meta.commit();
   hf.generate_mesh();
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(1,1,1), 14u );
-  STKUNIT_EXPECT_EQUAL( hf.elem_id(2,2,2), 27u );
+  EXPECT_EQ( hf.elem_id(0,0,0), 1u );
+  EXPECT_EQ( hf.elem_id(1,1,1), 14u );
+  EXPECT_EQ( hf.elem_id(2,2,2), 27u );
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
+TEST( UnitTestHexFixture, trivial_parallel_2 )
 {
   // Test a customized element distribution with one element on proc 0 and 1
   // and none on the other procs
@@ -169,18 +169,18 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   Entity entity_1 = mesh.get_entity(element_rank, 1);
   Entity entity_2 = mesh.get_entity(element_rank ,2);
   if (p_rank <= 1) {
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
+    ASSERT_TRUE( mesh.is_valid(entity_1) );
+    ASSERT_TRUE( mesh.is_valid(entity_2) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_1) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_2) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
+    EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    EXPECT_TRUE( !mesh.is_valid(entity_2) );
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
+TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 {
   // Test a customized element distribution with one element on each proc
 
@@ -209,25 +209,25 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 
   // We should always know about, and own, the element assigned to us
   Entity my_entity    = mesh.get_entity(element_rank, p_rank + 1);
-  STKUNIT_ASSERT_TRUE( mesh.is_valid(my_entity) );
-  STKUNIT_EXPECT_EQUAL( p_rank, mesh.parallel_owner_rank(my_entity) );
+  ASSERT_TRUE( mesh.is_valid(my_entity) );
+  EXPECT_EQ( p_rank, mesh.parallel_owner_rank(my_entity) );
 
   // If applicable, we know about the element on adjacent lower rank
   if (p_rank > 0) {
     Entity prior_entity = mesh.get_entity(element_rank, p_rank);
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(prior_entity) );
-    STKUNIT_EXPECT_EQUAL( p_rank - 1, mesh.parallel_owner_rank(prior_entity) );
+    ASSERT_TRUE( mesh.is_valid(prior_entity) );
+    EXPECT_EQ( p_rank - 1, mesh.parallel_owner_rank(prior_entity) );
   }
 
   // If applicable, we know about the element on adjacent higher rank
   if (p_rank < p_size - 1) {
     Entity next_entity   = mesh.get_entity(element_rank, p_rank + 2);
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(next_entity) );
-    STKUNIT_EXPECT_EQUAL( p_rank + 1, mesh.parallel_owner_rank(next_entity) );
+    ASSERT_TRUE( mesh.is_valid(next_entity) );
+    EXPECT_EQ( p_rank + 1, mesh.parallel_owner_rank(next_entity) );
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
+TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
 {
   // layout: 4x2x1 hex mesh
   // elements:
@@ -292,52 +292,52 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   Entity entity_7 = mesh.get_entity(element_rank, 7);
   Entity entity_8 = mesh.get_entity(element_rank, 8);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
-    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_4) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_6) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_7) );
-    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_8) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_5) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_6) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_7) );
+    ASSERT_TRUE( mesh.is_valid(entity_1) );
+    ASSERT_TRUE( mesh.is_valid(entity_2) );
+    ASSERT_TRUE( mesh.is_valid(entity_3) );
+    ASSERT_TRUE( !mesh.is_valid(entity_4) );
+    ASSERT_TRUE( mesh.is_valid(entity_5) );
+    ASSERT_TRUE( mesh.is_valid(entity_6) );
+    ASSERT_TRUE( mesh.is_valid(entity_7) );
+    ASSERT_TRUE( !mesh.is_valid(entity_8) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_1) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_2) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_3) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_5) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_6) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_7) );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_6) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_7) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_8) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_5) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_6) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_7) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_8) );
+    ASSERT_TRUE( mesh.is_valid(entity_1) );
+    ASSERT_TRUE( mesh.is_valid(entity_2) );
+    ASSERT_TRUE( mesh.is_valid(entity_3) );
+    ASSERT_TRUE( mesh.is_valid(entity_4) );
+    ASSERT_TRUE( mesh.is_valid(entity_5) );
+    ASSERT_TRUE( mesh.is_valid(entity_6) );
+    ASSERT_TRUE( mesh.is_valid(entity_7) );
+    ASSERT_TRUE( mesh.is_valid(entity_8) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_1) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_2) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_3) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_4) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_5) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_6) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_7) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_8) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_3) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_4) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_5) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_6) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_7) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_8) );
+    EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    EXPECT_TRUE( !mesh.is_valid(entity_2) );
+    EXPECT_TRUE( !mesh.is_valid(entity_3) );
+    EXPECT_TRUE( !mesh.is_valid(entity_4) );
+    EXPECT_TRUE( !mesh.is_valid(entity_5) );
+    EXPECT_TRUE( !mesh.is_valid(entity_6) );
+    EXPECT_TRUE( !mesh.is_valid(entity_7) );
+    EXPECT_TRUE( !mesh.is_valid(entity_8) );
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
+TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
 {
   // layout:
   // [ e_1, e_2, e_3, e_4, e_5 ] elements
@@ -391,34 +391,34 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   Entity entity_4 = mesh.get_entity(element_rank, 4);
   Entity entity_5 = mesh.get_entity(element_rank, 5);
   if (p_rank == 0) {
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
-    STKUNIT_ASSERT_TRUE( !mesh.is_valid(entity_3) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_5) );
+    ASSERT_TRUE( mesh.is_valid(entity_1) );
+    ASSERT_TRUE( mesh.is_valid(entity_2) );
+    ASSERT_TRUE( !mesh.is_valid(entity_3) );
+    ASSERT_TRUE( mesh.is_valid(entity_4) );
+    ASSERT_TRUE( mesh.is_valid(entity_5) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_1) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_2) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_4) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_5) );
   }
   else if (p_rank == 1) {
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_1) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_2) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_3) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_4) );
-    STKUNIT_ASSERT_TRUE( mesh.is_valid(entity_5) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_1) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_2) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_3) );
-    STKUNIT_EXPECT_EQUAL( 1, mesh.parallel_owner_rank(entity_4) );
-    STKUNIT_EXPECT_EQUAL( 0, mesh.parallel_owner_rank(entity_5) );
+    ASSERT_TRUE( mesh.is_valid(entity_1) );
+    ASSERT_TRUE( mesh.is_valid(entity_2) );
+    ASSERT_TRUE( mesh.is_valid(entity_3) );
+    ASSERT_TRUE( mesh.is_valid(entity_4) );
+    ASSERT_TRUE( mesh.is_valid(entity_5) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_1) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_2) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_3) );
+    EXPECT_EQ( 1, mesh.parallel_owner_rank(entity_4) );
+    EXPECT_EQ( 0, mesh.parallel_owner_rank(entity_5) );
   }
   else {
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_1) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_2) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_3) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_4) );
-    STKUNIT_EXPECT_TRUE( !mesh.is_valid(entity_5) );
+    EXPECT_TRUE( !mesh.is_valid(entity_1) );
+    EXPECT_TRUE( !mesh.is_valid(entity_2) );
+    EXPECT_TRUE( !mesh.is_valid(entity_3) );
+    EXPECT_TRUE( !mesh.is_valid(entity_4) );
+    EXPECT_TRUE( !mesh.is_valid(entity_5) );
   }
 }
 

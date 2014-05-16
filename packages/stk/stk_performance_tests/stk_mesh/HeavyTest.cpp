@@ -5,7 +5,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_util/environment/perf_util.hpp>
@@ -15,10 +15,10 @@
 #include <string>
 
 // Globals for command-line arguments
-extern int* STKUNIT_ARGC;
-extern char** STKUNIT_ARGV;
+extern int gl_argc;
+extern char** gl_argv;
 
-STKUNIT_UNIT_TEST( heavy, heavy )
+TEST( heavy, heavy )
 {
   // A performance test that stresses important parts of stk_mesh
   // (such as mesh-modification in parallel, creation of relations,
@@ -66,8 +66,8 @@ STKUNIT_UNIT_TEST( heavy, heavy )
   // Search cmd-line args
   const std::string input_flag  = "--heavy-test:input-file=";
   const std::string output_flag = "--heavy-test:output-file=";
-  for (int argitr = 1; argitr < *STKUNIT_ARGC; ++argitr) {
-    std::string argv(STKUNIT_ARGV[argitr]);
+  for (int argitr = 1; argitr < gl_argc; ++argitr) {
+    std::string argv(gl_argv[argitr]);
     if (argv.find(input_flag) == 0) {
       input_base_filename = argv.replace(0, input_flag.size(), "");
     }

@@ -5,7 +5,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
@@ -15,7 +15,7 @@
 #include "stk_topology/topology.hpp"    // for topology, etc
 
 
-STKUNIT_UNIT_TEST( SkinMesh, SimpleHex)
+TEST( SkinMesh, SimpleHex)
 {
   const unsigned X = 5, Y = 5, Z = 5;
   stk::mesh::fixtures::HexFixture fixture(MPI_COMM_WORLD, X, Y, Z);
@@ -72,7 +72,7 @@ STKUNIT_UNIT_TEST( SkinMesh, SimpleHex)
 
 }
 
-STKUNIT_UNIT_TEST( SkinMesh, SimpleQuad)
+TEST( SkinMesh, SimpleQuad)
 {
   const unsigned X = 5, Y = 5;
   stk::mesh::fixtures::QuadFixture fixture(MPI_COMM_WORLD, X, Y);

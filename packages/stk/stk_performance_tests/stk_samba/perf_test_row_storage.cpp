@@ -2,7 +2,7 @@
 
 #if ENABLE_ROW_STORAGE_VS_VECTOR_VECTOR
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <samba/utility/row_storage.hpp>
 
@@ -184,7 +184,7 @@ struct times{
 
 } // namespace
 
-STKUNIT_UNIT_TEST(samba, row_storage_vs_vector_vector)
+TEST(samba, row_storage_vs_vector_vector)
 {
   std::cout << std::setprecision(3);
 

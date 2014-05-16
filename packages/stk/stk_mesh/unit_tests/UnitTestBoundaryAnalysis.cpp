@@ -15,7 +15,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <utility>                      // for pair, operator==
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -50,13 +50,13 @@ public:
 
 namespace {
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshBoundaryAnalysis , testUnit )
+TEST( UnitTestStkMeshBoundaryAnalysis , testUnit )
 {
   UnitTestStkMeshBoundaryAnalysis unit(MPI_COMM_WORLD);
   unit.test_boundary_analysis();
 }
 
-STKUNIT_UNIT_TEST( UnitTestStkMeshBoundaryAnalysis , testNullTopology )
+TEST( UnitTestStkMeshBoundaryAnalysis , testNullTopology )
 {
   UnitTestStkMeshBoundaryAnalysis unit(MPI_COMM_WORLD);
   unit.test_boundary_analysis_null_topology();
@@ -164,7 +164,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
   // Run the bounary analysis!
   stk::mesh::EntitySideVector boundary;
   stk::mesh::boundary_analysis(bulk_data, closure, element_rank, boundary);
-  STKUNIT_EXPECT_TRUE(!boundary.empty());
+  EXPECT_TRUE(!boundary.empty());
 
   // Prepare the expected-results as a vector of pairs of pairs representing
   // ( inside, outside ) where
@@ -231,10 +231,10 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis()
 
   // Check that results match expected results
 
-  STKUNIT_EXPECT_EQ(sizeof(results), sizeof(expected_results));
+  EXPECT_EQ(sizeof(results), sizeof(expected_results));
 
   for (i = 0; i < sizeof(results)/sizeof(BoundaryPair); ++i) {
-    STKUNIT_EXPECT_TRUE(results[i] == expected_results[i]);
+    EXPECT_TRUE(results[i] == expected_results[i]);
   }
 }
 
@@ -269,7 +269,7 @@ void UnitTestStkMeshBoundaryAnalysis::test_boundary_analysis_null_topology()
 
   stk::mesh::boundary_analysis(bulk, newclosure, side_rank, boundary);
   /*
-  STKUNIT_EXPECT_TRUE(!boundary.empty());
+  EXPECT_TRUE(!boundary.empty());
   */
 
   bulk.modification_end();

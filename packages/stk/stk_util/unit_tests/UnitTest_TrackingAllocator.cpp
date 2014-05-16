@@ -1,12 +1,12 @@
 
 #include <stddef.h>                     // for size_t
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/util/TrackingAllocator.hpp>  // for tracking_allocator
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ
 #include "stk_util/util/AllocatorMemoryUsage.hpp"
 
-STKUNIT_UNIT_TEST( tracking_allocator, vector )
+TEST( tracking_allocator, vector )
 {
 #ifndef __IBMCPP__
   typedef stk::tracking_allocator<int> allocator;

@@ -5,7 +5,7 @@
 #include <cstdlib>                      // for rand, srand, RAND_MAX
 #include <deque>                        // for _Deque_iterator, operator-, etc
 #include <iostream>                     // for operator<<, basic_ostream, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/util/BlockVector.hpp>  // for block_vector<>::iterator, etc
 #include <stk_util/util/RadixSort.hpp>  // for radix_sort_unsigned
 #include <stk_util/util/RadixSort2.hpp>  // for radix_sort
@@ -14,7 +14,7 @@
 
 
 
-STKUNIT_UNIT_TEST( radix_sort, sort_unsigned )
+TEST( radix_sort, sort_unsigned )
 {
   size_t size = 1000;
   std::vector<unsigned> a(size);
@@ -32,7 +32,7 @@ STKUNIT_UNIT_TEST( radix_sort, sort_unsigned )
   ASSERT_TRUE( std::equal(a.begin(), a.end(), b.begin()));
 }
 
-STKUNIT_UNIT_TEST( radix_sort, sort_signed )
+TEST( radix_sort, sort_signed )
 {
   size_t size = 1000;
   std::vector<int> a(size);
@@ -50,7 +50,7 @@ STKUNIT_UNIT_TEST( radix_sort, sort_signed )
   ASSERT_TRUE( std::equal(a.begin(), a.end(), b.begin()));
 }
 
-STKUNIT_UNIT_TEST( radix_sort, sort_float )
+TEST( radix_sort, sort_float )
 {
   size_t size = 1000;
   std::vector<float> a(size);
@@ -69,7 +69,7 @@ STKUNIT_UNIT_TEST( radix_sort, sort_float )
   ASSERT_TRUE( std::equal(a.begin(), a.end(), b.begin()));
 }
 
-STKUNIT_UNIT_TEST( radix_sort, sort_signed_double )
+TEST( radix_sort, sort_signed_double )
 {
   size_t size = 1000;
   std::vector<double> a(size);
@@ -98,7 +98,7 @@ struct SortTag {};
 
 
 
-STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_radix_sort_unsigned_vector )
+TEST( radix_sort, DISABLED_performance_vs_radix_sort_unsigned_vector )
 {
   typedef std::vector<size_t> Vector;
 
@@ -127,7 +127,7 @@ STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_radix_sort_unsigned_vecto
   std::cout << "                 stk::radix_sort : " << radix_time << " secs, " << sort_time/radix_time << "x speedup" << std::endl;
 }
 
-STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_vector )
+TEST( radix_sort, DISABLED_performance_vs_std_sort_vector )
 {
   typedef std::vector<size_t> Vector;
 
@@ -155,7 +155,7 @@ STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_vector )
 
 }
 
-STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_block_vector )
+TEST( radix_sort, DISABLED_performance_vs_std_sort_block_vector )
 {
   typedef stk::block_vector<size_t> Vector;
 
@@ -183,7 +183,7 @@ STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_block_vector )
 
 }
 
-STKUNIT_UNIT_TEST( radix_sort, DISABLED_performance_vs_std_sort_deque )
+TEST( radix_sort, DISABLED_performance_vs_std_sort_deque )
 {
   typedef std::deque<size_t> Vector;
 

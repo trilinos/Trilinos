@@ -13,7 +13,7 @@
 #include <iostream>                     // for operator<<, basic_ostream, etc
 #include <stk_io/IossBridge.hpp>        // for map_ioss_topology_to_stk
 #include <stk_topology/topology.hpp>    // for topology, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for operator<<, operator!=, etc
 #include "gtest/gtest.h"                // for AssertHelper
 #include "stk_topology/topology.hpp"    // for topology::num_edges, etc
@@ -172,7 +172,7 @@ int testElement(const std::string &name)
 }
 }
 
-STKUNIT_UNIT_TEST(UnitTestTopology, testUnit)
+TEST(UnitTestTopology, testUnit)
 {
   Ioss::StorageInitializer initialize_storage;
   Ioss::Initializer        initialize_topologies;
@@ -199,7 +199,7 @@ STKUNIT_UNIT_TEST(UnitTestTopology, testUnit)
         std::cerr << "\t\tIGNORING " << elements[i] << " ERRORS...\n";
     }
   }
-  STKUNIT_ASSERT(errors == 0);
+  ASSERT_TRUE(errors == 0);
 }
 
 

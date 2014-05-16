@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 
 #include <vector>
@@ -7,7 +7,7 @@
 #include <algorithm>
 
 
-STKUNIT_UNIT_TEST( stk_topology, lexicographical_smallest_permutation)
+TEST( stk_topology, lexicographical_smallest_permutation)
 {
   using stk::topology;
 
@@ -20,15 +20,15 @@ STKUNIT_UNIT_TEST( stk_topology, lexicographical_smallest_permutation)
   unsigned permutation_index = t.lexicographical_smallest_permutation(nodes);
   t.permutation_nodes(nodes,permutation_index,permutation_nodes);
 
-  STKUNIT_EXPECT_EQ( std::string("abc"), std::string(permutation_nodes));
+  EXPECT_EQ( std::string("abc"), std::string(permutation_nodes));
 
   permutation_index = t.lexicographical_smallest_permutation(nodes,true); // only consider positive permutations (true means this)
   t.permutation_nodes(nodes,permutation_index,permutation_nodes);
 
-  STKUNIT_EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
+  EXPECT_EQ( std::string("acb"), std::string(permutation_nodes));
 }
 
-STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
+TEST( stk_topology, side_node_ordinals)
 {
   using stk::topology;
 
@@ -56,48 +56,48 @@ STKUNIT_UNIT_TEST( stk_topology, side_node_ordinals)
 
 };
 
-STKUNIT_UNIT_TEST( stk_topology, superelement_topology )
+TEST( stk_topology, superelement_topology )
 {
   using stk::topology;
 
   topology t = stk::create_superelement_topology(6);
 
-  STKUNIT_EXPECT_EQ( t.num_nodes(), 6u);
-  STKUNIT_EXPECT_EQ( t.rank(), topology::ELEMENT_RANK);
+  EXPECT_EQ( t.num_nodes(), 6u);
+  EXPECT_EQ( t.rank(), topology::ELEMENT_RANK);
 
-  STKUNIT_EXPECT_EQ( true, t.is_superelement());
+  EXPECT_EQ( true, t.is_superelement());
   {
     std::ostringstream name;
     name << t ;
     std::string goldName("SUPERELEMENT_TOPOLOGY_6");
-    STKUNIT_EXPECT_EQ( goldName, name.str() );
+    EXPECT_EQ( goldName, name.str() );
   }
 
   topology notSuper = topology::HEX_8;
-  STKUNIT_EXPECT_FALSE( notSuper.is_superelement());
+  EXPECT_FALSE( notSuper.is_superelement());
 
   topology newT = stk::create_superelement_topology(8);
 
-  STKUNIT_EXPECT_NE( newT.num_nodes(), 6u);
-  STKUNIT_EXPECT_EQ( newT.rank(), topology::ELEMENT_RANK);
+  EXPECT_NE( newT.num_nodes(), 6u);
+  EXPECT_EQ( newT.rank(), topology::ELEMENT_RANK);
 
-  STKUNIT_EXPECT_EQ( true, newT.is_superelement());
+  EXPECT_EQ( true, newT.is_superelement());
   {
     std::ostringstream name;
     name << newT ;
     std::string goldName("SUPERELEMENT_TOPOLOGY_6");
-    STKUNIT_EXPECT_NE( goldName, name.str() );
+    EXPECT_NE( goldName, name.str() );
   }
 
   topology anotherT = stk::create_superelement_topology(6);
-  STKUNIT_EXPECT_EQ(t, anotherT);
+  EXPECT_EQ(t, anotherT);
 
   topology badT = stk::create_superelement_topology(-2);
 
-  STKUNIT_EXPECT_EQ( badT.rank(), topology::INVALID_RANK);
+  EXPECT_EQ( badT.rank(), topology::INVALID_RANK);
 }
 
-STKUNIT_UNIT_TEST( stk_topology, arrayMesh )
+TEST( stk_topology, arrayMesh )
 {
   using stk::topology;
 
@@ -105,8 +105,8 @@ STKUNIT_UNIT_TEST( stk_topology, arrayMesh )
   topology t = topology::HEX_8;
   int side_nodes[4] = {};
   t.side_nodes( nodes, 0, side_nodes );
-  STKUNIT_EXPECT_EQ( 0, side_nodes[0] );
-  STKUNIT_EXPECT_EQ( 1, side_nodes[1] );
-  STKUNIT_EXPECT_EQ( 5, side_nodes[2] );
-  STKUNIT_EXPECT_EQ( 4, side_nodes[3] );
+  EXPECT_EQ( 0, side_nodes[0] );
+  EXPECT_EQ( 1, side_nodes[1] );
+  EXPECT_EQ( 5, side_nodes[2] );
+  EXPECT_EQ( 4, side_nodes[3] );
 }

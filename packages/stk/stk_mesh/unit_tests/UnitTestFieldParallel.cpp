@@ -14,7 +14,7 @@
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for EXPECT_EQ
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
@@ -136,8 +136,8 @@ void do_parallel_assemble()
   count_entities( shared_sel, bulk, counts );
 
   int multiplier = (p_rank == 0 || p_rank == p_size - 1) ? 1 : 2;
-  STKUNIT_EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[0]); // nodes
-  STKUNIT_EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[1]); // edges
+  EXPECT_EQ( multiplier * (NX + 1) * (NY + 1), counts[0]); // nodes
+  EXPECT_EQ( multiplier * 2 * NX * (NY + 1),   counts[1]); // edges
 
   // Move center nodes into center part
   Entity center_element = fixture.elem(NX / 2, NY / 2, p_rank);
@@ -253,17 +253,17 @@ void do_parallel_assemble()
   }
 }
 
-STKUNIT_UNIT_TEST(FieldParallel, parallel_sum)
+TEST(FieldParallel, parallel_sum)
 {
   do_parallel_assemble<SUM>();
 }
 
-STKUNIT_UNIT_TEST(FieldParallel, parallel_min)
+TEST(FieldParallel, parallel_min)
 {
   do_parallel_assemble<MIN>();
 }
 
-STKUNIT_UNIT_TEST(FieldParallel, parallel_max)
+TEST(FieldParallel, parallel_max)
 {
   do_parallel_assemble<MAX>();
 }

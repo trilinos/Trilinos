@@ -4,7 +4,7 @@
 #include <boost/range/algorithm/copy.hpp>
 #include <boost/range/algorithm/equal.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/memory_util.hpp>
 
 #include <stk_performance_test_includes/cpu_time.hpp>
@@ -189,7 +189,7 @@ static void count_memory(samba::mesh mesh)
 
 } // namespace
 
-STKUNIT_UNIT_TEST(tri_refine, tri_refine)
+TEST(tri_refine, tri_refine)
 {
   samba::mesh mesh( samba::connectivity_map::default_map_2d());
 
@@ -239,13 +239,13 @@ STKUNIT_UNIT_TEST(tri_refine, tri_refine)
   std::cout << "ref mesh.num_nodes()=  " << mesh.num_nodes() << std::endl;
   std::cout << "ref mesh.num_elements()=  " << mesh.num_elements() << std::endl;
 
-  STKUNIT_EXPECT_TRUE(mesh.num_nodes() == (NX+1)*(NY+1)+(NX*NY*2)*12);
-  STKUNIT_EXPECT_TRUE(mesh.num_elements() == 4*NX*NY*2);
+  EXPECT_TRUE(mesh.num_nodes() == (NX+1)*(NY+1)+(NX*NY*2)*12);
+  EXPECT_TRUE(mesh.num_elements() == 4*NX*NY*2);
 
   count_memory(mesh);
 }
 
-STKUNIT_UNIT_TEST(tri_refine, tri_count_memory)
+TEST(tri_refine, tri_count_memory)
 {
   samba::mesh mesh( samba::connectivity_map::default_map_2d());
 

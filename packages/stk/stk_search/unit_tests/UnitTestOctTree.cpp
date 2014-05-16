@@ -3,7 +3,7 @@
 #include <stk_search/OctTreeOps.hpp>
 #include <stk_search/OctTree.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 namespace
 {
@@ -15,7 +15,7 @@ typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
 typedef stk::search::Point<double> Point;
 typedef stk::search::Box<double> Box;
 
-STKUNIT_UNIT_TEST(stk_search_oct_tree, checkCuts)
+TEST(stk_search_oct_tree, checkCuts)
 {
     typedef std::pair<Box, Ident> BoxIdent;
     typedef std::vector<BoxIdent> BoxVector;
@@ -115,7 +115,7 @@ STKUNIT_UNIT_TEST(stk_search_oct_tree, checkCuts)
     }
 }
 
-STKUNIT_UNIT_TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
+TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
 {
     int procId=-1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
@@ -136,7 +136,7 @@ STKUNIT_UNIT_TEST(stk_search_oct_tree, testCalculationOfKeyUsingOffset)
     }
 }
 
-STKUNIT_UNIT_TEST(stk_search_oct_tree, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
+TEST(stk_search_oct_tree, testPartitioningOfPhysicalTreeForVaryingNumberOfProcsAndWeights)
 {
     int procId=-1;
     MPI_Comm_rank(MPI_COMM_WORLD, &procId);
@@ -186,7 +186,7 @@ STKUNIT_UNIT_TEST(stk_search_oct_tree, testPartitioningOfPhysicalTreeForVaryingN
     }
 }
 
-STKUNIT_UNIT_TEST(stk_search_oct_tree, stressTestPartitioningUpToOneMillionProcessors)
+TEST(stk_search_oct_tree, stressTestPartitioningUpToOneMillionProcessors)
 {
     unsigned depth = 4;
     unsigned tree_size = stk::oct_tree_size(depth);

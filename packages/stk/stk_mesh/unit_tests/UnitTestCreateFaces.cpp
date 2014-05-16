@@ -20,7 +20,7 @@
 #include <stk_mesh/fixtures/TetFixture.hpp>  // for TetFixture
 #include <stk_mesh/fixtures/degenerate_mesh.hpp>  // for VectorFieldType, etc
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
@@ -79,7 +79,7 @@ namespace {
   }
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Hex_2x1x1 )
+TEST ( UnitTestCreateFaces, Hex_2x1x1 )
 {
   const size_t NX = 2;
   const size_t NY = 1;
@@ -94,10 +94,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Hex_2x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -106,15 +106,15 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Hex_2x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Tet_2x1x1 )
+TEST ( UnitTestCreateFaces, Tet_2x1x1 )
 {
   const size_t NX = 2;
   const size_t NY = 1;
@@ -129,10 +129,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Tet_2x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -141,15 +141,15 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Tet_2x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , Hex_3x1x1 )
+TEST( UnitTestCreateFaces , Hex_3x1x1 )
 {
   const size_t NX = 3;
   const size_t NY = 1;
@@ -164,10 +164,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , Hex_3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -176,14 +176,14 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , Hex_3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , Tet_3x1x1 )
+TEST( UnitTestCreateFaces , Tet_3x1x1 )
 {
   const size_t NX = 3;
   const size_t NY = 1;
@@ -198,10 +198,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , Tet_3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -210,14 +210,14 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , Tet_3x1x1 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
+TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
 {
   const size_t NX = 3;
   const size_t NY = 3;
@@ -232,10 +232,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -244,10 +244,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -258,9 +258,9 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( faces_per_hex, b.num_faces(i) );
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( nodes_per_hex,  b.num_nodes(i) );
+      EXPECT_EQ( faces_per_hex, b.num_faces(i) );
+      EXPECT_EQ( 0u, b.num_edges(i) );
+      EXPECT_EQ( nodes_per_hex,  b.num_nodes(i) );
     }
   }
 
@@ -272,8 +272,8 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( nodes_per_quad, b.num_nodes(i) );
+      EXPECT_EQ( 0u, b.num_edges(i) );
+      EXPECT_EQ( nodes_per_quad, b.num_nodes(i) );
     }
   }
 
@@ -294,7 +294,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
       const stk::mesh::Entity & elem = b[i];
 
       const unsigned num_faces = fixture.m_bulk_data.num_faces(elem);
-      STKUNIT_EXPECT_EQ(faces_per_hex, num_faces);
+      EXPECT_EQ(faces_per_hex, num_faces);
 
       const stk::mesh::Entity * faces = fixture.m_bulk_data.begin_faces(elem);
       unsigned elem_num_ghosted_faces = 0;
@@ -311,32 +311,32 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFaces3x3x3 )
         {
           elem_num_ghosted_faces += 1;
           const int face_owner = fixture.m_bulk_data.parallel_owner_rank(face);
-          STKUNIT_EXPECT_NE(face_owner, my_proc_id);
+          EXPECT_NE(face_owner, my_proc_id);
         }
 
         const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;
-        STKUNIT_ASSERT(is_ghosted_or_shared);
+        ASSERT_TRUE(is_ghosted_or_shared);
 
       }
 
-      STKUNIT_EXPECT_LE(1u, elem_num_ghosted_faces);
+      EXPECT_LE(1u, elem_num_ghosted_faces);
       num_ghosted_faces += elem_num_ghosted_faces;
 
       const unsigned shared_and_ghosted = elem_num_shared_faces + elem_num_ghosted_faces;
-      STKUNIT_EXPECT_EQ(faces_per_hex, shared_and_ghosted);
+      EXPECT_EQ(faces_per_hex, shared_and_ghosted);
     }
   }
 
   if (fixture.m_bulk_data.parallel_size() > 1)
-    STKUNIT_EXPECT_LE(1u, num_ghosted_faces);
+    EXPECT_LE(1u, num_ghosted_faces);
 
 
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
+TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
 {
   const size_t NX = 3;
   const size_t NY = 3;
@@ -351,10 +351,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -363,10 +363,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_tet_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_tet_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -377,9 +377,9 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( faces_per_tet, b.num_faces(i) );
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( nodes_per_tet,  b.num_nodes(i) );
+      EXPECT_EQ( faces_per_tet, b.num_faces(i) );
+      EXPECT_EQ( 0u, b.num_edges(i) );
+      EXPECT_EQ( nodes_per_tet,  b.num_nodes(i) );
     }
   }
 
@@ -391,8 +391,8 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
   {
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(i) );
-      STKUNIT_EXPECT_EQ( nodes_per_tri, b.num_nodes(i) );
+      EXPECT_EQ( 0u, b.num_edges(i) );
+      EXPECT_EQ( nodes_per_tri, b.num_nodes(i) );
     }
   }
 
@@ -413,7 +413,7 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
       const stk::mesh::Entity & elem = b[i];
 
       const unsigned num_faces = fixture.m_bulk_data.num_faces(elem);
-      STKUNIT_EXPECT_EQ(faces_per_tet, num_faces);
+      EXPECT_EQ(faces_per_tet, num_faces);
 
       const stk::mesh::Entity * faces = fixture.m_bulk_data.begin_faces(elem);
       unsigned elem_num_ghosted_faces = 0;
@@ -430,32 +430,32 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateTetFaces3x3x3 )
         {
           elem_num_ghosted_faces += 1;
           const int face_owner = fixture.m_bulk_data.parallel_owner_rank(face);
-          STKUNIT_EXPECT_NE(face_owner, my_proc_id);
+          EXPECT_NE(face_owner, my_proc_id);
         }
 
         const bool is_shared = fixture.m_bulk_data.in_shared(fixture.m_bulk_data.entity_key(face));
         if (is_shared) elem_num_shared_faces += 1;
 
         const bool is_ghosted_or_shared = is_ghosted || is_shared;
-        STKUNIT_ASSERT(is_ghosted_or_shared);
+        ASSERT_TRUE(is_ghosted_or_shared);
 
       }
 
-      STKUNIT_EXPECT_LE(1u, elem_num_ghosted_faces);
+      EXPECT_LE(1u, elem_num_ghosted_faces);
       num_ghosted_faces += elem_num_ghosted_faces;
 
       const unsigned shared_and_ghosted = elem_num_shared_faces + elem_num_ghosted_faces;
-      STKUNIT_EXPECT_EQ(faces_per_tet, shared_and_ghosted);
+      EXPECT_EQ(faces_per_tet, shared_and_ghosted);
     }
   }
 
   if (fixture.m_bulk_data.parallel_size() > 1)
-    STKUNIT_EXPECT_LE(1u, num_ghosted_faces);
+    EXPECT_LE(1u, num_ghosted_faces);
 
 
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
+TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
 {
   const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
@@ -475,10 +475,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::skin_mesh(fixture.m_bulk_data);
@@ -486,10 +486,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 64u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,  counts[edge_rank] );  // edges
-    STKUNIT_EXPECT_EQ( 54u, counts[face_rank] );  // faces
-    STKUNIT_EXPECT_EQ( 27u, counts[elem_rank] ); // elements
+    EXPECT_EQ( 64u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,  counts[edge_rank] );  // edges
+    EXPECT_EQ( 54u, counts[face_rank] );  // faces
+    EXPECT_EQ( 27u, counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -498,10 +498,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -513,8 +513,8 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
       unsigned elem_ordinal = i;
-      STKUNIT_EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
-      STKUNIT_EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
+      EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
+      EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
     }
   }
 
@@ -527,14 +527,14 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testSkinAndCreateFaces3x3x3 )
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
       unsigned face_ordinal = i;
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
-      STKUNIT_EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
+      EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
+      EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
     }
   }
 
 }
 
-STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
+TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
 {
   const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
   const stk::mesh::EntityRank face_rank = stk::topology::FACE_RANK;
@@ -554,10 +554,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.m_bulk_data);
@@ -566,10 +566,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::skin_mesh(fixture.m_bulk_data);
@@ -578,10 +578,10 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.m_bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
+    EXPECT_EQ( exp_node_count(NX, NY, NZ), counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( exp_hex_face_count(NX, NY, NZ), counts[face_rank] ); // faces
+    EXPECT_EQ( exp_hex_count(NX, NY, NZ), counts[elem_rank] ); // elements
   }
 
   stk::mesh::BucketVector  elem_buckets = fixture.m_bulk_data.buckets(elem_rank);
@@ -593,8 +593,8 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
       unsigned elem_ordinal = i;
-      STKUNIT_EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
-      STKUNIT_EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
+      EXPECT_EQ( faces_per_hex,  b.num_faces(elem_ordinal) );
+      EXPECT_EQ( nodes_per_hex,  b.num_nodes(elem_ordinal) );
     }
   }
 
@@ -607,14 +607,14 @@ STKUNIT_UNIT_TEST( UnitTestCreateFaces , testCreateFacesThenSkin3x3x3 )
     stk::mesh::Bucket & b = **b_itr;
     for ( size_t i = 0; i< b.size(); ++i) {
       unsigned face_ordinal = i;
-      STKUNIT_EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
-      STKUNIT_EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
+      EXPECT_EQ( 0u, b.num_edges(face_ordinal) );
+      EXPECT_EQ( nodes_per_quad, b.num_nodes(face_ordinal) );
     }
   }
 
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Gears )
+TEST ( UnitTestCreateFaces, Gears )
 {
   stk::mesh::fixtures::GearsFixture fixture( MPI_COMM_WORLD, 1,
 					     stk::mesh::fixtures::GearParams(0.1, 0.4, 1.0, -0.4, 0.4));
@@ -626,10 +626,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Gears )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 4340u,  counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 3348u, counts[elem_rank] ); // elements
+    EXPECT_EQ( 4340u,  counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,                         counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,                         counts[face_rank] ); // faces
+    EXPECT_EQ( 3348u, counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(fixture.bulk_data);
@@ -638,15 +638,15 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Gears )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts( fixture.bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 4340u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 10974u, counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 3348u, counts[elem_rank] ); // elements
+    EXPECT_EQ( 4340u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u                        , counts[edge_rank] ); // edges
+    EXPECT_EQ( 10974u, counts[face_rank] ); // faces
+    EXPECT_EQ( 3348u, counts[elem_rank] ); // elements
   }
 
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
+TEST ( UnitTestCreateFaces, Heterogeneous )
 {
   int numprocs = 1;
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -710,10 +710,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts(bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 21u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u,  counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 17u, counts[elem_rank] ); // elements
+    EXPECT_EQ( 21u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u,  counts[face_rank] ); // faces
+    EXPECT_EQ( 17u, counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(bulk_data);
@@ -722,15 +722,15 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Heterogeneous )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts(bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ( 21u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 39u, counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 17u, counts[elem_rank] ); // elements
+    EXPECT_EQ( 21u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u,  counts[edge_rank] ); // edges
+    EXPECT_EQ( 39u, counts[face_rank] ); // faces
+    EXPECT_EQ( 17u, counts[elem_rank] ); // elements
   }
 
 }
 
-STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Degenerate )
+TEST ( UnitTestCreateFaces, Degenerate )
 {
   int numprocs = 1;
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
@@ -782,10 +782,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Degenerate )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts(bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ(10u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u, counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ( 0u, counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 2u, counts[elem_rank] ); // elements
+    EXPECT_EQ(10u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u, counts[edge_rank] ); // edges
+    EXPECT_EQ( 0u, counts[face_rank] ); // faces
+    EXPECT_EQ( 2u, counts[elem_rank] ); // elements
   }
 
   stk::mesh::create_faces(bulk_data);
@@ -794,10 +794,10 @@ STKUNIT_UNIT_TEST ( UnitTestCreateFaces, Degenerate )
     std::vector<size_t> counts ;
     stk::mesh::comm_mesh_counts(bulk_data , counts);
 
-    STKUNIT_EXPECT_EQ(10u, counts[node_rank] ); // nodes
-    STKUNIT_EXPECT_EQ( 0u, counts[edge_rank] ); // edges
-    STKUNIT_EXPECT_EQ(11u, counts[face_rank] ); // faces
-    STKUNIT_EXPECT_EQ( 2u, counts[elem_rank] ); // elements
+    EXPECT_EQ(10u, counts[node_rank] ); // nodes
+    EXPECT_EQ( 0u, counts[edge_rank] ); // edges
+    EXPECT_EQ(11u, counts[face_rank] ); // faces
+    EXPECT_EQ( 2u, counts[elem_rank] ); // elements
   }
 
 }

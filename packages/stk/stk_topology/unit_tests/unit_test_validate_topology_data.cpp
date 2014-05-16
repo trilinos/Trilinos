@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_topology/topology.hpp>
 
 #include <map>
@@ -103,49 +103,49 @@ struct validate_topology_data
 
 } //unnamed namespace
 
-STKUNIT_UNIT_TEST( stk_topology, validate_topology)
+TEST( stk_topology, validate_topology)
 {
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::NODE          > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::PARTICLE      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2_1D     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3_1D     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_2        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_3        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_2  > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_3  > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3_2D      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4_2D      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6_2D      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4_2D     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8_2D     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9_2D     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_3   > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_4   > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_6   > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_4  > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_8  > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_9  > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_4         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_8         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_10        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_11        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_5     > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_13    > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_14    > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_6       > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_15      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_18      > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_8         > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_20        > >::value );
-  STKUNIT_EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_27        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::NODE          > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::PARTICLE      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_2_1D     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::LINE_3_1D     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_2        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::BEAM_3        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_2  > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_LINE_3  > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_3_2D      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_4_2D      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TRI_6_2D      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_4_2D     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_8_2D     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::QUAD_9_2D     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_3   > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_4   > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_TRI_6   > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_4  > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_8  > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::SHELL_QUAD_9  > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_4         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_8         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_10        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::TET_11        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_5     > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_13    > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::PYRAMID_14    > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_6       > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_15      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::WEDGE_18      > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_8         > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_20        > >::value );
+  EXPECT_TRUE( validate_topology_data< topology_data< topology::HEX_27        > >::value );
 
   // check that the permutations define the same sides
   for (stk::topology topo = stk::topology::BEGIN_TOPOLOGY; topo < stk::topology::END_TOPOLOGY; ++topo) {

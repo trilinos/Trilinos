@@ -13,7 +13,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/FindRestriction.hpp>  // for find_restriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string
 #include <vector>                       // for vector
 #include "Shards_Array.hpp"
@@ -47,7 +47,7 @@ public:
 
 namespace {
 
-STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
+TEST(UnitTestFieldRestriction, testUnit)
 {
   stk::mesh::UnitTestFieldImpl ufield;
   ufield.testFieldRestriction();
@@ -112,21 +112,21 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   //------------------------------
   // Test for correctness of vector of declared fields.
-  STKUNIT_ASSERT_EQ(7u,  allocated_fields.size());
-  STKUNIT_ASSERT( f2 == allocated_fields[0] );
-  STKUNIT_ASSERT( nodeField == allocated_fields[1] );
+  ASSERT_EQ(7u,  allocated_fields.size());
+  ASSERT_TRUE( f2 == allocated_fields[0] );
+  ASSERT_TRUE( nodeField == allocated_fields[1] );
 
   //------------------------------
   // Test for correctness of field internal state access:
 
-  STKUNIT_ASSERT( f2     == f2->field_state( StateNone ) );
-  STKUNIT_ASSERT( NULL   == f2->field_state( StateOld ) );
-  STKUNIT_ASSERT( nodeField     == nodeField->field_state( StateNew ) );
-  STKUNIT_ASSERT( f3_old == nodeField->field_state( StateOld ) );
-  STKUNIT_ASSERT( NULL   == nodeField->field_state( StateNM1 ) );
-  STKUNIT_ASSERT( nodeField     == f3_old->field_state( StateNew ) );
-  STKUNIT_ASSERT( f3_old == f3_old->field_state( StateOld ) );
-  STKUNIT_ASSERT( NULL   == f3_old->field_state( StateNM1 ) );
+  ASSERT_TRUE( f2     == f2->field_state( StateNone ) );
+  ASSERT_TRUE( NULL   == f2->field_state( StateOld ) );
+  ASSERT_TRUE( nodeField     == nodeField->field_state( StateNew ) );
+  ASSERT_TRUE( f3_old == nodeField->field_state( StateOld ) );
+  ASSERT_TRUE( NULL   == nodeField->field_state( StateNM1 ) );
+  ASSERT_TRUE( nodeField     == f3_old->field_state( StateNew ) );
+  ASSERT_TRUE( f3_old == f3_old->field_state( StateOld ) );
+  ASSERT_TRUE( NULL   == f3_old->field_state( StateNM1 ) );
 
   //------------------------------
   // Declare some parts for restrictions:
@@ -144,42 +144,42 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   // Check for correctness of restrictions:
 
-  STKUNIT_ASSERT( nodeField->restrictions().size() == 1 );
-  STKUNIT_ASSERT( nodeField->restrictions()[0] ==
+  ASSERT_TRUE( nodeField->restrictions().size() == 1 );
+  ASSERT_TRUE( nodeField->restrictions()[0] ==
                   FieldRestriction( pA ) );
-  STKUNIT_ASSERT( edgeField->restrictions()[0] ==
+  ASSERT_TRUE( edgeField->restrictions()[0] ==
                   FieldRestriction( pB ) );
-  STKUNIT_ASSERT( faceField->restrictions()[0] ==
+  ASSERT_TRUE( faceField->restrictions()[0] ==
                   FieldRestriction( pC ) );
 
   meta_data.declare_field_restriction(*nodeField , pB , stride[nodeField->field_array_rank()], stride[1] );
 
-  STKUNIT_ASSERT_EQUAL( nodeField->max_size( stk::topology::NODE_RANK ) , 20u );
+  ASSERT_EQ( nodeField->max_size( stk::topology::NODE_RANK ) , 20u );
 
   //------------------------------
   // Check for error detection of bad stride:
   {
     unsigned bad_stride[4] = { 5 , 4 , 6 , 3 };
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
       meta_data.declare_field_restriction(*nodeField , pA, 5*4*6 , bad_stride[0] ),
       std::runtime_error
     );
-    STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
+    ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
   // Check for error detection in re-declaring an incompatible
   // field restriction.
   {
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
       meta_data.declare_field_restriction(*nodeField , pA , stride[nodeField->field_array_rank()], stride[1] ),
       std::runtime_error
     );
-    STKUNIT_ASSERT_EQ(2u, nodeField->restrictions().size());
+    ASSERT_EQ(2u, nodeField->restrictions().size());
   }
 
   // Verify and clean out any redundant restructions:
 
-  STKUNIT_ASSERT( nodeField->restrictions().size() == 2 );
+  ASSERT_TRUE( nodeField->restrictions().size() == 2 );
 
   //------------------------------
   // Introduce a redundant restriction, clean it, and
@@ -190,13 +190,13 @@ void UnitTestFieldImpl::testFieldRestriction()
   meta_data.declare_field_restriction(*f2 , pA , stride[f2->field_array_rank()-1], stride[0] );
   meta_data.declare_field_restriction(*f2 , pD , stride[f2->field_array_rank()-1], stride[0] );
 
-  STKUNIT_ASSERT( f2->restrictions().size() == 1 );
+  ASSERT_TRUE( f2->restrictions().size() == 1 );
 
   {
     const FieldBase::Restriction & rA = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pA );
     const FieldBase::Restriction & rD = stk::mesh::find_restriction(*f2, stk::topology::NODE_RANK, pD );
-    STKUNIT_ASSERT( & rA == & rD );
-    STKUNIT_ASSERT( rA.selector() == pD );
+    ASSERT_TRUE( & rA == & rD );
+    ASSERT_TRUE( rA.selector() == pD );
   }
 
   //------------------------------
@@ -207,7 +207,7 @@ void UnitTestFieldImpl::testFieldRestriction()
   // this error condition.
   {
     meta_data.declare_field_restriction(*f2 , pB , stride[f2->field_array_rank()], stride[1] );
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
       meta_data.declare_part_subset( pD, pB ),
       std::runtime_error
     );
@@ -221,7 +221,7 @@ void UnitTestFieldImpl::testFieldRestriction()
     arg_no_stride[0] = 1;
     arg_no_stride[1] = 0;
 
-    STKUNIT_ASSERT_THROW(
+    ASSERT_THROW(
       meta_data.declare_field_restriction(*f2, pA, 0, arg_no_stride[0]),
       std::runtime_error
     );

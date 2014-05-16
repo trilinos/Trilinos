@@ -13,7 +13,7 @@
 #include <stk_mesh/base/FEMHelpers.hpp>  // for declare_element
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Types.hpp"      // for EntityId
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -24,7 +24,7 @@ namespace stk { namespace mesh { class Part; } }
 
 
 
-STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
+TEST( UnitTestDeclareElement , inject_shell )
 {
   // This tests creates a small HexFixture with two hexes then, in a separate
   // modification cycle, inserts a shell between the two elements.
@@ -70,5 +70,5 @@ STKUNIT_UNIT_TEST( UnitTestDeclareElement , inject_shell )
   }
   fixture.m_bulk_data.modification_end();
 
-  STKUNIT_EXPECT_TRUE(no_throw);
+  EXPECT_TRUE(no_throw);
 }

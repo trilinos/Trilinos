@@ -9,7 +9,7 @@
 
 #include <stk_mesh/base/FieldRestriction.hpp>  // for FieldRestriction
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "stk_mesh/base/Selector.hpp"   // for Selector, operator<<
 namespace stk { namespace mesh { class Part; } }
 
@@ -17,16 +17,16 @@ namespace stk { namespace mesh { class Part; } }
 
 namespace {
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, defaultConstruct )
+TEST( UnitTestFieldRestriction, defaultConstruct )
 {
   stk::mesh::FieldRestriction fr;
-  STKUNIT_EXPECT_EQ( fr.selector(), stk::mesh::Selector() );
-  STKUNIT_EXPECT_EQ( 0, fr.num_scalars_per_entity() );
-  STKUNIT_EXPECT_EQ( fr.dimension(), 0 );
+  EXPECT_EQ( fr.selector(), stk::mesh::Selector() );
+  EXPECT_EQ( 0, fr.num_scalars_per_entity() );
+  EXPECT_EQ( fr.dimension(), 0 );
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, construct )
+TEST( UnitTestFieldRestriction, construct )
 {
   stk::mesh::MetaData meta(3);
   stk::mesh::Part& part_a = meta.declare_part("a");
@@ -34,16 +34,16 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, construct )
   stk::mesh::FieldRestriction fr(part_a);
   const int numScalarsPerEntity = 2;
   fr.set_num_scalars_per_entity(numScalarsPerEntity);
-  STKUNIT_EXPECT_EQ( numScalarsPerEntity, fr.num_scalars_per_entity() );
+  EXPECT_EQ( numScalarsPerEntity, fr.num_scalars_per_entity() );
 
   const int dim = 1;
   fr.set_dimension(dim);
-  STKUNIT_EXPECT_EQ( fr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ(dim, fr.dimension());
+  EXPECT_EQ( fr.selector(), stk::mesh::Selector(part_a) );
+  EXPECT_EQ(dim, fr.dimension());
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, copyConstruct )
+TEST( UnitTestFieldRestriction, copyConstruct )
 {
   stk::mesh::MetaData meta(3);
   stk::mesh::Part& part_a = meta.declare_part("a");
@@ -55,13 +55,13 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, copyConstruct )
   fr.set_dimension(dim);
 
   stk::mesh::FieldRestriction tmpfr(fr);
-  STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
-  STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ( dim, tmpfr.dimension() );
+  EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
+  EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
+  EXPECT_EQ( dim, tmpfr.dimension() );
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqual )
+TEST( UnitTestFieldRestriction, operatorEqual )
 {
   stk::mesh::MetaData meta(3);
   stk::mesh::Part& part_a = meta.declare_part("a");
@@ -77,13 +77,13 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqual )
   fr.set_dimension(dim);
 
   tmpfr = fr;
-  STKUNIT_EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
-  STKUNIT_EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
-  STKUNIT_EXPECT_EQ( dim, tmpfr.dimension() );
+  EXPECT_EQ( numScalarsPerEntity, tmpfr.num_scalars_per_entity() );
+  EXPECT_EQ( tmpfr.selector(), stk::mesh::Selector(part_a) );
+  EXPECT_EQ( dim, tmpfr.dimension() );
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorLess )
+TEST( UnitTestFieldRestriction, operatorLess )
 {
   stk::mesh::MetaData meta(3);
   stk::mesh::Part& part_a = meta.declare_part("a");
@@ -92,28 +92,28 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorLess )
   {
     stk::mesh::FieldRestriction frA(part_a);
     stk::mesh::FieldRestriction frB(part_b);
-    STKUNIT_EXPECT_EQ( frA < frB, true );
-    STKUNIT_EXPECT_EQ( frB < frA, false );
+    EXPECT_EQ( frA < frB, true );
+    EXPECT_EQ( frB < frA, false );
   }
   {
     stk::mesh::FieldRestriction frA(part_a);
     stk::mesh::FieldRestriction frB(part_a);
-    STKUNIT_EXPECT_EQ( frA == frB, true );
+    EXPECT_EQ( frA == frB, true );
   }
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorLessInvalid )
+TEST( UnitTestFieldRestriction, operatorLessInvalid )
 {
   stk::mesh::Selector emptySelector;
   stk::mesh::FieldRestriction frA(emptySelector);
   stk::mesh::FieldRestriction frB;
-  STKUNIT_EXPECT_EQ( frA < frB, false );
-  STKUNIT_EXPECT_EQ( frB < frA, false );
+  EXPECT_EQ( frA < frB, false );
+  EXPECT_EQ( frB < frA, false );
 }
 
 
-STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
+TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
 {
   stk::mesh::MetaData meta(3);
   stk::mesh::Part& part_a = meta.declare_part("a");
@@ -124,28 +124,28 @@ STKUNIT_UNIT_TEST( UnitTestFieldRestriction, operatorEqualEqual_and_NotEqual )
     frA.set_num_scalars_per_entity(25);
     stk::mesh::FieldRestriction frB(part_a);
     frB.set_num_scalars_per_entity(10);
-    STKUNIT_EXPECT_EQ( frA == frB, true );
-    STKUNIT_EXPECT_EQ( frA != frB, false );
+    EXPECT_EQ( frA == frB, true );
+    EXPECT_EQ( frA != frB, false );
   }
   {
     stk::mesh::FieldRestriction frA(part_a);
     frA.set_num_scalars_per_entity(3);
     stk::mesh::FieldRestriction frB(part_b);
     frB.set_num_scalars_per_entity(3);
-    STKUNIT_EXPECT_EQ( frA == frB, false );
-    STKUNIT_EXPECT_EQ( frA != frB, true );
+    EXPECT_EQ( frA == frB, false );
+    EXPECT_EQ( frA != frB, true );
   }
   {
     stk::mesh::FieldRestriction frA(part_a);
     stk::mesh::FieldRestriction frB(part_a);
-    STKUNIT_EXPECT_EQ( frA == frB, true );
-    STKUNIT_EXPECT_EQ( frA != frB, false );
+    EXPECT_EQ( frA == frB, true );
+    EXPECT_EQ( frA != frB, false );
   }
   {
     stk::mesh::FieldRestriction frA;
     stk::mesh::FieldRestriction frB;
-    STKUNIT_EXPECT_EQ( frA == frB, true );
-    STKUNIT_EXPECT_EQ( frA != frB, false );
+    EXPECT_EQ( frA == frB, true );
+    EXPECT_EQ( frA != frB, false );
   }
 }
 

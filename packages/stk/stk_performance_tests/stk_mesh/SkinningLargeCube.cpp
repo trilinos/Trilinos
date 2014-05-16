@@ -7,7 +7,7 @@
 /*------------------------------------------------------------------------*/
 #include <stdexcept>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/WallTime.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
@@ -312,7 +312,7 @@ void separate_and_skin_mesh(
 // \TODO Idea: ADD scaling test over mesh size and compute the slope.
 // \TODO Idea: ADD different partitioning such that the reskinning spans more than one process.
 
-STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
+TEST( skinning_large_cube, skinning_large_cube)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -386,7 +386,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
       }
       }
       }
-      STKUNIT_EXPECT_TRUE( num_detached_this_proc > 0u );
+      EXPECT_TRUE( num_detached_this_proc > 0u );
     } else {
       //detach middle of the mesh
       for (size_t ix=NX/2; ix < NX/2+1; ++ix) {
@@ -497,7 +497,7 @@ STKUNIT_UNIT_TEST( skinning_large_cube, skinning_large_cube)
       expected_num_skin = 2*(NX*NY + NX*NZ + NY*NZ) + 12;
     }
 
-    STKUNIT_EXPECT_EQUAL( num_skin_entities, expected_num_skin );
+    EXPECT_EQ( num_skin_entities, expected_num_skin );
   }
 
   if (p_rank == 0) {

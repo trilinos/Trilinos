@@ -16,7 +16,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
 #include <stk_mesh/fixtures/BoxFixture.hpp>  // for BoxFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, basic_string, etc
 #include <vector>                       // for vector, etc
 #include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
@@ -50,7 +50,7 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
+TEST(UnitTestingOfBucket, testBucket)
 {
   // Unit test the Part functionality in isolation:
 
@@ -91,7 +91,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
   int local_box[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
   bulk.modification_begin();
   fixture.generate_boxes( root_box, local_box );
-  STKUNIT_ASSERT(bulk.modification_end());
+  ASSERT_TRUE(bulk.modification_end());
 
   //  First, test for streaming IO;
   {
@@ -106,7 +106,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     std::stringstream  out1_str;
     out1_str << (*b1);
     bool equal = (gold1 == out1_str.str());
-    STKUNIT_ASSERT_EQUAL ( equal, true );
+    ASSERT_EQ ( equal, true );
   }
 
   // Second, update state of bucket until circular cue is filled
@@ -122,14 +122,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
     PartVector tmp(2) ;
     tmp[0] = & meta.universal_part();
     tmp[1] = & meta.locally_owned_part();
-    STKUNIT_ASSERT_EQUAL ( has_superset ( *bulk.buckets(stk::topology::NODE_RANK)[0] , tmp ) , bulk.parallel_size() == 1 );
-    STKUNIT_ASSERT ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_any ( tmp ) );
-    STKUNIT_ASSERT_EQUAL ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
-    STKUNIT_ASSERT ( bulk.buckets(stk::topology::NODE_RANK)[0]->member ( **meta.get_parts().begin() ) );
+    ASSERT_EQ ( has_superset ( *bulk.buckets(stk::topology::NODE_RANK)[0] , tmp ) , bulk.parallel_size() == 1 );
+    ASSERT_TRUE ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_any ( tmp ) );
+    ASSERT_EQ ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
+    ASSERT_TRUE ( bulk.buckets(stk::topology::NODE_RANK)[0]->member ( **meta.get_parts().begin() ) );
   }
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
+TEST(UnitTestingOfBucket, testGetInvolvedParts)
 {
   // Tests to cover get_involved_parts for GetBuckets.cpp - C.Brickley - 12 May 2010
 
@@ -216,7 +216,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   bulk2.modification_end();
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
+TEST(UnitTestingOfBucket, testBucket2)
 {
   // Tests to cover print, has_superset and BucketLess::operator() for Buckets.cpp - C.Brickley - 2nd June 2010
 
@@ -292,7 +292,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
   print(oss, "  ", b2);
 
   //Test to cover has_superset function in Bucket.cpp
-  STKUNIT_ASSERT_EQUAL ( has_superset ( b2 , partLeft_3 ) , false );
+  ASSERT_EQ ( has_superset ( b2 , partLeft_3 ) , false );
 
   //Test on BucketLess::operator() in Bucket.cpp/hpp
 
@@ -330,11 +330,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   bool res = Buck(  &t[0], &u[0] );
 
-  STKUNIT_EXPECT_EQUAL( res, false );
+  EXPECT_EQ( res, false );
   */
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
+TEST(UnitTestingOfBucket, testEntityComm)
 {
   // FIXME: With so much code commented out, this unit-test does
   // not appear to be testing anything.
@@ -372,26 +372,26 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
   /*  cout << endl << "Bucket test line 3" << endl ;
   bool result = in_shared(elem);
   if( result) {
-     STKUNIT_ASSERT_EQUAL( result , true );
+     ASSERT_EQ( result , true );
   }
   cout << endl << "Bucket test line 4" << endl ;
 
   result = in_receive_ghost(elem);
   if( result) {
-     STKUNIT_ASSERT_EQUAL( result , true );
+     ASSERT_EQ( result , true );
   }
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
       cout << endl << "in relation h and p =" << p << endl ;
 
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *elem , p ), false );
+      ASSERT_EQ( in_send_ghost( *elem , p ), false );
       cout << endl << "in relation ii =" << endl
    }
 
   cout << endl << "Bucket test line 5" << endl ;
   result = in_send_ghost(elem);
   if( result) {
-     STKUNIT_ASSERT_EQUAL( result , true );
+     ASSERT_EQ( result , true );
      }
 
   cout << endl << "Bucket test line 6" << endl ;
@@ -401,7 +401,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
 
   result = in_shared(elem, proc);
   if( result) {
-     STKUNIT_ASSERT_EQUAL( result , true );
+     ASSERT_EQ( result , true );
   }
   cout << endl << "Bucket test line 7" << endl ;  */
 }

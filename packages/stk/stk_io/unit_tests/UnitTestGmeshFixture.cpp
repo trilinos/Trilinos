@@ -12,7 +12,7 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for allocator, operator+, etc
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper
@@ -24,7 +24,7 @@
 
 enum { SpaceDim = 3 };
 
-STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
+TEST(UnitTestGmeshFixture, testUnit)
 {
   const size_t num_x = 1;
   const size_t num_y = 2;
@@ -38,19 +38,19 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   fixture.commit();
 
   const std::vector<std::string> & sideset_names = fixture.getSidesetNames();
-  STKUNIT_ASSERT_EQUAL( num_surf, sideset_names.size() );
+  ASSERT_EQ( num_surf, sideset_names.size() );
 
   for( size_t i = 0; i < num_surf; ++i ) {
     std::string surf_name =  (std::string)"surface_" + Ioss::Utils::to_string(i+1);
-    STKUNIT_ASSERT(surf_name == sideset_names[i]);
+    ASSERT_TRUE(surf_name == sideset_names[i]);
   }
 
   // Needed to test field data
   stk::mesh::Field<double,stk::mesh::Cartesian> * coord_field =
     fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
-  STKUNIT_ASSERT( coord_field );
+  ASSERT_TRUE( coord_field );
 
   const stk::mesh::PartVector & side_parts = fixture.getSideParts();
-  STKUNIT_ASSERT_EQUAL( sideset_names.size(), side_parts.size() );
+  ASSERT_EQ( sideset_names.size(), side_parts.size() );
 }
 

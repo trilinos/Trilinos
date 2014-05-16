@@ -9,12 +9,12 @@
 
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_size, etc
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 
 
-STKUNIT_UNIT_TEST(ParallelComm, CommAllDestructor) {
+TEST(ParallelComm, CommAllDestructor) {
     stk::ParallelMachine comm = MPI_COMM_WORLD ;
     int mpi_size = stk::parallel_machine_size(comm);
     const unsigned zero = 0 ;
@@ -26,7 +26,7 @@ STKUNIT_UNIT_TEST(ParallelComm, CommAllDestructor) {
         sparse.allocate_symmetric_buffers( comm, s_size );
         stk::CommBuffer * recv_buffer = &sparse.recv_buffer(0);
         stk::CommBuffer * send_buffer = &sparse.send_buffer(0);
-        STKUNIT_ASSERT( recv_buffer != send_buffer );
+        ASSERT_TRUE( recv_buffer != send_buffer );
     }
     // This should not produce a memory leak.
 }

@@ -5,12 +5,12 @@
 /*  Export of this program may require a license from the                 */
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_io/StkMeshIoBroker.hpp>
 
 #include <stk_mesh/base/BulkData.hpp>
 
-STKUNIT_UNIT_TEST(UnitTestNodeBucketsHaveValidTopology, testUnit)
+TEST(UnitTestNodeBucketsHaveValidTopology, testUnit)
 {
   std::string generated_mesh("generated:2x3x4");
 

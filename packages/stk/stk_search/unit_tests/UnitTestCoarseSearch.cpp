@@ -1,7 +1,7 @@
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <vector>
@@ -57,36 +57,36 @@ void testCoarseSearchForAlgorithm(stk::search::SearchMethod algorithm, MPI_Comm 
   stk::search::coarse_search(local_domain, local_range, algorithm, comm, searchResults);
 
   if (num_procs == 1) {
-    STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
-    STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-    STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+    ASSERT_EQ( searchResults.size(), 2u);
+    EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+    EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
   }
   else {
     if (proc_id == 0) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
+      ASSERT_EQ( searchResults.size(), 4u);
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
     }
     else if (proc_id == num_procs - 1) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      ASSERT_EQ( searchResults.size(), 4u);
       int prev = proc_id -1;
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
     }
     else {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 6u);
+      ASSERT_EQ( searchResults.size(), 6u);
       int prev = proc_id -1;
       int next = proc_id + 1;
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
     }
   }
 }
@@ -133,44 +133,44 @@ void testCoarseSearchForAlgorithm_IntsForIdents(stk::search::SearchMethod algori
   stk::search::coarse_search_nonIdentProc<StkBox, int, StkBox, int>(local_domain, local_range, algorithm, comm, searchResults);
 
   if (num_procs == 1) {
-    STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
-    STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
-    STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
-    STKUNIT_EXPECT_EQ( searchResults[0].second,IdentForTest(2,0) );
-    STKUNIT_EXPECT_EQ( searchResults[1].second,IdentForTest(3,0) );
+    ASSERT_EQ( searchResults.size(), 2u);
+    EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
+    EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
+    EXPECT_EQ( searchResults[0].second,IdentForTest(2,0) );
+    EXPECT_EQ( searchResults[1].second,IdentForTest(3,0) );
   }
   else {
     if (proc_id == 0) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
-      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
-      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
-      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(2,0) );
-      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(3,0) );
+      ASSERT_EQ( searchResults.size(), 2u);
+      EXPECT_EQ( searchResults[0].first, IdentForTest(0,0) );
+      EXPECT_EQ( searchResults[1].first, IdentForTest(1,0) );
+      EXPECT_EQ( searchResults[0].second, IdentForTest(2,0) );
+      EXPECT_EQ( searchResults[1].second, IdentForTest(3,0) );
     }
     else if (proc_id == num_procs - 1) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      ASSERT_EQ( searchResults.size(), 4u);
       int prev = proc_id -1;
-      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
-      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
-      STKUNIT_EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
+      EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
+      EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
+      EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
+      EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
+      EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
+      EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
+      EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
+      EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
 
     }
     else {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      ASSERT_EQ( searchResults.size(), 4u);
       int prev = proc_id -1;
-      STKUNIT_EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
-      STKUNIT_EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
-      STKUNIT_EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
-      STKUNIT_EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
+      EXPECT_EQ( searchResults[0].first, IdentForTest(proc_id*4,proc_id) );
+      EXPECT_EQ( searchResults[1].first, IdentForTest(proc_id*4,proc_id) );
+      EXPECT_EQ( searchResults[2].first, IdentForTest(proc_id*4+1,proc_id) );
+      EXPECT_EQ( searchResults[3].first, IdentForTest(proc_id*4+1,proc_id) );
+      EXPECT_EQ( searchResults[0].second, IdentForTest(prev*4+2,prev) );
+      EXPECT_EQ( searchResults[1].second, IdentForTest(proc_id*4+2,proc_id) );
+      EXPECT_EQ( searchResults[2].second, IdentForTest(prev*4+3,prev) );
+      EXPECT_EQ( searchResults[3].second, IdentForTest(proc_id*4+3,proc_id) );
     }
   }
 }
@@ -207,73 +207,73 @@ void testCoarseSearchForAlgorithmUsingGtkAABoxes(NewSearchMethod algorithm, MPI_
   coarse_search_new(local_domain, local_range, algorithm, comm, searchResults);
 
   if (num_procs == 1) {
-    STKUNIT_ASSERT_EQ( searchResults.size(), 2u);
-    STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-    STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+    ASSERT_EQ( searchResults.size(), 2u);
+    EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+    EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
   }
   else {
     if (proc_id == 0) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
+      ASSERT_EQ( searchResults.size(), 4u);
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(0,0), Ident(2,0)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(1,0), Ident(3,0)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(4,1), Ident(2,0)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(5,1), Ident(3,0)) );
     }
     else if (proc_id == num_procs - 1) {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 4u);
+      ASSERT_EQ( searchResults.size(), 4u);
       int prev = proc_id -1;
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
     }
     else {
-      STKUNIT_ASSERT_EQ( searchResults.size(), 6u);
+      ASSERT_EQ( searchResults.size(), 6u);
       int prev = proc_id -1;
       int next = proc_id + 1;
-      STKUNIT_EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
-      STKUNIT_EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
-      STKUNIT_EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[0], std::make_pair( Ident(proc_id*4,proc_id), Ident(prev*4+2,prev)) );
+      EXPECT_EQ( searchResults[1], std::make_pair( Ident(proc_id*4,proc_id), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[2], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(prev*4+3,prev)) );
+      EXPECT_EQ( searchResults[3], std::make_pair( Ident(proc_id*4+1,proc_id), Ident(proc_id*4+3,proc_id)) );
+      EXPECT_EQ( searchResults[4], std::make_pair( Ident(next*4,next), Ident(proc_id*4+2,proc_id)) );
+      EXPECT_EQ( searchResults[5], std::make_pair( Ident(next*4+1,next), Ident(proc_id*4+3,proc_id)) );
     }
   }
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_noIdentProc_boost_rtree)
+TEST(stk_search, coarse_search_noIdentProc_boost_rtree)
 {
   testCoarseSearchForAlgorithm_IntsForIdents(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
 
 #if 0
-STKUNIT_UNIT_TEST(stk_search, basic_coarse_search_octree)
+TEST(stk_search, basic_coarse_search_octree)
 {
   testCoarseSearchForAlgorithm_IntsForIdents(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 #endif
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree)
+TEST(stk_search, coarse_search_boost_rtree)
 {
   testCoarseSearchForAlgorithm(stk::search::BOOST_RTREE, MPI_COMM_WORLD);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_octree)
+TEST(stk_search, coarse_search_octree)
 {
   testCoarseSearchForAlgorithm(stk::search::OCTREE, MPI_COMM_WORLD);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_rtree_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_boost_rtree_using_gtk_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingGtkAABoxes(BOOST_RTREE, MPI_COMM_WORLD);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_octree_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_octree_using_gtk_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingGtkAABoxes(OCTREE, MPI_COMM_WORLD);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_gtk_using_gtk_aa_boxes)
+TEST(stk_search, coarse_search_gtk_using_gtk_aa_boxes)
 {
     testCoarseSearchForAlgorithmUsingGtkAABoxes(GTK, MPI_COMM_WORLD);
 }
@@ -334,19 +334,19 @@ void testIdentProcWithSearch(stk::search::SearchMethod searchMethod)
     }
 }
 
-//STKUNIT_UNIT_TEST(stk_search, coarse_search_boost_ident_proc_switch)
+//TEST(stk_search, coarse_search_boost_ident_proc_switch)
 //{
 //    stk::search::SearchMethod sm = stk::search::BOOST_RTREE;
 //    testIdentProcWithSearch(sm);
 //}
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_octree_ident_proc_switch)
+TEST(stk_search, coarse_search_octree_ident_proc_switch)
 {
     stk::search::SearchMethod sm = stk::search::OCTREE;
     testIdentProcWithSearch(sm);
 }
 
-STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
+TEST(stk_search, coarse_search_one_point)
 {
   typedef stk::search::IdentProc<uint64_t, unsigned> Ident;
   typedef stk::search::Point<double> Point;
@@ -391,10 +391,10 @@ STKUNIT_UNIT_TEST(stk_search, coarse_search_one_point)
   stk::search::coarse_search(local_domain, local_range, stk::search::OCTREE, comm, searchResults);
 
   if (proc_id == 0) {
-    STKUNIT_ASSERT_EQ(searchResults.size(), 1u);
-    STKUNIT_EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
+    ASSERT_EQ(searchResults.size(), 1u);
+    EXPECT_EQ(searchResults[0], std::make_pair(domainBox1, rangeBox1));
   } else {
-    STKUNIT_ASSERT_EQ(searchResults.size(), 0u);
+    ASSERT_EQ(searchResults.size(), 0u);
   }
 }
 

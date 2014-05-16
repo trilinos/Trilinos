@@ -17,7 +17,7 @@
 #include <stk_mesh/base/Selector.hpp>   // for operator|, Selector
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator, etc
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, BucketIterator
@@ -84,31 +84,31 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
+TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_bulkdata_not_syncronized();
 }
 
-STKUNIT_UNIT_TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
+TEST( UnitTestClosureOfNonLocallyUsedEntities , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_closure_of_non_locally_used_entities();
 }
 
-STKUNIT_UNIT_TEST( UnitTestAllLocalNodes , testUnit )
+TEST( UnitTestAllLocalNodes , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_all_local_nodes();
 }
 
-STKUNIT_UNIT_TEST( UnitTestAllLocalElements , testUnit )
+TEST( UnitTestAllLocalElements , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_all_local_elements();
 }
 
-STKUNIT_UNIT_TEST( UnitTestParallelConsistency , testUnit )
+TEST( UnitTestParallelConsistency , testUnit )
 {
   UnitTestStkMeshBulkModification unit(MPI_COMM_WORLD);
   unit.test_parallel_consistency();
@@ -124,7 +124,7 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 
   std::vector< Entity> entities;
   std::vector< Entity> entities_closure;
-  STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
+  ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
 }
 
 void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
@@ -143,7 +143,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
     entities.push_back(bulk_data.get_entity(ghost_receive.front()));
 
-    STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
+    ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
   }
 }
 
@@ -157,7 +157,7 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     find_closure(bulk_data, entities, entities_closure);
 
     // the closure of the an empty set of entities on all procs should be empty
-    STKUNIT_EXPECT_TRUE(entities_closure.empty());
+    EXPECT_TRUE(entities_closure.empty());
   }
 
   {
@@ -209,10 +209,10 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     // procs, so we expect that they will be part of the closure. In other
     // words, the set of nodes returned by find_closure should exactly match
     // the set of universal nodes.
-    STKUNIT_ASSERT_TRUE(universal_entities.size() == entities_closure.size());
+    ASSERT_TRUE(universal_entities.size() == entities_closure.size());
     stk::mesh::EntityEqual ee;
     for (size_t i = 0; i < entities_closure.size(); ++i) {
-      STKUNIT_EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
+      EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
     }
   }
 }
@@ -281,10 +281,10 @@ void UnitTestStkMeshBulkModification::test_all_local_elements()
     // expect that they will be part of the closure. In other
     // words, the set of entities returned by find_closure should exactly match
     // the set of universal entities (nodes and elements).
-    STKUNIT_ASSERT_TRUE(universal_entities.size() == entities_closure.size());
+    ASSERT_TRUE(universal_entities.size() == entities_closure.size());
     stk::mesh::EntityEqual ee;
     for (size_t i = 0; i < entities_closure.size(); ++i) {
-      STKUNIT_EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
+      EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
     }
   }
 }
@@ -361,9 +361,9 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // If any processor had ghosted nodes that were local to proc 0, those
   // nodes should be in the closure because proc 0 passed them in to
   // find_closure.
-  STKUNIT_ASSERT_TRUE(entities.size() == entities_closure.size());
+  ASSERT_TRUE(entities.size() == entities_closure.size());
   stk::mesh::EntityEqual ee;
   for (size_t i = 0; i < entities_closure.size(); ++i) {
-    STKUNIT_EXPECT_TRUE(ee(entities[i], entities_closure[i]));
+    EXPECT_TRUE(ee(entities[i], entities_closure[i]));
   }
 }

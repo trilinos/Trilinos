@@ -18,7 +18,7 @@
 #include <stk_mesh/base/Types.hpp>      // for EntityId, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }
@@ -37,7 +37,7 @@ using stk::mesh::MetaData;
 
 //---------------------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
+TEST( UnitTestSkin, SkinPocket)
 {
   enum { SpatialDim = 3 };
 
@@ -97,12 +97,12 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
   for (EntityId element_id = 1; element_id < 3; ++element_id) {
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, element_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ( bulk_data.num_connectivity(element, side_rank), 6u);
+      EXPECT_EQ( bulk_data.num_connectivity(element, side_rank), 6u);
     }
   }
 }
 
-STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinTwoStackedShells)
+TEST( UnitTestSkin, DISABLED_SkinTwoStackedShells)
 {
   enum { SpatialDim = 3 };
 
@@ -169,12 +169,12 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinTwoStackedShells)
 
     // Verify that the correct 2 sides are present.
 
-    STKUNIT_ASSERT_EQUAL( num_sides, 2 );
+    ASSERT_EQ( num_sides, 2 );
   }
 }
 
 //---------------------------------------------------------------------------------------
-STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
+TEST( UnitTestSkin, DISABLED_SkinStackedShells)
 {
   enum { SpatialDim = 3 };
 
@@ -249,7 +249,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
 
     // Verify that the correct 2 sides are present.
 
-    STKUNIT_ASSERT_EQUAL( num_sides, 2 );
+    ASSERT_EQ( num_sides, 2 );
   }
 
   //check that faces are attached to correct sides
@@ -260,7 +260,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
       stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
       if ( bulk_data.is_valid(shell) )
       {
-        STKUNIT_ASSERT_TRUE( bulk_data.num_connectivity(shell, side_rank) == 2);
+        ASSERT_TRUE( bulk_data.num_connectivity(shell, side_rank) == 2);
         stk::mesh::Entity const *side_entities_i = bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal const *side_ordinals_i = bulk_data.begin_ordinals(shell, side_rank);
 
@@ -270,11 +270,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
           face_1_id = bulk_data.identifier(*side_entities_i);
         }
         else {
-          STKUNIT_EXPECT_EQ( face_1_id, bulk_data.identifier(*side_entities_i));
+          EXPECT_EQ( face_1_id, bulk_data.identifier(*side_entities_i));
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_EQ(*side_ordinals_i, 0u);
+        EXPECT_EQ(*side_ordinals_i, 0u);
 
         ++side_entities_i;
         ++side_ordinals_i;
@@ -283,11 +283,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
           face_2_id = bulk_data.identifier( *side_entities_i);
         }
         else {
-          STKUNIT_EXPECT_EQ( face_2_id, bulk_data.identifier(*side_entities_i) );
+          EXPECT_EQ( face_2_id, bulk_data.identifier(*side_entities_i) );
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_EQ( *side_ordinals_i, 1u);
+        EXPECT_EQ( *side_ordinals_i, 1u);
       }
     }
 
@@ -295,7 +295,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
       stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
       if ( bulk_data.is_valid(shell) )
       {
-        STKUNIT_ASSERT_EQ( bulk_data.num_connectivity(shell, side_rank), 2u);
+        ASSERT_EQ( bulk_data.num_connectivity(shell, side_rank), 2u);
         stk::mesh::Entity const *side_entities_i = bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal const *side_ordinals_i = bulk_data.begin_ordinals(shell, side_rank);
 
@@ -305,11 +305,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
           face_2_id = bulk_data.identifier(*side_entities_i);
         }
         else {
-          STKUNIT_EXPECT_EQ( face_2_id, bulk_data.identifier(*side_entities_i));
+          EXPECT_EQ( face_2_id, bulk_data.identifier(*side_entities_i));
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_EQ(*side_ordinals_i, 0u);
+        EXPECT_EQ(*side_ordinals_i, 0u);
 
         ++side_entities_i;
         ++side_ordinals_i;
@@ -318,11 +318,11 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
           face_1_id = bulk_data.identifier(*side_entities_i);
         }
         else {
-          STKUNIT_EXPECT_EQ( face_1_id, bulk_data.identifier(*side_entities_i) );
+          EXPECT_EQ( face_1_id, bulk_data.identifier(*side_entities_i) );
         }
 
         //check that the side is one the correct local side of the shell
-        STKUNIT_EXPECT_EQ( *side_ordinals_i, 1u);
+        EXPECT_EQ( *side_ordinals_i, 1u);
       }
     }
   }
@@ -330,7 +330,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShells)
 
 //---------------------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
+TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
 {
   enum { SpatialDim = 3 };
 
@@ -394,14 +394,14 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
     EntityId hex_id = 1;
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 5u);
+      EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 5u);
       stk::mesh::ConnectivityOrdinal const *side_ords_i = bulk_data.begin_ordinals(element, side_rank);
       stk::mesh::ConnectivityOrdinal const *side_ords_e = bulk_data.end_ordinals(element, side_rank);
       for (; side_ords_i != side_ords_e; ++side_ords_i)
       {
         unsigned local_side_id = *side_ords_i;
-        STKUNIT_EXPECT_GT(local_side_id, 0u);
-        STKUNIT_EXPECT_LT(local_side_id, 6u);
+        EXPECT_GT(local_side_id, 0u);
+        EXPECT_LT(local_side_id, 6u);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
       }
     }
@@ -412,13 +412,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
     EntityId shell_id = 2;
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, shell_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 1u);
+      EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 1u);
       stk::mesh::ConnectivityOrdinal const *side_ords_i = bulk_data.begin_ordinals(element, side_rank);
       stk::mesh::ConnectivityOrdinal const *side_ords_e = bulk_data.end_ordinals(element, side_rank);
       for (; side_ords_i != side_ords_e; ++side_ords_i)
       {
         unsigned local_side_id = *side_ords_i;
-        STKUNIT_EXPECT_EQ(local_side_id, 0u);
+        EXPECT_EQ(local_side_id, 0u);
         std::cout << "Shell local side id: " << local_side_id << std::endl;
       }
     }
@@ -427,7 +427,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinShellOnHex)
 
 //---------------------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
+TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
 {
   enum { SpatialDim = 3 };
 
@@ -492,13 +492,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
     EntityId hex_id = 1;
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 6u);
+      EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 6u);
       stk::mesh::ConnectivityOrdinal const *side_ords_i = bulk_data.begin_ordinals(element, side_rank);
       stk::mesh::ConnectivityOrdinal const *side_ords_e = bulk_data.end_ordinals(element, side_rank);
       for (; side_ords_i != side_ords_e; ++side_ords_i)
       {
         unsigned local_side_id = *side_ords_i;
-        STKUNIT_EXPECT_LT(local_side_id, 6u);
+        EXPECT_LT(local_side_id, 6u);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
       }
     }
@@ -509,13 +509,13 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
     EntityId shell_id = 2;
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, shell_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 2u);
+      EXPECT_EQ(bulk_data.num_connectivity(element, side_rank), 2u);
       stk::mesh::ConnectivityOrdinal const *side_ords_i = bulk_data.begin_ordinals(element, side_rank);
       stk::mesh::ConnectivityOrdinal const *side_ords_e = bulk_data.end_ordinals(element, side_rank);
       for (; side_ords_i != side_ords_e; ++side_ords_i)
       {
         unsigned local_side_id = *side_ords_i;
-        STKUNIT_EXPECT_LT(local_side_id, 2u);
+        EXPECT_LT(local_side_id, 2u);
         std::cout << "Shell local side id: " << *side_ords_i << std::endl;
       }
     }
@@ -524,7 +524,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinInvertedShellOnHex)
 
 //---------------------------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
+TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
 {
   enum { SpatialDim = 3 };
 
@@ -608,14 +608,14 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
     EntityId hex_id = 1;
     stk::mesh::Entity element = bulk_data.get_entity( element_rank, hex_id);
     if ( bulk_data.is_valid(element) ) {
-      STKUNIT_EXPECT_EQ( bulk_data.num_connectivity(element, side_rank), 5u);
+      EXPECT_EQ( bulk_data.num_connectivity(element, side_rank), 5u);
       stk::mesh::ConnectivityOrdinal const *side_ords_i = bulk_data.begin_ordinals(element, side_rank);
       stk::mesh::ConnectivityOrdinal const *side_ords_e = bulk_data.end_ordinals(element, side_rank);
       for (; side_ords_i != side_ords_e; ++side_ords_i)
       {
         unsigned local_side_id = *side_ords_i;
-        STKUNIT_EXPECT_GT(local_side_id, 0u);
-        STKUNIT_EXPECT_LT(local_side_id, 6u);
+        EXPECT_GT(local_side_id, 0u);
+        EXPECT_LT(local_side_id, 6u);
         std::cout << "Hex local side id: " << local_side_id << std::endl;
       }
     }
@@ -628,7 +628,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
       stk::mesh::Entity shell = bulk_data.get_entity( element_rank, shell_id);
       if ( bulk_data.is_valid(shell) )
       {
-        STKUNIT_EXPECT_EQ(bulk_data.num_connectivity(shell, side_rank), 1u);
+        EXPECT_EQ(bulk_data.num_connectivity(shell, side_rank), 1u);
         stk::mesh::Entity side_entity = *bulk_data.begin(shell, side_rank);
         stk::mesh::ConnectivityOrdinal side_ordinal = *bulk_data.begin_ordinals(shell, side_rank);
 
@@ -638,7 +638,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
           face_id = bulk_data.identifier(side_entity);
         }
         else {
-          STKUNIT_EXPECT_EQ( face_id, bulk_data.identifier(side_entity) );
+          EXPECT_EQ( face_id, bulk_data.identifier(side_entity) );
           std::cout << "Shell: " << shell_id
                     << "\tFace_id: " << face_id
                     << "\tFace_id: " << bulk_data.identifier(side_entity)
@@ -650,10 +650,10 @@ STKUNIT_UNIT_TEST( UnitTestSkin, DISABLED_SkinStackedShellOnHex)
         //local_side_id 0.
         //shell 3 should have it's side on local_side_1d 1
         if (shell_id != 4) {
-          STKUNIT_EXPECT_EQ( side_ordinal, 0u);
+          EXPECT_EQ( side_ordinal, 0u);
         }
         else {
-          STKUNIT_EXPECT_EQ( side_ordinal, 1u);
+          EXPECT_EQ( side_ordinal, 1u);
         }
       }
     }

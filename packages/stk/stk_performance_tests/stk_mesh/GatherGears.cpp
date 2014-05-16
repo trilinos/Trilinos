@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/perf_util.hpp>
 
 #include <stk_mesh/fixtures/Gear.hpp>
@@ -85,7 +85,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
 } // empty namespace
 
-STKUNIT_UNIT_TEST(gather_gears, gather_gears)
+TEST(gather_gears, gather_gears)
 {
   stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, 1,
       stk::mesh::fixtures::GearParams(0.01, 0.4, 1.5, -0.4, 0.4));

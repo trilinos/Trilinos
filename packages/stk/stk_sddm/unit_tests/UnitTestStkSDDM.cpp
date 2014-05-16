@@ -1,5 +1,5 @@
 #include <cmath>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <stk_sddm/PropertyRepository.hpp>
 #include <stk_sddm/Taxonomy.hpp>
@@ -131,7 +131,7 @@ taxonomy_string()
 
 
 // // Test empty values
-// STKUNIT_UNIT_TEST(AnyValue, Empty)
+// TEST(AnyValue, Empty)
 // {
 //   stk::sddm::Value<int>                         empty_int;
 //   stk::sddm::Value<double>                      empty_double;
@@ -145,9 +145,9 @@ taxonomy_string()
 //     stk::sddm::AnyValue *empty_any_double = &empty_double;
 //     stk::sddm::AnyValue *empty_any_string = &empty_string;
   
-//     STKUNIT_EXPECT_TRUE(empty_any_int->empty());
-//     STKUNIT_EXPECT_TRUE(empty_any_double->empty());
-//     STKUNIT_EXPECT_TRUE(empty_any_string->empty());
+//     EXPECT_TRUE(empty_any_int->empty());
+//     EXPECT_TRUE(empty_any_double->empty());
+//     EXPECT_TRUE(empty_any_string->empty());
 //   }
   
 //   {
@@ -155,14 +155,14 @@ taxonomy_string()
 //     const stk::sddm::AnyValue *empty_any_double = &empty_double;
 //     const stk::sddm::AnyValue *empty_any_string = &empty_string;
   
-//     STKUNIT_EXPECT_TRUE(empty_any_int->empty());
-//     STKUNIT_EXPECT_TRUE(empty_any_double->empty());
-//     STKUNIT_EXPECT_TRUE(empty_any_string->empty());
+//     EXPECT_TRUE(empty_any_int->empty());
+//     EXPECT_TRUE(empty_any_double->empty());
+//     EXPECT_TRUE(empty_any_string->empty());
 //   }  
 // }
 
 // Test construct values
-STKUNIT_UNIT_TEST(AnyValue, GetValue)
+TEST(AnyValue, GetValue)
 {
   std::vector<int> input_int_vector;
   input_int_vector.push_back(1);
@@ -186,20 +186,20 @@ STKUNIT_UNIT_TEST(AnyValue, GetValue)
   {
     stk::sddm::AnyValue *any_value = &int_value;
     
-    STKUNIT_EXPECT_EQUAL(any_value->value<int>(), 1);
+    EXPECT_EQ(any_value->value<int>(), 1);
   }
   
   {
     stk::sddm::AnyValue *any_value = &double_value;
     
 
-    STKUNIT_EXPECT_EQUAL(any_value->value<double>(), M_PI);
+    EXPECT_EQ(any_value->value<double>(), M_PI);
   }
   
   {
     stk::sddm::AnyValue *any_value = &string_value;
     
-    STKUNIT_EXPECT_EQUAL((any_value->value<std::string>() == std::string("test")), true);
+    EXPECT_EQ((any_value->value<std::string>() == std::string("test")), true);
 
   }
   
@@ -207,27 +207,27 @@ STKUNIT_UNIT_TEST(AnyValue, GetValue)
     stk::sddm::AnyValue *any_value = &int_vector;
     
     for (size_t i = 0; i < input_int_vector.size(); ++i)
-      STKUNIT_EXPECT_EQUAL(any_value->value<std::vector<int> >()[i], input_int_vector[i]);
+      EXPECT_EQ(any_value->value<std::vector<int> >()[i], input_int_vector[i]);
   }
   
   {
     stk::sddm::AnyValue *any_value = &double_vector;
     
     for (size_t i = 0; i < input_double_vector.size(); ++i)
-      STKUNIT_EXPECT_EQUAL(any_value->value<std::vector<double> >()[i], input_double_vector[i]);
+      EXPECT_EQ(any_value->value<std::vector<double> >()[i], input_double_vector[i]);
   }
   
   {
     stk::sddm::AnyValue *any_value = &string_vector;
     
     for (size_t i = 0; i < input_string_vector.size(); ++i)
-      STKUNIT_EXPECT_EQUAL((any_value->value<std::vector<std::string> >()[i] == input_string_vector[i]), true);
+      EXPECT_EQ((any_value->value<std::vector<std::string> >()[i] == input_string_vector[i]), true);
   }
 }
 
 
 // Create, dump and destroy a property
-STKUNIT_UNIT_TEST(PropertyRepository, Simple)
+TEST(PropertyRepository, Simple)
 {
   std::ostringstream oss;
     
@@ -243,12 +243,12 @@ STKUNIT_UNIT_TEST(PropertyRepository, Simple)
   
   // std::cout << s;
     
-  STKUNIT_EXPECT_EQUAL((correct == s), true);
+  EXPECT_EQ((correct == s), true);
 }
 
 
 // Create, dump and destroy a property_repository
-STKUNIT_UNIT_TEST(PropertyRepository, Populate)
+TEST(PropertyRepository, Populate)
 {
   std::ostringstream oss;
 
@@ -291,12 +291,12 @@ STKUNIT_UNIT_TEST(PropertyRepository, Populate)
 
   // std::cout << s;
   
-  STKUNIT_EXPECT_EQUAL((correct == s), true);
+  EXPECT_EQ((correct == s), true);
 }
 
 
 // // Create state property and get values based on state.
-// STKUNIT_UNIT_TEST(AnyValue, testUnit3)
+// TEST(AnyValue, testUnit3)
 // {
 //   std::ostringstream oss;
 
@@ -308,24 +308,24 @@ STKUNIT_UNIT_TEST(PropertyRepository, Populate)
 //   tolerance->setValue("P1", 0.1);
 //   tolerance->setValue("P2", 0.2);
     
-//   STKUNIT_EXPECT_EQUAL(tolerance->value("P1"), 0.1);
-//   STKUNIT_EXPECT_EQUAL(tolerance->value("P2"), 0.2);
-//   STKUNIT_ASSERT_THROW(tolerance->value("P3"), std::runtime_error);
+//   EXPECT_EQ(tolerance->value("P1"), 0.1);
+//   EXPECT_EQ(tolerance->value("P2"), 0.2);
+//   ASSERT_THROW(tolerance->value("P3"), std::runtime_error);
 
 //   mesh.create<double>("Tolerance", tolerance);
 
-//   STKUNIT_EXPECT_EQUAL(mesh.value<double>("Tolerance"), 0.1);
+//   EXPECT_EQ(mesh.value<double>("Tolerance"), 0.1);
 
 //   period.setValue<std::string>("P2");
-//   STKUNIT_EXPECT_EQUAL(mesh.value<double>("Tolerance"), 0.2);
+//   EXPECT_EQ(mesh.value<double>("Tolerance"), 0.2);
 
 //   period.setValue<std::string>("P3");
-//   STKUNIT_EXPECT_EQUAL(mesh.value<double>("Tolerance"), 0.001);
+//   EXPECT_EQ(mesh.value<double>("Tolerance"), 0.001);
 // } 
 
 
 // Load taxonomy from file
-STKUNIT_UNIT_TEST(Taxonomy, Load)
+TEST(Taxonomy, Load)
 {
   std::istringstream iss(taxonomy_string());
 
@@ -347,11 +347,11 @@ STKUNIT_UNIT_TEST(Taxonomy, Load)
   // std::cout << taxonomy_string;
   // std::cout << s;
 
-  STKUNIT_EXPECT_EQUAL((taxonomy_string() == s), true);
+  EXPECT_EQ((taxonomy_string() == s), true);
 }
 
 // // Load taxonomy from file and add to property repository
-// STKUNIT_UNIT_TEST(Taxonomy, test_taxonomy)
+// TEST(Taxonomy, test_taxonomy)
 // {
 //   std::istringstream iss(taxonomy_string());
 

@@ -1,4 +1,4 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <numeric>
@@ -17,7 +17,7 @@ void force_calculation( long long sum )
 
   if( count && value != sum )
   {
-    STKUNIT_EXPECT_TRUE(false);
+    EXPECT_TRUE(false);
   }
 
   value = sum;
@@ -34,7 +34,7 @@ struct sum_func
   }
 };
 
-STKUNIT_UNIT_TEST( loop_iteration, loop_iteration)
+TEST( loop_iteration, loop_iteration)
 {
   boost::timer  total_time;
 

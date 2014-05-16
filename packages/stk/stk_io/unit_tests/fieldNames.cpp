@@ -4,7 +4,7 @@
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_MODEL, etc
 #include "Ioss_ElementTopology.h"       // for NameList
@@ -37,7 +37,7 @@ void testFieldNamedCorrectly(Ioss::Region &ioRegion, MPI_Comm communicator, cons
     EXPECT_STRCASEEQ(goldFieldName.c_str(), fieldNames[0].c_str());
 }
 
-STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
+TEST(FieldNamesTest, FieldNameRenameTwice)
 {
     const std::string outputFilename = "ourSillyOwlput.exo";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -72,7 +72,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameRenameTwice)
     unlink(outputFilename.c_str());
 }
 
-STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
+TEST(FieldNamesTest, FieldNameWithRestart)
 {
     std::string restartFilename = "output.restart";
     MPI_Comm communicator = MPI_COMM_WORLD;
@@ -107,7 +107,7 @@ STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithRestart)
     unlink(restartFilename.c_str());
 }
 
-STKUNIT_UNIT_TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
+TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
 {
     const std::string restartFilename = "FieldNameWithResultsAndRestart.restart";
     const std::string outputFileName = "FieldNameWithResultsAndRestart.exo";

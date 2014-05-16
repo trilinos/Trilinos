@@ -11,7 +11,7 @@
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_mesh/base/Part.hpp>       // for intersect, Part, contain, etc
 #include <stk_mesh/baseImpl/PartRepository.hpp>  // for PartRepository
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, char_traits
 #include "stk_mesh/base/Types.hpp"      // for PartVector
 #include "stk_topology/topology.hpp"    // for topology, etc
@@ -27,7 +27,7 @@ using stk::mesh::impl::PartRepository;
 
 namespace {
 
-STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
+TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
@@ -38,8 +38,8 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   Part & universal = *partRepo.universal_part();
   m.commit();
 
-  STKUNIT_ASSERT(  universal.supersets().empty() );
-  STKUNIT_ASSERT( 1u ==  partRepo.get_all_parts().size() );
+  ASSERT_TRUE(  universal.supersets().empty() );
+  ASSERT_TRUE( 1u ==  partRepo.get_all_parts().size() );
 
   //--------------------------------------------------------------------
   // Test multiple part creation
@@ -57,17 +57,17 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   }
   parts[99] =  partRepo.declare_part( "Part_99" , stk::topology::EDGE_RANK );
 
-  STKUNIT_ASSERT(  universal.supersets().empty() );
-  STKUNIT_ASSERT( NPARTS ==  partRepo.get_all_parts().size() );
-  STKUNIT_ASSERT_EQUAL(  partRepo.get_all_parts()[0] , &  universal );
+  ASSERT_TRUE(  universal.supersets().empty() );
+  ASSERT_TRUE( NPARTS ==  partRepo.get_all_parts().size() );
+  ASSERT_EQ(  partRepo.get_all_parts()[0] , &  universal );
 
   for ( unsigned i = 1 ; i < NPARTS ; ++i ) {
-    STKUNIT_ASSERT( parts[i]->subsets().empty() );
-    STKUNIT_ASSERT( parts[i]->mesh_meta_data_ordinal() == i );
-    STKUNIT_ASSERT( 1u == parts[i]->supersets().size() );
-    STKUNIT_ASSERT( &  universal == parts[i]->supersets()[0] );
-    STKUNIT_ASSERT_EQUAL( parts[i] ,  universal.subsets()[i-1] );
-    STKUNIT_ASSERT_EQUAL( parts[i] , find(  universal.subsets() , parts[i]->name() ) );
+    ASSERT_TRUE( parts[i]->subsets().empty() );
+    ASSERT_TRUE( parts[i]->mesh_meta_data_ordinal() == i );
+    ASSERT_TRUE( 1u == parts[i]->supersets().size() );
+    ASSERT_TRUE( &  universal == parts[i]->supersets()[0] );
+    ASSERT_EQ( parts[i] ,  universal.subsets()[i-1] );
+    ASSERT_EQ( parts[i] , find(  universal.subsets() , parts[i]->name() ) );
   }
 
   //--------------------------------------------------------------------
@@ -80,27 +80,27 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
   // 1 and 2 pick up 4 and 5 via transitive relationship:
   partRepo.declare_subset( * parts[2], * parts[3] );
 
-  STKUNIT_ASSERT( 4u == parts[1]->subsets().size() );
-  STKUNIT_ASSERT( 3u == parts[2]->subsets().size() );
-  STKUNIT_ASSERT( 2u == parts[3]->subsets().size() );
-  STKUNIT_ASSERT( 1u == parts[4]->subsets().size() );
-  STKUNIT_ASSERT( 0u == parts[5]->subsets().size() );
+  ASSERT_TRUE( 4u == parts[1]->subsets().size() );
+  ASSERT_TRUE( 3u == parts[2]->subsets().size() );
+  ASSERT_TRUE( 2u == parts[3]->subsets().size() );
+  ASSERT_TRUE( 1u == parts[4]->subsets().size() );
+  ASSERT_TRUE( 0u == parts[5]->subsets().size() );
 
-  STKUNIT_ASSERT( contain( parts[1]->subsets() , * parts[2] ) );
-  STKUNIT_ASSERT( contain( parts[1]->subsets() , * parts[3] ) );
-  STKUNIT_ASSERT( contain( parts[1]->subsets() , * parts[4] ) );
-  STKUNIT_ASSERT( contain( parts[1]->subsets() , * parts[5] ) );
+  ASSERT_TRUE( contain( parts[1]->subsets() , * parts[2] ) );
+  ASSERT_TRUE( contain( parts[1]->subsets() , * parts[3] ) );
+  ASSERT_TRUE( contain( parts[1]->subsets() , * parts[4] ) );
+  ASSERT_TRUE( contain( parts[1]->subsets() , * parts[5] ) );
 
-  STKUNIT_ASSERT( contain( parts[5]->supersets() , * parts[1] ) );
-  STKUNIT_ASSERT( contain( parts[5]->supersets() , * parts[2] ) );
-  STKUNIT_ASSERT( contain( parts[5]->supersets() , * parts[3] ) );
-  STKUNIT_ASSERT( contain( parts[5]->supersets() , * parts[4] ) );
+  ASSERT_TRUE( contain( parts[5]->supersets() , * parts[1] ) );
+  ASSERT_TRUE( contain( parts[5]->supersets() , * parts[2] ) );
+  ASSERT_TRUE( contain( parts[5]->supersets() , * parts[3] ) );
+  ASSERT_TRUE( contain( parts[5]->supersets() , * parts[4] ) );
 
 }
 
 //----------------------------------------------------------------------
 
-STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
+TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
   MetaData m(spatial_dimension);
@@ -113,12 +113,12 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   Part * const pe =  partRepo.declare_part( std::string("e") , stk::topology::NODE_RANK );
   Part * const pf =  partRepo.declare_part( std::string("f") , stk::topology::NODE_RANK );
 
-  STKUNIT_ASSERT( ! intersect( *pa , *pb ) );
-  STKUNIT_ASSERT( ! intersect( *pb , *pc ) );
-  STKUNIT_ASSERT( ! intersect( *pc , *pd ) );
-  STKUNIT_ASSERT( ! intersect( *pd , *pe ) );
-  STKUNIT_ASSERT( ! intersect( *pe , *pf ) );
-  STKUNIT_ASSERT( ! intersect( *pf , *pa ) );
+  ASSERT_TRUE( ! intersect( *pa , *pb ) );
+  ASSERT_TRUE( ! intersect( *pb , *pc ) );
+  ASSERT_TRUE( ! intersect( *pc , *pd ) );
+  ASSERT_TRUE( ! intersect( *pd , *pe ) );
+  ASSERT_TRUE( ! intersect( *pe , *pf ) );
+  ASSERT_TRUE( ! intersect( *pf , *pa ) );
 
   PartVector vabc , vbcd , vdef , vresult ;
 
@@ -139,23 +139,23 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   order( vdef );
 
   vresult.clear();
-  STKUNIT_ASSERT_EQUAL( size_t(2) , intersect( vabc , vbcd ) );
+  ASSERT_EQ( size_t(2) , intersect( vabc , vbcd ) );
   size_t intersect_size = intersect( vabc , vbcd , vresult );
-  STKUNIT_ASSERT_EQUAL( size_t(2) , intersect_size );
-  STKUNIT_ASSERT_EQUAL( pb , vresult[0] );
-  STKUNIT_ASSERT_EQUAL( pc , vresult[1] );
+  ASSERT_EQ( size_t(2) , intersect_size );
+  ASSERT_EQ( pb , vresult[0] );
+  ASSERT_EQ( pc , vresult[1] );
 
   vresult.clear();
-  STKUNIT_ASSERT_EQUAL( size_t(1) , intersect( vdef , vbcd ) );
+  ASSERT_EQ( size_t(1) , intersect( vdef , vbcd ) );
   intersect_size = intersect( vdef , vbcd , vresult );
-  STKUNIT_ASSERT_EQUAL( size_t(1) , intersect_size );
-  STKUNIT_ASSERT_EQUAL( pd , vresult[0] );
+  ASSERT_EQ( size_t(1) , intersect_size );
+  ASSERT_EQ( pd , vresult[0] );
 
   vresult.clear();
-  STKUNIT_ASSERT_EQUAL( size_t(0) , intersect( vdef , vabc ) );
+  ASSERT_EQ( size_t(0) , intersect( vdef , vabc ) );
   intersect_size = intersect( vdef , vabc , vresult );
-  STKUNIT_ASSERT_EQUAL( size_t(0) , intersect_size );
-  STKUNIT_ASSERT_EQUAL( size_t(0) , vresult.size() );
+  ASSERT_EQ( size_t(0) , intersect_size );
+  ASSERT_EQ( size_t(0) , vresult.size() );
 
   Part * const pabc =  partRepo.declare_part( std::string("abc") , stk::topology::NODE_RANK );
   Part * const pbcd =  partRepo.declare_part( std::string("bcd") , stk::topology::NODE_RANK );
@@ -173,15 +173,15 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
   partRepo.declare_subset( * pdef, *pe );
   partRepo.declare_subset( * pdef, *pf );
 
-  STKUNIT_ASSERT( intersect( *pabc , *pa ) );
-  STKUNIT_ASSERT( intersect( *pabc , *pb ) );
-  STKUNIT_ASSERT( intersect( *pabc , *pc ) );
-  STKUNIT_ASSERT( intersect( *pa , *pabc ) );
-  STKUNIT_ASSERT( intersect( *pb , *pabc ) );
-  STKUNIT_ASSERT( intersect( *pc , *pabc ) );
+  ASSERT_TRUE( intersect( *pabc , *pa ) );
+  ASSERT_TRUE( intersect( *pabc , *pb ) );
+  ASSERT_TRUE( intersect( *pabc , *pc ) );
+  ASSERT_TRUE( intersect( *pa , *pabc ) );
+  ASSERT_TRUE( intersect( *pb , *pabc ) );
+  ASSERT_TRUE( intersect( *pc , *pabc ) );
 
-  STKUNIT_ASSERT( intersect( *pabc , *pbcd ) );
-  STKUNIT_ASSERT( ! intersect( *pabc , *pdef ) );
+  ASSERT_TRUE( intersect( *pabc , *pbcd ) );
+  ASSERT_TRUE( ! intersect( *pabc , *pdef ) );
 }
 
 } // empty namespace

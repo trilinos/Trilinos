@@ -6,7 +6,7 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 #include <stk_util/environment/CPUTime.hpp>
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <stk_util/environment/perf_util.hpp>
 
 #include <stk_io/util/Gmesh_STKmesh_Fixture.hpp>
@@ -17,7 +17,7 @@
 
 #include <sstream>
 
-STKUNIT_UNIT_TEST(many_parts, many_parts)
+TEST(many_parts, many_parts)
 {
   // vector of mesh-dimensions holds the number of elements in each dimension.
   // Hard-wired to 3. This test can run with spatial-dimension less than 3,

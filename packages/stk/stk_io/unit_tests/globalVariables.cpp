@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/GetEntities.hpp>  // for get_entities
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, put_field
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string, basic_string
 #include <vector>                       // for vector
 #include "Ioss_DBUsage.h"               // for DatabaseUsage::READ_RESTART
@@ -79,7 +79,7 @@ void testNodalFieldOnFile(const std::string &outputFileName, const int stepNumbe
     }
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
+TEST(GlobalVariablesTest, OneGlobalDouble)
 {
     const std::string outputFileName = "OneGlobalDouble.exo";
     const std::string globalVarName = "testGlobal";
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, InvalidGlobalRequest)
+TEST(GlobalVariablesTest, InvalidGlobalRequest)
 {
     const std::string outputFileName = "InvalidGlobalRequest.exo";
     const std::string globalVarName = "testGlobal";
@@ -156,7 +156,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, InvalidGlobalRequest)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
+TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
 {
     const std::string outputFileName = "OneGlobalDoubleVector3.exo";
     const std::string globalVarName = "testGlobal";
@@ -192,7 +192,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleVector3)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
+TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
 {
     const std::string outputFileName = "OneGlobalIntegerVector3.exo";
     const std::string globalVarName = "testGlobal";
@@ -228,7 +228,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalIntegerVector3)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDouble10)
+TEST(GlobalVariablesTest, OneGlobalDouble10)
 {
     const std::string outputFileName = "OneGlobalDouble10.exo";
     const std::string globalVarName = "testGlobal";
@@ -299,7 +299,7 @@ void testTwoGlobals(const std::string &outputFileName, const std::vector<std::st
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalIntegers)
+TEST(GlobalVariablesTest, TwoGlobalIntegers)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -307,7 +307,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalIntegers)
     testTwoGlobals<int>("TwoGlobalIntegers.exo", globalVarNames);
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalDoubles)
+TEST(GlobalVariablesTest, TwoGlobalDoubles)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -315,7 +315,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalDoubles)
     testTwoGlobals<double>("TwoGlobalDoubles.exo", globalVarNames);
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
+TEST(GlobalVariablesTest, TwoGlobalDoublesSameName)
 {
     std::vector<std::string> globalVarNames;
     globalVarNames.push_back("testGlobal");
@@ -343,7 +343,7 @@ void putDataOnTestField(stk::mesh::BulkData &stkMeshBulkData, stk::mesh::Field<d
     }
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
+TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
 {
     const std::string outputFileName = "GlobalDoubleWithFieldMultipleTimeSteps.exo";
     const std::string fieldName = "field0";
@@ -396,7 +396,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, GlobalDoubleWithFieldMultipleTimeSteps)
     unlink(outputFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
+TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
 {
     const std::string restartFileName = "OneGlobalDouble.restart";
     const std::string globalVarName = "testGlobal";
@@ -443,7 +443,7 @@ STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleRestart)
     unlink(restartFileName.c_str());
 }
 
-STKUNIT_UNIT_TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
+TEST(GlobalVariablesTest, OneGlobalDoubleWithFieldRestart)
 {
     const std::string outputFileName = "GlobalDoubleWithFieldMultipleTimeSteps.restart";
     const std::string fieldName = "field0";

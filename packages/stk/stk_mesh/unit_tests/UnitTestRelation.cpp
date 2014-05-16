@@ -12,7 +12,7 @@
 #include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
@@ -52,7 +52,7 @@ namespace {
 
 const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
+TEST(UnitTestingOfRelation, testRelationCoverage)
 {
   // Test some relation error cases
 
@@ -76,12 +76,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationCoverage)
   Entity edge = bulk.declare_entity( stk::topology::EDGE_RANK , new_id , empty_parts );
 
   // Cannot declare a back relation
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
+  ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
 
   bulk.modification_end();
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
+TEST(UnitTestingOfRelation, testRelationNoGhosting)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -98,11 +98,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
 
   ring_bulk.modification_begin();
   mesh.generate_mesh( );
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(ring_bulk,
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
                                                           aura_flag));
   ring_bulk.modification_begin();
   mesh.fixup_node_ownership( );
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(ring_bulk,
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
                                                           aura_flag));
 
   // This process' first element in the loop
@@ -113,19 +113,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationNoGhosting)
   ring_bulk.modification_begin();
   for ( unsigned p = 0 ; p < p_size ; ++p ) {
     if ( p != p_rank ) {
-      STKUNIT_ASSERT_EQUAL( ring_bulk.in_shared( ring_bulk.entity_key(elementnew) , p ), false );
-      STKUNIT_ASSERT_EQUAL( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p ), false );
+      ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(elementnew) , p ), false );
+      ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p ), false );
     }
   }
 
   elementnew = ring_bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
-  STKUNIT_ASSERT_EQUAL( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
+  ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
 
   Entity node = ring_bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
-  STKUNIT_ASSERT_EQUAL( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
+  ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
+TEST(UnitTestingOfRelation, testRelationWithGhosting)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -141,11 +141,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
 
     bulk.modification_begin();
     mesh.generate_mesh();
-    STKUNIT_ASSERT(bulk.modification_end());
+    ASSERT_TRUE(bulk.modification_end());
 
     bulk.modification_begin();
     mesh.fixup_node_ownership();
-    STKUNIT_ASSERT(bulk.modification_end());
+    ASSERT_TRUE(bulk.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
@@ -156,19 +156,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationWithGhosting)
 
     for ( unsigned p = 0 ; p < p_size ; ++p ) {
       if ( p != p_rank ) {
-        STKUNIT_ASSERT_EQUAL( bulk.in_send_ghost( bulk.entity_key(node) , p ), false );
+        ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p ), false );
       }
     }
 
     //not owned and not shared
     Entity node2 = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    STKUNIT_ASSERT_EQUAL( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
-    STKUNIT_ASSERT_EQUAL( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
   }
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
+TEST(UnitTestingOfRelation, testDegenerateRelation)
 {
   // Test that, if you set up degenerate relations, only of the relations
   // is deleted when you destroy one of the degenerate relations.
@@ -208,19 +208,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   }
 
   // Elem should have nodes-per-elem relations
-  STKUNIT_ASSERT_EQUAL( nodes_per_elem, static_cast<unsigned>(mesh.num_nodes(elem)) );
+  ASSERT_EQ( nodes_per_elem, static_cast<unsigned>(mesh.num_nodes(elem)) );
 
   // Destroy relation one-by-one, always checking that appropriate number
   // of relations remain.
   for (unsigned i = 0; i < nodes_per_elem; ++i) {
     mesh.destroy_relation( elem, node, i );
-    STKUNIT_ASSERT_EQUAL( nodes_per_elem - (i+1), static_cast<unsigned>(mesh.num_nodes(elem)) );
+    ASSERT_EQ( nodes_per_elem - (i+1), static_cast<unsigned>(mesh.num_nodes(elem)) );
   }
 
   mesh.modification_end();
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
+TEST(UnitTestingOfRelation, testRelationAttribute)
 {
   // Test relation attribute
 
@@ -253,13 +253,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   //  const Relation & my_relation = *(mesh.nodes(elem).begin());
   //  my_relation.set_attribute(6u);
   //
-  //  STKUNIT_ASSERT_EQUAL( my_relation.attribute(), 6u);
+  //  ASSERT_EQ( my_relation.attribute(), 6u);
 
   mesh.modification_end();
 }
 
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
+TEST(UnitTestingOfRelation, testRelationExtendedRanks)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
@@ -291,7 +291,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   mesh.declare_relation(elem, node, 0);
   mesh.modification_end();
 
-  STKUNIT_ASSERT_FALSE(mesh.num_connectivity(elem, ext_ranks[0]));
+  ASSERT_FALSE(mesh.num_connectivity(elem, ext_ranks[0]));
 
   stk::mesh::ConnectivityOrdinal ord_count = static_cast<stk::mesh::ConnectivityOrdinal>(0);
 
@@ -306,8 +306,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   mesh.declare_relation(ere_0_1, elem, ++ord_count);
   mesh.modification_end();
   {
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[0]), 2u);
   }
 
   // add relations of a second extended rank
@@ -320,30 +320,30 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
 
   mesh.modification_end();
   {
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
     stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
     stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
-    STKUNIT_EXPECT_EQ(beg_rank4s + 2u, beg_rank5s);
+    EXPECT_EQ(beg_rank4s + 2u, beg_rank5s);
     stk::mesh::ConnectivityOrdinal const * const rank5_ords = mesh.begin_ordinals(elem, ext_ranks[1]);
-    STKUNIT_EXPECT_EQ(rank5_ords[1], ord_count);
+    EXPECT_EQ(rank5_ords[1], ord_count);
   }
 
   // destroy relations of extended ranks
   {
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 1u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 1u);
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 1u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 1u);
 
     mesh.modification_begin();
     mesh.destroy_relation(ere_0_0, node, node_rel_to_destroy);
     mesh.destroy_relation(ere_1_0, elem, elem_rel_to_destroy);
     mesh.modification_end();
 
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 1u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 0u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 1u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 0u);
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 0u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 0u);
   }
 
   // test out-of-order relation creation; test queries inside modification
@@ -353,9 +353,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   {
     stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
     stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
-    STKUNIT_EXPECT_EQ(beg_rank4s + 3u, beg_rank5s);
+    EXPECT_EQ(beg_rank4s + 3u, beg_rank5s);
     stk::mesh::ConnectivityOrdinal const * const rank4_ords = mesh.begin_ordinals(elem, ext_ranks[0]);
-    STKUNIT_EXPECT_EQ(rank4_ords[2], ord_count);
+    EXPECT_EQ(rank4_ords[2], ord_count);
   }
   mesh.modification_end();
 
@@ -369,23 +369,23 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationExtendedRanks)
   mesh.declare_relation(ere_2_0, ere_1_1, ++ord_count);
   mesh.modification_end();
   {
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[0]), 2u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_0_0, ext_ranks[2]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, ext_ranks[2]), 1u);
     stk::mesh::Entity const * const rel_2_0_entities = mesh.begin(ere_2_0, ext_ranks[0]);
-    STKUNIT_EXPECT_EQ(rel_2_0_entities[1], ere_0_1);
+    EXPECT_EQ(rel_2_0_entities[1], ere_0_1);
     stk::mesh::ConnectivityOrdinal const * const rel_2_1_ords = mesh.begin_ordinals(ere_2_0, ext_ranks[1]);
-    STKUNIT_EXPECT_EQ(rel_2_1_ords[1], ord_count);
+    EXPECT_EQ(rel_2_1_ords[1], ord_count);
 
     mesh.modification_begin();
     mesh.destroy_relation(ere_2_0, ere_1_0, ext_rank_rel_to_destroy);
     mesh.modification_end();
 
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[1]), 1u);
-    STKUNIT_EXPECT_EQ(mesh.num_connectivity(ere_1_0, ext_ranks[2]), 0u);
+    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[1]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, ext_ranks[2]), 0u);
   }
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
+TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 {
   // It should be legal to declare the same relation between shared
   // entities on two procs.

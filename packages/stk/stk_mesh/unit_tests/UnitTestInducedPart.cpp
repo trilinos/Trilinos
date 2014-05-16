@@ -10,7 +10,7 @@
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include "mpi.h"                        // for MPI_COMM_SELF, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -72,25 +72,25 @@ namespace {
   mesh.declare_relation(side1, node,  0 /*rel id*/);                    \
   mesh.declare_relation(side2, node,  0 /*rel id*/);
 
-STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyBasicInducedPart )
+TEST ( UnitTestInducedPart , verifyBasicInducedPart )
 {
   SETUP_MESH();
 
   // Check that directly-induced parts are induced upon relation creation
   // before modification end.
-  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
+  EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
+  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
+  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
 
   mesh.modification_end();
 
   // Modification-end should not have changed induced parts
-  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
+  EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
+  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_part));
+  EXPECT_TRUE(mesh.bucket(side2).member( element_rank_part));
 }
 
-STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
+TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
 {
   SETUP_MESH();
 
@@ -98,41 +98,41 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifyNotTransitiveInducedPart )
   // it's relation to the sides because induced-parts are not supposed to be
   // transitive according to the STK_Mesh domain design.
   // TODO: Are we sure we don't want induced parts to be transitive??
-  STKUNIT_EXPECT_TRUE(!mesh.bucket(node).member( element_rank_part));
+  EXPECT_TRUE(!mesh.bucket(node).member( element_rank_part));
 }
 
-STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelationsRemoved )
+TEST ( UnitTestInducedPart, verifyInducedPartCorrectnessWhenRelationsRemoved )
 {
   SETUP_MESH();
 
   // Destroy one relation from element to a side, confirm that the side that lost
   // the relation no longer has the element part.
   mesh.destroy_relation(elem, side1, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(!mesh.bucket(side1).member( element_rank_part));
+  EXPECT_TRUE(!mesh.bucket(side1).member( element_rank_part));
 
   // Destroy one of the relations from side to node. Confirm that node still has
   // side part due to its remaining relation.
   mesh.destroy_relation(side1, node, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
+  EXPECT_TRUE(mesh.bucket(node).member( side_rank_part));
 
   // Destroy the other relations from side to node. Confirm that node no longer
   // has any induced parts.
   mesh.destroy_relation(side2, node, 0 /*rel id*/);
-  STKUNIT_EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
+  EXPECT_TRUE(!mesh.bucket(node).member( side_rank_part));
 }
 
-STKUNIT_UNIT_TEST ( UnitTestInducedPart , verifySupersetsOfInducedPart )
+TEST ( UnitTestInducedPart , verifySupersetsOfInducedPart )
 {
   SETUP_MESH();
 
   // Check for superset/subset consistency in induced parts. If an entity is
   // induced into a part, it should also be induced into the supersets of
   // that part even if the superset parts are unranked.
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( element_rank_superset_part));
-  STKUNIT_EXPECT_TRUE(mesh.bucket(side1).member( unranked_superset_part));
+  EXPECT_TRUE(mesh.bucket(side1).member( element_rank_superset_part));
+  EXPECT_TRUE(mesh.bucket(side1).member( unranked_superset_part));
 }
 
-STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
+TEST ( UnitTestInducedPart, verifyForceNoInduce )
 {
   stk::ParallelMachine pm = MPI_COMM_SELF;
 
@@ -167,9 +167,9 @@ STKUNIT_UNIT_TEST ( UnitTestInducedPart, verifyForceNoInduce )
   mesh.declare_relation(elem, node,  rel_0_id);
   mesh.declare_relation(elem, node,  rel_1_id);
 
-  STKUNIT_EXPECT_TRUE( mesh.bucket(node).member(element_rank_part) );
-  STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_no_induce) );
-  STKUNIT_EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_change_to_no_induce) );
+  EXPECT_TRUE( mesh.bucket(node).member(element_rank_part) );
+  EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_no_induce) );
+  EXPECT_FALSE( mesh.bucket(node).member(element_rank_part_change_to_no_induce) );
 }
 
 }

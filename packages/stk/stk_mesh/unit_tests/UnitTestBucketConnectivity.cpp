@@ -1,7 +1,7 @@
 #include <stddef.h>                     // for NULL
 #include <stdint.h>                     // for uint64_t
 #include <algorithm>                    // for copy
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 #include <vector>                       // for vector
 #include "gtest/gtest.h"                // for AssertHelper, TEST
 
@@ -23,40 +23,40 @@ typedef impl::BucketConnectivity<stk::topology::NODE_RANK, DYNAMIC_CONNECTIVITY>
 
 void check_uninit_conn_size(fixed_conn& conn, unsigned num_conn, unsigned ordinal)
 {
-  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
+  EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
 }
 
 void check_uninit_conn_size(dynamic_conn& conn, unsigned num_conn, unsigned ordinal)
 {
-  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), 0u);
+  EXPECT_EQ(conn.num_connectivity(ordinal), 0u);
 }
 
 void check_even_conn_removed(fixed_conn& conn, unsigned num_conn, unsigned ordinal)
 {
-  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
+  EXPECT_EQ(conn.num_connectivity(ordinal), num_conn);
 
   Entity const* targets = conn.begin(ordinal);
   for (unsigned i = 0; i < num_conn; ++i) {
     Entity e_to = {ordinal * num_conn + i + 1};
     if ( (i % 2) == 0 ) {
-      STKUNIT_EXPECT_EQ(targets[i], Entity());
+      EXPECT_EQ(targets[i], Entity());
     }
     else {
-      STKUNIT_EXPECT_EQ(targets[i], e_to);
+      EXPECT_EQ(targets[i], e_to);
     }
   }
 }
 
 void check_even_conn_removed(dynamic_conn& conn, unsigned num_conn, unsigned ordinal)
 {
-  STKUNIT_EXPECT_EQ(conn.num_connectivity(ordinal), num_conn / 2);
+  EXPECT_EQ(conn.num_connectivity(ordinal), num_conn / 2);
 
   Entity const* targets = conn.begin(ordinal);
   ConnectivityOrdinal const* ordinals = conn.begin_ordinals(ordinal);
   for (unsigned i = 0; i < num_conn / 2; ++i) {
     Entity e_to = {ordinal * num_conn + ((2*i) + 1) + 1};
-    STKUNIT_EXPECT_EQ(targets[i], e_to);
-    STKUNIT_EXPECT_EQ(ordinals[i], static_cast<ConnectivityOrdinal>((2*i) + 1));
+    EXPECT_EQ(targets[i], e_to);
+    EXPECT_EQ(ordinals[i], static_cast<ConnectivityOrdinal>((2*i) + 1));
   }
 }
 
@@ -65,12 +65,12 @@ void test_simple_add(Connectivity& connectivity, unsigned num_entities_to_add, u
 {
   // Populate connectivity all at once for each entity
 
-  STKUNIT_EXPECT_EQ(connectivity.size(), 0u);
+  EXPECT_EQ(connectivity.size(), 0u);
 
   for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
     connectivity.add_entity();
 
-    STKUNIT_EXPECT_EQ(connectivity.size(), ord + 1);
+    EXPECT_EQ(connectivity.size(), ord + 1);
     check_uninit_conn_size(connectivity, num_to_add, ord);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
@@ -78,20 +78,20 @@ void test_simple_add(Connectivity& connectivity, unsigned num_entities_to_add, u
       connectivity.add_connectivity(ord, e_to, static_cast<ConnectivityOrdinal>(i));
     }
 
-    STKUNIT_EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
+    EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
 
     Entity const* begin = connectivity.begin(ord);
     Entity const* end   = connectivity.end(ord);
     ConnectivityOrdinal const* begin_ord = connectivity.begin_ordinals(ord);
     ConnectivityOrdinal const* end_ord   = connectivity.end_ordinals(ord);
 
-    STKUNIT_EXPECT_EQ(end - begin, num_to_add);
-    STKUNIT_EXPECT_EQ(end_ord - begin_ord, num_to_add);
+    EXPECT_EQ(end - begin, num_to_add);
+    EXPECT_EQ(end_ord - begin_ord, num_to_add);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
       Entity expected_to = {ord * num_to_add + i + 1};
-      STKUNIT_EXPECT_EQ(expected_to, begin[i]);
-      STKUNIT_EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
+      EXPECT_EQ(expected_to, begin[i]);
+      EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
     }
   }
 }
@@ -101,7 +101,7 @@ void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, 
 {
   // Populate connectivity one at a time for each entity
 
-  STKUNIT_EXPECT_EQ(connectivity.size(), 0u);
+  EXPECT_EQ(connectivity.size(), 0u);
 
   for (uint64_t i = 0; i < num_to_add; ++i) {
     for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
@@ -110,10 +110,10 @@ void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, 
       }
 
       if (i == 0) {
-        STKUNIT_EXPECT_EQ(connectivity.size(), ord + 1);
+        EXPECT_EQ(connectivity.size(), ord + 1);
       }
       else {
-        STKUNIT_EXPECT_EQ(connectivity.size(), num_entities_to_add);
+        EXPECT_EQ(connectivity.size(), num_entities_to_add);
       }
 
       Entity e_to = {ord * num_to_add + i + 1};
@@ -122,20 +122,20 @@ void test_complex_add(Connectivity& connectivity, unsigned num_entities_to_add, 
   }
 
   for (unsigned ord = 0; ord < num_entities_to_add; ++ord) {
-    STKUNIT_EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
+    EXPECT_EQ(connectivity.num_connectivity(ord), num_to_add);
 
     Entity const* begin = connectivity.begin(ord);
     Entity const* end   = connectivity.end(ord);
     ConnectivityOrdinal const* begin_ord = connectivity.begin_ordinals(ord);
     ConnectivityOrdinal const* end_ord   = connectivity.end_ordinals(ord);
 
-    STKUNIT_EXPECT_EQ(end - begin, num_to_add);
-    STKUNIT_EXPECT_EQ(end_ord - begin_ord, num_to_add);
+    EXPECT_EQ(end - begin, num_to_add);
+    EXPECT_EQ(end_ord - begin_ord, num_to_add);
 
     for (uint64_t i = 0; i < num_to_add; ++i) {
       Entity expected_to = {ord * num_to_add + i + 1};
-      STKUNIT_EXPECT_EQ(expected_to, begin[i]);
-      STKUNIT_EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
+      EXPECT_EQ(expected_to, begin[i]);
+      EXPECT_EQ(static_cast<ConnectivityOrdinal>(i), begin_ord[i]);
     }
   }
 }
@@ -151,7 +151,7 @@ void test_remove(Connectivity& connectivity, unsigned num_entities, unsigned num
     Entity e_to = {ord_to_remove_from * num_to_add + i + 1};
     if ( (i % 2) == 0 ) {
       bool rv = connectivity.remove_connectivity(ord_to_remove_from, e_to, static_cast<ConnectivityOrdinal>(i));
-      STKUNIT_EXPECT_TRUE(rv);
+      EXPECT_TRUE(rv);
     }
   }
 

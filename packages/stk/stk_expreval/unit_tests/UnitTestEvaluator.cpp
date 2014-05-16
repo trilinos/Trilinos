@@ -12,7 +12,7 @@
 #include <iomanip>
 #include <math.h>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <gtest/gtest.h>
 
 #include <stk_expreval/Evaluator.hpp>
 
@@ -29,7 +29,7 @@ using namespace stk::expreval;
 //      std::cout << std::setprecision(20) << x << "," << std::setprecision(20) << y << std::endl;		\	x
 namespace {
 
-STKUNIT_UNIT_TEST( UnitTestEvaluator, testEvaluator)
+TEST( UnitTestEvaluator, testEvaluator)
 {
   UnitTestEvaluator unit;
 
@@ -343,166 +343,166 @@ EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk::expreval::s_p
 void
 UnitTestEvaluator::testEvaluator()
 {
-  STKUNIT_EXPECT_TRUE(syntax("3^2"));
-  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;a+b",3));
-  STKUNIT_EXPECT_TRUE(test_one_value("9%3" ,0));
-  STKUNIT_EXPECT_TRUE(test_one_value("9 % 4" ,1));
-  STKUNIT_EXPECT_TRUE(test_one_value("15%(1+1+1)",0));
+  EXPECT_TRUE(syntax("3^2"));
+  EXPECT_TRUE(test_one_value("a=1;b=2;a+b",3));
+  EXPECT_TRUE(test_one_value("9%3" ,0));
+  EXPECT_TRUE(test_one_value("9 % 4" ,1));
+  EXPECT_TRUE(test_one_value("15%(1+1+1)",0));
 
-  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2)",2));
-  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2,3)",3));
-  STKUNIT_EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
+  EXPECT_TRUE(test_one_value("max(1,2)",2));
+  EXPECT_TRUE(test_one_value("max(1,2,3)",3));
+  EXPECT_TRUE(test_one_value("max(1,2,3,4)",4));
 
-  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3)",3));
-  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2)",2));
-  STKUNIT_EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));
+  EXPECT_TRUE(test_one_value("min(4,3)",3));
+  EXPECT_TRUE(test_one_value("min(4,3,2)",2));
+  EXPECT_TRUE(test_one_value("min(4,3,2,1)",1));
 
-  STKUNIT_EXPECT_TRUE(test_one_value("a=3;a^2",9.));
-  STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
-  STKUNIT_EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
-  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;c=(a!=b);",1));
-  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=2;c=(a==b);",0));
-  STKUNIT_EXPECT_TRUE(test_one_value("a=1;b=!a;",0));
-  STKUNIT_EXPECT_TRUE(test_one_value("sign(7)", 1));
-  STKUNIT_EXPECT_TRUE(test_one_value("sign(-5)", -1));
+  EXPECT_TRUE(test_one_value("a=3;a^2",9.));
+  EXPECT_TRUE(test_one_value("(1+2+3)^2",36.));
+  EXPECT_TRUE(test_one_value("(1+2+3+4)^(1+1)",100.));
+  EXPECT_TRUE(test_one_value("a=1;b=2;c=(a!=b);",1));
+  EXPECT_TRUE(test_one_value("a=1;b=2;c=(a==b);",0));
+  EXPECT_TRUE(test_one_value("a=1;b=!a;",0));
+  EXPECT_TRUE(test_one_value("sign(7)", 1));
+  EXPECT_TRUE(test_one_value("sign(-5)", -1));
 
 #ifndef __PATHSCALE__
   double weibull_gold_value = 3.6787944117144233402;
-  STKUNIT_EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
+  EXPECT_TRUE(test_one_value("shape=10;scale=1;weibull_pdf(1.0,shape,scale)", weibull_gold_value));
 #endif
 
 #ifndef __PATHSCALE__
   // Need a better test for distributions, perhaps something that computes the
   // mean and standard deviation of the distribution.
   double normal_gold_value = 0.79788456080286540573;
-  STKUNIT_EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
+  EXPECT_TRUE(test_one_value("mean=0;standard_deviation=0.5;normal_pdf(0.0,mean,standard_deviation)", normal_gold_value));
 #endif
 
 #ifndef __PATHSCALE__
   // These tests just print a range of values of the input expressions.
   // and optionally output to a CSV file along with an associated GNUPLOT input file.
   //                                                              XMIN  XMAX    Pts  Output
-  STKUNIT_EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
+  EXPECT_TRUE(evaluate_range("weibull_pdf(x,3,1)"       ,    0,    3,  3000, false ));
+  EXPECT_TRUE(evaluate_range("normal_pdf(x,1,.2)"       ,    0,    2,  3000, false ));
+  EXPECT_TRUE(evaluate_range("gamma_pdf(x,10,1.0)"      ,    0,    4,  3000, false ));
 #endif
 
-  STKUNIT_EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
-  //STKUNIT_EXPECT_TRUE(evaluate_range("uniform_pdf(x,10,1.0)"    ,    0,    4,  1000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"       ,  0.0,  2.0,  2000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"         ,  0.0,  2.0,  2000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("random()"                 , -1.0,  1.0,  2000, false ));
-  STKUNIT_EXPECT_TRUE(evaluate_range("sign(sin(x))"             ,    0,   12, 12000, false )); // square wave
+  EXPECT_TRUE(evaluate_range("exponential_pdf(x,2)"     ,    0,    6,  3000, false ));
+  EXPECT_TRUE(evaluate_range("log_uniform_pdf(x,10,1.0)",    0,    4,  3000, false ));
+  //EXPECT_TRUE(evaluate_range("uniform_pdf(x,10,1.0)"    ,    0,    4,  1000, false ));
+  EXPECT_TRUE(evaluate_range("unit_step(x,0.1,0.2)"     ,    0,   .3,  3000, false ));
+  EXPECT_TRUE(evaluate_range("cosine_ramp(x,1,2)"       ,  0.0,  3.0,  3000, false ));
+  EXPECT_TRUE(evaluate_range("cosine_ramp(x,0,1)"       ,  0.0,  2.0,  2000, false ));
+  EXPECT_TRUE(evaluate_range("cosine_ramp(x,1)"         ,  0.0,  2.0,  2000, false ));
+  EXPECT_TRUE(evaluate_range("cosine_ramp(x)"           ,  0.0,  2.0,  2000, false ));
+  EXPECT_TRUE(evaluate_range("random()"                 , -1.0,  1.0,  2000, false ));
+  EXPECT_TRUE(evaluate_range("sign(sin(x))"             ,    0,   12, 12000, false )); // square wave
 
-  STKUNIT_EXPECT_TRUE(syntax("2*2"));
-  STKUNIT_EXPECT_TRUE(syntax(""));
-  STKUNIT_EXPECT_TRUE(syntax(";"));
-  STKUNIT_EXPECT_TRUE(syntax(";;"));
-  STKUNIT_EXPECT_TRUE(syntax(";;;"));
-  STKUNIT_EXPECT_TRUE(syntax("x*0.1"));
-  STKUNIT_EXPECT_TRUE(syntax("x*-0.1"));
-  STKUNIT_EXPECT_TRUE(syntax("x*+0.1"));
-  STKUNIT_EXPECT_TRUE(syntax("x--7.0"));
-  STKUNIT_EXPECT_TRUE(syntax("x*-x"));
-  STKUNIT_EXPECT_TRUE(syntax("x*+x"));
-  STKUNIT_EXPECT_TRUE(syntax("v[0]=v[1]*0.1"));
-  STKUNIT_EXPECT_TRUE(syntax("x--x"));
-  STKUNIT_EXPECT_TRUE(syntax("x---x"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("0.01.02"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("5*.e+10"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("x y"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("x(y"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("x*"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("x*(y+1"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("x*y)"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("cos(x"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("(x)y"));
-  STKUNIT_EXPECT_TRUE(fail_syntax("()"));
-  STKUNIT_EXPECT_TRUE(undefinedFunction("stress(1)"));
-  STKUNIT_EXPECT_TRUE(notUndefinedFunction("sin(1)"));
-  STKUNIT_EXPECT_TRUE(notUndefinedFunction("0.01.02"));
-  STKUNIT_EXPECT_TRUE(syntax("rand()"));
-  STKUNIT_EXPECT_TRUE(syntax("srand()"));
-  STKUNIT_EXPECT_TRUE(syntax("randomize()"));
-  STKUNIT_EXPECT_TRUE(syntax("time()"));
-  STKUNIT_EXPECT_TRUE(syntax("random()"));
-  STKUNIT_EXPECT_TRUE(syntax("random(1)"));
-  STKUNIT_EXPECT_TRUE(syntax("random(time())"));
-  STKUNIT_EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
-  STKUNIT_EXPECT_TRUE(syntax("sign(x)"));
+  EXPECT_TRUE(syntax("2*2"));
+  EXPECT_TRUE(syntax(""));
+  EXPECT_TRUE(syntax(";"));
+  EXPECT_TRUE(syntax(";;"));
+  EXPECT_TRUE(syntax(";;;"));
+  EXPECT_TRUE(syntax("x*0.1"));
+  EXPECT_TRUE(syntax("x*-0.1"));
+  EXPECT_TRUE(syntax("x*+0.1"));
+  EXPECT_TRUE(syntax("x--7.0"));
+  EXPECT_TRUE(syntax("x*-x"));
+  EXPECT_TRUE(syntax("x*+x"));
+  EXPECT_TRUE(syntax("v[0]=v[1]*0.1"));
+  EXPECT_TRUE(syntax("x--x"));
+  EXPECT_TRUE(syntax("x---x"));
+  EXPECT_TRUE(fail_syntax("0.01.02"));
+  EXPECT_TRUE(fail_syntax("5*.e+10"));
+  EXPECT_TRUE(fail_syntax("x y"));
+  EXPECT_TRUE(fail_syntax("x(y"));
+  EXPECT_TRUE(fail_syntax("x*"));
+  EXPECT_TRUE(fail_syntax("x*(y+1"));
+  EXPECT_TRUE(fail_syntax("x*y)"));
+  EXPECT_TRUE(fail_syntax("cos(x"));
+  EXPECT_TRUE(fail_syntax("(x)y"));
+  EXPECT_TRUE(fail_syntax("()"));
+  EXPECT_TRUE(undefinedFunction("stress(1)"));
+  EXPECT_TRUE(notUndefinedFunction("sin(1)"));
+  EXPECT_TRUE(notUndefinedFunction("0.01.02"));
+  EXPECT_TRUE(syntax("rand()"));
+  EXPECT_TRUE(syntax("srand()"));
+  EXPECT_TRUE(syntax("randomize()"));
+  EXPECT_TRUE(syntax("time()"));
+  EXPECT_TRUE(syntax("random()"));
+  EXPECT_TRUE(syntax("random(1)"));
+  EXPECT_TRUE(syntax("random(time())"));
+  EXPECT_TRUE(syntax("cosine_ramp(x,y)"));
+  EXPECT_TRUE(syntax("sign(x)"));
 
 #ifndef __PATHSCALE__
-  STKUNIT_EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
-  STKUNIT_EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
+  EXPECT_TRUE(syntax("weibull_pdf(x, alpha, beta)"));
+  EXPECT_TRUE(syntax("normal_pdf(x, alpha, beta)"));
 #endif
 
 #define EXPREVAL_TEST(name) test(name##_expr, name)
 
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h1));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h2));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h3));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h4));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h5));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h6));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h7));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h8));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h9));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h10));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h11));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h12));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h13));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h14));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h15));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h16));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h17));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h18));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h19));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(h20));
+  EXPECT_TRUE(EXPREVAL_TEST(h1));
+  EXPECT_TRUE(EXPREVAL_TEST(h2));
+  EXPECT_TRUE(EXPREVAL_TEST(h3));
+  EXPECT_TRUE(EXPREVAL_TEST(h4));
+  EXPECT_TRUE(EXPREVAL_TEST(h5));
+  EXPECT_TRUE(EXPREVAL_TEST(h6));
+  EXPECT_TRUE(EXPREVAL_TEST(h7));
+  EXPECT_TRUE(EXPREVAL_TEST(h8));
+  EXPECT_TRUE(EXPREVAL_TEST(h9));
+  EXPECT_TRUE(EXPREVAL_TEST(h10));
+  EXPECT_TRUE(EXPREVAL_TEST(h11));
+  EXPECT_TRUE(EXPREVAL_TEST(h12));
+  EXPECT_TRUE(EXPREVAL_TEST(h13));
+  EXPECT_TRUE(EXPREVAL_TEST(h14));
+  EXPECT_TRUE(EXPREVAL_TEST(h15));
+  EXPECT_TRUE(EXPREVAL_TEST(h16));
+  EXPECT_TRUE(EXPREVAL_TEST(h17));
+  EXPECT_TRUE(EXPREVAL_TEST(h18));
+  EXPECT_TRUE(EXPREVAL_TEST(h19));
+  EXPECT_TRUE(EXPREVAL_TEST(h20));
 
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f1));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f2));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f3));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f4));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f5));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f6));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f7));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f8));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f9));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f10));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f11));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f12));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f13));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f14));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f15));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f16));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f17));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f18));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f19));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f20));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f21));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f22));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f23));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f24));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f25));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f26));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f27));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f28));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f29));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f30));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(f31));
+  EXPECT_TRUE(EXPREVAL_TEST(f1));
+  EXPECT_TRUE(EXPREVAL_TEST(f2));
+  EXPECT_TRUE(EXPREVAL_TEST(f3));
+  EXPECT_TRUE(EXPREVAL_TEST(f4));
+  EXPECT_TRUE(EXPREVAL_TEST(f5));
+  EXPECT_TRUE(EXPREVAL_TEST(f6));
+  EXPECT_TRUE(EXPREVAL_TEST(f7));
+  EXPECT_TRUE(EXPREVAL_TEST(f8));
+  EXPECT_TRUE(EXPREVAL_TEST(f9));
+  EXPECT_TRUE(EXPREVAL_TEST(f10));
+  EXPECT_TRUE(EXPREVAL_TEST(f11));
+  EXPECT_TRUE(EXPREVAL_TEST(f12));
+  EXPECT_TRUE(EXPREVAL_TEST(f13));
+  EXPECT_TRUE(EXPREVAL_TEST(f14));
+  EXPECT_TRUE(EXPREVAL_TEST(f15));
+  EXPECT_TRUE(EXPREVAL_TEST(f16));
+  EXPECT_TRUE(EXPREVAL_TEST(f17));
+  EXPECT_TRUE(EXPREVAL_TEST(f18));
+  EXPECT_TRUE(EXPREVAL_TEST(f19));
+  EXPECT_TRUE(EXPREVAL_TEST(f20));
+  EXPECT_TRUE(EXPREVAL_TEST(f21));
+  EXPECT_TRUE(EXPREVAL_TEST(f22));
+  EXPECT_TRUE(EXPREVAL_TEST(f23));
+  EXPECT_TRUE(EXPREVAL_TEST(f24));
+  EXPECT_TRUE(EXPREVAL_TEST(f25));
+  EXPECT_TRUE(EXPREVAL_TEST(f26));
+  EXPECT_TRUE(EXPREVAL_TEST(f27));
+  EXPECT_TRUE(EXPREVAL_TEST(f28));
+  EXPECT_TRUE(EXPREVAL_TEST(f29));
+  EXPECT_TRUE(EXPREVAL_TEST(f30));
+  EXPECT_TRUE(EXPREVAL_TEST(f31));
 
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b1));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b2));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(b3));
+  EXPECT_TRUE(EXPREVAL_TEST(b1));
+  EXPECT_TRUE(EXPREVAL_TEST(b2));
+  EXPECT_TRUE(EXPREVAL_TEST(b3));
 
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k1));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k2));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k3));
-  STKUNIT_EXPECT_TRUE(EXPREVAL_TEST(k4));
+  EXPECT_TRUE(EXPREVAL_TEST(k1));
+  EXPECT_TRUE(EXPREVAL_TEST(k2));
+  EXPECT_TRUE(EXPREVAL_TEST(k3));
+  EXPECT_TRUE(EXPREVAL_TEST(k4));
 
 #undef EXPREVAL_TEST
 }
