@@ -25,8 +25,7 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
         stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
         stk::diag::TimeBlock totalTestRuntime(rootTimer);
 
-        const std::string childName1 = "childTimer1";
-        stk::diag::Timer childTimer1(childName1, CHILDMASK1, rootTimer);
+        stk::diag::Timer childTimer1("childTimer1", CHILDMASK1, rootTimer);
 
         {
             stk::diag::TimeBlockSynchronized timerStartSynchronizedAcrossProcessors(childTimer1, communicator);
