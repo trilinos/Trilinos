@@ -223,6 +223,7 @@ TEST(OpenMp, learningAboutPrivates)
         EXPECT_NE(13, a.value);
         EXPECT_EQ(14, b.value);
         EXPECT_EQ(15, c.value);
+        #pragma omp barrier
         #pragma omp for lastprivate(c)
         for(int i =0; i <= numberOfIterations; i++)
         {
