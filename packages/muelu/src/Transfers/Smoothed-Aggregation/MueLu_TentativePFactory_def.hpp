@@ -297,7 +297,25 @@ namespace MueLu {
 
       } else {
         // Special handling for aggSize < NSDim (i.e. 1pt nodes)
-        throw Exceptions::RuntimeError("aggSize < NSDim is not implemented");
+
+        // FIXME: the code below does not make any sense to me, and was taken almost verbatim from the
+        // old factory
+        // The problems are:
+        //  - It seems to make at least partial sense only for aggSize = 1
+        //  - For aggSize = 1, it constructs localQR to be NSDim x NSDim, instead
+        //    of 1 x NSDim. But then it skips last rows in the final loop
+
+        localQR.reshape(NSDim, NSDim);
+        for (size_t i = aggSize; i < NSDim; i++)
+          localQR(i,i) = one;
+
+        for (size_t j = 0; j < NSDim; j++)
+          for (size_t k = 0; k <= j; k++)
+            coarseNS[j][offset+k] = localQR(k,j);
+
+        for (size_t i = 0; i < as<size_t>(aggSize); i++)
+          for (size_t j = 0; j < NSDim; j++)
+            localQR(i,j) = (j == i ? one : zero);
       }
 
       // Process each row in the local Q factor
