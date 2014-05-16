@@ -543,12 +543,46 @@ private:
                           const Scalar alpha,
                           const Scalar beta);
 
+  /// \brief Get the relative block offset of the given block.
+  ///
+  /// \param localRowIndex [in] Local index of the entry's row.
+  /// \param colIndexToFind [in] Local index of the entry's column.
+  /// \param hint [in] Relative offset hint.
+  ///
+  /// An offset may be either relative or absolute.  <i>Absolute</i>
+  /// offsets are just direct indices into an array.  <i>Relative</i>
+  /// offsets are relative to the current row.  For example, if
+  /// <tt>k_abs</tt> is an absolute offset into the array of column
+  /// indices <tt>ind_</tt>, then one can use <tt>k_abs</tt> directly
+  /// as <tt>ind_[k_abs]</tt>.  If <tt>k_rel</tt> is a relative offset
+  /// into <tt>ind_</tt>, then one must know the current local row
+  /// index in order to use <tt>k_rel</tt>.  For example:
+  /// \code
+  /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
+  /// LO colInd = ind_[k_abs];
+  /// \code
+  ///
+  /// This method returns a relative block offset.  A <i>block</i>
+  /// offset means a graph or mesh offset.  It's suitable for use in
+  /// <tt>ind_</tt>, but not in <tt>val_</tt>.  One must multiply it
+  /// by the result of offsetPerBlock() in order to get the
+  /// <i>point</i> offset into <tt>val_</tt>.
+  ///
+  /// The given "hint" is a relative block offset.  It can help avoid
+  /// searches, for the common case of accessing several consecutive
+  /// entries in the same row.
+  ///
+  /// \return Teuchos::OrdinalTraits<size_t>::invalid() if there is no
+  ///   block at the given index pair; otherwise, the "absolute"
+  ///   block offset of that block.
   size_t
-  findOffsetOfColumnIndex (const LO localRowIndex,
-                           const LO colIndexToFind,
-                           const size_t hint) const;
+  findRelOffsetOfColumnIndex (const LO localRowIndex,
+                              const LO colIndexToFind,
+                              const size_t hint) const;
 
-  LO allocationSizePerBlock () const;
+  /// \brief Number of entries consumed by each block in the matrix,
+  ///   including padding; the stride between blocks.
+  LO offsetPerBlock () const;
 
   const_little_block_type
   getConstLocalBlockFromInput (const Scalar* val, const size_t pointOffset) const;
@@ -557,10 +591,10 @@ private:
   getNonConstLocalBlockFromInput (Scalar* val, const size_t pointOffset) const;
 
   const_little_block_type
-  getConstLocalBlockFromOffset (const size_t blockOffset) const;
+  getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
 
   little_block_type
-  getNonConstLocalBlockFromOffset (const size_t blockOffset) const;
+  getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
 };
 
 } // namespace Experimental

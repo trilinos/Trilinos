@@ -82,6 +82,11 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true) // row major blocks by default
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
+      "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
+      "rows (isSorted() is false).  This class assumes sorted rows.");
+
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
     // anyway).  I don't promise that the trick works, but it
@@ -97,7 +102,7 @@ namespace Experimental {
 
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    valView_.resize (graph.getNodeNumEntries () * allocationSizePerBlock ());
+    valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
     val_ = valView_.getRawPtr ();
   }
 
@@ -120,6 +125,11 @@ namespace Experimental {
     columnPadding_ (0), // no padding by default
     rowMajor_ (true) // row major blocks by default
   {
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
+      "BlockCrsMatrix constructor: The input CrsGraph does not have sorted "
+      "rows (isSorted() is false).  This class assumes sorted rows.");
+
     // Trick to test whether LO is nonpositive, without a compiler
     // warning in case LO is unsigned (which is generally a bad idea
     // anyway).  I don't promise that the trick works, but it
@@ -132,7 +142,7 @@ namespace Experimental {
 
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    valView_.resize (graph.getNodeNumEntries () * allocationSizePerBlock ());
+    valView_.resize (graph.getNodeNumEntries () * offsetPerBlock ());
     val_ = valView_.getRawPtr ();
   }
 
@@ -264,21 +274,24 @@ namespace Experimental {
       return static_cast<LO> (0);
     }
 
-    const size_t perBlockSize = static_cast<LO> (allocationSizePerBlock ());
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the offset into allColIndsInRow
-    size_t valsPointOffset = 0; // Current offset into vals
+    size_t hint = 0; // Guess for the relative offset into the current row
+    size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k, valsPointOffset += perBlockSize) {
-      const size_t blockOffset =
-        findOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (blockOffset != STINV) {
-        little_block_type A_old = getNonConstLocalBlockFromOffset (blockOffset);
+    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
-          getConstLocalBlockFromInput (vals, valsPointOffset);
+          getConstLocalBlockFromInput (vals, pointOffset);
         A_old.assign (A_new);
-        hint = blockOffset + 1;
+        hint = relBlockOffset + 1;
         ++validCount;
       }
     }
@@ -301,21 +314,24 @@ namespace Experimental {
       return static_cast<LO> (0);
     }
 
-    const size_t perBlockSize = static_cast<LO> (allocationSizePerBlock ());
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
     const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
-    size_t hint = 0; // Guess for the offset into allColIndsInRow
-    size_t valsPointOffset = 0; // Current offset into vals
+    size_t hint = 0; // Guess for the relative offset into the current row
+    size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k, valsPointOffset += perBlockSize) {
-      const size_t blockOffset =
-        findOffsetOfColumnIndex (localRowInd, colInds[k], hint);
-      if (blockOffset != STINV) {
-        little_block_type A_old = getNonConstLocalBlockFromOffset (blockOffset);
+    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
         const_little_block_type A_new =
-          getConstLocalBlockFromInput (vals, valsPointOffset);
+          getConstLocalBlockFromInput (vals, pointOffset);
         A_old.update (STS::one (), A_new);
-        hint = blockOffset + 1;
+        hint = relBlockOffset + 1;
         ++validCount;
       }
     }
@@ -499,9 +515,8 @@ namespace Experimental {
     // Teuchos::ScalarTraits.
     const Scalar zero = STS::zero ();
     const Scalar one = STS::one ();
-    const size_t* const ptr = graph_.getNodeRowPtrs ().getRawPtr ();
-    const LO* const ind = graph_.getNodePackedIndices ().getRawPtr ();
-    const LO numLocalMeshRows = static_cast<LO> (graph_.getNodeNumRows ());
+    const LO numLocalMeshRows =
+      static_cast<LO> (rowMeshMap_.getNodeNumElements ());
     const LO numVecs = static_cast<LO> (X.getNumVectors ());
 
     // If using (new) Kokkos, replace localMem with thread-local
@@ -513,8 +528,8 @@ namespace Experimental {
     little_vec_type Y_lcl (localMem.getRawPtr (), blockSize, 1);
 
     if (numVecs == 1) {
-      for (LO localMeshRow = 0; localMeshRow < numLocalMeshRows; ++localMeshRow) {
-        little_vec_type Y_cur = Y.getLocalBlock (localMeshRow, 0);
+      for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
+        little_vec_type Y_cur = Y.getLocalBlock (lclRow, 0);
         if (beta == zero) {
           Y_lcl.fill (zero);
         } else if (beta == one) {
@@ -523,20 +538,21 @@ namespace Experimental {
           Y_lcl.assign (Y_cur);
           Y_lcl.scale (beta);
         }
-        const size_t meshStart = ptr[localMeshRow];
-        const size_t meshEnd = ptr[localMeshRow+1];
-        for (size_t meshEntryIndex = meshStart; meshEntryIndex < meshEnd; ++meshEntryIndex) {
-          const LO meshCol = ind[meshEntryIndex];
-          const_little_block_type A_cur = getConstLocalBlockFromOffset (meshEntryIndex);
+        const size_t meshBeg = ptr_[lclRow];
+        const size_t meshEnd = ptr_[lclRow+1];
+        for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+          const LO meshCol = ind_[absBlkOff];
+          const_little_block_type A_cur =
+            getConstLocalBlockFromAbsOffset (absBlkOff);
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
           Y_cur.matvecUpdate (alpha, A_cur, X_cur); // Y_cur += alpha*A_cur*X_cur;
         }
       }
     }
     else {
-      for (LO localMeshRow = 0; localMeshRow < numLocalMeshRows; ++localMeshRow) {
+      for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
         for (LO j = 0; j < numVecs; ++j) {
-          little_vec_type Y_cur = Y.getLocalBlock (localMeshRow, j);
+          little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
           if (beta == zero) {
             Y_lcl.fill (zero);
           } else if (beta == one) {
@@ -545,11 +561,12 @@ namespace Experimental {
             Y_lcl.assign (Y_cur);
             Y_lcl.scale (beta);
           }
-          const size_t meshStart = ptr[localMeshRow];
-          const size_t meshEnd = ptr[localMeshRow+1];
-          for (size_t meshEntryIndex = meshStart; meshEntryIndex < meshEnd; ++meshEntryIndex) {
-            const LO meshCol = ind[meshEntryIndex];
-            const_little_block_type A_cur = getConstLocalBlockFromOffset (meshEntryIndex);
+          const size_t meshBeg = ptr_[lclRow];
+          const size_t meshEnd = ptr_[lclRow+1];
+          for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
+            const LO meshCol = ind_[absBlkOff];
+            const_little_block_type A_cur =
+              getConstLocalBlockFromAbsOffset (absBlkOff);
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
             Y_cur.matvecUpdate (alpha, A_cur, X_cur); // Y_cur += alpha*A_cur*X_cur;
           }
@@ -561,55 +578,58 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   size_t
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  findOffsetOfColumnIndex (const LO localRowIndex,
-                           const LO colIndexToFind,
-                           const size_t hint) const
+  findRelOffsetOfColumnIndex (const LO localRowIndex,
+                              const LO colIndexToFind,
+                              const size_t hint) const
   {
-    const size_t startOffset = ptr_[localRowIndex];
-    const size_t endOffset = ptr_[localRowIndex+1];
-    const size_t numEntriesInRow = endOffset - startOffset;
-    const LO* beg = ind_ + startOffset;
+    const size_t absStartOffset = ptr_[localRowIndex];
+    const size_t absEndOffset = ptr_[localRowIndex+1];
+    const size_t numEntriesInRow = absEndOffset - absStartOffset;
+
     // If the hint was correct, then the hint is the offset to return.
-    if (hint < numEntriesInRow && beg[hint] == colIndexToFind) {
-      // Always return the _absolute_ offset, not the offset relative
-      // to the current row.
-      return startOffset + hint;
+    if (hint < numEntriesInRow && ind_[absStartOffset] == colIndexToFind) {
+      // Always return the offset relative to the current row.
+      return hint;
     }
 
     // The hint was wrong, so we must search for the given column
-    // index in the column indices for the given row.  How we do the
-    // search depends on whether the graph's column indices are
-    // sorted.
-    const LO* end = ind_ + endOffset;
-    const LO* ptr = end;
-    bool found = true;
+    // index in the column indices for the given row.
+    size_t relOffset = Teuchos::OrdinalTraits<size_t>::invalid ();
 
-    if (graph_.isSorted ()) { // use binary search
+    // We require that the graph have sorted rows.  However, binary
+    // search only pays if the current row is longer than a certain
+    // amount.  We set this to 32, but you might want to tune this.
+    const size_t maxNumEntriesForLinearSearch = 32;
+    if (numEntriesInRow > maxNumEntriesForLinearSearch) {
+      // Use binary search.  It would probably be better for us to
+      // roll this loop by hand.  If we wrote it right, a smart
+      // compiler could perhaps use conditional loads and avoid
+      // branches (according to Jed Brown on May 2014).
+      const LO* beg = ind_ + absStartOffset;
+      const LO* end = ind_ + absEndOffset;
       std::pair<const LO*, const LO*> p =
         std::equal_range (beg, end, colIndexToFind);
-      if (p.first == p.second) {
-        found = false;
-      } else {
-        ptr = p.first;
+      if (p.first != p.second) {
+        // offset is relative to the current row
+        relOffset = static_cast<size_t> (p.first - beg);
       }
-    } else { // use linear search
-      ptr = std::find (beg, end, colIndexToFind);
-      if (ptr == end) {
-        found = false;
+    }
+    else { // use linear search
+      for (size_t k = 0; k < numEntriesInRow; ++k) {
+        if (colIndexToFind == ind_[absStartOffset + k]) {
+          relOffset = k; // offset is relative to the current row
+          break;
+        }
       }
     }
 
-    if (found) {
-      return startOffset + static_cast<size_t> (ptr - beg);
-    } else {
-      return Teuchos::OrdinalTraits<size_t>::invalid ();
-    }
+    return relOffset;
   }
 
   template<class Scalar, class LO, class GO, class Node>
   LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  allocationSizePerBlock () const
+  offsetPerBlock () const
   {
     const LO numRows = blockSize_;
 
@@ -654,33 +674,33 @@ namespace Experimental {
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::const_little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getConstLocalBlockFromOffset (const size_t blockOffset) const
+  getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
-    if (blockOffset >= ptr_[graph_.getNodeNumRows ()]) {
+    if (absBlockOffset >= ptr_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
-      // segfaults or memory corruption in case there is a bug.
+      // memory corruption in case there is a bug.
       return const_little_block_type (NULL, 0, 0, 0);
     } else {
-      const size_t pointOffset = blockOffset * allocationSizePerBlock ();
-      return getConstLocalBlockFromInput (val_, pointOffset);
+      const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
+      return getConstLocalBlockFromInput (val_, absPointOffset);
     }
   }
 
   template<class Scalar, class LO, class GO, class Node>
   typename BlockCrsMatrix<Scalar, LO, GO, Node>::little_block_type
   BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getNonConstLocalBlockFromOffset (const size_t blockOffset) const
+  getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const
   {
-    if (blockOffset >= ptr_[graph_.getNodeNumRows ()]) {
+    if (absBlockOffset >= ptr_[rowMeshMap_.getNodeNumElements ()]) {
       // An empty block signifies an error.  We don't expect to see
       // this error in correct code, but it's helpful for avoiding
-      // segfaults or memory corruption in case there is a bug.
+      // memory corruption in case there is a bug.
       return little_block_type (NULL, 0, 0, 0);
     } else {
-      const size_t pointOffset = blockOffset * allocationSizePerBlock ();
+      const size_t absPointOffset = absBlockOffset * offsetPerBlock ();
       return getNonConstLocalBlockFromInput (const_cast<Scalar*> (val_),
-                                             pointOffset);
+                                             absPointOffset);
     }
   }
 
