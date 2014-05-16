@@ -421,6 +421,15 @@ protected:
 private:
   //! The graph that describes the structure of this matrix.
   crs_graph_type graph_;
+  /// \brief The graph's row Map; the mesh row Map of this matrix.
+  ///
+  /// We keep this separately, not as an RCP, so that methods like
+  /// replaceLocalValues and sumIntoLocalValues are thread safe.  (We
+  /// could do this just by keeping the number of local indices in the
+  /// mesh Map, but this more general approach will let us make
+  /// replaceGlobalValues and sumIntoGlobalValues thread safe as
+  /// well.)
+  map_type rowMeshMap_;
   /// \brief The point Map version of the graph's domain Map.
   ///
   /// NOTE (mfh 16 May 2014) Since this is created at construction
@@ -441,29 +450,44 @@ private:
   const size_t* ptr_;
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
-  //! Array of values in the matrix.
-  Teuchos::Array<Scalar> val_;
+  /// \brief Array of values in the matrix.
+  ///
+  /// This is stored as a Teuchos::ArrayRCP, so that BlockCrsMatrix
+  /// has view (shallow copy) semantics.  In the future, we will want
+  /// to replace this with Kokkos::View.
+  Teuchos::ArrayRCP<Scalar> valView_;
+  /// \brief Raw pointer version of valView_.
+  ///
+  /// It must always be true, outside of the constructors, that
+  /// <tt>valView_.getRawPtr() == val_</tt>.
+  Scalar* val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
-  /// FIXME (mfh 16 May 2014) Use a pointer (RCP or std::unique_ptr)
-  /// here, for correct use of the "lazy initialization of members of
-  /// objects with view semantics" pattern.  (Otherwise, existing
-  /// views of the BlockCrsMatrix won't get the benefit of lazy
-  /// initialization.)
-  BMV X_colMap_;
+  /// mfh 16 May 2014: This is a pointer to a pointer to BMV.  Ditto
+  /// for Y_rowMap_ below.  This lets us do lazy initialization
+  /// correctly with view semantics of BlockCrsMatrix.  All views of
+  /// this BlockCrsMatrix have the same outer pointer.  That way, we
+  /// can set the inner pointer in one view, and all other views will
+  /// see it.  (Otherwise, other existing views of the BlockCrsMatrix
+  /// would not get the benefit of lazy initialization.)
+  ///
+  /// The outer pointer is always nonull: It is always true that
+  ///
+  /// <tt>! X_colMap_.is_null()</tt>.
+  ///
+  /// However, the inner pointer starts out null and is lazily
+  /// initialized in applyBlock().
+  ///
+  /// It's necessary to use a shared pointer (either Teuchos::RCP or
+  /// std::shared_ptr) here, at least for the outer pointer type,
+  /// because different views of the same block matrix will use the
+  /// same BMV object.
+  Teuchos::RCP<Teuchos::RCP<BMV> > X_colMap_;
   /// \brief Row Map block multivector (only initialized if needed).
   ///
-  /// FIXME (mfh 16 May 2014) Use a pointer (RCP or std::unique_ptr)
-  /// here, for correct use of the "lazy initialization of members of
-  /// objects with view semantics" pattern.  (Otherwise, existing
-  /// views of the BlockCrsMatrix won't get the benefit of lazy
-  /// initialization.)
-  BMV Y_rowMap_;
-  //! Whether the column Map block multivector is initialized.
-  bool X_colMap_initialized_;
-  //! Whether the row Map block multivector is initialized.
-  bool Y_rowMap_initialized_;
+  /// See the documentation of X_colMap_ above.
+  Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
 
   /// \brief Padding to use for "little blocks" in the matrix.
   ///

@@ -60,8 +60,8 @@ namespace Experimental {
     blockSize_ (static_cast<LO> (0)),
     ptr_ (NULL),
     ind_ (NULL),
-    X_colMap_initialized_ (false),
-    Y_rowMap_initialized_ (false),
+    X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true) // row major blocks by default
   {}
@@ -72,11 +72,13 @@ namespace Experimental {
                   const LO blockSize) :
     dist_object_type (graph.getMap ()),
     graph_ (graph),
+    rowMeshMap_ (* (graph.getRowMap ())),
     blockSize_ (blockSize),
     ptr_ (NULL), // to be initialized below
     ind_ (NULL), // to be initialized below
-    X_colMap_initialized_ (false),
-    Y_rowMap_initialized_ (false),
+    val_ (NULL), // to be initialized below
+    X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true) // row major blocks by default
   {
@@ -95,7 +97,8 @@ namespace Experimental {
 
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    val_.resize (graph.getNodeNumEntries () * allocationSizePerBlock ());
+    valView_.resize (graph.getNodeNumEntries () * allocationSizePerBlock ());
+    val_ = valView_.getRawPtr ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -106,13 +109,14 @@ namespace Experimental {
                   const LO blockSize) :
     dist_object_type (graph.getMap ()),
     graph_ (graph),
+    rowMeshMap_ (* (graph.getRowMap ())),
     domainPointMap_ (domainPointMap),
     rangePointMap_ (rangePointMap),
     blockSize_ (blockSize),
     ptr_ (NULL), // to be initialized below
     ind_ (NULL), // to be initialized below
-    X_colMap_initialized_ (false),
-    Y_rowMap_initialized_ (false),
+    X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
+    Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
     rowMajor_ (true) // row major blocks by default
   {
@@ -128,7 +132,8 @@ namespace Experimental {
 
     ptr_ = graph.getNodeRowPtrs ().getRawPtr ();
     ind_ = graph.getNodePackedIndices ().getRawPtr ();
-    val_.resize (graph.getNodeNumEntries () * blockSize * blockSize);
+    valView_.resize (graph.getNodeNumEntries () * allocationSizePerBlock ());
+    val_ = valView_.getRawPtr ();
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -251,7 +256,7 @@ namespace Experimental {
                       const Scalar vals[],
                       const LO numColInds) const
   {
-    if (! graph_.getRowMap ()->isNodeLocalElement (localRowInd)) {
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       // We replaced no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
       // numColInds is zero anyway; it doesn't matter.  This is the
@@ -288,7 +293,7 @@ namespace Experimental {
                       const Scalar vals[],
                       const LO numColInds) const
   {
-    if (! graph_.getRowMap ()->isNodeLocalElement (localRowInd)) {
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
       // We replaced no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
       // numColInds is zero anyway; it doesn't matter.  This is the
@@ -426,6 +431,7 @@ namespace Experimental {
                      const Scalar beta)
   {
     using Teuchos::RCP;
+    using Teuchos::rcp;
     typedef Tpetra::Import<LO, GO, Node> import_type;
     typedef Tpetra::Export<LO, GO, Node> export_type;
     const Scalar zero = STS::zero ();
@@ -446,24 +452,31 @@ namespace Experimental {
       if (import.is_null ()) {
         X_colMap = X; // MUST do a shallow copy
       } else {
-        if (! X_colMap_initialized_ ||
-            X_colMap_.getNumVectors () != X.getNumVectors () ||
-            X_colMap_.getBlockSize () != X.getBlockSize ()) {
-          X_colMap_ = BMV (* (graph_.getColMap ()), getBlockSize (),
-                           static_cast<LO> (X.getNumVectors ()));
+        // X_colMap_ is a pointer to a pointer to BMV.  Ditto for
+        // Y_rowMap_ below.  This lets us do lazy initialization
+        // correctly with view semantics of BlockCrsMatrix.  All views
+        // of this BlockCrsMatrix have the same outer pointer.  That
+        // way, we can set the inner pointer in one view, and all
+        // other views will see it.
+        if ((*X_colMap_).is_null () ||
+            (**X_colMap_).getNumVectors () != X.getNumVectors () ||
+            (**X_colMap_).getBlockSize () != X.getBlockSize ()) {
+          *X_colMap_ = rcp (new BMV (* (graph_.getColMap ()), getBlockSize (),
+                                     static_cast<LO> (X.getNumVectors ())));
         }
-        X_colMap_.doImport (X, *import, Tpetra::REPLACE);
-        X_colMap = X_colMap_; // MUST do a shallow copy
+        (**X_colMap_).doImport (X, *import, Tpetra::REPLACE);
+        X_colMap = **X_colMap_; // MUST do a shallow copy
       }
 
       BMV Y_rowMap;
       if (import.is_null ()) {
         Y_rowMap = Y; // MUST do a shallow copy
-      } else if (! Y_rowMap_initialized_ ||
-                 Y_rowMap_.getNumVectors () != Y.getNumVectors () ||
-                 Y_rowMap_.getBlockSize () != Y.getBlockSize ()) {
-        Y_rowMap_ = BMV (* (graph_.getRowMap ()), getBlockSize (),
-                         static_cast<LO> (X.getNumVectors ()));
+      } else if ((*Y_rowMap_).is_null () ||
+                 (**Y_rowMap_).getNumVectors () != Y.getNumVectors () ||
+                 (**Y_rowMap_).getBlockSize () != Y.getBlockSize ()) {
+        *Y_rowMap_ = rcp (new BMV (* (graph_.getRowMap ()), getBlockSize (),
+                                   static_cast<LO> (X.getNumVectors ())));
+        Y_rowMap = **Y_rowMap_; // MUST do a shallow copy
       }
 
       localApplyBlockNoTrans (X_colMap, Y_rowMap, alpha, beta);
@@ -650,7 +663,7 @@ namespace Experimental {
       return const_little_block_type (NULL, 0, 0, 0);
     } else {
       const size_t pointOffset = blockOffset * allocationSizePerBlock ();
-      return getConstLocalBlockFromInput (val_.getRawPtr (), pointOffset);
+      return getConstLocalBlockFromInput (val_, pointOffset);
     }
   }
 
@@ -666,7 +679,8 @@ namespace Experimental {
       return little_block_type (NULL, 0, 0, 0);
     } else {
       const size_t pointOffset = blockOffset * allocationSizePerBlock ();
-      return getNonConstLocalBlockFromInput (const_cast<Scalar*> (val_.getRawPtr ()), pointOffset);
+      return getNonConstLocalBlockFromInput (const_cast<Scalar*> (val_),
+                                             pointOffset);
     }
   }
 
