@@ -280,7 +280,6 @@ namespace MueLu {
     }
 
     else {
-      typedef Teuchos::ScalarTraits<Scalar> TST;
       RCP<MultiVector> Residual = Utils::Residual(*A_,X,B);
       RCP<MultiVector> Correction = Xpetra::MultiVectorFactory<SC,LO,GO,NO>::Build(A_->getDomainMap(), X.getNumVectors());
       Tpetra::MultiVector<SC,LO,GO,NO> &tX = Utils::MV2NonConstTpetraMV(*Correction);
