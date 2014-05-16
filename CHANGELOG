@@ -1,0 +1,17 @@
+###############################################################################
+#                                                                             #
+# Trilinos Release 11.6 Changelog                                             #
+#                                                                             #
+###############################################################################
+
+Release update 11.6.2 May 16, 2013
+
+1. Stratimikos - Belos adapter now accepts magnitudeType for tolerance.
+
+2. Zoltan      - Fixed a bug when multiple object weights are used and ParMETIS
+                 4.x is compiled with 64bit integers and reals.
+
+3. Zoltan2     - Bug fix for Xpetra graph adapter when a processor has no
+                 vertices.
+
+4. Zoltan2     - Fix include guard in Zoltan2_ZpetraRowMatrixAdapter.hpp
