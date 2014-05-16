@@ -95,20 +95,31 @@ struct GrowArrayFunctor {
       Kokkos::deep_copy( results , m_search_array );
       Kokkos::deep_copy( count ,   m_search_count );
 
-      int error_count = 0 ;
+      int result_error_count = 0 ;
+      int flags_error_count = 0 ;
       for ( int i = 0 ; i < *count ; ++i ) {
         const int index = results(i);
-        const bool flag = flags( index >> SHIFT ) & ( 1 << ( index & MASK ) );
+        const int entry = index >> SHIFT ;
+        const int bit   = 1 << ( index & MASK );
+        const bool flag = 0 != ( flags( entry ) & bit );
         if ( ! flag ) {
-          if ( print ) std::cerr << "( " << i << " , " << index << " )";
-          ++error_count ;
+          if ( print ) std::cerr << "result( " << i << " : " << index << " )";
+          ++result_error_count ;
+        }
+        flags( entry ) &= ~bit ;
+      }
+      for ( int i = 0 ; i < int(flags.dimension_0()) ; ++i ) {
+        if ( flags(i) ) {
+          if ( print ) std::cerr << "flags( " << i << " : " << flags(i) << " )" ;
+          ++flags_error_count ;
         }
       }
 
-      if ( error_count ) {
+      if ( result_error_count || flags_error_count ) {
         std::cerr << std::endl << "Example::GrowArrayFunctor( " << array_length
                   << " , " << search_length
-                  << " ) error_count( " << error_count << " )"
+                  << " ) result_error_count( " << result_error_count << " )"
+                  << " ) flags_error_count( " << flags_error_count << " )"
                   << std::endl ;
       }
     }

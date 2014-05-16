@@ -57,7 +57,7 @@
 //----------------------------------------------------------------------------
 
 #if defined( KOKKOS_HAVE_CUDA )
-void grow_array_cuda();
+void grow_array_cuda( int length_array , int span_values );
 #endif
 
 int main( int argc , char ** argv )
@@ -65,6 +65,9 @@ int main( int argc , char ** argv )
   int num_threads = 4 ;
   int use_numa = 1 ;
   int use_core = 1 ;
+  int length_array  = 1000000 ;
+  int span_values = 100000000 ;
+  
 
   if ( Kokkos::hwloc::available() ) {
     use_numa = Kokkos::hwloc::get_available_numa_count();
@@ -74,14 +77,14 @@ int main( int argc , char ** argv )
 
   {
     std::cout << "Kokkos::Serial" << std::endl ;
-    Example::GrowArrayFunctor< Kokkos::Serial >( 10000 , 1000000 );
+    Example::GrowArrayFunctor< Kokkos::Serial >( length_array , span_values );
   }
 
 #if defined( KOKKOS_HAVE_PTHREAD )
   {
     std::cout << "Kokkos::Threads" << std::endl ;
     Kokkos::Threads::initialize( num_threads , use_numa , use_core );
-    Example::GrowArrayFunctor< Kokkos::Threads >( 10000 , 1000000 );
+    Example::GrowArrayFunctor< Kokkos::Threads >( length_array , span_values );
     Kokkos::Threads::finalize();
   }
 #endif
@@ -90,7 +93,7 @@ int main( int argc , char ** argv )
   {
     std::cout << "Kokkos::OpenMP" << std::endl ;
     Kokkos::OpenMP::initialize( num_threads , use_numa , use_core );
-    Example::GrowArrayFunctor< Kokkos::OpenMP >( 10000 , 1000000 );
+    Example::GrowArrayFunctor< Kokkos::OpenMP >( length_array , span_values );
     Kokkos::OpenMP::finalize();
   }
 #endif
@@ -98,7 +101,7 @@ int main( int argc , char ** argv )
 #if defined( KOKKOS_HAVE_CUDA )
   {
     std::cout << "Kokkos::Cuda" << std::endl ;
-    grow_array_cuda();
+    grow_array_cuda( length_array , span_values );
   }
 #endif
 
