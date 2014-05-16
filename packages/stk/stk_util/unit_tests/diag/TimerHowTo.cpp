@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <bitset>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <comparison/stringAndNumberComparisons.h>
@@ -26,11 +25,11 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
     bool printTimingsOnlySinceLastPrint = false;
     stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
 
-    std::string expectedOutput = "                                                                      \
-                Timer                                Count       CPU Time              Wall Time        \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                              1        0.001 SKIP        0.100 SKIP     \
-            ";
+    std::string expectedOutput = "                                                         \
+    Timer                                Count       CPU Time              Wall Time       \
+---------------------------------------- ----- --------------------- --------------------- \
+totalTestRuntime                              1        0.001 SKIP        0.100 SKIP        \
+";
     EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
     stk::diag::deleteRootTimer(rootTimer);
@@ -45,10 +44,10 @@ TEST(StkDiagTimerHowTo, useChildTimers)
 
     const std::string childName1 = "childTimer1";
     stk::diag::Timer childTimer1(childName1, CHILDMASK1, rootTimer);
-    const std::string childName2 = "childTimer2";
-    stk::diag::Timer childTimer2(childName2, CHILDMASK2, rootTimer);
 
     {
+    const std::string childName2 = "childTimer2";
+    stk::diag::Timer childTimer2(childName2, CHILDMASK2, rootTimer);
         stk::diag::TimeBlock timeStuffInThisScope(childTimer1);
         stk::diag::TimeBlock timeStuffInThisScopeAgain(childTimer2);
         doWork();
@@ -65,18 +64,18 @@ TEST(StkDiagTimerHowTo, useChildTimers)
 
     stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
 
-    std::string expectedOutput = "                                                                      \
-                 Timer                   Count       CPU Time              Wall Time                    \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.000  SKIP        0.100 SKIP         \
-              childTimer1                                1        0.000  SKIP        0.100 SKIP         \
-              childTimer2                                1        0.000  SKIP        0.100 SKIP         \
-                                                                                                        \
-                             Timer                   Count       CPU Time              Wall Time        \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.000  SKIP        0.200 SKIP         \
-              childTimer1                                2        0.000  SKIP        0.200 SKIP         \
-              childTimer2                                1        0.000  SKIP        0.100 SKIP         \
+    std::string expectedOutput = "                                                          \
+     Timer                   Count       CPU Time              Wall Time                    \
+---------------------------------------- ----- --------------------- ---------------------  \
+totalTestRuntime                             1        0.000  SKIP        0.100 SKIP         \
+  childTimer1                                1        0.000  SKIP        0.100 SKIP         \
+  childTimer2                                1        0.000  SKIP        0.100 SKIP         \
+                                                                                            \
+                 Timer                   Count       CPU Time              Wall Time        \
+---------------------------------------- ----- --------------------- ---------------------  \
+totalTestRuntime                             1        0.000  SKIP        0.200 SKIP         \
+  childTimer1                                2        0.000  SKIP        0.200 SKIP         \
+  childTimer2                                1        0.000  SKIP        0.100 SKIP         \
             ";
     EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
@@ -112,16 +111,16 @@ TEST(StkDiagTimerHowTo, disableChildTimers)
 
     stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
 
-    std::string expectedOutput = "                                                                      \
-                 Timer                   Count       CPU Time              Wall Time                    \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.000  SKIP        0.100 SKIP         \
-              enabledTimer                               1        0.000  SKIP        0.100 SKIP         \
-                                                                                                        \
-                             Timer                   Count       CPU Time              Wall Time        \
-            ---------------------------------------- ----- --------------------- ---------------------  \
-            totalTestRuntime                             1        0.000  SKIP        0.200 SKIP         \
-              enabledTimer                               1        0.000  SKIP        0.100 SKIP         \
+    std::string expectedOutput = "                                                          \
+     Timer                   Count       CPU Time              Wall Time                    \
+---------------------------------------- ----- --------------------- ---------------------  \
+totalTestRuntime                             1        0.000  SKIP        0.100 SKIP         \
+  enabledTimer                               1        0.000  SKIP        0.100 SKIP         \
+                                                                                            \
+                 Timer                   Count       CPU Time              Wall Time        \
+---------------------------------------- ----- --------------------- ---------------------  \
+totalTestRuntime                             1        0.000  SKIP        0.200 SKIP         \
+  enabledTimer                               1        0.000  SKIP        0.100 SKIP         \
             ";
     EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 

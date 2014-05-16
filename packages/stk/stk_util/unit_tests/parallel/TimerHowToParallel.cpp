@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>
-#include <bitset>
 #include <stk_util/diag/PrintTimer.hpp>
 #include <stk_util/diag/Timer.hpp>
 #include <comparison/stringAndNumberComparisons.h>
@@ -42,12 +41,16 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
         MPI_Comm_rank(communicator, &procId);
         if(procId == 0)
         {
-            std::string expectedOutput = "                                                                                                                                                              \
-                                                                         CPU Time              CPU Time              CPU Time              Wall Time             Wall Time             Wall Time        \
-                                     Timer                   Count   Sum (% of System)     Min (% of System)     Max (% of System)     Sum (% of System)     Min (% of System)     Max (% of System)    \
-                    ---------------------------------------- ----- --------------------- --------------------- --------------------- --------------------- --------------------- ---------------------  \
-                    totalTestRuntime                             2        0.001 SKIP          0.000  SKIP          0.001 SKIP            0.200 SKIP            0.100 SKIP            0.100 SKIP  \
-                      childTimer1                                2        0.001 SKIP          0.000  SKIP          0.001 SKIP            0.200 SKIP            0.100 SKIP            0.100 SKIP  \
+            std::string expectedOutput = "                                                  \
+                                CPU Time            CPU Time            CPU Time            \
+                               Wall Time           Wall Time           Wall Time            \
+     Timer      Count      Sum (% of System)   Min (% of System)   Max (% of System)        \
+                           Sum (% of System)   Min (% of System)   Max (% of System)        \
+SKIP ----- --------------------- --------------------- SKIP SKIP SKIP --------------------- \
+totalTestRuntime  2            0.001 SKIP          0.000 SKIP          0.001 SKIP           \
+                               0.200 SKIP          0.100 SKIP          0.100 SKIP           \
+  childTimer1     2            0.001 SKIP          0.000 SKIP          0.001 SKIP           \
+                               0.200 SKIP          0.100 SKIP          0.100 SKIP           \
                     ";
             EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
         }
