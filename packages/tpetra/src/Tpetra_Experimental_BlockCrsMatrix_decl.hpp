@@ -234,6 +234,9 @@ public:
   //! The number of degrees of freedom per mesh point.
   LO getBlockSize () const { return blockSize_; }
 
+  //! Get the (mesh) graph.
+  crs_graph_type getGraph () const { return graph_; }
+
   /// \brief Version of apply() that takes BlockMultiVector input and output.
   ///
   /// This method is deliberately not marked const, because it may do

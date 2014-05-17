@@ -120,15 +120,33 @@ namespace {
     out << "Testing two-argument constructor" << endl;
     TEST_NOTHROW( blockMat = BCM (graph, blockSize) );
 
-    // Test the four-argument constructor.
-    // Doing this requires the domain and range point Maps.
-    out << "Testing four-argument constructor" << endl;
+    // Test that the point domain and range Maps are correct.
     map_type pointDomainMap = BMV::makePointMap (* (graph.getDomainMap ()), blockSize);
     TEST_ASSERT( ! blockMat.getDomainMap ().is_null () &&
                  pointDomainMap.isSameAs (* (blockMat.getDomainMap ())) );
     map_type pointRangeMap = BMV::makePointMap (* (graph.getRangeMap ()), blockSize);
     TEST_ASSERT( ! blockMat.getRangeMap ().is_null () &&
                  pointRangeMap.isSameAs (* (blockMat.getRangeMap ())) );
+
+    // Test that the result of getGraph() has the same Maps.
+    {
+      graph_type graph2 = blockMat.getGraph ();
+      TEST_ASSERT( ! graph.getDomainMap ().is_null () &&
+                   ! graph2.getDomainMap ().is_null () &&
+                   graph.getDomainMap ()->isSameAs (* (graph2.getDomainMap ())) );
+      TEST_ASSERT( ! graph.getRangeMap ().is_null () &&
+                   ! graph2.getRangeMap ().is_null () &&
+                   graph.getRangeMap ()->isSameAs (* (graph2.getRangeMap ())) );
+      TEST_ASSERT( ! graph.getRowMap ().is_null () &&
+                   ! graph2.getRowMap ().is_null () &&
+                   graph.getRowMap ()->isSameAs (* (graph2.getRowMap ())) );
+      TEST_ASSERT( ! graph.getColMap ().is_null () &&
+                   ! graph2.getColMap ().is_null () &&
+                   graph.getColMap ()->isSameAs (* (graph2.getColMap ())) );
+    }
+
+    // Test the four-argument constructor.
+    out << "Testing four-argument constructor" << endl;
     TEST_NOTHROW( blockMat = BCM (graph, pointDomainMap, pointRangeMap, blockSize ) );
   }
 
