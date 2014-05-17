@@ -281,6 +281,16 @@ public:
   mv_type getMultiVectorView ();
 
   //@}
+  //! \name Coarse-grained operations
+  //@{
+
+  //! Fill all entries with the given value \c val.
+  void putScalar (const Scalar& val);
+
+  //! Multiply all entries in place by the given value \c val.
+  void scale (const Scalar& val);
+
+  //@}
   //! \name Fine-grained data access
   //@{
 
@@ -463,7 +473,7 @@ private:
   Scalar* mvData_;
 
   //! The number of degrees of freedom per mesh point.
-  const LO blockSize_;
+  LO blockSize_;
 
   //! Implementation of replaceLocalValues; does not check localRowIndex.
   void

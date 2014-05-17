@@ -61,6 +61,8 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   Map<LocalOrdinal,GlobalOrdinal,Node>::
   Map () :
+    comm_ (new Teuchos::SerialComm<int> ()),
+    node_ (KokkosClassic::Details::getNode<Node> ()),
     indexBase_ (0),
     numGlobalElements_ (0),
     numLocalElements_ (0),

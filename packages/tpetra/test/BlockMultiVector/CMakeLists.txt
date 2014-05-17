@@ -31,3 +31,14 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   STANDARD_PASS_OUTPUT
   DEPLIBS kokkos kokkoslinalg kokkosnodeapi
   )
+
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  ExpBlockCrsMatrix
+  SOURCES
+    ExpBlockCrsMatrix
+    ${EXPBLOCKMULTIVECTOR_OBJECTS_CUDA}
+    ${TEUCHOS_STD_UNIT_TEST_MAIN}
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  DEPLIBS kokkos kokkoslinalg kokkosnodeapi
+  )

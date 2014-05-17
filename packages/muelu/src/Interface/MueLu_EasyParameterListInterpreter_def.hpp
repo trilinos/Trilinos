@@ -395,7 +395,7 @@ namespace MueLu {
     manager.SetFactory("CoarseMap", coarseMap);
 
     // Tentative P
-    RCP<TentativePFactory> Ptent = rcp(new TentativePFactory());
+    RCP<Factory> Ptent = rcp(new TentativePFactory());
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);

@@ -49,9 +49,42 @@
 #include <KokkosCore_config.h>
 #include <Kokkos_Atomic.hpp>
 
-//----------------------------------------------------------------------------
+#include <algorithm>
+
+#if defined(KOKKOS_HAVE_CUDA)
+#include <thrust/device_ptr.h>
+#include <thrust/sort.h>
+#endif
 
 namespace Example {
+
+//----------------------------------------------------------------------------
+
+template< class Device >
+struct SortView {
+
+  template< typename ValueType >
+  SortView( const Kokkos::View<ValueType*,Device> v , int begin , int end )
+    {
+      std::sort( v.ptr_on_device() + begin , v.ptr_on_device() + end );
+    }
+};
+
+#if defined(KOKKOS_HAVE_CUDA)
+template<>
+struct SortView< Kokkos::Cuda > {
+  template< typename ValueType >
+  SortView( const Kokkos::View<ValueType*,Kokkos::Cuda> v , int begin , int end )
+    {
+      thrust::sort( thrust::device_ptr<ValueType>( v.ptr_on_device() + begin )
+                  , thrust::device_ptr<ValueType>( v.ptr_on_device() + end ) );
+    }
+};
+#endif
+
+
+
+//----------------------------------------------------------------------------
 
 template< class Device >
 struct GrowArrayFunctor {
@@ -88,13 +121,20 @@ struct GrowArrayFunctor {
       work.team_size   = Device::team_recommended();
       work.league_size = ( search_length + m_search_team_chunk - 1 ) / m_search_team_chunk ;
 
+      // Fill array:
       Kokkos::parallel_for( work , *this );
 
+      // How much was filled:
+      Kokkos::deep_copy( count , m_search_count );
+
+      // Sort array:
+      SortView< device_type >( m_search_array , 0 , *count );
+
+      // Mirror the results:
       typename Kokkos::View<int*,Device>::HostMirror results = Kokkos::create_mirror_view( m_search_array );
-
       Kokkos::deep_copy( results , m_search_array );
-      Kokkos::deep_copy( count ,   m_search_count );
 
+      // Verify results:
       int result_error_count = 0 ;
       int flags_error_count = 0 ;
       for ( int i = 0 ; i < *count ; ++i ) {

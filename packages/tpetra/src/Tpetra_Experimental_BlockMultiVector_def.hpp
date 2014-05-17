@@ -617,13 +617,27 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
 
 #endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+putScalar (const Scalar& val)
+{
+  getMultiVectorView ().putScalar (val);
+}
+
+template<class Scalar, class LO, class GO, class Node>
+void BlockMultiVector<Scalar, LO, GO, Node>::
+scale (const Scalar& val)
+{
+  getMultiVectorView ().scale (val);
+}
+
 } // namespace Experimental
 } // namespace Tpetra
 
 //
 // Explicit instantiation macro
 //
-// Must be expanded from within the Tpetra namespace!
+// Must be expanded from within the Tpetra::Experimental namespace!
 //
 #define TPETRA_EXPERIMENTAL_BLOCKMULTIVECTOR_INSTANT(S,LO,GO,NODE) \
   template class BlockMultiVector< S, LO, GO, NODE >;
