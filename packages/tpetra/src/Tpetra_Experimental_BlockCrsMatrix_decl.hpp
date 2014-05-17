@@ -81,25 +81,8 @@ namespace Experimental {
 /// \code
 /// int err = 0;
 /// // At least one entry, so &offsets[0] always makes sense.
-/// std::vector<ptrdiff_t> offsets (1);
+/// Teuchos::Array<ptrdiff_t> offsets (1);
 /// for (LO localRowInd = 0; localRowInd < localNumRows; ++localRowInd) {
-///   const LO numEntries = A.getNumEntriesInLocalRow (localRowInd);
-///
-///   if (wantOffsets) {
-///     // It's not necessary to get offsets if you plan to change
-///     // _all_ the entries in the row.  If you only plan to change
-///     // a subset of entries in the row, you should forego calling
-///     // getLocalRowView(), and instead call
-///     // replaceLocalValuesByOffsets().
-///     if (offsets.size () < numEntries) {
-///       offsets.resize (numEntries);
-///     }
-///     err = A.getLocalRowOffsets (localRowInd, &offsets[0]);
-///     if (err != 0) {
-///       break;
-///     }
-///   }
-///
 ///   // Get a view of the current row.
 ///   // You may modify the values, but not the column indices.
 ///   const LO* localColInds;
@@ -287,7 +270,9 @@ public:
   ///
   /// \param numColInds [in] The number of entries of colInds.
   ///
-  /// \return Zero if the sum was successful, else nonzero.
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   sumIntoLocalValues (const LO localRowInd,
                       const LO colInds[],
@@ -311,42 +296,50 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
-  /// \brief Get offsets corresponding to the given row indices.
+  /// \brief Get relative offsets corresponding to the given row indices.
   ///
   /// The point of this method is to precompute the results of
   /// searching for the offsets corresponding to the given column
   /// indices.  You may then reuse these search results in
   /// replaceLocalValuesByOffsets or sumIntoLocalValuesByOffsets.
   ///
-  /// Offsets are for column indices, <i>not</i> for values.
-  /// That is, the blockSize stride is precomputed.
+  /// Offsets are block offsets; they are for column indices,
+  /// <i>not</i> for values.
   ///
-  /// \param localRowInd [in] Index of the local row.
-  /// \param offsets [out] On output: offsets corresponding to the
-  ///   given column indices.  Must have at least numColInds entries.
+  /// \param localRowInd [in] Local index of the row.
+  /// \param offsets [out] On output: relative offsets corresponding
+  ///   to the given column indices.  Must have at least numColInds
+  ///   entries.
   /// \param colInds [in] The local column indices for which to
-  ///   compute entries.  Must have at least numColInds entries.
+  ///   compute offsets.  Must have at least numColInds entries.
   ///   This method will only read the first numColsInds entries.
   /// \param numColInds [in] Number of entries in colInds to read.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   getLocalRowOffsets (const LO localRowInd,
                       ptrdiff_t offsets[],
                       const LO colInds[],
                       const LO numColInds) const;
 
-  //! Like the four-argument version, but for all entries in the row.
-  LO
-  getLocalRowOffsets (const LO localRowInd,
-                      ptrdiff_t offsets[]) const;
-
-  //! Like replaceLocalValues, but avoids computing row offsets via search.
+  /// \brief Like replaceLocalValues, but avoids computing row offsets.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   replaceLocalValuesByOffsets (const LO localRowInd,
                                const ptrdiff_t offsets[],
                                const Scalar vals[],
                                const LO numOffsets) const;
 
-  //! Like sumIntoLocalValues, but avoids computing row offsets via search.
+  /// \brief Like sumIntoLocalValues, but avoids computing row offsets.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   sumIntoLocalValuesByOffsets (const LO localRowInd,
                                const ptrdiff_t offsets[],

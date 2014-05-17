@@ -267,7 +267,7 @@ namespace Experimental {
                       const LO numColInds) const
   {
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
-      // We replaced no values, because the input local row index is
+      // We modified no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
       // numColInds is zero anyway; it doesn't matter.  This is the
       // advantage of returning the number of valid indices.
@@ -307,7 +307,7 @@ namespace Experimental {
                       const LO numColInds) const
   {
     if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
-      // We replaced no values, because the input local row index is
+      // We modified no values, because the input local row index is
       // invalid on the calling process.  That may not be an error, if
       // numColInds is zero anyway; it doesn't matter.  This is the
       // advantage of returning the number of valid indices.
@@ -346,9 +346,19 @@ namespace Experimental {
                    Scalar*& vals,
                    LO& numInds) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "getLocalRowView: Not yet implemented.");
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      colInds = NULL;
+      vals = NULL;
+      numInds = 0;
+      return Teuchos::OrdinalTraits<LO>::invalid ();
+    }
+    else {
+      const size_t absBlockOffsetStart = ptr_[localRowInd];
+      colInds = ind_ + absBlockOffsetStart;
+      vals = val_ + absBlockOffsetStart * offsetPerBlock ();
+      numInds = ptr_[localRowInd + 1] - absBlockOffsetStart;
+      return 0; // indicates no error
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -359,21 +369,28 @@ namespace Experimental {
                       const LO colInds[],
                       const LO numColInds) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "getLocalRowOffsets(4 args): Not yet implemented.");
-  }
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      // We got no offsets, because the input local row index is
+      // invalid on the calling process.  That may not be an error, if
+      // numColInds is zero anyway; it doesn't matter.  This is the
+      // advantage of returning the number of valid indices.
+      return static_cast<LO> (0);
+    }
 
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    size_t hint = 0; // Guess for the relative offset into the current row
+    LO validCount = 0; // number of valid column indices in colInds
 
-  template<class Scalar, class LO, class GO, class Node>
-  LO
-  BlockCrsMatrix<Scalar, LO, GO, Node>::
-  getLocalRowOffsets (const LO localRowInd,
-                      ptrdiff_t offsets[]) const
-  {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "getLocalRowOffsets(2 args): Not yet implemented.");
+    for (size_t k = 0; k < numColInds; ++k) {
+      const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != STINV) {
+        offsets[k] = relBlockOffset;
+        hint = relBlockOffset + 1;
+        ++validCount;
+      }
+    }
+    return validCount;
   }
 
 
@@ -385,9 +402,33 @@ namespace Experimental {
                                const Scalar vals[],
                                const LO numOffsets) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "replaceLocalValuesByOffsets: Not yet implemented.");
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      // We modified no values, because the input local row index is
+      // invalid on the calling process.  That may not be an error, if
+      // numColInds is zero anyway; it doesn't matter.  This is the
+      // advantage of returning the number of valid indices.
+      return static_cast<LO> (0);
+    }
+
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    size_t pointOffset = 0; // Current offset into input values
+    LO validCount = 0; // number of valid offsets
+
+    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset = offsets[k];
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        const_little_block_type A_new =
+          getConstLocalBlockFromInput (vals, pointOffset);
+        A_old.assign (A_new);
+        ++validCount;
+      }
+    }
+    return validCount;
   }
 
 
@@ -399,9 +440,33 @@ namespace Experimental {
                                const Scalar vals[],
                                const LO numOffsets) const
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "sumIntoLocalValuesByOffsets: Not yet implemented.");
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      // We modified no values, because the input local row index is
+      // invalid on the calling process.  That may not be an error, if
+      // numColInds is zero anyway; it doesn't matter.  This is the
+      // advantage of returning the number of valid indices.
+      return static_cast<LO> (0);
+    }
+
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    size_t pointOffset = 0; // Current offset into input values
+    LO validCount = 0; // number of valid offsets
+
+    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset = offsets[k];
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        const_little_block_type A_new =
+          getConstLocalBlockFromInput (vals, pointOffset);
+        A_old.update (STS::one (), A_new);
+        ++validCount;
+      }
+    }
+    return validCount;
   }
 
 
