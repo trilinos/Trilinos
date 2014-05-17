@@ -414,7 +414,7 @@ namespace Experimental {
     if (numEntInGraph == Teuchos::OrdinalTraits<size_t>::invalid ()) {
       return static_cast<LO> (0); // the calling process doesn't have that row
     } else {
-      return getBlockSize () * static_cast<LO> (numEntInGraph);
+      return static_cast<LO> (numEntInGraph);
     }
   }
 
