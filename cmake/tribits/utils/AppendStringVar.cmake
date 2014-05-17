@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -48,13 +48,12 @@ INCLUDE(PrintVar)
 #
 # Usage::
 #
-#   APPEND_STIRNG_VAR(<stringVar> "<string1>" "<string2>" ...)
+#   APPEND_STRING_VAR(<stringVar> "<string1>" "<string2>" ...)
 #
 # Note that the usage of the characters ``'['``, ``']'``, ``'{'``, ``'}'`` are
 # taken by CMake to bypass the meaning of ';' to separate string characters.
-#
-# If you want to ignore the meaning of these special characters and are okay with
-# just adding one string at a time use `APPEND_STRING_VAR_EXT()`_.
+# If one wants to ignore the meaning of these special characters and are okay
+# with just adding one string at a time, then use `APPEND_STRING_VAR_EXT()`_.
 #
 FUNCTION(APPEND_STRING_VAR STRING_VAR_OUT)
   #MESSAGE("APPEND_STRING_VAR: ${STRING_VAR_OUT} {${ARGN}}")
@@ -73,9 +72,10 @@ ENDFUNCTION()
 #
 # Usage::
 #
-#   APPEND_STIRNG_VAR_EXT(<stringVar> "<string>")
+#   APPEND_STRING_VAR_EXT(<stringVar> "<string>")
 #
-# Simply sets ``<stringVar> = "${<stringVar>}<string>"``.
+# Simply sets ``<stringVar> = "${<stringVar>}<string>"`` and leaves in ``';'``
+# without creating new array elements.
 #
 FUNCTION(APPEND_STRING_VAR_EXT  STRING_VAR_OUT  STRING_TO_APPEND)
   SET(STRING_VAR "${${STRING_VAR_OUT}}${STRING_TO_APPEND}")

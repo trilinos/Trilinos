@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -49,7 +49,7 @@ ENDFUNCTION()
 #
 # @MACRO: PARSE_ARGUMENTS()
 #
-# Parse a set of macro/functon input arguments into different lists.  This
+# Parse a set of macro/function input arguments into different lists.  This
 # allows the easy implementation of keyword-based user-defined macros and
 # functions.
 #
@@ -60,7 +60,7 @@ ENDFUNCTION()
 #     <inputArgsList>
 #     )
 #
-# Arguments to this macro:
+# Arguments to this macro are:
 #
 #   ``<prefix>``
 #
@@ -70,27 +70,28 @@ ENDFUNCTION()
 #   ``<argNamesList>``
 #
 #     Quoted array of list arguments (e.g. ``"<argName0>;<argName1>;..."``).
-#     For each varaible name ``<argNamei>``, a local varible will be created
+#     For each variable name ``<argNamei>``, a local variable will be created
 #     in the current scope with the name ``<prefix>_<argNamei>`` which gives
-#     the list of varibles parsed out of ``<inputArgsList>``.
+#     the list of variables parsed out of ``<inputArgsList>``.
 #
 #   ``<optionNamesList>``
 #
-#     Quoted array of list arguments (e.g. ``"<optName0>;<optName1>;..."``).
-#     For each varaible name ``<optNamei>``, a local varible will be created
-#     in the current scope with the name ``<prefix>_<optNamei>`` that is
-#     either set to ``TRUE`` or ``FALSE`` depending if ``<optNamei>`` apears
-#     in ``<inputArgsList>`` or not.
+#     Quoted array of list options (e.g. ``"<optName0>;<optName1>;..."``)
+#     typically pass in as ``${ARGN}`` in the outer function/macro.  For each
+#     variable name ``<optNamei>``, a local variable will be created in the
+#     current scope with the name ``<prefix>_<optNamei>`` that is either set
+#     to ``TRUE`` or ``FALSE`` depending if ``<optNamei>`` appears in
+#     ``<inputArgsList>`` or not.
 #
 #   ``<inputArgsList>``
 #
-#     List of arguments keyword-based arguments passed in for the outer macro
-#     or function to be parsed out into the different argument and option
-#     lists.
+#     List of arguments keyword-based arguments passed in through the outer
+#     macro or function to be parsed out into the different argument and
+#     option lists.
 #
 # What this macro does is very simple yet very useful.  What it does is to
-# allow you to create your own user-defined keyword-based macros and functions
-# like is used by some built-in CMake comamnds..
+# allow one to create one's own user-defined keyword-based macros and
+# functions like is used by some built-in CMake commands.
 #
 # For example, consider the following user-defined macro that uses both
 # positional and keyword-based arguments using ``PARSE_ARGUMENTS()``::
@@ -113,7 +114,7 @@ ENDFUNCTION()
 #
 #   PARSE_SPECIAL_VARS(MyVar ARG0 a b ARG2 c OPT1)
 #
-# sets the following varibles in the current scope::
+# sets the following variables in the current scope::
 #
 #   MyVar_ARG0="a;b"
 #   MyVar_ARG1=""
@@ -121,34 +122,35 @@ ENDFUNCTION()
 #   MyVar_OPT0="FALSE"
 #   MyVar_OPT1="TRUE"
 #
-# This allows you to define user-defined macros and functions that have a
-# mixture of positional arguments and keyword-based arguments like you can do
-# in other languages.  The keyword-based arguments can be passed in any
-# order and those that are missing are empty (or false) by default.
+# This allows one to define user-defined macros and functions that have a
+# mixture of positional arguments and keyword-based arguments like one can do
+# in other languages.  The keyword-based arguments can be passed in any order
+# and those that are missing are empty (or false for options) by default.
 #
-# Any initial arguments that are not recongnised as ``<argNamesList>`` or
-# ``<optionNamesList>`` keyword arguments will be put into the local varible
-# ``<prefix>_DEFAULT_ARGS``.  If no arguments in ``${ARGN}`` match any in
-# ``<argNamesList>``, then all non-option arguments are point into
-# ``<prefix>_DEFAULT_ARGS``.  For example, if you pass in::
+# Any initial arguments that are not recognized as ``<argNamesList>`` or
+# ``<optionNamesList>`` keyword arguments will be put into the local variable
+# ``<prefix>_DEFAULT_ARGS``.  If no arguments in ``<inputArgsList>``
+# (typically ``${ARGN}``) match any in ``<argNamesList>``, then all non-option
+# arguments are put into ``<prefix>_DEFAULT_ARGS``.  For example, if one
+# passes in::
 #
 #   PARSE_SPECIAL_VARS(MyVar ARG5 a b c)
 #
 # you will get::
 #
-#   MyVar_DEFAULT_ARGS="a;b;c"
+#   MyVar_DEFAULT_ARGS="ARG5;a;b;c"
 #   MyVar_ARG0=""
 #   MyVar_ARG1=""
 #   MyVar_ARG2=""
 #   MyVar_OPT0="FALSE"
 #   MyVar_OPT1="FALSE"
 #
-# Multiple occurances of keyword arguments in ``${ARGN}`` is allowed but only
-# the last one listed will be recored.  For example, if you call::
+# Multiple occurrences of keyword arguments in ``<inputArgsList>`` is allowed
+# but only the last one listed will be recorded.  For example, if one calls::
 #
 #   PARSE_SPECIAL_VARS(MyVar ARG1 a b ARG1 c)
 #
-# then this wil set::
+# then this will set::
 #
 #   MyVar_ARG0=""
 #   MyVar_ARG1="c"
@@ -156,16 +158,16 @@ ENDFUNCTION()
 #   MyVar_OPT0="FALSE"
 #   MyVar_OPT1="FALSE"
 #
-# This is actually consistent with the way that most arugment list parsers
+# This is actually consistent with the way that most argument list parsers
 # behave with respect to multiple instances of the same argument so hopefully
 # this will not be a surprise to anyone.
 #
-# If you put an option keyword in the middle of a keyword argument list, the
-# option keyword will get pulled out of the list.  For exmaple, if you call::
+# If one puts an option keyword in the middle of a keyword argument list, the
+# option keyword will get pulled out of the list.  For example, if one calls::
 #
 #   PARSE_SPECIAL_VARS(MyVar ARG0 a OPT0 c)
 #
-# then this wil set::
+# then this will set::
 #
 #   MyVar_ARG0="a;c"
 #   MyVar_ARG1=""
@@ -173,16 +175,19 @@ ENDFUNCTION()
 #   MyVar_OPT0="TRUE"
 #   MyVar_OPT1="FALSE"
 #
-# If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED``is set to ``TRUE``, then a bunch
-# of detailed debug info will be printed.  This should only lbe used in the
-# most desparate of debug situations because it will print a *lot* of output!
+# This is confusing behavior so users would be smart not to mix option
+# arguments inside of list arguments.
+#
+# If ``PARSE_ARGUMENTS_DUMP_OUTPUT_ENABLED`` is set to ``TRUE``, then a bunch
+# of detailed debug info will be printed.  This should only be used in the
+# most desperate of debug situations because it will print a *lot* of output!
 #
 # **PERFORMANCE:** This function will scale as::
 #
 #   O( (len(<argNamesList>) * len(<optionNamesList>)) * len(<inputArgsList>) )
 #
-# Therefore, this could scale very badly for large lests of argument and
-# option names and input argument lists.
+# Therefore, this could scale very badly for large sets of argument and option
+# names and input argument list names.
 #
 MACRO(PARSE_ARGUMENTS prefix arg_names option_names)
 

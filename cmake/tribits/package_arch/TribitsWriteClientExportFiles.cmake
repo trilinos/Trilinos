@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -108,9 +108,10 @@ ENDFUNCTION()
 #
 # @FUNCTION: TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES()
 #
-# Utility function for writing ${PACKAGE_NAME}Config.cmake and/or the
-# Makefile.export.${PACKAGE_NAME} for package PACKAGE_NAME with some greater
-# flexibility than TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()
+# Utility function for writing ``${PACKAGE_NAME}Config.cmake`` and/or the
+# ``Makefile.export.${PACKAGE_NAME}`` files for package ``${PACKAGE_NAME}``
+# with some greater flexibility than what is provided by the function
+# ``TRIBITS_WRITE_PACKAGE_CLIENT_EXPORT_FILES()``.
 #
 # Usage::
 #
@@ -127,51 +128,54 @@ ENDFUNCTION()
 #
 #   ``PACKAGE_NAME <pakageName>``
 #  
-#     Gives the name of the TriBITS package for which the export files should be
-#     created for.
+#     Gives the name of the TriBITS package for which the export files should
+#     be created.
 #  
 #   ``EXPORT_FILE_VAR_PREFIX <exportFileVarPrefix>``
 #  
-#     If specified, then all of the varibles in the generated export files will
-#     be prefixed with "<exportFileVarPrefix>_" instead of "${PACKAGE_NAME}_".
-#     This is to provide flexibility.
+#     If specified, then all of the variables in the generated export files
+#     will be prefixed with ``<exportFileVarPrefix>_`` instead of
+#     ``<pakageName>_``.
 #  
 #   ``WRITE_CMAKE_CONFIG_FILE <cmakeConfigFileFullPath>``
 #  
-#     If specified, then the package <packageName>'s cmake configure export file
-#     for extenral CMake client projects will be created in the file
-#     <cmakeConfigFileFullPath>.  NOTE: the argument should be the full path!
+#     If specified, then the package's (``<packageName>``) cmake configure
+#     export file for use by external CMake client projects will be created as
+#     the file ``<cmakeConfigFileFullPath>``.  NOTE: the argument should be
+#     the full path!
 #  
 #   ``WRITE_EXPORT_MAKLEFILE <exportMakefileFileFullPath>``
 #  
-#     If specified, then the package <packageName>'s cmake configure export file
-#     for external Makefile client projects will be created in the file
-#     <exportMakefileFileFullPath>.  NOTE: the argument should be the full path!
+#     If specified, then the package's (``<packageName>``) export makefile for
+#     use by external Makefile client projects will be created in the file
+#     <exportMakefileFileFullPath>.  NOTE: the argument should be the full
+#     path!
 #  
 #   ``WRITE_INSTALL_CMAKE_CONFIG_FILE``
 #  
-#     If specified, then the package <packageName>'s install cmake configure
-#     export to be installed will be written.  The name and location of this
-#     file is hard-coded.
+#     If specified, then the package's (``<packageName>``) install cmake
+#     configured export file will be installed in to the install tree as well.
+#     The name and location of this file is hard-coded.
 #  
 #   ``WRITE_INSTALL_EXPORT_MAKLEFILE``
 #  
-#     If specified, then the package <packageName>'s install export makefile to
-#     be installed will be written.  The name and location of this file is
-#     hard-coded.
+#     If specified, then the package's (``<packageName>``) install export
+#     makefile to be installed into the install tree as well.  The name and
+#     location of this file is hard-coded.
 #
 # NOTE: The arguments to this function may look strange but the motivation is
-# to support versy speicalized use cases such as when a TriBITS package needs
-# to generate an export makefile for a given package but name the export
-# makefile differently and use different variable name prefixes.  The
-# particular driver use case is when wrapping an external autotools project
-# that depends on Trilinos and needs to read in the Makefile.export.Trilinos
+# to support very specialized use cases such as when a TriBITS package needs
+# to generate an export makefile for a given package but the name of the
+# export makefile must be different and use different variable name prefixes.
+# The particular use case is when wrapping an external autotools project that
+# depends on Trilinos and needs to read in the ``Makefile.export.Trilinos``
 # file but this file needs to be generated for a subset of enabled packages on
 # the fly during a one-pass configure.
 #
-# NOTE: This function does *not* contain the the INSTALL() commands because
+# NOTE: This function does *not* contain the ``INSTALL()`` commands because
 # CMake will not allow those to even be present in scripting mode that is used
-# for unit testing this function.
+# for unit testing this function.  Instead, the files to be installed are only
+# generated in the build tree and the install targets are added else where.
 #
 FUNCTION(TRIBITS_WRITE_FLEXIBLE_PACKAGE_CLIENT_EXPORT_FILES)
 

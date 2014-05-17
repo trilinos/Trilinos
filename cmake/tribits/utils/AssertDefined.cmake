@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,34 +40,38 @@
 #
 # @FUNCTION: ASSERT_DEFINED()
 #
-# Assert that a varaible is defined and if not call ``MESSAGE(SEND_ERROR ...)``.
+# Assert that a variable is defined and if not call ``MESSAGE(SEND_ERROR
+# ...)``.
 #
 # Usage::
 #
 #   ASSERT_DEFINED(<varName>)
 #
 # This is used to get around the problem of CMake not asserting the
-# defreferencing of undefined varibles.  For example, how do you know if you
-# did not mispell the name of a varible in an if statement like::
+# dereferencing of undefined variables.  For example, how does one know if one
+# did not misspell the name of a variable in an if statement like::
 #
 #   IF (SOME_VARBLE)
 #     ...
 #   ENDIF()
 #
-# ?  If you mispelled the varible ``SOME_VARBLE`` (which you likely did in
-#  this case), the the if statement will always be false.  To avoid this
-#  problem when you always expect the explicitly set, instead do::
+# ?
+#
+#  If one misspelled the variable ``SOME_VARBLE`` (which is likely in this
+#  case), then the if statement will always be false!  To avoid this problem
+#  when one always expects that a variable is explicitly set, instead do::
 #
 #   ASSERT_DEFINED(SOME_VARBLE)
 #   IF (SOME_VARBLE)
 #     ...
 #   ENDIF()
 #
-# Now if you misspell the varible, it will asset and stop processing.  This is
-# not a perfect solution since you can mispell the varible name in the
-# following if statemnt but typically you would always just copy and paste
-# between the two statements so they are always the same.  This is the best we
-# can do in CMake unfortunately.
+# Now if one misspells this variable, then CMake will asset and stop
+# processing.  This is not a perfect solution since one can misspell the
+# variable name in the following if statement but typically one would always
+# just copy and paste between the two statements so these names are always the
+# same.  This is the best that can be done in CMake unfortunately to catch
+# usage of misspelled undefined variables.
 #
 FUNCTION(ASSERT_DEFINED VARS)
   FOREACH(VAR ${VARS})

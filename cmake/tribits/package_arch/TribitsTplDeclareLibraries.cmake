@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -50,13 +50,13 @@ INCLUDE(ParseVariableArguments)
 # @FUNCTION: TRIBITS_TPL_DECLARE_LIBRARIES()
 # 
 # Function that sets up cache variables for users to specify where to find a
-# TPL's headers and libraries.  This function is typically called inside of a
-# file ``FindTPL<tpl_name>.cmake`` file.
+# `TriBITS TPL`_'s headers and libraries.  This function is typically called
+# inside of a ``FindTPL<tplName>.cmake`` file (see `${TPL_NAME}_FINDMOD`_).
 #
 # Usage::
 #
 #   TRIBITS_TPL_DECLARE_LIBRARIES(
-#     <tpl_name>
+#     <tplName>
 #     [REQUIRED_HEADERS <header1> <header2> ...]
 #     [MUST_FIND_ALL_HEADERS]
 #     [REQUIRED_LIBS_NAMES <libname1> <libname2> ...]
@@ -64,58 +64,83 @@ INCLUDE(ParseVariableArguments)
 #     [NO_PRINT_ENABLE_SUCCESS_FAIL]
 #     )
 #
-# This function can set up a with header files and/or libraries.
+# This function can be called to specify/require header files and include
+# directories and/or a list of libraries.
 #
 # The input arguments to this function are:
 #
-# * ``<tpl_name>``: Name of the TPL that is listed in a TPLsList.cmake file.
-#   Below, this is referted to as the local CMake variable ``TPL_NAME``.
+#   ``<tplName>``
 #
-# * ``REQUIRED_HEADERS``: List of header files that are searched for the TPL
-#   using ``FIND_PATH()``.
+#     Name of the TPL that is listed in a `<repoDir>/TPLsList.cmake`_ file.
+#     Below, this is referred to as the local CMake variable ``TPL_NAME``.
 #
-# * ``MUST_FIND_ALL_HEADERS``:  If set, then all of the header files listed in
-#   REQUIRED_HEADERS must be found in order for TPL_${TPL_NAME}_INCLUDE_DIRS
-#   to be defined.
+#   ``REQUIRED_HEADERS``
 #
-# * ``REQUIRED_LIBS_NAMES``: List of libraries that are searched for when
-#   looked for the TPLs libraries with FIND_LIBRARY(...).
+#     List of header files that are searched in order to find the TPL's
+#     include directories files using ``FIND_PATH()``.
 #
-# * ``MUST_FIND_ALL_LIBS``:  If set, then all of the library files listed in
-#   REQUIRED_LIBS_NAMES must be found or the TPL is considered not
-#   found!
+#   ``MUST_FIND_ALL_HEADERS``
 #
-# * ``NO_PRINT_ENABLE_SUCCESS_FAIL``: If set, then the final success/fail
-#     will not be printed
+#     If set, then all of the header files listed in ``REQUIRED_HEADERS`` must
+#     be found in order for ``TPL_${TPL_NAME}_INCLUDE_DIRS`` to be defined.
 #
-# The following cache variables, if set, will be used by that this function:
+#   ``REQUIRED_LIBS_NAMES``
 #
-# * ``${TPL_NAME}_INCLUDE_DIRS:PATH``: List of paths to search first for
-#   header files defined in ``REQUIRED_HEADERS``.
+#     List of libraries that are searched for when looking for the TPL's
+#     libraries using ``FIND_LIBRARY()``.
 #
-# * ``${TPL_NAME}_INCLUDE_NAMES:STIRNG``: List of include names to be looked
-#   for instead of what is specified in REQUIRED_HEADERS.
+#   ``MUST_FIND_ALL_LIBS``
 #
-# * ``${TPL_NAME}_LIBRARY_DIRS:PATH``: The list of directories to search first
-#   for libraies defined in REQUIRED_LIBS_NAMES.
+#     If set, then all of the library files listed in ``REQUIRED_LIBS_NAMES``
+#     must be found or the TPL is considered not found!
 #
-# * ``${TPL_NAME}_LIBRARY_NAMES:STIRNG``: List of library names to be looked
-#   for instead of what is specified in REQUIRED_LIBS_NAMES.
+#   ``NO_PRINT_ENABLE_SUCCESS_FAIL``
 #
-# This function sets global varibles to return state so it can be called from
-# anywhere in the call stack.  The following cache variables defined that are
-# intended for the user to set and/or use:
+#      If set, then the final success/fail will not be printed
 #
-# * ``TPL_${TPL_NAME}_INCLUDE_DIRS``: A list of common-separated full
-#   directory paths that contain the TPLs headers.  If this varible is set
-#   before calling this function, then no headers are searched for and this
-#   variable will be assumed to have the correct list of header paths.
+# This function implements the TPL find behavior described in `Enabling
+# support for an optional Third-Party Library (TPL)`_.
 #
-# * ``TPL_${TPL_NAME}_LIBRARIES``: A list of commons-seprated full library
-#   names (output from FIND_LIBRARY(...)) for all of the libraries found for
-#   the TPL.  IF this varible is set before calling this function, no
-#   libraries are searched for and this varaible will be assumed to have the
-#   correct list of libraries to link to.
+# The following (cache) variables, if set, will be used by that this function:
+#
+#   ``${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+#
+#     List of paths to search first for header files defined in
+#     ``REQUIRED_HEADERS``.
+#
+#   ``${TPL_NAME}_INCLUDE_NAMES`` (type ``STRING``)
+#
+#     List of include file names to be looked for instead of what is specified
+#     in ``REQUIRED_HEADERS``.
+#
+#   ``${TPL_NAME}_LIBRARY_DIRS`` (type ``PATH``)
+#
+#     The list of directories to search first for libraries defined in
+#     ``REQUIRED_LIBS_NAMES``.
+#
+#   ``${TPL_NAME}_LIBRARY_NAMES`` (type ``STRING``)
+#
+#     List of library names to be looked for instead of what is specified in
+#     ``REQUIRED_LIBS_NAMES``.
+#
+# This function sets global variables to return state so it can be called from
+# anywhere in the call stack.  The following cache variables are defined that
+# are intended for the user to set and/or use:
+#
+#   ``TPL_${TPL_NAME}_INCLUDE_DIRS`` (type ``PATH``)
+#
+#     A list of common-separated full directory paths that contain the TPL's
+#     header files.  If this variable is set before calling this function,
+#     then no headers are searched for and this variable will be assumed to
+#     have the correct list of header paths.
+#
+#   ``TPL_${TPL_NAME}_LIBRARIES`` (type ``FILEPATH``)
+#
+#     A list of commons-separated full library names (i.e. output from
+#     ``FIND_LIBRARY()``) for all of the libraries found for the TPL.  If this
+#     variable is set before calling this function, then no libraries are
+#     searched for and this variable will be assumed to have the correct list
+#     of libraries to link to.
 #
 FUNCTION(TRIBITS_TPL_DECLARE_LIBRARIES TPL_NAME)
 

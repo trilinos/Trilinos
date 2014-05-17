@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -68,16 +68,19 @@ INCLUDE(ParseVariableArguments)
 #
 #   TRIBITS_SET_ST_FOR_DEV_MODE(<outputVar>)
 #
-# ``${<outputVar>}`` is set to ``ON`` or ``OFF`` based on the configure state.
-# In development mode (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``),
-# ``${<outputVar>}`` will be set to ``ON`` only if ``ST`` code is enabled
+# This function is typically called in a package's top-level
+# `<packageDir>/CMakeLists.txt`_ file before defining other options for the
+# package.  The output variable ``${<outputVar>}`` is set to ``ON`` or ``OFF``
+# based on the configure state.  In development mode
+# (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==ON``), ``${<outputVar>}``
+# will be set to ``ON`` only if ``ST`` code is enabled
 # (i.e. ``${PROJECT_NAME}_ENABLE_SECONDARY_TESTED_CODE==ON``), otherwise it is
 # set to ``OFF``. In release mode
-# (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``) it is always set to
-# ``ON``.  This allows some sections of a TriBITS package to be considered
-# ``ST`` for development mode reducing testing time which includes only ``PT``
-# code., while still having important functionality available to users by
-# default in a release.
+# (i.e. ``${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE==OFF``), ``${<outputVar>}``
+# is always set to ``ON``.  This allows some parts of a TriBITS package to be
+# considered ``ST`` for development mode (thereby reducing testing time by not
+# enabling the dependent features/tests), while still having important
+# functionality available to users by default in a release of the package.
 #
 FUNCTION(TRIBITS_SET_ST_FOR_DEV_MODE  OUTPUT_VAR)
   IF(${PROJECT_NAME}_ENABLE_DEVELOPMENT_MODE)
@@ -320,8 +323,8 @@ ENDMACRO()
 #
 # @MACRO: TRIBITS_PACKAGE_DEFINE_DEPENDENCIES()
 #
-# Define the dependenices for a given TriBITS SE package (i.e. a top-level
-# package or a subpackage) in the package's
+# Define the dependencies for a given `TriBITS SE Package`_ (i.e. a top-level
+# `TriBITS Package`_ or a `TriBITS Subpackage`_) in the package's
 # `<packageDir>/cmake/Dependencies.cmake`_ file.
 #
 # Usage::
@@ -343,88 +346,89 @@ ENDMACRO()
 #        ]
 #      )
 #
-# Every argument in this macro is optional.  The arguments that apply a package
-# itself are:
+# Every argument in this macro is optional (that is, an SE package can have no
+# upstream dependencies).  The arguments that apply to all SE packages are:
 #
 #   ``LIB_REQUIRED_PACKAGES``
 #
-#     List of upstream packages that must be enabled in order to build and use
-#     the libraries (or capabilities) in this package.
+#     List of required upstream SE packages that must be enabled in order to
+#     build and use the libraries (or capabilities) in this SE package.
 #  
 #   ``LIB_OPTIONAL_PACKAGES``
 #
-#     List of additional optional upstream packages that can be used in this
-#     package if enabled.  These upstream packages need not be enabled in
-#     order to use this package but not enabling one or more of these optional
-#     upstream packages will result in diminished capabilities of this
-#     package.
+#     List of additional optional upstream SE packages that can be used in
+#     this SE package if enabled.  These upstream SE packages need not be
+#     enabled in order to enable this SE package but not enabling one or more
+#     of these optional upstream SE packages will result in diminished
+#     capabilities of this SE package.
 #  
 #   ``TEST_REQUIRED_PACKAGES``
 #
-#     List of additional upstream packages that must be enabled in order to
-#     build and/or run the tests and/or examples in this packages.  If any of
-#     these upstream packages is not enabled, then there will be no tests or
-#     examples defined or run for this package.
+#     List of additional upstream SE packages that must be enabled in order to
+#     build and/or run the tests and/or examples in this SE package.  If any
+#     of these upstream SE packages are not enabled, then there will be no
+#     tests or examples defined or run for this SE package.
 #  
 #   ``TEST_OPTIONAL_PACKAGES``
 #
-#     List of additional optional upstream packages that can be used by the
-#     tests in this package.  These upstream packages need not be enabled in
-#     order to run basic tests for this package.  Typically, extra tests that
-#     depend on optional test packages involve integration testing of some
-#     type.
+#     List of additional optional upstream SE packages that can be used by the
+#     tests in this SE package.  These upstream SE packages need not be
+#     enabled in order to run some basic tests or examples for this SE
+#     package.  Typically, extra tests that depend on optional test SE
+#     packages involve integration testing of some type.
 #  
 #   ``LIB_REQUIRED_TPLS``
 #
-#     List of upstream TPLs that must be enabled in order to build and use the
-#     libraries (or capabilities) in this package.
+#     List of required upstream TPLs that must be enabled in order to build
+#     and use the libraries (or capabilities) in this SE package.
 #  
 #   ``LIB_OPTIONAL_TPLS``
 #
-#     List of additional optional upstream TPLs that can be used in this
+#     List of additional optional upstream TPLs that can be used in this SE
 #     package if enabled.  These upstream TPLs need not be enabled in order to
-#     use this package but not enabling one or more of these optional upstream
-#     TPLs will result in diminished capabilities of this package.
+#     use this SE package but not enabling one or more of these optional
+#     upstream TPLs will result in diminished capabilities of this SE package.
 #  
 #   ``TEST_REQUIRED_TPLS``
 #
 #     List of additional upstream TPLs that must be enabled in order to build
-#     and/or run the tests and/or examples in this packages.  If any of these
-#     upstream TPLs is not enabled, then there will be no tests or examples
-#     defined or run for this package.
+#     and/or run the tests and/or examples in this SE package.  If any of
+#     these upstream TPLs are not enabled, then there will be no tests or
+#     examples defined or run for this SE package.
 #  
 #   ``TEST_OPTIONAL_TPLS``
 #
-#     List of additional optional upstream TPLs
-#     that can be used by the tests in this package.  These upstream TPLs
-#     need not be enabled in order to run basic tests for this package.
-#     Typically, extra tests that depend on optional test TPLs involve
-#     integration testing of some type.
+#     List of additional optional upstream TPLs that can be used by the tests
+#     in this SE package.  These upstream TPLs need not be enabled in order to
+#     run basic tests for this SE package.  Typically, extra tests that depend
+#     on optional TPLs involve integration testing or some additional testing
+#     of some type.
 #
-# Only upstream SE packages can be listed (as defined by the order the
+# Only upstream SE packages can be listed (as defined by the order the SE
 # packages are listed in `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_ in the
 # `<repoDir>/PackagesList.cmake`_ file).  Otherwise an error will occur and
-# processing will stop.  Also, mispelled SE package names are caught as well.
+# processing will stop.  Misspelled SE package names are caught as well.
 #
-# Only direct package dependenices need to be listed.  Indirect package
+# Only direct SE package dependencies need to be listed.  Indirect SE package
 # dependencies are automatically handled.  For example, if this SE package
-# directly depends on PKG2 which depends on PKG1 (but this SE package does not
-# directly depend on anything in PKG1) then this package only needs to list a
-# dependency on PKG2, not PKG1.  The dependnecy on PKG1 will be taken care of
-# automatically by the TriBITS dependency tracking system.
+# directly depends on SE package ``PKG2`` which depends on SE package ``PKG1``
+# (but this SE package does not directly depend on anything in ``PKG1``) then
+# this SE package only needs to list a dependency on ``PKG2``, not ``PKG1``.
+# The dependency on ``PKG1`` will be taken care of automatically by the
+# TriBITS dependency management system.
 #
-# However, currently, all TPL dependendies must be listed, even the indirect
+# However, currently, all TPL dependencies must be listed, even the indirect
 # ones.  This is a requirement that will be dropped in a future version of
 # TriBITS.
 #
-# The packages listed in LIB_REQUIRED_PACKAGES are implicitly also
-# dependenices in TEST_REQUIRED_PACKAGES.  Likewise LIB_OPTIONAL_PACKAGES are
-# implicitly also dependenices in TEST_OPTIONAL_PACKAGES.  Same goes for TPL
-# dependencies.
+# The SE packages listed in ``LIB_REQUIRED_PACKAGES`` are implicitly also
+# dependencies in ``TEST_REQUIRED_PACKAGES``.  Likewise
+# ``LIB_OPTIONAL_PACKAGES`` are implicitly also dependencies in
+# ``TEST_OPTIONAL_PACKAGES``.  Same goes for TPL dependencies.
 #
 # The upstream dependencies within a single list do not need to be listed in
 # any order.  For example if ``PKG2`` depends on ``PKG1``, and this given SE
-# package depends on both, one can list::
+# package depends on both, then one can list::
 #
 #   LIB_REQUIRED_PACKAGES PKG2 PKG1
 #
@@ -432,47 +436,49 @@ ENDMACRO()
 #
 #   "LIB_REQUIRED_PACKAGES PKG1 PKG2
 #
-# Likewise the listing of TPLs order is not important.
+# Likewise the order that dependent TPLs are listed is not significant.
 #
-# If some upstream packages are allowed to be missing, this can be specified
+# If some upstream SE packages are allowed to be missing, this can be specified
 # by calling the macro `TRIBITS_ALLOW_MISSING_EXTERNAL_PACKAGES()`_.
 #
-# A top-level package can also have subpackages.  In this case, the following
-# argument must be set:
+# A top-level `TriBITS Package`_ can also be broken down into `TriBITS
+# Subpackages`_.  In this case, the following argument must be passed in:
 #
 #   .. _SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS:
 #
 #   ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS``
 #
-#     2D array with rows listing the subpackages and the 4 columns:
+#     2D array with rows listing the subpackages where each row has the
+#     columns:
 #
-#     * **SUBPACKAGE** (Column 0): The name of the subpackage <spkg_name>.
-#       The full SE package name is "${PARENT_PACKAGE_NAME}<spkg_name>".  The
-#       full SE package name is what is used in listing dependenices in other
-#       SE packages.
+#     * **SUBPACKAGE** (Column 0): The name of the subpackage ``<spkg_name>``.
+#       The full SE package name is ``${PARENT_PACKAGE_NAME}<spkg_name>``.
+#       The full SE package name is what is used in listing dependencies in
+#       other SE packages.
 #    
-#     * **DIRS** (Column 1): The subdirectory <spkg_dir> relative to the
+#     * **DIRS** (Column 1): The subdirectory ``<spkg_dir>`` relative to the
 #       parent package's base directory.  All of the contents of the
 #       subpackage should be under this subdirectory.  This is assumed by the
 #       TriBITS testing support software when mapping modified files to SE
-#       packages that need to be tested.
+#       packages that need to be tested (see `checkin-test.py`_).
 #    
-#     * **CLASSIFICATIONS** (Column 2): The test group PT, ST, EX and the
-#       maturity level EP, RS, PG, PM, GRS, GPG, GPM, and UM, separated by a
-#       coma ',' with no spaces in between (e.g. "PT,GPM").  These have
-#       exactly the name meaning as for full packages (see
+#     * **CLASSIFICATIONS** (Column 2): The `Test Test Category`_ `PT`_,
+#       `ST`_, `EX`_ and the maturity level ``EP``, ``RS``, ``PG``, ``PM``,
+#       ``GRS``, ``GPG``, ``GPM``, and ``UM``, separated by a coma ',' with no
+#       spaces in between (e.g. ``"PT,GPM"``).  These have exactly the same
+#       meaning as for full packages (see
 #       `TRIBITS_REPOSITORY_DEFINE_PACKAGES()`_).
 #    
 #     * **OPTREQ** (Column 3): Determines if the outer parent package has an
-#       OPTIONAL or REQUIRED dependence on this subpackage.
+#       ``OPTIONAL`` or ``REQUIRED`` dependence on this subpackage.
 #
 # Other variables that this macro handles:
 #
 #   ``REGRESSION_EMAIL_LIST``
 #
-#     The email list that is used to send CDash error messages.  If this is
-#     missing, then the email list that CDash errors go to is determined by
-#     other means (see `CDash regression email addresses`_).
+#     The email list that is used to send CDash error messages.  If this
+#     argument is missing, then the email list that CDash errors go to is
+#     determined by other means (see `CDash regression email addresses`_).
 #
 # NOTE: All this macro really does is to just define the variables:
 #
@@ -487,12 +493,13 @@ ENDMACRO()
 # * ``REGRESSION_EMAIL_LIST``
 # * ``SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS``
 #
-# which are then read by the TriBITS cmake code to build the package
+# which are then read by the TriBITS cmake code to build the SE package
 # dependency graph.  The advantage of using this macro instead of just
-# directly setting the varibles is that you only need to list the dependencies
-# you have.  Otherwise, you need to set all of these varibles, even those that
-# are empty.  This is a error checking property of the TriBITS system to avoid
-# misspelling the names of these variables.
+# directly setting the variables is that an SE package only needs to list
+# dependencies that exist.  Otherwise, the ``Dependencies.cmake`` file will
+# need to set all of the above local variables, even those that are empty.
+# This is a error checking property of the TriBITS system to avoid misspelling
+# the names of these variables.
 # 
 MACRO(TRIBITS_PACKAGE_DEFINE_DEPENDENCIES)
 

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,7 +41,7 @@
 # @FUNCTION: PREPEND_CMNDLINE_ARGS()
 #
 # Utility function that prepends command-line arguments to a variable of
-# command-line options.
+# command-line arguments.
 #
 # Usage::
 #

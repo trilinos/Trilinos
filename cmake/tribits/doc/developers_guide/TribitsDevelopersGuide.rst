@@ -742,6 +742,8 @@ set in this top-level ``CMakeLists.txt`` file are those that do not impact the
 list of package enables/disables.  The latter type of defaults should set in
 other files (see below).
 
+.. _${PROJECT_NAME}_TRIBITS_DIR:
+
 In this example project, a CMake cache variable
 ``${PROJECT_NAME}_TRIBITS_DIR`` must be set by the user to define where the
 base ``tribits`` source directory is located.  With this variable set
@@ -6193,6 +6195,31 @@ After that, all deprecated code is removed and the next period of incremental
 change and deprecation begins.
 
 
+Installation and Backward Compatibility Testing
+-----------------------------------------------
+
+TriBITS has some built-in support for installation testing and backward
+compatibility testing.  The way it works is that one can install the headers,
+libraries, and executables for a TriBITS project and then configure the tests
+and examples in the TriBITS project against the installed
+headers/libraries/executables.  In this mode, the TriBITS project's libraries
+and executables are **not** build and the header file locations to local
+source are not included.
+
+When the same version of the project sources are used to build the
+tests/examples against the installed headers/libraries/executables, then this
+constitutes *installation testing*.  When an older version of the project is
+used to build and run tests and examples against the
+headers/libraries/executables for a version of the project, then this
+constitutes *backward compatibility testing* which also includes installation
+testing of course.
+
+ToDo: Describe how the installation testing and backward compatibility testing
+process works with some examples.
+
+ToDo: Discuss how this fits into the TriBITS lifecycle model.
+
+
 Wrapping Externally Configured/Built Software
 ---------------------------------------------
 
@@ -6632,32 +6659,31 @@ executed.
 
 .. include:: TribitsMacroFunctionDoc.rst
 
-.. ToDo: Edited and spell-checked up through TRIBITS_ADD_LIBRARY() on
-.. 05/02/2014!
-
 
 General Utility Macros and Functions
 ------------------------------------
 
 The following subsections give detailed documentation for some CMake macros
 and functions which are *not* a core part of the TriBITS system but are
-included in the TriBITS system that are used inside of the TriBITS system and
-are provided as a convenience to TriBITS project developers.  One will see
+included in the TriBITS source tree, are used inside of the TriBITS system,
+and are provided as a convenience to TriBITS project developers.  One will see
 many of these functions and macros used throughout the implementation of
-TriBITS and even in the ``CMakeLists.txt`` files for projects that use
-TriBITS.
+TriBITS and even in the ``CMakeLists.txt`` files for different projects that
+use TriBITS.
 
-These macros and functions are *not* prefixed with ``TRIBITS_``.  There is
-really not a large risk to defining and using these non-namespaces utility
-functions and macros.  It turns out that CMake allows you to redefine any
-macro or function, even built-in ones, inside of your project so even if CMake
-did add new commands that clashed with these names, there would be no
-conflict.  When overridding a built-in command ``some_builtin_command()``,
-you can always access the original built-in command as
-``_some_builtin_command()``.
+These macros and functions are *not* prefixed with ``TRIBITS_``.  However,
+there is really not a large risk to defining and using these non-namespaces
+utility functions and macros.  It turns out that CMake allows one to redefine
+any macro or function, even built-in ones, inside of one's project.
+Therefore, even if CMake did add new commands that clashed with these names,
+there would be no conflict.  When overriding a built-in command,
+e.g. ``some_builtin_command()``, one can always access the original built-in
+command as ``_some_builtin_command()``.
 
 
 .. include:: UtilsMacroFunctionDoc.rst
+
+.. ToDo: Edited and spell-checked through here on 5/15/2014.
 
 
 Appendix
@@ -6672,35 +6698,35 @@ provide a CMake build system for a small subset of packages in Trilinos.  The
 initial goal was to just to support a native Windows build (using Visual C++)
 to compile and install these few Trilinos packages on Windows for usage by
 another project (the Sandia Titan project which included VTK).  At that time,
-Trilinos was using a highly customized autotools build system.  Initially,
-this CMake system was just a set of macros to streamline creating executables
-and tests.  Some of the conventions started in that early effort (e.g. naming
-conventions of variables and macros where functions use upper case like old
-FORTRAN and variables are mixed case) were continued in later efforts and are
-reflected in the current.  Then, stating in early 2008, a more detailed
-evaluation was performed to see if Trilinos should stitch over to CMake as the
-default (and soon only) supported build and test system (see "Why CMake?" in
-`TriBITS Overview`_).  This lead to the initial implementation of a scale-able
-package-based architecture (PackageArch) for the Trilinos CMake project in
-late 2008.  This Trilinos CMake PackageArch system evolved over the next few
-years with development in the system slowing into 2010.  This Trilinos CMake
-build system was then adopted as the build infrastructure for the CASL VERA
-effort in 2011 where CASL VERA packages were treated as add-on Trilinos
-packages (see Section `Multi-Repository Support`_).  Over the next year, there
-was significant development of the system to support larger multi-repo
-projects in support of CASL VERA.  That lead to the decision to formally
-generalize the Trilinos CMake PackageArch build system outside of Trilinos and
-the name TriBITS was formally adopted in November 2011.  Work to refactor the
-Trilinos CMake system into a general reusable stand-alone CMake-based build
-system started in October 2011 and an initial implementation was complete in
-December 2011 when it was used for the CASL VERA build system.  In early 2012,
-the ORNL CASL-related projects Denovo and SCALE (see [`SCALE, 2011`_]) adopted
-TriBITS as their native development build systems.  Shortly after TriBITS was
-adopted the native build system for the the CASL-related University of
-Michigan code MPACT.  In addition to being used in CASL, all of these codes
-also had a significant life outside of CASL.  Because they used the same
-TriBITS build system, it proved relatively easy to keep these various codes
-integrated together in the CASL VERA code meta-build.  At the same time,
+Trilinos was using a highly customized and augmented autotools build system.
+Initially, this CMake system was just a set of macros to streamline creating
+executables and tests.  Some of the conventions started in that early effort
+(e.g. naming conventions of variables and macros where functions use upper
+case like old FORTRAN and variables are mixed case) were continued in later
+efforts and are reflected in the current implementation.  Then, stating in
+early 2008, a more detailed evaluation was performed to see if Trilinos should
+switch over to CMake as the default (and soon only) supported build and test
+system (see "Why CMake?" in `TriBITS Overview`_).  This lead to the initial
+implementation of a scalable package-based architecture (PackageArch) for the
+Trilinos CMake project in late 2008.  This Trilinos CMake PackageArch system
+evolved over the next few years with development in the system slowing
+into 2010.  This Trilinos CMake build system was then adopted as the build
+infrastructure for the CASL VERA effort in 2011 where CASL VERA packages were
+treated as add-on Trilinos packages (see Section `Multi-Repository Support`_).
+Over the next year, there was significant development of the system to support
+larger multi-repo projects in support of CASL VERA.  That lead to the decision
+to formally generalize the Trilinos CMake PackageArch build system outside of
+Trilinos and the name TriBITS was formally adopted in November 2011.  Work to
+refactor the Trilinos CMake system into a general reusable stand-alone
+CMake-based build system started in October 2011 and an initial implementation
+was complete in December 2011 when it was used for the CASL VERA build system.
+In early 2012, the ORNL CASL-related projects Denovo and SCALE (see [`SCALE,
+2011`_]) adopted TriBITS as their native development build systems.  Shortly
+after, TriBITS was adopted the native build system for the CASL-related
+University of Michigan code MPACT.  In addition to being used in CASL, all of
+these codes also had a significant life outside of CASL.  Because they used
+the same TriBITS build system, it proved relatively easy to keep these various
+codes integrated together in the CASL VERA code meta-build.  At the same time,
 TriBITS well served the independent development teams and non-CASL projects
 independent from CASL VERA.  Since the initial extraction of TriBITS from
 Trilinos, the TriBITS system was further extended and refined, driven by CASL
@@ -6709,13 +6735,13 @@ from 2012 was adopted by the LiveV
 project\footnote{https://github.com/lifev/cmake} which was forked and extended
 independently.
 
-.. _Why a TriBITS Package is not a CMake Package:
+Why a TriBITS Package is not a CMake Package
+--------------------------------------------
 
-**Why a TriBITS Package is not a CMake Package**: Note that a `TriBITS
-Package`_ is not the same thing as a "Package" in raw CMake terminology.  In
-raw CMake, a "Package" is some externally provided bit of software or other
-utility for which the current CMake project has an optional or required
-dependency (see `CMake: How to Find Libraries
+Note that a `TriBITS Package`_ is not the same thing as a "Package" in raw
+CMake terminology.  In raw CMake, a "Package" is some externally provided bit
+of software or other utility for which the current CMake project has an
+optional or required dependency (see `CMake: How to Find Libraries
 <http://www.cmake.org/Wiki/CMake:How_To_Find_Libraries>`_).  Therefore, a raw
 CMake "Package" actually maps to a `TriBITS TPL`_.  A raw CMake "Package"
 (e.g. Boost, CUDA, etc.)  can be found using a standard CMake find module
@@ -6736,34 +6762,38 @@ Principles`_.
 Design Considerations for TriBITS
 ---------------------------------
 
-ToDo: Discuss design requirements.
+Some of the basic requirements and design goals for TriBITS are outlined in the `TriBITS Overview`_ document.
 
-As stated in the TriBITS dependency rule `No circular dependencies of any kind
-are allowed`_, TriBITS SE package (or its tests) can declare a dependency on a
-`downstream`_ SE package, period!  To some, this might seem over constraining
-but adding support for circular dependencies to the TriBITS system would add
-signficiant complexity and space/time overhead and is a bad idea from a basic
-software engineering persective (see (see the *ADP (Acyclic Dependencies
-Principle)* in `Software Engineering Packaging Principles`_).  For a
-versioning, building, and and change-prorogation perspective, any packages
-involved in a circular dependency would need to be treated as a single
-software engineering package anyway so TriBITS forces development teams to
-glob all of this stuff together into a single `TriBITS SE Package`_ when
-cycles in software exists.  There are numerous wonderful ways to break
-circular dependencies that are proven and well established in the SE community
-(for example, see [`Agile Software Development, 2003`_]).
+.. ToDo: Discuss design requirements for TriBITS in more detail.
 
-ToDo: Discuss why it is a good idea to explicitly list packages instead of
-just searching for them.  Hint: Think performance and circular dependencies!
+As stated in `TriBITS Dependency Handling Behaviors`_, `No circular
+dependencies of any kind are allowed`_.  That is, no TriBITS SE package (or
+its tests) can declare a dependency on a `downstream`_ SE package, period!  To
+some, this might seem over constraining but adding support for circular
+dependencies to the TriBITS system would add significant complexity and
+space/time overhead and is a bad idea from a basic software engineering
+perspective (see the *ADP (Acyclic Dependencies Principle)* in `Software
+Engineering Packaging Principles`_).  From a versioning, building, and
+change-prorogation perspective, any packages involved in a circular dependency
+would need to be treated as a single software engineering package anyway so
+TriBITS forces development teams to glob all of this stuff together into a
+single `TriBITS SE Package`_ when cycles in software exist.  There are
+numerous wonderful ways to break circular dependencies between packages that
+are proven and well established in the SE community (for example, see [`Agile
+Software Development, 2003`_]).
+
+.. ToDo: Discuss why it is a good idea to explicitly list packages instead of
+.. just searching for them.  Hint: Think performance and circular
+.. dependencies!
 
 
 checkin-test.py --help
 ----------------------
 
 Below is a snapshot of the output from ``checkin-test.py --help``.  This
-documentation contains a lot of information about the recommended development
-workflow (mostly related to pushing commits) and outlines a number of
-different use cases for using the script.
+``--help`` output contains a lot of information about the recommended
+development workflow (mostly related to pushing commits) and outlines a number
+of different use cases for using the script.
 
 .. include:: checkin-test-help.txt
    :literal:

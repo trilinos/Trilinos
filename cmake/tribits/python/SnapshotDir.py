@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -119,9 +119,9 @@ way to run this script would be:
 By default, this assumes that git repos are used for both the 'orig-dir' and
 'dest-dir' locations.  The info about the origin of the snapshot from
 'orig-dir' is recorded in the commit message of the 'dest-dir' git repo to
-provide tracability for the versions (see below).
+provide tractability for the versions (see below).
 
-To sync between any two arbitrary directories invoking this scripot from any
+To sync between any two arbitrary directories invoking this script from any
 directory location, one can do:
 
   $ <some-base-dir>/snapshot-dir.py \
@@ -171,7 +171,7 @@ NOTES:
   chagnes after the last snapshot, they will get wiped out.  To avoid this, do
   the snapshot on a branch in the 'dest-dir' git repo, then merge that branch
   into the master branch in 'dest-dir' repo that has the local changes.  As
-  long as there are no merge conflicits, this will preserve local changes for
+  long as there are no merge conflicts, this will preserve local changes for
   the mirrored directories and files.  This works amazingly well in most
   cases.
 """
@@ -214,9 +214,9 @@ def snapshotDirMainDriver(cmndLineArgs, defaultOptionsIn = None, stdout = None):
     clp.add_option(
       "--orig-dir", dest="origDir", type="string",
       default=defaultOptions.getDefaultOrigDir(),
-      help="Original directory that is the source for the snapshoted directory." \
+      help="Original directory that is the source for the snapshotted directory." \
       +"  Note that it is important to add a final /' to the directory name." \
-      +"  The default is the directory where this script lives (or is softlinked)." \
+      +"  The default is the directory where this script lives (or is soft-linked)." \
       +"  [default: '"+defaultOptions.getDefaultOrigDir()+"']")
 
     clp.add_option(

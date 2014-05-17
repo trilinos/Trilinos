@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,13 +43,14 @@ INCLUDE(PrintVar)
 #
 # @FUNCTION: CONCAT_STRINGS()
 #
-# Concatenate a set of string argumnets.
+# Concatenate a set of string arguments.
 #
 # Usage::
 #
 #   CONCAT_STRINGS(<outputVar> "<str0>" "<str1>" ...)
 #
-# On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.
+# On output, ``<outputVar>`` is set to ``"<str0><str1>..."``.  This makes it
+# easier to format a long string over multiple CMake source code lines.
 #
 FUNCTION(CONCAT_STRINGS OUTPUT_STRING_VAR)
   #MESSAGE("CONCAT_STRINGS OUTPUT_STRING_VAR: ${OUTPUT_STRING_VAR} {${ARGN}}")

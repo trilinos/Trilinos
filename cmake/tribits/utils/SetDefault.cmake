@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,14 +40,16 @@
 #
 # @MACRO: SET_DEFAULT()
 #
-# Give a local variable a default if a non-empty value is not already set.
+# Give a local variable a default value if a non-empty value is not already
+# set.
 #
 # Usage::
 #
 #   SET_DEFAULT(<varName> <arg0> <arg1> ...)
 #
 # If on input ``"${<varName>}"==""``, then ``<varName>`` is set to the given
-# default.  Otherwise, the existing non-empty value is preserved.
+# default ``<arg0> <arg1> ...``.  Otherwise, the existing non-empty value is
+# preserved.
 #
 MACRO(SET_DEFAULT VAR)
   IF ("${${VAR}}" STREQUAL "")

@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -41,8 +41,8 @@
 #
 # @MACRO: GLOBAL_SET()
 #
-# Set a variable as an internal global (cache) variable (removes boiler
-# plate).
+# Set a variable as an internal global (cache) variable (removes boiler-plate
+# code).
 #
 # Usage::
 #
@@ -51,6 +51,8 @@
 # This just calls::
 #
 #   SET(<varName> [other args] CACHE INTERNAL "")
+#
+# This avoid misspelling ``CACHE``.
 #
 MACRO(GLOBAL_SET VARNAME)
   SET(${VARNAME} ${ARGN} CACHE INTERNAL "")

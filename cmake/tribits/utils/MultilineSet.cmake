@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -55,8 +55,11 @@
 #
 #   "<string0><string1>..."
 #
-# The purpose of this is to make it easier to set longer strings without going
-# to far to the right.
+# The purpose of this is function to make it easier to set longer strings over
+# multiple lines.
+#
+# This function is exactly the same as `CONCAT_STRINGS()`_ and should not even
+# exist :-(
 #
 FUNCTION(MULTILINE_SET VARAIBLE_NAME)
   

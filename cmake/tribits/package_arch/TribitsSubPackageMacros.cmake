@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,13 +43,14 @@ INCLUDE(TribitsPackageMacros)
 #
 # @MACRO: TRIBITS_SUBPACKAGE()
 #
-# Declare a subpackage.
+# Forward declare a `TriBITS Subpackage`_ called at the top of the
+# subpackage's `<packageDir>/<spkgDir>/CMakeLists.txt`_ file.
 #
 # Usage::
 #
 #   TRIBITS_SUBPACKAGE(<spkgName>)
 #
-# Once called, the following local varibles are in scope:
+# Once called, the following local variables are in scope:
 #
 #   ``PARENT_PACKAGE_NAME``
 #
@@ -63,7 +64,8 @@ INCLUDE(TribitsPackageMacros)
 #   ``SUBPACKAGE_FULLNAME``
 #
 #     The full project-level name of the subpackage (which includes the parent
-#     package name at the beginning).
+#     package name at the beginning,
+#     ``${PARENT_PACKAGE_NAME}${SUBPACKAGE_NAME}``).
 #
 #   ``PACKAGE_NAME``
 #
@@ -98,7 +100,9 @@ ENDMACRO()
 #
 # @MACRO: TRIBITS_SUBPACKAGE_POSTPROCESS()
 #
-# Postprocess after defining a subpackage.
+# Macro that performs standard post-processing after defining a `TriBITS
+# Subpackage`_ which is called at the bottom of a subpackage's
+# `<packageDir>/<spkgDir>/CMakeLists.txt`_ file.
 #
 # Usage::
 #

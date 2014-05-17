@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -48,9 +48,9 @@
 #
 #   ADVANCED_SET(<varName> [other arguments])
 #
-# This is identical to::
+# This just calls the built-in commands::
 #
-#   ADVANCED_SET(<varName> [other arguments])
+#   SET(<varName> [other arguments])
 #   MARK_AS_ADVANCED(<varName>)
 # 
 MACRO(ADVANCED_SET VARNAME)

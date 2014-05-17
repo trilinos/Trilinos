@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,8 +43,8 @@ INCLUDE(ParseVariableArguments)
 #
 # @MACRO: TRIBITS_INCLUDE_DIRECTORIES()
 #
-# This function is to override the standard behavior of include_directories
-# for a TriBITS package.
+# This function is to override the standard behavior of the built-in CMake
+# ``INCLUDE_DIRECTORIES()`` command.
 #
 # Usage::
 # 
@@ -55,16 +55,17 @@ INCLUDE(ParseVariableArguments)
 # If specified, ``REQUIRED_DURING_INSTALLATION_TESTING`` can appear anywhere
 # in the argument list.
 #
-# This function allows overriding the default behavior for installation
-# testing, to ensure that include directories will not be inadvertently added
-# to the build lines for tests during installation testing. Normally we want
-# the include directories to be handled as cmake usually does.  However during
-# TriBITS installation testing we do not want most of the include directories
-# to be used as the majority of the files should come from the installation we
-# are building against.  There is an exception to this and that is when there
-# are test only headers that are needed.  For that case we allow people to set
-# ``REQUIRED_DURING_INSTALLATION_TESTING`` to tell us that this include
-# directory does need to be set for instaltion testing.
+# This function allows overriding the default behavior of
+# ``INCLUDE_DIRECTORIES()`` for installation testing, to ensure that include
+# directories will not be inadvertently added to the build lines for tests
+# during installation testing (see `Installation and Backward Compatibility
+# Testing`_). Normally we want the include directories to be handled as cmake
+# usually does.  However during TriBITS installation testing we do not want
+# most of the include directories to be used as the majority of the files
+# should come from the installation we are building against.  There is an
+# exception to this and that is when there are test only headers that are
+# needed.  For that case ``REQUIRED_DURING_INSTALLATION_TESTING`` must be
+# passed in to ensure the include paths are added for installation testing.
 #
 MACRO(TRIBITS_INCLUDE_DIRECTORIES)
   PARSE_ARGUMENTS(

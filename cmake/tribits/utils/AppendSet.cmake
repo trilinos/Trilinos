@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -40,16 +40,19 @@
 #
 # @MACRO: APPEND_SET()
 #
-# Utility function to append elements to a varible (reduces boiler-plate
+# Utility function to append elements to a variable (reduces boiler-plate
 # code).
 #
 # Usage::
 #
 #   APPEND_SET(<varName> <arg0> <arg1> ...)
 #
-# Just calls::
+# This just calls::
 #
 #   LIST(APPEND <varName> <arg0> <arg1> ...)
+#
+# There is better error reporting if one misspells ``APPEND_SET`` than if one
+# misspells ``APPEND``.
 #
 MACRO(APPEND_SET VARNAME)
   LIST(APPEND ${VARNAME} ${ARGN})

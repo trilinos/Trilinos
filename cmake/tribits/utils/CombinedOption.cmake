@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,8 +45,8 @@ INCLUDE(ConcatStrings)
 #
 # @FUNCTION: COMBINED_OPTION()
 #
-# Set up a bool cache variable (i.e. an option) based on a set of dependent
-# options.
+# Set up a ``BOOL`` cache variable (i.e. an option) based on a set of
+# dependent options.
 #
 # Usage::
 #
@@ -55,16 +55,16 @@ INCLUDE(ConcatStrings)
 #     DOCSTR "<docstr0>" "<docstr1" ...
 #     )
 #
-# This sets up a bool cache variable ``<combinedOptionName>`` which is
-# defaulted to ``ON`` if all of the listed dependent option varaibles
+# This sets up a ``BOOL`` cache variable ``<combinedOptionName>`` which is
+# defaulted to ``ON`` if all of the listed dependent option variables
 # ``<depOpName0>``, ``<depOptName1>``, ... are all ``ON``.  However, if
 # ``<combinedOptionName>`` is set to ``ON`` by the user and not all of the
-# dependent option varibles are also true, this results in a fatal eror and
-# alll processing stops.
+# dependent option variables are also ``ON``, then this results in a fatal
+# error and all processing stops.
 #
-# This is used by a CMake project to by default automatically turn on a
-# feature that requires a set of other features to also be turned on but
-# allows a user to disable the feature if desired.
+# This is used by a CMake project to automatically turn on a feature that
+# requires a set of other features (when they are all enabled) but allows a
+# user to disable the feature if desired.
 #
 FUNCTION(COMBINED_OPTION  COMBINED_OPTION_NAME)
 

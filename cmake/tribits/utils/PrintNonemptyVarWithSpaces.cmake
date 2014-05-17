@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,7 +44,7 @@ INCLUDE(AppendStringVarWithSep)
 # @FUNCTION: PRINT_NONEMPTY_VAR_WITH_SPACES()
 #
 # Print a defined variable giving its name then value printed with spaces
-# instead of ';' but only if it is not empty.
+# instead of ``';'`` but only if it is not empty.
 #
 # Usage::
 #

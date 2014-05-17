@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -2530,7 +2530,10 @@ ENDMACRO()
 #
 # In general, do **NOT** put in excludes for files and directories that are
 # not under this package's source tree.  If the given package is not enabled,
-# then this command will never be called!
+# then this command will never be called! For example, don't put in excludes
+# for PackageB's files in PackageA's ``CMakeLists.txt`` file because if
+# PackageB is enabled but PackageA is not, the excludes for PackageB will
+# never get added to ``CPACK_SOURCE_IGNORE_FILES``.
 #
 # Also, be careful to note that the ``<filei>`` arguments are actually regexes
 # and one must be very careful not understand how CPack will use these regexes

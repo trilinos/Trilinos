@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,7 +44,8 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # @FUNCTION: TRIBITS_ADD_TEST()
 #
-# Add a test or a set of tests for a single executable or command.
+# Add a test or a set of tests for a single executable or command using CTest
+# ``ADD_TEST()``.
 #
 # Usage::
 #
@@ -88,58 +89,63 @@ INCLUDE(TribitsAddTestHelpers)
 #
 #   ``<exeRootName>``
 #
-#     The name of the exectuble or path to the exectuable to run for the test
+#     The name of the executable or path to the executable to run for the test
 #     (see `Determining the Executable or Command to Run
 #     (TRIBITS_ADD_TEST())`_).  This name is also the default root name for
 #     the test (see `Determining the Full Test Name (TRIBITS_ADD_TEST())`_).
 #
 #   ``NOEXEPREFIX``
 #
-#    If specified, then the prefix ``${PACKAGE_NAME}_`` is not assumed to be
-#    prepended to ``<exeRootName>``.
+#    If specified, then the prefix ``${PACKAGE_NAME}_`` is assumed **not** to
+#    be prepended to ``<exeRootName>`` (see `Determining the Executable or
+#    Command to Run (TRIBITS_ADD_TEST())`_).
 #
 #   ``NOEXESUFFIX``
 #
 #      If specified, then the postfix
-#      ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is not assumed to be
-#      post-pended to ``<exeRootName>``.
+#      ``${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}`` is assumed **not** to be
+#      post-pended to ``<exeRootName>`` (see `Determining the Executable or
+#      Command to Run (TRIBITS_ADD_TEST())`_).
 #
 #   ``NAME <testRootName>``
 #
-#     If specified, gives the root name of the test.
-#     If not specified, then ``<testRootName>`` is taken to be
-#     ``<exeRootName>``.  The actual test name will always prefixed as
-#     ``${PACKAGE_NAME}_<testRootName>`` passed into the call to the built-in
-#     CMake command ``ADD_TEST(...)``.  The main purpose of this argument is to
-#     allow multiple tests to be defined for the same executable.  CTest
-#     requires all test names to be globally unique in a single project.
+#     If specified, gives the root name of the test.  If not specified, then
+#     ``<testRootName>`` is taken to be ``<exeRootName>``.  The actual test
+#     name passed to ``ADD_TEST()`` will always be prefixed as
+#     ``${PACKAGE_NAME}_<testRootName>``.  The main purpose of this argument
+#     is to allow multiple tests to be defined for the same executable.  CTest
+#     requires all test names to be globally unique in a single project.  See
+#     `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
 #  
 #   ``NAME_POSTFIX <testNamePostfix>``
 #
 #     If specified, gives a postfix that will be added to the standard test
 #     name based on ``<exeRootName>`` (appended as ``_<NAME_POSTFIX>``).  If
 #     the ``NAME <testRootName>`` argument is given, this argument is ignored.
+#     See `Determining the Full Test Name (TRIBITS_ADD_TEST())`_.
 #  
 #   ``DIRECTORY <dir>``
 #
 #     If specified, then the executable is assumed to be in the directory
-#     given by by ``<dir>``.  The directory ``<dir>`` can either be a relative
-#     or absolute path.  If not specified, the executable is assumed to be in
-#     the current bindary directory.
+#     given by ``<dir>``.  The directory ``<dir>`` can either be a relative or
+#     absolute path.  If not specified, the executable is assumed to be in the
+#     current binary directory ``${CMAKE_CURRENT_BINARY_DIR}``.  See
+#     `Determining the Executable or Command to Run (TRIBITS_ADD_TEST())`_.
 #   
 #   ``ADD_DIR_TO_NAME``
 #
 #     If specified, then the directory name that this test resides in will be
 #     added into the name of the test after the package name is added and
-#     before the root test name (see below).  The directory will have the
-#     package's base directory stripped off so only the unique part of the
-#     test directory will be used.  All directory seperators will be changed
-#     into underscores.
+#     before the root test name (see `Determining the Full Test Name
+#     (TRIBITS_ADD_TEST())`_).  The directory name will have the package's
+#     base directory stripped off so only the unique part of the test
+#     directory will be used.  All directory separators ``"/"`` will be
+#     changed into underscores ``"_"``.
 #  
 #   ``RUN_SERIAL``
 #
 #     If specified then no other tests will be allowed to run while this test
-#     is running. This is useful for devices(like cuda cards) that require
+#     is running. This is useful for devices (like CUDA GPUs) that require
 #     exclusive access for processes/threads.  This just sets the CTest test
 #     property ``RUN_SERIAL`` using the built-in CMake function
 #     ``SET_TESTS_PROPERTIES()``.
@@ -151,8 +157,8 @@ INCLUDE(TribitsAddTestHelpers)
 #     arguments then a different test will be added for each set of arguments.
 #     In this way, many different tests can be added for a single executable
 #     in a single call to this function.  Each of these separate tests will be
-#     named ``${TEST_NAME}_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
-#     on.  **WARNING:** When defining multiple tests it is prefered to use the
+#     named ``<fullTestName>_xy`` where ``xy`` = ``00``, ``01``, ``02``, and so
+#     on.  **WARNING:** When defining multiple tests it is preferred to use the
 #     ``POSTFIX_AND_ARGS_<IDX>`` form instead.  **WARNING:** Multiple
 #     arguments passed to a single test invocation must be quoted or multiple
 #     tests taking single arguments will be created instead!  See `Adding
@@ -172,132 +178,148 @@ INCLUDE(TribitsAddTestHelpers)
 #     This will create three different test cases with the postfix names
 #     ``postfix0``, ``postfix1``, and ``postfix2``.  The indexes must be
 #     consecutive starting a ``0`` and going up to (currently) ``19``.  The
-#     main advantages of using these arguments instead of just 'ARGS' are that
-#     you can give meaningful name to each test case and you can specify
-#     multiple arguments without having to quote them and you can allow long
-#     argument lists to span multiple lines.  See `Adding Multiple Tests
-#     (TRIBITS_ADD_TEST())`_ for more details and exmaples.
+#     main advantages of using these arguments instead of just ``ARGS`` are
+#     that one can give a meaningful name to each test case and one can
+#     specify multiple arguments without having to quote them and one can
+#     allow long argument lists to span multiple lines.  See `Adding Multiple
+#     Tests (TRIBITS_ADD_TEST())`_ for more details and exmaples.
 #  
 #   ``COMM [serial] [mpi]``
 #
-#     If specified, selects if the test will be added in serial and/or MPI
+#     If specified, determines if the test will be added in serial and/or MPI
 #     mode.  If the ``COMM`` argument is missing, the test will be added in
-#     both serial and MPI builds of the code.
+#     both serial and MPI builds of the code.  That is if ``COMM mpi`` is
+#     passed in, then the test will **not** be added if
+#     ``TPL_ENABLE_MPI=OFF``.  Likewise, if ``COMM serial`` is passed in, then
+#     the test will **not** be added if ``TPL_ENABLE_MPI=ON``.  If ``COMM
+#     serial mpi`` or ``COMM mpi serial`` is passed in, then the value of
+#     ``TPL_ENABLE_MPI`` does not determine if the test is added or not.
 #  
 #   ``NUM_MPI_PROCS <numProcs>``
 #
-#     If specified, gives the number of processes that the test will be
-#     defined to run.  If ``<numProcs>`` is greater than
-#     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
-#     specified, then the default number of processes for an MPI build will be
-#     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
+#     If specified, gives the number of MPI processes used to run the test
+#     with the MPI exec program ``${MPI_EXEC}``.  If ``<numProcs>`` is greater
+#     than ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If
+#     not specified, then the default number of processes for an MPI build
+#     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
+#     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
 #     ignored.
-#  
-#   ``HOST <host0> <host1> ...``
-#
-#     If specified, gives a list of hostnames where the test will be included.
-#     The current hostname is determined by the built-in CMake command
-#     ``SITE_NAME(${PROJECT_NAME}_HOSTNAME)``.  On Linux/Unix systems, this is
-#     typically the value returned by 'uname -n'.  If this list is given, the
-#     value of ``${${PROJECT_NAME}_HOSTNAME}`` must equal one of the listed
-#     host names ``<hosti>`` or test will not be added.  The value of
-#     ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
-#     output under the section ``Probing the environment``.
-#  
-#   ``XHOST <host0> <host1> ...``
-#
-#     If specified, gives a list of hostnames (see ``HOST`` argument) where
-#     the test will *not* be added.  This check is performed after the check
-#     for the hostnames in the ``HOST`` list if it should exist.  Therefore,
-#     this list exclusion list overrides the 'HOST' inclusion list.
 #
 #   ``CATEGORIES <category0> <category1> ...``
 #
 #     If specified, gives the specific categories of the test.  Valid test
 #     categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
-#     and ``PERFORMANCE``.  By default, the category is ``BASIC``.  When the
-#     test category does not match ``${PROJECT_NAME}_TEST_CATEGORIES``, then
-#     the test is not added.  When the ``CATEGORIES`` is ``BASIC`` it will
-#     match ``${PROJECT_NAME}_TEST_CATEGORIES`` eqaual to ``CONTINUOUS``,
-#     ``NIGHTLY``, and ``WEEKLY``.  When the ``CATEGORIES`` contains
+#     and ``PERFORMANCE``.  If not specified, the default category is
+#     ``BASIC``.  When the test category does not match
+#     ``${PROJECT_NAME}_TEST_CATEGORIES``, then the test is **not** added.
+#     When ``CATEGORIES`` contains ``BASIC`` it will match
+#     ``${PROJECT_NAME}_TEST_CATEGORIES`` equal to ``CONTINUOUS``,
+#     ``NIGHTLY``, and ``WEEKLY``.  When ``CATEGORIES`` contains
 #     ``CONTINUOUS`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
-#     to ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY``.  When the ``CATEGORIES``
-#     is ``NIGHTLY`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES`` equal
-#     to ``NIGHTLY`` and ``WEEKLY``.  When the ``CATEGORIES`` is
+#     to ``CONTINUOUS``, ``NIGHTLY``, and ``WEEKLY``.  When ``CATEGORIES``
+#     contains ``NIGHTLY`` it will match ``${PROJECT_NAME}_TEST_CATEGORIES``
+#     equal to ``NIGHTLY`` and ``WEEKLY``.  When ``CATEGORIES`` contains
 #     ``PERFORMANCE`` it will match
 #     ``${PROJECT_NAME}_TEST_CATEGORIES=PERFORMANCE`` only.
 #
+#   ``HOST <host0> <host1> ...``
+#
+#     If specified, gives a list of hostnames where the test will be included.
+#     The current hostname is determined by the built-in CMake command
+#     ``SITE_NAME(${PROJECT_NAME}_HOSTNAME)``.  On Linux/Unix systems, this is
+#     typically the value returned by ``uname -n``.  If this list is given,
+#     the value of ``${${PROJECT_NAME}_HOSTNAME}`` must equal one of the
+#     listed host names ``<hosti>`` or test will **not** be added.  The value
+#     of ``${PROJECT_NAME}_HOSTNAME`` gets printed out in the TriBITS cmake
+#     output under the section ``Probing the environment`` (see `Full
+#     Processing of TriBITS Project Files`_).
+#  
+#   ``XHOST <host0> <host1> ...``
+#
+#     If specified, gives a list of hostnames (see ``HOST`` argument) on which
+#     the test will **not** be added.  This check is performed after the check
+#     for the hostnames in the ``HOST`` list if it should exist.  Therefore,
+#     this exclusion list overrides the ``HOST`` inclusion list.
+#
 #   ``HOSTTYPE <hosttype0> <hosttype1> ...``
 #
-#     If specified, gives the names of the host system type (given by
-#     ``CMAKE_HOST_SYSTEM_NAME`` which is printed in the TriBITS cmake
-#     confgiure output in the section ``Probing the environment``) to include
-#     the test.  Typical host system type names include ``Linux``,
-#     ``Darwain``, ``Windows``, etc.
+#     If specified, gives the names of the host system type (given by the
+#     built-in CMake cache variable ``CMAKE_HOST_SYSTEM_NAME`` which is
+#     printed in the TriBITS cmake configure output in the section ``Probing
+#     the environment``) for which the test is allowed to be added.  If
+#     ``HOSTTYPE`` is specified and ``CMAKE_HOST_SYSTEM_NAME`` is not equal to
+#     one of the values of ``<hosttypei>``, then the test will **not** be
+#     added.  Typical host system type names include ``Linux``, ``Darwain``,
+#     ``Windows``, etc.
 #
 #   ``XHOSTTYPE <hosttype0> <hosttype1> ...``
 #
-#     If specified, gives the names of the host system type to *not* include
-#     the test.  This check is performed after the check for the host system
-#     names in the ``HOSTTYPE`` list if it should exist.  Therefore, this list
-#     exclusion list overrides the ``HOSTTYPE`` inclusion list.
+#     If specified, gives the names of the host system type (see the
+#     ``HOSTTYPE`` argument above) for which **not** to include the test on.
+#     This check is performed after the check for the host system names in the
+#     ``HOSTTYPE`` list if it should exist.  Therefore, this exclusion list
+#     overrides the ``HOSTTYPE`` inclusion list.
 #
 #   ``STANDARD_PASS_OUTPUT``
 #
-#     If specified, then the standard test output ``End Result: TEST PASSED``
-#     is greped for to determine success.  This is needed for MPI tests on
-#     some platforms since the return value is unreliable.  This is set using
-#     the built-in ctest property ``PASS_REGULAR_EXPRESSION``.
+#     If specified, then the standard test output string ``End Result: TEST
+#     PASSED`` is grepped in the test stdout for to determine success.  This
+#     is needed for MPI tests on some platforms since the return value from
+#     MPI executables is unreliable.  This is set using the built-in CTest
+#     property ``PASS_REGULAR_EXPRESSION``.
 #
 #   ``PASS_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 #
-#     If specified, then a test will be assumed to pass only if one of the
-#     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output.
-#     Otherwise, the test will fail.  This is set using the built-in test
-#     property ``PASS_REGULAR_EXPRESSION``.  Consult standard CMake
-#     documentation.
+#     If specified, then the test will be assumed to pass only if one of the
+#     regular expressions ``<regex0>``, ``<regex1>`` etc. match the output
+#     send to stdout.  Otherwise, the test will fail.  This is set using the
+#     built-in CTest property ``PASS_REGULAR_EXPRESSION``.  Consult standard
+#     CMake documentation for full behavior.
 #
 #   ``FAIL_REGULAR_EXPRESSION "<regex0>;<regex1>;..."``
 #
 #     If specified, then a test will be assumed to fail if one of the regular
-#     expressions ``<regex0>``, ``<regex1>`` etc. match the output.
-#     Otherwise, the test will pass.  This is set using the built-in test
-#     property ``FAIL_REGULAR_EXPRESSION``.
+#     expressions ``<regex0>``, ``<regex1>`` etc. match the output send to
+#     stdout.  Otherwise, the test will pass.  This is set using the built-in
+#     CTest property ``FAIL_REGULAR_EXPRESSION``.  Consult standard CMake
+#     documentation for full behavior.
 #
 #   ``WILL_FAIL``
 #
 #     If passed in, then the pass/fail criteria will be inverted.  This is set
-#     using the built-in test property ``WILL_FAIL``.
+#     using the built-in CTest property ``WILL_FAIL``.  Consult standard CMake
+#     documentation for full behavior.
 #
 #   ``ENVIRONMENT <var0>=<value0> <var1>=<value1> ...``
 #
-#     If passed in, the listed environment varaibles will be set before
-#     calling the test.  This is set using the built-in test property
+#     If passed in, the listed environment variables will be set before
+#     calling the test.  This is set using the built-in CTest property
 #     ``ENVIRONMENT``.
 #
 #   ``TIMEOUT <maxSeconds>``
 #
 #     If passed in, gives maximum number of seconds the test will be allowed
-#     to run beforebeing timed-out.  This sets the test property ``TIMEOUT``.
-#     **WARNING:** Rather than just increasing the timeout for an expensive
-#     test, please try to either make the test run faster or relegate the test
-#     to being run less often (i.e. set ``CATEGORIES NIGHTLY`` or even
-#     ``WEEKLY`` for extremently expensive tests).  Expensive tests are one of
-#     the worse forms of technical debt that a project can have!
+#     to run before being timed-out.  This sets the CTest property
+#     ``TIMEOUT``.  **WARNING:** Rather than just increasing the timeout for
+#     an expensive test, please try to either make the test run faster or
+#     relegate the test to being run less often (i.e. set ``CATEGORIES
+#     NIGHTLY`` or even ``WEEKLY`` for extremely expensive tests).  Expensive
+#     tests are one of the worse forms of technical debt that a project can
+#     have!
 #
 # In the end, this function just calls the built-in CMake commands
 # ``ADD_TEST(${TEST_NAME} ...)`` and ``SET_TESTS_PROPERTIES(${TEST_NAME}
 # ...)`` to set up a executable process for ``ctest`` to run, determine
 # pass/fail criteria, and set some other test properties.  Therefore, this
-# wrapper funtion does not provide any fundamentally new features that are
-# already avaiable in the basic usage if CMake/CTest.  However, this wrapper
-# function takes care of many of the details and boiler-plate CMake code that
-# it takes to add such a test (or tests) and enforces consistency across a
-# large project for how tests are defined, run, and named (to avoid test name
-# clashes).
+# wrapper function does not provide any fundamentally new features that are
+# not already available in the basic usage if CMake/CTest.  However, this
+# wrapper function takes care of many of the details and boiler-plate CMake
+# code that it takes to add such a test (or tests) and enforces consistency
+# across a large project for how tests are defined, run, and named (to avoid
+# test name clashes).
 #
 # If more flexibility or control is needed when defining tests, then the
-# function ``TRIBITS_ADD_ADVANCED_TEST()`` should be used instead.
+# function `TRIBITS_ADD_ADVANCED_TEST()`_ should be used instead.
 #
 # In the following subsections, more details on how tests are defined and run
 # is given.
@@ -306,20 +328,18 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Determining the Executable or Command to Run (TRIBITS_ADD_TEST())**
 #
-# This funtion is primarily designed to make it easy to run tests for
-# exectaubles built using the function `TRIBITS_ADD_EXECUTABLE()`_.  To set up
+# This function is primarily designed to make it easy to run tests for
+# executables built using the function `TRIBITS_ADD_EXECUTABLE()`_.  To set up
 # tests to run arbitrary executables, see below.
 #
-# By default, the command to run for the executable is determined by first
-# getting the exectuable name which by default is assumed to be
-# ``<fullExeName``> =
+# By default, the executable to run is determined by first getting the
+# executable name which by default is assumed to be::
 #
-# ::
+#  <fullExeName> =
+#    ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
 #
-#   ${PACKAGE_NAME}_<exeRootName>${${PROJECT_NAME}_CMAKE_EXECUTABLE_SUFFIX}
-#
-# which is (by no coincidence) idential to how it is selected in
-# `TRIBITS_ADD_EXECUTABLE()`_.  This name can be alterned by passing in
+# which is (by no coincidence) identical to how it is selected in
+# `TRIBITS_ADD_EXECUTABLE()`_.  This name can be altered by passing in
 # ``NOEXEPREFIX``, ``NOEXESUFFIX``, and ``ADD_DIR_TO_NAME`` as described in
 # `Executable and Target Name (TRIBITS_ADD_EXECUTABLE())`_.
 #
@@ -327,11 +347,12 @@ INCLUDE(TribitsAddTestHelpers)
 # directory ``${CMAKE_CURRENT_BINARY_DIR}`` but the directory location can be
 # changed using the ``DIRECTORY <dir>`` argument.  
 #
-# If an arbitrary exectuable is to be run for the test, then pass in
-# ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set ``<exeRootName>`` to the
-# relative or absolute path of the exeutable to be run.  If ``<exeRootName>``
-# is not an absolute path, then ``${CMAKE_CURRENT_BINARY_DIR}/<exeRootName>``
-# is set as the executable to run.
+# If an arbitrary executable is to be run (i.e. not build inside of the
+# project), then pass in ``NOEXEPREFIX`` and ``NOEXESUFFIX`` and set
+# ``<exeRootName>`` to the relative or absolute path of the executable to be
+# run.  If ``<exeRootName>`` is not an absolute path, then
+# ``${CMAKE_CURRENT_BINARY_DIR}/<exeRootName>`` is set as the executable to
+# run in this case.
 #
 # Whatever executable path is specified using this logic, if the executable is
 # not found, then when ``ctest`` goes to run the test, it will mark it as
@@ -341,40 +362,40 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Determining the Full Test Name (TRIBITS_ADD_TEST())**
 #
-# By default, the base test name is selected to be ``<fullTestName>`` = ::
+# By default, the base test name is selected to be::
 #
-#   ${PACKAGE_NAME}_<exeRootName>
+#   <fullTestName> = ${PACKAGE_NAME}_<exeRootName>
 #
 # If ``NAME <testRootName>`` is passed in, then ``<testRootName>`` is used
-# instead of ``<exeRootName>``.
+# instead of ``<exeRootName>`` above.
 #
 # If ``NAME_POSTFIX <testNamePostfix>`` is passed in, then the base test name
-# is selected to be ``<fullTestName`` = ::
+# is selected to be::
 #
-#   ${PACKAGE_NAME}_<exeRootName>_<testNamePostfix>
+#   <fullTestName> = ${PACKAGE_NAME}_<exeRootName>_<testNamePostfix>
 #
-# If ``ADD_DIR_TO_NAME`` is passed in, then the directory name realtive to the
-# package directory name is added to the name as well to help disambiguate the
+# If ``ADD_DIR_TO_NAME`` is passed in, then the directory name relative to the
+# package base directory is added to the name as well to help disambiguate the
 # test name (see the above).
 #
-# Let the test name determined by this process be ``TEST_NAME``.  If no
-# arguments or one set of arguments are passed in through ``ARGS``, then this
-# is the test name actaully passed in to ``ADD_TEST()``.  If multiple tests
-# are defined, then this name becomes the base test name for each of the
-# tests. See below.
+# Let the test name determined as described above be ``<fullTestName>``.  If
+# no arguments or only a single set of arguments are passed in through
+# ``ARGS``, then this is the test name actually passed in to ``ADD_TEST()``.
+# If multiple tests are defined, then this name becomes the base test name for
+# each of the tests (see `Adding Multiple Tests (TRIBITS_ADD_TEST())`_).
 #
 # Finally, for any test that gets defined, if MPI is enabled
 # (i.e. ``TPL_ENABLE_MPI=ON``), then the terminal suffix
-# `_MPI_${NUM_MPI_PROCS}` will be added to the end of the test name (even for
-# multiple tests).  No such prefix is added for the serial case
+# ``_MPI_${NUM_MPI_PROCS}`` will be added to the end of the test name (even
+# for multiple tests).  No such prefix is added for the serial case
 # (i.e. ``TPL_ENABLE_MPI=OFF``).
 #
 # .. _Adding Multiple Tests  (TRIBITS_ADD_TEST()):
 #
 # **Adding Multiple Tests  (TRIBITS_ADD_TEST())**
 #
-# Using this function, one can add exectuable arguments and can even add
-# multiple tests in one of two ways.  One can either pass in 1 or more
+# Using this function, one can add executable arguments and can even add
+# multiple tests in one of two ways.  One can either pass in one or more
 # **quoted** clusters of arguments using::
 #
 #   ARGS "<arg0> <arg1> ..." "<arg2> <arg3> ..." ...
@@ -390,8 +411,8 @@ INCLUDE(TribitsAddTestHelpers)
 #   ARGS "<arg0> <arg1>"
 #
 # may be preferable since it will not add any postfix name to the test.  To
-# add more than one test case using ``ARGS``, you use more than one quoted set
-# of arugments such as with::
+# add more than one test case using ``ARGS``, one will use more than one
+# quoted set of arugments such as with::
 #
 #   ARGS "<arg0> <arg1>" "<arg2> <arg2>"
 #
@@ -412,16 +433,16 @@ INCLUDE(TribitsAddTestHelpers)
 # arugments ``<arg0>``, ``<arg1>``, ... do not need to be quoted and can
 # therefore be extended over multiple lines like::
 #
-#   POSTFOX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
+#   POSTFIX_AND_ARGS_0 long_args --this-is-the-first-long-arg=very
 #     --this-is-the-second-long-arg=verylong
 #
-# If you don't use quotes when using ``ARGS`` you actually get more than one
-# test.  For example, if you pass in::
+# If one does not use quotes when using ``ARGS`` one will actually get more
+# than one test.  For example, if one passes in::
 #
 #   ARGS --this-is-the-first-long-arg=very
 #     --this-is-the-second-long-arg=verylong
 #
-# you actually get two tests, not one test.  This is a common mistake that
+# one actually gets two tests, not one test.  This is a common mistake that
 # people make when using the ``ARGS`` form of passing arguments.  This can't
 # be fixed or it will break backward compatibility.  If this could be designed
 # fresh, the ``ARGS`` argument would only create a single test and the
@@ -431,13 +452,14 @@ INCLUDE(TribitsAddTestHelpers)
 #
 # **Determining Pass/Fail (TRIBITS_ADD_TEST())**
 #
-# The only means to determine pass/fail is to use the built-in test properties
-# ``PASS_REGULAR_EXPRESSION`` and ``FAIL_REGULAR_EXPRESSION`` which can only
-# grep STDOUT/STDERR or to check for a 0 return value (or invert these using
-# ``WILL_FAIL``).  For simple tests, that is enough.  However, for more
-# complex executables, one may need to examine the output files to determine
-# pass fail.  Raw CMake/CTest cant' do this.  In this case, one should use
-# `TRIBITS_ADD_ADVANCED_TEST()`_.
+# The only means to determine pass/fail is to use the built-in CTest
+# properties ``PASS_REGULAR_EXPRESSION`` and ``FAIL_REGULAR_EXPRESSION`` which
+# can only grep the test's STDOUT/STDERR or to check for a 0 return value (or
+# invert these using ``WILL_FAIL``).  For simple tests, that is enough.
+# However, for more complex executables, one may need to examine one or more
+# output files to determine pass/fail.  Raw CMake/CTest cannot do this.  In
+# this case, one should use `TRIBITS_ADD_ADVANCED_TEST()`_ instead to add the
+# test.
 #
 # .. _Setting additional test properties (TRIBITS_ADD_TEST()):
 #
@@ -446,12 +468,11 @@ INCLUDE(TribitsAddTestHelpers)
 # After this function returns, any tests that get added using ``ADD_TEST()``
 # can have additional properties set and changed using
 # ``SET_TEST_PROPERTIES()``.  Therefore, any tests properties that are not
-# directly supported by this function and passed through this wrapper function
-# can be set in the outer ``CMakeLists.txt`` file after the call to
-# ``TRIBITS_ADD_TEST()``.
+# directly supported and passed through this wrapper function can be set in
+# the outer ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_TEST()``.
 #
-# ToDo: Describe how to use new variable ADDED_TESTS_OUT to get the list of
-# tests actually added (if they are added) in order to make it easy to set
+# ToDo: Describe how to use new variable ``ADDED_TESTS_OUT`` to get the list
+# of tests actually added (if they are added) in order to make it easy to set
 # additional test properties.
 #
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
@@ -466,21 +487,26 @@ INCLUDE(TribitsAddTestHelpers)
 # Also, CMake writes a file ``CTestTestfile.cmake`` in the current binary
 # directory which contains all of the added tests and test properties that are
 # set.  This is the file that is read by ``ctest`` when it runs to determine
-# what tests to run.  In that file, one can see the exact ``ADD_TEST()`` and
+# what tests to run, determine pass/fail and adjust other behvaior using test
+# properties.  In this file, one can see the exact ``ADD_TEST()`` and
 # ``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
-# exactly what tests are getting added by this function.
+# exactly what tests are getting added by this function (or if the test is
+# even being added at all).
 #
 # .. _Disabling Tests Externally (TRIBITS_ADD_TEST()):
 #
 # **Disabling Tests Externally (TRIBITS_ADD_TEST())**
 #
 # The test can be disabled externally by setting the CMake cache variable
-# ``${FULL_TEST_NAME}_DISABLE=TRUE``.  This allows tests to be disable on a
-# case-by-case basis.  This is the *exact* name that shows up in 'ctest -N'
-# when running the test.  If multiple tests are added in this funtion through
+# ``<fullTestName>_DISABLE=TRUE``.  This allows tests to be disabled on a
+# case-by-case basis by the user (for whatever reason).  Here,
+# ``<fullTestName>`` must be the *exact* name that shows up in 'ctest -N' when
+# running the test.  If multiple tests are added in this function through
 # multiple argument sets to ``ARGS`` or through multiple
-# ``POSTFIX_AND_ARGS_<IDX>`` arguments, then
-# ``${FULL_TEST_NAME}_DISABLE=TRUE`` must be set for each test individually.
+# ``POSTFIX_AND_ARGS_<IDX>`` arguments, then ``<fullTestName>_DISABLE=TRUE``
+# must be set for each test individually.  When a test is disabled in this
+# way, TriBITS will always print a warning to the ``cmake`` stdout at
+# configure time warning that the test is being disabled.
 #
 FUNCTION(TRIBITS_ADD_TEST EXE_NAME)
 

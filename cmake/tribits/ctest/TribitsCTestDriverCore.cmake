@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -52,7 +52,7 @@ MESSAGE("")
 CMAKE_MINIMUM_REQUIRED(VERSION 2.7.0 FATAL_ERROR)
 
 #
-# Get the basic varaibles that define the project and the build
+# Get the basic variables that define the project and the build
 #
 
 #
@@ -712,27 +712,29 @@ ENDMACRO()
 #
 #   TRIBITS_CTEST_DRIVER()
 #
-# This is the driver code that is platform independent.  This script drives
-# the testing process by doing an update and then configuring and building the
-# top-level TriBITS packages one at a time.  This function gets called from
-# inside of a platform and build-specific ``ctest -S`` driver  script.
+# This driver code that is platform independent.  This script drives the
+# testing process by doing a version control (VC) source update on all of the
+# VC repos and then configuring and building the top-level TriBITS packages
+# one at a time, in order.  This function gets called from inside of a
+# platform and build-specific ``ctest -S`` driver script.
 #
 # To understand this script, one must understand that it gets run in several
 # different modes:
 #
 # **Mode 1**: Run where there are already existing source and binary
-# directories (i.e. ``CTEST_DASHBOARD_ROOT`` is set empty before call).  This
-# is for when the ctest driver script is run on an existing source and binary
+# directories (``CTEST_DASHBOARD_ROOT`` is set empty before call).  This is
+# for when the ctest driver script is run on an existing source and binary
 # tree.  In this case, there is one project source tree and
 # ``CTEST_SOURCE_DIRECTORY`` and ``CTEST_BINARY_DIRECTORY`` must be set by the
-# user before calling this function.
+# user before calling this function.  This is used to test a local build and
+# post to CDash.
 #
 # **Mode 2**: A new binary directory is created and new sources are cloned (or
-# updated) in a driver directory (``CTEST_DASHBOARD_ROOT`` is set is *not*
-# empty before call).  In this case, there are always two (partial) project
-# source tree's, i) a "driver" skeleton source tree (typically embedded with
-# TriBITS directory) that bootstraps the testing process, and ii) a true full
-# "source" that is (optionally) cloned and/or updated.
+# updated) in a driver directory (``CTEST_DASHBOARD_ROOT`` is set before
+# call).  In this case, there are always two (partial) project source tree's,
+# i) a "driver" skeleton source tree (typically embedded with TriBITS
+# directory) that bootstraps the testing process, and ii) a true full "source"
+# that is (optionally) cloned and/or updated.
 #
 # There are a few different directory locations are significant for this
 # script:
@@ -740,15 +742,15 @@ ENDMACRO()
 #   ``TRIBITS_PROJECT_ROOT``
 #
 #     The root directory to an existing source tree where the project's
-#      ProjectName.cmake (defining PROJECT_NAME variable) and Version.cmake
-#      file's can be found.
+#     `<projectDir>/ProjectName.cmake`_ (defining ``PROJECT_NAME`` variable)
+#     and ``Version.cmake`` file's can be found.
 #
 #   ``${PROJECT_NAME}_TRIBITS_DIR``
 #
 #     The base directory for the TriBITS system's various CMake modules,
 #     python scripts, and other files.  By default this is assumed to be in
-#     the source tree under ${TRIBITS_PROJECT_ROOT} (see below) but it can be
-#     overridden to point to any location.
+#     the source tree under ``${TRIBITS_PROJECT_ROOT}`` (see below) but it can
+#     be overridden to point to any location.
 #
 #   ``CTEST_DASHBOARD_ROOT``
 #
@@ -759,20 +761,20 @@ ENDMACRO()
 #   ``CTEST_SOURCE_DIRECTORY``
 #
 #     Determines the location of the sources that are used to define packages,
-#     dependencies and configure and build the software.  This is a varaible
+#     dependencies and configure and build the software.  This is a variable
 #     that CTest directly reads and must therefore be set. This is used to set
-#     PROJECT_SOURCE_DIR which is used by the TriBITS system.  If
-#     CTEST_DASHBOARD_ROOT is set, then this is hard-coded to
-#     ${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}.
+#     `PROJECT_SOURCE_DIR`_ which is used by the TriBITS system.  If
+#     ``CTEST_DASHBOARD_ROOT`` is set, then this is hard-coded internally to
+#     ``${CTEST_DASHBOARD_ROOT}/${CTEST_SOURCE_NAME}``.
 #
 #   ``CTEST_BINARY_DIRECTORY``
 #
 #     Determines the location of the binary tree where output from CMake/CTest
-#     is put.  This is used to set to PROJECT_BINARY_DIR which is used by the
-#     TriBITS system.  If CTEST_DASHBOARD_ROOT is set, then this is hard-coded
-#     to ${CTEST_DASHBOARD_ROOT}/BUILD.
+#     is put.  This is used to set to `PROJECT_BINARY_DIR`_ which is used by
+#     the TriBITS system.  If ``CTEST_DASHBOARD_ROOT`` is set, then this is
+#     hard-coded internally to ``${CTEST_DASHBOARD_ROOT}/BUILD``.
 #
-# ToDo: Document input variables that have defaults, be be set before, and can
+# ToDo: Document input variables that have defaults, to be set before, and can
 # be overridden from the env.
 #
 # ToDo: Finish Documentation!

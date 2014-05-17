@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -96,25 +96,28 @@ ENDFUNCTION()
 #     ${CMAKE_CURRENT_BINARY_DIR}/<packageConfigFile>
 #     )
 #
-# which does basic sustitution of CMake variables (see documentation for
-# built-in ``CONFIGURE_FILE()`` command for rules on how it performs
+# which does basic substitution of CMake variables (see documentation for
+# built-in CMake ``CONFIGURE_FILE()`` command for rules on how it performs
 # substitutions).
 #
 # In addition to just calling ``CONFIGURE_FILE()``, this function also aids in
-# creating configured header files adding macros for deprecating code.
+# creating configured header files adding macros for deprecating code as
+# described below.
 #
 # **Deprecated Code Macros**
 #
 # If ``${PARENT_PACKAGE_NAME}_SHOW_DEPRECATED_WARNINGS`` is ``TRUE`` (see
 # `TRIBITS_ADD_SHOW_DEPRECATED_WARNINGS_OPTION()`_), then the local CMake
-# varible ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS`` adds a define
-# ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where ``<PARENT_PACKAGE_NAME_UC>``
-# is the package name in all upper-case letters) add the compiler-specific
-# deprecated warning for an entity.  To use this, just add the line::
+# variable ``${PARENT_PACKAGE_NAME_UC}_DEPRECATED_DECLARATIONS`` is set which
+# adds a define ``<PARENT_PACKAGE_NAME_UC>_DEPRECATED`` (where
+# ``<PARENT_PACKAGE_NAME_UC>`` is the package name in all upper-case letters)
+# which adds a compiler-specific deprecated warning for an entity.  To take
+# advantage of this, just add the line::
 #
 #   @<PARENT_PACKAGE_NAME_UC>_DEPRECATED_DECLARATIONS@
 #
-# to the <packageConfigFile>.in file and it will be expended.
+# to the ``<packageConfigFile>.in`` file and it will be expanded at configure
+# time.
 #
 # Then C/C++ code can use this macro to deprecate functions, variables,
 # classes, etc., for example, using::
@@ -268,7 +271,10 @@ ENDFUNCTION()
 #     ``${PACKAGE_NAME}_LIBRARIES`` variable so that downstream SE packages
 #     will also pick up these libraries and these libraries will show up in
 #     the generated ``Makefile.export.${PACKAGE_NAME}`` and
-#     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).
+#     ``${PACKAGE_NAME}Config.cmake`` files (if they are generated).  However,
+#     not that external libraries are often better handled as `TriBITS TPLs`_.
+#     A well constructed TriBITS package and library should never have to use
+#     this option.
 #
 #   ``TESTONLY``
 #

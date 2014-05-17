@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -46,7 +46,7 @@
 #   SET_CACHE_ON_OFF_EMPTY(<varName> <initialVal> "<docString>" [FORCE])
 #
 # Sets a special string cache variable with possible values "", "ON", or
-# "OFF".  This results in a nice dropdown box in the CMake cache manipulation
+# "OFF".  This results in a nice drop-down box in the CMake cache manipulation
 # GUIs.
 # 
 FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
@@ -58,7 +58,6 @@ FUNCTION(SET_CACHE_ON_OFF_EMPTY VAR INITIAL_VALUE DOCSTR)
       MESSAGE(FATAL_ERROR "SET_CACHE_ON_OFF_EMPTY(...): Error, last arg '${ARG}' is"
         "invalid!  Must be 'FORCE' or nothing." )
     ENDIF()
-
   ENDFOREACH()
   SET( ${VAR} "${INITIAL_VALUE}" CACHE STRING "${DOCSTR}" ${FORCE_ARG})
   IF("${CMAKE_VERSION}" VERSION_GREATER 2.7.20090312)

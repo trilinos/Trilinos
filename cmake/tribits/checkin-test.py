@@ -3,7 +3,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -71,17 +71,17 @@ from GeneralScriptSupport import *
 
 usageHelp = r"""checkin-test.py [OPTIONS]
 
-This tool does checkin testing with CMake/CTest and can actually do
-the push itself using eg/git in a safe way.  In fact, it is
-recommended that you use this script to push since it will amend the
-last commit message with a (minimal) summary of the builds and tests
-run with results.
+This tool does testing of a TriBITS-based project using CTest and this script
+can actually do the push itself using eg/git in a safe way.  In fact, it is
+recommended that one uses this script to push since it will amend the last
+commit message with a (minimal) summary of the builds and tests run with
+results and/or send out a summary email about the builds/tests performed.
 
 
 Quickstart:
 -----------
 
-In order to do a solid checkin, perform the following recommended workflow
+In order to do a safe push, perform the following recommended workflow
 (different variations on this workflow are described below):
 
 1) Commit changes in the local repo:
@@ -578,7 +578,7 @@ the following input arguments specifying extra builds
 
   --st-extra-builds=MPI_DEBUG_ST --extra-builds=INTEL_DEBUG
 
-with the packages Techos, Phalanx, and Meros where Teuchos is PT, Phalanx is
+with the packages Teuchos, Phalanx, and Meros where Teuchos is PT, Phalanx is
 ST, and Meros is EX.
 
 Here is what packages would be enabled in each of the builds:
@@ -863,7 +863,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
 
   clp.add_option(
     "--ss-extra-builds", dest="ssExtraBuilds", type="string", default="",
-    help="DEPRICATED!  Use --st-extra-builds instead!." )
+    help="DEPRECATED!  Use --st-extra-builds instead!." )
 
   clp.add_option(
     "--extra-builds", dest="extraBuilds", type="string", default="",
@@ -947,7 +947,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
     +" should only be used in cases where the rebase mode will not work or " \
     +" when it is desired to use a merge commit to integrate changes on a" \
     +" branch that you wish be able to easily back out.  For sophisticated" \
-    +" users of git, this may in fact be the prefered mode.",
+    +" users of git, this may in fact be the preferred mode.",
     default=True )
 
   clp.add_option(

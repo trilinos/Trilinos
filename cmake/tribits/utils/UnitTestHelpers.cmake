@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -91,11 +91,11 @@ ENDFUNCTION()
 #
 #   UNITTEST_STRING_REGEX(
 #     <inputString>
-#     REGEX_STRINGS <str0> <str1> ...
+#     REGEX_STRINGS "<str0>" "<str1>" ...
 #     )
 #
-# If the ``<inputString>`` matches all of the of the regexs ``<str0>``,
-# ''<str1>``, ..., then the test passes.  Otherwise it fails.
+# If the ``<inputString>`` matches all of the of the regexs ``"<str0>"``,
+# ``"<str1>"``, ..., then the test passes.  Otherwise it fails.
 #
 # This updates the global variables ``UNITTEST_OVERALL_NUMRUN``,
 # ``UNITTEST_OVERALL_NUMPASSED``, and ``UNITTEST_OVERALL_PASS`` which are used
@@ -143,7 +143,7 @@ ENDFUNCTION()
 #
 #   UNITTEST_FILE_REGEX(
 #     <inputFileName>
-#     REGEX_STRINGS <str1> <str2> ...
+#     REGEX_STRINGS "<str1>" "<str2>" ...
 #     )
 # 
 # The contents of ``<inputFileName>`` are read into a string and then passed
@@ -159,7 +159,7 @@ ENDFUNCTION()
 #
 # @FUNCTION: UNITTEST_FINAL_RESULT()
 #
-# Print final statstics from all tests and assert final pass/fail
+# Print final statistics from all tests and assert final pass/fail
 #
 # Usage::
 #
@@ -171,16 +171,17 @@ ENDFUNCTION()
 #
 #  "Final UnitTests Result: PASSED"
 #
-# is printed.  Otherwise, the overall tets program is determined to have
+# is printed.  Otherwise, the overall test program is determined to have
 # failed, the string::
 #
 #  "Final UnitTests Result: FAILED"
 #
-# is printed and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
+# is printed, and ``MESSAGE(SEND_ERROR "FAIL")`` is called.
 #
 # The reason that we require passing in the expected number of passed tests is
-# an an extra precaution to make sure that important unit tests are not left
-# out.  CMake is a loosely typed language and it pays to be a little paranoid.
+# as an extra precaution to make sure that important unit tests are not left
+# out.  CMake is a very loosely typed language and it pays to be a little
+# paranoid.
 #
 FUNCTION(UNITTEST_FINAL_RESULT  EXPECTED_NUMPASSED)
    MESSAGE("\nFinal UnitTests Result: num_run = ${UNITTEST_OVERALL_NUMRUN}\n")

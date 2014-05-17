@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -44,24 +44,28 @@ INCLUDE(GlobalSet)
 # @FUNCTION: MESSAGE_WRAPPER()
 #
 # Function that wraps the standard CMake/CTest ``MESSAGE()`` function call in
-# order to allow unit testing to intercept the call.
+# order to allow unit testing to intercept the output.
 #
 # Usage::
 #
-#   MESSAGE_WRAPPER(<arg0> <arg1> ...)
+#   MESSAGE_WRAPPER(...)
 #
-# This function takes exactly the same argumnets as built-in ``MESSAGE()``.
-# When the varible ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is set to ``TRUE``, then
-# this function will not call ``MESSAGE(<arg0> <arg1> ...)`` but instead will
-# prepend set to global varible ``MESSAGE_WRAPPER_INPUT`` that input
-# argumnets.  To capture just this call's input, first call
-# ``GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT(MESSAGE_WRAPPER_INPUT)`` before
-# calling this function.
+# This function takes exactly the same arguments as built-in ``MESSAGE()``
+# function.  However, when the variable ``MESSAGE_WRAPPER_UNIT_TEST_MODE`` is
+# set to ``TRUE``, then this function will not call ``MESSAGE(...)`` but
+# instead will prepend set to the global variable ``MESSAGE_WRAPPER_INPUT``
+# the input argument that would have gon to ``MESSAGE()``.  To capture just
+# this call's input, first call::
+#
+#   GLOBAL_NULL_SET(MESSAGE_WRAPPER_INPUT)
+#
+# before calling this function (or the functions/macros that call this
+# function).
 #
 # This function allows one to unit test other user-defined CMake macros and
-# functions that call this to catch error conditions wihtout stopping the
-# CMake program.  Otherwise, this is used to capture print messages to verify
-# that they say the right thing.
+# functions that call this function to catch error conditions without stopping
+# the CMake program.  Otherwise, this is used to capture print messages to
+# verify that they say the right thing.
 #
 FUNCTION(MESSAGE_WRAPPER)
   #MESSAGE("MESSAGE_WRAPPER: ${ARGN}")

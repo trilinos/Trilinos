@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -45,11 +45,9 @@ INCLUDE(ParseVariableArguments)
 #
 # @FUNCTION: TRIBITS_COPY_FILES_TO_BINARY_DIR()
 #
-# Function that copies a list of files from a soruce directory to a
+# Function that copies a list of files from a source directory to a
 # destination directory at configure time, typically so that it can be used in
-# one or more tests.  This sets up all of the custom CMake commands and
-# targets to ensure that the files in the destiation directory are always up
-# to date just by building the ``ALL`` target.
+# one or more tests.
 #
 # Usage::
 #
@@ -64,6 +62,10 @@ INCLUDE(ParseVariableArguments)
 #     [NOEXEPREFIX]
 #     [CATEGORIES <category1>  <category2> ...]
 #     )
+#
+# This sets up all of the custom CMake commands and targets to ensure that the
+# files in the destination directory are always up to date just by building
+# the ``ALL`` target.
 #
 # This function has a few valid calling modes:
 #
@@ -96,9 +98,8 @@ INCLUDE(ParseVariableArguments)
 #     [CATEGORIES <category1>  <category2> ...]
 #     )
 #
-# In this case, the source files have the same basic name as the
-# destination files except they have the prefix 'srcPrefix' appended
-# to the name.
+# In this case, the source files have the same basic name as the destination
+# files except they have the prefix ``<srcPrefix>`` prepended to the name.
 #
 # **3) Source files and destination files have completely different names**::
 #
@@ -121,37 +122,38 @@ INCLUDE(ParseVariableArguments)
 #   ``SOURCE_FILES <file1> <file2> ...``
 #
 #     Listing of the source files relative to the source directory given by
-#     the argument ``SOURCE_DIR <sourceDir>``.  If omited, this list will be
+#     the argument ``SOURCE_DIR <sourceDir>``.  If omitted, this list will be
 #     the same as ``DEST_FILES`` with the argument ``SOURCE_PREFIX
 #     <srcPrefix>`` appended.
 #
 #   ``SOURCE_DIR <sourceDir>``
 #
-#     Optional argument that gives (absolute) the base directory for all of the
-#     source files.  If omited, this takes the default value of 
+#     Optional argument that gives the (absolute) base directory for all of
+#     the source files.  If omitted, this takes the default value of
 #     ``${CMAKE_CURRENT_SOURCE_DIR}``.
 #
 #   ``DEST_FILES <file1> <file2> ...``
 #
 #     Listing of the destination files relative to the destination directory
-#     given by the argument ``DEST_DIR <destDir>`` If omited, this list will
+#     given by the argument ``DEST_DIR <destDir>``. If omitted, this list will
 #     be the same as given by the ``SOURCE_FILES`` list.
 #
 #   ``DEST_DIR <destDir>``
 #
-#     Optional argument that gives the (absolute) base directory for all of the
-#     destination files.  If omited, this takes the default value of 
+#     Optional argument that gives the (absolute) base directory for all of
+#     the destination files.  If omitted, this takes the default value of
 #     ``${CMAKE_CURRENT_BINARY_DIR}``
 #
 #   ``TARGETDEPS <targDep1> <targDep2> ...``
 #
 #     Listing of general CMake targets that these files will be added as
-#     dependencies to.
+#     dependencies to.  This results in the copies to be performed when any of
+#     the targets ``<targDepi>`` are built.
 #
 #   ``EXEDEPS <exeDep1> <exeDep2> ...``
 #
 #     Listing of executable targets that these files will be added as
-#     dependencies to.  By default the prefix ``${PACKAGE_NAME}_`` will is
+#     dependencies to.  By default, the prefix ``${PACKAGE_NAME}_`` will is
 #     appended to the names of the targets.  This ensures that if the
 #     executable target is built that these files will also be copied as well.
 #

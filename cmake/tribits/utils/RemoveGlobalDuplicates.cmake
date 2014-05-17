@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -43,16 +43,20 @@ INCLUDE(GlobalSet)
 #
 # @FUNCTION: REMOVE_GLOBAL_DUPLICATES()
 #
-# Remove duplicate elements from a global list variable.
+# Remove duplicate elements from a global list variable (removes boiler-plate
+# code and errors).
 #
 # Usage::
 #
 #   REMOVE_GLOBAL_DUPLICATES(<globalVarName>)
 #
 # This function is necessary in order to preserve the "global" nature of the
-# variable.  If you just call LIST(REMOVE_DUPLICATES ...) it will actually
-# create a local variable of the same name and shadow the global variable!
-# That is a fun bug to track down!
+# variable.  If one just calls ``LIST(REMOVE_DUPLICATES ...)`` it will
+# actually create a local variable of the same name and shadow the global
+# variable!  That is a fun bug to track down!  The variable
+# ``<globalVarName>`` must be defined before this function is called.  If
+# ``<globalVarName>`` is actually not a global cache variable before this
+# function is called it will be after it completes.
 #
 FUNCTION(REMOVE_GLOBAL_DUPLICATES VARNAME)
   ASSERT_DEFINED(${VARNAME})
@@ -62,9 +66,3 @@ FUNCTION(REMOVE_GLOBAL_DUPLICATES VARNAME)
     GLOBAL_SET(${VARNAME} ${TMP})
   ENDIF()
 ENDFUNCTION()
-
-# 2008/11/21: rabartl: The above function is necessary in order to
-# preserve the "global" nature of the variable.  If you just call
-# LIST(REMOVE_DUPLICATES ...) it will actually create a local variable
-# of the same name and shadow the global variable.  It took me something
-# like two hours to track down that bug!

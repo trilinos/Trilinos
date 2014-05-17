@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -42,7 +42,7 @@
 #
 # Warning: Depends on calling 'date' program so will not be portable to all
 # platforms so call with care.
-
+#
 
 #
 # @FUNCTION: TIMER_GET_RAW_SECONDS()
@@ -60,10 +60,10 @@
 # example.
 #
 # NOTE: This function runs an external process to run the ``date`` command.
-# Therefsore, it only works on Unix/Linux type systems that have a standard
-# ``date`` command.  Since this runs an external process, this function should
-# only be used to time very course grained operations (i.e. that take longer
-# than a second).
+# Therefore, it only works on Unix/Linux and other systems that have a
+# standard ``date`` command.  Since this runs an external process, this
+# function should only be used to time very course-grained operations
+# (i.e. that take longer than a second).
 #
 FUNCTION(TIMER_GET_RAW_SECONDS   SECONDS_RAW_OUT)
   EXECUTE_PROCESS(COMMAND date "+%s" OUTPUT_STRIP_TRAILING_WHITESPACE
@@ -82,7 +82,7 @@ ENDFUNCTION()
 #   TIMER_GET_REL_SECONDS(<startSeconds> <endSeconds> <relSecondsOutVar>)
 #
 # This simple function computes the relative number of seconds between
-# ``<startSeconds>`` and ``<endSeconds>`` (i.e. from
+# ``<startSeconds>`` and ``<endSeconds>`` (returned from
 # `TIMER_GET_RAW_SECONDS()`_) and sets the result in the local variable
 # ``<relSecondsOutVar>``.
 #
@@ -100,7 +100,7 @@ ENDFUNCTION()
 # Print the relative time between start and stop timers in ``<min>m<sec>s``
 # format.
 #
-# Usage:
+# Usage::
 #
 #   TIMER_PRINT_REL_TIME(<startSeconds> <endSeconds> "<messageStr>")
 #
@@ -127,7 +127,7 @@ ENDFUNCTION()
 #   REAL_EXPENSIVE() time: 0m5s
 #
 # Again, don't try to time something that takes less than 1 second as it will
-# be recored as ``0m0s``.
+# be recorded as ``0m0s``.
 #   
 FUNCTION(TIMER_PRINT_REL_TIME  SECONDS_RAW_START   SECONDS_RAW_END
   MESSAGE_STR

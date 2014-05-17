@@ -1,7 +1,7 @@
 # @HEADER
 # ************************************************************************
 #
-#            TriBITS: Tribial Build, Integrate, and Test System
+#            TriBITS: Tribal Build, Integrate, and Test System
 #                    Copyright 2013 Sandia Corporation
 #
 # Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
@@ -1054,7 +1054,8 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_CI_EnableTeko
   ARGS -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Continuous
-    -DTrilinos_ENABLE_Teko=ON
+   -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
+   -DTrilinos_ENABLE_Teko=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* Teko 1"
     "Explicitly disabled packages on input .* Stokhos Stalix 2"
@@ -1069,6 +1070,7 @@ CREATE_DEPENDENCY_HANDLING_TEST_CASE(
 CREATE_DEPENDENCY_HANDLING_TEST_CASE(
   ENABLE_KNOWN_EXTERNAL_REPOS_TYPE_Nightly_EnableExtraPack
   ARGS  -DTrilinos_ENABLE_KNOWN_EXTERNAL_REPOS_TYPE:STRING=Nightly
+    -DTrilinos_IGNORE_MISSING_EXTRA_REPOSITORIES=ON
     -DTrilinos_ENABLE_ExtraPack=ON
   PASS_REGULAR_EXPRESSION_ALL
     "Explicitly enabled packages on input .* ExtraPack 1"
