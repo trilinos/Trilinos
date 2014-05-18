@@ -67,6 +67,9 @@ PHX_EVALUATOR_CLASS(DirichletResidual_EdgeBasis)
   PHX::MDField<ScalarT,Cell,BASIS> residual;
   PHX::MDField<ScalarT,Cell,Point,Dim> dof;
   PHX::MDField<ScalarT,Cell,Point,Dim> value;
+  PHX::MDField<ScalarT,Cell,BASIS> dof_orientation; // will scale residual
+                                                    // by orientation to ensure
+                                                    // parallel consistency
 
   Teuchos::RCP<const panzer::PureBasis> basis; 
   Teuchos::RCP<const panzer::PointRule> pointRule; 
