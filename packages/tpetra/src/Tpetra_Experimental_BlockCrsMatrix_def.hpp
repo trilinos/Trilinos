@@ -769,6 +769,238 @@ namespace Experimental {
     }
   }
 
+
+  template<class Scalar, class LO, class GO, class Node>
+  bool
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  checkSizes (const Tpetra::SrcDistObject& source)
+  {
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    const this_type* src = dynamic_cast<const this_type* > (&source);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src == NULL, std::invalid_argument, "Tpetra::Experimental::"
+      "BlockCrsMatrix::checkSizes: The source object of the Import or Export "
+      "must be a BlockCrsMatrix with the same template parameters as the "
+      "target object.");
+
+    return false; // not implemented
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  copyAndPermute (const Tpetra::SrcDistObject& source,
+                  size_t numSameIDs,
+                  const Teuchos::ArrayView<const LO>& permuteToLIDs,
+                  const Teuchos::ArrayView<const LO>& permuteFromLIDs)
+  {
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    const this_type* src = dynamic_cast<const this_type* > (&source);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src == NULL, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "copyAndPermute: The source object of the Import or Export is either "
+      "not a BlockCrsMatrix, or does not have the right template parameters.  "
+      "checkSizes() should have caught this.  "
+      "Please report this bug to the Tpetra developers.");
+
+    bool srcInvalidRow = false;
+    bool dstInvalidCol = false;
+    for (size_t localRow = 0; localRow < numSameIDs; ++localRow) {
+      const LO* localCols;
+      Scalar* vals;
+      LO numEntries;
+      LO err = src->getLocalRowView (localRow, localCols, vals, numEntries);
+      if (err != 0) {
+        // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
+        // be a local state, so we don't necessarily want to throw an
+        // exception yet.  It would be better to set a local error
+        // flag, and wait until the next collective to propagate it.
+        srcInvalidRow = true;
+      }
+      else {
+        err = this->replaceLocalValues (localRow, localCols, vals, numEntries);
+        if (err != numEntries) {
+          // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
+          // be a local state, so we don't necessarily want to throw an
+          // exception yet.  It would be better to set a local error
+          // flag, and wait until the next collective to propagate it.
+          dstInvalidCol = true;
+        }
+      }
+    }
+
+    const size_t numPermute =
+      std::min (permuteToLIDs.size (), permuteFromLIDs.size ());
+    for (size_t k = 0; k < numPermute; ++k) {
+      const LO* localCols;
+      Scalar* vals;
+      LO numEntries;
+      LO err = src->getLocalRowView (permuteFromLIDs[k], localCols, vals, numEntries);
+      if (err != 0) {
+        // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
+        // be a local state, so we don't necessarily want to throw an
+        // exception yet.  It would be better to set a local error
+        // flag, and wait until the next collective to propagate it.
+        srcInvalidRow = true;
+      }
+      else {
+        err = this->replaceLocalValues (permuteFromLIDs[k], localCols, vals, numEntries);
+        if (err != numEntries) {
+          // FIXME (mfh 16 May 2014) Not clear what to do now.  This
+          // may be a local state, so we don't necessarily want to
+          // throw an exception yet.  It would be better to set a
+          // local error flag, and wait until the next collective to
+          // propagate it.
+          dstInvalidCol = true;
+        }
+      }
+    }
+
+    // FIXME (mfh 16 May 2014) Not clear what to do now.  This may be
+    // a local state, so we don't necessarily want to throw an
+    // exception yet.  It would be better to set a local error flag,
+    // and wait until the next collective to propagate it.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      srcInvalidRow || dstInvalidCol, std::runtime_error,
+      "Tpetra::Experimental::BlockCrsMatrix::copyAndPermute: The graph "
+      "structure of the source of the Import or Export must be a subset of the "
+      "graph structure of the target.");
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  packAndPrepare (const Tpetra::SrcDistObject& source,
+                  const Teuchos::ArrayView<const LO>& exportLIDs,
+                  Teuchos::Array<packet_type>& exports,
+                  const Teuchos::ArrayView<size_t>& numPacketsPerLID,
+                  size_t& constantNumPackets,
+                  Tpetra::Distributor& /* distor */)
+  {
+    typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
+    const this_type* src = dynamic_cast<const this_type* > (&source);
+    // Should have checked for this case in checkSizes().
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      src == NULL, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+      "packAndPrepare: The source object of the Import or Export is either "
+      "not a BlockCrsMatrix, or does not have the right template parameters.  "
+      "checkSizes() should have caught this.  "
+      "Please report this bug to the Tpetra developers.");
+
+    const crs_graph_type& srcGraph = src->graph_;
+
+    // Compute the number of packets per row.  Each packet includes
+    // the _global_ column index and the block entry.  (We need the
+    // latter, because the two matrices may have different column
+    // Maps; this is allowed.)  While doing this, compute the total
+    // required send buffer ('exports') size, so we can resize it if
+    // needed.
+
+    // Count the number of entries in each row to pack.
+    //
+    // Graphs and matrices are allowed to have a variable number of
+    // entries per row.  We could test whether all rows have the same
+    // number of entries, but DistObject can only use this
+    // optimization if all rows on _all_ processes have the same
+    // number of entries.  Rather than do the all-reduce necessary to
+    // test for this unlikely case, we tell DistObject to assume that
+    // different rows may have different numbers of entries.
+    constantNumPackets = 0; // variable number of packets (entries) per row
+    size_t totalNumPackets = 0;
+    for (size_t k = 0; k < exportLIDs.size (); ++k) {
+      const LO localRow = exportLIDs[k];
+      const size_t numEnt = srcGraph.getNumEntriesInLocalRow (localRow);
+      numPacketsPerLID[localRow] = numEnt;
+      totalNumPackets += numEnt;
+    }
+    exports.resize (totalNumPackets); // resize the send buffer
+
+    const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
+
+    // Compute the size in bytes of each packet.
+    //
+    // Each packet contains a global (column) index, and the
+    // corresponding block's entries.  We don't pack any padding in
+    // the block.  Packed blocks are stored in row-major order,
+    // regardless of the matrix's storage format.  This lets us Import
+    // or Export between two matrices with different block storage
+    // formats or padding specifications, though it's unlikely we
+    // would ever want to exercise this case.
+    const size_t packetSize =
+      sizeof (GO) + blockSize * blockSize * sizeof (Scalar);
+
+    // Pack each block entry to send into the 'exports' buffer.
+    // First pack the column index, then the block's entries.
+    size_t exportsOffset = 0;
+    // If any given LIDs are invalid, we pack obviously invalid data
+    // (e.g., invalid column indices) into the buffer for that LID.
+    //
+    // TODO (mfh 17 May 2014) It would also be wise to set a local
+    // error flag, in case some processes don't get the invalid column
+    // indices.  That way, we could propagate the error state on the
+    // next all-reduce.
+    for (size_t k = 0; k < exportLIDs.size (); ++k, exportsOffset += packetSize) {
+      //
+      // Get a view of row exportLIDs[k].
+      //
+      const LO localRow = exportLIDs[k];
+      const LO* localColInds;
+      Scalar* vals;
+      LO numEntries;
+      const int err = src->getLocalRowView (localRow, localColInds, vals, numEntries);
+      //
+      // Pack the entries in the row.
+      //
+      packet_type* exportsStart = &exports[exportsOffset];
+      // Don't access ptr_[localRow] if localRow is an invalid LID.
+      const size_t rowStart = (err == 0) ? src->ptr_[localRow] : static_cast<size_t> (0);
+      for (LO j = 0; j < numEntries; ++j) {
+        const GO gblCol = (err == 0) ?
+          Teuchos::OrdinalTraits<GO>::invalid () :
+          rowMeshMap_.getGlobalElement (localColInds[j]);
+        // memcpy is the only safe function to use, given ANSI aliasing rules.
+        memcpy (exportsStart, &gblCol, sizeof (GO));
+        // FIXME (mfh 17 May 2014) Does this break ANSI aliasing rules?
+        // FIXME (mfh 17 May 2014) Do Scalar values need to be aligned?
+        Scalar* tgtPtr = reinterpret_cast<Scalar*> (exportsStart + sizeof (GO));
+
+        // Pack row major, regardless of the state of the source or
+        // target matrix, for consistency.
+        little_block_type tgtBlk (tgtPtr, blockSize, blockSize, 1);
+        if (err == 0) {
+          const_little_block_type srcBlk =
+            src->getConstLocalBlockFromAbsOffset (rowStart + j);
+          tgtBlk.assign (srcBlk);
+        }
+        else {
+          // NOTE (mfh 17 May 2014) It might be a good idea to use
+          // NaNs here instead, if Scalar supports them, to indicate
+          // invalid data.  However, we've already set an invalid
+          // column index above.
+          tgtBlk.fill (STS::zero ());
+        }
+      }
+    }
+  }
+
+  template<class Scalar, class LO, class GO, class Node>
+  void
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
+                    const Teuchos::ArrayView<const packet_type> &imports,
+                    const Teuchos::ArrayView<size_t> &numPacketsPerLID,
+                    size_t constantNumPackets,
+                    Tpetra::Distributor& distor,
+                    Tpetra::CombineMode CM)
+  {
+    (void) importLIDs;
+    (void) imports;
+    (void) numPacketsPerLID;
+    (void) constantNumPackets;
+    (void) distor;
+    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+  }
+
 } // namespace Experimental
 } // namespace Tpetra
 

@@ -87,6 +87,7 @@ namespace Experimental {
 ///   // You may modify the values, but not the column indices.
 ///   const LO* localColInds;
 ///   Scalar* vals;
+///   LO numEntries;
 ///   err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
 ///   if (err != 0) {
 ///     break;
@@ -363,22 +364,13 @@ protected:
   /// operations.  Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& /* source */ ) {
-    return false; // not implemented
-  }
+  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
   virtual void
   copyAndPermute (const Tpetra::SrcDistObject& source,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs)
-  {
-    (void) source;
-    (void) numSameIDs;
-    (void) permuteToLIDs;
-    (void) permuteFromLIDs;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
 
   virtual void
   packAndPrepare (const Tpetra::SrcDistObject& source,
@@ -386,16 +378,7 @@ protected:
                   Teuchos::Array<packet_type>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t& constantNumPackets,
-                  Tpetra::Distributor& distor)
-  {
-    (void) source;
-    (void) exportLIDs;
-    (void) exports;
-    (void) numPacketsPerLID;
-    (void) constantNumPackets;
-    (void) distor;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                  Tpetra::Distributor& distor);
 
   virtual void
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
@@ -403,15 +386,7 @@ protected:
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                     size_t constantNumPackets,
                     Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM)
-  {
-    (void) importLIDs;
-    (void) imports;
-    (void) numPacketsPerLID;
-    (void) constantNumPackets;
-    (void) distor;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                    Tpetra::CombineMode CM);
   //@}
 
 private:
