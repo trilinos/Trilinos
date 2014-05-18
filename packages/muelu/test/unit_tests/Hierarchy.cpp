@@ -262,7 +262,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  Acfact->SetImplicitTranspose(true);
+  ParameterList Aclist = *(Acfact->GetValidParameterList());
+  Aclist.set("implicit transpose", true);
+  Acfact->SetParameterList(Aclist);
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);

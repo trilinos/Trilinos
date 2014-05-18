@@ -112,10 +112,11 @@ namespace MueLu {
     //@{
 
     //!
-    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
-    static bool                  GetDefaultPRrebalance()                               { return true;   }
-    static int                   GetDefaultMaxLevels()                                 { return 10;     }
     static CycleType             GetDefaultCycle()                                     { return VCYCLE; }
+    static bool                  GetDefaultImplicitTranspose()                         { return false;  }
+    static Xpetra::global_size_t GetDefaultMaxCoarseSize()                             { return 2000;   }
+    static int                   GetDefaultMaxLevels()                                 { return 10;     }
+    static bool                  GetDefaultPRrebalance()                               { return true;   }
 
     Xpetra::global_size_t        GetMaxCoarseSize() const                              { return maxCoarseSize_; }
 
@@ -147,10 +148,10 @@ namespace MueLu {
     LO GetNumLevels() const;
     double GetOperatorComplexity() const;
 
-    //! Indicate that Iterate should use tranpose of prolongator for restriction operations.
+    //! Indicate that Iterate should use transpose of prolongator for restriction operations.
     void SetImplicitTranspose(const bool &implicit);
 
-    //! If true is returned, iterate will use tranpose of prolongator for restriction operations.
+    //! If true is returned, iterate will use transpose of prolongator for restriction operations.
     bool GetImplicitTranspose() const;
 
     //! Helper function
