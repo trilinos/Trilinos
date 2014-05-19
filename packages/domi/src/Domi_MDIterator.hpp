@@ -113,6 +113,9 @@ public:
   /** \brief Value type */
   typedef typename MDARRAY::value_type value_type;
 
+  /** \brief Pointer type */
+  typedef typename MDARRAY::pointer pointer;
+
   //@}
 
   /** \name Constructors and Destructor */
@@ -183,6 +186,9 @@ public:
 
   /** \brief Dereferencing operator */
   inline value_type & operator*();
+
+  /** \brief Dereferencing arrow operator */
+  inline pointer operator->() const;
 
   /** \brief Prefix increment operator */
   MDIterator< MDARRAY > & operator++();
@@ -363,6 +369,15 @@ MDIterator< MDARRAY >::operator*()
   for (_axis=0; _axis < _index.size(); ++_axis)
     offset += _index[_axis] * _strides[_axis];
   return _ptr[offset];
+}
+
+////////////////////////////////////////////////////////////////////////
+
+template< class MDARRAY >
+typename MDIterator< MDARRAY >::pointer
+MDIterator< MDARRAY >::operator->() const
+{
+  return &operator*();
 }
 
 ////////////////////////////////////////////////////////////////////////
