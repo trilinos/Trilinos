@@ -150,7 +150,6 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    const GO     indexBase = rowMap->getIndexBase();
     const size_t numRows   = rowMap->getNodeNumElements();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
@@ -377,8 +376,6 @@ namespace MueLu {
     typedef Teuchos::ScalarTraits<SC> STS;
     typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
-    const SC     one       = STS::one();
-    const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     // number of aggregates
     GO numAggs = aggregates->GetNumAggregates();
@@ -426,7 +423,6 @@ namespace MueLu {
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = A->getRowMap();
-    size_t numRowsForPtent = rowMapForPtent->getNodeNumElements();
     const Map& rowMapForPtentRef = *rowMapForPtent;
 
     // Set up storage for the rows of the local Qs that belong to other processors.
@@ -485,7 +481,6 @@ namespace MueLu {
 
     //Create column map for Ptent, estimate local #nonzeros in Ptent,  and create Ptent itself.
     const Map& coarseMapRef = *coarseMap;
-    size_t nzEstimate = numRowsForPtent*NSDim;
 
     // For the 3-arrays constructor
     ArrayRCP<size_t>  ptent_rowptr;
@@ -531,7 +526,7 @@ namespace MueLu {
           try{
             SC nsVal = fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ]; // extract information from fine level NS
             localQR(k,j) = nsVal;
-            if (nsVal != 0.0) bIsZeroNSColumn = false;
+            if (nsVal != zero) bIsZeroNSColumn = false;
           }
           catch(...) {
             std::cout << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
@@ -663,7 +658,6 @@ namespace MueLu {
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
         GO globalRow = aggToRowMap[aggStart[agg]+j];
-        LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
 
         //TODO is the use of Xpetra::global_size_t below correct?
         if (rowMapForPtentRef.isNodeGlobalElement(globalRow) == false ) {
@@ -698,7 +692,7 @@ namespace MueLu {
                       << "caught error during Ptent row insertion, global row "
                       << globalRow << std::endl;
           }
-        } //if (rowMapForPtent->getGlobalElement(localRow) == ...
+        }
       } //for (GO j=0; j<myAggSize; ++j)
 
     } // for (LO agg=0; agg<numAggs; ++agg)
