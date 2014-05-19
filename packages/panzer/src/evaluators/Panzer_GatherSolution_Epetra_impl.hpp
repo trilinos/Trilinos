@@ -345,7 +345,6 @@ GatherSolution_Epetra(
 
   if (p.isType<int>("Gather Seed Index")) {
      gatherSeedIndex_ = p.get<int>("Gather Seed Index");
-     TEUCHOS_ASSERT(gatherSeedIndex_>=0);
   }
 
   // print out convenience
