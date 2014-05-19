@@ -40,6 +40,8 @@
 */
 
 #include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
 
 #include <Kokkos_Threads.hpp>
 #include <HexElement.hpp>

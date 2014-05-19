@@ -19,6 +19,9 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     CUDA_INCLUDE_DIRECTORIES( ${KokkosContainers_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosLinAlg_INCLUDE_DIRS} )
     CUDA_INCLUDE_DIRECTORIES( ${KokkosCompat_INCLUDE_DIRS} )
+    IF (TrilinosCouplings_ENABLE_MueLu)
+      CUDA_INCLUDE_DIRECTORIES( ${MueLu_INCLUDE_DIRS} )
+    ENDIF()
 
     CUDA_COMPILE( OBJECTS_CUDA fenl.cpp.cu )
 
@@ -30,6 +33,10 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
     fenl
     SOURCES ${SOURCES}
     COMM serial mpi
+    )
+
+  TRIBITS_COPY_FILES_TO_BINARY_DIR(copyFenlFiles
+    DEST_FILES muelu.xml
     )
 
   IF( TrilinosCouplings_ENABLE_Stokhos AND

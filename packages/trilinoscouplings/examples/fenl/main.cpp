@@ -75,15 +75,15 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       Perf perf;
       if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] )
         perf = fenl< double , Device , BoxElemPart::ElemQuadratic >
-          ( comm , node ,
-            cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] , cmd[CMD_USE_ATOMIC] ,
+          ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
+            cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
             nelem , diffusion_coefficient , manufactured_solution ,
             manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
             true , response);
       else
         perf = fenl< double , Device , BoxElemPart::ElemLinear >
-          ( comm , node ,
-            cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] , cmd[CMD_USE_ATOMIC] ,
+          ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
+            cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
             nelem , diffusion_coefficient , manufactured_solution ,
             manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
             true , response);
@@ -102,15 +102,15 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     Perf perf;
     if ( cmd[ CMD_USE_FIXTURE_QUADRATIC ] )
       perf = fenl< double , Device , BoxElemPart::ElemQuadratic >
-        ( comm , node ,
-          cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] , cmd[CMD_USE_ATOMIC] ,
+        ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
+          cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
           nelem , diffusion_coefficient , manufactured_solution ,
           manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
           true , response);
     else
       perf = fenl< double , Device , BoxElemPart::ElemLinear >
-        ( comm , node ,
-          cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] , cmd[CMD_USE_ATOMIC] ,
+        ( comm , node , cmd[CMD_PRINT] , cmd[CMD_USE_TRIALS] ,
+          cmd[CMD_USE_ATOMIC] , cmd[CMD_USE_BELOS] , cmd[CMD_USE_MUELU] ,
           nelem , diffusion_coefficient , manufactured_solution ,
           manufactured_solution.T_zmin , manufactured_solution.T_zmax ,
           true , response);
@@ -120,7 +120,6 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
   }
-
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

@@ -81,7 +81,10 @@ Scalar all_reduce_max( Scalar local , const Teuchos::RCP<const Teuchos::Comm<int
 struct result_struct {
   double addtime,dottime,matvectime,norm_res,iter_time;
   int iteration;
-  result_struct(double add, double dot, double matvec,int niter,double res):
+  result_struct() :
+    addtime(0), dottime(0), matvectime(0), norm_res(0), iter_time(0),
+    iteration(0) {}
+  result_struct(double add, double dot, double matvec,int niter,double res) :
     addtime(add),dottime(dot),matvectime(matvec),
     norm_res(res),iter_time(add+dot+matvec),iteration(niter) {};
 };

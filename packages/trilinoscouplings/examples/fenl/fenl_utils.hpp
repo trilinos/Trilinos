@@ -31,6 +31,8 @@ enum { CMD_USE_THREADS = 0
        , CMD_USE_FIXTURE_QUADRATIC
        , CMD_USE_ATOMIC
        , CMD_USE_TRIALS
+       , CMD_USE_BELOS
+       , CMD_USE_MUELU
        , CMD_USE_UQ_ENSEMBLE
        , CMD_USE_UQ_DIM
        , CMD_USE_UQ_ORDER
@@ -85,6 +87,12 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_TRIALS ] ) {
     s << " TRIALS(" << cmd[ CMD_USE_TRIALS ] << ")" ;
   }
+  if ( cmd[ CMD_USE_BELOS ] ) {
+    s << " BELOS" ;
+  }
+  if ( cmd[ CMD_USE_MUELU ] ) {
+    s << " MUELU" ;
+  }
   if ( cmd[ CMD_PRINT ] ) {
     s << " PRINT" ;
   }
@@ -103,6 +111,8 @@ print_headers( std::ostream & s , const int cmd[] , const int comm_rank )
     else { s << " , LINEAR-ELEMENT" ; }
 
     if ( cmd[ CMD_USE_ATOMIC ] ) { s << " , USING ATOMICS" ; }
+    if ( cmd[ CMD_USE_BELOS ] ) { s << " , USING BELOS" ; }
+    if ( cmd[ CMD_USE_MUELU ] ) { s << " , USING MUELU" ; }
     if ( cmd[ CMD_USE_UQ_ENSEMBLE ] ) { s << " , USING UQ ENSEMBLE" ; }
     if ( cmd[ CMD_USE_UQ_DIM ] ) { s << " , UQ DIM , " << cmd[ CMD_USE_UQ_DIM ]; }
     if ( cmd[ CMD_USE_UQ_ORDER ] ) { s << " , UQ ORDER , " << cmd[ CMD_USE_UQ_ORDER ]; }
@@ -231,6 +241,12 @@ void parse_cmdline( int argc , char ** argv, int cmdline[],
       }
       else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
         cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "belos" ) ) {
+        cmdline[ CMD_USE_BELOS ] = 1 ;
+      }
+      else if ( 0 == strcasecmp( argv[i] , "muelu" ) ) {
+        cmdline[ CMD_USE_MUELU ] = 1 ;
       }
       else if ( 0 == strcasecmp( argv[i] , "print" ) ) {
         cmdline[ CMD_PRINT ] = 1 ;

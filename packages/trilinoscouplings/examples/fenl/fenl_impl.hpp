@@ -60,6 +60,7 @@
 
 #include <BoxElemFixture.hpp>
 #include <CGSolve.hpp>
+#include <BelosSolve.hpp>
 
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
@@ -125,6 +126,8 @@ Perf fenl(
   const int use_print ,
   const int use_trials ,
   const int use_atomic ,
+  const int use_belos ,
+  const int use_muelu ,
   const int use_nodes[] ,
   const CoeffFunctionType& coeff_function ,
   const ManufacturedSolutionType& manufactured_solution ,
@@ -448,11 +451,22 @@ Perf fenl(
       //--------------------------------
       // Solve for nonlinear update
 
-      result_struct cgsolve = cg_solve(rcpFromRef(g_jacobian),
-                                       rcpFromRef(g_nodal_residual),
-                                       rcpFromRef(g_nodal_delta),
-                                       cg_iteration_limit ,
-                                       cg_iteration_tolerance);
+      result_struct cgsolve;
+      if (use_belos) {
+        cgsolve = belos_solve(rcpFromRef(g_jacobian),
+                              rcpFromRef(g_nodal_residual),
+                              rcpFromRef(g_nodal_delta),
+                              use_muelu,
+                              cg_iteration_limit ,
+                              cg_iteration_tolerance);
+      }
+      else {
+        cgsolve = cg_solve(rcpFromRef(g_jacobian),
+                           rcpFromRef(g_nodal_residual),
+                           rcpFromRef(g_nodal_delta),
+                           cg_iteration_limit,
+                           cg_iteration_tolerance);
+      }
 
       // Update solution vector
 
@@ -562,6 +576,8 @@ Perf fenl(
     const int use_print ,                                            \
     const int use_trials ,                                           \
     const int use_atomic ,                                           \
+    const int use_belos ,                                            \
+    const int use_muelu ,                                            \
     const int global_elems[] ,                                       \
     const COEFF& coeff_function ,                                    \
     const MS& manufactured_solution ,                                \

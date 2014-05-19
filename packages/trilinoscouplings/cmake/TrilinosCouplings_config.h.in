@@ -56,3 +56,6 @@
 
 /* Define if Stokhos is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_STOKHOS
+
+/* Define if Belos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_BELOS
