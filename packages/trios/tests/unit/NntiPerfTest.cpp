@@ -275,7 +275,7 @@ void client(void) {
         }
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -289,7 +289,7 @@ void client(void) {
         }
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -305,7 +305,7 @@ void client(void) {
         }
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -321,7 +321,7 @@ void client(void) {
         }
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -344,7 +344,7 @@ void client(void) {
     for (int i=0;i<MAX_GETS_PER_CLIENT;i++) {
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -360,7 +360,7 @@ void client(void) {
     for (int i=0;i<MAX_GETS_PER_CLIENT;i++) {
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -378,7 +378,7 @@ void client(void) {
     for (int i=0;i<MAX_GETS_PER_CLIENT;i++) {
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -396,7 +396,7 @@ void client(void) {
     for (int i=0;i<MAX_GETS_PER_CLIENT;i++) {
         rc=NNTI_wait(&get_dst_mr, NNTI_GET_DST, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -417,7 +417,7 @@ void client(void) {
         }
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -433,7 +433,7 @@ void client(void) {
         }
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -449,7 +449,7 @@ void client(void) {
         }
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -472,7 +472,7 @@ void client(void) {
     for (int i=0;i<MAX_PUTS_PER_CLIENT;i++) {
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -490,7 +490,7 @@ void client(void) {
     for (int i=0;i<MAX_PUTS_PER_CLIENT;i++) {
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
@@ -508,7 +508,7 @@ void client(void) {
     for (int i=0;i<MAX_PUTS_PER_CLIENT;i++) {
         rc=NNTI_wait(&put_src_mr, NNTI_PUT_SRC, 1000, &rdma_status);
         if (rc != NNTI_OK) {
-            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_EDROPPED: %d", rc);
+            log_error(nntiperf_debug_level, "NNTI_wait() did not return NNTI_OK: %d", rc);
             MPI_Abort(MPI_COMM_WORLD, rc);
         }
     }
