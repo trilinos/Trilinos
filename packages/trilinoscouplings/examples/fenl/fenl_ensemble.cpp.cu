@@ -39,34 +39,35 @@
 // ************************************************************************
 */
 
-#include <Kokkos_Threads.hpp>
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
+
+#include <Kokkos_Cuda.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
-
-#include <Teuchos_GlobalMPISession.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+static const int VectorSize = 16;
+typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Cuda> Storage;
+typedef Sacado::MP::Vector<Storage> Scalar;
+typedef ElementComputationKLCoefficient<Scalar,double,Cuda> KL_Vector;
+typedef ElementComputationKLCoefficient<double,double,Cuda> KL_Scalar;
 
-INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
-           ElementComputationConstantCoefficient , ManufacturedSolution )
-INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
-           ElementComputationConstantCoefficient , ManufacturedSolution )
+INST_FENL( Scalar , Cuda , BoxElemPart::ElemLinear ,
+           KL_Vector , TrivialManufacturedSolution )
+INST_FENL( Scalar , Cuda , BoxElemPart::ElemQuadratic ,
+           KL_Vector , TrivialManufacturedSolution )
+INST_KL( Scalar , double , Cuda )
 
-#endif
-
-#if defined (KOKKOS_HAVE_OPENMP)
-
-INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
-           ElementComputationConstantCoefficient , ManufacturedSolution )
-INST_FENL( double , OpenMP , BoxElemPart::ElemQuadratic ,
-           ElementComputationConstantCoefficient , ManufacturedSolution )
-
-#endif
-
+INST_FENL( double , Cuda , BoxElemPart::ElemLinear ,
+           KL_Scalar , TrivialManufacturedSolution )
+INST_FENL( double , Cuda , BoxElemPart::ElemQuadratic ,
+           KL_Scalar , TrivialManufacturedSolution )
+INST_KL( double , double , Cuda )
 
 } /* namespace FENL */
 } /* namespace Example */

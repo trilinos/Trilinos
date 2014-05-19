@@ -812,7 +812,7 @@ namespace Sacado {
       Vector& operator += (const volatile Expr<S>& xx) {
         //*this = *this + x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -866,7 +866,7 @@ namespace Sacado {
       /*volatile*/ Vector& operator += (const volatile Expr<S>& xx) volatile {
         //*this = *this + x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -920,7 +920,7 @@ namespace Sacado {
       Vector& operator -= (const volatile Expr<S>& xx) {
         //*this = *this - x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -974,7 +974,7 @@ namespace Sacado {
       /*volatile*/ Vector& operator -= (const volatile Expr<S>& xx) volatile {
         //*this = *this - x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -1028,7 +1028,7 @@ namespace Sacado {
       Vector& operator *= (const volatile Expr<S>& xx) {
         //*this = *this * x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -1082,7 +1082,7 @@ namespace Sacado {
       /*volatile*/ Vector& operator *= (const volatile Expr<S>& xx) volatile {
         //*this = *this * x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -1136,7 +1136,7 @@ namespace Sacado {
       Vector& operator /= (const volatile Expr<S>& xx) {
         //*this = *this / x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());
@@ -1190,7 +1190,7 @@ namespace Sacado {
       /*volatile*/ Vector& operator /= (const volatile Expr<S>& xx) volatile {
         //*this = *this / x;
         typedef typename Expr<S>::derived_type expr_type;
-        const expr_type& x = xx.derived();
+        const volatile expr_type& x = xx.derived();
 
         if (x.size() > s.size())
           this->reset(x.size());

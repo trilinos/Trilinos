@@ -435,11 +435,14 @@ namespace Tpetra {
                        Kokkos::Compat::deallocator (k_lclGraph_.entries), false);
 
     //FIXME: This doesn't work because of const/non const issues
-    /*k_rowPtrs_ = k_lclGraph_.row_map;
+    /*k_rowPtrs_ = k_lclGraph_.row_map;*/
 
-    rowPtrs_ = arcp (k_lclGraph_.row_map.ptr_on_device (), 0,
-                       k_lclGraph_.row_map.dimension_0 (),
-                       Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);*/
+    // FIXME:  ETP 05/19/2014:  Add const_cast to prevent getRowInfo() from
+    // throwing an exception.
+    rowPtrs_ =
+      arcp (const_cast<size_t*>(k_lclGraph_.row_map.ptr_on_device ()), 0,
+            k_lclGraph_.row_map.dimension_0 (),
+            Kokkos::Compat::deallocator (k_lclGraph_.row_map), false);
 
     haveLocalConstants_ = true;
     computeGlobalConstants();
