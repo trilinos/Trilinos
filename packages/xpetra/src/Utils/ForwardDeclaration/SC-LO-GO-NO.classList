@@ -5,3 +5,4 @@ TpetraVector
 Vector
 VectorFactory
 MapExtractor
+MapExtractorFactory
