@@ -135,19 +135,10 @@ template<class Scalar,
          class GO = LO,
          class Node = KokkosClassic::DefaultNode::DefaultNodeType>
 class BlockMultiVector :
-#if 0 && defined(TPETRA_USE_KOKKOS_DISTOBJECT)
-    public Tpetra::DistObjectKA<Scalar, LO, GO, Node>
-#else
     public Tpetra::DistObject<Scalar, LO, GO, Node>
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 {
 private:
-#if 0 && defined(TPETRA_USE_KOKKOS_DISTOBJECT)
-  typedef Tpetra::DistObjectKA<Scalar, LO, GO, Node> dist_object_type;
-#else
   typedef Tpetra::DistObject<Scalar, LO, GO, Node> dist_object_type;
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
-
   typedef Teuchos::ScalarTraits<Scalar> STS;
 
 protected:
@@ -166,12 +157,35 @@ public:
   //! The Kokkos Node type.
   typedef Node node_type;
 
+  //! The specialization of Tpetra::Map that this class uses.
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type,
                       node_type> map_type;
+  //! The specialization of Tpetra::MultiVector that this class uses.
   typedef Tpetra::MultiVector<scalar_type, local_ordinal_type,
                               global_ordinal_type, node_type> mv_type;
 
+  /// \brief "Block view" of all degrees of freedom at a mesh point,
+  ///   for a single column of the MultiVector.
+  ///
+  /// A "block view" lets you address all degrees of freedom at a mesh
+  /// point.  You don't have to use this class to access the degrees
+  /// of freedom.  If you do choose to use this class, it implements
+  /// operator()(LO i), so you can access and modify its entries.
+  ///
+  /// The preferred way to refer to the little_vec_type and
+  /// const_little_vec_type types, is to get them from the typedefs
+  /// below.  This is because different specializations of BlockVector
+  /// reserve the right to use different types to implement
+  /// little_vec_type or const_little_vec_type.  This gives us a
+  /// porting strategy to move from "classic" Tpetra to the Kokkos
+  /// refactor version.
   typedef LittleVector<Scalar, LO> little_vec_type;
+
+  /// \brief "Const block view" of all degrees of freedom at a mesh point,
+  ///   for a single column of the MultiVector.
+  ///
+  /// This is just like little_vec_type, except that you can't modify
+  /// its entries.
   typedef LittleVector<const Scalar, LO> const_little_vec_type;
 
   //@}
@@ -201,7 +215,7 @@ public:
   ///
   /// There are two ways to get the point Map corresponding to a given
   /// mesh Map and block size.  You may either call the class method
-  /// makePointMap(), or you may call this two-argument constructor,
+  /// makePointMap(), or you may call this three-argument constructor,
   /// and then call getPointMap().
   ///
   /// The point Map enables reinterpretation of a BlockMultiVector as
@@ -239,8 +253,8 @@ public:
 
   /// \brief Default constructor.
   ///
-  /// Creates an empty BlockMultiVector (with zero rows and columns,
-  /// and block size zero).
+  /// Creates an empty BlockMultiVector.  An empty BlockMultiVector
+  /// has zero rows, and block size zero.
   BlockMultiVector ();
 
   //@}
@@ -274,7 +288,8 @@ public:
     return static_cast<LO> (mv_.getNumVectors ());
   }
 
-  /// \brief Get a ::Tpetra::MultiVector that views this BlockMultiVector's data.
+  /// \brief Get a Tpetra::MultiVector that views this
+  ///   BlockMultiVector's data.
   ///
   /// This is how you can give a BlockMultiVector to Trilinos' solvers
   /// and preconditioners.
@@ -401,29 +416,6 @@ protected:
 
   virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
-#if 0 && defined(TPETRA_USE_KOKKOS_DISTOBJECT)
-  virtual void
-  copyAndPermute (const Tpetra::SrcDistObject& source,
-                  size_t numSameIDs,
-                  const Kokkos::View<const LO*, device_type> &permuteToLIDs,
-                  const Kokkos::View<const LO*, device_type> &permuteFromLIDs);
-
-  virtual void
-  packAndPrepare (const Tpetra::SrcDistObject& source,
-                  const Kokkos::View<const LO*, device_type>& exportLIDs,
-                  Kokkos::View<packet_type*, device_type>& exports,
-                  const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
-                  size_t& constantNumPackets,
-                  Tpetra::Distributor& distor);
-
-  virtual void
-  unpackAndCombine (const Kokkos::View<const LO*, device_type>& importLIDs,
-                    const Kokkos::View<const packet_type*, device_type>& imports,
-                    const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
-                    size_t constantNumPackets,
-                    Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM);
-#else
   virtual void
   copyAndPermute (const Tpetra::SrcDistObject& source,
                   size_t numSameIDs,
@@ -445,8 +437,30 @@ protected:
                     size_t constantNumPackets,
                     Tpetra::Distributor& distor,
                     Tpetra::CombineMode CM);
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
   //@}
+
+protected:
+  //! Raw pointer to the MultiVector's data.
+  Scalar* getRawPtr () const {
+    return mvData_;
+  }
+
+  //! Stride between consecutive local entries in the same column.
+  size_t getStrideX () const {
+    return static_cast<size_t> (1);
+  }
+
+  //! Stride between consecutive local entries in the same row.
+  size_t getStrideY () const {
+    return mv_.getStride ();
+  }
+
+  /// \brief True if and only if \c meshLocalIndex is a valid local
+  ///   index in the mesh Map.
+  bool isValidLocalMeshIndex (const LO meshLocalIndex) const {
+    return meshLocalIndex != Teuchos::OrdinalTraits<LO>::invalid () &&
+      meshMap_.isNodeLocalElement (meshLocalIndex);
+  }
 
 private:
   /// \brief Mesh Map given to constructor.
@@ -459,9 +473,11 @@ private:
   //! The point Map (describing the distribution of degrees of freedom).
   map_type pointMap_;
 
+protected:
   //! The Tpetra::MultiVector used to represent the data.
   mv_type mv_;
 
+private:
   /// \brief Raw pointer to the above Tpetra::MultiVector's data.
   ///
   /// Keeping this is a temporary measure that ensures that the
