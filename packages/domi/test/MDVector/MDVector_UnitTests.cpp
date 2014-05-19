@@ -205,11 +205,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, dimensionsConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -298,6 +303,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, initializationConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
@@ -386,11 +394,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, copyConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -455,11 +468,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListDimensionsConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -541,11 +559,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListCommPadConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -644,11 +667,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListBndryPadConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+    Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+      mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -747,11 +775,16 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, pListPaddingConstructor, Sca )
   }
   else
     TEST_THROW(mdVector.getEpetraVectorView(), Domi::TypeError);
+
+  Teuchos::RCP< Epetra_Vector > epetraVectorCopy =
+    mdVector.getEpetraVectorCopy();
 #endif
 
 #ifdef HAVE_TPETRA
   Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorView =
     mdVector.template getTpetraVectorView< int, int >();
+  Teuchos::RCP< Tpetra::Vector< Sca, int, int > > tpetraVectorCopy =
+    mdVector.template getTpetraVectorCopy< int, int >();
 #endif
 }
 
@@ -793,7 +826,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
   plist.set("trailing dimension", 5   );
 
   // Construct and test an MDVector with a trailing dimension
-    MDVector< Sca > mdv3(mdComm, plist);
+  MDVector< Sca > mdv3(mdComm, plist);
   TEST_EQUALITY(mdv3.numDims()            , numDims+1);
   TEST_EQUALITY(mdv3.getCommDim(numDims)  , 1        );
   TEST_EQUALITY(mdv3.getGlobalDim(numDims), 5        );
@@ -813,6 +846,12 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
     TEST_THROW(mdv2.getEpetraMultiVectorView(), Domi::TypeError);
     TEST_THROW(mdv2.getEpetraMultiVectorView(), Domi::TypeError);
   }
+
+  Teuchos::RCP< Epetra_Vector      > ev1c  = mdv1.getEpetraVectorCopy();
+  Teuchos::RCP< Epetra_MultiVector > emv2c = mdv2.getEpetraMultiVectorCopy();
+  Teuchos::RCP< Epetra_MultiVector > emv3c = mdv3.getEpetraMultiVectorCopy();
+  TEST_EQUALITY_CONST(emv2c->NumVectors(), 2);
+  TEST_EQUALITY_CONST(emv3c->NumVectors(), 5);
 #endif
 
 #ifdef HAVE_TPETRA
@@ -824,6 +863,15 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, augmentedConstruction, Sca )
     mdv3.template getTpetraMultiVectorView< int >();
   TEST_EQUALITY_CONST(tmv2->getNumVectors(), 2);
   TEST_EQUALITY_CONST(tmv3->getNumVectors(), 5);
+
+  Teuchos::RCP< Tpetra::Vector< Sca, int >      > tv1c  =
+    mdv1.template getTpetraVectorCopy< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv2c =
+    mdv2.template getTpetraMultiVectorCopy< int >();
+  Teuchos::RCP< Tpetra::MultiVector< Sca, int > > tmv3c =
+    mdv3.template getTpetraMultiVectorCopy< int >();
+  TEST_EQUALITY_CONST(tmv2c->getNumVectors(), 2);
+  TEST_EQUALITY_CONST(tmv3c->getNumVectors(), 5);
 #endif
 }
 
