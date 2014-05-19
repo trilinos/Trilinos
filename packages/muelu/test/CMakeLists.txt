@@ -4,6 +4,7 @@ ASSERT_DEFINED(
 
 TRIBITS_ADD_TEST_DIRECTORIES(blockedtransfer)
 TRIBITS_ADD_TEST_DIRECTORIES(longlong)
+TRIBITS_ADD_TEST_DIRECTORIES(maxwell)
 TRIBITS_ADD_TEST_DIRECTORIES(navierstokes)
 if (NOT MUELU_VALGRIND_TESTING)
   # JJH 4Feb2014:  This is failing the nightly MPI valgrind test.  It runs fine
