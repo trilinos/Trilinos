@@ -1727,6 +1727,8 @@ Teuchos::RCP< Epetra_Vector >
 MDVector< Scalar, Node >::
 getEpetraVectorCopy() const
 {
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+
   // Get the Epetra_Map that is equivalent to this MDVector's MDMap
   Teuchos::RCP< const Epetra_Map > epetraMap = _mdMap->getEpetraMap(true);
 
@@ -1737,8 +1739,7 @@ getEpetraVectorCopy() const
   // Copy the MDVector data buffer to the Epetra_Vector, even if the
   // MDVector is non-contiguous
   int ii = 0;
-  typename MDArrayView< Scalar >::iterator it;
-  for (it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     result->operator[](ii++) = (double) *it;
 
   // Return the result
@@ -1757,6 +1758,9 @@ Teuchos::RCP< Epetra_MultiVector >
 MDVector< Scalar, Node >::
 getEpetraMultiVectorCopy() const
 {
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+  typedef typename MDArrayView< const Scalar >::iterator citerator;
+
   // Determine the vector axis and related info
   int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
   int padding    = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
@@ -1783,10 +1787,9 @@ getEpetraMultiVectorCopy() const
   // Copy the MDVector data to the Epetra_MultiVector, even if the
   // MDVector is non-contiguous
   int ii = 0;
-  typename MDArrayView< Scalar >::iterator it;
   if (numVectors == 1)
   {
-    for (it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
+    for (citerator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
       result->operator[](0)[ii++] = (double) *it;
   }
   else
@@ -1795,7 +1798,7 @@ getEpetraMultiVectorCopy() const
     {
       ii = 0;
       MDArrayView< Scalar > subArray(_mdArrayView, vectorAxis, iv);
-      for (it = subArray.begin(); it != subArray.end(); ++it)
+      for (iterator it = subArray.begin(); it != subArray.end(); ++it)
         result->operator[](iv)[ii++] = (double) *it;
     }
   }
@@ -1915,6 +1918,8 @@ Teuchos::RCP< Tpetra::Vector< Scalar, LocalOrdinal, GlobalOrdinal, Node2 > >
 MDVector< Scalar, Node >::
 getTpetraVectorCopy() const
 {
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+
   // Get the Tpetra::Map that is equivalent to this MDVector's MDMap
   Teuchos::RCP< const Tpetra::Map< LocalOrdinal,
                                    GlobalOrdinal,
@@ -1933,10 +1938,9 @@ getTpetraVectorCopy() const
 
   // Copy the MDVector data to the Tpetra::Vector, even if the
   // MDVector is non-contiguous
-  Teuchos::ArrayView< Scalar > tpetraVectorArray = result->getDataNonConst();
+  Teuchos::ArrayRCP< Scalar > tpetraVectorArray = result->getDataNonConst();
   int ii = 0;
-  typename MDArrayView< Scalar >::iterator it;
-  for (it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     tpetraVectorArray[ii++] = *it;
 
   // Return the result
@@ -2101,6 +2105,9 @@ Teuchos::RCP< Tpetra::MultiVector< Scalar,
 MDVector< Scalar, Node >::
 getTpetraMultiVectorCopy() const
 {
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+  typedef typename MDArrayView< const Scalar >::iterator citerator;
+
   // Determine the vector axis and related info
   int vectorAxis = (getLayout() == C_ORDER) ? 0 : numDims()-1;
   int padding    = getLowerPadSize(vectorAxis) + getUpperPadSize(vectorAxis);
@@ -2136,11 +2143,10 @@ getTpetraMultiVectorCopy() const
   // Copy the MDVector to the Tpetra::MultiVector, even if the
   // MDVector is non-contiguous
   int ii = 0;
-  typename MDArrayView< Scalar >::iterator it;
   if (numVectors == 1)
   {
     Teuchos::ArrayRCP< Scalar > tpetraVectorArray = result->getDataNonConst(0);
-    for (it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
+    for (citerator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
       tpetraVectorArray[ii++] = (double) *it;
   }
   else
@@ -2151,7 +2157,7 @@ getTpetraMultiVectorCopy() const
       Teuchos::ArrayRCP< Scalar > tpetraVectorArray =
         result->getDataNonConst(iv);
       MDArrayView< Scalar > subArray(_mdArrayView, vectorAxis, iv);
-      for (it = subArray.begin(); it != subArray.end(); ++it)
+      for (iterator it = subArray.begin(); it != subArray.end(); ++it)
         tpetraVectorArray[ii++] = (double) *it;
     }
   }
@@ -2307,9 +2313,10 @@ MDVector< Scalar, Node >::
 norm1() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+
   mag local_norm1 = 0;
-  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
-       it != _mdArrayView.end(); ++it)
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     local_norm1 += std::abs(*it);
   mag global_norm1 = 0;
   Teuchos::reduceAll(*_teuchosComm,
@@ -2342,9 +2349,10 @@ MDVector< Scalar, Node >::
 normInf() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+
   mag local_normInf = 0;
-  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
-       it != _mdArrayView.end(); ++it)
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     local_normInf = std::max(local_normInf, std::abs(*it));
   mag global_normInf = 0;
   Teuchos::reduceAll(*_teuchosComm,
@@ -2364,6 +2372,7 @@ MDVector< Scalar, Node >::
 normWeighted(const MDVector< Scalar, Node > & weights) const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
 
   TEUCHOS_TEST_FOR_EXCEPTION(
     ! _mdMap->isCompatible(*(weights._mdMap)),
@@ -2372,9 +2381,9 @@ normWeighted(const MDVector< Scalar, Node > & weights) const
 
   MDArrayView< const Scalar > wView = weights.getData();
   mag local_wNorm = 0;
-  typename MDArrayView< const Scalar >::iterator w_it = wView.begin();
-  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
-       it != _mdArrayView.end(); ++it, ++w_it)
+  iterator w_it = wView.begin();
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end();
+       ++it, ++w_it)
     local_wNorm += *it * *it * *w_it;
   mag global_wNorm = 0;
   Teuchos::reduceAll(*_teuchosComm,
@@ -2399,9 +2408,10 @@ MDVector< Scalar, Node >::
 meanValue() const
 {
   typedef typename Teuchos::ScalarTraits< Scalar >::magnitudeType mag;
+  typedef typename MDArrayView< const Scalar >::iterator iterator;
+
   mag local_sum = 0;
-  for (typename MDArrayView< const Scalar >::iterator it = _mdArrayView.begin();
-       it != _mdArrayView.end(); ++it)
+  for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     local_sum += *it;
   mag global_sum = 0;
   Teuchos::reduceAll(*_teuchosComm,
@@ -2545,9 +2555,10 @@ MDVector< Scalar, Node >::
 putScalar(const Scalar & value,
           bool includePadding)
 {
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+
   MDArrayView< Scalar > newArray = getDataNonConst(includePadding);
-  for (typename MDArrayView< Scalar >::iterator it = newArray.begin();
-       it != newArray.end(); ++it)
+  for (iterator it = newArray.begin(); it != newArray.end(); ++it)
     *it = value;
 }
 
@@ -2560,6 +2571,7 @@ MDVector< Scalar, Node >::
 randomize()
 {
   typedef typename MDArrayView< Scalar >::iterator iterator;
+
   Teuchos::ScalarTraits< Scalar >::seedrandom(time(NULL));
   for (iterator it = _mdArrayView.begin(); it != _mdArrayView.end(); ++it)
     *it = Teuchos::ScalarTraits< Scalar >::random();
