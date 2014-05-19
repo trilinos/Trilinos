@@ -3,6 +3,7 @@
 
 #include <exodusMeshInterface.h>
 #include <gtest/gtest.h>
+#include <optionParsing/getOption.h>
 
 inline void createBoundingBoxForElement(const sierra::Mesh::LocalNodeId *connectivity, const int numNodesPerElement,
         const std::vector<double> &coordinates, std::vector<double>& boxCoordinates)
@@ -247,10 +248,10 @@ inline void writeExodusFileUsingBoxes(const std::vector<GtkBox>& boxes, const st
 
 inline void fillDomainBoxes(MPI_Comm comm, std::vector<GtkBox>& domainBoxes)
 {
-    std::string filename = getOption("-i", "input.exo");
+    std::string filename = unitTestUtils::getOption("-i", "input.exo");
     fillBoxesUsingSidesetsFromFile(comm, filename, domainBoxes);
 
-    std::string exodusFilename = getOption("-o", "boxes.exo");
+    std::string exodusFilename = unitTestUtils::getOption("-o", "boxes.exo");
     if ( exodusFilename != "skip" )
     {
         writeExodusFileUsingBoxes(domainBoxes, exodusFilename);

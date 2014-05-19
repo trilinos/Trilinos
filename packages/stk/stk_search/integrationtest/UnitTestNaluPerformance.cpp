@@ -1,6 +1,7 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestUtils.hpp>
 #include <unit_tests/MeshUtilsForBoundingVolumes.hpp>
+#include <optionParsing/getOption.h>
 
 namespace
 {
@@ -54,14 +55,14 @@ struct Options
      void setSphereFile()
      {
          std::string optionString = "-sphere";
-         mSphereFile = getOption(optionString, "NO_FILE_SPECIFIED");
+         mSphereFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mSphereFile);
      }
 
      void setVolumeFile()
      {
          std::string optionString = "-volume";
-         mVolumeFile = getOption(optionString, "NO_FILE_SPECIFIED");
+         mVolumeFile = unitTestUtils::getOption(optionString, "NO_FILE_SPECIFIED");
          checkForRequiredFile(optionString, mVolumeFile);
      }
 
@@ -69,7 +70,7 @@ struct Options
      {
          std::string optionString = "-method";
          mSearchMethod = BOOST_RTREE;
-         std::string searchString = getOption(optionString, "boost");
+         std::string searchString = unitTestUtils::getOption(optionString, "boost");
          if ( searchString == "octree")
          {
              mSearchMethod = OCTREE;
@@ -84,7 +85,7 @@ struct Options
      {
          std::string optionString = "-rangeBoxComm";
          mCommunicateRangeBoxes = true;
-         if ( getOption(optionString, "yes") == "no" )
+         if ( unitTestUtils::getOption(optionString, "yes") == "no" )
          {
              mCommunicateRangeBoxes = false;
          }
@@ -94,7 +95,7 @@ struct Options
      {
          std::string optionString = "-sb";
          mSpheresFirstThenBoxes = false;
-         if ( getOption(optionString, "no" ) == "yes" )
+         if ( unitTestUtils::getOption(optionString, "no" ) == "yes" )
          {
              mSpheresFirstThenBoxes = true;
          }
@@ -104,7 +105,7 @@ struct Options
      {
          mTestToGetGoldResults = false;
          std::string optionString = "-getGold";
-         if ( getOption(optionString, "no") == "yes" )
+         if ( unitTestUtils::getOption(optionString, "no") == "yes" )
          {
              mTestToGetGoldResults = true;
          }

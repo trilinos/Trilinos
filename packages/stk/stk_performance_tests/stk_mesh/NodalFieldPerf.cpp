@@ -14,13 +14,13 @@
 #include <vector>
 #include <string>
 
+#include <optionParsing/getOption.h>
+
 #if defined(_OPENMP)
 #include <omp.h>
 #endif
 
 
-extern int gl_argc;
-extern char** gl_argv;
 
 namespace
 {
@@ -42,30 +42,9 @@ void createNodalVectorFields(stk::mesh::MetaData& meshMetaData)
     meshMetaData.commit();
 }
 
-std::string getOption(const std::string& option, const std::string defaultString = "no")
-{
-    std::string returnValue = defaultString;
-    if(gl_argv != 0)
-    {
-        for(int i = 0; i < gl_argc; i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if(option == input_argv)
-            {
-                if((i + 1) < gl_argc)
-                {
-                    returnValue = std::string(gl_argv[i + 1]);
-                }
-                break;
-            }
-        }
-    }
-    return returnValue;
-}
-
 void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh::FieldDataManager *fieldDataManager)
 {
-    std::string exodusFileName = getOption("-i", "NO_FILE_SPECIFIED");
+    std::string exodusFileName = unitTestUtils::getOption("-i", "NO_FILE_SPECIFIED");
     ASSERT_NE(exodusFileName, "NO_FILE_SPECIFIED");
 
     exodusFileReader.add_mesh_database(exodusFileName, stk::io::READ_MESH);
@@ -98,7 +77,7 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
 
 void timeFieldOperations(stk::mesh::MetaData &stkMeshMetaData, stk::mesh::BulkData &stkMeshBulkData, double alpha, double beta, double gamma)
 {
-    std::string numIterationsString = getOption("-numIter", "1");
+    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
     const int numIterations = std::atoi(numIterationsString.c_str());
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("disp");
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("vel");
@@ -178,7 +157,7 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     double beta = 0.3333333;
     double gamma = 3.14159;
 
-    std::string numIterationsString = getOption("-numIter", "1");
+    std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
     const int numIterations = std::atoi(numIterationsString.c_str());
 
     stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("disp");

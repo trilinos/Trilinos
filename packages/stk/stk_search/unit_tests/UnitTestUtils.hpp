@@ -17,6 +17,9 @@
 #include <stk_search/OctTreeOps.hpp>
 
 #include <stk_util/parallel/ParallelComm.hpp>
+
+#include <optionParsing/getOption.h>
+
 #include <gtest/gtest.h>
 
 typedef stk::search::IdentProc<int,int> Ident;
@@ -73,33 +76,9 @@ std::pair<VolumeType, Ident> generateBoundingVolume(double x, double y, double z
 
 //======================
 
-extern int gl_argc;
-extern char** gl_argv;
-
-inline std::string getOption(const std::string& option, const std::string defaultString="no")
-{
-    std::string returnValue = defaultString;
-    if ( gl_argv != 0 )
-    {
-        for (int i=0;i<gl_argc;i++)
-        {
-            std::string input_argv(gl_argv[i]);
-            if ( option == input_argv )
-            {
-                if ( (i+1) < gl_argc )
-                {
-                    returnValue = std::string(gl_argv[i+1]);
-                }
-                break;
-            }
-        }
-    }
-    return returnValue;
-}
-
 inline size_t getGoldValueForTest()
 {
-    std::string goldValue = getOption("-gold");
+    std::string goldValue = unitTestUtils::getOption("-gold");
     if ( goldValue == "skip" ) return 0u;
     std::istringstream ss(goldValue);
     size_t goldValueNumber=0;

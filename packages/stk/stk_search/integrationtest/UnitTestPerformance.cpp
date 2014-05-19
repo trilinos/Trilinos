@@ -9,6 +9,7 @@
 #include <exodusMeshInterface.h>
 
 #include <stk_util/unit_test_support/perf_unit_util.hpp>
+#include <optionParsing/getOption.h>
 
 namespace
 {
@@ -261,7 +262,7 @@ void testGtkSearch(MPI_Comm comm, std::vector<GtkBox>&domainBoxes, SearchResults
             localResults.insert(std::make_pair(box1, box2));
         }
     }
-    std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
     if ( rangeResultsCommunicated )
@@ -307,7 +308,7 @@ void testStkSearchUsingStkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
     StkBoxVector stkBoxes(domainBoxes.size());
     fillStkBoxesUsingGtkBoxes(domainBoxes, procId, stkBoxes);
 
-    std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
 #if __VALGRIND_MAJOR__
@@ -362,7 +363,7 @@ void testStkSearchUsingGtkAABoxes(MPI_Comm comm, std::vector<GtkBox> &domainBoxe
         searchBoxPairs[i] = std::make_pair(domainBoxes[i], domainBoxId);
     }
 
-    std::string rangeBoxComm = getOption("-rangeBoxComm", "yes");
+    std::string rangeBoxComm = unitTestUtils::getOption("-rangeBoxComm", "yes");
     bool rangeResultsCommunicated = ( rangeBoxComm == "yes" );
 
 #if __VALGRIND_MAJOR__
