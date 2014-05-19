@@ -574,9 +574,9 @@ namespace Belos {
             std::vector<mag_type> &normvec,
             NormType type=TwoNorm)
     {
-      typedef std::vector<int>::size_type size_type;
 
 #ifdef HAVE_TPETRA_DEBUG
+      typedef std::vector<int>::size_type size_type;
       TEUCHOS_TEST_FOR_EXCEPTION(
         normvec.size () < static_cast<size_type> (mv.getNumVectors ()),
         std::invalid_argument,
