@@ -18,19 +18,21 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
     stk::diag::TimerSet enabledTimerSet(0);
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
 
-    stk::diag::TimeBlock totalTestRuntime(rootTimer);
-    doWork();
+    {
+        stk::diag::TimeBlock totalTestRuntime(rootTimer);
+        doWork();
 
-    std::ostringstream outputStream;
-    bool printTimingsOnlySinceLastPrint = false;
-    stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
+        std::ostringstream outputStream;
+        bool printTimingsOnlySinceLastPrint = false;
+        stk::diag::printTimersTable(outputStream, rootTimer, stk::diag::METRICS_ALL, printTimingsOnlySinceLastPrint);
 
-    std::string expectedOutput = "                                                         \
+        std::string expectedOutput = "                                                     \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
 totalTestRuntime                           1        0.001 SKIP             0.100 SKIP      \
-";
-    EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
+    ";
+        EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
+    }
 
     stk::diag::deleteRootTimer(rootTimer);
 }
@@ -40,7 +42,7 @@ TEST(StkDiagTimerHowTo, useChildTimers)
     enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
     stk::diag::TimerSet enabledTimerSet(CHILDMASK1 | CHILDMASK2);
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
-    stk::diag::TimeBlock totalTestRuntime(rootTimer);
+    rootTimer.start();
 
     stk::diag::Timer childTimer1("childTimer1", CHILDMASK1, rootTimer);
     stk::diag::Timer childTimer2("childTimer2", CHILDMASK2, rootTimer);
@@ -85,7 +87,7 @@ TEST(StkDiagTimerHowTo, disableChildTimers)
     enum {CHILDMASK1 = 1, CHILDMASK2 = 2};
     stk::diag::TimerSet enabledTimerSet(CHILDMASK2);
     stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
-    stk::diag::TimeBlock totalTestRuntime(rootTimer);
+    rootTimer.start();
 
     stk::diag::Timer disabledTimer("disabledTimer", CHILDMASK1, rootTimer);
     stk::diag::Timer enabledTimer("enabledTimer", CHILDMASK2, rootTimer);

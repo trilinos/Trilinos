@@ -23,7 +23,7 @@ TEST(StkDiagTimerHowTo, useTimersInParallel)
         enum {CHILDMASK1 = 1};
         stk::diag::TimerSet enabledTimerSet(CHILDMASK1);
         stk::diag::Timer rootTimer = createRootTimer("totalTestRuntime", enabledTimerSet);
-        stk::diag::TimeBlock totalTestRuntime(rootTimer);
+        rootTimer.start();
 
         stk::diag::Timer childTimer1("childTimer1", CHILDMASK1, rootTimer);
 
