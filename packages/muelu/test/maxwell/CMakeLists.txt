@@ -18,7 +18,14 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(
       Maxwell3D
       SOURCES Maxwell3D.cpp
-      NUM_MPI_PROCS 1
+      COMM serial
+      DEPLIBS muelu xpetra muelu-adapters
+    )
+
+    TRIBITS_ADD_EXECUTABLE_AND_TEST(
+      Maxwell3D
+      SOURCES Maxwell3D.cpp
+      NUM_MPI_PROCS 4
       COMM mpi
       DEPLIBS muelu xpetra muelu-adapters
     )

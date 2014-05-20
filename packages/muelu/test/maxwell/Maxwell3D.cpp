@@ -77,6 +77,7 @@ int main(int argc, char *argv[]) {
 
   Teuchos::GlobalMPISession mpiSession(&argc, &argv, NULL);
   RCP< const Teuchos::Comm<int> > comm = Teuchos::DefaultComm<int>::getComm();
+  int commrank = comm->getRank();
 
   // Read matrices in from files
   std::ifstream inputfile;
@@ -84,38 +85,50 @@ int main(int argc, char *argv[]) {
   int nedges=540, nnodes=216, row, col;
   double entry, x, y, z;
   // maps for nodal and edge matrices
-  RCP<TMap> edge_map = rcp( new TMap(nedges,nedges,1,comm) );
-  RCP<TMap> node_map = rcp( new TMap(nnodes,nnodes,1,comm) );
+  RCP<TMap> edge_map = rcp( new TMap(nedges,0,comm) );
+  RCP<TMap> node_map = rcp( new TMap(nnodes,0,comm) );
   // edge stiffness matrix
-  RCP<TCRS> S_Matrix = rcp( new TCRS(edge_map,50) );
+  RCP<TCRS> S_Matrix = rcp( new TCRS(edge_map,100) );
   inputfile.open("S.txt");
   for(int i=0; i<nnz_edges; i++) {
     inputfile >> row >> col >> entry ;
-    S_Matrix->insertGlobalValues(row,
-				 Teuchos::ArrayView<LO>(&col,1),
-				 Teuchos::ArrayView<SC>(&entry,1));
+    row=row-1;
+    col=col-1;
+    if(edge_map->isNodeGlobalElement(row)) {
+      S_Matrix->insertGlobalValues(row,
+				   Teuchos::ArrayView<LO>(&col,1),
+				   Teuchos::ArrayView<SC>(&entry,1));
+    }
   }
   S_Matrix->fillComplete();
   inputfile.close();
   // edge mass matrix
-  RCP<TCRS> M1_Matrix = rcp( new TCRS(edge_map,50) );
+  RCP<TCRS> M1_Matrix = rcp( new TCRS(edge_map,100) );
   inputfile.open("M1.txt");
   for(int i=0; i<nnz_edges; i++) {
     inputfile >> row >> col >> entry ;
-    M1_Matrix->insertGlobalValues(row,
-				  Teuchos::ArrayView<LO>(&col,1),
-				  Teuchos::ArrayView<SC>(&entry,1));
+    row=row-1;
+    col=col-1;
+    if(edge_map->isNodeGlobalElement(row)) {
+      M1_Matrix->insertGlobalValues(row,
+				    Teuchos::ArrayView<LO>(&col,1),
+				    Teuchos::ArrayView<SC>(&entry,1));
+    }
   }
   M1_Matrix->fillComplete();
   inputfile.close();
   // nodal mass matrix
-  RCP<TCRS> M0_Matrix = rcp( new TCRS(node_map,40) );
+  RCP<TCRS> M0_Matrix = rcp( new TCRS(node_map,100) );
   inputfile.open("M0.txt");
   for(int i=0; i<nnz_nodes; i++) {
     inputfile >> row >> col >> entry ;
-    M0_Matrix->insertGlobalValues(row,
-				  Teuchos::ArrayView<LO>(&col,1),
-				  Teuchos::ArrayView<SC>(&entry,1));
+    row=row-1;
+    col=col-1;
+    if(node_map->isNodeGlobalElement(row)) {
+      M0_Matrix->insertGlobalValues(row,
+				    Teuchos::ArrayView<LO>(&col,1),
+				    Teuchos::ArrayView<SC>(&entry,1));
+    }
   }
   M0_Matrix->fillComplete();
   inputfile.close();
@@ -124,9 +137,13 @@ int main(int argc, char *argv[]) {
   inputfile.open("D0.txt");
   for(int i=0; i<nnz_grad; i++) {
     inputfile >> row >> col >> entry ;
-    D0_Matrix->insertGlobalValues(row,
-				  Teuchos::ArrayView<LO>(&col,1),
-				  Teuchos::ArrayView<SC>(&entry,1));
+    row=row-1;
+    col=col-1;
+    if(edge_map->isNodeGlobalElement(row)) {
+      D0_Matrix->insertGlobalValues(row,
+				    Teuchos::ArrayView<LO>(&col,1),
+				    Teuchos::ArrayView<SC>(&entry,1));
+    }
   }
   D0_Matrix->fillComplete(node_map,edge_map);
   inputfile.close();
@@ -135,9 +152,11 @@ int main(int argc, char *argv[]) {
   inputfile.open("coords.txt");
   for(int i=0; i<nnodes; i++) {
     inputfile >> x >> y >> z ;
-    coords->replaceGlobalValue(i+1,0,x);
-    coords->replaceGlobalValue(i+1,1,y);
-    coords->replaceGlobalValue(i+1,2,z);
+    if(node_map->isNodeGlobalElement(i)) {
+      coords->replaceGlobalValue(i,0,x);
+      coords->replaceGlobalValue(i,1,y);
+      coords->replaceGlobalValue(i,2,z);
+    }
   }
   inputfile.close();
   // build lumped mass matrix inverse (M0inv_Matrix)
@@ -150,16 +169,19 @@ int main(int argc, char *argv[]) {
   Teuchos::ArrayRCP<const SC> invdiags = invdiag->getData(0);
   RCP<TCRS> M0inv_Matrix = rcp( new TCRS(node_map,1) );
   for(int i=0; i<nnodes; i++) {
-    row = i+1;
-    col = i+1;
-    entry = invdiags[i];
-    M0inv_Matrix -> insertGlobalValues(row,
-				       Teuchos::ArrayView<LO>(&col,1),
-				       Teuchos::ArrayView<SC>(&entry,1));
+    row = i;
+    col = i;
+    if(node_map->isNodeGlobalElement(i)) {
+      LocalOrdinal lclidx = node_map->getLocalElement(i);
+      entry = invdiags[lclidx];
+      M0inv_Matrix -> insertGlobalValues(row,
+					 Teuchos::ArrayView<LO>(&col,1),
+					 Teuchos::ArrayView<SC>(&entry,1));
+    }
   }
   M0inv_Matrix->fillComplete();
   // build stiffness plus mass matrix (SM_Matrix)
-  RCP<TCRS> SM_Matrix = rcp( new TCRS(edge_map,50) );
+  RCP<TCRS> SM_Matrix = rcp( new TCRS(edge_map,100) );
   Tpetra::MatrixMatrix::Add(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix);
   SM_Matrix->fillComplete();
 
@@ -210,7 +232,9 @@ int main(int argc, char *argv[]) {
   Belos::ReturnType status = solver -> solve();
   int iters = solver -> getNumIters();
   if(iters<10 && status == Belos::Converged) {
-    std::cout<<"SUCCESS! Belos converged in "<<iters<<" iterations."<<std::endl;
+    if(commrank==0) {
+      std::cout<<"SUCCESS! Belos converged in "<<iters<<" iterations."<<std::endl;
+    }
   }
   else {
     throw(MueLu::Exceptions::RuntimeError("FAIL! Belos did not converge fast enough."));

@@ -175,7 +175,7 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
   size_t numLocalRows = SM_Matrix_->getNodeNumRows();
   Teuchos::RCP<XMap> BlockColMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getColMap(),dim);
-  P11_ = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Build(Ptent->getRowMap(),BlockColMap,dim*30);
+  P11_ = Xpetra::MatrixFactory<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::Build(Ptent->getRowMap(),BlockColMap,100);
   
   std::vector< Teuchos::ArrayRCP<const Scalar> > nullspace(dim);
   for(size_t i=0; i<dim; i++) {
@@ -200,9 +200,9 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
 			      Teuchos::ArrayView<LocalOrdinal>(blockLocalCols),
 			      Teuchos::ArrayView<Scalar>(blockLocalVals));
   }
-  Teuchos::RCP<XMap> BlockDomainMap
+  Teuchos::RCP<XMap> blockCoarseMap
     = Xpetra::MapFactory<LocalOrdinal,GlobalOrdinal,Node>::Build(Ptent->getDomainMap(),dim);
-  P11_->fillComplete(BlockDomainMap,Ptent->getRangeMap());
+  P11_->fillComplete(blockCoarseMap,SM_Matrix_->getDomainMap());
 
 }
 
@@ -298,8 +298,8 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(const
     P11_->apply(*residual,*P11residual,Teuchos::TRANS);
     D0_Matrix_->apply(*residual,*D0residual,Teuchos::TRANS);
     // block diagonal preconditioner on 2x2 (V-cycle for each block)
-    Hierarchy11_->Iterate(*P11residual, 1, *P11result, true);
-    Hierarchy22_->Iterate(*D0residual, 1, *D0result, true);
+    Hierarchy11_->Iterate(*P11residual, *P11result, 1, true);
+    Hierarchy22_->Iterate(*D0residual, *D0result, 1, true);
     // update current solution
     P11_->apply(*P11result,*residual,Teuchos::NO_TRANS);
     D0_Matrix_->apply(*D0result,*residual,Teuchos::NO_TRANS,(Scalar)1.0,(Scalar)1.0);
