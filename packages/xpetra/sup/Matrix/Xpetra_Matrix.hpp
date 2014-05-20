@@ -131,7 +131,6 @@ namespace Xpetra {
       RCP<const Map> domainMap = Teuchos::null;
       RCP<const Map> rangeMap  = Teuchos::null;
 
-      typedef Xpetra::StridedMap       <LocalOrdinal, GlobalOrdinal, Node> StridedMap;
       typedef Xpetra::StridedMapFactory<LocalOrdinal, GlobalOrdinal, Node> StridedMapFactory;
 
       const size_t        blkSize = 1;
