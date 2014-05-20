@@ -3218,7 +3218,7 @@ int ML_MultiLevel_Gen_Prolongator(ML *ml,int level, int clevel, void *data)
      VertLineId = (int *) ML_allocate(sizeof(int)*(Nnodes+1));
 
      NumZDir = ML_compute_line_info(LayerId, VertLineId,Amat->invec_leng,
-            Amat->num_PDEs, Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm->ML_mypid);
+            Amat->num_PDEs, Zorientation, NumZDir, ml->Grid[level].Grid, ml->comm);
   }
   if ( (RelativeLevel < ag->semicoarsen_levels ) && (NumZDir > 1) ) { 
      widget.nz = NumZDir;
@@ -4426,7 +4426,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
 int ML_compute_line_info(int LayerId[], int VertLineId[],
                                     int Ndof, int DofsPerNode, 
                                     int MeshNumbering, int NumNodesPerVertLine, 
-                                    ML_Aggregate_Viz_Stats *grid_info, int mypid)
+                                    ML_Aggregate_Viz_Stats *grid_info, ML_Comm *comm)
 {
    double *xvals= NULL, *yvals = NULL, *zvals = NULL;
    int    Nnodes, NVertLines, MyNode;
@@ -4435,31 +4435,38 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
    double *xtemp, *ytemp, *ztemp;
    int    *OrigLoc;
    int    i,j,count;
+   int    RetVal, gRetVal;
+   int    mypid;
 
-
+   mypid = comm->ML_mypid;
+   RetVal = 0;
    if ((MeshNumbering != 1) && (MeshNumbering != 2)) {
       if (grid_info != NULL) xvals = grid_info->x;
       if (grid_info != NULL) yvals = grid_info->y;
       if (grid_info != NULL) zvals = grid_info->z;
 
-      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
-         if (mypid == 0) printf("Not semicoarsening as no mesh numbering information or coordinates are given\n");
-         return -1;
-      }
+      if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) RetVal = -1;
    }
    else {
-      if  (NumNodesPerVertLine == -1) {
-         if (mypid == 0) printf("Not semicoarsening as the number of z nodes is not given.\n");
-         return -4;
-      }
-      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) {
-         if (mypid == 0) printf("Not semicoarsening as the total number of nodes is not evenly divisible by the number of z direction nodes .\n");
-         return -3;
-      }
+      if  (NumNodesPerVertLine == -1)                     RetVal = -4;
+      if ( ((Ndof/DofsPerNode)%NumNodesPerVertLine) != 0) RetVal = -3;
    }
-   if ( (Ndof%DofsPerNode) != 0) {
-         if (mypid == 0) printf("Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
-      return -2;
+   if ( (Ndof%DofsPerNode) != 0) RetVal = -2;
+
+   gRetVal = RetVal;
+   ML_gsum_scalar_int(&gRetVal, &j, comm);
+   if ( gRetVal < 0)  {
+      i = -1; 
+      if (RetVal < 0) i = mypid;
+      j = ML_gmin_int(i, comm);
+
+      if (mypid == j) {
+         if (RetVal == -1) printf("Not semicoarsening as no mesh numbering information or coordinates are given\n");
+         if (RetVal == -4) printf("Not semicoarsening as the number of z nodes is not given.\n");
+         if (RetVal == -3) printf("Not semicoarsening as the total number of nodes is not evenly divisible by the number of z direction nodes .\n");
+         if (RetVal == -2) printf("Not semicoarsening as something is off with the number of degrees-of-freedom per node.\n");
+      }
+      return gRetVal;
    }
 
    Nnodes = Ndof/DofsPerNode;
