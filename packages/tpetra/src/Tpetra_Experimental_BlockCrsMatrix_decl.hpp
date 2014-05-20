@@ -256,12 +256,6 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const;
 
-  LO
-  absMaxLocalValues (const LO localRowInd,
-                     const LO colInds[],
-                     const Scalar vals[],
-                     const LO numColInds) const;
-
   /// \brief Sum into values at the given column indices, in the given row.
   ///
   /// \param localRowInd [in] Local index of the row into which to sum.
@@ -353,12 +347,6 @@ public:
                                const Scalar vals[],
                                const LO numOffsets) const;
 
-  LO
-  absMaxLocalValuesByOffsets (const LO localRowInd,
-                              const ptrdiff_t offsets[],
-                              const Scalar vals[],
-                              const LO numOffsets) const;
-
   /// \brief Return the number of entries in the given row on the
   ///   calling process.
   ///
@@ -367,7 +355,39 @@ public:
   /// any entries in that row.
   LO getNumEntriesInLocalRow (const LO localRowInd) const;
 
+  /// \brief Whether this object had an error on the calling process.
+  ///
+  /// Import and Export operations using this object as the target of
+  /// the Import or Export may incur local errors, if some process
+  /// encounters an LID in its list which is not a valid mesh row
+  /// local index on that process.  In that case, we don't want to
+  /// throw an exception, because not all processes may throw an
+  /// exception; this can result in deadlock or put Tpetra in an
+  /// incorrect state, due to lack of consistency across processes.
+  /// Instead, we set a local error flag and ignore the incorrect
+  /// data.  When unpacking, we do the same with invalid column
+  /// indices.  If you want to check whether some process experienced
+  /// an error, you must do a reduction or all-reduce over this flag.
+  /// Every time you initiate a new Import or Export with this object
+  /// as the target, we clear this flag.  In particular, we clear it
+  /// at the end of checkSizes(), if that method will return true.
+  bool localError () const;
+
 protected:
+  //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
+  LO
+  absMaxLocalValues (const LO localRowInd,
+                     const LO colInds[],
+                     const Scalar vals[],
+                     const LO numColInds) const;
+
+  //! Like sumIntoLocalValuesByOffsets, but for the ABSMAX combine mode.
+  LO
+  absMaxLocalValuesByOffsets (const LO localRowInd,
+                              const ptrdiff_t offsets[],
+                              const Scalar vals[],
+                              const LO numOffsets) const;
+
   /// \brief \name Implementation of DistObject (or DistObjectKA).
   ///
   /// The methods here implement Tpetra::DistObject or
@@ -483,6 +503,11 @@ private:
 
   //! Whether "little blocks" are stored in row-major (or column-major) order.
   bool rowMajor_;
+
+  /// \brief Whether this object on the calling process is in an error state.
+  ///
+  /// See the documentation of localError() for details.
+  bool localError_;
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.

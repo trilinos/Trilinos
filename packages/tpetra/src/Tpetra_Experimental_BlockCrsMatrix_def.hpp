@@ -63,7 +63,8 @@ namespace Experimental {
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
-    rowMajor_ (true) // row major blocks by default
+    rowMajor_ (true), // row major blocks by default
+    localError_ (false)
   {}
 
   template<class Scalar, class LO, class GO, class Node>
@@ -80,7 +81,8 @@ namespace Experimental {
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
-    rowMajor_ (true) // row major blocks by default
+    rowMajor_ (true), // row major blocks by default
+    localError_ (false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -123,7 +125,8 @@ namespace Experimental {
     X_colMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     Y_rowMap_ (new Teuchos::RCP<BMV> ()), // ptr to a null ptr
     columnPadding_ (0), // no padding by default
-    rowMajor_ (true) // row major blocks by default
+    rowMajor_ (true), // row major blocks by default
+    localError_ (false)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(
       ! graph_.isSorted (), std::invalid_argument, "Tpetra::Experimental::"
@@ -857,13 +860,39 @@ namespace Experimental {
   {
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     const this_type* src = dynamic_cast<const this_type* > (&source);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      src == NULL, std::invalid_argument, "Tpetra::Experimental::"
-      "BlockCrsMatrix::checkSizes: The source object of the Import or Export "
-      "must be a BlockCrsMatrix with the same template parameters as the "
-      "target object.");
 
-    return false; // not implemented
+    // FIXME (mfh 19 May 2014) Would be great to have a way to report
+    // errors, without throwing an exception.  The latter would be bad
+    // in the case of differing block sizes, just in case those block
+    // sizes are inconsistent across processes.  (The latter is not
+    // allowed, but possible due to user error.)
+
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   src == NULL, std::invalid_argument, "Tpetra::Experimental::"
+    //   "BlockCrsMatrix::checkSizes: The source object of the Import or Export "
+    //   "must be a BlockCrsMatrix with the same template parameters as the "
+    //   "target object.");
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   src->getBlockSize () != this->getBlockSize (), std::invalid_argument,
+    //   "Tpetra::Experimental::BlockCrsMatrix::checkSizes: "
+    //   "The source and target objects of the Import or Export must have the "
+    //   "same block sizes.  The source's block size = " << src->getBlockSize ()
+    //   << " != the target's block size = " << this->getBlockSize () << ".");
+
+    if (src == NULL || src->getBlockSize () != this->getBlockSize ()) {
+      const_cast<this_type*> (this)->localError_ = true;
+      return false;
+    }
+    else {
+      const_cast<this_type*> (this)->localError_ = false;
+
+      // FIXME (mfh 19 May 2014) Return false for now, as a way to
+      // signal that the DistObject functions haven't been tested yet.
+      // Returning false tells the Import or Export not to proceed.
+      // Once we finish and test those functions, we need to change this
+      // to return true.
+      return false;
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -889,21 +918,15 @@ namespace Experimental {
       const LO* localCols;
       Scalar* vals;
       LO numEntries;
+      // If this call fails, that means the mesh row local index is
+      // invalid.  That means the Import or Export is invalid somehow.
       LO err = src->getLocalRowView (localRow, localCols, vals, numEntries);
       if (err != 0) {
-        // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
-        // be a local state, so we don't necessarily want to throw an
-        // exception yet.  It would be better to set a local error
-        // flag, and wait until the next collective to propagate it.
         srcInvalidRow = true;
       }
       else {
         err = this->replaceLocalValues (localRow, localCols, vals, numEntries);
         if (err != numEntries) {
-          // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
-          // be a local state, so we don't necessarily want to throw an
-          // exception yet.  It would be better to set a local error
-          // flag, and wait until the next collective to propagate it.
           dstInvalidCol = true;
         }
       }
@@ -917,34 +940,31 @@ namespace Experimental {
       LO numEntries;
       LO err = src->getLocalRowView (permuteFromLIDs[k], localCols, vals, numEntries);
       if (err != 0) {
-        // FIXME (mfh 16 May 2014) Not clear what to do now.  This may
-        // be a local state, so we don't necessarily want to throw an
-        // exception yet.  It would be better to set a local error
-        // flag, and wait until the next collective to propagate it.
         srcInvalidRow = true;
       }
       else {
         err = this->replaceLocalValues (permuteFromLIDs[k], localCols, vals, numEntries);
         if (err != numEntries) {
-          // FIXME (mfh 16 May 2014) Not clear what to do now.  This
-          // may be a local state, so we don't necessarily want to
-          // throw an exception yet.  It would be better to set a
-          // local error flag, and wait until the next collective to
-          // propagate it.
           dstInvalidCol = true;
         }
       }
     }
 
-    // FIXME (mfh 16 May 2014) Not clear what to do now.  This may be
-    // a local state, so we don't necessarily want to throw an
-    // exception yet.  It would be better to set a local error flag,
-    // and wait until the next collective to propagate it.
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      srcInvalidRow || dstInvalidCol, std::runtime_error,
-      "Tpetra::Experimental::BlockCrsMatrix::copyAndPermute: The graph "
-      "structure of the source of the Import or Export must be a subset of the "
-      "graph structure of the target.");
+    if (srcInvalidRow || dstInvalidCol) {
+      localError_ = true;
+    }
+
+    // FIXME (mfh 19 May 2014) Would be great to have a way to report
+    // errors, without throwing an exception.  The latter would be bad
+    // in the case of differing block sizes, just in case those block
+    // sizes are inconsistent across processes.  (The latter is not
+    // allowed, but possible due to user error.)
+
+    // TEUCHOS_TEST_FOR_EXCEPTION(
+    //   srcInvalidRow || dstInvalidCol, std::runtime_error,
+    //   "Tpetra::Experimental::BlockCrsMatrix::copyAndPermute: The graph "
+    //   "structure of the source of the Import or Export must be a subset of the "
+    //   "graph structure of the target.");
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1131,9 +1151,16 @@ namespace Experimental {
         successCount =
           this->absMaxLocalValues (importLid, lclColIndsView.getRawPtr (),
                                    vals.getRawPtr (), numEntries);
+      } else {
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+          "unpackAndCombine: Invalid CombineMode value " << CM << ".  Valid "
+          "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO.");
       }
-      (void) successCount;
 
+      if (successCount != numEntries) {
+        localError_ = true;
+      }
       importsOffset += numIndexBytes + padding + numBlockBytes;
     }
   }
