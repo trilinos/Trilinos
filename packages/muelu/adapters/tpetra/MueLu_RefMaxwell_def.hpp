@@ -97,17 +97,27 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<SaPFactory> Pfact = Teuchos::rcp( new SaPFactory );
-  std::string precType11 = "CHEBYSHEV";
-  std::string precType22 = "CHEBYSHEV";
+  std::string precType11 = EdgeSmoother_;
+  std::string precType22 = NodeSmoother_;
   Teuchos::ParameterList precList11, precList22;
   precList11.set("chebyshev: degree",3);
   precList22.set("chebyshev: degree",3);
-  Teuchos::RCP<SmootherPrototype> SmooProto11 = Teuchos::rcp( new Ifpack2Smoother(precType11,precList11) );
-  Teuchos::RCP<SmootherFactory> SmooFact11 = Teuchos::rcp( new SmootherFactory(SmooProto11) );
-  Teuchos::RCP<SmootherPrototype> SmooProto22 = Teuchos::rcp( new Ifpack2Smoother(precType22,precList22) );
-  Teuchos::RCP<SmootherFactory> SmooFact22 = Teuchos::rcp( new SmootherFactory(SmooProto22) );
+  Teuchos::RCP<SmootherPrototype> SmooProto11
+    = Teuchos::rcp( new Ifpack2Smoother(precType11,precList11) );
+  Teuchos::RCP<SmootherFactory> SmooFact11
+    = Teuchos::rcp( new SmootherFactory(SmooProto11) );
+  Teuchos::RCP<SmootherPrototype> SmooProto22
+    = Teuchos::rcp( new Ifpack2Smoother(precType22,precList22) );
+  Teuchos::RCP<SmootherFactory> SmooFact22
+    = Teuchos::rcp( new SmootherFactory(SmooProto22) );
+  Teuchos::RCP<UncoupledAggregationFactory> Aggfact
+    = Teuchos::rcp( new UncoupledAggregationFactory() );
+  Manager11->SetFactory("Aggregates",Aggfact);
   Manager11->SetFactory("Smoother",SmooFact11);
+  Manager11->SetFactory("CoarseSolver",SmooFact11);
+  Manager22->SetFactory("Aggregates",Aggfact);
   Manager22->SetFactory("Smoother",SmooFact22);
+  Manager22->SetFactory("CoarseSolver",SmooFact22);
   Hierarchy11_ = Teuchos::rcp( new Hierarchy(A11_) );
   Hierarchy11_ -> SetMaxCoarseSize( MaxCoarseSize_ );
   Hierarchy11_ -> Setup(*Manager11, 0, MaxLevels_ );
@@ -147,11 +157,14 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::buildProlon
     = Teuchos::rcp( new TentativePFactory );
   Teuchos::RCP<SaPFactory> Pfact
     = Teuchos::rcp( new SaPFactory );
+  Teuchos::RCP<UncoupledAggregationFactory> Aggfact
+    = Teuchos::rcp( new UncoupledAggregationFactory() );
   Teuchos::ParameterList params1;
   params1.set("Damping factor",(Scalar)0.0);
   Pfact      -> SetParameterList(params1);
   auxManager -> SetFactory("P", Pfact);
   auxManager -> SetFactory("Ptent", TentPfact);
+  auxManager -> SetFactory("Aggregates", Aggfact);
   auxManager -> SetFactory("Smoother", Teuchos::null);
   auxManager -> SetFactory("CoarseSolver", Teuchos::null);
   auxHierarchy -> Keep("P", Pfact.get());
