@@ -298,6 +298,48 @@ namespace Experimental {
     return validCount;
   }
 
+
+  template<class Scalar, class LO, class GO, class Node>
+  LO
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  absMaxLocalValues (const LO localRowInd,
+                     const LO colInds[],
+                     const Scalar vals[],
+                     const LO numColInds) const
+  {
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      // We modified no values, because the input local row index is
+      // invalid on the calling process.  That may not be an error, if
+      // numColInds is zero anyway; it doesn't matter.  This is the
+      // advantage of returning the number of valid indices.
+      return static_cast<LO> (0);
+    }
+
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    size_t hint = 0; // Guess for the relative offset into the current row
+    size_t pointOffset = 0; // Current offset into input values
+    LO validCount = 0; // number of valid column indices in colInds
+
+    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset =
+        findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        const_little_block_type A_new =
+          getConstLocalBlockFromInput (vals, pointOffset);
+        A_old.absmax (A_new);
+        hint = relBlockOffset + 1;
+        ++validCount;
+      }
+    }
+    return validCount;
+  }
+
+
   template<class Scalar, class LO, class GO, class Node>
   LO
   BlockCrsMatrix<Scalar, LO, GO, Node>::
@@ -425,6 +467,44 @@ namespace Experimental {
         const_little_block_type A_new =
           getConstLocalBlockFromInput (vals, pointOffset);
         A_old.assign (A_new);
+        ++validCount;
+      }
+    }
+    return validCount;
+  }
+
+
+  template<class Scalar, class LO, class GO, class Node>
+  LO
+  BlockCrsMatrix<Scalar, LO, GO, Node>::
+  absMaxLocalValuesByOffsets (const LO localRowInd,
+                              const ptrdiff_t offsets[],
+                              const Scalar vals[],
+                              const LO numOffsets) const
+  {
+    if (! rowMeshMap_.isNodeLocalElement (localRowInd)) {
+      // We modified no values, because the input local row index is
+      // invalid on the calling process.  That may not be an error, if
+      // numColInds is zero anyway; it doesn't matter.  This is the
+      // advantage of returning the number of valid indices.
+      return static_cast<LO> (0);
+    }
+
+    const size_t absRowBlockOffset = ptr_[localRowInd];
+    const size_t perBlockSize = static_cast<LO> (offsetPerBlock ());
+    const size_t STINV = Teuchos::OrdinalTraits<size_t>::invalid ();
+    size_t pointOffset = 0; // Current offset into input values
+    LO validCount = 0; // number of valid offsets
+
+    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+      const size_t relBlockOffset = offsets[k];
+      if (relBlockOffset != STINV) {
+        const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
+        little_block_type A_old =
+          getNonConstLocalBlockFromAbsOffset (absBlockOffset);
+        const_little_block_type A_new =
+          getConstLocalBlockFromInput (vals, pointOffset);
+        A_old.absmax (A_new);
         ++validCount;
       }
     }
@@ -983,22 +1063,79 @@ namespace Experimental {
     }
   }
 
+
   template<class Scalar, class LO, class GO, class Node>
   void
   BlockCrsMatrix<Scalar, LO, GO, Node>::
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
                     const Teuchos::ArrayView<const packet_type> &imports,
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
-                    size_t constantNumPackets,
-                    Tpetra::Distributor& distor,
+                    size_t /* constantNumPackets */, // not worthwhile to use this
+                    Tpetra::Distributor& /* distor */,
                     Tpetra::CombineMode CM)
   {
-    (void) importLIDs;
-    (void) imports;
-    (void) numPacketsPerLID;
-    (void) constantNumPackets;
-    (void) distor;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
+    using Teuchos::ArrayView;
+    using Teuchos::av_reinterpret_cast;
+
+    if (CM == ZERO) {
+      return; // nothing to do; no need to combine entries
+    }
+
+    const size_t blockSize = this->getBlockSize ();
+    const size_t numImportLids = importLIDs.size ();
+
+    // Temporary space to cache local column indices.  Column indices
+    // come in as global indices, in case the source object's column
+    // Map differs from the target object's (this's) column Map.
+    Teuchos::Array<LO> lclColInds (graph_.getNodeMaxNumRowEntries ());
+
+    // Current offset (in bytes) into the 'imports' array.  We unpack
+    // data from the 'imports' array into the target object.
+    size_t importsOffset = 0;
+    for (size_t importLidIndex = 0; importLidIndex < numImportLids; ++importLidIndex) {
+      // Number of entries in the row.
+      const size_t numEntries = numPacketsPerLID[importLidIndex];
+      // The current (local) row index.
+      const LO importLid = importLIDs[importLidIndex];
+
+      // Lengths and offsets for packed data in the 'imports' array.
+      //
+      // We pack all column indices first, then all values.  We pad
+      // the former so that the latter is aligned to sizeof(Scalar).
+      // 'padding' gives the size in bytes of the padding.
+      const size_t numIndexBytes = numEntries * sizeof (GO);
+      const size_t numBlockBytes = numEntries * blockSize * sizeof (Scalar);
+      const size_t padding = sizeof (Scalar) - (numIndexBytes % sizeof (Scalar));
+      const size_t absBlockOffset = importsOffset + numIndexBytes + padding;
+
+      ArrayView<const GO> gblColInds =
+        av_reinterpret_cast<const GO> (imports.view (importsOffset, numIndexBytes));
+      ArrayView<const Scalar> vals =
+        av_reinterpret_cast<const Scalar> (imports.view (absBlockOffset, numBlockBytes));
+
+      ArrayView<LO> lclColIndsView = lclColInds.view (0, numEntries);
+      for (size_t k = 0; k < numEntries; ++k) {
+        lclColIndsView[k] = rowMeshMap_.getLocalElement (gblColInds[k]);
+      }
+
+      LO successCount = 0;
+      if (CM == ADD) {
+        successCount =
+          this->sumIntoLocalValues (importLid, lclColIndsView.getRawPtr (),
+                                    vals.getRawPtr (), numEntries);
+      } else if (CM == INSERT || CM == REPLACE) {
+        successCount =
+          this->replaceLocalValues (importLid, lclColIndsView.getRawPtr (),
+                                    vals.getRawPtr (), numEntries);
+      } else if (CM == ABSMAX) {
+        successCount =
+          this->absMaxLocalValues (importLid, lclColIndsView.getRawPtr (),
+                                   vals.getRawPtr (), numEntries);
+      }
+      (void) successCount;
+
+      importsOffset += numIndexBytes + padding + numBlockBytes;
+    }
   }
 
 } // namespace Experimental

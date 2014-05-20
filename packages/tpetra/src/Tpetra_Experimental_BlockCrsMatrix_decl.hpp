@@ -256,6 +256,12 @@ public:
                       const Scalar vals[],
                       const LO numColInds) const;
 
+  LO
+  absMaxLocalValues (const LO localRowInd,
+                     const LO colInds[],
+                     const Scalar vals[],
+                     const LO numColInds) const;
+
   /// \brief Sum into values at the given column indices, in the given row.
   ///
   /// \param localRowInd [in] Local index of the row into which to sum.
@@ -346,6 +352,12 @@ public:
                                const ptrdiff_t offsets[],
                                const Scalar vals[],
                                const LO numOffsets) const;
+
+  LO
+  absMaxLocalValuesByOffsets (const LO localRowInd,
+                              const ptrdiff_t offsets[],
+                              const Scalar vals[],
+                              const LO numOffsets) const;
 
   /// \brief Return the number of entries in the given row on the
   ///   calling process.
