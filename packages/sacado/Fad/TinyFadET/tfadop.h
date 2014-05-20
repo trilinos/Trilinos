@@ -503,7 +503,6 @@ OP (const typename E::value_type &t, const TFadExpr<E> &e){        \
 template<class E,int Num>                                                 \
 inline TFadExpr<TYPE<TFadExpr<E>,TFad<Num,typename E::value_type> > >    \
 OP (const TFadExpr<E> &e,const TFad<Num,typename E::value_type>& v){    \
-    typedef typename E::value_type A;                             \
     typedef TYPE<TFadExpr<E>,TFad<Num,typename E::value_type> > expr_t; \
     return TFadExpr<expr_t>(expr_t (e, v ));                       \
 }                                                                 \
@@ -518,7 +517,6 @@ OP (const TFad<Num,A> &e1,const TFad<Num,A>& e2){                           \
 template<class E, int Num>                                                 \
 inline TFadExpr<TYPE<TFad<Num,typename E::value_type>,TFadExpr<E> > >    \
 OP (const TFad<Num,typename E::value_type> &v, const TFadExpr<E> &e){   \
-    typedef typename E::value_type A;                             \
     typedef TYPE<TFad<Num,typename E::value_type>,TFadExpr<E> > expr_t; \
     return TFadExpr<expr_t> (expr_t (v , e ));                     \
 }
