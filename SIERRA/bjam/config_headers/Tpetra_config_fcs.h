@@ -46,6 +46,9 @@
 /* Define when enabling the Murmur hash function in Tpetra */
 /* #undef TPETRA_USE_MURMUR_HASH */
 
+/* Define when enabling KokkosContainers in Tpetra */
+/* #undef HAVE_TPETRA_MMM_TIMINGS */
+
 /* Define when enabling KokkosCore in Tpetra */
 #define HAVE_TPETRA_KOKKOSCORE
 
@@ -56,7 +59,7 @@
 /* #undef HAVE_TPETRA_KOKKOSLINALG */
 
 /* Define when enabling KokkosContainers in Tpetra */
-/* #undef HAVE_TPETRA_KOKKOSCONTAINERS */
+#define HAVE_TPETRA_KOKKOSCONTAINERS
 
 /* Define when enabling KokkosContainers in Tpetra */
 /* #undef HAVE_TPETRA_KOKKOSMPICOMM */
