@@ -45,16 +45,28 @@ IF (TrilinosCouplings_ENABLE_Tpetra AND Tpetra_Have_Kokkos_Refactor)
       Stokhos_ENABLE_KokkosLinAlg )
 
     SET( SOURCES BoxElemPart.cpp fenl_ensemble.cpp )
-
     IF (Kokkos_ENABLE_Cuda)
       CUDA_COMPILE( OBJECTS_CUDA fenl_ensemble.cpp.cu main_ensemble.cpp.cu )
       LIST( APPEND SOURCES ${OBJECTS_CUDA} )
     ELSE()
       LIST( APPEND SOURCES main_ensemble.cpp )
     ENDIF()
-
     TRIBITS_ADD_EXECUTABLE(
       fenl_ensemble
+      SOURCES ${SOURCES}
+      COMM serial mpi
+      DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore
+      )
+
+    SET( SOURCES BoxElemPart.cpp fenl_pce.cpp )
+    IF (Kokkos_ENABLE_Cuda)
+      CUDA_COMPILE( OBJECTS_CUDA fenl_pce.cpp.cu main_pce.cpp.cu )
+      LIST( APPEND SOURCES ${OBJECTS_CUDA} )
+    ELSE()
+      LIST( APPEND SOURCES main_pce.cpp )
+    ENDIF()
+    TRIBITS_ADD_EXECUTABLE(
+      fenl_pce
       SOURCES ${SOURCES}
       COMM serial mpi
       DEPLIBS kokkoscorelinalg kokkoscontainers kokkoscore

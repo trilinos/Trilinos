@@ -1,4 +1,5 @@
 #include "Stokhos_Sacado_Kokkos_MP_Vector.hpp"
+#include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
 #include "Stokhos.hpp"
 
 //----------------------------------------------------------------------------
@@ -37,6 +38,19 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   bool success = true;
   try {
 
+  // Create Tpetra Node -- do this first as it initializes host/device
+  Teuchos::ParameterList params;
+  params.set("Verbose",     0);
+  if ( cmd[ CMD_USE_THREADS ] )
+    params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
+    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
+    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
+  }
+  if ( cmd[ CMD_USE_CUDA_DEV ] )
+    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
+  Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
+
   // Set up stochastic discretization
   using Teuchos::Array;
   using Teuchos::RCP;
@@ -56,7 +70,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   const int num_quad_points                 = quad->size();
   const Array<double>& quad_weights         = quad->getQuadWeights();
   const Array< Array<double> >& quad_points = quad->getQuadPoints();
-  //const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
+  const Array< Array<double> >& quad_values = quad->getBasisAtQuadPoints();
 
   // Print output headers
   const int comm_rank = comm->getRank();
@@ -83,23 +97,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   Perf perf_total;
   perf_total.uq_count = num_quad_points;
 
-  double mean = 0.0;
-  double std_dev = 0.0;
+  typedef Stokhos::DynamicStorage<int,double,Device> PCEStorage;
+  typedef Sacado::UQ::PCE<PCEStorage> PCEScalar;
+  PCEScalar response_pce( typename PCEScalar::cijk_type(), basis->size() );
 
-  // Create Tpetra Node
-  Teuchos::ParameterList params;
-  params.set("Verbose",     0);
-  if ( cmd[ CMD_USE_THREADS ] )
-    params.set("Num Threads", cmd[CMD_USE_THREADS]);
-  if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
-    params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
-    params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);
-  }
-  if ( cmd[ CMD_USE_CUDA_DEV ] )
-    params.set("Device", cmd[ CMD_USE_CUDA_DEV ] );
-  Teuchos::RCP<NodeType> node = Teuchos::rcp (new NodeType(params));
-
-  // Compute mean/std. dev. of response propagating blocks of quadrature
+  // Compute PCE of response propagating blocks of quadrature
   // points at a time
   if ( cmd[ CMD_USE_UQ_ENSEMBLE ] ) {
 
@@ -160,20 +162,19 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf.fill_element_graph *= VectorSize;
       perf_total.increment(perf);
 
-      // Sum response into mean, variance
+      // Sum response into integral computing response PCE coefficients
       for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j) {
         double r = response.coeff(j);
         double w = quad_weights[qp];
-        mean    += r     * w;
-        std_dev += r * r * w;
+        for (int i=0; i<basis->size(); ++i)
+          response_pce.fastAccessCoeff(i) += r*w*quad_values[qp][i];
       }
 
     }
 
   }
 
-  // Compute mean/std. dev. of response propagating one quadrature point
-  // at a time
+  // Compute PCE of response propagating one quadrature point at a time
   else {
 
     typedef double Scalar;
@@ -211,18 +212,20 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       //           << " cg count = " << perf.cg_iter_count << std::endl;
       perf_total.increment(perf);
 
-      // Sum response into mean, variance
+      // Sum response into integral computing response PCE coefficients
       double r = response;
       double w = quad_weights[qp];
-      mean    += r     * w;
-      std_dev += r * r * w;
+      for (int i=0; i<basis->size(); ++i)
+        response_pce.fastAccessCoeff(i) += r*w*quad_values[qp][i];
 
     }
 
   }
 
-  perf_total.response_mean = mean;
-  perf_total.response_std_dev = std::sqrt(std_dev - mean*mean);
+  //std::cout << std::endl << response_pce << std::endl;
+
+  perf_total.response_mean = response_pce.mean();
+  perf_total.response_std_dev = response_pce.standard_deviation();
 
   if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf_total ); }
 

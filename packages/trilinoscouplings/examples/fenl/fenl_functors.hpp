@@ -58,6 +58,7 @@
 
 #include <impl/Kokkos_Timer.hpp>
 
+#include <fenl.hpp>
 #include <BoxElemFixture.hpp>
 #include <HexElement.hpp>
 
@@ -1313,7 +1314,7 @@ public:
   KOKKOS_INLINE_FUNCTION
   void operator()( const unsigned i , value_type& response ) const
   {
-    value_type u = solution(i);
+    const value_type& u = solution(i);
     response += (u * u) / fixture.node_count_global();
   }
 
