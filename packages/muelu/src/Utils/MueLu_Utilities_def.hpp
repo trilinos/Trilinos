@@ -1034,7 +1034,6 @@ namespace MueLu {
       ifs.read(reinterpret_cast<char*>(&n),   sizeof(n));
       ifs.read(reinterpret_cast<char*>(&nnz), sizeof(nnz));
 
-      GO indexBase = 0;
       RCP<Matrix> A = MatrixFactory::Build(rowMap, colMap, 1);
 
       TEUCHOS_TEST_FOR_EXCEPTION(sizeof(int) != sizeof(GO), Exceptions::RuntimeError, "Incompatible sizes");
