@@ -178,10 +178,11 @@ KOKKOS_INLINE_FUNCTION
 T atomic_exchange( volatile T * const dest , const T val )
 {
   T retval;
-#pragma omp critical
+//#pragma omp atomic capture
+  #pragma omp critical
   {
-    retval = *dest;
-    *dest = val;
+    retval = dest[0];
+    dest[0] = val;
   }
   return retval;
 }
@@ -190,9 +191,10 @@ template < typename T >
 KOKKOS_INLINE_FUNCTION
 void atomic_assign( volatile T * const dest , const T val )
 {
-#pragma omp critical
+//#pragma omp atomic
+  #pragma omp critical
   {
-    *dest = val;
+    dest[0] = val;
   }
 }
 

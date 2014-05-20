@@ -101,8 +101,8 @@ T atomic_fetch_and( volatile T * const dest , const T val )
   T retval;
 #pragma omp atomic capture
   {
-    retval = *dest;
-    *dest[0] &= val;
+    retval = dest[0];
+    dest[0] &= val;
   }
   return retval;
 }
