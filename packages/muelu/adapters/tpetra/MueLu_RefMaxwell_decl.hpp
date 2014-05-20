@@ -50,17 +50,21 @@
 #include "MueLu_ConfigDefs.hpp"
 #include "MueLu_BaseClass.hpp"
 #include "MueLu_Utilities.hpp"
+#include "MueLu_SaPFactory.hpp"
+#include "MueLu_TentativePFactory.hpp"
+#include "MueLu_SmootherFactory.hpp"
 
 #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "Tpetra_Operator.hpp"
 #include "Tpetra_CrsMatrix.hpp"
 #include "Tpetra_MultiVector_decl.hpp"
-#include "TpetraExt_MatrixMatrix.hpp"
 #include "Xpetra_Matrix.hpp"
+#include "Xpetra_MatrixFactory.hpp"
 #include "Xpetra_CrsMatrixWrap.hpp"
 #include "Xpetra_BlockedCrsMatrix.hpp"
 #include "Xpetra_TpetraMultiVector.hpp"
+#include "XpetraExt_MatrixMatrix.hpp"
 #include "Ifpack2_Preconditioner.hpp"
 #include "Ifpack2_Factory_decl.hpp"
 #include "Ifpack2_Factory_def.hpp"
