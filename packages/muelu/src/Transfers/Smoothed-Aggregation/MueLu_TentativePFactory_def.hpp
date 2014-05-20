@@ -297,18 +297,18 @@ namespace MueLu {
       } else {
         // Special handling for aggSize < NSDim (i.e. single node aggregates in structural mechanics)
 
-	// The local QR decomposition is not possible in the "overconstrained" case (i.e. number of columns in localQR > number of rows),
-	// which corresponds to #DOFs in Aggregate < NSDim. For usual problems this is only possible for single node aggregates in structural mechanics. 
-	// (Similar problems may arise in discontinuous Galerkin problems...)
-	// We bypass the QR decomposition and use an identity block in the tentative prolongator for the single node aggregate and transfer the corresponding
-	// fine level null space information 1-to-1 to the coarse level null space part.
-	
-	// NOTE: The resulting tentative prolongation operator has (aggSize*DofsPerNode-NSDim) zero columns leading to a singular coarse level operator A.
-	// To deal with that one has the following options:
-	// - Use the "RepairMainDiagonal" flag in the RAPFactory (default: false) to add some identity block to the diagonal of the zero rows in the coarse level operator A,
-	//   such that standard level smoothers can be used again.
-	// - Use special (projection-based) level smoothers, which can deal with singular matrices (very application specific)
-	// - Adapt the code below to avoid zero columns. However, we do not support a variable number of DOFs per node in MueLu/Xpetra which makes the implementation really hard.
+        // The local QR decomposition is not possible in the "overconstrained" case (i.e. number of columns in localQR > number of rows),
+        // which corresponds to #DOFs in Aggregate < NSDim. For usual problems this is only possible for single node aggregates in structural mechanics.
+        // (Similar problems may arise in discontinuous Galerkin problems...)
+        // We bypass the QR decomposition and use an identity block in the tentative prolongator for the single node aggregate and transfer the corresponding
+        // fine level null space information 1-to-1 to the coarse level null space part.
+
+        // NOTE: The resulting tentative prolongation operator has (aggSize*DofsPerNode-NSDim) zero columns leading to a singular coarse level operator A.
+        // To deal with that one has the following options:
+        // - Use the "RepairMainDiagonal" flag in the RAPFactory (default: false) to add some identity block to the diagonal of the zero rows in the coarse level operator A,
+        //   such that standard level smoothers can be used again.
+        // - Use special (projection-based) level smoothers, which can deal with singular matrices (very application specific)
+        // - Adapt the code below to avoid zero columns. However, we do not support a variable number of DOFs per node in MueLu/Xpetra which makes the implementation really hard.
 	
         localQR.reshape(NSDim, NSDim);
         for (size_t i = aggSize; i < NSDim; i++)
