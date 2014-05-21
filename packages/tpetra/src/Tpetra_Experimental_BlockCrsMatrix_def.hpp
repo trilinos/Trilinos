@@ -604,6 +604,19 @@ namespace Experimental {
     // "export" is a reserved C++ keyword, so we can't use it.
     RCP<const export_type> theExport = graph_.getExporter ();
 
+    // FIXME (mfh 20 May 2014) X.mv_ and Y.mv_ requires a friend
+    // declaration, which is useful only for debugging.
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      X.mv_.getCopyOrView () != Teuchos::View, std::invalid_argument,
+      "Tpetra::Experimental::BlockCrsMatrix::applyBlockNoTrans: "
+      "The input BlockMultiVector X has deep copy semantics, "
+      "not view semantics (as it should).");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      Y.mv_.getCopyOrView () != Teuchos::View, std::invalid_argument,
+      "Tpetra::Experimental::BlockCrsMatrix::applyBlockNoTrans: "
+      "The output BlockMultiVector Y has deep copy semantics, "
+      "not view semantics (as it should).");
+
     if (alpha == zero) {
       if (beta == zero) {
         Y.putScalar (zero); // replace Inf or NaN (BLAS rules)
@@ -611,10 +624,16 @@ namespace Experimental {
         Y.scale (beta);
       }
     } else { // alpha != 0
-      // BMV gets view semantics from the beginning.
-      BMV X_colMap;
+      const BMV* X_colMap = NULL;
       if (import.is_null ()) {
-        X_colMap = X; // MUST do a shallow copy
+        try {
+          X_colMap = &X;
+        } catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+            "applyBlockNoTrans:" << std::endl << "Tpetra::MultiVector::"
+            "operator= threw an exception: " << std::endl << e.what ());
+        }
       } else {
         // X_colMap_ is a pointer to a pointer to BMV.  Ditto for
         // Y_rowMap_ below.  This lets us do lazy initialization
@@ -629,24 +648,38 @@ namespace Experimental {
                                      static_cast<LO> (X.getNumVectors ())));
         }
         (**X_colMap_).doImport (X, *import, Tpetra::REPLACE);
-        X_colMap = **X_colMap_; // MUST do a shallow copy
+        try {
+          X_colMap = &(**X_colMap_);
+        } catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+            "applyBlockNoTrans:" << std::endl << "Tpetra::MultiVector::"
+            "operator= threw an exception: " << std::endl << e.what ());
+        }
       }
 
-      BMV Y_rowMap;
-      if (import.is_null ()) {
-        Y_rowMap = Y; // MUST do a shallow copy
+      BMV* Y_rowMap = NULL;
+      if (theExport.is_null ()) {
+        Y_rowMap = &Y;
       } else if ((*Y_rowMap_).is_null () ||
                  (**Y_rowMap_).getNumVectors () != Y.getNumVectors () ||
                  (**Y_rowMap_).getBlockSize () != Y.getBlockSize ()) {
         *Y_rowMap_ = rcp (new BMV (* (graph_.getRowMap ()), getBlockSize (),
                                    static_cast<LO> (X.getNumVectors ())));
-        Y_rowMap = **Y_rowMap_; // MUST do a shallow copy
+        try {
+          Y_rowMap = &(**Y_rowMap_);
+        } catch (std::exception& e) {
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
+            "applyBlockNoTrans:" << std::endl << "Tpetra::MultiVector::"
+            "operator= threw an exception: " << std::endl << e.what ());
+        }
       }
 
-      localApplyBlockNoTrans (X_colMap, Y_rowMap, alpha, beta);
+      localApplyBlockNoTrans (*X_colMap, *Y_rowMap, alpha, beta);
 
       if (! theExport.is_null ()) {
-        Y.doExport (Y_rowMap, *theExport, Tpetra::REPLACE);
+        Y.doExport (*Y_rowMap, *theExport, Tpetra::REPLACE);
       }
     }
   }
@@ -678,6 +711,7 @@ namespace Experimental {
     if (numVecs == 1) {
       for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
         little_vec_type Y_cur = Y.getLocalBlock (lclRow, 0);
+
         if (beta == zero) {
           Y_lcl.fill (zero);
         } else if (beta == one) {
@@ -686,6 +720,7 @@ namespace Experimental {
           Y_lcl.assign (Y_cur);
           Y_lcl.scale (beta);
         }
+
         const size_t meshBeg = ptr_[lclRow];
         const size_t meshEnd = ptr_[lclRow+1];
         for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
@@ -693,14 +728,18 @@ namespace Experimental {
           const_little_block_type A_cur =
             getConstLocalBlockFromAbsOffset (absBlkOff);
           little_vec_type X_cur = X.getLocalBlock (meshCol, 0);
-          Y_cur.matvecUpdate (alpha, A_cur, X_cur); // Y_cur += alpha*A_cur*X_cur;
-        }
-      }
+          // Y_lcl += alpha*A_cur*X_cur
+          Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+        } // for each entry in the current local row of the matrx
+
+        Y_cur.assign (Y_lcl);
+      } // for each local row of the matrix
     }
     else {
       for (LO lclRow = 0; lclRow < numLocalMeshRows; ++lclRow) {
         for (LO j = 0; j < numVecs; ++j) {
           little_vec_type Y_cur = Y.getLocalBlock (lclRow, j);
+
           if (beta == zero) {
             Y_lcl.fill (zero);
           } else if (beta == one) {
@@ -709,6 +748,7 @@ namespace Experimental {
             Y_lcl.assign (Y_cur);
             Y_lcl.scale (beta);
           }
+
           const size_t meshBeg = ptr_[lclRow];
           const size_t meshEnd = ptr_[lclRow+1];
           for (size_t absBlkOff = meshBeg; absBlkOff < meshEnd; ++absBlkOff) {
@@ -716,10 +756,13 @@ namespace Experimental {
             const_little_block_type A_cur =
               getConstLocalBlockFromAbsOffset (absBlkOff);
             little_vec_type X_cur = X.getLocalBlock (meshCol, j);
-            Y_cur.matvecUpdate (alpha, A_cur, X_cur); // Y_cur += alpha*A_cur*X_cur;
-          }
-        }
-      }
+            // Y_lcl += alpha*A_cur*X_cur
+            Y_lcl.matvecUpdate (alpha, A_cur, X_cur);
+          } // for each entry in the current local row of the matrix
+
+          Y_cur.assign (Y_lcl);
+        } // for each entry in the current row of Y
+      } // for each local row of the matrix
     }
   }
 

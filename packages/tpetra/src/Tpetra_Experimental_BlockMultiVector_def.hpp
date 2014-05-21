@@ -86,7 +86,10 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
   mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
   blockSize_ (blockSize)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -100,7 +103,10 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
   mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
   blockSize_ (blockSize)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -153,7 +159,10 @@ BlockMultiVector () :
   dist_object_type (Teuchos::null),
   mvData_ (NULL),
   blockSize_ (0)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::map_type
