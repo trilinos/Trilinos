@@ -151,8 +151,10 @@ namespace {
     TEST_NOTHROW( blockMat = BCM (graph, pointDomainMap, pointRangeMap, blockSize ) );
   }
 
-  // Test creating a BlockCrsMatrix with a nontrivial graph.
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, NontrivialGraph, Scalar, LO, GO, Node )
+  // Test for basic functionality of a BlockCrsMatrix.  We create a
+  // BlockCrsMatrix with a nontrivial graph, exercise getLocalRowView
+  // and replaceLocalValues, and test applyBlock and apply.
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_DECL( ExpBlockCrsMatrix, basic, Scalar, LO, GO, Node )
   {
     using Tpetra::TestingUtilities::getNode;
     using Tpetra::TestingUtilities::getDefaultComm;
@@ -164,6 +166,8 @@ namespace {
     typedef Tpetra::Experimental::BlockMultiVector<Scalar, LO, GO, Node> BMV;
     typedef Tpetra::Experimental::BlockVector<Scalar, LO, GO, Node> BV;
     typedef Tpetra::Experimental::BlockCrsMatrix<Scalar, LO, GO, Node> BCM;
+    typedef Tpetra::MultiVector<Scalar, LO, GO, Node> mv_type;
+    typedef Tpetra::Vector<Scalar, LO, GO, Node> vec_type;
     typedef Tpetra::CrsGraph<LO, GO, Node> graph_type;
     typedef Tpetra::Map<LO, GO, Node> map_type;
     typedef Tpetra::global_size_t GST;
@@ -176,8 +180,8 @@ namespace {
     const Scalar two = STS::one () + STS::one ();
     const Scalar three = STS::one () + STS::one () + STS::one ();
 
-    out << "Testing Tpetra::Experimental::BlockCrsMatrix creation with a "
-      "nontrivial graph" << endl;
+    out << "Testing Tpetra::Experimental::BlockCrsMatrix basic "
+      "functionality" << endl;
     Teuchos::OSTab tab0 (out);
 
     RCP<const Comm<int> > comm = getDefaultComm ();
@@ -227,6 +231,8 @@ namespace {
     TEST_ASSERT( ! graph.getColMap ().is_null () );
     map_type meshColMap = * (graph.getColMap ());
 
+    out << "Creating BlockCrsMatrix" << endl;
+
     // Construct the BlockCrsMatrix.
     BCM blockMat;
     TEST_NOTHROW( blockMat = BCM (graph, blockSize) );
@@ -261,7 +267,8 @@ namespace {
                    graph.getColMap ()->isSameAs (* (graph2.getColMap ())) );
     }
 
-    // // Fill the matrix with zeros.
+    out << "Test getLocalRowView and replaceLocalValues" << endl;
+
     Array<Scalar> tempBlockSpace (maxNumEntPerRow * entriesPerBlock);
 
     // Test that getLocalRowView returns the right column indices.
@@ -346,6 +353,8 @@ namespace {
         }
       } // for each entry in the row
     } // for each local row
+
+    out << "Test applyBlock for a single vector" << endl;
 
     // Fill a BlockVector and test applyBlock() for a single vector.
     {
@@ -440,6 +449,7 @@ namespace {
       }
     } // done with single-vector applyBlock test
 
+    out << "Test applyBlock for multiple vectors (right-hand sides)" << endl;
 
     // Fill a BlockMultiVector and test applyBlock() for multiple vectors.
     {
@@ -547,6 +557,223 @@ namespace {
       } // for each local (mesh) row of the output BlockMultiVector
     } // done with multiple-vector applyBlock test
 
+    out << "Test apply for a single vector" << endl;
+
+    // Fill a BlockVector and test apply() for a single vector.
+    {
+      // Each block of the BlockVector will have i-th entry = b - i,
+      // where is the block size.  For example, with blockSize = 3,
+      // each block will be [3 2 1]^T.  Given how we filled the
+      // BlockVector above, this will make each block dense mat-vec
+      // give the following results:
+      //
+      // [0 1 2]   [3]   [ 4]
+      // [3 4 5] * [2] = [22]
+      // [6 7 8]   [1]   [40]
+      //
+      // In general, A(i,j) = j + i*b, and X(i) = b - i, so
+      //
+      // Y(i) = sum_j A(i,j) * X(j)
+      //      = sum_j( (j + ib)(b - j) )
+      //      = sum_j( b(1 - i)j - j^2 + ib^2 )
+      //
+      // Since each row of the matrix has two block entries, each block
+      // of the result of the global mat-vec will be twice the above
+      // result.
+      BV X (* (graph.getDomainMap ()), blockSize);
+      BV Y (* (graph.getRangeMap ()), blockSize);
+      Y.putScalar (STS::zero ());
+
+      const map_type& meshDomainMap = * (graph.getDomainMap ());
+      for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
+           lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
+        little_vec_type X_lcl = X.getLocalBlock (lclDomIdx);
+        TEST_ASSERT( X_lcl.getRawPtr () != NULL );
+        TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+        for (LO i = 0; i < blockSize; ++i) {
+          X_lcl(i) = static_cast<Scalar> (blockSize - i);
+        }
+      }
+
+      vec_type X_vec = X.getVectorView ();
+      vec_type Y_vec = Y.getVectorView ();
+
+      TEST_NOTHROW( blockMat.apply (X_vec, Y_vec) );
+
+      // This test also exercises whether getVectorView really does
+      // return a view, since we access and test results using the
+      // BlockVector.
+
+      const map_type& meshRangeMap = * (graph.getRangeMap ());
+      for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
+           lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
+        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
+        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+
+        // Test that each actual output value matches its expected value.
+        for (LO i = 0; i < blockSize; ++i) {
+          // Compute the expected value for the current output index i.  I
+          // could have worked out the above formula, but why not let the
+          // computer do it?
+          LO expectedVal = 0;
+          for (LO j = 0; j < blockSize; ++j) {
+            expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
+          }
+          expectedVal *= two;
+          out << "Y_lcl(" << i << ") = " << Y_lcl(i)
+              << "; expectedVal = " << expectedVal << std::endl;
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+        }
+      }
+
+      // Repeat this test for alpha = 2 and beta = -3, where we
+      // initially fill Y with ones.
+      Y.putScalar (STS::one ());
+      Scalar alpha = STS::one () + STS::one ();
+      Scalar beta = -(STS::one () + STS::one () + STS::one ());
+
+      TEST_NOTHROW( blockMat.apply (X_vec, Y_vec, Teuchos::NO_TRANS, alpha, beta) );
+
+      for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
+           lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
+        little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+        TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
+        TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+
+        // Test that each actual output value matches its expected value.
+        for (LO i = 0; i < blockSize; ++i) {
+          // Compute the expected value for the current output index i.  I
+          // could have worked out the above formula, but why not let the
+          // computer do it?
+          LO expectedVal = 0;
+          for (LO j = 0; j < blockSize; ++j) {
+            expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
+          }
+          expectedVal *= (two * alpha);
+          expectedVal += beta * STS::one ();
+          out << "Y_lcl(" << i << ") = " << Y_lcl(i)
+              << "; expectedVal = " << expectedVal << std::endl;
+          TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+        }
+      }
+    } // done with single-vector apply test
+
+    out << "Test apply for multiple vectors (right-hand sides)" << endl;
+
+    // Fill a BlockMultiVector and test apply() for multiple vectors.
+    {
+      const LO numVecs = 3;
+
+      // Each block of the BlockMultiVector will have i-th entry = b -
+      // i, where is the block size.  For example, with blockSize = 3,
+      // each block will be [3 2 1]^T.  Given how we filled the
+      // BlockVector above, this will make each block dense mat-vec
+      // give the following results:
+      //
+      // [0 1 2]   [3]   [ 4]
+      // [3 4 5] * [2] = [22]
+      // [6 7 8]   [1]   [40]
+      //
+      // In general, A(i,j) = j + i*b, and X(i) = b - i, so
+      //
+      // Y(i) = sum_j A(i,j) * X(j)
+      //      = sum_j( (j + ib)(b - j) )
+      //      = sum_j( b(1 - i)j - j^2 + ib^2 )
+      //
+      // Since each row of the matrix has two block entries, each block
+      // of the result of the global mat-vec will be twice the above
+      // result.
+      //
+      // For the multiple-vector case, we revise the above test so
+      // that column j of X is scaled by j+1.
+      BMV X (* (graph.getDomainMap ()), blockSize, numVecs);
+      BMV Y (* (graph.getRangeMap ()), blockSize, numVecs);
+      Y.putScalar (STS::zero ());
+
+      const map_type& meshDomainMap = * (graph.getDomainMap ());
+      for (LO lclDomIdx = meshDomainMap.getMinLocalIndex ();
+           lclDomIdx <= meshDomainMap.getMaxLocalIndex (); ++lclDomIdx) {
+        for (LO j = 0; j < numVecs; ++j) {
+          little_vec_type X_lcl = X.getLocalBlock (lclDomIdx, j);
+          TEST_ASSERT( X_lcl.getRawPtr () != NULL );
+          TEST_ASSERT( X_lcl.getBlockSize () == blockSize );
+          for (LO i = 0; i < blockSize; ++i) {
+            X_lcl(i) = static_cast<Scalar> ((blockSize - i) * (j + 1));
+          }
+        }
+      }
+
+      mv_type X_mv = X.getMultiVectorView ();
+      mv_type Y_mv = Y.getMultiVectorView ();
+
+      TEST_NOTHROW( blockMat.apply (X_mv, Y_mv) );
+
+      // This test also exercises whether getMultiVectorView really
+      // does return a view, since we access and test results using
+      // the BlockMultiVector.
+
+      const map_type& meshRangeMap = * (graph.getRangeMap ());
+      for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
+           lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
+        for (LO col = 0; col < numVecs; ++col) {
+          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
+          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+
+          // Test that each actual output value matches its expected value.
+          for (LO i = 0; i < blockSize; ++i) {
+            // Compute the expected value for the current output index i.  I
+            // could have worked out the above formula, but why not let the
+            // computer do it?
+            LO expectedVal = 0;
+            for (LO j = 0; j < blockSize; ++j) {
+              expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
+            }
+            expectedVal *= two;
+            expectedVal *= static_cast<Scalar> (col + 1);
+            out << "Y_lcl(" << i << ") = " << Y_lcl(i)
+                << "; expectedVal = " << expectedVal << std::endl;
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          }
+        }
+      }
+
+      // Repeat this test for alpha = 2 and beta = -3, where we
+      // initially fill Y with ones.
+      Y.putScalar (STS::one ());
+      Scalar alpha = two;
+      Scalar beta = -three;
+
+      TEST_NOTHROW( blockMat.apply (X_mv, Y_mv, Teuchos::NO_TRANS, alpha, beta) );
+
+      for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
+           lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
+        for (LO col = 0; col < numVecs; ++col) {
+          little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx, col);
+          TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
+          TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+
+          // Test that each actual output value matches its expected value.
+          for (LO i = 0; i < blockSize; ++i) {
+            // Compute the expected value for the current output index i.  I
+            // could have worked out the above formula, but why not let the
+            // computer do it?
+            LO expectedVal = 0;
+            for (LO j = 0; j < blockSize; ++j) {
+              expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
+            }
+            expectedVal *= (two * alpha);
+            expectedVal *= static_cast<Scalar> (col + 1);
+            expectedVal += beta * STS::one ();
+            out << "Y_lcl(" << i << ") = " << Y_lcl(i)
+                << "; expectedVal = " << expectedVal << std::endl;
+            TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+          }
+        } // for each column (vector) of the BlockMultiVector
+      } // for each local (mesh) row of the output BlockMultiVector
+    } // done with multiple-vector apply test
+
     // Finishing with a barrier ensures that the test won't finish on
     // Process 0 (and therefore report a "pass") if there is deadlock
     // somewhere.
@@ -562,7 +789,7 @@ namespace {
 
 #define UNIT_TEST_GROUP( SCALAR, LO, GO, NODE ) \
   TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, ctor, SCALAR, LO, GO, NODE ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, NontrivialGraph, SCALAR, LO, GO, NODE )
+  TEUCHOS_UNIT_TEST_TEMPLATE_4_INSTANT( ExpBlockCrsMatrix, basic, SCALAR, LO, GO, NODE )
 
   TPETRA_ETI_MANGLING_TYPEDEFS()
 
