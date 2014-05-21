@@ -30,6 +30,25 @@ IF (${PACKAGE_NAME}_ENABLE_Tpetra)
       DEPLIBS muelu xpetra muelu-adapters
     )
 
+    IF(HAVE_MUELU_COMPLEX)
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        MaxwellComplex3D
+        SOURCES MaxwellComplex3D.cpp
+        COMM serial
+        DEPLIBS muelu xpetra muelu-adapters
+      )
+
+      TRIBITS_ADD_EXECUTABLE_AND_TEST(
+        MaxwellComplex3D
+        SOURCES MaxwellComplex3D.cpp
+        NUM_MPI_PROCS 4
+        COMM mpi
+        DEPLIBS muelu xpetra muelu-adapters
+      )
+
+    ENDIF()
+
     TRIBITS_COPY_FILES_TO_BINARY_DIR(Maxwell_cp
     SOURCE_FILES M0.txt M1.txt S.txt D0.txt coords.txt
     )
