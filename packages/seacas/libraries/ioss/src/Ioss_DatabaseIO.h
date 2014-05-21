@@ -64,13 +64,8 @@ namespace Ioss { class Region; }
 namespace Ioss { class SideBlock; }
 namespace Ioss { class SideSet; }
 
-// Defines the Ioss_State enum...
-
-
 namespace Ioss {
   class EntityBlock;
-
-
 
   // Contains (parent_element, side) topology pairs
   typedef std::vector<std::pair<const ElementTopology*, const ElementTopology*> > TopoContainer;
@@ -165,14 +160,14 @@ namespace Ioss {
     template <typename T>
     int64_t get_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
-      verify_and_log(reg, field);
+      verify_and_log(reg, field, 1);
       return get_field_internal(reg, field, data, data_size);
     }
 
     template <typename T>
     int64_t put_field(const T* reg,      const Field& field, void *data, size_t data_size) const
     {
-      verify_and_log(reg, field);
+      verify_and_log(reg, field, 0);
       return put_field_internal(reg, field, data, data_size);
     }
 
@@ -373,7 +368,7 @@ namespace Ioss {
     std::vector<std::string> qaRecords;
 
     private:
-    void verify_and_log(const GroupingEntity *reg, const Field& field) const;
+    void verify_and_log(const GroupingEntity *reg, const Field& field, int in_out) const;
 
     virtual int64_t get_field_internal(const Region* reg, const Field& field,
                                        void *data, size_t data_size) const = 0;
