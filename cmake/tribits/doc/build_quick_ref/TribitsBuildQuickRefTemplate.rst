@@ -1,5 +1,5 @@
 =======================================================================
-Generic TriBITS PRoject, Build, Test, and Install Quick Reference Guide
+Generic TriBITS Project, Build, Test, and Install Quick Reference Guide
 =======================================================================
 
 :Author: Roscoe A. Bartlett
