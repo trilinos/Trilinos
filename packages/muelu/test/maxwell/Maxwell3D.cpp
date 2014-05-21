@@ -223,7 +223,7 @@ int main(int argc, char *argv[]) {
   belosParams->set("Verbosity", Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   belosParams->set("Output Frequency",1);
   belosParams->set("Output Style",Belos::Brief);
-  solver = factory->create("Block GMRES",belosParams);
+  solver = factory->create("Block CG",belosParams);
   // set problem and solve
   solver -> setProblem( problem );
   Belos::ReturnType status = solver -> solve();
