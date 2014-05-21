@@ -164,6 +164,7 @@ int main(int argc, char** argv)
   bopt::options_description desc("options");
 
   desc.add_options()
+    ("help,h", "produce help message")
     ("directory,d",   bopt::value<std::string>(&working_directory),
      "working directory with trailing '/'" )
     ("decomposition,D", bopt::value<std::string>(&decomp_method),
@@ -192,6 +193,11 @@ int main(int argc, char** argv)
     std::exit(EXIT_FAILURE);
   }
 
+  if (vm.count("help")) {
+    std::cout << "Usage: " << argv[0] << " " << desc << "\n";
+    std::exit(EXIT_SUCCESS);
+  }
+  
   if (vm.count("faces")) {create_faces = true;}
   if (vm.count("edges")) {create_edges = true;}
   if (vm.count("skin"))  {create_skin  = true;}
