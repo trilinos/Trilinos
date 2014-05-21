@@ -1789,20 +1789,24 @@ void import_and_extract_views(
 #endif
 
   // mark each row in targetMap as local or remote, and go ahead and get a view for the local rows
-  // CMS: This can actually be done even more effiently by querying the importer directly
+  
+  // TODO: If we have a prototypeImporter, this can actually be done even more effiently by querying the importer
+  // directly , avoiding all of these hash table lookups
   Mview.remote.resize(numRows);
 
-  Array<GlobalOrdinal> MremoteRows;
+  Array<GlobalOrdinal> MremoteRows(NumRows);
   for(size_t i=0; i < numRows; ++i)
   {
     const LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
 
     if (mlid == OrdinalTraits<LocalOrdinal>::invalid()) {
       ++numRemote;
-      MremoteRows.push_back(Mrows[i]);
+      MremoteRows[numRemote]=Mrows[i];
       Mview.remote[i]=true;
     }
   }
+  MremoteRows.resize(numRemote);
+
 
   if (numProcs < 2) {
     TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
