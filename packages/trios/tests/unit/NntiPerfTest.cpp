@@ -237,7 +237,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << " sync requests per second == " << num_sends/op_timer << std::endl;
+    if (num_sends > 0) {
+    	out << " sync requests per second == " << num_sends/op_timer << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -260,7 +262,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << "async requests per second == " << num_sends/op_timer << std::endl;
+    if (num_sends > 0) {
+    	out << "async requests per second == " << num_sends/op_timer << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -295,7 +299,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << " sync get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+    if (num_gets > 0) {
+    	out << " sync get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -334,7 +340,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << "async get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+    if (num_gets > 0) {
+    	out << "async get (" << get_size << " byte transfer) == " << (double)(num_gets*get_size)/one_mb/op_timer << " MBps" << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -369,7 +377,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << " sync put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+    if (num_puts > 0) {
+    	out << " sync put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
@@ -408,7 +418,9 @@ void client(void) {
         }
     }
     op_timer=trios_get_time()-op_timer;
-    out << "async put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+    if (num_puts > 0) {
+    	out << "async put (" << put_size << " byte transfer) == " << (double)(num_puts*put_size)/one_mb/op_timer << " MBps" << std::endl;
+    }
 
     MPI_Barrier(MPI_COMM_WORLD);
 
