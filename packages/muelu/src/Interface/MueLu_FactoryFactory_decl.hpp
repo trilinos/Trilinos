@@ -85,6 +85,7 @@
 #include "MueLu_EminPFactory.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_GenericRFactory.hpp"
+#include "MueLu_IndefBlockedDiagonalSmoother.hpp"
 #include "MueLu_IsorropiaInterface.hpp"
 #include "MueLu_RepartitionInterface.hpp"
 #include "MueLu_MultiVectorTransferFactory.hpp"
@@ -107,6 +108,7 @@
 #include "MueLu_UncoupledAggregationFactory.hpp"
 #include "MueLu_UserAggregationFactory.hpp"
 #include "MueLu_UserPFactory.hpp"
+#include "MueLu_UzawaSmoother.hpp"
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
@@ -217,12 +219,14 @@ namespace MueLu {
 #endif // HAVE_MPI
       }
       // Blocked factories
-      if (factoryName == "BlockedPFactory")            return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "BlockedGaussSeidelSmoother") return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "SimpleSmoother")             return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "BraessSarazinSmoother")      return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "SchurComplementFactory")     return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
-      if (factoryName == "BlockedDirectSolver")        return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedDirectSolver")             return BuildBlockedDirectSolver(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedGaussSeidelSmoother")      return BuildBlockedSmoother<BlockedGaussSeidelSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BlockedPFactory")                 return BuildBlockedPFactory(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "BraessSarazinSmoother")           return BuildBlockedSmoother<BraessSarazinSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "IndefiniteBlockDiagonalSmoother") return BuildBlockedSmoother<IndefBlockedDiagonalSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SimpleSmoother")                  return BuildBlockedSmoother<SimpleSmoother>(paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "SchurComplementFactory")          return Build2<SchurComplementFactory> (paramList, factoryMapIn, factoryManagersIn);
+      if (factoryName == "UzawaSmoother")                   return BuildBlockedSmoother<UzawaSmoother>(paramList, factoryMapIn, factoryManagersIn);
 
       // Use a user defined factories (in <Factories> node)
       if (factoryMapIn.find(factoryName) != factoryMapIn.end()) {

@@ -83,6 +83,7 @@ namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
   void GeoInterpFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &fineLevel, Level &coarseLevel) const {
 
+    Input(fineLevel, "A");
     Input(fineLevel, "A00");
     Input(fineLevel, "A10");
     Input(fineLevel, "A20");
@@ -159,9 +160,9 @@ namespace MueLu {
     std::cout << "computing various numbers...\n";
     // Number of elements?
     GO totalFineElements = fineElementMDOFs->numRows();
-    LO nFineElements = sqrt(totalFineElements);
+    LO nFineElements = (int) sqrt(totalFineElements);
     GO totalCoarseElements = coarseElementMDOFs->numRows();
-    LO nCoarseElements = sqrt(totalCoarseElements);
+    LO nCoarseElements = (int) sqrt(totalCoarseElements);
 
     // Set sizes for *COARSE GRID*
     GO nM = (2*nCoarseElements+1)*(2*nCoarseElements+1);
@@ -187,7 +188,8 @@ namespace MueLu {
     RCP<const Teuchos::Comm<int> > comm = rowMapforPV->getComm();
 
     // Create rowMap for P
-    RCP<const Map> rowMapforP  = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,fNV+fNP+fNM,comm);
+    RCP<Matrix> FineA = Factory::Get< RCP<Matrix> >(fineLevel, "A");
+    RCP<const Map> rowMapforP  = FineA->getRowMap();
 
     // Create colMaps for the coarse grid
     RCP<const Map> colMapforPV = Xpetra::MapFactory<LO,GO>::createUniformContigMap(Xpetra::UseTpetra,nV,comm);

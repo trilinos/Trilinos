@@ -61,7 +61,8 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   basis = p.get<Teuchos::RCP<const panzer::PureBasis> >("Basis");
   pointRule = p.get<Teuchos::RCP<const panzer::PointRule> >("Point Rule");
 
-  std::string dof_name = p.get<std::string>("DOF Name")+"_"+pointRule->getName(); 
+  std::string field_name = p.get<std::string>("DOF Name");
+  std::string dof_name = field_name+"_"+pointRule->getName(); 
   std::string value_name = p.get<std::string>("Value Name");
 
   Teuchos::RCP<PHX::DataLayout> basis_layout = basis->functional;
@@ -81,6 +82,13 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   dof      = PHX::MDField<ScalarT,Cell,Point,Dim>(dof_name, vector_layout_dof);
   value    = PHX::MDField<ScalarT,Cell,Point,Dim>(value_name, vector_layout_vector);
 
+  // setup the orientation field
+  std::string orientationFieldName = field_name+" Orientation";
+  if(p.isType<std::string>("Orientation Field Name"))
+    orientationFieldName = p.get<std::string>("Orientation Field Name");
+  dof_orientation = PHX::MDField<ScalarT,Cell,BASIS>(orientationFieldName,
+	                                                basis_layout);
+
   // setup all basis fields that are required
   panzer::MDFieldArrayFactory af_pv(pointRule->getName()+"_");
 
@@ -93,8 +101,11 @@ PHX_EVALUATOR_CTOR(DirichletResidual_EdgeBasis,p)
   
   this->addEvaluatedField(residual);
   this->addDependentField(dof);
+  this->addDependentField(dof_orientation);
   this->addDependentField(value);
   this->addDependentField(pointValues.jac);
+
+     
  
   std::string n = "Dirichlet Residual Edge Basis Evaluator";
   this->setName(n);
@@ -105,6 +116,7 @@ PHX_POST_REGISTRATION_SETUP(DirichletResidual_EdgeBasis,worksets,fm)
 {
   this->utils.setFieldData(residual,fm);
   this->utils.setFieldData(dof,fm);
+  this->utils.setFieldData(dof_orientation,fm);
   this->utils.setFieldData(value,fm);
   this->utils.setFieldData(pointValues.jac,fm);
 
@@ -174,6 +186,15 @@ PHX_EVALUATE_FIELDS(DirichletResidual_EdgeBasis,workset)
   else {
     // don't know what to do 
     TEUCHOS_ASSERT(false);
+  }
+
+  // loop over residuals scaling by orientation. This gurantees
+  // everything is oriented in the "positive" direction, this allows
+  // sums acrossed processor to be oriented in the same way (right?)
+  for(std::size_t c=0;c<workset.num_cells;c++) {
+    for(int b=0;b<dof.dimension(1);b++) {
+      residual(c,b) *= dof_orientation(c,b);
+    }
   }
 }
 

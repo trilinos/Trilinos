@@ -436,7 +436,7 @@ int main(int argc, char *argv[]) {
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*rhs,its,*X);
+    H->Iterate(*rhs,*X,its);
 
     //x->describe(*out,Teuchos::VERB_EXTREME);
   }

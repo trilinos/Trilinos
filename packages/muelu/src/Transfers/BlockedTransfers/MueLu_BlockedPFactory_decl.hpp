@@ -53,6 +53,7 @@
 #ifndef MUELU_BLOCKEDPFACTORY_DECL_HPP_
 #define MUELU_BLOCKEDPFACTORY_DECL_HPP_
 
+#include <Xpetra_MapExtractorFactory_fwd.hpp>
 #include <Xpetra_Matrix_fwd.hpp>
 
 #include "MueLu_ConfigDefs.hpp"
@@ -136,10 +137,10 @@ namespace MueLu {
     /*! @brief Constructor.
       User can supply a factory for generating the tentative prolongator.
     */
-    BlockedPFactory(/*RCP<FactoryBase> AFact = Teuchos::null*/);
+    BlockedPFactory(/*RCP<FactoryBase> AFact = Teuchos::null*/): diagonalView_("current") { }
 
     //! Destructor.
-    virtual ~BlockedPFactory();
+    virtual ~BlockedPFactory() { }
 
     RCP<const ParameterList> GetValidParameterList(const ParameterList& paramList = ParameterList()) const;
 
@@ -149,10 +150,10 @@ namespace MueLu {
     //@{
 
     //! Change view of diagonal.
-    void SetDiagonalView(std::string const& diagView);
+    void SetDiagonalView(std::string const& diagView) { diagonalView_ = diagView; }
 
     //! Add a factory manager
-    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager);
+    void AddFactoryManager(RCP<const FactoryManagerBase> FactManager) { FactManager_.push_back(FactManager); }
 
     //@}
 
@@ -160,7 +161,7 @@ namespace MueLu {
     //@{
 
     //! Returns current view of diagonal.
-    std::string GetDiagonalView();
+    std::string GetDiagonalView() { return diagonalView_; }
 
     //@}
 

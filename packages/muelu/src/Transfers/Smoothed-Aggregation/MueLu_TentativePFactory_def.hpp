@@ -150,7 +150,6 @@ namespace MueLu {
     RCP<const Map> rowMap = A->getRowMap();
     RCP<const Map> colMap = A->getColMap();
 
-    const GO     indexBase = rowMap->getIndexBase();
     const size_t numRows   = rowMap->getNodeNumElements();
 
     RCP<const Teuchos::Comm<int> > comm = rowMap->getComm();
@@ -298,27 +297,39 @@ namespace MueLu {
       } else {
         // Special handling for aggSize < NSDim (i.e. single node aggregates in structural mechanics)
 
-	// The local QR decomposition is not possible in the "overconstrained" case (i.e. number of columns in localQR > number of rows),
-	// which corresponds to #DOFs in Aggregate < NSDim. For usual problems this is only possible for single node aggregates in structural mechanics. 
-	// (Similar problems may arise in discontinuous Galerkin problems...)
-	// We bypass the QR decomposition and use an identity block in the tentative prolongator for the single node aggregate and transfer the corresponding
-	// fine level null space information 1-to-1 to the coarse level null space part.
-	
-	// NOTE: The resulting tentative prolongation operator has (aggSize*DofsPerNode-NSDim) zero columns leading to a singular coarse level operator A.
-	// To deal with that one has the following options:
-	// - Use the "RepairMainDiagonal" flag in the RAPFactory (default: false) to add some identity block to the diagonal of the zero rows in the coarse level operator A,
-	//   such that standard level smoothers can be used again.
-	// - Use special (projection-based) level smoothers, which can deal with singular matrices (very application specific)
-	// - Adapt the code below to avoid zero columns. However, we do not support a variable number of DOFs per node in MueLu/Xpetra which makes the implementation really hard.
-	
-        localQR.reshape(NSDim, NSDim);
-        for (size_t i = aggSize; i < NSDim; i++)
-          localQR(i,i) = one;
+        // The local QR decomposition is not possible in the "overconstrained"
+        // case (i.e. number of columns in localQR > number of rows), which
+        // corresponds to #DOFs in Aggregate < NSDim. For usual problems this
+        // is only possible for single node aggregates in structural mechanics.
+        // (Similar problems may arise in discontinuous Galerkin problems...)
+        // We bypass the QR decomposition and use an identity block in the
+        // tentative prolongator for the single node aggregate and transfer the
+        // corresponding fine level null space information 1-to-1 to the coarse
+        // level null space part.
 
+        // NOTE: The resulting tentative prolongation operator has
+        // (aggSize*DofsPerNode-NSDim) zero columns leading to a singular
+        // coarse level operator A.  To deal with that one has the following
+        // options:
+        // - Use the "RepairMainDiagonal" flag in the RAPFactory (default:
+        //   false) to add some identity block to the diagonal of the zero rows
+        //   in the coarse level operator A, such that standard level smoothers
+        //   can be used again.
+        // - Use special (projection-based) level smoothers, which can deal
+        //   with singular matrices (very application specific)
+        // - Adapt the code below to avoid zero columns. However, we do not
+        //   support a variable number of DOFs per node in MueLu/Xpetra which
+        //   makes the implementation really hard.
+
+        // R = extended (by adding identity rows) localQR
         for (size_t j = 0; j < NSDim; j++)
-          for (size_t k = 0; k <= j; k++)
-            coarseNS[j][offset+k] = localQR(k,j);
+          for (size_t k = 0; k <= NSDim; k++)
+            if (k < as<size_t>(aggSize))
+              coarseNS[j][offset+k] = localQR(k,j);
+            else
+              coarseNS[j][offset+k] = (k == j ? one : zero);
 
+        // Q = I (rectangular)
         for (size_t i = 0; i < as<size_t>(aggSize); i++)
           for (size_t j = 0; j < NSDim; j++)
             localQR(i,j) = (j == i ? one : zero);
@@ -378,7 +389,6 @@ namespace MueLu {
     typedef typename STS::magnitudeType Magnitude;
     const SC     zero      = STS::zero();
     const SC     one       = STS::one();
-    const LO     INVALID   = Teuchos::OrdinalTraits<LO>::invalid();
 
     // number of aggregates
     GO numAggs = aggregates->GetNumAggregates();
@@ -426,7 +436,6 @@ namespace MueLu {
     //This requires moving some parts of some local Q's to other processors
     //because aggregates can span processors.
     RCP<const Map > rowMapForPtent = A->getRowMap();
-    size_t numRowsForPtent = rowMapForPtent->getNodeNumElements();
     const Map& rowMapForPtentRef = *rowMapForPtent;
 
     // Set up storage for the rows of the local Qs that belong to other processors.
@@ -485,7 +494,6 @@ namespace MueLu {
 
     //Create column map for Ptent, estimate local #nonzeros in Ptent,  and create Ptent itself.
     const Map& coarseMapRef = *coarseMap;
-    size_t nzEstimate = numRowsForPtent*NSDim;
 
     // For the 3-arrays constructor
     ArrayRCP<size_t>  ptent_rowptr;
@@ -531,7 +539,7 @@ namespace MueLu {
           try{
             SC nsVal = fineNS[j][ nonUniqueMapRef.getLocalElement(aggToRowMap[aggStart[agg]+k]) ]; // extract information from fine level NS
             localQR(k,j) = nsVal;
-            if (nsVal != 0.0) bIsZeroNSColumn = false;
+            if (nsVal != zero) bIsZeroNSColumn = false;
           }
           catch(...) {
             std::cout << "length of fine level nsp: " << fineNullspace->getGlobalLength() << std::endl;
@@ -615,43 +623,24 @@ namespace MueLu {
 
          // end default case (myAggSize >= NSDim)
       } else {  // special handling for myAggSize < NSDim (i.e. 1pt nodes)
-        // construct R by hand, i.e. keep first myAggSize rows untouched
-        //GetOStream(Warnings0) << "TentativePFactory (WARNING): aggregate with " << myAggSize << " DOFs and nullspace dim " << NSDim << ". special handling of QR decomposition." << std::endl;
+        // See comments for the uncoupled case
 
-        localQR.reshape(NSDim,NSDim);
-        for (size_t i=myAggSize; i<NSDim; i++) {
-          localQR(i,i) = Teuchos::ScalarTraits<SC>::one();
-        }
+        // R = extended (by adding identity rows) localQR
+        for (size_t j = 0; j < NSDim; j++)
+          for (size_t k = 0; k <= NSDim; k++) {
+            TEUCHOS_TEST_FOR_EXCEPTION(!coarseMapRef.isNodeLocalElement(offset+k), Exceptions::RuntimeError,
+                                       "Caught error in coarseNS insert, j=" << j << ", offset+k = " << offset+k);
 
-        // Extract R, the coarse nullspace.  This is stored in upper triangular part of localQR.
-        // Note:  coarseNS[i][.] is the ith coarse nullspace vector, which may be counter to your intuition.
-        // This stores the (offset+k)th entry only if it is local according to the coarseMap.
-
-        for (size_t j=0; j<NSDim; ++j) {
-          for (size_t k=0; k<=j; ++k) {
-            try {
-              if (coarseMapRef.isNodeLocalElement(offset+k)) {
-                coarseNS[j][offset+k] = localQR(k,j); // agg has only one node
-              }
-            }
-            catch(...) {
-              std::cout << "caught error in coarseNS insert, j="<<j<<", offset+k = "<<offset+k<<std::endl;
-            }
+            if (k < as<size_t>(myAggSize))
+              coarseNS[j][offset+k] = localQR(k,j);
+            else
+              coarseNS[j][offset+k] = (k == j ? one : zero);
           }
-        }
 
-        // Calculate Q, the tentative prolongator.
-        // The Lapack GEQRF call only works for myAggsize >= NSDim
-        // special handling for very small aggregates (with myAggsize < NSDim)
-
-        // calculate identity matrix with zero columns for the last NSDim-myAggsize columns.
-        for (size_t i=0; i<Teuchos::as<size_t>(myAggSize); i++) {
-          // loop over cols
-          for (size_t j=0; j<NSDim; j++) {
-            if (j==i) localQR(i,j) = Teuchos::ScalarTraits<SC>::one();
-            else localQR(i,j) = Teuchos::ScalarTraits<SC>::zero();
-          }
-        }
+        // Q = I (rectangular)
+        for (size_t i = 0; i < as<size_t>(myAggSize); i++)
+          for (size_t j = 0; j < NSDim; j++)
+            localQR(i,j) = (j == i ? one : zero);
       } // end else (special handling for 1pt aggregates)
 
       //Process each row in the local Q factor.  If the row is local to the current processor
@@ -663,7 +652,6 @@ namespace MueLu {
         //If it is, the row is inserted.  If not, the row number, columns, and values are saved in
         //MultiVectors that will be sent to other processors.
         GO globalRow = aggToRowMap[aggStart[agg]+j];
-        LO localRow  = rowMapForPtent->getLocalElement(globalRow); // CMS: There has to be an efficient way to do this...
 
         //TODO is the use of Xpetra::global_size_t below correct?
         if (rowMapForPtentRef.isNodeGlobalElement(globalRow) == false ) {
@@ -698,7 +686,7 @@ namespace MueLu {
                       << "caught error during Ptent row insertion, global row "
                       << globalRow << std::endl;
           }
-        } //if (rowMapForPtent->getGlobalElement(localRow) == ...
+        }
       } //for (GO j=0; j<myAggSize; ++j)
 
     } // for (LO agg=0; agg<numAggs; ++agg)

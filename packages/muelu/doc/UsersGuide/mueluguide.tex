@@ -179,6 +179,8 @@ Rather than implementing all possible algorithms, \muelu relies on other \trilin
 
 \cbb{multigrid algorithm}                {string}    {"sa"}          {Multigrid method. Possible values: "sa", "emin", "pg".}
 
+\cbb{transpose: use implicit}            {bool}      {false}         {Use implicit transpose for the restriction operator.}
+
 \cbb{aggregation: type}                  {string}    {"uncoupled"}   {Aggregation scheme. Possible values: "uncoupled", "coupled".}
 \cbc{aggregation: symmetrize}            {bool}      {false}         {Symmetrize connectivity graph for nonsymmetric matrices.}
 \cbb{aggregation: drop scheme}           {string}    {"classical"}   {Aggregation connectivity dropping scheme. Possible values: "classical", "laplacian".}

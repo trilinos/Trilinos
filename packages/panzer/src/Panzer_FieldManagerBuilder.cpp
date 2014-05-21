@@ -114,7 +114,8 @@ void panzer::FieldManagerBuilder::setupVolumeFieldManagers(
     
     // use the physics block to register evaluators
     pb->buildAndRegisterEquationSetEvaluators(*fm, user_data);
-    pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
+    if(!physicsBlockGatherDisabled())
+      pb->buildAndRegisterGatherAndOrientationEvaluators(*fm,lo_factory,user_data);
     pb->buildAndRegisterDOFProjectionsToIPEvaluators(*fm,user_data);
     if(!physicsBlockScatterDisabled())
       pb->buildAndRegisterScatterEvaluators(*fm,lo_factory,user_data);

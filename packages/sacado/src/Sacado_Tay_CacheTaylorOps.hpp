@@ -1607,8 +1607,6 @@ namespace Sacado {
     inline typename PowExprType< typename Expr<T>::value_type, Expr<T> >::expr_type
     pow (const typename Expr<T>::value_type& c, const Expr<T>& expr)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-
       // pow(x,y) = exp(y*log(x))
       return exp(expr*std::log(c));
     }
@@ -1617,8 +1615,6 @@ namespace Sacado {
     inline typename PowExprType< Expr<T>, typename Expr<T>::value_type >::expr_type
     pow (const Expr<T>& expr, const typename Expr<T>::value_type& c)
     {
-      typedef ConstExpr<typename Expr<T>::value_type> ConstT;
-
       // pow(x,y) = exp(y*log(x))
       return exp(c*log(expr));
     }

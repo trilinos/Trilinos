@@ -195,6 +195,8 @@ namespace MueLu {
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
       this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
 
+    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", Hierarchy::GetDefaultImplicitTranspose());
+
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
     defaultManager->SetVerbLevel(this->verbosity_);
@@ -463,14 +465,22 @@ namespace MueLu {
     }
 
     // === Restriction ===
-    RCP<TransPFactory> R = rcp(new TransPFactory());
-    R->SetFactory("P", manager.GetFactory("P"));
-    manager.SetFactory("R", R);
+    if (!this->implicitTranspose_) {
+      RCP<TransPFactory> R = rcp(new TransPFactory());
+      R->SetFactory("P", manager.GetFactory("P"));
+      manager.SetFactory("R", R);
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
 
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
+    ParameterList RAPparams = *(RAP->GetValidParameterList());
+    RAPparams.set("implicit transpose", this->implicitTranspose_);
+    RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
-    RAP->SetFactory("R", manager.GetFactory("R"));
+    if (!this->implicitTranspose_)
+      RAP->SetFactory("R", manager.GetFactory("R"));
     manager.SetFactory("A", RAP);
 
     // === Coordinates ===
@@ -547,14 +557,17 @@ namespace MueLu {
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
-      newRparams.set("type",     "Restriction");
-      newRparams.set("implicit", !this->doPRrebalance_);
+      newRparams.set("type",               "Restriction");
+      newRparams.set("implicit",          !this->doPRrebalance_);
+      newRparams.set("implicit transpose", this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->  SetFactory("R",           manager.GetFactory("R"));
       newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
       newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("R",           newR);
+      if (!this->implicitTranspose_) {
+        newR->SetFactory("R",           manager.GetFactory("R"));
+        manager.SetFactory("R",           newR);
+      }
       manager.SetFactory("Coordinates", newR);
 
       // NOTE: the role of NullspaceFactory is to provide nullspace on the finest

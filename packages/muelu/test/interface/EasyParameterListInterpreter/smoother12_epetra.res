@@ -4,6 +4,7 @@ verbosity = test
 max levels = 10   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -66,10 +67,11 @@ Level 1
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0   [default]
+ Keep AP Pattern = 0
+ Keep RAP Pattern = 0
+ implicit transpose = 0
+ CheckMainDiagonal = 0
+ RepairMainDiagonal = 0
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 5   [unused]
@@ -117,10 +119,11 @@ Level 2
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0   [default]
+ Keep AP Pattern = 0
+ Keep RAP Pattern = 0
+ implicit transpose = 0
+ CheckMainDiagonal = 0
+ RepairMainDiagonal = 0
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 4   [unused]
@@ -168,10 +171,11 @@ Level 3
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0   [default]
+ Keep AP Pattern = 0
+ Keep RAP Pattern = 0
+ implicit transpose = 0
+ CheckMainDiagonal = 0
+ RepairMainDiagonal = 0
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 2.99461   [unused]
@@ -219,10 +223,11 @@ Level 4
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0   [default]
+ Keep AP Pattern = 0
+ Keep RAP Pattern = 0
+ implicit transpose = 0
+ CheckMainDiagonal = 0
+ RepairMainDiagonal = 0
  
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 2.99194   [unused]
@@ -270,10 +275,11 @@ Level 5
  [empty list]
  
  Computing Ac (MueLu::RAPFactory)
- Keep AP Pattern = 0   [default]
- Keep RAP Pattern = 0   [default]
- CheckMainDiagonal = 0   [default]
- RepairMainDiagonal = 0   [default]
+ Keep AP Pattern = 0
+ Keep RAP Pattern = 0
+ implicit transpose = 0
+ CheckMainDiagonal = 0
+ RepairMainDiagonal = 0
  
  Setup Smoother (MueLu::AmesosSmoother{type = Superlu})
  presmoother -> 

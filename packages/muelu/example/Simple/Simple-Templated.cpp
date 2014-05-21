@@ -140,7 +140,7 @@ int main(int argc, char *argv[]) {
   // Use AMG directly as an iterative solver (not as a preconditionner)
   int nIts = 9;
 
-  H.Iterate(*B, nIts, *X);
+  H.Iterate(*B, *X, nIts);
 
   // Print relative residual norm
   typedef Teuchos::ScalarTraits<Scalar> ST;

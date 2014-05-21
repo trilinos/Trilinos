@@ -77,16 +77,17 @@ namespace MueLu {
       validParamList->set("type", "Interpolation", "Type of the transfer operator that need to be rebalanced (Interpolation or Restriction)", typeValidator);
     }
 
-    validParamList->set< RCP<const FactoryBase> >("P",              Teuchos::null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
-    validParamList->set< RCP<const FactoryBase> >("R",              Teuchos::null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Nullspace",      Teuchos::null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Coordinates",    Teuchos::null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
-    validParamList->set< RCP<const FactoryBase> >("Importer",       Teuchos::null, "Factory of the importer object used for the rebalancing");
+    validParamList->set< RCP<const FactoryBase> >("P",                   null, "Factory of the prolongation operator that need to be rebalanced (only used if type=Interpolation)");
+    validParamList->set< RCP<const FactoryBase> >("R",                   null, "Factory of the restriction operator that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Nullspace",           null, "Factory of the nullspace that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Coordinates",         null, "Factory of the coordinates that need to be rebalanced (only used if type=Restriction)");
+    validParamList->set< RCP<const FactoryBase> >("Importer",            null, "Factory of the importer object used for the rebalancing");
+    validParamList->set< bool >                  ("implicit transpose", false, "Use implicit transpose for restriction");
     // The value of "useSubcomm" parameter here must be the same as in RebalanceAcFactory
-    validParamList->set< bool >                  ("useSubcomm",              true, "Construct subcommunicators");
-    validParamList->set< bool >                  ("implicit",               false, "Do not rebalance P and R");
-    validParamList->set< int >                   ("write start",    -1, "first level at which coordinates should be written to file");
-    validParamList->set< int >                   ("write end",      -1, "last level at which coordinates should be written to file");
+    validParamList->set< bool >                  ("useSubcomm",          true, "Construct subcommunicators");
+    validParamList->set< bool >                  ("implicit",           false, "Do not rebalance P and R");
+    validParamList->set< int >                   ("write start",           -1, "First level at which coordinates should be written to file");
+    validParamList->set< int >                   ("write end",             -1, "Last level at which coordinates should be written to file");
 
     // TODO validation: "P" parameter valid only for type="Interpolation" and "R" valid only for type="Restriction". Like so:
     // if (paramList.isEntry("type") && paramList.get("type) == "Interpolation) {
@@ -103,7 +104,9 @@ namespace MueLu {
       Input(coarseLevel, "P");
 
     } else {
-      Input(coarseLevel, "R");
+      if (pL.get<bool>("implicit transpose") == false)
+        Input(coarseLevel, "R");
+
       Input(coarseLevel, "Nullspace");
       if (pL.get< RCP<const FactoryBase> >("Coordinates") != Teuchos::null)
         Input(coarseLevel, "Coordinates");
@@ -193,9 +196,9 @@ namespace MueLu {
     } else {
       //TODO how do we handle implicitly transposed restriction operators?
 
-      RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
+      if (pL.get<bool>("implicit transpose") == false) {
+        RCP<Matrix> originalR = Get< RCP<Matrix> >(coarseLevel, "R");
 
-      {
         SubFactoryMonitor m2(*this, "Rebalancing restriction", coarseLevel);
 
         if (implicit || importer.is_null()) {

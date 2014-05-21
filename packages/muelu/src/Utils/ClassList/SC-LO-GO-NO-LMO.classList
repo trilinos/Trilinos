@@ -30,6 +30,7 @@ Hierarchy
 HierarchyManager
 HierarchyFactory
 Ifpack2Smoother - #if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+IndefBlockedDiagonalSmoother
 LocalPermutationStrategy
 MapTransferFactory
 MergedBlockedMatrixFactory
@@ -54,6 +55,7 @@ RebalanceBlockAcFactory
 RebalanceBlockInterpolationFactory
 RebalanceBlockRestrictionFactory
 RebalanceTransferFactory
+RefMaxwell
 RepartitionFactory - #ifdef HAVE_MPI
 RigidBodyModeFactory
 SaPFactory
@@ -75,3 +77,4 @@ TpetraOperator
 TransPFactory
 TrilinosSmoother
 UserPFactory
+UzawaSmoother

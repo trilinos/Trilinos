@@ -53,3 +53,9 @@
 
 /* mfh 10 Apr 2014: Define if ML is enabled in TrilinosCouplings */
 #cmakedefine HAVE_TRILINOSCOUPLINGS_ML
+
+/* Define if Stokhos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_STOKHOS
+
+/* Define if Belos is enabled in TrilinosCouplings */
+#cmakedefine HAVE_TRILINOSCOUPLINGS_BELOS

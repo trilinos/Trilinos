@@ -93,6 +93,11 @@ public:
     A_ (A), blockSize_ (blockSize), strideX_ (strideX), strideY_ (strideY)
   {}
 
+  //! The block size (number of rows, and number of columns).
+  LO getBlockSize () const {
+    return blockSize_;
+  }
+
   //! Pointer to the block's entries.
   Scalar* getRawPtr () const {
     return A_;

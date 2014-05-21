@@ -768,7 +768,7 @@ int ML_Epetra::MultiLevelPreconditioner::SetSmoothers(bool keepFineLevelSmoother
           if (grid_info != NULL) yvals = grid_info->y;
           if (grid_info != NULL) zvals = grid_info->z;
 
-          if ( (xvals == NULL) || (yvals == NULL) || (zvals == NULL)) {
+          if ( (nnn != 0) && ((xvals == NULL) || (yvals == NULL) || (zvals == NULL))) {
              std::cerr << ErrorMsg_ << "line smoother: must supply either coordinates or orientation should be either 'horizontal' or 'vertical' " << "\n";
              exit(EXIT_FAILURE);
           }

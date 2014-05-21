@@ -461,7 +461,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(
   Kokkos_View_Fad, ShmemSize, FadType, Layout, Device )
 {
   typedef typename ApplyView<FadType**,Layout,Device>::type ViewType;
-  typedef typename FadType::value_type value_type;
   typedef typename ViewType::size_type size_type;
 
   const size_type num_rows = global_num_rows;

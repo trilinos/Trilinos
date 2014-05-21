@@ -505,7 +505,6 @@ OP (const typename E::value_type &t, const FadExpr<E> &e){        \
 template<class E>                                                 \
 inline FadExpr<TYPE<FadExpr<E>,Fad<typename E::value_type> > >    \
 OP (const FadExpr<E> &e,const Fad<typename E::value_type>& v){    \
-    typedef typename E::value_type A;                             \
     typedef TYPE<FadExpr<E>,Fad<typename E::value_type> > expr_t; \
     return FadExpr<expr_t>(expr_t (e, v ));                       \
 }                                                                 \
@@ -520,7 +519,6 @@ OP (const Fad<A> &e1,const Fad<A>& e2){                           \
 template<class E>                                                 \
 inline FadExpr<TYPE<Fad<typename E::value_type>,FadExpr<E> > >    \
 OP (const Fad<typename E::value_type> &v, const FadExpr<E> &e){   \
-    typedef typename E::value_type A;                             \
     typedef TYPE<Fad<typename E::value_type>,FadExpr<E> > expr_t; \
     return FadExpr<expr_t> (expr_t (v , e ));                     \
 }

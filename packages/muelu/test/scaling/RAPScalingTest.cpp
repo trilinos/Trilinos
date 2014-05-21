@@ -181,10 +181,13 @@ int main(int argc, char *argv[]) {
 
       RFact = rcp(new TransPFactory());
 
+      ParameterList Aclist = *(AcFact.GetValidParameterList());
+      Aclist.set("implicit transpose", optImplicitTranspose);
+      AcFact.SetParameterList(Aclist);
+
       AcFact.SetFactory("P", PFact);
       if (optImplicitTranspose==false)
         AcFact.SetFactory("R", RFact);
-      AcFact.SetImplicitTranspose(optImplicitTranspose);
     }
 
     RCP<Time> RAPKernelTimer = TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel"); // re-use the same timer in the loop

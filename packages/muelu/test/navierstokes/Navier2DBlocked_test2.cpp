@@ -573,7 +573,7 @@ int main(int argc, char *argv[]) {
     *out << "||x_0|| = " << norms[0] << std::endl;
 
     // apply ten multigrid iterations
-    H->Iterate(*xRhs,100,*xLsg);
+    H->Iterate(*xRhs,*xLsg,100);
 
 
     // calculate and print residual

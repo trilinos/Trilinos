@@ -415,7 +415,7 @@ int main(int argc, char *argv[]) {
     *out << "||x_0|| = " << norms[0] << std::endl;
 
     // apply ten multigrid iterations
-    H->Iterate(*xRhs,10,*xLsg);
+    H->Iterate(*xRhs,*xLsg,10);
 
     // calculate and print residual
     RCP<MultiVector> xTmp = MultiVectorFactory::Build(map,1);

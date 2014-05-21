@@ -295,6 +295,9 @@ namespace Xpetra {
     //! Extract a const, non-persisting view of global indices in a specified row of the matrix.
     void getGlobalRowView(GlobalOrdinal GlobalRow, ArrayView< const GlobalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalRowView"); mtx_->getGlobalRowView(GlobalRow, indices, values); }
 
+    //! Extract a list of entries in a specified global row of this matrix. Put into pre-allocated storage.
+    void getGlobalRowCopy(GlobalOrdinal GlobalRow, const ArrayView< GlobalOrdinal > &indices, const ArrayView< Scalar > &values, size_t &numEntries) const { XPETRA_MONITOR("TpetraCrsMatrix::getGlobalRowCopy"); mtx_->getGlobalRowCopy(GlobalRow, indices, values, numEntries); }
+
     //! Extract a const, non-persisting view of local indices in a specified row of the matrix.
     void getLocalRowView(LocalOrdinal LocalRow, ArrayView< const LocalOrdinal > &indices, ArrayView< const Scalar > &values) const { XPETRA_MONITOR("TpetraCrsMatrix::getLocalRowView"); mtx_->getLocalRowView(LocalRow, indices, values); }
 

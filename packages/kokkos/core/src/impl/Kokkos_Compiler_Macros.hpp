@@ -148,5 +148,23 @@
   #define KOKKOS_DEVICE_COMPILER_VERSION KOKKOS_COMPILER_VERSION
 #endif
 
+// disable asm on ibm platforms
+#if defined( __powerpc) || defined(__powerpc__) || defined(__powerpc64__) || defined(__POWERPC__) || defined(__ppc__) || defined(__ppc64__)
+  #define KOKKOS_DISABLE_ASM true
+#endif
+
+// disable asm on intel compilers less that 1200
+#if defined (__INTEL_COMPILER) && (__INTEL_COMPILER < 1200 )
+  #define KOKKOS_DISABLE_ASM true
+#endif
+
+#if (defined( __GNUC__ ) || defined( __GNUG__ )) && not defined( __CUDACC__ )
+  #define KOKKOS_NONTEMPORAL_PREFETCH_LOAD(addr) __builtin_prefetch(addr,0,0)
+  #define KOKKOS_NONTEMPORAL_PREFETCH_STORE(addr) __builtin_prefetch(addr,1,0)
+#else
+  #define KOKKOS_NONTEMPORAL_PREFETCH_LOAD(addr) ((void)0)
+  #define KOKKOS_NONTEMPORAL_PREFETCH_STORE(addr) ((void)0)
+#endif
+
 
 #endif

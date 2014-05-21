@@ -81,29 +81,13 @@ namespace Experimental {
 /// \code
 /// int err = 0;
 /// // At least one entry, so &offsets[0] always makes sense.
-/// std::vector<ptrdiff_t> offsets (1);
+/// Teuchos::Array<ptrdiff_t> offsets (1);
 /// for (LO localRowInd = 0; localRowInd < localNumRows; ++localRowInd) {
-///   const LO numEntries = A.getNumEntriesInLocalRow (localRowInd);
-///
-///   if (wantOffsets) {
-///     // It's not necessary to get offsets if you plan to change
-///     // _all_ the entries in the row.  If you only plan to change
-///     // a subset of entries in the row, you should forego calling
-///     // getLocalRowView(), and instead call
-///     // replaceLocalValuesByOffsets().
-///     if (offsets.size () < numEntries) {
-///       offsets.resize (numEntries);
-///     }
-///     err = A.getLocalRowOffsets (localRowInd, &offsets[0]);
-///     if (err != 0) {
-///       break;
-///     }
-///   }
-///
 ///   // Get a view of the current row.
 ///   // You may modify the values, but not the column indices.
 ///   const LO* localColInds;
 ///   Scalar* vals;
+///   LO numEntries;
 ///   err = A.getLocalRowView (localRowInd, localColInds, vals, numEntries);
 ///   if (err != 0) {
 ///     break;
@@ -234,6 +218,9 @@ public:
   //! The number of degrees of freedom per mesh point.
   LO getBlockSize () const { return blockSize_; }
 
+  //! Get the (mesh) graph.
+  crs_graph_type getGraph () const { return graph_; }
+
   /// \brief Version of apply() that takes BlockMultiVector input and output.
   ///
   /// This method is deliberately not marked const, because it may do
@@ -284,7 +271,9 @@ public:
   ///
   /// \param numColInds [in] The number of entries of colInds.
   ///
-  /// \return Zero if the sum was successful, else nonzero.
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   sumIntoLocalValues (const LO localRowInd,
                       const LO colInds[],
@@ -308,42 +297,50 @@ public:
                    Scalar*& vals,
                    LO& numInds) const;
 
-  /// \brief Get offsets corresponding to the given row indices.
+  /// \brief Get relative offsets corresponding to the given row indices.
   ///
   /// The point of this method is to precompute the results of
   /// searching for the offsets corresponding to the given column
   /// indices.  You may then reuse these search results in
   /// replaceLocalValuesByOffsets or sumIntoLocalValuesByOffsets.
   ///
-  /// Offsets are for column indices, <i>not</i> for values.
-  /// That is, the blockSize stride is precomputed.
+  /// Offsets are block offsets; they are for column indices,
+  /// <i>not</i> for values.
   ///
-  /// \param localRowInd [in] Index of the local row.
-  /// \param offsets [out] On output: offsets corresponding to the
-  ///   given column indices.  Must have at least numColInds entries.
+  /// \param localRowInd [in] Local index of the row.
+  /// \param offsets [out] On output: relative offsets corresponding
+  ///   to the given column indices.  Must have at least numColInds
+  ///   entries.
   /// \param colInds [in] The local column indices for which to
-  ///   compute entries.  Must have at least numColInds entries.
+  ///   compute offsets.  Must have at least numColInds entries.
   ///   This method will only read the first numColsInds entries.
   /// \param numColInds [in] Number of entries in colInds to read.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   getLocalRowOffsets (const LO localRowInd,
                       ptrdiff_t offsets[],
                       const LO colInds[],
                       const LO numColInds) const;
 
-  //! Like the four-argument version, but for all entries in the row.
-  LO
-  getLocalRowOffsets (const LO localRowInd,
-                      ptrdiff_t offsets[]) const;
-
-  //! Like replaceLocalValues, but avoids computing row offsets via search.
+  /// \brief Like replaceLocalValues, but avoids computing row offsets.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   replaceLocalValuesByOffsets (const LO localRowInd,
                                const ptrdiff_t offsets[],
                                const Scalar vals[],
                                const LO numOffsets) const;
 
-  //! Like sumIntoLocalValues, but avoids computing row offsets via search.
+  /// \brief Like sumIntoLocalValues, but avoids computing row offsets.
+  ///
+  /// \return The number of valid column indices in colInds.  This
+  ///   method succeeded if and only if the return value equals the
+  ///   input argument numColInds.
   LO
   sumIntoLocalValuesByOffsets (const LO localRowInd,
                                const ptrdiff_t offsets[],
@@ -358,7 +355,59 @@ public:
   /// any entries in that row.
   LO getNumEntriesInLocalRow (const LO localRowInd) const;
 
+  /// \brief Whether this object had an error on the calling process.
+  ///
+  /// Import and Export operations using this object as the target of
+  /// the Import or Export may incur local errors, if some process
+  /// encounters an LID in its list which is not a valid mesh row
+  /// local index on that process.  In that case, we don't want to
+  /// throw an exception, because not all processes may throw an
+  /// exception; this can result in deadlock or put Tpetra in an
+  /// incorrect state, due to lack of consistency across processes.
+  /// Instead, we set a local error flag and ignore the incorrect
+  /// data.  When unpacking, we do the same with invalid column
+  /// indices.  If you want to check whether some process experienced
+  /// an error, you must do a reduction or all-reduce over this flag.
+  /// Every time you initiate a new Import or Export with this object
+  /// as the target, we clear this flag.  (Note to developers: we
+  /// clear it at the beginning of checkSizes().)
+  bool localError () const {
+    return localError_;
+  }
+
+  /// \brief The current stream of error messages.
+  ///
+  /// This is only nonempty on the calling process if localError()
+  /// returns true.  In that case, it stores a stream of
+  /// human-readable, endline-separated error messages encountered
+  /// during an Import or Export cycle.  Every time you initiate a new
+  /// Import or Export with this object as the target, we clear this
+  /// stream.  (Note to developers: we clear it at the beginning of
+  /// checkSizes().)
+  ///
+  /// If you want to print this, you are responsible for ensuring that
+  /// it is valid for the calling MPI process to print to whatever
+  /// output stream you use.  On some MPI implementations, you may
+  /// need to send the string to Process 0 for printing.
+  std::string errorMessages () const {
+    return errs_.is_null () ? std::string ("") : errs_->str ();
+  }
+
 protected:
+  //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
+  LO
+  absMaxLocalValues (const LO localRowInd,
+                     const LO colInds[],
+                     const Scalar vals[],
+                     const LO numColInds) const;
+
+  //! Like sumIntoLocalValuesByOffsets, but for the ABSMAX combine mode.
+  LO
+  absMaxLocalValuesByOffsets (const LO localRowInd,
+                              const ptrdiff_t offsets[],
+                              const Scalar vals[],
+                              const LO numOffsets) const;
+
   /// \brief \name Implementation of DistObject (or DistObjectKA).
   ///
   /// The methods here implement Tpetra::DistObject or
@@ -367,22 +416,13 @@ protected:
   /// operations.  Users don't have to worry about these methods.
   //@{
 
-  virtual bool checkSizes (const Tpetra::SrcDistObject& /* source */ ) {
-    return false; // not implemented
-  }
+  virtual bool checkSizes (const Tpetra::SrcDistObject& source);
 
   virtual void
   copyAndPermute (const Tpetra::SrcDistObject& source,
                   size_t numSameIDs,
                   const Teuchos::ArrayView<const LO>& permuteToLIDs,
-                  const Teuchos::ArrayView<const LO>& permuteFromLIDs)
-  {
-    (void) source;
-    (void) numSameIDs;
-    (void) permuteToLIDs;
-    (void) permuteFromLIDs;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                  const Teuchos::ArrayView<const LO>& permuteFromLIDs);
 
   virtual void
   packAndPrepare (const Tpetra::SrcDistObject& source,
@@ -390,16 +430,7 @@ protected:
                   Teuchos::Array<packet_type>& exports,
                   const Teuchos::ArrayView<size_t>& numPacketsPerLID,
                   size_t& constantNumPackets,
-                  Tpetra::Distributor& distor)
-  {
-    (void) source;
-    (void) exportLIDs;
-    (void) exports;
-    (void) numPacketsPerLID;
-    (void) constantNumPackets;
-    (void) distor;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                  Tpetra::Distributor& distor);
 
   virtual void
   unpackAndCombine (const Teuchos::ArrayView<const LO> &importLIDs,
@@ -407,20 +438,21 @@ protected:
                     const Teuchos::ArrayView<size_t> &numPacketsPerLID,
                     size_t constantNumPackets,
                     Tpetra::Distributor& distor,
-                    Tpetra::CombineMode CM)
-  {
-    (void) importLIDs;
-    (void) imports;
-    (void) numPacketsPerLID;
-    (void) constantNumPackets;
-    (void) distor;
-    TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Not implemented");
-  }
+                    Tpetra::CombineMode CM);
   //@}
 
 private:
   //! The graph that describes the structure of this matrix.
   crs_graph_type graph_;
+  /// \brief The graph's row Map; the mesh row Map of this matrix.
+  ///
+  /// We keep this separately, not as an RCP, so that methods like
+  /// replaceLocalValues and sumIntoLocalValues are thread safe.  (We
+  /// could do this just by keeping the number of local indices in the
+  /// mesh Map, but this more general approach will let us make
+  /// replaceGlobalValues and sumIntoGlobalValues thread safe as
+  /// well.)
+  map_type rowMeshMap_;
   /// \brief The point Map version of the graph's domain Map.
   ///
   /// NOTE (mfh 16 May 2014) Since this is created at construction
@@ -441,29 +473,44 @@ private:
   const size_t* ptr_;
   //! Raw pointer to the graph's array of column indices.
   const LO* ind_;
-  //! Array of values in the matrix.
-  Teuchos::Array<Scalar> val_;
+  /// \brief Array of values in the matrix.
+  ///
+  /// This is stored as a Teuchos::ArrayRCP, so that BlockCrsMatrix
+  /// has view (shallow copy) semantics.  In the future, we will want
+  /// to replace this with Kokkos::View.
+  Teuchos::ArrayRCP<Scalar> valView_;
+  /// \brief Raw pointer version of valView_.
+  ///
+  /// It must always be true, outside of the constructors, that
+  /// <tt>valView_.getRawPtr() == val_</tt>.
+  Scalar* val_;
 
   /// \brief Column Map block multivector (only initialized if needed).
   ///
-  /// FIXME (mfh 16 May 2014) Use a pointer (RCP or std::unique_ptr)
-  /// here, for correct use of the "lazy initialization of members of
-  /// objects with view semantics" pattern.  (Otherwise, existing
-  /// views of the BlockCrsMatrix won't get the benefit of lazy
-  /// initialization.)
-  BMV X_colMap_;
+  /// mfh 16 May 2014: This is a pointer to a pointer to BMV.  Ditto
+  /// for Y_rowMap_ below.  This lets us do lazy initialization
+  /// correctly with view semantics of BlockCrsMatrix.  All views of
+  /// this BlockCrsMatrix have the same outer pointer.  That way, we
+  /// can set the inner pointer in one view, and all other views will
+  /// see it.  (Otherwise, other existing views of the BlockCrsMatrix
+  /// would not get the benefit of lazy initialization.)
+  ///
+  /// The outer pointer is always nonull: It is always true that
+  ///
+  /// <tt>! X_colMap_.is_null()</tt>.
+  ///
+  /// However, the inner pointer starts out null and is lazily
+  /// initialized in applyBlock().
+  ///
+  /// It's necessary to use a shared pointer (either Teuchos::RCP or
+  /// std::shared_ptr) here, at least for the outer pointer type,
+  /// because different views of the same block matrix will use the
+  /// same BMV object.
+  Teuchos::RCP<Teuchos::RCP<BMV> > X_colMap_;
   /// \brief Row Map block multivector (only initialized if needed).
   ///
-  /// FIXME (mfh 16 May 2014) Use a pointer (RCP or std::unique_ptr)
-  /// here, for correct use of the "lazy initialization of members of
-  /// objects with view semantics" pattern.  (Otherwise, existing
-  /// views of the BlockCrsMatrix won't get the benefit of lazy
-  /// initialization.)
-  BMV Y_rowMap_;
-  //! Whether the column Map block multivector is initialized.
-  bool X_colMap_initialized_;
-  //! Whether the row Map block multivector is initialized.
-  bool Y_rowMap_initialized_;
+  /// See the documentation of X_colMap_ above.
+  Teuchos::RCP<Teuchos::RCP<BMV> > Y_rowMap_;
 
   /// \brief Padding to use for "little blocks" in the matrix.
   ///
@@ -476,6 +523,14 @@ private:
 
   //! Whether "little blocks" are stored in row-major (or column-major) order.
   bool rowMajor_;
+
+  /// \brief Whether this object on the calling process is in an error state.
+  ///
+  /// See the documentation of localError() for details.
+  bool localError_;
+
+  //! Stream of error messages.  This is null if localError is false.
+  Teuchos::RCP<std::ostringstream> errs_;
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.
@@ -519,12 +574,46 @@ private:
                           const Scalar alpha,
                           const Scalar beta);
 
+  /// \brief Get the relative block offset of the given block.
+  ///
+  /// \param localRowIndex [in] Local index of the entry's row.
+  /// \param colIndexToFind [in] Local index of the entry's column.
+  /// \param hint [in] Relative offset hint.
+  ///
+  /// An offset may be either relative or absolute.  <i>Absolute</i>
+  /// offsets are just direct indices into an array.  <i>Relative</i>
+  /// offsets are relative to the current row.  For example, if
+  /// <tt>k_abs</tt> is an absolute offset into the array of column
+  /// indices <tt>ind_</tt>, then one can use <tt>k_abs</tt> directly
+  /// as <tt>ind_[k_abs]</tt>.  If <tt>k_rel</tt> is a relative offset
+  /// into <tt>ind_</tt>, then one must know the current local row
+  /// index in order to use <tt>k_rel</tt>.  For example:
+  /// \code
+  /// size_t k_abs = ptr_[curLocalRow] + k_rel; // absolute offset
+  /// LO colInd = ind_[k_abs];
+  /// \code
+  ///
+  /// This method returns a relative block offset.  A <i>block</i>
+  /// offset means a graph or mesh offset.  It's suitable for use in
+  /// <tt>ind_</tt>, but not in <tt>val_</tt>.  One must multiply it
+  /// by the result of offsetPerBlock() in order to get the
+  /// <i>point</i> offset into <tt>val_</tt>.
+  ///
+  /// The given "hint" is a relative block offset.  It can help avoid
+  /// searches, for the common case of accessing several consecutive
+  /// entries in the same row.
+  ///
+  /// \return Teuchos::OrdinalTraits<size_t>::invalid() if there is no
+  ///   block at the given index pair; otherwise, the "absolute"
+  ///   block offset of that block.
   size_t
-  findOffsetOfColumnIndex (const LO localRowIndex,
-                           const LO colIndexToFind,
-                           const size_t hint) const;
+  findRelOffsetOfColumnIndex (const LO localRowIndex,
+                              const LO colIndexToFind,
+                              const size_t hint) const;
 
-  LO allocationSizePerBlock () const;
+  /// \brief Number of entries consumed by each block in the matrix,
+  ///   including padding; the stride between blocks.
+  LO offsetPerBlock () const;
 
   const_little_block_type
   getConstLocalBlockFromInput (const Scalar* val, const size_t pointOffset) const;
@@ -533,10 +622,10 @@ private:
   getNonConstLocalBlockFromInput (Scalar* val, const size_t pointOffset) const;
 
   const_little_block_type
-  getConstLocalBlockFromOffset (const size_t blockOffset) const;
+  getConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
 
   little_block_type
-  getNonConstLocalBlockFromOffset (const size_t blockOffset) const;
+  getNonConstLocalBlockFromAbsOffset (const size_t absBlockOffset) const;
 };
 
 } // namespace Experimental

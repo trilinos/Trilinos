@@ -5,6 +5,7 @@ HierarchyFactory
 HierarchyManager
 PreDropFunctionBaseClass
 PRFactory
+RefMaxwell
 ShiftedLaplacian
 ShiftedLaplacianOperator
 Smoother

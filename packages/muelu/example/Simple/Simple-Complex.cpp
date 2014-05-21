@@ -153,7 +153,7 @@ int main(int argc, char *argv[]) {
   int nIts = 20;
 
   H.IsPreconditioner(false);
-  H.Iterate(*B, nIts, *X);
+  H.Iterate(*B, *X, nIts);
 
   // Print relative residual norm
   typedef Teuchos::ScalarTraits<Scalar> ST;

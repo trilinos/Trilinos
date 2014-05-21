@@ -92,7 +92,7 @@ void TpetraOperator<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::apply(c
     XTMV       tY(rcpFromRef(Y));
 
     tY.putScalar(Teuchos::ScalarTraits<Scalar>::zero());
-    Hierarchy_->Iterate(tX, 1, tY, true);
+    Hierarchy_->Iterate(tX, tY, 1, true);
 
   } catch (std::exception& e) {
     //FIXME add message and rethrow

@@ -343,7 +343,9 @@ int main(int argc, char *argv[]) {
       AFact->setVerbLevel(Teuchos::VERB_HIGH);
       if (!optExplicitR) {
         H->SetImplicitTranspose(true);
-        AFact->SetImplicitTranspose(true);
+        ParameterList Aclist = *(AFact->GetValidParameterList());
+        Aclist.set("implicit transpose", true);
+        AFact->SetParameterList(Aclist);
         if (comm->getRank() == 0) std::cout << "\n\n* ***** USING IMPLICIT RESTRICTION OPERATOR ***** *\n" << std::endl;
       }
 
@@ -526,7 +528,7 @@ int main(int argc, char *argv[]) {
     TimeMonitor tm(*TimeMonitor::getNewTimer("ScalingTest: 3 - Fixed Point Solve"));
 
     H->IsPreconditioner(false);
-    H->Iterate(*B, optIts, *X);
+    H->Iterate(*B, *X, optIts);
 
   } // optFixedPt
 

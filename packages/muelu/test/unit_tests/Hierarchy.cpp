@@ -211,7 +211,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, Iterate)
   RHS->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 
   X->norm2(norms);
   out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
@@ -262,7 +262,9 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RCP<SaPFactory>         Pfact = rcp( new SaPFactory() );
   RCP<TransPFactory>      Rfact = rcp( new TransPFactory());
   RCP<RAPFactory>         Acfact = rcp( new RAPFactory() );
-  Acfact->SetImplicitTranspose(true);
+  ParameterList Aclist = *(Acfact->GetValidParameterList());
+  Aclist.set("implicit transpose", true);
+  Acfact->SetParameterList(Aclist);
 
 #if defined(HAVE_MUELU_EPETRA) && defined(HAVE_MUELU_IFPACK) && defined(HAVE_MUELU_AMESOS)
   RCP<SmootherPrototype> smooProto = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createSmootherPrototype("Gauss-Seidel", 2);
@@ -306,7 +308,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, IterateWithImplicitRestriction)
   RHS->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 
   X->norm2(norms);
   out << "||X_" << std::setprecision(2) << iterations << "|| = " << std::setiosflags(std::ios::fixed) <<
@@ -359,7 +361,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     }
 }
@@ -427,7 +429,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy2level)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 #endif
     }
 }
@@ -512,7 +514,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3level)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 #endif
     }
 }
@@ -612,7 +614,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy3levelFacManagers)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 #endif
     } // test only for Epetra
 }
@@ -660,7 +662,7 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchyTestBreakCondition)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
-  H.Iterate(*RHS, iterations, *X);
+  H.Iterate(*RHS, *X, iterations);
 #endif
     } // test only for Epetra
 }

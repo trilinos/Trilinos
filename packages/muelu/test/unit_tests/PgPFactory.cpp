@@ -248,7 +248,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, nonsymExample)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -551,7 +551,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ColumnBasedOmegas)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -717,7 +717,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegas)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -885,7 +885,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, ReUseOmegasTransP)
   {
     X->putScalar( (SC) 0.0);
 
-    H->Iterate(*RHS,its,*X);
+    H->Iterate(*RHS,*X,its);
 
     X->norm2(norms);
     if (comm->getRank() == 0)
@@ -1125,7 +1125,7 @@ TEUCHOS_UNIT_TEST(PgPFactory, EpetraVsTpetra)
       {
         X->putScalar( (SC) 0.0);
 
-        H->Iterate(*RHS,its,*X);
+        H->Iterate(*RHS,*X,its);
 
         X->norm2(norms);
         if (comm->getRank() == 0)

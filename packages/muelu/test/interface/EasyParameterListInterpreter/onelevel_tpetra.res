@@ -4,6 +4,7 @@ verbosity = test
 coarse: max size = 2000   [default]
 debug: graph level = -1   [default]
 number of equations = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]

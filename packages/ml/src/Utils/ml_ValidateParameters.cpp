@@ -329,7 +329,7 @@ Teuchos::ParameterList * ML_Epetra::GetValidMLPParameters(){
   setIntParameter("max levels",10,"Max # of levels",PL,intParam);
   setStringToIntegralParameter<int>("increasing or decreasing", "increasing", "Level numbering",tuple<std::string>("increasing","decreasing"),PL);
   setStringToIntegralParameter<int>("prec type", "MGV","Multigrid cycle type",tuple<std::string>("MGV","MGW","full-MGV","one-level-postsmoothing","two-level-additive","two-level-hybrid","two-level-hybrid2","projected MGV"),PL);
-  PL->set("projected mode",(double**)0);
+  PL->set("projected modes",(double**)0);
   setIntParameter("number of projected modes",0,"# of modes to be projected out before and after the V-cycle",PL,intParam);
 
   /* Aggregation and Prolongator Options (Section 6.4.3) */

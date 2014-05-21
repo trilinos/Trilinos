@@ -86,7 +86,10 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs), // nonowning RCP is OK, since pointMap_ won't go away
   mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
   blockSize_ (blockSize)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -100,7 +103,10 @@ BlockMultiVector (const map_type& meshMap,
   mv_ (Teuchos::rcpFromRef (pointMap_), numVecs),
   mvData_ (mv_.get1dViewNonConst ().getRawPtr ()),
   blockSize_ (blockSize)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 BlockMultiVector<Scalar, LO, GO, Node>::
@@ -153,7 +159,10 @@ BlockMultiVector () :
   dist_object_type (Teuchos::null),
   mvData_ (NULL),
   blockSize_ (0)
-{}
+{
+  // Make sure that mv_ has view semantics.
+  mv_.setCopyOrView (Teuchos::View);
+}
 
 template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::map_type
@@ -309,17 +318,16 @@ template<class Scalar, class LO, class GO, class Node>
 typename BlockMultiVector<Scalar, LO, GO, Node>::little_vec_type
 BlockMultiVector<Scalar, LO, GO, Node>::
 getLocalBlock (const LO localRowIndex,
-                   const LO colIndex) const
+               const LO colIndex) const
 {
-  if (! meshMap_.isNodeLocalElement (localRowIndex) ||
-      localRowIndex == Teuchos::OrdinalTraits<LO>::invalid ()) {
+  if (! isValidLocalMeshIndex (localRowIndex)) {
     return little_vec_type (NULL, 0, 0);
   } else {
-    const size_t offset = colIndex * mv_.getStride () +
-      localRowIndex * getBlockSize ();
-    Scalar* const A = mvData_ + offset;
-    const LO strideX = 1;
-    return little_vec_type (A, getBlockSize (), strideX);
+    const LO strideX = this->getStrideX ();
+    const size_t blockSize = getBlockSize ();
+    const size_t offset = colIndex * this->getStrideY () +
+      localRowIndex * blockSize * strideX;
+    return little_vec_type (this->getRawPtr () + offset, blockSize, strideX);
   }
 }
 
@@ -358,110 +366,6 @@ checkSizes (const Tpetra::SrcDistObject& src)
 {
   return ! getMultiVectorFromSrcDistObject (src).is_null ();
 }
-
-#if 0 && defined(TPETRA_USE_KOKKOS_DISTOBJECT)
-
-template<class Scalar, class LO, class GO, class Node>
-void BlockMultiVector<Scalar, LO, GO, Node>::
-copyAndPermute (const Tpetra::SrcDistObject& src,
-                size_t numSameIDs,
-                const Kokkos::View<const LO*, device_type> &permuteToLIDs,
-                const Kokkos::View<const LO*, device_type> &permuteFromLIDs)
-{
-  const char tfecfFuncName[] = "copyAndPermute";
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    permuteToLIDs.dimension_0 () != permuteFromLIDs.dimension_0 (),
-    std::invalid_argument, ": permuteToLIDs and permuteFromLIDs must have the "
-    "same size.  permuteToLIDs.dimension_0() = " << permuteToLIDs.dimension_0 ()
-    << " != permuteFromLIDs.dimension_0() = " << permuteFromLIDs.dimension_0 ()
-    << ".");
-
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
-
-  // FIXME (mfh 23 Apr 2014) This implementation is sequential and
-  // assumes UVM.
-
-  const LO numVecs = getNumVectors ();
-  const LO numSame = static_cast<LO> (numSameIDs);
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO lclRow = 0; lclRow < numSame; ++lclRow) {
-      getLocalBlock (lclRow, j).assign (srcAsBmv.getLocalBlock (lclRow, j));
-    }
-  }
-
-  // FIXME (mfh 20 June 2012) For an Export with duplicate GIDs on the
-  // same process, this merges their values by replacement of the last
-  // encountered GID, not by the specified merge rule (such as ADD).
-  const LO numPermute = static_cast<LO> (permuteToLIDs.dimension_0 ());
-  for (LO j = 0; j < numVecs; ++j) {
-    for (LO k = numSame; k < numPermuteLIDs; ++k) {
-      getLocalBlock (permuteToLIDs(k), j).assign (srcAsBmv.getLocalBlock (permuteFromLIDs(k), j));
-    }
-  }
-}
-
-template<class Scalar, class LO, class GO, class Node>
-void BlockMultiVector<Scalar, LO, GO, Node>::
-packAndPrepare (const Tpetra::SrcDistObject& source,
-                const Kokkos::View<const LO*, device_type>& exportLIDs,
-                Kokkos::View<packet_type*, device_type>& exports,
-                const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
-                size_t& constantNumPackets,
-                Tpetra::Distributor& distor)
-{
-  typedef typename Kokkos::View<Scalar*, device_type>::size_type size_type;
-
-  typedef BlockMultiVector<Scalar, LO, GO, Node> BMV;
-  Teuchos::RCP<const BMV> srcAsBmvPtr = getBlockMultiVectorFromSrcDistObject (src);
-  TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
-    srcAsBmvPtr.is_null (), std::invalid_argument,
-    ": The source of an Import or Export to a BlockMultiVector "
-    "must also be a BlockMultiVector.");
-  const BMV& srcAsBmv = *srcAsBmvPtr;
-
-  const LO numVecs = getNumVectors ();
-
-  // Number of things to pack per LID is the block size, times the
-  // number of columns.  Input LIDs correspond to the mesh points, not
-  // the degrees of freedom (DOFs).
-  const size_type numMeshLIDs = exportLIDs.size ();
-  const size_type blockSize = static_cast<size_t> (getBlockSize ());
-  constantNumPackets = blockSize * numVecs;
-
-  size_type curExportPos = 0;
-  for (size_type meshLidIndex = 0; meshLidIndex < numMeshLIDs; ++meshLidIndex) {
-    for (LO j = 0; j < numVecs; ++j, curExportPos += blockSize) {
-      const LO meshLid = exportLIDs(meshLidIndex);
-      Scalar* const curExportPtr = &exports(curExportPos);
-      little_vec_type X_dst (curExportPtr, blockSize, 1);
-      little_vec_type X_src = srcAsBmv.getLocalBlock (meshLid, j);
-
-      X_dst.assign (X_src);
-    }
-  }
-}
-
-template<class Scalar, class LO, class GO, class Node>
-void BlockMultiVector<Scalar, LO, GO, Node>::
-unpackAndCombine (const Kokkos::View<const LO*, device_type>& importLIDs,
-                  const Kokkos::View<const packet_type*, device_type>& imports,
-                  const Kokkos::View<size_t*, device_type>& numPacketsPerLID,
-                  size_t constantNumPackets,
-                  Tpetra::Distributor& distor,
-                  Tpetra::CombineMode CM)
-{
-  TEUCHOS_TEST_FOR_EXCEPTION(
-    true, std::logic_error, "Tpetra::Experimental::unpackAndCombine: "
-    "NOT IMPLEMENTED");
-}
-
-#else // NOT TPETRA_USE_KOKKOS_DISTOBJECT
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
@@ -614,8 +518,6 @@ unpackAndCombine (const Teuchos::ArrayView<const LO>& importLIDs,
     }
   }
 }
-
-#endif // TPETRA_USE_KOKKOS_DISTOBJECT
 
 template<class Scalar, class LO, class GO, class Node>
 void BlockMultiVector<Scalar, LO, GO, Node>::
