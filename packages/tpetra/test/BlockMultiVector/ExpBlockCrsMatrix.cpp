@@ -402,6 +402,37 @@ namespace {
         TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
       }
     }
+
+    // Repeat this test for alpha = 2 and beta = -3, where we
+    // initially fill Y with ones.
+    Y.putScalar (STS::one ());
+    Scalar alpha = STS::one () + STS::one ();
+    Scalar beta = -(STS::one () + STS::one () + STS::one ());
+
+    TEST_NOTHROW( blockMat.applyBlock (X, Y, Teuchos::NO_TRANS, alpha, beta) );
+
+    for (LO lclRanIdx = meshRangeMap.getMinLocalIndex ();
+         lclRanIdx <= meshRangeMap.getMaxLocalIndex (); ++lclRanIdx) {
+      little_vec_type Y_lcl = Y.getLocalBlock (lclRanIdx);
+      TEST_ASSERT( Y_lcl.getRawPtr () != NULL );
+      TEST_ASSERT( Y_lcl.getBlockSize () == blockSize );
+
+      // Test that each actual output value matches its expected value.
+      for (LO i = 0; i < blockSize; ++i) {
+        // Compute the expected value for the current output index i.  I
+        // could have worked out the above formula, but why not let the
+        // computer do it?
+        LO expectedVal = 0;
+        for (LO j = 0; j < blockSize; ++j) {
+          expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
+        }
+        expectedVal *= (2 * alpha);
+        expectedVal += beta * STS::one ();
+        out << "Y_lcl(" << i << ") = " << Y_lcl(i)
+            << "; expectedVal = " << expectedVal << std::endl;
+        TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
+      }
+    }
   }
 
 
