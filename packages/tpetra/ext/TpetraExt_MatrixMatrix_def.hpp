@@ -1800,9 +1800,9 @@ void import_and_extract_views(
     const LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
 
     if (mlid == OrdinalTraits<LocalOrdinal>::invalid()) {
-      ++numRemote;
       MremoteRows[numRemote]=Mrows[i];
       Mview.remote[i]=true;
+      ++numRemote;
     }
   }
   MremoteRows.resize(numRemote);
