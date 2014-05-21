@@ -1794,7 +1794,7 @@ void import_and_extract_views(
   // directly , avoiding all of these hash table lookups
   Mview.remote.resize(numRows);
 
-  Array<GlobalOrdinal> MremoteRows(NumRows);
+  Array<GlobalOrdinal> MremoteRows(numRows);
   for(size_t i=0; i < numRows; ++i)
   {
     const LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
