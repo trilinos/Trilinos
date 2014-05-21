@@ -100,7 +100,6 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   // build stuff for hierarchies
   Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
-  Teuchos::RCP<SaPFactory> Pfact = Teuchos::rcp( new SaPFactory );
   Teuchos::RCP<SmootherPrototype> SmooProto11
     = Teuchos::rcp( new Ifpack2Smoother(precType11_,precList11_) );
   Teuchos::RCP<SmootherFactory> SmooFact11
@@ -109,12 +108,14 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
     = Teuchos::rcp( new Ifpack2Smoother(precType22_,precList22_) );
   Teuchos::RCP<SmootherFactory> SmooFact22
     = Teuchos::rcp( new SmootherFactory(SmooProto22) );
-  Teuchos::RCP<UncoupledAggregationFactory> Aggfact
+  Teuchos::RCP<UncoupledAggregationFactory> Aggfact11
     = Teuchos::rcp( new UncoupledAggregationFactory() );
-  Manager11->SetFactory("Aggregates",Aggfact);
+  Teuchos::RCP<UncoupledAggregationFactory> Aggfact22
+    = Teuchos::rcp( new UncoupledAggregationFactory() );
+  Manager11->SetFactory("Aggregates",Aggfact11);
   Manager11->SetFactory("Smoother",SmooFact11);
   Manager11->SetFactory("CoarseSolver",SmooFact11);
-  Manager22->SetFactory("Aggregates",Aggfact);
+  Manager22->SetFactory("Aggregates",Aggfact22);
   Manager22->SetFactory("Smoother",SmooFact22);
   Manager22->SetFactory("CoarseSolver",SmooFact22);
   Hierarchy11_ = Teuchos::rcp( new Hierarchy(A11_) );
