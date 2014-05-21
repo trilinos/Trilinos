@@ -68,11 +68,15 @@ Teuchos::RCP<const Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node> > RefMaxwell<Sca
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
 void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::setParameters(Teuchos::ParameterList& list) {
-  disable_addon_     =  list.get("refmaxwell: disable add-on",false);
-  MaxCoarseSize_     =  list.get("refmaxwell: max coarse size",1000);
-  MaxLevels_         =  list.get("refmaxwell: max levels",5);
-  EdgeSmoother_      =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
-  NodeSmoother_      =  list.get("refmaxwell: node smoother","CHEBYSHEV");
+  disable_addon_  =  list.get("refmaxwell: disable add-on",false);
+  MaxCoarseSize_  =  list.get("refmaxwell: max coarse size",1000);
+  MaxLevels_      =  list.get("refmaxwell: max levels",5);
+  precType11_     =  list.get("refmaxwell: edge smoother","CHEBYSHEV");
+  precType22_     =  list.get("refmaxwell: node smoother","CHEBYSHEV");
+  if(list.isSublist("refmaxwell: edge smoother list"))
+    precList11_     =  list.sublist("refmaxwell: edge smoother list");
+  if(list.isSublist("refmaxwell: node smoother list"))
+    precList22_     =  list.sublist("refmaxwell: node smoother list");
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -97,17 +101,12 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<SaPFactory> Pfact = Teuchos::rcp( new SaPFactory );
-  std::string precType11 = EdgeSmoother_;
-  std::string precType22 = NodeSmoother_;
-  Teuchos::ParameterList precList11, precList22;
-  precList11.set("chebyshev: degree",3);
-  precList22.set("chebyshev: degree",3);
   Teuchos::RCP<SmootherPrototype> SmooProto11
-    = Teuchos::rcp( new Ifpack2Smoother(precType11,precList11) );
+    = Teuchos::rcp( new Ifpack2Smoother(precType11_,precList11_) );
   Teuchos::RCP<SmootherFactory> SmooFact11
     = Teuchos::rcp( new SmootherFactory(SmooProto11) );
   Teuchos::RCP<SmootherPrototype> SmooProto22
-    = Teuchos::rcp( new Ifpack2Smoother(precType22,precList22) );
+    = Teuchos::rcp( new Ifpack2Smoother(precType22_,precList22_) );
   Teuchos::RCP<SmootherFactory> SmooFact22
     = Teuchos::rcp( new SmootherFactory(SmooProto22) );
   Teuchos::RCP<UncoupledAggregationFactory> Aggfact
@@ -127,10 +126,10 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
   // build ifpack2 preconditioners for Hiptmair
   Teuchos::RCP<const TCRS> EdgeMatrix = Utils::Op2NonConstTpetraCrs(SM_Matrix_ );
   Teuchos::RCP<const TCRS> NodeMatrix = Utils::Op2NonConstTpetraCrs(TMT_Matrix_);
-  edgePrec_ = Ifpack2::Factory::create(EdgeSmoother_, EdgeMatrix);
-  nodePrec_ = Ifpack2::Factory::create(NodeSmoother_, NodeMatrix);
-  edgePrec_->setParameters(precList11); edgePrec_->initialize(); edgePrec_->compute();
-  nodePrec_->setParameters(precList22); nodePrec_->initialize(); nodePrec_->compute();
+  edgePrec_ = Ifpack2::Factory::create(precType11_, EdgeMatrix);
+  nodePrec_ = Ifpack2::Factory::create(precType22_, NodeMatrix);
+  edgePrec_->setParameters(precList11_); edgePrec_->initialize(); edgePrec_->compute();
+  nodePrec_->setParameters(precList22_); nodePrec_->initialize(); nodePrec_->compute();
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

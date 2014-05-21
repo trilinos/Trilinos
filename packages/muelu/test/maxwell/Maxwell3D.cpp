@@ -185,20 +185,17 @@ int main(int argc, char *argv[]) {
   Tpetra::MatrixMatrix::Add(*S_Matrix,false,(SC)1.0,*M1_Matrix,false,(SC)1.0,SM_Matrix);
   SM_Matrix->fillComplete();
 
-  // dimension check
-  //std::cout<<"SM_Matrix is "<<SM_Matrix->getGlobalNumRows()<<" by "<<SM_Matrix->getGlobalNumCols()<<std::endl;
-  //std::cout<<"D0_Matrix is "<<D0_Matrix->getGlobalNumRows()<<" by "<<D0_Matrix->getGlobalNumCols()<<std::endl;
-  //std::cout<<"M0inv_Matrix is "<<M0inv_Matrix->getGlobalNumRows()<<" by "<<M0inv_Matrix->getGlobalNumCols()<<std::endl;
-  //std::cout<<"M1_Matrix is "<<M1_Matrix->getGlobalNumRows()<<" by "<<M1_Matrix->getGlobalNumCols()<<std::endl;
-  //std::cout<<"Coordinates multivector is "<<coords->getGlobalLength()<<" by "<<coords->getNumVectors()<<std::endl;
-
   // set parameters
-  Teuchos::ParameterList params;
+  Teuchos::ParameterList params, params11, params22;
   params.set("refmaxwell: disable add-on",false);
   params.set("refmaxwell: max coarse size",25);
   params.set("refmaxwell: max levels",4);
   params.set("refmaxwell: edge smoother","CHEBYSHEV");
   params.set("refmaxwell: node smoother","CHEBYSHEV");
+  params11.set("chebyshev: degree",3);
+  params22.set("chebyshev: degree",3);
+  params.set("refmaxwell: edge smoother list",params11);
+  params.set("refmaxwell: node smoother list",params22);
   // construct preconditioner
   RCP<RefMaxwell> preconditioner
     = rcp( new RefMaxwell(SM_Matrix,D0_Matrix,M0inv_Matrix,

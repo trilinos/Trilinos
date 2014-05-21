@@ -209,14 +209,14 @@ namespace MueLu {
     Teuchos::RCP<XMat> TMT_Matrix_, TMT_Agg_Matrix_, P11_, A11_, A22_;
     //! Nullspace
     Teuchos::RCP<XMV>  Nullspace_, Coords_;
-    //! Parameter list
-    Teuchos::ParameterList parameterList_;
+    //! Parameter lists
+    Teuchos::ParameterList parameterList_, precList11_, precList22_;
     //! Ifpack preconditioners for Hiptmair smoothing
     Teuchos::RCP< Ifpack2::Preconditioner<Scalar,LocalOrdinal,GlobalOrdinal,Node> > nodePrec_, edgePrec_;
     //! Some options
     bool disable_addon_;
     int MaxCoarseSize_, MaxLevels_;
-    std::string EdgeSmoother_, NodeSmoother_;
+    std::string precType11_, precType22_;
 
   };
 
