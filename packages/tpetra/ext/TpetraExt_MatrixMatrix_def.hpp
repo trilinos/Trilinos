@@ -1054,11 +1054,13 @@ void mult_A_B(
   Array<GlobalOrdinal> combined_index = Array<GlobalOrdinal>(2*C_numCols);
   Array<Scalar> combined_values = Array<Scalar>(2*C_numCols);
 
-  size_t C_row_i_length, j, k, lastj, last_index;
+  size_t C_row_i_length, j, k, last_index;
 
   // Run through all the hash table lookups once and for all
-  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements());
-  if(Aview.colMap->isSameAs(*Bview.rowMap)){
+  LocalOrdinal LO_INVALID = OrdinalTraits<LocalOrdinal>::invalid();
+  Array<LocalOrdinal> Acol2Brow(Aview.colMap->getNodeNumElements(),LO_INVALID);
+  Array<LocalOrdinal> Acol2Irow(Aview.colMap->getNodeNumElements(),LO_INVALID);
+  if(Aview.colMap->isSameAs(*Bview.origMatrix->getRowMap())){
     // Maps are the same: Use local IDs as the hash
     for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <=
             Aview.colMap->getMaxLocalIndex(); i++)
@@ -1067,9 +1069,12 @@ void mult_A_B(
   else {
     // Maps are not the same:  Use the map's hash
     for(LocalOrdinal i=Aview.colMap->getMinLocalIndex(); i <=
-            Aview.colMap->getMaxLocalIndex(); i++)
-      Acol2Brow[i]=Bview.rowMap->getLocalElement(
-            Aview.colMap->getGlobalElement(i));
+	  Aview.colMap->getMaxLocalIndex(); i++) {
+      GlobalOrdinal GID = Aview.colMap->getGlobalElement(i);
+      LocalOrdinal BLID = Bview.origMatrix->getRowMap()->getLocalElement(GID);
+      if(BLID != LO_INVALID) Acol2Brow[i] = BLID;
+      else Acol2Irow[i] = Bview.importMatrix->getRowMap()->getLocalElement(GID);
+    }    
   }
 
   //To form C = A*B we're going to execute this expression:
@@ -1078,14 +1083,29 @@ void mult_A_B(
   //
   //Our goal, of course, is to navigate the data in A and B once, without
   //performing searches for column-indices, etc.
-
+  ArrayRCP<const size_t> Arowptr_RCP, Browptr_RCP, Irowptr_RCP;
+  ArrayRCP<const LocalOrdinal> Acolind_RCP, Bcolind_RCP, Icolind_RCP;
+  ArrayRCP<const Scalar> Avals_RCP, Bvals_RCP, Ivals_RCP;
+  ArrayView<const size_t> Arowptr, Browptr, Irowptr;
+  ArrayView<const LocalOrdinal> Acolind, Bcolind, Icolind;
+  ArrayView<const Scalar> Avals, Bvals, Ivals;
+  Aview.origMatrix->getAllValues(Arowptr_RCP,Acolind_RCP,Avals_RCP);
+  Bview.origMatrix->getAllValues(Browptr_RCP,Bcolind_RCP,Bvals_RCP);
+  Arowptr = Arowptr_RCP();  Acolind = Acolind_RCP();  Avals = Avals_RCP();
+  Browptr = Browptr_RCP();  Bcolind = Bcolind_RCP();  Bvals = Bvals_RCP();
+  if(!Bview.importMatrix.is_null()) {
+    Bview.importMatrix->getAllValues(Irowptr_RCP,Icolind_RCP,Ivals_RCP);
+    Irowptr = Irowptr_RCP();  Icolind = Icolind_RCP();  Ivals = Ivals_RCP();
+  }
+  
   bool C_filled = C.isFillComplete();
 
   for (size_t i = 0; i < C_numCols; i++)
       c_index[i] = OrdinalTraits<size_t>::invalid();
 
   //loop over the rows of A.
-  for(size_t i=0; i<Aview.numRows; ++i) {
+  size_t Arows = Aview.rowMap->getNodeNumElements();
+  for(size_t i=0; i<Arows; ++i) {
 
     //only navigate the local portion of Aview... (It's probable that we
     //imported more of A than we need for A*B, because other cases like A^T*B
@@ -1094,12 +1114,7 @@ void mult_A_B(
       continue;
     }
 
-
-    ArrayView<const LocalOrdinal> Aindices_i = Aview.indices[i];
-    ArrayView<const Scalar> Aval_i  = Aview.values[i];
-
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
-
 
     //loop across the i-th row of A and for each corresponding row
     //in B, loop across colums and accumulate product
@@ -1110,32 +1125,27 @@ void mult_A_B(
 
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
-    for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
-      LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = Aval_i[k];
+    for(k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
+      LocalOrdinal Ak = Acol2Brow[Acolind[k]];
+      Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
-      if (Bview.remote[Ak]) continue;
+      if (Ak==LO_INVALID) continue;
 
-      const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
-      const Scalar *Bvals_k         = Bview.values[Ak].getRawPtr();
-
-      lastj = Bview.numEntriesPerRow[Ak];
-
-        for(j=OrdinalTraits<size_t>::zero(); j< lastj; ++j) {
-          LocalOrdinal col = Bcol_inds[j];
+      for(j=Browptr[Ak]; j< Browptr[Ak+1]; ++j) {
+          LocalOrdinal col = Bcolind[j];
           //assert(col >= 0 && col < C_numCols);
           if (c_index[col] == OrdinalTraits<size_t>::invalid()){
           //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
             // This has to be a +=  so insertGlobalValue goes out
-            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+            C_row_i[C_row_i_length] = Aval*Bvals[j];
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
           }
           else {
-            C_row_i[c_index[col]] += Aval*Bvals_k[j];
+            C_row_i[c_index[col]] += Aval*Bvals[j];
           }
         }
     }
@@ -1154,32 +1164,29 @@ void mult_A_B(
     // We might have to revamp this later.
     C_row_i_length = OrdinalTraits<size_t>::zero();
 
-    for(k = OrdinalTraits<size_t>::zero(); k < Aview.numEntriesPerRow[i]; ++k) {
-      LocalOrdinal Ak = Acol2Brow[Aindices_i[k]];
-      Scalar Aval = Aval_i[k];
+    for(k = Arowptr[i]; k < Arowptr[i+1]; ++k) {
+      LocalOrdinal Ak = Acol2Brow[Acolind[k]];
+      Scalar Aval = Avals[k];
       if (Aval == STS::zero())
         continue;
 
-      if (!Bview.remote[Ak]) continue;
+      if (Ak!=LO_INVALID) continue;
 
-      const LocalOrdinal *Bcol_inds = Bview.indices[Ak].getRawPtr();
-      const Scalar *Bvals_k         = Bview.values[Ak].getRawPtr();
-
-      lastj = Bview.numEntriesPerRow[Ak];
-        for(j=OrdinalTraits<size_t>::zero(); j< lastj; ++j) {
-          LocalOrdinal col = Bcol_inds[j];
+      Ak = Acol2Irow[Acolind[k]];
+      for(j=Irowptr[Ak]; j< Irowptr[Ak+1]; ++j) {
+          LocalOrdinal col = Icolind[j];
           //assert(col >= 0 && col < C_numCols);
           if (c_index[col] == OrdinalTraits<size_t>::invalid()){
           //assert(C_row_i_length >= 0 && C_row_i_length < C_numCols);
             // This has to be a +=  so insertGlobalValue goes out
-            C_row_i[C_row_i_length] = Aval*Bvals_k[j];
+            C_row_i[C_row_i_length] = Aval*Ivals[j];
             C_cols[C_row_i_length] = col;
             c_index[col] = C_row_i_length;
             C_row_i_length++;
             }
             else {
               // This has to be a +=  so insertGlobalValue goes out
-              C_row_i[c_index[col]] += Aval*Bvals_k[j];
+              C_row_i[c_index[col]] += Aval*Ivals[j];
             }
         }
     }
@@ -1767,15 +1774,9 @@ void import_and_extract_views(
 
   ArrayView<const GlobalOrdinal> Mrows = targetMap->getNodeElementList();
 
-  Mview.numRemote = 0;
-  Mview.numRows = targetMap->getNodeNumElements();
-  Mview.numEntriesPerRow.resize(Mview.numRows);
-  Mview.indices.resize(         Mview.numRows);
-  Mview.values.resize(          Mview.numRows);
-  Mview.remote.resize(          Mview.numRows);
+  size_t numRemote = 0;
+  size_t numRows   = targetMap->getNodeNumElements();
   Mview.origMatrix = Teuchos::rcp(&M,false);
-
-
   Mview.origRowMap = M.getRowMap();
   Mview.rowMap = targetMap;
   Mview.colMap = M.getColMap();
@@ -1788,26 +1789,28 @@ void import_and_extract_views(
 #endif
 
   // mark each row in targetMap as local or remote, and go ahead and get a view for the local rows
+  
+  // TODO: If we have a prototypeImporter, this can actually be done even more effiently by querying the importer
+  // directly , avoiding all of these hash table lookups
+  Mview.remote.resize(numRows);
 
-  for(size_t i=0; i < Mview.numRows; ++i)
+  Array<GlobalOrdinal> MremoteRows(numRows);
+  for(size_t i=0; i < numRows; ++i)
   {
     const LocalOrdinal mlid = Mrowmap->getLocalElement(Mrows[i]);
 
     if (mlid == OrdinalTraits<LocalOrdinal>::invalid()) {
-      Mview.remote[i] = true;
-      ++Mview.numRemote;
-    }
-    else {
-      Mview.remote[i] = false;
-      M.getLocalRowView(mlid, Mview.indices[i], Mview.values[i]);
-            Mview.numEntriesPerRow[i] = Mview.indices[i].size();
+      MremoteRows[numRemote]=Mrows[i];
+      Mview.remote[i]=true;
+      ++numRemote;
     }
   }
+  MremoteRows.resize(numRemote);
+
 
   if (numProcs < 2) {
-    TEUCHOS_TEST_FOR_EXCEPTION(Mview.numRemote > 0, std::runtime_error,
+    TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
       "MatrixMatrix::import_and_extract_views ERROR, numProcs < 2 but attempting to import remote matrix rows." <<std::endl);
-    setMaxNumEntriesPerRow(Mview);
     //If only one processor we don't need to import any remote rows, so return.
     return;
   }
@@ -1821,7 +1824,7 @@ void import_and_extract_views(
 #endif
 
   global_size_t globalMaxNumRemote = 0;
-  Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, Mview.numRemote, Teuchos::outArg(globalMaxNumRemote) );
+  Teuchos::reduceAll(*(Mrowmap->getComm()) , Teuchos::REDUCE_MAX, (global_size_t)numRemote, Teuchos::outArg(globalMaxNumRemote) );
 
 
   if (globalMaxNumRemote > 0) {
@@ -1829,15 +1832,7 @@ void import_and_extract_views(
 #ifdef HAVE_TPETRA_MMM_TIMINGS
     MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM I&X Import-1")));
 #endif
-    Array<GlobalOrdinal> MremoteRows(Mview.numRemote);
 
-
-    global_size_t offset = 0;
-    for(size_t i=0; i < Mview.numRows; ++i) {
-      if (Mview.remote[i]) {
-        MremoteRows[offset++] = Mrows[i];
-      }
-    }
 
     RCP<const Map_t> MremoteRowMap = rcp(new Map_t(
       OrdinalTraits<global_size_t>::invalid(),
@@ -1880,22 +1875,9 @@ void import_and_extract_views(
 
     // Save the column map of the imported matrix, so that we can convert indices back to global for arithmetic later
     Mview.importColMap = Mview.importMatrix->getColMap();
-
-    // Finally, use the freshly imported data to fill in the gaps in our views of rows of M.
-    for(size_t i=0; i < Mview.numRows; ++i)
-    {
-      if (Mview.remote[i]) {
-        const LocalOrdinal importLID = MremoteRowMap->getLocalElement(Mrows[i]);
-        Mview.importMatrix->getLocalRowView(importLID,
-                                             Mview.indices[i],
-                                             Mview.values[i]);
-        Mview.numEntriesPerRow[i] = Mview.indices[i].size();
-      }
-    }
-
   }
-  setMaxNumEntriesPerRow(Mview);
 }
+
 
 
 } //End namepsace MMdetails
