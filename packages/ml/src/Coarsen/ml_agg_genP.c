@@ -3887,7 +3887,7 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   Pmatrix->data_destroy = ML_CSR_MSRdata_Destroy;
   ML_Operator_Set_Getrow(Pmatrix, Amat->invec_leng, CSR_getrow);
   ML_Operator_Set_ApplyFunc(Pmatrix, CSR_matvec);
-  Pmatrix->NumZDir = Ncoarse/(ag->num_PDE_eqns*NVertLines);  /* mark these so that we can use them */
+
   Pmatrix->Zorientation= 1;                                  /* for the next level coarsening      */
   Pmatrix ->num_PDEs    = ag->num_PDE_eqns;
 
@@ -3899,6 +3899,8 @@ int ML_AGG_SemiCoarseP(ML *ml,int level, int clevel, void *data)
   Nglobal = ML_Comm_GsumInt( ml->comm, Nglobal);
   Ncglobal= ML_Comm_GsumInt( ml->comm, Ncglobal);
 
+  /* doing it this way to avoid overflow (and to handle empty procs) */
+  Pmatrix->NumZDir = (int) ( (((double)Ncglobal)/((double)Nglobal))*((double) widget->nz) + .001);
   if (ml->comm->ML_mypid == 0 && ag->print_flag < ML_Get_PrintLevel()) {
        printf("SemiCoarsening: Coarsening from %d to %d\n",Nglobal,Ncglobal);
   }
@@ -4082,8 +4084,12 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
    for (i = 0; i < Ntotal*DofsPerNode+Nghost; i++) Col2Dof[i]=dtemp[i];
    if (dtemp != NULL) free(dtemp);
 
-  NLayers   = LayerId[0];
-  NVertLines= VertLineId[0];
+   if (Ntotal != 0) {
+     NLayers   = LayerId[0];
+     NVertLines= VertLineId[0];
+   }
+   else { NLayers = -1; NVertLines = -1; }
+
   for (i = 1; i < Ntotal; i++) {
       if ( VertLineId[i] > NVertLines ) NVertLines = VertLineId[i];
       if ( LayerId[i]    >   NLayers  ) NLayers    = LayerId[i];
@@ -4158,6 +4164,7 @@ int MakeSemiCoarsenP(int Ntotal, int nz, int CoarsenRate, int LayerId[],
   MaxNnz = 2*DofsPerNode*Ndofs;
   Pvals  = (double *) malloc( (1+MaxNnz)*sizeof(double));
   Pptr   = (int    *) malloc( DofsPerNode*(2+Ntotal)*sizeof(int   ));
+  Pptr[0] = 0; Pptr[1] = 0;
   Pcols  = (int    *) malloc( (1+MaxNnz)*sizeof(int   ));
 
   if (Pcols == NULL) {
@@ -4453,10 +4460,9 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
    }
    if ( (Ndof%DofsPerNode) != 0) RetVal = -2;
 
-   gRetVal = RetVal;
-   ML_gsum_scalar_int(&gRetVal, &j, comm);
+   gRetVal = ML_gmax_int(RetVal, comm);
    if ( gRetVal < 0)  {
-      i = -1; 
+      i = comm->ML_nprocs;
       if (RetVal < 0) i = mypid;
       j = ML_gmin_int(i, comm);
 
@@ -4544,7 +4550,7 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
                next++;
             if (NumBlocks == 0) NumNodesPerVertLine = next-index;
             if (next-index != NumNodesPerVertLine) {
-               printf("Error code only works for constant block size now!!! A size of %d found instead of %d\n",next-index,NumNodesPerVertLine);
+               printf("%d: Error code only works for constant block size now!!! A size of %d found instead of %d\n",mypid,next-index,NumNodesPerVertLine);
                exit(EXIT_FAILURE);
             }
             count = 0;
@@ -4570,6 +4576,13 @@ int ML_compute_line_info(int LayerId[], int VertLineId[],
           if (LayerId[i] == -1) {
              printf("Warning: did not assign %d to a Layer?????\n",i);
           }
+       }
+       i = ML_gmax_int(NumNodesPerVertLine, comm);
+       if (NumNodesPerVertLine == -1)  NumNodesPerVertLine = i;
+
+       if (NumNodesPerVertLine != i)  {
+          printf("%d: Different processors have different z direction line lengths? %d vs. %d\n",mypid,i,NumNodesPerVertLine);
+          exit(EXIT_FAILURE);
        }
        return NumNodesPerVertLine;
 }
