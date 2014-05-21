@@ -369,9 +369,29 @@ public:
   /// indices.  If you want to check whether some process experienced
   /// an error, you must do a reduction or all-reduce over this flag.
   /// Every time you initiate a new Import or Export with this object
-  /// as the target, we clear this flag.  In particular, we clear it
-  /// at the end of checkSizes(), if that method will return true.
-  bool localError () const;
+  /// as the target, we clear this flag.  (Note to developers: we
+  /// clear it at the beginning of checkSizes().)
+  bool localError () const {
+    return localError_;
+  }
+
+  /// \brief The current stream of error messages.
+  ///
+  /// This is only nonempty on the calling process if localError()
+  /// returns true.  In that case, it stores a stream of
+  /// human-readable, endline-separated error messages encountered
+  /// during an Import or Export cycle.  Every time you initiate a new
+  /// Import or Export with this object as the target, we clear this
+  /// stream.  (Note to developers: we clear it at the beginning of
+  /// checkSizes().)
+  ///
+  /// If you want to print this, you are responsible for ensuring that
+  /// it is valid for the calling MPI process to print to whatever
+  /// output stream you use.  On some MPI implementations, you may
+  /// need to send the string to Process 0 for printing.
+  std::string errorMessages () const {
+    return errs_.is_null () ? std::string ("") : errs_->str ();
+  }
 
 protected:
   //! Like sumIntoLocalValues, but for the ABSMAX combine mode.
@@ -508,6 +528,9 @@ private:
   ///
   /// See the documentation of localError() for details.
   bool localError_;
+
+  //! Stream of error messages.  This is null if localError is false.
+  Teuchos::RCP<std::ostringstream> errs_;
 
   /// \brief Global sparse matrix-vector multiply for the transpose or
   ///   conjugate transpose cases.

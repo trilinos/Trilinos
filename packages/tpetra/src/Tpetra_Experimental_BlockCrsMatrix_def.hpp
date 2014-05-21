@@ -904,38 +904,67 @@ namespace Experimental {
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     const this_type* src = dynamic_cast<const this_type* > (&source);
 
-    // FIXME (mfh 19 May 2014) Would be great to have a way to report
-    // errors, without throwing an exception.  The latter would be bad
-    // in the case of differing block sizes, just in case those block
-    // sizes are inconsistent across processes.  (The latter is not
-    // allowed, but possible due to user error.)
+    // Clear out the current local error state.
+    const_cast<this_type*> (this)->localError_ = false;
+    errs_ = Teuchos::null;
 
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   src == NULL, std::invalid_argument, "Tpetra::Experimental::"
-    //   "BlockCrsMatrix::checkSizes: The source object of the Import or Export "
-    //   "must be a BlockCrsMatrix with the same template parameters as the "
-    //   "target object.");
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   src->getBlockSize () != this->getBlockSize (), std::invalid_argument,
-    //   "Tpetra::Experimental::BlockCrsMatrix::checkSizes: "
-    //   "The source and target objects of the Import or Export must have the "
-    //   "same block sizes.  The source's block size = " << src->getBlockSize ()
-    //   << " != the target's block size = " << this->getBlockSize () << ".");
+    // We don't allow block sizes to be inconsistent across processes,
+    // but it's possible due to user error.  It costs an all-reduce to
+    // check in the constructor; we want to save that.
+    if (src == NULL ||
+        src->getBlockSize () != this->getBlockSize () ||
+        ! src->graph_.isFillComplete () ||
+        ! this->graph_.isFillComplete () ||
+        src->graph_.getColMap ().is_null () ||
+        this->graph_.getColMap ().is_null ()) {
+      localError_ = true;
+      if (errs_.is_null ()) {
+        errs_ = Teuchos::rcp (new std::ostringstream ());
+      }
+    }
 
-    if (src == NULL || src->getBlockSize () != this->getBlockSize ()) {
-      const_cast<this_type*> (this)->localError_ = true;
-      return false;
+    if (src == NULL) {
+      *errs_ << "checkSizes: The source object of the Import or Export "
+        "must be a BlockCrsMatrix with the same template parameters as the "
+        "target object." << std::endl;
     }
     else {
-      const_cast<this_type*> (this)->localError_ = false;
-
-      // FIXME (mfh 19 May 2014) Return false for now, as a way to
-      // signal that the DistObject functions haven't been tested yet.
-      // Returning false tells the Import or Export not to proceed.
-      // Once we finish and test those functions, we need to change this
-      // to return true.
-      return false;
+      // Use a string of ifs, not if-elseifs, because we want to know
+      // all the errors.
+      if (src->getBlockSize () != this->getBlockSize ()) {
+        *errs_ << "checkSizes: The source and target objects of the Import or "
+               << "Export must have the same block sizes.  The source's block "
+               << "size = " << src->getBlockSize () << " != the target's block "
+               << "size = " << this->getBlockSize () << "." << std::endl;
+      }
+      if (! src->graph_.isFillComplete ()) {
+        *errs_ << "checkSizes: The source object of the Import or Export is "
+          "not fill complete.  Both source and target objects must be fill "
+          "complete." << std::endl;
+      }
+      if (! this->graph_.isFillComplete ()) {
+        *errs_ << "checkSizes: The target object of the Import or Export is "
+          "not fill complete.  Both source and target objects must be fill "
+          "complete." << std::endl;
+      }
+      if (src->graph_.getColMap ().is_null ()) {
+        *errs_ << "checkSizes: The source object of the Import or Export does "
+          "not have a column Map.  Both source and target objects must have "
+          "column Maps." << std::endl;
+      }
+      if (this->graph_.getColMap ().is_null ()) {
+        *errs_ << "checkSizes: The target object of the Import or Export does "
+          "not have a column Map.  Both source and target objects must have "
+          "column Maps." << std::endl;
+      }
     }
+
+    // FIXME (mfh 19 May 2014) Return false for now, as a way to
+    // signal that the DistObject functions haven't been tested yet.
+    // Returning false tells the Import or Export not to proceed.
+    // Once we finish and test those functions, we need to change this
+    // to return true.
+    return false;
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -948,15 +977,27 @@ namespace Experimental {
   {
     typedef BlockCrsMatrix<Scalar, LO, GO, Node> this_type;
     const this_type* src = dynamic_cast<const this_type* > (&source);
-    TEUCHOS_TEST_FOR_EXCEPTION(
-      src == NULL, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-      "copyAndPermute: The source object of the Import or Export is either "
-      "not a BlockCrsMatrix, or does not have the right template parameters.  "
-      "checkSizes() should have caught this.  "
-      "Please report this bug to the Tpetra developers.");
+    if (src == NULL) {
+      this->localError_ = true;
+      if (errs_.is_null ()) {
+        errs_ = Teuchos::rcp (new std::ostringstream ());
+      }
+      *errs_ << "copyAndPermute: The source object of the Import or Export is "
+        "either not a BlockCrsMatrix, or does not have the right template "
+        "parameters.  checkSizes() should have caught this.  "
+        "Please report this bug to the Tpetra developers." << std::endl;
+      // There's no communication in this method, so it's safe just to
+      // return on error.
+      return;
+    }
 
     bool srcInvalidRow = false;
     bool dstInvalidCol = false;
+
+    // Copy the initial sequence of rows that are the same.
+    //
+    // FIXME (mfh 20 May 2014) The two graphs might have different
+    // column Maps, so we need to do this using global column indices.
     for (size_t localRow = 0; localRow < numSameIDs; ++localRow) {
       const LO* localCols;
       Scalar* vals;
@@ -993,21 +1034,21 @@ namespace Experimental {
       }
     }
 
-    if (srcInvalidRow || dstInvalidCol) {
-      localError_ = true;
-    }
-
     // FIXME (mfh 19 May 2014) Would be great to have a way to report
     // errors, without throwing an exception.  The latter would be bad
     // in the case of differing block sizes, just in case those block
     // sizes are inconsistent across processes.  (The latter is not
     // allowed, but possible due to user error.)
 
-    // TEUCHOS_TEST_FOR_EXCEPTION(
-    //   srcInvalidRow || dstInvalidCol, std::runtime_error,
-    //   "Tpetra::Experimental::BlockCrsMatrix::copyAndPermute: The graph "
-    //   "structure of the source of the Import or Export must be a subset of the "
-    //   "graph structure of the target.");
+    if (srcInvalidRow || dstInvalidCol) {
+      this->localError_ = true;
+      if (errs_.is_null ()) {
+        errs_ = Teuchos::rcp (new std::ostringstream ());
+      }
+      *errs_ << "copyAndPermute: The graph structure of the source of the "
+        "Import or Export must be a subset of the graph structure of the "
+        "target." << std::endl;
+    }
   }
 
   template<class Scalar, class LO, class GO, class Node>
@@ -1031,99 +1072,201 @@ namespace Experimental {
       "Please report this bug to the Tpetra developers.");
 
     const crs_graph_type& srcGraph = src->graph_;
+    const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
+    const size_t bytesPerBlock = blockSize * blockSize * sizeof (Scalar);
 
-    // Compute the number of packets per row.  Each packet includes
-    // the _global_ column index and the block entry.  (We need the
-    // latter, because the two matrices may have different column
-    // Maps; this is allowed.)  While doing this, compute the total
-    // required send buffer ('exports') size, so we can resize it if
-    // needed.
-
-    // Count the number of entries in each row to pack.
-    //
     // Graphs and matrices are allowed to have a variable number of
     // entries per row.  We could test whether all rows have the same
     // number of entries, but DistObject can only use this
     // optimization if all rows on _all_ processes have the same
     // number of entries.  Rather than do the all-reduce necessary to
-    // test for this unlikely case, we tell DistObject to assume that
-    // different rows may have different numbers of entries.
-    constantNumPackets = 0; // variable number of packets (entries) per row
-    size_t totalNumPackets = 0;
+    // test for this unlikely case, we tell DistObject (by setting
+    // constantNumPackets to zero) to assume that different rows may
+    // have different numbers of entries.
+    constantNumPackets = 0;
+
+    // Count the number of packets per row.  The number of packets is
+    // the number of entries to send.  However, we don't pack entries
+    // contiguously.  Instead, we put the column indices first, and
+    // then all the block values.  This makes it easier to align the
+    // latter to sizeof (Scalar), and reduces the number of memcpy
+    // operations necessary to copy in the row's data.  (We have to
+    // use memcpy because of ANSI C(++) aliasing rules, which
+    // compilers now enforce.)  We pack global column indices, because
+    // the source and target matrices are allowed to have different
+    // column Maps.
+
+    // Byte alignment of the start of the block values in each row's
+    // data.  We use the max in case sizeof(Scalar) < sizeof(GO),
+    // e.g., float vs. long long.
+    const size_t alignment = std::max (sizeof (Scalar), sizeof (GO));
+
+    // While counting the number of packets per row, compute the total
+    // required send buffer ('exports') size, so we can resize it if
+    // needed.  Also count the total number of entries to send, as a
+    // sanity check for the total buffer size.
+    size_t totalBufSize = 0;
+    size_t totalNumEnt = 0;
+
     for (size_t k = 0; k < exportLIDs.size (); ++k) {
       const LO localRow = exportLIDs[k];
       const size_t numEnt = srcGraph.getNumEntriesInLocalRow (localRow);
-      numPacketsPerLID[localRow] = numEnt;
-      totalNumPackets += numEnt;
-    }
-    exports.resize (totalNumPackets); // resize the send buffer
+      totalNumEnt += numEnt;
 
-    const size_t blockSize = static_cast<size_t> (src->getBlockSize ());
+      // If any given LIDs are invalid, the above might return either
+      // zero or the invalid size_t value.  If the former, we have no
+      // way to tell, but that's OK; it just means the calling process
+      // won't pack anything (it has nothing to pack anyway).  If the
+      // latter, we replace it with zero (that row is not owned by the
+      // calling process, so it has no entries to pack), and set the
+      // local error flag.
+      if (numEnt == Teuchos::OrdinalTraits<size_t>::invalid ()) {
+        numPacketsPerLID[localRow] = static_cast<size_t> (0);
+        this->localError_ = true;
+      } else {
+        numPacketsPerLID[localRow] = numEnt;
+      }
 
-    // Compute the size in bytes of each packet.
-    //
-    // Each packet contains a global (column) index, and the
-    // corresponding block's entries.  We don't pack any padding in
-    // the block.  Packed blocks are stored in row-major order,
-    // regardless of the matrix's storage format.  This lets us Import
-    // or Export between two matrices with different block storage
-    // formats or padding specifications, though it's unlikely we
-    // would ever want to exercise this case.
-    const size_t packetSize =
-      sizeof (GO) + blockSize * blockSize * sizeof (Scalar);
+      // Space for the global column indices in this row.
+      totalBufSize += numEnt * sizeof (GO);
 
-    // Pack each block entry to send into the 'exports' buffer.
-    // First pack the column index, then the block's entries.
-    size_t exportsOffset = 0;
-    // If any given LIDs are invalid, we pack obviously invalid data
-    // (e.g., invalid column indices) into the buffer for that LID.
-    //
-    // TODO (mfh 17 May 2014) It would also be wise to set a local
-    // error flag, in case some processes don't get the invalid column
-    // indices.  That way, we could propagate the error state on the
-    // next all-reduce.
-    for (size_t k = 0; k < exportLIDs.size (); ++k, exportsOffset += packetSize) {
-      //
-      // Get a view of row exportLIDs[k].
-      //
-      const LO localRow = exportLIDs[k];
-      const LO* localColInds;
-      Scalar* vals;
-      LO numEntries;
-      const int err = src->getLocalRowView (localRow, localColInds, vals, numEntries);
-      //
-      // Pack the entries in the row.
-      //
-      packet_type* exportsStart = &exports[exportsOffset];
-      // Don't access ptr_[localRow] if localRow is an invalid LID.
-      const size_t rowStart = (err == 0) ? src->ptr_[localRow] : static_cast<size_t> (0);
-      for (LO j = 0; j < numEntries; ++j) {
-        const GO gblCol = (err == 0) ?
-          Teuchos::OrdinalTraits<GO>::invalid () :
-          rowMeshMap_.getGlobalElement (localColInds[j]);
-        // memcpy is the only safe function to use, given ANSI aliasing rules.
-        memcpy (exportsStart, &gblCol, sizeof (GO));
-        // FIXME (mfh 17 May 2014) Does this break ANSI aliasing rules?
-        // FIXME (mfh 17 May 2014) Do Scalar values need to be aligned?
-        Scalar* tgtPtr = reinterpret_cast<Scalar*> (exportsStart + sizeof (GO));
+      // Padding, so that the block values are Scalar aligned.
+      {
+        const size_t rem = (numEnt * sizeof (GO)) % alignment;
+        const size_t padding = (rem == 0) ?
+          static_cast<size_t> (0) :
+          alignment - rem;
+        totalBufSize += padding;
+      }
 
-        // Pack row major, regardless of the state of the source or
-        // target matrix, for consistency.
-        little_block_type tgtBlk (tgtPtr, blockSize, blockSize, 1);
-        if (err == 0) {
-          const_little_block_type srcBlk =
-            src->getConstLocalBlockFromAbsOffset (rowStart + j);
-          tgtBlk.assign (srcBlk);
-        }
-        else {
-          // NOTE (mfh 17 May 2014) It might be a good idea to use
-          // NaNs here instead, if Scalar supports them, to indicate
-          // invalid data.  However, we've already set an invalid
-          // column index above.
-          tgtBlk.fill (STS::zero ());
-        }
+      // Space for the block values in this row.  We don't include
+      // padding for vectorization when packing the blocks.
+      totalBufSize += numEnt * bytesPerBlock;
+
+      // In case sizeof(Scalar) < sizeof(GO) (e.g., float vs. long
+      // long), we pad the end of the send buffer so that the next row
+      // is aligned to sizeof(GO) bytes.
+      {
+        const size_t rem = (numEnt * bytesPerBlock) % sizeof (GO);
+        const size_t padding = (rem == 0) ?
+          static_cast<size_t> (0) :
+          sizeof (GO) - rem;
+        totalBufSize += padding;
       }
     }
+
+    {
+      const size_t minSaneBufSize = totalNumEnt * (bytesPerBlock + sizeof (GO));
+      // If the test triggers, there's no point in setting the error
+      // flag here, because the above code is completely broken.  This
+      // probably means that the code below is broken as well.
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        minSaneBufSize < totalBufSize, std::logic_error, "Tpetra::Experimental"
+        "::BlockCrsMatrix: This method must have computed the total send buffer"
+        " size incorrectly.  The minimum size in bytes without padding for "
+        "alignment is " << minSaneBufSize << ", but this method computed the "
+        "size in bytes _with_ padding for alignment as a lesser number " <<
+        totalBufSize << ".  Please report this bug to the Tpetra developers.");
+    }
+
+    // packAndPrepare is responsible for resizing the send buffer.
+    exports.resize (totalBufSize);
+
+    // In the loop below: Current offset in bytes into the 'exports'
+    // array; where to start putting the current row's data.
+    size_t exportsOffset = 0;
+
+    // Temporary space for global column indices.
+    Teuchos::Array<GO> gblColIndsSpace (srcGraph.getNodeMaxNumRowEntries ());
+
+    // Temporary row-major contiguous buffer for a block's entries.
+    Teuchos::Array<Scalar> tempBlockSpace (blockSize * blockSize);
+    little_block_type tempBlock (tempBlockSpace.getRawPtr (), blockSize, blockSize, 1);
+
+    // Source matrix's column Map.  We verified in checkSizes() that
+    // the column Map exists (is not null).
+    const map_type& srcColMap = * (srcGraph.getColMap ());
+
+    // Pack the data for each row to send, into the 'exports' buffer.
+    // If any given LIDs are invalid, we pack obviously invalid data
+    // (e.g., invalid column indices) into the buffer for that LID,
+    // and set the local error flag.
+    for (size_t lidInd = 0; lidInd < exportLIDs.size (); ++lidInd) {
+      // Get a view of row exportLIDs[lidInd].
+      const LO lclRowInd = exportLIDs[lidInd];
+      const LO* lclColInds;
+      Scalar* vals;
+      LO numEnt;
+      const int err = src->getLocalRowView (lclRowInd, lclColInds, vals, numEnt);
+      if (err != 0) {
+        localError_ = true;
+        // TODO (mfh 20 May 2014) Report the local error, without
+        // printing a line for each bad LID.  It might help to collect
+        // all the bad LIDs, but don't print them all if there are too
+        // many.
+        continue;
+      }
+
+      // Convert column indices from local to global.
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsSpace.view (0, numEnt);
+      for (size_t j = 0; j < numEnt; ++j) {
+        gblColInds[j] = srcColMap.getGlobalElement (lclColInds[j]);
+      }
+
+      // Pack the column indices.  Use memcpy to follow ANSI aliasing rules.
+      packet_type* exportsStart = &exports[exportsOffset];
+      memcpy (exportsStart, gblColInds.getRawPtr (), numEnt * sizeof (GO));
+      exportsOffset += numEnt * sizeof (GO);
+
+      // Compute padding so that block values are Scalar aligned.
+      {
+        const size_t rem = (numEnt * sizeof (GO)) % alignment;
+        const size_t padding = (rem == 0) ?
+          static_cast<size_t> (0) :
+          alignment - rem;
+        exportsOffset += padding;
+      }
+
+      // Pack the block values in this row.  Always pack row major,
+      // for consistency, in case the source and target objects order
+      // their blocks differently.
+      //
+      // In order to follow ANSI aliasing rules that forbid certain
+      // kinds of type punning, we copy each block's entries first
+      // into a temporary contiguous buffer, and then memcpy into the
+      // send buffer.  We could just memcpy one entry at a time, but
+      // it's probably faster to avoid the library call.
+      const size_t rowStart = src->ptr_[lclRowInd];
+      for (size_t j = 0; j < numEnt; ++j) {
+        const_little_block_type srcBlock =
+          src->getConstLocalBlockFromAbsOffset (rowStart + j);
+        if (srcBlock.getBlockSize () == blockSize) {
+          // A block size of zero is a possible error state.  Of
+          // course, the actual block size could be zero.  That would
+          // be silly, but why shouldn't it be legal?  That's why we
+          // check whether the actual block size is different.
+          localError_ = true;
+          // Pack a block of zeros.  It might make sense to pack NaNs,
+          // if Scalar implements a NaN value.
+          tempBlock.fill (STS::zero ());
+        } else {
+          tempBlock.assign (srcBlock);
+        }
+        memcpy (&exports[exportsOffset], tempBlock.getRawPtr (), bytesPerBlock);
+        exportsOffset += bytesPerBlock;
+      }
+
+      // In case sizeof(Scalar) < sizeof(GO) (e.g., float vs. long
+      // long), we pad the end of the send buffer so that the next row
+      // is aligned to sizeof(GO) bytes.
+      {
+        const size_t rem = (numEnt * bytesPerBlock) % sizeof (GO);
+        const size_t padding = (rem == 0) ?
+          static_cast<size_t> (0) :
+          sizeof (GO) - rem;
+        exportsOffset += padding;
+      }
+    } // for each LID (of a row) to send
   }
 
 
@@ -1137,74 +1280,122 @@ namespace Experimental {
                     Tpetra::Distributor& /* distor */,
                     Tpetra::CombineMode CM)
   {
-    using Teuchos::ArrayView;
-    using Teuchos::av_reinterpret_cast;
+    if (CM == ADD && CM != INSERT && CM != REPLACE && CM != ABSMAX && CM != ZERO) {
+      this->localError_ = true;
+      if (errs_.is_null ()) {
+        errs_ = Teuchos::rcp (new std::ostringstream ());
+        *errs_ << "unpackAndCombine: Invalid CombineMode value " << CM << ".  "
+               << "Valid values include ADD, INSERT, REPLACE, ABSMAX, and ZERO."
+               << std::endl;
+        // It won't cause deadlock to return here, since this method
+        // does not communicate.
+        return;
+      }
+    }
 
     if (CM == ZERO) {
       return; // nothing to do; no need to combine entries
     }
 
     const size_t blockSize = this->getBlockSize ();
+    const size_t bytesPerBlock = blockSize * blockSize * sizeof (Scalar);
     const size_t numImportLids = importLIDs.size ();
 
-    // Temporary space to cache local column indices.  Column indices
-    // come in as global indices, in case the source object's column
-    // Map differs from the target object's (this's) column Map.
-    Teuchos::Array<LO> lclColInds (graph_.getNodeMaxNumRowEntries ());
+    // Byte alignment of the start of the block values in each row's
+    // data.  We use the max in case sizeof(Scalar) < sizeof(GO),
+    // e.g., float vs. long long.
+    const size_t alignment = std::max (sizeof (Scalar), sizeof (GO));
 
-    // Current offset (in bytes) into the 'imports' array.  We unpack
-    // data from the 'imports' array into the target object.
+    // Temporary space to cache local and global column indices.
+    // Column indices come in as global indices, in case the source
+    // object's column Map differs from the target object's (this's)
+    // column Map.  We need the latter space in order to follow ANSI
+    // aliasing rules (we don't want to type pun the buffer).
+    Teuchos::Array<LO> lclColIndsSpace (graph_.getNodeMaxNumRowEntries ());
+    Teuchos::Array<GO> gblColIndsSpace (graph_.getNodeMaxNumRowEntries ());
+
+    // Temporary contiguous buffer for a row's block entries.
+    Teuchos::Array<Scalar> tempVals (graph_.getNodeMaxNumRowEntries ());
+
+    // Target matrix's column Map.  Use to convert the global column
+    // indices in the receive buffer to local indices.  We verified in
+    // checkSizes() that the column Map exists (is not null).
+    const map_type& tgtColMap = * (this->graph_.getColMap ());
+
+    // In the loop below: Current offset (in bytes) into the 'imports'
+    // array; from whence to unpack data for the current LID (row).
     size_t importsOffset = 0;
-    for (size_t importLidIndex = 0; importLidIndex < numImportLids; ++importLidIndex) {
-      // Number of entries in the row.
-      const size_t numEntries = numPacketsPerLID[importLidIndex];
-      // The current (local) row index.
-      const LO importLid = importLIDs[importLidIndex];
+
+    for (size_t lidInd = 0; lidInd < numImportLids; ++lidInd) {
+      const size_t numEnt = numPacketsPerLID[lidInd]; // # entries in row
+      const LO lclRowInd = importLIDs[lidInd]; // current local row index
 
       // Lengths and offsets for packed data in the 'imports' array.
       //
       // We pack all column indices first, then all values.  We pad
       // the former so that the latter is aligned to sizeof(Scalar).
       // 'padding' gives the size in bytes of the padding.
-      const size_t numIndexBytes = numEntries * sizeof (GO);
-      const size_t numBlockBytes = numEntries * blockSize * sizeof (Scalar);
-      const size_t padding = sizeof (Scalar) - (numIndexBytes % sizeof (Scalar));
-      const size_t absBlockOffset = importsOffset + numIndexBytes + padding;
+      const size_t numIndexBytes = numEnt * sizeof (GO);
+      const size_t numBlockBytes = numEnt * bytesPerBlock;
 
-      ArrayView<const GO> gblColInds =
-        av_reinterpret_cast<const GO> (imports.view (importsOffset, numIndexBytes));
-      ArrayView<const Scalar> vals =
-        av_reinterpret_cast<const Scalar> (imports.view (absBlockOffset, numBlockBytes));
+      // Views for storing global and local column indices.
+      Teuchos::ArrayView<GO> gblColInds = gblColIndsSpace.view (0, numEnt);
+      Teuchos::ArrayView<LO> lclColInds = lclColIndsSpace.view (0, numEnt);
 
-      ArrayView<LO> lclColIndsView = lclColInds.view (0, numEntries);
-      for (size_t k = 0; k < numEntries; ++k) {
-        lclColIndsView[k] = rowMeshMap_.getLocalElement (gblColInds[k]);
+      // Unpack the global column indices from the receive buffer.
+      memcpy (gblColInds.getRawPtr (), &imports[importsOffset], numIndexBytes);
+      // Convert global column indices to local.
+      for (size_t j = 0; j < numEnt; ++j) {
+        lclColInds[j] = tgtColMap.getLocalElement (gblColInds[j]);
       }
 
+      // Update the byte offset into the receive buffer.
+      importsOffset += numIndexBytes;
+      // Block values are aligned to max(sizeof(Scalar), sizeof(GO)).
+      // Update the byte offset to account for padding to this alignment.
+      {
+        const size_t rem = numIndexBytes % alignment;
+        const size_t padding = (rem == 0) ?
+          static_cast<size_t> (0) :
+          alignment - rem;
+        importsOffset += padding;
+      }
+
+      // Copy out data for _all_ the blocks.  We memcpy into temp
+      // storage, in order to follow ANSI aliasing rules that forbid
+      // certain kinds of type punning.
+      memcpy (tempVals.getRawPtr (), &imports[importsOffset], numBlockBytes);
+      // Update the byte offset into the receive buffer.
+      importsOffset += numBlockBytes;
+      // In case sizeof(Scalar) < sizeof(GO) (e.g., float vs. long
+      // long), the receive buffer was padded so that the next row is
+      // aligned to sizeof(GO) bytes.
+      const size_t rem = numBlockBytes % sizeof (GO);
+      const size_t padding = (rem == 0) ?
+        static_cast<size_t> (0) :
+        sizeof (GO) - rem;
+      importsOffset += padding;
+
+      // Combine the incoming data with the matrix's current data.
       LO successCount = 0;
       if (CM == ADD) {
         successCount =
-          this->sumIntoLocalValues (importLid, lclColIndsView.getRawPtr (),
-                                    vals.getRawPtr (), numEntries);
+          this->sumIntoLocalValues (lclRowInd, lclColInds.getRawPtr (),
+                                    tempVals.getRawPtr (), numEnt);
       } else if (CM == INSERT || CM == REPLACE) {
         successCount =
-          this->replaceLocalValues (importLid, lclColIndsView.getRawPtr (),
-                                    vals.getRawPtr (), numEntries);
+          this->replaceLocalValues (lclRowInd, lclColInds.getRawPtr (),
+                                    tempVals.getRawPtr (), numEnt);
       } else if (CM == ABSMAX) {
         successCount =
-          this->absMaxLocalValues (importLid, lclColIndsView.getRawPtr (),
-                                   vals.getRawPtr (), numEntries);
-      } else {
-        TEUCHOS_TEST_FOR_EXCEPTION(
-          true, std::logic_error, "Tpetra::Experimental::BlockCrsMatrix::"
-          "unpackAndCombine: Invalid CombineMode value " << CM << ".  Valid "
-          "values include ADD, INSERT, REPLACE, ABSMAX, and ZERO.");
+          this->absMaxLocalValues (lclRowInd, lclColInds.getRawPtr (),
+                                   tempVals.getRawPtr (), numEnt);
       }
+      // We've already checked that CM is valid.
 
-      if (successCount != numEntries) {
+      if (successCount != numEnt) {
         localError_ = true;
       }
-      importsOffset += numIndexBytes + padding + numBlockBytes;
     }
   }
 
