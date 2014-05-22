@@ -36,6 +36,8 @@
 #include <Ioss_SubSystem.h>
 
 namespace {
+  void provide_entity_count(stk::mesh::BulkData &bulk, int proc);
+
   // Do the actual reading of the mesh database and
   // creation and population of the MetaData and BulkData.
   void mesh_read_write(const std::string &type,
@@ -94,11 +96,8 @@ namespace {
     double all_edge_time = 0.0;
     MPI_Allreduce(&create_edges_time, &all_edge_time, 1, MPI_DOUBLE, MPI_SUM, mesh_data.bulk_data().parallel());
 
+    provide_entity_count(mesh_data.bulk_data(), proc);
     if (proc == 0) {
-      std::cout<< "\nnum nodes: "<<mesh_counts[stk::topology::NODE_RANK]<<std::endl;
-      std::cout<< "num edges: "<<mesh_counts[stk::topology::EDGE_RANK]<<std::endl;
-      std::cout<< "num faces: "<<mesh_counts[stk::topology::FACE_RANK]<<std::endl;
-      std::cout<< "num elems: "<<mesh_counts[stk::topology::ELEMENT_RANK]<<std::endl;
       if (create_edges) {
 	std::cout<< "num edges/second: " << mesh_counts[stk::topology::EDGE_RANK]/all_edge_time << "\t" << all_edge_time << std::endl;
       }
@@ -142,6 +141,22 @@ namespace {
     }
 
     mesh_read_write(type, working_directory, filename, mesh_data, create_edges, create_faces, create_skin);
+  }
+
+  void provide_entity_count(stk::mesh::BulkData &bulk, int proc) {
+    std::vector<size_t> counts;
+    std::vector<size_t> minCounts;
+    std::vector<size_t> maxCounts;
+    stk::mesh::comm_mesh_counts(bulk, counts, minCounts, maxCounts);
+
+    if (proc == 0) {
+      std::cout << "===========================" << std::endl;
+      std::cout << "nodes,    " << std::setw(10) << counts[0] << ", min/max: " << minCounts[0] << "/" << maxCounts[0] << std::endl
+		<< "edges,    " << std::setw(10) << counts[1] << ", min/max: " << minCounts[1] << "/" << maxCounts[1] << std::endl
+		<< "faces,    " << std::setw(10) << counts[2] << ", min/max: " << minCounts[2] << "/" << maxCounts[2] << std::endl
+		<< "elements, " << std::setw(10) << counts[3] << ", min/max: " << minCounts[3] << "/" << maxCounts[3] << std::endl
+		<< "===========================" << std::endl;
+    }
   }
 }
 
