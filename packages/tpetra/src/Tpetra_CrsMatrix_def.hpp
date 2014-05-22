@@ -5367,8 +5367,6 @@ namespace Tpetra {
     typedef node_type NT;
     typedef CrsMatrix<Scalar, LO, GO, NT, LocalMatOps> this_type;
     typedef Vector<int,LO,GO,NT> IntVectorType;
-    typedef Import<LO, GO, NT> import_type;
-    typedef Export<LO, GO, NT> export_type;
 
     // Make sure that the input argument rowTransfer is either an
     // Import or an Export.  Import and Export are the only two
