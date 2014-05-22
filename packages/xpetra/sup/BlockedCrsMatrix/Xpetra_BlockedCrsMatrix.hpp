@@ -752,7 +752,7 @@ namespace Xpetra {
       if (scalarA == zero)
         return;
 
-      size_t maxNumEntries = std::max(A.getNodeMaxNumRowEntries(), B.getNodeMaxNumRowEntries());
+      size_t maxNumEntries = A.getNodeMaxNumRowEntries();
 
       size_t    numEntries;
       Array<GO> inds(maxNumEntries);
@@ -770,7 +770,7 @@ namespace Xpetra {
           for (size_t j = 0; j < numEntries; ++j)
             vals[j] *= scalarA;
 
-        B.insertGlobalValues(row, inds(), vals()); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
+        B.insertGlobalValues(row, inds(0, numEntries), vals(0, numEntries)); // insert should be ok, since blocks in BlockedCrsOpeartor do not overlap!
       }
     }
 
