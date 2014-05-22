@@ -10,12 +10,16 @@
 #include <iomanip>
 
 //----------------------------------------------------------------------------
-
 #include <Teuchos_Comm.hpp>
+#include <Teuchos_CommandLineProcessor.hpp>
 
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 // Command line processing:
+
+enum clp_return_type {CLP_HELP=0,
+      CLP_ERROR,
+      CLP_OK};
 
 enum { CMD_USE_THREADS = 0
        , CMD_USE_NUMA
@@ -186,95 +190,92 @@ void print_perf_value( std::ostream & s ,
   s << std::endl ;
 }
 
-void parse_cmdline( int argc , char ** argv, int cmdline[],
+clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
                     const Teuchos::Comm<int>& comm )
 {
   const int comm_rank = comm.getRank();
+  Teuchos::ParameterList params;
+  Teuchos::CommandLineProcessor clp(false);
+  cmdline[CMD_USE_THREADS] = 0;       clp.setOption("threads",               cmdline+CMD_USE_THREADS,  "number of threads");
 
-  for ( int i = 0 ; i < CMD_COUNT ; ++i ) cmdline[i] = 0 ;
+  bool useOpenMP = false;             clp.setOption("openmp", "no-openmp",   &useOpenMP,  "use OpenMP");
 
-  if ( 0 == comm_rank ) {
-    for ( int i = 1 ; i < argc ; ++i ) {
-      if ( 0 == strcasecmp( argv[i] , "threads" ) ) {
-        cmdline[ CMD_USE_THREADS ] = atoi( argv[++i] );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "openmp" ) ) {
-        cmdline[ CMD_USE_OPENMP ] = atoi( argv[++i] );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cores" ) ) {
-        sscanf( argv[++i] , "%dx%d" ,
-                cmdline + CMD_USE_NUMA ,
-                cmdline + CMD_USE_CORE_PER_NUMA );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cuda" ) ) {
-        cmdline[ CMD_USE_CUDA ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "cuda-dev" ) ) {
-        cmdline[ CMD_USE_CUDA ] = 1 ;
-        cmdline[ CMD_USE_CUDA_DEV ] = atoi( argv[++i] ) ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "fixture" ) ) {
-        sscanf( argv[++i] , "%dx%dx%d" ,
-                cmdline + CMD_USE_FIXTURE_X ,
-                cmdline + CMD_USE_FIXTURE_Y ,
-                cmdline + CMD_USE_FIXTURE_Z );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "fixture-range" ) ) {
-        sscanf( argv[++i] , "%d..%d" ,
-                cmdline + CMD_USE_FIXTURE_BEGIN ,
-                cmdline + CMD_USE_FIXTURE_END );
-      }
-      else if ( 0 == strcasecmp( argv[i] , "fixture-quadratic" ) ) {
-        cmdline[ CMD_USE_FIXTURE_QUADRATIC ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "ensemble" ) ) {
-        cmdline[ CMD_USE_UQ_ENSEMBLE ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "uq-dim" ) ) {
-        cmdline[ CMD_USE_UQ_DIM ] = atoi( argv[++i] ) ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "uq-order" ) ) {
-        cmdline[ CMD_USE_UQ_ORDER ] = atoi( argv[++i] ) ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "atomic" ) ) {
-        cmdline[ CMD_USE_ATOMIC ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "trials" ) ) {
-        cmdline[ CMD_USE_TRIALS ] = atoi( argv[++i] ) ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "belos" ) ) {
-        cmdline[ CMD_USE_BELOS ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "muelu" ) ) {
-        cmdline[ CMD_USE_MUELU ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "print" ) ) {
-        cmdline[ CMD_PRINT ] = 1 ;
-      }
-      else if ( 0 == strcasecmp( argv[i] , "echo" ) ) {
-        cmdline[ CMD_ECHO ] = 1 ;
-      }
-      else {
-        cmdline[ CMD_ERROR ] = 1 ;
+  cmdline[CMD_USE_NUMA] = 0;          clp.setOption("numa",                  cmdline+CMD_USE_NUMA,  "number of numa nodes");
 
-        std::cerr << "Unrecognized command line argument #" << i << ": " << argv[i] << std::endl ;
-      }
-    }
+  cmdline[CMD_USE_CORE_PER_NUMA] = 0; clp.setOption("cores",                 cmdline+CMD_USE_CORE_PER_NUMA,  "cores per numa node");
 
-    if ( ! cmdline[ CMD_USE_TRIALS ] ) { cmdline[ CMD_USE_TRIALS ] = 1 ; }
+  bool useCuda = false;               clp.setOption("cuda", "no-cuda",       &useCuda,  "use CUDA");
 
-    if ( ! cmdline[ CMD_USE_FIXTURE_X ] &&
-         ! cmdline[ CMD_USE_FIXTURE_BEGIN ] ) {
-      cmdline[ CMD_USE_FIXTURE_X ] = 2 ;
-      cmdline[ CMD_USE_FIXTURE_Y ] = 2 ;
-      cmdline[ CMD_USE_FIXTURE_Z ] = 2 ;
-    }
+  bool useCudaDev = false;            clp.setOption("cuda-dev", "no-cuda-dev",  &useCudaDev,  "use CUDA dev");
 
-    if ( cmdline[ CMD_ECHO ] ) { print_cmdline( std::cout , cmdline ); }
+  std::string fixtureSpec="2x2x2";      clp.setOption("fixture",                &fixtureSpec,  "fixture string: \"XxYxZ\"");
+  //clp.setOption("fixture-x",               cmdline+CMD_USE_FIXTURE_X,  "fixture");
+  //clp.setOption("fixture-y",               cmdline+CMD_USE_FIXTURE_Y,  "fixture");
+  //clp.setOption("fixture-z",               cmdline+CMD_USE_FIXTURE_Z,  "fixture");
+
+  std::string fixtureRange;           clp.setOption("fixture-range",           &fixtureRange,  "fixture range: \"x..y\"");
+  //cmdline[CMD_USE_FIXTURE_BEGIN]=0;   clp.setOption("fixture-begin",          cmdline+CMD_USE_FIXTURE_BEGIN,  "fixture begin");
+  //cmdline[CMD_USE_FIXTURE_END]=0;     clp.setOption("fixture-end",            cmdline+CMD_USE_FIXTURE_END,  "fixture end");
+
+  bool useQuadratic = false;          clp.setOption("fixture-quadratic", "no-fixture-quadratic", &useQuadratic,  "quadratic");
+
+  bool useEnsemble = false;           clp.setOption("ensemble", "no-ensemble",    &useEnsemble,  "use ensemble");
+
+  cmdline[CMD_USE_UQ_DIM] = 0;        clp.setOption("uq-dim",                  cmdline+CMD_USE_UQ_DIM,  "UQ dimension");
+
+  cmdline[CMD_USE_UQ_ORDER] = 0;      clp.setOption("uq-order",                  cmdline+CMD_USE_UQ_ORDER,  "UQ order");
+
+  bool useAtomic = false;             clp.setOption("atomic", "no-atomic",    &useAtomic,  "atomic");
+
+  cmdline[CMD_USE_TRIALS] = 1;        clp.setOption("trials",                 cmdline+CMD_USE_TRIALS,  "trials");
+
+  bool useBelos = false;              clp.setOption("belos", "no-belos",    &useBelos,  "use Belos solver");
+
+  bool useMueLu = false;              clp.setOption("muelu", "no-muelu",    &useMueLu,  "use MueLu preconditioner");
+
+  bool doPrint = false;               clp.setOption("print", "no-print",      &doPrint,  "print detailed test output");
+
+  bool doDryRun = false;              clp.setOption("echo", "no-echo",        &doDryRun,  "dry-run only");
+
+  switch (clp.parse(argc, argv)) {
+    case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return CLP_HELP;
+    case Teuchos::CommandLineProcessor::PARSE_ERROR:
+    case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return CLP_ERROR;
+    case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+
+  // cmdline is of type int*, which means we can't use it directly in CommandLineProcessor::setOptions for bools.
+  cmdline[CMD_USE_OPENMP]            = useOpenMP;
+  cmdline[CMD_USE_CUDA]              = useCuda;
+  cmdline[CMD_USE_CUDA_DEV]          = useCudaDev;
+  if (useCudaDev)
+    cmdline[CMD_USE_CUDA] = true;
+  cmdline[CMD_USE_FIXTURE_QUADRATIC] = useQuadratic;
+  cmdline[CMD_USE_UQ_ENSEMBLE]       = useEnsemble;
+  cmdline[CMD_USE_ATOMIC]            = useAtomic;
+  cmdline[CMD_USE_BELOS]             = useBelos;
+  cmdline[CMD_USE_MUELU]             = useMueLu;
+  cmdline[CMD_PRINT]                 = doPrint;
+  sscanf( fixtureSpec.c_str() , "%dx%dx%d" ,
+          cmdline + CMD_USE_FIXTURE_X ,
+          cmdline + CMD_USE_FIXTURE_Y ,
+          cmdline + CMD_USE_FIXTURE_Z );
+  sscanf( fixtureRange.c_str(), "%d..%d" ,
+          cmdline + CMD_USE_FIXTURE_BEGIN ,
+          cmdline + CMD_USE_FIXTURE_END );
+
+  if (doDryRun) {
+    print_cmdline( std::cout , cmdline );
+    cmdline[ CMD_ECHO ] = 1;
+  } else {
+    cmdline[ CMD_ECHO ] = 0;
+  }
+  cmdline[ CMD_ERROR ] = 0 ;
 
   //--------------------------------------------------------------------------
 
   comm.broadcast( int(0) , int(CMD_COUNT * sizeof(int)) , (char *) cmdline );
+
+  return CLP_OK;
 
 }

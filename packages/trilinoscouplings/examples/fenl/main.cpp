@@ -141,7 +141,11 @@ int main( int argc , char ** argv )
   //--------------------------------------------------------------------------
 
   int cmdline[ CMD_COUNT ] ;
-  parse_cmdline( argc, argv, cmdline, *comm );
+  clp_return_type rv = parse_cmdline( argc, argv, cmdline, *comm );
+  if (rv==CLP_HELP)
+    return(EXIT_SUCCESS);
+  else if (rv==CLP_ERROR)
+    return(EXIT_FAILURE);
 
   if ( ! cmdline[ CMD_ERROR ] && ! cmdline[ CMD_ECHO ] ) {
 
