@@ -114,6 +114,7 @@ INCLUDE(PrintVar)
 # * `Argument Parsing and Ordering (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Implementation Details (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Setting Additional Test Properties (TRIBITS_ADD_ADVANCED_TEST())`_
+# * `Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_ADVANCED_TEST())`_
 #
@@ -174,7 +175,14 @@ INCLUDE(PrintVar)
 #     ``${MPI_EXEC_MAX_NUMPROCS}`` then the test will be excluded.  If not
 #     specified, then the default number of processes for an MPI build will be
 #     ``${MPI_EXEC_DEFAULT_NUMPROCS}``.  For serial builds, this argument is
-#     ignored.
+#     ignored.  This also results in the test property ``PROCESSORS`` being
+#     set to ``<overallNumProcs>`` (see `Running multiple tests at the same
+#     time (TRIBITS_ADD_ADVANCED_TEST())`_).  **WARNING!** If just running a
+#     serial script or other command, then the property ``PROCESSORS`` will
+#     still get set to ``${MPI_EXEC_DEFAULT_NUMPROCS}`` so in order to avoid
+#     CTest unnecessarily resolving ``${MPI_EXEC_DEFAULT_NUMPROCS}`` processes
+#     for a serial non-MPI test, then one must explicitly pass in
+#     ``MPI_EXEC_DEFAULT_NUMPROCS 1``!
 #
 #   ``CATEGORIES <category0> <category1> ...``
 #
@@ -417,6 +425,16 @@ INCLUDE(PrintVar)
 # tests properties that are not directly supported by this function and passed
 # through the argument list to this wrapper function can be set in the outer
 # ``CMakeLists.txt`` file after the call to ``TRIBITS_ADD_ADVANCED_TEST()``.
+#
+# .. _Running multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST()):
+#
+# **Runnning multiple tests at the same time (TRIBITS_ADD_ADVANCED_TEST())**
+#
+# Just as with `TRIBITS_ADD_TEST()`_, setting ``NUM_MPI_PROCS <numProcs>`` or
+# ``OVERALL_NUM_MPI_PROCS <numOverallProcs>`` will set the ``PROCESSORS``
+# CTest property to allow CTest to schedule and run mutiple tests at the same
+# time when ``'ctest -j<N>'`` is used (see `Running multiple tests at the same
+# time (TRIBITS_ADD_TEST())`_).
 #
 # .. _Disabling Tests Externally (TRIBITS_ADD_ADVANCED_TEST()):
 #

@@ -80,6 +80,7 @@ INCLUDE(TribitsAddTestHelpers)
 # * `Adding Multiple Tests  (TRIBITS_ADD_TEST())`_
 # * `Determining Pass/Fail (TRIBITS_ADD_TEST())`_
 # * `Setting additional test properties (TRIBITS_ADD_TEST())`_
+# * `Running multiple tests at the same time (TRIBITS_ADD_TEST())`_
 # * `Debugging and Examining Test Generation (TRIBITS_ADD_TEST())`_
 # * `Disabling Tests Externally (TRIBITS_ADD_TEST())`_
 #
@@ -203,7 +204,9 @@ INCLUDE(TribitsAddTestHelpers)
 #     not specified, then the default number of processes for an MPI build
 #     (i.e. ``TPL_ENABLE_MPI=ON``) will be ``${MPI_EXEC_DEFAULT_NUMPROCS}``.
 #     For serial builds (i.e. ``TPL_ENABLE_MPI=OFF``), this argument is
-#     ignored.
+#     ignored.  This will also be set as the built-in test property
+#     ``PROCESSORS`` to tell CTest how many processes this test will use (see
+#     `Running multiple tests at the same time (TRIBITS_ADD_TEST())`_).
 #
 #   ``CATEGORIES <category0> <category1> ...``
 #
@@ -475,6 +478,71 @@ INCLUDE(TribitsAddTestHelpers)
 # of tests actually added (if they are added) in order to make it easy to set
 # additional test properties.
 #
+# .. _Running multiple tests at the same time (TRIBITS_ADD_TEST()):
+#
+# **Running multiple tests at the same time (TRIBITS_ADD_TEST())**
+#
+# By default, CTest will run many tests defined with ``ADD_TEST()`` at same
+# time as it can according to its parallel level (e.g. ``'test -j<N>'`` or the
+# CTest property ``CTEST_PARALLEL_LEVEL``).  For example, when raw ``'ctest
+# -j10'`` is run, CTest will run multiple tests at the same time to try to
+# make usage of 10 processes.  If all of the defined tests only used one
+# process (which is assumed by default except for MPI tests), then CTest will
+# run 10 tests at the same time and will launch new tests as running tests
+# finish.  One can also define tests using ``ADD_TEST()`` that use more than
+# one process such as for MPI tests.  When passing in ``NUM_MPI_PROCS
+# <numProcs>`` (see above), this TriBITS function will set the built-in CTest
+# property ``PROCESSORS`` to ``<numProcs>`` using::
+#
+#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <numProcs>)
+#
+# This tells CTest that the defined test uses ``<numProcs>`` processes and
+# CTest will use that information to not exceed the requested parallel level.
+# For example, if several ``NUM_MPI_PROCS 3`` tests are defined and CTest is
+# run with ``'ctest -j12'``, then CTest would schedule and run 4 of these
+# tests at a time (to make use of 12 processes), starting new ones as running
+# tests finish, until all of the tests have been run.
+#
+# When the number of processes a test uses does not cleanly divide into the
+# requested CTest parallel level, it is not clear how CTest schedules the
+# tests (hard to find documentation on this but one could always inspect the
+# CTest source code to find out for sure).  However, one boundary case that is
+# well observed is that CTest will run all defined tests regardless of the
+# size of the ``PROCESSORS`` property or the value of
+# ``CTEST_PARALLEL_LEVEL``.  For example, if there are tests where
+# ``PROCESSORS`` is set to 20 but ```ctest -j10'`` is run, then CTest will
+# still run those tests (using 20 processes) one at a time but will not
+# schedule any other tests while the parallel level is exceeded.
+#
+# For single-thread MPI tests, the behavior built into TriBITS does exactly
+# the right thing.  Defining the test with ``NUM_MPI_PROCS <numProcs>`` will
+# call ``${MPI_EXEC}`` with ``<numProcs>`` and it will set the CTest property
+# ``PROCESSORS`` to ``<numProcs>``.  However, if the MPI processes use more
+# than one thread, then CTest could easily oversubscribe the machine.  For
+# example, consider the case where one is on a machine that only has 16 cores
+# and one defines MPI tests with ``NUM_MPI_PROCS 4`` but each MPI process
+# launches 6 threads.  In this case, running these tests with ``'ctest -j8'``,
+# CTest would schedule 2 of these 4-process tests to run at a time but would
+# in actuality be using ``2*4*6 = 48`` cores and would overload 32 core
+# machine.  The other case that is not automatically handled by TriBITS is
+# when a test script (not MPI) launches multiple processes simultaneously
+# internally.
+#
+# Therefore, in cases where the executable or script uses multiple processes,
+# then one must manually override the ``PROCESSORS`` property.  To do, this
+# after the ``TRIBITS_ADD_TEST()`` (or `TRIBITS_ADD_ADVANCED_TEST()`_)
+# function returns, one can reset the ``PROCESSORS`` property` with::
+#
+#   SET_TESTS_PROPERTIES(<fullTestName> PROPERTIES PROCESSORS <fullNumProces>)
+#
+# For example, if one runs an MPI program that uses 4 processes and 6 threads
+# per process, one would call::
+#
+#   TRIBITS_ADD_TEST(myProg ... NUM_MPI_PROCS 4 ...)
+#   SET_TESTS_PROPERTIES(${PACKAGE_NAME}_myProg PROPERTIES PROCESSORS 12)
+#
+# ToDo: Update above example to use loop over ``ADDED_TESTS_OUT``.
+#
 # .. _Debugging and Examining Test Generation (TRIBITS_ADD_TEST()):
 #
 # **Debugging and Examining Test Generation (TRIBITS_ADD_TEST())**
@@ -487,7 +555,7 @@ INCLUDE(TribitsAddTestHelpers)
 # Also, CMake writes a file ``CTestTestfile.cmake`` in the current binary
 # directory which contains all of the added tests and test properties that are
 # set.  This is the file that is read by ``ctest`` when it runs to determine
-# what tests to run, determine pass/fail and adjust other behvaior using test
+# what tests to run, determine pass/fail and adjust other behavior using test
 # properties.  In this file, one can see the exact ``ADD_TEST()`` and
 # ``SET_TEST_PROPERTIES()`` commands.  The is the ultimate way to debug
 # exactly what tests are getting added by this function (or if the test is
