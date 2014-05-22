@@ -143,7 +143,8 @@ namespace stk {
       TS_CSV,     /* same as CSV except lines preceded by timestamp*/
       TEXT,       /* Same as CSV except fields separated by tab (by default) */
       TS_TEXT,    /* same as TEXT except lines preceded by timestamp*/
-      SPYHIS
+      SPYHIS,     /* Format for use in spyhis plotter */
+      NONE        /* Ignored in this class, can be used by apps */
     };
 
     // ========================================================================

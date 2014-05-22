@@ -87,7 +87,7 @@ namespace {
 
     // Create heartbeat file of the specified format...
     size_t heart = 0;
-    if (!global_fields.empty()) {
+    if (hb_type != stk::io::NONE && !global_fields.empty()) {
       std::string heartbeat_filename = working_directory + type + ".hrt";
       heart = mesh_data.add_heartbeat_output(heartbeat_filename, hb_type);
     }
@@ -121,8 +121,10 @@ namespace {
 			   input_field.raw_storage()->name(), input_field.get_type());
       mesh_data.add_global(results_index, input_field.get_name(),
 			   input_field.raw_storage()->name(), input_field.get_type());
-      stk::util::Parameter &param = parameters.get_param(input_field.get_name());
-      mesh_data.add_heartbeat_global(heart, input_field.get_name(), &param.value, param.type);
+      if (hb_type != stk::io::NONE) {
+	stk::util::Parameter &param = parameters.get_param(input_field.get_name());
+	mesh_data.add_heartbeat_global(heart, input_field.get_name(), &param.value, param.type);
+      }
     }
 
     // ========================================================================
@@ -181,7 +183,7 @@ namespace {
 	  mesh_data.end_output_step(results_index);
 
 	}
-	if (!global_fields.empty()) {
+	if (hb_type != stk::io::NONE && !global_fields.empty()) {
 	  mesh_data.process_heartbeat_output(heart, step, time);
 	}
       }
@@ -249,7 +251,7 @@ int main(int argc, char** argv)
   int db_integer_size = 4;
   bool compose_output = false;
   std::string parallel_io = "";
-  std::string heartbeat_format = "binary";
+  std::string heartbeat_format = "none";
   //----------------------------------
   // Process the broadcast command line arguments
   bopt::options_description desc("options");
@@ -268,7 +270,7 @@ int main(int argc, char** argv)
     ("parallel_io_method", bopt::value<std::string>(&parallel_io),
      "Method to use for parallel io. One of mpiio, mpiposix, or pnetcdf")
     ("heartbeat_format", bopt::value<std::string>(&heartbeat_format),
-     "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis")
+     "Format of heartbeat output. One of binary, csv, text, ts_text, spyhis, [none]")
     ("interpolate", bopt::value<int>(&interpolation_intervals), "number of intervals to divide each input time step into")
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
 
@@ -295,8 +297,12 @@ int main(int argc, char** argv)
     type = "dof";
   }
 
-  stk::io::HeartbeatType hb_type = stk::io::BINARY; // Default is binary.
-  if (heartbeat_format == "csv")
+  stk::io::HeartbeatType hb_type = stk::io::NONE; // Default is no heartbeat output
+  if (heartbeat_format == "none")
+    hb_type = stk::io::NONE;
+  else if (heartbeat_format == "binary")
+    hb_type = stk::io::BINARY;
+  else if (heartbeat_format == "csv")
     hb_type = stk::io::CSV;
   else if (heartbeat_format == "ts_csv")
     hb_type = stk::io::TS_CSV;
