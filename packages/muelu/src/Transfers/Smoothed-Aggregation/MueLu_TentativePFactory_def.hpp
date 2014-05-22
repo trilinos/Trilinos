@@ -323,7 +323,7 @@ namespace MueLu {
 
         // R = extended (by adding identity rows) localQR
         for (size_t j = 0; j < NSDim; j++)
-          for (size_t k = 0; k <= NSDim; k++)
+          for (size_t k = 0; k < NSDim; k++)
             if (k < as<size_t>(aggSize))
               coarseNS[j][offset+k] = localQR(k,j);
             else
