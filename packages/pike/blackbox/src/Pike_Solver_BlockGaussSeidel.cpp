@@ -1,6 +1,7 @@
 #include "Pike_Solver_BlockGaussSeidel.hpp"
 #include "Teuchos_ParameterList.hpp"
 #include "Teuchos_VerboseObjectParameterListHelpers.hpp"
+#include "Teuchos_Comm.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Pike_DataTransfer.hpp"
 
@@ -9,11 +10,22 @@ namespace pike {
   BlockGaussSeidel::BlockGaussSeidel()
   {
     this->getNonconstValidParameters()->set("Type","Block Gauss-Seidel");
+    this->getNonconstValidParameters()->set("MPI Barrier Transfers",false,"If set to true, an MPI barrier will be called after all transfers are finished.");
+    this->getNonconstValidParameters()->set("MPI Barrier Solves",false,"If set to true, an MPI barrier will be called after all model solves.");
   }
 
   void BlockGaussSeidel::completeRegistration()
   {
     this->pike::SolverDefaultBase::completeRegistration();
+
+    barrierTransfers_ = 
+      this->getParameterList()->get<bool>("MPI Barrier Transfers");
+
+    barrierSolves_ = this->getParameterList()->get<bool>("MPI Barrier Solves");
+
+    if (barrierTransfers_ || barrierSolves_)
+      TEUCHOS_TEST_FOR_EXCEPTION(is_null(comm_), std::logic_error,
+				 "ERROR: An MPI Barrier of either the transfers or solves of a BlockJacobi solver was requested, but the teuchos comm was not ergistered with this object prior to completeRegistration being called.  Please register the comm or disable the mpi barriers.");
 
     modelAndTransfers_.resize(models_.size());
     for (std::size_t  i = 0; i < modelAndTransfers_.size(); ++i) {
@@ -38,11 +50,24 @@ namespace pike {
  
       // for the model about to be solved, transfer all data to the model
       for (std::vector<Teuchos::RCP<pike::DataTransfer> >::iterator t = m->second.begin();
-	   t != m->second.end(); ++t)
+	   t != m->second.end(); ++t) {
 	(*t)->doTransfer(*this);
+	
+	if (barrierTransfers_)
+	  comm_->barrier();
+      }
 
       m->first->solve();
+      
+      if (barrierSolves_)
+	comm_->barrier();
+
     }
+  }
+
+  void BlockGaussSeidel::registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
+  {
+    comm_ = comm;
   }
 
 }

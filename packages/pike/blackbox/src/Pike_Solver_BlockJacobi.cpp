@@ -1,7 +1,7 @@
 #include "Pike_Solver_BlockJacobi.hpp"
 #include "Pike_BlackBoxModelEvaluator.hpp"
 #include "Pike_DataTransfer.hpp"
-#include "Teuchos_DefaultMpiComm.hpp"
+#include "Teuchos_Comm.hpp"
 
 namespace pike {
 

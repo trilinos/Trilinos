@@ -20,6 +20,8 @@ namespace pike {
 
     virtual ~SolverDefaultBase();
 
+    virtual void registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
     virtual void registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me);
 
     virtual void registerDataTransfer(const Teuchos::RCP<pike::DataTransfer>& dt);

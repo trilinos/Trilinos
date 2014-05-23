@@ -18,6 +18,8 @@ namespace pike {
 
     void stepImplementation();
 
+    void registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
+
   private:
 
     //! Maps the name of a model to the corresponding index in the models vector.
@@ -26,6 +28,9 @@ namespace pike {
     //! Binds each model to a vector of tranfers where the target of the data transfer is the corresponding model.
     std::vector<std::pair<Teuchos::RCP<pike::BlackBoxModelEvaluator>,std::vector<Teuchos::RCP<pike::DataTransfer> > > > modelAndTransfers_;
     
+    bool barrierTransfers_;
+    bool barrierSolves_;
+    Teuchos::RCP<const Teuchos::Comm<int> > comm_;
   };
 
 }

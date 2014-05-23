@@ -7,6 +7,8 @@
 #include "Pike_StatusTest.hpp"
 #include <vector>
 
+namespace Teuchos {template<typename> class Comm;}
+
 namespace pike {
 
   class BlackBoxModelEvaluator;
@@ -21,6 +23,12 @@ namespace pike {
   public:
 
     virtual ~Solver() {}
+
+    /** \brief Optionally register a comm.
+
+	Some solvers provide the option to globally barrier between solver actions.  For such solvers, set the comm with this method.   
+    */
+    virtual void registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >& comm) = 0;
 
     /** \brief Register an application/model evaluator with the solver. 
 

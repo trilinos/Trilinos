@@ -24,6 +24,12 @@ namespace pike {
 
   SolverDefaultBase::~SolverDefaultBase() {}
 
+  void SolverDefaultBase::registerComm(const Teuchos::RCP<const Teuchos::Comm<int> >&)
+  {  
+    // Default impl does nothing.  If a solver can support use of a
+    // comm, it must be implemented in the base class
+  }
+
   void SolverDefaultBase::registerModelEvaluator(const Teuchos::RCP<pike::BlackBoxModelEvaluator>& me)
   {
     TEUCHOS_TEST_FOR_EXCEPTION(registrationComplete_,
