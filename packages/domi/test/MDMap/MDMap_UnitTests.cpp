@@ -2120,7 +2120,7 @@ TEUCHOS_UNIT_TEST( MDMap, subMapUpperRightNewBndryPad )
   else
   {
     TEST_ASSERT(not subMDMap.onSubcommunicator());
-    TEST_EQUALITY(subMDMap.numDims(), 0);
+    TEST_EQUALITY_CONST(subMDMap.numDims(), 0);
     TEST_THROW(subMDMap.getCommDim(0)      , Domi::SubcommunicatorError);
     TEST_THROW(subMDMap.isPeriodic(0)      , Domi::SubcommunicatorError);
     TEST_THROW(subMDMap.getCommIndex(0)    , Domi::SubcommunicatorError);
