@@ -44,6 +44,8 @@
 //
 // @HEADER
 
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 
@@ -70,4 +72,4 @@ template class MueLu::RefMaxwell<std::complex<double>, int, int, KokkosClassic::
 # endif
 #endif
 
-
+#endif
