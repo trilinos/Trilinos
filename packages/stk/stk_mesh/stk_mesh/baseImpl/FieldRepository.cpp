@@ -48,8 +48,7 @@ std::string print_field_type(const DataTraits                  & arg_traits ,
 // 2) Number of states must match
 // 3) Dimension must be different by at most one rank,
 //    where the tags match for the smaller rank.
-void verify_field_type( const char                        * arg_method ,
-                        const FieldBase                   & arg_field ,
+void verify_field_type( const FieldBase                   & arg_field ,
                         const DataTraits                  & arg_traits ,
                         unsigned                            arg_rank ,
                         const shards::ArrayDimTag * const * arg_dim_tags ,
@@ -74,7 +73,7 @@ void verify_field_type( const char                        * arg_method ,
   }
 
   ThrowErrorMsgIf( ! ok_traits || ! ok_number_states || ! ok_dimension,
-                   arg_method << " FAILED: Existing field = " <<
+                   " verify_field_type FAILED: Existing field = " <<
                    print_field_type( arg_field.data_traits() ,
                                      arg_field.field_array_rank() ,
                                      arg_field.dimension_tags() ) <<
@@ -88,24 +87,22 @@ void verify_field_type( const char                        * arg_method ,
 } //unamed namespace
 
 //----------------------------------------------------------------------
-
 FieldBase * FieldRepository::get_field(
-  const char                        * arg_method ,
+  stk::topology::rank_t               arg_entity_rank ,
   const std::string                 & arg_name ,
   const DataTraits                  & arg_traits ,
-  unsigned                            arg_rank ,
+  unsigned                            arg_array_rank ,
   const shards::ArrayDimTag * const * arg_dim_tags ,
   unsigned                            arg_num_states ) const
 {
   for ( std::vector<FieldBase*>::const_iterator
-        j =  m_fields.begin();
-        j != m_fields.end(); ++j ) {
+        j =  m_rankedFields[arg_entity_rank].begin();
+        j != m_rankedFields[arg_entity_rank].end(); ++j ) {
     if ( equal_case( (*j)->name() , arg_name ) ) {
 
       FieldBase* f = *j ;
 
-      verify_field_type( arg_method , *f , arg_traits ,
-                         arg_rank , arg_dim_tags , arg_num_states );
+      verify_field_type( *f , arg_traits , arg_array_rank , arg_dim_tags , arg_num_states );
 
       return f;
     }
@@ -153,7 +150,7 @@ FieldBase * FieldRepository::declare_field(
   FieldBase * f[ MaximumFieldStates ] ;
 
   f[0] = get_field(
-                "FieldRepository::declare_field" ,
+                arg_entity_rank ,
                 arg_name ,
                 arg_traits ,
                 arg_rank ,

@@ -303,7 +303,10 @@ public:
    *  \{
    */
 
-  /** \brief  Get a field, return NULL if it does not exist.
+  /** \brief  Get a field by name, return NULL if it does not exist.
+   *
+   * Note that this is a case-insensitive name search.
+   * E.g., 'TEMPERATURE' is the same as 'temperature'.
    *
    *  \exception std::runtime_error
    *    If the field exits and the
@@ -311,11 +314,48 @@ public:
    *    if a field of that name is not found.
    */
   template< class field_type >
+  field_type * get_field( stk::mesh::EntityRank entity_rank, const std::string & name ) const ;
+
+  template< class field_type >
+  field_type * get_node_field( const std::string & name ) const
+  { return get_field<field_type>(stk::topology::NODE_RANK, name); }
+
+  template< class field_type >
+  field_type * get_edge_field( const std::string & name ) const
+  { return get_field<field_type>(stk::topology::EDGE_RANK, name); }
+
+  template< class field_type >
+  field_type * get_face_field( const std::string & name ) const
+  { return get_field<field_type>(stk::topology::FACE_RANK, name); }
+
+  template< class field_type >
+  field_type * get_elem_field( const std::string & name ) const
+  { return get_field<field_type>(stk::topology::ELEM_RANK, name); }
+
+  template< class field_type >
+  field_type * get_side_field( const std::string & name ) const
+  { ThrowAssertMsg(static_cast<stk::topology::rank_t>(m_side_rank) != stk::topology::INVALID_RANK, "MetaData::get_side_field ERROR, side-rank invalid, probably because spatial-dimension hasn't been set yet.");
+    return get_field<field_type>(m_side_rank, name); }
+
+  template< class field_type >
   field_type * get_field( const std::string & name ) const ;
 
   /**
    * \brief Get a field by name with unknown type, NULL if does not exist
+   *
+   * Note that this is a case-insensitive name search.
+   * E.g., 'TEMPERATURE' is the same as 'temperature'.
    */
+  FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
+  FieldBase* get_node_field( const std::string& name ) const { return get_field(stk::topology::NODE_RANK, name); }
+  FieldBase* get_edge_field( const std::string& name ) const { return get_field(stk::topology::EDGE_RANK, name); }
+  FieldBase* get_face_field( const std::string& name ) const { return get_field(stk::topology::FACE_RANK, name); }
+  FieldBase* get_elem_field( const std::string& name ) const { return get_field(stk::topology::ELEM_RANK, name); }
+
+  FieldBase* get_side_field( const std::string& name ) const
+  { ThrowAssertMsg(static_cast<stk::topology::rank_t>(m_side_rank) != stk::topology::INVALID_RANK, "MetaData::get_side_field ERROR, side-rank invalid, probably because spatial-dimension hasn't been set yet.");
+    return get_field(m_side_rank, name); }
+
   FieldBase* get_field( const std::string& name ) const;
 
   /** \brief  Get/Set the coordinate field */
@@ -725,7 +765,7 @@ Part & MetaData::get_part( unsigned ord ) const
 
 template< class field_type >
 inline
-field_type * MetaData::get_field( const std::string & name ) const
+field_type * MetaData::get_field( stk::mesh::EntityRank arg_entity_rank, const std::string & name ) const
 {
   typedef FieldTraits< field_type > Traits ;
 
@@ -736,14 +776,34 @@ field_type * MetaData::get_field( const std::string & name ) const
   Traits::assign_tags( tags );
 
   FieldBase * const field =
-    m_field_repo.get_field( "stk::mesh::MetaData::get_field" ,
-                          name , dt , Traits::Rank , tags , 0 );
+    m_field_repo.get_field( static_cast<stk::topology::rank_t>(arg_entity_rank), name , dt , Traits::Rank , tags , 0 );
   if (field == NULL) {
     return static_cast<field_type*>(NULL);
   }
   else {
     return dynamic_cast< field_type * >( field );
   }
+}
+
+template< class field_type >
+inline
+field_type * MetaData::get_field( const std::string & name ) const
+{
+  field_type* field = NULL;
+  unsigned num_nonnull_fields = 0;
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::ELEM_RANK; ++i) {
+    field_type* thisfield = get_field<field_type>(i, name);
+    if (thisfield != NULL) {
+      if (field == NULL) {
+        field = thisfield;
+      }
+      ++num_nonnull_fields;
+    }
+  }
+
+  ThrowRequireMsg(num_nonnull_fields <= 1, "MetaData::get_field ERROR, found "<<num_nonnull_fields<<" fields with name="<<name);
+
+  return field;
 }
 
 
@@ -791,12 +851,8 @@ field_type & MetaData::declare_field( stk::topology::rank_t arg_entity_rank,
   field_type * f[ MaximumFieldStates ] ;
 
   f[0] = dynamic_cast<field_type*>(m_field_repo.get_field(
-      "MetaData::declare_field" ,
-      name ,
-      traits ,
-      Traits::Rank ,
-      dim_tags ,
-      number_of_states
+      arg_entity_rank , name ,
+      traits , Traits::Rank , dim_tags , number_of_states
       ));
 
   if ( NULL != f[0] ) {

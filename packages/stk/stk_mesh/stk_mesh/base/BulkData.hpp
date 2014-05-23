@@ -605,6 +605,7 @@ public:
    *          and the 'modification_end' has not been called.
    */
   Ghosting & shared_aura() const { return * m_ghosting[1] ; }
+  Part& aura_part() const { return *m_ghost_parts[1]; }
 
   /** \brief Asymmetric parallel relations for owner-to-ghosted mesh entities.
    *
@@ -1164,6 +1165,7 @@ private:
   VolatileFastSharedCommMap m_volatile_fast_shared_comm_map;
 
   std::vector<Ghosting*>              m_ghosting; /**< Aura is [1] */
+  std::vector<Part*>                  m_ghost_parts;
 
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities;
   std::list<size_t, tracking_allocator<size_t, DeletedEntityTag> >     m_deleted_entities_current_modification_cycle;

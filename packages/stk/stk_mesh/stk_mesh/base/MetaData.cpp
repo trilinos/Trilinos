@@ -208,6 +208,7 @@ MetaData::MetaData(size_t spatial_dimension, const std::vector<std::string>& ent
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
+    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -231,6 +232,7 @@ MetaData::MetaData()
     m_properties( ),
     m_entity_rank_names( ),
     m_spatial_dimension( 0 /*invalid spatial dimension*/),
+    m_side_rank(stk::topology::INVALID_RANK),
     m_part_fields()
 {
   // Declare the predefined parts
@@ -258,6 +260,7 @@ void MetaData::initialize(size_t spatial_dimension, const std::vector<std::strin
   }
 
   m_spatial_dimension = spatial_dimension;
+  m_side_rank = side_rank();
 
   internal_declare_known_cell_topology_parts();
 }
@@ -1111,16 +1114,34 @@ CellTopology get_cell_topology(stk::topology t)
   return CellTopology(NULL);
 }
 //end-get_cell_topology
-FieldBase* MetaData::get_field( const std::string& name ) const
+FieldBase* MetaData::get_field(stk::mesh::EntityRank entity_rank, const std::string& name ) const
 {
-  const FieldVector& fields = m_field_repo.get_fields();
-  for ( std::vector<FieldBase*>::const_iterator i =  fields.begin() ;
-        i != fields.end(); ++i ) {
+  const FieldVector& fields = m_field_repo.get_fields(static_cast<stk::topology::rank_t>(entity_rank));
+  for ( FieldVector::const_iterator i =  fields.begin() ; i != fields.end(); ++i ) {
     if (equal_case((*i)->name(), name)) {
       return *i;
     }
   }
   return NULL;
+}
+
+FieldBase* MetaData::get_field( const std::string& name ) const
+{
+  FieldBase* field = NULL;
+  unsigned num_nonnull_fields = 0;
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::ELEM_RANK; ++i) {
+    FieldBase* thisfield = get_field(i, name);
+    if (thisfield != NULL) {
+      if (field == NULL) {
+        field = thisfield;
+      }
+      ++num_nonnull_fields;
+    }
+  }
+
+  ThrowRequireMsg(num_nonnull_fields <= 1, "MetaData::get_field ERROR, found "<<num_nonnull_fields<<" fields with name="<<name);
+
+  return field;
 }
 
 void MetaData::dump_all_meta_info(std::ostream& out) const

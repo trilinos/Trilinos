@@ -42,10 +42,10 @@ class FieldRepository {
     }
 
     FieldBase * get_field(
-        const char                        * arg_method ,
+        stk::topology::rank_t               arg_entity_rank ,
         const std::string                 & arg_name ,
         const DataTraits                  & arg_traits ,
-        unsigned                            arg_rank ,
+        unsigned                            arg_array_rank ,
         const shards::ArrayDimTag * const * arg_dim_tags ,
         unsigned                            arg_num_states
         ) const;
@@ -120,7 +120,7 @@ class FieldRepository {
   private:
     FieldVector m_fields;
 
-    // Fields assocated with each topologyical rank  
+    // Fields assocated with each topological rank  
     FieldVector m_rankedFields[stk::topology::NUM_RANKS];
 
     //disallow copy and assignment
