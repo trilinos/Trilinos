@@ -826,10 +826,10 @@ private:
   // A double array of Slices that stores the starting and stopping
   // indexes for each axis processor along each axis.  This data
   // structure allows any processor to know the map bounds on any
-  // other processor.  These bounds do NOT include the boundary
-  // padding.  The outer array will have a size equal to the number of
-  // dimensions.  Each inner array will have a size equal to the
-  // number of axis processors along that axis.
+  // other processor.  These bounds do NOT include the boundary or
+  // communication padding.  The outer array will have a size equal to
+  // the number of dimensions.  Each inner array will have a size
+  // equal to the number of axis processors along that axis.
   Teuchos::Array< Teuchos::Array< Slice > > _globalRankBounds;
 
   // The global stride between adjacent IDs.  This quantity is
@@ -850,7 +850,11 @@ private:
   Teuchos::Array< dim_type > _localDims;
 
   // The local loop bounds along each axis, stored as an array of
-  // Slices.  These bounds DO include the padding.
+  // Slices.  These bounds DO include the padding.  By definition, the
+  // start() attribute of these Slices will all be zero by definition.
+  // This may seem wasteful (we could store an array of dim_type
+  // rather than an array of Slice), but this storage is convenient
+  // when it comes to the getLocalBounds() method.
   Teuchos::Array< Slice > _localBounds;
 
   // The local stride between adjacent elements in memory.
@@ -1305,7 +1309,7 @@ MDMap(const MDMap< Node > & parent,
       _localMin = parent._localMin +
         (index - parent._globalRankBounds[axis][0].start()) *
         parent._localStrides[axis];
-      _localMax = _localMin;
+      _localMax = _localMin + 1;
       _commPadSizes.push_back(0);
       _pad.push_back(Teuchos::tuple(0,0));
       _bndryPadSizes.push_back(0);
@@ -1388,12 +1392,6 @@ MDMap(const MDMap< Node > & parent,
       "axis = " << axis  << " is invalid for MDMap with " <<
         numDims << " dimensions");
 
-    // Copy the boundary padding sizes and set initial values for
-    // _bndryPad
-    _bndryPadSizes[axis] = bndryPad;
-    _bndryPad[axis][0]   = bndryPad;
-    _bndryPad[axis][1]   = bndryPad;
-
     // Convert the slice to concrete and check
     Slice bounds =
       slice.bounds(parent.getGlobalBounds(axis,true).stop());
@@ -1403,6 +1401,12 @@ MDMap(const MDMap< Node > & parent,
       RangeError,
       "Slice along axis " << axis << " is " << bounds << " but must be within "
       << parent.getGlobalBounds(axis));
+
+    // Copy the boundary padding sizes and set initial values for
+    // _bndryPad
+    _bndryPadSizes[axis] = bndryPad;
+    _bndryPad[axis][0]   = bndryPad;
+    _bndryPad[axis][1]   = bndryPad;
 
     // Adjust _globalRankBounds
     for (int axisRank = 0; axisRank < parent.getCommDim(axis);
@@ -1468,44 +1472,54 @@ MDMap(const MDMap< Node > & parent,
     // communicator, then we clear many of the data members.
     if (_mdComm->onSubcommunicator())
     {
-      int axisRank = parent.getCommIndex(axis);
-      if (axisRank == 0)
+      int parentAxisRank = parent.getCommIndex(axis);
+      int myAxisRank     = _mdComm->getCommIndex(axis);
+      if (myAxisRank == 0)
         _pad[axis][0] = _bndryPad[axis][0];
-      if (axisRank == _mdComm->getCommDim(axis)-1)
+      if (myAxisRank == _mdComm->getCommDim(axis)-1)
         _pad[axis][1] = _bndryPad[axis][1];
-      dim_type start = parent._localBounds[axis].start();
-      if (_globalBounds[axis].start() >
-          _globalRankBounds[axis][axisRank].start())
-      {
-        start = _globalBounds[axis].start() -
-          _globalRankBounds[axis][axisRank].start();
-      }
-      else
-      {
-        if (_globalRankBounds[axis][axisRank].start() -
-            _globalBounds[axis].start() < _pad[axis][0])
-        {
-          _pad[axis][0] = _globalRankBounds[axis][axisRank].start() -
-            _globalBounds[axis].start();
-        }
-      }
-      dim_type stop = parent._localBounds[axis].stop();
-      if (_globalBounds[axis].stop() <
-          _globalRankBounds[axis][axisRank].stop())
-      {
-        stop = _globalBounds[axis].stop() -
-          _globalRankBounds[axis][axisRank].start();
-      }
-      else
-      {
-        if (_globalBounds[axis].stop() -
-            _globalRankBounds[axis][axisRank].stop() < _pad[axis][1])
-        {
-          _pad[axis][1] = _globalBounds[axis].stop() -
-            _globalRankBounds[axis][axisRank].stop();
-        }
-      }
-      _localBounds[axis] = ConcreteSlice(start,stop);
+
+      dim_type start = (_globalRankBounds[axis][parentAxisRank].start() -
+                        _pad[axis][0]) -
+                       (parent._globalRankBounds[axis][parentAxisRank].start() -
+                        parent._pad[axis][0]);
+      // if (_globalBounds[axis].start() >
+      //     _globalRankBounds[axis][axisRank].start())
+      // {
+      //   start = _globalBounds[axis].start() -
+      //     _globalRankBounds[axis][axisRank].start();
+      // }
+      // else
+      // {
+      //   if (_globalRankBounds[axis][axisRank].start() -
+      //       _globalBounds[axis].start() < _pad[axis][0])
+      //   {
+      //     _pad[axis][0] = _globalRankBounds[axis][axisRank].start() -
+      //       _globalBounds[axis].start();
+      //   }
+      // }
+
+      dim_type stop = (_globalRankBounds[axis][parentAxisRank].stop() +
+                       _pad[axis][1]) -
+                      (parent._globalRankBounds[axis][parentAxisRank].start() -
+                       parent._pad[axis][0]);
+      // if (_globalBounds[axis].stop() <
+      //     _globalRankBounds[axis][axisRank].stop())
+      // {
+      //   stop = _globalBounds[axis].stop() -
+      //     _globalRankBounds[axis][axisRank].start();
+      // }
+      // else
+      // {
+      //   if (_globalBounds[axis].stop() -
+      //       _globalRankBounds[axis][axisRank].stop() < _pad[axis][1])
+      //   {
+      //     _pad[axis][1] = _globalBounds[axis].stop() -
+      //       _globalRankBounds[axis][axisRank].stop();
+      //   }
+      // }
+
+      _localBounds[axis] = ConcreteSlice(stop - start);
       _localDims[axis]   = stop - start;
       _localMin         += start * _localStrides[axis];
       _localMax         -= (parent.getLocalBounds(axis,true).stop() - stop) *
