@@ -652,3 +652,21 @@ TRIBITS_ADD_TEST(
   ARGS "--teuchos-suppress-startup-banner --dims=16,16,4 --commDims=4,4"
   STANDARD_PASS_OUTPUT
   )
+
+# Create the MDVector slice test executable
+TRIBITS_ADD_EXECUTABLE(
+  MDVector_SliceTests
+  SOURCES
+    MDVector_SliceTests.cpp
+    ${TEUCHOS_STD_PARALLEL_UNIT_TEST_MAIN}
+  COMM serial mpi
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_1D_1
+  COMM mpi
+  NUM_MPI_PROCS 1
+  ARGS "--teuchos-suppress-startup-banner --commDims=1"
+  STANDARD_PASS_OUTPUT
+  )
