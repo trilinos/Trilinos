@@ -120,15 +120,21 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
   Slice slice(0, width);
   for (int axis = 0; axis < numDims; ++axis)
   {
+    // Construct the sub-vector
     MDVector< Sca > subVector(mdVector, axis, slice);
+
+    // Check whether on-processor or not
     if (commDims[axis] > 1 && mdComm->getCommIndex(axis) > 0)
     {
       TEST_ASSERT(!subVector.onSubcommunicator());
     }
     else
     {
-      TEST_ASSERT( subVector.onSubcommunicator());
-      bool contig = (axis == 0);
+      // Compute the sub-vector stats
+      bool contig = (axis == numDims-1);
+
+      // Perform the unit tests
+      TEST_ASSERT(subVector.onSubcommunicator());
       TEST_EQUALITY(subVector.isContiguous()           , contig );
       TEST_EQUALITY(subVector.numDims()                , numDims);
       TEST_EQUALITY(subVector.getGlobalDim(axis)       , width  );
@@ -148,8 +154,77 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
 
 ////////////////////////////////////////////////////////////////////////
 
+TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceMed, Sca )
+{
+  // Initialize the MDComm
+  TeuchosCommRCP comm = Teuchos::DefaultComm< int >::getComm();
+  commDims = Domi::splitStringOfIntsWithCommas(commDimsStr);
+  MDCommRCP mdComm = Teuchos::rcp(new MDComm(comm, numDims, commDims));
+
+  // Ensure that the commDims are completely specified
+  commDims.resize(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    commDims[axis] = mdComm->getCommDim(axis);
+
+  // Construct dimensions
+  dim_type localDim = 10;
+  Array< dim_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = localDim * mdComm->getCommDim(axis);
+
+  // Construct an MDMap and MDVector
+  typedef Teuchos::RCP< MDMap<> > MDMapRCP;
+  MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
+  MDVector< Sca > mdVector(mdMap);
+
+  // Perform tests along each axis
+  dim_type start = localDim / 3;
+  for (int axis = 0; axis < numDims; ++axis)
+  {
+    // Construct the sub-vector
+    dim_type stop  = dims[axis] - localDim / 3;
+    dim_type width = stop - start;
+    Slice slice(start, stop);
+    MDVector< Sca > subVector(mdVector, axis, slice);
+
+    // Compute sub-vector stats
+    bool contig = (axis == numDims-1);
+    dim_type globalRankStart = start;
+    dim_type globalRankStop  = stop;
+    dim_type myStart = 0;
+    dim_type myStop  = localDim;
+    int commIndex = mdComm->getCommIndex(axis);
+    if (commIndex > 0)                 globalRankStart = localDim*commIndex;
+    if (commIndex < commDims[axis]-1)  globalRankStop  = localDim*(commIndex+1);
+    if (commIndex == 0)                myStart = localDim / 3;
+    if (commIndex == commDims[axis]-1) myStop  = localDim - localDim / 3;
+    dim_type myWidth = myStop - myStart;
+    Slice grs     = Slice(globalRankStart, globalRankStop);
+    Slice mySlice = Slice(myWidth);
+
+    // Perform the unit tests
+    TEST_ASSERT(subVector.onSubcommunicator());
+    TEST_EQUALITY(subVector.isContiguous()           , contig );
+    TEST_EQUALITY(subVector.numDims()                , numDims);
+    TEST_EQUALITY(subVector.getGlobalDim(axis)       , width  );
+    TEST_EQUALITY(subVector.getGlobalBounds(axis)    , slice  );
+    TEST_EQUALITY(subVector.getGlobalRankBounds(axis), grs    );
+    TEST_EQUALITY(subVector.getLocalDim(axis)        , myWidth);
+    TEST_EQUALITY(subVector.getLocalBounds(axis)     , mySlice);
+    TEST_EQUALITY(subVector.getLowerPadSize(axis)    , 0      );
+    TEST_EQUALITY(subVector.getUpperPadSize(axis)    , 0      );
+    TEST_EQUALITY(subVector.getCommPadSize(axis)     , 0      );
+    TEST_EQUALITY(subVector.getLowerBndryPad(axis)   , 0      );
+    TEST_EQUALITY(subVector.getUpperBndryPad(axis)   , 0      );
+    TEST_EQUALITY(subVector.getBndryPadSize(axis)    , 0      );
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+
 #define UNIT_TEST_GROUP( Sca ) \
-  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, SliceLow, Sca )
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, SliceLow, Sca ) \
+  TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT( MDVector, SliceMed, Sca )
 
 UNIT_TEST_GROUP(double)
 #if 0
