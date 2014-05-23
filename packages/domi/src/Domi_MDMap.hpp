@@ -1472,6 +1472,7 @@ MDMap(const MDMap< Node > & parent,
     // communicator, then we clear many of the data members.
     if (_mdComm->onSubcommunicator())
     {
+      // Fix _pad, if needed
       int parentAxisRank = parent.getCommIndex(axis);
       int myAxisRank     = _mdComm->getCommIndex(axis);
       if (myAxisRank == 0)
@@ -1479,51 +1480,26 @@ MDMap(const MDMap< Node > & parent,
       if (myAxisRank == _mdComm->getCommDim(axis)-1)
         _pad[axis][1] = _bndryPad[axis][1];
 
+      // Compute the local start and stop indexes.  Note that
+      // _globalRankBounds has an axis-rank dimension, and that it
+      // still uses the parent's commDim, not the new ones.  We will
+      // fix this later.
       dim_type start = (_globalRankBounds[axis][parentAxisRank].start() -
                         _pad[axis][0]) -
                        (parent._globalRankBounds[axis][parentAxisRank].start() -
                         parent._pad[axis][0]);
-      // if (_globalBounds[axis].start() >
-      //     _globalRankBounds[axis][axisRank].start())
-      // {
-      //   start = _globalBounds[axis].start() -
-      //     _globalRankBounds[axis][axisRank].start();
-      // }
-      // else
-      // {
-      //   if (_globalRankBounds[axis][axisRank].start() -
-      //       _globalBounds[axis].start() < _pad[axis][0])
-      //   {
-      //     _pad[axis][0] = _globalRankBounds[axis][axisRank].start() -
-      //       _globalBounds[axis].start();
-      //   }
-      // }
+      dim_type stop  = (_globalRankBounds[axis][parentAxisRank].stop() +
+                        _pad[axis][1]) -
+                       (parent._globalRankBounds[axis][parentAxisRank].start() -
+                        parent._pad[axis][0]);
 
-      dim_type stop = (_globalRankBounds[axis][parentAxisRank].stop() +
-                       _pad[axis][1]) -
-                      (parent._globalRankBounds[axis][parentAxisRank].start() -
-                       parent._pad[axis][0]);
-      // if (_globalBounds[axis].stop() <
-      //     _globalRankBounds[axis][axisRank].stop())
-      // {
-      //   stop = _globalBounds[axis].stop() -
-      //     _globalRankBounds[axis][axisRank].start();
-      // }
-      // else
-      // {
-      //   if (_globalBounds[axis].stop() -
-      //       _globalRankBounds[axis][axisRank].stop() < _pad[axis][1])
-      //   {
-      //     _pad[axis][1] = _globalBounds[axis].stop() -
-      //       _globalRankBounds[axis][axisRank].stop();
-      //   }
-      // }
-
+      // Compute the local bounds, dims, min, and max
       _localBounds[axis] = ConcreteSlice(stop - start);
       _localDims[axis]   = stop - start;
       _localMin         += start * _localStrides[axis];
       _localMax         -= (parent.getLocalBounds(axis,true).stop() - stop) *
                             _localStrides[axis];
+
       // The new sub-communicator may have fewer processors than the
       // parent communicator, so we need to fix _globalRankBounds
       Teuchos::Array< Slice > newRankBounds;
