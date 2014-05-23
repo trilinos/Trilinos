@@ -58,7 +58,7 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-#define USE_NEW_TRANSPOSE_CODE
+//#define USE_NEW_TRANSPOSE_CODE
 
 //#define COMPUTE_MMM_STATISTICS
 
