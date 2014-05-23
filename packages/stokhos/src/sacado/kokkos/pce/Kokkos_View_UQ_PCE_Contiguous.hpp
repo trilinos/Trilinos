@@ -194,6 +194,20 @@ struct sacado_pce_partition_constructor_requires_unmanaged_view {};
 
 namespace Kokkos {
 
+// Overload of deep_copy for UQ::PCE views intializing to a constant scalar
+template< typename T, typename L, typename D, typename M >
+void deep_copy(
+  const View<T,L,D,M,Impl::ViewPCEContiguous>& view ,
+  const typename View<T,L,D,M,Impl::ViewPCEContiguous>::intrinsic_scalar_type& value )
+{
+  typedef View<T,L,D,M,Impl::ViewPCEContiguous> ViewType;
+  typedef typename ViewType::intrinsic_scalar_type ScalarType;
+  if (value == ScalarType(0))
+    Impl::ViewFill< typename ViewType::flat_array_type >( view , value );
+  else
+    Impl::ViewFill< ViewType >( view , value );
+}
+
 /**\brief View::value_type  == Sacado::UQ::PCE< Storage<...> > */
 template< class DataType ,
           class Arg1Type ,
@@ -280,16 +294,6 @@ private:
     const intrinsic_scalar_type* last_coeff_expected =
       m_allocation.m_scalar_ptr_on_device + (sz-1)*m_storage_size;
     return last_coeff == last_coeff_expected;
-  }
-
-  // Throw an error message
-  KOKKOS_INLINE_FUNCTION
-  void throw_error(const char* msg) const {
-#if defined(__CUDACC__) && defined(__CUDA_ARCH__)
-    cuda_abort(msg);
-#else
-    throw std::runtime_error(msg);
-#endif
   }
 
 public:
@@ -502,7 +506,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   explicit inline
@@ -533,7 +537,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   explicit inline
@@ -624,7 +628,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   template <typename iType>
@@ -657,7 +661,7 @@ public:
                                m_sacado_size.value );
       m_is_contiguous = true;
 
-      (void) Impl::ViewFill< View >( *this , typename traits::value_type() );
+      deep_copy( *this , intrinsic_scalar_type() );
     }
 
   template <typename iType>
@@ -1622,10 +1626,10 @@ struct ViewAssignment< ViewPCEContiguous , ViewPCEContiguous , void >
     //
     if ( dst_type::is_static && (part.begin % dst.m_sacado_size.value ||
                                  part.begin + dst.m_sacado_size.value != part.end) )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible partitioning");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible partitioning");
 
     if ( !src.m_is_contiguous )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't partition non-contiguous view");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't partition non-contiguous view");
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -1877,10 +1881,10 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
     typedef View<ST,SL,SD,SM,ViewPCEContiguous> src_type ;
 
     if ( src.m_stride != 1 )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
 
     if ( !src.m_is_contiguous )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -1958,10 +1962,10 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
     typedef typename dst_type::array_layout dst_layout_type ;
 
     if ( src.m_stride != 1 )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  incompatible assignment");
 
     if ( !src.m_is_contiguous )
-      src.throw_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
+      Impl::raise_error("Kokkos::View< Sacado::UQ::PCE ... >:  can't assign non-contiguous view");
 
     dst.m_tracking.decrement( dst.m_ptr_on_device );
 
@@ -1992,6 +1996,133 @@ struct ViewAssignment< ViewDefault , ViewPCEContiguous , void >
 
     dst.m_tracking.increment( dst.m_ptr_on_device );
   }
+};
+
+// Specialization for deep_copy( view, view::value_type ) for Cuda
+template< class T , class L , class M , unsigned Rank >
+struct ViewFill< View<T,L,Cuda,M,ViewPCEContiguous> , Rank >
+{
+  typedef View<T,L,Cuda,M,ViewPCEContiguous>         OutputView ;
+  typedef typename OutputView::const_value_type      const_value_type ;
+  typedef typename OutputView::intrinsic_scalar_type scalar_type ;
+  typedef typename OutputView::device_type           device_type ;
+  typedef typename OutputView::size_type             size_type ;
+
+  template <unsigned VectorLength>
+  struct PCEKernel {
+    typedef typename OutputView::device_type device_type ;
+    const OutputView output;
+    const_value_type input;
+
+    PCEKernel( const OutputView & arg_out , const_value_type & arg_in ) :
+      output(arg_out), input(arg_in) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      const size_type tidx = dev.team_rank() % VectorLength;
+      const size_type tidy = dev.team_rank() / VectorLength;
+      const size_type nrow = dev.team_size() / VectorLength;
+      const size_type npce = output.sacado_size();
+
+      const size_type i0 = dev.league_rank() * nrow + tidy;
+      if ( i0 >= output.dimension_0() ) return;
+
+      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+          input.fastAccessCoeff(is) ;
+      }}}}}}}}
+    }
+  };
+
+  template <unsigned VectorLength>
+  struct ScalarKernel {
+    typedef typename OutputView::device_type device_type ;
+    const OutputView  output;
+    const scalar_type input;
+
+    ScalarKernel( const OutputView & arg_out , const scalar_type & arg_in ) :
+      output(arg_out), input(arg_in) {}
+
+    KOKKOS_INLINE_FUNCTION
+    void operator()( device_type dev ) const
+    {
+      const size_type tidx = dev.team_rank() % VectorLength;
+      const size_type tidy = dev.team_rank() / VectorLength;
+      const size_type nrow = dev.team_size() / VectorLength;
+      const size_type npce = output.sacado_size();
+
+      const size_type i0 = dev.league_rank() * nrow + tidy;
+      if ( i0 >= output.dimension_0() ) return;
+
+      for ( size_type i1 = 0 ; i1 < output.dimension_1() ; ++i1 ) {
+      for ( size_type i2 = 0 ; i2 < output.dimension_2() ; ++i2 ) {
+      for ( size_type i3 = 0 ; i3 < output.dimension_3() ; ++i3 ) {
+      for ( size_type i4 = 0 ; i4 < output.dimension_4() ; ++i4 ) {
+      for ( size_type i5 = 0 ; i5 < output.dimension_5() ; ++i5 ) {
+      for ( size_type i6 = 0 ; i6 < output.dimension_6() ; ++i6 ) {
+      for ( size_type i7 = 0 ; i7 < output.dimension_7() ; ++i7 ) {
+      for ( size_type is = tidx ; is < npce ; is+=VectorLength ) {
+        output.at(i0,i1,i2,i3,i4,i5,i6,i7).fastAccessCoeff(is) =
+          is == 0 ? input : scalar_type(0) ;
+      }}}}}}}}
+    }
+  };
+
+  ViewFill( const OutputView & output , const_value_type & input )
+  {
+    // Coalesced accesses are 128 bytes in size
+    typedef typename OutputView::intrinsic_scalar_type scalar_type;
+    const unsigned vector_length =
+      ( 128 + sizeof(scalar_type)-1 ) / sizeof(scalar_type);
+
+    // 8 warps per block should give good occupancy
+    const size_type block_size = 256;
+
+    const size_type rows_per_block = block_size / vector_length;
+    const size_type n = output.dimension_0();
+    const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
+    const size_type team_size = rows_per_block * vector_length;
+    ParallelWorkRequest config( league_size, team_size );
+
+    if (input.size() != output.sacado_size() && input.size() != 1)
+      Impl::raise_error("ViewFill:  Invalid input value size");
+
+    if (input.size() == 1)
+      parallel_for(
+        config, ScalarKernel<vector_length>(output, input.fastAccessCoeff(0)) );
+    else
+      parallel_for( config, PCEKernel<vector_length>(output, input) );
+    device_type::fence();
+  }
+
+  ViewFill( const OutputView & output , const scalar_type & input )
+  {
+    // Coalesced accesses are 128 bytes in size
+    typedef typename OutputView::intrinsic_scalar_type scalar_type;
+    const unsigned vector_length =
+      ( 128 + sizeof(scalar_type)-1 ) / sizeof(scalar_type);
+
+    // 8 warps per block should give good occupancy
+    const size_type block_size = 256;
+
+    const size_type rows_per_block = block_size / vector_length;
+    const size_type n = output.dimension_0();
+    const size_type league_size = ( n + rows_per_block-1 ) / rows_per_block;
+    const size_type team_size = rows_per_block * vector_length;
+    ParallelWorkRequest config( league_size, team_size );
+
+    parallel_for( config, ScalarKernel<vector_length>(output, input) );
+    device_type::fence();
+  }
+
 };
 
 } // namespace Impl

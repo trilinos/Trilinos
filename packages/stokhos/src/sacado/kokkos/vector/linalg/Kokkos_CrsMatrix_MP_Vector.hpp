@@ -1206,8 +1206,8 @@ MV_Multiply(
   typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*,
     InputLayout, Device, InputMemory > InputVectorType;
 
-  if (!Impl::is_mp_vector_constant(a)) {
-    Impl::raise_mp_vector_error(
+  if (!Sacado::is_constant(a)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a");
   }
 
@@ -1265,8 +1265,8 @@ MV_Multiply(
   typedef Kokkos::View< Sacado::MP::Vector<InputStorage>*,
     InputLayout, Device, InputMemory > InputVectorType;
 
-  if (!Impl::is_mp_vector_constant(a) || !Impl::is_mp_vector_constant(b)) {
-    Impl::raise_mp_vector_error(
+  if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+    Impl::raise_error(
       "MV_Multiply not implemented for non-constant a or b");
   }
 
@@ -1411,8 +1411,8 @@ MV_Multiply(
     typedef Kokkos::View< Sacado::MP::Vector<InputStorage>**,
       InputLayout, Device, InputMemory > InputVectorType;
 
-    if (!Impl::is_mp_vector_constant(a)) {
-      Impl::raise_mp_vector_error(
+    if (!Sacado::is_constant(a)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a");
     }
 
@@ -1481,8 +1481,8 @@ MV_Multiply(
     typedef Kokkos::View< Sacado::MP::Vector<InputStorage>**,
       InputLayout, Device, InputMemory > InputVectorType;
 
-    if (!Impl::is_mp_vector_constant(a) || !Impl::is_mp_vector_constant(b)) {
-      Impl::raise_mp_vector_error(
+    if (!Sacado::is_constant(a) || !Sacado::is_constant(b)) {
+      Impl::raise_error(
         "MV_Multiply not implemented for non-constant a or b");
     }
 

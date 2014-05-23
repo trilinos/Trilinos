@@ -57,6 +57,8 @@
 #include "Sacado_mpl_range_c.hpp"
 #include "Stokhos_mpl_for_each.hpp"
 
+#include "Kokkos_View_Utils.hpp"
+
 // ivdep is necessary to get the intel compiler to vectorize through
 // expresion template assignent operators
 #if defined(__INTEL_COMPILER) && ! defined(__CUDA_ARCH__)
@@ -200,6 +202,11 @@ namespace Sacado {
         s(xx.derived().size()) {
         typedef typename Expr<S>::derived_type expr_type;
         const expr_type& x = xx.derived();
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector():  Mismatched sizes");
+#endif
 
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
@@ -429,6 +436,12 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -454,6 +467,12 @@ namespace Sacado {
         const expr_type& x = xx.derived();
 
         this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -789,6 +808,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -816,6 +841,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -843,6 +874,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -870,6 +907,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -897,6 +940,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -924,6 +973,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -951,6 +1006,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -978,6 +1039,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1005,6 +1072,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1032,6 +1105,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1059,6 +1138,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1086,6 +1171,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1113,6 +1204,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1140,6 +1237,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1167,6 +1270,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1194,6 +1303,12 @@ namespace Sacado {
 
         if (x.size() > s.size())
           this->reset(x.size());
+
+#ifdef STOKHOS_DEBUG
+        if (s.size() != x.size())
+          Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
+#endif
+
         if (x.hasFastAccess(s.size())) {
 #ifdef STOKHOS_HAVE_PRAGMA_IVDEP
 #pragma ivdep
@@ -1434,6 +1549,25 @@ namespace Sacado {
   template <typename T, unsigned N> struct is_mp_vector< T[N] > {
     static const bool value = is_mp_vector<T>::value;
   };
+
+  // Utility function to see if a MP::Vector is really a constant
+  template <typename Storage>
+  bool is_constant(const Sacado::MP::Vector<Storage>& x)
+  {
+    typedef typename Storage::ordinal_type ordinal_type;
+    typedef typename Storage::value_type value_type;
+
+    // All size-1 vectors are constants
+    const ordinal_type sz = x.size();
+    if (sz == 1) return true;
+
+    // Maybe use a tolerance????
+    const value_type val = x.fastAccessCoeff(0);
+    for (ordinal_type i=1; i<sz; ++i)
+      if (x.fastAccessCoeff(i) != val) return false;
+
+    return true;
+  }
 
 } // namespace Sacado
 

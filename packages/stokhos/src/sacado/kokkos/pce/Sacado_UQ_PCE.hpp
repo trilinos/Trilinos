@@ -1176,6 +1176,25 @@ namespace Sacado {
     static const bool value = is_uq_pce<T>::value;
   };
 
+  // Utility function to see if a PCE is really a constant
+  template <typename Storage>
+  bool is_constant(const Sacado::UQ::PCE<Storage>& x)
+  {
+    typedef typename Storage::ordinal_type ordinal_type;
+    typedef typename Storage::value_type value_type;
+
+    // All size-1 expansions are constants
+    const ordinal_type sz = x.size();
+    if (sz == 1) return true;
+
+    // Maybe use a tolerance????
+    const value_type zero = 0;
+    for (ordinal_type i=1; i<sz; ++i)
+      if (x.fastAccessCoeff(i) != zero) return false;
+
+    return true;
+  }
+
 } // namespace Sacado
 
 #include "Sacado_UQ_PCE_Traits.hpp"
