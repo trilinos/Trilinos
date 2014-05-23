@@ -81,9 +81,6 @@ public:
 
   void deleteContents();
 
-  /** \brief Which of the desired global rows are remote*/
-  Teuchos::Array<bool> remote;
-
   /** \brief Original row map of matrix */
   Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > origRowMap;
   /** \brief Desired row map for "imported" version of the matrix */

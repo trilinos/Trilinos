@@ -1108,13 +1108,8 @@ void mult_A_B(
   size_t Arows = Aview.rowMap->getNodeNumElements();
   for(size_t i=0; i<Arows; ++i) {
 
-    //only navigate the local portion of Aview... (It's probable that we
-    //imported more of A than we need for A*B, because other cases like A^T*B
-    //need the extra rows.)
-    if (Aview.remote[i]) {
-      continue;
-    }
-
+    //only navigate the local portion of Aview... which is, thankfully, all of A
+    //since this routine doesn't do transpose modes
     GlobalOrdinal global_row = Aview.rowMap->getGlobalElement(i);
 
     //loop across the i-th row of A and for each corresponding row
@@ -1784,7 +1779,6 @@ void import_and_extract_views(
   Mview.colMap = M.getColMap();
   Mview.domainMap = M.getDomainMap();
   Mview.importColMap = null;
-  Mview.remote.resize(numRows,false);
 
   // Short circuit if the user swears there are no remotes
   if(userAssertsThereAreNoRemotes) return;
@@ -1802,7 +1796,6 @@ void import_and_extract_views(
     ArrayView<const LocalOrdinal> RemoteLIDs = prototypeImporter->getRemoteLIDs();
     for(size_t i=0; i<numRemote; i++) {
       MremoteRows[i] = targetMap->getGlobalElement(RemoteLIDs[i]);
-      Mview.remote[i]=true;
     }
 
     MremoteRowMap=rcp(new Map_t(OrdinalTraits<global_size_t>::invalid(), MremoteRows(), Mrowmap->getIndexBase(), Mrowmap->getComm(), Mrowmap->getNode()));
@@ -1816,7 +1809,6 @@ void import_and_extract_views(
       
       if (mlid == OrdinalTraits<LocalOrdinal>::invalid()) {
 	MremoteRows[numRemote]=Mrows[i];
-	Mview.remote[i]=true;
 	++numRemote;
       }
     }
