@@ -1287,7 +1287,7 @@ MDVector(const MDVector< Scalar, Node > & parent,
   setObjectLabel("Domi::MDVector");
 
   // Obtain the parent MDMap
-  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent->getMDMap();
+  Teuchos::RCP< const MDMap< Node > > parentMdMap = parent.getMDMap();
 
   // Obtain the new, sliced MDMap
   _mdMap = Teuchos::rcp(new MDMap< Node >(*parentMdMap,
