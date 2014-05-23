@@ -58,7 +58,7 @@
 #include <algorithm>
 #include "Teuchos_FancyOStream.hpp"
 
-//#define USE_NEW_TRANSPOSE_CODE
+#define USE_NEW_TRANSPOSE_CODE
 
 //#define COMPUTE_MMM_STATISTICS
 
@@ -127,9 +127,9 @@ void Multiply(
 #ifdef USE_NEW_TRANSPOSE_CODE
   if(transposeA && !transposeB && call_FillComplete_on_result && NewFlag) {
     use_optimized_ATB=true;
+    if(!A.getComm()->getRank()) printf("CMS: New Transpose code invoked\n");
   }
 #endif
-
 
   if(!use_optimized_ATB && transposeA) {
     RowMatrixTransposer<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps> at (Teuchos::rcpFromRef (A));
@@ -194,8 +194,11 @@ void Multiply(
 #endif
 
   //Now import any needed remote rows and populate the Aview struct.
-  if(!use_optimized_ATB)
-    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview);
+  // NOTE: We assert that an import isn't needed --- since we do the transpose above to handle that.
+  if(!use_optimized_ATB) {
+    RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
+    MMdetails::import_and_extract_views(*Aprime, targetMap_A, Aview,dummyImporter,true);
+  }
 
 
   //We will also need local access to all rows of B that correspond to the
@@ -966,13 +969,12 @@ void mult_AT_B_newmatrix(
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T I&X")));
 #endif
 
-  // Get views
-  // FIXME: Need to get rid of this as part of an overall refactor of the view object
+  // Get views, asserting that no import is required to speed up computation
   CrsMatrixStruct_t Aview;
   CrsMatrixStruct_t Bview;
-
-  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview);
-  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview);
+  RCP<const Import<LocalOrdinal,GlobalOrdinal, Node> > dummyImporter;
+  MMdetails::import_and_extract_views(*Atrans, Atrans->getRowMap(), Aview, dummyImporter,true);
+  MMdetails::import_and_extract_views(B, B.getRowMap(), Bview, dummyImporter,true);
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM-T AB-core")));
@@ -1749,7 +1751,8 @@ void import_and_extract_views(
   const CrsMatrix<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& M,
   RCP<const Map<LocalOrdinal, GlobalOrdinal, Node> > targetMap,
   CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>& Mview,
-  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter)
+  RCP<const Import<LocalOrdinal, GlobalOrdinal, Node> > prototypeImporter,
+  bool userAssertsThereAreNoRemotes)
 {
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   using Teuchos::TimeMonitor;
@@ -1782,6 +1785,9 @@ void import_and_extract_views(
   Mview.domainMap = M.getDomainMap();
   Mview.importColMap = null;
   Mview.remote.resize(numRows,false);
+
+  // Short circuit if the user swears there are no remotes
+  if(userAssertsThereAreNoRemotes) return;
 
 #ifdef HAVE_TPETRA_MMM_TIMINGS
   MM = Teuchos::rcp(new TimeMonitor(*TimeMonitor::getNewTimer("TpetraExt: MMM I&X RemoteMap")));
@@ -1822,8 +1828,6 @@ void import_and_extract_views(
     // prototypeImporter is bad.  But if we're in serial that's OK.
     mode=3;
   }
-
-
 
   if (numProcs < 2) {
     TEUCHOS_TEST_FOR_EXCEPTION(numRemote > 0, std::runtime_error,
