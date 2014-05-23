@@ -1628,7 +1628,7 @@ namespace Tpetra {
 
     // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
     Teuchos::ArrayRCP<scalar_type> dataAsArcp =
-      Kokkos::Compat::persistingView (hostView_j);
+      Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
     return Teuchos::arcp_const_cast<const scalar_type> (dataAsArcp);
 
     // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);
@@ -1669,7 +1669,7 @@ namespace Tpetra {
 
     // Wrap up the subview of column j in an ArrayRCP<const scalar_type>.
     Teuchos::ArrayRCP<scalar_type> dataAsArcp =
-      Kokkos::Compat::persistingView (hostView_j);
+      Kokkos::Compat::persistingView (hostView_j, 0, getLocalLength ());
     return dataAsArcp;
 
     // Teuchos::RCP<Node> node = MVT::getNode (lclMV_);

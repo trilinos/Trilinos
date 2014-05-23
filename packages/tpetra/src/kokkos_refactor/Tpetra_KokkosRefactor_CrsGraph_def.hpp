@@ -2179,6 +2179,8 @@ namespace Tpetra {
     k_rowPtrs_           = Kokkos::Compat::getKokkosViewDeepCopy<DeviceType>(rowPointers());
     rowPtrs_             = rowPointers;
     nodeNumEntries_ = nodeNumAllocated_ = rowPtrs_[getNodeNumRows()];
+    numAllocForAllRows_  = 0;
+    numAllocPerRow_      = null;
     checkInternalState();
   }
 

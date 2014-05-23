@@ -218,6 +218,29 @@ namespace Xpetra {
       myRowptr[i] = Teuchos::as<int>(rowptr[i]);
   }
 
+  void EpetraCrsMatrix::getAllValues(ArrayRCP<const size_t>& rowptr, ArrayRCP<const LocalOrdinal>& colind, ArrayRCP<const Scalar>& values) const {
+    XPETRA_MONITOR("EpetraCrsMatrix::getAllValues");
+
+    int  lowerOffset = 0;
+    bool ownMemory   = false;
+
+    const size_t n   = getNodeNumRows();
+    const size_t nnz = getNodeNumEntries();
+
+    // Row offsets
+    // We have to make a copy here, it is unavoidable (see comments in allocateAllValues)
+    Epetra_IntSerialDenseVector& myRowptr = mtx_->ExpertExtractIndexOffset();
+    rowptr.resize(n+1);
+    for (size_t i = 0; i < n+1; i++)
+      (*const_cast<size_t*>(&rowptr[i])) = Teuchos::as<size_t>(myRowptr[i]);
+
+    // Column indices
+    colind = Teuchos::arcp(mtx_->ExpertExtractIndices().Values(), lowerOffset, nnz, ownMemory);
+
+    // Values
+    values = Teuchos::arcp(mtx_->ExpertExtractValues(), lowerOffset, nnz, ownMemory);
+  }
+
   void EpetraCrsMatrix::resumeFill(const RCP< ParameterList > &params) {
     XPETRA_MONITOR("EpetraCrsMatrix::resumeFill");
 

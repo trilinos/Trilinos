@@ -340,6 +340,9 @@ namespace MueLu {
     TEUCHOS_TEST_FOR_EXCEPTION(Levels_.size() <= startLevel, Exceptions::RuntimeError,
                                "MueLu::Hierarchy::Setup(): fine level (" << startLevel << ") does not exist");
 
+    TEUCHOS_TEST_FOR_EXCEPTION(numDesiredLevels <= 0, Exceptions::RuntimeError,
+                               "Constructing non-positive (" << numDesiredLevels << ") number of levels does not make sense.");
+
     // Check for fine level matrix A
     TEUCHOS_TEST_FOR_EXCEPTION(!Levels_[startLevel]->IsAvailable("A"), Exceptions::RuntimeError,
                                "MueLu::Hierarchy::Setup(): fine level (" << startLevel << ") has no matrix A! "
@@ -358,15 +361,21 @@ namespace MueLu {
 
     // Setup multigrid levels
     int iLevel = 0;
-    bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
-    if (bIsLastLevel == false) {
-      for (iLevel = startLevel + 1; iLevel < lastLevel; iLevel++) {
-        bIsLastLevel = Setup(iLevel, ptrmanager, ptrmanager, ptrmanager);            // setup intermediate levels
-        if (bIsLastLevel == true)
-          break;
+    if (numDesiredLevels == 1) {
+      iLevel = 0;
+      Setup(startLevel, Teuchos::null, ptrmanager, Teuchos::null);                     // setup finest==coarsest level (first and last managers are Teuchos::null)
+
+    } else {
+      bool bIsLastLevel = Setup(startLevel, Teuchos::null, ptrmanager, ptrmanager);    // setup finest level (level 0) (first manager is Teuchos::null)
+      if (bIsLastLevel == false) {
+        for (iLevel = startLevel + 1; iLevel < lastLevel; iLevel++) {
+          bIsLastLevel = Setup(iLevel, ptrmanager, ptrmanager, ptrmanager);            // setup intermediate levels
+          if (bIsLastLevel == true)
+            break;
+        }
+        if (bIsLastLevel == false)
+          Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);                     // setup coarsest level (last manager is Teuchos::null)
       }
-      if (bIsLastLevel == false)
-        Setup(lastLevel, ptrmanager, ptrmanager, Teuchos::null);                     // setup coarsest level (last manager is Teuchos::null)
     }
 
     // TODO: some check like this should be done at the beginning of the routine

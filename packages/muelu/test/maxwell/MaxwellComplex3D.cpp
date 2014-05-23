@@ -54,7 +54,6 @@
 // MueLu
 #include <MueLu_RefMaxwell.hpp>
 #include <MueLu_UseDefaultTypesComplex.hpp>
-#include <MueLu_TestHelpers.hpp>
 #include <MueLu_Exceptions.hpp>
 
 // Belos

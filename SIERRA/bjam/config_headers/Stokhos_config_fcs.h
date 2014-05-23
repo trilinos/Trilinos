@@ -98,3 +98,6 @@
 
 /* Define if OpenMP is enabled */
 /* #undef HAVE_STOKHOS_OPENMP */
+
+/* Define if intrinsics are enabled */
+#define HAVE_STOKHOS_INTRINSICS

@@ -68,7 +68,7 @@ namespace {
 
 #ifndef NDEBUG
   bool internal_parallel_consistent(bool single_proc_only, const Ioss::GroupingEntity *ge,
-			      const Ioss::Field &field, const Ioss::ParallelUtils &util)
+				    const Ioss::Field &field, int in_out, const Ioss::ParallelUtils &util)
   {
     if (single_proc_only)
       return true;
@@ -79,11 +79,13 @@ namespace {
     unsigned int max_hash  = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MAX);
     unsigned int min_hash  = util.global_minmax(hash_code, Ioss::ParallelUtils::DO_MIN);
     if (max_hash != min_hash) {
-      std::string errmsg = "Parallel inconsistency detected for field ";
+      std::string errmsg = "Parallel inconsistency detected for ";
+      errmsg += in_out == 0 ? "writing" : "reading";
+      errmsg += " field '";
       errmsg += field_name;
-      errmsg += " on entity ";
+      errmsg += "' on entity '";
       errmsg += ge_name;
-      errmsg += "\n";
+      errmsg += "'\n";
       IOSS_WARNING << errmsg;
       return false;
     } else {
@@ -276,9 +278,9 @@ namespace Ioss {
     return exists;
   }
 
-  void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field) const
+  void DatabaseIO::verify_and_log(const GroupingEntity *ge, const Field& field, int in_out) const
   {
-    assert(!is_parallel_consistent() || internal_parallel_consistent(singleProcOnly, ge, field, util_));
+    assert(!is_parallel_consistent() || internal_parallel_consistent(singleProcOnly, ge, field, in_out, util_));
     if (get_logging()) {
       log_field(">", ge, field, singleProcOnly, util_);
     }

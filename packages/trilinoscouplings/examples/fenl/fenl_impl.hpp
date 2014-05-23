@@ -65,8 +65,8 @@
 #include <fenl.hpp>
 #include <fenl_functors.hpp>
 #include <Kokkos_DefaultNode.hpp>
+
 #include <Tpetra_Vector.hpp>
-#include <Tpetra_CrsMatrix.hpp>
 
 //----------------------------------------------------------------------------
 
@@ -140,21 +140,16 @@ Perf fenl(
   using Teuchos::rcp;
   using Teuchos::rcpFromRef;
   using Teuchos::arrayView;
-  using Teuchos::ParameterList;
 
-  typedef Kokkos::Details::ArithTraits<Scalar> KAT;
-  typedef typename KAT::mag_type Magnitude;
-  typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device> NodeType;
-  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType> GlobalMatrixType;
-  typedef Tpetra::Vector<Scalar,int,int,NodeType> GlobalVectorType;
-  typedef Tpetra::Map<int, int, NodeType> MapType;
-  typedef RCP<const MapType> pMapType;
+  typedef typename Kokkos::Details::ArithTraits<Scalar>::mag_type  Magnitude;
+  typedef Kokkos::Compat::KokkosDeviceWrapperNode<Device>          NodeType;
+  typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>               GlobalMatrixType;
+  typedef Tpetra::Map<int, int, NodeType>                          MapType;
+  typedef RCP<const MapType>                                       pMapType;
+  typedef typename ::Tpetra::MultiVector<Scalar,int,int,NodeType>  GlobalVectorType;
+  typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder >    FixtureType ;
 
-  typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder > FixtureType ;
-
-  //typedef Kokkos::CrsMatrix< double , unsigned , Device >
-  typedef typename GlobalMatrixType::k_local_matrix_type
-    LocalMatrixType ;
+  typedef typename GlobalMatrixType::k_local_matrix_type LocalMatrixType ;
 
   typedef typename LocalMatrixType::StaticCrsGraphType
     LocalGraphType ;
@@ -336,8 +331,6 @@ Perf fenl(
       bc_lower_value ,
       bc_upper_value );
 
-    const ParameterList params();
-
     // Create Distributed Objects
 
     // Create Maps
@@ -363,10 +356,10 @@ Perf fenl(
         arrayView(lid_to_gid_host.ptr_on_device(),lid_to_gid.dimension_0()),
         0,comm, node) );
 
-    // Create Teptra Matrix: this uses the already allocated matrix data
+    // Create Tpetra Matrix: this uses the already allocated matrix data
     GlobalMatrixType g_jacobian(RowMap,ColMap,jacobian);
 
-    // Create Teptra Vectors: this uses the already allocated vector data
+    // Create Tpetra MultiVectors: this uses the already allocated vector data
     GlobalVectorType g_nodal_solution(ColMap,k_nodal_solution);
     GlobalVectorType g_nodal_residual(RowMap,k_nodal_residual);
     GlobalVectorType g_nodal_delta(RowMap,k_nodal_delta);
@@ -439,15 +432,18 @@ Perf fenl(
       //--------------------------------
       // Evaluate convergence
 
-      const Magnitude residual_norm =
-          g_nodal_residual.norm2();
+      Teuchos::Array<Magnitude> residual_norm(1);
+      g_nodal_residual.norm2(residual_norm());
 
-      perf.newton_residual = residual_norm ;
+      perf.newton_residual = residual_norm[0] ;
 
-      if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm ; }
+      if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm[0] ; }
 
-      if ( residual_norm < residual_norm_init * newton_iteration_tolerance ) { break ; }
+      if ( residual_norm[0] < residual_norm_init * newton_iteration_tolerance ) { break ; }
 
+      std::string xmlFileName="muelu.xml";
+      Teuchos::RCP<MueLu::TpetraOperator<double,int,int,NodeType> > mueluPreconditioner;
+      mueluPreconditioner = MueLu::CreateTpetraPreconditioner<double,int,int,NodeType>(rcpFromRef(g_jacobian),xmlFileName);
       //--------------------------------
       // Solve for nonlinear update
 
@@ -477,12 +473,12 @@ Perf fenl(
       //--------------------------------
 
       if ( print_flag ) {
-        const double delta_norm =
-            g_nodal_delta.norm2();
+        Teuchos::Array<Magnitude> delta_norm(1);
+        g_nodal_delta.norm2(delta_norm());
 
         std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                   << " residual[" << perf.newton_residual << "]"
-                  << " update[" << delta_norm << "]"
+                  << " update[" << delta_norm[0] << "]"
                   << " cg_iteration[" << cgsolve.iteration << "]"
                   << " cg_residual[" << cgsolve.norm_res << "]"
                   << std::endl ;

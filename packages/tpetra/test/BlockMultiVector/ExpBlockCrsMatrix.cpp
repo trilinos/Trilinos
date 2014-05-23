@@ -410,7 +410,7 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= two;
+          expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
           TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -440,8 +440,8 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= (two * alpha);
-          expectedVal += beta * STS::one ();
+          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+          expectedVal += static_cast<LO> (beta);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
           TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -513,8 +513,8 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= two;
-            expectedVal *= static_cast<Scalar> (col + 1);
+            expectedVal *= static_cast<LO> (2);
+            expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
             TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -546,9 +546,9 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= (two * alpha);
-            expectedVal *= static_cast<Scalar> (col + 1);
-            expectedVal += beta * STS::one ();
+            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+            expectedVal *= static_cast<LO> (col + 1);
+            expectedVal += static_cast<LO> (beta);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
             TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -620,7 +620,7 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= two;
+          expectedVal *= static_cast<LO> (2);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
           TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -650,8 +650,8 @@ namespace {
           for (LO j = 0; j < blockSize; ++j) {
             expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
           }
-          expectedVal *= (two * alpha);
-          expectedVal += beta * STS::one ();
+          expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+          expectedVal += static_cast<LO> (beta);
           out << "Y_lcl(" << i << ") = " << Y_lcl(i)
               << "; expectedVal = " << expectedVal << std::endl;
           TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -730,8 +730,8 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= two;
-            expectedVal *= static_cast<Scalar> (col + 1);
+            expectedVal *= static_cast<LO> (2);
+            expectedVal *= static_cast<LO> (col + 1);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
             TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -763,9 +763,9 @@ namespace {
             for (LO j = 0; j < blockSize; ++j) {
               expectedVal += blockSize*(1 - i)*j - j*j + i*blockSize*blockSize;
             }
-            expectedVal *= (two * alpha);
-            expectedVal *= static_cast<Scalar> (col + 1);
-            expectedVal += beta * STS::one ();
+            expectedVal *= (static_cast<LO> (2) * static_cast<LO> (alpha));
+            expectedVal *= static_cast<LO> (col + 1);
+            expectedVal += static_cast<LO> (beta);
             out << "Y_lcl(" << i << ") = " << Y_lcl(i)
                 << "; expectedVal = " << expectedVal << std::endl;
             TEST_ASSERT( Y_lcl(i) == static_cast<Scalar> (expectedVal) );
@@ -780,8 +780,6 @@ namespace {
     comm->barrier ();
     out << "Hooray, got to the end of the BlockCrsMatrix test!" << std::endl;
   }
-
-
 
 //
 // INSTANTIATIONS

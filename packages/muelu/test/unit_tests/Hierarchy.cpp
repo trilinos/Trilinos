@@ -341,10 +341,6 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
 
   RCP<Level> l0 = H.GetLevel(0);
 
-  /*RCP<Teuchos::FancyOStream> stdout = Teuchos::fancyOStream(Teuchos::rcpFromRef(std::cout));
-  l0->print(*stdout,Teuchos::VERB_EXTREME);
-  l1->print(*stdout,Teuchos::VERB_EXTREME);*/
-
   TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
   TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
   TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
@@ -361,6 +357,46 @@ TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1level)
   X->putScalar( (SC) 0.0);
 
   int iterations=10;
+  H.Iterate(*RHS, *X, iterations);
+#endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
+    }
+}
+
+TEUCHOS_UNIT_TEST(Hierarchy, SetupHierarchy1levelv2)
+{
+  MUELU_TEST_ONLY_FOR(Xpetra::UseTpetra)
+    {
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_AMESOS2)
+  RCP<const Teuchos::Comm<int> > comm = TestHelpers::Parameters::getDefaultComm();
+  RCP<Matrix> A = TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::Build1DPoisson(299*comm->getSize());
+
+  // Multigrid Hierarchy
+  Hierarchy H(A);
+  H.setVerbLevel(Teuchos::VERB_HIGH);
+
+  // Multigrid setup phase (using default parameters)
+  FactoryManager M0; // how to build aggregates and smoother of the first level
+
+  H.Setup(M0, 0, 1);
+
+  RCP<Level> l0 = H.GetLevel(0);
+
+  TEST_EQUALITY(l0->IsAvailable("PreSmoother",  MueLu::NoFactory::get()), true);
+  TEST_EQUALITY(l0->IsAvailable("PostSmoother", MueLu::NoFactory::get()), false); // direct solve
+  TEST_EQUALITY(l0->IsAvailable("A",            MueLu::NoFactory::get()), true);
+
+  TEST_EQUALITY(l0->GetKeepFlag("A",            MueLu::NoFactory::get()), MueLu::UserData);
+  TEST_EQUALITY(l0->GetKeepFlag("PreSmoother",  MueLu::NoFactory::get()), MueLu::Final);
+  //TEST_EQUALITY(l0->GetKeepFlag("PostSmoother", MueLu::NoFactory::get()), MueLu::Final); // direct solve
+
+  RCP<MultiVector> RHS = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RCP<MultiVector> X   = MultiVectorFactory::Build(A->getRowMap(), 1);
+  RHS->setSeed(846930886);
+  RHS->randomize();
+
+  X->putScalar( (SC) 0.0);
+
+  int iterations = 10;
   H.Iterate(*RHS, *X, iterations);
 #endif // HAVE_MUELU_TPETRA && HAVE_MUELU_AMESOS2
     }
