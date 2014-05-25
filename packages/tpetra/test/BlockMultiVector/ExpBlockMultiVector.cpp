@@ -355,6 +355,9 @@ namespace {
 
     little_vec_type Y_overlap = Y.getLocalBlock (overlappingMeshMap.getLocalElement (overlappingMeshMap.getMinGlobalIndex ()), colToModify);
 
+    // Forestall compiler warning for unused variable.
+    (void) Y_overlap;
+
     Teuchos::Array<Scalar> zeroArray (blockSize, STS::zero ());
     little_vec_type zeroLittleVector (zeroArray.getRawPtr (), blockSize, 1);
 

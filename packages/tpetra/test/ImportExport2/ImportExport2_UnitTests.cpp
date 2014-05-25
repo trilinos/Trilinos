@@ -617,7 +617,7 @@ double test_with_matvec(const CrsMatrixType &A, const CrsMatrixType &B){
   X0.putScalar(1.0);
 
 
-  // Handle domain map change 
+  // Handle domain map change
   if(!Xgmap->isSameAs(*Xamap)) {
     import_type Ximport(Xgmap,Xamap);
     Xa.doImport(X0,Ximport,Tpetra::INSERT);
@@ -629,7 +629,7 @@ double test_with_matvec(const CrsMatrixType &A, const CrsMatrixType &B){
     Xb.doImport(X0,Ximport,Tpetra::INSERT);
   }
   else Xb = X0;
-    
+
   Xa.putScalar(1.0);
   Xb.putScalar(1.0);
 
@@ -878,7 +878,7 @@ void build_test_matrix_with_row_overlap(RCP<const Teuchos::Comm<int> > & Comm, R
     GO GID = MyMap->getGlobalElement(i);
     Indices[0] = GID;
     NumEntries = 1;
-    if(i < NumPrimaryEquations) 
+    if(i < NumPrimaryEquations)
       Values[0] = 2.0;
     else
       Values[0] = 1.0;
@@ -888,6 +888,9 @@ void build_test_matrix_with_row_overlap(RCP<const Teuchos::Comm<int> > & Comm, R
   // Create the domain/range map since this can't be allowed to overlap
   RCP<const map_type > MyDRMap = rcp(new map_type(Teuchos::OrdinalTraits<GO>::invalid(), NumPrimaryEquations, 0, Comm));
   A->fillComplete(MyDRMap,MyDRMap);
+
+  // Forestall compiler warning for unused variable.
+  (void) NumEntries;
 }
 
 

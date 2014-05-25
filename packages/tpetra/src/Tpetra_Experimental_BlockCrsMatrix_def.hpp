@@ -284,7 +284,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
@@ -325,7 +325,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
@@ -366,7 +366,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numColInds; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
@@ -426,7 +426,7 @@ namespace Experimental {
     size_t hint = 0; // Guess for the relative offset into the current row
     LO validCount = 0; // number of valid column indices in colInds
 
-    for (size_t k = 0; k < numColInds; ++k) {
+    for (LO k = 0; k < numColInds; ++k) {
       const size_t relBlockOffset =
         findRelOffsetOfColumnIndex (localRowInd, colInds[k], hint);
       if (relBlockOffset != STINV) {
@@ -461,7 +461,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid offsets
 
-    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset = offsets[k];
       if (relBlockOffset != STINV) {
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
@@ -499,7 +499,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid offsets
 
-    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset = offsets[k];
       if (relBlockOffset != STINV) {
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
@@ -537,7 +537,7 @@ namespace Experimental {
     size_t pointOffset = 0; // Current offset into input values
     LO validCount = 0; // number of valid offsets
 
-    for (size_t k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
+    for (LO k = 0; k < numOffsets; ++k, pointOffset += perBlockSize) {
       const size_t relBlockOffset = offsets[k];
       if (relBlockOffset != STINV) {
         const size_t absBlockOffset = absRowBlockOffset + relBlockOffset;
@@ -1108,7 +1108,7 @@ namespace Experimental {
     size_t totalBufSize = 0;
     size_t totalNumEnt = 0;
 
-    for (size_t k = 0; k < exportLIDs.size (); ++k) {
+    for (size_t k = 0; k < static_cast<size_t> (exportLIDs.size ()); ++k) {
       const LO localRow = exportLIDs[k];
       const size_t numEnt = srcGraph.getNumEntriesInLocalRow (localRow);
       totalNumEnt += numEnt;
@@ -1191,7 +1191,7 @@ namespace Experimental {
     // If any given LIDs are invalid, we pack obviously invalid data
     // (e.g., invalid column indices) into the buffer for that LID,
     // and set the local error flag.
-    for (size_t lidInd = 0; lidInd < exportLIDs.size (); ++lidInd) {
+    for (size_t lidInd = 0; lidInd < static_cast<size_t> (exportLIDs.size ()); ++lidInd) {
       // Get a view of row exportLIDs[lidInd].
       const LO lclRowInd = exportLIDs[lidInd];
       const LO* lclColInds;
@@ -1209,7 +1209,7 @@ namespace Experimental {
 
       // Convert column indices from local to global.
       Teuchos::ArrayView<GO> gblColInds = gblColIndsSpace.view (0, numEnt);
-      for (size_t j = 0; j < numEnt; ++j) {
+      for (size_t j = 0; j < static_cast<size_t> (numEnt); ++j) {
         gblColInds[j] = srcColMap.getGlobalElement (lclColInds[j]);
       }
 
@@ -1237,10 +1237,10 @@ namespace Experimental {
       // send buffer.  We could just memcpy one entry at a time, but
       // it's probably faster to avoid the library call.
       const size_t rowStart = src->ptr_[lclRowInd];
-      for (size_t j = 0; j < numEnt; ++j) {
+      for (size_t j = 0; j < static_cast<size_t> (numEnt); ++j) {
         const_little_block_type srcBlock =
           src->getConstLocalBlockFromAbsOffset (rowStart + j);
-        if (srcBlock.getBlockSize () == blockSize) {
+        if (static_cast<size_t> (srcBlock.getBlockSize ()) == blockSize) {
           // A block size of zero is a possible error state.  Of
           // course, the actual block size could be zero.  That would
           // be silly, but why shouldn't it be legal?  That's why we
@@ -1393,7 +1393,7 @@ namespace Experimental {
       }
       // We've already checked that CM is valid.
 
-      if (successCount != numEnt) {
+      if (static_cast<size_t> (successCount) != numEnt) {
         localError_ = true;
       }
     }
