@@ -1401,6 +1401,10 @@ MDMap(const MDMap< Node > & parent,
       RangeError,
       "Slice along axis " << axis << " is " << bounds << " but must be within "
       << parent.getGlobalBounds(axis));
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      (bounds.stop() == bounds.start()),
+      RangeError,
+      "Slice along axis " << axis << " has lebgth zero");
 
     // Copy the boundary padding sizes and set initial values for
     // _bndryPad
