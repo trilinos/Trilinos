@@ -32,14 +32,23 @@ int getProcId()
     return procId;
 }
 
+int getNumThreads()
+{
+    int numThreads = -1;
+    #pragma omp parallel
+    {
+        #pragma omp single
+        numThreads = omp_get_num_threads();
+    }
+    return numThreads;
+}
+
 TEST(MpiPlusOpenMp, Reduction)
 {
-    int numThreads = 0;
     double threadSum = 0;
 
     #pragma omp parallel reduction(+:threadSum)
     {
-        numThreads = omp_get_num_threads();
         threadSum = 1.0;
     }
 
@@ -48,13 +57,13 @@ TEST(MpiPlusOpenMp, Reduction)
     MPI_Allreduce(&threadSum, &mpiSum, numItemsPerProc, MPI_DOUBLE, MPI_SUM, MPI_COMM_WORLD);
 
     int numProcs = getNumProcs();
+    int numThreads = getNumThreads();
     EXPECT_EQ(numThreads*numProcs, mpiSum);
 }
 
 TEST(MpiPlusOpenMp, VectorSumReduction)
 {
     int numProcs = getNumProcs();
-    int numThreads = 0;
 //    size_t sizeOfGlobalVector = 4032000000;
     size_t sizeOfGlobalVector = 40320000;
     ASSERT_EQ(0u, sizeOfGlobalVector%numProcs);
@@ -73,7 +82,6 @@ TEST(MpiPlusOpenMp, VectorSumReduction)
     double threadSum = 0;
     #pragma omp parallel
     {
-        numThreads = omp_get_num_threads();
         #pragma omp for reduction(+:threadSum)
         for (size_t i = 0; i < sizeOfLocalVector; i++)
         {
@@ -91,6 +99,7 @@ TEST(MpiPlusOpenMp, VectorSumReduction)
     int procId = getProcId();
     if(procId == 0)
     {
+        int numThreads = getNumThreads();
         std::stringstream ss;
         ss << "Num MPI processes: " << numProcs << " ";
         ss << "Num threads per process: " << numThreads <<  " ";
