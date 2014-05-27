@@ -282,17 +282,13 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
 
       for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	Acoords_[a] +=
-	  coords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	Acoords_[a] += coords_[connect[b][i * num_nodes_per_elem[b] + j] - 1];
 	Acoords_[num_nodes_ + a] +=
-	  coords_[connect[b]
-		  [num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	  coords_[connect[b][num_nodes_ + i * num_nodes_per_elem[b] + j] - 1];
 
 	if(3 == dimension_) {
 	  Acoords_[2 * num_nodes_ + a] +=
-	    coords_[connect[b]
-		   [2*num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-
-		   1];
+	    coords_[connect[b][2*num_nodes_+i*num_nodes_per_elem[b]+j] - 1];
 	}
       }
 

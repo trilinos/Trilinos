@@ -134,7 +134,12 @@ public:
    *         the rank 
    *    \param inputPart on return a pointer to input part numbers
    */ 
-//KDD  virtual void getPartsView(const part_t *&inputPart) const;
+  void getPartsView(const part_t *&inputPart) const
+  {
+    // Default behavior:  return NULL for inputPart array;
+    // assume input part == rank
+    inputPart = NULL;
+  }
 
   /*! \brief Apply a PartitioningSolution to an input.
    *
