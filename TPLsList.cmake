@@ -190,6 +190,7 @@ SET( Trilinos_TPLS_FINDMODS_CLASSIFICATIONS
   Eigen           "cmake/TPLs/"    EX
   X11             "cmake/TPLs/"    SS
   Lemon           "cmake/TPLs/"    EX
+  GLM             "cmake/TPLs/"    EX
   )
 
 # NOTES:
