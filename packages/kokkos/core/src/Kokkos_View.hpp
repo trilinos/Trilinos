@@ -454,7 +454,7 @@ public:
 
   enum { Rank = traits::rank };
 
-  KOKKOS_INLINE_FUNCTION typename traits::shape_type shape() const { return m_offset_map ; }
+  KOKKOS_INLINE_FUNCTION offset_map_type shape() const { return m_offset_map ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_0() const { return m_offset_map.N0 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_1() const { return m_offset_map.N1 ; }
   KOKKOS_INLINE_FUNCTION typename traits::size_type dimension_2() const { return m_offset_map.N2 ; }
