@@ -178,6 +178,16 @@ struct Vectorization<Cuda,N> {
   }
 
   KOKKOS_FORCEINLINE_FUNCTION
+  static int team_rank(const Cuda &dev) {
+    return dev.team_rank()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  static int team_size(const Cuda &dev) {
+    return dev.team_size()/increment;
+  }
+
+  KOKKOS_FORCEINLINE_FUNCTION
   static int global_thread_rank(const Cuda &dev) {
     return (dev.league_rank()*dev.team_size()+dev.team_rank())/increment;
   }
