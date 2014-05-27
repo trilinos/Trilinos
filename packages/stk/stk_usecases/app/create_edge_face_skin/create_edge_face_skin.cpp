@@ -98,6 +98,10 @@ namespace {
 
     provide_entity_count(mesh_data.bulk_data(), proc);
     if (proc == 0) {
+      std::cout<<"num nodes: "<<mesh_counts[stk::topology::NODE_RANK]<<std::endl;
+      std::cout<<"num edges: "<<mesh_counts[stk::topology::EDGE_RANK]<<std::endl;
+      std::cout<<"num faces: "<<mesh_counts[stk::topology::FACE_RANK]<<std::endl;
+      std::cout<<"num elems: "<<mesh_counts[stk::topology::ELEM_RANK]<<"\n"<<std::endl;
       if (create_edges) {
 	std::cout<< "num edges/second: " << mesh_counts[stk::topology::EDGE_RANK]/all_edge_time << "\t" << all_edge_time << std::endl;
       }
