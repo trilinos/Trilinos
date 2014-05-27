@@ -219,10 +219,6 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-int find_surnd_elems()
-{
-}
-
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   dimension_(0)
@@ -284,11 +280,11 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
 	Acoords_[a] += coords_[connect[b][i * num_nodes_per_elem[b] + j] - 1];
 	Acoords_[num_nodes_ + a] +=
-	  coords_[connect[b][num_nodes_ + i * num_nodes_per_elem[b] + j] - 1];
+	  coords_[num_nodes_ + connect[b][i * num_nodes_per_elem[b] + j] - 1];
 
 	if(3 == dimension_) {
 	  Acoords_[2 * num_nodes_ + a] +=
-	    coords_[connect[b][2*num_nodes_+i*num_nodes_per_elem[b]+j] - 1];
+	    coords_[2*num_nodes_ + connect[b][i*num_nodes_per_elem[b]+j] - 1];
 	}
       }
 
