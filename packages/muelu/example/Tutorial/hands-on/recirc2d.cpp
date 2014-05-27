@@ -380,7 +380,7 @@ int main(int argc, char *argv[]) {
   globalTimeMonitor = Teuchos::null;
 
   if (printTimings == "yes") {
-    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
+    TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union, "", true);
   }
 
   return 0;
