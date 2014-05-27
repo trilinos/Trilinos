@@ -96,12 +96,7 @@ TEST(UnitTestingOfBucket, testBucket)
   //  First, test for streaming IO;
   {
     std::string gold1;
-    // Parallel and Serial runs have different part intersections for the first
-    // bucket
-    if ( bulk.parallel_size() == 1 )
-       gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} )";
-    else
-       gold1 = "Bucket( EntityRank0 : {UNIVERSAL} )";
+    gold1 = "Bucket( EntityRank0 : {UNIVERSAL} {OWNS} )";
     Bucket *b1 = bulk.buckets(stk::topology::NODE_RANK)[0];
     std::stringstream  out1_str;
     out1_str << (*b1);

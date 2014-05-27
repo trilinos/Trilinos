@@ -39,7 +39,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 
-TEST(UnitTestGhostParts, test1)
+TEST(UnitTestGhostParts, Aura)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
@@ -58,17 +58,89 @@ TEST(UnitTestGhostParts, test1)
   stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
   stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
-//  stk::mesh::Part& aura_part = stkMeshBulkData.aura_part();
-//  stk::mesh::Selector aura_selector = aura_part;
+  std::cerr<<"about to get aura_part..."<<std::endl;
+  stk::mesh::Part& aura_part = stkMeshBulkData.aura_part();
+  std::cerr<<"...got aura part with name="<<aura_part.name()<<std::endl;
+  stk::mesh::Selector aura_selector = aura_part;
   
+  stk::mesh::Ghosting& aura_ghosting = stkMeshBulkData.shared_aura();
+  EXPECT_EQ(aura_part.mesh_meta_data_ordinal(), stkMeshBulkData.ghosting_part(aura_ghosting).mesh_meta_data_ordinal());
+
   stk::mesh::Selector not_owned_nor_shared = !stkMeshMetaData.locally_owned_part() & !stkMeshMetaData.globally_shared_part();
 
   const stk::mesh::BucketVector& not_owned_nor_shared_node_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, not_owned_nor_shared);
   size_t expected_num_not_owned_nor_shared_node_buckets = 1;
   EXPECT_EQ(expected_num_not_owned_nor_shared_node_buckets, not_owned_nor_shared_node_buckets.size());
 
-//  const stk::mesh::BucketVector& aura_node_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, aura_selector);
-//
-//  EXPECT_EQ(not_owned_nor_shared_node_buckets.size(), aura_node_buckets.size());
+  const stk::mesh::BucketVector& aura_node_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, aura_selector);
+
+  EXPECT_EQ(not_owned_nor_shared_node_buckets.size(), aura_node_buckets.size());
+
+  const size_t expected_num_ghost_nodes = 4;
+  size_t counted_nodes = 0;
+  size_t counted_aura_nodes = 0;
+  for(size_t i=0; i<not_owned_nor_shared_node_buckets.size(); ++i)
+  {
+      counted_nodes += not_owned_nor_shared_node_buckets[i]->size();
+      counted_aura_nodes += aura_node_buckets[i]->size();
+  }
+  EXPECT_EQ(expected_num_ghost_nodes, counted_nodes);
+  EXPECT_EQ(expected_num_ghost_nodes, counted_aura_nodes);
+}
+
+TEST(UnitTestGhostParts, Custom1)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = 1;
+  MPI_Comm_size(communicator, &numProcs);
+  if (numProcs != 2) {
+    return;
+  }
+
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  const std::string generatedMeshSpecification = "generated:1x1x4";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
+
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
+  int myProc = stkMeshBulkData.parallel_rank();
+  int otherProc = (myProc == 0) ? 1 : 0;
+
+  stkMeshBulkData.modification_begin();
+
+  stk::mesh::Ghosting& custom_ghosting = stkMeshBulkData.create_ghosting("CustomGhosting1");
+
+  std::vector<stk::mesh::EntityProc> elems_to_ghost;
+
+  const stk::mesh::BucketVector& elem_buckets = stkMeshBulkData.buckets(stk::topology::ELEM_RANK);
+  for(size_t i=0; i<elem_buckets.size(); ++i) {
+    const stk::mesh::Bucket& bucket = *elem_buckets[i];
+    for(size_t j=0; j<bucket.size(); ++j) {
+      if (stkMeshBulkData.parallel_owner_rank(bucket[j]) == myProc) {
+        elems_to_ghost.push_back(std::make_pair(bucket[j], otherProc));
+      }
+    }
+  }
+
+  stkMeshBulkData.change_ghosting(custom_ghosting, elems_to_ghost);
+
+  stkMeshBulkData.modification_end();
+
+  //now each processor should have 2 elements that were received as ghosts of elements from the other proc.
+  const size_t expected_num_elems_for_custom_ghosting = 2;
+
+  stk::mesh::Part& custom_ghost_part = stkMeshBulkData.ghosting_part(custom_ghosting);
+  stk::mesh::Selector custom_ghost_selector = custom_ghost_part;
+
+  const stk::mesh::BucketVector& custom_ghost_elem_buckets = stkMeshBulkData.get_buckets(stk::topology::ELEM_RANK, custom_ghost_selector);
+  size_t counted_elements = 0;
+  for(size_t i=0; i<custom_ghost_elem_buckets.size(); ++i) {
+    counted_elements += custom_ghost_elem_buckets[i]->size();
+  }
+
+  EXPECT_EQ(expected_num_elems_for_custom_ghosting, counted_elements);
 }
 

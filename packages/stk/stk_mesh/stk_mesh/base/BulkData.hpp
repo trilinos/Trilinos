@@ -607,6 +607,19 @@ public:
   Ghosting & shared_aura() const { return * m_ghosting[1] ; }
   Part& aura_part() const { return *m_ghost_parts[1]; }
 
+  /** Return the part corresponding to the stk-mesh-maintained 'aura' which is a 1-element-thick
+   * layer of ghost elements around each processor.
+   */
+  Part& aura_part() const { return *m_ghost_parts[1]; }
+
+  /** Return the part corresponding to the specified ghosting.
+   */
+  Part& ghosting_part(const Ghosting& ghosting) const
+  {
+    ThrowRequireMsg(ghosting.ordinal() < m_ghost_parts.size(), "BulkData::ghosting_part ERROR, no part corresponds to ghosting with name="<<ghosting.name()<<" and ordinal="<<ghosting.ordinal());
+    return *m_ghost_parts[ghosting.ordinal()];
+  }
+
   /** \brief Asymmetric parallel relations for owner-to-ghosted mesh entities.
    *
    *  - A collective parallel operation that must have the
@@ -640,7 +653,7 @@ public:
    */
   void destroy_all_ghosting();
 
-  /** \brief  Query all ghostings */
+  /** \brief  Vector of all ghostings */
   const std::vector<Ghosting*> & ghostings() const { return m_ghosting ; }
 
   /** \brief  Entity Comm functions that are now moved to BulkData

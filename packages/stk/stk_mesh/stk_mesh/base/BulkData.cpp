@@ -27,6 +27,7 @@
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommBuffer, CommAll, etc
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, all_reduce, etc
 #include <stk_util/util/StaticAssert.hpp>  // for StaticAssert, etc
+#include <stk_util/util/string_case_compare.hpp>
 #include <string>                       // for char_traits, string, etc
 #include <utility>                      // for pair, make_pair, swap
 #include <vector>                       // for vector, etc
@@ -167,7 +168,9 @@ BulkData::BulkData( MetaData & mesh_meta_data ,
 
   initialize_arrays();
 
+  m_ghost_parts.clear();
   create_ghosting( "shared" );
+  //shared part should reside in m_ghost_parts[0]
   create_ghosting( "shared_aura" );
 
   m_sync_state = SYNCHRONIZED ;
@@ -3431,6 +3434,20 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
 
   m_ghosting.push_back( g );
 
+  if (m_ghost_parts.size() == 0) {
+    ThrowRequireMsg(equal_case(std::string("shared"), name), "Expect shared to be the first ghosting created.");
+    m_ghost_parts.push_back(&mesh_meta_data().globally_shared_part());
+  }
+  else if (m_ghost_parts.size() == 1) {
+    ThrowRequireMsg(equal_case(std::string("shared_aura"), name), "Expect aura to be the second ghosting created.");
+    m_ghost_parts.push_back(&mesh_meta_data().declare_part(name));
+  }
+  else {
+    m_ghost_parts.push_back(&mesh_meta_data().declare_part(name));
+  }
+
+  ThrowRequireMsg(m_ghost_parts.size() == m_ghosting.size(), "m_ghost_parts.size()="<<m_ghost_parts.size()<<", must be same as m_ghosting.size()="<<m_ghosting.size());
+
   return *g ;
 }
 
@@ -3595,7 +3612,7 @@ void BulkData::internal_change_ghosting(
   const int p_size = m_parallel_size ;
 
   //------------------------------------
-  // Copy ghosting lists into more efficiently editted container.
+  // Copy ghosting lists into more efficiently edited container.
   // The send and receive lists must be in entity rank-order.
 
   std::set<EntityProc , EntityLess> new_send(EntityLess(*this));
@@ -3800,6 +3817,12 @@ void BulkData::internal_change_ghosting(
 
           remove( parts , meta.locally_owned_part() );
           remove( parts , meta.globally_shared_part() );
+
+          if (owner != this->parallel_rank()) {
+            // Add the part for the input-argument ghosting:
+            stk::mesh::Part& ghost_part = *m_ghost_parts[ghosts.ordinal()];
+            insert( parts, ghost_part );
+          }
 
           GhostReuseMap::iterator f_itr = m_ghost_reuse_map.find(key);
           const size_t use_this_offset = f_itr == m_ghost_reuse_map.end() ? 0 : f_itr->second;

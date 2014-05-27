@@ -341,7 +341,7 @@ void MetaData::synchronize_part_fields_with_parts()
 
 Part & MetaData::declare_part( const std::string & p_name )
 {
-  require_not_committed();
+//  require_not_committed();
 
   const EntityRank rank = InvalidEntityRank;
 
@@ -357,7 +357,7 @@ Part & MetaData::declare_internal_part( const std::string & p_name )
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool arg_force_no_induce )
 {
-  require_not_committed();
+//  require_not_committed();
   require_valid_entity_rank(rank);
 
   add_new_part_in_part_fields();
