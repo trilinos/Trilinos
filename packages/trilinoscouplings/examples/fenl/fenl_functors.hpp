@@ -1053,6 +1053,7 @@ public:
 
   typedef DeviceType   device_type ;
   typedef ScalarType   scalar_type ;
+  typedef double       bc_scalar_type ;
 
   //------------------------------------
 
@@ -1065,8 +1066,8 @@ public:
   const vector_type         solution ;
   const sparse_matrix_type  jacobian ;
   const vector_type         residual ;
-  const scalar_type         bc_lower_value ;
-  const scalar_type         bc_upper_value ;
+  const bc_scalar_type      bc_lower_value ;
+  const bc_scalar_type      bc_upper_value ;
   const scalar_coord_type   bc_lower_limit ;
   const scalar_coord_type   bc_upper_limit ;
   const unsigned            bc_plane ;
@@ -1079,8 +1080,8 @@ public:
                         const sparse_matrix_type & arg_jacobian ,
                         const vector_type        & arg_residual ,
                         const unsigned             arg_bc_plane ,
-                        const scalar_type          arg_bc_lower_value ,
-                        const scalar_type          arg_bc_upper_value )
+                        const bc_scalar_type       arg_bc_lower_value ,
+                        const bc_scalar_type       arg_bc_upper_value )
     : node_coords( arg_mesh.node_coord() )
     , solution(    arg_solution )
     , jacobian(    arg_jacobian )

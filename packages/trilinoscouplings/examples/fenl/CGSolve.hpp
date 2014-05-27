@@ -93,7 +93,7 @@ template<class CrsMatrix, class Vector>
 result_struct cg_solve(
   Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x,
   int max_iter = 200,
-  typename CrsMatrix::scalar_type tolerance =
+  typename Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
     Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
   int print = 0)
 {
