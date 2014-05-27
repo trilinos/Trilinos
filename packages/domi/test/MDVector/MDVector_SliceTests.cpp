@@ -79,6 +79,37 @@ int numDims = 2;
 string commDimsStr = "-1";
 Array< int > commDims;
 
+////////////////////////////////////////////////////////////////////////
+
+/** \brief Assign each element of an MDVector a unique global ID
+ *
+ * \param mdv [in] an MDVector, whose values will be re-assigned
+ *
+ */
+template< typename Sca, class Node >
+void assignGlobalIDsToMDVector(MDVector< Sca, Node > & mdv)
+{
+  // Give the iterator a simpler name
+  typedef typename MDArrayView< Sca >::iterator iterator;
+  // Get a pointer to the underlying MDMap
+  const Teuchos::RCP< const MDMap< Node > > mdMap = mdv.getMDMap();
+  // Loop over the underlying MDArrayView
+  MDArrayView< Sca > mdav = mdv.getDataNonConst();
+  for (iterator it = mdav.begin(); it != mdav.end(); ++it)
+  {
+    // Obtain the local index
+    Array< dim_type > localIndex(mdv.numDims());
+    for (int axis = 0; axis < mdv.numDims(); ++axis)
+      localIndex[axis] = it.index(axis);
+    // Convert the local index to a local ID, and then convert to a
+    // global ID and store
+    size_type localID = mdMap->getLocalID(localIndex);
+    *it = (Sca) mdMap->getGlobalID(localID);
+  }
+}
+
+////////////////////////////////////////////////////////////////////////
+
 TEUCHOS_STATIC_SETUP()
 {
   Teuchos::CommandLineProcessor &clp = Teuchos::UnitTestRepository::getCLP();
@@ -88,9 +119,13 @@ TEUCHOS_STATIC_SETUP()
                 "number of processors along each axis");
 }
 
+////////////////////////////////////////////////////////////////////////
+
 //
 // Templated Unit Tests
 //
+
+////////////////////////////////////////////////////////////////////////
 
 TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
 {
@@ -104,16 +139,23 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
   for (int axis = 0; axis < numDims; ++axis)
     commDims[axis] = mdComm->getCommDim(axis);
 
-  // Construct dimensions
+  // Construct global dimensions and strides
   dim_type localDim = 10;
   Array< dim_type > dims(numDims);
+  Array< dim_type > strides(numDims);
   for (int axis = 0; axis < numDims; ++axis)
+  {
     dims[axis] = localDim * mdComm->getCommDim(axis);
+    if (axis == 0) strides[0] = 1;
+    else strides[axis] = strides[axis-1] * dims[axis-1];
+  }
+  std::cerr << "strides = " << strides << std::endl;
 
   // Construct an MDMap and MDVector
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
   MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
   MDVector< Sca > mdVector(mdMap);
+  assignGlobalIDsToMDVector(mdVector);
 
   // Perform tests along each axis
   dim_type width = 2 * localDim / 3;
@@ -130,8 +172,20 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
     }
     else
     {
-      // Compute the sub-vector stats
+      // Compute the sub-vector statistics
       bool contig = (axis == numDims-1);
+      Sca  begin  = 0;
+      Sca  end    = 0;
+      for (int myAxis = 0; myAxis < numDims; ++myAxis)
+      {
+        dim_type min =  mdMap->getCommIndex(myAxis)    * localDim;
+        dim_type max = (mdMap->getCommIndex(myAxis)+1) * localDim;
+        begin += min * strides[myAxis];
+        if (myAxis == axis) end += (width-1) * strides[myAxis];
+        else end += (max-1) * strides[myAxis];
+      }
+      MDArrayView< const Sca > subArray = subVector.getData();
+      std::cerr << "subArray =" << std::endl << subArray << std::endl;
 
       // Perform the unit tests
       TEST_ASSERT(subVector.onSubcommunicator());
@@ -148,6 +202,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceLow, Sca )
       TEST_EQUALITY(subVector.getLowerBndryPad(axis)   , 0      );
       TEST_EQUALITY(subVector.getUpperBndryPad(axis)   , 0      );
       TEST_EQUALITY(subVector.getBndryPadSize(axis)    , 0      );
+      TEST_EQUALITY(*(subArray.begin() ), begin);
+      TEST_EQUALITY(*(subArray.rbegin()), end  );
     }
   }
 }
@@ -176,6 +232,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_1_DECL( MDVector, SliceMed, Sca )
   typedef Teuchos::RCP< MDMap<> > MDMapRCP;
   MDMapRCP mdMap = rcp(new MDMap<>(mdComm, dims()));
   MDVector< Sca > mdVector(mdMap);
+  assignGlobalIDsToMDVector(mdVector);
 
   // Perform tests along each axis
   dim_type start = localDim / 3;
