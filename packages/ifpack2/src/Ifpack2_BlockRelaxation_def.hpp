@@ -873,7 +873,6 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
   }
 }
 
-
 template<class MatrixType, class ContainerType>
 std::string BlockRelaxation<MatrixType,ContainerType>::description () const
 {
@@ -1000,17 +999,17 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 #include "Ifpack2_ILUT_decl.hpp"
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
-  template<> \
-  class BlockRelaxation< \
-    ::Tpetra::CrsMatrix<S, LO, GO, N>, \
-    SparseContainer< \
-      ::Tpetra::CrsMatrix<S, LO, GO, N>, \
-      ILUT< ::Tpetra::CrsMatrix<S,LO,GO,N> > > >; \
-  template<> \
-  class BlockRelaxation< \
-    ::Tpetra::CrsMatrix<S, LO, GO, N>, \
-    DenseContainer< \
-      ::Tpetra::CrsMatrix<S, LO, GO, N>, \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::SparseContainer<       \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      Ifpack2::ILUT< ::Tpetra::CrsMatrix<S,LO,GO,N> > > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::DenseContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
       S > >;
 
 #endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
