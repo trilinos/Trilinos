@@ -61,6 +61,9 @@
 #include <BelosSolverFactory.hpp>
 
 int main(int argc, char *argv[]) {
+
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
+
 #include <MueLu_UseShortNames.hpp>
 
   typedef Tpetra::Map<LO,GO,NO>               TMap;
@@ -236,4 +239,6 @@ int main(int argc, char *argv[]) {
     throw(MueLu::Exceptions::RuntimeError("FAIL! Belos did not converge fast enough."));
   }
   
+#endif
+
 } // main
