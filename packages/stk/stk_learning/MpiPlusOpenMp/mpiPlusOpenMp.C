@@ -45,8 +45,9 @@ int getNumThreads()
 
 TEST(MpiPlusOpenMp, Reduction)
 {
-    double threadSum = 0;
+    omp_set_num_threads(8);
 
+    double threadSum = 0;
     #pragma omp parallel reduction(+:threadSum)
     {
         threadSum = 1.0;
