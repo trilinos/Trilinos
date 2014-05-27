@@ -1139,7 +1139,10 @@ FieldBase* MetaData::get_field( const std::string& name ) const
     }
   }
 
-  ThrowRequireMsg(num_nonnull_fields <= 1, "MetaData::get_field ERROR, found "<<num_nonnull_fields<<" fields with name="<<name);
+  if (num_nonnull_fields > 1) {
+    std::cerr << "MetaData::get_field WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
+      <<". Returning the first one."<<std::endl;
+  }
 
   return field;
 }

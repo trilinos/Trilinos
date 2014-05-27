@@ -170,6 +170,11 @@ public:
    */
   Part & globally_shared_part() const { return *m_shares_part ; }
 
+  /** \brief  Subset for the problem domain that is ghosted from another
+   *          process.
+   */
+  Part & aura_part() const { return *m_aura_part ; }
+
   /** \} */
   //------------------------------------
   /** \name  Declare and query parts
@@ -572,6 +577,7 @@ private:
   Part * m_universal_part ;
   Part * m_owns_part ;
   Part * m_shares_part ;
+  Part * m_aura_part ;
 
   impl::FieldRepository        m_field_repo ;
   mutable FieldBase* m_coord_field;
@@ -801,7 +807,10 @@ field_type * MetaData::get_field( const std::string & name ) const
     }
   }
 
-  ThrowRequireMsg(num_nonnull_fields <= 1, "MetaData::get_field ERROR, found "<<num_nonnull_fields<<" fields with name="<<name);
+  if (num_nonnull_fields > 1) {
+    std::cerr << "MetaData::get_field WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
+      <<". Returning the first one."<<std::endl;
+  }
 
   return field;
 }
