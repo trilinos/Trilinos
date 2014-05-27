@@ -26,7 +26,7 @@ class ResponseEvaluatorFactory_SolutionWriter : public panzer::ResponseEvaluator
 public:
 
    ResponseEvaluatorFactory_SolutionWriter(const Teuchos::RCP<STK_Interface> & mesh)
-     : mesh_(mesh) {}
+     : mesh_(mesh), addSolutionFields_(true) {}
 
    virtual ~ResponseEvaluatorFactory_SolutionWriter() {}
  
@@ -91,6 +91,11 @@ public:
      */
    void addAdditionalField(const std::string & fieldName,const Teuchos::RCP<panzer::PureBasis> & basis);
 
+   /** Enable/disable addition of solution fields. Note that this "true" by default.
+     */
+   void setAddSolutionFields(bool asf) 
+   { addSolutionFields_ = asf; }
+
 private:
    void computeReferenceCentroid(const std::map<std::string,Teuchos::RCP<panzer::PureBasis> > & bases,
                                  int baseDimension,
@@ -102,12 +107,15 @@ private:
    boost::unordered_set<std::string> scaledFieldsHash_; // used to print the warning about unused scaling
 
    std::vector<panzer::StrPureBasisPair> additionalFields_;
+   bool addSolutionFields_;
 };
 
 /** A simple builder for this the SolutionWriter response factory, simply set the mesh 
   * and this will build the response factories for you. (Pass into ResponseLibrary::addResponse)
   */
 struct RespFactorySolnWriter_Builder {
+  RespFactorySolnWriter_Builder() : addSolutionFields_(true) {}
+
   Teuchos::RCP<panzer_stk::STK_Interface> mesh;
 
   void scaleField(const std::string & fieldName,double fieldScalar)
@@ -121,6 +129,9 @@ struct RespFactorySolnWriter_Builder {
   { 
     Teuchos::RCP<ResponseEvaluatorFactory_SolutionWriter<T> > ref = 
         Teuchos::rcp(new panzer_stk::ResponseEvaluatorFactory_SolutionWriter<T>(mesh)); 
+ 
+    // disable/enable the solution fields
+    ref->setAddSolutionFields(addSolutionFields_);
 
     // add all additional fields
     for(std::size_t i=0;i<additionalFields_.size();i++)
@@ -134,9 +145,15 @@ struct RespFactorySolnWriter_Builder {
     return ref;
   }
 
+   /** Enable/disable addition of solution fields. Note that this "true" by default.
+     */
+   void setAddSolutionFields(bool asf) 
+   { addSolutionFields_ = asf; }
+
 private:
   boost::unordered_map<std::string,double> fieldToScalar_;
   std::vector<panzer::StrPureBasisPair> additionalFields_;
+  bool addSolutionFields_;
 };
 
 }
