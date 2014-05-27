@@ -278,13 +278,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
 
       for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	Acoords_[a] += coords_[connect[b][i * num_nodes_per_elem[b] + j] - 1];
-	Acoords_[num_nodes_ + a] +=
-	  coords_[num_nodes_ + connect[b][i * num_nodes_per_elem[b] + j] - 1];
+	long long node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
+	Acoords_[a] += coords_[node];
+	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes_ + a] +=
-	    coords_[2*num_nodes_ + connect[b][i*num_nodes_per_elem[b]+j] - 1];
+	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
 	}
       }
 
