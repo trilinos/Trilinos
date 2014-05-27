@@ -69,6 +69,11 @@ class Serial ;
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
+/// Define DefaultDeviceType
+/// The DefaultDeviceType can either be set externally via
+/// KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_**** or is chosen according to the active
+/// Device types with following priority: Cuda,OpenMP,Threads,Serial
+
 namespace Kokkos {
 namespace Impl {
   #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
@@ -112,6 +117,7 @@ namespace Impl {
 namespace Kokkos {
 namespace Impl {
 
+/// A way to find out whether a Functor has device_type defined
 template< class FunctorType , class Enable = void >
 struct FunctorHasDeviceType : public false_type {};
 
@@ -166,7 +172,7 @@ namespace Kokkos {
 /** \brief Execute \c functor \c work_count times in parallel.
  *
  * A "functor" is a class containing the function to execute in
- * parallel, any data needed for that execution, and a \c device_type
+ * parallel, any data needed for that execution, and an optional \c device_type
  * typedef.  Here is an example functor for parallel_for:
  *
  * \code
@@ -182,6 +188,7 @@ namespace Kokkos {
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
+ * If \c device_type is not defined DefaultDeviceType will be used.
  */
 template< class FunctorType >
 inline
@@ -551,9 +558,20 @@ struct ParallelWorkRequest {
 template< class FunctorType >
 inline
 void parallel_for( const ParallelWorkRequest & request ,
-                   const FunctorType         & functor )
+                   const FunctorType         & functor ,
+     typename Impl::enable_if<Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
 {
   Kokkos::Impl::ParallelFor< FunctorType , ParallelWorkRequest >( functor , request );
+}
+
+template< class FunctorType >
+inline
+void parallel_for( const ParallelWorkRequest & request ,
+                   const FunctorType         & functor ,
+     typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
+{
+  Kokkos::Impl::ParallelFor< FunctorType , ParallelWorkRequest, Impl::DefaultDeviceType  >
+     ( functor , request );
 }
 
 } // namespace Kokkos
