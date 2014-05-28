@@ -45,7 +45,7 @@
 
 // Force OMP atomics for testing only
 
-#define KOKKOS_ATOMICS_USE_OMP31
+//#define KOKKOS_ATOMICS_USE_OMP31
 #include <Kokkos_Atomic.hpp>
 
 #include <Kokkos_OpenMP.hpp>
