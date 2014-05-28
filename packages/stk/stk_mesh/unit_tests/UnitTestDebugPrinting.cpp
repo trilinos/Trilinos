@@ -27,8 +27,8 @@ TEST( UnitTestDebugDump, MetaData )
   fixture.meta_data.commit();
 
   // Doesn't check anything, but at least makes sure it passes
-  std::ostringstream _out;
-  fixture.meta_data.dump_all_meta_info(_out);
+  std::ostringstream myout;
+  fixture.meta_data.dump_all_meta_info(myout);
 }
 
 TEST( UnitTestDebugDump, BulkData )
@@ -41,8 +41,8 @@ TEST( UnitTestDebugDump, BulkData )
   hf.generate_mesh();
 
   // Doesn't check anything, but at least makes sure it passes
-  std::ostringstream _out;
-  hf.m_bulk_data.dump_all_mesh_info(_out);
+  std::ostringstream myout;
+  hf.m_bulk_data.dump_all_mesh_info(myout);
 
   // Uncomment to see output
   //std::cout << out.str() << std::endl;
