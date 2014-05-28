@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Error.hpp>
