@@ -39,30 +39,27 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
 #if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
-#include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
-#include "Stokhos_MueLu_UQ_PCE.hpp"
+#include "Stokhos_Tpetra_ETI_Helpers_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
 
 #include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_Constraint_def.hpp"
+#include "MueLu_RefMaxwell_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::Constraint<S, LO, GO, N>;
-
-#define MUELU_INST_N(N) \
-  INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
+  template class MueLu::RefMaxwell<S, LO, GO, N>;
 
 TPETRA_ETI_MANGLING_TYPEDEFS()
 
-INSTANTIATE_TPETRA_UQ_PCE_CUDA(MUELU_INST_N)
+INSTANTIATE_TPETRA_MP_VECTOR_OPENMP(MUELU_INST_S_LO_GO_N)
 
 #endif
 
-
+#endif

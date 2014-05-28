@@ -39,8 +39,8 @@
 // ***********************************************************************
 // @HEADER
 
-
-
+#include "MueLu_ConfigDefs.hpp"
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
@@ -51,10 +51,10 @@
 #include "Stokhos_MueLu_UQ_PCE.hpp"
 
 #include "Tpetra_ETIHelperMacros.h"
-#include "MueLu_Constraint_def.hpp"
+#include "MueLu_RefMaxwell_def.hpp"
 
 #define MUELU_INST_S_LO_GO_N(S, LO, GO, N) \
-  template class MueLu::Constraint<S, LO, GO, N>;
+  template class MueLu::RefMaxwell<S, LO, GO, N>;
 
 #define MUELU_INST_N(N) \
   INSTANTIATE_TPETRA_UQ_PCE_N(MUELU_INST_S_LO_GO_N, N)
@@ -65,4 +65,4 @@ INSTANTIATE_TPETRA_UQ_PCE_CUDA(MUELU_INST_N)
 
 #endif
 
-
+#endif

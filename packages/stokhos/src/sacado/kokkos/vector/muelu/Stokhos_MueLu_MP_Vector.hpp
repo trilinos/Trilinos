@@ -54,6 +54,5 @@
 #if defined(HAVE_MUELU_AMESOS2)
 #include "Stokhos_Amesos2_MP_Vector.hpp"
 #endif
-#include "MueLu_Constraint_MP_Vector.hpp"
 
 #endif // STOKHOS_MUELU_MP_VECTOR_HPP

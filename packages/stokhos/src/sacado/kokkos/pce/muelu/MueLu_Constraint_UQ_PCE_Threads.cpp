@@ -45,7 +45,7 @@
 #include "MueLu_ExplicitInstantiation.hpp"
 #include "Stokhos_ConfigDefs.h"
 
-#if 0 && defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
+#if defined(HAVE_STOKHOS_MUELU) && defined(HAVE_MUELU_EXPLICIT_INSTANTIATION) && defined(HAVE_STOKHOS_SACADO)
 
 #include "Stokhos_Tpetra_ETI_Helpers_UQ_PCE.hpp"
 #include "Stokhos_MueLu_UQ_PCE.hpp"
