@@ -39,6 +39,9 @@
 // ***********************************************************************
 // @HEADER
 
+#include "Teuchos_SerialDenseMatrix.hpp"
+
+
 namespace Sacado {
 namespace UQ {
 
@@ -427,19 +430,45 @@ operator/=(const PCE<Storage>& x)
 {
   const ordinal_type xsz = x.size();
   const ordinal_type sz = this->size();
+  const ordinal_type csz = sz > xsz ? sz : xsz;
 
-// #if !defined(__CUDA_ARCH__)
-//   TEUCHOS_TEST_FOR_EXCEPTION(
-//     xsz != 1, std::logic_error,
-//     "Sacado::UQ::PCE::operator/=():  denominator has size != 1");
-// #endif
+#if !defined(__CUDA_ARCH__)
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    sz != xsz && sz != 1 && xsz != 1, std::logic_error,
+    "Sacado::UQ::PCE::operator/=(): input sizes do not match");
+#endif
 
+  if (cijk_.is_empty() && !x.cijk_.is_empty())
+    cijk_ = x.cijk_;
+
+  if (csz > sz)
+    s_.resize(csz);
+
+  const_pointer xc = x.coeff();
   pointer cc = this->coeff();
-  const value_type xcz = x.fastAccessCoeff(0);
-  for (ordinal_type i=0; i<sz; ++i)
-    cc[i] /= xcz;
+
+#if defined(__CUDA_ARCH__)
+  const value_type xcz = xc[0];
+    for (ordinal_type i=0; i<sz; ++i)
+      cc[i] /= xcz;
+#endif
+
+#if !defined(__CUDA_ARCH__)
+  if (xsz == 1) {//constant denom
+    const value_type xcz = xc[0];
+    for (ordinal_type i=0; i<sz; ++i)
+      cc[i] /= xcz;
+  }
+  else {
+
+    PCE<Storage> y(cijk_, csz);
+    CG_divide(*this, x, y);
+    s_ = y.s_;
+  }
+#endif
 
   return *this;
+
 }
 
 template <typename Storage>
@@ -702,23 +731,44 @@ operator/(const PCE<Storage>& a, const PCE<Storage>& b)
   typedef typename PCE<Storage>::const_pointer const_pointer;
   typedef typename PCE<Storage>::ordinal_type ordinal_type;
   typedef typename PCE<Storage>::value_type value_type;
+  typedef typename PCE<Storage>::my_cijk_type my_cijk_type;
 
   const ordinal_type asz = a.size();
   const ordinal_type bsz = b.size();
+  const ordinal_type csz = asz > bsz ? asz : bsz;
+  
+#if !defined(__CUDA_ARCH__)
+TEUCHOS_TEST_FOR_EXCEPTION(
+  asz != bsz && asz != 1 && bsz != 1, std::logic_error,
+  "Sacado::UQ::PCE::operator/(): input sizes do not match");
+#endif
+  my_cijk_type c_cijk = asz == bsz || asz >1 ? a.cijk() : b.cijk();
 
-// #if !defined(__CUDA_ARCH__)
-//   TEUCHOS_TEST_FOR_EXCEPTION(
-//     bsz != 1, std::logic_error,
-//     "Sacado::UQ::PCE::operator/():  denominator has size != 1");
-// #endif
+  PCE<Storage> c(c_cijk, csz);
 
-  PCE<Storage> c(a.cijk(), asz);
+#if defined(__CUDA_ARCH__)
   const_pointer ac = a.coeff();
   pointer cc = c.coeff();
   value_type bcz = b.fastAccessCoeff(0);
   for (ordinal_type i=0; i<asz; ++i)
     cc[i] = ac[i]/bcz;
-  return c;
+#endif
+ 
+  
+#if !defined(__CUDA_ARCH__)
+  if (bsz == 1) {//constant denom
+    const_pointer ac = a.coeff();
+    const_pointer bc = b.coeff();
+    pointer cc = c.coeff();
+    const value_type bcz = bc[0];
+    for (ordinal_type i=0; i<csz; ++i)
+      cc[i] = ac[i] / bcz;
+  }
+  else {
+   CG_divide(a,b,c);
+  }
+#endif
+  return c; 
 }
 
 template <typename Storage>
@@ -727,16 +777,10 @@ PCE<Storage>
 operator/(const typename PCE<Storage>::value_type& a,
           const PCE<Storage>& b)
 {
-// #if !defined(__CUDA_ARCH__)
-//   TEUCHOS_TEST_FOR_EXCEPTION(
-//     b.size() != 1, std::logic_error,
-//     "Sacado::UQ::PCE::operator/():  denominator has size != 1");
-// #endif
-
-  PCE<Storage> c(b.cijk(), 1);
-  c.fastAccessCoeff(0) = a / b.fastAccessCoeff(0);
-
-  return c;
+  //Creat a 0-th order PCE for a
+  PCE<Storage> a_pce(a);
+//  return a / b;
+  return operator/(a_pce,b);
 }
 
 template <typename Storage>
@@ -1453,6 +1497,51 @@ operator >> (std::istream& is, PCE<Storage>& a)
   is >> bracket;
   return is;
 }
+
+template <typename Storage>
+void
+CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c) {
+    typedef typename PCE<Storage>::ordinal_type ordinal_type;
+    typedef typename PCE<Storage>::value_type value_type;
+
+    const ordinal_type size = c.size();
+
+    //Needed scalars
+    value_type alpha, beta, rTz, rTz_old, resid;
+
+    //Needed temporary PCEs 
+    PCE<Storage> r(a.cijk(),size);
+    PCE<Storage> p(a.cijk(),size);
+    PCE<Storage> bp(a.cijk(),size);
+    PCE<Storage> z(a.cijk(),size);
+
+    //compute residual = a - b*c 
+    r =  a - b*c;
+    z = r/b.coeff(0);
+    p = z;
+    resid = r.two_norm();
+    //Compute <r,z>=rTz (L2 inner product)
+    rTz = r.inner_product(z);
+    ordinal_type k = 0;
+    value_type tol = 1e-6;
+    while ( resid > tol && k < 100){
+      bp = b*p;
+      //Compute alpha = <r,z>/<p,b*p>
+      alpha = rTz/p.inner_product(bp);
+      //Update the solution c = c + alpha*p
+      c = c + alpha*p;
+      rTz_old = rTz;
+      //Compute the new residual r = r - alpha*b*p
+      r = r - alpha*bp;
+      resid = r.two_norm();
+      //Compute beta = rTz_new/ rTz_old and new p
+      z = r/b.coeff(0);
+      rTz = r.inner_product(z);
+      beta = rTz/rTz_old;
+      p = z + beta*p;
+      k++;
+   }
+ }
 
 } // namespace UQ
 } // namespace Sacado

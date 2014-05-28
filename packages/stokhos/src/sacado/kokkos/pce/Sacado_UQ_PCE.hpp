@@ -702,6 +702,8 @@ namespace Sacado {
         return tmp;
       }
 
+
+
       //@}
 
     protected:
@@ -713,7 +715,18 @@ namespace Sacado {
 
       Storage s_;
 
+    private:
+  
+      //PCE division using CG with diagonal preconditioning
+//      KOKKOS_INLINE_FUNCTION
+//      void CG_divide(const PCE& a, const PCE& b, PCE& c);
+
+
     }; // class PCE
+
+    template <typename Storage>
+    KOKKOS_INLINE_FUNCTION
+    void CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c);
 
     // Operations
     template <typename Storage>
@@ -1086,6 +1099,60 @@ namespace Sacado {
       PCEPartition( const iType0 & i0 , const iType1 & i1 ) :
         begin(i0), end(i1) {}
     };
+   
+/*   template <typename Storage>
+   KOKKOS_INLINE_FUNCTION
+   void
+   PCE<Storage>::
+   CG_divide(const PCE<Storage>& a, const PCE<Storage>& b, PCE<Storage>& c) {
+//     typedef typename PCE<Storage>::ordinal_type ordinal_type;
+//     typedef typename PCE<Storage>::value_type value_type;
+
+     const ordinal_type size = c.size();
+     //Needed scalars
+     value_type alpha, beta, rTz, rTz_old, resid;
+     
+     //Needed temporary PCEs 
+     PCE<Storage> r(a.cijk(),size);
+     PCE<Storage> p(a.cijk(),size);
+     PCE<Storage> bp(a.cijk(),size);
+     PCE<Storage> z(a.cijk(),size);
+ 
+     //compute residual = a - b*c 
+     r =  a - b*c;
+     z = r/b.coeff(0);
+     p = z;
+     resid = r.two_norm();
+     //Compute <r,z>=rTz (L2 inner product)
+     rTz = r.inner_product(z);
+     ordinal_type k = 0;
+     value_type tol = 1e-6;
+     while ( resid > tol && k < 100){
+       //Compute b*p 
+       bp = b*p;
+
+       //Compute alpha = <r,z>/<p,b*p>
+       alpha = rTz/p.inner_product(bp);
+
+       //Check alpha is positive!
+       //Update the solution c = c + alpha*p
+       c = c + alpha*p;
+       rTz_old = rTz;
+
+       //Compute the new residual r = r - alpha*b*p
+       r = r - alpha*bp;
+       resid = r.two_norm();
+
+       //Compute beta = rTz_new/ rTz_old and new p
+       z = r/b.coeff(0);
+       rTz = r.inner_product(z);
+       beta = rTz/rTz_old;
+       p = z + beta*p;
+       k++;
+      }
+//  return c;
+   }
+*/
 
   } // namespace PCE
 
