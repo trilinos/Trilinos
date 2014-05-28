@@ -191,51 +191,50 @@ void print_perf_value( std::ostream & s ,
 }
 
 clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
-                    const Teuchos::Comm<int>& comm )
+                               const Teuchos::Comm<int>& comm )
 {
-  const int comm_rank = comm.getRank();
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
-  cmdline[CMD_USE_THREADS] = 0;       clp.setOption("threads",               cmdline+CMD_USE_THREADS,  "number of threads");
+  cmdline[CMD_USE_THREADS] = 0;       clp.setOption("threads",                 cmdline+CMD_USE_THREADS,  "number of threads");
 
-  bool useOpenMP = false;             clp.setOption("openmp", "no-openmp",   &useOpenMP,  "use OpenMP");
+  bool useOpenMP = false;             clp.setOption("openmp", "no-openmp",     &useOpenMP,  "use OpenMP");
 
-  cmdline[CMD_USE_NUMA] = 0;          clp.setOption("numa",                  cmdline+CMD_USE_NUMA,  "number of numa nodes");
+  cmdline[CMD_USE_NUMA] = 0;          clp.setOption("numa",                    cmdline+CMD_USE_NUMA,  "number of numa nodes");
 
-  cmdline[CMD_USE_CORE_PER_NUMA] = 0; clp.setOption("cores",                 cmdline+CMD_USE_CORE_PER_NUMA,  "cores per numa node");
+  cmdline[CMD_USE_CORE_PER_NUMA] = 0; clp.setOption("cores",                   cmdline+CMD_USE_CORE_PER_NUMA,  "cores per numa node");
 
-  bool useCuda = false;               clp.setOption("cuda", "no-cuda",       &useCuda,  "use CUDA");
+  bool useCuda = false;               clp.setOption("cuda", "no-cuda",         &useCuda,  "use CUDA");
 
-  bool useCudaDev = false;            clp.setOption("cuda-dev", "no-cuda-dev",  &useCudaDev,  "use CUDA dev");
+  bool useCudaDev = false;            clp.setOption("cuda-dev", "no-cuda-dev", &useCudaDev,  "use CUDA dev");
 
-  std::string fixtureSpec="2x2x2";      clp.setOption("fixture",                &fixtureSpec,  "fixture string: \"XxYxZ\"");
-  clp.setOption("fixture-x",               cmdline+CMD_USE_FIXTURE_X,  "fixture");
-  clp.setOption("fixture-y",               cmdline+CMD_USE_FIXTURE_Y,  "fixture");
-  clp.setOption("fixture-z",               cmdline+CMD_USE_FIXTURE_Z,  "fixture");
+  std::string fixtureSpec="2x2x2";    clp.setOption("fixture",                 &fixtureSpec,  "fixture string: \"XxYxZ\"");
+                                      clp.setOption("fixture-x",               cmdline+CMD_USE_FIXTURE_X,  "fixture");
+                                      clp.setOption("fixture-y",               cmdline+CMD_USE_FIXTURE_Y,  "fixture");
+                                      clp.setOption("fixture-z",               cmdline+CMD_USE_FIXTURE_Z,  "fixture");
 
   std::string fixtureRange;           clp.setOption("fixture-range",           &fixtureRange,  "fixture range: \"x..y\"");
-  cmdline[CMD_USE_FIXTURE_BEGIN]=0;   clp.setOption("fixture-begin",          cmdline+CMD_USE_FIXTURE_BEGIN,  "fixture begin");
-  cmdline[CMD_USE_FIXTURE_END]=0;     clp.setOption("fixture-end",            cmdline+CMD_USE_FIXTURE_END,  "fixture end");
+  cmdline[CMD_USE_FIXTURE_BEGIN]=0;   clp.setOption("fixture-begin",           cmdline+CMD_USE_FIXTURE_BEGIN,  "fixture begin");
+  cmdline[CMD_USE_FIXTURE_END]=0;     clp.setOption("fixture-end",             cmdline+CMD_USE_FIXTURE_END,  "fixture end");
 
   bool useQuadratic = false;          clp.setOption("fixture-quadratic", "no-fixture-quadratic", &useQuadratic,  "quadratic");
 
-  bool useEnsemble = false;           clp.setOption("ensemble", "no-ensemble",    &useEnsemble,  "use ensemble");
+  bool useEnsemble = false;           clp.setOption("ensemble", "no-ensemble",  &useEnsemble,  "use ensemble");
 
-  cmdline[CMD_USE_UQ_DIM] = 0;        clp.setOption("uq-dim",                  cmdline+CMD_USE_UQ_DIM,  "UQ dimension");
+  cmdline[CMD_USE_UQ_DIM] = 0;        clp.setOption("uq-dim",                   cmdline+CMD_USE_UQ_DIM,  "UQ dimension");
 
-  cmdline[CMD_USE_UQ_ORDER] = 0;      clp.setOption("uq-order",                  cmdline+CMD_USE_UQ_ORDER,  "UQ order");
+  cmdline[CMD_USE_UQ_ORDER] = 0;      clp.setOption("uq-order",                 cmdline+CMD_USE_UQ_ORDER,  "UQ order");
 
-  bool useAtomic = false;             clp.setOption("atomic", "no-atomic",    &useAtomic,  "atomic");
+  bool useAtomic = false;             clp.setOption("atomic", "no-atomic",      &useAtomic,  "atomic");
 
-  cmdline[CMD_USE_TRIALS] = 1;        clp.setOption("trials",                 cmdline+CMD_USE_TRIALS,  "trials");
+  cmdline[CMD_USE_TRIALS] = 1;        clp.setOption("trials",                   cmdline+CMD_USE_TRIALS,  "trials");
 
-  bool useBelos = false;              clp.setOption("belos", "no-belos",    &useBelos,  "use Belos solver");
+  bool useBelos = false;              clp.setOption("belos", "no-belos",        &useBelos,  "use Belos solver");
 
-  bool useMueLu = false;              clp.setOption("muelu", "no-muelu",    &useMueLu,  "use MueLu preconditioner");
+  bool useMueLu = false;              clp.setOption("muelu", "no-muelu",        &useMueLu,  "use MueLu preconditioner");
 
-  bool doPrint = false;               clp.setOption("print", "no-print",      &doPrint,  "print detailed test output");
+  bool doPrint = false;               clp.setOption("print", "no-print",        &doPrint,  "print detailed test output");
 
-  bool doDryRun = false;              clp.setOption("echo", "no-echo",        &doDryRun,  "dry-run only");
+  bool doDryRun = false;              clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return CLP_HELP;

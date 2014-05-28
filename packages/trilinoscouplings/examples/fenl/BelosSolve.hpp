@@ -69,22 +69,23 @@
 namespace Kokkos {
 namespace Example {
 
-template <class MatrixType, class VectorType>
+template <class SM, class SV, class LO, class GO, class N, class LMO>
 result_struct
 belos_solve(
-  const Teuchos::RCP<MatrixType>& A,
-  const Teuchos::RCP<VectorType>& b,
-  const Teuchos::RCP<VectorType>& x,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
+  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
   const int use_muelu,
   const unsigned max_iter = 200,
-  const typename Kokkos::Details::ArithTraits<typename MatrixType::scalar_type>::mag_type tolerance =
-    Kokkos::Details::ArithTraits<typename MatrixType::scalar_type>::epsilon())
+  const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
+    Kokkos::Details::ArithTraits<SV>::epsilon())
 {
-  typedef Tpetra::Operator<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> OperatorType;
+  typedef Tpetra::Operator<SM,LO,GO,N> OperatorType;
+  typedef Tpetra::MultiVector<SV,LO,GO,N> VectorType;
   typedef typename VectorType::dot_type BelosScalarType;
   typedef Belos::LinearProblem<BelosScalarType, VectorType, OperatorType> ProblemType;
   typedef Belos::PseudoBlockCGSolMgr<BelosScalarType, VectorType, OperatorType> SolverType;
-  typedef MueLu::TpetraOperator<typename MatrixType::scalar_type, typename MatrixType::local_ordinal_type, typename MatrixType::global_ordinal_type, typename MatrixType::node_type> PreconditionerType;
+  typedef MueLu::TpetraOperator<SM,LO,GO,N> PreconditionerType;
 
   using Teuchos::RCP;
   using Teuchos::rcp;

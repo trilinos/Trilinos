@@ -1,5 +1,5 @@
 <ParameterList name="MueLu">
-<<<<<<< HEAD
+
   <Parameter name="verbosity" type="string" value="medium"/>
   <Parameter name="number of equations" type="int" value="1"/>
   <Parameter name="coarse: max size" type="int" value="500"/>
