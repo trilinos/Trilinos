@@ -365,9 +365,9 @@ void CudaInternal::initialize( int cuda_device_id )
     // Query what compute capability architecture a kernel executes:
     m_cudaArch = cuda_kernel_arch();
 
-    if ( m_cudaArch != cudaProp.major * 100 + cudaProp.minor ) {
+    if ( m_cudaArch != cudaProp.major * 100 + cudaProp.minor * 10 ) {
       std::cerr << "Kokkos::Cuda::initialize WARNING: running kernels compiled for compute capability "
-                << ( m_cudaArch / 100 ) << "." << ( m_cudaArch % 100 )
+                << ( m_cudaArch / 100 ) << "." << ( ( m_cudaArch % 100 ) / 10 )
                 << " on device with compute capability "
                 << cudaProp.major << "." << cudaProp.minor
                 << " , this will likely reduce potential performance."
