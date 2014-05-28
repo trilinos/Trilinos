@@ -263,6 +263,9 @@ TEST_F( openmp , compiler_macros )
 TEST_F( openmp , cxx11 )
 {
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::OpenMP >(4) ) );
 }
 #endif
 } // namespace test

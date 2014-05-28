@@ -277,6 +277,9 @@ TEST_F( serial , compiler_macros )
 TEST_F( serial , cxx11 )
 {
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Serial >(4) ) );
 }
 #endif
 
