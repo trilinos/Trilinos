@@ -797,7 +797,7 @@ field_type * MetaData::get_field( const std::string & name ) const
 {
   field_type* field = NULL;
   unsigned num_nonnull_fields = 0;
-  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::ELEM_RANK; ++i) {
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
     field_type* thisfield = get_field<field_type>(i, name);
     if (thisfield != NULL) {
       if (field == NULL) {

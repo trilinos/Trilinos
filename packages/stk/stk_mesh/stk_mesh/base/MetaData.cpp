@@ -1129,7 +1129,7 @@ FieldBase* MetaData::get_field( const std::string& name ) const
 {
   FieldBase* field = NULL;
   unsigned num_nonnull_fields = 0;
-  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::ELEM_RANK; ++i) {
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
     FieldBase* thisfield = get_field(i, name);
     if (thisfield != NULL) {
       if (field == NULL) {
