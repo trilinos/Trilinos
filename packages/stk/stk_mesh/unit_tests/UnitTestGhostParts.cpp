@@ -59,7 +59,7 @@ TEST(UnitTestGhostParts, Aura)
   stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
 
   std::cerr<<"about to get aura_part..."<<std::endl;
-  stk::mesh::Part& aura_part = stkMeshBulkData.aura_part();
+  stk::mesh::Part& aura_part = stkMeshMetaData.aura_part();
   std::cerr<<"...got aura part with name="<<aura_part.name()<<std::endl;
   stk::mesh::Selector aura_selector = aura_part;
   

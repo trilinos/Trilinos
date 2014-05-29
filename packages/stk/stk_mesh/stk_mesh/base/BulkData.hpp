@@ -605,12 +605,6 @@ public:
    *          and the 'modification_end' has not been called.
    */
   Ghosting & shared_aura() const { return * m_ghosting[1] ; }
-  Part& aura_part() const { return *m_ghost_parts[1]; }
-
-  /** Return the part corresponding to the stk-mesh-maintained 'aura' which is a 1-element-thick
-   * layer of ghost elements around each processor.
-   */
-  Part& aura_part() const { return *m_ghost_parts[1]; }
 
   /** Return the part corresponding to the specified ghosting.
    */

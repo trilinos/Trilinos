@@ -3440,10 +3440,7 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
   }
   else if (m_ghost_parts.size() == 1) {
     ThrowRequireMsg(equal_case(std::string("shared_aura"), name), "Expect aura to be the second ghosting created.");
-    //decorate the name to add curly braces, because this is an automatically-created 'internal'
-    //part.
-    std::string aura_name("{"+name+"}");
-    Part& aura_part = mesh_meta_data().declare_part(aura_name);
+    Part & aura_part = mesh_meta_data().aura_part();
     aura_part.entity_membership_is_parallel_consistent(false);
     m_ghost_parts.push_back(&aura_part);
   }
@@ -3451,7 +3448,8 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
     //We aren't decorating this name with curly braces like we are for the aura part above,
     //because this is a custom-ghosting part, so it doesn't automatically exist. Only exists if the
     //client creates a custom-ghosting.
-    Part& ghost_part = mesh_meta_data().declare_part(name);
+    unsigned custom_ghost_part_index = m_ghost_parts.size() - 2;
+    Part& ghost_part = mesh_meta_data().get_custom_ghosting_part(custom_ghost_part_index);
     ghost_part.entity_membership_is_parallel_consistent(false);
     m_ghost_parts.push_back(&ghost_part);
   }
