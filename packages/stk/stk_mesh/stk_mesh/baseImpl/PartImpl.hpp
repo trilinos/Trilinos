@@ -50,6 +50,9 @@ public:
 
   void set_force_no_induce(bool arg_force_no_induce) { m_force_no_induce = arg_force_no_induce; }
 
+  bool entity_membership_is_parallel_consistent() const { return m_entity_membership_is_parallel_consistent; }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_entity_membership_is_parallel_consistent = trueOrFalse; }
+
   /** \brief  Application-defined text name of this part */
   const std::string & name() const { return m_name; }
 
@@ -116,6 +119,7 @@ private:
   EntityRank                m_entity_rank;
   stk::topology             m_topology;
   bool                      m_force_no_induce;
+  bool                      m_entity_membership_is_parallel_consistent;
 
 #endif /* DOXYGEN_COMPILE */
 

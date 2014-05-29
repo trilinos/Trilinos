@@ -90,6 +90,10 @@ public:
            !force_no_induce();
   }
 
+  //whether an entity's membership in this part is required to be the same on each processor that shares/ghosts the entity.
+  bool entity_membership_is_parallel_consistent() const { return m_partImpl.entity_membership_is_parallel_consistent(); }
+  void entity_membership_is_parallel_consistent(bool trueOrFalse) { m_partImpl.entity_membership_is_parallel_consistent(trueOrFalse); }
+
   int64_t id() const { return m_partImpl.id(); }
 
   /** \brief  Internally generated ordinal of this part that is unique

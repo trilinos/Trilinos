@@ -2601,7 +2601,7 @@ void unpack_not_owned_verify_compare_parts(const BulkData &  mesh,
 
   for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
     if ( owns_part != *ip ) {
-      if ( shares_part != *ip ) {
+      if ( shares_part != *ip && (*ip)->entity_membership_is_parallel_consistent() ) {
         // All not-owned and not-shares parts must match:
         bad_part = k == part_ordinals.second ||
           (*ip)->mesh_meta_data_ordinal() != *k ;
@@ -3440,10 +3440,20 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
   }
   else if (m_ghost_parts.size() == 1) {
     ThrowRequireMsg(equal_case(std::string("shared_aura"), name), "Expect aura to be the second ghosting created.");
-    m_ghost_parts.push_back(&mesh_meta_data().declare_part(name));
+    //decorate the name to add curly braces, because this is an automatically-created 'internal'
+    //part.
+    std::string aura_name("{"+name+"}");
+    Part& aura_part = mesh_meta_data().declare_part(aura_name);
+    aura_part.entity_membership_is_parallel_consistent(false);
+    m_ghost_parts.push_back(&aura_part);
   }
   else {
-    m_ghost_parts.push_back(&mesh_meta_data().declare_part(name));
+    //We aren't decorating this name with curly braces like we are for the aura part above,
+    //because this is a custom-ghosting part, so it doesn't automatically exist. Only exists if the
+    //client creates a custom-ghosting.
+    Part& ghost_part = mesh_meta_data().declare_part(name);
+    ghost_part.entity_membership_is_parallel_consistent(false);
+    m_ghost_parts.push_back(&ghost_part);
   }
 
   ThrowRequireMsg(m_ghost_parts.size() == m_ghosting.size(), "m_ghost_parts.size()="<<m_ghost_parts.size()<<", must be same as m_ghosting.size()="<<m_ghosting.size());
@@ -3819,7 +3829,7 @@ void BulkData::internal_change_ghosting(
           remove( parts , meta.globally_shared_part() );
 
           if (owner != this->parallel_rank()) {
-            // Add the part for the input-argument ghosting:
+            // We will also add the entity to the part corresponding to the 'ghosts' ghosting.
             stk::mesh::Part& ghost_part = *m_ghost_parts[ghosts.ordinal()];
             insert( parts, ghost_part );
           }

@@ -44,7 +44,7 @@ TEST(UnitTestParts, CreateAfterCommit)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
-  const std::string generatedMeshSpecification = "generated:1x1x3";
+  const std::string generatedMeshSpecification = "generated:1x1x4";
   stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
   stkMeshIoBroker.create_input_mesh();
 

@@ -2049,10 +2049,6 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
             }
             string gold_result =
                     string("P0:  rank=NODE_RANK\n") +
-                    string("P0:  (Entity_gid=9, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
-                    string("P0:  (Entity_gid=10, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
-                    string("P0:  (Entity_gid=11, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
-                    string("P0:  (Entity_gid=12, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
                     string("P0:  (Entity_gid=1, rank=0, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n") +
                     string("P0:  (Entity_gid=1, rank=0, direction=SEND, processor=1, ghosting level=AURA)\n") +
                     string("P0:  (Entity_gid=2, rank=0, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n") +
@@ -2061,6 +2057,10 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
                     string("P0:  (Entity_gid=3, rank=0, direction=SEND, processor=1, ghosting level=AURA)\n") +
                     string("P0:  (Entity_gid=4, rank=0, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n") +
                     string("P0:  (Entity_gid=4, rank=0, direction=SEND, processor=1, ghosting level=AURA)\n") +
+                    string("P0:  (Entity_gid=9, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
+                    string("P0:  (Entity_gid=10, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
+                    string("P0:  (Entity_gid=11, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
+                    string("P0:  (Entity_gid=12, rank=0, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
                     string("P0:  (Entity_gid=5, rank=0, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n") +
                     string("P0:  (Entity_gid=5, rank=0, direction=SEND, processor=1, ghosting level=SHARED)\n") +
                     string("P0:  (Entity_gid=5, rank=0, direction=SEND, processor=2, ghosting level=AURA)\n") +
@@ -2076,9 +2076,9 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
                     string("P0:  rank=EDGE_RANK\n") +
                     string("P0:  rank=FACE_RANK\n") +
                     string("P0:  rank=ELEMENT_RANK\n") +
-                    string("P0:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
                     string("P0:  (Entity_gid=1, rank=3, direction=NONE, processor=0, ghosting level=LOCALLY_OWNED)\n") +
-                    string("P0:  (Entity_gid=1, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n");
+                    string("P0:  (Entity_gid=1, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n") +
+                    string("P0:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n");
             EXPECT_EQ( gold_result, oss.str() );
         }
         else if (stkMeshBulkData.parallel_rank() == 1) {
@@ -2088,6 +2088,10 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
             }
             std::string gold_result =
                     string("P1:  rank=NODE_RANK\n") +
+                    string("P1:  (Entity_gid=5, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
+                    string("P1:  (Entity_gid=6, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
+                    string("P1:  (Entity_gid=7, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
+                    string("P1:  (Entity_gid=8, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
                     string("P1:  (Entity_gid=1, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
                     string("P1:  (Entity_gid=2, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
                     string("P1:  (Entity_gid=3, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
@@ -2096,10 +2100,6 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
                     string("P1:  (Entity_gid=14, rank=0, direction=RECEIVE, processor=2, ghosting level=AURA)\n") +
                     string("P1:  (Entity_gid=15, rank=0, direction=RECEIVE, processor=2, ghosting level=AURA)\n") +
                     string("P1:  (Entity_gid=16, rank=0, direction=RECEIVE, processor=2, ghosting level=AURA)\n") +
-                    string("P1:  (Entity_gid=5, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
-                    string("P1:  (Entity_gid=6, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
-                    string("P1:  (Entity_gid=7, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
-                    string("P1:  (Entity_gid=8, rank=0, direction=RECEIVE, processor=0, ghosting level=SHARED)\n") +
                     string("P1:  (Entity_gid=9, rank=0, direction=NONE, processor=1, ghosting level=LOCALLY_OWNED)\n") +
                     string("P1:  (Entity_gid=9, rank=0, direction=SEND, processor=2, ghosting level=SHARED)\n") +
                     string("P1:  (Entity_gid=9, rank=0, direction=SEND, processor=0, ghosting level=AURA)\n") +
@@ -2115,11 +2115,11 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
                     string("P1:  rank=EDGE_RANK\n") +
                     string("P1:  rank=FACE_RANK\n") +
                     string("P1:  rank=ELEMENT_RANK\n") +
-                    string("P1:  (Entity_gid=1, rank=3, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
-                    string("P1:  (Entity_gid=3, rank=3, direction=RECEIVE, processor=2, ghosting level=AURA)\n") +
                     string("P1:  (Entity_gid=2, rank=3, direction=NONE, processor=1, ghosting level=LOCALLY_OWNED)\n") +
                     string("P1:  (Entity_gid=2, rank=3, direction=SEND, processor=0, ghosting level=AURA)\n") +
-                    string("P1:  (Entity_gid=2, rank=3, direction=SEND, processor=2, ghosting level=AURA)\n");
+                    string("P1:  (Entity_gid=2, rank=3, direction=SEND, processor=2, ghosting level=AURA)\n") +
+                    string("P1:  (Entity_gid=1, rank=3, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
+                    string("P1:  (Entity_gid=3, rank=3, direction=RECEIVE, processor=2, ghosting level=AURA)\n");
             EXPECT_EQ( gold_result, oss.str() );
         }
         else { // if (stkMeshBulkData.parallel_rank() == 2)
@@ -2129,10 +2129,6 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
             }
             std::string gold_result =
                     string("P2:  rank=NODE_RANK\n") +
-                    string("P2:  (Entity_gid=5, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
-                    string("P2:  (Entity_gid=6, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
-                    string("P2:  (Entity_gid=7, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
-                    string("P2:  (Entity_gid=8, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
                     string("P2:  (Entity_gid=13, rank=0, direction=NONE, processor=2, ghosting level=LOCALLY_OWNED)\n") +
                     string("P2:  (Entity_gid=13, rank=0, direction=SEND, processor=1, ghosting level=AURA)\n") +
                     string("P2:  (Entity_gid=14, rank=0, direction=NONE, processor=2, ghosting level=LOCALLY_OWNED)\n") +
@@ -2145,12 +2141,16 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
                     string("P2:  (Entity_gid=10, rank=0, direction=RECEIVE, processor=1, ghosting level=SHARED)\n") +
                     string("P2:  (Entity_gid=11, rank=0, direction=RECEIVE, processor=1, ghosting level=SHARED)\n") +
                     string("P2:  (Entity_gid=12, rank=0, direction=RECEIVE, processor=1, ghosting level=SHARED)\n") +
+                    string("P2:  (Entity_gid=5, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
+                    string("P2:  (Entity_gid=6, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
+                    string("P2:  (Entity_gid=7, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
+                    string("P2:  (Entity_gid=8, rank=0, direction=RECEIVE, processor=0, ghosting level=AURA)\n") +
                     string("P2:  rank=EDGE_RANK\n") +
                     string("P2:  rank=FACE_RANK\n") +
                     string("P2:  rank=ELEMENT_RANK\n") +
-                    string("P2:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n") +
                     string("P2:  (Entity_gid=3, rank=3, direction=NONE, processor=2, ghosting level=LOCALLY_OWNED)\n") +
-                    string("P2:  (Entity_gid=3, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n");
+                    string("P2:  (Entity_gid=3, rank=3, direction=SEND, processor=1, ghosting level=AURA)\n") +
+                    string("P2:  (Entity_gid=2, rank=3, direction=RECEIVE, processor=1, ghosting level=AURA)\n");
             EXPECT_EQ( gold_result, oss.str() );
         }
     }

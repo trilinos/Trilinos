@@ -61,7 +61,8 @@ PartImpl::PartImpl( MetaData          * arg_meta_data,
     m_ordinal( arg_ordinal ),
     m_entity_rank( arg_rank ),
     m_topology(stk::topology::INVALID_TOPOLOGY),
-    m_force_no_induce(arg_force_no_induce)
+    m_force_no_induce(arg_force_no_induce),
+    m_entity_membership_is_parallel_consistent(true)
 {
   TraceIfWatching("stk::mesh::impl::PartImpl::PartImpl", LOG_PART, arg_ordinal);
   DiagIfWatching(LOG_PART, static_cast<size_t>(m_ordinal), "Name is: " << arg_name << ", rank is : " << arg_rank );

@@ -117,9 +117,9 @@ TEST(UnitTestingOfBucket, testBucket)
     PartVector tmp(2) ;
     tmp[0] = & meta.universal_part();
     tmp[1] = & meta.locally_owned_part();
-    ASSERT_EQ ( has_superset ( *bulk.buckets(stk::topology::NODE_RANK)[0] , tmp ) , bulk.parallel_size() == 1 );
+    ASSERT_TRUE ( has_superset ( *bulk.buckets(stk::topology::NODE_RANK)[0] , tmp ) );
     ASSERT_TRUE ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_any ( tmp ) );
-    ASSERT_EQ ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_all ( tmp ) , bulk.parallel_size() == 1 );
+    ASSERT_TRUE ( bulk.buckets(stk::topology::NODE_RANK)[0]->member_all ( tmp ) );
     ASSERT_TRUE ( bulk.buckets(stk::topology::NODE_RANK)[0]->member ( **meta.get_parts().begin() ) );
   }
 }
