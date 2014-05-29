@@ -666,7 +666,7 @@ template <class FadType, class ScalarType>
 void
 FadOpsUnitTest2<FadType,ScalarType>::
 testResizeBug6135() {
-  FadType d_fad = 1.0;
+  FadType d_fad = ScalarType(1.0);
   d_fad = d_fad + a_fad;
   c_fad = 1.0 + a_fad;
   COMPARE_FADS(d_fad, c_fad);
@@ -694,7 +694,7 @@ testEqualityConstL() {
   FadType bb_fad = b_fad;
   bb_fad.val() = 3.0;
   FadType d_fad;
-  if (9.0 == bb_fad*bb_fad)
+  if (ScalarType(9.0) == bb_fad*bb_fad)
     d_fad = a_fad;
   c_fad = a_fad;
   COMPARE_FADS(d_fad, c_fad);
@@ -707,7 +707,7 @@ testEqualityConstR() {
   FadType bb_fad = b_fad;
   bb_fad.val() = 3.0;
   FadType d_fad;
-  if (bb_fad*bb_fad == 9.0)
+  if (bb_fad*bb_fad == ScalarType(9.0))
     d_fad = a_fad;
   c_fad = a_fad;
   COMPARE_FADS(d_fad, c_fad);
