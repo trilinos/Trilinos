@@ -385,7 +385,7 @@ const ViewWithoutManaging view_without_managing = ViewWithoutManaging();
  * \endcode
  */
 template< class DataType ,
-          class Arg1Type ,        /* ArrayLayout or DeviceType */
+          class Arg1Type = void , /* ArrayLayout, DeviceType or MemoryTraits*/
           class Arg2Type = void , /* DeviceType or MemoryTraits */
           class Arg3Type = void , /* MemoryTraits */
           class Specialize =
