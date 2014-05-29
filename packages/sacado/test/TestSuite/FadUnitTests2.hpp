@@ -95,6 +95,10 @@ class FadOpsUnitTest2 : public CppUnit::TestFixture {
 
   CPPUNIT_TEST(testResizeBug6135);
 
+  CPPUNIT_TEST(testEquality);
+  CPPUNIT_TEST(testEqualityConstL);
+  CPPUNIT_TEST(testEqualityConstR);
+
   CPPUNIT_TEST_SUITE_END();
 
 public:
@@ -144,6 +148,10 @@ public:
   void testDivideEqualsLR();
 
   void testResizeBug6135();
+
+  void testEquality();
+  void testEqualityConstL();
+  void testEqualityConstR();
 
 protected:
 
@@ -664,6 +672,47 @@ testResizeBug6135() {
   COMPARE_FADS(d_fad, c_fad);
 }
 
+template <class FadType, class ScalarType>
+void
+FadOpsUnitTest2<FadType,ScalarType>::
+testEquality() {
+  FadType aa_fad = a_fad;
+  FadType bb_fad = b_fad;
+  aa_fad.val() = 9.0;
+  bb_fad.val() = 3.0;
+  FadType d_fad;
+  if (aa_fad == bb_fad*bb_fad)
+    d_fad = aa_fad;
+  c_fad = aa_fad;
+  COMPARE_FADS(d_fad, c_fad);
+}
+
+template <class FadType, class ScalarType>
+void
+FadOpsUnitTest2<FadType,ScalarType>::
+testEqualityConstL() {
+  FadType bb_fad = b_fad;
+  bb_fad.val() = 3.0;
+  FadType d_fad;
+  if (9.0 == bb_fad*bb_fad)
+    d_fad = a_fad;
+  c_fad = a_fad;
+  COMPARE_FADS(d_fad, c_fad);
+}
+
+template <class FadType, class ScalarType>
+void
+FadOpsUnitTest2<FadType,ScalarType>::
+testEqualityConstR() {
+  FadType bb_fad = b_fad;
+  bb_fad.val() = 3.0;
+  FadType d_fad;
+  if (bb_fad*bb_fad == 9.0)
+    d_fad = a_fad;
+  c_fad = a_fad;
+  COMPARE_FADS(d_fad, c_fad);
+}
+
 // A class for testing each real Fad operation
 // This class tests additional functions that aren't define for complex
 // types
@@ -723,6 +772,10 @@ class RealFadOpsUnitTest2 : public FadOpsUnitTest2<FadType,ScalarType> {
   CPPUNIT_TEST(testDivideEqualsLR);
 
   CPPUNIT_TEST(testResizeBug6135);
+
+  CPPUNIT_TEST(testEquality);
+  CPPUNIT_TEST(testEqualityConstL);
+  CPPUNIT_TEST(testEqualityConstR);
 
   CPPUNIT_TEST_SUITE_END();
 
