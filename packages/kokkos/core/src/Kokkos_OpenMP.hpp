@@ -56,6 +56,7 @@
 #include <Kokkos_HostSpace.hpp>
 #include <Kokkos_Parallel.hpp>
 #include <Kokkos_Layout.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -77,6 +78,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   typedef OpenMP                device_type ;
   typedef HostSpace::size_type  size_type ;
   typedef HostSpace             memory_space ;

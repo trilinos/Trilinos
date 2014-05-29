@@ -63,6 +63,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_CudaSpace.hpp>
 #include <Kokkos_MemoryTraits.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -91,6 +92,8 @@ public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
 
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
   //! The device type (same as this class).
   typedef Cuda                  device_type ;
   //! This device's preferred memory space.

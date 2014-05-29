@@ -49,6 +49,7 @@
 #include <Kokkos_Layout.hpp>
 #include <Kokkos_MemoryTraits.hpp>
 #include <Kokkos_HostSpace.hpp>
+#include <impl/Kokkos_Tags.hpp>
 
 /*--------------------------------------------------------------------------*/
 
@@ -67,6 +68,8 @@ class Threads {
 public:
   //! \name Type declarations that all Kokkos devices must provide.
   //@{
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::DeviceTag       kokkos_tag ;
 
   typedef Threads                  device_type ;
   typedef Kokkos::HostSpace        memory_space ;
