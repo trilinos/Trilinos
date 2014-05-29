@@ -327,6 +327,36 @@ void parallel_reduce( const size_t work_count ,
   reduce.wait();
 }
 
+namespace Impl {
+template<class FunctorType, class ReturnType, class DeviceType>
+struct WrapperFunctorSizeT {
+
+  const FunctorType f;
+  typedef DeviceType device_type;
+  typedef ReturnType value_type;
+
+  WrapperFunctorSizeT(const FunctorType& f_):f(f_) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(const size_t i, value_type& val) const
+  {
+    f(i,val);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & update ) const
+  {
+    update = value_type();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & update, volatile value_type const & input ) const
+  {
+    update += input;
+  }
+};
+}
+
 template< class FunctorType, class ReturnType >
 inline
 void parallel_reduce( const size_t work_count ,
@@ -335,35 +365,8 @@ void parallel_reduce( const size_t work_count ,
                       typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0)
 {
 
-  struct WrapperFunctor {
-
-    const FunctorType f;
-    typedef Impl::DefaultDeviceType device_type;
-    typedef ReturnType value_type;
-
-    WrapperFunctor(const FunctorType& f_):f(f_) {}
-
-    KOKKOS_FORCEINLINE_FUNCTION
-    void operator()(const size_t& i, value_type& val) const
-    {
-      f(i,val);
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void init( value_type & update ) const
-    {
-      update = value_type();
-    }
-
-    KOKKOS_INLINE_FUNCTION
-    void join( volatile value_type & update, volatile value_type const & input ) const
-    {
-      update += input;
-    }
-  };
-
-  Impl::ParallelReduce< WrapperFunctor, size_t >
-    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< WrapperFunctor >::pointer( result ) );
+  Impl::ParallelReduce< Impl::WrapperFunctorSizeT<FunctorType, ReturnType, Impl::DefaultDeviceType>, size_t >
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< Impl::WrapperFunctorSizeT<FunctorType, ReturnType, Impl::DefaultDeviceType> >::pointer( result ) );
 
   reduce.wait();
 }
@@ -671,13 +674,13 @@ void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
 
 namespace Impl {
 template<class FunctorType, class ReturnType, class DeviceType>
-struct WrapperFunctor {
+struct WrapperFunctorDevice {
 
   const FunctorType f;
   typedef DeviceType device_type;
   typedef ReturnType value_type;
 
-  WrapperFunctor(const FunctorType& f_):f(f_) {}
+  WrapperFunctorDevice(const FunctorType& f_):f(f_) {}
 
   KOKKOS_FORCEINLINE_FUNCTION
   void operator()(device_type dev, value_type& val) const
@@ -708,9 +711,9 @@ void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
 {
 
 
-  Impl::ParallelReduce< Impl::WrapperFunctor<FunctorType, ReturnType, Impl::DefaultDeviceType>, Kokkos::ParallelWorkRequest >
+  Impl::ParallelReduce< Impl::WrapperFunctorDevice<FunctorType, ReturnType, Impl::DefaultDeviceType>, Kokkos::ParallelWorkRequest >
     reduce( functor , request , Kokkos::Impl::ReduceAdapter<
-        Impl::WrapperFunctor<FunctorType, ReturnType, Impl::DefaultDeviceType>
+        Impl::WrapperFunctorDevice<FunctorType, ReturnType, Impl::DefaultDeviceType>
    >::pointer( result ) );
 
   reduce.wait();
