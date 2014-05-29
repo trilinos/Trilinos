@@ -99,7 +99,14 @@ namespace MueLu {
   // Similar to the above macro, we all try to take a value from the default list
   // NOTE: this essentially converts UserAPI parameter names into MueLu internal ones
 #define MUELU_TEST_AND_SET_PARAM(listWrite, varNameWrite, paramList, defaultList, varNameRead, T) \
-  if      (paramList.isParameter(varNameRead))   listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+  if      (paramList.isParameter(varNameRead)) { \
+    try { \
+      listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+    } \
+    catch(Teuchos::Exceptions::InvalidParameterType) { \
+      TEUCHOS_TEST_FOR_EXCEPTION(true,Teuchos::Exceptions::InvalidParameterType,"Error: parameter \"" << varNameRead << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
+    } \
+  } \
   else if (defaultList.isParameter(varNameRead)) listWrite.set(varNameWrite, defaultList.get<T>(varNameRead));
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
