@@ -103,6 +103,10 @@ namespace Sacado {
       KOKKOS_INLINE_FUNCTION
       void resize(int sz) {}
 
+      //! Resize the derivative array to sz
+      KOKKOS_INLINE_FUNCTION
+      void resizeAndZero(int sz) {}
+
       //! Expand derivative array to size sz
       KOKKOS_INLINE_FUNCTION
       void expand(int sz) {}
