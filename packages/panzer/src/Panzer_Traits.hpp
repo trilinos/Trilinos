@@ -98,12 +98,14 @@ namespace panzer {
     //typedef Sacado::Fad::DFad<double> FadType;
     //typedef Sacado::CacheFad::DFad<double> FadType;
     //typedef Sacado::ELRFad::DFad<double> FadType;
-    typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    // typedef Sacado::ELRCacheFad::DFad<double> FadType;
+    typedef PANZER_FADTYPE<double> FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
        typedef Sacado::PCE::OrthogPoly<RealType,SGStorageType> SGType;
-       typedef Sacado::Fad::DFad<SGType> SGFadType;
+       // typedef Sacado::Fad::DFad<SGType> SGFadType;
+       typedef PANZER_FADTYPE<SGType> SGFadType;
     #endif
     
     // ******************************************************************

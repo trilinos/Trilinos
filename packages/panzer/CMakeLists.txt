@@ -19,6 +19,11 @@ TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_DEBUG
   "Build with debug code enabled."
   OFF )
 
+TRIBITS_ADD_OPTION_AND_DEFINE(${PACKAGE_NAME}_ENABLE_FADTYPE
+  PANZER_FADTYPE
+  "Build with debug code enabled."
+  Sacado::ELRCacheFad::DFad )
+
 # optional package specific configurations
 ############################################################
 
