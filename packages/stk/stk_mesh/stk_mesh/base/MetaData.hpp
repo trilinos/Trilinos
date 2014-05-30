@@ -1269,9 +1269,6 @@ is_auto_declared_part(const Part &part)
 {
   const std::string &part_name = part.name();
 
-  if (part_name[0]=='{' && part_name[1]!='F' && part_name[2]!='E') {
-   std::cout<<part_name<<std::endl;
-  }
   return !part_name.empty() && part_name[0] == '{';
 }
 
