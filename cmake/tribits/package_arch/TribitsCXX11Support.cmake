@@ -40,13 +40,17 @@
 INCLUDE(CheckCXXSourceRuns)
 
 FUNCTION(TRIBITS_ENABLE_CXX11)
+
   ##
   ## Only try introspection if we have not already
   ## or if the user has not overridden then
   ##
+
   IF(NOT TRIBITS_CXX11_FLAGS)
-     MESSAGE(STATUS "Search for CXX11 compiler flag.")
+
+     MESSAGE("-- " "Search for CXX11 compiler flag.")
      INCLUDE(CheckCXXSourceCompiles)
+
      ##
      ## List of possible compiler flags to use
      ##
@@ -55,6 +59,7 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
          "-std=c++11"    # intel/clang linux/mac
          "-std=gnu++11"  # gcc
      )
+
      ##
      ## Same CXX11 source
      ##
@@ -84,14 +89,18 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
         }
         "
      )
+
      ##
      ## Try to compile with each flag
      ##
      FOREACH( TOPTION ${CXX11_FLAG_OPTIONS})
-        IF(${PROJECT_NAME}_VERBOSE_CONFIGURE)
-          MESSAGE(STATUS "Testing CXX11 flag: ${TOPTION}")
+
+        IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
+          MESSAGE("-- " "Testing CXX11 flag: ${TOPTION}")
         ENDIF()
+
         SET(CMAKE_REQUIRED_FLAGS "${TOPTION}")
+
         CHECK_CXX_SOURCE_COMPILES("${TSOURCE}" CXX11_FLAGS_COMPILE_RESULT
            ## Some compilers do not fail with a bad flag
            FAIL_REGEX "unrecognized .*option"                     # GNU
@@ -101,27 +110,32 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
            FAIL_REGEX "[Ww]arning: [Oo]ption"                     # SunPro
            FAIL_REGEX "command option .* is not recognized"       # XL
         )
+
         IF(CXX11_FLAGS_COMPILE_RESULT)
           # CACHE the successful flags
           #SET(CXX11_FLAGS_COMPILE_RESULT "${TOPTION}" CACHE INTERNAL "cxx11 support flag")
           # Append compiler flag to CMAKE_CXX_FLAGS
           SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TOPTION}" CACHE INTERNAL "")
-          IF(${PROJECT_NAME}_VERBOSE_CONFIGURE})
-            MESSAGE(STATUS "Successful CXX11 flag: '${TOPTION}'")
-          ENDIF()
+          MESSAGE("-- " "Successful CXX11 flag: '${TOPTION}'")
           SET(TRIBITS_CXX11_FLAGS ${TOPTION} PARENT_SCOPE)
           BREAK()
         ELSE()
+          # NOTE: You have to set this in case 
           SET(CXX11_FLAGS_COMPILE_RESULT TRUE)
         ENDIF()
      ENDFOREACH()
-  ELSE(NOT TRIBITS_CXX11_FLAGS)
+
+  ELSE()
+
      ##
      ## We already detected or set the cxx11 flags
      ##
-     MESSAGE(STATUS "CXX11 Flags already set: '${TRIBITS_CXX11_FLAGS}'")
-  ENDIF(NOT TRIBITS_CXX11_FLAGS)
-ENDFUNCTION(TRIBITS_ENABLE_CXX11)
+     MESSAGE("-- " "CXX11 Flags already set: '${TRIBITS_CXX11_FLAGS}'")
+
+  ENDIF()
+
+ENDFUNCTION()
+
 
 FUNCTION(TRIBITS_CHECK_CXX11_SUPPORT VARNAME)
 
@@ -176,11 +190,16 @@ int main() {
 }
   "
   )
+
   CHECK_CXX_SOURCE_RUNS("${SOURCE_CXX11_LAMBDAS}" CXX11_LAMBDAS)
 
-  IF (NOT CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS OR NOT CXX11_AUTOTYPEDVARIABLES OR NOT CXX11_LAMBDAS)
+  IF (NOT CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS OR
+    NOT CXX11_AUTOTYPEDVARIABLES OR
+    NOT CXX11_LAMBDAS
+    )
     SET(${VARNAME} FALSE PARENT_SCOPE)
   ELSE()
     SET(${VARNAME} TRUE PARENT_SCOPE)
   ENDIF()
+
 ENDFUNCTION()
