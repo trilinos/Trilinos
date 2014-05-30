@@ -121,7 +121,7 @@ void testFromDataFile(
 
   if (coordsConst->getGlobalLength() < 40) {
     int len = coordsConst->getLocalLength();
-    const zoltan2_partId_t *zparts = problem.getSolution().getPartList();
+    const inputAdapter_t::part_t *zparts = problem.getSolution().getPartList();
     const gno_t *zgids = problem.getSolution().getIdList(); 
     for (int i = 0; i < len; i++)
       cout << me << " gid " << zgids[i] << " part " << zparts[i] << endl;

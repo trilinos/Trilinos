@@ -1,12 +1,12 @@
 #@HEADER
 # ************************************************************************
-# 
+#
 #            NOX: An Object-Oriented Nonlinear Solver Package
 #                 Copyright (2002) Sandia Corporation
-# 
+#
 # Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 # license for use of this work by or on behalf of the U.S. Government.
-# 
+#
 # Redistribution and use in source and binary forms, with or without
 # modification, are permitted provided that the following conditions are
 # met:
@@ -34,7 +34,7 @@
 # NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 # SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 #
-# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+# Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 # Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 # ************************************************************************
 #@HEADER
@@ -55,7 +55,7 @@ You may access/create the NOX documentation in three ways...
 
    > doxygen Doxyfile.default
 
-   Then browse to doc/html/index.html to get started.  
+   Then browse to doc/html/index.html to get started.
 
    Note that graphical dependency trees will not be generated with this option,
    since doxygen requires the "dot" library out of the graphviz
@@ -66,7 +66,7 @@ You may access/create the NOX documentation in three ways...
 3. AUTOMATICALLY GENERATE THE DOCUMENTATION
 
    Let $NOX_SRC denote the top level NOX directory, and let $NOX_BUILD
-   denote the top level build directory (often these are the same). 
+   denote the top level build directory (often these are the same).
 
    Within the $NOX_BUILD directory, type
 
@@ -75,5 +75,5 @@ You may access/create the NOX documentation in three ways...
 
    This will create the documentation inside the $NOX_SRC
    directory. Browse to $NOX_SRC/doc/html/index.html.
-   
+
 

@@ -141,7 +141,7 @@ namespace Tpetra {
     ///
     /// \note This constructor is invoked by Map's constructor, using
     ///   the Map's <tt>this</tt> pointer as the input argument.
-    explicit Directory (const map_type& map);
+    explicit TEUCHOS_DEPRECATED Directory (const map_type& map);
 
     /// \brief Constructor (using a tie break class to decide ownership).
     ///
@@ -150,11 +150,36 @@ namespace Tpetra {
     ///
     /// \note This constructor is NOT invoked by Map's constructor,
     ///   and for now only works with noncontiguous Maps.
-    explicit Directory (const map_type& map,
-                        const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
+    explicit TEUCHOS_DEPRECATED
+    Directory (const map_type& map,
+               const Tpetra::Details::TieBreak<LocalOrdinal,GlobalOrdinal>& tie_break);
+
+    /// \brief Constructor (preserved for backwards compatibility with 11.4).
+    ///
+    /// This constructor is DEPRECATED.  Please use the constructor
+    /// that takes a <tt>const map_type&</tt>.
+    explicit TEUCHOS_DEPRECATED
+    Directory (const Teuchos::RCP<const map_type>& map);
+
+    /// \brief Default constructor: the only one you should use.
+    ///
+    /// To initialize the Directory, call the appropriate initialize()
+    /// overload.
+    Directory ();
 
     //! Destructor.
     ~Directory ();
+
+    //! Initialize the Directory with its Map.
+    void initialize (const map_type& map);
+
+    //! Initialize the Directory, with its Map and a TieBreak object.
+    void
+    initialize (const map_type& map,
+                const Tpetra::Details::TieBreak<LocalOrdinal, GlobalOrdinal>& tieBreak);
+
+    //! Whether the Directory is initialized.
+    bool initialized () const;
 
     /// \brief Clone the Directory for a different Node type, using a cloned Map.
     /// \warning This is an advanced method for use by experts only.
@@ -180,26 +205,49 @@ namespace Tpetra {
     {
       typedef LocalOrdinal LO;
       typedef GlobalOrdinal GO;
-      using Teuchos::rcp_dynamic_cast;
 
       RCP<Directory<LO, GO, Node2> > dir (new Directory<LO, GO, Node2> ());
       if (clone_map.isDistributed ()) {
         if (clone_map.isUniform ()) {
           typedef Details::ContiguousUniformDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be distributed, contiguous, and uniform, "
+            "but its Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else if (clone_map.isContiguous ()) {
           typedef Details::DistributedContiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be distributed and contiguous, but its "
+            "Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
         else { // not contiguous
           typedef Details::DistributedNoncontiguousDirectory<LO, GO, Node> impl_type;
-          dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+          const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+            "The input Map claims to be noncontiguous, but its "
+            "Directory's implementation type does not match that assumption.  "
+            "Please report this bug to the Tpetra developers.");
+          dir->impl_ = theImpl->template clone<Node2> (clone_map);
         }
       }
       else { // locally replicated (not distributed)
         typedef Details::ReplicatedDirectory<LO, GO, Node> impl_type;
-        dir->impl_ = rcp_dynamic_cast<const impl_type> (impl_)->template clone<Node2> (clone_map);
+        const impl_type* theImpl = dynamic_cast<const impl_type*> (impl_);
+        TEUCHOS_TEST_FOR_EXCEPTION(
+          theImpl == NULL, std::logic_error, "Tpetra::Directory::clone: "
+          "The input Map claims to be locally replicated, but its "
+          "Directory's implementation type does not match that assumption.  "
+          "Please report this bug to the Tpetra developers.");
+        dir->impl_ = theImpl->template clone<Node2> (clone_map);
       }
       return dir;
     }
@@ -245,6 +293,15 @@ namespace Tpetra {
                          const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
                          const Teuchos::ArrayView<int>& nodeIDs) const;
 
+    /// \brief DEPRECATED method; does not work.
+    ///
+    /// This method only exists so that the 11.4 backwards
+    /// compatibility build passes.  This method does NOT succeed.  It
+    /// throws an exception on all calling processes, in fact.
+    LookupStatus TEUCHOS_DEPRECATED
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<int>& nodeIDs) const;
+
     /// \brief Given a global ID list, return a list of their owning
     ///   process IDs and their corresponding local IDs.
     ///
@@ -286,13 +343,23 @@ namespace Tpetra {
                          const Teuchos::ArrayView<int>& nodeIDs,
                          const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
 
+    /// \brief DEPRECATED method; does not work.
+    ///
+    /// This method only exists so that the 11.4 backwards
+    /// compatibility build passes.  This method does NOT succeed.  It
+    /// throws an exception on all calling processes, in fact.
+    LookupStatus TEUCHOS_DEPRECATED
+    getDirectoryEntries (const Teuchos::ArrayView<const GlobalOrdinal>& globalIDs,
+                         const Teuchos::ArrayView<int>& nodeIDs,
+                         const Teuchos::ArrayView<LocalOrdinal>& localIDs) const;
+
     /// \brief Whether the Directory's input Map is (globally) one to one.
     ///
     /// This method should always be treated as a collective on all
-    /// processes in the given communicator, which must be the same
-    /// as the input Map's communicator.  Not all implementations
+    /// processes in the given Map's communicator, which must be the
+    /// same as the input Map's communicator.  Not all implementations
     /// necessarily communicate.
-    bool isOneToOne (const Teuchos::Comm<int>& comm) const;
+    bool isOneToOne (const map_type& map) const;
 
     //@}
   private:
@@ -304,7 +371,10 @@ namespace Tpetra {
     ///   contiguous or noncontiguous).
     typedef Details::Directory<LocalOrdinal, GlobalOrdinal, Node> base_type;
 
-    //! Implementation of this object.
+    /// \brief Implementation of this object.
+    ///
+    /// Directory creates this impl_ object either lazily, or on
+    /// request (in initialize()), and caches it.
     const base_type* impl_;
 
     //! Copy constructor: declared private but not defined on purpose.
@@ -312,13 +382,9 @@ namespace Tpetra {
 
     template <class LO, class GO, class N> friend class Directory;
 
-    //! Empty constructor, for delayed initialization by clone()
-    Directory ();
-
     //! Assignment operator: declared private but not defined on purpose.
     Directory<LocalOrdinal, GlobalOrdinal, Node>&
     operator= (const Directory<LocalOrdinal, GlobalOrdinal, Node>& source);
-
   }; // class Directory
 } // namespace Tpetra
 

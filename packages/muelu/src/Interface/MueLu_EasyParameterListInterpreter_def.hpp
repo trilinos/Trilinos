@@ -58,12 +58,15 @@
 
 #include "MueLu_CoalesceDropFactory.hpp"
 #include "MueLu_CoarseMapFactory.hpp"
+#include "MueLu_ConstraintFactory.hpp"
 #include "MueLu_CoordinatesTransferFactory.hpp"
 #include "MueLu_CoupledAggregationFactory.hpp"
 #include "MueLu_DirectSolver.hpp"
+#include "MueLu_EminPFactory.hpp"
 #include "MueLu_Exceptions.hpp"
 #include "MueLu_FilteredAFactory.hpp"
 #include "MueLu_NullspaceFactory.hpp"
+#include "MueLu_PatternFactory.hpp"
 #include "MueLu_PgPFactory.hpp"
 #include "MueLu_RAPFactory.hpp"
 #include "MueLu_RebalanceAcFactory.hpp"
@@ -77,16 +80,10 @@
 #include "MueLu_ZoltanInterface.hpp"
 #include "MueLu_Zoltan2Interface.hpp"
 
-#ifdef HAVE_MUELU_EXPERIMENTAL
-#include "MueLu_ConstraintFactory.hpp"
-#include "MueLu_PatternFactory.hpp"
-#include "MueLu_EminPFactory.hpp"
-#endif
-
 namespace MueLu {
 
   //! Helper functions to compare two paramter lists
-  static bool areSame(const ParameterList& list1, const ParameterList& list2);
+  static inline bool areSame(const ParameterList& list1, const ParameterList& list2);
 
 
   // This macro is tricky. The use case is when we do not have a level specific parameter, so we
@@ -102,7 +99,14 @@ namespace MueLu {
   // Similar to the above macro, we all try to take a value from the default list
   // NOTE: this essentially converts UserAPI parameter names into MueLu internal ones
 #define MUELU_TEST_AND_SET_PARAM(listWrite, varNameWrite, paramList, defaultList, varNameRead, T) \
-  if      (paramList.isParameter(varNameRead))   listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+  if      (paramList.isParameter(varNameRead)) { \
+    try { \
+      listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+    } \
+    catch(Teuchos::Exceptions::InvalidParameterType) { \
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,Teuchos::Exceptions::InvalidParameterType,"Error: parameter \"" << varNameRead << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
+    } \
+  } \
   else if (defaultList.isParameter(varNameRead)) listWrite.set(varNameWrite, defaultList.get<T>(varNameRead));
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -197,6 +201,8 @@ namespace MueLu {
     // Detect if we do implicit P and R rebalance
     if (paramList.isParameter("repartition: enable") && paramList.get<bool>("repartition: enable") == true)
       this->doPRrebalance_ = paramList.get<bool>("repartition: rebalance P and R", Hierarchy::GetDefaultPRrebalance());
+
+    this->implicitTranspose_ = paramList.get<bool>("transpose: use implicit", Hierarchy::GetDefaultImplicitTranspose());
 
     // Create default manager
     RCP<FactoryManager> defaultManager = rcp(new FactoryManager());
@@ -360,7 +366,7 @@ namespace MueLu {
       // case of smoother, we would like to unify Amesos and Ifpack2 smoothers in src/Smoothers, and
       // have a single factory responsible for those. Then, this check would belong there.
       if (coarseType == "RELAXATION" || coarseType == "CHEBYSHEV" ||
-          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK")
+          coarseType == "ILUT" || coarseType == "ILU" || coarseType == "RILUK" || coarseType == "SCHWARZ")
         coarseSmoother = rcp(new TrilinosSmoother(coarseType, coarseParams));
       else
         coarseSmoother = rcp(new DirectSolver(coarseType, coarseParams));
@@ -398,7 +404,7 @@ namespace MueLu {
     manager.SetFactory("CoarseMap", coarseMap);
 
     // Tentative P
-    RCP<TentativePFactory> Ptent = rcp(new TentativePFactory());
+    RCP<Factory> Ptent = rcp(new TentativePFactory());
     Ptent->SetFactory("Aggregates", manager.GetFactory("Aggregates"));
     Ptent->SetFactory("CoarseMap",  manager.GetFactory("CoarseMap"));
     manager.SetFactory("Ptent",     Ptent);
@@ -431,10 +437,9 @@ namespace MueLu {
       manager.SetFactory("P", P);
 
     } else if (multigridAlgo == "emin") {
-#ifdef HAVE_MUELU_EXPERIMENTAL
       MUELU_READ_2LIST_PARAM(paramList, defaultList, "emin: pattern", std::string, "AkPtent", patternType);
-      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument, "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
-
+      TEUCHOS_TEST_FOR_EXCEPTION(patternType != "AkPtent", Exceptions::InvalidArgument,
+                                 "Invalid pattern name: \"" << patternType << "\". Valid options: \"AkPtent\"");
       // Pattern
       RCP<PatternFactory> patternFactory = rcp(new PatternFactory());
       ParameterList patternParams = *(patternFactory->GetValidParameterList());
@@ -452,14 +457,12 @@ namespace MueLu {
       // Energy minimization
       RCP<EminPFactory> P = rcp(new EminPFactory());
       ParameterList Pparams = *(P->GetValidParameterList());
-      MUELU_TEST_AND_SET_PARAM(Pparams, "Niterations", paramList, defaultList, "emin: num iterations", int);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: num iterations",   paramList, defaultList, "emin: num iterations",   int);
+      MUELU_TEST_AND_SET_PARAM(Pparams, "emin: iterative method", paramList, defaultList, "emin: iterative method", std::string);
       P->SetParameterList(Pparams);
       P->SetFactory("P",          manager.GetFactory("Ptent"));
       P->SetFactory("Constraint", manager.GetFactory("Constraint"));
       manager.SetFactory("P", P);
-#else
-      throw Exceptions::RuntimeError("Please enable Experimental options in MueLu to use \"emin\"");
-#endif
 
     } else if (multigridAlgo == "pg") {
       // Petrov-Galerkin
@@ -469,14 +472,22 @@ namespace MueLu {
     }
 
     // === Restriction ===
-    RCP<TransPFactory> R = rcp(new TransPFactory());
-    R->SetFactory("P", manager.GetFactory("P"));
-    manager.SetFactory("R", R);
+    if (!this->implicitTranspose_) {
+      RCP<TransPFactory> R = rcp(new TransPFactory());
+      R->SetFactory("P", manager.GetFactory("P"));
+      manager.SetFactory("R", R);
+    } else {
+      manager.SetFactory("R", Teuchos::null);
+    }
 
     // === RAP ===
     RCP<RAPFactory> RAP = rcp(new RAPFactory());
+    ParameterList RAPparams = *(RAP->GetValidParameterList());
+    RAPparams.set("implicit transpose", this->implicitTranspose_);
+    RAP->SetParameterList(RAPparams);
     RAP->SetFactory("P", manager.GetFactory("P"));
-    RAP->SetFactory("R", manager.GetFactory("R"));
+    if (!this->implicitTranspose_)
+      RAP->SetFactory("R", manager.GetFactory("R"));
     manager.SetFactory("A", RAP);
 
     // === Coordinates ===
@@ -553,14 +564,17 @@ namespace MueLu {
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
       ParameterList newRparams;
-      newRparams.set("type",     "Restriction");
-      newRparams.set("implicit", !this->doPRrebalance_);
+      newRparams.set("type",               "Restriction");
+      newRparams.set("implicit",          !this->doPRrebalance_);
+      newRparams.set("implicit transpose", this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
       newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->  SetFactory("R",           manager.GetFactory("R"));
       newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
       newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
-      manager.SetFactory("R",           newR);
+      if (!this->implicitTranspose_) {
+        newR->SetFactory("R",           manager.GetFactory("R"));
+        manager.SetFactory("R",           newR);
+      }
       manager.SetFactory("Coordinates", newR);
 
       // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
@@ -598,7 +612,7 @@ namespace MueLu {
 
     return true;
   }
-  static bool areSame(const ParameterList& list1, const ParameterList& list2) {
+  static inline bool areSame(const ParameterList& list1, const ParameterList& list2) {
     return compare(list1, list2) && compare(list2, list1);
   }
 

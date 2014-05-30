@@ -31,8 +31,10 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_DashSurfaceMesh.h>
+#include <algorithm>                    // for copy
+#include <vector>                       // for vector
+#include "generated/Iogn_GeneratedMesh.h"  // for MapVector, IntVector, etc
 
-#include <vector>
 
 namespace Iogn
 {
@@ -208,7 +210,7 @@ void DashSurfaceMesh::node_communication_map(MapVector &map, std::vector<int> &p
     return;
 }
 
-void DashSurfaceMesh::node_map(IntVector &map)
+void DashSurfaceMesh::node_map(IntVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);
@@ -219,7 +221,7 @@ void DashSurfaceMesh::node_map(IntVector &map)
     }
 }
 
-void DashSurfaceMesh::node_map(MapVector &map)
+void DashSurfaceMesh::node_map(MapVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);
@@ -454,7 +456,7 @@ void ExodusMesh::node_communication_map(MapVector &map, std::vector<int> &proc)
     }
 }
 
-void ExodusMesh::node_map(IntVector &map)
+void ExodusMesh::node_map(IntVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);
@@ -465,7 +467,7 @@ void ExodusMesh::node_map(IntVector &map)
     }
 }
 
-void ExodusMesh::node_map(MapVector &map)
+void ExodusMesh::node_map(MapVector &map) const
 {
     int size = node_count_proc();
     map.resize(size);

@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -60,10 +60,10 @@
 int check(Epetra_CrsMatrix& A, int NumMyRows1, int NumGlobalRows1, int NumMyNonzeros1,
 	  int NumGlobalNonzeros1, int * MyGlobalElements, bool verbose);
 
-int power_method(bool TransA, Epetra_CrsMatrix& A, 
+int power_method(bool TransA, Epetra_CrsMatrix& A,
 		 Epetra_Vector& q,
-		 Epetra_Vector& z, 
-		 Epetra_Vector& resid, 
+		 Epetra_Vector& z,
+		 Epetra_Vector& resid,
 		 double * lambda, int niters, double tolerance,
 		 bool verbose);
 
@@ -88,7 +88,7 @@ double test_with_matvec(const Epetra_CrsMatrix &A, const Epetra_CrsMatrix &B){
   else {
     Xb=Xa;
   }
-  
+
   // Do the multiplies
   A.Apply(Xa,Ya);
   B.Apply(Xb,Yb);
@@ -117,7 +117,7 @@ double test_with_matvec_reduced_maps(const Epetra_CrsMatrix &A, const Epetra_Crs
   const Epetra_Map *Bmap  = Bfullmap.NumMyElements() > 0 ? &B.DomainMap() : 0;
   Epetra_Vector *Xb = Bmap ? new Epetra_Vector(*Bmap) : 0;
   Epetra_Vector *Yb = Bmap ? new Epetra_Vector(*Bmap) : 0;
-  
+
   Epetra_Vector Xb_alias(View,Bfullmap, Bmap ? Xb->Values(): 0);
   Epetra_Vector Yb_alias(View,Bfullmap, Bmap ? Yb->Values(): 0);
 
@@ -127,11 +127,11 @@ double test_with_matvec_reduced_maps(const Epetra_CrsMatrix &A, const Epetra_Crs
   Xa.SetSeed(24601);
   Xa.Random();
   Xb_alias.Import(Xa,Ximport,Insert);
-  
+
   // Do the multiplies
   A.Apply(Xa,Ya);
   if(Bmap) B.Apply(*Xb,*Yb);
-  
+
   // Check solution
   Epetra_Import Yimport(Amap,Bfullmap);
   Diff.Import(Yb_alias,Yimport,Insert);
@@ -151,7 +151,7 @@ int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Import & 
   rv=A->Import(SourceMatrix, RowImporter, Insert);
   if(rv) {cerr<<"build_matrix_unfused: Import failed"<<endl; return rv;}
 
-  rv=A->FillComplete(SourceMatrix.DomainMap(), SourceMatrix.RangeMap()); 
+  rv=A->FillComplete(SourceMatrix.DomainMap(), SourceMatrix.RangeMap());
   return rv;
 }
 
@@ -160,7 +160,7 @@ int build_matrix_unfused(const Epetra_CrsMatrix & SourceMatrix, Epetra_Export & 
   rv=A->Export(SourceMatrix, RowExporter, Insert);
   if(rv) {cerr<<"build_matrix_unfused: Export failed"<<endl; return rv;}
 
-  rv=A->FillComplete(SourceMatrix.DomainMap(), SourceMatrix.RangeMap()); 
+  rv=A->FillComplete(SourceMatrix.DomainMap(), SourceMatrix.RangeMap());
   return rv;
 }
 
@@ -176,42 +176,42 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
 
     long long NumGlobalEquations = (NumMyEquations * NumProc) + EPETRA_MIN(NumProc,3);
     if(MyPID < 3)  NumMyEquations++;
-    
+
     // Construct a Map that puts approximately the same Number of equations on each processor
     Epetra_Map Map(NumGlobalEquations, NumMyEquations, (long long)0, Comm);
-    
+
     // Get update list and number of local equations from newly created Map
     long long* MyGlobalElements = new long long[Map.NumMyElements()];
     Map.MyGlobalElements(MyGlobalElements);
-    
+
     // Create an integer vector NumNz that is used to build the Petra Matrix.
     // NumNz[i] is the Number of OFF-DIAGONAL term for the ith global equation on this processor
-    
+
     int* NumNz = new int[NumMyEquations];
-    
+
     // We are building a tridiagonal matrix where each row has (-1 2 -1)
     // So we need 2 off-diagonal terms (except for the first and last equation)
-    
+
     for (int i = 0; i < NumMyEquations; i++)
       if((MyGlobalElements[i] == 0) || (MyGlobalElements[i] == NumGlobalEquations - 1))
 	NumNz[i] = 1;
       else
 	NumNz[i] = 2;
-    
-    // Create a Epetra_Matrix     
+
+    // Create a Epetra_Matrix
     A=new Epetra_CrsMatrix(Copy, Map, NumNz);
-    
+
     // Add  rows one-at-a-time
     // Need some vectors to help
     // Off diagonal Values will always be -1
-    
+
     double* Values = new double[2];
-    Values[0] = -1.0; 
+    Values[0] = -1.0;
     Values[1] = -1.0;
     long long* Indices = new long long[2];
     double two = 2.0;
     int NumEntries;
-    
+
     for (int i = 0; i < NumMyEquations; i++) {
       if(MyGlobalElements[i] == 0) {
 	Indices[0] = 1;
@@ -229,17 +229,17 @@ int build_test_matrix(Epetra_MpiComm & Comm, int test_number, Epetra_CrsMatrix *
       A->InsertGlobalValues(MyGlobalElements[i], NumEntries, Values, Indices);
       A->InsertGlobalValues(MyGlobalElements[i], 1, &two, MyGlobalElements+i);
     }
-    
+
     A->FillComplete();
-    
+
     // Cleanup
     delete [] MyGlobalElements;
     delete [] NumNz;
     delete [] Values;
     delete [] Indices;
-    
+
   }
-  return 0; 
+  return 0;
 }
 
 
@@ -299,10 +299,10 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_1
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
-    
-    // New map with all on Proc1 
+
+    // New map with all on Proc1
     if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long) 0,Comm);
     else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
 
@@ -315,7 +315,7 @@ int main(int argc, char *argv[])
       if(MyPID==0) cout<<"FusedImport: Test #1 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
-    
+
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
@@ -338,16 +338,16 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_2
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
     int num_local = A->RowMap().NumMyElements();
-    
+
     std::vector<long long> MyGIDS(num_local);
     for(int i=0; i<num_local; i++)
       MyGIDS[i] = A->RowMap().GID64(num_local-i-1);
 
-    // New map with all on Proc1 
+    // New map with all on Proc1
     Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],0,Comm);
-    
+
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
     B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
@@ -379,7 +379,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_3
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
     int num_local  = A->RowMap().NumMyElements();
     long long num_global = A->RowMap().NumGlobalElements64();
     int num_scansum = 0;
@@ -393,9 +393,9 @@ int main(int argc, char *argv[])
     Map1=new Epetra_Map((long long)-1,num_local,&MyGIDS[0],(long long)0,Comm);
 
     // Execute fused import constructor
-    Import1 = new Epetra_Import(*Map1,A->RowMap());   
+    Import1 = new Epetra_Import(*Map1,A->RowMap());
     B=new Epetra_CrsMatrix(*A,*Import1,0,&A->RangeMap());
-    
+
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #3 FAILED with norm diff = "<<diff<<"."<<endl;
@@ -424,7 +424,7 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_4
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
 
     // Assume we always own the diagonal
     int num_local = A->NumMyCols()-A->NumMyRows();
@@ -476,9 +476,9 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_5
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
-    
+
     // New map with all on Proc1
     if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long)0,Comm);
     else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
@@ -492,12 +492,12 @@ int main(int argc, char *argv[])
       if(MyPID==0) cout<<"FusedImport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
-    
+
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
     B=new Epetra_CrsMatrix(*A,*Export1,Map1,Map1);
-    
+
     diff=test_with_matvec(*A,*B);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedExport: Test #5 FAILED with norm diff = "<<diff<<"."<<endl;
@@ -515,28 +515,28 @@ int main(int argc, char *argv[])
 #ifdef ENABLE_TEST_6
   {
     double diff;
-    ierr=build_test_matrix(Comm,1,A); 
+    ierr=build_test_matrix(Comm,1,A);
     long long num_global = A->RowMap().NumGlobalElements64();
-    
+
     // New map with all on Proc1
     if(MyPID==0) Map1=new Epetra_Map(num_global,num_global,(long long)0,Comm);
     else         Map1=new Epetra_Map(num_global,0,(long long)0,Comm);
 
     // Execute fused import constructor
     Import1 = new Epetra_Import(*Map1,A->RowMap());
-    B=new Epetra_CrsMatrix(*A,*Import1,Map1,Map1,true);   
+    B=new Epetra_CrsMatrix(*A,*Import1,Map1,Map1,true);
 
     diff=test_with_matvec_reduced_maps(*A,*B,*Map1);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedImport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
       total_err--;
     }
-    
+
     // Execute fused export constructor
     delete B;
     Export1 = new Epetra_Export(A->RowMap(),*Map1);
     B=new Epetra_CrsMatrix(*A,*Export1,Map1,Map1,true);
-    
+
     diff=test_with_matvec_reduced_maps(*A,*B,*Map1);
     if(diff > diff_tol){
       if(MyPID==0) cout<<"FusedExport: Test #6 FAILED with norm diff = "<<diff<<"."<<endl;
@@ -552,7 +552,7 @@ int main(int argc, char *argv[])
   if(MyPID==0 && total_err==0)
     cout<<"FusedImportExport: All tests PASSED."<<endl;
 
-  // Cleanup  
+  // Cleanup
   MPI_Finalize();
 
   return total_err ;
@@ -562,7 +562,7 @@ int main(int argc, char *argv[])
 
 #else
 int main(){
-  
+
   return 0;
 }
 #endif

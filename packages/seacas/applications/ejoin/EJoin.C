@@ -364,6 +364,7 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
   }
 
   // Verify nodemap...
+#ifndef NDEBUG
   std::vector<int> glob(node_count);
   for (size_t i=0; i<local_node_map.size(); i++) {
     if (local_node_map[i] >= 0)
@@ -372,6 +373,8 @@ int ejoin(SystemInterface &interface, std::vector<Ioss::Region*> &part_mesh, INT
   for (size_t i=0; i<glob.size(); i++) {
     SMART_ASSERT(glob[i] == 1);
   }
+#endif
+
   // Transfer some common data...
   output_region.property_add(part_mesh[0]->get_property("title"));
   output_region.property_add(part_mesh[0]->get_property("spatial_dimension"));
@@ -1257,8 +1260,9 @@ namespace {
 
       if (field_name != "ids" &&
           (prefix.length() == 0 || std::strncmp(prefix.c_str(), field_name.c_str(), prefix.length()) == 0)) {
-        assert(oge->field_exists(field_name));
-        transfer_field_data_internal(ige, oge, field_name);
+        if (oge->field_exists(field_name)) {
+	  transfer_field_data_internal(ige, oge, field_name);
+	}
       }
     }
   }

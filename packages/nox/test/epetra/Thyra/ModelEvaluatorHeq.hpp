@@ -12,8 +12,8 @@ template<class Scalar> class ModelEvaluatorHeq;
 template<class Scalar>
 Teuchos::RCP<ModelEvaluatorHeq<Scalar> >
 modelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
-		    const int NumGlobalElements,
-		    const Scalar paramC);
+            const int NumGlobalElements,
+            const Scalar paramC);
 
 
 /** \brief Chandrasekhar H-Equation
@@ -36,8 +36,8 @@ class ModelEvaluatorHeq
 public:
 
   ModelEvaluatorHeq(const Teuchos::RCP<const Epetra_Comm>& comm,
-		      const int num_global_elements,
-		      const Scalar paramC);
+              const int num_global_elements,
+              const Scalar paramC);
 
   /** \name Initializers/Accessors */
   //@{
@@ -68,7 +68,7 @@ public:
   /** \brief . */
   ::Thyra::ModelEvaluatorBase::InArgs<Scalar> createInArgs() const;
   /** \brief . */
-  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const; 
+  Teuchos::RCP< ::Thyra::PreconditionerBase< Scalar > > create_W_prec() const;
   //@}
 
 private:
@@ -104,11 +104,11 @@ private: // data members
   Teuchos::RCP<const Epetra_Map>   f_owned_map_;
 
   Teuchos::RCP<Epetra_CrsGraph>  W_graph_;
-  
+
   Teuchos::RCP<const ::Thyra::LinearOpWithSolveFactoryBase<Scalar> > W_factory_;
 
   Teuchos::RCP<Epetra_MultiVector> A_heq;
-  
+
   mutable Teuchos::RCP<const Epetra_Vector> x_ptr;
 
   Teuchos::RCP<Epetra_Vector> node_coordinates_;

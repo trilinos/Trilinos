@@ -152,7 +152,6 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   NOX                   packages/nox                      PS
   Moertel               packages/moertel                  PS
   MueLu                 packages/muelu                    SS
-  TrilinosCouplings     packages/trilinoscouplings        SS
   Rythmos               packages/rythmos                  PS
   MOOCHO                packages/moocho                   PS
   Aristos               packages/aristos                  EX
@@ -169,6 +168,7 @@ SET( Trilinos_PACKAGES_AND_DIRS_AND_CLASSIFICATIONS
   Optika		packages/optika		          SS
   Mesquite              packages/mesquite                 PS
   MeshingGenie          packages/meshinggenie             EX
+  TrilinosCouplings     packages/trilinoscouplings        SS
   FEApp                 demos/FEApp                       SS # Capability demonstration package
   )
 

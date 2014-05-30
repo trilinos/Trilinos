@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -55,7 +55,7 @@ extern "C" {
 
 //! Epetra_OskiMultiVector: A class for constructing and using dense Oski multi-vectors on a single processor or a single core of a multi-processor.
 
-/*! The Epetra_OskiMultiVector class enables the construction and use of real-valued, 
+/*! The Epetra_OskiMultiVector class enables the construction and use of real-valued,
   double-precision dense vectors and multi-vectors,
   in a serial environment.  The dimensions of the dense multi-vectors comes
   from the inherited Epetra_MultiVector object.  All values and data layouts are kept the
@@ -75,7 +75,7 @@ class Epetra_OskiMultiVector: public Epetra_MultiVector{
    //! Constructor creates and Epetra_OskiMultiVector from an Epetra_MultiVector
    /*! \param Source (In) An Epetra_MultiVector that is wrapped as an Epetra_OskiMultiVector.
        \return Pointer to an Epetra_OskiMultiVector.
-       \note If the Epetra_MultiVector is not stored contigously according to the 
+       \note If the Epetra_MultiVector is not stored contigously according to the
 	     BLAS standard then a deep copy is made.
    */
    Epetra_OskiMultiVector(const Epetra_MultiVector& Source);
@@ -83,19 +83,19 @@ class Epetra_OskiMultiVector: public Epetra_MultiVector{
    //! Destructor
    virtual ~Epetra_OskiMultiVector();
    //@}
-   
+
    //! @name Extraction Methods
    //@{
    //! Returns true if a deep copy of the multi-vector was created by the constructor.
    bool Copy_Created() const;
-   
+
    //! Returns the Oski portion of the Multi-Vector.
    oski_vecview_t Oski_View() const;
-   
+
    //! Returns the Epetra portion of the Multi-Vector.
    const Epetra_MultiVector* Epetra_View() const;
    //@}
-  
+
    //! @name Operators
    //@{
    //! Sets this equal to Source.

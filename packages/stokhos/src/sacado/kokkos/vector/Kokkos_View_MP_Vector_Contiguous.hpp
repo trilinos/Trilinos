@@ -183,7 +183,10 @@ struct MPVectorAllocation<Device, Storage, false> {
   // This makes BIG assumption on how the data was allocated
   KOKKOS_INLINE_FUNCTION
   void assign(value_type * ptr) {
-    m_scalar_ptr_on_device = reinterpret_cast<scalar_type*>(ptr);
+    if (ptr != 0)
+      m_scalar_ptr_on_device = ptr->coeff();
+    else
+      m_scalar_ptr_on_device = 0;
   }
 
   struct VectorInit {
@@ -602,7 +605,7 @@ public:
         const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,typename traits::value_type>::value ||
-            Impl::is_same<T,typename traits::const_value_type>::value ) &&
+            Impl::is_same<T,typename traits::non_const_value_type>::value ) &&
           ! traits::is_managed ),
         const size_t >::type n7 = 0 )
     : m_ptr_on_device(ptr)
@@ -614,6 +617,33 @@ public:
         m_storage_size = global_sacado_mp_vector_size;
       m_sacado_size = m_storage_size;
       m_allocation.assign(ptr);
+      m_tracking = false;
+    }
+
+  template< typename T >
+  View( const ViewWithoutManaging & ,
+        T * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<T,typename traits::value_type>::value ||
+          Impl::is_same<T,typename traits::non_const_value_type>::value ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+      m_stride = 1 ;
+      m_storage_size = Impl::GetSacadoSize<unsigned(Rank)>::eval(n0,n1,n2,n3,n4,n5,n6,n7);
+      if (m_storage_size == 0)
+        m_storage_size = global_sacado_mp_vector_size;
+      m_sacado_size = m_storage_size;
+      m_allocation.assign(ptr);
+      m_tracking = false;
     }
 
   //------------------------------------
@@ -1263,7 +1293,6 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
                       View<ST,SL,SD,SM,specialize>::is_static )
                   ), const Sacado::MP::VectorPartition & >::type part )
   {
-    typedef View<ST,SL,SD,SM,specialize>   src_type ;
     typedef View<DT,DL,DD,DM,specialize>   dst_type ;
 
     // Must have: begin = i * src.m_sacado_size.value
@@ -1278,6 +1307,8 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
       throw std::runtime_error(msg);
 #endif
     }
+
+    dst.m_tracking.decrement( dst.m_ptr_on_device );
 
     const int length = part.end - part.begin ;
 
@@ -1296,6 +1327,8 @@ struct ViewAssignment< ViewMPVectorContiguous , ViewMPVectorContiguous , void >
     dst.m_allocation.m_scalar_ptr_on_device =
       src.m_allocation.m_scalar_ptr_on_device +
       (part.begin / dst.m_sacado_size.value) * src.m_storage_size ;
+
+    dst.m_tracking.increment( dst.m_ptr_on_device );
   }
 
   //------------------------------------

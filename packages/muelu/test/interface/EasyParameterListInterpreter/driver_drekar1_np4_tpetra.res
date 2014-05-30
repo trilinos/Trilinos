@@ -15,6 +15,7 @@ repartition: partitioner = zoltan2
 max levels = 10   [default]
 debug: graph level = -1   [default]
 repartition: rebalance P and R = 1   [default]
+transpose: use implicit = 0   [default]
 smoother: pre or post = both   [default]
 aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
@@ -90,10 +91,11 @@ Level 1
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0   [default]
-   Keep RAP Pattern = 0   [default]
-   CheckMainDiagonal = 0   [default]
-   RepairMainDiagonal = 0   [default]
+   Keep AP Pattern = 0
+   Keep RAP Pattern = 0
+   implicit transpose = 0
+   CheckMainDiagonal = 0
+   RepairMainDiagonal = 0
    
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -104,6 +106,7 @@ Level 1
   
  type = Interpolation
  implicit = 0
+ implicit transpose = 0   [default]
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -111,6 +114,7 @@ Level 1
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  implicit = 0
+ implicit transpose = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -180,10 +184,11 @@ Level 2
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0   [default]
-   Keep RAP Pattern = 0   [default]
-   CheckMainDiagonal = 0   [default]
-   RepairMainDiagonal = 0   [default]
+   Keep AP Pattern = 0
+   Keep RAP Pattern = 0
+   implicit transpose = 0
+   CheckMainDiagonal = 0
+   RepairMainDiagonal = 0
    
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -194,6 +199,7 @@ Level 2
   
  type = Interpolation
  implicit = 0
+ implicit transpose = 0   [default]
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -201,6 +207,7 @@ Level 2
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  implicit = 0
+ implicit transpose = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -270,10 +277,11 @@ Level 3
    write start = -1   [default]
    write end = -1   [default]
    
-   Keep AP Pattern = 0   [default]
-   Keep RAP Pattern = 0   [default]
-   CheckMainDiagonal = 0   [default]
-   RepairMainDiagonal = 0   [default]
+   Keep AP Pattern = 0
+   Keep RAP Pattern = 0
+   implicit transpose = 0
+   CheckMainDiagonal = 0
+   RepairMainDiagonal = 0
    
   startLevel = 1
   minRowsPerProcessor = 2000
@@ -284,6 +292,7 @@ Level 3
   
  type = Interpolation
  implicit = 0
+ implicit transpose = 0   [default]
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]
@@ -291,6 +300,7 @@ Level 3
  Build (MueLu::RebalanceTransferFactory)
  type = Restriction
  implicit = 0
+ implicit transpose = 0
  useSubcomm = 1   [default]
  write start = -1   [default]
  write end = -1   [default]

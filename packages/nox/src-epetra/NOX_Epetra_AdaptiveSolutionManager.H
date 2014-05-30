@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2012) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact 
+// Questions? Contact
 // Glen Hansen (gahanse@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -123,34 +123,34 @@ protected:
 
      //! Initial solution vector
       Teuchos::RCP<Epetra_Vector> initial_x;
-  
+
       //! Initial solution vector
       Teuchos::RCP<Epetra_Vector> initial_xdot;
-  
+
       //! Importer for overlapped data
       Teuchos::RCP<Epetra_Import> importer;
-  
+
       //! Exporter for overlapped data
       Teuchos::RCP<Epetra_Export> exporter;
-  
+
       //! Overlapped solution vector
       Teuchos::RCP<Epetra_Vector> overlapped_x;
-  
+
       //! Overlapped time derivative vector
       Teuchos::RCP<Epetra_Vector> overlapped_xdot;
-  
+
       //! Overlapped time acceleration vector
       Teuchos::RCP<Epetra_Vector> overlapped_xdotdot;
-  
+
       //! Overlapped residual vector
       Teuchos::RCP<Epetra_Vector> overlapped_f;
-  
+
       //! Overlapped Jacobian matrix
       Teuchos::RCP<Epetra_CrsMatrix> overlapped_jac;
-  
+
       //! Temporary overlapped solution vector (for output)
       Teuchos::RCP<Epetra_Vector> tmp_ovlp_sol;
-  
+
       //! The adaptation manager - makes the call to adapt the mesh
       Teuchos::RCP<NOX::Epetra::AdaptManager> adaptManager;
 

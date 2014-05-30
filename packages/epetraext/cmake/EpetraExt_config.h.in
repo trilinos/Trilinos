@@ -51,6 +51,9 @@
 /* Define if want to build with petsc enabled */
 #cmakedefine HAVE_PETSC
 
+/* Define if want to build with mmm timings enabled */
+#cmakedefine ENABLE_MMM_TIMINGS
+
 /* Define if want to build with hypre enabled */
 #cmakedefine HAVE_HYPRE
 

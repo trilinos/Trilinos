@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -80,7 +80,7 @@ namespace LOCA {
      * <ul>
      * <li> "Operator" - Name of the Anasazi operator. Valid choices are
      *   <ul>
-     *   <li> "Jacobian Inverse" (LOCA::AnasaziOperator::JacobianInverse) 
+     *   <li> "Jacobian Inverse" (LOCA::AnasaziOperator::JacobianInverse)
      *        [Default]
      *   <li> "Shift-Invert" (LOCA::AnasaziOperator::ShiftInvert)
      *   <li> "Cayley" (LOCA::AnasaziOperator::Cayley)
@@ -88,7 +88,7 @@ namespace LOCA {
      * </ul>
      *
      * There is also an %Epetra specific strategy that can
-     * be instantiated by the LOCA::Epetra::Factory.  See 
+     * be instantiated by the LOCA::Epetra::Factory.  See
      * LOCA::Epetra::AnasaziOperator::Floquet.
      */
     class Factory {
@@ -103,17 +103,17 @@ namespace LOCA {
 
       //! Create Anasazi operator strategy
       /*!
-       * \param topParams [in] Parsed top-level parameter list.  
+       * \param topParams [in] Parsed top-level parameter list.
        * \param eigenParams [in] %Eigensolver parameters as described above
        * \param solverParams [in] Linear solver parameters
        * \param grp [in] Group representing Jacobian/mass matrices
        */
       Teuchos::RCP<LOCA::AnasaziOperator::AbstractStrategy>
       create(
-	const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
-	const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
-	const Teuchos::RCP<NOX::Abstract::Group>& grp);
+    const Teuchos::RCP<LOCA::Parameter::SublistParser>& topParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& eigenParams,
+    const Teuchos::RCP<Teuchos::ParameterList>& solverParams,
+    const Teuchos::RCP<NOX::Abstract::Group>& grp);
 
       //! Return strategy name given by \c eigenParams
       const std::string& strategyName(Teuchos::ParameterList& eigenParams) const;

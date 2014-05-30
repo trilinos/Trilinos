@@ -41,7 +41,7 @@
 //
 // This driver reads a problem from a Harwell-Boeing (HB) file.
 // Multiple right-hand-sides are created randomly.
-// The initial guesses are all set to zero. 
+// The initial guesses are all set to zero.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -54,14 +54,15 @@
 #include "Epetra_Map.h"
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char *argv[]) {
   //
-#ifdef EPETRA_MPI	
+#ifdef EPETRA_MPI
   MPI_Init(&argc,&argv);
   Belos::MPIFinalize mpiFinalize; // Will call finalize with *any* return
   (void)mpiFinalize;
-#endif	
+#endif
   //
   typedef double                            ST;
   typedef Teuchos::ScalarTraits<ST>        SCT;
@@ -75,7 +76,10 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+bool verbose = false;
+bool success = true;
+try {
+bool proc_verbose = false;
   bool leftprec = true; // use left preconditioning to solve these linear systems
   int frequency = -1;  // how often residuals are printed by solver
   int numrhs = 1;
@@ -165,7 +169,7 @@ int main(int argc, char *argv[]) {
   if (leftprec)
     belosList.set( "Explicit Residual Test", true );     // Need to check for the explicit residual before returning
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
 		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
@@ -184,7 +188,7 @@ int main(int argc, char *argv[]) {
     problem.setLeftPrec( Prec );
   else
     problem.setRightPrec( Prec );
-  
+
   bool set = problem.setProblem();
   if (set == false) {
     if (proc_verbose)
@@ -205,7 +209,7 @@ int main(int argc, char *argv[]) {
     std::cout << std::endl << std::endl;
     std::cout << "Dimension of matrix: " << NumGlobalElements << std::endl;
     std::cout << "Number of right-hand sides: " << numrhs << std::endl;
-    std::cout << "Max number of TFQMR iterations: " << maxiters << std::endl; 
+    std::cout << "Max number of TFQMR iterations: " << maxiters << std::endl;
     std::cout << "Relative residual tolerance: " << tol << std::endl;
     std::cout << std::endl;
   }
@@ -213,7 +217,7 @@ int main(int argc, char *argv[]) {
   // Perform solve
   //
   Belos::ReturnType ret = solver->solve();
-  
+
   //
   // Compute actual residuals.
   //
@@ -222,7 +226,7 @@ int main(int argc, char *argv[]) {
   std::vector<double> rhs_norm( numrhs );
   Epetra_MultiVector R(Map, numrhs);
   OPT::Apply( *A, *X, R );
-  MVT::MvAddMv( -1.0, R, 1.0, *B, R ); 
+  MVT::MvAddMv( -1.0, R, 1.0, *B, R );
   MVT::MvNorm( R, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
@@ -234,16 +238,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
-  if (ret!=Belos::Converged || badRes) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
-    return -1;
-  } 
-  //
-  // Default return value
-  //
+if (ret!=Belos::Converged || badRes) {
+  success = false;
+  if (proc_verbose)
+    std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+} else {
+  success = true;
   if (proc_verbose)
     std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-  return 0;
+}
+}
+TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-} 
+#ifdef EPETRA_MPI
+MPI_Finalize();
+#endif
+
+return success ? EXIT_SUCCESS : EXIT_FAILURE;
+}

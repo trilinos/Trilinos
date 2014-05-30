@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -62,7 +62,7 @@
 
 NOX::LineSearch::Backtrack::
 Backtrack(const Teuchos::RCP<NOX::GlobalData>& gd,
-	  Teuchos::ParameterList& params)
+      Teuchos::ParameterList& params)
 {
   reset(gd, params);
 }
@@ -75,7 +75,7 @@ NOX::LineSearch::Backtrack::~Backtrack()
 bool NOX::LineSearch::Backtrack::
 reset(const Teuchos::RCP<NOX::GlobalData>& gd,
       Teuchos::ParameterList& params)
-{ 
+{
   utils = gd->getUtils();
   meritFunctionPtr = gd->getMeritFunction();
 
@@ -88,10 +88,10 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   reductionFactor = p.get("Reduction Factor", 0.5);
   if ((reductionFactor <= 0.0)  || (reductionFactor >= 1.0)) {
-    utils->err() << "NOX::LineSearch::Backtrack::reset - Invalid choice \"" 
-		 << reductionFactor << "\" for \"Reduction Factor\"!  " 
-		 << "Value must be greater than zero and less than 1.0."
-		 << std::endl;
+    utils->err() << "NOX::LineSearch::Backtrack::reset - Invalid choice \""
+         << reductionFactor << "\" for \"Reduction Factor\"!  "
+         << "Value must be greater than zero and less than 1.0."
+         << std::endl;
     throw "NOX Error";
   }
 
@@ -99,9 +99,9 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 }
 
 bool NOX::LineSearch::Backtrack::
-compute(NOX::Abstract::Group& grp, double& step, 
-	const NOX::Abstract::Vector& dir,
-	const NOX::Solver::Generic& s)
+compute(NOX::Abstract::Group& grp, double& step,
+    const NOX::Abstract::Vector& dir,
+    const NOX::Solver::Generic& s)
 {
   const Abstract::Group& oldGrp = s.getPreviousSolutionGroup();
   double oldF = meritFunctionPtr->computef(oldGrp);
@@ -113,30 +113,30 @@ compute(NOX::Abstract::Group& grp, double& step,
 
   NOX::Abstract::Group::ReturnType rtype;
 
-  rtype = grp.computeF();    
+  rtype = grp.computeF();
   if (rtype != NOX::Abstract::Group::Ok)
   {
     utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F"
-		<< std::endl;
+        << std::endl;
     throw "NOX Error";
   }
 
   newF = meritFunctionPtr->computef(grp);
   int nIters = 1;
 
-  if (utils->isPrintType(Utils::InnerIteration)) 
+  if (utils->isPrintType(Utils::InnerIteration))
   {
-   utils->out() << "\n" << Utils::fill(72) << "\n" 
-	       << "-- Backtrack Line Search -- \n";
+   utils->out() << "\n" << Utils::fill(72) << "\n"
+           << "-- Backtrack Line Search -- \n";
   }
 
   NOX::StatusTest::FiniteValue checkNAN;
 
   while ( ((newF >= oldF) || (checkNAN.finiteNumberTest(newF) !=0))
-	 && (!isFailed)) 
+     && (!isFailed))
   {
 
-    if (utils->isPrintType(Utils::InnerIteration)) 
+    if (utils->isPrintType(Utils::InnerIteration))
     {
       utils->out() << std::setw(3) << nIters << ":";
       utils->out() << " step = " << utils->sciformat(step);
@@ -148,7 +148,7 @@ compute(NOX::Abstract::Group& grp, double& step,
     nIters ++;
     step = step * reductionFactor;
 
-    if ((step < minStep) || (nIters > maxIters)) 
+    if ((step < minStep) || (nIters > maxIters))
     {
       isFailed = true;
       step = recoveryStep;
@@ -156,7 +156,7 @@ compute(NOX::Abstract::Group& grp, double& step,
 
     grp.computeX(oldGrp, dir, step);
 
-    rtype = grp.computeF();    
+    rtype = grp.computeF();
     if (rtype != NOX::Abstract::Group::Ok)
     {
       utils->err() << "NOX::LineSearch::BackTrack::compute - Unable to compute F" << std::endl;
@@ -164,9 +164,9 @@ compute(NOX::Abstract::Group& grp, double& step,
     }
 
     newF = meritFunctionPtr->computef(grp);
-  } 
+  }
 
-  if (utils->isPrintType(Utils::InnerIteration)) 
+  if (utils->isPrintType(Utils::InnerIteration))
   {
     utils->out() << std::setw(3) << nIters << ":";
     utils->out() << " step = " << utils->sciformat(step);

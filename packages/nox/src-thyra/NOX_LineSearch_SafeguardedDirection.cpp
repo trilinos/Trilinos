@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -67,7 +67,7 @@
 
 NOX::LineSearch::SafeguardedDirection::
 SafeguardedDirection(const Teuchos::RCP<NOX::GlobalData>& gd,
-		     Teuchos::ParameterList& params) :
+             Teuchos::ParameterList& params) :
   paramsPtr_(NULL),
   globalDataPtr_(gd),
   print_(gd->getUtils())
@@ -85,12 +85,12 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
 
   Teuchos::ParameterList& p = params.sublist("Safeguarded Direction");
   p.validateParametersAndSetDefaults(*getValidParameters());
-  
+
   userLimits_ = p.get<Teuchos::RCP<NOX::Abstract::Vector> >("Update Limit Vector");
   useCounter_ = p.get<bool>("Use Counters");
 
   TEUCHOS_TEST_FOR_EXCEPTION(is_null(userLimits_), std::runtime_error,
-			     "Error: The line search NOX::LineSearch::SafeguardedDirection requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
+                 "Error: The line search NOX::LineSearch::SafeguardedDirection requires the user to supply the \"Update Limit Vector\" parameter of type NOX::Abstract::Vector for in the parameter list.");
 
   if (is_null(limitDifference_))
     limitDifference_ = userLimits_->clone(NOX::ShapeCopy);
@@ -105,13 +105,13 @@ reset(const Teuchos::RCP<NOX::GlobalData>& gd,
   return true;
 }
 
-bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp, 
-						    double& step, 
-						    const Abstract::Vector& dir,
-						    const Solver::Generic& s) 
+bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
+                            double& step,
+                            const Abstract::Vector& dir,
+                            const Solver::Generic& s)
 {
   printOpeningRemarks();
-  
+
   if (useCounter_) {
     counter_.incrementNumLineSearches();
     counter_.incrementNumNonTrivialLineSearches();
@@ -131,7 +131,7 @@ bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
   // Protect against divide by zero corner case (for a perfectly converged solution)
   if (dirNorm < 100.0 * Teuchos::ScalarTraits<double>::eps())
     step = 1.0;
-  else 
+  else
     step = 1.0 - limitDifference_->norm(NOX::Abstract::Vector::TwoNorm) / dir.norm(NOX::Abstract::Vector::TwoNorm);
 
   if (print_.isPrintType(NOX::Utils::Details)) {
@@ -146,7 +146,7 @@ bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
   }
 
   if (print_.isPrintType(NOX::Utils::InnerIteration)) {
-    print_.out () << "    approximated equivalent step = " << step << std::endl;  
+    print_.out () << "    approximated equivalent step = " << step << std::endl;
   }
 
   newGrp.computeX(newGrp,*scaledUpdate_,1.0);
@@ -162,7 +162,7 @@ bool NOX::LineSearch::SafeguardedDirection::compute(Abstract::Group& newGrp,
   return true;
 }
 
-Teuchos::RCP<const Teuchos::ParameterList> 
+Teuchos::RCP<const Teuchos::ParameterList>
 NOX::LineSearch::SafeguardedDirection::getValidParameters()
 {
   if (is_null(validParams_)) {
@@ -173,12 +173,12 @@ NOX::LineSearch::SafeguardedDirection::getValidParameters()
 
   return validParams_;
 }
-  
+
 void NOX::LineSearch::SafeguardedDirection::printOpeningRemarks() const
 {
-  if (print_.isPrintType(NOX::Utils::InnerIteration)) 
+  if (print_.isPrintType(NOX::Utils::InnerIteration))
   {
     print_.out() << "\n" << NOX::Utils::fill(72) << "\n"
-		 << "-- SafeguardedDirection Line Search -- \n";
+         << "-- SafeguardedDirection Line Search -- \n";
   }
 }

@@ -49,6 +49,7 @@
 #include "Panzer_UniqueGlobalIndexer.hpp"
 #include "Panzer_PureBasis.hpp"
 #include "Panzer_EpetraLinearObjContainer.hpp"
+#include "Panzer_LOCPair_GlobalEvaluationData.hpp"
 
 #include "Teuchos_FancyOStream.hpp"
 
@@ -73,7 +74,7 @@ GatherSolution_Epetra(
 
   indexerNames_ = p.get< Teuchos::RCP< std::vector<std::string> > >("Indexer Names");
 
-  // this is being to fix the issues with incorrect use of const
+  // this is beging to fix the issues with incorrect use of const
   Teuchos::RCP<const panzer::PureBasis> basis;
   if(p.isType< Teuchos::RCP<panzer::PureBasis> >("Basis"))
     basis = p.get< Teuchos::RCP<panzer::PureBasis> >("Basis");
@@ -124,7 +125,13 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Residual, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+
+   if(epetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+   }
 }
 
 // **********************************************************************
@@ -239,7 +246,13 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Tangent, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
+
+   if(epetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+   }
 }
 
 // **********************************************************************
@@ -298,6 +311,7 @@ GatherSolution_Epetra(
   , useTimeDerivativeSolutionVector_(false)
   , disableSensitivities_(false)
   , globalDataKey_("Solution Gather Container")
+  , gatherSeedIndex_(-1)
 { 
 
   const std::vector<std::string>& names = 
@@ -328,6 +342,10 @@ GatherSolution_Epetra(
 
   if (p.isType<std::string>("Global Data Key"))
      globalDataKey_ = p.get<std::string>("Global Data Key");
+
+  if (p.isType<int>("Gather Seed Index")) {
+     gatherSeedIndex_ = p.get<int>("Gather Seed Index");
+  }
 
   // print out convenience
   if(disableSensitivities_)
@@ -365,9 +383,13 @@ void panzer::GatherSolution_Epetra<panzer::Traits::Jacobian, Traits,LO,GO>::
 preEvaluate(typename Traits::PreEvalData d)
 {
    // extract linear object container
-   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_),true);
+   epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(d.getDataObject(globalDataKey_));
 
-   
+   if(epetraContainer_==Teuchos::null) {
+      // extract linear object container
+      Teuchos::RCP<LinearObjContainer> loc = Teuchos::rcp_dynamic_cast<LOCPair_GlobalEvaluationData>(d.getDataObject(globalDataKey_),true)->getGhostedLOC();
+      epetraContainer_ = Teuchos::rcp_dynamic_cast<EpetraLinearObjContainer>(loc);
+   }
 }
 
 // **********************************************************************
@@ -383,13 +405,20 @@ evaluateFields(typename Traits::EvalData workset)
 
    Teuchos::RCP<Epetra_Vector> x;
    double seed_value = 0.0;
-   if (useTimeDerivativeSolutionVector_) {
+   if (useTimeDerivativeSolutionVector_ && gatherSeedIndex_<0) {
      x = epetraContainer_->get_dxdt();
      seed_value = workset.alpha;
    }
-   else {
+   else if (gatherSeedIndex_<0) {
      x = epetraContainer_->get_x();
      seed_value = workset.beta;
+   }
+   else if(!useTimeDerivativeSolutionVector_) {
+     x = epetraContainer_->get_x();
+     seed_value = workset.gather_seeds[gatherSeedIndex_];
+   }
+   else {
+     TEUCHOS_ASSERT(false);
    }
 
    // turn off sensitivies: this may be faster if we don't expand the term

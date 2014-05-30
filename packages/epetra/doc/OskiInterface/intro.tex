@@ -1,6 +1,6 @@
-Many real world scientific problems, in fields such as atmospheric science, 
+Many real world scientific problems, in fields such as atmospheric science,
 quantum physics, and
-structural engineering, are simulated on computers.  Due to model complexity, fidelity, or 
+structural engineering, are simulated on computers.  Due to model complexity, fidelity, or
 time scales, such simulations often must be run on massively parallel computers.
 The time and effort involved in designing these simulations is large.
 %Therefore, many simulations attempt to reuse common operations and methods whenever possible.   Libraries containing common operations are typically developed to facilitate simulation design.  At Sandia one complex library is Trilinos \cite{IK:Trilinos}.
@@ -10,11 +10,11 @@ At Sandia, one such source of state-of-the-art numerical algorithms is the Trili
 Trilinos is a collection of scientific computing libraries called ``packages''.  Each package in Trilinos has
 unique functionality, and is written by domain experts. Packages are typically autonomous, but can leverage capabilities
 in other Trilinos packages.  Functionality available
-within Trilinos packages includes basic linear algebra operations, preconditioning, solvers, data distribution and 
+within Trilinos packages includes basic linear algebra operations, preconditioning, solvers, data distribution and
 load balancing.  The Trilinos project provides application developers a suite of modern optimized numerical methods.
-In turn, Trilinos leverages basic libraries such as the BLAS \cite{IK:BLAS} and LAPACK \cite{IK:LaPACK}. 
+In turn, Trilinos leverages basic libraries such as the BLAS \cite{IK:BLAS} and LAPACK \cite{IK:LaPACK}.
 
-Epetra, a foundational package within Trilinos, is frequently used by other packages \cite{IK:Epetra-site}.  
+Epetra, a foundational package within Trilinos, is frequently used by other packages \cite{IK:Epetra-site}.
 Epetra provides fundamental classes and methods for serial and parallel linear algebra.  Classes available include
 point and block matrices, multivectors, and graphs.  These and other classes support the usual linear algebra
 operations.  All solver packages within Trilinos can use
@@ -30,7 +30,7 @@ important kernel operation is matrix-vector multiplication.  By speeding up this
 overall simulation speed can be improved.
 
 The Optimized Sparse Kernel Interface (OSKI)
-provides many highly tuned matrix vector multiply kernels \cite{IK:OSKI-paper,IK:OSKI-site,IK:OSKI-user}.  OSKI 
+provides many highly tuned matrix vector multiply kernels \cite{IK:OSKI-paper,IK:OSKI-site,IK:OSKI-user}.  OSKI
 provides five optimized, serial, sparse matrix-vector kernels: four routines that perform matrix-vector multiplication and
 one that performs a triangular solve of a system of equations.
 At install time, OSKI's kernels can be tuned according to the underlying machines architecture.

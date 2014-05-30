@@ -47,7 +47,7 @@
 #  PYTHONINTERP_FOUND - Was the Python executable found
 #  PYTHON_EXECUTABLE  - path to the Python interpreter
 #
-# This module also responds to the following CMake cache varibles:
+# This module also responds to the following CMake cache variables:
 #
 #  PythonInterp_FIND_VERSION - Requires that a given version be found
 #    if some Python executable is found (e.g. '2.4').  Note that this

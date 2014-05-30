@@ -42,7 +42,8 @@
 #ifndef STOKHOS_TINY_VEC_HPP
 #define STOKHOS_TINY_VEC_HPP
 
-#if ! defined( __CUDACC__ )
+#include "Stokhos_ConfigDefs.h"
+#if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 extern "C" {
 #include <immintrin.h>
@@ -248,7 +249,7 @@ private:
   int sz;
 };
 
-#if ! defined( __CUDACC__ )
+#if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 #ifdef __SSE2__
 template <>
@@ -1039,7 +1040,7 @@ private:
 };
 #endif
 
-#endif // #if ! defined( __CUDACC__ )
+#endif // #if defined(HAVE_STOKHOS_INTRINSICS) && !defined( __CUDACC__ )
 
 } // namespace Stokhos
 

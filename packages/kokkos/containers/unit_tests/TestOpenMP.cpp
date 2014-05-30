@@ -53,10 +53,12 @@
 #include <Kokkos_OpenMP.hpp>
 #include <Kokkos_hwloc.hpp>
 
+#include <Kokkos_Bitset.hpp>
 #include <Kokkos_UnorderedMap.hpp>
 #include <Kokkos_Vector.hpp>
 
 //----------------------------------------------------------------------------
+#include <TestBitset.hpp>
 #include <TestUnorderedMap.hpp>
 #include <TestVector.hpp>
 #include <TestDualView.hpp>
@@ -88,10 +90,15 @@ protected:
   }
 };
 
-#define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
+TEST_F( openmp, bitset )
+{
+  test_bitset<Kokkos::OpenMP>();
+}
+
+#define OPENMP_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat, near )                                \
   TEST_F( openmp, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \
-    for (int i=0; i<repeat; ++i)                                                                                  \
-      test_insert_##name<Kokkos::OpenMP>(num_nodes,num_inserts,num_duplicates);                                   \
+    for (int i=0; i<repeat; ++i)                                                                                \
+      test_insert<Kokkos::OpenMP>(num_nodes,num_inserts,num_duplicates, near);                                   \
   }
 
 #define OPENMP_FAILED_INSERT_TEST( num_nodes, repeat )                         \
@@ -122,8 +129,8 @@ protected:
       test_dualview_combinations<int,Kokkos::OpenMP>(size);                     \
   }
 
-OPENMP_INSERT_TEST(close, 100000, 90000, 100, 500)
-OPENMP_INSERT_TEST(far, 100000, 90000, 100, 500)
+OPENMP_INSERT_TEST(close, 100000, 90000, 100, 500, true)
+OPENMP_INSERT_TEST(far, 100000, 90000, 100, 500, false)
 OPENMP_FAILED_INSERT_TEST( 10000, 1000 )
 OPENMP_DEEP_COPY( 10000, 1 )
 

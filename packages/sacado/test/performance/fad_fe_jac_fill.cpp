@@ -1,31 +1,31 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Sacado Package
 //                 Copyright (2006) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // This library is free software; you can redistribute it and/or modify
 // it under the terms of the GNU Lesser General Public License as
 // published by the Free Software Foundation; either version 2.1 of the
 // License, or (at your option) any later version.
-//  
+//
 // This library is distributed in the hope that it will be useful, but
 // WITHOUT ANY WARRANTY; without even the implied warranty of
 // MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the GNU
 // Lesser General Public License for more details.
-//  
+//
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -80,10 +80,10 @@ int main(int argc, char* argv[]) {
 
     std::cout.setf(std::ios::scientific);
     std::cout.precision(p);
-    std::cout << "num_nodes =  " << num_nodes 
-	      << ", num_eqns = " << num_eqns << ":  " << std::endl
-	      << "               " << "   Time   " << "\t"<< "Time/Analytic" << "\t"
-	      << "Time/(2*p*Residual)" << std::endl;
+    std::cout << "num_nodes =  " << num_nodes
+        << ", num_eqns = " << num_eqns << ":  " << std::endl
+        << "               " << "   Time   " << "\t"<< "Time/Analytic" << "\t"
+        << "Time/(2*p*Residual)" << std::endl;
 
     ta = 1.0;
     tr = 1.0;
@@ -155,7 +155,7 @@ int main(int argc, char* argv[]) {
       t = fad_jac_fill< Sacado::Fad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "SLFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
     }
-    
+
     t = fad_jac_fill< Sacado::Fad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
     std::cout << "DFad:          " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
@@ -163,7 +163,7 @@ int main(int argc, char* argv[]) {
     std::cout << "SimpleFad:     " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
     t = fad_jac_fill< Sacado::Fad::DMFad<double> >(num_nodes, num_eqns, mesh_spacing);
-    std::cout << "DMFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl; 
+    std::cout << "DMFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
     if (num_eqns*2 == 4) {
       t = fad_jac_fill< Sacado::ELRFad::SFad<double,4> >(num_nodes, num_eqns, mesh_spacing);
@@ -211,7 +211,7 @@ int main(int argc, char* argv[]) {
       t = fad_jac_fill< Sacado::CacheFad::SLFad<double,slfad_max> >(num_nodes, num_eqns, mesh_spacing);
       std::cout << "CacheSLFad:    " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
     }
-    
+
     t = fad_jac_fill< Sacado::CacheFad::DFad<double> >(num_nodes, num_eqns, mesh_spacing);
     std::cout << "CacheFad:      " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
 
@@ -242,18 +242,18 @@ int main(int argc, char* argv[]) {
 
     t = fad_jac_fill< Sacado::Fad::DVFad<double> >(num_nodes, num_eqns, mesh_spacing);
     std::cout << "DVFad:         " << std::setw(w) << t << "\t" << std::setw(w) << t/ta << "\t" << std::setw(w) << t/(2.0*num_eqns*tr) << std::endl;
-    
+
   }
   catch (std::exception& e) {
-    cout << e.what() << endl;
+    std::cout << e.what() << std::endl;
     ierr = 1;
   }
   catch (const char *s) {
-    cout << s << endl;
+    std::cout << s << std::endl;
     ierr = 1;
   }
   catch (...) {
-    cout << "Caught unknown exception!" << endl;
+    std::cout << "Caught unknown exception!" << std::endl;
     ierr = 1;
   }
 

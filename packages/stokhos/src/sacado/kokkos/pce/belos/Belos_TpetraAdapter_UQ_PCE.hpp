@@ -343,10 +343,11 @@ namespace Belos {
 
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
-      typedef typename FMV::view_type::t_dev view_type;
+      typedef typename FMV::dual_view_type::t_dev view_type;
+      typedef typename view_type::device_type device_type;
       typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
-      view_type A_view = Atmp->getLocalView().d_view;
-      view_type C_view = Ctmp->getLocalView().d_view;
+      view_type A_view = Atmp->template getLocalView<device_type>();
+      view_type C_view = Ctmp->template getLocalView<device_type>();
       DKMV A_mv(A.getMap()->getNode());
       DKMV C_mv(A.getMap()->getNode());
       size_t A_stride[8], C_stride[8];
@@ -366,7 +367,6 @@ namespace Belos {
                             LDC);
 
       // Create a view for B
-      typedef typename view_type::device_type device_type;
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> b_view_type;
       typedef typename b_view_type::HostMirror b_host_view_type;
       b_host_view_type B_view(Kokkos::view_without_managing,
@@ -474,10 +474,11 @@ namespace Belos {
 
       // Create flattened Kokkos::MultiVector's
       typedef Tpetra::MultiVector<dot_type,LO,GO,Node> FMV;
-      typedef typename FMV::view_type::t_dev view_type;
+      typedef typename FMV::dual_view_type::t_dev view_type;
+      typedef typename view_type::device_type device_type;
       typedef KokkosClassic::MultiVector<dot_type,Node> DKMV;
-      view_type A_view = Atmp->getLocalView().d_view;
-      view_type B_view = Btmp->getLocalView().d_view;
+      view_type A_view = Atmp->template getLocalView<device_type>();
+      view_type B_view = Btmp->template getLocalView<device_type>();
       DKMV A_mv(A.getMap()->getNode());
       DKMV B_mv(A.getMap()->getNode());
       size_t A_stride[8], B_stride[8];
@@ -497,7 +498,6 @@ namespace Belos {
                             LDB);
 
       // Create a view for C
-      typedef typename view_type::device_type device_type;
       typedef Kokkos::View<dot_type**, Kokkos::LayoutLeft, device_type> c_view_type;
       typedef typename c_view_type::HostMirror c_host_view_type;
       c_host_view_type C_view(Kokkos::view_without_managing,
@@ -574,9 +574,9 @@ namespace Belos {
             std::vector<mag_type> &normvec,
             NormType type=TwoNorm)
     {
-      typedef std::vector<int>::size_type size_type;
 
 #ifdef HAVE_TPETRA_DEBUG
+      typedef std::vector<int>::size_type size_type;
       TEUCHOS_TEST_FOR_EXCEPTION(
         normvec.size () < static_cast<size_type> (mv.getNumVectors ()),
         std::invalid_argument,

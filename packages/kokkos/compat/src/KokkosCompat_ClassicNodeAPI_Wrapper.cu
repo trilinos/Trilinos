@@ -18,34 +18,33 @@ namespace Kokkos {
         if(Cuda::host_mirror_device_type::is_initialized()) {
           // make sure that no Actual DeviceWrapper node of the mirror_device_type is in use
           if(KokkosDeviceWrapperNode<Cuda::host_mirror_device_type>::count==0) {
-            //Don't try to kill me if HostSpace was already destroyed.
-            //Typical reason: static global instance of node is used, which might get destroyed after
-            //the static HostSpace is destroyed.
-            if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-              Cuda::host_mirror_device_type::finalize();
+            Cuda::host_mirror_device_type::finalize();
           }
         }
         if(Cuda::is_initialized())
-          if(Kokkos::NEVEREVERUSEMEIWILLFINDYOU::host_space_singleton_wrapper().size()>0)
-            Cuda::finalize();
+          Cuda::finalize();
       }
     }
     template<>
-    void KokkosDeviceWrapperNode<Kokkos::Cuda>::init(int NumTeams, int NumThreads, int Device) {
+    void KokkosDeviceWrapperNode<Kokkos::Cuda>::
+    init(int NumThreads, int NumNUMA, int NumCoresPerNUMA, int Device) {
 
       // Setting (currently) necessary environment variables for NVIDIA UVM
       #ifdef KOKKOS_USE_UVM
-        char str[256];
-        sprintf(str,"CUDA_VISIBLE_DEVICES=%i",Device);
-        putenv(str);
         putenv("CUDA_LAUNCH_BLOCKING=1");
       #else
         throw std::runtime_error("Using CudaWrapperNode without UVM is not allowed.");
       #endif
 
-      if(!Kokkos::Cuda::host_mirror_device_type::is_initialized())
-        Kokkos::Cuda::host_mirror_device_type::initialize(NumTeams*NumThreads);
-      Kokkos::Cuda::SelectDevice select_device(0);
+      if(!Kokkos::Cuda::host_mirror_device_type::is_initialized()) {
+        if(NumNUMA>0 && NumCoresPerNUMA>0)
+          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads, NumNUMA, NumCoresPerNUMA );
+        else if (NumNUMA > 0)
+          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads, NumNUMA );
+        else
+          Kokkos::Cuda::host_mirror_device_type::initialize ( NumThreads );
+      }
+      Kokkos::Cuda::SelectDevice select_device(Device);
       if(!Kokkos::Cuda::is_initialized())
         Kokkos::Cuda::initialize(select_device);
     }

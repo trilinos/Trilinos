@@ -33,15 +33,14 @@
  *
  */
 
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <strings.h>
-
-#include "elb.h"
 #include "elb_elem.h"
-#include "elb_err.h"
-#include "elb_util.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for exit
+#include <string.h>                     // for strncasecmp
+#include "elb_err.h"                    // for error_report, Gen_Error
+#include "elb_util.h"                   // for in_list
+
 
 /*****************************************************************************/
 /*****************************************************************************/
@@ -1824,8 +1823,8 @@ int ss_to_node_list(const E_Type  etype,		/* The element type */
 
   case HEXSHELL:
     switch (side_num) {
+    case 4:
     case 5:
-    case 6:
       for (i = 0; i < 4; i++)
         ss_node_list[i] = connect[(hexshell_table[side_num][i] - 1)];
       break;

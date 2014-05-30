@@ -2,11 +2,10 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"structs.h"
-#include	"defs.h"
-#include	"params.h"
-#include "smalloc.h"
+#include <stdio.h>                      // for printf, NULL
+#include "params.h"                     // for MAXSETS
+#include "smalloc.h"                    // for sfree, smalloc
+#include "structs.h"                    // for vtx_data
 
 
 /* Partition vertices into sets in one of several simplistic ways. */

@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,9 +64,9 @@ namespace LOCA {
 namespace LOCA {
 
   namespace BorderedSolver {
-    
+
     //! Block elimination strategy for solving a block lower-triangular system
-    /*! 
+    /*!
      * This class solves the extended system of equations
      * \f[
      *     \begin{bmatrix}
@@ -75,8 +75,8 @@ namespace LOCA {
      *     \end{bmatrix}
      *     \begin{bmatrix}
      *        X \\
-     *        Y 
-     *     \end{bmatrix} = 
+     *        Y
+     *     \end{bmatrix} =
      *     \begin{bmatrix}
      *        F \\
      *        G
@@ -90,9 +90,9 @@ namespace LOCA {
      *     \end{aligned}
      * \f]
      * where \f$op\f$ represents either the identity operation or the
-     * transpose.  \f$C\f$ must be nonzero, while \f$B\f$, \f$F\f$ or 
-     * \f$G\f$ may be zero. \f$B\f$ may be specified either as a 
-     * NOX::Abstract::MultiVector or a 
+     * transpose.  \f$C\f$ must be nonzero, while \f$B\f$, \f$F\f$ or
+     * \f$G\f$ may be zero. \f$B\f$ may be specified either as a
+     * NOX::Abstract::MultiVector or a
      * LOCA::MultiContinuation::ConstraintInterface object.  The solve
      * for the non-transposed system is implemented by the solve() method,
      * while the solve for the transposed system is implemented by the
@@ -102,93 +102,93 @@ namespace LOCA {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       /*!
        * \param global_data [in] Global data object
        */
       LowerTriangularBlockElimination(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~LowerTriangularBlockElimination();
 
-      /*! 
+      /*!
        * \brief Solves the extended system as described above with B
        * specified as a LOCA::MultiContinuation::ConstraintInterface object.
        */
       /*!
        * Either F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solve(Teuchos::ParameterList& params,
-	    const LOCA::BorderedSolver::AbstractOperator& op,
-	    const LOCA::MultiContinuation::ConstraintInterface& B,
-	    const NOX::Abstract::MultiVector::DenseMatrix& C,
-	    const NOX::Abstract::MultiVector* F,
-	    const NOX::Abstract::MultiVector::DenseMatrix* G,
-	    NOX::Abstract::MultiVector& X,
-	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+        const LOCA::BorderedSolver::AbstractOperator& op,
+        const LOCA::MultiContinuation::ConstraintInterface& B,
+        const NOX::Abstract::MultiVector::DenseMatrix& C,
+        const NOX::Abstract::MultiVector* F,
+        const NOX::Abstract::MultiVector::DenseMatrix* G,
+        NOX::Abstract::MultiVector& X,
+        NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-      /*! 
+      /*!
        * \brief Solves the extended system as described above with B
        * specified as a NOX::Abstract::MultiVector.
        */
       /*!
-       * Either F, or G may be zero by passing NULL.  
+       * Either F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solve(Teuchos::ParameterList& params,
-	    const LOCA::BorderedSolver::AbstractOperator& op,
-	    const NOX::Abstract::MultiVector& B,
-	    const NOX::Abstract::MultiVector::DenseMatrix& C,
-	    const NOX::Abstract::MultiVector* F,
-	    const NOX::Abstract::MultiVector::DenseMatrix* G,
-	    NOX::Abstract::MultiVector& X,
-	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+        const LOCA::BorderedSolver::AbstractOperator& op,
+        const NOX::Abstract::MultiVector& B,
+        const NOX::Abstract::MultiVector::DenseMatrix& C,
+        const NOX::Abstract::MultiVector* F,
+        const NOX::Abstract::MultiVector::DenseMatrix* G,
+        NOX::Abstract::MultiVector& X,
+        NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-      /*! 
-       * \brief Solves the extended system using the tranpose of J and C 
-       * as described above with B specified as a 
+      /*!
+       * \brief Solves the extended system using the tranpose of J and C
+       * as described above with B specified as a
        * LOCA::MultiContinuation::ConstraintInterface object.
        */
       /*!
-       * Either F, or G may be zero by passing NULL.  
+       * Either F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solveTranspose(Teuchos::ParameterList& params,
-		     const LOCA::BorderedSolver::AbstractOperator& op,
-		     const LOCA::MultiContinuation::ConstraintInterface& B,
-		     const NOX::Abstract::MultiVector::DenseMatrix& C,
-		     const NOX::Abstract::MultiVector* F,
-		     const NOX::Abstract::MultiVector::DenseMatrix* G,
-		     NOX::Abstract::MultiVector& X,
-		     NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+             const LOCA::BorderedSolver::AbstractOperator& op,
+             const LOCA::MultiContinuation::ConstraintInterface& B,
+             const NOX::Abstract::MultiVector::DenseMatrix& C,
+             const NOX::Abstract::MultiVector* F,
+             const NOX::Abstract::MultiVector::DenseMatrix* G,
+             NOX::Abstract::MultiVector& X,
+             NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-      /*! 
-       * \brief Solves the extended system using the tranpose of J and C 
-       * as described above with B specified as a 
+      /*!
+       * \brief Solves the extended system using the tranpose of J and C
+       * as described above with B specified as a
        * NOX::Abstract::MultiVector object.
        */
       /*!
-       * Either F, or G may be zero by passing NULL.  
+       * Either F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solveTranspose(Teuchos::ParameterList& params,
-		     const LOCA::BorderedSolver::AbstractOperator& op,
-		     const NOX::Abstract::MultiVector& B,
-		     const NOX::Abstract::MultiVector::DenseMatrix& C,
-		     const NOX::Abstract::MultiVector* F,
-		     const NOX::Abstract::MultiVector::DenseMatrix* G,
-		     NOX::Abstract::MultiVector& X,
-		     NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-      
+             const LOCA::BorderedSolver::AbstractOperator& op,
+             const NOX::Abstract::MultiVector& B,
+             const NOX::Abstract::MultiVector::DenseMatrix& C,
+             const NOX::Abstract::MultiVector* F,
+             const NOX::Abstract::MultiVector::DenseMatrix* G,
+             NOX::Abstract::MultiVector& X,
+             NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     private:
 
       //! Private to prohibit copying
       LowerTriangularBlockElimination(const LowerTriangularBlockElimination&);
 
       //! Private to prohibit copying
-      LowerTriangularBlockElimination& 
+      LowerTriangularBlockElimination&
       operator = (const LowerTriangularBlockElimination&);
 
     protected:

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,12 +44,12 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 // Finite Element Problem Class
-/* Provides function (F) and Jacobian evaluations for the following equation 
+/* Provides function (F) and Jacobian evaluations for the following equation
  * via a 1D linear finite element discretization with Epetra objects.
  *
- * d2u 
+ * d2u
  * --- - k * u**2 = 0
  * dx2
  *
@@ -66,7 +66,7 @@
 
 // Forward Declarations
 class Epetra_Comm;
-class Epetra_Map; 
+class Epetra_Map;
 class Epetra_Vector;
 class Epetra_Import;
 class Epetra_Operator;
@@ -80,14 +80,14 @@ namespace NOX {
 }
 
 // Finite Element Problem Class
-class ModelEvaluatorInterface : public EpetraExt::ModelEvaluator { 
+class ModelEvaluatorInterface : public EpetraExt::ModelEvaluator {
 
 public:
 
   // Constructor
-  ModelEvaluatorInterface(int NumGlobalElements, Epetra_Comm& Comm, 
-			  double xmin = 0.0, double xmax = 1.0 );
-  
+  ModelEvaluatorInterface(int NumGlobalElements, Epetra_Comm& Comm,
+              double xmin = 0.0, double xmax = 1.0 );
+
   // Destructor
   virtual ~ModelEvaluatorInterface();
 
@@ -116,11 +116,11 @@ public:
 
 protected:
 
-  // Evaluates the function (F) and/or the Jacobian using the solution 
+  // Evaluates the function (F) and/or the Jacobian using the solution
   // values in solnVector.
-  virtual bool evaluate(const Epetra_Vector *solnVector, 
-			Epetra_Vector *rhsVector, 
-			Epetra_RowMatrix *matrix) const;
+  virtual bool evaluate(const Epetra_Vector *solnVector,
+            Epetra_Vector *rhsVector,
+            Epetra_RowMatrix *matrix) const;
 
   // Inserts the global column indices into the Graph
   virtual bool createGraph();
@@ -139,10 +139,10 @@ protected:
 
   double xmin;
   double xmax;
-  double factor; 	  // PDE factor
+  double factor;       // PDE factor
 
   Epetra_Comm* Comm;
-  Teuchos::RCP<Epetra_Map> StandardMap; 
+  Teuchos::RCP<Epetra_Map> StandardMap;
   Teuchos::RCP<Epetra_Map> OverlapMap;
   Epetra_Import* Importer;
   Teuchos::RCP<Epetra_Vector> initialSolution;
@@ -169,7 +169,7 @@ class Basis {
 
  public:
   // Variables that are calculated at the gauss point
-  double *phi, *dphide; 
+  double *phi, *dphide;
   double uu, xx, duu, eta, wt;
   double dx;
   // These are only needed for transient

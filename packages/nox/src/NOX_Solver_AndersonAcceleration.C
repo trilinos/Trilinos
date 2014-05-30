@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -48,7 +48,7 @@
 // ************************************************************************
 //@HEADER
 
-#include "NOX_Solver_AndersonAcceleration.H"	// class definition
+#include "NOX_Solver_AndersonAcceleration.H"    // class definition
 #include "NOX_Abstract_Vector.H"
 #include "NOX_Abstract_Group.H"
 #include "NOX_Common.H"
@@ -67,15 +67,15 @@
 #include <cmath>
 
 NOX::Solver::AndersonAcceleration::
-AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp, 
-		const Teuchos::RCP<NOX::StatusTest::Generic>& t, 
-		const Teuchos::RCP<Teuchos::ParameterList>& p) :
+AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
+        const Teuchos::RCP<NOX::StatusTest::Generic>& t,
+        const Teuchos::RCP<Teuchos::ParameterList>& p) :
   globalDataPtr(Teuchos::rcp(new NOX::GlobalData(p))),
-  utilsPtr(globalDataPtr->getUtils()), 
-  solnPtr(xGrp),		                       // pointer to xGrp
-  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone 
-  testPtr(t),	
-  paramsPtr(p),   
+  utilsPtr(globalDataPtr->getUtils()),
+  solnPtr(xGrp),                               // pointer to xGrp
+  oldSolnPtr(xGrp->clone(DeepCopy)),     // create via clone
+  testPtr(t),
+  paramsPtr(p),
   tempVec(xGrp->getX().clone(NOX::ShapeCopy)),
   precF(xGrp->getX().clone(NOX::ShapeCopy)),
   oldPrecF(xGrp->getX().clone(NOX::ShapeCopy)),
@@ -87,7 +87,7 @@ AndersonAcceleration(const Teuchos::RCP<NOX::Abstract::Group>& xGrp,
 // Protected
 void NOX::Solver::AndersonAcceleration::init()
 {
-  // Initialize 
+  // Initialize
   stepSize = 0.0;
   nIter = 0;
   tempVec->init(0.0);
@@ -117,7 +117,7 @@ void NOX::Solver::AndersonAcceleration::init()
   if (storeParam <= 0){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
       << "Storage parameter must be positive" << std::endl;
-    throw "NOX Error";    
+    throw "NOX Error";
   }
   if ((mixParam < -1.0) || (mixParam == 0) || (mixParam > 1.0)){
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
@@ -129,14 +129,14 @@ void NOX::Solver::AndersonAcceleration::init()
   adjustForConditionNumber = paramsPtr->sublist("Anderson Parameters").get<bool>("Adjust Matrix for Condition Number");
   dropTolerance = paramsPtr->sublist("Anderson Parameters").get<double>("Condition Number Drop Tolerance");
   accelerationStartIteration = paramsPtr->sublist("Anderson Parameters").get<int>("Acceleration Start Iteration");
-  
+
   TEUCHOS_TEST_FOR_EXCEPTION((accelerationStartIteration < 1),std::logic_error,"Error - The \"Acceleration Start Iteration\" should be greater than 0!");
 
   status = NOX::StatusTest::Unconverged;
   checkType = parseStatusTestCheckType(paramsPtr->sublist("Solver Options"));
 
   // Print out parameters
-  if (utilsPtr->isPrintType(NOX::Utils::Parameters)) 
+  if (utilsPtr->isPrintType(NOX::Utils::Parameters))
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "\n-- Parameters Passed to Nonlinear Solver --\n\n";
@@ -146,7 +146,7 @@ void NOX::Solver::AndersonAcceleration::init()
 }
 
 void NOX::Solver::AndersonAcceleration::
-reset(const NOX::Abstract::Vector& initialGuess, 
+reset(const NOX::Abstract::Vector& initialGuess,
       const Teuchos::RCP<NOX::StatusTest::Generic>& t)
 {
   solnPtr->setX(initialGuess);
@@ -161,9 +161,9 @@ reset(const NOX::Abstract::Vector& initialGuess)
   init();
 }
 
-NOX::Solver::AndersonAcceleration::~AndersonAcceleration() 
+NOX::Solver::AndersonAcceleration::~AndersonAcceleration()
 {
- 
+
 }
 
 
@@ -175,15 +175,15 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::getStatus()
 NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 {
   prePostOperator.runPreIterate(*this);
-  Teuchos::ParameterList lsParams = paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver");  
-  
+  Teuchos::ParameterList lsParams = paramsPtr->sublist("Direction").sublist("Newton").sublist("Linear Solver");
+
   // On the first step, do some initializations
   if (nIter == 0) {
     // Compute F of initital guess
     NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
     if (rtype != NOX::Abstract::Group::Ok) {
       utilsPtr->out() << "NOX::Solver::AndersonAcceleration::init - "
-		      << "Unable to compute F" << std::endl;
+              << "Unable to compute F" << std::endl;
       throw "NOX Error";
     }
 
@@ -199,16 +199,16 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     // Test the initial guess
     status = testPtr->checkStatus(*this, checkType);
     if ((status == NOX::StatusTest::Converged) &&
-	(utilsPtr->isPrintType(NOX::Utils::Warning))) {
+    (utilsPtr->isPrintType(NOX::Utils::Warning))) {
       utilsPtr->out() << "Warning: NOX::Solver::AndersonAcceleration::init() - "
-		      << "The solution passed into the solver (either "
-		      << "through constructor or reset method) "
-		      << "is already converged!  The solver wil not "
-		      << "attempt to solve this system since status is "
-		      << "flagged as converged." << std::endl;
+              << "The solution passed into the solver (either "
+              << "through constructor or reset method) "
+              << "is already converged!  The solver wil not "
+              << "attempt to solve this system since status is "
+              << "flagged as converged." << std::endl;
     }
     printUpdate();
-    
+
     // First check status
     if (status != NOX::StatusTest::Unconverged) {
       prePostOperator.runPostIterate(*this);
@@ -241,13 +241,13 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     }
     else
       *precF = solnPtr->getF();
-    
+
     // Evaluate the current status.
     status = testPtr->checkStatus(*this, checkType);
-    
+
     //Update iteration count
     nIter++;
-    
+
     printUpdate();
     return status;
   }
@@ -303,17 +303,17 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
     if (utilsPtr->isPrintType(Utils::Details))
       utilsPtr->out() << "    R condition number estimate ("<< nStore << ") = " << 1.0/invCondNum << std::endl;
-    
+
     if (adjustForConditionNumber) {
       while ( (1.0/invCondNum > dropTolerance) && (nStore > 1)  ) {
-	for (int ii = 0; ii<nStore-1; ii++)
-	  *(xMat[ii]) = *(xMat[ii+1]);
-	xMat.pop_back();
-	qrDelete();
-	--nStore;
-	lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
-	if (utilsPtr->isPrintType(Utils::Details))
-	  utilsPtr->out() << "    Adjusted R condition number estimate ("<< nStore << ") = " << 1.0/invCondNum << std::endl;
+    for (int ii = 0; ii<nStore-1; ii++)
+      *(xMat[ii]) = *(xMat[ii+1]);
+    xMat.pop_back();
+    qrDelete();
+    --nStore;
+    lapack.GECON(normType,nStore,rMat.values(),nStore,rMat.normOne(),&invCondNum,&WORK[0],&IWORK[0],&info);
+    if (utilsPtr->isPrintType(Utils::Details))
+      utilsPtr->out() << "    Adjusted R condition number estimate ("<< nStore << ") = " << 1.0/invCondNum << std::endl;
       }
     }
   }
@@ -322,7 +322,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
   Teuchos::SerialDenseMatrix<int,double> gamma(nStore,1), RHS(nStore,1), Rgamma(nStore,1);
   for (int ii = 0; ii<nStore; ii++)
     RHS(ii,0) = precF->innerProduct( *(qMat[ii]) ); //Compute Q^T*Prec*F_k
-  
+
   //Back-solve for gamma
   for (int ii = nStore-1; ii>=0; ii--){
     gamma(ii,0) = RHS(ii,0);
@@ -336,7 +336,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
     Rgamma.multiply(Teuchos::NO_TRANS,Teuchos::NO_TRANS,mixParam,rMat,gamma,0.0);
 
   // Compute the new solution.
-  solnPtr->computeX(*solnPtr, *precF, mixParam);  
+  solnPtr->computeX(*solnPtr, *precF, mixParam);
   for (int ii=0; ii<nStore; ii++){
     solnPtr->computeX(*solnPtr, *(xMat[ii]), -gamma(ii,0));
     solnPtr->computeX(*solnPtr, *(qMat[ii]), -Rgamma(ii,0));
@@ -344,7 +344,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
   // Compute F for new current solution.
   NOX::Abstract::Group::ReturnType rtype = solnPtr->computeF();
-  if (rtype != NOX::Abstract::Group::Ok) 
+  if (rtype != NOX::Abstract::Group::Ok)
   {
     utilsPtr->out() << "NOX::Solver::AndersonAcceleration::iterate - unable to compute F" << std::endl;
     status = NOX::StatusTest::Failed;
@@ -367,7 +367,7 @@ NOX::StatusTest::StatusType NOX::Solver::AndersonAcceleration::step()
 
   // Evaluate the current status.
   status = testPtr->checkStatus(*this, checkType);
- 
+
   prePostOperator.runPostIterate(*this);
 
   printUpdate();
@@ -435,13 +435,13 @@ void NOX::Solver::AndersonAcceleration::qrDelete()
   rMat.reshape(N-1,N-1);
 }
 
-const NOX::Abstract::Group& 
+const NOX::Abstract::Group&
 NOX::Solver::AndersonAcceleration::getSolutionGroup() const
 {
   return *solnPtr;
 }
 
-const NOX::Abstract::Group& 
+const NOX::Abstract::Group&
 NOX::Solver::AndersonAcceleration::getPreviousSolutionGroup() const
 {
   return *oldSolnPtr;
@@ -452,35 +452,35 @@ int NOX::Solver::AndersonAcceleration::getNumIterations() const
   return nIter;
 }
 
-const Teuchos::ParameterList& 
+const Teuchos::ParameterList&
 NOX::Solver::AndersonAcceleration::getList() const
 {
   return *paramsPtr;
 }
 
 // protected
-void NOX::Solver::AndersonAcceleration::printUpdate() 
+void NOX::Solver::AndersonAcceleration::printUpdate()
 {
   double normSoln = 0;
 
-  // Print the status test parameters at each iteration if requested  
-  if ((status == NOX::StatusTest::Unconverged) && 
-      (utilsPtr->isPrintType(NOX::Utils::OuterIterationStatusTest))) 
+  // Print the status test parameters at each iteration if requested
+  if ((status == NOX::StatusTest::Unconverged) &&
+      (utilsPtr->isPrintType(NOX::Utils::OuterIterationStatusTest)))
   {
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "-- Status Test Results --\n";    
+    utilsPtr->out() << "-- Status Test Results --\n";
     testPtr->print(utilsPtr->out());
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }
 
   // All processes participate in the computation of these norms...
-  if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
+  if (utilsPtr->isPrintType(NOX::Utils::OuterIteration))
   {
     normSoln = solnPtr->getNormF();
   }
 
   // ...But only the print process actually prints the result.
-  if (utilsPtr->isPrintType(NOX::Utils::OuterIteration)) 
+  if (utilsPtr->isPrintType(NOX::Utils::OuterIteration))
   {
     utilsPtr->out() << "\n" << NOX::Utils::fill(72) << "\n";
     utilsPtr->out() << "-- Nonlinear Solver Step " << nIter << " -- \n";
@@ -493,11 +493,11 @@ void NOX::Solver::AndersonAcceleration::printUpdate()
   }
 
   // Print the final parameter values of the status test
-  if ((status != NOX::StatusTest::Unconverged) && 
-      (utilsPtr->isPrintType(NOX::Utils::OuterIteration))) 
+  if ((status != NOX::StatusTest::Unconverged) &&
+      (utilsPtr->isPrintType(NOX::Utils::OuterIteration)))
   {
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
-    utilsPtr->out() << "-- Final Status Test Results --\n";    
+    utilsPtr->out() << "-- Final Status Test Results --\n";
     testPtr->print(utilsPtr->out());
     utilsPtr->out() << NOX::Utils::fill(72) << "\n";
   }

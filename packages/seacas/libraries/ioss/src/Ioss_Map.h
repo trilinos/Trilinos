@@ -33,13 +33,14 @@
 #ifndef IOSS_Ioss_Map_h
 #define IOSS_Ioss_Map_h
 
-#include <Ioss_CodeTypes.h>
-#include <vector>
-#include <string>
-#include <stdint.h>
+#include <stddef.h>                     // for size_t
+#include <stdint.h>                     // for int64_t
+#include <string>                       // for string
+#include <utility>                      // for pair
+#include <vector>                       // for vector
+namespace Ioss { class Field; }
 
 namespace Ioss {
-  class Field;
   
   typedef std::vector<int64_t> MapContainer;
   typedef std::pair<int64_t,int64_t> IdPair;

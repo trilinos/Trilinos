@@ -129,12 +129,12 @@ operator can be cast to Epetra_RowMatrix, otherwise calls
 SetUserOperator().
 
 IMPORTANT WARNING *** This method calls SetUserMatrix(), which also
-sets the *preconditioner* matrix to the matrix passed in, by
-internally calling SetPrecMatrix(), but *ONLY* if SetPrecMatrix()
-hasn't previously been called. If the user wants to make sure that any
-pre-existing preconditioner is replaced, they must set the optional
-bool argument 'call_SetPrecMatrix' to true, which will force this
-function to call SetPrecMatrix().
+sets the preconditioner matrix to the matrix passed in, by internally
+calling SetPrecMatrix(), but ONLY if SetPrecMatrix() hasn't previously
+been called. If the user wants to make sure that any pre-existing
+preconditioner is replaced, they must set the optional bool argument
+'call_SetPrecMatrix' to true, which will force this function to call
+SetPrecMatrix().
 
 WARNING:  The first time this method is called, the default options
 and parameters are set. Therefore, this method should be called before
@@ -166,14 +166,13 @@ AztecOO User Matrix Set.
 Associates an already defined Epetra_Matrix as the matrix that will be
 used by AztecOO as the linear operator when solving the linear system.
 Epetra_CrsMatrix and Epetra_VbrMatrix objects can be passed in through
-this method.
-
-IMPORTANT WARNING *** This method sets the preconditioner matrix to
-the matrix passed in here, by internally calling SetPrecMatrix(), but
-*ONLY* if SetPrecMatrix() hasn't previously been called. If the user
-wants to make sure that any pre-existing preconditioner is replaced,
-they must set the optional bool argument 'call_SetPrecMatrix' to true,
-which will force this function to call SetPrecMatrix(). ";
+this method.IMPORTANT WARNING *** This method sets the preconditioner
+matrix to the matrix passed in here, by internally calling
+SetPrecMatrix(), but ONLY if SetPrecMatrix() hasn't previously been
+called. If the user wants to make sure that any pre-existing
+preconditioner is replaced, they must set the optional bool argument
+'call_SetPrecMatrix' to true, which will force this function to call
+SetPrecMatrix(). ";
 
 %feature("docstring")  AztecOO::SetLHS "int
 AztecOO::SetLHS(Epetra_MultiVector *X)
@@ -445,8 +444,8 @@ Set all Aztec parameter values using an existing Aztec params array.
 
 /*  Standard AztecOO solve methods.  */
 
-%feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(int
-MaxIters, double Tolerance)
+%feature("docstring")  AztecOO::Iterate "int AztecOO::Iterate(long
+long MaxIters, double Tolerance)
 
 AztecOO iteration function.
 
@@ -838,14 +837,15 @@ AztecOO_StatusType AztecOO_StatusTest::GetStatus() const =0
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  AztecOO_StatusTest::Print "virtual ostream&
-AztecOO_StatusTest::Print(ostream &stream, int indent=0) const =0
+%feature("docstring")  AztecOO_StatusTest::Print "virtual
+std::ostream& AztecOO_StatusTest::Print(std::ostream &stream, int
+indent=0) const =0
 
 Output formatted description of stopping test to output stream. ";
 
 %feature("docstring")  AztecOO_StatusTest::PrintStatus "virtual void
-AztecOO_StatusTest::PrintStatus(ostream &os, AztecOO_StatusType type)
-const ";
+AztecOO_StatusTest::PrintStatus(std::ostream &os, AztecOO_StatusType
+type) const ";
 
 
 // File: classAztecOO__StatusTestCombo.xml
@@ -960,8 +960,9 @@ AztecOO_StatusType: Unconverged, Converged or Failed. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  AztecOO_StatusTestCombo::Print "ostream &
-AztecOO_StatusTestCombo::Print(ostream &stream, int indent=0) const
+%feature("docstring")  AztecOO_StatusTestCombo::Print "std::ostream &
+AztecOO_StatusTestCombo::Print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -1025,8 +1026,8 @@ CurrentIters>=MaxIters. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  AztecOO_StatusTestMaxIters::Print "ostream &
-AztecOO_StatusTestMaxIters::Print(ostream &stream, int indent=0) const
+%feature("docstring")  AztecOO_StatusTestMaxIters::Print "std::ostream & AztecOO_StatusTestMaxIters::Print(std::ostream &stream,
+int indent=0) const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -1251,8 +1252,9 @@ AztecOO_StatusType: Unconverged, Converged or Failed. ";
 
 Return the result of the most recent checkStatus call. ";
 
-%feature("docstring")  AztecOO_StatusTestResNorm::Print "ostream &
-AztecOO_StatusTestResNorm::Print(ostream &stream, int indent=0) const
+%feature("docstring")  AztecOO_StatusTestResNorm::Print "std::ostream
+& AztecOO_StatusTestResNorm::Print(std::ostream &stream, int indent=0)
+const
 
 Output formatted description of stopping test to output stream. ";
 
@@ -1339,8 +1341,8 @@ Epetra_Vector *inX=0, Epetra_Vector *inY=0) ";
 
 
 // File: AztecOO_8cpp.xml
-%feature("docstring")  AztecOO_uppercase "string
-AztecOO_uppercase(const string &s) ";
+%feature("docstring")  AztecOO_uppercase "std::string
+AztecOO_uppercase(const std::string &s) ";
 
 %feature("docstring")  Epetra_Aztec_matnorminf "double
 Epetra_Aztec_matnorminf(AZ_MATRIX *Amat) ";
@@ -1482,11 +1484,12 @@ Epetra matrices passed in by AztecOO. ";
 
 
 // File: AztecOO__Version_8h.xml
-%feature("docstring")  AztecOO_Version "string AztecOO_Version() ";
+%feature("docstring")  AztecOO_Version "std::string AztecOO_Version()
+";
 
 
-// File: dir_7894d9566ccc3a34f56a76d817e62719.xml
+// File: dir_e54c18caf883a3a3a320d975896741c0.xml
 
 
-// File: dir_d2a30b9de7594b3f8f120c191973da80.xml
+// File: dir_1e9b80fd4aac33dbf287a7f36c0cdbf1.xml
 

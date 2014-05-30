@@ -495,7 +495,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     // The intel compiler doesn't seem to be able to vectorize through
     // the coord() calls, so extract pointers
@@ -518,7 +519,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -530,7 +531,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -594,7 +596,7 @@ public:
         iEntry += rem;
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 
@@ -606,7 +608,8 @@ public:
   static void apply( const tensor_type & tensor ,
                      const MatrixValue * const a ,
                      const VectorValue * const x ,
-                           VectorValue * const y )
+                           VectorValue * const y ,
+                     const VectorValue & alpha = VectorValue(1) )
   {
     const size_type nDim = tensor.dimension();
     for ( size_type iy = 0 ; iy < nDim ; ++iy ) {
@@ -648,7 +651,7 @@ public:
         ytmp += tensor.value(iEntry) * ( a[j] * x[k] + a[k] * x[j] );
       }
 
-      y[iy] += ytmp ;
+      y[iy] += alpha * ytmp ;
     }
   }
 #endif
@@ -1016,7 +1019,6 @@ public:
 
     const size_t row_count = A.graph.row_map.dimension_0() - 1 ;
     if (use_block_algorithm) {
-      typedef typename matrix_type::device_type device_type;
 #ifdef __MIC__
       const size_t team_size = 4;  // 4 hyperthreads for MIC
 #else

@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <math.h>
-#include "defs.h"
+#include <math.h>                       // for fabs, sqrt
+#include <stdio.h>                      // for printf
 
 /* Solve the shifted, symmetric tridiagonal linear system (T - lambda*I)v = b
    where b is a multiple of e1 (the first column of the identity matrix).

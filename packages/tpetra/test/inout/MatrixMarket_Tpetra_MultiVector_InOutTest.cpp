@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //          Tpetra: Templated Linear Algebra Services Package
 //                 Copyright (2008) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 // @HEADER
 
@@ -61,7 +61,7 @@
 #include <Tpetra_DefaultPlatform.hpp>
 
 #include <Kokkos_ConfigDefs.hpp>
-#include <Kokkos_SerialNode.hpp>
+#include <Kokkos_DefaultNode.hpp>
 
 #include <Teuchos_CommandLineProcessor.hpp>
 #include <Teuchos_CommHelpers.hpp>
@@ -75,15 +75,9 @@ namespace {
   ///
   template<class NodeType>
   Teuchos::RCP<NodeType>
-  getNode() {
-    throw std::runtime_error ("This Kokkos Node type not supported (compile-time error)");
-  }
-
-  template<>
-  Teuchos::RCP<KokkosClassic::SerialNode>
-  getNode() {
+  getNode () {
     Teuchos::ParameterList defaultParams;
-    return Teuchos::rcp (new KokkosClassic::SerialNode (defaultParams));
+    return Teuchos::rcp (new NodeType (defaultParams));
   }
 
   // Ensure that X and Y have the same dimensions, and that the
@@ -92,8 +86,8 @@ namespace {
   // errors in computing the 2-norm).
   template<class MV>
   void
-  assertMultiVectorsEqual (const Teuchos::RCP<const MV>& X, 
-			   const Teuchos::RCP<const MV>& Y)
+  assertMultiVectorsEqual (const Teuchos::RCP<const MV>& X,
+                           const Teuchos::RCP<const MV>& Y)
   {
     using Teuchos::as;
     using Teuchos::RCP;
@@ -124,27 +118,27 @@ namespace {
     // floating-point numbers involved in computing the norm for one
     // column).  Our output routine is careful to use enough digits,
     // so the input matrix shouldn't be that much different.
-    const magnitude_type tol = as<magnitude_type> (10) * 
-      STS::magnitude (STS::eps ()) * 
+    const magnitude_type tol = as<magnitude_type> (10) *
+      STS::magnitude (STS::eps ()) *
       STM::squareroot (as<magnitude_type> (numRows));
     std::vector<size_t> badColumns;
     for (size_t j = 0; j < numVecs; ++j) {
       // If the norm of the current column of X is zero, use the
       // absolute difference; otherwise use the relative difference.
       if ((X_norm2[j] == STM::zero() && STS::magnitude (Y_norm2[j]) > tol) ||
-	  STS::magnitude (X_norm2[j] - Y_norm2[j]) > tol) {
-	badColumns.push_back (j);
+          STS::magnitude (X_norm2[j] - Y_norm2[j]) > tol) {
+        badColumns.push_back (j);
       }
     }
-    
+
     if (badColumns.size() > 0) {
       const size_t numBad = badColumns.size();
       std::ostringstream os;
-      std::copy (badColumns.begin(), badColumns.end(), 
-		 std::ostream_iterator<size_t> (os, " "));
-      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Column" 
+      std::copy (badColumns.begin(), badColumns.end(),
+                 std::ostream_iterator<size_t> (os, " "));
+      TEUCHOS_TEST_FOR_EXCEPTION(true, std::logic_error, "Column"
         << (numBad != 1 ? "s" : "") << " [" << os.str() << "] of X and Y have "
-	"norms that differ relatively by more than " << tol << ".");
+        "norms that differ relatively by more than " << tol << ".");
     }
   }
 
@@ -166,13 +160,13 @@ namespace {
   // \param debug [in] Whether to print debugging output.
   template<class MV>
   Teuchos::RCP<MV>
-  testReadDenseFile (const std::string& inputFilename, 
-		     const std::string& outputFilename,
-		     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-		     const Teuchos::RCP<typename MV::node_type>& node,
-		     const bool tolerant, 
-		     const bool verbose,
-		     const bool debug)
+  testReadDenseFile (const std::string& inputFilename,
+                     const std::string& outputFilename,
+                     const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                     const Teuchos::RCP<typename MV::node_type>& node,
+                     const bool tolerant,
+                     const bool verbose,
+                     const bool debug)
   {
     using Teuchos::RCP;
     using std::cerr;
@@ -184,30 +178,30 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>
       map_type;
 
     // The reader and writer classes are templated on the
     // Tpetra::CrsMatrix specialization, from which the
     // Tpetra::MultiVector specialization is derived.
-    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
       global_ordinal_type, node_type> sparse_matrix_type;
 
     const int myRank = comm->getRank ();
     if (verbose && myRank == 0) {
-      cout << "testReadDenseFile: reading Matrix Market file \"" 
-	   << inputFilename << "\":" << endl;
+      cout << "testReadDenseFile: reading Matrix Market file \""
+           << inputFilename << "\":" << endl;
     }
 
     // Map describing multivector distribution; starts out null and is
     // an output argument of readDenseFile().
-    RCP<const map_type> map = Teuchos::null; 
+    RCP<const map_type> map = Teuchos::null;
 
     // Read the dense matrix from the given Matrix Market file.
     // This routine acts like an MPI barrier.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
     RCP<MV> X = reader_type::readDenseFile (inputFilename, comm, node,
-					    map, tolerant, debug);
+                                            map, tolerant, debug);
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::runtime_error,
       "The Tpetra::MultiVector returned from readDenseFile() is null.");
     TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::runtime_error,
@@ -233,12 +227,12 @@ namespace {
       // We're not testing here the functionality of readDenseFile()
       // to reuse an existing Map.
       RCP<const map_type> testMap;
-      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node, 
-					      testMap, tolerant, debug);
+      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node,
+                                              testMap, tolerant, debug);
       TEUCHOS_TEST_FOR_EXCEPTION(! map->isCompatible (*testMap), std::logic_error,
         "Writing the read-in Tpetra::MultiVector X (with no input Map provided) "
         "to a file and reading it back in resulted in a multivector Y with an "
-	"incompatible Map.  Please report this bug to the Tpetra developers.");
+        "incompatible Map.  Please report this bug to the Tpetra developers.");
       assertMultiVectorsEqual<MV> (X, Y);
     }
     return X;
@@ -258,12 +252,12 @@ namespace {
   // \param debug [in] Whether to print debugging output.
   template<class MV>
   Teuchos::RCP<MV>
-  testReadDenseFileWithInputMap (const std::string& inputFilename, 
-				 const std::string& outputFilename,
-				 const Teuchos::RCP<const Tpetra::Map<typename MV::local_ordinal_type, typename MV::global_ordinal_type, typename MV::node_type> >& map,
-				 const bool tolerant, 
-				 const bool verbose,
-				 const bool debug)
+  testReadDenseFileWithInputMap (const std::string& inputFilename,
+                                 const std::string& outputFilename,
+                                 const Teuchos::RCP<const Tpetra::Map<typename MV::local_ordinal_type, typename MV::global_ordinal_type, typename MV::node_type> >& map,
+                                 const bool tolerant,
+                                 const bool verbose,
+                                 const bool debug)
   {
     using Teuchos::RCP;
     using std::cerr;
@@ -275,16 +269,16 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>
       map_type;
 
     // The reader and writer classes are templated on the
     // Tpetra::CrsMatrix specialization, from which the
     // Tpetra::MultiVector specialization is derived.
-    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
       global_ordinal_type, node_type> sparse_matrix_type;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::invalid_argument, 
+    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::invalid_argument,
       "testReadDenseFileWithInputMap requires a nonnull input map.");
 
     RCP<const Teuchos::Comm<int> > comm = map->getComm();
@@ -306,7 +300,7 @@ namespace {
     // map isSameAs() the input map.
     RCP<const map_type> theMap = map;
 
-    TEUCHOS_TEST_FOR_EXCEPTION(theMap.is_null(), std::logic_error, 
+    TEUCHOS_TEST_FOR_EXCEPTION(theMap.is_null(), std::logic_error,
       "testReadDenseFileWithInputMap: theMap (a shallow copy of map) should not "
       "be null, but it is.  Please report this bug to the Tpetra developers.");
 
@@ -314,7 +308,7 @@ namespace {
     // This routine acts like an MPI barrier.
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
     RCP<MV> X = reader_type::readDenseFile (inputFilename, comm, node,
-					    theMap, tolerant, debug);
+                                            theMap, tolerant, debug);
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::runtime_error,
       "The Tpetra::MultiVector returned from readDenseFile() is null.");
     TEUCHOS_TEST_FOR_EXCEPTION(theMap.is_null(), std::runtime_error,
@@ -338,8 +332,8 @@ namespace {
       // contiguous, uniformly distributed Map.  The input Map need
       // not necessarily be contiguous or uniformly distributed.
       RCP<const map_type> testMap;
-      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node, 
-					      testMap, tolerant, debug);
+      RCP<MV> Y = reader_type::readDenseFile (inputFilename, comm, node,
+                                              testMap, tolerant, debug);
       assertMultiVectorsEqual<MV> (X, Y);
     }
     return X;
@@ -361,10 +355,10 @@ namespace {
   template<class MV>
   void
   testWriteDenseFile (const std::string& outputFilename,
-		      const Teuchos::RCP<const MV>& X,
-		      const bool echo,
-		      const bool verbose,
-		      const bool debug)
+                      const Teuchos::RCP<const MV>& X,
+                      const bool echo,
+                      const bool verbose,
+                      const bool debug)
   {
     using Teuchos::RCP;
     using std::cerr;
@@ -376,13 +370,13 @@ namespace {
     typedef typename MV::global_ordinal_type global_ordinal_type;
     typedef typename MV::node_type node_type;
 
-    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> 
+    typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type>
       map_type;
 
     // The reader and writer classes are templated on the
     // Tpetra::CrsMatrix specialization, from which the
     // Tpetra::MultiVector specialization is derived.
-    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, 
+    typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type,
       global_ordinal_type, node_type> sparse_matrix_type;
 
     TEUCHOS_TEST_FOR_EXCEPTION(X.is_null(), std::invalid_argument,
@@ -394,7 +388,7 @@ namespace {
 
     if (verbose && myRank == 0) {
       cout << "testWriteDenseFile: writing Tpetra::MultiVector instance to "
-	"file \"" << outputFilename << "\"" << endl;
+        "file \"" << outputFilename << "\"" << endl;
     }
     // If specified, write the read-in sparse matrix to a file and/or
     // echo it to stdout.
@@ -407,7 +401,7 @@ namespace {
     }
     if (echo) {
       if (verbose && myRank == 0) {
-	cout << "Echoing output to stdout." << endl;
+        cout << "Echoing output to stdout." << endl;
       }
       writer_type::writeDense (cout, X);
     }
@@ -418,16 +412,16 @@ namespace {
     typedef Tpetra::MatrixMarket::Reader<sparse_matrix_type> reader_type;
     RCP<node_type> node = map->getNode();
     const bool tolerant = false; // Our own output shouldn't need tolerant mode.
-    RCP<MV> Y = reader_type::readDenseFile (outputFilename, comm, node, 
-					    map, tolerant, debug);
+    RCP<MV> Y = reader_type::readDenseFile (outputFilename, comm, node,
+                                            map, tolerant, debug);
     assertMultiVectorsEqual<MV> (X, Y);
   }
 
 } // namespace (anonymous)
 
 
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Teuchos::Array;
   using Teuchos::as;
@@ -447,10 +441,10 @@ main (int argc, char *argv[])
   typedef double scalar_type;
   typedef int local_ordinal_type;
   typedef int global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &cout);
-  RCP<const Comm<int> > comm = 
+  RCP<const Comm<int> > comm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
@@ -470,7 +464,7 @@ main (int argc, char *argv[])
   // _all_ processes).
   bool testDifferentIndexBase = false;
   bool testContiguousInputMap = true;
-  bool testNoncontiguousInputMap = false; 
+  bool testNoncontiguousInputMap = false;
 
   bool testWrite = true; // Test Matrix Market output?
   bool tolerant = false; // Parse the file tolerantly?
@@ -480,62 +474,62 @@ main (int argc, char *argv[])
   // If true, stop after a single test failure.  Intended for
   // interactive use, so that you can examine a test's output file.
   // Not intended for batch or ctest use.
-  bool stopAfterFailure = false; 
+  bool stopAfterFailure = false;
 
   CommandLineProcessor cmdp (false, true);
   cmdp.setOption ("inputFilename", &inputFilename,
-		  "Name of the Matrix Market dense matrix file to read.");
+                  "Name of the Matrix Market dense matrix file to read.");
   cmdp.setOption ("temporaryFilename", &temporaryFilename,
-		  "If --testWrite is true, then use this file as temporary "
-		  "storage on (MPI) Proc 0.  Otherwise, this argument is "
-		  "ignored.");
+                  "If --testWrite is true, then use this file as temporary "
+                  "storage on (MPI) Proc 0.  Otherwise, this argument is "
+                  "ignored.");
   cmdp.setOption ("outputFilename", &outputFilename,
-		  "If --testWrite is true, then write the read-in matrix to "
-		  "this file in Matrix Market format on (MPI) Proc 0.  "
-		  "Otherwise, this argument is ignored.  Note that the output "
-		  "file may not be identical to the input file.");
+                  "If --testWrite is true, then write the read-in matrix to "
+                  "this file in Matrix Market format on (MPI) Proc 0.  "
+                  "Otherwise, this argument is ignored.  Note that the output "
+                  "file may not be identical to the input file.");
   cmdp.setOption ("testToRun", &testToRun, "Number of a specific test to run.  "
-		  "If nonzero, only run that test.  We always run Test #1 since"
-		  " its result is needed for subsequent tests.");
+                  "If nonzero, only run that test.  We always run Test #1 since"
+                  " its result is needed for subsequent tests.");
   cmdp.setOption ("testDifferentIndexBase", "dontTestDifferentIndexBase",
-		  &testDifferentIndexBase, "Whether to test input and output "
-		  "for Maps with different index bases.");
+                  &testDifferentIndexBase, "Whether to test input and output "
+                  "for Maps with different index bases.");
   cmdp.setOption ("testContiguousInputMap", "dontTestContiguousInputMap",
-		  &testContiguousInputMap,
-		  "Whether to test input and output for nonnull contiguous "
-		  "input Maps.");
+                  &testContiguousInputMap,
+                  "Whether to test input and output for nonnull contiguous "
+                  "input Maps.");
   cmdp.setOption ("testNoncontiguousInputMap", "dontTestNoncontiguousInputMap",
-		  &testNoncontiguousInputMap,
-		  "Whether to test input and output for nonnull noncontiguous "
-		  "input Maps.");
+                  &testNoncontiguousInputMap,
+                  "Whether to test input and output for nonnull noncontiguous "
+                  "input Maps.");
   cmdp.setOption ("testWrite", "noTestWrite", &testWrite,
-		  "Whether to test Matrix Market file output.  Ignored if no "
-		  "--outputFilename value is given.");
-  cmdp.setOption ("tolerant", "strict", &tolerant, 
-		  "Whether to parse the input Matrix Market file tolerantly.");
+                  "Whether to test Matrix Market file output.  Ignored if no "
+                  "--outputFilename value is given.");
+  cmdp.setOption ("tolerant", "strict", &tolerant,
+                  "Whether to parse the input Matrix Market file tolerantly.");
   cmdp.setOption ("echo", "noecho", &echo,
-		  "Whether to echo the read-in matrix back to stdout on Rank 0 "
-		  "in Matrix Market format.  Note that the echoed matrix may "
-		  "not be identical to the input file.");
+                  "Whether to echo the read-in matrix back to stdout on Rank 0 "
+                  "in Matrix Market format.  Note that the echoed matrix may "
+                  "not be identical to the input file.");
   cmdp.setOption ("verbose", "quiet", &verbose, "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug, "Print debugging information.");
-  cmdp.setOption ("stopAfterFailure", "dontStopAfterFailure", &stopAfterFailure, 
-		  "Whether to stop after a single test failure.");
+  cmdp.setOption ("stopAfterFailure", "dontStopAfterFailure", &stopAfterFailure,
+                  "Whether to stop after a single test failure.");
 
   // Parse the command-line arguments.
   {
-    const CommandLineProcessor::EParseCommandLineReturn parseResult = 
+    const CommandLineProcessor::EParseCommandLineReturn parseResult =
       cmdp.parse (argc,argv);
     // If the caller asks us to print the documentation, or does not
     // explicitly say to run the benchmark, we let this "test" pass
     // trivially.
     if (parseResult == CommandLineProcessor::PARSE_HELP_PRINTED) {
       if (myRank == 0) {
-	cout << "End Result: TEST PASSED" << endl;
+        cout << "End Result: TEST PASSED" << endl;
       }
       return EXIT_SUCCESS;
     }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
       std::invalid_argument, "Failed to parse command-line arguments.");
   }
 
@@ -574,9 +568,9 @@ main (int argc, char *argv[])
     RCP<MV> X;
     try {
       X = testReadDenseFile<MV> (inputFilename, tmpFilename, comm,
-				 node, tolerant, verbose, debug);
+                                 node, tolerant, verbose, debug);
       if (outFilename != "") {
-	testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
+        testWriteDenseFile<MV> (outFilename, X, echo, verbose, debug);
       }
     } catch (std::exception& e) {
       failedTests.push_back (testNum);
@@ -589,45 +583,45 @@ main (int argc, char *argv[])
     // as X's Map.  This Map may or may not necessarily be the same as
     // (in the sense of isSameAs()) or even compatible with X's Map.
     ++testNum;
-    if ((testToRun == 0 && testContiguousInputMap) || 
-	(testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap) ||
+        (testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull contiguous Map (same index "
-	  "base) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull contiguous Map (same index "
+          "base) on input to readDenseFile()" << endl;
       }
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
       const GO indexBase = X->getMap()->getIndexBase();
       // Create the Map.
-      RCP<const MT> map = 
-	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
-					  Tpetra::GloballyDistributed, node));
+      RCP<const MT> map =
+        rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
+                                          Tpetra::GloballyDistributed, node));
       try {
-	RCP<MV> X2 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-					     map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X2, echo, verbose, debug);
-	}
+        RCP<MV> X2 =
+          testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                             map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X2, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     }
 
@@ -636,11 +630,11 @@ main (int argc, char *argv[])
     // index base plus a small number (3).  For sufficiently long
     // vectors, this tests the case where the GID sets overlap.
     ++testNum;
-    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) || 
-	(testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) ||
+        (testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
-	  "index base) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull contiguous Map (different "
+          "index base) on input to readDenseFile()" << endl;
       }
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
       const GO indexBase = X->getMap()->getIndexBase() + as<GO> (3);
@@ -654,40 +648,40 @@ main (int argc, char *argv[])
       reduceAll (*comm, REDUCE_MAX, indexBase, ptr (&maxIndexBase));
       TEUCHOS_TEST_FOR_EXCEPTION(minIndexBase != maxIndexBase || minIndexBase != indexBase,
         std::logic_error, "Index base values do not match on all processes.  "
-        "Min value is " << minIndexBase << " and max value is " << maxIndexBase 
+        "Min value is " << minIndexBase << " and max value is " << maxIndexBase
         << ".");
 
       // Create the Map.
-      RCP<const MT> map = 
-	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
-					  Tpetra::GloballyDistributed, node));
+      RCP<const MT> map =
+        rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
+                                          Tpetra::GloballyDistributed, node));
       try {
-	RCP<MV> X3 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-					     map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
-	}
+        RCP<MV> X3 =
+          testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                             map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     }
 
@@ -696,11 +690,11 @@ main (int argc, char *argv[])
     // so that the new GID set does not overlap with X's Map's GID
     // set.
     ++testNum;
-    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) || 
-	(testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testContiguousInputMap && testDifferentIndexBase) ||
+        (testToRun != 0 && testToRun == testNum)) {
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull contiguous Map (different "
-	  "index base) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull contiguous Map (different "
+          "index base) on input to readDenseFile()" << endl;
       }
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
       // Choose the Map's index base so that the global ordinal sets
@@ -717,54 +711,54 @@ main (int argc, char *argv[])
       reduceAll (*comm, REDUCE_MAX, indexBase, ptr (&maxIndexBase));
       TEUCHOS_TEST_FOR_EXCEPTION(minIndexBase != maxIndexBase || minIndexBase != indexBase,
         std::logic_error, "Index base values do not match on all processes.  "
-        "Min value is " << minIndexBase << " and max value is " << maxIndexBase 
+        "Min value is " << minIndexBase << " and max value is " << maxIndexBase
         << ".");
 
       // Create the Map.
-      RCP<const MT> map = 
-	rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm, 
-					  Tpetra::GloballyDistributed, node));
+      RCP<const MT> map =
+        rcp (new Tpetra::Map<LO, GO, NT> (globalNumRows, indexBase, comm,
+                                          Tpetra::GloballyDistributed, node));
       try {
-	RCP<MV> X3 = 
-	  testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-					     map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
-	}
+        RCP<MV> X3 =
+          testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                             map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X3, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     }
 
     ++testNum;
-    if ((testToRun == 0 && testNoncontiguousInputMap) || 
-	(testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testNoncontiguousInputMap) ||
+        (testToRun != 0 && testToRun == testNum)) {
       // Test 5: nonnull input Map with the same index base as X's
       // Map, and a "noncontiguous" distribution (in the sense that
       // the Map is constructed using the constructor that takes an
       // arbitrary list of GIDs; that doesn't necessarily mean that
       // the GIDs themselves are noncontiguous).
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
-	  "base) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
+          "base) on input to readDenseFile()" << endl;
       }
       const GO indexBase = X->getMap()->getIndexBase();
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
@@ -776,87 +770,87 @@ main (int argc, char *argv[])
       // likely to uncover bugs.
       const size_t quotient = globalNumRows / numProcs;
       const size_t remainder = globalNumRows - quotient * numProcs;
-      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
-	(quotient + 1) : quotient;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ?
+        (quotient + 1) : quotient;
 
       // Build the list of GIDs owned by this process.
       Array<GO> elementList (localNumRows);
       GO myStartGID;
       if (as<size_t> (myRank) < remainder) {
-	myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
-      } 
+        myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
+      }
       else {
-	// This branch does _not_ assume that GO is a signed type.
-	myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
-	  (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
+        // This branch does _not_ assume that GO is a signed type.
+        myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
+          (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
       }
       for (GO i = 0; i < as<GO> (localNumRows); ++i) {
-	elementList[i] = myStartGID + i;
+        elementList[i] = myStartGID + i;
       }
 
       if (debug) {
-	for (int p = 0; p < numProcs; ++p) {
-	  if (p == myRank) {
-	    if (elementList.size() > 0) {
-	      const GO minGID = *std::min_element (elementList.begin(), elementList.end());
-	      const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
-	      cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
-	    }
-	    else {
-	      cerr << "On Proc " << p << ": elementList is empty" << endl;
-	    }
-	    cerr << std::flush;
-	  } 
-	  comm->barrier ();
-	  comm->barrier ();
-	  comm->barrier ();
-	}
+        for (int p = 0; p < numProcs; ++p) {
+          if (p == myRank) {
+            if (elementList.size() > 0) {
+              const GO minGID = *std::min_element (elementList.begin(), elementList.end());
+              const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
+              cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
+            }
+            else {
+              cerr << "On Proc " << p << ": elementList is empty" << endl;
+            }
+            cerr << std::flush;
+          }
+          comm->barrier ();
+          comm->barrier ();
+          comm->barrier ();
+        }
       }
 
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
-      RCP<const MT> map = 
-	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      RCP<const MT> map =
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-							map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X4, echo, verbose, debug);
-	}
+        RCP<MV> X4 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                                        map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X4, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     } // if test noncontiguous input Map
 
     ++testNum;
     if ((testToRun == 0 && testNoncontiguousInputMap && testDifferentIndexBase) ||
-	(testToRun != 0 && testToRun == testNum)) {
+        (testToRun != 0 && testToRun == testNum)) {
       // Test 6: nonnull input Map with a different index base than
       // X's Map, and a "noncontiguous" distribution (in the sense
       // that the Map is constructed using the constructor that takes
       // an arbitrary list of GIDs; that doesn't necessarily mean that
       // the GIDs themselves are noncontiguous).
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull noncontiguous Map (different "
-	  "index base) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull noncontiguous Map (different "
+          "index base) on input to readDenseFile()" << endl;
       }
       // Make sure that the global ordinal sets of X->getMap() and
       // map don't overlap.
@@ -870,67 +864,67 @@ main (int argc, char *argv[])
       // likely to uncover bugs.
       const size_t quotient = globalNumRows / numProcs;
       const size_t remainder = globalNumRows - quotient * numProcs;
-      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
-	(quotient + 1) : quotient;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ?
+        (quotient + 1) : quotient;
 
       // Build the list of GIDs owned by this process.
       Array<GO> elementList (localNumRows);
       GO myStartGID;
       if (as<size_t> (myRank) < remainder) {
-	myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
-      } 
+        myStartGID = indexBase + as<GO> (myRank) * as<GO> (quotient + 1);
+      }
       else {
-	// This branch does _not_ assume that GO is a signed type.
-	myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
-	  (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
+        // This branch does _not_ assume that GO is a signed type.
+        myStartGID = indexBase + as<GO> (remainder) * as<GO> (quotient + 1) +
+          (as<GO> (remainder) - as<GO> (myRank)) * as<GO> (quotient);
       }
       for (GO i = 0; i < as<GO> (localNumRows); ++i) {
-	elementList[i] = myStartGID + i;
+        elementList[i] = myStartGID + i;
       }
 
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
-      RCP<const MT> map = 
-	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      RCP<const MT> map =
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-							map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X5, echo, verbose, debug);
-	}
+        RCP<MV> X5 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                                        map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X5, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     } // if test noncontiguous input Map
 
     ++testNum;
-    if ((testToRun == 0 && testNoncontiguousInputMap) || 
-	(testToRun != 0 && testToRun == testNum)) {
+    if ((testToRun == 0 && testNoncontiguousInputMap) ||
+        (testToRun != 0 && testToRun == testNum)) {
       // Test 7: nonnull input Map with the same index base as X's
       // Map, and a "noncontiguous" distribution with GIDs that start
       // at 3.  This lets us easily observe any missing entries after
       // writing X and reading it back in again.
       if (verbose && myRank == 0) {
-	cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
-	  "base, GIDs not in 0 .. N-1) on input to readDenseFile()" << endl;
+        cout << "Test " << testNum << ": Nonnull noncontiguous Map (same index "
+          "base, GIDs not in 0 .. N-1) on input to readDenseFile()" << endl;
       }
       const Tpetra::global_size_t globalNumRows = X->getMap()->getGlobalNumElements();
       const GO globalStartGID = as<GO> (3);
@@ -942,73 +936,73 @@ main (int argc, char *argv[])
       // likely to uncover bugs.
       const size_t quotient = globalNumRows / numProcs;
       const size_t remainder = globalNumRows - quotient * numProcs;
-      const size_t localNumRows = (as<size_t> (myRank) < remainder) ? 
-	(quotient + 1) : quotient;
+      const size_t localNumRows = (as<size_t> (myRank) < remainder) ?
+        (quotient + 1) : quotient;
 
       // Build the list of GIDs owned by this process.
       Array<GO> elementList (localNumRows);
       GO myStartGID;
       if (as<size_t> (myRank) < remainder) {
-	myStartGID = globalStartGID + as<GO> (myRank) * as<GO> (quotient + 1);
-      } 
+        myStartGID = globalStartGID + as<GO> (myRank) * as<GO> (quotient + 1);
+      }
       else {
-	// This branch does _not_ assume that GO is a signed type.
-	myStartGID = globalStartGID + as<GO> (remainder) * as<GO> (quotient + 1) +
-	  (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
+        // This branch does _not_ assume that GO is a signed type.
+        myStartGID = globalStartGID + as<GO> (remainder) * as<GO> (quotient + 1) +
+          (as<GO> (myRank) - as<GO> (remainder)) * as<GO> (quotient);
       }
       for (GO i = 0; i < as<GO> (localNumRows); ++i) {
-	elementList[i] = myStartGID + i;
+        elementList[i] = myStartGID + i;
       }
 
       if (debug) {
-	for (int p = 0; p < numProcs; ++p) {
-	  if (p == myRank) {
-	    if (elementList.size() > 0) {
-	      const GO minGID = *std::min_element (elementList.begin(), elementList.end());
-	      const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
-	      cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
-	    }
-	    else {
-	      cerr << "On Proc " << p << ": elementList is empty" << endl;
-	    }
-	    cerr << std::flush;
-	  } 
-	  comm->barrier ();
-	  comm->barrier ();
-	  comm->barrier ();
-	}
+        for (int p = 0; p < numProcs; ++p) {
+          if (p == myRank) {
+            if (elementList.size() > 0) {
+              const GO minGID = *std::min_element (elementList.begin(), elementList.end());
+              const GO maxGID = *std::max_element (elementList.begin(), elementList.end());
+              cerr << "On Proc " << p << ": min,max GID = " << minGID << "," << maxGID << endl;
+            }
+            else {
+              cerr << "On Proc " << p << ": elementList is empty" << endl;
+            }
+            cerr << std::flush;
+          }
+          comm->barrier ();
+          comm->barrier ();
+          comm->barrier ();
+        }
       }
 
       // Create the Map.
       using Tpetra::createNonContigMapWithNode;
-      RCP<const MT> map = 
-	createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
+      RCP<const MT> map =
+        createNonContigMapWithNode<LO, GO, NT> (elementList(), comm, node);
       try {
-	RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
-							map, tolerant, verbose, debug);
-	if (outFilename != "") {
-	  testWriteDenseFile<MV> (outFilename, X7, echo, verbose, debug);
-	}
+        RCP<MV> X7 = testReadDenseFileWithInputMap<MV> (inputFilename, tmpFilename,
+                                                        map, tolerant, verbose, debug);
+        if (outFilename != "") {
+          testWriteDenseFile<MV> (outFilename, X7, echo, verbose, debug);
+        }
       } catch (std::exception& e) {
-	failedTests.push_back (testNum);
-	if (myRank == 0) {
-	  cerr << "Test " << testNum << " failed: " << e.what() << endl;
-	}
+        failedTests.push_back (testNum);
+        if (myRank == 0) {
+          cerr << "Test " << testNum << " failed: " << e.what() << endl;
+        }
 
-	if (stopAfterFailure) {
-	  if (failedTests.size() > 0) {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST FAILED" << endl;
-	    }
-	    return EXIT_FAILURE;
-	  }
-	  else {
-	    if (myRank == 0) {
-	      cout << "End Result: TEST PASSED" << endl;
-	    }
-	    return EXIT_SUCCESS;
-	  }
-	} // if stop after failure
+        if (stopAfterFailure) {
+          if (failedTests.size() > 0) {
+            if (myRank == 0) {
+              cout << "End Result: TEST FAILED" << endl;
+            }
+            return EXIT_FAILURE;
+          }
+          else {
+            if (myRank == 0) {
+              cout << "End Result: TEST PASSED" << endl;
+            }
+            return EXIT_SUCCESS;
+          }
+        } // if stop after failure
       }
     } // if test noncontiguous input Map
   }

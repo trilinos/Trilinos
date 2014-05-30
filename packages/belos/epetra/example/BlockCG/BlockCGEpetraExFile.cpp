@@ -42,9 +42,9 @@
 // This driver reads a problem from a file, which can be in Harwell-Boeing (*.hb),
 // Matrix Market (*.mtx), or triplet format (*.triU, *.triS).  The right-hand side
 // from the problem, if it exists, will be used instead of multiple
-// random right-hand-sides.  The initial guesses are all set to zero. 
+// random right-hand-sides.  The initial guesses are all set to zero.
 //
-// NOTE: No preconditioner is used in this example. 
+// NOTE: No preconditioner is used in this example.
 //
 #include "BelosConfigDefs.hpp"
 #include "BelosLinearProblem.hpp"
@@ -62,6 +62,7 @@
 
 #include "Teuchos_CommandLineProcessor.hpp"
 #include "Teuchos_ParameterList.hpp"
+#include "Teuchos_StandardCatchMacros.hpp"
 
 int main(int argc, char *argv[]) {
   //
@@ -87,7 +88,11 @@ int main(int argc, char *argv[]) {
   using Teuchos::RCP;
   using Teuchos::rcp;
 
-  bool verbose = false, proc_verbose = false;
+
+  bool verbose = false;
+  bool success = true;
+  try {
+  bool proc_verbose = false;
   int frequency = -1;        // frequency of status test output.
   int blocksize = 1;         // blocksize
   int numrhs = 1;            // number of right-hand sides to solve for
@@ -145,7 +150,7 @@ int main(int argc, char *argv[]) {
   belosList.set( "Maximum Iterations", maxiters );       // Maximum number of iterations allowed
   belosList.set( "Convergence Tolerance", tol );         // Relative convergence tolerance requested
   if (verbose) {
-    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings + 
+    belosList.set( "Verbosity", Belos::Errors + Belos::Warnings +
 		   Belos::TimingDetails + Belos::StatusTestDetails );
     if (frequency > 0)
       belosList.set( "Output Frequency", frequency );
@@ -197,7 +202,7 @@ int main(int argc, char *argv[]) {
   std::vector<double> rhs_norm( numrhs );
   Epetra_MultiVector resid(*Map, numrhs);
   OPT::Apply( *A, *X, resid );
-  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid ); 
+  MVT::MvAddMv( -1.0, resid, 1.0, *B, resid );
   MVT::MvNorm( resid, actual_resids );
   MVT::MvNorm( *B, rhs_norm );
   if (proc_verbose) {
@@ -209,21 +214,21 @@ int main(int argc, char *argv[]) {
     }
   }
 
+  if (ret!=Belos::Converged || badRes) {
+    success = false;
+    if (proc_verbose)
+      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;
+  } else {
+    success = true;
+    if (proc_verbose)
+      std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
+  }
+  }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
+
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
 
-  if (ret!=Belos::Converged || badRes) {
-    if (proc_verbose)
-      std::cout << std::endl << "ERROR:  Belos did not converge!" << std::endl;	
-    return -1;
-  }
-  //
-  // Default return value
-  //
-  if (proc_verbose)
-    std::cout << std::endl << "SUCCESS:  Belos converged!" << std::endl;
-  return 0;
-  
-  //
-} 
+  return success ? EXIT_SUCCESS : EXIT_FAILURE;
+}

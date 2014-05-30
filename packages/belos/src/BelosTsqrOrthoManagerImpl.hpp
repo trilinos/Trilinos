@@ -1568,13 +1568,12 @@ namespace Belos {
     if (B.is_null()) {
       B_out = rcp (new mat_type (1, 1));
     } else {
-      const int numRows = B->numRows();
-      const int numCols = B->numCols();
-      TEUCHOS_TEST_FOR_EXCEPTION(numRows < 1 || numCols < 1,
-                         std::invalid_argument,
-                         "normalizeOne: Input matrix B must be at "
-                         "least 1 x 1, but is instead " << numRows
-                         << " x " << numCols << ".");
+      const int theNumRows = B->numRows ();
+      const int theNumCols = B->numCols ();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        theNumRows < 1 || theNumCols < 1, std::invalid_argument,
+        "normalizeOne: Input matrix B must be at least 1 x 1, but "
+        "is instead " << theNumRows << " x " << theNumCols << ".");
       // Create a view of the 1x1 upper left submatrix of *B.
       B_out = rcp (new mat_type (Teuchos::View, *B, 1, 1));
     }

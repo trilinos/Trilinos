@@ -85,7 +85,7 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
 
 
   int col_len,row_len;
- 
+
 
   MPI_Status msgstatus;
 
@@ -95,33 +95,33 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
 
   int rhs_col,k_row;
 
-  
+
   col_len = my_rows;    /* length of column in remaining local matrix */
 
 
-  row_len = my_cols + my_rhs;  /* length of row in local matrix including 
+  row_len = my_cols + my_rhs;  /* length of row in local matrix including
 			          rhs's*/
- 
+
   rhs_col = 0;
   for (k=0; k<=nrows_matrix-2; k++)
   {
     k_row = k%nprocs_col;
     if (mycol == rhs_col)
     {
-	if (myrow  == k_row) 
+	if (myrow  == k_row)
         {
-	  pivot_row = permutations[k/nprocs_col]; 
+	  pivot_row = permutations[k/nprocs_col];
         }
         MPI_Bcast(&pivot_row,1,MPI_INT,k_row,col_comm);
         if (k != pivot_row)
 	{
 	  /* Perform necessary sends to do the swap: */
-	  if (myrow == k_row) 
+	  if (myrow == k_row)
           {
 	    MPI_Send((char *)(&rhs[k/nprocs_col]),sizeof(DATA_TYPE),MPI_CHAR,
 		pivot_row%nprocs_col,2,col_comm);
 	  }
-	  if (myrow == pivot_row%nprocs_col) 
+	  if (myrow == pivot_row%nprocs_col)
           {
    	    MPI_Send((char *)(&rhs[pivot_row/nprocs_col]),sizeof(DATA_TYPE),
 		MPI_CHAR,k_row,3,col_comm);
@@ -130,7 +130,7 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
 	  if (myrow == k_row)
 	  {
 	    MPI_Recv((char *)(&tmpv),sizeof(DATA_TYPE),MPI_CHAR,
-		pivot_row%nprocs_col,3,col_comm,&msgstatus);      
+		pivot_row%nprocs_col,3,col_comm,&msgstatus);
     	    rhs[k/nprocs_col] = tmpv;
           }
 	  if (myrow == pivot_row%nprocs_col)
@@ -138,7 +138,7 @@ permute_rhs(DATA_TYPE *rhs, int *permutations)
             MPI_Recv((char *)(&tmpv),sizeof(DATA_TYPE),
 		MPI_CHAR,k_row,2,col_comm,&msgstatus);
     	    rhs[pivot_row/nprocs_col] = tmpv;
-          } 
+          }
        }
     }
   }

@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact David M. Gay (dmgay@sandia.gov) or Eric T. Phipps
 // (etphipp@sandia.gov).
@@ -302,14 +302,14 @@ public:
 
   explicit inline
   View( const typename if_allocation_constructor::type & label ,
-        size_t n0 = 0 ,
-        size_t n1 = 0 ,
-        size_t n2 = 0 ,
-        size_t n3 = 0 ,
-        size_t n4 = 0 ,
-        size_t n5 = 0 ,
-        size_t n6 = 0 ,
-        size_t n7 = 0 )
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
@@ -333,14 +333,14 @@ public:
   explicit inline
   View( const AllocateWithoutInitializing & ,
         const typename if_allocation_constructor::type & label ,
-        size_t n0 = 0 ,
-        size_t n1 = 0 ,
-        size_t n2 = 0 ,
-        size_t n3 = 0 ,
-        size_t n4 = 0 ,
-        size_t n5 = 0 ,
-        size_t n6 = 0 ,
-        size_t n7 = 0 )
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        const size_t n7 = 0 )
     : m_ptr_on_device(0)
     {
       typedef typename traits::memory_space  memory_space ;
@@ -362,30 +362,15 @@ public:
   //------------------------------------
   // Assign an unmanaged View from pointer, can be called in functors.
   // No alignment padding is performed.
-
-  // template< typename T >
-  // View( T * ptr ,
-  //       size_t n0 = 0 ,
-  //       size_t n1 = 0 ,
-  //       size_t n2 = 0 ,
-  //       size_t n3 = 0 ,
-  //       size_t n4 = 0 ,
-  //       size_t n5 = 0 ,
-  //       size_t n6 = 0 ,
-  //       typename Impl::enable_if<(
-  //         ( Impl::is_same<T,typename traits::value_type>::value ||
-  //           Impl::is_same<T,typename traits::const_value_type>::value ) &&
-  //         ! traits::is_managed ),
-  //       const size_t >::type n7 = 0 )
   template< typename T >
   View( T * ptr ,
-        size_t n0 = 0 ,
-        size_t n1 = 0 ,
-        size_t n2 = 0 ,
-        size_t n3 = 0 ,
-        size_t n4 = 0 ,
-        size_t n5 = 0 ,
-        size_t n6 = 0 ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
         typename Impl::enable_if<(
           ( Impl::is_same<T,fad_value_type>::value ||
             Impl::is_same<T,const_fad_value_type>::value ) &&
@@ -398,6 +383,33 @@ public:
       verify_dimension_storage_static_size();
 
       m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
+
+      m_tracking = false;
+    }
+
+  template< typename T >
+  View( const ViewWithoutManaging & ,
+        T * ptr ,
+        const size_t n0 = 0 ,
+        const size_t n1 = 0 ,
+        const size_t n2 = 0 ,
+        const size_t n3 = 0 ,
+        const size_t n4 = 0 ,
+        const size_t n5 = 0 ,
+        const size_t n6 = 0 ,
+        typename Impl::enable_if<(
+          Impl::is_same<T,fad_value_type>::value ||
+          Impl::is_same<T,const_fad_value_type>::value ),
+        const size_t >::type n7 = 0 )
+    : m_ptr_on_device(ptr)
+    {
+      m_offset_map.assign( n0, n1, n2, n3, n4, n5, n6, n7 );
+
+      verify_dimension_storage_static_size();
+
+      m_storage_size = Impl::dimension( m_offset_map , unsigned(Rank) );
+
+      m_tracking = false;
     }
 
   //------------------------------------

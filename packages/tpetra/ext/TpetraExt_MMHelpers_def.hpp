@@ -67,12 +67,6 @@ CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::~CrsMatrix
 template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class SpMatOps>
 void CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdinal, Node, SpMatOps>::deleteContents()
 {
-  numRows = 0;
-  numEntriesPerRow.clear();
-  indices.clear();
-  values.clear();
-  remote.clear();
-  numRemote = 0;
   importMatrix.reset();
   origMatrix = Teuchos::null;
 }
@@ -84,14 +78,8 @@ int dumpCrsMatrixStruct(const CrsMatrixStruct<Scalar, LocalOrdinal, GlobalOrdina
   std::cout << "numRows: " << M.numRows<<std::endl;
   for(LocalOrdinal i=0; i<M.numRows; ++i) {
     for(LocalOrdinal j=0; j<M.numEntriesPerRow[i]; ++j) {
-      if (M.remote[i]) {
-        std::cout << "  *"<<M.rowMap->GID(i)<<"   "
-             <<M.importColMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
-      }
-      else {
-        std::cout << "   "<<M.rowMap->GID(i)<<"   "
-             <<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
-      }
+      std::cout << "   "<<M.rowMap->GID(i)<<"   "
+		<<M.colMap->GID(M.indices[i][j])<<"   "<<M.values[i][j]<<std::endl;
     }
   }
   return(0);

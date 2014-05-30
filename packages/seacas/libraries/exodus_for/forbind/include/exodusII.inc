@@ -31,9 +31,9 @@
         integer EX_MAPS_INT64_API
         integer EX_IDS_INT64_API,EX_BULK_INT64_API,EX_ALL_INT64_API
 
-        parameter (EXREAD =     0)   !       EXREAD - File open for read
         parameter (EXWRIT =     1)   !       EXWRIT - File open for write
         parameter (EXWRT  =     1)   !       EXWRT  - File open for write (alternate to EXWRIT)
+        parameter (EXREAD =     2)   !       EXREAD - File open for read
 
         parameter (EXNOCL =     4)   !       EXNOCL - File create with no overwrite (no clobber), default
         parameter (EXCLOB =     8)   !       EXCLOB - File create with overwrite (clobber)

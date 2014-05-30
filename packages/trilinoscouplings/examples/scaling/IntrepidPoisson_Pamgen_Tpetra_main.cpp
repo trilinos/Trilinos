@@ -83,9 +83,10 @@ main (int argc, char *argv[])
   using TpetraIntrepidPoissonExample::solveWithBelos;
   using TpetraIntrepidPoissonExample::solveWithBelosGPU;
   using IntrepidPoissonExample::makeMeshInput;
-  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
-  using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
+  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
+  using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
+  using IntrepidPoissonExample::setUpCommandLineArguments;
   using Tpetra::DefaultPlatform;
   using Teuchos::Comm;
   using Teuchos::outArg;
@@ -99,8 +100,10 @@ main (int argc, char *argv[])
   using std::endl;
   // Pull in typedefs from the example's namespace.
   typedef TpetraIntrepidPoissonExample::ST ST;
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::LO LO;
   typedef TpetraIntrepidPoissonExample::GO GO;
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
   typedef TpetraIntrepidPoissonExample::Node Node;
   typedef Teuchos::ScalarTraits<ST> STS;
   typedef STS::magnitudeType MT;
@@ -128,14 +131,25 @@ main (int argc, char *argv[])
     int nx, ny, nz;
     std::string xmlInputParamsFile;
     bool verbose, debug;
+    int maxNumItersFromCmdLine = -1; // -1 means "read from XML file"
+    double tolFromCmdLine = -1.0; // -1 means "read from XML file"
+    std::string solverName = "GMRES";
+    ST materialTensorOffDiagonalValue = 0.0;
 
     // Set default values of command-line arguments.
     setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
-                                    verbose, debug);
+                                    solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+                               solverName, tolFromCmdLine,
+                               maxNumItersFromCmdLine,
                                verbose, debug);
+    cmdp.setOption ("materialTensorOffDiagonalValue",
+                    &materialTensorOffDiagonalValue, "Off-diagonal value in "
+                    "the material tensor.  This controls the iteration count.  "
+                    "Be careful with this if you use CG, since you can easily "
+                    "make the matrix indefinite.");
 
     // Additional command-line arguments for GPU experimentation.
     bool gpu = false;
@@ -180,13 +194,15 @@ main (int argc, char *argv[])
                     "before exiting.");
 
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
-                               xmlInputParamsFile, verbose, debug);
+                               xmlInputParamsFile, solverName, verbose, debug);
     if (printedHelp) {
       // The user specified --help at the command line to print help
       // with command-line arguments.  We printed help already, so quit
       // with a happy return code.
       return EXIT_SUCCESS;
     }
+
+    setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
 
     // Both streams only print on MPI Rank 0.  "out" only prints if the
     // user specified --verbose.
@@ -265,7 +281,7 @@ main (int argc, char *argv[])
            << "||A||_F = " << norms[2] << endl;
 
       // Setup preconditioner
-      std::string prec_type = inputList.get("Preconditioner", "None");
+      std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
@@ -287,12 +303,33 @@ main (int argc, char *argv[])
         }
       } // setup preconditioner
 
+      // Get the convergence tolerance for each linear solve.
+      // If the user provided a nonnegative value at the command
+      // line, it overrides any value in the input ParameterList.
+      MT tol = STM::squareroot (STM::eps ()); // default value
+      if (tolFromCmdLine < STM::zero ()) {
+        tol = inputList.get ("Convergence Tolerance", tol);
+      } else {
+        tol = tolFromCmdLine;
+      }
+
+      // Get the maximum number of iterations for each linear solve.
+      // If the user provided a value other than -1 at the command
+      // line, it overrides any value in the input ParameterList.
+      int maxNumIters = 200; // default value
+      if (maxNumItersFromCmdLine == -1) {
+        maxNumIters = inputList.get ("Maximum Iterations", maxNumIters);
+      } else {
+        maxNumIters = maxNumItersFromCmdLine;
+      }
+
+      // Get the number of "time steps."  We imitate a time-dependent
+      // PDE by doing this many linear solves.
+      const int num_steps = inputList.get ("Number of Time Steps", 1);
+
+      // Do the linear solve(s).
       bool converged = false;
       int numItersPerformed = 0;
-      const MT tol = inputList.get("Convergence Tolerance",
-                                   STM::squareroot (STM::eps ()));
-      const int maxNumIters = inputList.get("Maximum Iterations", 200);
-      const int num_steps = inputList.get("Number of Time Steps", 1);
       if (gpu) {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total GPU Solve", total_solve);
         solveWithBelosGPU (converged, numItersPerformed, tol, maxNumIters,
@@ -301,8 +338,8 @@ main (int argc, char *argv[])
       }
       else {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-        solveWithBelos (converged, numItersPerformed, tol, maxNumIters,
-                        num_steps, X, A, B, Teuchos::null, M);
+        solveWithBelos (converged, numItersPerformed, solverName, tol,
+                        maxNumIters, num_steps, X, A, B, Teuchos::null, M);
       }
 
       // Compute ||X-X_exact||_2

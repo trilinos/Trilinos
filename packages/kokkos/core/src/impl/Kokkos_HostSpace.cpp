@@ -46,6 +46,7 @@
 #include <stdlib.h>
 #include <iostream>
 #include <sstream>
+#include <cstring>
 
 #include <Kokkos_HostSpace.hpp>
 #include <impl/Kokkos_Error.hpp>
@@ -74,7 +75,7 @@ public:
 
 HostMemoryTrackingEntry::~HostMemoryTrackingEntry()
 {
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
    _mm_free( ptr_alloc );
 #else
    free( ptr_alloc );
@@ -87,12 +88,23 @@ Impl::MemoryTracking & host_space_singleton()
   return self ;
 }
 
+bool host_space_verify_modifiable( const char * const label )
+{
+  static const char error_in_parallel[] = "Called with HostSpace::in_parallel()" ;
+  static const char error_not_exists[]  = "Called after return from main()" ;
+
+  const char * const error_msg =
+    HostSpace::in_parallel() ? error_in_parallel : (
+    ! host_space_singleton().exists() ? error_not_exists : (const char *) 0 );
+
+  if ( error_msg ) {
+    std::cerr << "Kokkos::HostSpace::" << label << " ERROR : " << error_msg << std::endl ;
+  }
+
+  return error_msg == 0  ;
+}
+
 } // namespace <blank>
-namespace NEVEREVERUSEMEIWILLFINDYOU {
-Impl::MemoryTracking & host_space_singleton_wrapper() {
-  return host_space_singleton();
-}
-}
 } // namespade Kokkos
 
 /*--------------------------------------------------------------------------*/
@@ -112,7 +124,7 @@ void * host_allocate_not_thread_safe(
     void * ptr_alloc = 0 ;
     size_t count_alloc = scalar_count ;
 
-#if defined( __INTEL_COMPILER )
+#if defined( __INTEL_COMPILER ) && !defined ( KOKKOS_HAVE_CUDA )
 
     ptr = ptr_alloc = _mm_malloc( scalar_size * count_alloc , MEMORY_ALIGNMENT );
    
@@ -235,26 +247,25 @@ void * HostSpace::allocate(
   const size_t           scalar_size ,
   const size_t           scalar_count )
 {
-  if ( HostSpace::in_parallel() ) {
-    Kokkos::Impl::throw_runtime_exception( "Kokkos::HostSpace::allocate ERROR : called in parallel" );
-  }
+  void * ptr = 0 ;
 
-  void * const ptr =
-    Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
+  if ( host_space_verify_modifiable("allocate") ) {
+    ptr = Impl::host_allocate_not_thread_safe( label , scalar_type , scalar_size , scalar_count );
+  }
 
   return ptr ;
 }
 
 void HostSpace::increment( const void * ptr )
 {
-  if ( ! HostSpace::in_parallel() ) {
+  if ( host_space_verify_modifiable("increment") ) {
     host_space_singleton().increment( ptr );
   }
 }
 
 void HostSpace::decrement( const void * ptr )
 {
-  if ( ! HostSpace::in_parallel() ) {
+  if ( host_space_verify_modifiable("decrement") ) {
     Impl::host_decrement_not_thread_safe( ptr );
   }
 }

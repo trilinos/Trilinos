@@ -83,6 +83,12 @@ extern void cuda_test_deep_copy(  uint32_t num_nodes );
 extern void cuda_test_vector_combinations(unsigned int size);
 extern void cuda_test_dualview_combinations(unsigned int size);
 
+extern void cuda_test_bitset();
+
+TEST_F( cuda, bitset )
+{
+  cuda_test_bitset();
+}
 
 #define CUDA_INSERT_TEST( name, num_nodes, num_inserts, num_duplicates, repeat )                                \
   TEST_F( cuda, UnorderedMap_insert_##name##_##num_nodes##_##num_inserts##_##num_duplicates##_##repeat##x) {   \

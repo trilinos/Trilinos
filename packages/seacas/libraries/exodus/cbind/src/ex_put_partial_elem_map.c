@@ -51,9 +51,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <stdlib.h> /* for free() */
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_num_map, etc
 
 /*!
  * writes an element map; this is a vector of integers of length number

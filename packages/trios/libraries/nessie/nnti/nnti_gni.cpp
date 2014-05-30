@@ -1231,12 +1231,12 @@ NNTI_result_t NNTI_gni_connect (
             goto cleanup;
         }
 
-        rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.ep_cq_hdl);
+        rc=GNI_CqCreate (conn->nic_hdl, 100, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.ep_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CqCreate(transport_global_data.ep_cq_hdl) failed: %d", rc);
             goto cleanup;
         }
-        rc=GNI_CqCreate (conn->nic_hdl, 1, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.mem_cq_hdl);
+        rc=GNI_CqCreate (conn->nic_hdl, 100, 0, GNI_CQ_BLOCKING, NULL, NULL, &transport_global_data.mem_cq_hdl);
         if (rc!=GNI_RC_SUCCESS) {
             log_error(nnti_debug_level, "CqCreate(transport_global_data.mem_cq_hdl) failed: %d", rc);
             goto cleanup;
@@ -6843,7 +6843,7 @@ static void client_req_queue_init(
 
     rc=GNI_CqCreate (
             c->nic_hdl,
-            5,
+            50,
             0,
             GNI_CQ_BLOCKING,
             NULL,

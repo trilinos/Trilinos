@@ -495,7 +495,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoslinalg
+          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
 
         TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -505,7 +505,7 @@ IF(Stokhos_ENABLE_Sacado)
           COMM serial mpi
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
-          DEPLIBS stokhos kokkoscore kokkoslinalg
+          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
       ENDIF()
 
@@ -522,7 +522,7 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoslinalg
+          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
 
         CUDA_COMPILE(CUDA_SOURCES Stokhos_KokkosCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -534,7 +534,7 @@ IF(Stokhos_ENABLE_Sacado)
           STANDARD_PASS_OUTPUT
           NUM_MPI_PROCS 1
           RUN_SERIAL
-          DEPLIBS stokhos kokkoscore kokkoslinalg
+          DEPLIBS stokhos kokkoscore kokkoscorelinalg
           )
       ENDIF()
 
@@ -548,7 +548,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoslinalg
+            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
 
           TRIBITS_ADD_EXECUTABLE_AND_TEST(
@@ -558,7 +558,7 @@ IF(Stokhos_ENABLE_Sacado)
             COMM serial mpi
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
-            DEPLIBS stokhos kokkoscore kokkoslinalg
+            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
         ENDIF()
 
@@ -572,7 +572,7 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoslinalg
+            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
 
           CUDA_COMPILE(CUDA_SOURCES Stokhos_TpetraCrsMatrixUQPCEUnitTest_Cuda.cu)
@@ -584,7 +584,7 @@ IF(Stokhos_ENABLE_Sacado)
             STANDARD_PASS_OUTPUT
             NUM_MPI_PROCS 4
             RUN_SERIAL
-            DEPLIBS stokhos kokkoscore kokkoslinalg
+            DEPLIBS stokhos kokkoscore kokkoscorelinalg
             )
         ENDIF()
 
@@ -603,17 +603,17 @@ ENDIF()
 # Need to fix these tests so they don't require Epetra
 IF (Stokhos_ENABLE_KokkosCore AND Stokhos_ENABLE_EpetraExt)
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    KokkosArrayKernelsUnitTest_Serial
-    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
-            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
-            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    DEPLIBS stokhos kokkoscore
-    )
+#  TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#    KokkosArrayKernelsUnitTest_Serial
+#    SOURCES Stokhos_KokkosArrayKernelsUnitTest.hpp
+#            Stokhos_KokkosArrayKernelsUnitTestDecl.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Host.hpp
+#            Stokhos_KokkosArrayKernelsUnitTest_Serial.cpp
+#    COMM serial mpi
+#    STANDARD_PASS_OUTPUT
+#    NUM_MPI_PROCS 1
+#    DEPLIBS stokhos kokkoscore
+#    )
 
   IF (Kokkos_ENABLE_Pthread)
     TRIBITS_ADD_EXECUTABLE_AND_TEST(

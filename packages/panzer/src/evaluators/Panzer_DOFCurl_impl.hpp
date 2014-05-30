@@ -83,7 +83,7 @@ PHX_EVALUATOR_CTOR(DOFCurl,p) :
   this->addDependentField(dof_value);
   this->addDependentField(dof_orientation);
   
-  std::string n = "DOFCurl: " + dof_curl.fieldTag().name();
+  std::string n = "DOFCurl: " + dof_curl.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 

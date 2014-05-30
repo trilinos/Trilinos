@@ -123,7 +123,7 @@ namespace {
 
   const char *complex_suffix[] = {".re", ".im"};
 
-  const char *Version() {return "Ioex_DatabaseIO.C 2012/04/19 gdsjaar";}
+  const char *Version() {return "Ioex_DatabaseIO.C 2014/05/14";}
 
   bool type_match(const std::string& type, const char *substring);
   int64_t extract_id(const std::string &name_id);
@@ -136,33 +136,7 @@ namespace {
     std::ostringstream errmsg;
     // Create errmsg here so that the exerrval doesn't get cleared by
     // the ex_close call.
-    // Try to interpret exodus error messages...
-    std::string error_type;
-    switch (exerrval) {
-    case -31:
-      error_type = "System Error -- Usually disk full or filesystem issue"; break;
-    case -33:
-      error_type = "Not a netcdf id"; break;
-    case -34:
-      error_type = "Too many files open"; break;
-    case -41:
-    case -44:
-    case -48:
-    case -53:
-    case -62:
-      error_type = "Internal netcdf/exodusII dimension exceeded"; break;
-    case -51:
-      error_type = "Not an exodusII/netcdf file"; break;
-    case -59:
-      error_type = "Attribute of variable name contains illegal characters"; break;
-    case -60:
-      error_type = "Memory allocation (malloc) failure"; break;
-    case -64:
-      error_type = "Filesystem issue; File likely truncated or possibly corrupted"; break;
-    default:
-      ;
-    }
-    errmsg << "ExodusII error (" << exerrval << ")" << error_type << " at line " << lineno
+    errmsg << "Exodus error (" << exerrval << ")" << nc_strerror(exerrval) << " at line " << lineno
         << " in file '" << Version()
         << "' Please report to gdsjaar@sandia.gov if you need help.";
 
@@ -214,6 +188,12 @@ namespace {
   void filter_element_list(Ioss::Region *region,
                            Ioss::Int64Vector &elements, Ioss::Int64Vector &sides,
                            bool remove_omitted_elements);
+
+  bool filter_node_list(Ioss::Int64Vector &nodes,
+			const std::vector<unsigned char> &node_connectivity_status);
+
+  template <typename T>
+  void filter_node_list(T* data, std::vector<T> &dbvals, const std::vector<int64_t> &active_node_index);
 
   void separate_surface_element_sides(Ioss::Int64Vector &element,
                                       Ioss::Int64Vector &sides,
@@ -364,7 +344,7 @@ namespace Ioex {
 
     if (!is_input()) {
       // Check whether appending to existing file...
-      if (open_create_behavior() == Ioss::DB_APPEND) {
+      if (open_create_behavior() == Ioss::DB_APPEND || open_create_behavior() == Ioss::DB_APPEND_GROUP) {
         // Append to file if it already exists -- See if the file exists.
         std::string decoded_filename = util().decode_filename(get_filename(), isParallel);
         Ioss::FileInfo file = Ioss::FileInfo(decoded_filename);
@@ -398,6 +378,11 @@ namespace Ioex {
       if (type == "netcdf4" || type == "netcdf-4" || type == "hdf5") {
         exodusMode |= EX_NETCDF4;
       }
+    }
+
+    if (properties.exists("ENABLE_FILE_GROUPS")) {
+        exodusMode |= EX_NETCDF4;
+        exodusMode |= EX_NOCLASSIC;
     }
 
     if (properties.exists("MAXIMUM_NAME_LENGTH")) {
@@ -642,6 +627,9 @@ namespace Ioex {
         ex_set_option(exodusFilePtr, EX_OPT_COMPRESSION_SHUFFLE, shuffle);
       }
 
+      if (!m_groupName.empty()) {
+       ex_get_group_id(exodusFilePtr, m_groupName.c_str(), &exodusFilePtr);
+      }
     }
     assert(exodusFilePtr >= 0);
     fileExists = true;
@@ -655,6 +643,59 @@ namespace Ioex {
     exodusFilePtr = -1;
 
     return exodusFilePtr;
+  }
+
+  bool DatabaseIO::open_group(const std::string &group_name)
+  {
+    // Get existing file pointer...
+    bool success = false;
+
+    int exoid = get_file_pointer();
+
+    m_groupName = group_name;
+    ex_get_group_id(exoid, m_groupName.c_str(), &exodusFilePtr);
+
+    if (exodusFilePtr < 0) {
+      std::ostringstream errmsg;
+      errmsg << "ERROR: Could not open group named '" << m_groupName
+            << "' in file '" << get_filename() << "'.\n";
+      IOSS_ERROR(errmsg);
+    } else {
+      success = true;
+    }
+    return success;
+  }
+
+  bool DatabaseIO::create_subgroup(const std::string &group_name)
+  {
+    bool success = false;
+    if (!is_input()) {
+      // Get existing file pointer...
+      int exoid = get_file_pointer();
+
+      // Check name for '/' which is not allowed since it is the
+      // separator character in a full group path
+      if (group_name.find('/') != std::string::npos) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Invalid group name '" << m_groupName
+              << "' contains a '/' which is not allowed.\n";
+       IOSS_ERROR(errmsg);
+      }
+
+      m_groupName = group_name;
+      exoid = ex_create_group(exoid, m_groupName.c_str());
+      if (exoid < 0) {
+       std::ostringstream errmsg;
+       errmsg << "ERROR: Could not create group named '" << m_groupName
+              << "' in file '" << get_filename() << "'.\n";
+       IOSS_ERROR(errmsg);
+      }
+      else {
+       exodusFilePtr = exoid;
+       success = true;
+      }
+    }
+    return success;
   }
 
   void DatabaseIO::put_qa()
@@ -2582,6 +2623,22 @@ namespace Ioex {
 	      alias = temp;
 	    }
 
+	    bool filtered = false;
+	    int64_t original_set_size = set_params[ins].num_entry;
+	    Ioss::Int64Vector active_node_index;
+	    if (!blockOmissions.empty() && type == EX_NODE_SET) {
+	      active_node_index.resize(set_params[ins].num_entry);
+	      set_params[ins].entry_list = TOPTR(active_node_index);
+
+	      int old_status = ex_int64_status(get_file_pointer());
+	      ex_set_int64_status(get_file_pointer(), EX_BULK_INT64_API);	      
+	      ex_get_sets(get_file_pointer(), 1, &set_params[ins]);
+	      ex_set_int64_status(get_file_pointer(), old_status);	      
+
+              compute_node_status();
+	      filtered = filter_node_list(active_node_index, nodeConnectivityStatus);
+	      set_params[ins].num_entry = active_node_index.size();
+	    }
             T* Xset = new T(this, Xset_name, set_params[ins].num_entry);
             Xsets[ins] = Xset;
             Xset->property_add(Ioss::Property("id", id));
@@ -2592,6 +2649,10 @@ namespace Ioex {
 	      }
 	      if (alias != Xset_name)
 		Xset->property_add(Ioss::Property("db_name", *db_name));
+	    }
+	    if (filtered && type == EX_NODE_SET) {
+	      Xset->property_add(Ioss::Property("filtered_db_set_size", original_set_size));
+	      activeNodesetNodesIndex[Xset_name].swap(active_node_index);
 	    }
             get_region()->add(Xset);
             get_region()->add_alias(Xset_name, alias);
@@ -3316,7 +3377,79 @@ namespace Ioex {
                                            const Ioss::Field& field,
                                            void *data, size_t data_size) const
     {
-      return get_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
+      if (!ns->property_exists("filtered_db_set_size")) {
+	return get_Xset_field_internal(EX_NODE_SET, ns, field, data, data_size);
+      }
+      else {
+	size_t db_size = ns->get_property("filtered_db_set_size").get_int();
+	
+        int ierr;
+        Ioss::SerializeIO	serializeIO__(this);
+
+        size_t num_to_get = field.verify(data_size);
+        if (num_to_get > 0) {
+
+          int64_t id = get_id(ns, EX_NODE_SET, &ids_);
+          Ioss::Field::RoleType role = field.get_role();
+          if (role == Ioss::Field::MESH) {
+
+            if (field.get_name() == "ids" ||
+                field.get_name() == "ids_raw") {
+              if (field.get_type() == Ioss::Field::INTEGER) {
+		IntVector dbvals(db_size);
+                ierr = ex_get_set(get_file_pointer(), EX_NODE_SET, id, TOPTR(dbvals), NULL);
+		if (ierr >= 0)
+		  filter_node_list(static_cast<int*>(data), dbvals, activeNodesetNodesIndex[ns->name()]);
+              } else {
+		Int64Vector dbvals(db_size);
+                ierr = ex_get_set(get_file_pointer(), EX_NODE_SET, id, TOPTR(dbvals), NULL);
+		if (ierr >= 0)
+		  filter_node_list(static_cast<int64_t*>(data), dbvals, activeNodesetNodesIndex[ns->name()]);
+              }
+              if (ierr < 0)
+                exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+              if (field.get_name() == "ids") {
+                // Convert the local node ids to global ids
+                get_map(EX_NODE_SET).map_data(data, field, num_to_get);
+              }
+
+            } else if (field.get_name() == "distribution_factors") {
+              ex_set set_param[1];
+              set_param[0].id = id;
+              set_param[0].type = EX_NODE_SET;
+              set_param[0].entry_list = NULL;
+              set_param[0].extra_list = NULL;
+              set_param[0].distribution_factor_list = NULL;
+              ierr = ex_get_sets(get_file_pointer(), 1, set_param);
+	      if (ierr < 0)
+		exodus_error(get_file_pointer(), __LINE__, myProcessor);
+
+              if (set_param[0].num_distribution_factor == 0) {
+                double *rdata = static_cast<double*>(data);
+                for (size_t i=0; i < num_to_get; i++)
+                  rdata[i] = 1.0;
+              } else {
+		std::vector<double>dbvals(db_size);
+                set_param[0].distribution_factor_list = TOPTR(dbvals);
+                ierr = ex_get_sets(get_file_pointer(), 1, set_param);
+                if (ierr < 0)
+                  exodus_error(get_file_pointer(), __LINE__, myProcessor);
+		filter_node_list(static_cast<double*>(data), dbvals, activeNodesetNodesIndex[ns->name()]);
+              }
+            } else {
+              num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+            }
+          } else if (role == Ioss::Field::ATTRIBUTE) {
+	    num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+
+          } else if (role == Ioss::Field::TRANSIENT) {
+	    // Filtered not currently implemented for transient or attributes....
+	    num_to_get = Ioss::Utils::field_warning(ns, field, "input");
+          }
+        }
+        return num_to_get;
+      }
     }
 
     int64_t DatabaseIO::get_field_internal(const Ioss::EdgeSet* ns,
@@ -7785,6 +7918,40 @@ namespace Ioex {
       if (remove_omitted_elements && omitted) {
         elements.erase(std::remove(elements.begin(), elements.end(), 0), elements.end());
         sides.erase(   std::remove(sides.begin(),    sides.end(),    0), sides.end());
+      }
+    }
+
+    bool filter_node_list(Ioss::Int64Vector &nodes,
+			  const std::vector<unsigned char> &node_connectivity_status)
+    {
+      // Iterate through 'nodes' and determine which of the nodes are
+      // not connected to any non-omitted blocks. The index of these
+      // nodes is then put in the 'nodes' list.
+      // Assumes that there is at least one omitted element block.  The
+      // 'nodes' list on entry contains 1-based local node ids, not global.
+      // On return, the nodes list contains indices.  To filter a nodeset list:
+      // for (size_t i = 0; i < nodes.size(); i++) {
+      //    active_values[i] = some_nset_values[nodes[i]];
+      // }
+
+      size_t orig_size = nodes.size();
+      size_t active = 0;
+      for (size_t i=0; i < orig_size; i++) {
+	if (node_connectivity_status[nodes[i]-1] >= 2) {
+	  // Node is connected to at least 1 active element...
+	  nodes[active++] = i;
+	}
+      }
+      nodes.resize(active);
+      std::vector<int64_t>(nodes).swap(nodes); // shrink to fit
+      return (active != orig_size);
+    }
+
+    template <typename T>
+    void filter_node_list(T* data, std::vector<T> &dbvals, const std::vector<int64_t> &active_node_index)
+    {
+      for (size_t i=0; i < active_node_index.size(); i++) {
+	data[i] = dbvals[active_node_index[i]];
       }
     }
 

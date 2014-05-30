@@ -2,9 +2,8 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include	<stdio.h>
-#include	"defs.h"
-#include	"refine_map.h"
+#include <stdio.h>                      // for NULL
+#include "refine_map.h"                 // for refine_vdata
 
 
 void 

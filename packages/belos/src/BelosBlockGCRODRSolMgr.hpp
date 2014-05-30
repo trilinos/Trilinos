@@ -1304,7 +1304,7 @@ return;
 
 template<class ScalarType, class MV, class OP>
 void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<BlockGCRODRIter<ScalarType,MV,OP> > block_gcrodr_iter){
-  const ScalarType one = Teuchos::ScalarTraits<ScalarType>::one();
+  const MagnitudeType one = Teuchos::ScalarTraits<ScalarType>::one();
   const ScalarType zero = Teuchos::ScalarTraits<ScalarType>::zero();
 
   std::vector<MagnitudeType> d(keff);
@@ -1337,7 +1337,8 @@ void BlockGCRODRSolMgr<ScalarType,MV,OP>::buildRecycleSpaceAugKryl(Teuchos::RCP<
     dscalar.resize(keff);
     MVT::MvNorm( *Utmp, d );
     for (int i=0; i<keff; ++i) {
-      dscalar[i] = one / d[i];
+      d[i] = one / d[i];
+      dscalar[i] = (ScalarType)d[i];
     }
     MVT::MvScale( *Utmp, dscalar );
   }
@@ -1564,30 +1565,35 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsAugKryl(int keff, int m,
 
   this->sort(w,ld,iperm);
 
-  // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
-    int countImag = 0;
-    for ( i=ld-recycledBlocks_; i<ld; i++ )
-      if (wi[iperm[i]] != 0.0) countImag++;
-    // Check to see if this count is even or odd:
-    if (countImag % 2) xtraVec = true;
-  }
+  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
-
   for( i=0; i<recycledBlocks_; i++ )
     for( j=0; j<ld; j++ )
       PP(j,i) = vr(j,iperm[ld-recycledBlocks_+i]);
 
-  if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
-      for( j=0; j<ld; j++ )                  // so get the "imag" component
-        PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+  if(scalarTypeIsComplex==false) {
+    
+    // Determine exact size for PP (i.e., determine if we need to store an additional vector)
+    if (wi[iperm[ld-recycledBlocks_]] != 0.0) {
+      int countImag = 0;
+      for ( i=ld-recycledBlocks_; i<ld; i++ )
+	if (wi[iperm[i]] != 0.0) countImag++;
+      // Check to see if this count is even or odd:
+      if (countImag % 2) xtraVec = true;
     }
-    else {                  // I picked the "imag" component
-      for( j=0; j<ld; j++ ) // so get the "real" component
-        PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
+    
+    if (xtraVec) { // we need to store one more vector
+      if (wi[iperm[ld-recycledBlocks_]] > 0.0) { // I picked the "real" component
+	for( j=0; j<ld; j++ )                  // so get the "imag" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]+1);
+      }
+      else {                  // I picked the "imag" component
+	for( j=0; j<ld; j++ ) // so get the "real" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[ld-recycledBlocks_]-1);
+      }
     }
+    
   }
 
   // Return whether we needed to store an additional vector
@@ -1684,29 +1690,35 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
 
   this->sort(w, m, iperm);
 
-  // Determine exact size for PP (i.e., determine if we need to store an additional vector)
-  if (wi[iperm[recycledBlocks_-1]] != 0.0) {
-    int countImag = 0;
-    for (int i=0; i<recycledBlocks_; ++i )
-      if (wi[iperm[i]] != 0.0) countImag++;
-    // Check to see if this count is even or odd:
-    if (countImag % 2) xtraVec = true;
-  }
+  bool scalarTypeIsComplex = Teuchos::ScalarTraits<ScalarType>::isComplex;
 
   // Select recycledBlocks_ smallest eigenvectors
   for( int i=0; i<recycledBlocks_; ++i )
     for(int j=0; j<m; j++ )
       PP(j,i) = vr(j,iperm[i]);
 
-  if (xtraVec) { // we need to store one more vector
-    if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
-      for(int j=0; j<m; ++j )               // so get the "imag" component
-        PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+  if(scalarTypeIsComplex==false) {
+
+    // Determine exact size for PP (i.e., determine if we need to store an additional vector)
+    if (wi[iperm[recycledBlocks_-1]] != 0.0) {
+      int countImag = 0;
+      for (int i=0; i<recycledBlocks_; ++i )
+	if (wi[iperm[i]] != 0.0) countImag++;
+      // Check to see if this count is even or odd:
+      if (countImag % 2) xtraVec = true;
     }
-    else{                         // I picked the "imag" component
-      for(int j=0; j<m; ++j )     // so get the "real" component
-        PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
+    
+    if (xtraVec) { // we need to store one more vector
+      if (wi[iperm[recycledBlocks_-1]] > 0.0) { // I picked the "real" component
+	for(int j=0; j<m; ++j )               // so get the "imag" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]+1);
+      }
+      else{                         // I picked the "imag" component
+	for(int j=0; j<m; ++j )     // so get the "real" component
+	  PP(j,recycledBlocks_) = vr(j,iperm[recycledBlocks_-1]-1);
+      }
     }
+    
   }
 
   // Return whether we needed to store an additional vector
@@ -1714,9 +1726,10 @@ int BlockGCRODRSolMgr<ScalarType,MV,OP>::getHarmonicVecsKryl(int m, const SDM& H
     printer_->stream(Debug) << "Recycled " << recycledBlocks_+1 << " vectors" << std::endl;
     return recycledBlocks_+1;
   }
-  printer_->stream(Debug) << "Recycled " << recycledBlocks_ << " vectors" << std::endl;
-  return recycledBlocks_;
-
+  else {
+    printer_->stream(Debug) << "Recycled " << recycledBlocks_ << " vectors" << std::endl;
+    return recycledBlocks_;
+  }
 } //end getHarmonicVecsKryl
 
 // This method sorts list of n floating-point numbers and return permutation vector

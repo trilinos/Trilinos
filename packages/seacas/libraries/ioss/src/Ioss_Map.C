@@ -31,16 +31,17 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <Ioss_Map.h>
-#include <Ioss_Field.h>
-#include <Ioss_Utils.h>
-#include <assert.h>
-#include <stddef.h>
-#include <algorithm>
-#include <iterator>
-#include <sstream>
-#include <string>
-#include <utility>
-#include <vector>
+#include <Ioss_Field.h>                 // for Field, etc
+#include <Ioss_Utils.h>                 // for IOSS_ERROR
+#include <assert.h>                     // for assert
+#include <stddef.h>                     // for size_t
+#include <sys/types.h>                  // for ssize_t
+#include <algorithm>                    // for adjacent_find, equal_range, etc
+#include <iterator>                     // for insert_iterator, inserter
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <string>                       // for char_traits, operator<<, etc
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector, vector<>::iterator, etc
 
 namespace {
   // Determines whether the input map is sequential (map[i] == i)

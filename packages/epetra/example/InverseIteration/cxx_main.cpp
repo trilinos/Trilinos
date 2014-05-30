@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -66,16 +66,16 @@
 // Function prototypes
 // *************************************************************
 
-int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose); 
+int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose);
 int applyInverseSetup(Epetra_CrsMatrix &A, Ifpack_CrsRiluk * & M);
-int applyInverse(Epetra_CrsMatrix &A, Epetra_Vector & x, Epetra_Vector & b, Ifpack_CrsRiluk * M, 
+int applyInverse(Epetra_CrsMatrix &A, Epetra_Vector & x, Epetra_Vector & b, Ifpack_CrsRiluk * M,
 		 bool verbose);
 int applyInverseDestroy(Ifpack_CrsRiluk * M);
-void BiCGSTAB(Epetra_CrsMatrix &A, 
-	      Epetra_Vector &x, 
-	      Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, 
+void BiCGSTAB(Epetra_CrsMatrix &A,
+	      Epetra_Vector &x,
+	      Epetra_Vector &b,
+	      Ifpack_CrsRiluk *M,
+	      int Maxiter,
 	      double Tolerance, bool verbose);
 
 // *************************************************************
@@ -96,7 +96,7 @@ int main(int argc, char *argv[]) {
 
   int MyPID = Comm.MyPID();
 
-  bool verbose = false; 
+  bool verbose = false;
   if (MyPID==0) verbose = true; // Print out detailed results (turn off for best performance)
 
   if(argc != 2) {
@@ -107,11 +107,11 @@ int main(int argc, char *argv[]) {
   // Define pointers that will be set by HB read function
 
   Epetra_Map * readMap;
-  Epetra_CrsMatrix * readA; 
-  Epetra_Vector * readx; 
+  Epetra_CrsMatrix * readA;
+  Epetra_Vector * readx;
   Epetra_Vector * readb;
   Epetra_Vector * readxexact;
-   
+
   // Call function to read in HB problem
   Trilinos_Util_ReadHb2Epetra(argv[1], Comm, readMap, readA, readx, readb, readxexact);
 
@@ -166,7 +166,7 @@ int main(int argc, char *argv[]) {
   MPI_Finalize();
 #else
   delete readA;
-  delete readMap;  
+  delete readMap;
 #endif
 
 return (0);
@@ -180,7 +180,7 @@ return (0);
 // Returns result in lambda
 // *************************************************************
 
-int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose) {  
+int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose) {
 
   Ifpack_CrsRiluk * M;
   applyInverseSetup(A, M);
@@ -207,7 +207,7 @@ int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose) {
 
   for (int iter = 0; iter < niters; iter++)
     {
-      if (verbose) 
+      if (verbose)
 	cout << endl
 	     << " ***** Performing step " << iter << " of inverse iteration ***** " << endl;
 
@@ -222,9 +222,9 @@ int invIteration(Epetra_CrsMatrix& A, double &lambda, bool verbose) {
 	  cout << endl
 	       << "***** Inverse Iteration Step " << iter+1 << endl
 	       << "  Lambda = " << 1.0/lambda << endl
-	       << "  Residual of A(inv)*q - lambda*q = " 
+	       << "  Residual of A(inv)*q - lambda*q = "
 	       << residual << endl;
-	} 
+	}
       if (residual < tolerance) {
 	ierr = 0;
 	break;
@@ -256,11 +256,11 @@ int applyInverseSetup(Epetra_CrsMatrix &A, Ifpack_CrsRiluk * & M) {
 }
 
 // *************************************************************
-// Solves a problem Ax = b, for a given A and b.  
+// Solves a problem Ax = b, for a given A and b.
 // M is a preconditioner computed in applyInverseSetup.
 // *************************************************************
 
-int applyInverse(Epetra_CrsMatrix &A, 
+int applyInverse(Epetra_CrsMatrix &A,
 		 Epetra_Vector & x, Epetra_Vector & b, Ifpack_CrsRiluk * M, bool verbose) {
 
   int Maxiter = 1000;
@@ -286,11 +286,11 @@ int applyInverseDestroy(Ifpack_CrsRiluk * M) {
 // Uses the Bi-CGSTAB iterative method to solve Ax = b
 // *************************************************************
 
-void BiCGSTAB(Epetra_CrsMatrix &A, 
-	      Epetra_Vector &x, 
-	      Epetra_Vector &b, 
-	      Ifpack_CrsRiluk *M, 
-	      int Maxiter, 
+void BiCGSTAB(Epetra_CrsMatrix &A,
+	      Epetra_Vector &x,
+	      Epetra_Vector &b,
+	      Ifpack_CrsRiluk *M,
+	      int Maxiter,
 	      double Tolerance, bool verbose) {
 
   // Allocate vectors needed for iterations
@@ -301,7 +301,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
   Epetra_Vector r(x.Map()); r.SetFlopCounter(x);
   Epetra_Vector rtilde(x.Map()); rtilde.Random(); rtilde.SetFlopCounter(x);
   Epetra_Vector v(x.Map()); v.SetFlopCounter(x);
-  
+
 
   A.Multiply(false, x, r); // r = A*x
 
@@ -319,7 +319,7 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
 		    << " Scaled residual = " << scaled_r_norm << endl;
 
 
-  for (int i=0; i<Maxiter; i++) { // Main iteration loop   
+  for (int i=0; i<Maxiter; i++) { // Main iteration loop
 
     double beta = (rhon/rhonm1) * (alpha/omega);
     rhonm1 = rhon;
@@ -331,22 +331,22 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     double dtemp = - beta*omega;
 
     p.Update(1.0, r, dtemp, v, beta);
-    if (M==0) 
+    if (M==0)
       phat.Scale(1.0, p);
     else
       M->Solve(false, p, phat);
     A.Multiply(false, phat, v);
 
-    
+
     rtilde.Dot(v,&sigma);
-    alpha = rhon/sigma;    
+    alpha = rhon/sigma;
 
     /* s = r - alpha*v                     */
     /* shat = M^-1 s                       */
     /* r = A shat (r is a tmp here for t ) */
 
     s.Update(-alpha, v, 1.0, r, 0.0);
-    if (M==0) 
+    if (M==0)
       shat.Scale(1.0, s);
     else
       M->Solve(false, s, shat);
@@ -360,8 +360,8 @@ void BiCGSTAB(Epetra_CrsMatrix &A,
     /* r = s - omega*r */
 
     x.Update(alpha, phat, omega, shat, 1.0);
-    r.Update(1.0, s, -omega); 
-    
+    r.Update(1.0, s, -omega);
+
     r.Norm2(&r_norm);
     scaled_r_norm = r_norm/b_norm;
     r.Dot(rtilde,&rhon);

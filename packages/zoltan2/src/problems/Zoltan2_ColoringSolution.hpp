@@ -43,8 +43,6 @@
 //
 // @HEADER
 
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
-
 /*! \file Zoltan2_ColoringSolution.hpp
     \brief Defines the ColoringSolution class.
 */
@@ -53,6 +51,7 @@
 #define _ZOLTAN2_COLORINGSOLUTION_HPP_
 
 #include <Zoltan2_Standards.hpp>
+#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #include <Zoltan2_Solution.hpp>
 
 namespace Zoltan2 {
@@ -60,18 +59,23 @@ namespace Zoltan2 {
 /*! \brief The class containing coloring solution.
 
     Template parameters:
-    \li \c gid_t    data type for application global Ids
-    \li \c lno_t    data type for local indices and local counts
+    \li \c adapter    input adapter
 
 The coloring solution contains an array of colors, one per id.
-Colors are represented as integers starting from 0. A special value,
-NO_COLOR, is used for vertices that have not been colored.
+Colors are represented as int (sufficient for any reasonable use case). 
+A special value, currently 0, is used for vertices that have not been colored.
 
 */
 
-template <typename gid_t, typename lno_t>
+template <typename Adapter>
   class ColoringSolution : public Solution
 {
+private: 
+  typedef typename Adapter::gno_t gno_t;
+  typedef typename Adapter::scalar_t scalar_t;
+  typedef typename Adapter::lno_t lno_t;
+  typedef typename Adapter::gid_t gid_t;
+
 public:
 
   /*! \brief Constructor allocates memory for the solution.
@@ -82,7 +86,6 @@ public:
   {
     HELLO;
     length_ = length;
-    gids_   = ArrayRCP<gid_t>(length_);
     colors_  = ArrayRCP<int>(length_);
   }
 
@@ -99,22 +102,35 @@ public:
    */
   inline ArrayRCP<int>  &getColorsRCP()  {return colors_;}
 
+  /*! \brief Get (local) color array by raw pointer (no RCP).
+   */
+  inline int * getColors()  {return &(*colors_);}
+
   /*! \brief Get local number of colors.
    */
-  int getLocalNumColors(); // TODO
+  inline int getNumColors()  {return numColors_;} 
 
   /*! \brief Get global number of colors.
    */
-  int getGlobalNumColors(); // TODO
+  //int getGlobalNumColors(); // TODO
+ 
+  //////////////////////////////////////////////
+  // Set methods, allowing algorithms to store data.
+  //
+  void setNumColors(int nc)
+  {
+    numColors_ = nc;
+  }
 
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
-  ArrayRCP<gid_t>  gids_; // TODO: Remove?
-  ArrayRCP<int> colors_;    // zero-based local color array
+  ArrayRCP<int> colors_;   // zero-based local color array
+  int numColors_;          // Number of colors (local on this proc)
+  //int numColorsGlobal_;  // For future distributed coloring
 };
 
 }
 
-#endif
 #endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
+#endif

@@ -50,7 +50,8 @@
 #include "Phalanx_Evaluator.hpp"
 #include "Phalanx_FieldManager.hpp"
 #include "Panzer_Traits.hpp"
-#include "Panzer_Base.hpp"
+#include "Panzer_ClosureModel_Factory_Base.hpp"
+
 #include <string>
 #include <vector>
 
@@ -61,7 +62,7 @@ namespace panzer {
   struct GlobalData;
 
   template<typename EvalT>
-  class ClosureModelFactory : public panzer::Base {
+  class ClosureModelFactory : public panzer::ClosureModelFactoryBase {
 
   public:
 
@@ -71,13 +72,27 @@ namespace panzer {
     
     Teuchos::RCP< std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > >
     virtual  buildClosureModels(const std::string& model_id,
-				const Teuchos::ParameterList& models,
-				const panzer::FieldLayoutLibrary& fl,
-				const Teuchos::RCP<panzer::IntegrationRule>& ir,
-				const Teuchos::ParameterList& equation_set_params,
-				const Teuchos::ParameterList& user_data,
-				const Teuchos::RCP<panzer::GlobalData>& global_data,
-				PHX::FieldManager<panzer::Traits>& fm) const = 0;
+                                const Teuchos::ParameterList& models,
+                                const panzer::FieldLayoutLibrary& fl,
+                                const Teuchos::RCP<panzer::IntegrationRule>& ir,
+                                const Teuchos::ParameterList& equation_set_params,
+                                const Teuchos::ParameterList& user_data,
+                                const Teuchos::RCP<panzer::GlobalData>& global_data,
+                                PHX::FieldManager<panzer::Traits>& fm) const = 0;
+
+    /** This a convenience function for registering the evaluators. Essentially this
+      * facilitates better usage of the ClosureModel TM and allows an easy registration
+      * process externally without knowning the compile-time evaluation type.
+      *
+      * \param[in] evaluators Evaluators to register
+      * \param[in] fm Field manager where the evaluators will be registered on completion.
+      */
+    virtual void registerEvaluators(const std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > > & evaluators,
+                                    PHX::FieldManager<panzer::Traits>& fm) const
+    { 
+      for (std::vector< Teuchos::RCP<PHX::Evaluator<panzer::Traits> > >::size_type i=0; i < evaluators.size(); ++i)
+        fm.template registerEvaluator<EvalT>(evaluators[i]);
+    }
 
   };
   

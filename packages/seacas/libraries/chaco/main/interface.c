@@ -2,12 +2,11 @@
  * at Sandia National Laboratories under US Department of Energy        *
  * contract DE-AC04-76DP00789 and is copyrighted by Sandia Corporation. */
 
-#include <stdio.h>
-#include <stdlib.h>
+#include <stdio.h>                      // for NULL, printf, fclose, fopen, etc
+#include <stdlib.h>                     // for free
+#include "defs.h"                       // for FALSE, TRUE
+#include "smalloc.h"                    // for sfree, smalloc_ret
 
-#include "defs.h"
-#include "structs.h"
-#include "smalloc.h"
 
 extern int submain(struct vtx_data **graph,
 		   int       nvtxs,		

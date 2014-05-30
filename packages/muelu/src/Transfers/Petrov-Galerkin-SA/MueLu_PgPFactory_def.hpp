@@ -46,11 +46,6 @@
 #ifndef MUELU_PGPFACTORY_DEF_HPP
 #define MUELU_PGPFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <vector>
 
 #include <Xpetra_Vector.hpp>
@@ -376,9 +371,9 @@ namespace MueLu {
       }
 
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) < min_local)
-	{ min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { min_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
       if(Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]) > max_local)
-	{ max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
+      { max_local = Teuchos::ScalarTraits<Scalar>::magnitude(ColBasedOmega_local[i]); }
     }
 
     { // be verbose

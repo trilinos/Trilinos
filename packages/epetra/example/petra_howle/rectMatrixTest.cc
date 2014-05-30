@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -146,7 +146,7 @@ Petra_RDP_CRS_Matrix* readMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 	// cout << "NumGlobalElements = " << NumGlobalElements << "\n" << endl;
 	fscanf(dataFile, "%d", &maxNumNz);
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Petra_Map& Map = *new Petra_Map(NumGlobalElements, 0, Comm);
 
@@ -211,7 +211,7 @@ Petra_RDP_CRS_Matrix* readMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 					//		 << endl;
 				}
 			NumEntries = NumNz[i];
-			assert(M.InsertGlobalValues(MyGlobalElements[i], 
+			assert(M.InsertGlobalValues(MyGlobalElements[i],
 						    NumEntries, Values, Indices)==0);
 			// cout << "offset = " << offset << endl;
 			offset = offset + NumNz[i];
@@ -230,7 +230,7 @@ Petra_RDP_CRS_Matrix* readMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 
 Petra_RDP_CRS_Matrix* readRectMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 {
-	/// Read in the rectangular matrix 
+	/// Read in the rectangular matrix
 	/// Assuming following file format:
   ///   line 1 Number of rows
 	///   line 2: max of elements in vector NumNz
@@ -246,7 +246,7 @@ Petra_RDP_CRS_Matrix* readRectMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 	// cout << "NumGlobalElements = " << NumGlobalElements << "\n" << endl;
 	fscanf(dataFile, "%d", &maxNumNz);
 
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Petra_Map& Map = *new Petra_Map(NumGlobalElements, 0, Comm);
 
@@ -315,7 +315,7 @@ Petra_RDP_CRS_Matrix* readRectMatrixIn(FILE *dataFile, Petra_Comm& Comm)
 					//  	 << endl;
 				}
 			NumEntries = NumNz[i];
-			assert(M.InsertGlobalValues(MyGlobalElements[i], 
+			assert(M.InsertGlobalValues(MyGlobalElements[i],
 						    NumEntries, Values, Indices)==0);
 			// cout << "offset = " << offset << endl;
 			offset = offset + NumNz[i];
@@ -349,7 +349,7 @@ Petra_RDP_Vector* readVectorIn(FILE *dataFile, Petra_Comm& Comm)
 
 	fscanf(dataFile, "%d", &NumGlobalElements);
 	fscanf(dataFile, "%d", &NzElms);
-  // Construct a Map that puts approximately the same number of 
+  // Construct a Map that puts approximately the same number of
   // equations on each processor.
   Petra_Map& Map = *new Petra_Map(NumGlobalElements, 0, Comm);
 
@@ -375,7 +375,7 @@ Petra_RDP_Vector* readVectorIn(FILE *dataFile, Petra_Comm& Comm)
 			// cout << tempVal << endl;
 		}
 	//  Petra_RDP_CRS_Matrix& M = *new Petra_RDP_CRS_Matrix(Copy, Map, NumNz);
- 
+
 	return vptr;
 
 }
@@ -397,7 +397,7 @@ void matVecTest(Petra_RDP_CRS_Matrix* Aptr,
 
 // matrix vector multiply for our block matrix
 /************
-Petra_RDP_Vector* = myMatVecMult(Petra_RDP_CRS_Matrix* Bptr, 
+Petra_RDP_Vector* = myMatVecMult(Petra_RDP_CRS_Matrix* Bptr,
 																 Petra_RDP_CRS_Matrix* Fptr,
 																 Petra_RDP_CRS_Matrix* Cptr,
 																 Petra_RDP_Vector* xptr)

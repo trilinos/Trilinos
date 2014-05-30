@@ -80,7 +80,7 @@ namespace MueLu {
     //!
     // TODO: default values should be query from Hierarchy class to avoid duplication
     HierarchyManager() : numDesiredLevel_(Hierarchy::GetDefaultMaxLevels()), maxCoarseSize_(Hierarchy::GetDefaultMaxCoarseSize()),
-    verbosity_(Medium), doPRrebalance_(Hierarchy::GetDefaultPRrebalance()), graphOutputLevel_(-1) { }
+    verbosity_(Medium), doPRrebalance_(Hierarchy::GetDefaultPRrebalance()), implicitTranspose_(Hierarchy::GetDefaultImplicitTranspose()), graphOutputLevel_(-1) { }
 
     //!
     virtual ~HierarchyManager() { }
@@ -147,6 +147,7 @@ namespace MueLu {
         H.EnableGraphDumping("dep_graph.dot", graphOutputLevel_);
 
       H.SetPRrebalance(doPRrebalance_);
+      H.SetImplicitTranspose(implicitTranspose_);
 
       // TODO: coarsestLevelManager
 
@@ -224,6 +225,7 @@ namespace MueLu {
     Xpetra::global_size_t maxCoarseSize_;
     MsgType               verbosity_;
     bool                  doPRrebalance_;
+    bool                  implicitTranspose_;
     int                   graphOutputLevel_;
     Teuchos::Array<int>   matricesToPrint_;
     Teuchos::Array<int>   prolongatorsToPrint_;

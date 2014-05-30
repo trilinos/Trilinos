@@ -55,12 +55,13 @@
 /*****************************************************************************/
 /*****************************************************************************/
 
-#include <stdio.h>
+#include <exodusII.h>                   // for exerrval, ex_err, etc
+#include <exodusII_int.h>               // for ex_leavedef, EX_FATAL, etc
+#include <netcdf.h>                     // for NC_NOERR, nc_def_var, etc
+#include <stdio.h>                      // for sprintf
+#include <sys/types.h>                  // for int64_t
 
-#include <netcdf.h>
 
-#include <exodusII.h>
-#include <exodusII_int.h>
 
 int ex_put_loadbal_param(int   exoid,
                          int64_t   num_int_nodes,

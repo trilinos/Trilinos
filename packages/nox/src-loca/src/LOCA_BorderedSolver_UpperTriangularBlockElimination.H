@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,9 +64,9 @@ namespace LOCA {
 namespace LOCA {
 
   namespace BorderedSolver {
-    
+
     //! Block elimination strategy for solving a block upper-triangular system
-    /*! 
+    /*!
      * This class solves the extended system of equations
      * \f[
      *     \begin{bmatrix}
@@ -75,8 +75,8 @@ namespace LOCA {
      *     \end{bmatrix}
      *     \begin{bmatrix}
      *        X \\
-     *        Y 
-     *     \end{bmatrix} = 
+     *        Y
+     *     \end{bmatrix} =
      *     \begin{bmatrix}
      *        F \\
      *        G
@@ -90,7 +90,7 @@ namespace LOCA {
      *     \end{aligned}
      * \f]
      * where \f$op\f$ represents either the identity operation or the
-     * transpose.  \f$C\f$ must be nonzero, while \f$A\f$, \f$F\f$ or \f$G\f$ 
+     * transpose.  \f$C\f$ must be nonzero, while \f$A\f$, \f$F\f$ or \f$G\f$
      * may be zero.  The solve
      * for the non-transposed system is implemented by the solve() method,
      * while the solve for the transposed system is implemented by the
@@ -100,56 +100,56 @@ namespace LOCA {
 
     public:
 
-      //! Constructor. 
+      //! Constructor.
       /*!
        * \param global_data [in] Global data object
        */
       UpperTriangularBlockElimination(
-	 const Teuchos::RCP<LOCA::GlobalData>& global_data);
+     const Teuchos::RCP<LOCA::GlobalData>& global_data);
 
       //! Destructor
       virtual ~UpperTriangularBlockElimination();
 
-      /*! 
+      /*!
        * \brief Solves the extended system as described above.
        */
       /*!
-       * Either A, F, or G may be zero by passing NULL.  
+       * Either A, F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solve(Teuchos::ParameterList& params,
-	    const LOCA::BorderedSolver::AbstractOperator& op,
-	    const NOX::Abstract::MultiVector* A,
-	    const NOX::Abstract::MultiVector::DenseMatrix& C,
-	    const NOX::Abstract::MultiVector* F,
-	    const NOX::Abstract::MultiVector::DenseMatrix* G,
-	    NOX::Abstract::MultiVector& X,
-	    NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+        const LOCA::BorderedSolver::AbstractOperator& op,
+        const NOX::Abstract::MultiVector* A,
+        const NOX::Abstract::MultiVector::DenseMatrix& C,
+        const NOX::Abstract::MultiVector* F,
+        const NOX::Abstract::MultiVector::DenseMatrix* G,
+        NOX::Abstract::MultiVector& X,
+        NOX::Abstract::MultiVector::DenseMatrix& Y) const;
 
-      /*! 
+      /*!
        * \brief Solves the extended system using the tranpose of J and C
        * as described above.
        */
       /*!
-       * Either A, F, or G may be zero by passing NULL.  
+       * Either A, F, or G may be zero by passing NULL.
        */
-      NOX::Abstract::Group::ReturnType  
+      NOX::Abstract::Group::ReturnType
       solveTranspose(Teuchos::ParameterList& params,
-		     const LOCA::BorderedSolver::AbstractOperator& op,
-		     const NOX::Abstract::MultiVector* A,
-		     const NOX::Abstract::MultiVector::DenseMatrix& C,
-		     const NOX::Abstract::MultiVector* F,
-		     const NOX::Abstract::MultiVector::DenseMatrix* G,
-		     NOX::Abstract::MultiVector& X,
-		     NOX::Abstract::MultiVector::DenseMatrix& Y) const;
-      
+             const LOCA::BorderedSolver::AbstractOperator& op,
+             const NOX::Abstract::MultiVector* A,
+             const NOX::Abstract::MultiVector::DenseMatrix& C,
+             const NOX::Abstract::MultiVector* F,
+             const NOX::Abstract::MultiVector::DenseMatrix* G,
+             NOX::Abstract::MultiVector& X,
+             NOX::Abstract::MultiVector::DenseMatrix& Y) const;
+
     private:
 
       //! Private to prohibit copying
       UpperTriangularBlockElimination(const UpperTriangularBlockElimination&);
 
       //! Private to prohibit copying
-      UpperTriangularBlockElimination& 
+      UpperTriangularBlockElimination&
       operator = (const UpperTriangularBlockElimination&);
 
     protected:

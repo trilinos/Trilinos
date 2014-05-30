@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -64,7 +64,7 @@
 #include <sstream>
 
 ContinuationManager::
-ContinuationManager( 
+ContinuationManager(
     //const Teuchos::RCP< Epetra_MpiComm > & aComm ,
     const Teuchos::RCP< Epetra_Comm > & aComm ,
     const std::string & taskFileName):
@@ -88,36 +88,36 @@ ContinuationManager(
   Teuchos::updateParametersFromXmlFile(taskFileName, taskList.ptr());
 
   if (comm->MyPID()==0) {
-    std::cout << std::endl << "#### Task Parameters from task file \"" << 
+    std::cout << std::endl << "#### Task Parameters from task file \"" <<
       taskFileName << " ####" << std::endl;
     taskList->print(std::cout,2,false,false);
-    std::cout << std::endl << "#### End Parameters from "<< taskFileName << 
+    std::cout << std::endl << "#### End Parameters from "<< taskFileName <<
       " ####" << std::endl << std::endl;
   }
 
   // Getting the initial step label flag
   iniStepLabel = taskList->sublist("Continuation Manager").
                          sublist("Continuation").
-			   get<int>("Label From Step");
+               get<int>("Label From Step");
 
 //  // If the constraint sublist exists, check whether the constraint is enabled
 //  if ( taskList->sublist("Continuation Manager").isSublist("Constraint") )
 //    isConstrainedProblem = taskList->sublist("Continuation Manager").
 //                                        sublist("Constraint").
-//					 get<bool>("Enable Constraint");
+//                     get<bool>("Enable Constraint");
 
   // Getting solution files prefix and extensions
   if ( taskList->sublist("Continuation Manager").sublist("Continuation").
                                                  isParameter("Solution Files Prefix") )
     solutionFilesPrefix = taskList->sublist("Continuation Manager").
                                      sublist("Continuation").
-				     get<std::string>("Solution Files Prefix");
+                     get<std::string>("Solution Files Prefix");
 
   if ( taskList->sublist("Continuation Manager").sublist("Continuation").
                                                  isParameter("Solution Files Extension") )
     solutionFilesExtension = taskList->sublist("Continuation Manager").
                                      sublist("Continuation").
-				     get<std::string>("Solution Files Extension");
+                     get<std::string>("Solution Files Extension");
 
 }
 
@@ -134,14 +134,14 @@ BuildLOCAStepper()
   if (comm->MyPID()==0) std::cout << std::endl << "Building the LOCA stepper..." << std::endl;
 
   // Make sure the problem has been set
-  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null,
       std::logic_error,
       "ContinuationManager has not been given a valid ProblemLOCAPrototype");
 
   // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base 
+  // This is created by the user using inheritance of the abstract base
   // class
-  Teuchos::RCP <LOCAInterface> interface = 
+  Teuchos::RCP <LOCAInterface> interface =
     Teuchos::rcp(new LOCAInterface(problem,Teuchos::rcp(&*this,false)));
   Teuchos::RCP <LOCA::Epetra::Interface::Required> interfaceRequired = interface;
   Teuchos::RCP <NOX::Epetra::Interface::Jacobian> interfaceJacobian = interface;
@@ -150,7 +150,7 @@ BuildLOCAStepper()
   Teuchos::RCP <Epetra_RowMatrix> jacobian = problem->GetJacF();
 
   // Get the initial guess vector
-  Teuchos::RCP <Epetra_Vector> initialGuess = 
+  Teuchos::RCP <Epetra_Vector> initialGuess =
     problem->GetInitialGuess();
 
   // NOX and LOCA sublist
@@ -158,11 +158,11 @@ BuildLOCAStepper()
     Teuchos::rcp(new Teuchos::ParameterList(taskList->sublist("NOX and LOCA")));
 
   // Create the lists needed for linear systems
-  Teuchos::ParameterList & noxPrintingList = 
+  Teuchos::ParameterList & noxPrintingList =
     noxAndLocaList->
       sublist("NOX").
         sublist("Printing");
-  Teuchos::ParameterList & linearSystemList = 
+  Teuchos::ParameterList & linearSystemList =
     noxAndLocaList->
       sublist("NOX").
         sublist("Direction").
@@ -171,35 +171,35 @@ BuildLOCAStepper()
 
   // Instntiating the appropriate linear system
   std::string linearSolverType = linearSystemList.get("Solver","Aztec");
-  Teuchos::RCP<NOX::Epetra::LinearSystem> linearSystem = Teuchos::null; 
+  Teuchos::RCP<NOX::Epetra::LinearSystem> linearSystem = Teuchos::null;
 
   if (linearSolverType == "Aztec")
     // Create the linear system
-    //Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem = 
-    linearSystem = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList, 
-	    linearSystemList,
-	    interfaceRequired,
-	    interfaceJacobian,
-	    jacobian,
-	    *initialGuess));
+    //Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem =
+    linearSystem =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList,
+        linearSystemList,
+        interfaceRequired,
+        interfaceJacobian,
+        jacobian,
+        *initialGuess));
 #ifdef HAVE_NOX_AMESOS
   else if (linearSolverType == "Amesos")
     // Create the linear system
-    //Teuchos::RCP<NOX::Epetra::LinearSystemAmesos> linearSystem = 
-    linearSystem = 
-      Teuchos::rcp(new NOX::Epetra::LinearSystemAmesos(noxPrintingList, 
-	    linearSystemList,
-	    interfaceRequired,
-	    interfaceJacobian,
-	    jacobian,
-	    *initialGuess));
+    //Teuchos::RCP<NOX::Epetra::LinearSystemAmesos> linearSystem =
+    linearSystem =
+      Teuchos::rcp(new NOX::Epetra::LinearSystemAmesos(noxPrintingList,
+        linearSystemList,
+        interfaceRequired,
+        interfaceJacobian,
+        jacobian,
+        *initialGuess));
 #endif
   else
   {
-    TEUCHOS_TEST_FOR_EXCEPTION(true, 
-	std::logic_error, "Continuation manager: " + 
-			  linearSolverType + " is not a valid linear solver");
+    TEUCHOS_TEST_FOR_EXCEPTION(true,
+    std::logic_error, "Continuation manager: " +
+              linearSolverType + " is not a valid linear solver");
   }
 
   // Get the parameter vector
@@ -210,7 +210,7 @@ BuildLOCAStepper()
     Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create the loca vector
-  Teuchos::RCP <NOX::Epetra::Vector> locaInitialGuess = 
+  Teuchos::RCP <NOX::Epetra::Vector> locaInitialGuess =
     Teuchos::rcp (new NOX::Epetra::Vector(*initialGuess));
 
   // Instantiate the constraint objects
@@ -218,35 +218,35 @@ BuildLOCAStepper()
   if (interfaceConstraint != Teuchos::null) {
 
 //    // Instantiate the constraint
-//    Teuchos::RCP <PhaseConstraint> phaseConstraint = 
+//    Teuchos::RCP <PhaseConstraint> phaseConstraint =
 //      Teuchos::rcp(new PhaseConstraint(problem,*locaInitialGuess));
 //
 //    // Instantiate the interface
-//    Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> 
+//    Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface>
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< std::vector<std::string> > constraintParamsNames = 
+    Teuchos::RCP< std::vector<std::string> > constraintParamsNames =
       Teuchos::rcp(new std::vector<std::string>());
 
     // The user-defined constrained parameters
-    Teuchos::ParameterList & constraintParams = 
+    Teuchos::ParameterList & constraintParams =
       taskList->sublist("Continuation Manager").
                    sublist("Constraint").
-		    sublist("Constraint Parameters");
+            sublist("Constraint Parameters");
 
     // Getting the parameter names from the user-defined list
     Teuchos::ParameterList::ConstIterator i;
-    for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
+    for (i = constraintParams.begin(); i !=constraintParams.end(); ++i)
       constraintParamsNames->push_back(
-	  constraintParams.get<std::string>(constraintParams.name(i)));
+      constraintParams.get<std::string>(constraintParams.name(i)));
 
     // Instantiating the constraint list
     Teuchos::ParameterList & constraintsList =
       noxAndLocaList->sublist("LOCA").sublist("Constraints");
     constraintsList.set("Constraint Object", interfaceConstraint);
-    constraintsList.set("Constraint Parameter Names", 
-	constraintParamsNames);
+    constraintsList.set("Constraint Parameter Names",
+    constraintParamsNames);
     constraintsList.set("Bordered Solver Method", "Householder");
 
   }
@@ -255,25 +255,25 @@ BuildLOCAStepper()
   locaGlobalData = LOCA::createGlobalData(noxAndLocaList, epetraFactory);
 
   // Create the Group
-  Teuchos::RCP<LOCA::Epetra::Group> group = 
-    Teuchos::rcp(new LOCA::Epetra::Group(locaGlobalData, noxPrintingList, 
+  Teuchos::RCP<LOCA::Epetra::Group> group =
+    Teuchos::rcp(new LOCA::Epetra::Group(locaGlobalData, noxPrintingList,
       interfaceRequired, *locaInitialGuess, linearSystem, continuableParams));
 
   // Create the Solver convergence test
-  Teuchos::RCP<NOX::StatusTest::NormF> normTolerance = 
+  Teuchos::RCP<NOX::StatusTest::NormF> normTolerance =
     Teuchos::rcp(new NOX::StatusTest::NormF(
-	  taskList->
-	    sublist("Continuation Manager").
-	      sublist("Continuation").
-		get<double>("Nonlinear Step Tolerance"),
-	  NOX::StatusTest::NormF::Scaled));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxIterations = 
+      taskList->
+        sublist("Continuation Manager").
+          sublist("Continuation").
+        get<double>("Nonlinear Step Tolerance"),
+      NOX::StatusTest::NormF::Scaled));
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxIterations =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(
-	  noxAndLocaList->
-	    sublist("LOCA").
-	      sublist("Stepper").
-	        get<int>("Max Nonlinear Iterations")));
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+      noxAndLocaList->
+        sublist("LOCA").
+          sublist("Stepper").
+            get<int>("Max Nonlinear Iterations")));
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(normTolerance);
   combo->addStatusTest(maxIterations);
@@ -295,7 +295,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
   if (comm->MyPID()==0) std::cout << std::endl << "Building the LOCA stepper..." << std::endl;
 
   // Make sure the problem has been set
-  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null, 
+  TEUCHOS_TEST_FOR_EXCEPTION( problem == Teuchos::null,
       std::logic_error,
       "ContinuationManager has not been given a valid ProblemLOCAPrototype");
 
@@ -303,7 +303,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
   Teuchos::RCP <Epetra_RowMatrix> jacobian = problem->GetJacF();
 
   // Get the initial guess vector
-  Teuchos::RCP <Epetra_Vector> initialGuess = 
+  Teuchos::RCP <Epetra_Vector> initialGuess =
     problem->GetInitialGuess();
 
   // NOX and LOCA sublist
@@ -311,11 +311,11 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
     Teuchos::rcp(new Teuchos::ParameterList(taskList->sublist("NOX and LOCA")));
 
   // Create the lists needed for linear systems
-  Teuchos::ParameterList & noxPrintingList = 
+  Teuchos::ParameterList & noxPrintingList =
     noxAndLocaList->
       sublist("NOX").
         sublist("Printing");
-  Teuchos::ParameterList & linearSystemList = 
+  Teuchos::ParameterList & linearSystemList =
     noxAndLocaList->
       sublist("NOX").
         sublist("Direction").
@@ -323,9 +323,9 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
             sublist("Linear Solver");
 
   // Create the interface between the test problem and the nonlinear solver
-  // This is created by the user using inheritance of the abstract base 
+  // This is created by the user using inheritance of the abstract base
   // class
-  Teuchos::RCP <LOCAInterface> interface = 
+  Teuchos::RCP <LOCAInterface> interface =
     Teuchos::rcp(new LOCAInterface(problem,Teuchos::rcp(&*this,false)));
 
   Epetra_MultiVector guessMV(initialGuess->Map(), globalComm->NumTimeStepsOnDomain());
@@ -335,7 +335,7 @@ BuildLOCAPeriodicStepper(const Teuchos::RCP<EpetraExt::MultiComm> globalComm)
 std::cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDomain() << std::endl;
 
   double dt = 1.0;
-  Teuchos::RCP <LOCA::Epetra::Interface::xyzt> xyzt_interface = 
+  Teuchos::RCP <LOCA::Epetra::Interface::xyzt> xyzt_interface =
    Teuchos::rcp(new LOCA::Epetra::Interface::xyzt(interface, guessMV, jacobian, globalComm, *initialGuess, dt ));
 
 
@@ -348,8 +348,8 @@ std::cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDo
 
 
   // Create the linear system
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem = 
-    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList, 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linearSystem =
+    Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(noxPrintingList,
           linearSystemList,
           interfaceRequired,
           interfaceJacobian,
@@ -364,43 +364,43 @@ std::cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDo
     Teuchos::rcp(new LOCA::Epetra::Factory);
 
   // Create the loca vector
-  Teuchos::RCP <NOX::Epetra::Vector> locaInitialGuess = 
+  Teuchos::RCP <NOX::Epetra::Vector> locaInitialGuess =
     Teuchos::rcp (new NOX::Epetra::Vector(solnxyzt));
 
   // Instantiate the constraint objects
-  //if (isConstrainedProblem) 
+  //if (isConstrainedProblem)
   if (interfaceConstraint != Teuchos::null) {
 
 //    // Instantiate the constraint
-//    Teuchos::RCP <PhaseConstraint> phaseConstraint = 
+//    Teuchos::RCP <PhaseConstraint> phaseConstraint =
 //      Teuchos::rcp(new PhaseConstraint(problem,*locaInitialGuess));
 //
 //    // Instantiate the interface
-//    Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> 
+//    Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface>
 //      interfaceConstraint = phaseConstraint;
 
     // Instantiate the constraint parameters names
-    Teuchos::RCP< std::vector<std::string> > constraintParamsNames = 
+    Teuchos::RCP< std::vector<std::string> > constraintParamsNames =
       Teuchos::rcp(new std::vector<std::string>());
 
     // The user-defined constrained parameters
-    Teuchos::ParameterList & constraintParams = 
+    Teuchos::ParameterList & constraintParams =
       taskList->sublist("Continuation Manager").
                    sublist("Constraint").
-		    sublist("Constraint Parameters");
+            sublist("Constraint Parameters");
 
     // Getting the parameter names from the user-defined list
     Teuchos::ParameterList::ConstIterator i;
-    for (i = constraintParams.begin(); i !=constraintParams.end(); ++i) 
+    for (i = constraintParams.begin(); i !=constraintParams.end(); ++i)
       constraintParamsNames->push_back(
-	  constraintParams.get<std::string>(constraintParams.name(i)));
+      constraintParams.get<std::string>(constraintParams.name(i)));
 
     // Instantiating the constraint list
     Teuchos::ParameterList & constraintsList =
       noxAndLocaList->sublist("LOCA").sublist("Constraints");
     constraintsList.set("Constraint Object", interfaceConstraint);
-    constraintsList.set("Constraint Parameter Names", 
-	constraintParamsNames);
+    constraintsList.set("Constraint Parameter Names",
+    constraintParamsNames);
     constraintsList.set("Bordered Solver Method", "Householder");
 
   }
@@ -409,25 +409,25 @@ std::cout << "XXX  num time steps on domain = " <<  globalComm->NumTimeStepsOnDo
   locaGlobalData = LOCA::createGlobalData(noxAndLocaList, epetraFactory);
 
   // Create the Group
-  Teuchos::RCP<LOCA::Epetra::Group> group = 
-    Teuchos::rcp(new LOCA::Epetra::Group(locaGlobalData, noxPrintingList, 
+  Teuchos::RCP<LOCA::Epetra::Group> group =
+    Teuchos::rcp(new LOCA::Epetra::Group(locaGlobalData, noxPrintingList,
       interfaceRequired, *locaInitialGuess, linearSystem, continuableParams));
 
   // Create the Solver convergence test
-  Teuchos::RCP<NOX::StatusTest::NormF> normTolerance = 
+  Teuchos::RCP<NOX::StatusTest::NormF> normTolerance =
     Teuchos::rcp(new NOX::StatusTest::NormF(
-	  taskList->
-	    sublist("Continuation Manager").
-	      sublist("Continuation").
-		get<double>("Nonlinear Step Tolerance"),
-	  NOX::StatusTest::NormF::Scaled));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxIterations = 
+      taskList->
+        sublist("Continuation Manager").
+          sublist("Continuation").
+        get<double>("Nonlinear Step Tolerance"),
+      NOX::StatusTest::NormF::Scaled));
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxIterations =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(
-	  noxAndLocaList->
-	    sublist("LOCA").
-	      sublist("Stepper").
-	        get<int>("Max Nonlinear Iterations")));
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+      noxAndLocaList->
+        sublist("LOCA").
+          sublist("Stepper").
+            get<int>("Max Nonlinear Iterations")));
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(normTolerance);
   combo->addStatusTest(maxIterations);
@@ -448,12 +448,12 @@ ValidateLOCAStepper()
   // The number of steps must not exceed maxAllowedSteps
   int numSteps = iniStepLabel + locaStepper->getList()->sublist("LOCA").
                                                      sublist("Stepper").
-				                       get<int>("Max Steps");
+                                       get<int>("Max Steps");
   std::ostringstream osstream;
   osstream << maxAllowedSteps;
-  std::string errString = "iniStepLabel + Max number of continuation steps must not exceed " + 
+  std::string errString = "iniStepLabel + Max number of continuation steps must not exceed " +
     osstream.str();
-  TEUCHOS_TEST_FOR_EXCEPTION( numSteps > maxAllowedSteps, 
+  TEUCHOS_TEST_FOR_EXCEPTION( numSteps > maxAllowedSteps,
       std::logic_error,
       errString);
 
@@ -469,7 +469,7 @@ RunLOCAStepper()
   // Initialise continuation file
   if ( (comm->MyPID() == 0) && (iniStepLabel == 0) )
     WriteHeaderToContFile( GetContinuationFileName(),
-	*(problem->GetContinuationFileParameters()) );
+    *(problem->GetContinuationFileParameters()) );
 
   // Running
   locaStepperStatus =  locaStepper->run();
@@ -481,13 +481,13 @@ bool ContinuationManager::
 PrintLOCAStepperStatistics()
 {
   // Ckecking the convergence of a nonlinear step
-  if (locaStepperStatus != LOCA::Abstract::Iterator::Finished) 
+  if (locaStepperStatus != LOCA::Abstract::Iterator::Finished)
      if (locaGlobalData->locaUtils->isPrintType(NOX::Utils::Error))
        locaGlobalData->locaUtils->out() << "Stepper failed to converge!" << std::endl;
 
   // Output the parameter list
   if (locaGlobalData->locaUtils->isPrintType(NOX::Utils::StepperParameters)) {
-    locaGlobalData->locaUtils->out() << std::endl << 
+    locaGlobalData->locaUtils->out() << std::endl <<
       "### Final Parameters ############" << std::endl;
     locaStepper->getList()->print(locaGlobalData->locaUtils->out());
     locaGlobalData->locaUtils->out() << std::endl;
@@ -497,46 +497,46 @@ PrintLOCAStepperStatistics()
   if (comm->MyPID() == 0)
     std::cout << std::endl << "#### Statistics ########" << std::endl;
 
-  std::cout << " Time on proc " << comm->MyPID() << " = " 
+  std::cout << " Time on proc " << comm->MyPID() << " = "
        << timeCounter.ElapsedTime() << std::endl;
 
   // Check number of steps
   int numSteps = locaStepper->getStepNumber();
-  if (comm->MyPID() == 0) 
+  if (comm->MyPID() == 0)
     std::cout << " Number of continuation Steps = " << numSteps << std::endl;
 
   // Check number of failed steps
   int numFailedSteps = locaStepper->getNumFailedSteps();
-  if (comm->MyPID() == 0) 
+  if (comm->MyPID() == 0)
     std::cout << " Number of failed continuation Steps = " << numFailedSteps << std::endl;
 
   return true;
 }
 
-std::string ContinuationManager:: 
+std::string ContinuationManager::
 GetSolutionFileName() const
 {
   // Number of digits
-  int numDigits = 
+  int numDigits =
     static_cast<int>( std::floor( std::log10( static_cast<double>(maxAllowedSteps) ) ) ) + 1;
 
   // Composing the filename
   std::ostringstream fileName;
   fileName << outputDir + "/" +
               solutionFilesPrefix +
-	      StringifyInt(iniStepLabel + locaStepper->getStepNumber(), numDigits) +
-	      "." + solutionFilesExtension;
+          StringifyInt(iniStepLabel + locaStepper->getStepNumber(), numDigits) +
+          "." + solutionFilesExtension;
 
   return fileName.str();
 }
 
-std::string ContinuationManager:: 
+std::string ContinuationManager::
 GetContinuationFileName() const
 {
   return outputDir + "/" + continuationFileName;
 }
 
-int ContinuationManager:: 
+int ContinuationManager::
 GetStepID() const
 {
   return (iniStepLabel+locaStepper->getStepNumber());
@@ -556,13 +556,13 @@ GetSolutionFileAttribute() const
 
   if ( taskList->sublist("Continuation Manager").
                   sublist("Continuation").
-		   isParameter("Steps Per Print"))
+           isParameter("Steps Per Print"))
     stepsPerPrint = taskList->sublist("Continuation Manager").
                                sublist("Continuation").
-			        get<int>("Steps Per Print");
+                    get<int>("Steps Per Print");
 
   // Every few steps, do print
-  if (  (stepsPerPrint != 0 ) && ( numSteps % stepsPerPrint  == 0 ) ) 
+  if (  (stepsPerPrint != 0 ) && ( numSteps % stepsPerPrint  == 0 ) )
     attribute = Print;
 
   return attribute;
@@ -582,7 +582,7 @@ SetLOCAProblem( const Teuchos::RCP <ProblemLOCAPrototype> & aProblem )
 }
 
 bool ContinuationManager::
-SetLOCAConstraint( 
+SetLOCAConstraint(
     const Teuchos::RCP <LOCA::MultiContinuation::ConstraintInterface> &
     anInterfaceConstraint)
 {
@@ -598,7 +598,7 @@ SetTaskList( Teuchos::RCP <Teuchos::ParameterList> aTaskList )
 }
 
 std::string ContinuationManager::
-StringifyInt( const int & intNumber , const int & digits) const 
+StringifyInt( const int & intNumber , const int & digits) const
 {
   // The number of Steps
   std::ostringstream osstream;

@@ -48,11 +48,13 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf
+#include <stdlib.h>                     // for NULL
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for ex_get_dimension, EX_FATAL, etc
+#include "netcdf.h"                     // for nc_inq_varid, NC_NOERR, etc
 
-#include <ctype.h>
 
 /*!
  * reads the EXODUS II specified variable truth table from the database

@@ -1,4 +1,4 @@
-/* 
+/*
  * @HEADER
  *
  * ***********************************************************************
@@ -36,18 +36,18 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  *
- * Questions? Contact Karen Devine	kddevin@sandia.gov
- *                    Erik Boman	egboman@sandia.gov
+ * Questions? Contact Karen Devine      kddevin@sandia.gov
+ *                    Erik Boman        egboman@sandia.gov
  *
  * ***********************************************************************
  *
  * @HEADER
  */
 /**************************************************************
-*  An expansion of simpleGRAPH.c.  
+*  An expansion of simpleGRAPH.c.
 *
 *  We use Zoltan's distributed directory utility to create a
-*  global directory of object (graph vertex) locations.  We use 
+*  global directory of object (graph vertex) locations.  We use
 *  Zoltan's migration capabilities to move the graph vertices.
 *
 *  In this example, part numbers and process ranks are the same.
@@ -127,7 +127,9 @@ int main(int argc, char *argv[])
   int myRank, numProcs;
   float ver;
   struct Zoltan_Struct *zz;
-  int changes, numGidEntries, numLidEntries, numImport, numExport, start_gid, num_nbors;
+  /* mfh 18 Apr 2014: Commented out unused variables */
+  /* FIXME (mfh 18 Apr 2014) Hey, is start_gid a GID?  Shouldn't it not be an int then? */
+  int changes, numGidEntries, numLidEntries, numImport, numExport; /* , start_gid, num_nbors; */
   ZOLTAN_ID_PTR importGlobalGids, importLocalGids, exportGlobalGids, exportLocalGids;
   int *importProcs, *importToPart, *exportProcs, *exportToPart;
   int *parts=NULL;
@@ -149,13 +151,13 @@ int main(int argc, char *argv[])
   rc = Zoltan_Initialize(argc, argv, &ver);
 
   if (rc != ZOLTAN_OK){
-    printf("sorry...\n");
+    printf("Failed to initialize Zoltan -- sorry...\n");
     MPI_Finalize();
     exit(0);
   }
 
   /******************************************************************
-  ** Read graph from input file and distribute it 
+  ** Read graph from input file and distribute it
   ******************************************************************/
 
   fp = fopen(fname, "r");
@@ -183,7 +185,7 @@ int main(int argc, char *argv[])
   ** ZOLTAN_ID_TYPEs.
   ******************************************************************/
 
-  rc = Zoltan_DD_Create(&dd, MPI_COMM_WORLD, 
+  rc = Zoltan_DD_Create(&dd, MPI_COMM_WORLD,
                            gid_length,    /* length of a global ID */
                            lid_length,    /* length of a local ID */
                            0,             /* length of user data  */
@@ -192,19 +194,19 @@ int main(int argc, char *argv[])
 
   parts = (int *) malloc(myGraph.numMyVertices * sizeof(int));
   lids = (ZOLTAN_ID_TYPE *) malloc(myGraph.numMyVertices * sizeof(ZOLTAN_ID_TYPE));
-  
+
   for (i=0; i < myGraph.numMyVertices; i++){
     parts[i] = myRank;   /* part number of this vertex */
     lids[i] = (ZOLTAN_ID_TYPE)i;         /* local ID on my process for this vertex */
   }
-  
-  rc = Zoltan_DD_Update(dd, 
-                        myGraph.vertexGID, 
+
+  rc = Zoltan_DD_Update(dd,
+                        myGraph.vertexGID,
                         lids,
                         NULL,
                         parts,
                         myGraph.numMyVertices);
-  
+
 
   myGraph.dd = dd;
 
@@ -222,13 +224,13 @@ int main(int argc, char *argv[])
   Zoltan_Set_Param(zz, "DEBUG_LEVEL", "0");
   Zoltan_Set_Param(zz, "LB_METHOD", "GRAPH");
   Zoltan_Set_Param(zz, "LB_APPROACH", "PARTITION");
-  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1"); 
+  Zoltan_Set_Param(zz, "NUM_GID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "NUM_LID_ENTRIES", "1");
   Zoltan_Set_Param(zz, "RETURN_LISTS", "ALL");
 
   /* Graph parameters */
 
-  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2"); 
+  Zoltan_Set_Param(zz, "CHECK_GRAPH", "2");
   Zoltan_Set_Param(zz, "PHG_EDGE_SIZE_THRESHOLD", ".35");  /* 0-remove all, 1-remove none */
 
   /* Query functions, defined in this source file */
@@ -262,7 +264,7 @@ int main(int argc, char *argv[])
   ******************************************************************/
 
   rc = Zoltan_LB_Partition(zz, /* input (all remaining fields are output) */
-        &changes,        /* 1 if partition was changed, 0 otherwise */ 
+        &changes,        /* 1 if partition was changed, 0 otherwise */
         &numGidEntries,  /* Number of integers used for a global ID */
         &numLidEntries,  /* Number of integers used for a local ID */
         &numImport,      /* Number of vertices to be sent to me */
@@ -293,8 +295,8 @@ int main(int argc, char *argv[])
     parts[exportLocalGids[i]] = exportToPart[i];
   }
 
-  rc = Zoltan_DD_Update(dd, 
-                        myGraph.vertexGID, 
+  rc = Zoltan_DD_Update(dd,
+                        myGraph.vertexGID,
                         lids,
                         NULL,
                         parts,
@@ -304,7 +306,7 @@ int main(int argc, char *argv[])
   ** Migrate vertices to new parts
   ******************************************************************/
 
-  rc = Zoltan_Migrate(zz, 
+  rc = Zoltan_Migrate(zz,
                       numImport, importGlobalGids, importLocalGids,
                       importProcs, importToPart,
                       numExport, exportGlobalGids, exportLocalGids,
@@ -316,7 +318,7 @@ int main(int argc, char *argv[])
   ******************************************************************/
 
   rc = Zoltan_DD_Find(dd,
-             (ZOLTAN_ID_PTR)(myGraph.nborGID), NULL, NULL, 
+             (ZOLTAN_ID_PTR)(myGraph.nborGID), NULL, NULL,
               myGraph.nborPart, myGraph.nborIndex[myGraph.numMyVertices], NULL);
 
   /******************************************************************
@@ -334,9 +336,9 @@ int main(int argc, char *argv[])
   ** the storage allocated for the Zoltan structure.
   ******************************************************************/
 
-  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids, 
+  Zoltan_LB_Free_Part(&importGlobalGids, &importLocalGids,
                       &importProcs, &importToPart);
-  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids, 
+  Zoltan_LB_Free_Part(&exportGlobalGids, &exportLocalGids,
                       &exportProcs, &exportToPart);
 
   Zoltan_Destroy(&zz);
@@ -362,12 +364,12 @@ int main(int argc, char *argv[])
   return 0;
 }
 
-/* Application-defined query functions used in migrating ************************ 
+/* Application-defined query functions used in migrating ************************
  *
  * Migration strategy:
  *   The data sent for each vertex is the list of the vertex neighbor global IDs.
  *   At the pack query function, copy the vertex data to the Zoltan-supplied buffer.
- *   At the mid-migrate query function, rewrite the local graph data omitting the 
+ *   At the mid-migrate query function, rewrite the local graph data omitting the
  *   exported vertices.
  *   At the unpack query function, copy the new vertices to the local graph data.
  */
@@ -389,7 +391,7 @@ static void get_message_sizes(void *data, int gidSize, int lidSize, int num_ids,
 }
 
 static void pack_object_messages(void *data, int gidSize, int lidSize, int num_ids,
-                     ZOLTAN_ID_PTR globalIDs, ZOLTAN_ID_PTR localIDs, 
+                     ZOLTAN_ID_PTR globalIDs, ZOLTAN_ID_PTR localIDs,
                      int *dests, int *sizes, int *idx, char *buf, int *ierr)
 {
   int i, j, num_nbors;
@@ -415,14 +417,14 @@ static void pack_object_messages(void *data, int gidSize, int lidSize, int num_i
   }
 }
 
-static void mid_migrate(void *data, int gidSize, int lidSize, 
+static void mid_migrate(void *data, int gidSize, int lidSize,
    int numImport,
    ZOLTAN_ID_PTR importGlobalID, ZOLTAN_ID_PTR importLocalID, int *importProc, int *importPart,
    int numExport,
    ZOLTAN_ID_PTR exportGlobalID, ZOLTAN_ID_PTR exportLocalID, int *exportProc, int *exportPart,
    int *ierr)
 {
-  GRAPH_DATA *graph; 
+  GRAPH_DATA *graph;
   int i, len, next_vertex, next_nbor;
   int *exports;
 
@@ -433,7 +435,7 @@ static void mid_migrate(void *data, int gidSize, int lidSize,
 
   exports = (int *)calloc(sizeof(int) , graph->numMyVertices);
   for (i=0; i <numExport; i++){
-    exports[exportLocalID[i]] = 1; 
+    exports[exportLocalID[i]] = 1;
   }
 
   next_vertex = 0;
@@ -491,7 +493,7 @@ static void unpack_object_messages(void *data, int gidSize, int num_ids,
   if (num_vertex > graph->vertex_capacity){
     graph->vertexGID = (ZOLTAN_ID_TYPE *)realloc(graph->vertexGID, sizeof(ZOLTAN_ID_TYPE) * num_vertex);
     graph->nborIndex = (int *)realloc(graph->nborIndex, sizeof(int) * (num_vertex+1));
-    graph->vertex_capacity = num_vertex; 
+    graph->vertex_capacity = num_vertex;
   }
 
   if (num_nbors > graph->nbor_capacity){
@@ -582,7 +584,7 @@ int *nextProc;
   GRAPH_DATA *graph = (GRAPH_DATA *)data;
   *ierr = ZOLTAN_OK;
 
-  if ( (sizeGID != 1) || (sizeLID != 1) || 
+  if ( (sizeGID != 1) || (sizeLID != 1) ||
        (num_obj != graph->numMyVertices)||
        (wgt_dim != 0)){
     *ierr = ZOLTAN_FATAL;
@@ -616,7 +618,7 @@ int *nextProc;
 }
 
 /* Function to find next line of information in input file */
- 
+
 static int get_next_line(FILE *fp, char *buf, int bufsize)
 {
 int i, cval, len;
@@ -632,7 +634,7 @@ char *c;
     len = strlen(c);
 
     for (i=0, c=buf; i < len; i++, c++){
-      cval = (int)*c; 
+      cval = (int)*c;
       if (isspace(cval) == 0) break;
     }
     if (i == len) continue;   /* blank line */
@@ -659,16 +661,16 @@ int count=0;
       if ((c - buf) >= bufsize) break;
       c++;
     }
-  
+
     if ( (c-buf) >= bufsize) break;
-  
+
     vals[count++] = atoi(c);
-  
+
     while (isdigit(*c)){
       if ((c - buf) >= bufsize) break;
       c++;
     }
-  
+
     if ( (c-buf) >= bufsize) break;
   }
 
@@ -883,7 +885,7 @@ GRAPH_DATA *send_graph;
     for (i=0; i <numGlobalNeighbors; i++){
       id = graph->nborGID[i];
       graph->nborPart[i] = Zoltan_Hash(&id, 1, nproc);
-    } 
+    }
 
     /* Create a sub graph for each process */
 
@@ -936,10 +938,10 @@ GRAPH_DATA *send_graph;
       if (nnbors > 0){
         memcpy(send_graph[procID].nborGID + j, graph->nborGID + graph->nborIndex[i],
                nnbors * sizeof(ZOLTAN_ID_TYPE));
-  
+
         memcpy(send_graph[procID].nborPart + j, graph->nborPart + graph->nborIndex[i],
                nnbors * sizeof(int));
-  
+
         idx[procID] = j + nnbors;
       }
     }

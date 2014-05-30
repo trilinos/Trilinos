@@ -131,7 +131,7 @@ TEUCHOS_UNIT_TEST(TpetraOperator, Apply)
     X2->putScalar( (SC) 0.0);
 
     int iterations=1;
-    H->Iterate(*RHS2, iterations, *X2);
+    H->Iterate(*RHS2, *X2, iterations);
 
     X2->norm2(norms);
     out << "after apply, ||X2|| = " << std::setiosflags(std::ios::fixed) << std::setprecision(10) << norms[0] << std::endl;

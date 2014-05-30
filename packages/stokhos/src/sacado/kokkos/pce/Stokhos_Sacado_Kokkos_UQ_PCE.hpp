@@ -64,6 +64,7 @@
 #include "Kokkos_Atomic_UQ_PCE.hpp"
 
 #include "Teuchos_SerialQRDenseSolver_UQ_PCE.hpp"
+#include "Teuchos_LAPACK_UQ_PCE.hpp"
 
 #endif // HAVE_STOKHOS_KOKKOSCORE
 

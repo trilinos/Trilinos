@@ -62,7 +62,7 @@
 # can take off the -VV argument if you don't want this to be too verbose.
 #
 # There are a number of other options that you can change as
-# environment varibles.  See the macros SET_DEFAULT_AND_FROM_ENV(...)
+# environment variables.  See the macros SET_DEFAULT_AND_FROM_ENV(...)
 # in the file TribitsCTestDriverCore.cmake.  One option that you
 # might want to overridde, for instance is CTEST_BUILD_NAME so that
 # you can insert a special name into the dashboard.

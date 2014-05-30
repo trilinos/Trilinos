@@ -1,13 +1,13 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
+//
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
 //              Copyright (2012) Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov) 
-// 
+// Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -48,24 +48,32 @@
 #include <Kokkos_hwloc.hpp>
 #include <iostream>
 
+#ifdef KOKKOS_HAVE_OPENMP
+
 namespace Kokkos {
 namespace Impl {
 namespace {
 
+KOKKOS_INLINE_FUNCTION
 int kokkos_omp_in_parallel();
 
 int kokkos_omp_in_critical_region = ( Kokkos::HostSpace::register_in_parallel( kokkos_omp_in_parallel ) , 0 );
 
+KOKKOS_INLINE_FUNCTION
 int kokkos_omp_in_parallel()
 {
+#ifndef __CUDA_ARCH__
   return omp_in_parallel() && ! kokkos_omp_in_critical_region ;
+#else
+  return 0;
+#endif
 }
 
 unsigned s_threads_per_core = 0 ;
 unsigned s_threads_per_numa = 0 ;
 bool s_using_hwloc = false;
 
-inline
+KOKKOS_INLINE_FUNCTION
 unsigned fan_size( const unsigned rank , const unsigned size )
 {
   const unsigned rank_rev = size - ( rank + 1 );
@@ -255,8 +263,11 @@ void OpenMPexec::resize_shared_scratch( size_t size )
   s_size = size ;
 }
 
+
+KOKKOS_FUNCTION
 void * OpenMPexec::get_shmem( const int size )
 {
+#ifndef __CUDA_ARCH__
   // m_shared_iter is in bytes, convert to integer offsets
   const int offset = m_team_shared_iter >> power_of_two<sizeof(int)>::value ;
 
@@ -267,6 +278,9 @@ void * OpenMPexec::get_shmem( const int size )
   }
 
   return ((int*)m_team_shared) + offset ;
+#else
+  return NULL;
+#endif
 }
 
 } // namespace Impl
@@ -277,20 +291,30 @@ void * OpenMPexec::get_shmem( const int size )
 
 namespace Kokkos {
 
-unsigned OpenMP::league_max()
-{
-  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::league_max" );
-  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::league_max" );
-
-  return unsigned( std::numeric_limits<int>::max() );
-}
-
+KOKKOS_FUNCTION
 unsigned OpenMP::team_max()
 {
+#ifndef __CUDA_ARCH__
   Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_max" );
   Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_max" );
 
   return Impl::s_threads_per_numa ;
+#else
+  return 0;
+#endif
+}
+
+KOKKOS_FUNCTION
+unsigned OpenMP::team_recommended()
+{
+#ifndef __CUDA_ARCH__
+  Impl::OpenMPexec::verify_initialized("Kokkos::OpenMP::team_recommended" );
+  Impl::OpenMPexec::verify_is_process("Kokkos::OpenMP::team_recommended" );
+
+  return Impl::s_threads_per_core ;
+#else
+  return 0;
+#endif
 }
 
 //----------------------------------------------------------------------------
@@ -358,7 +382,7 @@ void OpenMP::initialize( unsigned thread_count ,
 
     if ( ! thread_spawn_failed ) {
       Impl::s_threads_per_numa = Impl::s_using_hwloc ? thread_count / use_numa_count : thread_count;
-      Impl::s_threads_per_core = Impl::s_using_hwloc ? thread_count / ( use_numa_count * use_cores_per_numa ) : thread_count;
+      Impl::s_threads_per_core = Impl::s_using_hwloc ? thread_count / ( use_numa_count * use_cores_per_numa ) : 1;
 
       Impl::OpenMPexec::resize_reduce_scratch( 4096 - Impl::OpenMPexec::REDUCE_TEAM_BASE );
       Impl::OpenMPexec::resize_shared_scratch( 4096 );
@@ -401,3 +425,4 @@ void OpenMP::finalize()
 
 } // namespace Kokkos
 
+#endif //KOKKOS_HAVE_OPENMP

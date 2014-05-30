@@ -46,11 +46,6 @@
 #ifndef MUELU_ZOLTANINTERFACE_DEF_HPP
 #define MUELU_ZOLTANINTERFACE_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_ZoltanInterface_decl.hpp"
 #if defined(HAVE_MUELU_ZOLTAN) && defined(HAVE_MPI)
 

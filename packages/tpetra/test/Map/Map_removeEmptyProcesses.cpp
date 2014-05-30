@@ -93,7 +93,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_noncontigMap )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
@@ -250,7 +250,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_MpiComm_contigMap )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
 
   RCP<const Comm<int> > origComm = rcp (new MpiComm<int> (MPI_COMM_WORLD));
@@ -398,7 +398,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm1 )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 
@@ -545,7 +545,7 @@ TEUCHOS_UNIT_TEST( Map, removeEmptyProcesses_SerialComm2 )
 {
   typedef int local_ordinal_type;
   typedef long global_ordinal_type;
-  typedef KokkosClassic::SerialNode node_type;
+  typedef KokkosClassic::DefaultNode::DefaultNodeType node_type;
   typedef Tpetra::Map<local_ordinal_type, global_ordinal_type, node_type> map_type;
   typedef Array<global_ordinal_type>::size_type size_type;
 

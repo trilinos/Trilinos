@@ -263,6 +263,8 @@ int run(int argc, char *argv[]) {
   int niters = 100;
   int numthreads = 1;
   int numteams = 1;
+  int numgpus = 1;
+  int skipgpu = 999;
   int nsize = 20;
   Magnitude tolerance = 1.0e-2;
   std::string filename;
@@ -277,6 +279,8 @@ int run(int argc, char *argv[]) {
   cmdp.setOption("verbose","quiet",&verbose,"Print messages and results.");
   cmdp.setOption("numthreads",&numthreads,"Number of threads per thread team.");
   cmdp.setOption("numteams",&numteams,"Number of thread teams.");
+  cmdp.setOption("numgpus",&numgpus,"Number of GPUs.");
+  cmdp.setOption("skipgpu",&skipgpu,"Do not use this GPU.");
   cmdp.setOption("hostname",&hostname,"Override of hostname for PerfTest entry.");
   cmdp.setOption("testarchive",&testarchive,"Set filename for Performance Test archive.");
   cmdp.setOption("filename",&filename,"Filename for test matrix.");
@@ -296,8 +300,8 @@ int run(int argc, char *argv[]) {
   (void) MPI_Comm_rank (MPI_COMM_WORLD, &myRank);
 #endif // HAVE_MPI
 
-  int device = myRank%2;
-  if (device>0) device++;
+  int device = myRank%numgpus;
+  if(device>=skipgpu) device++;
   int verboseint = verbose?1:0;
   Teuchos::ParameterList params;
   params.set("Num Threads",numthreads,"Number of Threads per Threadteam");

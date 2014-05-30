@@ -44,7 +44,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_SG_SpMv, CrsProductTensorCijk, Scalar,
   success = true;
 
   typedef Scalar value_type;
-  typedef int size_type;
   typedef Stokhos::CrsProductTensor< value_type , Device > tensor_type ;
 
   tensor_type tensor =

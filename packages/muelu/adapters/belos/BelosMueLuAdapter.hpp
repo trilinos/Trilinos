@@ -111,7 +111,7 @@ namespace Belos {
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);
 
-      Hierarchy_->Iterate( x, 1, y , true);
+      Hierarchy_->Iterate(x, y, 1, true);
 
     }
 
@@ -135,7 +135,7 @@ namespace Belos {
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
 
-      Hierarchy_->Iterate( tX, 1, tY , true);
+      Hierarchy_->Iterate(tX, tY, 1, true);
 
     }
 #endif
@@ -177,7 +177,7 @@ namespace Belos {
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       y.putScalar(0.0);
 
-      Hierarchy_->Iterate( x, 1, y , true);
+      Hierarchy_->Iterate(x, y, 1, true);
 
     }
 
@@ -195,7 +195,7 @@ namespace Belos {
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
 
-      Hierarchy_->Iterate( tX, 1, tY , true);
+      Hierarchy_->Iterate(tX, tY, 1, true);
 
     }
 #endif
@@ -220,7 +220,7 @@ namespace Belos {
       //FIXME InitialGuessIsZero currently does nothing in MueLu::Hierarchy.Iterate().
       tY.putScalar(0.0);
 
-      Hierarchy_->Iterate( tX, 1, tY , true);
+      Hierarchy_->Iterate(tX, tY, 1, true);
 
     }
 

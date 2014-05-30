@@ -51,6 +51,7 @@
 #include <Epetra_MultiVector.h>
 #include <Epetra_CrsGraph.h>
 #include <Epetra_CrsMatrix.h>
+#include <Epetra_GIDTypeVector.h>
 
 namespace EpetraExt {
 

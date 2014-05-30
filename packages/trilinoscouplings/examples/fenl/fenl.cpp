@@ -51,51 +51,19 @@ namespace FENL {
 
 #if defined (KOKKOS_HAVE_PTHREAD)
 
-template
-Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemLinear >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
-
-
-template
-Perf fenl< Kokkos::Threads , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
+INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
+INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
 
 #endif
-
-} /* namespace FENL */
-} /* namespace Example */
-} /* namespace Kokkos */
-
-namespace Kokkos {
-namespace Example {
-namespace FENL {
 
 #if defined (KOKKOS_HAVE_OPENMP)
 
-template
-Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemLinear >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
-
-
-template
-Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
-  const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
-  const int use_print ,
-  const int use_trials ,
-  const int use_atomic ,
-  const int global_elems[] );
+INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
+INST_FENL( double , OpenMP , BoxElemPart::ElemQuadratic ,
+           ElementComputationConstantCoefficient , ManufacturedSolution )
 
 #endif
 
@@ -103,4 +71,3 @@ Perf fenl< Kokkos::OpenMP , Kokkos::Example::BoxElemPart::ElemQuadratic >(
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
-

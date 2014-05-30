@@ -1,15 +1,15 @@
-// $Id$ 
-// $Source$ 
+// $Id$
+// $Source$
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -68,7 +68,7 @@ namespace NOX {
 
 namespace NOX {
 
-/*! 
+/*!
   \brief %NOX nonlinear solvers namespace.
 
   The Generic class spells out the interface. The Manager class can
@@ -77,12 +77,12 @@ namespace NOX {
 */
 namespace Solver {
 
-/*! 
+/*!
   \brief %Abstract nonlinear solver method interface.
 
-  Defines the type of access methods into the iterative nonlinear solvers. 
+  Defines the type of access methods into the iterative nonlinear solvers.
 
-  <ul> 
+  <ul>
   <li>Instantiate or reset() the solver.
   <li>Find the solution via solve() or perform a single iterations via iterate().
   <li>Get information about the current solver state via
@@ -96,7 +96,7 @@ class Generic {
 
 public:
 
-  //! Constructor (does nothing) 
+  //! Constructor (does nothing)
   Generic() {};
 
   //! Destructor (does nothing)
@@ -107,19 +107,19 @@ public:
 
   //! Resets the solver, sets a new status test, and sets a new initial guess.
   virtual void reset(const NOX::Abstract::Vector& initial_guess,
-		     const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
+             const Teuchos::RCP<NOX::StatusTest::Generic>& test) = 0;
 
-  //! Check current convergence and failure status. 
+  //! Check current convergence and failure status.
   virtual NOX::StatusTest::StatusType getStatus() = 0;
 
   //! Do one nonlinear step in the iteration sequence and return status.
   virtual NOX::StatusTest::StatusType step() = 0;
 
-  /*! 
+  /*!
     \brief Solve the nonlinear problem and return final status.
 
     By "solve", we call iterate() until the NOX::StatusTest value is
-    either NOX::StatusTest::Converged or NOX::StatusTest::Failed. 
+    either NOX::StatusTest::Converged or NOX::StatusTest::Failed.
   */
   virtual NOX::StatusTest::StatusType solve() = 0;
 
@@ -141,7 +141,7 @@ public:
   virtual Teuchos::RCP< const NOX::Abstract::Group > getSolutionGroupPtr() const
   {
      TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-			"NOX::Generic::Solver::getSolutionGroupPtr() not implemented!");
+            "NOX::Generic::Solver::getSolutionGroupPtr() not implemented!");
      return Teuchos::null;
   }
 
@@ -149,7 +149,7 @@ public:
   virtual Teuchos::RCP< const NOX::Abstract::Group > getPreviousSolutionGroupPtr() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-		       "NOX::Generic::Solver::getPreviousSolutionGroupPtr() not implemented!");
+               "NOX::Generic::Solver::getPreviousSolutionGroupPtr() not implemented!");
      return Teuchos::null;
   }
 
@@ -157,7 +157,7 @@ public:
   virtual Teuchos::RCP< const Teuchos::ParameterList > getListPtr() const
   {
     TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-		       "NOX::Generic::Solver::getListPtr() not implemented!");
+               "NOX::Generic::Solver::getListPtr() not implemented!");
      return Teuchos::null;
   }
 

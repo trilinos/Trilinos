@@ -127,19 +127,19 @@ public:
 
   static int is_initialized();
 
-  static unsigned league_max();
-  static unsigned team_max();
+  KOKKOS_FUNCTION static unsigned team_max();
+  KOKKOS_FUNCTION static unsigned team_recommended();
   //@}
   //------------------------------------
   //! \name Function for the functor device interface */
   //@{
 
-  inline int league_rank() const ;
-  inline int league_size() const ;
-  inline int team_rank() const ;
-  inline int team_size() const ;
+  KOKKOS_INLINE_FUNCTION int league_rank() const ;
+  KOKKOS_INLINE_FUNCTION int league_size() const ;
+  KOKKOS_INLINE_FUNCTION int team_rank() const ;
+  KOKKOS_INLINE_FUNCTION int team_size() const ;
 
-  inline void team_barrier();
+  KOKKOS_INLINE_FUNCTION void team_barrier();
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering.
    *
@@ -147,7 +147,7 @@ public:
    *    reduction_total = dev.team_scan( value ) + value ;
    */
   template< typename Type >
-  inline Type team_scan( const Type & value );
+  KOKKOS_INLINE_FUNCTION Type team_scan( const Type & value );
 
   /** \brief  Intra-team exclusive prefix sum with team_rank() ordering
    *          with intra-team non-deterministic ordering accumulation.
@@ -159,10 +159,10 @@ public:
    *  non-deterministic.
    */
   template< typename TypeLocal , typename TypeGlobal >
-  inline TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
+  KOKKOS_INLINE_FUNCTION TypeGlobal team_scan( const TypeLocal & value , TypeGlobal * const global_accum );
 
 
-  inline void * get_shmem( const int size );
+  KOKKOS_INLINE_FUNCTION void * get_shmem( const int size );
 
   explicit inline OpenMP( Impl::OpenMPexec & );
 

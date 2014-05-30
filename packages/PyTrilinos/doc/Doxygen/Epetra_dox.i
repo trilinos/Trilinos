@@ -98,9 +98,15 @@ If any GIDs are owned by multiple processors, returns false. ";
 /*  I/O Methods  */
 
 %feature("docstring")  Epetra_BasicDirectory::Print "void
-Epetra_BasicDirectory::Print(ostream &os) const
+Epetra_BasicDirectory::Print(std::ostream &os) const
 
 Print method. ";
+
+%feature("docstring")  Epetra_BasicDirectory::AllMinGIDs "const int*
+Epetra_BasicDirectory::AllMinGIDs() const ";
+
+%feature("docstring")  Epetra_BasicDirectory::AllMinGIDs "const long
+long* Epetra_BasicDirectory::AllMinGIDs() const ";
 
 
 // File: classEpetra__BasicRowMatrix.xml
@@ -124,10 +130,8 @@ to the NumMyNonzeros()-1. The order in which the nonzeros are
 traversed is not specified and is up to the adapter implementation.
 
 NumMyRowEntries: Provide the number of entries for a specified local
-row.
-
-An alternative is possible if you do not want to provide a non-trivial
-implementation of the ExtraMyEntryView methods (See
+row.  An alternative is possible if you do not want to provide a non-
+trivial implementation of the ExtraMyEntryView   methods (See
 Epetra_VbrRowMatrix for an example): Implement ExtractMyRowCopy and
 NumMyRowEntries as above.
 
@@ -633,7 +637,7 @@ matrix. ";
 /*  I/O Methods  */
 
 %feature("docstring")  Epetra_BasicRowMatrix::Print "void
-Epetra_BasicRowMatrix::Print(ostream &os) const
+Epetra_BasicRowMatrix::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -1156,6 +1160,9 @@ Pointer to a Epetra_BlockMap object. ";
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm)
@@ -1193,6 +1200,10 @@ Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
+&Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, int ElementSize, long long IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
@@ -1242,6 +1253,10 @@ Pointer to a Epetra_BlockMap object. ";
 NumMyElements, const long long *MyGlobalElements, int ElementSize, int
 IndexBase, const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, int ElementSize,
+long long IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobalElements, int
 NumMyElements, const int *MyGlobalElements, const int
 *ElementSizeList, int IndexBase, const Epetra_Comm &Comm)
@@ -1289,6 +1304,32 @@ Pointer to a Epetra_BlockMap object. ";
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
 *ElementSizeList, int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
+NumMyElements, const long long *MyGlobalElements, const int
+*ElementSizeList, long long IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, int ElementSize,
+int indexBase, const Epetra_Comm &comm, bool UserIsDistributedGlobal,
+long long UserMinAllGID, long long UserMaxAllGID)
+
+Epetra_BlockMap constructor for a user-defined arbitrary distribution
+of constant size elements, where the user provides all the globals.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, int ElementSize,
+long long indexBase, const Epetra_Comm &comm, bool
+UserIsDistributedGlobal, long long UserMinAllGID, long long
+UserMaxAllGID) ";
+
+%feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(int NumGlobal_Elements, int
+NumMy_Elements, const int *myGlobalElements, int ElementSize, int
+indexBase, const Epetra_Comm &comm, bool UserIsDistributedGlobal, int
+UserMinAllGID, int UserMaxAllGID) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(const Epetra_BlockMap &map)
 
@@ -1373,7 +1414,7 @@ this map, otherwise returns false. ";
 Epetra_BlockMap::MyGID(long long GID_in) const ";
 
 %feature("docstring")  Epetra_BlockMap::MyLID "bool
-Epetra_BlockMap::MyLID(int LID_in) const
+Epetra_BlockMap::MyLID(int lid) const
 
 Returns true if the LID passed in belongs to the calling processor in
 this map, otherwise returns false. ";
@@ -1397,7 +1438,7 @@ Epetra_BlockMap::MaxAllGID64() const ";
 %feature("docstring")  Epetra_BlockMap::MinMyGID "int
 Epetra_BlockMap::MinMyGID() const
 
-Returns the maximum global ID owned by this processor. ";
+Returns the minimum global ID owned by this processor. ";
 
 %feature("docstring")  Epetra_BlockMap::MinMyGID64 "long long
 Epetra_BlockMap::MinMyGID64() const ";
@@ -1480,6 +1521,9 @@ Epetra_BlockMap::IndexBase() const
 
 Index base for this map. ";
 
+%feature("docstring")  Epetra_BlockMap::IndexBase64 "long long
+Epetra_BlockMap::IndexBase64() const ";
+
 %feature("docstring")  Epetra_BlockMap::NumGlobalPoints "int
 Epetra_BlockMap::NumGlobalPoints() const
 
@@ -1539,7 +1583,7 @@ Epetra_BlockMap::GlobalIndicesLongLong() const
 Returns true if map create with long long NumGlobalElements. ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
-Epetra_BlockMap::GlobalIndicesIsType< int >() const ";
+Epetra_BlockMap::GlobalIndicesIsType() const ";
 
 %feature("docstring")  Epetra_BlockMap::GlobalIndicesTypeValid "bool
 Epetra_BlockMap::GlobalIndicesTypeValid() const ";
@@ -1588,6 +1632,14 @@ the calling processor. ";
 %feature("docstring")  Epetra_BlockMap::MyGlobalElements64 "long long
 * Epetra_BlockMap::MyGlobalElements64() const ";
 
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "void
+Epetra_BlockMap::MyGlobalElements(const int *&IntGIDs, const long long
+*&LLGIDs) const ";
+
+%feature("docstring")  Epetra_BlockMap::MyGlobalElements "void
+Epetra_BlockMap::MyGlobalElements(int *&IntGIDs, long long *&LLGIDs)
+";
+
 %feature("docstring")  Epetra_BlockMap::FirstPointInElementList "int
 * Epetra_BlockMap::FirstPointInElementList() const
 
@@ -1632,7 +1684,7 @@ passed in. ";
 /*  Miscellaneous  */
 
 %feature("docstring")  Epetra_BlockMap::Print "void
-Epetra_BlockMap::Print(ostream &os) const
+Epetra_BlockMap::Print(std::ostream &os) const
 
 Print object to an output stream. ";
 
@@ -1659,6 +1711,83 @@ Epetra_BlockMapData* Epetra_BlockMap::DataPtr() const
 Returns a pointer to the BlockMapData instance this BlockMap uses.
 
 (Intended for developer use only for testing purposes.) ";
+
+%feature("docstring")  Epetra_BlockMap::RemoveEmptyProcesses "Epetra_BlockMap * Epetra_BlockMap::RemoveEmptyProcesses() const
+
+Return a new BlockMap with processes with zero elements removed.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.  This method first computes a new
+communicator, which contains only those processes in this Map's
+communicator (the \"original communicator\") that have a nonzero
+number of elements in this BlockMap (the \"original BlockMap\"). It
+then returns a new BlockMap distributed over the new communicator. The
+new BlockMap represents the same distribution as the original
+BlockMap, except that processes containing zero elements are not
+included in the new BlockMap or its communicator. On processes not
+included in the new BlockMap or communicator, this method returns
+NULL.
+
+The returned BlockMap always has a distinct communicator from this
+BlockMap's original communicator. The new communicator contains a
+subset of processes from the original communicator. Even if the number
+of processes in the new communicator equals the number of processes in
+the original communicator, the new communicator is distinct. (In an
+MPI implementation, the new communicator is created using
+MPI_Comm_split.)
+
+This method must be called collectively on the original communicator.
+It leaves the original Map and communicator unchanged.
+
+This method was intended for applications such as algebraic multigrid
+or other multilevel preconditioners. Construction of each level of the
+multilevel preconditioner typically requires constructing sparse
+matrices, which in turn requires all-reduces over all participating
+processes at that level. Matrix sizes at successively coarser levels
+shrink geometrically. At the coarsest levels, some processes might be
+left with zero rows of the matrix, or the multigrid implementation
+might \"rebalance\" (redistribute the matrix) and intentionally leave
+some processes with zero rows. Removing processes with zero rows makes
+the all-reduces and other communication operations cheaper. ";
+
+%feature("docstring")  Epetra_BlockMap::ReplaceCommWithSubset "Epetra_BlockMap * Epetra_BlockMap::ReplaceCommWithSubset(const
+Epetra_Comm *Comm) const
+
+Replace this BlockMap's communicator with a subset communicator.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.
+
+The input communicator's processes are a subset of this BlockMap's
+current communicator's processes.
+
+On processes which are not included in the input communicator, the
+input communicator is null.  This method must be called collectively
+on the original communicator. It leaves the original BlockMap and
+communicator unchanged.
+
+This method differs from removeEmptyProcesses(), in that it does not
+assume that excluded processes have zero entries. For example, one
+might wish to remove empty processes from the row BlockMap of a
+CrsGraph using removeEmptyProcesses(), and then apply the resulting
+subset communicator to the column, domain, and range Maps of the same
+graph. For the latter three Maps, one would in general use this method
+instead of removeEmptyProcesses(), giving the new row BlockMap's
+communicator to this method. ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
+Epetra_BlockMap::GlobalIndicesIsType() const ";
+
+%feature("docstring")  Epetra_BlockMap::GlobalIndicesIsType "bool
+Epetra_BlockMap::GlobalIndicesIsType() const ";
 
 
 // File: classEpetra__BlockMapData.xml
@@ -1773,6 +1902,28 @@ will receive a copy of Values. ";
 
 %feature("docstring")  Epetra_Comm::Broadcast "virtual int
 Epetra_Comm::Broadcast(long *MyVals, int Count, int Root) const =0
+
+Epetra_Comm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_Comm::Broadcast "virtual int
+Epetra_Comm::Broadcast(long long *MyVals, int Count, int Root) const
+=0
 
 Epetra_Comm Broadcast function.
 
@@ -2266,7 +2417,7 @@ Create a directory object for the given Epetra_BlockMap. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_Comm::PrintInfo "virtual void
-Epetra_Comm::PrintInfo(ostream &os) const =0
+Epetra_Comm::PrintInfo(std::ostream &os) const =0
 
 Print object to an output stream. ";
 
@@ -3320,7 +3471,12 @@ on this processor. ";
 %feature("docstring")  Epetra_CrsGraph::IndexBase "int
 Epetra_CrsGraph::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_CrsGraph::IndexBase64 "long long
+Epetra_CrsGraph::IndexBase64() const ";
 
 %feature("docstring")  Epetra_CrsGraph::RowMap "const
 Epetra_BlockMap& Epetra_CrsGraph::RowMap() const
@@ -3347,6 +3503,43 @@ function. Returns 0 if map is replaced, -1 if not.
 
 ( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsGraph::ReplaceDomainMapAndImporter "int Epetra_CrsGraph::ReplaceDomainMapAndImporter(const Epetra_BlockMap
+&NewDomainMap, const Epetra_Import *NewImporter)
+
+Replaces the current DomainMap & Importer with the user-specified map
+object.
+
+Replaces the current DomainMap and Importer with the user-specified
+map object, but only if the matrix has been FillCompleted, Importer's
+TargetMap matches the ColMap and Importer's SourceMap matches the
+DomainMap (assuming the importer isn't null). If an Importer is passed
+in, Epetra_CrsMatrix will copy it. Returns 0 if map/importer is
+replaced, -1 if not.
+
+(!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter
+&& ColMap().PointSameAs(NewImporter->TargetMap()) &&
+NewDomainMap.PointSameAs(NewImporter->SourceMap())) ";
+
+%feature("docstring")  Epetra_CrsGraph::RemoveEmptyProcessesInPlace "int Epetra_CrsGraph::RemoveEmptyProcessesInPlace(const Epetra_BlockMap
+*NewMap)
+
+Remove processes owning zero rows from the Maps and their
+communicator.
+
+Remove processes owning zero rows from the Maps and their
+communicator. WARNING:  This method is ONLY for use by experts.
+
+We make NO promises of backwards compatibility. This method may change
+or disappear at any time.
+
+Parameters:
+-----------
+
+newMap:  [in] This must be the result of calling the
+removeEmptyProcesses() method on the row BlockMap. If it is not, this
+method's behavior is undefined. This pointer will be null on excluded
+processes. ";
 
 %feature("docstring")  Epetra_CrsGraph::ColMap "const
 Epetra_BlockMap& Epetra_CrsGraph::ColMap() const
@@ -3466,15 +3659,15 @@ HaveColMap()==true (If HaveColMap()==false, returns -1) ";
 /*  I/O Methods  */
 
 %feature("docstring")  Epetra_CrsGraph::Print "void
-Epetra_CrsGraph::Print(ostream &os) const
+Epetra_CrsGraph::Print(std::ostream &os) const
 
 Print method. ";
 
 %feature("docstring")  Epetra_CrsGraph::PrintGraphData "void
-Epetra_CrsGraph::PrintGraphData(ostream &os) const ";
+Epetra_CrsGraph::PrintGraphData(std::ostream &os) const ";
 
 %feature("docstring")  Epetra_CrsGraph::PrintGraphData "void
-Epetra_CrsGraph::PrintGraphData(ostream &os, int level) const ";
+Epetra_CrsGraph::PrintGraphData(std::ostream &os, int level) const ";
 
 /*  Deprecated methods:  These methods still work, but will be removed
 in a future version  */
@@ -3578,7 +3771,7 @@ matrix rows.
 Constructor that accepts two Epetra_Map objects. (The second map is a
 column-map, and describes the set of column-indices that appear in
 each processor's portion of the matrix. Generally these are
-overlapping sets -- column-indices may appear on more than one
+overlapping sets column-indices may appear on more than one
 processor.)
 
 Constructor that accepts an Epetra_CrsGraph object, defining the non-
@@ -3828,6 +4021,98 @@ CV:  - (In) An Epetra_DataAccess enumerated type set to Copy or View.
 
 Graph:  - (In) A Epetra_CrsGraph object, constructed directly or
 extracted from another Epetra matrix object. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix
+&SourceMatrix, const Epetra_Import &RowImporter, const Epetra_Map
+*DomainMap=0, const Epetra_Map *RangeMap=0, bool
+RestrictCommunicator=false)
+
+Epetra CrsMatrix constructor that also fuses Import and
+FillComplete().
+
+A common use case is to create an empty destination Epetra_CrsMatrix,
+redistribute from a source CrsMatrix (by an Import or Export
+operation), then call FillComplete() on the destination CrsMatrix.
+This constructor fuses these three cases, for an Import
+redistribution.
+
+Fusing redistribution and FillComplete() exposes potential
+optimizations. For example, it may make constructing the column map
+faster, and it may avoid intermediate unoptimized storage in the
+destination Epetra_CrsMatrix. These optimizations may improve
+performance for specialized kernels like sparse matrix-matrix
+multiply, as well as for redistributing data after doing load
+balancing.
+
+The resulting matrix is fill complete (in the sense of Filled()) and
+has optimized storage (in the sense of StorageOptimized()). It the
+DomainMap is taken from the SourceMatrix, the RangeMap is presumed to
+be RowImporter.TargetMap() if not specified
+
+Parameters:
+-----------
+
+SourceMatrix:  [in] The source matrix from which to import. The source
+of an Import must have a nonoverlapping distribution.
+
+RowImporter:  [in] The Import instance containing a precomputed
+redistribution plan. The source Map of the Import must be the same as
+the row Map of sourceMatrix.
+
+DomainMap:  [in] The new domainMap for the new matrix. If not
+specified, then the DomainMap of the SourceMatrix is used.
+
+RangeMap:  [in] The new rangeMap for the new matrix. If not specified,
+then RowImporter.TargetMap() is used.
+
+RestrictCommunicator:  [in] Restricts the resulting communicator to
+active processes only. ";
+
+%feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix
+&SourceMatrix, const Epetra_Export &RowExporter, const Epetra_Map
+*DomainMap=0, const Epetra_Map *RangeMap=0, bool
+RestrictCommunicator=false)
+
+Epetra CrsMatrix constructor that also fuses Ex[prt and
+FillComplete().
+
+A common use case is to create an empty destination Epetra_CrsMatrix,
+redistribute from a source CrsMatrix (by an Import or Export
+operation), then call FillComplete() on the destination CrsMatrix.
+This constructor fuses these three cases, for an Import
+redistribution.
+
+Fusing redistribution and FillComplete() exposes potential
+optimizations. For example, it may make constructing the column map
+faster, and it may avoid intermediate unoptimized storage in the
+destination Epetra_CrsMatrix. These optimizations may improve
+performance for specialized kernels like sparse matrix-matrix
+multiply, as well as for redistributing data after doing load
+balancing.
+
+The resulting matrix is fill complete (in the sense of Filled()) and
+has optimized storage (in the sense of StorageOptimized()). It the
+DomainMap is taken from the SourceMatrix, the RangeMap is presumed to
+be RowImporter.TargetMap() if not specified
+
+Parameters:
+-----------
+
+SourceMatrix:  [in] The source matrix from which to import. The source
+of an Import must have a nonoverlapping distribution.
+
+RowExporter:  [in] The Export instance containing a precomputed
+redistribution plan. The source Map of the Import must be the same as
+the row Map of sourceMatrix.
+
+DomainMap:  [in] The new domainMap for the new matrix. If not
+specified, then the DomainMap of the SourceMatrix is used.
+
+RangeMap:  [in] The new rangeMap for the new matrix. If not specified,
+then RowExporter.TargetMap() is used.
+
+RestrictCommunicator:  [in] Restricts the resulting communicator to
+active processes only. ";
 
 %feature("docstring")  Epetra_CrsMatrix::Epetra_CrsMatrix "Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix &Matrix)
 
@@ -4873,7 +5158,12 @@ on this processor. ";
 %feature("docstring")  Epetra_CrsMatrix::IndexBase "int
 Epetra_CrsMatrix::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_CrsMatrix::IndexBase64 "long long
+Epetra_CrsMatrix::IndexBase64() const ";
 
 %feature("docstring")  Epetra_CrsMatrix::StaticGraph "bool
 Epetra_CrsMatrix::StaticGraph()
@@ -4928,6 +5218,44 @@ function. Returns 0 if map is replaced, -1 if not.
 
 ( IndicesAreLocal()==false && IndicesAreGlobal()==false) ||
 ColMap().PointSameAs(newmap)==true ";
+
+%feature("docstring")  Epetra_CrsMatrix::ReplaceDomainMapAndImporter "int Epetra_CrsMatrix::ReplaceDomainMapAndImporter(const Epetra_Map
+&NewDomainMap, const Epetra_Import *NewImporter)
+
+Replaces the current DomainMap & Importer with the user-specified map
+object.
+
+Replaces the current DomainMap and Importer with the user-specified
+map object, but only if the matrix has been FillCompleted, Importer's
+TargetMap matches the ColMap and Importer's SourceMap matches the
+DomainMap (assuming the importer isn't null). If an Importer is passed
+in, Epetra_CrsMatrix will copy it.
+
+Returns 0 if map/importer is replaced, -1 if not.
+
+(!NewImporter && ColMap().PointSameAs(NewDomainMap)) || (NewImporter
+&& ColMap().PointSameAs(NewImporter->TargetMap()) &&
+NewDomainMap.PointSameAs(NewImporter->SourceMap())) ";
+
+%feature("docstring")  Epetra_CrsMatrix::RemoveEmptyProcessesInPlace "int Epetra_CrsMatrix::RemoveEmptyProcessesInPlace(const
+Epetra_BlockMap *NewMap)
+
+Remove processes owning zero rows from the Maps and their
+communicator.
+
+Remove processes owning zero rows from the Maps and their
+communicator. WARNING:  This method is ONLY for use by experts.
+
+We make NO promises of backwards compatibility. This method may change
+or disappear at any time.
+
+Parameters:
+-----------
+
+newMap:  [in] This must be the result of calling the
+removeEmptyProcesses() method on the row Map. If it is not, this
+method's behavior is undefined. This pointer will be null on excluded
+processes. ";
 
 %feature("docstring")  Epetra_CrsMatrix::ColMap "const Epetra_Map&
 Epetra_CrsMatrix::ColMap() const
@@ -5066,7 +5394,7 @@ Epetra_CrsMatrix::MyGlobalRow(long long GID) const ";
 /*  I/O Methods  */
 
 %feature("docstring")  Epetra_CrsMatrix::Print "void
-Epetra_CrsMatrix::Print(ostream &os) const
+Epetra_CrsMatrix::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -5250,6 +5578,56 @@ has not been performed or Storage has not been Optimized.
 
 WARNING:  This method is intended for expert only, its use may require
 user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractIndexOffset "Epetra_IntSerialDenseVector &
+Epetra_CrsMatrix::ExpertExtractIndexOffset()
+
+Returns a reference to the Epetra_IntSerialDenseVector used to hold
+the local IndexOffsets (CRS rowptr)
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractIndices "Epetra_IntSerialDenseVector & Epetra_CrsMatrix::ExpertExtractIndices()
+
+Returns a reference to the Epetra_IntSerialDenseVector used to hold
+the local All_Indices (CRS colind)
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertExtractValues "double*& Epetra_CrsMatrix::ExpertExtractValues()
+
+Returns a reference to the double* used to hold the values array.
+
+WARNING:  This method is intended for experts only, its use may
+require user code modifications in future versions of Epetra. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertStaticFillComplete "int Epetra_CrsMatrix::ExpertStaticFillComplete(const Epetra_Map
+&DomainMap, const Epetra_Map &RangeMap, const Epetra_Import
+*Importer=0, const Epetra_Export *Exporter=0, int NumMyDiagonals=-1)
+
+Performs a FillComplete on an object that aready has filled CRS data.
+
+Performs a lightweight FillComplete on an object that already has
+filled IndexOffsets, All_Indices and All_Values. This routine is
+needed to support the EpetraExt::MatrixMatrix::Multiply and should not
+be called by users. WARNING:   Epetra_CrsMatrix will assume ownership
+of the Importer/Exporter you pass in. You should not deallocate it
+afterwards.
+
+This method is intended for expert developer use only, and should
+never be called by user code. ";
+
+%feature("docstring")  Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData
+"int Epetra_CrsMatrix::ExpertMakeUniqueCrsGraphData()
+
+Makes sure this matrix has a unique CrsGraphData object.
+
+This routine is needed to support the
+EpetraExt::MatrixMatrix::Multiply and should not be called by users.
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
 
 %feature("docstring")
 Epetra_CrsMatrix::SortGhostsAssociatedWithEachProcessor "int
@@ -5847,7 +6225,7 @@ local replicated. ";
 /*  Miscellaneous  */
 
 %feature("docstring")  Epetra_DistObject::Print "void
-Epetra_DistObject::Print(ostream &os) const
+Epetra_DistObject::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -5881,6 +6259,15 @@ C++ includes: Epetra_Distributor.h ";
 Epetra_Distributor* Epetra_Distributor::Clone()=0
 
 Epetra_Distributor clone constructor. ";
+
+%feature("docstring")  Epetra_Distributor::ReverseClone "virtual
+Epetra_Distributor* Epetra_Distributor::ReverseClone()=0
+
+Create and extract the reverse version of the distributor.
+
+This is not a const method since a reverse distributor might need to
+be created. This works like Clone, returning a new object the user
+must deallocate. ";
 
 %feature("docstring")  Epetra_Distributor::~Epetra_Distributor "virtual Epetra_Distributor::~Epetra_Distributor()
 
@@ -6016,7 +6403,7 @@ before executing Waits) ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_Distributor::Print "virtual void
-Epetra_Distributor::Print(ostream &os) const =0 ";
+Epetra_Distributor::Print(std::ostream &os) const =0 ";
 
 
 // File: classEpetra__Export.xml
@@ -6040,7 +6427,7 @@ C++ includes: Epetra_Export.h ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_Export::Print "void
-Epetra_Export::Print(ostream &os) const
+Epetra_Export::Print(std::ostream &os) const
 
 Print object to an output stream Print method ";
 
@@ -6065,29 +6452,25 @@ exporting data.
 WARNING:  Note that the TargetMap must have GIDs uniquely owned, each
 GID of the target map can occur only once.  Builds an export object
 that will transfer objects built with SourceMap to objects built with
-TargetMap.
-
-A Epetra_Export object categorizes the elements of the target map into
-three sets as follows: All elements in the target map that have the
-same GID as the corresponding element of the source map, starting with
-the first element in the target map, going up to the first element
-that is different from the source map. The number of these IDs is
-returned by NumSameIDs().
-
-All elements that are local to the processor, but are not part of the
-first set of elements. These elements have GIDs that are owned by the
-calling processor, but at least the first element of this list is
-permuted. Even if subsequent elements are not permuted, they are
-included in this list. The number of permuted elements is returned by
-NumPermutedIDs(). The list of elements (local IDs) in the source map
-that are permuted can be found in the list PermuteFromLIDs(). The list
-of elements (local IDs) in the target map that are the new locations
-of the source elements can be found in the list PermuteToLIDs().
-
-All remaining elements of the target map correspond to global IDs that
-are owned by remote processors. The number of these elements is
-returned by NumRemoteIDs() and the list of these is returned by
-RemoteLIDs().
+TargetMap.A Epetra_Export object categorizes the elements of the
+target map into three sets as follows: <ol> <li> All elements in the
+target map that have the same GID as the corresponding element of the
+source map, starting with the first       element in the target map,
+going up to the first element that is different from the source map.
+The number of      these IDs is returned by NumSameIDs(). <li> All
+elements that are local to the processor, but are not part of the
+first set of elements.  These elements      have GIDs that are owned
+by the calling processor, but at least the first element of this list
+is permuted. Even if subsequent elements are not permuted, they are
+included in this list.  The number of permuted elements      is
+returned by NumPermutedIDs().  The list of elements (local IDs) in the
+source map that are permuted can be      found in the list
+PermuteFromLIDs(). The list of elements (local IDs) in the target map
+that are the new locations      of the source elements can be found in
+the list PermuteToLIDs(). <li> All remaining elements of the target
+map correspond to global IDs that are owned by remote processors.  The
+number       of these elements is returned by NumRemoteIDs() and the
+list of these is returned by RemoteLIDs(). </ol>
 
 Given the above information, the Epetra_Export constructor builds a
 list of elements that must be communicated to other processors as a
@@ -6104,7 +6487,7 @@ will be received is returned by NumRecv().
 The following example illustrates the basic concepts.
 
 Assume we have 3 processors and 9 global elements with each processor
-owning 3 elements as follows  PE 0 Elements |  PE 1 Elements  |  PE 2
+owning 3 elements as follows PE 0 Elements |  PE 1 Elements  |  PE 2
 Elements     0  1  2 3  4  5           6  7  8
 
 The above layout essentially defines the target map argument of the
@@ -6125,7 +6508,7 @@ these contributions is to create a forcing vector with replicated
 entries for the shared contributions. Specifically the following
 SourceMap works for this scenario:
 
-PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements      0  1 2  3
+PE 0 Elements    |  PE 1 Elements    |  PE 2 Elements      0  1  2 3
 2  3  4  5  6        5  6  7  8
 
 A vector constructed using this SourceMap can be used to collect each
@@ -6172,16 +6555,16 @@ documentation.
 In the above example, if x_integrate is constructed using the
 SourceMap and then filled with local contributions, and x_force is
 constructed using the target map, the following operation will fill
-x_force with the combined results of x_integrate:
-x_force.Export(x_integrate, exporter, Add); The third argument above
-tells the export operation to add results that come from multiple
-processors for the same GID.
+x_force with the combined results of
+x_integrate:x_force.Export(x_integrate, exporter, Add); The third
+argument above tells the export operation to add results that come
+from multiple processors for the same GID.
 
 Epetra_Export objects can also be used by Import operations to perform
 the reverse operation. For example, if x_force in the above example
 had boundary conditions that should be sent to processors that share a
 boundary element, the following operation would send replicated values
-to x_integrate: x_integrate.Import(x_force, exporter, Insert); At the
+to x_integrate:x_integrate.Import(x_force, exporter, Insert); At the
 end of this operation, x_integrate would have replicated values from
 x_force of entries 2 and 3 on PEs 0 and 1, and entries 5 and 6 on PEs
 1 and 2. ";
@@ -6189,6 +6572,11 @@ x_force of entries 2 and 3 on PEs 0 and 1, and entries 5 and 6 on PEs
 %feature("docstring")  Epetra_Export::Epetra_Export "Epetra_Export::Epetra_Export(const Epetra_Export &Exporter)
 
 Epetra_Export copy constructor. ";
+
+%feature("docstring")  Epetra_Export::Epetra_Export "Epetra_Export::Epetra_Export(const Epetra_Import &Exporter)
+
+Epetra_Export pseudo-copy constructor. Creates an Epetra_Export in the
+reverse direction of the Epetra_Import argument. ";
 
 %feature("docstring")  Epetra_Export::~Epetra_Export "Epetra_Export::~Epetra_Export(void)
 
@@ -6310,13 +6698,9 @@ buildNonlocalGraph=false)
 
 Constructor ";
 
-%feature("docstring")  Epetra_FECrsGraph::Epetra_FECrsGraph "Epetra_FECrsGraph::Epetra_FECrsGraph(const Epetra_FECrsGraph &Graph)
-
-Constructor ";
-
 %feature("docstring")  Epetra_FECrsGraph::~Epetra_FECrsGraph "Epetra_FECrsGraph::~Epetra_FECrsGraph()
 
-Destructor ";
+Constructor Destructor ";
 
 %feature("docstring")  Epetra_FECrsGraph::InsertGlobalIndices "int
 Epetra_FECrsGraph::InsertGlobalIndices(int numRows, const int *rows,
@@ -6348,16 +6732,16 @@ Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
-is a collective method -- every processor must enter it before any
-will complete it.
+is a collective method every processor must enter it before any will
+complete it.
 
 NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
-arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
-held by the base-class CrsMatrix and its graph. If a rectangular
-matrix is being assembled, the domain-map and range-map must be
-specified by calling the other overloading of this method. Otherwise,
-GlobalAssemble() has no way of knowing what these maps should really
-be.
+arguments ' DomainMap()' and ' RangeMap()', which are the map
+attributes held by the base-class CrsMatrix and its graph. If a
+rectangular matrix is being assembled, the domain-map and range-map
+must be specified by calling the other overloading of this method.
+Otherwise, GlobalAssemble() has no way of knowing what these maps
+should really be.
 
 Parameters:
 -----------
@@ -6376,12 +6760,12 @@ Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
-is a collective method -- every processor must enter it before any
-will complete it.
+is a collective method every processor must enter it before any will
+complete it.
 
 NOTE***: When GlobalAssemble() (the other overloading of this method)
-calls FillComplete(), it passes the arguments 'DomainMap()' and
-'RangeMap()', which are the map attributes already held by the base-
+calls FillComplete(), it passes the arguments ' DomainMap()' and '
+RangeMap()', which are the map attributes already held by the base-
 class CrsMatrix and its graph. If a rectangular matrix is being
 assembled, the domain-map and range-map must be specified. Otherwise,
 GlobalAssemble() has no way of knowing what these maps should really
@@ -6402,6 +6786,12 @@ error-code 0 if successful, non-zero if some error occurs ";
 
 %feature("docstring")  Epetra_FECrsGraph::UseNonlocalGraph "bool
 Epetra_FECrsGraph::UseNonlocalGraph() const ";
+
+%feature("docstring")  Epetra_FECrsGraph::nonlocalRowData "std::map<int,Epetra_CrsGraphData::EntriesInOneRow<int> >&
+Epetra_FECrsGraph::nonlocalRowData() ";
+
+%feature("docstring")  Epetra_FECrsGraph::nonlocalRowData "std::map<long long,Epetra_CrsGraphData::EntriesInOneRow<long long> >&
+Epetra_FECrsGraph::nonlocalRowData() ";
 
 
 // File: classEpetra__FECrsMatrix.xml
@@ -6427,11 +6817,11 @@ construction. Users should note that the GlobalAssemble() method has
 an optional argument which determines whether GlobalAssemble() in turn
 calls FillComplete() after the data-exchange has occurred. If not
 explicitly supplied, this argument defaults to true. NOTE***: When
-GlobalAssemble() calls FillComplete(), it passes the arguments
-'DomainMap()' and 'RangeMap()', which are the map attributes held by
+GlobalAssemble() calls FillComplete(), it passes the arguments '
+DomainMap()' and ' RangeMap()', which are the map attributes held by
 the base-class CrsMatrix and its graph. If a rectangular matrix is
 being assembled, the correct domain-map and range-map must be passed
-to GlobalAssemble (there are two overloadings of this method) --
+to GlobalAssemble (there are two overloadings of this method)
 otherwise, it has no way of knowing what these maps should really be.
 
 Sub-matrix data, which is assumed to be a rectangular 'table' of
@@ -7100,16 +7490,16 @@ Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
-is a collective method -- every processor must enter it before any
-will complete it.
+is a collective method every processor must enter it before any will
+complete it.
 
 NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
-arguments 'DomainMap()' and 'RangeMap()', which are the map attributes
-held by the base-class CrsMatrix and its graph. If a rectangular
-matrix is being assembled, the domain-map and range-map must be
-specified by calling the other overloading of this method. Otherwise,
-GlobalAssemble() has no way of knowing what these maps should really
-be.
+arguments ' DomainMap()' and ' RangeMap()', which are the map
+attributes held by the base-class CrsMatrix and its graph. If a
+rectangular matrix is being assembled, the domain-map and range-map
+must be specified by calling the other overloading of this method.
+Otherwise, GlobalAssemble() has no way of knowing what these maps
+should really be.
 
 Parameters:
 -----------
@@ -7129,12 +7519,12 @@ Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this matrix at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
-is a collective method -- every processor must enter it before any
-will complete it.
+is a collective method every processor must enter it before any will
+complete it.
 
 NOTE***: When GlobalAssemble() (the other overloading of this method)
-calls FillComplete(), it passes the arguments 'DomainMap()' and
-'RangeMap()', which are the map attributes already held by the base-
+calls FillComplete(), it passes the arguments ' DomainMap()' and '
+RangeMap()', which are the map attributes already held by the base-
 class CrsMatrix and its graph. If a rectangular matrix is being
 assembled, the domain-map and range-map must be specified. Otherwise,
 GlobalAssemble() has no way of knowing what these maps should really
@@ -7551,8 +7941,8 @@ Gather any overlapping/shared data into the non-overlapping
 partitioning defined by the Map that was passed to this vector at
 construction time. Data imported from other processors is stored on
 the owning processor with a \"sumInto\" or accumulate operation. This
-is a collective method -- every processor must enter it before any
-will complete it.
+is a collective method every processor must enter it before any will
+complete it.
 
 Optimization for power-users: The optional parameter
 'reuse_map_and_exporter' defaults to false. By default, a map that
@@ -7615,6 +8005,48 @@ Epetra_Flops Destructor.
 Completely deletes a Epetra_Flops object. ";
 
 
+// File: classEpetra__GIDTypeSerialDenseVector.xml
+%feature("docstring") Epetra_GIDTypeSerialDenseVector "
+
+Epetra_GIDTypeSerialDenseVector: A class for switching between \"int\"
+and \"long long\" GID Type at compile time.
+
+The Epetra_GIDTypeSerialDenseVector class enables the construction and
+use of integer-valued, dense vectors to store \"int\" or \"long
+long\".
+
+C++ includes: Epetra_GIDTypeSerialDenseVector.h ";
+
+
+// File: classEpetra__GIDTypeSerialDenseVector_3_01int_01_4.xml
+%feature("docstring") Epetra_GIDTypeSerialDenseVector< int > " ";
+
+
+// File: classEpetra__GIDTypeSerialDenseVector_3_01long_01long_01_4.xml
+%feature("docstring") Epetra_GIDTypeSerialDenseVector< long long > "
+";
+
+
+// File: classEpetra__GIDTypeVector.xml
+%feature("docstring") Epetra_GIDTypeVector "
+
+Epetra_GIDTypeVector: A class for constructing and using dense \"int\"
+and \"long long\" vectors on a parallel computer.
+
+The Epetra_GIDTypeVector class enables the construction and use of
+integer dense vectors in a distributed memory environment.
+
+C++ includes: Epetra_GIDTypeVector.h ";
+
+
+// File: classEpetra__GIDTypeVector_3_01int_01_4.xml
+%feature("docstring") Epetra_GIDTypeVector< int > " ";
+
+
+// File: classEpetra__GIDTypeVector_3_01long_01long_01_4.xml
+%feature("docstring") Epetra_GIDTypeVector< long long > " ";
+
+
 // File: classEpetra__HashTable.xml
 %feature("docstring") Epetra_HashTable "";
 
@@ -7654,7 +8086,7 @@ C++ includes: Epetra_Import.h ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_Import::Print "void
-Epetra_Import::Print(ostream &os) const
+Epetra_Import::Print(std::ostream &os) const
 
 Print object to an output stream Print method ";
 
@@ -7718,7 +8150,7 @@ will be received is returned by NumRecv().
 The following example illustrates the basic concepts.
 
 Assume we have 3 processors and 9 global elements with each processor
-owning 3 elements as follows  PE 0 Elements |  PE 1 Elements  |  PE 2
+owning 3 elements as follows PE 0 Elements |  PE 1 Elements  |  PE 2
 Elements     0  1  2 3  4  5           6  7  8
 
 The above layout essentially defines the source map argument of the
@@ -7737,7 +8169,7 @@ X
 To perform a matrix vector multiplication operation y = A*x (assuming
 that x has the same distribution as the rows of the matrix A) each
 processor will need to import elements of x that are not local. To do
-this, we build a target map on each processor as follows:     PE 0
+this, we build a target map on each processor as follows:    PE 0
 Elements    |  PE 1 Elements    |  PE 2 Elements     0  1  2 3  8
 2  3  4  5  6       0  5  6  7  8
 
@@ -7789,9 +8221,42 @@ we can use the importer we constructed in the above example to do an
 export operation to y, adding the contributions that come from
 multiple processors. ";
 
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_BlockMap &TargetMap, const
+Epetra_BlockMap &SourceMap, int NumRemotePIDs, const int *RemotePIDs)
+
+Expert-only import constructor.
+
+The additional RemotePIDs argument should be filled with the owning
+PIDs (from the SourceMap) of the remote GIDs in the TargetMap. The
+normal Import constructor computes this for you with a call to
+RemoteIDList. However in some cases (MakeImportExport) we already have
+this information.
+
+WARNING: THIS METHOD IS FOR INTERNAL USE ONLY. USERS SHOULD NOT CALL
+THIS CONSTRUCTOR ";
+
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_BlockMap &TargetMap, const
+Epetra_BlockMap &SourceMap, int NumRemotePIDs, const int *RemotePIDs,
+const int &NumExportIDs, const int *ExportLIDs, const int *ExportPIDs)
+
+Expert-only import constructor.
+
+The RemotePIDs argument should be filled with the owning PIDs (from
+the SourceMap) of the remote GIDs in the TargetMap. The normal Import
+constructor computes this for you with a call to RemoteIDList. However
+in some cases (MakeImportExport) we already have this information. We
+also require information on the Export PIDs/GIDs so we can use the
+Distributor's CreateFromSendsAndReceives method. WARNING: THIS METHOD
+IS FOR INTERNAL USE ONLY. USERS SHOULD NOT CALL THIS CONSTRUCTOR ";
+
 %feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_Import &Importer)
 
 Epetra_Import copy constructor. ";
+
+%feature("docstring")  Epetra_Import::Epetra_Import "Epetra_Import::Epetra_Import(const Epetra_Export &Exporter)
+
+Epetra_Import pseudo-copy constructor. Creates an Epetra_Import in the
+reverse direction of the Epetra_Export argument. ";
 
 %feature("docstring")  Epetra_Import::~Epetra_Import "Epetra_Import::~Epetra_Import(void)
 
@@ -8106,7 +8571,7 @@ Returns the data access mode of the this matrix. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_IntSerialDenseMatrix::Print "void
-Epetra_IntSerialDenseMatrix::Print(ostream &os) const
+Epetra_IntSerialDenseMatrix::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -8186,7 +8651,7 @@ C++ includes: Epetra_IntSerialDenseVector.h ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_IntSerialDenseVector::Print "void
-Epetra_IntSerialDenseVector::Print(ostream &os) const
+Epetra_IntSerialDenseVector::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -8538,7 +9003,7 @@ Epetra_IntVector::GlobalLength64() const ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_IntVector::Print "void
-Epetra_IntVector::Print(ostream &os) const
+Epetra_IntVector::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -8643,7 +9108,7 @@ Returns the infinity norm of the global matrix. ";
 %feature("docstring")  Epetra_InvOperator::Label "const char*
 Epetra_InvOperator::Label() const
 
-Returns a character string describing the operator. ";
+Returns a character std::string describing the operator. ";
 
 %feature("docstring")  Epetra_InvOperator::Operator "Epetra_Operator*
 Epetra_InvOperator::Operator() const
@@ -10040,7 +10505,7 @@ deleted when the owning class is destroyed. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_LinearProblemRedistor::Print "virtual
-void Epetra_LinearProblemRedistor::Print(ostream &os) const
+void Epetra_LinearProblemRedistor::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -10111,6 +10576,9 @@ number of processors.
 Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
+IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
 IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(const Epetra_LocalMap &map)
@@ -10360,7 +10828,7 @@ Returns the data access mode of the this matrix. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_LongLongSerialDenseMatrix::Print "void
-Epetra_LongLongSerialDenseMatrix::Print(ostream &os) const
+Epetra_LongLongSerialDenseMatrix::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -10441,7 +10909,7 @@ C++ includes: Epetra_LongLongSerialDenseVector.h ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_LongLongSerialDenseVector::Print "void
-Epetra_LongLongSerialDenseVector::Print(ostream &os) const
+Epetra_LongLongSerialDenseVector::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -10785,15 +11253,15 @@ Epetra_LongLongVector::MyLength() const
 Returns the local vector length on the calling processor of vectors in
 the multi-vector. ";
 
-%feature("docstring")  Epetra_LongLongVector::GlobalLength "long long
-Epetra_LongLongVector::GlobalLength() const
+%feature("docstring")  Epetra_LongLongVector::GlobalLength64 "long
+long Epetra_LongLongVector::GlobalLength64() const
 
 Returns the global vector length of vectors in the multi-vector. ";
 
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_LongLongVector::Print "void
-Epetra_LongLongVector::Print(ostream &os) const
+Epetra_LongLongVector::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -10915,6 +11383,9 @@ Pointer to a Epetra_Map object. ";
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
 const Epetra_Comm &Comm) ";
 
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
+IndexBase, const Epetra_Comm &Comm) ";
+
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, int
 IndexBase, const Epetra_Comm &Comm)
 
@@ -10946,6 +11417,9 @@ Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 int IndexBase, const Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+long long IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobalElements, int NumMyElements, const
 int *MyGlobalElements, int IndexBase, const Epetra_Comm &Comm)
@@ -10988,6 +11462,30 @@ Pointer to a Epetra_Map object. ";
 const long long *MyGlobalElements, int IndexBase, const Epetra_Comm
 &Comm) ";
 
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
+const long long *MyGlobalElements, long long IndexBase, const
+Epetra_Comm &Comm) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, int indexBase,
+const Epetra_Comm &comm, bool UserIsDistributedGlobal, long long
+UserMinAllGID, long long UserMaxAllGID)
+
+Epetra_Map constructor for a user-defined arbitrary distribution of
+elements, where the user provides all the globals.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobal_Elements, int
+NumMy_Elements, const long long *myGlobalElements, long long
+indexBase, const Epetra_Comm &comm, bool UserIsDistributedGlobal, long
+long UserMinAllGID, long long UserMaxAllGID) ";
+
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(int NumGlobal_Elements, int NumMy_Elements,
+const int *myGlobalElements, int indexBase, const Epetra_Comm &comm,
+bool UserIsDistributedGlobal, int UserMinAllGID, int UserMaxAllGID) ";
+
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(const Epetra_Map &map)
 
 Epetra_Map copy constructor. ";
@@ -10995,6 +11493,78 @@ Epetra_Map copy constructor. ";
 %feature("docstring")  Epetra_Map::~Epetra_Map "Epetra_Map::~Epetra_Map(void)
 
 Epetra_Map destructor. ";
+
+%feature("docstring")  Epetra_Map::RemoveEmptyProcesses "Epetra_Map *
+Epetra_Map::RemoveEmptyProcesses() const
+
+Return a new BlockMap with processes with zero elements removed.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.  This method first computes a new
+communicator, which contains only those processes in this Map's
+communicator (the \"original communicator\") that have a nonzero
+number of elements in this BlockMap (the \"original BlockMap\"). It
+then returns a new BlockMap distributed over the new communicator. The
+new BlockMap represents the same distribution as the original
+BlockMap, except that processes containing zero elements are not
+included in the new BlockMap or its communicator. On processes not
+included in the new BlockMap or communicator, this method returns
+NULL.
+
+The returned BlockMap always has a distinct communicator from this
+BlockMap's original communicator. The new communicator contains a
+subset of processes from the original communicator. Even if the number
+of processes in the new communicator equals the number of processes in
+the original communicator, the new communicator is distinct. (In an
+MPI implementation, the new communicator is created using
+MPI_Comm_split.)
+
+This method must be called collectively on the original communicator.
+It leaves the original Map and communicator unchanged.
+
+This method was intended for applications such as algebraic multigrid
+or other multilevel preconditioners. Construction of each level of the
+multilevel preconditioner typically requires constructing sparse
+matrices, which in turn requires all-reduces over all participating
+processes at that level. Matrix sizes at successively coarser levels
+shrink geometrically. At the coarsest levels, some processes might be
+left with zero rows of the matrix, or the multigrid implementation
+might \"rebalance\" (redistribute the matrix) and intentionally leave
+some processes with zero rows. Removing processes with zero rows makes
+the all-reduces and other communication operations cheaper. ";
+
+%feature("docstring")  Epetra_Map::ReplaceCommWithSubset "Epetra_Map
+* Epetra_Map::ReplaceCommWithSubset(const Epetra_Comm *Comm) const
+
+Replace this Map's communicator with a subset communicator.
+
+WARNING:  This method is only for expert users. Understanding how to
+use this method correctly requires some familiarity with semantics of
+MPI communicators.
+
+We make no promises of backwards compatibility for this method. It may
+go away or change at any time.
+
+The input communicator's processes are a subset of this Map's current
+communicator's processes.
+
+On processes which are not included in the input communicator, the
+input communicator is null.  This method must be called collectively
+on the original communicator. It leaves the original BlockMap and
+communicator unchanged.
+
+This method differs from removeEmptyProcesses(), in that it does not
+assume that excluded processes have zero entries. For example, one
+might wish to remove empty processes from the row Map of a CrsGraph
+using removeEmptyProcesses(), and then apply the resulting subset
+communicator to the column, domain, and range Maps of the same graph.
+For the latter three Maps, one would in general use this method
+instead of removeEmptyProcesses(), giving the new row Map's
+communicator to this method. ";
 
 
 // File: classEpetra__MapColoring.xml
@@ -11200,7 +11770,7 @@ the map is generated, the user is responsible for deleting it. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_MapColoring::Print "void
-Epetra_MapColoring::Print(ostream &os) const
+Epetra_MapColoring::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -11301,6 +11871,28 @@ will receive a copy of Values. ";
 
 %feature("docstring")  Epetra_MpiComm::Broadcast "int
 Epetra_MpiComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_MpiComm Broadcast function.
+
+Take list of input values from the root processor and sends to all
+other processors.
+
+Parameters:
+-----------
+
+Values:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of Values.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of Values. ";
+
+%feature("docstring")  Epetra_MpiComm::Broadcast "int
+Epetra_MpiComm::Broadcast(long long *MyVals, int Count, int Root)
+const
 
 Epetra_MpiComm Broadcast function.
 
@@ -11813,12 +12405,12 @@ know we are MPI. ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_MpiComm::Print "void
-Epetra_MpiComm::Print(ostream &os) const
+Epetra_MpiComm::Print(std::ostream &os) const
 
 Print method that implements Epetra_Object virtual Print method. ";
 
 %feature("docstring")  Epetra_MpiComm::PrintInfo "void
-Epetra_MpiComm::PrintInfo(ostream &os) const
+Epetra_MpiComm::PrintInfo(std::ostream &os) const
 
 Print method that implements Epetra_Comm virtual PrintInfo method. ";
 
@@ -11882,6 +12474,14 @@ Copy constructor. ";
 %feature("docstring")  Epetra_MpiDistributor::Clone "Epetra_Distributor* Epetra_MpiDistributor::Clone()
 
 Clone method. ";
+
+%feature("docstring")  Epetra_MpiDistributor::ReverseClone "Epetra_Distributor * Epetra_MpiDistributor::ReverseClone()
+
+Create and extract the reverse version of the distributor.
+
+This is not a const method since a reverse distributor might need to
+be created. This works like Clone, returning a new object the user
+must deallocate. ";
 
 %feature("docstring")  Epetra_MpiDistributor::~Epetra_MpiDistributor "Epetra_MpiDistributor::~Epetra_MpiDistributor()
 
@@ -11958,6 +12558,50 @@ responsible for deallocating them after use. ";
 Epetra_MpiDistributor::CreateFromRecvs(const int &NumRemoteIDs, const
 long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic, int
 &NumExportIDs, long long *&ExportGIDs, int *&ExportPIDs) ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromSendsAndRecvs
+"int Epetra_MpiDistributor::CreateFromSendsAndRecvs(const int
+&NumExportIDs, const int *ExportPIDs, const int &NumRemoteIDs, const
+int *RemoteGIDs, const int *RemotePIDs, bool Deterministic)
+
+Create a communication plan from send list and a recv list.
+
+Given a list of process IDs to which to send the given number of data
+IDs, and a list of remote data IDs and corresponding process IDs from
+which to receive data, construct a communication plan for efficiently
+scattering data to these processes.
+
+Needless to say, knowing both of these at the same time is a pretty
+rare occurance. But if it happens, this routine will avoid a lot of
+communication that CreateFromSends or CreateFromRecvs would have to
+do.
+
+zero if this worked.
+
+Parameters:
+-----------
+
+NumExportIDs:  [in] Number of data IDs that need to be sent from the
+calling process.
+
+ExportPIDs:  [in] List of process IDs that will get the exported data
+IDs.
+
+NumRemoteIDs:  [in] Number of data IDs the calling process will be
+receiving.
+
+RemoteGIDs:  [in] List of data IDs that the calling process wants to
+receive.
+
+RemotePIDs:  [in] List of IDs of the processes that will send the
+remote data IDs to the calling process.
+
+Deterministic:  [in] Currently has no effect. ";
+
+%feature("docstring")  Epetra_MpiDistributor::CreateFromSendsAndRecvs
+"int Epetra_MpiDistributor::CreateFromSendsAndRecvs(const int
+&NumExportIDs, const int *ExportPIDs, const int &NumRemoteIDs, const
+long long *RemoteGIDs, const int *RemotePIDs, bool Deterministic) ";
 
 /*  Execute Gather/Scatter Operations  */
 
@@ -12079,7 +12723,7 @@ We will send LengthsTo[i] values to procs ProcsTo[i]. ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_MpiDistributor::Print "void
-Epetra_MpiDistributor::Print(ostream &os) const ";
+Epetra_MpiDistributor::Print(std::ostream &os) const ";
 
 
 // File: classEpetra__MpiSmpComm.xml
@@ -12665,12 +13309,12 @@ associated with a single node with the same ID. ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_MpiSmpComm::Print "void
-Epetra_MpiSmpComm::Print(ostream &os) const
+Epetra_MpiSmpComm::Print(std::ostream &os) const
 
 Print method that implements Epetra_Object virtual Print method. ";
 
 %feature("docstring")  Epetra_MpiSmpComm::PrintInfo "void
-Epetra_MpiSmpComm::PrintInfo(ostream &os) const
+Epetra_MpiSmpComm::PrintInfo(std::ostream &os) const
 
 Print method that implements Epetra_Comm virtual PrintInfo method. ";
 
@@ -13575,19 +14219,18 @@ This function performs a variety of matrix-matrix multiply operations,
 interpreting the Epetra_MultiVectors ( this-aka C , A and B) as 2D
 matrices. Variations are due to the fact that A, B and C can be local
 replicated or global distributed Epetra_MultiVectors and that we may
-or may not operate with the transpose of A and B. Possible cases are:
-Total of 32 case (2^5).     Num     OPERATIONS case  Notes     1)
-C(local) = A^X(local) * B^X(local)  4 (X=Transpose or Not, No comm
-needed)      2) C(local) = A^T(distr) * B (distr)  1   (2D dot
-product, replicate C)     3) C(distr) = A (distr) * B^X(local)  2
-(2D vector update, no comm needed)      Note that the following
-operations are not meaningful for      1D distributions:      1)
-C(local) = A^T(distr) * B^T(distr)  1     2) C(local) = A  (distr) *
-B^X(distr)  2     3) C(distr) = A^X(local) * B^X(local)  4     4)
-C(distr) = A^X(local) * B^X(distr)  4     5) C(distr) = A^T(distr) *
-B^X(local)  2     6) C(local) = A^X(distr) * B^X(local)  4     7)
-C(distr) = A^X(distr) * B^X(local)  4     8) C(local) = A^X(local) *
-B^X(distr)  4
+or may not operate with the transpose of A and B. Possible cases
+are:Total of 32 case (2^5). Num OPERATIONS                        case
+Notes 1) C(local) = A^X(local) * B^X(local)  4   (X=Transpose or Not,
+No comm needed)  2) C(local) = A^T(distr) * B  (distr)  1   (2D dot
+product, replicate C) 3) C(distr) = A  (distr) * B^X(local)  2   (2D
+vector update, no comm needed)  Note that the following operations are
+not meaningful for  1D distributions:  1) C(local) = A^T(distr) *
+B^T(distr)  1 2) C(local) = A  (distr) * B^X(distr)  2 3) C(distr) =
+A^X(local) * B^X(local)  4 4) C(distr) = A^X(local) * B^X(distr)  4 5)
+C(distr) = A^T(distr) * B^X(local)  2 6) C(local) = A^X(distr) *
+B^X(local)  4 7) C(distr) = A^X(distr) * B^X(local)  4 8) C(local) =
+A^X(local) * B^X(distr)  4
 
 Parameters:
 -----------
@@ -13705,7 +14348,7 @@ Returns true if this multi-vector has constant stride between vectors.
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_MultiVector::Print "void
-Epetra_MultiVector::Print(ostream &os) const
+Epetra_MultiVector::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -13849,12 +14492,13 @@ Get the output stream for error reporting. ";
 /*  Miscellaneous  */
 
 %feature("docstring")  Epetra_Object::Print "void
-Epetra_Object::Print(ostream &os) const
+Epetra_Object::Print(std::ostream &os) const
 
 Print object to an output stream Print method ";
 
 %feature("docstring")  Epetra_Object::ReportError "int
-Epetra_Object::ReportError(const string Message, int ErrorCode) const
+Epetra_Object::ReportError(const std::string Message, int ErrorCode)
+const
 
 Error reporting method. ";
 
@@ -13874,7 +14518,7 @@ C++ includes: Epetra_OffsetIndex.h ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_OffsetIndex::Print "void
-Epetra_OffsetIndex::Print(ostream &os) const
+Epetra_OffsetIndex::Print(std::ostream &os) const
 
 Print object to an output stream Print method ";
 
@@ -14783,52 +15427,32 @@ supports up to 5. This means only 5 block sizes or 5 diaganols can be
 passed in at once. If you have more changing the code to support your
 needs should be simple, but every case you use must be enumerated. Of
 course you can just say there are diagonals and blocks and not pass in
-specific sizes as wells.
-
-bool noblocks: If true, the matrix has no block structure
-
-bool singleblocksize: If true, the matrix structure is dominated by
-blocks of the size of the next two parameters. int row: The number of
-rows in each block.
-
-int col: The number of columns in each block.
-
-bool multipleblocksize: If true, the matrix consists of multiple block
-sizes. The next 3 parameters describe these and are optional. int
-blocks: The number of block sizes in the matrix.
-
-int row<x>: Where x is the block number, and x goes from 1 to blocks.
-This is the number of rows in block x.
-
-int col<x>: Where x is the block number, and x goes from 1 to blocks.
-This is the number of cols in block x.
-
-bool alignedblocks: If true, all blocks are aligned to a grid.
-
-bool unalignedblocks: If true, blocks are not aligned to a grid.
-
-bool symmetricpattern: If true, the matrix is either symmetric or
-nearly symmetric.
-
-bool nonsymmetricpattern: If true, the matrix has a very unsymmetric
-pattern.
-
-bool randompattern: If true, the matrix's non-zeros are distributed in
-a random pattern.
-
-bool correlatedpattern: If true, the row and column indices for non-
-zeros are highly correlated.
-
-bool nodiags : If true, the matrix has little or no diagonal
-structure.
-
-bool diags: If true, the matrix consists of diagonal structure
-described the next two optional parameters. int numdiags: The number
-of diagonal sizes known to be present others not listed could be
-present.
-
-int diag<x>: Where x is the diagonal number, and x goes from 1 to
-numdiags. This is the size of the diagonal. ";
+specific sizes as wells.        - bool noblocks: If true, the matrix
+has no block structure - bool singleblocksize: If true, the matrix
+structure is dominated by blocks of the size of the next two
+parameters.           - int row: The number of rows in each block.
+- int col: The number of columns in each block.         - bool
+multipleblocksize: If true, the matrix consists of multiple block
+sizes.  The next 3 parameters describe these and are optional.
+- int blocks: The number of block sizes in the matrix.           - int
+row<x>: Where x is the block number, and x goes from 1 to blocks.
+This is the number of rows in block x.           - int col<x>: Where x
+is the block number, and x goes from 1 to blocks.  This is the number
+of cols in block x. - bool alignedblocks: If true, all blocks are
+aligned to a grid. - bool unalignedblocks: If true, blocks are not
+aligned to a grid. - bool symmetricpattern: If true, the matrix is
+either symmetric or nearly symmetric.         - bool
+nonsymmetricpattern: If true, the matrix has a very unsymmetric
+pattern.          - bool randompattern: If true, the matrix's non-
+zeros are distributed in a random pattern. - bool correlatedpattern:
+If true, the row and column indices for non-zeros are highly
+correlated.          - bool nodiags : If true, the matrix has little
+or no diagonal structure.         - bool diags: If true, the matrix
+consists of diagonal structure described the next two optional
+parameters.           - int numdiags: The number of diagonal sizes
+known to be present others not listed could be present. - int diag<x>:
+Where x is the diagonal number, and x goes from 1 to numdiags.  This
+is the size of the diagonal. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintMultiply "int
 Epetra_OskiMatrix::SetHintMultiply(bool TransA, double Alpha, const
@@ -14879,23 +15503,16 @@ the operation is not valid an error code is returned.  Options that
 can be passed to the List are presented below. They are: \"<type>
 <option name>: <description of purpose>\". The available hints are
 grouped by section, and only one hint from each section can be true
-for a given matrix.
-
-These replace InVec. bool symminvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symminmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace OutVec. bool symmoutvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symmoutmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-bool tune: If true, have OSKI tune moderately rather than using the
-number of calls passed in.
-
+for a given matrix.        These replace InVec.         - bool
+symminvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes. - bool symminmultivec: If true, use a
+symbolic multi-vector rather than the multi-vector passed in for
+tuning purposes.          These replace OutVec.         - bool
+symmoutvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symmoutmultivec: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          - bool tune: If true, have OSKI tune
+moderately rather than using the number of calls passed in.         -
 bool tuneaggressive: If true, have OSKI tune aggressively rather than
 using the number of calls passed in. ";
 
@@ -14941,19 +15558,14 @@ the operation is not valid an error code is returned.  Options that
 can be passed to the List are presented below. They are: \"<type>
 <option name>: <description of purpose>\". The available hints are
 grouped by section, and only one hint from each section can be true
-for a given matrix.
-
-These replace Vector. bool symmvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symmmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-bool tune: If true, have OSKI tune moderately rather than using the
-number of calls passed in.
-
-bool tuneaggressive: If true, have OSKI tune aggressively rather than
-using the number of calls passed in. ";
+for a given matrix.        These replace Vector.         - bool
+symmvec: If true, use a symbolic vector rather than the vector passed
+in for tuning purposes. - bool symmmultivec: If true, use a symbolic
+multi-vector rather than the multi-vector passed in for tuning
+purposes.          - bool tune: If true, have OSKI tune moderately
+rather than using the number of calls passed in.         - bool
+tuneaggressive: If true, have OSKI tune aggressively rather than using
+the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::SetHintMatTransMatMultiply "int Epetra_OskiMatrix::SetHintMatTransMatMultiply(bool ATA, double
 Alpha, const Epetra_OskiMultiVector &InVec, double Beta, const
@@ -15007,31 +15619,22 @@ the operation is not valid an error code is returned.  Options that
 can be passed to the List are presented below. They are: \"<type>
 <option name>: <description of purpose>\". The available hints are
 grouped by section, and only one hint from each section can be true
-for a given matrix.
-
-These replace InVec. bool symminvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symminmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace OutVec. bool symmoutvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symmoutmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace Intermediate. bool symmintervec: If true, use a symbolic
-vector rather than the vector passed in for tuning purposes.
-
-bool symmintermultivec: If true, use a symbolic multi-vector rather
-than the multi-vector passed in for tuning purposes.
-
-bool tune: If true, have OSKI tune moderately rather than using the
-number of calls passed in.
-
-bool tuneaggressive: If true, have OSKI tune aggressively rather than
-using the number of calls passed in. ";
+for a given matrix.        These replace InVec.         - bool
+symminvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes. - bool symminmultivec: If true, use a
+symbolic multi-vector rather than the multi-vector passed in for
+tuning purposes.          These replace OutVec.         - bool
+symmoutvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symmoutmultivec: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          These replace Intermediate.         -
+bool symmintervec: If true, use a symbolic vector rather than the
+vector passed in for tuning purposes.         - bool
+symmintermultivec: If true, use a symbolic multi-vector rather than
+the multi-vector passed in for tuning purposes.          - bool tune:
+If true, have OSKI tune moderately rather than using the number of
+calls passed in.         - bool tuneaggressive: If true, have OSKI
+tune aggressively rather than using the number of calls passed in. ";
 
 %feature("docstring")
 Epetra_OskiMatrix::SetHintMultiplyAndMatTransMultiply "int
@@ -15095,35 +15698,24 @@ the operation is not valid an error code is returned.  Options that
 can be passed to the List are presented below. They are: \"<type>
 <option name>: <description of purpose>\". The available hints are
 grouped by section, and only one hint from each section can be true
-for a given matrix.
-
-These replace InVec. bool symminvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symminmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace OutVec. bool symmoutvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symmoutmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace InVec2. bool symminvec2: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symminmultivec2: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace OutVec2. bool symmoutvec2: If true, use a symbolic
-vector rather than the vector passed in for tuning purposes.
-
-bool symmoutmultivec2: If true, use a symbolic multi-vector rather
-than the multi-vector passed in for tuning purposes.
-
-bool tune: If true, have OSKI tune moderately rather than using the
-number of calls passed in.
-
+for a given matrix.        These replace InVec.         - bool
+symminvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes. - bool symminmultivec: If true, use a
+symbolic multi-vector rather than the multi-vector passed in for
+tuning purposes.          These replace OutVec.         - bool
+symmoutvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symmoutmultivec: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          These replace InVec2.         - bool
+symminvec2: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symminmultivec2: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          These replace OutVec2.         - bool
+symmoutvec2: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symmoutmultivec2: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          - bool tune: If true, have OSKI tune
+moderately rather than using the number of calls passed in.         -
 bool tuneaggressive: If true, have OSKI tune aggressively rather than
 using the number of calls passed in. ";
 
@@ -15183,29 +15775,20 @@ the operation is not valid an error code is returned.  Options that
 can be passed to the List are presented below. They are: \"<type>
 <option name>: <description of purpose>\". The available hints are
 grouped by section, and only one hint from each section can be true
-for a given matrix.
-
-These replace InVec. bool symminvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symminmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-These replace OutVec. bool symmoutvec: If true, use a symbolic vector
-rather than the vector passed in for tuning purposes.
-
-bool symmoutmultivec: If true, use a symbolic multi-vector rather than
-the multi-vector passed in for tuning purposes.
-
-This replaces Intermediate. bool symmintermultivec: If true, use a
+for a given matrix.        These replace InVec.         - bool
+symminvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes. - bool symminmultivec: If true, use a
 symbolic multi-vector rather than the multi-vector passed in for
-tuning purposes.
-
-bool tune: If true, have OSKI tune moderately rather than using the
-number of calls passed in.
-
-bool tuneaggressive: If true, have OSKI tune aggressively rather than
-using the number of calls passed in. ";
+tuning purposes.          These replace OutVec.         - bool
+symmoutvec: If true, use a symbolic vector rather than the vector
+passed in for tuning purposes.         - bool symmoutmultivec: If
+true, use a symbolic multi-vector rather than the multi-vector passed
+in for tuning purposes.          This replaces Intermediate.         -
+bool symmintermultivec: If true, use a symbolic multi-vector rather
+than the multi-vector passed in for tuning purposes.          - bool
+tune: If true, have OSKI tune moderately rather than using the number
+of calls passed in.         - bool tuneaggressive: If true, have OSKI
+tune aggressively rather than using the number of calls passed in. ";
 
 %feature("docstring")  Epetra_OskiMatrix::TuneMatrix "int
 Epetra_OskiMatrix::TuneMatrix()
@@ -15869,25 +16452,19 @@ Generate a new Epetra_CrsMatrix as the transpose of an
 Epetra_RowMatrix passed into the constructor.
 
 Constructs a new Epetra_CrsMatrix that is a copy of the
-Epetra_RowMatrix passed in to the constructor.
-
-Parameters:
------------
-
-MakeDataContiguous:  (In) Causes the output matrix, LHS and RHS to be
-stored in a form compatible with Fortran-style solvers. The output
-matrix will be compatible with the Harwell-Boeing compressed column
-format. The RHS and LHS will be stored such that the last value in
-column j of the multivector is stored next to the first value in
-column j+1.
-
-TransposeRowMap:  (Optional/In) If this argument is defined, the
-transpose matrix will be distributed using this map as the row map for
-the transpose. If it is set to zero, the transpose matrix will use the
-OrigMatrix->RowMatrixDomainMap as the row map.
-
-Integer error code, 0 if no errors. Negative if some fatal error
-occured. ";
+Epetra_RowMatrix passed in to the constructor.    \\\\param
+MakeDataContiguous (In) Causes the output matrix, LHS and RHS to be
+stored in a form compatible with            Fortran- style solvers.
+The output matrix will be compatible with the Harwell- Boeing
+compressed                              column format.  The RHS and
+LHS will be stored such that the last value in column j of the
+multivector is stored next to the first value in column j+1. \\\\param
+TransposeRowMap (Optional/In) If this argument is defined, the
+transpose matrix will be distributed            using this map as the
+row map for the transpose.  If it is set to zero, the transpose matrix
+will use                              the
+OrigMatrix->RowMatrixDomainMap as the row map.      \\\\return Integer
+error code, 0 if no errors.  Negative if some fatal error occured. ";
 
 %feature("docstring")
 Epetra_RowMatrixTransposer::UpdateTransposeValues "int
@@ -16039,6 +16616,27 @@ will receive a copy of MyVals. ";
 
 %feature("docstring")  Epetra_SerialComm::Broadcast "int
 Epetra_SerialComm::Broadcast(long *MyVals, int Count, int Root) const
+
+Epetra_SerialComm Broadcast function.
+
+A no-op for a serial communicator.
+
+Parameters:
+-----------
+
+MyVals:  InOut On entry, the root processor contains the list of
+values. On exit, all processors will have the same list of values.
+Note that values must be allocated on all processor before the
+broadcast.
+
+Count:  In On entry, contains the length of the list of MyVals.
+
+Root:  In On entry, contains the processor from which all processors
+will receive a copy of MyVals. ";
+
+%feature("docstring")  Epetra_SerialComm::Broadcast "int
+Epetra_SerialComm::Broadcast(long long *MyVals, int Count, int Root)
+const
 
 Epetra_SerialComm Broadcast function.
 
@@ -16503,12 +17101,12 @@ Create a directory object for the given Epetra_BlockMap. ";
 /*  Print object to an output stream  */
 
 %feature("docstring")  Epetra_SerialComm::Print "void
-Epetra_SerialComm::Print(ostream &os) const
+Epetra_SerialComm::Print(std::ostream &os) const
 
 Print method that implements Epetra_Object virtual Print method. ";
 
 %feature("docstring")  Epetra_SerialComm::PrintInfo "void
-Epetra_SerialComm::PrintInfo(ostream &os) const
+Epetra_SerialComm::PrintInfo(std::ostream &os) const
 
 Print method that implements Epetra_Comm virtual PrintInfo method. ";
 
@@ -16843,7 +17441,7 @@ Returns the data access mode of the this matrix. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_SerialDenseMatrix::Print "void
-Epetra_SerialDenseMatrix::Print(ostream &os) const
+Epetra_SerialDenseMatrix::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -17499,7 +18097,7 @@ Returns a pointer to the column scale vector used for equilibration.
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_SerialDenseSolver::Print "void
-Epetra_SerialDenseSolver::Print(ostream &os) const
+Epetra_SerialDenseSolver::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -17756,7 +18354,7 @@ computed). ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_SerialDenseSVD::Print "void
-Epetra_SerialDenseSVD::Print(ostream &os) const
+Epetra_SerialDenseSVD::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -18078,7 +18676,7 @@ Returns the data access mode of the this vector. ";
 /*  I/O methods  */
 
 %feature("docstring")  Epetra_SerialDenseVector::Print "void
-Epetra_SerialDenseVector::Print(ostream &os) const
+Epetra_SerialDenseVector::Print(std::ostream &os) const
 
 Print service methods; defines behavior of ostream << operator. ";
 
@@ -18114,6 +18712,12 @@ Epetra_SerialDistributor Copy Constructor. ";
 %feature("docstring")  Epetra_SerialDistributor::Clone "Epetra_Distributor* Epetra_SerialDistributor::Clone()
 
 Clone method. ";
+
+%feature("docstring")  Epetra_SerialDistributor::ReverseClone "Epetra_Distributor* Epetra_SerialDistributor::ReverseClone()
+
+Create and extract the reverse version of the distributor.
+
+This is not implemented for SeriaDistributor. ";
 
 %feature("docstring")
 Epetra_SerialDistributor::~Epetra_SerialDistributor "Epetra_SerialDistributor::~Epetra_SerialDistributor()
@@ -18243,7 +18847,7 @@ Do reverse post of buffer of export objects (can do other local work
 before executing Waits) ";
 
 %feature("docstring")  Epetra_SerialDistributor::Print "void
-Epetra_SerialDistributor::Print(ostream &os) const ";
+Epetra_SerialDistributor::Print(std::ostream &os) const ";
 
 
 // File: classEpetra__SerialSpdDenseSolver.xml
@@ -18949,7 +19553,7 @@ row-map defining the distribution of matrix rows.
 Constructor that accepts two Epetra_Map objects. (The second map is a
 column-map, and describes the set of column-indices that appear in
 each processor's portion of the matrix. Generally these are
-overlapping sets -- column-indices may appear on more than one
+overlapping sets column-indices may appear on more than one
 processor.)
 
 Constructor that accepts an Epetra_CrsGraph object, defining the non-
@@ -20178,7 +20782,12 @@ This function returns the max over all processor of MaxNumNonzeros().
 %feature("docstring")  Epetra_VbrMatrix::IndexBase "int
 Epetra_VbrMatrix::IndexBase() const
 
-Returns the index base for row and column indices for this graph. ";
+Returns the index base for row and column indices for this graph.
+
+Index base for this map. ";
+
+%feature("docstring")  Epetra_VbrMatrix::IndexBase64 "long long
+Epetra_VbrMatrix::IndexBase64() const ";
 
 %feature("docstring")  Epetra_VbrMatrix::Graph "const
 Epetra_CrsGraph& Epetra_VbrMatrix::Graph() const
@@ -20311,7 +20920,7 @@ Epetra_VbrMatrix::MyGlobalBlockRow(long long GID) const ";
 /*  I/O Methods  */
 
 %feature("docstring")  Epetra_VbrMatrix::Print "void
-Epetra_VbrMatrix::Print(ostream &os) const
+Epetra_VbrMatrix::Print(std::ostream &os) const
 
 Print method. ";
 
@@ -21177,6 +21786,9 @@ WARNING:  This method is extremely dangerous and should only be used
 by experts. ";
 
 
+// File: structEpetra__CrsGraphData_1_1IndexData.xml
+
+
 // File: structEpetra__CrsGraphData_1_1IndexData_3_01int_01_4.xml
 %feature("docstring") Epetra_CrsGraphData::IndexData< int > " ";
 
@@ -21213,6 +21825,165 @@ NumMyBlockRows, bool AllocSorted) ";
 
 
 // File: structEpetra__HashTable_1_1Node.xml
+
+
+// File: namespaceEpetra__Import__Util.xml
+%feature("docstring")
+Epetra_Import_Util::TPackAndPrepareWithOwningPIDs "int
+Epetra_Import_Util::TPackAndPrepareWithOwningPIDs(const
+Epetra_CrsMatrix &A, int NumExportIDs, int *ExportLIDs, int
+&LenExports, char *&Exports, int &SizeOfPacket, int *Sizes, bool
+&VarSizes, std::vector< int > &pids) ";
+
+%feature("docstring")
+Epetra_Import_Util::PackAndPrepareWithOwningPIDs "int
+Epetra_Import_Util::PackAndPrepareWithOwningPIDs(const
+Epetra_CrsMatrix &SourceMatrix, int NumExportIDs, int *ExportLIDs, int
+&LenExports, char *&Exports, int &SizeOfPacket, int *Sizes, bool
+&VarSizes, std::vector< int > &SourcePids)
+
+PackAndPrepareWithOwningPIDs.
+
+Note: The SourcePids vector should contain a list of owning PIDs for
+each column in the ColMap, as from Epetra_Util::GetPids, without the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")  Epetra_Import_Util::TUnpackWithOwningPIDsCount
+"int Epetra_Import_Util::TUnpackWithOwningPIDsCount(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports) ";
+
+%feature("docstring")  Epetra_Import_Util::UnpackWithOwningPIDsCount "int Epetra_Import_Util::UnpackWithOwningPIDsCount(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports)
+
+UnpackWithOwningPIDsCount.
+
+Counts the number of non-zeros in the resulting matrix. Call this
+before UnpackAndCombineIntoCrsArrays.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::TUnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::TUnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int MyTargetPID, int
+*CSR_rowptr, int_type *CSR_colind, double *CSR_vals, const
+std::vector< int > &SourcePids, std::vector< int > &TargetPids) ";
+
+%feature("docstring")
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int MyTargetPID, int
+*CSR_rowptr, int *CSR_colind, double *CSR_values, const std::vector<
+int > &SourcePids, std::vector< int > &TargetPids)
+
+UnpackAndCombineIntoCrsArrays.
+
+You should call UnpackWithOwningPIDsCount first and allocate all
+arrays accordingly.
+
+Note: The SourcePids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+Note: The TargetPids vector (on output) will contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays "int
+Epetra_Import_Util::UnpackAndCombineIntoCrsArrays(const
+Epetra_CrsMatrix &SourceMatrix, int NumSameIDs, int NumRemoteIDs,
+const int *RemoteLIDs, int NumPermuteIDs, const int *PermuteToLIDs,
+const int *PermuteFromLIDs, int LenImports, char *Imports, int
+TargetNumRows, int TargetNumNonzeros, int MyTargetPID, int
+*CSR_rowptr, long long *CSR_colind, double *CSR_values, const
+std::vector< int > &SourcePids, std::vector< int > &TargetPids)
+
+UnpackAndCombineIntoCrsArrays.
+
+You should call UnpackWithOwningPIDsCount first and allocate all
+arrays accordingly.
+
+Note: The SourcePids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+Note: The TargetPids vector (on output) will contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" option being used.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::TLowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::TLowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind_LID, const int_type *colind_GID, const
+Epetra_Map &domainMap, const int *owningPIDs, bool
+SortGhostsAssociatedWithEachProcessor, std::vector< int > &RemotePIDs,
+MapType1 &NewColMap) ";
+
+%feature("docstring")
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind, const Epetra_Map &domainMap, const int
+*owningPIDs, bool SortGhostsAssociatedWithEachProcessor, std::vector<
+int > &RemotePIDs, Epetra_BlockMap &NewColMap)
+
+LowCommunicationMakeColMapAndReindex.
+
+If you know the owning PIDs already, you can make the colmap a lot
+less expensively.
+
+Note: The owningPids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" can be used, or not, here.
+
+Note: This method will return a std::vector of the RemotePIDs, used
+for construction of the importer.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
+
+%feature("docstring")
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex "int
+Epetra_Import_Util::LowCommunicationMakeColMapAndReindex(int N, const
+int *rowptr, int *colind_LID, long long *colind_GID, const Epetra_Map
+&domainMap, const int *owningPIDs, bool
+SortGhostsAssociatedWithEachProcessor, std::vector< int > &RemotePIDs,
+Epetra_BlockMap &NewColMap)
+
+LowCommunicationMakeColMapAndReindex.
+
+If you know the owning PIDs already, you can make the colmap a lot
+less expensively.
+
+Note: The owningPids vector (on input) should contain of owning PIDs
+for each column in the ColMap, as from Epetra_Util::GetPids, with the
+\"-1 for local\" can be used, or not, here.
+
+Note: This method will return a std::vector of the RemotePIDs, used
+for construction of the importer.
+
+WARNING:  This method is intended for expert developer use only, and
+should never be called by user code. ";
 
 
 // File: Epetra__BasicDirectory_8cpp.xml
@@ -21426,16 +22197,16 @@ EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+EPETRA_LONG_LONG indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT numMyElements, EPETRA_INT indexBase, EPETRA_OBJECT_REF
-comm) ";
+EPETRA_INT numMyElements, EPETRA_LONG_LONG indexBase,
+EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create3_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create3_64(EPETRA_LONG_LONG numGlobalElements,
-EPETRA_INT numLocalElements, long long *updateList, EPETRA_INT
+EPETRA_INT numLocalElements, long long *updateList, EPETRA_LONG_LONG
 indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_nummyelements "int MANGLE()
@@ -21524,7 +22295,7 @@ EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create1_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create1_64(EPETRA_LONG_LONG numGlobalEquations,
-EPETRA_INT indexBase, EPETRA_OBJECT_REF comm) ";
+EPETRA_LONG_LONG indexBase, EPETRA_OBJECT_REF comm) ";
 
 %feature("docstring")  epetra_map_create2_64 "EPETRA_OBJECT_PTR
 MANGLE() epetra_map_create2_64(EPETRA_LONG_LONG numGlobalEquations,
@@ -21699,6 +22470,12 @@ epetra_crsgraph_compress_out_duplicates(int len, int *list, int
 // File: Epetra__Fortran__wrappers_8h.xml
 
 
+// File: Epetra__GIDTypeSerialDenseVector_8h.xml
+
+
+// File: Epetra__GIDTypeVector_8h.xml
+
+
 // File: Epetra__HashTable_8h.xml
 
 
@@ -21706,6 +22483,12 @@ epetra_crsgraph_compress_out_duplicates(int len, int *list, int
 
 
 // File: Epetra__Import_8h.xml
+
+
+// File: Epetra__Import__Util_8cpp.xml
+
+
+// File: Epetra__Import__Util_8h.xml
 
 
 // File: Epetra__IntSerialDenseMatrix_8cpp.xml
@@ -22387,6 +23170,9 @@ uplo, Epetra_fcd trans, Epetra_fcd diag, const int *n, const int
 
 
 // File: Epetra__Util_8cpp.xml
+%feature("docstring")  TCreate_Root_Map "static Epetra_Map
+TCreate_Root_Map(const Epetra_Map &usermap, int root) ";
+
 %feature("docstring")  Epetra_Util_binary_search "int
 Epetra_Util_binary_search(T item, const T *list, int len, int
 &insertPoint)
@@ -22417,6 +23203,40 @@ Epetra_Util_binary_search(int item, const int *list, int len, int
 %feature("docstring")  Epetra_Util_binary_search "int
 Epetra_Util_binary_search(long long item, const long long *list, int
 len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(T item, const int *list, const T
+*aux_list, int len, int &insertPoint)
+
+Utility function to perform a binary-search on a list of data.
+Important assumption: data is assumed to be sorted.
+
+Parameters:
+-----------
+
+item:  to be searched for
+
+list:  to be searched in
+
+aux_list:
+
+len:  Length of list
+
+insertPoint:  Input/Output. If item is found, insertPoint is not
+referenced. If item is not found, insertPoint is set to the offset at
+which item should be inserted in list such that order (sortedness)
+would be maintained.
+
+offset Location in list at which aux_list[list[i]] item was found. -1
+if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(int item, const int *list, const int
+*aux_list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(long long item, const int *list, const
+long long *aux_list, int len, int &insertPoint) ";
 
 %feature("docstring")  Epetra_Util_ExtractHbData "int
 Epetra_Util_ExtractHbData(Epetra_CrsMatrix *A, Epetra_MultiVector
@@ -22503,6 +23323,39 @@ int *list, int len, int &insertPoint) ";
 
 %feature("docstring")  Epetra_Util_binary_search "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search(long long item,
 const long long *list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "int
+Epetra_Util_binary_search_aux(T item, const int *list, const T
+*aux_list, int len, int &insertPoint)
+
+Utility function to perform a binary-search on a list of data.
+Important assumption: data is assumed to be sorted.
+
+Parameters:
+-----------
+
+item:  to be searched for
+
+list:  to be searched in
+
+aux_list:
+
+len:  Length of list
+
+insertPoint:  Input/Output. If item is found, insertPoint is not
+referenced. If item is not found, insertPoint is set to the offset at
+which item should be inserted in list such that order (sortedness)
+would be maintained.
+
+offset Location in list at which aux_list[list[i]] item was found. -1
+if not found. ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(int item,
+const int *list, const int *aux_list, int len, int &insertPoint) ";
+
+%feature("docstring")  Epetra_Util_binary_search_aux "EPETRA_LIB_DLL_EXPORT int Epetra_Util_binary_search_aux(long long
+item, const int *list, const long long *aux_list, int len, int
+&insertPoint) ";
 
 %feature("docstring")  Epetra_Util_insert_empty_positions "int
 Epetra_Util_insert_empty_positions(T *&array, int &usedLength, int
@@ -22610,11 +23463,12 @@ ldrhs:  (Out) Stride between columns of lhs. ";
 
 
 // File: Epetra__Version_8h.xml
-%feature("docstring")  Epetra_Version "string Epetra_Version() ";
+%feature("docstring")  Epetra_Version "std::string Epetra_Version()
+";
 
 
-// File: dir_233cfbe96499141f251547db95e4fda3.xml
+// File: dir_ff59eb91dbbb0e4b7350479658f542a7.xml
 
 
-// File: dir_29eb5d4e506afeb59b852f05b8c1a238.xml
+// File: dir_53f44f000d01eb8ad16139f194c8b7cf.xml
 

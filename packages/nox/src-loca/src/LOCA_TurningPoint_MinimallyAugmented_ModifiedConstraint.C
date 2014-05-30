@@ -3,13 +3,13 @@
 
 //@HEADER
 // ************************************************************************
-// 
+//
 //            LOCA: Library of Continuation Algorithms Package
 //                 Copyright (2005) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -37,7 +37,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -87,8 +87,8 @@ ModifiedConstraint(
 
 LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::
 ModifiedConstraint(
-     const LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint& source, 
-     NOX::CopyType type) : 
+     const LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint& source,
+     NOX::CopyType type) :
   Constraint(source, type),
   w_vector_update(source.w_vector_update->clone(type)),
   v_vector_update(source.v_vector_update->clone(type)),
@@ -112,7 +112,7 @@ void
 LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::
 copy(const LOCA::MultiContinuation::ConstraintInterface& src)
 {
-  const LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint& source = 
+  const LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint& source =
   dynamic_cast<const LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint&>(src);
 
   if (this != &source) {
@@ -145,25 +145,25 @@ computeConstraints()
   if (isValidConstraints)
     return NOX::Abstract::Group::Ok;
 
-  std::string callingFunction = 
+  std::string callingFunction =
     "LOCA::TurningPoint::MinimallyAugmented::ModifiedConstraint::computeConstraints()";
   NOX::Abstract::Group::ReturnType status;
   NOX::Abstract::Group::ReturnType finalStatus = NOX::Abstract::Group::Ok;
 
   // Compute J
   status = grpPtr->computeJacobian();
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
 
   // Set up bordered systems
   Teuchos::RCP<const LOCA::BorderedSolver::JacobianOperator> op =
     Teuchos::rcp(new  LOCA::BorderedSolver::JacobianOperator(grpPtr));
-  borderedSolver->setMatrixBlocksMultiVecConstraint(op, 
-						    a_vector, 
-						    b_vector, 
-						    Teuchos::null);
+  borderedSolver->setMatrixBlocksMultiVecConstraint(op,
+                            a_vector,
+                            b_vector,
+                            Teuchos::null);
 
   // Get linear solver parameters
   Teuchos::RCP<Teuchos::ParameterList> linear_solver_params =
@@ -183,38 +183,38 @@ computeConstraints()
 
     // Compute sigma_1 and right null vector v
     status = borderedSolver->initForSolve();
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
-    status = borderedSolver->applyInverse(*linear_solver_params, 
-					  NULL, 
-					  &one, 
-					  *v_vector, 
-					  sigma1);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
+    status = borderedSolver->applyInverse(*linear_solver_params,
+                      NULL,
+                      &one,
+                      *v_vector,
+                      sigma1);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
 
     // Compute sigma_2 and left null vector w
     if (!isSymmetric) {
       status = borderedSolver->initForTransposeSolve();
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							    status, 
-							    finalStatus,
-							    callingFunction);
-      status = borderedSolver->applyInverseTranspose(*linear_solver_params, 
-						     NULL, 
-						     &one, 
-						     *w_vector, 
-						     sigma2);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							    status, 
-							    finalStatus,
-							    callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                status,
+                                finalStatus,
+                                callingFunction);
+      status = borderedSolver->applyInverseTranspose(*linear_solver_params,
+                             NULL,
+                             &one,
+                             *w_vector,
+                             sigma2);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                status,
+                                finalStatus,
+                                callingFunction);
 
     }
     else {
@@ -232,12 +232,12 @@ computeConstraints()
 
     // Compute J*v + a*sigma_1
     status = grpPtr->applyJacobianMultiVector(*v_vector, *v_residual);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
     v_residual->update(Teuchos::NO_TRANS, 1.0, *a_vector, sigma1, 0.0);
-    
+
     // Compute b^T*v - n
     NOX::Abstract::MultiVector::DenseMatrix sigma1_residual(1,1);
     v_vector->multiply(1.0, *b_vector, sigma1_residual);
@@ -249,138 +249,138 @@ computeConstraints()
     if (includeNewtonTerms) {
 
       // Compute (Jv)_x*dx
-      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_x_dx = 
-	deltaX->clone(NOX::ShapeCopy);
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_x_dx =
+    deltaX->clone(NOX::ShapeCopy);
       status = grpPtr->computeDJnDxaMulti((*v_vector)[0], *deltaX, *Jv_x_dx);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
 
       // Compute (Jv)_p
-      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p1 = 
-	deltaX->clone(2);
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p1 =
+    deltaX->clone(2);
       std::vector<int> idx(1); idx[0] = 0;
-      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p = 
-	Jv_p1->subView(idx);
-      status = grpPtr->computeDJnDpMulti(bifParamID, (*v_vector)[0], *Jv_p1, 
-					 false);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      Teuchos::RCP<NOX::Abstract::MultiVector> Jv_p =
+    Jv_p1->subView(idx);
+      status = grpPtr->computeDJnDpMulti(bifParamID, (*v_vector)[0], *Jv_p1,
+                     false);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
       // compute v_residual += (Jv)_x*dx + (Jv)_p*dp
       v_residual->update(1.0, *Jv_x_dx, deltaP, *Jv_p, 1.0);
-      
+
       // Compute J
       status = grpPtr->computeJacobian();
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
     }
 
     // Compute update to sigma_1 and right null vector v
     NOX::Abstract::MultiVector::DenseMatrix sigma1_update(1,1);
     status = borderedSolver->initForSolve();
-    finalStatus = 
+    finalStatus =
       globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							   status, 
-							   finalStatus,
-							   callingFunction);
-    status = borderedSolver->applyInverse(*linear_solver_params, 
-					  v_residual.get(), 
-					  &sigma1_residual, 
-					  *v_vector_update, 
-					  sigma1_update);
-    finalStatus = 
+                               status,
+                               finalStatus,
+                               callingFunction);
+    status = borderedSolver->applyInverse(*linear_solver_params,
+                      v_residual.get(),
+                      &sigma1_residual,
+                      *v_vector_update,
+                      sigma1_update);
+    finalStatus =
       globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							   status, 
-							   finalStatus,
-							   callingFunction);
+                               status,
+                               finalStatus,
+                               callingFunction);
 
     // apply updates
     v_vector->update(-1.0, *v_vector_update, 1.0);
     sigma1(0,0) -= sigma1_update(0,0);
-    
+
     if (!isSymmetric) {
       // Compute J^T*w + b*sigma_w
-      status = grpPtr->applyJacobianTransposeMultiVector(*w_vector, 
-							 *w_residual);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      status = grpPtr->applyJacobianTransposeMultiVector(*w_vector,
+                             *w_residual);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
       w_residual->update(Teuchos::NO_TRANS, 1.0, *b_vector, sigma2, 0.0);
 
       // Compute a^T*w - n
       NOX::Abstract::MultiVector::DenseMatrix sigma2_residual(1,1);
       w_vector->multiply(1.0, *a_vector, sigma2_residual);
       if (nullVecScaling == NVS_OrderN)
-	sigma2_residual(0,0) -= dn;
+    sigma2_residual(0,0) -= dn;
       else
-	sigma2_residual(0,0) -= 1.0;
+    sigma2_residual(0,0) -= 1.0;
 
       if (includeNewtonTerms) {
 
-	// Compute (J^T*w)_x*dx
-	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_x_dx = 
-	  deltaX->clone(NOX::ShapeCopy);
-	status = grpPtr->computeDwtJnDx((*w_vector)[0], (*deltaX)[0], 
-					(*Jtw_x_dx)[0]);
-	finalStatus = 
-	  globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+    // Compute (J^T*w)_x*dx
+    Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_x_dx =
+      deltaX->clone(NOX::ShapeCopy);
+    status = grpPtr->computeDwtJnDx((*w_vector)[0], (*deltaX)[0],
+                    (*Jtw_x_dx)[0]);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
 
-	// Compute (J^T*w)_p
-	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p1 = 
-	  deltaX->clone(2);
-	std::vector<int> idx(1); idx[0] = 0;
-	Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p = 
-	  Jtw_p1->subView(idx);
-	status = grpPtr->computeDwtJDp(bifParamID, (*w_vector)[0], *Jtw_p1, 
-				       false);
-	finalStatus = 
-	  globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
-	// compute w_residual += (J^T*w)_x*dx + (J^T*w)_p*dp
-	w_residual->update(1.0, *Jtw_x_dx, deltaP, *Jtw_p, 1.0);
-	
-	// Compute J
-	status = grpPtr->computeJacobian();
-	finalStatus = 
-	  globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							    status, 
-							    finalStatus,
-							    callingFunction);
+    // Compute (J^T*w)_p
+    Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p1 =
+      deltaX->clone(2);
+    std::vector<int> idx(1); idx[0] = 0;
+    Teuchos::RCP<NOX::Abstract::MultiVector> Jtw_p =
+      Jtw_p1->subView(idx);
+    status = grpPtr->computeDwtJDp(bifParamID, (*w_vector)[0], *Jtw_p1,
+                       false);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
+    // compute w_residual += (J^T*w)_x*dx + (J^T*w)_p*dp
+    w_residual->update(1.0, *Jtw_x_dx, deltaP, *Jtw_p, 1.0);
+
+    // Compute J
+    status = grpPtr->computeJacobian();
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                status,
+                                finalStatus,
+                                callingFunction);
       }
 
       // Compute update to sigma_2 and left null vector w
       NOX::Abstract::MultiVector::DenseMatrix sigma2_update(1,1);
       status = borderedSolver->initForTransposeSolve();
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
-      status = borderedSolver->applyInverseTranspose(*linear_solver_params, 
-						     w_residual.get(), 
-						     &sigma2_residual, 
-						     *w_vector_update, 
-						     sigma2_update);
-      finalStatus = 
-	globalData->locaErrorCheck->combineAndCheckReturnTypes(
-							     status, 
-							     finalStatus,
-							     callingFunction);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
+      status = borderedSolver->applyInverseTranspose(*linear_solver_params,
+                             w_residual.get(),
+                             &sigma2_residual,
+                             *w_vector_update,
+                             sigma2_update);
+      finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(
+                                 status,
+                                 finalStatus,
+                                 callingFunction);
 
       // apply updates
       w_vector->update(-1.0, *w_vector_update, 1.0);
@@ -391,21 +391,21 @@ computeConstraints()
       *w_vector = *v_vector;
       sigma2.assign(sigma1);
     }
-    
+
   }
-  
+
   // Compute sigma = -w^T*J*v
   status = grpPtr->applyJacobianMultiVector(*v_vector, *Jv_vector);
-  finalStatus = 
-    globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							   finalStatus,
-							   callingFunction);
+  finalStatus =
+    globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                               finalStatus,
+                               callingFunction);
   if (!isSymmetric) {
     status = grpPtr->applyJacobianTransposeMultiVector(*w_vector, *Jtw_vector);
-    finalStatus = 
-      globalData->locaErrorCheck->combineAndCheckReturnTypes(status, 
-							     finalStatus,
-							     callingFunction);
+    finalStatus =
+      globalData->locaErrorCheck->combineAndCheckReturnTypes(status,
+                                 finalStatus,
+                                 callingFunction);
   }
   else
     *Jtw_vector = *Jv_vector;
@@ -423,22 +423,22 @@ computeConstraints()
   constraints.scale(1.0/sigma_scale);
 
   if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-    globalData->locaUtils->out() << "\n\t||Right null vector v|| = " 
-				 << globalData->locaUtils->sciformat(v_norm);
-    globalData->locaUtils->out() << "\n\t||Left null vector w|| = " 
-				 << globalData->locaUtils->sciformat(w_norm);
-    globalData->locaUtils->out() << "\n\t||Jv|| = " 
-				 << globalData->locaUtils->sciformat(Jv_norm);
-    globalData->locaUtils->out() << "\n\t||J^T*w|| = " 
-				 << globalData->locaUtils->sciformat(Jtw_norm);
-    globalData->locaUtils->out() << 
-      "\n\tRight estimate for singularity of Jacobian (sigma1) = " << 
+    globalData->locaUtils->out() << "\n\t||Right null vector v|| = "
+                 << globalData->locaUtils->sciformat(v_norm);
+    globalData->locaUtils->out() << "\n\t||Left null vector w|| = "
+                 << globalData->locaUtils->sciformat(w_norm);
+    globalData->locaUtils->out() << "\n\t||Jv|| = "
+                 << globalData->locaUtils->sciformat(Jv_norm);
+    globalData->locaUtils->out() << "\n\t||J^T*w|| = "
+                 << globalData->locaUtils->sciformat(Jtw_norm);
+    globalData->locaUtils->out() <<
+      "\n\tRight estimate for singularity of Jacobian (sigma1) = " <<
       globalData->locaUtils->sciformat(sigma1(0,0));
-    globalData->locaUtils->out() << 
-      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " << 
+    globalData->locaUtils->out() <<
+      "\n\tLeft estimate for singularity of Jacobian (sigma2) = " <<
       globalData->locaUtils->sciformat(sigma2(0,0));
-    globalData->locaUtils->out() << 
-      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " << 
+    globalData->locaUtils->out() <<
+      "\n\tFinal Estimate for singularity of Jacobian (sigma) = " <<
       globalData->locaUtils->sciformat(constraints(0,0)) << std::endl;
   }
 
@@ -447,9 +447,9 @@ computeConstraints()
   // Update a and b if requested
   if (updateVectorsEveryIteration) {
     if (globalData->locaUtils->isPrintType(NOX::Utils::OuterIteration)) {
-      globalData->locaUtils->out() << 
-	"\n\tUpdating null vectors for the next nonlinear iteration" << 
-	std::endl;
+      globalData->locaUtils->out() <<
+    "\n\tUpdating null vectors for the next nonlinear iteration" <<
+    std::endl;
     }
     *a_vector = *w_vector;
     *b_vector = *v_vector;

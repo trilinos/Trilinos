@@ -146,7 +146,7 @@ int main(int argc, char *argv[]) {
     B->setSeed(846930886); B->randomize();
 
     int nIts = 9;
-    H.Iterate(*B, nIts, *X);
+    H.Iterate(*B, *X, nIts);
 
     ST::magnitudeType residualNorms = Utils::ResidualNorm(*A1, *X, *B)[0];
     if (comm->getRank() == 0)
@@ -181,7 +181,7 @@ int main(int argc, char *argv[]) {
     B->setSeed(846930886); B->randomize();
 
     int nIts = 9;
-    H.Iterate(*B, nIts, *X);
+    H.Iterate(*B, *X, nIts);
 
     ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
     if (comm->getRank() == 0)
@@ -216,7 +216,7 @@ int main(int argc, char *argv[]) {
     B->setSeed(846930886); B->randomize();
 
     int nIts = 9;
-    H.Iterate(*B, nIts, *X);
+    H.Iterate(*B, *X, nIts);
 
     ST::magnitudeType residualNorms = Utils::ResidualNorm(*A2, *X, *B)[0];
     if (comm->getRank() == 0)

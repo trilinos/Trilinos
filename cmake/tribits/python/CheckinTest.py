@@ -888,7 +888,7 @@ def analyzeResultsSendEmail(inOptions, buildTestCase,
 
     if not testOutputExists:
 
-      print "\nThe tests where never even run!\n"
+      print "\nThe tests were never even run!\n"
       testsPassed = False
 
     else: # testOutputExists

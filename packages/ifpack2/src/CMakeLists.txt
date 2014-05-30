@@ -37,7 +37,7 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 TRILINOS_CREATE_CLIENT_TEMPLATE_HEADERS(${DIR})
 
 IF (${PACKAGE_NAME}_ENABLE_Experimental)
-IF (${PACKAGE_NAME}_ENABLE_Boost)
+IF (${PACKAGE_NAME}_ENABLE_Lemon)
 IF (${PACKAGE_NAME}_ENABLE_Amesos2)
 IF (${PACKAGE_NAME}_ENABLE_Cholmod)
 
@@ -72,6 +72,7 @@ IF(Ifpack2_ENABLE_EXPLICIT_INSTANTIATION)
     BlockRelaxation
     BorderedOperator
     Chebyshev
+    DenseContainer
     Diagonal
     DiagonalFilter
     Factory

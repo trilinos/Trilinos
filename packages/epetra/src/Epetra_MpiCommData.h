@@ -1,10 +1,10 @@
 /*
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 */
@@ -49,7 +49,7 @@
 
 //! Epetra_MpiCommData:  The Epetra Mpi Communication Data Class.
 /*! The Epetra_MpiCommData class is an implementation detail of Epetra_MpiComm.
-    It is reference-counted, and can be shared by multiple Epetra_MpiComm instances. 
+    It is reference-counted, and can be shared by multiple Epetra_MpiComm instances.
 		It derives from Epetra_Data, and inherits reference-counting from it.
 */
 
@@ -57,7 +57,7 @@ class Epetra_MpiCommData : public Epetra_Data {
 	friend class Epetra_MpiComm;
  private:
   //! @name Constructor/Destructor Methods
-  //@{ 
+  //@{
 
   //! Epetra_MpiCommData Default Constructor.
   Epetra_MpiCommData(MPI_Comm & Comm);
@@ -82,6 +82,6 @@ class Epetra_MpiCommData : public Epetra_Data {
 	// these are intentionally declared but not defined. See Epetra Developer's Guide for details.
   Epetra_MpiCommData(const Epetra_MpiCommData & CommData);
 	Epetra_MpiCommData& operator=(const Epetra_MpiCommData & CommData);
-  
+
 };
 #endif /* EPETRA_MPICOMMDATA_H */

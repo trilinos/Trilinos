@@ -69,21 +69,26 @@
 #ifdef EPETRA_MPI
 #  include "mpi.h"
 #  include "Epetra_MpiComm.h"
+#  include "Teuchos_DefaultMpiComm.hpp"
 #else
 #  include "Epetra_SerialComm.h"
+#  include "Teuchos_DefaultSerialComm.hpp"
 #endif // EPETRA_MPI
 
+#include "TrilinosCouplings_config.h"
 #include "TrilinosCouplings_EpetraIntrepidPoissonExample.hpp"
 #include "TrilinosCouplings_IntrepidPoissonExampleHelpers.hpp"
 
-// ML
-#include "ml_include.h"
-#include "ml_MultiLevelPreconditioner.h"
+#ifdef HAVE_TRILINOSCOUPLINGS_ML
+#  include "ml_include.h"
+#  include "ml_MultiLevelPreconditioner.h"
+#endif // HAVE_TRILINOSCOUPLINGS_ML
 
-// MueLu includes
-#include "MueLu.hpp"
-#include "MueLu_ParameterListInterpreter.hpp"
-#include "MueLu_EpetraOperator.hpp"
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
+#  include "MueLu.hpp"
+#  include "MueLu_ParameterListInterpreter.hpp"
+#  include "MueLu_EpetraOperator.hpp"
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
 
 int
 main (int argc, char *argv[])
@@ -94,11 +99,10 @@ main (int argc, char *argv[])
   using EpetraIntrepidPoissonExample::makeMatrixAndRightHandSide;
   using EpetraIntrepidPoissonExample::solveWithBelos;
   using IntrepidPoissonExample::makeMeshInput;
-  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
-  using IntrepidPoissonExample::setUpCommandLineArguments;
   using IntrepidPoissonExample::parseCommandLineArguments;
-  //using Tpetra::DefaultPlatform;
-  //using Teuchos::Comm;
+  using IntrepidPoissonExample::setCommandLineArgumentDefaults;
+  using IntrepidPoissonExample::setMaterialTensorOffDiagonalValue;
+  using IntrepidPoissonExample::setUpCommandLineArguments;
   using Teuchos::outArg;
   using Teuchos::ParameterList;
   using Teuchos::parameterList;
@@ -143,22 +147,36 @@ main (int argc, char *argv[])
     int nx, ny, nz;
     std::string xmlInputParamsFile;
     bool verbose, debug;
+    int maxNumItersFromCmdLine = -1; // -1 means "read from XML file"
+    double tolFromCmdLine = -1.0; // -1 means "read from XML file"
+    std::string solverName = "GMRES";
+    ST materialTensorOffDiagonalValue = 0.0;
 
     // Set default values of command-line arguments.
     setCommandLineArgumentDefaults (nx, ny, nz, xmlInputParamsFile,
-                                    verbose, debug);
+                                    solverName, verbose, debug);
     // Parse and validate command-line arguments.
     Teuchos::CommandLineProcessor cmdp (false, true);
     setUpCommandLineArguments (cmdp, nx, ny, nz, xmlInputParamsFile,
+                               solverName, tolFromCmdLine,
+                               maxNumItersFromCmdLine,
                                verbose, debug);
+    cmdp.setOption ("materialTensorOffDiagonalValue",
+                    &materialTensorOffDiagonalValue, "Off-diagonal value in "
+                    "the material tensor.  This controls the iteration count.  "
+                    "Be careful with this if you use CG, since you can easily "
+                    "make the matrix indefinite.");
+
     parseCommandLineArguments (cmdp, printedHelp, argc, argv, nx, ny, nz,
-                               xmlInputParamsFile, verbose, debug);
+                               xmlInputParamsFile, solverName, verbose, debug);
     if (printedHelp) {
       // The user specified --help at the command line to print help
       // with command-line arguments.  We printed help already, so quit
       // with a happy return code.
       return EXIT_SUCCESS;
     }
+
+    setMaterialTensorOffDiagonalValue (materialTensorOffDiagonalValue);
 
     // Both streams only print on MPI Rank 0.  "out" only prints if the
     // user specified --verbose.
@@ -221,12 +239,13 @@ main (int argc, char *argv[])
            << "||A||_F = " << norms[2] << endl;
 
       // Setup preconditioner
-      std::string prec_type = inputList.get("Preconditioner", "None");
+      std::string prec_type = inputList.get ("Preconditioner", "None");
       RCP<operator_type> M;
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Preconditioner Setup", total_prec);
 
         if (prec_type == "ML") {
+#ifdef HAVE_TRILINOSCOUPLINGS_ML
           ParameterList mlParams;
           if (inputList.isSublist("ML"))
             mlParams = inputList.sublist("ML");
@@ -235,8 +254,15 @@ main (int argc, char *argv[])
             mlParams.set("ML output", 0);
           }
           M = rcp(new ML_Epetra::MultiLevelPreconditioner(*A, mlParams));
+#else // NOT HAVE_TRILINOSCOUPLINGS_ML
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            prec_type == "ML", std::runtime_error, "Epetra scaling example: "
+            "In order to precondition with ML, you must have built Trilinos "
+            "with the ML package enabled.");
+#endif // HAVE_TRILINOSCOUPLINGS_ML
         }
         else if (prec_type == "MueLu") {
+#ifdef HAVE_TRILINOSCOUPLINGS_MUELU
           // Turns a Epetra_CrsMatrix into a MueLu::Matrix
           RCP<Xpetra::CrsMatrix<ST> > mueluA_ =
             rcp(new Xpetra::EpetraCrsMatrix(A));
@@ -258,19 +284,46 @@ main (int argc, char *argv[])
 
           // Wrap MueLu Hierarchy as a Tpetra::Operator
           M = rcp(new MueLu::EpetraOperator(H));
+#else // NOT HAVE_TRILINOSCOUPLINGS_MUELU
+          TEUCHOS_TEST_FOR_EXCEPTION(
+            prec_type == "MueLu", std::runtime_error, "Epetra scaling example: "
+            "In order to precondition with MueLu, you must have built Trilinos "
+            "with the MueLu package enabled.");
+#endif // HAVE_TRILINOSCOUPLINGS_MUELU
         }
       } // setup preconditioner
 
+      // Get the convergence tolerance for each linear solve.
+      // If the user provided a nonnegative value at the command
+      // line, it overrides any value in the input ParameterList.
+      MT tol = STM::squareroot (STM::eps ()); // default value
+      if (tolFromCmdLine < STM::zero ()) {
+        tol = inputList.get ("Convergence Tolerance", tol);
+      } else {
+        tol = tolFromCmdLine;
+      }
+
+      // Get the maximum number of iterations for each linear solve.
+      // If the user provided a value other than -1 at the command
+      // line, it overrides any value in the input ParameterList.
+      int maxNumIters = 200; // default value
+      if (maxNumItersFromCmdLine == -1) {
+        maxNumIters = inputList.get ("Maximum Iterations", maxNumIters);
+      } else {
+        maxNumIters = maxNumItersFromCmdLine;
+      }
+
+      // Get the number of "time steps."  We imitate a time-dependent
+      // PDE by doing this many linear solves.
+      const int num_steps = inputList.get ("Number of Time Steps", 1);
+
+      // Do the linear solve(s).
       bool converged = false;
       int numItersPerformed = 0;
-      const MT tol = inputList.get("Convergence Tolerance",
-                                   STM::squareroot (STM::eps ()));
-      const int maxNumIters = inputList.get("Maximum Iterations", 200);
-      const int num_steps = inputList.get("Number of Time Steps", 1);
       {
         TEUCHOS_FUNC_TIME_MONITOR_DIFF("Total Solve", total_solve);
-        solveWithBelos (converged, numItersPerformed, tol, maxNumIters, num_steps,
-                        X, A, B, Teuchos::null, M);
+        solveWithBelos (converged, numItersPerformed, solverName, tol,
+                        maxNumIters, num_steps, X, A, B, Teuchos::null, M);
       }
 
       // Compute ||X-X_exact||_2
@@ -284,8 +337,19 @@ main (int argc, char *argv[])
     } // total time block
 
     // Summarize timings
-    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
-  } //try
+    {
+      // Make a Teuchos::Comm corresponding to the Epetra_Comm.
+      RCP<const Teuchos::Comm<int> > teuchosComm;
+#ifdef EPETRA_MPI
+      teuchosComm = rcp (new Teuchos::MpiComm<int> (MPI_COMM_WORLD));
+#else
+      teuchosComm = rcp (new Teuchos::SerialComm<int> ());
+#endif // EPETRA_MPI
+
+      // Use the Teuchos::Comm to report timings.
+      Teuchos::TimeMonitor::report (teuchosComm.ptr (), std::cout);
+    }
+  } // try
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);
 
   if (success) {

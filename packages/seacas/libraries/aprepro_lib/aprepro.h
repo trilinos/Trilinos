@@ -93,7 +93,7 @@ namespace SEAMS {
     bool interactive;
     bool immutable;
     bool trace_parsing;    // enable debug output in the bison parser
-
+    bool one_based_index;
     aprepro_options() :
       end_on_exit(false),
       warning_msg(true),
@@ -101,7 +101,8 @@ namespace SEAMS {
       debugging(false),
       interactive(false),
       immutable(false),
-      trace_parsing(false)
+      trace_parsing(false),
+      one_based_index(false)
     {}
   };
 

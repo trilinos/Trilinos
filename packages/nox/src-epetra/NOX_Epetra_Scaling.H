@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,12 +44,12 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
+
 #ifndef NOX_EPETRA_SCALING_H
 #define NOX_EPETRA_SCALING_H
 
 #include "NOX_Common.H"           // for <string>
-#include "NOX_Abstract_Vector.H"  // 
+#include "NOX_Abstract_Vector.H"  //
 #include "Teuchos_RCP.hpp"
 #include <vector>
 #include <ostream>
@@ -66,28 +66,28 @@ namespace NOX {
 
 namespace Epetra {
 
-  /*! \brief Object to control scaling of vectors and linear systems.  
+  /*! \brief Object to control scaling of vectors and linear systems.
 
-  Currently this assumes a diagonal scaling only!  Once epetra can 
+  Currently this assumes a diagonal scaling only!  Once epetra can
   do matrix-matrix multiplies we will expand this class.
-  
+
   */
 class Scaling {
-      
+
 public:
-  
+
   //! Describes where the scaling vector comes from.
   enum SourceType {None, RowSum, ColSum, UserDefined};
-  
+
   //! Describes the type of scaling to apply.
   enum ScaleType {Left, Right};
-  
-  //! Constructor. 
+
+  //! Constructor.
   Scaling();
-  
+
   //! Virtual destructor
   virtual ~Scaling();
-  
+
   //! Add a user supplied diagonal scale vector to the scaling object.
   virtual void addUserScaling(ScaleType type, const Teuchos::RCP<Epetra_Vector>& D);
 
@@ -106,19 +106,19 @@ public:
   //! Remove the scaling from the linear system.
   virtual void unscaleLinearSystem(Epetra_LinearProblem& problem);
 
-  //! Applies any RIGHT scaling vectors to an input vector. 
-  virtual void applyRightScaling(const Epetra_Vector& input, 
-				 Epetra_Vector& result);
+  //! Applies any RIGHT scaling vectors to an input vector.
+  virtual void applyRightScaling(const Epetra_Vector& input,
+                 Epetra_Vector& result);
 
-  //! Applies any LEFT scaling vectors to an input vector. 
-  virtual void applyLeftScaling(const Epetra_Vector& input, 
-				Epetra_Vector& result);
+  //! Applies any LEFT scaling vectors to an input vector.
+  virtual void applyLeftScaling(const Epetra_Vector& input,
+                Epetra_Vector& result);
 
-  //! Printing 
+  //! Printing
   virtual void print(std::ostream& os);
 
 private:
-  
+
   //! Scaling type
   std::vector<ScaleType> scaleType;
 

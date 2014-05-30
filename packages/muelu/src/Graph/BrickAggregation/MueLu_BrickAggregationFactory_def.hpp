@@ -46,12 +46,8 @@
 #ifndef MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 #define MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include "MueLu_BrickAggregationFactory_decl.hpp"
+#ifdef HAVE_MPI
 #include <Teuchos_DefaultMpiComm.hpp>
 #include <Teuchos_CommHelpers.hpp>
 
@@ -85,7 +81,7 @@ namespace MueLu {
   }
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
-  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level &currentLevel) const {
+  void BrickAggregationFactory<Scalar, LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::DeclareInput(Level& currentLevel) const {
     Input(currentLevel, "A");
     Input(currentLevel, "Coordinates");
   }
@@ -369,4 +365,5 @@ namespace MueLu {
 
 } //namespace MueLu
 
+#endif //ifdef HAVE_MPI
 #endif /* MUELU_BRICKAGGREGATIONFACTORY_DEF_HPP_ */

@@ -50,9 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
+#include "exodusII.h"                   // for ex_put_attr_names, etc
 
 /*!
  * writes the attribute names for an element block

@@ -688,7 +688,7 @@ MACRO(TRIBITS_PARSE_SUBPACKAGES_AND_APPEND_SE_PACKAGES_AND_ADD_OPTIONS  PACKAGE_
            " is missing!")
       ENDIF()
   
-      # Append to lists and global varibles
+      # Append to lists and global variables
 
       IF (SUBPACKAGE_EXISTS)
   
@@ -789,7 +789,7 @@ ENDMACRO()
 
 
 #
-# Read in subpackages dependencies files and add to dependencies graph varibles
+# Read in subpackages dependencies files and add to dependencies graph variables
 #
 MACRO(TRIBITS_READ_ALL_PACKAGE_SUBPACKAGE_DEPENDENCIES  PACKAGE_NAME  PACKAGE_DIR)
 

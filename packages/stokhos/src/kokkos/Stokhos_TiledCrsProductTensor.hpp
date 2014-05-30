@@ -267,7 +267,6 @@ public:
           const Stokhos::Sparse3Tensor<OrdinalType,ValueType>& Cijk,
           const Teuchos::ParameterList& params)
   {
-    typedef Stokhos::Sparse3Tensor<OrdinalType,ValueType> Cijk_type;
     typedef Stokhos::CijkData<OrdinalType,ValueType> Cijk_Data_type;
 
     const size_type tile_size = params.get<int>("Tile Size");

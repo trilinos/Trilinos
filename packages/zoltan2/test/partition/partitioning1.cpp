@@ -306,7 +306,7 @@ int main(int narg, char** arg)
   size_t checkNparts = comm->getSize();
   
   size_t  checkLength = problem.getSolution().getLocalNumberOfIds();
-  const zoltan2_partId_t *checkParts = problem.getSolution().getPartList();
+  const SparseGraphAdapter::part_t *checkParts = problem.getSolution().getPartList();
 
   // Check for load balance
   size_t *countPerPart = new size_t[checkNparts];

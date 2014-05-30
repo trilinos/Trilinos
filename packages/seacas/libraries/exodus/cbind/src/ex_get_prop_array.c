@@ -52,10 +52,11 @@
 *
 *****************************************************************************/
 
-#include <stdlib.h>
-#include <string.h>
-#include "exodusII.h"
-#include "exodusII_int.h"
+#include <stdio.h>                      // for sprintf
+#include <string.h>                     // for strcpy, memset, strcmp
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, ATT_PROP_NAME, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_att_text, etc
 
 /*!
   

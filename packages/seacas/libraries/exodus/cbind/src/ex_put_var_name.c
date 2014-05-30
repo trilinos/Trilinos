@@ -50,10 +50,7 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
-#include "exodusII_int.h"
-#include <string.h>
-#include <ctype.h>
+#include "exodusII.h"                   // for ex_put_variable_name, etc
 
 /*!
  * writes the name of a particular results variable to the database

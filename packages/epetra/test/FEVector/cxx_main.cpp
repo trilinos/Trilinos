@@ -1,9 +1,9 @@
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -59,7 +59,7 @@ int main(int argc, char *argv[]) {
   Epetra_Comm* epetra_comm = epetra_test::create_comm(argc, argv);
   Epetra_Comm& Comm = *epetra_comm;
 
-  int NumProc = Comm.NumProc(); 
+  int NumProc = Comm.NumProc();
 
   bool verbose =
     epetra_test::global_check_for_flag_on_proc_0("-v",argc,argv, Comm);
@@ -130,7 +130,7 @@ int main(int argc, char *argv[]) {
 #ifdef EPETRA_MPI
   MPI_Finalize();
 #endif
- 
+
   return ierr;
 }
 

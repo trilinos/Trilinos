@@ -130,6 +130,74 @@ namespace MueLu {
 
   } //UnamalgamateAggregates
 
+  template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+  void AmalgamationInfo<LocalOrdinal, GlobalOrdinal, Node, LocalMatOps>::UnamalgamateAggregatesLO(const Aggregates& aggregates,
+        Teuchos::ArrayRCP<LO>& aggStart, Teuchos::ArrayRCP<LO>& aggToRowMap) const {
+
+    int myPid = aggregates.GetMap()->getComm()->getRank();
+    Teuchos::ArrayView<const GO> nodeGlobalElts = aggregates.GetMap()->getNodeElementList();
+
+    Teuchos::ArrayRCP<LO> procWinner   = aggregates.GetProcWinner()  ->getDataNonConst(0);
+    Teuchos::ArrayRCP<LO> vertex2AggId = aggregates.GetVertex2AggId()->getDataNonConst(0);
+    const GO numAggregates             = aggregates.GetNumAggregates();
+
+
+    // FIXME: Do we need to compute size here? Or can we use existing?
+    LO size = procWinner.size();
+
+    std::vector<LO> sizes(numAggregates);
+    if (stridedblocksize_ == 1) {
+      for (LO lnode = 0; lnode < size; lnode++)
+        if (procWinner[lnode] == myPid)
+          sizes[vertex2AggId[lnode]]++;
+    } else {
+      for (LO lnode = 0; lnode < size; lnode++)
+        if (procWinner[lnode] == myPid) {
+          GO nodeGID = nodeGlobalElts[lnode];
+
+          for (LO k = 0; k < stridedblocksize_; k++) {
+            GO GID = ComputeGlobalDOF(nodeGID, k);
+            if (columnMap_->isNodeGlobalElement(GID))
+              sizes[vertex2AggId[lnode]]++;
+          }
+        }
+    }
+
+    aggStart = ArrayRCP<LO>(numAggregates+1); // FIXME: useless initialization with zeros
+    aggStart[0] = 0;
+    for (GO i = 0; i < numAggregates; i++)
+      aggStart[i+1] = aggStart[i] + sizes[i];
+
+    aggToRowMap = ArrayRCP<LO>(aggStart[numAggregates], 0);
+
+    // count, how many dofs have been recorded for each aggregate so far
+    Array<LO> numDofs(numAggregates, 0); // empty array with number of DOFs for each aggregate
+    if (stridedblocksize_ == 1) {
+      for (LO lnode = 0; lnode < size; ++lnode)
+        if (procWinner[lnode] == myPid) {
+          LO myAgg = vertex2AggId[lnode];
+          aggToRowMap[aggStart[myAgg] + numDofs[myAgg]] = lnode;
+          numDofs[myAgg]++;
+        }
+    } else {
+      for (LO lnode = 0; lnode < size; ++lnode)
+        if (procWinner[lnode] == myPid) {
+          LO myAgg = vertex2AggId[lnode];
+          GO nodeGID = nodeGlobalElts[lnode];
+
+          for (LO k = 0; k < stridedblocksize_; k++) {
+            GO GID = ComputeGlobalDOF(nodeGID, k);
+            if (columnMap_->isNodeGlobalElement(GID)) {
+              aggToRowMap[aggStart[myAgg] + numDofs[myAgg]] = lnode*stridedblocksize_ + k;
+              numDofs[myAgg]++;
+            }
+          }
+        }
+    }
+    // todo plausibility check: entry numDofs[k] == aggToRowMap[k].size()
+
+  } //UnamalgamateAggregates
+
   /////////////////////////////////////////////////////////////////////////////
 
   template <class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

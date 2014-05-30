@@ -121,9 +121,6 @@ struct VerifyExecutionSpaceCanAccessDataSpace< HostSpace , HostSpace >
   inline static void verify(void) {}
   inline static void verify(const void *) {}
 };
-namespace NEVEREVERUSEMEIWILLFINDYOU {
-Impl::MemoryTracking & host_space_singleton_wrapper();
-}
 
 } // namespace Kokkos
 

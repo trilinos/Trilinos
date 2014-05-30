@@ -168,7 +168,7 @@ int main(int argc, char *argv[]) {
   //
 
   LO nIts = 9;
-  H.Iterate(*B, nIts, *X);
+  H.Iterate(*B, *X, nIts);
 
   //
   // Print relative residual norm

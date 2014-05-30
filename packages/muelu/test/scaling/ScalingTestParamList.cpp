@@ -349,7 +349,7 @@ int main(int argc, char *argv[]) {
 
       {
         // we set seed for reproducibility
-        X->setSeed(846930886);
+        Utils::SetRandomSeed(*comm);
         X->randomize();
         A->apply(*X, *B, Teuchos::NO_TRANS, one, zero);
 
@@ -374,7 +374,7 @@ int main(int argc, char *argv[]) {
         tm = rcp (new TimeMonitor(*TimeMonitor::getNewTimer("ScalingTest: 4 - Fixed Point Solve")));
 
         H->IsPreconditioner(false);
-        H->Iterate(*B, 25, *X);
+        H->Iterate(*B, *X, 25);
 
       } else if (solveType == "cg" || solveType == "gmres") {
 #ifdef HAVE_MUELU_BELOS
@@ -444,7 +444,7 @@ int main(int argc, char *argv[]) {
       if (printTimings)
         TimeMonitor::summarize(A->getRowMap()->getComm().ptr(), std::cout, false, true, false, Teuchos::Union);
 
-      TimeMonitor::zeroOutTimers();
+      TimeMonitor::clearCounters();
 
       if (isDriver) {
         if (openedOut != NULL) {

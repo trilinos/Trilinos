@@ -89,7 +89,7 @@ namespace Tpetra {
       typedef typename OutMapType::node_type out_node_type;
       typedef typename InMapType::node_type in_node_type;
 
-      static Teuchos::RCP<const OutMapType>
+      static OutMapType
       clone (const InMapType& mapIn,
              const Teuchos::RCP<out_node_type>& node2);
     };
@@ -665,7 +665,8 @@ namespace Tpetra {
 
     //! Create a shallow copy of this Map, with a different Node type.
     template <class NodeOut>
-    RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> > clone (const RCP<NodeOut>& nodeOut) const;
+    Teuchos::RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
+    clone (const RCP<NodeOut>& nodeOut) const;
 
     /// \brief Return a new Map with processes with zero elements removed.
     ///
@@ -895,30 +896,39 @@ namespace Tpetra {
     /// \brief Object that can find the process rank and local index
     ///   for any given global index.
     ///
-    /// Creating this object is a collective operation over all
-    /// processes in the Map's communicator.  getRemoteIndexList() is
-    /// the only method that needs this object, and it also happens to
-    /// be a collective.  Thus, we create the Directory on demand in
-    /// getRemoteIndexList().  This saves the communication cost of
-    /// creating the Directory, for some Maps which are never involved
-    /// in an Import or Export operation.  For example, a nonsquare
-    /// sparse matrix (CrsMatrix) with row and range Maps the same
-    /// would never need to construct an Export object.  This is a
-    /// common case for the prolongation or restriction operators in
-    /// algebraic multigrid.
+    /// Initializing this object is a collective operation over all
+    /// processes in the Map's communicator.  (Creating it is not.)
+    /// getRemoteIndexList() is the only method that needs this
+    /// object, and it also happens to be a collective.  Thus, we
+    /// initialize the Directory on demand in getRemoteIndexList().
+    /// This saves the communication cost of initializing the
+    /// Directory, for some Maps which are never involved in an Import
+    /// or Export operation.  For example, a nonsquare sparse matrix
+    /// (CrsMatrix) with row and range Maps the same would never need
+    /// to construct an Export object.  This is a common case for the
+    /// prolongation or restriction operators in algebraic multigrid.
     ///
     /// \note This is declared "mutable" so that getRemoteIndexList()
-    ///   can create the Directory on demand.
+    ///   can initialize the Directory on demand.
     ///
     /// \warning The Directory is an implementation detail of its Map.
     ///   It does not make sense to expose in the public interface of
     ///   Map.  Resist the temptation to do so.  There is no need,
     ///   because Map's public interface already exposes the one
-    ///   useful feature of Directory, via getRemoteIndexList().  We
-    ///   only use Teuchos::RCP here because the more appropriate
-    ///   std::unique_ptr is a C++11 feature and is therefore not
-    ///   available to us.  Developers should not construe the use of
-    ///   Teuchos::RCP as permission to share this object.
+    ///   useful feature of Directory, via getRemoteIndexList().
+    ///
+    /// \note We use Teuchos::RCP (one could also use std::shared_ptr)
+    ///   here because different views of the same Map (remember that
+    ///   Map implements view semantics) may share the same Directory.
+    ///   Map's three creation constructors (not copy constructor!)
+    ///   create the Directory, but creation is lightweight.  Since
+    ///   the Directory then exists (directory_ is not null), multiple
+    ///   views of the same object share the same Directory, and all
+    ///   of them will see the result if the Directory is initialized
+    ///   by one of them.  Otherwise, if directory_ were to start out
+    ///   null, then previously existing views of a Map could not
+    ///   benefit from lazy creation of the Directory.
+    ///
     mutable Teuchos::RCP<Directory<LocalOrdinal,GlobalOrdinal,Node> > directory_;
 
   }; // Map class
@@ -963,29 +973,31 @@ namespace Tpetra {
                           const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
                           const Teuchos::RCP<Node>& node = KokkosClassic::Details::getNode<Node> ());
 
-  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with the default Kokkos Node.
-
-      This method returns a Map instantiated on the Kokkos default node type, KokkosClassic::DefaultNode::DefaultNodeType.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Non-member constructor for a uniformly distributed,
+  ///   contiguous Map with the default Kokkos Node.
+  ///
+  /// This method returns a Map instantiated on the Kokkos default
+  /// Node type, KokkosClassic::DefaultNode::DefaultNodeType.  The
+  /// resulting Map uses zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal>
   Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal> >
-  createUniformContigMap(global_size_t numElements, const Teuchos::RCP< const Teuchos::Comm< int > > &comm);
+  createUniformContigMap (global_size_t numElements,
+                          const Teuchos::RCP<const Teuchos::Comm<int> >& comm);
 
-  /** \brief Non-member constructor for a uniformly distributed, contiguous Map with a user-specified Kokkos Node.
-
-      The Map is configured to use zero-based indexing.
-
-      \relatesalso Map
-   */
+  /// \brief Non-member constructor for a uniformly distributed,
+  ///   contiguous Map with a user-specified Kokkos Node.
+  ///
+  /// The resulting Map uses zero-based indexing.
+  ///
+  /// \relatesalso Map
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
-  Teuchos::RCP< const Map<LocalOrdinal,GlobalOrdinal,Node> >
-  createUniformContigMapWithNode(global_size_t numElements,
-                                 const Teuchos::RCP< const Teuchos::Comm< int > > &comm,
-                                 const Teuchos::RCP< Node > &node = KokkosClassic::Details::getNode<Node>());
+  Teuchos::RCP<const Map<LocalOrdinal,GlobalOrdinal,Node> >
+  createUniformContigMapWithNode (global_size_t numElements,
+                                  const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
+                                  const Teuchos::RCP<Node>& node =
+                                  KokkosClassic::Details::getNode<Node> ());
 
   /** \brief Non-member constructor for a (potentially) non-uniformly distributed, contiguous Map with the default Kokkos Node.
 
@@ -1082,40 +1094,43 @@ namespace Tpetra {
   namespace Details {
 
     template<class OutMapType, class InMapType>
-    Teuchos::RCP<const OutMapType>
+    OutMapType
     MapCloner<OutMapType, InMapType>::
     clone (const InMapType& mapIn,
            const Teuchos::RCP<out_node_type>& nodeOut)
     {
-      Teuchos::RCP<OutMapType> mapOut = Teuchos::rcp (new OutMapType ());
+      typedef ::Tpetra::Directory<typename OutMapType::local_ordinal_type,
+                                  typename OutMapType::global_ordinal_type,
+                                  typename OutMapType::node_type> out_dir_type;
+
+      OutMapType mapOut; // Make an empty Map.
+
       // Fill the new Map with shallow copies of all of the original
       // Map's data.  This is safe because Map is immutable, so
       // users can't change the original Map.
-      mapOut->comm_              = mapIn.comm_;
-      mapOut->indexBase_         = mapIn.indexBase_;
-      mapOut->numGlobalElements_ = mapIn.numGlobalElements_;
-      mapOut->numLocalElements_  = mapIn.numLocalElements_;
-      mapOut->minMyGID_          = mapIn.minMyGID_;
-      mapOut->maxMyGID_          = mapIn.maxMyGID_;
-      mapOut->minAllGID_         = mapIn.minAllGID_;
-      mapOut->maxAllGID_         = mapIn.maxAllGID_;
-      mapOut->firstContiguousGID_= mapIn.firstContiguousGID_;
-      mapOut->lastContiguousGID_ = mapIn.lastContiguousGID_;
-      mapOut->uniform_           = mapIn.uniform_;
-      mapOut->contiguous_        = mapIn.contiguous_;
-      mapOut->distributed_       = mapIn.distributed_;
-      mapOut->lgMap_             = mapIn.lgMap_;
-      mapOut->glMap_             = mapIn.glMap_;
+      mapOut.comm_              = mapIn.comm_;
+      mapOut.indexBase_         = mapIn.indexBase_;
+      mapOut.numGlobalElements_ = mapIn.numGlobalElements_;
+      mapOut.numLocalElements_  = mapIn.numLocalElements_;
+      mapOut.minMyGID_          = mapIn.minMyGID_;
+      mapOut.maxMyGID_          = mapIn.maxMyGID_;
+      mapOut.minAllGID_         = mapIn.minAllGID_;
+      mapOut.maxAllGID_         = mapIn.maxAllGID_;
+      mapOut.firstContiguousGID_= mapIn.firstContiguousGID_;
+      mapOut.lastContiguousGID_ = mapIn.lastContiguousGID_;
+      mapOut.uniform_           = mapIn.uniform_;
+      mapOut.contiguous_        = mapIn.contiguous_;
+      mapOut.distributed_       = mapIn.distributed_;
+      mapOut.lgMap_             = mapIn.lgMap_;
+      mapOut.glMap_             = mapIn.glMap_;
       // New Map gets the new Node instance.
-      mapOut->node_              = nodeOut;
-      // mfh 02 Apr 2013: While Map could just wait to create the
-      // Directory on demand in getRemoteIndexList, we have a
-      // Directory here that we can clone inexpensively, so there is
-      // no harm in creating it here.
-      // if (! mapIn.directory_.is_null ()) {
-      //   mapOut->directory_ =
-      //     mapIn.directory_->template clone<out_node_type> (mapIn);
-      // }
+      mapOut.node_              = nodeOut;
+
+      // We could cleverly clone the Directory here if it is
+      // initialized, but there is no harm in simply creating it
+      // uninitialized.
+      mapOut.directory_ = Teuchos::rcp (new out_dir_type ());
+
       return mapOut;
     }
   } // namespace Details
@@ -1124,11 +1139,14 @@ namespace Tpetra {
   template <class LocalOrdinal, class GlobalOrdinal, class Node>
   template <class NodeOut>
   RCP<const Map<LocalOrdinal, GlobalOrdinal, NodeOut> >
-  Map<LocalOrdinal,GlobalOrdinal,Node>::clone (const RCP<NodeOut> &nodeOut) const
+  Map<LocalOrdinal,GlobalOrdinal,Node>::
+  clone (const Teuchos::RCP<NodeOut>& nodeOut) const
   {
     typedef Map<LocalOrdinal, GlobalOrdinal, Node> in_map_type;
     typedef Map<LocalOrdinal, GlobalOrdinal, NodeOut> out_map_type;
-    return Details::MapCloner<out_map_type, in_map_type>::clone (*this, nodeOut);
+    typedef Details::MapCloner<out_map_type, in_map_type> cloner_type;
+    // Copy constructor does a shallow copy.
+    return Teuchos::rcp (new out_map_type (cloner_type::clone (*this, nodeOut)));
   }
 
 } // namespace Tpetra

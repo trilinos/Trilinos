@@ -314,7 +314,7 @@ int ML_Epetra::RefMaxwellPreconditioner::ComputePreconditioner(const bool CheckF
 #ifdef ML_TIMING
   StopTimer(&t_time_curr,&(t_diff[5]));
 #endif
-  if(print_hierarchy) EdgePC->Print();
+  if(print_hierarchy == -1) EdgePC->Print();
   /* Build the (2,2) Block Preconditioner */
   if(!HasOnlyDirichletNodes){
     std::string solver22=List_.get("refmaxwell: 22solver","multilevel");

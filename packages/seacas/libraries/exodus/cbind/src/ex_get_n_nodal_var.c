@@ -33,7 +33,8 @@
  * 
  */
 
-#include <exodusII.h>
+#include <exodusII.h>                   // for ex_get_partial_nodal_var
+#include <sys/types.h>                  // for int64_t
 
 /*!
  * \deprecated Use ex_get_partial_nodal_var() instead

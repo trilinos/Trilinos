@@ -926,35 +926,37 @@ namespace Iovs {
   {
     int64_t num_to_get = field.verify(data_size);
 
-    if(field.get_name() != "ids" && field.get_name() != "ids_raw")
-      return num_to_get;
-
-    int id = get_id(ns, EX_NODE_SET, &this->ids_);
-
-    if(this->createNodeSets == 0)
-      num_to_get = 0;
-
-    if (field.get_type() == Ioss::Field::INTEGER)
+    if( num_to_get > 0 &&
+       (field.get_name() == "ids" ||
+        field.get_name() == "ids_raw") )
       {
-      this->nodeMap.reverse_map_data(data, field, num_to_get);
-      if(this->pvcsa)
-        this->pvcsa->CreateNodeSet(ns->name().c_str(),
-                                   id,
-                                   num_to_get,
-                                   static_cast<int*>(data),
-                                   this->DBFilename.c_str());
-      }
-    else if (field.get_type() == Ioss::Field::INT64)
-      {
-      this->nodeMap.reverse_map_data(data, field, num_to_get);
-      if(this->pvcsa)
-        this->pvcsa->CreateNodeSet(ns->name().c_str(),
-                                   id,
-                                   num_to_get,
-                                   static_cast<int64_t*>(data),
-                                   this->DBFilename.c_str());
-      }
 
+      int id = get_id(ns, EX_NODE_SET, &this->ids_);
+
+      if(this->createNodeSets == 0)
+        num_to_get = 0;
+
+      if (field.get_type() == Ioss::Field::INTEGER)
+        {
+        this->nodeMap.reverse_map_data(data, field, num_to_get);
+        if(this->pvcsa)
+          this->pvcsa->CreateNodeSet(ns->name().c_str(),
+                                     id,
+                                     num_to_get,
+                                     static_cast<int*>(data),
+                                     this->DBFilename.c_str());
+        }
+      else if (field.get_type() == Ioss::Field::INT64)
+        {
+        this->nodeMap.reverse_map_data(data, field, num_to_get);
+        if(this->pvcsa)
+          this->pvcsa->CreateNodeSet(ns->name().c_str(),
+                                     id,
+                                     num_to_get,
+                                     static_cast<int64_t*>(data),
+                                     this->DBFilename.c_str());
+        }
+      }
     return num_to_get;
   }
 

@@ -46,11 +46,6 @@
 #ifndef MUELU_FILTEREDAFACTORY_DEF_HPP
 #define MUELU_FILTEREDAFACTORY_DEF_HPP
 
-// disable clang warnings
-#ifdef __clang__
-#pragma clang system_header
-#endif
-
 #include <Xpetra_Matrix.hpp>
 #include <Xpetra_MatrixFactory.hpp>
 
@@ -170,16 +165,15 @@ namespace MueLu {
           SC diagExtra = zero;
 
           for (size_t j = 0; j < nnz; j++) {
-            if (filter[inds[j]])
+            if (filter[inds[j]]) {
+              if (inds[j] == row) {
+                // Remember diagonal position
+                diagIndex = j;
+              }
               continue;
-
-            if (inds[j] == row) {
-              // Remember diagonal position
-              diagIndex = j;
-
-            } else {
-              diagExtra += vals[j];
             }
+
+            diagExtra += vals[j];
 
             vals[j] = zero;
           }

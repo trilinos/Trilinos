@@ -145,7 +145,7 @@ PHX_EVALUATOR_CTOR(DOF,p) :
      this->addDependentField(dof_orientation);
   }
   
-  std::string n = "DOF: " + dof_basis.fieldTag().name();
+  std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 
@@ -236,7 +236,7 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
     this->addDependentField(basisValues.curl_basis);          
   }
   
-  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name();
+  std::string n = "DOF_PointValues: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
 }
 

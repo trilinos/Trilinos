@@ -108,7 +108,7 @@ public:
   {}
 
   // Partitioning method
-  void solve()
+  void partition()
   {
     using std::string;
     using std::ostringstream;
@@ -116,6 +116,7 @@ public:
     typedef typename Adapter::lno_t lno_t;     // local ids
     typedef typename Adapter::gno_t gno_t;     // global ids
     typedef typename Adapter::scalar_t scalar_t;   // scalars
+    typedef typename Adapter::part_t part_t;   // part numbers
 
     env->debug(DETAILED_STATUS, string("Entering AlgBlock"));
 
@@ -220,10 +221,10 @@ public:
     }
 
     /* Loop over objects and assign part. */
-    partId_t part = 0;
+    part_t part = 0;
     wtsum = scansum[rank];
     Array<scalar_t> partTotal(numGlobalParts, 0);
-    ArrayRCP<partId_t> gnoPart= arcp(new partId_t [numGnos], 0, numGnos);
+    ArrayRCP<part_t> gnoPart= arcp(new part_t[numGnos], 0, numGnos);
 
     env->memory("Block algorithm memory");
 

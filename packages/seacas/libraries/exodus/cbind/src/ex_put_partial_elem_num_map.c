@@ -52,7 +52,8 @@
 *
 *****************************************************************************/
 
-#include "exodusII.h"
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for ex_put_partial_id_map, etc
 
 /*
  * writes out a portion of the element numbering map to the database;

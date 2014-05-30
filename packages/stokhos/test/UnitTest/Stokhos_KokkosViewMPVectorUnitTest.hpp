@@ -304,6 +304,45 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_DeviceArray, Storage
   success = checkVectorView(v, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, Unmanaged, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename ViewType::HostMirror host_view_type;
+  typedef typename host_view_type::array_type host_array_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+  host_view_type h_v = Kokkos::create_mirror_view(v);
+  host_array_type h_a = h_v;
+
+  bool is_right = Kokkos::Impl::is_same< typename ViewType::array_layout,
+                                         Kokkos::LayoutRight >::value;
+  if (is_right || !ViewType::is_contiguous) {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(i,j) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  else {
+    for (size_type i=0; i<num_rows; ++i)
+      for (size_type j=0; j<num_cols; ++j)
+        h_a(j,i) = generate_vector_coefficient<Scalar>(
+          num_rows, num_cols, i, j);
+  }
+  Kokkos::deep_copy(v, h_v);
+
+  // Create unmanaged view
+  ViewType v2(Kokkos::view_without_managing, v.ptr_on_device(),
+              num_rows, num_cols);
+
+  success = checkVectorView(v2, out);
+}
+
 namespace Test {
 
 template< class ViewType >
@@ -338,9 +377,6 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   typedef Sacado::MP::Vector<Storage> Vector;
   typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
   typedef typename ViewType::size_type size_type;
-  typedef typename ViewType::HostMirror host_view_type;
-  typedef typename host_view_type::array_type host_array_type;
-  typedef typename ViewType::array_type array_type;
 
   const size_type num_rows = global_num_rows;
   const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
@@ -359,7 +395,9 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy_ConstantScalar, STORAGE, LAYOUT )          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
-    Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )
+    Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, Unmanaged, STORAGE, LAYOUT )
 
 // Some tests the fail, or fail to compile
 

@@ -14,10 +14,10 @@
 %ignore operator[];
 %ignore operator<<;
 // %ignore LOCA::Stepper::Stepper(
-// 	    LOCA::Continuation::AbstractGroup& initialGuess,
-// 	    NOX::StatusTest::Generic& t,
-// 	    NOX::Parameter::List& p,
-// 	    const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory);
+//         LOCA::Continuation::AbstractGroup& initialGuess,
+//         NOX::StatusTest::Generic& t,
+//         NOX::Parameter::List& p,
+//         const Teuchos::RCP<LOCA::Abstract::Factory>& userFactory);
 %rename(Print) LOCA::ParameterVector::print(ostream& stream) const;
 
 // include std_string to convert between python strings and C++ strings

@@ -131,6 +131,27 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
      }
      else { TEUCHOS_ASSERT(false); } // what do I do with 1D?
   }
+  else if(elmtspace==panzer::PureBasis::CONST) {
+     // CONST is a nodal field
+
+     // build values
+     ///////////////////////////////////////////////
+
+     basis_ref = af.template buildArray<Scalar,BASIS,IP>("basis_ref",card,num_quad); // F, P
+     basis = af.template buildArray<Scalar,Cell,BASIS,IP>("basis",numcells,card,num_quad);
+
+     weighted_basis = af.template buildArray<Scalar,Cell,BASIS,IP>("weighted_basis",numcells,card,num_quad);
+
+     // build gradients
+     ///////////////////////////////////////////////
+
+     // nothing - CONST does not support GRAD operation
+
+     // build curl
+     ///////////////////////////////////////////////
+
+     // nothing - HGRAD does not support CURL operation
+  }
   else { TEUCHOS_ASSERT(false); }
 
   basis_coordinates_ref = af.template buildArray<Scalar,BASIS,Dim>("basis_coordinates_ref",card,dim);

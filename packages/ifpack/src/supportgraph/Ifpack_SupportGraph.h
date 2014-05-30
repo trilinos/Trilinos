@@ -404,16 +404,22 @@ int Ifpack_SupportGraph<T>::FindSupport()
 {
 
   // Extract matrix dimensions                                                                  
-  int rows = (*Matrix_).NumGlobalRows();
-  int cols = (*Matrix_).NumGlobalCols();
+  long long rows = (*Matrix_).NumGlobalRows64();
+  long long cols = (*Matrix_).NumGlobalCols64();
   int num_edges  = ((*Matrix_).NumMyNonzeros() - (*Matrix_).NumMyDiagonals())/2;
   std::cout << "global num rows " << rows << std::endl;
 
   // Assert square matrix                                                                       
   IFPACK_CHK_ERR((rows == cols));
 
+  if(rows > std::numeric_limits<int>::max())
+  {
+    std::cerr << "Ifpack_SupportGraph<T>::FindSupport: global num rows won't fit an int. " << rows << std::endl;
+    IFPACK_CHK_ERR(1);
+  }
+
   // Rename for clarity                                                                         
-  int num_verts = rows;
+  int num_verts = (int) rows;
 
   // Create data structures for the BGL code and temp data structures for extraction            
   E *edge_array = new E[num_edges];
@@ -579,13 +585,34 @@ int Ifpack_SupportGraph<T>::FindSupport()
   // Create the CrsMatrix for the support graph                                                 
   Support_ = rcp(new Epetra_CrsMatrix(Copy, Matrix().RowMatrixRowMap(),l, false));
   
- 
-  // Fill in the matrix with the stl vectors for each row                                       
-  for(int i = 0; i < num_verts; i++)
-    {
-      (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
-    }  
- 
+#ifndef EPETRA_NO_64BIT_GLOBAL_INDICES
+  if((*Matrix_).RowMatrixRowMap().GlobalIndicesLongLong())
+  { 
+    // Fill in the matrix with the stl vectors for each row                                       
+    for(int i = 0; i < num_verts; i++)
+      {
+        std::vector<long long> IndicesLL(l[i]);
+        for(int k = 0; k < l[i]; ++k)
+           IndicesLL[k] = Indices[i][k];
+
+        (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&IndicesLL[0]);
+      }
+  }
+  else
+#endif
+#ifndef EPETRA_NO_32BIT_GLOBAL_INDICES
+  if((*Matrix_).RowMatrixRowMap().GlobalIndicesInt())
+  {
+    // Fill in the matrix with the stl vectors for each row                                       
+    for(int i = 0; i < num_verts; i++)
+      {
+        (*Support_).InsertGlobalValues(i,l[i],&Values[i][0],&Indices[i][0]);
+      }
+  }
+  else
+#endif
+  throw "Ifpack_SupportGraph::FindSupport: GlobalIndices unknown.";;
+  
   (*Support_).FillComplete();
  
   delete edge_array;
@@ -714,10 +741,10 @@ Print(std::ostream& os) const
   os << "================================================================================" << std::endl;
    os << "Ifpack_SupportGraph: " << Label () << endl << endl;
   os << "Condition number estimate = " << Condest() << endl;
-  os << "Global number of rows            = " << Matrix_->NumGlobalRows() << endl;
-  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/2 << endl;
+  os << "Global number of rows            = " << Matrix_->NumGlobalRows64() << endl;
+  os << "Number of edges in support graph     = " << (Support_->NumGlobalNonzeros64()-Support_->NumGlobalDiagonals64())/2 << endl;
   os << "Fraction of off diagonals of support graph/off diagonals of original     = "
-     << ((double)Support_->NumGlobalNonzeros()-Support_->NumGlobalDiagonals())/(Matrix_->NumGlobalNonzeros()-Matrix_->NumGlobalDiagonals());
+     << ((double)Support_->NumGlobalNonzeros64()-Support_->NumGlobalDiagonals64())/(Matrix_->NumGlobalNonzeros64()-Matrix_->NumGlobalDiagonals64());
   os << endl;
   os << "Phase           # calls   Total Time (s)       Total MFlops     MFlops/s" << endl;
   os << "-----           -------   --------------       ------------     --------" << endl;

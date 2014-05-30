@@ -148,17 +148,23 @@ private:
   const input_array_type    m_x ;
   const output_array_type   m_y ;
   const tensor_type         m_tensor ;
+  const input_scalar        m_a ;
+  const output_scalar       m_b ;
   const size_type           BlockSize;
 
   Multiply( const matrix_type &        A ,
             const input_vector_type &  x ,
             const output_vector_type & y ,
+            const input_scalar & a ,
+            const output_scalar & b ,
             const size_type block_size )
   : m_A_values( A.values )
   , m_A_graph( A.graph )
   , m_x( x )
   , m_y( y )
   , m_tensor( A.values.cijk() )
+  , m_a( a )
+  , m_b( b )
   , BlockSize(block_size)
   {}
 
@@ -267,9 +273,12 @@ public:
     __syncthreads();
 
     // Store result back in global memory
-    for ( size_type i = tid; i < dim; i += nid ) {
-      m_y( i, blockIdx.x ) = sh_y[ i ];
-    }
+    if ( m_b == output_scalar(0) )
+      for ( size_type i = tid; i < dim; i += nid )
+        m_y( i, blockIdx.x ) = m_a * sh_y[ i ];
+    else
+      for ( size_type i = tid; i < dim; i += nid )
+        m_y( i, blockIdx.x ) = m_a * sh_y[ i ] + m_b * m_y( i, blockIdx.x );
   }
 
   struct TensorReadEntry {
@@ -279,7 +288,9 @@ public:
 
   static void apply( const matrix_type & A ,
                      const input_vector_type & x ,
-                     const output_vector_type & y )
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
   {
     const tensor_type tensor = A.values.cijk();
     const size_type row_count = A.graph.row_map.dimension_0() - 1;
@@ -432,7 +443,7 @@ public:
     // Finally launch our kernel
     //cudaProfilerStart();
     Kokkos::Impl::cuda_parallel_launch_local_memory<<< dGrid, dBlock, shmem >>>
-      ( Multiply( A, x, y, block_size ) );
+      ( Multiply( A, x, y, a, b, block_size ) );
     //cudaProfilerStop();
   }
 };
@@ -489,12 +500,16 @@ public:
                         Kokkos::LayoutLeft,
                         Device,
                         OutputMemory > output_vector_type;
+  typedef typename InputVectorValue::value_type input_scalar;
+  typedef typename OutputVectorValue::value_type output_scalar;
 
 public:
 
   static void apply( const matrix_type & A ,
                      const input_vector_type & x ,
-                     const output_vector_type & y )
+                     const output_vector_type & y ,
+                     const input_scalar & a = input_scalar(1) ,
+                     const output_scalar & b = output_scalar(0) )
   {
     typedef Kokkos::View< InputVectorValue*, Kokkos::LayoutLeft, Device,
       InputMemory > input_vector_type_1D;
@@ -509,7 +524,8 @@ public:
       multiply_type_1D::apply(
         A,
         Kokkos::subview<input_vector_type_1D>( x, Kokkos::ALL(), col),
-        Kokkos::subview<output_vector_type_1D>(y, Kokkos::ALL(), col) );
+        Kokkos::subview<output_vector_type_1D>(y, Kokkos::ALL(), col),
+        a, b );
   }
 };
 

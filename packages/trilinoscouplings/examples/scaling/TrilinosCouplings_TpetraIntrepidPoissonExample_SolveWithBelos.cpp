@@ -19,7 +19,7 @@
 //
 // You should have received a copy of the GNU Lesser General Public
 // License along with this library; if not, write to the Free Software
-// Foundation, Inc., 59 Temple Place, Suite 330, Boston, MA 02111-1307
+// Foundation, Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301
 // USA
 // Questions? Contact Pavel Bochev  (pbboche@sandia.gov),
 //                    Denis Ridzal  (dridzal@sandia.gov),
@@ -43,6 +43,7 @@ namespace TpetraIntrepidPoissonExample {
 void
 solveWithBelos (bool& converged,
                 int& numItersPerformed,
+                const std::string& solverName,
                 const Teuchos::ScalarTraits<ST>::magnitudeType& tol,
                 const int maxNumIters,
                 const int num_steps,
@@ -56,7 +57,10 @@ solveWithBelos (bool& converged,
   typedef operator_type OP;
 
   // Invoke the generic solve routine.
-  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed, tol, maxNumIters, num_steps, X, A, B, M_left, M_right);
+  IntrepidPoissonExample::solveWithBelos<ST, MV, OP> (converged, numItersPerformed,
+                                                      solverName, tol, maxNumIters,
+                                                      num_steps,
+                                                      X, A, B, M_left, M_right);
 }
 
 /// \brief Solve the linear system(s) AX=B with Belos by cloning to a new

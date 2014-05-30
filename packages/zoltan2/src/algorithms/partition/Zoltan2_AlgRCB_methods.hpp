@@ -178,21 +178,24 @@ enum leftRightFlag{
 template <typename Adapter>
   void getFractionLeft(
     const RCP<const Environment> &env,
-    partId_t part0,
-    partId_t part1,
+    typename Adapter::part_t part0,
+    typename Adapter::part_t part1,
     const RCP<PartitioningSolution<Adapter> > &solution,
     ArrayRCP<double> &fractionLeft,
-    partId_t &numPartsLeftHalf)
+    typename Adapter::part_t &numPartsLeftHalf)
 {
   env->debug(DETAILED_STATUS, "Entering getFractionLeft");
-  partId_t numParts = part1 - part0 + 1;
+
+  typedef typename Adapter::part_t part_t;
+
+  part_t numParts = part1 - part0 + 1;
   // TODO In LDRD, substitute call to machine model for
   // TODO computation of numPartsLeftHalf below.
   numPartsLeftHalf = numParts / 2;
-  partId_t left0 = part0;   // First part in left half
-  partId_t left1 = left0 + numPartsLeftHalf - 1;  // Last part in left half
-  partId_t right0 = left1 + 1;  // First part in right half
-  partId_t right1 = part1;  // Last part in right half
+  part_t left0 = part0;   // First part in left half
+  part_t left1 = left0 + numPartsLeftHalf - 1;  // Last part in left half
+  part_t right0 = left1 + 1;  // First part in right half
+  part_t right1 = part1;  // Last part in right half
 
   int nVecs = solution->getNumberOfCriteria();
   fractionLeft = arcp(new double [nVecs], 0, nVecs);
@@ -1220,18 +1223,19 @@ template <typename mvector_t, typename Adapter>
     const RCP<mvector_t> &vectors,
     multiCriteriaNorm mcnorm,
     const RCP<PartitioningSolution<Adapter> > &solution,
-    partId_t part0, 
-    partId_t part1,
+    typename Adapter::part_t part0, 
+    typename Adapter::part_t part1,
     ArrayView<unsigned char> lrflags,  // output
     int &cutDimension,                  // output
     typename mvector_t::scalar_type &cutValue,   // output
     typename mvector_t::scalar_type &imbalance,  // output
-    partId_t &numPartsLeftHalf,                  // output
+    typename Adapter::part_t &numPartsLeftHalf,                  // output
     typename mvector_t::scalar_type &weightLeftHalf,  // output
     typename mvector_t::scalar_type &weightRightHalf  // output
     )
 {
   env->debug(DETAILED_STATUS, "Entering determineCut");
+  typedef typename Adapter::part_t part_t;
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
   typedef StridedData<lno_t, scalar_t> input_t;
@@ -1292,11 +1296,11 @@ template <typename mvector_t, typename Adapter>
       for (int i=0; i < nWeightsPerCoord; i++)
         wgts[i] = input_t(vectors->getData(wgtidx++), 1);
 
-      partId_t numParts, numNonemptyParts;
+      part_t numParts, numNonemptyParts;
       ArrayRCP<MetricValues<scalar_t> > metrics;
       ArrayRCP<scalar_t> weightSums;
     
-      globalSumsByPart<scalar_t, unsigned char, lno_t>(
+      globalSumsByPart<scalar_t, unsigned char, lno_t, part_t>(
         env, comm, lrflags, nWeightsPerCoord,
         wgts.view(0, nWeightsPerCoord), mcnorm,
         numParts, numNonemptyParts, metrics, weightSums);
@@ -1374,13 +1378,14 @@ template <typename mvector_t, typename Adapter>
     const RCP<mvector_t> &vectors, 
     ArrayView<typename mvector_t::local_ordinal_type> index,
     const RCP<PartitioningSolution<Adapter> > &solution,
-    partId_t part0, 
-    partId_t part1,
-    ArrayView<partId_t> partNum)   // output
+    typename Adapter::part_t part0, 
+    typename Adapter::part_t part1,
+    ArrayView<typename Adapter::part_t> partNum)   // output
 {
   env->debug(DETAILED_STATUS, "Entering serialRCB");
   env->timerStart(MICRO_TIMERS, "serialRCB", depth, 2);
 
+  typedef typename Adapter::part_t part_t;
   typedef typename mvector_t::scalar_type scalar_t;
   typedef typename mvector_t::local_ordinal_type lno_t;
 
@@ -1442,7 +1447,7 @@ template <typename mvector_t, typename Adapter>
   // Compute relative sizes of the two halves.
 
   ArrayRCP<double> fractionLeft;
-  partId_t numPartsLeftHalf;
+  part_t numPartsLeftHalf;
 
   try{
     getFractionLeft<Adapter>(env, part0, part1, solution,
@@ -1530,7 +1535,7 @@ template <typename mvector_t, typename Adapter>
           newIndex[ii++] = i;
     }
 
-    partId_t newPart1 = part0 + numPartsLeftHalf - 1;
+    part_t newPart1 = part0 + numPartsLeftHalf - 1;
 
     env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 
@@ -1562,7 +1567,7 @@ template <typename mvector_t, typename Adapter>
           newIndex[ii++] = i;
     }
 
-    partId_t newPart0 = part0 + numPartsLeftHalf;
+    part_t newPart0 = part0 + numPartsLeftHalf;
 
     env->timerStop(MICRO_TIMERS, "serialRCB", depth, 2);
 

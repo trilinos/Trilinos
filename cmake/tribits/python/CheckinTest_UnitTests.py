@@ -1220,7 +1220,7 @@ g_expectedRegexTestPasses = \
   "Test: Passed\n"
 
 g_expectedRegexTestNotRun = \
-  "The tests where never even run!\n" \
+  "The tests were never even run!\n" \
   "Test: FAILED\n"
 
 g_expectedCommonOptionsSummary = \
@@ -4119,7 +4119,7 @@ class test_checkin_test(unittest.TestCase):
       +"Configure failed returning 1!\n" \
       +"The configure FAILED!\n" \
       +"The build was never attempted!\n" \
-      +"The tests where never even run!\n" \
+      +"The tests were never even run!\n" \
       +"FAILED: configure failed\n" \
       +"A PUSH IS \*NOT\* READY TO BE PERFORMED!\n" \
       +"FAILED CONFIGURE/BUILD/TEST: Trilinos:\n" \
@@ -4467,7 +4467,7 @@ class test_checkin_test(unittest.TestCase):
       +"Configure failed returning 1!\n" \
       +"The configure FAILED!\n" \
       +"The build was never attempted!\n" \
-      +"The tests where never even run!\n" \
+      +"The tests were never even run!\n" \
       +"FAILED: configure failed\n" \
       +g_expectedRegexConfigPasses \
       +g_expectedRegexBuildPasses \

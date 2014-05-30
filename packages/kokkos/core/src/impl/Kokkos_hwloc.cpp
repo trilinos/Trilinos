@@ -255,14 +255,30 @@ struct Sentinel {
   Sentinel();
 };
 
-void sentinel()
-{ static Sentinel self ; }
+bool sentinel()
+{
+  static Sentinel self ;
+
+  if ( 0 == s_hwloc_topology ) {
+    std::cerr << "Kokkos::hwloc ERROR : Called after return from main()" << std::endl ;
+    std::cerr.flush();
+  }
+
+  return 0 != s_hwloc_topology ;
+}
 
 Sentinel::~Sentinel()
 {
   hwloc_topology_destroy( s_hwloc_topology );
   hwloc_bitmap_free( s_process_binding );
   hwloc_bitmap_free( s_hwloc_location );
+
+  s_core_topology.first  = 0 ;
+  s_core_topology.second = 0 ;
+  s_core_capacity   = 0 ;
+  s_hwloc_topology  = 0 ;
+  s_hwloc_location  = 0 ;
+  s_process_binding = 0 ;
 }
 
 Sentinel::Sentinel()
@@ -547,7 +563,7 @@ unsigned bind_this_thread(
 
 bool bind_this_thread( const std::pair<unsigned,unsigned> coord )
 {
-  sentinel();
+  if ( ! sentinel() ) return false ;
 
 #if DEBUG_PRINT
 
@@ -577,7 +593,7 @@ bool bind_this_thread( const std::pair<unsigned,unsigned> coord )
 
 bool unbind_this_thread()
 {
-  sentinel();
+  if ( ! sentinel() ) return false ;
 
 #define HWLOC_DEBUG_PRINT 0
 
@@ -619,11 +635,11 @@ bool unbind_this_thread()
 
 std::pair<unsigned,unsigned> get_this_thread_coordinate()
 {
-  sentinel();
+  std::pair<unsigned,unsigned> coord(0u,0u);
+
+  if ( ! sentinel() ) return coord ;
 
   const unsigned n = s_core_topology.first * s_core_topology.second ;
-
-  std::pair<unsigned,unsigned> coord(0u,0u);
 
   // Using the pre-allocated 's_hwloc_location' to avoid memory
   // allocation by this thread.  This call is NOT thread-safe.

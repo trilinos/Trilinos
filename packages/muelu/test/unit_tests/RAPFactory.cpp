@@ -185,11 +185,13 @@ namespace MueLuTests {
     sapFactory.Build(fineLevel, coarseLevel);
     transPFactory.Build(fineLevel,coarseLevel);
     RAPFactory rap;
+    ParameterList rapList = *(rap.GetValidParameterList());
+    rapList.set("implicit transpose", true);
+    rap.SetParameterList(rapList);
     rap.SetFactory("P", rcpFromRef(sapFactory));
     rap.SetFactory("R", rcpFromRef(transPFactory));
     coarseLevel.Request("A", &rap);
 
-    rap.SetImplicitTranspose(true);
     coarseLevel.Request(rap);
     rap.Build(fineLevel,coarseLevel);
 
@@ -225,7 +227,7 @@ namespace MueLuTests {
     Teuchos::Array<Teuchos::ScalarTraits<SC>::magnitudeType> normX(1), normResult1(1),normResult2(1);
     X->norm2(normX);
     out << "This test checks the correctness of the Galerkin triple "
-        << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit tranpose of P." << std::endl;
+        << "matrix product by comparing (RAP)*X to R(A(P*X)), where R is the implicit transpose of P." << std::endl;
     out << "||X||_2 = " << normX << std::endl;
     result1->norm2(normResult1);
     result2->norm2(normResult2);

@@ -93,7 +93,7 @@ namespace Xpetra {
     }
 
     static RCP<StridedMap> Build(const RCP<const Map>& map, std::vector<size_t>& stridingInfo, LocalOrdinal stridedBlockId = -1, GlobalOrdinal offset = 0) {
-      return rcp(new StridedMap(map, stridingInfo, stridedBlockId, offset));
+      return rcp(new StridedMap(map, stridingInfo, map->getIndexBase(), stridedBlockId, offset));
     }
 
     // special constructor for generating a given subblock of a strided map

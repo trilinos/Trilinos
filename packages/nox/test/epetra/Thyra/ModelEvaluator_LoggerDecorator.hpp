@@ -12,9 +12,9 @@ namespace NOX_TEST {
   */
   template<typename ScalarT>
   class ModelEvaluatorLoggerDecorator : public ::Thyra::ModelEvaluatorDelegatorBase<ScalarT> {
-    
+
   public:
-    
+
     ModelEvaluatorLoggerDecorator(const Teuchos::RCP< ::Thyra::ModelEvaluator<ScalarT> > &model) :
       ::Thyra::ModelEvaluatorDelegatorBase<ScalarT>(model),
       num_calls_exact_(0),
@@ -23,7 +23,7 @@ namespace NOX_TEST {
     { }
 
     void evalModelImpl(const ::Thyra::ModelEvaluatorBase::InArgs<ScalarT> &inArgs,
-		       const ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> &outArgs) const
+               const ::Thyra::ModelEvaluatorBase::OutArgs<ScalarT> &outArgs) const
     {
       ::Thyra::ModelEvaluatorBase::InArgs<ScalarT> modelInArgs = this->getUnderlyingModel()->createInArgs();
       modelInArgs.setArgs(inArgs,false);
@@ -33,18 +33,18 @@ namespace NOX_TEST {
 
       ::Thyra::ModelEvaluatorBase::Evaluation< ::Thyra::VectorBase<ScalarT> > eval = outArgs.get_f();
       if (nonnull(eval)) {
-	if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_EXACT) {
-	  ++num_calls_exact_;
-	  //std::cout << "EXACT!" << std::endl;
-	}
-	else if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_APPROX_DERIV) {
-	  ++num_calls_approx_deriv_;
-	  //std::cout << "APPROX DERIV!" << std::endl;
-	}
-	else if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_VERY_APPROX_DERIV) {
-	  ++num_calls_very_approx_deriv_;
-	  //std::cout << "VERY APPROX DERIV!" << std::endl;
-	}
+    if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_EXACT) {
+      ++num_calls_exact_;
+      //std::cout << "EXACT!" << std::endl;
+    }
+    else if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_APPROX_DERIV) {
+      ++num_calls_approx_deriv_;
+      //std::cout << "APPROX DERIV!" << std::endl;
+    }
+    else if (eval.getType() == ::Thyra::ModelEvaluatorBase::EVAL_TYPE_VERY_APPROX_DERIV) {
+      ++num_calls_very_approx_deriv_;
+      //std::cout << "VERY APPROX DERIV!" << std::endl;
+    }
       }
 
       this->getUnderlyingModel()->evalModel(modelInArgs,modelOutArgs);
@@ -52,10 +52,10 @@ namespace NOX_TEST {
 
     int getNumExactCalls() const
     { return num_calls_exact_; }
-    
+
     int getNumApproxDerivCalls() const
     { return num_calls_approx_deriv_; }
-    
+
     int getNumVeryApproxDerivCalls() const
     { return num_calls_very_approx_deriv_; }
 

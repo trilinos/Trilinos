@@ -81,7 +81,7 @@ namespace MueLu {
     //! Constructor
     RigidBodyModeFactory(const std::string & nspName = "Nullspace")
       : nspName_(nspName),
-	numPDEs_(3)
+        numPDEs_(3)
     { }
 
     //! Destructor.

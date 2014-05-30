@@ -199,6 +199,7 @@ namespace SacadoPCEUnitTest {
                                    setup.rtol, setup.atol, out);
   }
 
+
 #define UNARY_UNIT_TEST(OP)                                             \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, OP##_const) {                         \
     UTS::pce_type u = OP(setup.cx);                                     \
@@ -314,7 +315,7 @@ namespace SacadoPCEUnitTest {
   BINARY_UNIT_TEST(operator+, plus)
   BINARY_UNIT_TEST(operator-, minus)
   BINARY_UNIT_TEST(operator*, times)
-  //BINARY_UNIT_TEST(operator/, divide)
+  BINARY_UNIT_TEST(operator/, divide)
 
 #define OPASSIGN_UNIT_TEST(OP, EXPOP)                                   \
   TEUCHOS_UNIT_TEST( Stokhos_PCE, EXPOP) {                              \
@@ -355,5 +356,5 @@ namespace SacadoPCEUnitTest {
   OPASSIGN_UNIT_TEST(+=, plusEqual)
   OPASSIGN_UNIT_TEST(-=, minusEqual)
   OPASSIGN_UNIT_TEST(*=, timesEqual)
-  //OPASSIGN_UNIT_TEST(/=, divideEqual)
+  OPASSIGN_UNIT_TEST(/=, divideEqual)
 }

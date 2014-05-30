@@ -273,7 +273,7 @@ cleanUp();
     ############################################################################
     # init()
     #
-    # Prepares varibles.
+    # Prepares variables.
     #
     #   - args:     NONE
     #

@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,11 +44,11 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                                
-//  Simple 2 equation test for quadratic and cubic line searches 
+
+//  Simple 2 equation test for quadratic and cubic line searches
 //  from Dennis & Schnabel's book, chp 6.  The test problem is from
 //  Example 6.5.1
-/*  
+/*
  *    U0**2 + U1**2 - 2 = 0
  *    exp(U0-1) + U1**3 -2 = 0
  */
@@ -71,9 +71,9 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
+// User's application specific files
 #include "Problem_Interface.H" // Interface file to NOX
-#include "DennisSchnabel.H"              
+#include "DennisSchnabel.H"
 
 using namespace std;
 
@@ -111,7 +111,7 @@ int main(int argc, char *argv[])
   }
 
   // Create the Problem class.  This creates all required
-  // Epetra objects for the problem and allows calls to the 
+  // Epetra objects for the problem and allows calls to the
   // function (RHS) and Jacobian evaluation routines.
   DennisSchnabel Problem(NumGlobalElements, Comm);
 
@@ -122,10 +122,10 @@ int main(int argc, char *argv[])
   // Initialize Solution
   if (MyPID==0) {
     (*soln)[0]=2.0;
-    if (NumProc==1) 
+    if (NumProc==1)
       (*soln)[1]=0.5;
-  } 
-  else 
+  }
+  else
     (*soln)[0]=0.5;
 
   // Begin Nonlinear Solver ************************************
@@ -142,7 +142,7 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 5);
   printParams.set("Output Processor", 0);
   if ( verbose )
@@ -188,12 +188,12 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 20);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 20);
   lsParams.set("Tolerance", 1e-4);
-  lsParams.set("Preconditioner", "None");   
+  lsParams.set("Preconditioner", "None");
   if( verbose )
-    lsParams.set("Output Frequency", 1);    
+    lsParams.set("Output Frequency", 1);
 
   // Sublist for Cauchy direction
   Teuchos::ParameterList& cauchyDirParams = nlParams.sublist("Cauchy Direction");
@@ -202,9 +202,9 @@ int main(int argc, char *argv[])
     sdParams.set("Scaling Type", "Quadratic Model Min");
 
   // Create the interface between the test problem and the nonlinear solver
-  Teuchos::RCP<Problem_Interface> interface = 
+  Teuchos::RCP<Problem_Interface> interface =
     Teuchos::rcp(new Problem_Interface(Problem));
-  
+
   // Create the Epetra_RowMatrix.  Uncomment one or more of the following:
   // 1. User supplied (Epetra_RowMatrix)
   Teuchos::RCP<Epetra_RowMatrix> A = Problem.getJacobian();
@@ -214,35 +214,35 @@ int main(int argc, char *argv[])
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
 
   // Create the Linear System
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, A, noxSoln));
+                              iReq, iJac, A, noxSoln));
 
   // Create the Group
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					noxSoln, 
-					linSys)); 
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams,
+                    iReq,
+                    noxSoln,
+                    linSys));
 
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> testNormF = 
+  Teuchos::RCP<NOX::StatusTest::NormF> testNormF =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-6));
-  Teuchos::RCP<NOX::StatusTest::MaxIters> testMaxIters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> testMaxIters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(25));
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
-    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR, 
-					    testNormF, testMaxIters));
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
+    Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR,
+                        testNormF, testMaxIters));
 
   // Create the method
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
   NOX::StatusTest::StatusType status = solver->solve();
 
   // Get the Epetra_Vector with the final solution from the solver
-  const NOX::Epetra::Group& finalGroup = 
+  const NOX::Epetra::Group& finalGroup =
       dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
-  const Epetra_Vector& finalSolution = 
+  const Epetra_Vector& finalSolution =
       (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
 
   // End Nonlinear Solver **************************************
@@ -250,7 +250,7 @@ int main(int argc, char *argv[])
   // Output the parameter list
   if (printing.isPrintType(NOX::Utils::Parameters)) {
     std::cout << std::endl << "Final Parameters" << std::endl
-	 << "****************" << std::endl;
+     << "****************" << std::endl;
     solver->getList().print(cout);
     std::cout << std::endl;
   }
@@ -287,7 +287,7 @@ int main(int argc, char *argv[])
 #ifdef HAVE_MPI
   MPI_Finalize() ;
 #endif
- 
+
   return testStatus;
 
 } // end main

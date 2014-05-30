@@ -48,7 +48,7 @@
 #include <new>
 #include "Teuchos_SerialQRDenseSolver.hpp"
 
-#include "Stokhos_Sacado_Kokkos_UQ_PCE.hpp"
+#include "Sacado_UQ_PCE.hpp"
 
 /*! \class Teuchos::SerialQRDenseSolver
   \brief Specialization for Sacado::UQ::PCE< Storage<...> >

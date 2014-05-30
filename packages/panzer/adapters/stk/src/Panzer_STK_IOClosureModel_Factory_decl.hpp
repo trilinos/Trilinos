@@ -89,6 +89,9 @@ namespace panzer_stk {
     //! Map showing which cell fields need to be written out for each element block
     std::map<std::string,std::vector<std::string> > blockIdToCellFields_;
 
+    //! Map showing which nodal fields need to be written out for each element block
+    std::map<std::string,std::vector<std::string> > blockIdToNodalFields_;
+
     /** Map stating if an evaluator for a particular block ID has been included.
       *
       * This is a bit of hack that is done to gurantee only one evaluator is

@@ -65,6 +65,7 @@
 #include "Kokkos_Atomic_MP_Vector.hpp"
 
 #include "Teuchos_SerialQRDenseSolver_MP_Vector.hpp"
+#include "Teuchos_LAPACK_MP_Vector.hpp"
 
 #endif // HAVE_STOKHOS_KOKKOSCORE
 

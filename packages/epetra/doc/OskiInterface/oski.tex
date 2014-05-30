@@ -1,10 +1,10 @@
 OSKI is a package used to perform optimized sparse matrix-vector operations.
 It provides both a statically tuned library created upon installation
-and dynamically tuned routines created at runtime.  
+and dynamically tuned routines created at runtime.
 OSKI provides support for single and double
 precision values of both real and complex types, along with indexing using both integer
 and long types.  When possible it follows the sparse BLAS standard \cite{IK:SBLAS}
- as closely as possible in defining operations and functions.  
+ as closely as possible in defining operations and functions.
 
 Before a matrix can use OSKI functionality, it first must be converted to the matrix
 type \IKcompfont{oski\_matrix\_t}.  To store a matrix as an \IKcompfont{oski\_matrix\_t} object, a create function
@@ -14,7 +14,7 @@ only make changes to the matrix's structure through the OSKI interface.  When a 
 copy is created, the matrix that was passed in can be edited by the user as desired.
 OSKI automatically makes a deep copy when any matrix is tuned in a manner that changes its structure.
 
-\begin{table}[htbp] 
+\begin{table}[htbp]
 \begin{center}
 \begin{tabular}{|l|l|}
 	\hline
@@ -28,7 +28,7 @@ Matrix Transpose Matrix-Vector Multiply & $y = \alpha A^TAx + \beta y$ or \\
  & $y = \alpha AA^Tx + \beta y$ \\ \hline
 Matrix Power Vector Multiply  & $y = \alpha A^px + \beta y$ or \\
  & $y = \alpha {A^T}^px + \beta y$\\ \hline
-Matrix-Vector Multiply and & $y = \alpha Ax + \beta y$ and \\ 
+Matrix-Vector Multiply and & $y = \alpha Ax + \beta y$ and \\
 Matrix Transpose Vector Multiply & $z = \omega Aw + \zeta z$ or \\
  & $z = \omega A^Tw + \zeta z$ \\
 	\hline
@@ -56,7 +56,7 @@ When an operation is called enough times to amortize the cost of rearranging the
 data structure, runtime tuning can be more profitable than using statically tuned
 functions.  OSKI provides multiple ways to invoke runtime tuning, along with multiple
 levels of tuning.  A user can explicitly ask for a matrix to always be tuned for a specific
-kernel by selecting either the moderate or aggressive tuning option.  If the user wishes for OSKI to 
+kernel by selecting either the moderate or aggressive tuning option.  If the user wishes for OSKI to
 decide whether enough calls to a function occur to justify tuning, hints can be used.
 Possible hints include telling OSKI the number of calls expected to the routine and information
 about the matrix, such as block structure or symmetry.  In either
@@ -69,7 +69,7 @@ if it expects the tuning cost to be recovered via future routine calls.
 
 OSKI can also save tuning transformations for later reuse.  Thus, the cost of tuning searches can be
 amortized over future runs.  Specifically, a search for the best tuning options does not need to be
-run again, and only the prescribed transformations need to be applied.  
+run again, and only the prescribed transformations need to be applied.
 
 OSKI is under active development.  As of this writing, the current version is 1.0.1h,
 with a multi-core version under development \cite{IK:Vuduc-convo}.

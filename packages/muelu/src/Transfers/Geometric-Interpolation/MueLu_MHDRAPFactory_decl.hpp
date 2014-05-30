@@ -108,7 +108,7 @@ namespace MueLu {
     //@}
 
     //! @name internal print methods.
-    static std::string PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
+//    static std::string PerfUtils::PrintMatrixInfo(const Matrix & Ac, const std::string & msgTag);
 
     static std::string PrintLoadBalancingInfo(const Matrix & Ac, const std::string & msgTag);
 

@@ -86,6 +86,38 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NOEXEPREFIX
 )
 
+TRIBITS_ADD_EXECUTABLE(
+  NntiPerfTest
+  SOURCES NntiPerfTest.cpp
+  NOEXEPREFIX
+)
+
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  NntiSelfSendTest
+#  SOURCES NntiSelfSendTest.cpp
+#  COMM serial mpi
+#  NOEXEPREFIX
+#)
+#
+#TRIBITS_ADD_EXECUTABLE_AND_TEST(
+#  NssiSelfSendTest
+#  SOURCES NssiSelfSendTest.cpp
+#  COMM serial mpi
+#  NOEXEPREFIX
+#)
+
+TRIBITS_ADD_EXECUTABLE(
+  NntiSelfSendTest
+  SOURCES NntiSelfSendTest.cpp
+  NOEXEPREFIX
+)
+
+TRIBITS_ADD_EXECUTABLE(
+  NssiSelfSendTest
+  SOURCES NssiSelfSendTest.cpp
+  NOEXEPREFIX
+)
+
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
   SignalTest
   SOURCES SignalTest.c

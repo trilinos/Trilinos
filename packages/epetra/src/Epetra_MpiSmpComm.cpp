@@ -1,10 +1,10 @@
 
 //@HEADER
 // ************************************************************************
-// 
-//               Epetra: Linear Algebra Services Package 
+//
+//               Epetra: Linear Algebra Services Package
 //                 Copyright 2011 Sandia Corporation
-// 
+//
 // Under the terms of Contract DE-AC04-94AL85000 with Sandia Corporation,
 // the U.S. Government retains certain rights in this software.
 //
@@ -35,8 +35,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Michael A. Heroux (maherou@sandia.gov) 
-// 
+// Questions? Contact Michael A. Heroux (maherou@sandia.gov)
+//
 // ************************************************************************
 //@HEADER
 
@@ -45,12 +45,12 @@
 
 
 //=============================================================================
-Epetra_MpiSmpComm::Epetra_MpiSmpComm(MPI_Comm Comm) 
-  : Epetra_Object("Epetra::MpiSmpComm"), 
+Epetra_MpiSmpComm::Epetra_MpiSmpComm(MPI_Comm Comm)
+  : Epetra_Object("Epetra::MpiSmpComm"),
     MpiSmpCommData_(Comm)
 {}
 //=============================================================================
-Epetra_MpiSmpComm::Epetra_MpiSmpComm(const Epetra_MpiSmpComm& Comm) : 
+Epetra_MpiSmpComm::Epetra_MpiSmpComm(const Epetra_MpiSmpComm& Comm) :
   Epetra_Object(Comm.Label()),
   MpiSmpCommData_(Comm.MpiSmpCommData_)
 {
@@ -88,12 +88,12 @@ int Epetra_MpiSmpComm::GatherAll(double * MyVals, double * AllVals, int Count) c
 }
 //=============================================================================
 int Epetra_MpiSmpComm::GatherAll(int * MyVals, int * AllVals, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, MpiSmpCommData->Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_INT, AllVals, Count, MPI_INT, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
 int Epetra_MpiSmpComm::GatherAll(long * MyVals, long * AllVals, int Count) const {
-  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG, AllVals, Count, MPI_LONG, MpiSmpCommData->Comm_)); 
+  EPETRA_CHK_ERR(MPI_Allgather(MyVals, Count, MPI_LONG, AllVals, Count, MPI_LONG, MpiSmpCommData->Comm_));
   return(0);
 }
 //=============================================================================
@@ -158,7 +158,7 @@ int Epetra_MpiSmpComm::ScanSum(long * MyVals, long * ScanSums, int Count) const 
 }
 //=============================================================================
 Epetra_Distributor * Epetra_MpiSmpComm:: CreateDistributor() const {
-  
+
   Epetra_MpiComm mpicomm(GetMpiComm());
   Epetra_Distributor * dist = dynamic_cast<Epetra_Distributor *>(new Epetra_MpiDistributor(mpicomm));
   return(dist);

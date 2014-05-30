@@ -93,6 +93,7 @@ int main(int argc, char *argv[]) {
 
   int  optNraps   = 5;  clp.setOption("nraps",                &optNraps,   "number of RAPS to perform");
   bool optTimings = true; clp.setOption("timings", "notimings", &optTimings, "print timings to screen");
+  bool optImplicitTranspose = true; clp.setOption("implicit", "explicit", &optImplicitTranspose, "whether to form R implicitly");
 
   switch (clp.parse(argc, argv)) {
   case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS; break;
@@ -166,24 +167,27 @@ int main(int argc, char *argv[]) {
     Level fineLevel, coarseLevel;
     RAPFactory AcFact;
     AcFact.DisableMultipleCallCheck();
+    RCP<SaPFactory>    PFact;
+    RCP<TransPFactory> RFact;
     {
       TimeMonitor tm(*TimeMonitor::getNewTimer("RAPScalingTest: 2 - Setup"));
 
       MueLuTests::TestHelpers::TestFactory<SC, LO, GO, NO, LMO>::createTwoLevelHierarchy(fineLevel, coarseLevel); // set a default FactoryManager
       fineLevel.Set("A", A);
 
-      RCP<SaPFactory>    PFact = rcp(new SaPFactory());
-      RCP<TransPFactory> RFact = rcp(new TransPFactory());
-      RFact->SetFactory("P", PFact);
-
+      PFact = rcp(new SaPFactory());
       coarseLevel.Request("P", PFact.get());
-      coarseLevel.Request("R", RFact.get());
-
       PFact->Build(fineLevel, coarseLevel);
-      RFact->Build(fineLevel, coarseLevel);
+
+      RFact = rcp(new TransPFactory());
+
+      ParameterList Aclist = *(AcFact.GetValidParameterList());
+      Aclist.set("implicit transpose", optImplicitTranspose);
+      AcFact.SetParameterList(Aclist);
 
       AcFact.SetFactory("P", PFact);
-      AcFact.SetFactory("R", RFact);
+      if (optImplicitTranspose==false)
+        AcFact.SetFactory("R", RFact);
     }
 
     RCP<Time> RAPKernelTimer = TimeMonitor::getNewTimer("RAPScalingTest: 3 - RAP kernel"); // re-use the same timer in the loop
@@ -192,9 +196,16 @@ int main(int argc, char *argv[]) {
       coarseLevel.Request("A", &AcFact);
       {
         TimeMonitor tm(*RAPKernelTimer);
+        if (optImplicitTranspose==false) {
+          RFact->SetFactory("P", PFact);
+          coarseLevel.Request("R", RFact.get());
+          RFact->Build(fineLevel, coarseLevel);
+        }
         RCP<Matrix> Ac = coarseLevel.Get< RCP<Matrix> >("A", &AcFact);
       }
       coarseLevel.Release("A", &AcFact);
+      if (optImplicitTranspose==false)
+        coarseLevel.Release("R", RFact.get());
     }
 
   } // end of globalTimeMonitor

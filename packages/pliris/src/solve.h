@@ -49,12 +49,12 @@
 
 #ifdef __cplusplus
 extern "C" {
-#endif 
+#endif
 
 void back_solve6(DATA_TYPE *, DATA_TYPE *);
 
 
 #ifdef __cplusplus
 }
-#endif 
-#endif 
+#endif
+#endif

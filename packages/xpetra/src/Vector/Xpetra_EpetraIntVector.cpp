@@ -122,7 +122,15 @@ namespace Xpetra {
     TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
   }
 
-  void EpetraIntVector::scale(const int &alpha) { XPETRA_MONITOR("EpetraIntVector::scale"); TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO"); }
+  void EpetraIntVector::scale(const int &alpha) {
+    XPETRA_MONITOR("EpetraIntVector::scale");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
+
+  void EpetraIntVector::scale (Teuchos::ArrayView< const int > alpha) {
+    XPETRA_MONITOR("EpetraIntVector::scale");
+    TEUCHOS_TEST_FOR_EXCEPTION(1, Xpetra::Exceptions::NotImplemented, "TODO");
+  }
 
   void EpetraIntVector::update(const int &alpha, const MultiVector<int,int,int> &A, const int &beta) {
     XPETRA_MONITOR("EpetraIntVector::update");
@@ -247,5 +255,39 @@ namespace Xpetra {
     int err = vec_->Export(v, *tExporter.getEpetra_Export(), toEpetra(CM));
     TEUCHOS_TEST_FOR_EXCEPTION(err != 0, std::runtime_error, "Catch error code returned by Epetra.");
   }
+
+  void EpetraIntVector::
+  assign (const MultiVector<Scalar, LocalOrdinal, GlobalOrdinal, Node>& rhs)
+  {
+    typedef EpetraIntVector this_type;
+    const this_type* rhsPtr = dynamic_cast<const this_type*> (&rhs);
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rhsPtr == NULL, std::invalid_argument, "Xpetra::MultiVector::operator=: "
+      "The left-hand side (LHS) of the assignment has a different type than "
+      "the right-hand side (RHS).  The LHS has type Xpetra::EpetraIntVector "
+      "(which means it wraps an Epetra_IntVector), but the RHS has some "
+      "other type.  This probably means that the RHS wraps either an "
+      "Tpetra::MultiVector, or an Epetra_MultiVector.  Xpetra::MultiVector "
+      "does not currently implement assignment from a Tpetra object to an "
+      "Epetra object, though this could be added with sufficient interest.");
+
+    RCP<const Epetra_IntVector> rhsImpl = rhsPtr->getEpetra_IntVector ();
+    RCP<Epetra_IntVector> lhsImpl = this->getEpetra_IntVector ();
+
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      rhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+      "(in Xpetra::EpetraIntVector::assign): *this (the right-hand side of "
+      "the assignment) has a null RCP<Epetra_IntVector> inside.  Please "
+      "report this bug to the Xpetra developers.");
+    TEUCHOS_TEST_FOR_EXCEPTION(
+      lhsImpl.is_null (), std::logic_error, "Xpetra::MultiVector::operator= "
+      "(in Xpetra::EpetraIntVector::assign): The left-hand side of the "
+      "assignment has a null RCP<Epetra_IntVector> inside.  Please report "
+      "this bug to the Xpetra developers.");
+
+    // Epetra_IntVector's assignment operator does a deep copy.
+    *lhsImpl = *rhsImpl;
+  }
+
 
 } // namespace Xpetra

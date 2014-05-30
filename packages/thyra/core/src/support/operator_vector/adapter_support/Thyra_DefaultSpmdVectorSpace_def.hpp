@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //    Thyra: Interfaces and Support for Abstract Numerical Algorithms
 //                 Copyright (2004) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,8 +34,8 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov) 
-// 
+// Questions? Contact Roscoe A. Bartlett (bartlettra@ornl.gov)
+//
 // ***********************************************************************
 // @HEADER
 
@@ -56,7 +56,7 @@ namespace Thyra {
 template<class Scalar>
 RCP<DefaultSpmdVectorSpace<Scalar> >
 DefaultSpmdVectorSpace<Scalar>::create()
-{ 
+{
   const RCP<DefaultSpmdVectorSpace<Scalar> > vs(new DefaultSpmdVectorSpace<Scalar>);
   vs->weakSelfPtr_ = vs.create_weak();
   return vs;
@@ -84,9 +84,9 @@ void DefaultSpmdVectorSpace<Scalar>::initialize(
 #endif
   comm_ = comm;
   localSubDim_ = localSubDim_in;
-  if (!is_null(comm)) {
-    numProc_ = size(*comm);
-    procRank_ = rank(*comm);
+  if (! comm.is_null ()) {
+    numProc_ = comm->getSize ();
+    procRank_ = comm->getRank ();
   }
   else {
     numProc_ = 1;

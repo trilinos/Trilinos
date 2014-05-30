@@ -1,12 +1,12 @@
 //@HEADER
 // ************************************************************************
-// 
+//
 //            NOX: An Object-Oriented Nonlinear Solver Package
 //                 Copyright (2002) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -34,7 +34,7 @@
 // NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
-// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or 
+// Questions? Contact Roger Pawlowski (rppawlo@sandia.gov) or
 // Eric Phipps (etphipp@sandia.gov), Sandia National Laboratories.
 // ************************************************************************
 //  CVS Information
@@ -44,7 +44,7 @@
 //  $Revision$
 // ************************************************************************
 //@HEADER
-                                                                    
+
 // 1D Transient Finite Element Test Problem
 /* Solves the nonlinear PDE for u(x,t):
 *
@@ -99,15 +99,15 @@
 #include "Epetra_LinearProblem.h"
 #include "AztecOO.h"
 
-// User's application specific files 
-#include "1DfemInterface.H" 
+// User's application specific files
+#include "1DfemInterface.H"
 
 using namespace std;
 
 // ------------------------------------------------------------------------
 // ------------------  Declaration with definition ------------------------
 // ------------------------------------------------------------------------
-class TransientInterface : public Interface 
+class TransientInterface : public Interface
 {
 
 public:
@@ -115,7 +115,7 @@ public:
   // ---------------------------
   // --------------- Constructor ------
   // ---------------------------
-  TransientInterface(int NumGlobalElements, Epetra_Comm& Comm, 
+  TransientInterface(int NumGlobalElements, Epetra_Comm& Comm,
                      double xmin = 0.0, double xmax = 1.0) :
     Interface(NumGlobalElements, Comm, xmin, xmax),
     oldSolution(0),
@@ -131,7 +131,7 @@ public:
   // --------------- Destructor ------
   // ---------------------------
   virtual ~TransientInterface()
-    { 
+    {
       delete oldSolution;
       if (exactSolution) delete exactSolution;
     };
@@ -139,10 +139,10 @@ public:
   // ---------------------------
   // --------------- Matrix and Residual Fills
   // ---------------------------
-  bool evaluate(NOX::Epetra::Interface::Required::FillType flag, 
-                const Epetra_Vector* soln, 
-  		Epetra_Vector* tmp_rhs, 
-  		Epetra_RowMatrix* tmp_matrix)
+  bool evaluate(NOX::Epetra::Interface::Required::FillType flag,
+                const Epetra_Vector* soln,
+          Epetra_Vector* tmp_rhs,
+          Epetra_RowMatrix* tmp_matrix)
   {
 
     //Determine what to fill (F or Jacobian)
@@ -155,9 +155,9 @@ public:
     else {
       fillMatrix = true;
     }
-  
+
     // "flag" can be used to determine how accurate your fill of F should be
-    // depending on why we are calling evaluate (Could be using computeF to 
+    // depending on why we are calling evaluate (Could be using computeF to
     // populate a Jacobian or Preconditioner).
     if (flag == NOX::Epetra::Interface::Required::Residual) {
       // Do nothing for now
@@ -171,45 +171,45 @@ public:
     else if (flag == NOX::Epetra::Interface::Required::User) {
       // Do nothing for now
     }
-  
-  
+
+
     // Create the overlapped solution and position vectors
     Epetra_Vector u(*OverlapMap);
     Epetra_Vector uold(*OverlapMap);
     Epetra_Vector xvec(*OverlapMap);
-  
+
     // Export Solution to Overlap vector
     u.Import(*soln, *Importer, Insert);
     uold.Import(*oldSolution, *Importer, Insert);
     xvec.Import(*xptr, *Importer, Insert);
-  
+
     // Declare required variables
     int ierr;
     int OverlapNumMyElements = OverlapMap->NumMyElements();
-  
+
     int OverlapMinMyGID;
     if (MyPID == 0) OverlapMinMyGID = StandardMap->MinMyGID();
     else OverlapMinMyGID = StandardMap->MinMyGID()-1;
-  
+
     int row, column;
     double jac;
     double xx[2];
     double uu[2];
     double uuold[2];
     Basis basis;
-  
+
     // Zero out the objects that will be filled
-    if (fillF) 
+    if (fillF)
       rhs->PutScalar(0.0);
-    if (fillMatrix) 
+    if (fillMatrix)
       jacobian->PutScalar(0.0);
-  
+
     // Loop Over # of Finite Elements on Processor
     for (int ne=0; ne < OverlapNumMyElements-1; ne++) {
-      
+
       // Loop Over Gauss Points
       for(int gp=0; gp < 2; gp++) {
-        // Get the solution and coordinates at the nodes 
+        // Get the solution and coordinates at the nodes
         xx[0]=xvec[ne];
         xx[1]=xvec[ne+1];
         uu[0]=u[ne];
@@ -218,46 +218,46 @@ public:
         uuold[1]=uold[ne+1];
         // Calculate the basis function at the gauss point
         basis.computeBasis(gp, xx, uu, uuold);
-  	            
+
         // Loop over Nodes in Element
         for (int i=0; i< 2; i++) {
-  	row=OverlapMap->GID(ne+i);
-  	//printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
-  	//     MyPID, row, ne+i,StandardMap.MyGID(row));
-  	if (StandardMap->MyGID(row)) {
-  	  if (fillF) {
+      row=OverlapMap->GID(ne+i);
+      //printf("Proc=%d GlobalRow=%d LocalRow=%d Owned=%d\n",
+      //     MyPID, row, ne+i,StandardMap.MyGID(row));
+      if (StandardMap->MyGID(row)) {
+        if (fillF) {
             (*rhs)[StandardMap->LID(OverlapMap->GID(ne+i))]+=
               +basis.wt*basis.dx*(
                 (basis.uu-basis.uuold)/dt*basis.phi[i] +
                 (1.0/(basis.dx*basis.dx))*basis.duu*basis.dphide[i] -
                 8.0/factor/factor*basis.uu*basis.uu*
                 (1.0-basis.uu)*basis.phi[i]);
-  	  }
-  	}
-  	// Loop over Trial Functions
-  	if (fillMatrix) {
-  	  for(int j=0;j < 2; j++) {
-  	    if (StandardMap->MyGID(row)) {
-  	      column=OverlapMap->GID(ne+j);
+        }
+      }
+      // Loop over Trial Functions
+      if (fillMatrix) {
+        for(int j=0;j < 2; j++) {
+          if (StandardMap->MyGID(row)) {
+            column=OverlapMap->GID(ne+j);
               jac=basis.wt*basis.dx*(
                 basis.phi[j]/dt*basis.phi[i] +
-	        (1.0/(basis.dx*basis.dx))*
+            (1.0/(basis.dx*basis.dx))*
                 basis.dphide[j]*basis.dphide[i] -
                 8.0/factor/factor*
                 (2.0*basis.uu-3.0*basis.uu*basis.uu)*
                 basis.phi[j]*basis.phi[i]);
-  	      ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
-  	    }
-  	  }
-  	}
+            ierr=jacobian->SumIntoGlobalValues(row, 1, &jac, &column);
+          }
         }
       }
-    } 
-  
+        }
+      }
+    }
+
     // Insert Boundary Conditions and modify Jacobian and function (F)
     // U(0)=1
     if (MyPID==0) {
-      if (fillF) 
+      if (fillF)
         (*rhs)[0]= (*soln)[0] - 1.0;
       if (fillMatrix) {
         column=0;
@@ -287,9 +287,9 @@ public:
 
     // Sync up processors to be safe
     Comm->Barrier();
-   
+
     jacobian->FillComplete();
-  
+
     return true;
   }
 
@@ -299,7 +299,7 @@ public:
   bool initializeSoln()
   {
     Epetra_Vector& x = *xptr;
-  
+
     double arg;
     for(int i=0; i<NumMyElements; i++) {
       arg = x[i]/factor;
@@ -311,7 +311,7 @@ public:
 
   // Reset problem for next parameter (time) step.
   // For now, this simply updates oldsoln with the given Epetra_Vector
-  bool reset(const Epetra_Vector& x) 
+  bool reset(const Epetra_Vector& x)
     { *oldSolution = x;  return true; };
 
   // Return a reference to the Epetra_Vector with the old solution
@@ -319,11 +319,11 @@ public:
     { return *oldSolution; };
 
   // ---------------------------
-  // --------------- Return a reference to the Epetra_Vector 
+  // --------------- Return a reference to the Epetra_Vector
   // --------------- with the exact analytic solution
   // ---------------------------
   Epetra_Vector& getExactSoln(double time)
-    {  
+    {
       // Create the exact solution vector only if needed and if not already
       // created.
       if( !exactSolution )
@@ -332,7 +332,7 @@ public:
       Epetra_Vector& x = *xptr;
 
       for(int i=0; i<NumMyElements; i++)
-        (*exactSolution)[i] = 
+        (*exactSolution)[i] =
           (1.0 - tanh( (x[i]-2.0*time/factor)/factor )) / 2.0;
 
       return *exactSolution;
@@ -340,13 +340,13 @@ public:
 
   // Accesor function for setting time step
   void setdt( double dt_ ) { dt = dt_; }
-  
+
   // Accesor function for time obtaining step
   double getdt() { return dt; }
-  
+
 private:
 
-  double dt; 	// Time step size
+  double dt;     // Time step size
 
   Epetra_Vector *oldSolution;
   Epetra_Vector *exactSolution;
@@ -359,7 +359,7 @@ private:
 // ------------------------------------------------------------------------
 int main(int argc, char *argv[])
 {
- 
+
   // Initialize MPI
 #ifdef HAVE_MPI
   MPI_Init(&argc,&argv);
@@ -378,8 +378,8 @@ int main(int argc, char *argv[])
 
   bool verbose = false;
   // Check for verbose output
-  if (argc>1) 
-    if (argv[1][0]=='-' && argv[1][1]=='v') 
+  if (argc>1)
+    if (argv[1][0]=='-' && argv[1][1]=='v')
       verbose = true;
 
   // Get the number of elements from the command line
@@ -388,20 +388,20 @@ int main(int argc, char *argv[])
     NumGlobalElements = atoi(argv[2]) + 1;
   else if ((argc > 1) && (!verbose))
     NumGlobalElements = atoi(argv[1]) + 1;
-  else 
+  else
     NumGlobalElements = 101;
 
-  // The number of unknowns must be at least equal to the 
+  // The number of unknowns must be at least equal to the
   // number of processors.
   if (NumGlobalElements < NumProc) {
-    std::cout << "numGlobalBlocks = " << NumGlobalElements 
-	 << " cannot be < number of processors = " << NumProc << std::endl;
+    std::cout << "numGlobalBlocks = " << NumGlobalElements
+     << " cannot be < number of processors = " << NumProc << std::endl;
     throw "NOX Error";
   }
 
   // Create the interface between NOX and the application
   // This object is derived from NOX::Epetra::Interface
-  Teuchos::RCP<TransientInterface> interface = 
+  Teuchos::RCP<TransientInterface> interface =
     Teuchos::rcp(new TransientInterface(NumGlobalElements, Comm, -20.0, 20.0));
   double dt = 0.10;
   interface->setdt(dt);
@@ -425,27 +425,27 @@ int main(int argc, char *argv[])
 
   // Set the printing parameters in the "Printing" sublist
   Teuchos::ParameterList& printParams = nlParams.sublist("Printing");
-  printParams.set("MyPID", MyPID); 
+  printParams.set("MyPID", MyPID);
   printParams.set("Output Precision", 3);
   printParams.set("Output Processor", 0);
   if (verbose)
-    printParams.set("Output Information", 
-			     NOX::Utils::OuterIteration + 
-			     NOX::Utils::OuterIterationStatusTest + 
-			     NOX::Utils::InnerIteration +
-			     NOX::Utils::LinearSolverDetails +
-			     NOX::Utils::Parameters + 
-			     NOX::Utils::Details + 
-			     NOX::Utils::Warning +
+    printParams.set("Output Information",
+                 NOX::Utils::OuterIteration +
+                 NOX::Utils::OuterIterationStatusTest +
+                 NOX::Utils::InnerIteration +
+                 NOX::Utils::LinearSolverDetails +
+                 NOX::Utils::Parameters +
+                 NOX::Utils::Details +
+                 NOX::Utils::Warning +
                              NOX::Utils::Debug +
-			     NOX::Utils::Error);
+                 NOX::Utils::Error);
   else
     printParams.set("Output Information", NOX::Utils::Error);
 
   // Create a print class for controlling output below
   NOX::Utils utils(printParams);
 
-  // Sublist for line search 
+  // Sublist for line search
   Teuchos::ParameterList& searchParams = nlParams.sublist("Line Search");
   searchParams.set("Method", "Full Step");
 
@@ -457,9 +457,9 @@ int main(int argc, char *argv[])
 
   // Sublist for linear solver for the Newton method
   Teuchos::ParameterList& lsParams = newtonParams.sublist("Linear Solver");
-  lsParams.set("Aztec Solver", "GMRES");  
-  lsParams.set("Max Iterations", 800);  
-  lsParams.set("Tolerance", 1e-4);  
+  lsParams.set("Aztec Solver", "GMRES");
+  lsParams.set("Max Iterations", 800);
+  lsParams.set("Tolerance", 1e-4);
   lsParams.set("Preconditioner", "AztecOO");
 
   // Create all possible Epetra_Operators.
@@ -470,23 +470,23 @@ int main(int argc, char *argv[])
   // Four constructors to create the Linear System
   Teuchos::RCP<NOX::Epetra::Interface::Required> iReq = interface;
   Teuchos::RCP<NOX::Epetra::Interface::Jacobian> iJac = interface;
-  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys = 
+  Teuchos::RCP<NOX::Epetra::LinearSystemAztecOO> linSys =
     Teuchos::rcp(new NOX::Epetra::LinearSystemAztecOO(printParams, lsParams,
-						      iReq, iJac, Analytic, 
-						      noxSoln));
+                              iReq, iJac, Analytic,
+                              noxSoln));
 
   // Create the Group
-  Teuchos::RCP<NOX::Epetra::Group> grpPtr = 
-    Teuchos::rcp(new NOX::Epetra::Group(printParams, 
-					iReq, 
-					noxSoln, 
-					linSys));  
+  Teuchos::RCP<NOX::Epetra::Group> grpPtr =
+    Teuchos::rcp(new NOX::Epetra::Group(printParams,
+                    iReq,
+                    noxSoln,
+                    linSys));
   NOX::Epetra::Group& grp = *(grpPtr.get());
 
   // Create the convergence tests
-  Teuchos::RCP<NOX::StatusTest::NormF> absresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> absresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(1.0e-8));
-  Teuchos::RCP<NOX::StatusTest::NormF> relresid = 
+  Teuchos::RCP<NOX::StatusTest::NormF> relresid =
     Teuchos::rcp(new NOX::StatusTest::NormF(grp, 1.0e-2));
   Teuchos::RCP<NOX::StatusTest::NormUpdate> update =
     Teuchos::rcp(new NOX::StatusTest::NormUpdate(1.0e-5));
@@ -498,11 +498,11 @@ int main(int argc, char *argv[])
   converged->addStatusTest(relresid);
   converged->addStatusTest(wrms);
   converged->addStatusTest(update);
-  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters = 
+  Teuchos::RCP<NOX::StatusTest::MaxIters> maxiters =
     Teuchos::rcp(new NOX::StatusTest::MaxIters(20));
   Teuchos::RCP<NOX::StatusTest::FiniteValue> fv =
     Teuchos::rcp(new NOX::StatusTest::FiniteValue);
-  Teuchos::RCP<NOX::StatusTest::Combo> combo = 
+  Teuchos::RCP<NOX::StatusTest::Combo> combo =
     Teuchos::rcp(new NOX::StatusTest::Combo(NOX::StatusTest::Combo::OR));
   combo->addStatusTest(fv);
   combo->addStatusTest(converged);
@@ -527,7 +527,7 @@ int main(int argc, char *argv[])
 #endif
 
   // Create the solver
-  Teuchos::RCP<NOX::Solver::Generic> solver = 
+  Teuchos::RCP<NOX::Solver::Generic> solver =
     NOX::Solver::buildSolver(grpPtr, combo, nlParamsPtr);
 
   // Overall status flag
@@ -539,7 +539,7 @@ int main(int argc, char *argv[])
     time += dt;
 
     utils.out() << "Time Step: " << timeStep << ",\tTime: " << time << std::endl;
-  
+
     NOX::StatusTest::StatusType status = solver->solve();
 
     // Check for convergence
@@ -549,12 +549,12 @@ int main(int argc, char *argv[])
           utils.out() << "Nonlinear solver failed to converge!" << std::endl;
     }
 
-    
+
     // Get the Epetra_Vector with the final solution from the solver
     const NOX::Epetra::Group& finalGroup = dynamic_cast<const NOX::Epetra::Group&>(solver->getSolutionGroup());
     const Epetra_Vector& finalSolution = (dynamic_cast<const NOX::Epetra::Vector&>(finalGroup.getX())).getEpetraVector();
     //Epetra_Vector& exactSolution = interface->getExactSoln(time);
-    
+
 
     // End Nonlinear Solver **************************************
 
@@ -578,14 +578,14 @@ int main(int argc, char *argv[])
   // Output the parameter list
   if (utils.isPrintType(NOX::Utils::Parameters)) {
     utils.out() << std::endl << "Final Parameters" << std::endl
-	 << "****************" << std::endl;
+     << "****************" << std::endl;
     solver->getList().print(utils.out());
     utils.out() << std::endl;
   }
 
   // Test for convergence
-  
-#ifndef HAVE_MPI 
+
+#ifndef HAVE_MPI
   // 1. Linear solve iterations on final time step (30)- SERIAL TEST ONLY!
   //    The number of linear iterations changes with # of procs.
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Direction").sublist("Newton").sublist("Linear Solver").sublist("Output").get("Total Number of Linear Iterations",0) != 30) {
@@ -596,10 +596,10 @@ int main(int argc, char *argv[])
   if (const_cast<Teuchos::ParameterList&>(solver->getList()).sublist("Output").get("Nonlinear Iterations", 0) != 3)
     ierr = 2;
 
-  // Summarize test results  
+  // Summarize test results
   if (ierr == 0)
     utils.out() << "Test passed!" << std::endl;
-  else 
+  else
     utils.out() << "Test failed!" << std::endl;
 
 #ifdef HAVE_MPI

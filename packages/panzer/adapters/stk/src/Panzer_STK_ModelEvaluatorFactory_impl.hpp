@@ -166,6 +166,7 @@ namespace panzer_stk {
       pl->sublist("Output").set("Write to Exodus",true);
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
+      pl->sublist("Output").sublist("Nodal Quantities").disableRecursiveValidation();
 
       // Assembly sublist
       {
@@ -324,6 +325,21 @@ namespace panzer_stk {
 
        for(std::size_t i=0;i<tokens.size();i++)
           mesh->addCellField(tokens[i],blockId);
+    }
+
+    // register ndoal quantities
+    Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
+        itr!=nodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh->addSolutionField(tokens[i],blockId);
     }
 
     // finish building mesh, set required field variables and mesh bulk data
@@ -821,13 +837,17 @@ namespace panzer_stk {
 	std::set<panzer::StrPureBasisPair,panzer::StrPureBasisComp>::const_iterator fieldItr;
 	for (fieldItr=fieldNames.begin();fieldItr!=fieldNames.end();++fieldItr) {
 
-          if(fieldItr->second->isScalarBasis()) {
-	    mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
+          if(fieldItr->second->isScalarBasis() &&  
+             fieldItr->second->getElementSpace()==panzer::PureBasis::CONST) {
+             mesh.addCellField(fieldItr->first,pb->elementBlockID());
+          }
+          else if(fieldItr->second->isScalarBasis()) {
+             mesh.addSolutionField(fieldItr->first,pb->elementBlockID());
           }
           else if(fieldItr->second->isVectorBasis()) {
             std::string d_mod[3] = {"X","Y","Z"};
             for(int d=0;d<fieldItr->second->dimension();d++) 
-	      mesh.addCellField(fieldItr->first+d_mod[d],pb->elementBlockID());
+              mesh.addCellField(fieldItr->first+d_mod[d],pb->elementBlockID());
           }
           else { TEUCHOS_ASSERT(false); }
 

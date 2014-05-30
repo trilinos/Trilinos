@@ -272,6 +272,9 @@ int read_mesh_params(const std::string &exo_file,
       return 0;
     }
 
+    if (num_elems == 0)
+      continue;
+    
     if(cnt == 0)
       sphere->end[0] = num_elems;
 
@@ -388,6 +391,8 @@ int read_mesh(const std::string &exo_file,
 	Gen_Error(0, "fatal: unable to read element block");
 	return 0;
       }
+    if (el_blk_cnts[cnt] == 0)
+      continue;
 
     blk_elem_type = get_elem_type(elem_type, nodes_per_elem, mesh->num_dims);
 

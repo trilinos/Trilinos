@@ -82,7 +82,7 @@ enum {
 class assert_context {
     typedef std::string string;
 public:
-    assert_context() : level_( lvl_debug) {
+    assert_context() : line_(0), level_( lvl_debug) {
     }
 
     // where the assertion failed: file & line

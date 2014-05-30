@@ -99,7 +99,7 @@ public:
 // Technically speaking, the static functions on RCPNodeTracer that use this
 // data might be called from other translation units in pre-main code before
 // this translation unit gets initialized.  By using functions returning
-// references to local static varible trick, we ensure that these objects are
+// references to local static variable trick, we ensure that these objects are
 // always initialized before they are used, no matter what.
 //
 // These could have been static functions on RCPNodeTracer but the advantage

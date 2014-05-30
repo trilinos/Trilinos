@@ -49,11 +49,13 @@
 *
 *
 *****************************************************************************/
-#include <stdio.h>
-#include <stdlib.h>
+#include <stddef.h>                     // for size_t
+#include <stdio.h>                      // for sprintf, fprintf, stderr
+#include <sys/types.h>                  // for int64_t
+#include "exodusII.h"                   // for exerrval, ex_err, etc
+#include "exodusII_int.h"               // for EX_FATAL, DIM_NUM_NODES, etc
+#include "netcdf.h"                     // for NC_NOERR, nc_get_vara_int, etc
 
-#include "exodusII.h"
-#include "exodusII_int.h"
 
 /*
  *  reads the node numbering map from the database

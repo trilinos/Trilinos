@@ -18,3 +18,8 @@ IF (Stokhos_ENABLE_KokkosLinAlg)
 ENDIF()
 ADD_SUBDIRECTORY(CuspSpMM)
 ADD_SUBDIRECTORY(CuspAMG)
+IF (Stokhos_ENABLE_Sacado AND
+    Stokhos_ENABLE_KokkosCore AND
+    Stokhos_ENABLE_KokkosLinAlg)
+  ADD_SUBDIRECTORY(MPAssembly)
+ENDIF()

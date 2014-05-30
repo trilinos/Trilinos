@@ -7,11 +7,12 @@ TRIBITS_INCLUDE_DIRECTORIES(${PROJECT_BINARY_DIR}/packages/tpetra/src)
 TRIBITS_INCLUDE_DIRECTORIES(REQUIRED_DURING_INSTALLATION_TESTING ${CMAKE_CURRENT_SOURCE_DIR}/helpers)
 
 ADD_SUBDIRECTORIES(
-order
+unit
 partition
+order
+color
 scaling
 correctness
-unit
 temp
 driver
 )

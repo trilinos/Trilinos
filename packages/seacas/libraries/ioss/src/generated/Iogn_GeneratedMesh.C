@@ -31,18 +31,19 @@
 // OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
 #include <generated/Iogn_GeneratedMesh.h>
-#include <Ioss_EntityType.h>
-#include <tokenize.h>
+#include <Ioss_EntityType.h>            // for EntityType, etc
+#include <assert.h>                     // for assert
+#include <sys/types.h>                  // for ssize_t
+#include <tokenize.h>                   // for tokenize
+#include <cmath>                        // for atan2, cos, sin
+#include <cstdlib>                      // for strtod, NULL, strtol, exit, etc
+#include <cstring>                      // for memcpy
+#include <iomanip>                      // for operator<<, setw
+#include <iostream>                     // for operator<<, basic_ostream, etc
+#include <string>                       // for string, operator==, etc
+#include <vector>                       // for vector
 
-#include <cmath>
-#include <cstring>
-#include <cstdlib>
 
-#include <vector>
-#include <string>
-#include <iostream>
-#include <iomanip>
-#include <assert.h>
 
 namespace Iogn {
   GeneratedMesh::GeneratedMesh(int64_t num_x, int64_t num_y, int64_t num_z,
@@ -689,7 +690,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(Int64Vector &map)
+  void GeneratedMesh::node_map(Int64Vector &map) const
   {
     int64_t count = node_count_proc();
     map.reserve(count);
@@ -699,7 +700,7 @@ namespace Iogn {
     }
   }
 
-  void GeneratedMesh::node_map(IntVector &map)
+  void GeneratedMesh::node_map(IntVector &map) const
   {
     int count = node_count_proc();
     map.resize(count);

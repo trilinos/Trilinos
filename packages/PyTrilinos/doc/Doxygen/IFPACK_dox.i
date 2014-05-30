@@ -33,36 +33,41 @@ among the processes.
 
 The first argument can assume the following values:  \"point
 relaxation\" : returns an instance of
-Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation>
+Ifpack_AdditiveSchwarz<Ifpack_PointRelaxation> (no Additive Schwarz in
+serial)
 
 \"point relaxation stand-alone\" : returns an instance of
 Ifpack_PointRelaxation (value of overlap is ignored).
 
 \"block relaxation\" : returns an instance of
-Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation>
+Ifpack_AdditiveSchwarz<Ifpack_BlockRelaxation> (no Additive Schwarz in
+serial)
 
 \"block relaxation stand-alone)\" : returns an instance of
 Ifpack_BlockRelaxation.
 
 \"Amesos\" : returns an instance of
-Ifpack_AdditiveSchwarz<Ifpack_Amesos>.
+Ifpack_AdditiveSchwarz<Ifpack_Amesos> (no Additive Schwarz in serial)
 
 \"Amesos stand-alone\" : returns an instance of Ifpack_Amesos.
 
-\"IC\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC>.
+\"IC\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_IC> (no
+Additive Schwarz in serial)
 
-\"IC stand-alone\" : returns an instance of
-Ifpack_AdditiveSchwarz<Ifpack_IC>.
+\"IC stand-alone\" : returns an instance of Ifpack_IC.
 
-\"ICT\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT>.
+\"ICT\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ICT>
+(no Additive Schwarz in serial)
 
 \"ICT stand-alone\" : returns an instance of Ifpack_ICT.
 
-\"ILU\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILU>.
+\"ILU\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILU>
+(no Additive Schwarz in serial)
 
 \"ILU stand-alone\" : returns an instance of Ifpack_ILU.
 
-\"ILUT\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT>.
+\"ILUT\" : returns an instance of Ifpack_AdditiveSchwarz<Ifpack_ILUT>
+(no Additive Schwarz in serial)
 
 \"ILUT stand-alone\" : returns an instance of Ifpack_ILUT.
 
@@ -80,7 +85,7 @@ C++ includes: Ifpack.h ";
 
 %feature("docstring")  Ifpack::Create "Ifpack_Preconditioner *
 Ifpack::Create(const string PrecType, Epetra_RowMatrix *Matrix, const
-int overlap=0)
+int overlap=0, bool overrideSerialDefault=false)
 
 Creates an instance of Ifpack_Preconditioner given the string name of
 the preconditioner type (can fail with bad input).
@@ -932,7 +937,7 @@ double Ifpack_BlockRelaxation< T >::Condest() const
 Returns the computed condition number estimate, or -1.0 if not
 computed. ";
 
-%feature("docstring")  Ifpack_BlockRelaxation::Print "std::ostream&
+%feature("docstring")  Ifpack_BlockRelaxation::Print "ostream &
 Ifpack_BlockRelaxation< T >::Print(std::ostream &os) const
 
 Prints basic information on iostream. This function is used by
@@ -1448,401 +1453,6 @@ Ifpack_CrsGraph::ExtractRowCopy(int Row, int LenOfIndices, int
 &NumIndices, int *&Indices) const =0 ";
 
 
-// File: classIfpack__CrsIct.xml
-%feature("docstring") Ifpack_CrsIct "
-
-Ifpack_CrsIct: A class for constructing and using an incomplete
-Cholesky factorization of a given Epetra_CrsMatrix.
-
-The Ifpack_CrsIct class computes a threshold based incomplete LDL^T
-factorization of a given Epetra_CrsMatrix. The factorization that is
-produced is a function of several parameters: Maximum number of
-entries per row/column in factor - The factorization will contain at
-most this number of nonzero terms in each row/column of the
-factorization.
-
-Diagonal perturbation - Prior to computing the factorization, it is
-possible to modify the diagonal entries of the matrix for which the
-factorization will be computing. If the absolute and relative
-perturbation values are zero and one, respectively, the factorization
-will be compute for the original user matrix A. Otherwise, the
-factorization will computed for a matrix that differs from the
-original user matrix in the diagonal values only. Below we discuss the
-details of diagonal perturbations. The absolute and relative threshold
-values are set by calling SetAbsoluteThreshold() and
-SetRelativeThreshold(), respectively.
-
-Estimating Preconditioner Condition Numbers
-
-For ill-conditioned matrices, we often have difficulty computing
-usable incomplete factorizations. The most common source of problems
-is that the factorization may encounter a small or zero pivot, in
-which case the factorization can fail, or even if the factorization
-succeeds, the factors may be so poorly conditioned that use of them in
-the iterative phase produces meaningless results. Before we can fix
-this problem, we must be able to detect it. To this end, we use a
-simple but effective condition number estimate for $(LU)^{-1}$.
-
-The condition of a matrix $B$, called $cond_p(B)$, is defined as
-$cond_p(B) = \\\\|B\\\\|_p\\\\|B^{-1}\\\\|_p$ in some appropriate norm
-$p$. $cond_p(B)$ gives some indication of how many accurate floating
-point digits can be expected from operations involving the matrix and
-its inverse. A condition number approaching the accuracy of a given
-floating point number system, about 15 decimal digits in IEEE double
-precision, means that any results involving $B$ or $B^{-1}$ may be
-meaningless.
-
-The $\\\\infty$-norm of a vector $y$ is defined as the maximum of the
-absolute values of the vector entries, and the $\\\\infty$-norm of a
-matrix C is defined as $\\\\|C\\\\|_\\\\infty =
-\\\\max_{\\\\|y\\\\|_\\\\infty = 1} \\\\|Cy\\\\|_\\\\infty$. A crude
-lower bound for the $cond_\\\\infty(C)$ is
-$\\\\|C^{-1}e\\\\|_\\\\infty$ where $e = (1, 1, \\\\ldots, 1)^T$. It
-is a lower bound because $cond_\\\\infty(C) =
-\\\\|C\\\\|_\\\\infty\\\\|C^{-1}\\\\|_\\\\infty \\\\ge
-\\\\|C^{-1}\\\\|_\\\\infty \\\\ge |C^{-1}e\\\\|_\\\\infty$.
-
-For our purposes, we want to estimate $cond_\\\\infty(LU)$, where $L$
-and $U$ are our incomplete factors. Edmond in his Ph.D. thesis
-demonstrates that $\\\\|(LU)^{-1}e\\\\|_\\\\infty$ provides an
-effective estimate for $cond_\\\\infty(LU)$. Furthermore, since
-finding $z$ such that $LUz = y$ is a basic kernel for applying the
-preconditioner, computing this estimate of $cond_\\\\infty(LU)$ is
-performed by setting $y = e$, calling the solve kernel to compute $z$
-and then computing $\\\\|z\\\\|_\\\\infty$.
-
-A priori Diagonal Perturbations
-
-Given the above method to estimate the conditioning of the incomplete
-factors, if we detect that our factorization is too ill-conditioned we
-can improve the conditioning by perturbing the matrix diagonal and
-restarting the factorization using this more diagonally dominant
-matrix. In order to apply perturbation, prior to starting the
-factorization, we compute a diagonal perturbation of our matrix $A$
-and perform the factorization on this perturbed matrix. The overhead
-cost of perturbing the diagonal is minimal since the first step in
-computing the incomplete factors is to copy the matrix $A$ into the
-memory space for the incomplete factors. We simply compute the
-perturbed diagonal at this point.
-
-The actual perturbation values we use are the diagonal values $(d_1,
-d_2, \\\\ldots, d_n)$ with $d_i = sgn(d_i)\\\\alpha + d_i\\\\rho$,
-$i=1, 2, \\\\ldots, n$, where $n$ is the matrix dimension and
-$sgn(d_i)$ returns the sign of the diagonal entry. This has the effect
-of forcing the diagonal values to have minimal magnitude of
-$\\\\alpha$ and to increase each by an amount proportional to
-$\\\\rho$, and still keep the sign of the original diagonal entry.
-
-Constructing Ifpack_CrsIct objects
-
-Constructing Ifpack_CrsIct objects is a multi-step process. The basic
-steps are as follows: Create Ifpack_CrsIct instance, including
-storage, via constructor.
-
-Enter values via one or more Put or SumInto functions.
-
-Complete construction via FillComplete call.
-
-Note that, even after a matrix is constructed, it is possible to
-update existing matrix entries. It is not possible to create new
-entries.
-
-Counting Floating Point Operations
-
-Each Ifpack_CrsIct object keep track of the number of serial floating
-point operations performed using the specified object as the this
-argument to the function. The Flops() function returns this number as
-a double precision number. Using this information, in conjunction with
-the Epetra_Time class, one can get accurate parallel performance
-numbers. The ResetFlops() function resets the floating point counter.
-
-WARNING:  A Epetra_Map is required for the Ifpack_CrsIct constructor.
-
-C++ includes: Ifpack_CrsIct.h ";
-
-%feature("docstring")  Ifpack_CrsIct::Label "const char*
-Ifpack_CrsIct::Label() const
-
-Returns a character string describing the operator. ";
-
-%feature("docstring")  Ifpack_CrsIct::SetUseTranspose "int
-Ifpack_CrsIct::SetUseTranspose(bool UseTranspose_in)
-
-If set true, transpose of this operator will be applied.
-
-This flag allows the transpose of the given operator to be used
-implicitly. Setting this flag affects only the Apply() and
-ApplyInverse() methods. If the implementation of this interface does
-not support transpose use, this method should return a value of -1.
-
-Parameters:
------------
-
-In:  UseTranspose_in -If true, multiply by the transpose of operator,
-otherwise just use operator.
-
-Always returns 0. ";
-
-%feature("docstring")  Ifpack_CrsIct::Apply "int
-Ifpack_CrsIct::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
-&Y) const
-
-Returns the result of a Epetra_Operator applied to a
-Epetra_MultiVector X in Y.
-
-Note that this implementation of Apply does NOT perform a forward back
-solve with the LDU factorization. Instead it applies these operators
-via multiplication with U, D and L respectively. The ApplyInverse()
-method performs a solve.
-
-Parameters:
------------
-
-In:  X - A Epetra_MultiVector of dimension NumVectors to multiply with
-matrix.
-
-Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
-result.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Ifpack_CrsIct::ApplyInverse "int
-Ifpack_CrsIct::ApplyInverse(const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Returns the result of a Epetra_Operator inverse applied to an
-Epetra_MultiVector X in Y.
-
-In this implementation, we use several existing attributes to
-determine how virtual method ApplyInverse() should call the concrete
-method Solve(). We pass in the UpperTriangular(), the
-Epetra_CrsMatrix::UseTranspose(), and NoDiagonal() methods. The most
-notable warning is that if a matrix has no diagonal values we assume
-that there is an implicit unit diagonal that should be accounted for
-when doing a triangular solve.
-
-Parameters:
------------
-
-In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
-
-Out:  Y -A Epetra_MultiVector of dimension NumVectors containing
-result.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Ifpack_CrsIct::NormInf "double
-Ifpack_CrsIct::NormInf() const
-
-Returns 0.0 because this class cannot compute Inf-norm. ";
-
-%feature("docstring")  Ifpack_CrsIct::HasNormInf "bool
-Ifpack_CrsIct::HasNormInf() const
-
-Returns false because this class cannot compute an Inf-norm. ";
-
-%feature("docstring")  Ifpack_CrsIct::UseTranspose "bool
-Ifpack_CrsIct::UseTranspose() const
-
-Returns the current UseTranspose setting. ";
-
-%feature("docstring")  Ifpack_CrsIct::OperatorDomainMap "const
-Epetra_Map& Ifpack_CrsIct::OperatorDomainMap() const
-
-Returns the Epetra_Map object associated with the domain of this
-operator. ";
-
-%feature("docstring")  Ifpack_CrsIct::OperatorRangeMap "const
-Epetra_Map& Ifpack_CrsIct::OperatorRangeMap() const
-
-Returns the Epetra_Map object associated with the range of this
-operator. ";
-
-%feature("docstring")  Ifpack_CrsIct::Comm "const Epetra_Comm&
-Ifpack_CrsIct::Comm() const
-
-Returns the Epetra_BlockMap object associated with the range of this
-matrix operator. ";
-
-%feature("docstring")  Ifpack_CrsIct::Ifpack_CrsIct "Ifpack_CrsIct::Ifpack_CrsIct(const Epetra_CrsMatrix &A, double
-Droptol=1.0E-4, int Lfil=20)
-
-Ifpack_CrsIct constuctor with variable number of indices per row.
-
-Creates a Ifpack_CrsIct object and allocates storage.
-
-Parameters:
------------
-
-In:  A - User matrix to be factored.
-
-In:  Graph - Graph generated by Ifpack_IlukGraph. ";
-
-%feature("docstring")  Ifpack_CrsIct::Ifpack_CrsIct "Ifpack_CrsIct::Ifpack_CrsIct(const Ifpack_CrsIct &IctOperator)
-
-Copy constructor. ";
-
-%feature("docstring")  Ifpack_CrsIct::~Ifpack_CrsIct "Ifpack_CrsIct::~Ifpack_CrsIct()
-
-Ifpack_CrsIct Destructor. ";
-
-%feature("docstring")  Ifpack_CrsIct::SetAbsoluteThreshold "void
-Ifpack_CrsIct::SetAbsoluteThreshold(double Athresh)
-
-Set absolute threshold value. ";
-
-%feature("docstring")  Ifpack_CrsIct::SetRelativeThreshold "void
-Ifpack_CrsIct::SetRelativeThreshold(double Rthresh)
-
-Set relative threshold value. ";
-
-%feature("docstring")  Ifpack_CrsIct::SetOverlapMode "void
-Ifpack_CrsIct::SetOverlapMode(Epetra_CombineMode OverlapMode)
-
-Set overlap mode type. ";
-
-%feature("docstring")  Ifpack_CrsIct::SetParameters "int
-Ifpack_CrsIct::SetParameters(const Teuchos::ParameterList
-&parameterlist, bool cerr_warning_if_unused=false)
-
-Set parameters using a Teuchos::ParameterList object. ";
-
-%feature("docstring")  Ifpack_CrsIct::InitValues "int
-Ifpack_CrsIct::InitValues(const Epetra_CrsMatrix &A)
-
-Initialize L and U with values from user matrix A.
-
-Copies values from the user's matrix into the nonzero pattern of L and
-U.
-
-Parameters:
------------
-
-In:  A - User matrix to be factored.
-
-WARNING:  The graph of A must be identical to the graph passed in to
-Ifpack_IlukGraph constructor. ";
-
-%feature("docstring")  Ifpack_CrsIct::ValuesInitialized "bool
-Ifpack_CrsIct::ValuesInitialized() const
-
-If values have been initialized, this query returns true, otherwise it
-returns false. ";
-
-%feature("docstring")  Ifpack_CrsIct::Factor "int
-Ifpack_CrsIct::Factor()
-
-Compute IC factor U using the specified graph, diagonal perturbation
-thresholds and relaxation parameters.
-
-This function computes the RILU(k) factors L and U using the current:
-Ifpack_IlukGraph specifying the structure of L and U.
-
-Value for the RILU(k) relaxation parameter.
-
-Value for the a priori diagonal threshold values.  InitValues() must
-be called before the factorization can proceed. ";
-
-%feature("docstring")  Ifpack_CrsIct::Factored "bool
-Ifpack_CrsIct::Factored() const
-
-If factor is completed, this query returns true, otherwise it returns
-false. ";
-
-%feature("docstring")  Ifpack_CrsIct::Solve "int
-Ifpack_CrsIct::Solve(bool Trans, const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Returns the result of a Ifpack_CrsIct forward/back solve on a
-Epetra_MultiVector X in Y.
-
-Parameters:
------------
-
-In:  Trans -If true, solve transpose problem.
-
-In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
-
-Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
-result.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Ifpack_CrsIct::Multiply "int
-Ifpack_CrsIct::Multiply(bool Trans, const Epetra_MultiVector &X,
-Epetra_MultiVector &Y) const
-
-Returns the result of multiplying U, D and U^T in that order on an
-Epetra_MultiVector X in Y.
-
-Parameters:
------------
-
-In:  Trans -If true, multiply by L^T, D and U^T in that order.
-
-In:  X - A Epetra_MultiVector of dimension NumVectors to solve for.
-
-Out:  Y -A Epetra_MultiVector of dimension NumVectorscontaining
-result.
-
-Integer error code, set to 0 if successful. ";
-
-%feature("docstring")  Ifpack_CrsIct::Condest "int
-Ifpack_CrsIct::Condest(bool Trans, double &ConditionNumberEstimate)
-const
-
-Returns the maximum over all the condition number estimate for each
-local ILU set of factors.
-
-This functions computes a local condition number estimate on each
-processor and return the maximum over all processor of the estimate.
-
-Parameters:
------------
-
-In:  Trans -If true, solve transpose problem.
-
-Out:  ConditionNumberEstimate - The maximum across all processors of
-the infinity-norm estimate of the condition number of the inverse of
-LDU. ";
-
-%feature("docstring")  Ifpack_CrsIct::GetAbsoluteThreshold "double
-Ifpack_CrsIct::GetAbsoluteThreshold()
-
-Get absolute threshold value. ";
-
-%feature("docstring")  Ifpack_CrsIct::GetRelativeThreshold "double
-Ifpack_CrsIct::GetRelativeThreshold()
-
-Get relative threshold value. ";
-
-%feature("docstring")  Ifpack_CrsIct::GetOverlapMode "Epetra_CombineMode Ifpack_CrsIct::GetOverlapMode()
-
-Get overlap mode type. ";
-
-%feature("docstring")  Ifpack_CrsIct::NumGlobalNonzeros "int
-Ifpack_CrsIct::NumGlobalNonzeros() const
-
-Returns the number of nonzero entries in the global graph. ";
-
-%feature("docstring")  Ifpack_CrsIct::NumMyNonzeros "int
-Ifpack_CrsIct::NumMyNonzeros() const
-
-Returns the number of nonzero entries in the local graph. ";
-
-%feature("docstring")  Ifpack_CrsIct::D "const Epetra_Vector&
-Ifpack_CrsIct::D() const
-
-Returns the address of the D factor associated with this factored
-matrix. ";
-
-%feature("docstring")  Ifpack_CrsIct::U "const Epetra_CrsMatrix&
-Ifpack_CrsIct::U() const
-
-Returns the address of the U factor associated with this factored
-matrix. ";
-
-
 // File: classIfpack__CrsIlut.xml
 %feature("docstring") Ifpack_CrsIlut "
 
@@ -1925,15 +1535,15 @@ Set fill tolerance value as defined by the ILUT algorithm. ";
 %feature("docstring") Ifpack_CrsRick "
 
 Ifpack_CrsRick: A class for constructing and using an incomplete
-lower/upper (ILU) factorization of a given Epetra_CrsMatrix.
+Cholesky (IC) factorization of a given Epetra_CrsMatrix.
 
-The Ifpack_CrsRick class computes a \"Relaxed\" ILU factorization with
+The Ifpack_CrsRick class computes a \"Relaxed\" IC factorization with
 level k fill of a given Epetra_CrsMatrix. The factorization that is
 produced is a function of several parameters: The pattern of the
 matrix - All fill is derived from the original matrix nonzero
 structure. Level zero fill is defined as the original matrix pattern
 (nonzero structure), even if the matrix value at an entry is stored as
-a zero. (Thus it is possible to add entries to the ILU factors by
+a zero. (Thus it is possible to add entries to the IC factors by
 adding zero entries the original matrix.)
 
 Level of fill - Starting with the original matrix pattern as level
@@ -1943,13 +1553,13 @@ result of combining entries that were from previous level only (not
 the current level). This rule limits fill to entries that are direct
 decendents from the previous level graph. Fill for level k is
 determined by applying this rule recursively. For sufficiently large
-values of k, the fill would eventually be complete and an exact LU
-factorization would be computed. Level of fill is defined during the
-construction of the Ifpack_IlukGraph object.
+values of k, the fill would eventually be complete and an exact
+Cholesky factorization would be computed. Level of fill is defined
+during the construction of the Ifpack_IlukGraph object.
 
 Level of overlap - All Ifpack preconditioners work on parallel
 distributed memory computers by using the row partitioning the user
-input matrix to determine the partitioning for local ILU factors. If
+input matrix to determine the partitioning for local IC factors. If
 the level of overlap is set to zero, the rows of the user matrix that
 are stored on a given processor are treated as a self-contained local
 matrix and all column entries that reach to off-processor entries are
@@ -1957,37 +1567,37 @@ ignored. Setting the level of overlap to one tells Ifpack to increase
 the size of the local matrix by adding rows that are reached to by
 rows owned by this processor. Increasing levels of overlap are defined
 recursively in the same way. For sufficiently large levels of overlap,
-the entire matrix would be part of each processor's local ILU
+the entire matrix would be part of each processor's local IC
 factorization process. Level of overlap is defined during the
 construction of the Ifpack_IlukGraph object.
 
 Once the factorization is computed, applying the factorization
-\\\\(LUy = x\\\\) results in redundant approximations for any elements
-of y that correspond to rows that are part of more than one local ILU
+(LL^{T}y = x) results in redundant approximations for any elements of
+y that correspond to rows that are part of more than one local IC
 factor. The OverlapMode (changed by calling SetOverlapMode()) defines
 how these redundancies are handled using the Epetra_CombineMode enum.
 The default is to zero out all values of y for rows that were not part
 of the original matrix row distribution.
 
-Fraction of relaxation - Ifpack_CrsRick computes the ILU factorization
+Fraction of relaxation - Ifpack_CrsRick computes the IC factorization
 row-by-row. As entries at a given row are computed, some number of
 them will be dropped because they do match the prescribed sparsity
 pattern. The relaxation factor determines how these dropped values
 will be handled. If the RelaxValue (changed by calling
 SetRelaxValue()) is zero, then these extra entries will by dropped.
-This is a classical ILU approach. If the RelaxValue is 1, then the sum
+This is a classical IC approach. If the RelaxValue is 1, then the sum
 of the extra entries will be added to the diagonal. This is a
-classical Modified ILU (MILU) approach. If RelaxValue is between 0 and
+classical Modified IC (MIC) approach. If RelaxValue is between 0 and
 1, then RelaxValue times the sum of extra entries will be added to the
 diagonal.
 
 For most situations, RelaxValue should be set to zero. For certain
 kinds of problems, e.g., reservoir modeling, there is a conservation
 principle involved such that any operator should obey a zero row-sum
-property. MILU was designed for these cases and you should set the
+property. MIC was designed for these cases and you should set the
 RelaxValue to 1. For other situations, setting RelaxValue to some
 nonzero value may improve the stability of factorization, and can be
-used if the computed ILU factors are poorly conditioned.
+used if the computed IC factors are poorly conditioned.
 
 Diagonal perturbation - Prior to computing the factorization, it is
 possible to modify the diagonal entries of the matrix for which the
@@ -2088,7 +1698,7 @@ WARNING:  A Epetra_Map is required for the Ifpack_CrsRick constructor.
 
 C++ includes: Ifpack_CrsRick.h ";
 
-%feature("docstring")  Ifpack_CrsRick::Label "char*
+%feature("docstring")  Ifpack_CrsRick::Label "const char*
 Ifpack_CrsRick::Label() const
 
 Returns a character string describing the operator. ";
@@ -2225,7 +1835,7 @@ returns false. ";
 %feature("docstring")  Ifpack_CrsRick::SetRelaxValue "void
 Ifpack_CrsRick::SetRelaxValue(double RelaxValue)
 
-Set RILU(k) relaxation parameter. ";
+Set RIC(k) relaxation parameter. ";
 
 %feature("docstring")  Ifpack_CrsRick::SetAbsoluteThreshold "void
 Ifpack_CrsRick::SetAbsoluteThreshold(double Athresh)
@@ -2251,13 +1861,13 @@ Set parameters using a Teuchos::ParameterList object. ";
 %feature("docstring")  Ifpack_CrsRick::Factor "int
 Ifpack_CrsRick::Factor()
 
-Compute ILU factors L and U using the specified graph, diagonal
-perturbation thresholds and relaxation parameters.
+Compute IC factor L using the specified graph, diagonal perturbation
+thresholds and relaxation parameters.
 
-This function computes the RILU(k) factors L and U using the current:
-Ifpack_IlukGraph specifying the structure of L and U.
+This function computes the RIC(k) factor L using the current:
+Ifpack_IlukGraph specifying the structure of L.
 
-Value for the RILU(k) relaxation parameter.
+Value for the RIC(k) relaxation parameter.
 
 Value for the a priori diagonal threshold values.  InitValues() must
 be called before the factorization can proceed. ";
@@ -2329,7 +1939,7 @@ Ifpack_CrsRick::Condest(bool Trans, double &ConditionNumberEstimate)
 const
 
 Returns the maximum over all the condition number estimate for each
-local ILU set of factors.
+local IC set of factors.
 
 This functions computes a local condition number estimate on each
 processor and return the maximum over all processor of the estimate.
@@ -2346,7 +1956,7 @@ LDU. ";
 %feature("docstring")  Ifpack_CrsRick::GetRelaxValue "double
 Ifpack_CrsRick::GetRelaxValue()
 
-Get RILU(k) relaxation parameter. ";
+Get RIC(k) relaxation parameter. ";
 
 %feature("docstring")  Ifpack_CrsRick::GetAbsoluteThreshold "double
 Ifpack_CrsRick::GetAbsoluteThreshold()
@@ -2468,13 +2078,13 @@ the entire matrix would be part of each processor's local ILU
 factorization process. Level of overlap is defined during the
 construction of the Ifpack_IlukGraph object.
 
-Once the factorization is computed, applying the factorization
-\\\\(LUy = x\\\\) results in redundant approximations for any elements
-of y that correspond to rows that are part of more than one local ILU
-factor. The OverlapMode (changed by calling SetOverlapMode()) defines
-how these redundancies are handled using the Epetra_CombineMode enum.
-The default is to zero out all values of y for rows that were not part
-of the original matrix row distribution.
+Once the factorization is computed, applying the factorization (LUy =
+x) results in redundant approximations for any elements of y that
+correspond to rows that are part of more than one local ILU factor.
+The OverlapMode (changed by calling SetOverlapMode()) defines how
+these redundancies are handled using the Epetra_CombineMode enum. The
+default is to zero out all values of y for rows that were not part of
+the original matrix row distribution.
 
 Fraction of relaxation - Ifpack_CrsRiluk computes the ILU
 factorization row-by-row. As entries at a given row are computed, some
@@ -2900,6 +2510,18 @@ Returns the number of nonzero entries in the global graph. ";
 Returns the number of diagonal entries found in the global input
 graph. ";
 
+%feature("docstring")  Ifpack_CrsRiluk::NumGlobalRows64 "long long
+Ifpack_CrsRiluk::NumGlobalRows64() const ";
+
+%feature("docstring")  Ifpack_CrsRiluk::NumGlobalCols64 "long long
+Ifpack_CrsRiluk::NumGlobalCols64() const ";
+
+%feature("docstring")  Ifpack_CrsRiluk::NumGlobalNonzeros64 "long
+long Ifpack_CrsRiluk::NumGlobalNonzeros64() const ";
+
+%feature("docstring")  Ifpack_CrsRiluk::NumGlobalBlockDiagonals64 "virtual long long Ifpack_CrsRiluk::NumGlobalBlockDiagonals64() const
+";
+
 %feature("docstring")  Ifpack_CrsRiluk::NumMyRows "int
 Ifpack_CrsRiluk::NumMyRows() const
 
@@ -2931,10 +2553,13 @@ Ifpack_CrsRiluk::IndexBase() const
 
 Returns the index base for row and column indices for this graph. ";
 
+%feature("docstring")  Ifpack_CrsRiluk::IndexBase64 "long long
+Ifpack_CrsRiluk::IndexBase64() const ";
+
 %feature("docstring")  Ifpack_CrsRiluk::Graph "const
 Ifpack_IlukGraph& Ifpack_CrsRiluk::Graph() const
 
-Returns the address of the Ifpack_IlukGraph associated with this
+returns the address of the Ifpack_IlukGraph associated with this
 factored matrix. ";
 
 %feature("docstring")  Ifpack_CrsRiluk::L "const Epetra_CrsMatrix&
@@ -3138,7 +2763,7 @@ Returns the flops in Apply(). ";
 
 Returns the flops in ApplyInverse(). ";
 
-%feature("docstring")  Ifpack_DenseContainer::Print "virtual ostream&
+%feature("docstring")  Ifpack_DenseContainer::Print "ostream &
 Ifpack_DenseContainer::Print(std::ostream &os) const
 
 Prints basic information on iostream. This function is used by
@@ -3237,6 +2862,16 @@ int Ifpack_DiagonalFilter::NumGlobalRows() const ";
 int Ifpack_DiagonalFilter::NumGlobalCols() const ";
 
 %feature("docstring")  Ifpack_DiagonalFilter::NumGlobalDiagonals "virtual int Ifpack_DiagonalFilter::NumGlobalDiagonals() const ";
+
+%feature("docstring")  Ifpack_DiagonalFilter::NumGlobalNonzeros64 "virtual long long Ifpack_DiagonalFilter::NumGlobalNonzeros64() const
+";
+
+%feature("docstring")  Ifpack_DiagonalFilter::NumGlobalRows64 "virtual long long Ifpack_DiagonalFilter::NumGlobalRows64() const ";
+
+%feature("docstring")  Ifpack_DiagonalFilter::NumGlobalCols64 "virtual long long Ifpack_DiagonalFilter::NumGlobalCols64() const ";
+
+%feature("docstring")  Ifpack_DiagonalFilter::NumGlobalDiagonals64 "virtual long long Ifpack_DiagonalFilter::NumGlobalDiagonals64() const
+";
 
 %feature("docstring")  Ifpack_DiagonalFilter::NumMyNonzeros "virtual
 int Ifpack_DiagonalFilter::NumMyNonzeros() const ";
@@ -3439,6 +3074,16 @@ Ifpack_DropFilter::NumGlobalCols() const ";
 %feature("docstring")  Ifpack_DropFilter::NumGlobalDiagonals "virtual
 int Ifpack_DropFilter::NumGlobalDiagonals() const ";
 
+%feature("docstring")  Ifpack_DropFilter::NumGlobalNonzeros64 "virtual long long Ifpack_DropFilter::NumGlobalNonzeros64() const ";
+
+%feature("docstring")  Ifpack_DropFilter::NumGlobalRows64 "virtual
+long long Ifpack_DropFilter::NumGlobalRows64() const ";
+
+%feature("docstring")  Ifpack_DropFilter::NumGlobalCols64 "virtual
+long long Ifpack_DropFilter::NumGlobalCols64() const ";
+
+%feature("docstring")  Ifpack_DropFilter::NumGlobalDiagonals64 "virtual long long Ifpack_DropFilter::NumGlobalDiagonals64() const ";
+
 %feature("docstring")  Ifpack_DropFilter::NumMyNonzeros "virtual int
 Ifpack_DropFilter::NumMyNonzeros() const ";
 
@@ -3489,6 +3134,39 @@ Ifpack_DropFilter::Map() const ";
 
 %feature("docstring")  Ifpack_DropFilter::Label "const char*
 Ifpack_DropFilter::Label() const ";
+
+
+// File: classIfpack__DynamicFactory.xml
+%feature("docstring") Ifpack_DynamicFactory "
+
+Ifpack_DynamicFactory.
+
+TODO: write class description
+
+Radu Popescuradu.popescu@epfl.ch
+
+C++ includes: Ifpack_DynamicFactory.h ";
+
+%feature("docstring")  Ifpack_DynamicFactory::Create "Ifpack_Preconditioner * Ifpack_DynamicFactory::Create(const string
+PrecType, Epetra_RowMatrix *Matrix, const int overlap=0, bool
+overrideSerialDefault=false)
+
+Creates an instance of Ifpack_Preconditioner given the string name of
+the preconditioner type (can fail with bad input).
+
+Parameters:
+-----------
+
+PrecType:  (In) - String name of preconditioner type to be created.
+
+Matrix:  (In) - Matrix used to define the preconditioner
+
+overlap:  (In) - specified overlap, defaulted to 0.
+
+Returns 0 if the preconditioner with that input name does not exist.
+Otherwise, return a newly created preconditioner object. Note that the
+client is responsible for calling delete on the returned object once
+it is finished using it! ";
 
 
 // File: classIfpack__Element.xml
@@ -3594,6 +3272,12 @@ Ifpack_Graph::NumGlobalCols() const =0
 
 Returns the number of global columns. ";
 
+%feature("docstring")  Ifpack_Graph::NumGlobalRows64 "virtual long
+long Ifpack_Graph::NumGlobalRows64() const =0 ";
+
+%feature("docstring")  Ifpack_Graph::NumGlobalCols64 "virtual long
+long Ifpack_Graph::NumGlobalCols64() const =0 ";
+
 %feature("docstring")  Ifpack_Graph::MaxMyNumEntries "virtual int
 Ifpack_Graph::MaxMyNumEntries() const =0
 
@@ -3619,6 +3303,14 @@ Ifpack_Graph::GCID(int) const =0
 
 Returns the global column ID of input local column. ";
 
+%feature("docstring")  Ifpack_Graph::GRID64 "virtual long long
+Ifpack_Graph::GRID64(int) const =0 ";
+
+%feature("docstring")  Ifpack_Graph::GCID64 "virtual long long
+Ifpack_Graph::GCID64(int) const =0
+
+Returns the global column ID of input local column. ";
+
 %feature("docstring")  Ifpack_Graph::LRID "virtual int
 Ifpack_Graph::LRID(int) const =0
 
@@ -3626,6 +3318,16 @@ Returns the local row ID of input global row. ";
 
 %feature("docstring")  Ifpack_Graph::LCID "virtual int
 Ifpack_Graph::LCID(int) const =0
+
+Returns the local column ID of input global column. ";
+
+%feature("docstring")  Ifpack_Graph::LRID "virtual int
+Ifpack_Graph::LRID(long long) const =0
+
+Returns the local row ID of input global row. ";
+
+%feature("docstring")  Ifpack_Graph::LCID "virtual int
+Ifpack_Graph::LCID(long long) const =0
 
 Returns the local column ID of input global column. ";
 
@@ -3684,9 +3386,13 @@ Returns the number of local columns. ";
 
 Returns the number of global rows. ";
 
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::NumGlobalRows64 "long long Ifpack_Graph_Epetra_CrsGraph::NumGlobalRows64() const ";
+
 %feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::NumGlobalCols "int Ifpack_Graph_Epetra_CrsGraph::NumGlobalCols() const
 
 Returns the number of global columns. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::NumGlobalCols64 "long long Ifpack_Graph_Epetra_CrsGraph::NumGlobalCols64() const ";
 
 %feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::MaxMyNumEntries "int Ifpack_Graph_Epetra_CrsGraph::MaxMyNumEntries() const
 
@@ -3706,8 +3412,16 @@ Ifpack_Graph_Epetra_CrsGraph::GRID(int) const
 
 Returns the global row ID of input local row. ";
 
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::GRID64 "long
+long Ifpack_Graph_Epetra_CrsGraph::GRID64(int) const ";
+
 %feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::GCID "int
 Ifpack_Graph_Epetra_CrsGraph::GCID(int) const
+
+Returns the global column ID of input local column. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::GCID64 "long
+long Ifpack_Graph_Epetra_CrsGraph::GCID64(int) const
 
 Returns the global column ID of input local column. ";
 
@@ -3718,6 +3432,16 @@ Returns the local row ID of input global row. ";
 
 %feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::LCID "int
 Ifpack_Graph_Epetra_CrsGraph::LCID(int) const
+
+Returns the local column ID of input global column. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::LRID "int
+Ifpack_Graph_Epetra_CrsGraph::LRID(long long) const
+
+Returns the local row ID of input global row. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_CrsGraph::LCID "int
+Ifpack_Graph_Epetra_CrsGraph::LCID(long long) const
 
 Returns the local column ID of input global column. ";
 
@@ -3778,9 +3502,15 @@ Returns the number of local columns. ";
 
 Returns the number of global rows. ";
 
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::NumGlobalRows64
+"long long Ifpack_Graph_Epetra_RowMatrix::NumGlobalRows64() const ";
+
 %feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols "int Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols() const
 
 Returns the number of global columns. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols64
+"long long Ifpack_Graph_Epetra_RowMatrix::NumGlobalCols64() const ";
 
 %feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::MaxMyNumEntries
 "int Ifpack_Graph_Epetra_RowMatrix::MaxMyNumEntries() const
@@ -3801,8 +3531,16 @@ Ifpack_Graph_Epetra_RowMatrix::GRID(int) const
 
 Returns the global row ID of input local row. ";
 
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::GRID64 "long
+long Ifpack_Graph_Epetra_RowMatrix::GRID64(int) const ";
+
 %feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::GCID "int
 Ifpack_Graph_Epetra_RowMatrix::GCID(int) const
+
+Returns the global column ID of input local column. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::GCID64 "long
+long Ifpack_Graph_Epetra_RowMatrix::GCID64(int) const
 
 Returns the global column ID of input local column. ";
 
@@ -3813,6 +3551,16 @@ Returns the local row ID of input global row. ";
 
 %feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::LCID "int
 Ifpack_Graph_Epetra_RowMatrix::LCID(int) const
+
+Returns the local column ID of input global column. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::LRID "int
+Ifpack_Graph_Epetra_RowMatrix::LRID(long long) const
+
+Returns the local row ID of input global row. ";
+
+%feature("docstring")  Ifpack_Graph_Epetra_RowMatrix::LCID "int
+Ifpack_Graph_Epetra_RowMatrix::LCID(long long) const
 
 Returns the local column ID of input global column. ";
 
@@ -3869,45 +3617,14 @@ Computes the partitions. Returns 0 if successful. ";
 %feature("docstring") Ifpack_HashTable "";
 
 %feature("docstring")  Ifpack_HashTable::Ifpack_HashTable "Ifpack_HashTable::Ifpack_HashTable(const int n_keys=1031, const int
-n_sets=1)
+n_sets=1) ";
 
-constructor. ";
 
-%feature("docstring")  Ifpack_HashTable::get "double
-Ifpack_HashTable::get(const int key)
+// File: classIfpack__HashTable64.xml
+%feature("docstring") Ifpack_HashTable64 "";
 
-Returns an element from the hash table, or 0.0 if not found. ";
-
-%feature("docstring")  Ifpack_HashTable::set "void
-Ifpack_HashTable::set(const int key, const double value, const bool
-addToValue=false)
-
-Sets an element in the hash table. ";
-
-%feature("docstring")  Ifpack_HashTable::reset "void
-Ifpack_HashTable::reset()
-
-Resets the entries of the already allocated memory. This method can be
-used to clean an array, to be reused without additional memory
-allocation/deallocation. ";
-
-%feature("docstring")  Ifpack_HashTable::getNumEntries "int
-Ifpack_HashTable::getNumEntries() const
-
-Returns the number of stored entries. ";
-
-%feature("docstring")  Ifpack_HashTable::arrayify "void
-Ifpack_HashTable::arrayify(int *key_array, double *val_array)
-
-Converts the contents in array format for both keys and values. ";
-
-%feature("docstring")  Ifpack_HashTable::print "void
-Ifpack_HashTable::print()
-
-Basic printing routine. ";
-
-%feature("docstring")  Ifpack_HashTable::getRecommendedHashSize "int
-Ifpack_HashTable::getRecommendedHashSize(int n) ";
+%feature("docstring")  Ifpack_HashTable64::Ifpack_HashTable64 "Ifpack_HashTable64::Ifpack_HashTable64(const int n_keys=1031, const
+int n_sets=1) ";
 
 
 // File: classIfpack__IC.xml
@@ -3916,12 +3633,12 @@ Ifpack_HashTable::getRecommendedHashSize(int n) ";
 Ifpack_IC: A class for constructing and using an incomplete Cholesky
 factorization of a given Epetra_RowMatrix.
 
-The Ifpack_IC class computes a threshold based incomplete LDL^T
-factorization of a given Epetra_RowMatrix. The factorization that is
-produced is a function of several parameters: Maximum number of
-entries per row/column in factor - The factorization will contain at
-most this number of nonzero terms in each row/column of the
-factorization.
+The Ifpack_IC class computes a threshold (not level) based incomplete
+LDL^T factorization of a given Epetra_RowMatrix. The factorization
+that is produced is a function of several parameters: Level of fill
+ratio. This defines the maximum number of entries per row/column in
+the factor, relative to the average number of nonzeros per row/col in
+A. The default value of 1.0 keeps the IC factor as sparse as A.
 
 Diagonal perturbation - Prior to computing the factorization, it is
 possible to modify the diagonal entries of the matrix for which the
@@ -4136,6 +3853,9 @@ Get relative threshold value. ";
 Ifpack_IC::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_IC::NumGlobalNonzeros64 "long long
+Ifpack_IC::NumGlobalNonzeros64() const ";
 
 %feature("docstring")  Ifpack_IC::NumMyNonzeros "int
 Ifpack_IC::NumMyNonzeros() const
@@ -4408,6 +4128,9 @@ computed. ";
 Ifpack_ICT::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_ICT::NumGlobalNonzeros64 "long long
+Ifpack_ICT::NumGlobalNonzeros64() const ";
 
 %feature("docstring")  Ifpack_ICT::NumMyNonzeros "int
 Ifpack_ICT::NumMyNonzeros() const
@@ -4770,6 +4493,9 @@ Ifpack_IKLU::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global graph. ";
 
+%feature("docstring")  Ifpack_IKLU::NumGlobalNonzeros64 "long long
+Ifpack_IKLU::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  Ifpack_IKLU::NumMyNonzeros "int
 Ifpack_IKLU::NumMyNonzeros() const
 
@@ -4782,8 +4508,10 @@ Returns the number of nonzero entries in the local graph. ";
 Ifpack_ILU: A class for constructing and using an incomplete
 lower/upper (ILU) factorization of a given Epetra_RowMatrix.
 
-The Ifpack_ILU class computes a \"Relaxed\" ILU factorization with
-level k fill of a given Epetra_RowMatrix.
+The Ifpack_ILU class computes a \"relaxed\" ILU factorization with
+level k fill of a given Epetra_RowMatrix. The notion of relaxation is
+the same as described in \"Experimental study of ILU preconditioners
+for indefinite matrices\" by Chow and Saad.
 
 Please refer to ifp_ilu for a general description of the ILU
 algorithm.
@@ -4967,7 +4695,7 @@ Ifpack_ILU::Matrix() const
 
 Returns a reference to the matrix to be preconditioned. ";
 
-%feature("docstring")  Ifpack_ILU::Print "virtual ostream&
+%feature("docstring")  Ifpack_ILU::Print "std::ostream &
 Ifpack_ILU::Print(ostream &os) const
 
 Prints on stream basic information about this object. ";
@@ -5135,6 +4863,36 @@ Returns the number of nonzero entries in the global graph. ";
 Returns the number of diagonal entries found in the global input
 graph. ";
 
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalBlockRows64 "long
+long Ifpack_IlukGraph::NumGlobalBlockRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalBlockCols64 "long
+long Ifpack_IlukGraph::NumGlobalBlockCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalRows64 "long long
+Ifpack_IlukGraph::NumGlobalRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalCols64 "long long
+Ifpack_IlukGraph::NumGlobalCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalNonzeros64 "long
+long Ifpack_IlukGraph::NumGlobalNonzeros64() const
+
+Returns the number of nonzero entries in the global graph. ";
+
+%feature("docstring")  Ifpack_IlukGraph::NumGlobalBlockDiagonals64 "virtual long long Ifpack_IlukGraph::NumGlobalBlockDiagonals64() const
+
+Returns the number of diagonal entries found in the global input
+graph. ";
+
 %feature("docstring")  Ifpack_IlukGraph::NumMyBlockRows "int
 Ifpack_IlukGraph::NumMyBlockRows() const
 
@@ -5170,6 +4928,9 @@ Returns the number of diagonal entries found in the local input graph.
 Ifpack_IlukGraph::IndexBase() const
 
 Returns the index base for row and column indices for this graph. ";
+
+%feature("docstring")  Ifpack_IlukGraph::IndexBase64 "long long
+Ifpack_IlukGraph::IndexBase64() const ";
 
 %feature("docstring")  Ifpack_IlukGraph::L_Graph "virtual
 Epetra_CrsGraph& Ifpack_IlukGraph::L_Graph()
@@ -5492,10 +5253,209 @@ Ifpack_ILUT::NumGlobalNonzeros() const
 
 Returns the number of nonzero entries in the global graph. ";
 
+%feature("docstring")  Ifpack_ILUT::NumGlobalNonzeros64 "long long
+Ifpack_ILUT::NumGlobalNonzeros64() const ";
+
 %feature("docstring")  Ifpack_ILUT::NumMyNonzeros "int
 Ifpack_ILUT::NumMyNonzeros() const
 
 Returns the number of nonzero entries in the local graph. ";
+
+
+// File: classIfpack__Krylov.xml
+%feature("docstring") Ifpack_Krylov "
+
+Ifpack_Krylov: class for smoothing with Krylov solvers in Ifpack.
+
+C++ includes: Ifpack_Krylov.h ";
+
+%feature("docstring")  Ifpack_Krylov::Ifpack_Krylov "Ifpack_Krylov::Ifpack_Krylov(Epetra_Operator *Matrix) ";
+
+%feature("docstring")  Ifpack_Krylov::Ifpack_Krylov "Ifpack_Krylov::Ifpack_Krylov(Epetra_RowMatrix *Matrix)
+
+Ifpack_Krylov constructor with given Epetra_Operator/Epetra_RowMatrix.
+";
+
+%feature("docstring")  Ifpack_Krylov::~Ifpack_Krylov "virtual
+Ifpack_Krylov::~Ifpack_Krylov()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_Krylov::Apply "int
+Ifpack_Krylov::Apply(const Epetra_MultiVector &X, Epetra_MultiVector
+&Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+the result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_Krylov::ApplyInverse "int
+Ifpack_Krylov::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  - (InOut) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This routine is NOT AztecOO complaint. ";
+
+%feature("docstring")  Ifpack_Krylov::NormInf "virtual double
+Ifpack_Krylov::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented) ";
+
+%feature("docstring")  Ifpack_Krylov::Label "virtual const char*
+Ifpack_Krylov::Label() const ";
+
+%feature("docstring")  Ifpack_Krylov::UseTranspose "virtual bool
+Ifpack_Krylov::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_Krylov::HasNormInf "virtual bool
+Ifpack_Krylov::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Krylov::Comm "const Epetra_Comm &
+Ifpack_Krylov::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_Krylov::OperatorDomainMap "const
+Epetra_Map & Ifpack_Krylov::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_Krylov::OperatorRangeMap "const
+Epetra_Map & Ifpack_Krylov::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_Krylov::Initialize "int
+Ifpack_Krylov::Initialize()
+
+Computes all it is necessary to initialize the preconditioner. ";
+
+%feature("docstring")  Ifpack_Krylov::IsInitialized "virtual bool
+Ifpack_Krylov::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Krylov::IsComputed "virtual bool
+Ifpack_Krylov::IsComputed() const
+
+Returns true if the preconditioner has been successfully computed. ";
+
+%feature("docstring")  Ifpack_Krylov::Compute "int
+Ifpack_Krylov::Compute()
+
+Computes the preconditioners. ";
+
+%feature("docstring")  Ifpack_Krylov::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_Krylov::Matrix() const
+
+Returns a pointer to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_Krylov::Condest "double
+Ifpack_Krylov::Condest(const Ifpack_CondestType CT=Ifpack_Cheap, const
+int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
+
+Computes the condition number estimates and returns the value. ";
+
+%feature("docstring")  Ifpack_Krylov::Condest "virtual double
+Ifpack_Krylov::Condest() const
+
+Returns the condition number estimate, or -1.0 if not computed. ";
+
+%feature("docstring")  Ifpack_Krylov::SetParameters "int
+Ifpack_Krylov::SetParameters(Teuchos::ParameterList &List)
+
+Sets all the parameters for the preconditioner. ";
+
+%feature("docstring")  Ifpack_Krylov::Print "ostream &
+Ifpack_Krylov::Print(ostream &os) const
+
+Prints object to an output stream. ";
+
+%feature("docstring")  Ifpack_Krylov::NumInitialize "virtual int
+Ifpack_Krylov::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_Krylov::NumCompute "virtual int
+Ifpack_Krylov::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_Krylov::NumApplyInverse "virtual int
+Ifpack_Krylov::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Krylov::InitializeTime "virtual double
+Ifpack_Krylov::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_Krylov::ComputeTime "virtual double
+Ifpack_Krylov::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_Krylov::ApplyInverseTime "virtual
+double Ifpack_Krylov::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Krylov::InitializeFlops "virtual double
+Ifpack_Krylov::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_Krylov::ComputeFlops "virtual double
+Ifpack_Krylov::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_Krylov::ApplyInverseFlops "virtual
+double Ifpack_Krylov::ApplyInverseFlops() const
+
+Returns the number of flops for the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_Krylov::SetUseTranspose "virtual int
+Ifpack_Krylov::SetUseTranspose(bool UseTranspose_in)
+
+This flag can be used to apply the preconditioner to the transpose of
+the input operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
 
 
 // File: classIfpack__LinearPartitioner.xml
@@ -5722,6 +5682,25 @@ Returns the number of global matrix columns. ";
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
 
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalNonzeros64 "virtual long long Ifpack_LocalFilter::NumGlobalNonzeros64() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalRows64 "virtual
+long long Ifpack_LocalFilter::NumGlobalRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalCols64 "virtual
+long long Ifpack_LocalFilter::NumGlobalCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")  Ifpack_LocalFilter::NumGlobalDiagonals64 "virtual long long Ifpack_LocalFilter::NumGlobalDiagonals64() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
 %feature("docstring")  Ifpack_LocalFilter::NumMyNonzeros "virtual int
 Ifpack_LocalFilter::NumMyNonzeros() const
 
@@ -5829,7 +5808,7 @@ METIS.
 
 Class Ifpack_METISPartitioner enables the decomposition of the local
 Ifpack_Graph's using METIS. In order to work properly, this class
-requires IFPACK to be configured with option --enable-ifpack-metis.
+requires IFPACK to be configured with option enable-ifpack-metis.
 Otherwise, this class will always create one partition.
 
 C++ includes: Ifpack_METISPartitioner.h ";
@@ -6196,8 +6175,8 @@ Computes the partitions. Returns 0 if successful. ";
 
 Returns true if partitions have been computed successfully. ";
 
-%feature("docstring")  Ifpack_OverlappingPartitioner::Print "virtual
-ostream& Ifpack_OverlappingPartitioner::Print(std::ostream &os) const
+%feature("docstring")  Ifpack_OverlappingPartitioner::Print "ostream
+& Ifpack_OverlappingPartitioner::Print(std::ostream &os) const
 
 Prints basic information on iostream. This function is used by
 operator<<. ";
@@ -6365,6 +6344,27 @@ Returns the number of global matrix columns. ";
 
 %feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalDiagonals
 "virtual int Ifpack_OverlappingRowMatrix::NumGlobalDiagonals() const
+
+Returns the number of global nonzero diagonal entries, based on global
+row/column index comparisons. ";
+
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64 "virtual long long
+Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64() const
+
+Returns the number of nonzero entries in the global matrix. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalRows64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalRows64() const
+
+Returns the number of global matrix rows. ";
+
+%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalCols64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalCols64() const
+
+Returns the number of global matrix columns. ";
+
+%feature("docstring")
+Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64 "virtual long long
+Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64() const
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
@@ -6614,7 +6614,7 @@ Epetra_CrsMatrix& Ifpack_OverlapSolveObject::U() const
 Returns the address of the L factor associated with this factored
 matrix. ";
 
-%feature("docstring")  Ifpack_OverlapSolveObject::Label "char*
+%feature("docstring")  Ifpack_OverlapSolveObject::Label "const char*
 Ifpack_OverlapSolveObject::Label() const
 
 Returns a character string describing the operator. ";
@@ -6744,7 +6744,7 @@ are:  Ifpack_LinearPartitioner, which allows the decomposition of the
 rows of the graph in simple consecutive chunks;
 
 Ifpack_METISPartitioner, which calls METIS to decompose the graph
-(this requires the configuration option --enable-ifpack-metis);
+(this requires the configuration optionenable-ifpack-metis);
 
 Ifpack_GreedyPartitioner, a simple greedy algorith;
 
@@ -7063,6 +7063,289 @@ Returns the number of flops for the application of the preconditioner.
 
 %feature("docstring")  Ifpack_PointRelaxation::SetUseTranspose "virtual int Ifpack_PointRelaxation::SetUseTranspose(bool
 UseTranspose_in)
+
+This flag can be used to apply the preconditioner to the transpose of
+the input operator.
+
+Integer error code, set to 0 if successful. Set to -1 if this
+implementation does not support transpose. ";
+
+
+// File: classIfpack__Polynomial.xml
+%feature("docstring") Ifpack_Polynomial "
+
+Ifpack_Polynomial: class for preconditioning with least squares
+polynomials in Ifpack.
+
+The Ifpack_Polynomial class enables the construction of
+preconditioners based on least squares polynomials for an
+Epetra_RowMatrix. Similar to Ifpack_Chebyshev, Ifpack_Polynomial is
+designed for indefinite linear systems.
+
+The list of parameters is RealEigRatio_ = List.get(\"polynomial: real
+eigenvalue ratio\", RealEigRatio_);
+
+ImagEigRatio_ = List.get(\"polynomial: imag eigenvalue ratio\",
+ImagEigRatio_); these are the ratios to estimate the bounds on the
+spectrum (if the eigenvalue bounds aren't already given)
+
+LambdaRealMin_ = List.get(\"polynomial: min real part\",
+LambdaRealMin_);
+
+LambdaRealMax_ = List.get(\"polynomial: max real part\",
+LambdaRealMax_);
+
+LambdaImagMin_ = List.get(\"polynomial: min imag part\",
+LambdaImagMin_);
+
+LambdaImagMax_ = List.get(\"polynomial: max imag part\",
+LambdaImagMax_); these values define the rectangular region on which
+the polynomial will be minimized.
+
+PolyDegree_ = List.get(\"polynomial: degree\",PolyDegree_); this is
+the polynomial degree.
+
+LSPointsReal_ = List.get(\"polynomial: real interp
+points\",LSPointsReal_);
+
+LSPointsImag_ = List.get(\"polynomial: imag interp
+points\",LSPointsImag_); these are the number of points used in real
+and imaginary directions which will be used in the least squares
+problem.
+
+MinDiagonalValue_ = List.get(\"polynomial: min diagonal value\",
+MinDiagonalValue_); this defines the threshold for diagonal values
+under which they are not inverted
+
+ZeroStartingSolution_ = List.get(\"polynomial: zero starting
+solution\", ZeroStartingSolution_); this flag allows to set a non-zero
+initial guess.
+
+Paul Tsuji, May 2013.
+
+C++ includes: Ifpack_Polynomial.h ";
+
+%feature("docstring")  Ifpack_Polynomial::Ifpack_Polynomial "Ifpack_Polynomial::Ifpack_Polynomial(const Epetra_Operator *Matrix)
+
+Ifpack_Polynomial constructor with given
+Epetra_Operator/Epetra_RowMatrix.
+
+Creates an instance of Ifpack_Polynomial class.
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to the operator to precondition. ";
+
+%feature("docstring")  Ifpack_Polynomial::Ifpack_Polynomial "Ifpack_Polynomial::Ifpack_Polynomial(const Epetra_RowMatrix *Matrix)
+
+Ifpack_Polynomial constructor with given
+Epetra_Operator/Epetra_RowMatrix.
+
+Creates an instance of Ifpack_Polynomial class.
+
+Parameters:
+-----------
+
+Matrix:  - (In) Pointer to the matrix to precondition. ";
+
+%feature("docstring")  Ifpack_Polynomial::~Ifpack_Polynomial "virtual
+Ifpack_Polynomial::~Ifpack_Polynomial()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_Polynomial::Apply "int
+Ifpack_Polynomial::Apply(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the matrix to an Epetra_MultiVector.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to multiply
+with matrix.
+
+Y:  - (Out) A Epetra_MultiVector of dimension NumVectors containing
+the result.
+
+Integer error code, set to 0 if successful. ";
+
+%feature("docstring")  Ifpack_Polynomial::ApplyInverse "int
+Ifpack_Polynomial::ApplyInverse(const Epetra_MultiVector &X,
+Epetra_MultiVector &Y) const
+
+Applies the preconditioner to X, returns the result in Y.
+
+Parameters:
+-----------
+
+X:  - (In) A Epetra_MultiVector of dimension NumVectors to be
+preconditioned.
+
+Y:  - (InOut) A Epetra_MultiVector of dimension NumVectors containing
+result.
+
+Integer error code, set to 0 if successful.
+
+WARNING:  This routine is NOT AztecOO complaint. ";
+
+%feature("docstring")  Ifpack_Polynomial::NormInf "virtual double
+Ifpack_Polynomial::NormInf() const
+
+Returns the infinity norm of the global matrix (not implemented) ";
+
+%feature("docstring")  Ifpack_Polynomial::Label "virtual const char*
+Ifpack_Polynomial::Label() const ";
+
+%feature("docstring")  Ifpack_Polynomial::UseTranspose "virtual bool
+Ifpack_Polynomial::UseTranspose() const
+
+Returns the current UseTranspose setting. ";
+
+%feature("docstring")  Ifpack_Polynomial::HasNormInf "virtual bool
+Ifpack_Polynomial::HasNormInf() const
+
+Returns true if the this object can provide an approximate Inf-norm,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Polynomial::Comm "const Epetra_Comm &
+Ifpack_Polynomial::Comm() const
+
+Returns a pointer to the Epetra_Comm communicator associated with this
+operator. ";
+
+%feature("docstring")  Ifpack_Polynomial::OperatorDomainMap "const
+Epetra_Map & Ifpack_Polynomial::OperatorDomainMap() const
+
+Returns the Epetra_Map object associated with the domain of this
+operator. ";
+
+%feature("docstring")  Ifpack_Polynomial::OperatorRangeMap "const
+Epetra_Map & Ifpack_Polynomial::OperatorRangeMap() const
+
+Returns the Epetra_Map object associated with the range of this
+operator. ";
+
+%feature("docstring")  Ifpack_Polynomial::Initialize "int
+Ifpack_Polynomial::Initialize()
+
+Computes all it is necessary to initialize the preconditioner. ";
+
+%feature("docstring")  Ifpack_Polynomial::IsInitialized "virtual bool
+Ifpack_Polynomial::IsInitialized() const
+
+Returns true if the preconditioner has been successfully initialized,
+false otherwise. ";
+
+%feature("docstring")  Ifpack_Polynomial::IsComputed "virtual bool
+Ifpack_Polynomial::IsComputed() const
+
+Returns true if the preconditioner has been successfully computed. ";
+
+%feature("docstring")  Ifpack_Polynomial::Compute "int
+Ifpack_Polynomial::Compute()
+
+Computes the preconditioners. ";
+
+%feature("docstring")  Ifpack_Polynomial::Matrix "virtual const
+Epetra_RowMatrix& Ifpack_Polynomial::Matrix() const
+
+Returns a pointer to the matrix to be preconditioned. ";
+
+%feature("docstring")  Ifpack_Polynomial::Condest "double
+Ifpack_Polynomial::Condest(const Ifpack_CondestType CT=Ifpack_Cheap,
+const int MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix
+*Matrix_in=0)
+
+Computes the condition number estimates and returns the value. ";
+
+%feature("docstring")  Ifpack_Polynomial::Condest "virtual double
+Ifpack_Polynomial::Condest() const
+
+Returns the condition number estimate, or -1.0 if not computed. ";
+
+%feature("docstring")  Ifpack_Polynomial::SetParameters "int
+Ifpack_Polynomial::SetParameters(Teuchos::ParameterList &List)
+
+Sets all the parameters for the preconditioner. ";
+
+%feature("docstring")  Ifpack_Polynomial::Print "ostream &
+Ifpack_Polynomial::Print(ostream &os) const
+
+Prints object to an output stream. ";
+
+%feature("docstring")  Ifpack_Polynomial::NumInitialize "virtual int
+Ifpack_Polynomial::NumInitialize() const
+
+Returns the number of calls to Initialize(). ";
+
+%feature("docstring")  Ifpack_Polynomial::NumCompute "virtual int
+Ifpack_Polynomial::NumCompute() const
+
+Returns the number of calls to Compute(). ";
+
+%feature("docstring")  Ifpack_Polynomial::NumApplyInverse "virtual
+int Ifpack_Polynomial::NumApplyInverse() const
+
+Returns the number of calls to ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Polynomial::InitializeTime "virtual
+double Ifpack_Polynomial::InitializeTime() const
+
+Returns the time spent in Initialize(). ";
+
+%feature("docstring")  Ifpack_Polynomial::ComputeTime "virtual double
+Ifpack_Polynomial::ComputeTime() const
+
+Returns the time spent in Compute(). ";
+
+%feature("docstring")  Ifpack_Polynomial::ApplyInverseTime "virtual
+double Ifpack_Polynomial::ApplyInverseTime() const
+
+Returns the time spent in ApplyInverse(). ";
+
+%feature("docstring")  Ifpack_Polynomial::InitializeFlops "virtual
+double Ifpack_Polynomial::InitializeFlops() const
+
+Returns the number of flops in the initialization phase. ";
+
+%feature("docstring")  Ifpack_Polynomial::ComputeFlops "virtual
+double Ifpack_Polynomial::ComputeFlops() const
+
+Returns the number of flops in the computation phase. ";
+
+%feature("docstring")  Ifpack_Polynomial::ApplyInverseFlops "virtual
+double Ifpack_Polynomial::ApplyInverseFlops() const
+
+Returns the number of flops for the application of the preconditioner.
+";
+
+%feature("docstring")  Ifpack_Polynomial::GMRES "int
+Ifpack_Polynomial::GMRES(const Epetra_Operator &Operator, const
+Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
+&lambda_real_min, double &lambda_real_max, double &lambda_imag_min,
+double &lambda_imag_max)
+
+Uses AztecOO's GMRES to estimate the height and width of the spectrum.
+";
+
+%feature("docstring")  Ifpack_Polynomial::PowerMethod "int
+Ifpack_Polynomial::PowerMethod(const Epetra_Operator &Operator, const
+Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
+&LambdaMax)
+
+Simple power method to compute lambda_max. ";
+
+%feature("docstring")  Ifpack_Polynomial::CG "int
+Ifpack_Polynomial::CG(const Epetra_Operator &Operator, const
+Epetra_Vector &InvPointDiagonal, const int MaximumIterations, double
+&lambda_min, double &lambda_max)
+
+Uses AztecOO's CG to estimate lambda_min and lambda_max. ";
+
+%feature("docstring")  Ifpack_Polynomial::SetUseTranspose "virtual
+int Ifpack_Polynomial::SetUseTranspose(bool UseTranspose_in)
 
 This flag can be used to apply the preconditioner to the transpose of
 the input operator.
@@ -7490,6 +7773,24 @@ Returns the number of global columns. ";
 
 Returns the number of global diagonals. ";
 
+%feature("docstring")  Ifpack_ReorderFilter::NumGlobalNonzeros64 "virtual long long Ifpack_ReorderFilter::NumGlobalNonzeros64() const
+
+Returns the number of global nonzero elements. ";
+
+%feature("docstring")  Ifpack_ReorderFilter::NumGlobalRows64 "virtual
+long long Ifpack_ReorderFilter::NumGlobalRows64() const
+
+Returns the number of global rows. ";
+
+%feature("docstring")  Ifpack_ReorderFilter::NumGlobalCols64 "virtual
+long long Ifpack_ReorderFilter::NumGlobalCols64() const
+
+Returns the number of global columns. ";
+
+%feature("docstring")  Ifpack_ReorderFilter::NumGlobalDiagonals64 "virtual long long Ifpack_ReorderFilter::NumGlobalDiagonals64() const
+
+Returns the number of global diagonals. ";
+
 %feature("docstring")  Ifpack_ReorderFilter::NumMyNonzeros "virtual
 int Ifpack_ReorderFilter::NumMyNonzeros() const
 
@@ -7772,6 +8073,16 @@ int Ifpack_SingletonFilter::NumGlobalRows() const ";
 int Ifpack_SingletonFilter::NumGlobalCols() const ";
 
 %feature("docstring")  Ifpack_SingletonFilter::NumGlobalDiagonals "virtual int Ifpack_SingletonFilter::NumGlobalDiagonals() const ";
+
+%feature("docstring")  Ifpack_SingletonFilter::NumGlobalNonzeros64 "virtual long long Ifpack_SingletonFilter::NumGlobalNonzeros64() const
+";
+
+%feature("docstring")  Ifpack_SingletonFilter::NumGlobalRows64 "virtual long long Ifpack_SingletonFilter::NumGlobalRows64() const ";
+
+%feature("docstring")  Ifpack_SingletonFilter::NumGlobalCols64 "virtual long long Ifpack_SingletonFilter::NumGlobalCols64() const ";
+
+%feature("docstring")  Ifpack_SingletonFilter::NumGlobalDiagonals64 "virtual long long Ifpack_SingletonFilter::NumGlobalDiagonals64() const
+";
 
 %feature("docstring")  Ifpack_SingletonFilter::NumMyNonzeros "virtual
 int Ifpack_SingletonFilter::NumMyNonzeros() const ";
@@ -8101,6 +8412,16 @@ int Ifpack_SparsityFilter::NumGlobalCols() const ";
 
 %feature("docstring")  Ifpack_SparsityFilter::NumGlobalDiagonals "virtual int Ifpack_SparsityFilter::NumGlobalDiagonals() const ";
 
+%feature("docstring")  Ifpack_SparsityFilter::NumGlobalNonzeros64 "virtual long long Ifpack_SparsityFilter::NumGlobalNonzeros64() const
+";
+
+%feature("docstring")  Ifpack_SparsityFilter::NumGlobalRows64 "virtual long long Ifpack_SparsityFilter::NumGlobalRows64() const ";
+
+%feature("docstring")  Ifpack_SparsityFilter::NumGlobalCols64 "virtual long long Ifpack_SparsityFilter::NumGlobalCols64() const ";
+
+%feature("docstring")  Ifpack_SparsityFilter::NumGlobalDiagonals64 "virtual long long Ifpack_SparsityFilter::NumGlobalDiagonals64() const
+";
+
 %feature("docstring")  Ifpack_SparsityFilter::NumMyNonzeros "virtual
 int Ifpack_SparsityFilter::NumMyNonzeros() const ";
 
@@ -8186,7 +8507,56 @@ Computes the partitions. Returns 0 if successful. ";
 %feature("docstring") row_matrix "";
 
 
+// File: classTIfpack__HashTable.xml
+%feature("docstring") TIfpack_HashTable "";
+
+%feature("docstring")  TIfpack_HashTable::TIfpack_HashTable "TIfpack_HashTable< key_type >::TIfpack_HashTable(const int
+n_keys=1031, const int n_sets=1)
+
+constructor. ";
+
+%feature("docstring")  TIfpack_HashTable::get "double
+TIfpack_HashTable< key_type >::get(const key_type key)
+
+Returns an element from the hash table, or 0.0 if not found. ";
+
+%feature("docstring")  TIfpack_HashTable::set "void
+TIfpack_HashTable< key_type >::set(const key_type key, const double
+value, const bool addToValue=false)
+
+Sets an element in the hash table. ";
+
+%feature("docstring")  TIfpack_HashTable::reset "void
+TIfpack_HashTable< key_type >::reset()
+
+Resets the entries of the already allocated memory. This method can be
+used to clean an array, to be reused without additional memory
+allocation/deallocation. ";
+
+%feature("docstring")  TIfpack_HashTable::getNumEntries "int
+TIfpack_HashTable< key_type >::getNumEntries() const
+
+Returns the number of stored entries. ";
+
+%feature("docstring")  TIfpack_HashTable::arrayify "void
+TIfpack_HashTable< key_type >::arrayify(key_type *key_array, double
+*val_array)
+
+Converts the contents in array format for both keys and values. ";
+
+%feature("docstring")  TIfpack_HashTable::print "void
+TIfpack_HashTable< key_type >::print()
+
+Basic printing routine. ";
+
+%feature("docstring")  TIfpack_HashTable::getRecommendedHashSize "int
+TIfpack_HashTable< key_type >::getRecommendedHashSize(int n) ";
+
+
 // File: namespace@0.xml
+
+
+// File: namespace@30.xml
 
 
 // File: namespacestd.xml
@@ -8252,12 +8622,6 @@ MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0) ";
 // File: Ifpack__CrsGraph_8h.xml
 
 
-// File: Ifpack__CrsIct_8cpp.xml
-
-
-// File: Ifpack__CrsIct_8h.xml
-
-
 // File: Ifpack__CrsIlut_8cpp.xml
 
 
@@ -8298,6 +8662,12 @@ MaxIters=1550, const double Tol=1e-9, Epetra_RowMatrix *Matrix=0) ";
 
 
 // File: Ifpack__DropFilter_8h.xml
+
+
+// File: Ifpack__DynamicFactory_8cpp.xml
+
+
+// File: Ifpack__DynamicFactory_8h.xml
 
 
 // File: Ifpack__EquationPartitioner_8cpp.xml
@@ -8385,8 +8755,9 @@ Ifpack_AIJMatrix *L, double **pdiag) ";
 
 
 // File: Ifpack__IC__Utils_8h.xml
-%feature("docstring")  ifpack_quicksort "void ifpack_quicksort(int
-*const pbase, double *const daux, int total_elems) ";
+%feature("docstring")  ifpack_multilist_sort "void
+ifpack_multilist_sort(int *const pbase, double *const daux, int
+total_elems) ";
 
 %feature("docstring")  Ifpack_AIJMatrix_dealloc "void
 Ifpack_AIJMatrix_dealloc(Ifpack_AIJMatrix *a) ";
@@ -8601,6 +8972,12 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 // File: Ifpack__ILUT_8h.xml
 
 
+// File: Ifpack__Krylov_8cpp.xml
+
+
+// File: Ifpack__Krylov_8h.xml
+
+
 // File: Ifpack__LinearPartitioner_8cpp.xml
 
 
@@ -8671,6 +9048,15 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 
 
 // File: Ifpack__PointRelaxation_8h.xml
+
+
+// File: Ifpack__Polynomial_8cpp.xml
+%feature("docstring")  Apply_Transpose "void
+Apply_Transpose(Teuchos::RCP< const Epetra_Operator > Operator_, const
+Epetra_MultiVector &X, Epetra_MultiVector &Y) ";
+
+
+// File: Ifpack__Polynomial_8h.xml
 
 
 // File: Ifpack__Preconditioner_8h.xml
@@ -8972,8 +9358,8 @@ IFPACK. ";
 %feature("docstring")  Ifpack_Version "string Ifpack_Version() ";
 
 
-// File: dir_9b150e231a3088b15fbe04166109c688.xml
+// File: dir_5838d4552e1cf70d11903e52fb48b52a.xml
 
 
-// File: dir_0edeec2379d245cfc73672c515d4a02d.xml
+// File: dir_3a401f9a0f481fd6e189eb671945d208.xml
 
