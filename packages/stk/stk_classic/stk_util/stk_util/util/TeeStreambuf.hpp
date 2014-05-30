@@ -15,7 +15,7 @@
 #include <set>
 #include <map>
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Class <b>basic_tee_streambuf</b> maintains a list of destination output stream buffers to
@@ -190,7 +190,7 @@ private:
   StreamSet             m_destinations;    ///< Destination output stream buffers to write to
 };
 
-typedef stk::basic_tee_streambuf<char> tee_streambuf;
+typedef stk_classic::basic_tee_streambuf<char> tee_streambuf;
 
 } // namespace stk
 

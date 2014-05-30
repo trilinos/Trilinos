@@ -12,7 +12,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 template< typename EnumType > class DataTraitsEnum ;

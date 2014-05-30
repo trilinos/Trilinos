@@ -14,7 +14,7 @@
 
 #include <stk_util/util/CSet.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 

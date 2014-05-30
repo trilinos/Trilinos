@@ -22,7 +22,7 @@ public:
   void testEvaluator();
 };
 
-using namespace stk::expreval;
+using namespace stk_classic::expreval;
 
 //  expr_eval.bind("x", x);				\								x
 //      expr_eval.setValue("x", x);			\								x
@@ -41,7 +41,7 @@ checkUndefinedFunction(
     const char *	expr)
 {
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
     if (expr_eval.undefinedFunction()) {
       return true;
@@ -88,7 +88,7 @@ syntax(
 {
   std::cout << "Syntax " << expr << " ... ";
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -105,7 +105,7 @@ fail_syntax(
 {
   std::cout << "Invalid syntax " << expr << " ...  ";
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -123,7 +123,7 @@ vectest(
 {
   std::cout << " syntax " << expr << " ...  ";
   try {
-    stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -141,7 +141,7 @@ test_one_value(const char *expression, double gold_value)
   bool failed = false;
   std::cout << "Evaluate " << expression << " ... ";
   std::string by_expr = std::string("by=") + expression + ";";
-  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
   double result = expr_eval.evaluate();
   double absolute_error = fabs(result - gold_value);
@@ -178,7 +178,7 @@ evaluate_range(
   std::cout << "Evaluate " << expr << " from " << xmin << " to " << xmax << " with " << numPoints << "\n";
 
   std::string by_expr = std::string("by=") + expr + ";";
-  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
   double x, y, by, v[2];
@@ -231,7 +231,7 @@ test(
   bool failed = false;
   std::cout << "Evaluate " << expr << " ... ";
   std::string by_expr = std::string("by=") + expr + ";";
-  stk::expreval::Eval expr_eval(stk::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  stk_classic::expreval::Eval expr_eval(stk_classic::expreval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
   double x, y, by, result = 0.0;
@@ -290,11 +290,11 @@ test(
   std::cout << "Evaluate " << expr1 << " vs " << expr2;
 
   std::string by_expr1 = std::string("by=") + expr1 + ";";
-  stk::expreval::Eval expr_eval1(stk::expreval::VariableMap::getDefaultResolver(), by_expr1.c_str());
+  stk_classic::expreval::Eval expr_eval1(stk_classic::expreval::VariableMap::getDefaultResolver(), by_expr1.c_str());
   expr_eval1.parse();
 
   std::string by_expr2 = std::string("by=") + expr2 + ";";
-  stk::expreval::Eval expr_eval2(stk::expreval::VariableMap::getDefaultResolver(), by_expr2.c_str());
+  stk_classic::expreval::Eval expr_eval2(stk_classic::expreval::VariableMap::getDefaultResolver(), by_expr2.c_str());
   expr_eval2.parse();
 
   double x, y, by, result = 0.0;
@@ -400,16 +400,16 @@ EXPREVAL_DEFINE_TEST1(f17, sinh(x));
 EXPREVAL_DEFINE_TEST1(f18, sqrt(x));
 EXPREVAL_DEFINE_TEST1(f19, tan(x));
 EXPREVAL_DEFINE_TEST1(f20, tanh(x));
-EXPREVAL_DEFINE_TEST(f21, atan2(x, PI),atan2(x, stk::expreval::s_pi));
+EXPREVAL_DEFINE_TEST(f21, atan2(x, PI),atan2(x, stk_classic::expreval::s_pi));
 EXPREVAL_DEFINE_TEST(f22, ln(x),log(x));
-EXPREVAL_DEFINE_TEST(f23, deg(x),(180.0 / stk::expreval::s_pi) * x);
-EXPREVAL_DEFINE_TEST(f24, rad(x),(stk::expreval::s_pi / 180.0) * x);
+EXPREVAL_DEFINE_TEST(f23, deg(x),(180.0 / stk_classic::expreval::s_pi) * x);
+EXPREVAL_DEFINE_TEST(f24, rad(x),(stk_classic::expreval::s_pi / 180.0) * x);
 EXPREVAL_DEFINE_TEST(f25, max(x,1.0),std::max(x,1.0));
 EXPREVAL_DEFINE_TEST(f26, min(x,1.0),std::min(x,1.0));
 EXPREVAL_DEFINE_TEST(f27, recttopolr(x,1.0),sqrt(x*x+1.0*1.0));
 EXPREVAL_DEFINE_TEST(f28, recttopola(x,1.0),atan2(1.0, x));
-EXPREVAL_DEFINE_TEST(f29, poltorectx(x,PI/4.0),x*cos(stk::expreval::s_pi/4.0));
-EXPREVAL_DEFINE_TEST(f30, poltorecty(x,PI/4.0),x*sin(stk::expreval::s_pi/4.0));
+EXPREVAL_DEFINE_TEST(f29, poltorectx(x,PI/4.0),x*cos(stk_classic::expreval::s_pi/4.0));
+EXPREVAL_DEFINE_TEST(f30, poltorecty(x,PI/4.0),x*sin(stk_classic::expreval::s_pi/4.0));
 EXPREVAL_DEFINE_TEST1(f31, 0.4209+4.5e-4*x);
 
 // Bova tests
@@ -419,9 +419,9 @@ EXPREVAL_DEFINE_TEST1(b3, .5*sin(x));
 
 // Pierson tests
 EXPREVAL_DEFINE_TEST(k1, x^2, x*x);
-EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*stk::expreval::s_pi))/2);
-EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
-EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k2, cosine_ramp(x),           (1.0-cos(x*stk_classic::expreval::s_pi))/2);
+EXPREVAL_DEFINE_TEST(k3, cosine_ramp(x, 1.0),      (1.0-cos(x*stk_classic::expreval::s_pi/1.0))/2);
+EXPREVAL_DEFINE_TEST(k4, cosine_ramp(x, 0.0, 1.0), (1.0-cos(x*stk_classic::expreval::s_pi/1.0))/2);
 
 #undef EXPREVAL_DEFINE_TEST1
 

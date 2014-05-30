@@ -26,10 +26,10 @@ using std::sqrt;
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
-typedef stk::mesh::Field<double>                                ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>          CartesianField ;
-typedef stk::mesh::Field<double, stk::mesh::FullTensor>         FullTensorField ;
-typedef stk::mesh::Field<double, stk::mesh::SymmetricTensor>    SymmetricTensorField ;
+typedef stk_classic::mesh::Field<double>                                ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>          CartesianField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::FullTensor>         FullTensorField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::SymmetricTensor>    SymmetricTensorField ;
 
 //----------------------------------------------------------------------
 // Tags for my special kinds of field types,
@@ -71,29 +71,29 @@ const char * HourglassModes::name() const
 
 //----------------------------------------------------------------------
 
-typedef stk::mesh::Field<double, HourglassOp>     HourglassOpField;
-typedef stk::mesh::Field<double, HourglassModes>  HourglassArrayField;
+typedef stk_classic::mesh::Field<double, HourglassOp>     HourglassOpField;
+typedef stk_classic::mesh::Field<double, HourglassModes>  HourglassArrayField;
 
 // Specification for the aggressive gather pointer-field for elements.
 
-typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerField ;
+typedef stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> ElementNodePointerField ;
 
 //----------------------------------------------------------------------
 // prototype for the function that will generate the use-case mesh.
 
-namespace stk {
+namespace stk_classic {
   namespace app {
 
     void use_case_14_generate_mesh(
-        stk::mesh::BulkData & mesh ,
+        stk_classic::mesh::BulkData & mesh ,
         const unsigned N[] ,
         const CartesianField & node_coord ,
-        const stk::mesh::ElementNodePointerField & coord_gather ,
-        stk::mesh::Part & hex_block ,
+        const stk_classic::mesh::ElementNodePointerField & coord_gather ,
+        stk_classic::mesh::Part & hex_block ,
         const unsigned shell_side[][2] );
 
     void use_case_14_initialize_data(
-        stk::mesh::BulkData & mesh ,
+        stk_classic::mesh::BulkData & mesh ,
         const CartesianField & node_model_coordinates ,
         const CartesianField & node_coordinates ,
         const CartesianField & node_velocity );

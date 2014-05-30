@@ -17,7 +17,7 @@
 
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     struct RefinementInfoByType
@@ -48,7 +48,7 @@ namespace stk {
 
       static void estimateNew(std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass);
       static void printTable(std::ostream& os, std::vector< RefinementInfoByType >& refinementInfoByType, int iRefinePass, bool printAll = false);
-      static void countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType);
+      static void countCurrentNodes(stk_classic::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType);
 
     };
 

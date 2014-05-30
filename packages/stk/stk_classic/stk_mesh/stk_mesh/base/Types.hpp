@@ -19,7 +19,7 @@
 #include <stk_util/util/PairIter.hpp>
 #include <stk_util/util/NamedPair.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------
@@ -30,7 +30,7 @@ namespace mesh {
 class MetaData ;  // Meta-data description of a mesh
 class Part ;      // Defined subset of the mesh
 
-/** \brief  Collections of \ref stk::mesh::Part "parts" are frequently
+/** \brief  Collections of \ref stk_classic::mesh::Part "parts" are frequently
  *          maintained as a vector of Part pointers.
  */
 typedef std::vector< Part * > PartVector ;
@@ -47,7 +47,7 @@ template< typename Scalar = void ,
 
 /** \brief Maximum
  *  \ref shards::Array "multi-dimenaional array" dimension of a
- *  \ref stk::mesh::Field "field"
+ *  \ref stk_classic::mesh::Field "field"
  */
 enum { MaximumFieldDimension = 7 };
 

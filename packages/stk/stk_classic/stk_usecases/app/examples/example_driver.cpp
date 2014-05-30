@@ -18,15 +18,15 @@
 
 namespace stk_examples {
 
-  void example_io_1( stk::ParallelMachine comm,
+  void example_io_1( stk_classic::ParallelMachine comm,
                      const std::string& in_filename,
                      const std::string & out_filename );
 
-  void example_io_2( stk::ParallelMachine comm,
+  void example_io_2( stk_classic::ParallelMachine comm,
                      const std::string& in_filename,
                      const std::string & out_filename );
 
-  void use_case_5_write_mesh( stk::ParallelMachine , 
+  void use_case_5_write_mesh( stk_classic::ParallelMachine , 
                               const std::string & out_filename );
 } // namespace stk_examples
 
@@ -37,9 +37,9 @@ int main(int argc, char** argv)
   //----------------------------------
   // Broadcast argc and argv to all processors.
 
-  stk::ParallelMachine comm = stk::parallel_machine_init(&argc, &argv);
+  stk_classic::ParallelMachine comm = stk_classic::parallel_machine_init(&argc, &argv);
 
-  stk::BroadcastArg b_arg(comm, argc, argv);
+  stk_classic::BroadcastArg b_arg(comm, argc, argv);
 
   //----------------------------------
   // Process the broadcast command line arguments
@@ -54,15 +54,15 @@ int main(int argc, char** argv)
     ("output-log,o", bopt::value<std::string>(), "output log path" )
     ("runtest,r",    bopt::value<std::string>(), "runtest pid file" );
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
     
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk_classic::get_variables_map();  
   try {
     bopt::store(bopt::parse_command_line(b_arg.m_argc, b_arg.m_argv, desc), vm);
     bopt::notify(vm);
   }
   catch (std::exception &x) {
-    stk::RuntimeDoomedSymmetric() << x.what();
+    stk_classic::RuntimeDoomedSymmetric() << x.what();
     std::exit(1);
   }
   
@@ -103,7 +103,7 @@ int main(int argc, char** argv)
     stk_examples::example_io_1(comm, in_filename, out_filename );
   }
 
-  stk::parallel_machine_finalize();
+  stk_classic::parallel_machine_finalize();
 
   return 0;
 }

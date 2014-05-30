@@ -18,7 +18,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Part.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {

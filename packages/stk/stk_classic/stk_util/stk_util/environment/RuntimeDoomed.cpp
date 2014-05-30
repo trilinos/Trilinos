@@ -12,7 +12,7 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeDoomed.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 unsigned int
 get_doomed_count()

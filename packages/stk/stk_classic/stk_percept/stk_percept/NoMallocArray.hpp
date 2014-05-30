@@ -4,7 +4,7 @@
 #include <algorithm>
 #include <stk_percept/Util.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     // patterned after boost::array

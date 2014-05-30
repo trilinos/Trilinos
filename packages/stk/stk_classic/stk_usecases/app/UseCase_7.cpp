@@ -47,19 +47,19 @@
 // The function 'use_case_7_driver' below is the equivalent of 'main'.
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 enum { SpatialDim = 3 };
 
 //----------------------------------------------------------------------
 
-typedef stk::mesh::Field<double,stk::mesh::Cartesian>    VectorFieldType ;
-typedef stk::mesh::Field<double>              ScalarFieldType ;
+typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian>    VectorFieldType ;
+typedef stk_classic::mesh::Field<double>              ScalarFieldType ;
 
 // Specification for the aggressive gather pointer-field for elements.
 
-typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
+typedef stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> ElementNodePointerFieldType ;
 
 // Centroid algorithm generic programming functions:
 
@@ -70,14 +70,14 @@ typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerField
 
 void use_case_7_generate_mesh(
   const std::string& mesh_options,
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  stk::mesh::Part & hex_block ,
-  stk::mesh::Part & quad_shell_block );
+  stk_classic::mesh::Part & hex_block ,
+  stk_classic::mesh::Part & quad_shell_block );
 
 void use_case_7_initialize_data(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const VectorFieldType & node_displ ,
   const VectorFieldType & node_rotat );
@@ -100,7 +100,7 @@ bool use_case_7_driver( MPI_Comm comm ,
                         int num_threads ,
                         const std::string& thread_runner )
 {
-  if ( ! stk::parallel_machine_rank( comm ) ) {
+  if ( ! stk_classic::parallel_machine_rank( comm ) ) {
     std::cout << "stk_mesh Use Case #7, begin" << std::endl ;
   }
 
@@ -132,7 +132,7 @@ bool use_case_7_driver(
   const std::string & mesh_options ,
   const unsigned num_trials )
 {
-  // stk::mesh::BulkData bulk data CHUNK_SIZE = max entities per field data chunk.
+  // stk_classic::mesh::BulkData bulk data CHUNK_SIZE = max entities per field data chunk.
   // (CHUNK_SIZE is the application's preferred "workset" size.)
 
   // Timing:
@@ -144,8 +144,8 @@ bool use_case_7_driver(
   //   [5] = Element computation #2 gathered
   //   [6] = Node computation #1
   //   [7] = Node computation #2
-  //   [8] = stk::mesh::BulkData output
-  //   [9] = stk::mesh::BulkData destruction
+  //   [8] = stk_classic::mesh::BulkData output
+  //   [9] = stk_classic::mesh::BulkData destruction
 
   double time_min[10] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
   double time_max[10] = { 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 , 0 };
@@ -158,17 +158,17 @@ bool use_case_7_driver(
 
   const AlgorithmRunnerInterface* alg_runner = NULL ;
   if (thread_runner.empty() || thread_runner == "NonThreaded") {
-    alg_runner = stk::algorithm_runner_non_thread();
+    alg_runner = stk_classic::algorithm_runner_non_thread();
   }
   else if (thread_runner == "TPI") {
-    alg_runner = stk::algorithm_runner_tpi(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tpi(num_threads);
   }
   else if ( thread_runner == std::string("TBB") ) {
-    alg_runner = stk::algorithm_runner_tbb(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tbb(num_threads);
   }
 
   if (alg_runner != NULL) {
-    if (stk::parallel_machine_rank(comm) == 0)
+    if (stk_classic::parallel_machine_rank(comm) == 0)
       std::cout << "Using " << thread_runner
                 << " algorithm runner, num_threads = " << num_threads
                 << std::endl;
@@ -183,9 +183,9 @@ bool use_case_7_driver(
 
   reset_malloc_stats();
 
-  if ( 0 == stk::parallel_machine_rank( comm ) ) {
+  if ( 0 == stk_classic::parallel_machine_rank( comm ) ) {
     std::cout << "stk_mesh use case 7" << std::endl
-              << "  Number Processes = " << stk::parallel_machine_size( comm )
+              << "  Number Processes = " << stk_classic::parallel_machine_size( comm )
               << std::endl ;
     if ( num_threads ) {
       std::cout << "  Threads/process  = " << num_threads << std::endl ;
@@ -195,14 +195,14 @@ bool use_case_7_driver(
 
   //--------------------------------------------------------------------
 
-  wtime = stk::wall_time();
+  wtime = stk_classic::wall_time();
 
   //------------------------------------------------------------------
   // Declare the mesh meta data: element blocks and associated fields
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim) ) ;
-  stk::mesh::MetaData & mesh_meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim) ) ;
+  stk_classic::mesh::MetaData & mesh_meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   {
 
@@ -212,41 +212,41 @@ bool use_case_7_driver(
     // Declaring the element blocks and associating an element traits
     // with each element block.
 
-    stk::mesh::Part & universal        = fem_meta.universal_part();
-    stk::mesh::Part & block_hex        = fem_meta.declare_part("block_1", element_rank);
-    stk::mesh::Part & block_quad_shell = fem_meta.declare_part("block_2", element_rank);
+    stk_classic::mesh::Part & universal        = fem_meta.universal_part();
+    stk_classic::mesh::Part & block_hex        = fem_meta.declare_part("block_1", element_rank);
+    stk_classic::mesh::Part & block_quad_shell = fem_meta.declare_part("block_2", element_rank);
 
-    stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-    stk::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
-    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
-    stk::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
+    stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
+    stk_classic::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
+    stk_classic::mesh::fem::set_cell_topology( block_hex, hex_top );
+    stk_classic::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
 
     //--------------------------------
     // Declaring fields of specified types on all nodes:
 
     VectorFieldType & coordinates_field =
-      stk::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "coordinates" ) , fem_meta.node_rank() , universal , SpatialDim );
+      stk_classic::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "coordinates" ) , fem_meta.node_rank() , universal , SpatialDim );
 
     VectorFieldType & displacements_field =
-      stk::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "displacements" ) , fem_meta.node_rank() , universal , SpatialDim );
+      stk_classic::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "displacements" ) , fem_meta.node_rank() , universal , SpatialDim );
 
     VectorFieldType & residual_field =
-      stk::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "residual" ) ,fem_meta.node_rank() , universal , SpatialDim );
+      stk_classic::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "residual" ) ,fem_meta.node_rank() , universal , SpatialDim );
 
     //--------------------------------
     // rotation_field only exists on the shell-nodes:
 
     VectorFieldType & rotation_field =
-      stk::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "rotation" ), stk::mesh::fem::FEMMetaData::NODE_RANK , block_quad_shell , SpatialDim );
+      stk_classic::mesh::put_field(fem_meta.declare_field< VectorFieldType >( "rotation" ), stk_classic::mesh::fem::FEMMetaData::NODE_RANK , block_quad_shell , SpatialDim );
 
     //--------------------------------
     // Declare the coordinates field for all elements - for the centroid
 
-    stk::mesh::put_field(coordinates_field , element_rank , universal , SpatialDim );
+    stk_classic::mesh::put_field(coordinates_field , element_rank , universal , SpatialDim );
 
     // Declare rotation field on elements also - for the mean rotation.
 
-    stk::mesh::put_field(rotation_field , element_rank , block_quad_shell , SpatialDim );
+    stk_classic::mesh::put_field(rotation_field , element_rank , block_quad_shell , SpatialDim );
 
     //--------------------------------
     // Declare an aggressive "gather" field which is an
@@ -266,12 +266,12 @@ bool use_case_7_driver(
 
     fem_meta.declare_field_relation(
       elem_node_coord ,
-      stk::mesh::fem::get_element_node_stencil(SpatialDim) ,
+      stk_classic::mesh::fem::get_element_node_stencil(SpatialDim) ,
       coordinates_field );
 
     fem_meta.declare_field_relation(
       elem_node_rot ,
-      stk::mesh::fem::get_element_node_stencil(SpatialDim) ,
+      stk_classic::mesh::fem::get_element_node_stencil(SpatialDim) ,
       rotation_field );
 
     // Declare the size of the aggressive "gather" field
@@ -279,11 +279,11 @@ bool use_case_7_driver(
     // is the number of nodes per element.
     // This size is different for each element block.
 
-    stk::mesh::put_field(elem_node_coord , element_rank , block_hex , shards::Hexahedron<> ::node_count );
+    stk_classic::mesh::put_field(elem_node_coord , element_rank , block_hex , shards::Hexahedron<> ::node_count );
 
-    stk::mesh::put_field(elem_node_coord, element_rank, block_quad_shell,shards::ShellQuadrilateral<> ::node_count );
+    stk_classic::mesh::put_field(elem_node_coord, element_rank, block_quad_shell,shards::ShellQuadrilateral<> ::node_count );
 
-    stk::mesh::put_field(elem_node_rot, element_rank, block_quad_shell,shards::ShellQuadrilateral<> ::node_count );
+    stk_classic::mesh::put_field(elem_node_rot, element_rank, block_quad_shell,shards::ShellQuadrilateral<> ::node_count );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -292,9 +292,9 @@ bool use_case_7_driver(
     fem_meta.commit();
 
     //------------------------------------------------------------------
-    // stk::mesh::BulkData bulk data conforming to the meta data.
+    // stk_classic::mesh::BulkData bulk data conforming to the meta data.
 
-    stk::mesh::BulkData mesh_bulk_data( mesh_meta_data , comm );
+    stk_classic::mesh::BulkData mesh_bulk_data( mesh_meta_data , comm );
 
     // In a typical app, the mesh would be read from file at this point.
     // But in this use-case, we generate the mesh and initialize
@@ -314,16 +314,16 @@ bool use_case_7_driver(
       displacements_field ,
       rotation_field );
 
-    time_max[0] = stk::wall_dtime( wtime );
+    time_max[0] = stk_classic::wall_dtime( wtime );
 
     mesh_bulk_data.modification_end();
 
-    time_max[1] = stk::wall_dtime( wtime );
+    time_max[1] = stk_classic::wall_dtime( wtime );
 
     //------------------------------------------------------------------
 
 #ifdef USE_GNU_MALLOC_HOOKS
-    if (stk::parallel_machine_rank(comm) == 0) {
+    if (stk_classic::parallel_machine_rank(comm) == 0) {
       double net_alloc = alloc_MB() - freed_MB();
       std::cout << "Mesh creation:" << "\n   Total allocated: "
         << alloc_MB()<<"MB in "<<alloc_blks() << " blocks."
@@ -335,16 +335,16 @@ bool use_case_7_driver(
 
     //------------------------------------------------------------------
 
-    stk::mesh::Selector selector_all(universal);
-    stk::mesh::Selector selector_hex(block_hex);
-    stk::mesh::count_entities( selector_hex, mesh_bulk_data, hex_block_count );
-    stk::mesh::Selector selector_quad_shell(block_quad_shell);
-    stk::mesh::count_entities( selector_quad_shell, mesh_bulk_data, shell_block_count);
+    stk_classic::mesh::Selector selector_all(universal);
+    stk_classic::mesh::Selector selector_hex(block_hex);
+    stk_classic::mesh::count_entities( selector_hex, mesh_bulk_data, hex_block_count );
+    stk_classic::mesh::Selector selector_quad_shell(block_quad_shell);
+    stk_classic::mesh::count_entities( selector_quad_shell, mesh_bulk_data, shell_block_count);
 
     verify_elem_node_coord( mesh_bulk_data, elem_node_coord, coordinates_field);
 
-    const std::vector< stk::mesh::Bucket * >& node_buckets = mesh_bulk_data.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
-    const std::vector< stk::mesh::Bucket * >& elem_buckets = mesh_bulk_data.buckets( element_rank );
+    const std::vector< stk_classic::mesh::Bucket * >& node_buckets = mesh_bulk_data.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
+    const std::vector< stk_classic::mesh::Bucket * >& elem_buckets = mesh_bulk_data.buckets( element_rank );
 
     ElementMeanValue elem_mean_hex(coordinates_field, elem_node_coord);
     ElementMeanValue_Gather elem_mean_gather_hex(coordinates_field, elem_node_coord);
@@ -365,7 +365,7 @@ bool use_case_7_driver(
 
     for ( unsigned i = 0 ; i < num_trials ; ++i ) {
 
-      wtime = stk::wall_time();
+      wtime = stk_classic::wall_time();
 
       // None of these Selector usages have a union part vector so we
       // pass in an empty union vector.
@@ -373,29 +373,29 @@ bool use_case_7_driver(
 
       alg_runner->run( selector_hex , empty_union_vector, elem_buckets , elem_mean_hex );
 
-      time_max[2] += stk::wall_dtime( wtime );
+      time_max[2] += stk_classic::wall_dtime( wtime );
 
       alg_runner->run( selector_hex , empty_union_vector, elem_buckets , elem_mean_gather_hex );
 
-      time_max[3] += stk::wall_dtime( wtime );
+      time_max[3] += stk_classic::wall_dtime( wtime );
 
       // Mean rotation of shell elements:
 
       alg_runner->run( selector_quad_shell , empty_union_vector, elem_buckets , elem_mean_quad_shell );
 
-      time_max[4] += stk::wall_dtime( wtime );
+      time_max[4] += stk_classic::wall_dtime( wtime );
 
       alg_runner->run( selector_quad_shell , empty_union_vector, elem_buckets , elem_mean_gather_quad_shell );
 
-      time_max[5] += stk::wall_dtime( wtime );
+      time_max[5] += stk_classic::wall_dtime( wtime );
 
       alg_runner->run( selector_all , empty_union_vector, node_buckets , node_scale_sum );
 
-      time_max[6] += stk::wall_dtime( wtime );
+      time_max[6] += stk_classic::wall_dtime( wtime );
 
-      double result = dot(*alg_runner , mesh_bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK , residual_field , displacements_field);
+      double result = dot(*alg_runner , mesh_bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , residual_field , displacements_field);
 
-      time_max[7] += stk::wall_dtime( wtime );
+      time_max[7] += stk_classic::wall_dtime( wtime );
 
       if ( ! i ) { result_inner_product[0] = result ; }
       if ( i + 1 == num_trials ) { result_inner_product[1] = result ; }
@@ -403,10 +403,10 @@ bool use_case_7_driver(
 
     //------------------------------
 
-    wtime = stk::wall_time();
+    wtime = stk_classic::wall_time();
   }
 
-  time_max[9] = stk::wall_dtime( wtime );
+  time_max[9] = stk_classic::wall_dtime( wtime );
 
   bool success = true;
 
@@ -446,7 +446,7 @@ bool use_case_7_driver(
   time_min[8] = time_max[8] ;
   time_min[9] = time_max[9] ;
 
-  stk::all_reduce( comm , stk::ReduceMax<10>( time_max ) & stk::ReduceMin<10>( time_min ) );
+  stk_classic::all_reduce( comm , stk_classic::ReduceMax<10>( time_max ) & stk_classic::ReduceMin<10>( time_min ) );
 
   time_max[2] /= num_trials ;
   time_max[3] /= num_trials ;
@@ -475,7 +475,7 @@ bool use_case_7_driver(
       time_max[4] / ( shell_block_count[element_rank] );
   }
 
-  if ( ! stk::parallel_machine_rank( comm ) ) {
+  if ( ! stk_classic::parallel_machine_rank( comm ) ) {
     std::cout
       << "stk_mesh performance use case results:" << std::endl
       << "  Number trials       = " << num_trials << std::endl
@@ -538,22 +538,22 @@ bool use_case_7_driver(
 //----------------------------------------------------------------------
 
 void use_case_7_initialize_data(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const VectorFieldType & node_displ ,
   const VectorFieldType & node_rotat )
 {
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+  const std::vector<stk_classic::mesh::Bucket*> & buckets = mesh.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    stk::mesh::Bucket & bucket = **k ;
+    stk_classic::mesh::Bucket & bucket = **k ;
     const unsigned length = bucket.size();
     const unsigned length_3 = length * 3 ;
 
-    double * const coord = stk::mesh::field_data( node_coord , bucket.begin() );
-    double * const displ = stk::mesh::field_data( node_displ , bucket.begin() );
-    double * const rotat = stk::mesh::field_data( node_rotat , bucket.begin() );
+    double * const coord = stk_classic::mesh::field_data( node_coord , bucket.begin() );
+    double * const displ = stk_classic::mesh::field_data( node_displ , bucket.begin() );
+    double * const rotat = stk_classic::mesh::field_data( node_rotat , bucket.begin() );
 
     for ( unsigned i = 0 ; i < length_3 ; ++i ) {
       displ[i] = 0.1 * coord[i] ;
@@ -575,16 +575,16 @@ void use_case_7_initialize_data(
 
 #include <generated/Iogn_GeneratedMesh.h>
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 void use_case_7_generate_mesh(
   const std::string& mesh_options ,
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const ElementNodePointerFieldType & /*elem_node_coord */,
-  stk::mesh::Part & hex_block ,
-  stk::mesh::Part & quad_shell_block )
+  stk_classic::mesh::Part & hex_block ,
+  stk_classic::mesh::Part & quad_shell_block )
 {
   mesh.modification_begin();
 
@@ -605,7 +605,7 @@ void use_case_7_generate_mesh(
     num_nodes = gmesh.node_count_proc();
     num_block = gmesh.block_count();
 
-    t = stk::wall_time();
+    t = stk_classic::wall_time();
 
     std::vector<int> node_map( num_nodes , 0 );
 
@@ -629,7 +629,7 @@ void use_case_7_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
-            const stk::mesh::EntityId node_id[8] = {
+            const stk_classic::mesh::EntityId node_id[8] = {
               node_map[ local_node_id[0] - 1 ] ,
               node_map[ local_node_id[1] - 1 ] ,
               node_map[ local_node_id[2] - 1 ] ,
@@ -640,9 +640,9 @@ void use_case_7_generate_mesh(
               node_map[ local_node_id[7] - 1 ]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
-            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
+            stk_classic::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
             ++num_hex ;
           }
@@ -653,16 +653,16 @@ void use_case_7_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 4 ] ;
 
-            const stk::mesh::EntityId node_id[4] = {
+            const stk_classic::mesh::EntityId node_id[4] = {
               node_map[ local_node_id[0] - 1 ] ,
               node_map[ local_node_id[1] - 1 ] ,
               node_map[ local_node_id[2] - 1 ] ,
               node_map[ local_node_id[3] - 1 ]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
-            stk::mesh::fem::declare_element( mesh , quad_shell_block , elem_id , node_id );
+            stk_classic::mesh::fem::declare_element( mesh , quad_shell_block , elem_id , node_id );
 
             ++num_shell ;
           }
@@ -687,7 +687,7 @@ void use_case_7_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      stk::mesh::Entity * const node = mesh.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
+      stk_classic::mesh::Entity * const node = mesh.get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
 
       if ( NULL == node ) {
         std::ostringstream msg ;
@@ -717,7 +717,7 @@ void use_case_7_generate_mesh(
     error_flag = 1 ;
   }
 
-  stk::all_reduce( mesh.parallel() , stk::ReduceMax<1>( & error_flag ) );
+  stk_classic::all_reduce( mesh.parallel() , stk_classic::ReduceMax<1>( & error_flag ) );
 
   if ( error_flag ) {
     std::string msg( "Failed mesh generation" );
@@ -726,9 +726,9 @@ void use_case_7_generate_mesh(
 
   mesh.modification_end();
 
-  double dt = stk::wall_dtime( t );
+  double dt = stk_classic::wall_dtime( t );
 
-  stk::all_reduce( mesh.parallel() , stk::ReduceMax<1>( & dt ) );
+  stk_classic::all_reduce( mesh.parallel() , stk_classic::ReduceMax<1>( & dt ) );
 
   std::cout << "  P" << mesh.parallel_rank()
             << ": Meshed Hex = " << num_hex

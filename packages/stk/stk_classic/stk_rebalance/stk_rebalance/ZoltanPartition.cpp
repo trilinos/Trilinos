@@ -19,8 +19,8 @@
 #include <Teuchos_ParameterList.hpp>
 
 using namespace std;
-using namespace stk;
-using namespace stk::rebalance;
+using namespace stk_classic;
+using namespace stk_classic::rebalance;
 
 #define STK_GEOMDECOMP_DEBUG 0
 
@@ -245,8 +245,8 @@ int stkCallback_Num_Elements( void *data, int *ierr )
     *ierr = ZOLTAN_FATAL;  // Set FATAL Zoltan error flag
     return 0;
   }
-  stk::rebalance::GeomDecomp   *gdata =  static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan       *zdata = dynamic_cast<stk::rebalance::Zoltan*>(gdata);
+  stk_classic::rebalance::GeomDecomp   *gdata =  static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan       *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>(gdata);
 
   if (zdata == NULL ) {
     *ierr = ZOLTAN_FATAL;  // Set FATAL Zoltan error flag
@@ -273,8 +273,8 @@ void stkCallback_Element_List( void *data,
     return;
   }
 
-  stk::rebalance::GeomDecomp   *gdata =  static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan       *zdata = dynamic_cast<stk::rebalance::Zoltan*>     (gdata);
+  stk_classic::rebalance::GeomDecomp   *gdata =  static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan       *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>     (gdata);
 
   if (!zdata) {
     *ierr = ZOLTAN_FATAL;           // Set FATAL Zoltan error flag
@@ -307,8 +307,8 @@ int stkCallback_Num_Dimensions( void *data, int *ierr )
     *ierr = ZOLTAN_FATAL;
     return 0;
   }
-  stk::rebalance::GeomDecomp *gdata = static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan     *zdata = dynamic_cast<stk::rebalance::Zoltan*>    (gdata);
+  stk_classic::rebalance::GeomDecomp *gdata = static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan     *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>    (gdata);
 
   if ( !zdata ) {
     *ierr = ZOLTAN_FATAL;
@@ -340,8 +340,8 @@ void stkCallback_Centroid_Coord( void *data,
     *ierr = ZOLTAN_FATAL;
     return ;
   }
-  stk::rebalance::GeomDecomp *gdata = static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan     *zdata = dynamic_cast<stk::rebalance::Zoltan*>    (gdata);
+  stk_classic::rebalance::GeomDecomp *gdata = static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan     *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>    (gdata);
 
   if ( !zdata ) {
     *ierr = ZOLTAN_FATAL;
@@ -373,8 +373,8 @@ void stkCallback_Centroid_Coord( void *data,
 void getNeighbors( const mesh::Entity & entity,
                    std::set<const mesh::Entity*> & nodes )
 {
-  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(entity);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(entity);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   nodes.clear();
 
@@ -415,8 +415,8 @@ int stkCallback_Num_Edges( void *data,
     *ierr = ZOLTAN_FATAL;
     return 0;
   }
-  stk::rebalance::GeomDecomp *gdata = static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan     *zdata = dynamic_cast<stk::rebalance::Zoltan*>    (gdata);
+  stk_classic::rebalance::GeomDecomp *gdata = static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan     *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>    (gdata);
 
   if ( !zdata ) {
     *ierr = ZOLTAN_FATAL;
@@ -455,8 +455,8 @@ void stkCallback_Edge_List( void *data,
     *ierr = ZOLTAN_FATAL;
     return ;
   }
-  stk::rebalance::GeomDecomp *gdata = static_cast<stk::rebalance::GeomDecomp*>  (data);
-  stk::rebalance::Zoltan     *zdata = dynamic_cast<stk::rebalance::Zoltan*>    (gdata);
+  stk_classic::rebalance::GeomDecomp *gdata = static_cast<stk_classic::rebalance::GeomDecomp*>  (data);
+  stk_classic::rebalance::Zoltan     *zdata = dynamic_cast<stk_classic::rebalance::Zoltan*>    (gdata);
 
   if ( !zdata ) {
     *ierr = ZOLTAN_FATAL;
@@ -585,7 +585,7 @@ Zoltan::set_mesh_info( const std::vector<mesh::Entity *> &mesh_entities,
       The length of the dest_proc_ids vector is the same
       length as the mesh_entities vector.
   */
-  mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk::parallel_machine_rank(comm_));
+  mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk_classic::parallel_machine_rank(comm_));
 
   m_mesh_information_ = mesh_info;
 }
@@ -709,7 +709,7 @@ Zoltan::find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const
 }
 
 int
-Zoltan::get_new_partition(stk::mesh::EntityProcVec &rebal_spec)
+Zoltan::get_new_partition(stk_classic::mesh::EntityProcVec &rebal_spec)
 {
   const unsigned entity_iter_len = m_mesh_information_.mesh_entities.size();
   for (unsigned entity_iter =0; entity_iter != entity_iter_len; ++entity_iter) {
@@ -956,7 +956,7 @@ void Zoltan::determine_new_partition (bool &RebalancingNeeded)
   RebalancingNeeded = 0 ;
   if (new_decomp) {
     int rebalneeded=0;
-    stk::all_reduce_sum(comm_, &actual_exported, &rebalneeded, 1);
+    stk_classic::all_reduce_sum(comm_, &actual_exported, &rebalneeded, 1);
     if (rebalneeded)  RebalancingNeeded = 1;
   }
 

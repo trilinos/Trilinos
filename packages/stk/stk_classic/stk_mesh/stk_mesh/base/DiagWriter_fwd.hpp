@@ -3,15 +3,15 @@
 
 #include <stk_util/diag/Writer_fwd.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 enum LogMask {
-  LOG_ALWAYS            = stk::LOG_ALWAYS,
-  LOG_TRACE             = stk::LOG_TRACE,
-  LOG_TRACE_STATS       = stk::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS   = stk::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS           = stk::LOG_MEMBERS,
+  LOG_ALWAYS            = stk_classic::LOG_ALWAYS,
+  LOG_TRACE             = stk_classic::LOG_TRACE,
+  LOG_TRACE_STATS       = stk_classic::LOG_TRACE_STATS,
+  LOG_TRACE_SUB_CALLS   = stk_classic::LOG_TRACE_SUB_CALLS,
+  LOG_MEMBERS           = stk_classic::LOG_MEMBERS,
 
   LOG_STREAM_COMMON     = LOG_TRACE | LOG_TRACE_STATS,
   LOG_BUCKET            = 0x00000100,

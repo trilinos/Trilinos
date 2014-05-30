@@ -114,7 +114,7 @@ Destroy nodes and sides that are no longer attached to a live face
 const int NUM_ITERATIONS = 7;
 const int NUM_RANK = 3;
 
-typedef std::vector<stk::mesh::Entity *> EntityVector;
+typedef std::vector<stk_classic::mesh::Entity *> EntityVector;
 
 // Validation constants:
 const int global_num_dead[NUM_ITERATIONS][NUM_RANK] =
@@ -144,9 +144,9 @@ const int global_num_live[NUM_ITERATIONS][NUM_RANK] =
 
 //Generates a vector of entities to be killed in this iteration
 EntityVector entities_to_be_killed( 
-    const stk::mesh::BulkData & mesh, 
+    const stk_classic::mesh::BulkData & mesh, 
     int iteration,
-    stk::mesh::EntityRank entity_rank
+    stk_classic::mesh::EntityRank entity_rank
     ) {
 
   std::vector<unsigned> entity_ids_to_kill;
@@ -188,7 +188,7 @@ EntityVector entities_to_be_killed(
   EntityVector entities_to_kill;
   for (std::vector<unsigned>::const_iterator itr = entity_ids_to_kill.begin();
       itr != entity_ids_to_kill.end(); ++itr) {
-    stk::mesh::Entity * temp = mesh.get_entity(entity_rank, *itr);
+    stk_classic::mesh::Entity * temp = mesh.get_entity(entity_rank, *itr);
     //select the entity only if the current process in the owner
     if (temp != NULL && temp->owner_rank() == mesh.parallel_rank()) {
       entities_to_kill.push_back(temp);
@@ -210,7 +210,7 @@ namespace {
   };
 }
 
-bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
+bool validate_sides( stk_classic::mesh::fixtures::GridFixture & fixture, int iteration)
 {
   enum {
     LEFT   = 0,
@@ -529,22 +529,22 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
       break;
   }
 
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::Part & dead_part = *fixture.dead_part();
-  const stk::mesh::EntityRank element_rank = fixture.fem_meta().element_rank();
+  stk_classic::mesh::BulkData& mesh = fixture.bulk_data();
+  stk_classic::mesh::Part & dead_part = *fixture.dead_part();
+  const stk_classic::mesh::EntityRank element_rank = fixture.fem_meta().element_rank();
 
   // Select live or dead from owned, shared, and ghosted
-  stk::mesh::Selector select_dead = dead_part ;
-  stk::mesh::Selector select_live = !dead_part ;
+  stk_classic::mesh::Selector select_dead = dead_part ;
+  stk_classic::mesh::Selector select_live = !dead_part ;
 
   //check live sides
   for (std::vector<entity_side>::const_iterator itr = live_sides.begin();
       itr != live_sides.end(); ++itr) {
-    stk::mesh::Entity * entity = mesh.get_entity(element_rank, itr->entity_id);
+    stk_classic::mesh::Entity * entity = mesh.get_entity(element_rank, itr->entity_id);
     if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
+      stk_classic::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
 
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
@@ -561,14 +561,14 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
   //check dead sides
   for (std::vector<entity_side>::const_iterator itr = dead_sides.begin();
       itr != dead_sides.end(); ++itr) {
-    stk::mesh::Entity * entity = mesh.get_entity(element_rank, itr->entity_id);
+    stk_classic::mesh::Entity * entity = mesh.get_entity(element_rank, itr->entity_id);
     //select the entity only if the current process in the owner
     // TODO fix the aura to correctly ghost the sides
     if (entity != NULL && entity->owner_rank() == mesh.parallel_rank()) {
     //if (entity != NULL) {
       //make sure the side exist
       const unsigned side_ordinal = itr->side_ordinal;
-      stk::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
+      stk_classic::mesh::PairIterRelation existing_sides = entity->relations(entity->entity_rank()-1);
 
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
@@ -593,30 +593,30 @@ bool validate_sides( stk::mesh::fixtures::GridFixture & fixture, int iteration)
 
 
 //Validates that the correct entites were killed in this iteration
-bool validate_iteration( stk::ParallelMachine pm, stk::mesh::fixtures::GridFixture & fixture, int iteration) {
+bool validate_iteration( stk_classic::ParallelMachine pm, stk_classic::mesh::fixtures::GridFixture & fixture, int iteration) {
 
   if (iteration >= NUM_ITERATIONS || iteration < 0) {
     return false;
   }
 
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
+  stk_classic::mesh::BulkData& mesh = fixture.bulk_data();
+  stk_classic::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
 
-  stk::mesh::Part & dead_part = *fixture.dead_part();
+  stk_classic::mesh::Part & dead_part = *fixture.dead_part();
 
-  stk::mesh::Selector select_dead = dead_part & fem_meta.locally_owned_part();
-  stk::mesh::Selector select_live = !dead_part & fem_meta.locally_owned_part();
+  stk_classic::mesh::Selector select_dead = dead_part & fem_meta.locally_owned_part();
+  stk_classic::mesh::Selector select_live = !dead_part & fem_meta.locally_owned_part();
 
   int num_dead[NUM_RANK] = {0, 0, 0};
   int num_live[NUM_RANK] = {0, 0, 0};
 
   for ( int i = 0; i < NUM_RANK ; ++i) {
-    const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( stk::mesh::EntityRank(i) );
+    const std::vector<stk_classic::mesh::Bucket*>& buckets = mesh.buckets( stk_classic::mesh::EntityRank(i) );
     num_dead[i] = count_selected_entities( select_dead, buckets);
     num_live[i] = count_selected_entities( select_live, buckets);
   }
 
-  stk::all_reduce(pm, stk::ReduceSum<3>(num_dead) & stk::ReduceSum<3>(num_live));
+  stk_classic::all_reduce(pm, stk_classic::ReduceSum<3>(num_dead) & stk_classic::ReduceSum<3>(num_live));
 
   bool correct_dead = true;
   bool correct_live = true;

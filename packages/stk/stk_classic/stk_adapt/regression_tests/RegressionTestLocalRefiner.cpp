@@ -153,12 +153,12 @@ namespace stk
         SetRefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {
         }
 
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
           double plane_point[3] = {2,0,0};
           double plane_normal[3] = {1, .5, -.5};
 
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -201,9 +201,9 @@ namespace stk
         percept::PerceptMesh& m_eMesh;
       public:
         SetUnrefineField(percept::PerceptMesh& eMesh) : m_eMesh(eMesh) {}
-        virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+        virtual bool operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
         {
-          const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           double *f_data = PerceptMesh::field_data_entity(field, element);
           VectorFieldType* coordField = m_eMesh.get_coordinates_field();
@@ -234,11 +234,11 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_ElementBased)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_local_refiner_break_tet_to_tet_2
@@ -248,8 +248,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -305,11 +305,11 @@ namespace stk
 
       struct MyEdgeBasedRefinePredicate : public IEdgeBasedAdapterPredicate {
       
-        MyEdgeBasedRefinePredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+        MyEdgeBasedRefinePredicate(stk_classic::mesh::Selector * selector=0, stk_classic::mesh::FieldBase *field=0, double tolerance=0.0) :
           IEdgeBasedAdapterPredicate(selector, field, tolerance) {}
 
         /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
-        int operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+        int operator()(const stk_classic::mesh::Entity& element, unsigned which_edge, stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1,
                        double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark = 0;
@@ -340,11 +340,11 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_local_refiner_break_tet_to_tet_2
@@ -354,8 +354,8 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             if (0)
@@ -447,8 +447,8 @@ namespace stk
       }
 
       
-      static double shock_diff(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh,
-                               stk::mesh::Entity & node0, stk::mesh::Entity & node1, double *coord0, double *coord1, PlaneShock& shock, double shock_displacement)
+      static double shock_diff(stk_classic::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh,
+                               stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1, double *coord0, double *coord1, PlaneShock& shock, double shock_displacement)
       {
         shock.setCurrentPlanePoint(shock_displacement);
         double *plane_point = shock.plane_point;
@@ -490,19 +490,19 @@ namespace stk
       struct ShockBasedRefinePredicate : public IEdgeBasedAdapterPredicate {
       
         percept::PerceptMesh& m_eMesh;
-        stk::mesh::FieldBase * m_nodal_refine_field;
+        stk_classic::mesh::FieldBase * m_nodal_refine_field;
         PlaneShock m_shock;
         double m_shock_displacement;
         double m_shock_diff_criterion;
 
-        ShockBasedRefinePredicate(stk::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk::mesh::Selector* selector, stk::mesh::FieldBase *field, double tolerance,
+        ShockBasedRefinePredicate(stk_classic::mesh::FieldBase* nodal_refine_field, percept::PerceptMesh& eMesh, stk_classic::mesh::Selector* selector, stk_classic::mesh::FieldBase *field, double tolerance,
                                   PlaneShock shock, double shock_displacement=0, double shock_diff_criterion=0.4) :
           IEdgeBasedAdapterPredicate(selector, field, tolerance), m_eMesh(eMesh),m_nodal_refine_field(nodal_refine_field), m_shock(shock), m_shock_displacement(shock_displacement),
           m_shock_diff_criterion(shock_diff_criterion) {}
 
 
         /// Return DO_NOTHING, DO_REFINE, DO_UNREFINE or sum of these
-        int operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+        int operator()(const stk_classic::mesh::Entity& element, unsigned which_edge, stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1,
                         double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
         {
           int mark=0;
@@ -527,7 +527,7 @@ namespace stk
           return mark;
         }
 
-        //double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
+        //double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
         //return m_selector(entity) && fdata[0] > 0;
       };
 
@@ -535,11 +535,11 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_localRefiner, break_tet_to_tet_N_5_EdgeBased_shock)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         if (LARGE_TEST_ONLY || !DO_TESTS) return;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_local_refiner_break_tet_to_tet_2
@@ -549,9 +549,9 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
             if (0)
@@ -610,12 +610,12 @@ namespace stk
       static void do_moving_shock_test(int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         shock_width = 1./5.0;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_local_refiner_break_tet_to_tet_2
@@ -625,9 +625,9 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
@@ -734,13 +734,13 @@ namespace stk
       static void do_moving_shock_test_cyl_sidesets(int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         shock_width = 1./25.0;
         double shock_diff_criterion = 0.04;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size==1 || p_size == 3)
           {
             percept::PerceptMesh eMesh;
@@ -748,9 +748,9 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
             std::cout << "moving_shock initial number elements= " << eMesh.get_number_elements() << std::endl;
@@ -865,15 +865,15 @@ namespace stk
       static void do_moving_shock_test_large_test(int num_time_steps, bool save_intermediate=false, bool delete_parents=false)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         //         shock_width = 1./50.; //1./25.0;
         //         shock_diff_criterion = 0.1;
         shock_width = 1./500.; //1./25.0;
         double shock_diff_criterion = 0.1;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size==1 || p_size == 2 || p_size == 8)
           {
             percept::PerceptMesh eMesh;
@@ -881,9 +881,9 @@ namespace stk
 
             Local_Tet4_Tet4_N break_tet_to_tet_N(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
-            stk::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field    = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* refine_field       = eMesh.add_field("refine_field", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* nodal_refine_field = eMesh.add_field("nodal_refine_field", eMesh.node_rank(), scalarDimension);
             eMesh.commit();
 
             //eMesh.delete_side_sets();
@@ -892,7 +892,7 @@ namespace stk
 
             eMesh.save_as( output_files_loc+"large_scale_moving_shock_"+post_fix[p_size]+".e.0");
 
-            stk::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
+            stk_classic::mesh::Selector univ_selector(eMesh.get_fem_meta_data()->universal_part());
 
             PlaneShock shock;
             shock.plane_point_init[0] = 0.0;

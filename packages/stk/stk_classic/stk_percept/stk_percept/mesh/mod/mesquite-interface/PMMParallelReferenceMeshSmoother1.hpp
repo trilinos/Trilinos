@@ -13,7 +13,7 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
@@ -46,13 +46,13 @@ namespace stk {
                                       MsqError& err );
 
       virtual double total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int *num_invalid=0);
-      virtual double metric(stk::mesh::Entity& entity, bool& valid);
+      virtual double metric(stk_classic::mesh::Entity& entity, bool& valid);
       virtual void update_node_positions(Mesh* mesh, double alpha);
       virtual bool check_convergence();
 
-      double nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid );
-      void nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
-      double nodal_edge_length_ave(stk::mesh::Entity& node);
+      double nodal_metric(stk_classic::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid );
+      void nodal_gradient(stk_classic::mesh::Entity& node, double alpha, double *coord_current, double *cg_d,  bool& valid, double *ng);
+      double nodal_edge_length_ave(stk_classic::mesh::Entity& node);
       
       PerceptMesquiteMesh *m_pmm;
 

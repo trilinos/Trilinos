@@ -5,7 +5,7 @@
 #include "GeometryKernel.hpp"
 #include "MeshGeometry.hpp"
 #include <stk_percept/PerceptMesh.hpp>
-using namespace stk;
+using namespace stk_classic;
 using namespace mesh;
 using namespace percept;
 

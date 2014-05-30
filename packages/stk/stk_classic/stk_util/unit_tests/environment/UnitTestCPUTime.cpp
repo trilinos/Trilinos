@@ -16,7 +16,7 @@ STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
 {
   std::ostringstream oss;
   
-  double cpu_now = stk::cpu_time();
+  double cpu_now = stk_classic::cpu_time();
   
   double x = 0.0;
   for (int i = 0; i < 10000; ++i)
@@ -26,7 +26,7 @@ STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
   if (x > 100000.0)
     oss << x << std::endl;
   
-  double cpu_delta = stk::cpu_time() - cpu_now;
+  double cpu_delta = stk_classic::cpu_time() - cpu_now;
   
   STKUNIT_ASSERT(cpu_delta >= 0.0 && cpu_delta <= 1.0);
 }

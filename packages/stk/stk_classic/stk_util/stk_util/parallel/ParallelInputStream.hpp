@@ -12,7 +12,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 #include <istream>
 
-namespace stk {
+namespace stk_classic {
 
 class ParallelInputStream : public std::istream {
 public:

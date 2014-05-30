@@ -16,15 +16,15 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
 /// doxygen tutorial start source
 enum { field_data_chunk_size = 10 };
 
-UseCase_1_Mesh::UseCase_1_Mesh( stk::ParallelMachine comm )
-  : m_metaData( stk::mesh::fem::entity_rank_names(SpatialDim) )
+UseCase_1_Mesh::UseCase_1_Mesh( stk_classic::ParallelMachine comm )
+  : m_metaData( stk_classic::mesh::fem::entity_rank_names(SpatialDim) )
   , m_bulkData(  m_metaData , comm , field_data_chunk_size )
 {
   /// Done populating the mesh meta data.

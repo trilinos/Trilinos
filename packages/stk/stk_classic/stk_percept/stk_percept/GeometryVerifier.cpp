@@ -82,7 +82,7 @@ namespace stk
             max_i = id;
           }
       }
-      void finish(stk::mesh::BulkData& mesh)
+      void finish(stk_classic::mesh::BulkData& mesh)
       {
         //double parallel_max = max;
 
@@ -231,30 +231,30 @@ namespace stk
     /**
      * Check for nonpositive Jacobian
      */
-    bool GeometryVerifier::isGeometryBad(stk::mesh::BulkData& bulk, bool printTable) //, stk::mesh::Part& mesh_part )
+    bool GeometryVerifier::isGeometryBad(stk_classic::mesh::BulkData& bulk, bool printTable) //, stk_classic::mesh::Part& mesh_part )
     {
-      const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(bulk);
+      const stk_classic::mesh::fem::FEMMetaData& meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
       const unsigned p_rank = bulk.parallel_rank();
 
       unsigned foundBad=0;
       jac_data_map jac_data;
 
-      stk::mesh::Field<double, stk::mesh::Cartesian> *coord_field =
-        meta.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
+      stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> *coord_field =
+        meta.get_field<stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> >("coordinates");
 
       mesh::Selector select_owned( meta.locally_owned_part() );
       const std::vector<mesh::Bucket*> & buckets = bulk.buckets( meta.element_rank() );
 
       //for ( std::vector<mesh::Bucket *>::const_iterator ik = buckets.begin() ; ik != buckets.end() ; ++ik )
-      const stk::mesh::PartVector & all_parts = meta.get_parts();
-      for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) 
+      const stk_classic::mesh::PartVector & all_parts = meta.get_parts();
+      for ( stk_classic::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) 
         {
-          stk::mesh::Part * part = *ip;
+          stk_classic::mesh::Part * part = *ip;
 
-          if ( stk::mesh::is_auto_declared_part(*part) )
+          if ( stk_classic::mesh::is_auto_declared_part(*part) )
             continue;
 
-          const CellTopologyData * const part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*part);
+          const CellTopologyData * const part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(*part);
           //std::cout << "P[" << p_rank << "] part = " << part->name() << " part_cell_topo_data= " << part_cell_topo_data << " topo-name= "
           //          << (part_cell_topo_data ? part_cell_topo_data->name : "null") << std::endl;
 
@@ -281,7 +281,7 @@ namespace stk
               if (0) { elem_node_data[0]++;}
 
 #if 1
-              const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+              const CellTopologyData * const bucket_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
               int bucket_shardsId = ShardsInterfaceTable::s_singleton.lookupShardsId(bucket_cell_topo_data->name);
 #endif
 
@@ -295,7 +295,7 @@ namespace stk
               unsigned numCells = number_elems;
               unsigned numNodes = cell_topo.getNodeCount();
               unsigned spaceDim = cell_topo.getDimension();
-              //unsigned spatialDimMeta = stk::mesh::fem::FEMMetaData::get(bulk).spatial_dimension();
+              //unsigned spatialDimMeta = stk_classic::mesh::fem::FEMMetaData::get(bulk).spatial_dimension();
 
               // Rank-3 array with dimensions (C,N,D) for the node coordinates of 3 traingle cells
               FieldContainer<double> cellNodes(numCells, numNodes, spaceDim);
@@ -412,7 +412,7 @@ namespace stk
                     {
                       for (unsigned iCubPt = 0; iCubPt < numCubPoints; iCubPt++)
                         {
-                          stk::PrintTable table;
+                          stk_classic::PrintTable table;
                           std::ostringstream msg; msg << "Jacobian"<<" iCell= "<<iCell<<" iCubPt= "<<iCubPt << " Det= " << jacobian_det(iCell, iCubPt);
                           table.setTitle(msg.str());
 
@@ -422,7 +422,7 @@ namespace stk
                                 {
                                   table << jacobian(iCell, iCubPt, id, jd);
                                 }
-                              table << stk::end_row;
+                              table << stk_classic::end_row;
                             }
                           std::cout << "P["<< bulk.parallel_rank() << "] " << cell_topo.getName() << "\n" << table;
                         }
@@ -445,7 +445,7 @@ namespace stk
 
       //  all_reduce( mesh.parallel() , ReduceMax<1>( & error_flag ) );
 
-      stk::PrintTable table;
+      stk_classic::PrintTable table;
       if (0)
         {
           const unsigned rank = bulk.parallel_rank();
@@ -465,7 +465,7 @@ namespace stk
             << "Min QM2" << "|" << "Id" << "|"
             << "Max QM2" << "|" << "Id" << "|"
             << "Ave QM2" << "|"
-            << stk::end_header;
+            << stk_classic::end_header;
 
       for (jac_data_map::iterator itMap = jac_data.begin(); itMap != jac_data.end(); itMap++)
         {
@@ -491,7 +491,7 @@ namespace stk
                 << itMap->second.QM_2.max << "|"
                 << itMap->second.QM_2.max_i << "|"
                 << itMap->second.QM_2.ave << "|"
-                << stk::end_row;
+                << stk_classic::end_row;
         }
 
       if (!p_rank && printTable)

@@ -76,13 +76,13 @@ void centroid( unsigned number_elements ,
 
 template< class ElementTraits >
 void centroid_algorithm(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  stk::mesh::Part & elem_part )
+  stk_classic::mesh::Part & elem_part )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
+  stk_classic::mesh::fem::FEMMetaData &fem = stk_classic::mesh::fem::FEMMetaData::get(mesh);
+  const stk_classic::mesh::EntityRank element_rank = fem.element_rank();
 
   // The 'stk_mesh' implementation uses the
   // "homogeneous subset" concept (see the Domain Model document)
@@ -91,11 +91,11 @@ void centroid_algorithm(
 
   // Iterate the set of element buckets:
 
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
+  const std::vector<stk_classic::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    stk::mesh::Bucket & bucket = **k ;
+    stk_classic::mesh::Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
@@ -110,12 +110,12 @@ void centroid_algorithm(
       // in the bucket.
       //   double * node_ptr[ nodes_per_element * number_of_elements ]
 
-      double ** node_ptr = stk::mesh::field_data( elem_node_coord , bucket.begin() );
+      double ** node_ptr = stk_classic::mesh::field_data( elem_node_coord , bucket.begin() );
 
       // Element centroid field data
       //   double elem_ptr[ 3 * number_of_elements ]
 
-      double *  elem_ptr = stk::mesh::field_data( elem_centroid , bucket.begin() );
+      double *  elem_ptr = stk_classic::mesh::field_data( elem_centroid , bucket.begin() );
 
       // Call an element function to calculate centroid for
       // contiguous arrays of element field data.
@@ -130,13 +130,13 @@ void centroid_algorithm(
 
 template< class ElementTraits >
 void centroid_algorithm_unit_test_dimensions(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType             & elem_centroid ,
   const ElementNodePointerFieldType & elem_node_coord ,
-  stk::mesh::Part & elem_part )
+  stk_classic::mesh::Part & elem_part )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
+  stk_classic::mesh::fem::FEMMetaData &fem = stk_classic::mesh::fem::FEMMetaData::get(mesh);
+  const stk_classic::mesh::EntityRank element_rank = fem.element_rank();
 
   // Use the "homogeneous subset" concept (see the Domain Model document)
   // for field data storage.  A "homogeneous subset" is called
@@ -144,12 +144,12 @@ void centroid_algorithm_unit_test_dimensions(
 
   // Iterate the set of element buckets:
 
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
+  const std::vector<stk_classic::mesh::Bucket*> & buckets = mesh.buckets(element_rank);
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
-     stk::mesh::Bucket & bucket = **k ;
+     stk_classic::mesh::Bucket & bucket = **k ;
 
     // If this bucket is a subset of the given elem_part
     // then want to compute on it.
@@ -162,13 +162,13 @@ void centroid_algorithm_unit_test_dimensions(
 
       // Unit testing the dimension feature
       {
-        stk::mesh::BucketArray< ElementNodePointerFieldType > array( elem_node_coord, bucket);
+        stk_classic::mesh::BucketArray< ElementNodePointerFieldType > array( elem_node_coord, bucket);
         const size_t n1 = array.template dimension<0>();
         const size_t n2 = array.template dimension<1>();
       }
 
       {
-        stk::mesh::BucketArray< VectorFieldType > array( elem_centroid , bucket );
+        stk_classic::mesh::BucketArray< VectorFieldType > array( elem_centroid , bucket );
         const size_t n1 = array.template dimension<0>();
         const size_t n2 = array.template dimension<1>();
       }

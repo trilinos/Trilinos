@@ -42,8 +42,8 @@
 //static  bool isParallel = true; // FIXME
 static  bool isParallel()
 {
-  stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
-  int mpi_size = stk::parallel_machine_size(parallel_machine);
+  stk_classic::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
+  int mpi_size = stk_classic::parallel_machine_size(parallel_machine);
   return mpi_size > 0;
 }
 
@@ -53,7 +53,7 @@ void use_encr_case_1_driver( MPI_Comm comm );
 
 int myMain()
 {
-  stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
 
   if (isParallel() ) return 0;
 
@@ -98,16 +98,16 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
 {
 
   if (isParallel() ) return;
-  using namespace stk::percept::util;
-  using namespace stk::percept::interface_table;
+  using namespace stk_classic::percept::util;
+  using namespace stk_classic::percept::interface_table;
   /* %TRACE[OFF]% */  /* %TRACE% */
-  stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
   bool verbose = false;
 
   // totally different
   STKUNIT_EXPECT_FALSE( 0 );
 
-  stk::percept::TopologyVerifier topoVerifier;
+  stk_classic::percept::TopologyVerifier topoVerifier;
 
   unsigned line2Elems[] = {
     0,1,
@@ -218,17 +218,17 @@ STKUNIT_UNIT_TEST(topo, testCrossedElems)
 STKUNIT_UNIT_TEST(geom, geomPrints)
 {
   if (isParallel() ) return;
-  using namespace stk::percept::util;
-  using namespace stk::percept::interface_table;
+  using namespace stk_classic::percept::util;
+  using namespace stk_classic::percept::interface_table;
 
   /* %TRACE[OFF]% */  /* %TRACE% */
-  stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
   bool verbose = false;
 
   // totally different
   STKUNIT_EXPECT_FALSE( 0 );
 
-  stk::percept::GeometryVerifier geomVerifier(false); // true for more dumps
+  stk_classic::percept::GeometryVerifier geomVerifier(false); // true for more dumps
 
   unsigned line2Elems[] = {
     0,1,
@@ -331,14 +331,14 @@ STKUNIT_UNIT_TEST(geom, geomPrints)
 STKUNIT_UNIT_TEST(geom, geomEqui)
 {
   if (isParallel() ) return;
-  using namespace stk::percept::util;
-  using namespace stk::percept::interface_table;
+  using namespace stk_classic::percept::util;
+  using namespace stk_classic::percept::interface_table;
 
   /* %TRACE[OFF]% */  /* %TRACE% */
-  stk::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine parallel_machine = MPI_COMM_WORLD ;
   bool verbose = false;
 
-  stk::percept::GeometryVerifier geomVerifier(false); // true for more dumps
+  stk_classic::percept::GeometryVerifier geomVerifier(false); // true for more dumps
 
   unsigned tetElems[] = {
     0,1,2,3
@@ -395,7 +395,7 @@ STKUNIT_UNIT_TEST(geom, geomEqui)
 
 
 
-using namespace stk ;
+using namespace stk_classic ;
 
 
 namespace stk_percept_unit {
@@ -413,7 +413,7 @@ typedef mesh::Field<double*,mesh::ElementNode> ElementNodePointerFieldType ;
 
 //--------------------------------
 // prototype for the function that will generate the use-case mesh.
-// copied from stk::mesh use cases
+// copied from stk_classic::mesh use cases
 
 void use_encr_case_1_generate_mesh(
   mesh::BulkData & mesh ,
@@ -464,7 +464,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", mesh_meta_data.element_rank());
 
     /// set cell topology for the part block_1
-    stk::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
+    stk_classic::mesh::fem::set_cell_topology< shards::Hexahedron<8>  >( block_hex );
 
     //--------------------------------
     // Declare coordinates field on all nodes with 3D:
@@ -472,7 +472,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     VectorFieldType & coordinates_field =
       mesh_meta_data.declare_field< VectorFieldType >( "coordinates" );
 
-    stk::mesh::put_field(
+    stk_classic::mesh::put_field(
       coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
@@ -493,7 +493,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
 
     mesh_meta_data.declare_field_relation(
       elem_node_coord ,
-      stk::mesh::fem::get_element_node_stencil(3) ,
+      stk_classic::mesh::fem::get_element_node_stencil(3) ,
       coordinates_field );
 
     // Declare the size of the aggressive "gather" field
@@ -501,7 +501,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     // is the number of nodes of the elements.
     // This size is different for each element block.
 
-    stk::mesh::put_field(
+    stk_classic::mesh::put_field(
                          elem_node_coord , mesh_meta_data.element_rank() , block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
@@ -513,7 +513,7 @@ void use_encr_case_1_driver( MPI_Comm comm )
     //------------------------------------------------------------------
     // mesh::BulkData bulk data conforming to the meta data.
 
-    mesh::BulkData mesh_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(mesh_meta_data) , MPI_COMM_WORLD );
+    mesh::BulkData mesh_bulk_data( stk_classic::mesh::fem::FEMMetaData::get_meta_data(mesh_meta_data) , MPI_COMM_WORLD );
 
     // In a typical app, the mesh would be read from file at this point.
     // But in this use-case, we generate the mesh and initialize
@@ -601,7 +601,7 @@ void use_encr_case_1_generate_mesh(
   const unsigned parallel_size = mesh.parallel_size();
   const unsigned parallel_rank = mesh.parallel_rank();
 
-  stk::percept::TopologyVerifier topoVerifier;
+  stk_classic::percept::TopologyVerifier topoVerifier;
 
   double t = 0 ;
   size_t num_hex = 0 ;
@@ -612,7 +612,7 @@ void use_encr_case_1_generate_mesh(
 
   try {
 
-    stk::io::util::GeneratedMesh gmesh( N[0], N[1], N[2], parallel_size, parallel_rank );
+    stk_classic::io::util::GeneratedMesh gmesh( N[0], N[1], N[2], parallel_size, parallel_rank );
 
     num_nodes = gmesh.node_count_proc();
     num_block = gmesh.block_count();
@@ -649,7 +649,7 @@ void use_encr_case_1_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
-            const stk::mesh::EntityId node_id[8] = {
+            const stk_classic::mesh::EntityId node_id[8] = {
               node_map[ local_node_id[0] - 1 ] ,
               node_map[ local_node_id[1] - 1 ] ,
               node_map[ local_node_id[2] - 1 ] ,
@@ -661,11 +661,11 @@ void use_encr_case_1_generate_mesh(
               node_map[ local_node_id[7] - 1 ]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
-            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
+            stk_classic::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
-            mesh::Entity * const elem = mesh.get_entity( stk::mesh::fem::FEMMetaData::get(mesh).element_rank() , elem_id );
+            mesh::Entity * const elem = mesh.get_entity( stk_classic::mesh::fem::FEMMetaData::get(mesh).element_rank() , elem_id );
 
 
             if (!topoVerifier.isTopologyBad(*elem))

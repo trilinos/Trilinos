@@ -13,7 +13,7 @@
 #include <cmath>
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 
 std::string
 formatTime(

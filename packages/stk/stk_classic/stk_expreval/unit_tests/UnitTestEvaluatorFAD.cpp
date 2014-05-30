@@ -12,7 +12,7 @@ public:
   void testEvaluator();
 };
 
-using namespace stk::expreval;
+using namespace stk_classic::expreval;
 
 //  expr_eval.bind("x", x);				\								x
 //      expr_eval.setValue("x", x);			\								x
@@ -34,7 +34,7 @@ syntax(
 {
   std::cout << "Syntax " << expr << " ... ";
   try {
-    stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::fad::Eval expr_eval(stk_classic::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -52,7 +52,7 @@ fail_syntax(
 {
   std::cout << "Invalid syntax " << expr << " ...  ";
   try {
-    stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::fad::Eval expr_eval(stk_classic::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -70,7 +70,7 @@ vectest(
 {
   std::cout << " syntax " << expr << " ...  ";
   try {
-    stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
+    stk_classic::expreval::fad::Eval expr_eval(stk_classic::expreval::fad::Eval::VariableMap::getDefaultResolver(), expr);
     expr_eval.parse();
   }
   catch (std::runtime_error &x) {
@@ -82,8 +82,8 @@ vectest(
 }
 */
 
-typedef stk::expreval::fad::FADDouble FADDouble;
-typedef FADDouble (TestFunc)(stk::expreval::fad::FADDouble);
+typedef stk_classic::expreval::fad::FADDouble FADDouble;
+typedef FADDouble (TestFunc)(stk_classic::expreval::fad::FADDouble);
 
 bool
 test(
@@ -93,7 +93,7 @@ test(
   bool failed = false;
   std::cout << "Evaluate " << expr << " ... ";
   std::string by_expr = std::string("by=") + expr + ";";
-  stk::expreval::fad::Eval expr_eval(stk::expreval::fad::Eval::VariableMap::getDefaultResolver(), by_expr.c_str());
+  stk_classic::expreval::fad::Eval expr_eval(stk_classic::expreval::fad::Eval::VariableMap::getDefaultResolver(), by_expr.c_str());
   expr_eval.parse();
 
   // result and by are the ExprEvalFAD results
@@ -212,7 +212,7 @@ EXPREVALFAD_DEFINE_TEST_1(f17, sinh(x));
 EXPREVALFAD_DEFINE_TEST_1(f18, sqrt(x));
 EXPREVALFAD_DEFINE_TEST_1(f19, tan(x));
 EXPREVALFAD_DEFINE_TEST_1(f20, tanh(x));
-// EXPREVALFAD_DEFINE_TEST(f21, atan2(x, PI),atan2(x, stk::expreval::fad::Eval::s_pi));
+// EXPREVALFAD_DEFINE_TEST(f21, atan2(x, PI),atan2(x, stk_classic::expreval::fad::Eval::s_pi));
 EXPREVALFAD_DEFINE_TEST(f22, ln(x), log(x));
 // EXPREVALFAD_DEFINE_TEST(f23, deg(x),(180.0 / Expr::Eval::s_pi) * x);
 // EXPREVALFAD_DEFINE_TEST(f24, rad(x),(Expr::Eval::s_pi / 180.0) * x);

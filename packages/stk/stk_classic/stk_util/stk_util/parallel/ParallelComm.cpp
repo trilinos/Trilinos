@@ -14,7 +14,7 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/parallel/ParallelReduce.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 //-----------------------------------------------------------------------
 
@@ -33,7 +33,7 @@ bool all_to_all_dense( ParallelMachine p_comm ,
 {
   typedef unsigned char * ucharp ;
 
-  static const char method[] = "stk::CommAll::communicate" ;
+  static const char method[] = "stk_classic::CommAll::communicate" ;
 
   int result ;
 
@@ -78,7 +78,7 @@ bool all_to_all_sparse( ParallelMachine p_comm ,
                         const CommBuffer * const recv ,
                         std::ostream & msg )
 {
-  static const char method[] = "stk::CommAll::communicate" ;
+  static const char method[] = "stk_classic::CommAll::communicate" ;
   static const int mpi_tag = STK_MPI_TAG_DATA ;
 
   int result = MPI_SUCCESS ;
@@ -233,7 +233,7 @@ size_t align_quad( size_t n )
 void CommBuffer::pack_overflow() const
 {
   std::ostringstream os ;
-  os << "stk::CommBuffer::pack<T>(...){ overflow by " ;
+  os << "stk_classic::CommBuffer::pack<T>(...){ overflow by " ;
   os << remaining() ;
   os << " bytes. }" ;
   throw std::overflow_error( os.str() );
@@ -242,7 +242,7 @@ void CommBuffer::pack_overflow() const
 void CommBuffer::unpack_overflow() const
 {
   std::ostringstream os ;
-  os << "stk::CommBuffer::unpack<T>(...){ overflow by " ;
+  os << "stk_classic::CommBuffer::unpack<T>(...){ overflow by " ;
   os << remaining();
   os << " bytes. }" ;
   throw std::overflow_error( os.str() );
@@ -251,7 +251,7 @@ void CommBuffer::unpack_overflow() const
 void CommAll::rank_error( const char * method , unsigned p ) const
 {
   std::ostringstream os ;
-  os << "stk::CommAll::" << method
+  os << "stk_classic::CommAll::" << method
      << "(" << p << ") ERROR: Not in [0:" << m_size << ")" ;
   throw std::range_error( os.str() );
 }
@@ -357,7 +357,7 @@ CommAll::CommAll( ParallelMachine comm )
   m_send = CommBuffer::allocate( m_size , NULL );
 
   if ( NULL == m_send ) {
-    std::string msg("stk::CommAll::CommAll FAILED malloc");
+    std::string msg("stk_classic::CommAll::CommAll FAILED malloc");
     throw std::runtime_error(msg);
   }
 }
@@ -403,7 +403,7 @@ void CommAll::swap_send_recv()
   if ( m_recv == NULL ) {
     // ERROR
     std::string
-      msg("stk::CommAll::swap_send_recv(){ NULL recv buffers }" );
+      msg("stk_classic::CommAll::swap_send_recv(){ NULL recv buffers }" );
     throw std::logic_error( msg );
   }
 
@@ -420,7 +420,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 			        const unsigned * const recv_size ,
 			        const bool local_flag )
 {
-  static const char method[] = "stk::CommAll::allocate_buffers" ;
+  static const char method[] = "stk_classic::CommAll::allocate_buffers" ;
   const unsigned uzero = 0 ;
 
   CommBuffer::deallocate( m_size , m_send );
@@ -542,7 +542,7 @@ bool CommAll::allocate_buffers( ParallelMachine comm ,
 
 void CommAll::communicate()
 {
-  static const char method[] = "stk::CommAll::communicate" ;
+  static const char method[] = "stk_classic::CommAll::communicate" ;
 
   std::ostringstream msg ;
 
@@ -588,7 +588,7 @@ CommBroadcast::CommBroadcast( ParallelMachine comm , unsigned root_rank )
 
 bool CommBroadcast::allocate_buffer( const bool local_flag )
 {
-  static const char method[] = "stk::CommBroadcast::allocate_buffer" ;
+  static const char method[] = "stk_classic::CommBroadcast::allocate_buffer" ;
 
   unsigned root_rank_min = m_root_rank ;
   unsigned root_rank_max = m_root_rank ;
@@ -631,7 +631,7 @@ CommBuffer & CommBroadcast::recv_buffer()
 
 CommBuffer & CommBroadcast::send_buffer()
 {
-  static const char method[] = "stk::CommBroadcast::send_buffer" ;
+  static const char method[] = "stk_classic::CommBroadcast::send_buffer" ;
 
   if ( m_root_rank != m_rank ) {
     std::string msg ;
@@ -654,7 +654,7 @@ void CommBroadcast::communicate()
 
     if ( MPI_SUCCESS != result ) {
       std::ostringstream msg ;
-      msg << "stk::CommBroadcast::communicate ERROR : "
+      msg << "stk_classic::CommBroadcast::communicate ERROR : "
           << result << " == MPI_Bcast" ;
       throw std::runtime_error( msg.str() );
     }
@@ -773,7 +773,7 @@ bool comm_dense_sizes( ParallelMachine comm ,
                              unsigned * const recv_size ,
                        bool local_flag )
 {
-  static const char method[] = "stk::comm_dense_sizes" ;
+  static const char method[] = "stk_classic::comm_dense_sizes" ;
 
   const unsigned zero = 0 ;
   const unsigned p_size = parallel_machine_size( comm );
@@ -848,7 +848,7 @@ bool comm_sizes( ParallelMachine comm ,
                        unsigned * const recv_size ,
                  bool local_flag )
 {
-  static const char method[] = "stk::comm_unknown_sizes" ;
+  static const char method[] = "stk_classic::comm_unknown_sizes" ;
   const unsigned uzero = 0 ;
 
   static MPI_Op mpi_op = MPI_OP_NULL ;

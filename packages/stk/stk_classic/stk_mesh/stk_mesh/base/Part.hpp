@@ -23,7 +23,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace impl {
@@ -44,12 +44,12 @@ namespace impl {
  *  or any other application need for subsetting.
  *
  *  A Part is created, owned, and modified by a
- *  \ref stk::mesh::PartRepository "Part manager".
+ *  \ref stk_classic::mesh::PartRepository "Part manager".
  */
 class Part {
 public:
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+  /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns the PartRepository which created this part.
    */
   MetaData & mesh_meta_data() const { return m_partImpl.mesh_meta_data(); }
@@ -67,7 +67,7 @@ public:
   const std::string & name() const { return m_partImpl.name(); }
 
   /** \brief  Internally generated ordinal of this part that is unique
-   *          within the owning \ref stk::mesh::MetaData "meta data manager".
+   *          within the owning \ref stk_classic::mesh::MetaData "meta data manager".
    */
   unsigned mesh_meta_data_ordinal() const { return m_partImpl.mesh_meta_data_ordinal(); }
 
@@ -95,7 +95,7 @@ public:
 
 private:
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+  /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns the PartRepository which created this part.
    */
   MetaData & meta_data() const { return m_partImpl.mesh_meta_data(); }
@@ -109,8 +109,8 @@ private:
    *         a private data object on the Part and the PartRepository is a
    *         friend.
    */
-  friend class ::stk::mesh::impl::PartRepository ;
-  friend class ::stk::mesh::MetaData ;
+  friend class ::stk_classic::mesh::impl::PartRepository ;
+  friend class ::stk_classic::mesh::MetaData ;
 
 #ifndef DOXYGEN_COMPILE
 

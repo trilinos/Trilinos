@@ -26,9 +26,9 @@ namespace stk
     {
 
     public:
-      typedef stk::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
-      typedef stk::search::box::PointBoundingBox<IdentProc,double,SpatialDim> BoundingPoint;
-      typedef stk::search::box::AxisAlignedBoundingBox<IdentProc,double,SpatialDim> AABoundingBox;
+      typedef stk_classic::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
+      typedef stk_classic::search::box::PointBoundingBox<IdentProc,double,SpatialDim> BoundingPoint;
+      typedef stk_classic::search::box::AxisAlignedBoundingBox<IdentProc,double,SpatialDim> AABoundingBox;
 
       std::vector<AABoundingBox>& m_boxes;
       VectorFieldType *m_coords_field;
@@ -46,12 +46,12 @@ namespace stk
       {
         m_notInitialized=true;  // force this object to be used only once 
       }
-      bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
+      bool operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
 
-      AABoundingBox getBoundingBox(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
+      AABoundingBox getBoundingBox(const stk_classic::mesh::Entity& element, const mesh::BulkData& bulkData)
       {
         double bbox[2*SpatialDim];
-        const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+        const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
         unsigned numNodes = elem_nodes.size();
         for (unsigned iNode = 0; iNode < numNodes; iNode++)
           {
@@ -132,7 +132,7 @@ namespace stk
 #endif
 
     template<unsigned SpatialDim>
-    bool BuildBoundingBoxes<SpatialDim>::operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    bool BuildBoundingBoxes<SpatialDim>::operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
     {
       if (m_notInitialized)
         throw std::runtime_error("BuildBoundingBoxes::operator(): you must re-construct this object before reusing it");

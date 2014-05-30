@@ -9,7 +9,7 @@
 #ifndef stk_search_BoundingBoxCompare_hpp
 #define stk_search_BoundingBoxCompare_hpp
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace box {
 namespace compare{

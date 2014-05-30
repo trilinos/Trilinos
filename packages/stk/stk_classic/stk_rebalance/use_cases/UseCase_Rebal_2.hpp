@@ -11,11 +11,11 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 namespace use_cases {
 
-  bool test_heavy_nodes( stk::ParallelMachine comm );
+  bool test_heavy_nodes( stk_classic::ParallelMachine comm );
 
 } //namespace use_cases
 } //namespace rebalance

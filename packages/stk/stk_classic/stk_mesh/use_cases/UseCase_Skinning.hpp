@@ -17,17 +17,17 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
 
-bool skinning_use_case_1(stk::ParallelMachine pm);
-bool skinning_use_case_1b(stk::ParallelMachine pm);
-bool skinning_use_case_2(stk::ParallelMachine pm);
+bool skinning_use_case_1(stk_classic::ParallelMachine pm);
+bool skinning_use_case_1b(stk_classic::ParallelMachine pm);
+bool skinning_use_case_2(stk_classic::ParallelMachine pm);
 
 
 void separate_and_skin_mesh(
-    stk::mesh::fem::FEMMetaData & fem_meta,
-    stk::mesh::BulkData & mesh,
-    stk::mesh::Part     & skin_part,
-    std::vector< stk::mesh::EntityId > elements_to_separate,
-    const stk::mesh::EntityRank rank_of_element
+    stk_classic::mesh::fem::FEMMetaData & fem_meta,
+    stk_classic::mesh::BulkData & mesh,
+    stk_classic::mesh::Part     & skin_part,
+    std::vector< stk_classic::mesh::EntityId > elements_to_separate,
+    const stk_classic::mesh::EntityRank rank_of_element
     );
 
 #endif

@@ -13,7 +13,7 @@
 #include <stk_util/parallel/Parallel.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class Entity;
@@ -29,16 +29,16 @@ class GridFixture;
 }
 
 //Generates a vector of entities to be killed in this iteration
-std::vector<stk::mesh::Entity *> entities_to_be_killed( 
-    const stk::mesh::BulkData & mesh, 
+std::vector<stk_classic::mesh::Entity *> entities_to_be_killed( 
+    const stk_classic::mesh::BulkData & mesh, 
     int iteration, 
-    stk::mesh::EntityRank entity_rank
+    stk_classic::mesh::EntityRank entity_rank
     );
 
 //Validates that the correct entites were killed in this iteration
 bool validate_iteration(
-    stk::ParallelMachine pm,
-    stk::mesh::fixtures::GridFixture & fixture,
+    stk_classic::ParallelMachine pm,
+    stk_classic::mesh::fixtures::GridFixture & fixture,
     int iteration
     );
 

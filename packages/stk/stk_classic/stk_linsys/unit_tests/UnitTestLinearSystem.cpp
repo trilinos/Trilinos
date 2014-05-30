@@ -30,12 +30,12 @@
 
 #include <fei_Factory_Trilinos.hpp>
 
-static const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 namespace stk_linsys_unit_tests {
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
 void get_local_coefs(const fei::Vector& vec, std::vector<double>& coefs)
 {
@@ -74,13 +74,13 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension);
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
+  stk_classic::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
 
   fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
@@ -91,49 +91,49 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
-  stk::mesh::Selector select_owned(meta_data.locally_owned_part());
-  stk::mesh::get_selected_entities(select_owned,
+  std::vector<stk_classic::mesh::Entity*> local_nodes;
+  stk_classic::mesh::Selector select_owned(meta_data.locally_owned_part());
+  stk_classic::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
-  stk::mesh::EntityId bc_node_id = 0;
+  stk_classic::mesh::EntityId bc_node_id = 0;
 
   if (local_nodes.size() > 0) {
-    stk::mesh::PartVector partvector;
+    stk_classic::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bc_node_id = stk_classic::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
   bulk_data.modification_end();
   //------------------------------
 
-  stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
+  stk_classic::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
-  stk::mesh::count_entities(select_used, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::count_entities(select_used, bulk_data, count);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
+  std::vector<stk_classic::mesh::Entity*> nodes;
+  stk_classic::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Now we're ready to test the LinearSystem object:
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
-  stk::linsys::LinearSystem ls(comm,factory);
+  stk_classic::linsys::LinearSystem ls(comm,factory);
 
-  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
+  stk_classic::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                               *temperature_field, select_owned, bulk_data);
 
   ls.synchronize_mappings_and_structure();
 
-  const stk::linsys::LinearSystem& const_ls = ls;
+  const stk_classic::linsys::LinearSystem& const_ls = ls;
   const fei::SharedPtr<fei::MatrixGraph> const_mgraph = const_ls.get_fei_MatrixGraph();
   fei::SharedPtr<fei::MatrixGraph> mgraph = ls.get_fei_MatrixGraph();
 
@@ -150,8 +150,8 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
   STKUNIT_ASSERT_EQUAL( (fei::LinearSystem*)const_linsys_ptr, linsys_ptr);
 
   int numProcs = 1, myProc = 0;
-  myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  myProc = stk_classic::parallel_machine_rank( MPI_COMM_WORLD );
+  numProcs = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
   STKUNIT_ASSERT(numProcs>=1);
 
   fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
@@ -160,11 +160,11 @@ STKUNIT_UNIT_TEST(UnitTestLinearSystem, test1)
 
   STKUNIT_ASSERT_EQUAL( num_local_rows, expected_num_local_rows );
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk_classic::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
 
-  const stk::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
+  const stk_classic::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
 
-  STKUNIT_ASSERT_EQUAL( (stk::linsys::DofMapper*)&dof_mapper , (stk::linsys::DofMapper*)&const_dof_mapper );
+  STKUNIT_ASSERT_EQUAL( (stk_classic::linsys::DofMapper*)&dof_mapper , (stk_classic::linsys::DofMapper*)&const_dof_mapper );
 
   assemble_elem_matrices_and_vectors(bulk_data, *temperature_field, ls);
 
@@ -184,13 +184,13 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension);
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
+  stk_classic::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
 
   fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
@@ -201,35 +201,35 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
-  stk::mesh::Selector select_owned(meta_data.locally_owned_part());
-  stk::mesh::get_selected_entities(select_owned,
+  std::vector<stk_classic::mesh::Entity*> local_nodes;
+  stk_classic::mesh::Selector select_owned(meta_data.locally_owned_part());
+  stk_classic::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
-  stk::mesh::EntityId bc_node_id = 0;
+  stk_classic::mesh::EntityId bc_node_id = 0;
 
   if (local_nodes.size() > 0) {
-    stk::mesh::PartVector partvector;
+    stk_classic::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bc_node_id = stk_classic::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
   }
   (void)bc_node_id; // to avoid a set but not used warning from gcc 4.6.3
 
   bulk_data.modification_end();
   //------------------------------
 
-  stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
+  stk_classic::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
-  stk::mesh::count_entities(select_used, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::count_entities(select_used, bulk_data, count);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
+  std::vector<stk_classic::mesh::Entity*> nodes;
+  stk_classic::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
@@ -238,14 +238,14 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
   size_t num_matrices = 2;
   size_t num_rhsvecs = 2;
-  stk::linsys::AggregateLinearSystem ls(comm,factory, num_matrices, num_rhsvecs);
+  stk_classic::linsys::AggregateLinearSystem ls(comm,factory, num_matrices, num_rhsvecs);
 
-  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
+  stk_classic::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                               *temperature_field, select_owned, bulk_data);
 
   ls.synchronize_mappings_and_structure();
 
-  const stk::linsys::LinearSystemInterface& const_ls = ls;
+  const stk_classic::linsys::LinearSystemInterface& const_ls = ls;
   const fei::SharedPtr<fei::MatrixGraph> const_mgraph = const_ls.get_fei_MatrixGraph();
   fei::SharedPtr<fei::MatrixGraph> mgraph = ls.get_fei_MatrixGraph();
 
@@ -262,8 +262,8 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
   STKUNIT_ASSERT_EQUAL( (fei::LinearSystem*)const_linsys_ptr, linsys_ptr);
 
   int numProcs = 1, myProc = 0;
-  myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  myProc = stk_classic::parallel_machine_rank( MPI_COMM_WORLD );
+  numProcs = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
   STKUNIT_ASSERT(numProcs >= 1);
 
   fei::SharedPtr<fei::Matrix> matrix = ls.get_fei_LinearSystem()->getMatrix();
@@ -272,11 +272,11 @@ STKUNIT_UNIT_TEST(UnitTestAggregateLinearSystem, test1)
 
   STKUNIT_ASSERT_EQUAL( num_local_rows, expected_num_local_rows );
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk_classic::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
 
-  const stk::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
+  const stk_classic::linsys::DofMapper& const_dof_mapper = const_ls.get_DofMapper();
 
-  STKUNIT_ASSERT_EQUAL( (stk::linsys::DofMapper*)&dof_mapper , (stk::linsys::DofMapper*)&const_dof_mapper );
+  STKUNIT_ASSERT_EQUAL( (stk_classic::linsys::DofMapper*)&dof_mapper , (stk_classic::linsys::DofMapper*)&const_dof_mapper );
 
   fei::SharedPtr<fei::Matrix> mat0 = ls.get_matrix(0);
   fei::SharedPtr<fei::Vector> rhs0 = ls.get_rhsvec(0);

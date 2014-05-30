@@ -59,7 +59,7 @@
 #include <math.h>
 #include <stk_util/parallel/Parallel.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
     namespace unit_tests {
 

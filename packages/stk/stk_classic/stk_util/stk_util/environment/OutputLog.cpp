@@ -21,7 +21,7 @@
 #include <stdexcept>
 #include <cctype>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 
@@ -644,7 +644,7 @@ void
 bind_output_streams(
   const std::string &   output_description)
 {
-  stk::CommandList command_list;
+  stk_classic::CommandList command_list;
 
   parse_output_description(output_description, command_list);
   execute(command_list);
@@ -688,7 +688,7 @@ tout() {
 
 std::ostream &
 dwout() {
-  static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
+  static stk_classic::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
   static std::ostream s_dwout(&s_dwoutStreambuf);
   
   return s_dwout;

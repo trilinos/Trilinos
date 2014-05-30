@@ -31,23 +31,23 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk {
+namespace stk_classic {
 namespace adapt {
 namespace unit_tests {
 
 static int dw_enabled = 1;
-static stk::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
+static stk_classic::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
 
-static stk::diag::Writer &
+static stk_classic::diag::Writer &
 dw()
 {
-  //static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+  //static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
 
   s_diagWriter.setPrintMask(percept::LOG_NORM+percept::LOG_ALWAYS);
 
   return s_diagWriter;
 }
-//static stk::diag::Writer &s_dw_tmp = dw();
+//static stk_classic::diag::Writer &s_dw_tmp = dw();
 
 #define EXTRA_PRINT 0
 
@@ -57,7 +57,7 @@ dw()
 
 STKUNIT_UNIT_TEST(mesh_colorer, test1)
 {
-  dw().m(percept::LOG_MESH_COLORER) << "TEST::mesh_colorer::test1 " << stk::diag::dendl;
+  dw().m(percept::LOG_MESH_COLORER) << "TEST::mesh_colorer::test1 " << stk_classic::diag::dendl;
 
   const size_t numxyz=3;
   const size_t num_x = numxyz;

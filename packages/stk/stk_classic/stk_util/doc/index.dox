@@ -1,6 +1,6 @@
 
 /** @brief Sierra Toolkit */
-namespace stk {
+namespace stk_classic {
 }//namespace stk
 
 /**

@@ -11,7 +11,7 @@
 
 #include <boost/program_options.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 ///
 /// @addtogroup command_line_options_detail

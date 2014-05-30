@@ -36,12 +36,12 @@
 
 #define HET_FIX_INCLUDE_EXTRA_ELEM_TYPES 0
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
-    typedef stk::mesh::Field<double>                          ScalarFieldType ;
-    typedef stk::mesh::Field<double*, stk::mesh::ElementNode> ElementNodePointerFieldType ;
+    typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorFieldType ;
+    typedef stk_classic::mesh::Field<double>                          ScalarFieldType ;
+    typedef stk_classic::mesh::Field<double*, stk_classic::mesh::ElementNode> ElementNodePointerFieldType ;
 
     /** Use case with mixed element topologies and
      *  field relations to provide fast access to node field data
@@ -54,23 +54,23 @@ namespace stk {
     public:
 
       typedef double Point[3];
-      typedef stk::mesh::EntityId TetIds[4];
+      typedef stk_classic::mesh::EntityId TetIds[4];
 
 
       ~SingleTetFixture();
 
-      SingleTetFixture( stk::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0, 
-                        stk::mesh::EntityId elem_id_start=0);
+      SingleTetFixture( stk_classic::ParallelMachine comm, bool doCommit = true, unsigned npts=0, Point *points=0, unsigned ntets=0, TetIds *tetIds=0, 
+                        stk_classic::mesh::EntityId elem_id_start=0);
 
       void populate();
 
       int m_spatial_dimension;
-      stk::mesh::fem::FEMMetaData m_metaData;
-      stk::mesh::BulkData m_bulkData;
+      stk_classic::mesh::fem::FEMMetaData m_metaData;
+      stk_classic::mesh::BulkData m_bulkData;
 
-      stk::mesh::Part & m_block_tet;
+      stk_classic::mesh::Part & m_block_tet;
 
-      const stk::mesh::EntityRank m_elem_rank;
+      const stk_classic::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;
 
@@ -79,7 +79,7 @@ namespace stk {
       unsigned m_ntets;
       TetIds *m_tetIds;
 
-      stk::mesh::EntityId m_elem_id_start;
+      stk_classic::mesh::EntityId m_elem_id_start;
       
     };
 

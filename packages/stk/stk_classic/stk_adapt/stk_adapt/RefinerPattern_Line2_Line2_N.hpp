@@ -6,7 +6,7 @@
 #include <stk_adapt/sierra_element/RefinementTopology.hpp>
 #include <stk_adapt/sierra_element/StdMeshObjTopologies.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     template <>
@@ -37,18 +37,18 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId> line_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> line_tuple_type;
         static vector<line_tuple_type> elems(2);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        std::vector<stk_classic::mesh::Part*> add_parts;
+        std::vector<stk_classic::mesh::Part*> remove_parts;
 
         add_parts = m_toParts;
         
@@ -72,10 +72,10 @@ namespace stk {
           }
 
         // FIXME
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk_classic::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
 
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk_classic::mesh::Entity *>(&element), m_primaryEntityRank, 0u);
 
         Elem::CellTopology elem_celltopo = Elem::getCellTopology< FromTopology >();
         const Elem::RefinementTopology* ref_topo_p = Elem::getRefinementTopology(elem_celltopo);
@@ -126,20 +126,20 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
 #if 0
             if (proc_rank_field && proc_rank_field->rank() == m_eMesh.edge_rank()) //&& m_eMesh.get_spatial_dim()==1)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }
 #endif
-            stk::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field("proc_rank_edge");
+            stk_classic::mesh::FieldBase * proc_rank_field_edge = m_eMesh.get_field("proc_rank_edge");
             if (proc_rank_field_edge)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field_edge) , newElement );
                 fdata[0] = double(newElement.owner_rank());
                 //fdata[0] = 1234.56;
                 if (0)

@@ -19,7 +19,7 @@
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 #include <stk_search_util/stk_mesh/PrintBoundingBox.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace box {
 
@@ -145,5 +145,5 @@ void tests() {
 STKUNIT_UNIT_TEST(UnitTestingOfSearchBox, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
-  stk::search::box::tests();
+  stk_classic::search::box::tests();
 }

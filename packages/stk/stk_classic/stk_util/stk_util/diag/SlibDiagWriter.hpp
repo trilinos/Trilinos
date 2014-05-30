@@ -10,7 +10,7 @@
 namespace sierra {
 namespace Slib {
 
-stk::diag::Writer &theDiagWriter();
+stk_classic::diag::Writer &theDiagWriter();
 
 /// Macro <code>fmwkout</code> makes the coding look nicer.
 #define slibout sierra::Slib::theDiagWriter()
@@ -38,9 +38,9 @@ typedef Diag::Tracespec Trace;
 } // namespace Slib
 
 namespace Diag {
-using stk::diag::push;
-using stk::diag::pop;
-using stk::diag::dendl;
+using stk_classic::diag::push;
+using stk_classic::diag::pop;
+using stk_classic::diag::dendl;
 } // namespace Diag
 
 } // namespace sierra

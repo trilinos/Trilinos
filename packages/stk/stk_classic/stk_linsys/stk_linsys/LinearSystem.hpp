@@ -15,7 +15,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 /** Container of linear-system (matrix, vectors) and mapping objects.

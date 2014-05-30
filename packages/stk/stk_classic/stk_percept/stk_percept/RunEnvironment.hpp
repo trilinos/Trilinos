@@ -28,16 +28,16 @@
 #include "Teuchos_oblackholestream.hpp"
 #include "Teuchos_StandardCatchMacros.hpp"
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
 
     enum LogMask {
-      LOG_ALWAYS          = stk::LOG_ALWAYS,
-      LOG_TRACE           = stk::LOG_TRACE,
-      LOG_TRACE_STATS     = stk::LOG_TRACE_STATS,
-      LOG_TRACE_SUB_CALLS = stk::LOG_TRACE_SUB_CALLS,
-      LOG_MEMBERS         = stk::LOG_MEMBERS,
+      LOG_ALWAYS          = stk_classic::LOG_ALWAYS,
+      LOG_TRACE           = stk_classic::LOG_TRACE,
+      LOG_TRACE_STATS     = stk_classic::LOG_TRACE_STATS,
+      LOG_TRACE_SUB_CALLS = stk_classic::LOG_TRACE_SUB_CALLS,
+      LOG_MEMBERS         = stk_classic::LOG_MEMBERS,
 
       LOG_APPLICATION     = 0x0000010  // use this as the base for additional masks
       //LOG_SEARCH          = 0x0000010,
@@ -51,8 +51,8 @@ namespace stk {
      *
      */
     enum message_type {
-      MSG_WARNING = stk::MSG_WARNING,
-      MSG_FATAL   = stk::MSG_DOOMED,
+      MSG_WARNING = stk_classic::MSG_WARNING,
+      MSG_FATAL   = stk_classic::MSG_DOOMED,
       MSG_INFORMATION,
       MSG_EXCEPTION,
       MSG_PARALLEL_EXCEPTION
@@ -64,7 +64,7 @@ namespace stk {
      *
      */
     enum message_throttle_type {
-      MSG_APPLICATION = stk::MSG_APPLICATION,
+      MSG_APPLICATION = stk_classic::MSG_APPLICATION,
       MSG_TIME_STEP
     };
 
@@ -86,12 +86,12 @@ namespace stk {
     std::ostream &dwout();              ///< Diagnostic writer stream
 
     // dw() definition
-    stk::diag::Writer &dw();
-#define DWENDL stk::diag::dendl
+    stk_classic::diag::Writer &dw();
+#define DWENDL stk_classic::diag::dendl
 
-    stk::diag::TimerSet &timerSet();
+    stk_classic::diag::TimerSet &timerSet();
 
-    stk::diag::Timer &timer();
+    stk_classic::diag::Timer &timer();
 
     void my_report_handler(const char *message, int type);
 
@@ -107,7 +107,7 @@ namespace stk {
       {
         if (m_need_to_finalize)
           {
-            stk::parallel_machine_finalize();
+            stk_classic::parallel_machine_finalize();
           }
       }
     };
@@ -120,7 +120,7 @@ namespace stk {
       RunEnvironment(int *argc, char ***argv, bool debug=false);
 
       // Assumes already-initialized comm
-      RunEnvironment(int *argc, char ***argv, stk::ParallelMachine comm, bool debug=false);
+      RunEnvironment(int *argc, char ***argv, stk_classic::ParallelMachine comm, bool debug=false);
 
       int processCommandLine(int argc, char **argv);
       int processCommandLine() { return processCommandLine(m_argc, m_argv); }
@@ -130,10 +130,10 @@ namespace stk {
       void printHelp();
 
       static void 
-      doSierraLoadBalance(stk::ParallelMachine comm, std::string meshFileName);
+      doSierraLoadBalance(stk_classic::ParallelMachine comm, std::string meshFileName);
 
       static void
-      doLoadBalance(stk::ParallelMachine comm, std::string meshFileName);
+      doLoadBalance(stk_classic::ParallelMachine comm, std::string meshFileName);
 
       std::string
       build_log_description(const std::string &           working_directory,
@@ -162,7 +162,7 @@ namespace stk {
       int help_opt;
 
       // data
-      const stk::ParallelMachine    m_comm;
+      const stk_classic::ParallelMachine    m_comm;
       static std::string            m_workingDirectory;
 
     private:

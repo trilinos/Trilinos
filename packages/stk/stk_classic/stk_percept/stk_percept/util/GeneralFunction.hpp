@@ -20,7 +20,7 @@ template<typename T> void push_back( std::vector<T>& dst, const std::vector<T>& 
 }
 #endif
 
-namespace stk {
+namespace stk_classic {
 
   namespace percept {
 

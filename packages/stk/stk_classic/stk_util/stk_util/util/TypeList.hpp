@@ -13,7 +13,7 @@
 #include <stk_util/util/TypeUtil.hpp>
 #include <stk_util/util/SameType.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 /** \ingroup  util_module
  *  \defgroup  typelist_module  TypeList: linked list of types
@@ -97,7 +97,7 @@ template< typename Value , class Tail , typename TestValue , unsigned ordinal >
 struct TypeListIndex< TypeList< Value , Tail > , TestValue , ordinal >
 {
 private:
-  enum { match = stk::SameType< Value , TestValue >::value };
+  enum { match = stk_classic::SameType< Value , TestValue >::value };
   enum { J = match && 0 < ordinal ? ordinal - 1 : ordinal };
   enum { N = TypeListIndex< Tail , TestValue , J >::value };
 public:
@@ -122,7 +122,7 @@ template< typename Value , class Tail , typename TestValue >
 struct TypeListCount< TypeList< Value , Tail > , TestValue >
 {
   enum { value = TypeListCount< Tail , TestValue >::value +
-                 ( stk::SameType< Value , TestValue >::value ? 1 : 0 ) };
+                 ( stk_classic::SameType< Value , TestValue >::value ? 1 : 0 ) };
 };
 
 //----------------------------------------------------------------------
@@ -140,7 +140,7 @@ struct TypeListMember< TypeListEnd , TestValue >
 template< typename Value , class Tail , typename TestValue >
 struct TypeListMember< TypeList< Value , Tail > , TestValue >
 {
-  enum { value = stk::SameType< Value , TestValue >::value ||
+  enum { value = stk_classic::SameType< Value , TestValue >::value ||
                  TypeListMember< Tail , TestValue >::value };
 };
 
@@ -663,7 +663,7 @@ template<class ListType, typename ValueType, unsigned Ordinal>
 struct TypeListIndex
 {
 private:
-  enum { same = stk::SameType<ValueType,typename ListType::TypeListValue>::value };
+  enum { same = stk_classic::SameType<ValueType,typename ListType::TypeListValue>::value };
   enum { ord = Ordinal == 0 ? 0 : ( same ? Ordinal - 1 : Ordinal ) };
   typedef typename ListType::TypeListTail TailType ;
   typedef TypeListIndex< TailType , ValueType , ord > type_list_index ;

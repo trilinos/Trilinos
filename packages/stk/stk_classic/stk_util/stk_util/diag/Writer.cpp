@@ -15,7 +15,7 @@
 #include <stk_util/util/IndentStreambuf.hpp>
 #include <stk_util/diag/Writer.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 WriterThrowSafe::WriterThrowSafe(
@@ -86,7 +86,7 @@ Writer &
 Writer::push() {
   if (shouldPrint()) {
     m_lineMaskStack.pushDepth();
-    getStream() << stk::push;
+    getStream() << stk_classic::push;
   }
 
   return *this;
@@ -101,7 +101,7 @@ Writer::push() {
 Writer &
 Writer::pop() {
   if (shouldPrint()) {
-    getStream() << stk::pop;
+    getStream() << stk_classic::pop;
     m_lineMaskStack.resetDepth().pop();
   }
 

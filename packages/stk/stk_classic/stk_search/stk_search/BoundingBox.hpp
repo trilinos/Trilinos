@@ -14,7 +14,7 @@
 #include <cmath>
 #include <stdint.h>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace box {
 

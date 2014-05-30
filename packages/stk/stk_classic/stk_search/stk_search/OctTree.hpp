@@ -14,7 +14,7 @@
 #include <stk_util/util/SimpleArrayOps.hpp>
 #include <stk_util/util/StaticAssert.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 class OctTreeKey ;
 
@@ -22,11 +22,11 @@ class OctTreeKey ;
 
 namespace std {
 
-ostream & operator << ( ostream & , const stk::OctTreeKey & otk);
+ostream & operator << ( ostream & , const stk_classic::OctTreeKey & otk);
 
 }
 
-namespace stk {
+namespace stk_classic {
 
 /** \ingroup util_module
  *  \class  OctTreeKey

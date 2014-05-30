@@ -1,6 +1,6 @@
 #include <stk_expreval/Variable.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 VariableMap::Resolver &

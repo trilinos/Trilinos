@@ -57,7 +57,7 @@ Registry::registerIt(
 {
   slibout.m(Slib::LOG_PLUGIN) << "Registering " << name_pair.second
 			      << " of type " << demangle(name_pair.first->name())
-			      << " at " << func_ptr << stk::diag::dendl;
+			      << " at " << func_ptr << stk_classic::diag::dendl;
 
   RegistryMap::const_iterator registry_entry = getRegistryMap().find(name_pair);
   if (registry_entry != getRegistryMap().end() && (*registry_entry).second != func_ptr) {
@@ -153,7 +153,7 @@ Registry::registerDL(
   const char *		function_name)
 {
 #ifdef SIERRA_DLOPEN_ENABLED
-  slibout.m(Slib::LOG_PLUGIN) << "Loading dynamic library " << so_path << stk::diag::dendl;
+  slibout.m(Slib::LOG_PLUGIN) << "Loading dynamic library " << so_path << stk_classic::diag::dendl;
   void *dl = dlopen(so_path, RTLD_NOW);
   if (!dl){
     throw std::runtime_error(dlerror());
@@ -170,7 +170,7 @@ Registry::registerDL(
     }
     
     if (f) {
-      slibout.m(Slib::LOG_PLUGIN) << "Executing dynamic library " << so_path << " function " << s << "()" << stk::diag::dendl;
+      slibout.m(Slib::LOG_PLUGIN) << "Executing dynamic library " << so_path << " function " << s << "()" << stk_classic::diag::dendl;
       (*f)();
     }
     else {
@@ -218,16 +218,16 @@ Registry::verbose_print(
 }
 
 
-stk::diag::Writer &
+stk_classic::diag::Writer &
 Registry::verbose_print(
-  stk::diag::Writer &		dout) const
+  stk_classic::diag::Writer &		dout) const
 {
   if (dout.shouldPrint()) {
-    dout << "Registry, size " << getRegistryMap().size() << stk::diag::push << stk::diag::dendl;
+    dout << "Registry, size " << getRegistryMap().size() << stk_classic::diag::push << stk_classic::diag::dendl;
 
     for (RegistryMap::const_iterator it = getRegistryMap().begin(); it != getRegistryMap().end(); ++it)
-      dout << (*it).first.second << " of type " << demangle((*it).first.first->name()) << " at " << (*it).second << stk::diag::dendl;
-    dout << stk::diag::pop;
+      dout << (*it).first.second << " of type " << demangle((*it).first.first->name()) << " at " << (*it).second << stk_classic::diag::dendl;
+    dout << stk_classic::diag::pop;
   }
   return dout;
 }

@@ -28,13 +28,13 @@
 
 namespace {
 
-using stk::mesh::Bucket;
-using stk::mesh::Part;
-using stk::mesh::Selector;
-using stk::mesh::BulkData;
-using stk::mesh::Entity;
+using stk_classic::mesh::Bucket;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Entity;
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 // Just make copies so we don't have to worry about constness
 template <class T>
@@ -71,30 +71,30 @@ void check_selected_buckets(const Selector& selector,
   std::copy(selected_bucket_set.begin(), selected_bucket_set.end(), std::back_inserter(expected_buckets));
 
   // get buckets selected by selector
-  stk::mesh::get_buckets(selector, node_buckets, get_buckets);
+  stk_classic::mesh::get_buckets(selector, node_buckets, get_buckets);
 
   // get buckets selected by selector using range API
   // all buckets are node buckets, so this should work
-  stk::mesh::AllSelectedBucketsRange buckets_range = stk::mesh::get_buckets(selector, mesh);
-  for (stk::mesh::AllSelectedBucketsIterator buckets_itr = boost::begin(buckets_range), buckets_end = boost::end(buckets_range);
+  stk_classic::mesh::AllSelectedBucketsRange buckets_range = stk_classic::mesh::get_buckets(selector, mesh);
+  for (stk_classic::mesh::AllSelectedBucketsIterator buckets_itr = boost::begin(buckets_range), buckets_end = boost::end(buckets_range);
        buckets_itr != buckets_end;
        ++buckets_itr) {
     get_buckets_range.push_back(*buckets_itr);
   }
-  //BOOST_FOREACH( Bucket* bucket, stk::mesh::get_buckets(selector, mesh) ) {
+  //BOOST_FOREACH( Bucket* bucket, stk_classic::mesh::get_buckets(selector, mesh) ) {
   //  get_buckets_range.push_back(bucket);
   //}
 
   // get buckets selected by selector using alteranate range API
   // all buckets are node buckets, so this should work
-  stk::mesh::AllBucketsRange all_buckets = stk::mesh::get_buckets(mesh);
-  buckets_range = stk::mesh::get_buckets(selector, all_buckets);
-  for (stk::mesh::AllSelectedBucketsIterator buckets_itr = boost::begin(buckets_range), buckets_end = boost::end(buckets_range);
+  stk_classic::mesh::AllBucketsRange all_buckets = stk_classic::mesh::get_buckets(mesh);
+  buckets_range = stk_classic::mesh::get_buckets(selector, all_buckets);
+  for (stk_classic::mesh::AllSelectedBucketsIterator buckets_itr = boost::begin(buckets_range), buckets_end = boost::end(buckets_range);
        buckets_itr != buckets_end;
        ++buckets_itr) {
     get_buckets_alt_range.push_back(*buckets_itr);
   }
-  //BOOST_FOREACH( Bucket* bucket, stk::mesh::get_buckets(selector, all_buckets) ) {
+  //BOOST_FOREACH( Bucket* bucket, stk_classic::mesh::get_buckets(selector, all_buckets) ) {
   //  get_buckets_alt_range.push_back(bucket);
   //}
 
@@ -108,15 +108,15 @@ void check_selected_buckets(const Selector& selector,
 
   std::vector<Entity*> get_entities_range;
 
-  stk::mesh::SelectedBucketRangeEntityIteratorRange selected_entity_range = stk::mesh::get_selected_entities( selector, all_buckets );
-  for (stk::mesh::SelectedBucketRangeEntityIterator selected_entity_itr = boost::begin(selected_entity_range),
+  stk_classic::mesh::SelectedBucketRangeEntityIteratorRange selected_entity_range = stk_classic::mesh::get_selected_entities( selector, all_buckets );
+  for (stk_classic::mesh::SelectedBucketRangeEntityIterator selected_entity_itr = boost::begin(selected_entity_range),
                                                     selected_entity_end = boost::end(selected_entity_range);
        selected_entity_itr != selected_entity_end;
        ++selected_entity_itr) {
     get_entities_range.push_back(*selected_entity_itr);
   }
   // TODO: Figure out why BOOST_FOREACH does not work well with selected entity iterators
-  // BOOST_FOREACH(Entity* entity, stk::mesh::get_selected_entities(selector, all_buckets) ) {
+  // BOOST_FOREACH(Entity* entity, stk_classic::mesh::get_selected_entities(selector, all_buckets) ) {
   //   get_entities_range.push_back(entity);
   // }
 
@@ -131,7 +131,7 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 
   // Generate mesh
 
-  stk::mesh::fixtures::SelectorFixture fix ;
+  stk_classic::mesh::fixtures::SelectorFixture fix ;
   fix.m_meta_data.commit();
 
   fix.m_bulk_data.modification_begin();
@@ -189,13 +189,13 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
 
     // Get all node buckets using range API
 
-    stk::mesh::AllBucketsRange all_node_buckets = stk::mesh::get_buckets(NODE_RANK, fix.m_bulk_data);
-    for (stk::mesh::AllBucketsIterator buckets_itr = boost::begin(all_node_buckets), buckets_end = boost::end(all_node_buckets);
+    stk_classic::mesh::AllBucketsRange all_node_buckets = stk_classic::mesh::get_buckets(NODE_RANK, fix.m_bulk_data);
+    for (stk_classic::mesh::AllBucketsIterator buckets_itr = boost::begin(all_node_buckets), buckets_end = boost::end(all_node_buckets);
          buckets_itr != buckets_end;
          ++buckets_itr) {
       get_buckets_range.push_back(*buckets_itr);
     }
-    // BOOST_FOREACH( Bucket* bucket, stk::mesh::get_buckets(NODE_RANK, fix.m_bulk_data) ) {
+    // BOOST_FOREACH( Bucket* bucket, stk_classic::mesh::get_buckets(NODE_RANK, fix.m_bulk_data) ) {
     //   get_buckets_range.push_back(bucket);
     // }
 
@@ -240,16 +240,16 @@ STKUNIT_UNIT_TEST( UnitTestGetBuckets, ExampleFixture )
     all_nodes_expected.push_back(fix.m_entity4);
     all_nodes_expected.push_back(fix.m_entity5);
 
-    stk::mesh::get_entities( fix.m_bulk_data, NODE_RANK, all_nodes );
+    stk_classic::mesh::get_entities( fix.m_bulk_data, NODE_RANK, all_nodes );
     sort_and_compare_eq(all_nodes, all_nodes_expected);
 
-    stk::mesh::BucketVectorEntityIteratorRange entity_range = stk::mesh::get_entities(NODE_RANK, fix.m_bulk_data);
-    for (stk::mesh::BucketVectorEntityIterator entity_itr = boost::begin(entity_range), entity_end = boost::end(entity_range);
+    stk_classic::mesh::BucketVectorEntityIteratorRange entity_range = stk_classic::mesh::get_entities(NODE_RANK, fix.m_bulk_data);
+    for (stk_classic::mesh::BucketVectorEntityIterator entity_itr = boost::begin(entity_range), entity_end = boost::end(entity_range);
          entity_itr != entity_end;
          ++entity_itr) {
       all_nodes_range.push_back(*entity_itr);
     }
-    // BOOST_FOREACH( Entity* const entity, stk::mesh::get_entities( NODE_RANK, fix.m_bulk_data ) ) {
+    // BOOST_FOREACH( Entity* const entity, stk_classic::mesh::get_entities( NODE_RANK, fix.m_bulk_data ) ) {
     //   all_nodes_range.push_back(entity);
     // }
     sort_and_compare_eq(all_nodes_range, all_nodes_expected);

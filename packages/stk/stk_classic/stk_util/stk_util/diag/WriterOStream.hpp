@@ -11,7 +11,7 @@
 
 #include <stk_util/diag/Writer.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///

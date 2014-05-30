@@ -15,7 +15,7 @@
 
 #include <stk_util/diag/Writer_fwd.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 class PrintTable
 {
@@ -410,11 +410,11 @@ inline diag::Writer &operator<<(diag::Writer &dout, const PrintTable &table){
 
 //namespace sierra {
 //
-////typedef stk::PrintTable PrintTable;
-//using stk::PrintTable;
-//typedef stk::cell_width cell_width;
-//typedef stk::at at;
-//typedef stk::justify justify;
+////typedef stk_classic::PrintTable PrintTable;
+//using stk_classic::PrintTable;
+//typedef stk_classic::cell_width cell_width;
+//typedef stk_classic::at at;
+//typedef stk_classic::justify justify;
 //
 //} // namespace sierra
 

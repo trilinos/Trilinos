@@ -7,7 +7,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/Ghosting.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fem {
 
@@ -274,7 +274,7 @@ fem::CellTopology FEMMetaData::get_cell_topology( const Part & part) const
 
 namespace {
 
-bool root_part_in_subset(stk::mesh::Part & part)
+bool root_part_in_subset(stk_classic::mesh::Part & part)
 {
   if (is_cell_topology_root_part(part)) {
     return true;

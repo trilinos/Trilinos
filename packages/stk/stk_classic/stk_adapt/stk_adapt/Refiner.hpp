@@ -44,11 +44,11 @@
 #endif
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
-    typedef std::set<stk::mesh::Entity *> ElementUnrefineCollection;
-    //typedef std::map<stk::mesh::Part*, stk::mesh::Part*> SidePartMap;
+    typedef std::set<stk_classic::mesh::Entity *> ElementUnrefineCollection;
+    //typedef std::map<stk_classic::mesh::Part*, stk_classic::mesh::Part*> SidePartMap;
     typedef std::map<std::string, std::string> SidePartMap;
 
     using std::vector;
@@ -57,13 +57,13 @@ namespace stk {
 
 
 #if UNIFORM_REF_REMOVE_OLD_STD_SET
-    typedef std::set<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef std::set<stk_classic::mesh::Entity *> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_STD_VECTOR
-    typedef std::vector<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef std::vector<stk_classic::mesh::Entity *> elements_to_be_destroyed_type;
 #endif
 #if UNIFORM_REF_REMOVE_OLD_BOOST_SET
-    typedef boost::unordered_set<stk::mesh::Entity *> elements_to_be_destroyed_type;
+    typedef boost::unordered_set<stk_classic::mesh::Entity *> elements_to_be_destroyed_type;
 #endif
 
 
@@ -88,13 +88,13 @@ namespace stk {
     //template<class UniformRefinerPattern>
     class Refiner
 #ifndef SWIG //NLM    
-  : public stk::percept::Observable<ProgressMeterData>
+  : public stk_classic::percept::Observable<ProgressMeterData>
 #endif
     {
     public:
-      Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
-      Refiner(percept::PerceptMesh& eMesh, Pattern refine_type, stk::mesh::FieldBase *proc_rank_field=0);
-      //Refiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, stk::mesh::FieldBase *proc_rank_field=0);
+      Refiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0);
+      Refiner(percept::PerceptMesh& eMesh, Pattern refine_type, stk_classic::mesh::FieldBase *proc_rank_field=0);
+      //Refiner(percept::PerceptMesh& eMesh, std::vector<UniformRefinerPatternBase *>&  bp, stk_classic::mesh::FieldBase *proc_rank_field=0);
       
       virtual ~Refiner();
       
@@ -146,8 +146,8 @@ namespace stk {
 
       // ================================ unrefine
 
-      typedef std::set<stk::mesh::Entity *> NodeSetType;
-      typedef std::set<stk::mesh::Entity *> SetOfEntities;
+      typedef std::set<stk_classic::mesh::Entity *> NodeSetType;
+      typedef std::set<stk_classic::mesh::Entity *> SetOfEntities;
 
 
       void
@@ -191,9 +191,9 @@ namespace stk {
       /// determine side part to elem part relations
       void get_side_part_relations(bool checkParentChild, SidePartMap& side_part_map);
 
-      bool connectSides(stk::mesh::Entity *element, stk::mesh::Entity *side_elem, SidePartMap* side_part_map=0);
+      bool connectSides(stk_classic::mesh::Entity *element, stk_classic::mesh::Entity *side_elem, SidePartMap* side_part_map=0);
       void fixElementSides2();
-      void fixSides(stk::mesh::Entity *parent);
+      void fixSides(stk_classic::mesh::Entity *parent);
 
       NodeRegistry& getNodeRegistry() { return *m_nodeRegistry; }
       percept::PerceptMesh& getMesh() { return m_eMesh; }
@@ -251,7 +251,7 @@ namespace stk {
 
       virtual unsigned
       doForAllElements(unsigned irank, std::string function_info,
-                       stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
+                       stk_classic::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function,
                        vector< ColorerSetType >& elementColors, unsigned elementType,
                        vector<NeededEntityType>& needed_entity_ranks,  
                        bool only_count=false, bool doAllElements=true) ;
@@ -266,16 +266,16 @@ namespace stk {
        */
       virtual bool
       createNewNeededNodeIds(const CellTopologyData * const cell_topo_data,
-                             const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes) ;
+                             const stk_classic::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks, NewSubEntityNodesType& nodes) ;
 
       /** Method that actually creates new elements by first calling createNewNeededNodeIds then calls the break pattern's createNewElements method.
        *
        *  A sample implementation is shown in @see UniformRefiner
        */
       virtual void
-      createElementsAndNodesAndConnectLocal(unsigned irank,  stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
+      createElementsAndNodesAndConnectLocal(unsigned irank,  stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern,
                                             vector< ColorerSetType >& elementColors,   vector<NeededEntityType>& needed_entity_ranks,
-                                            vector<stk::mesh::Entity *>& new_elements_pool) ;
+                                            vector<stk_classic::mesh::Entity *>& new_elements_pool) ;
 
       /** This is a helper method that loops over all sub-dimensional entities whose rank matches on of those in @param needed_entity_ranks
        *    and registers that sub-dimensional entity as needing a new node, or whatever other function NodeRegistry requires (getFromRemote(), etc)
@@ -287,7 +287,7 @@ namespace stk {
        */
 
       virtual void
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element,
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element,
                                               vector<NeededEntityType>& needed_entity_ranks);
 
       /// =========>  Overrides  end
@@ -298,7 +298,7 @@ namespace stk {
       removeFamilyTrees();
 
       void
-      removeOldElements(unsigned irank, stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
+      removeOldElements(unsigned irank, stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern );
 
       void
       removeElements( elements_to_be_destroyed_type& elements_to_be_destroyed, unsigned irank=0);
@@ -311,16 +311,16 @@ namespace stk {
       removeDanglingNodes();
 
       void
-      addOldElementsToPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
+      addOldElementsToPart(stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern, unsigned *elementType = 0u);
 
       void 
-      removeFromOldPart(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
+      removeFromOldPart(stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
       void
-      renameNewParts(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
+      renameNewParts(stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
       void
-      fixSurfaceAndEdgeSetNames(stk::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
+      fixSurfaceAndEdgeSetNames(stk_classic::mesh::EntityRank rank, UniformRefinerPatternBase* breakPattern);
 
       void
       fixElementSides();
@@ -329,13 +329,13 @@ namespace stk {
       fixElementSides1();
 
       void
-      fixElementSides(stk::mesh::EntityRank side_rank);
+      fixElementSides(stk_classic::mesh::EntityRank side_rank);
 
       void
-      fixElementSides1(stk::mesh::EntityRank side_rank);
+      fixElementSides1(stk_classic::mesh::EntityRank side_rank);
 
       void
-      checkFixElementSides(stk::mesh::EntityRank side_rank, stk::mesh::EntityRank elem_rank);
+      checkFixElementSides(stk_classic::mesh::EntityRank side_rank, stk_classic::mesh::EntityRank elem_rank);
 
       void
       buildElementSideDB(SubDimCellToDataMap& cell_2_data_map);
@@ -344,7 +344,7 @@ namespace stk {
       trace_print(std::string msg);
 
       void
-      checkBreakPatternValidityAndBuildRanks(std::vector<stk::mesh::EntityRank>& ranks);
+      checkBreakPatternValidityAndBuildRanks(std::vector<stk_classic::mesh::EntityRank>& ranks);
 
       void
       set_active_part();
@@ -357,13 +357,13 @@ namespace stk {
       std::vector<UniformRefinerPatternBase *> m_breakPattern;
 
       NodeRegistry* m_nodeRegistry;
-      stk::mesh::FieldBase *m_proc_rank_field;
+      stk_classic::mesh::FieldBase *m_proc_rank_field;
       bool m_doRemove;
 
       // for future: 
       // bool m_doIOSaveInactiveElements; // default false
 
-      std::vector<stk::mesh::EntityRank> m_ranks;
+      std::vector<stk_classic::mesh::EntityRank> m_ranks;
       bool m_ignoreSideSets;
       std::string m_geomFile;
       bool m_geomSnap;

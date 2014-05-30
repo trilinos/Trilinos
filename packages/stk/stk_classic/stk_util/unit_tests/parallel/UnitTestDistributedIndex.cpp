@@ -60,7 +60,7 @@ STKUNIT_UNIT_TEST( UnitTestDistributedIndexGenerateBig , testUnit )
 //   [80001..90000]
 //      etc.
 void generate_test_spans_10x10000(
-  std::vector< stk::parallel::DistributedIndex::KeySpan > & partition_spans )
+  std::vector< stk_classic::parallel::DistributedIndex::KeySpan > & partition_spans )
 {
   enum { test_spans_count = 10 };
   enum { test_spans_size  = 10000 };
@@ -79,11 +79,11 @@ void generate_test_spans_10x10000(
 
 void UnitTestSTKParallelDistributedIndex::test_ctor()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  int mpi_size = stk::parallel_machine_size(comm);
+  int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -122,9 +122,9 @@ void UnitTestSTKParallelDistributedIndex::test_ctor()
 
 void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
   {
     // Throw for overlapping span
@@ -155,12 +155,12 @@ void UnitTestSTKParallelDistributedIndex::test_ctor_bad()
 
 void UnitTestSTKParallelDistributedIndex::test_update()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  int mpi_size = stk::parallel_machine_size(comm);
+  int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -281,12 +281,12 @@ void UnitTestSTKParallelDistributedIndex::test_update()
 
 void UnitTestSTKParallelDistributedIndex::test_update_bad()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  int mpi_size = stk::parallel_machine_size(comm);
+  int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -319,12 +319,12 @@ void UnitTestSTKParallelDistributedIndex::test_update_bad()
 
 void UnitTestSTKParallelDistributedIndex::test_generate()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  // int mpi_size = stk::parallel_machine_size(comm);
+  int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  // int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -412,12 +412,12 @@ void UnitTestSTKParallelDistributedIndex::test_generate()
 
 void UnitTestSTKParallelDistributedIndex::test_update_generate()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int p_rank = stk::parallel_machine_rank(comm);
-  int p_size = stk::parallel_machine_size(comm);
+  int p_rank = stk_classic::parallel_machine_rank(comm);
+  int p_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -506,12 +506,12 @@ void UnitTestSTKParallelDistributedIndex::test_update_generate()
 
 void UnitTestSTKParallelDistributedIndex::test_generate_bad()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  int mpi_rank = stk::parallel_machine_rank(comm);
-  int mpi_size = stk::parallel_machine_size(comm);
+  int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 
@@ -551,12 +551,12 @@ void UnitTestSTKParallelDistributedIndex::test_generate_bad()
 
 void UnitTestSTKParallelDistributedIndex::test_generate_big()
 {
-  typedef stk::parallel::DistributedIndex PDIndex ;
+  typedef stk_classic::parallel::DistributedIndex PDIndex ;
 
-  stk::ParallelMachine comm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine comm = MPI_COMM_WORLD ;
 
-  const int mpi_rank = stk::parallel_machine_rank(comm);
-  const int mpi_size = stk::parallel_machine_size(comm);
+  const int mpi_rank = stk_classic::parallel_machine_rank(comm);
+  const int mpi_size = stk_classic::parallel_machine_size(comm);
 
   std::vector< PDIndex::KeySpan > partition_spans ;
 

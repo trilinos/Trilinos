@@ -10,7 +10,7 @@
 #include <sstream>
 #include <stk_mesh/fixtures/SelectorFixture.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -28,29 +28,29 @@ SelectorFixture::SelectorFixture()
   , m_entity3( NULL )
   , m_entity4( NULL )
   , m_entity5( NULL )
-  , m_fieldA(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldA"))
-  , m_fieldABC(m_meta_data.declare_field<stk::mesh::Field<double> >("FieldABC"))
+  , m_fieldA(m_meta_data.declare_field<stk_classic::mesh::Field<double> >("FieldA"))
+  , m_fieldABC(m_meta_data.declare_field<stk_classic::mesh::Field<double> >("FieldABC"))
 {
-  stk::mesh::EntityRank ent_rank = 0;
+  stk_classic::mesh::EntityRank ent_rank = 0;
 
-  stk::mesh::put_field(m_fieldA, ent_rank, m_partA);
+  stk_classic::mesh::put_field(m_fieldA, ent_rank, m_partA);
 
-  stk::mesh::put_field(m_fieldABC, ent_rank, m_partA);
-  stk::mesh::put_field(m_fieldABC, ent_rank, m_partB);
-  stk::mesh::put_field(m_fieldABC, ent_rank, m_partC);
+  stk_classic::mesh::put_field(m_fieldABC, ent_rank, m_partA);
+  stk_classic::mesh::put_field(m_fieldABC, ent_rank, m_partB);
+  stk_classic::mesh::put_field(m_fieldABC, ent_rank, m_partC);
 }
 
 void SelectorFixture::generate_mesh()
 {
   const unsigned entity_count = 5 ;
 
-  stk::mesh::EntityRank ent_type = 0; // rank
+  stk_classic::mesh::EntityRank ent_type = 0; // rank
 
   // Create Entities and assign to parts:
-  stk::mesh::EntityId ent_id =
+  stk_classic::mesh::EntityId ent_id =
     1 + entity_count * m_bulk_data.parallel_rank(); // Unique ID
 
-  std::vector<stk::mesh::Part*> partMembership;
+  std::vector<stk_classic::mesh::Part*> partMembership;
 
   // Entity1 is contained in PartA
   partMembership.clear();
@@ -94,13 +94,13 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
 {
   // Create Parts and commit:
   std::string myPartName;
-  stk::mesh::EntityRank myRank = 0;
+  stk_classic::mesh::EntityRank myRank = 0;
 
   std::string partName = "Part_";
   for (int part_i=0 ; part_i<NumParts; ++part_i) {
     std::ostringstream localPartName(partName);
     localPartName << part_i;
-    stk::mesh::Part * part =
+    stk_classic::mesh::Part * part =
       & m_MetaData.declare_part(localPartName.str(),myRank);
     m_declared_part_vector.push_back( part );
   }
@@ -111,14 +111,14 @@ VariableSelectorFixture::VariableSelectorFixture(int NumParts)
 
   m_BulkData.modification_begin();
 
-  stk::mesh::EntityRank ent_type = 0; // rank
-  stk::mesh::EntityId ent_id =
+  stk_classic::mesh::EntityRank ent_type = 0; // rank
+  stk_classic::mesh::EntityId ent_id =
     1 + NumParts * m_BulkData.parallel_rank(); // Unique ID
 
   for (int part_i = 0 ; part_i < NumParts ; ++part_i) {
-    std::vector<stk::mesh::Part*> partMembership;
+    std::vector<stk_classic::mesh::Part*> partMembership;
     partMembership.push_back(m_declared_part_vector[part_i]);
-    stk::mesh::Entity * e =
+    stk_classic::mesh::Entity * e =
       & m_BulkData.declare_entity(ent_type, ent_id, partMembership);
     m_entities.push_back( e );
     ++ent_id;

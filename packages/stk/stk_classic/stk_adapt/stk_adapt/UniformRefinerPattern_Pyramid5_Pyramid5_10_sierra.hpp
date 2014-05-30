@@ -9,7 +9,7 @@
 
 #include <stk_percept/PerceptBoostArray.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 #define DEBUG_Pyramid5_Pyramid5_10 0
@@ -59,8 +59,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,
@@ -109,8 +109,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         genericRefine_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,
@@ -174,7 +174,7 @@ namespace stk {
 
         for (int ibp=0; ibp < 2; ibp++)
           {
-            stk::mesh::PartVector& fromParts = m_bp[ibp]->getFromParts();
+            stk_classic::mesh::PartVector& fromParts = m_bp[ibp]->getFromParts();
             for (unsigned ii=0; ii < fromParts.size(); ii++)
               {
                 if (std::find(getFromParts().begin(), getFromParts().end(), fromParts[ii]) == getFromParts().end())
@@ -182,7 +182,7 @@ namespace stk {
                     getFromParts().push_back(fromParts[ii]);
                   }
               }
-            stk::mesh::PartVector& toParts = m_bp[ibp]->getToParts();
+            stk_classic::mesh::PartVector& toParts = m_bp[ibp]->getToParts();
             for (unsigned ii=0; ii < toParts.size(); ii++)
               {
                 if (std::find(getToParts().begin(), getToParts().end(), toParts[ii]) == getToParts().end())
@@ -269,8 +269,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         //throw std::runtime_error("shouldn't call URP_Pyramid5_Pyramid5::createNewElements()");
 

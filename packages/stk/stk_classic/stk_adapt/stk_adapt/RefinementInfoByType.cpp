@@ -3,7 +3,7 @@
 #include <stk_util/diag/PrintTable.hpp>
 #include <stk_percept/stk_mesh.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     /** Estimate number of elements for each topology based on old/new saved in m_numOrigElems, m_numNewElems.
@@ -58,15 +58,15 @@ namespace stk {
       //os << "Refinement Info> total original elements = " << numOrigTot << "\n";
       //os << "Refinement Info> total new elements = " << numNewTot << "\n";
 
-      stk::PrintTable table;
+      stk_classic::PrintTable table;
       table.setTitle("Refinement Info\n");
       //table.setAutoEndCol(false);
 
       table << "|" << "                     " <<  "|" << justify(PrintTable::Cell::CENTER) 
-        << "Original" << stk::end_col << "     " << "|" << "New     " << stk::end_col << "     " << "|" << stk::end_header;
-      //    << stk::span << "Original"  << "|" << stk::span << "New     "  << "|" << stk::end_header;
+        << "Original" << stk_classic::end_col << "     " << "|" << "New     " << stk_classic::end_col << "     " << "|" << stk_classic::end_header;
+      //    << stk_classic::span << "Original"  << "|" << stk_classic::span << "New     "  << "|" << stk_classic::end_header;
       table << justify(PrintTable::Cell::LEFT) ;
-      table << "|" << "Element Topology Type" <<  "|" << "Elements" << stk::end_col << "Nodes" << "|" << "Elements" << stk::end_col << "Nodes" << "|" << stk::end_header;
+      table << "|" << "Element Topology Type" <<  "|" << "Elements" << stk_classic::end_col << "Nodes" << "|" << "Elements" << stk_classic::end_col << "Nodes" << "|" << stk_classic::end_header;
 
       for (unsigned irank = 0; irank < refinementInfoByType.size(); irank++)
         {
@@ -77,38 +77,38 @@ namespace stk {
           RefinementInfoCount numNew = refinementInfoByType[irank].m_numNewElemsLast;
 
           table << "|" << refinementInfoByType[irank].m_topology.getName() << "|"
-                << numOrig << stk::end_col << " " << "|"
-                << numNew  << stk::end_col << " " << "|"
-            //                 << numOrig << stk::end_col << numOrigNodes << "|"
-            //                 << numNew  << stk::end_col << numNewNodes << "|"
-                << stk::end_row;
+                << numOrig << stk_classic::end_col << " " << "|"
+                << numNew  << stk_classic::end_col << " " << "|"
+            //                 << numOrig << stk_classic::end_col << numOrigNodes << "|"
+            //                 << numNew  << stk_classic::end_col << numNewNodes << "|"
+                << stk_classic::end_row;
         }
 
       table << "|" << "Totals" << "|"
-            << numOrigTot << stk::end_col << numOrigNodes << "|"
-            << numNewTot  << stk::end_col << numNewNodes << "|"
-            << stk::end_row;
+            << numOrigTot << stk_classic::end_col << numOrigNodes << "|"
+            << numNewTot  << stk_classic::end_col << numNewNodes << "|"
+            << stk_classic::end_row;
 
 #if 0
       table << "|" << "Node Totals" << "|"
             << numOrigNodes << "|"
             << numNewNodes << "|"
-            << stk::end_row;
+            << stk_classic::end_row;
 #endif
 
       os << "\n" << table;
     }
 
-    void RefinementInfoByType::countCurrentNodes(stk::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType)
+    void RefinementInfoByType::countCurrentNodes(stk_classic::percept::PerceptMesh& eMesh, std::vector< RefinementInfoByType >& refinementInfoByType)
     {
       mesh::Selector selector(eMesh.get_fem_meta_data()->locally_owned_part());
       std::vector<unsigned> count ;
-      stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
+      stk_classic::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
       
       unsigned nnodes = count[0];
 
-      stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
-      stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
+      stk_classic::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
+      stk_classic::all_reduce( pm, stk_classic::ReduceSum<1>( &nnodes ) );
 
       for (unsigned i = 0; i < refinementInfoByType.size(); i++)
         {

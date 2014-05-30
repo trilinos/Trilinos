@@ -18,7 +18,7 @@
 #include <stk_util/util/Bootstrap.hpp>
 #include <stk_util/util/Marshal.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 MessageCode
 MessageCode::s_defaultMessageCode(100000000);
@@ -33,7 +33,7 @@ void bootstrap()
   register_message_type(MSG_INFORMATION, 1000000, "informational");
 }
 
-stk::Bootstrap x(bootstrap);
+stk_classic::Bootstrap x(bootstrap);
 
 typedef std::pair<MessageId, std::string> MessageKey;
 
@@ -315,7 +315,7 @@ report_deferred_messages(
                           p_root, comm);
   if (MPI_SUCCESS != result) {
     std::ostringstream message ;
-    message << "stk::report_deferred_messages FAILED: MPI_Gather = " << result ;
+    message << "stk_classic::report_deferred_messages FAILED: MPI_Gather = " << result ;
     throw std::runtime_error(message.str());
   }
 
@@ -340,7 +340,7 @@ report_deferred_messages(
                          p_root, comm);
     if (MPI_SUCCESS != result) {
       std::ostringstream message ;
-      message << "stk::report_deferred_messages FAILED: MPI_Gatherv = " << result ;
+      message << "stk_classic::report_deferred_messages FAILED: MPI_Gatherv = " << result ;
       throw std::runtime_error(message.str());
     }
 
@@ -381,7 +381,7 @@ report_deferred_messages(
           }
         }
 
-        report_message(s.str().c_str(), current_message.m_type | stk::MSG_SYMMETRIC, MessageCode(current_message.m_messageId, current_message.m_throttleCutoff, current_message.m_throttleGroup));
+        report_message(s.str().c_str(), current_message.m_type | stk_classic::MSG_SYMMETRIC, MessageCode(current_message.m_messageId, current_message.m_throttleCutoff, current_message.m_throttleGroup));
         
         current_message_it = end;
       }
@@ -424,7 +424,7 @@ aggregate_messages(
 
   if (MPI_SUCCESS != result) {
     std::ostringstream s;
-    s << "stk::all_write FAILED: MPI_Gather = " << result ;
+    s << "stk_classic::all_write FAILED: MPI_Gather = " << result ;
     throw std::runtime_error(s.str());
   }
 
@@ -451,7 +451,7 @@ aggregate_messages(
 
   if (MPI_SUCCESS != result) {
     std::ostringstream s ;
-    s << "stk::all_write FAILED: MPI_Gatherv = " << result ;
+    s << "stk_classic::all_write FAILED: MPI_Gatherv = " << result ;
     throw std::runtime_error(s.str());
   }
 

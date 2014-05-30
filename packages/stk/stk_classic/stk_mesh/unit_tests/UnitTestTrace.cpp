@@ -15,7 +15,7 @@
 
 #include <sstream>
 
-using stk::mesh::EntityKey;
+using stk_classic::mesh::EntityKey;
 
 namespace {
 
@@ -65,19 +65,19 @@ STKUNIT_UNIT_TEST(UnitTestTrace, testTrace)
   // Local constants
   const EntityKey watch_key(0, 1);
   const EntityKey not_watch_key(0, 2);
-  const std::string tracing_func = "stk::mesh::BulkData";
-  const std::string not_tracing_func = "stk::mesh::MetaData";
-  const stk::mesh::LogMask active_mask = stk::mesh::LOG_ENTITY;
-  const stk::mesh::LogMask inactive_mask = stk::mesh::LOG_BUCKET;
+  const std::string tracing_func = "stk_classic::mesh::BulkData";
+  const std::string not_tracing_func = "stk_classic::mesh::MetaData";
+  const stk_classic::mesh::LogMask active_mask = stk_classic::mesh::LOG_ENTITY;
+  const stk_classic::mesh::LogMask inactive_mask = stk_classic::mesh::LOG_BUCKET;
 
   // Set up a dummy trace configuration. Here, we're telling the tracing
   // system that we want to trace BulkData calls related to entities,
   // specifically Node[1].
   std::ostringstream trace_output;
-  stk::mesh::setStream(trace_output);
-  meshlog.setPrintMask(active_mask | stk::mesh::LOG_TRACE);
-  stk::mesh::watch(watch_key);
-  stk::diag::Trace::addTraceFunction(tracing_func);
+  stk_classic::mesh::setStream(trace_output);
+  meshlog.setPrintMask(active_mask | stk_classic::mesh::LOG_TRACE);
+  stk_classic::mesh::watch(watch_key);
+  stk_classic::diag::Trace::addTraceFunction(tracing_func);
 
   //
   // Make calls to Trace API, some of which should generate trace output. We tag

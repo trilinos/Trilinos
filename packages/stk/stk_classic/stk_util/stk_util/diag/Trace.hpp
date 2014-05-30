@@ -13,7 +13,7 @@
 
 #define SLIB_TRACE_COVERAGE
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///
@@ -511,9 +511,9 @@ inline std::ostream &operator<<(std::ostream &os, const Traceback::PrintCoverage
 namespace sierra {
 namespace Diag {
 
-typedef stk::diag::Tracespec Tracespec;
-typedef stk::diag::Traceback Traceback;
-typedef stk::diag::Trace Trace;
+typedef stk_classic::diag::Tracespec Tracespec;
+typedef stk_classic::diag::Traceback Traceback;
+typedef stk_classic::diag::Trace Trace;
 
 } // namespace sierra 
 } // namespace Diag 

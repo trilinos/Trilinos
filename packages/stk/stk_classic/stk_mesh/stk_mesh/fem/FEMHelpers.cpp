@@ -11,7 +11,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fem {
 
@@ -185,7 +185,7 @@ Entity & declare_element_edge(
 
 Entity & declare_element_side(
   BulkData & mesh ,
-  const stk::mesh::EntityId global_side_id ,
+  const stk_classic::mesh::EntityId global_side_id ,
   Entity & elem ,
   const unsigned local_side_id ,
   Part * part )
@@ -210,7 +210,7 @@ Entity & declare_element_side(
 
 Entity & declare_element_edge(
   BulkData & mesh ,
-  const stk::mesh::EntityId global_edge_id ,
+  const stk_classic::mesh::EntityId global_edge_id ,
   Entity & elem ,
   const unsigned local_edge_id ,
   Part * part )
@@ -391,7 +391,7 @@ bool comm_mesh_counts( BulkData & M ,
 
   local[ entity_rank_count ] = local_flag ;
 
-  stk::all_reduce_sum( comm , & local[0] , & global[0] , comm_count );
+  stk_classic::all_reduce_sum( comm , & local[0] , & global[0] , comm_count );
 
   counts.assign( global.begin() , global.begin() + entity_rank_count );
 

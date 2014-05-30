@@ -38,18 +38,18 @@
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
 {
-  stk::mesh::MetaData meta ( stk::mesh::fem_entity_rank_names() );
-  stk::mesh::Part  &new_part = meta.declare_part ( "another part" );
+  stk_classic::mesh::MetaData meta ( stk_classic::mesh::fem_entity_rank_names() );
+  stk_classic::mesh::Part  &new_part = meta.declare_part ( "another part" );
   meta.commit ();
 
-  stk::ParallelMachine comm(MPI_COMM_WORLD);
-  stk::mesh::BulkData bulk ( meta , comm , 100 );
-  std::vector<stk::mesh::Part *>  add_part;
+  stk_classic::ParallelMachine comm(MPI_COMM_WORLD);
+  stk_classic::mesh::BulkData bulk ( meta , comm , 100 );
+  std::vector<stk_classic::mesh::Part *>  add_part;
   add_part.push_back ( &new_part );
 
   int  size , rank;
-  rank = stk::parallel_machine_rank( comm );
-  size = stk::parallel_machine_size( comm );
+  rank = stk_classic::parallel_machine_rank( comm );
+  size = stk_classic::parallel_machine_size( comm );
 
   for ( int i = 0 ; i != 100 ; i++ )
   {
@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_deleted_buckets(0).size() == 0 );
 
   // Verify that things are inserted in the bulk transaction
-  stk::mesh::PartVector  inserted_parts;
+  stk_classic::mesh::PartVector  inserted_parts;
   bulk.get_transaction_log().get_parts_with_inserted_entities ( inserted_parts );
   STKUNIT_ASSERT ( inserted_parts.size() > 0 );
 }
@@ -77,18 +77,18 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkOnCreate)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData             &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part ();
-  stk::mesh::PartVector                  add_part;
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part ();
+  stk_classic::mesh::PartVector                  add_part;
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin ();
   bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
   bulk.modification_end ();
@@ -97,7 +97,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_inserted_buckets(0).size() == 0 );
 
   // Check to see if the new_part is in the inserted parts;
-  stk::mesh::PartVector                  inserted_parts;
+  stk_classic::mesh::PartVector                  inserted_parts;
   bool  found = false;
   bulk.get_transaction_log().get_parts_with_inserted_entities ( inserted_parts );
   for ( size_t i = 0 ; i != inserted_parts.size() ; i++ )
@@ -108,7 +108,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
   STKUNIT_ASSERT ( found );
 
   // Verify there is nothing in the modified_parts set
-  stk::mesh::PartVector  modified_parts;
+  stk_classic::mesh::PartVector  modified_parts;
   found = false;
   bulk.get_transaction_log().get_parts_with_modified_entities ( modified_parts );
   for ( size_t i = 0 ; i != modified_parts.size() ; i++ )
@@ -119,7 +119,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
   STKUNIT_ASSERT ( !found );
 
   // Verify there is nothing in the deleted_parts set
-  stk::mesh::PartVector  deleted_parts;
+  stk_classic::mesh::PartVector  deleted_parts;
   found = false;
   bulk.get_transaction_log().get_parts_with_deleted_entities ( deleted_parts );
   for ( size_t i = 0 ; i != deleted_parts.size() ; i++ )
@@ -138,30 +138,30 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkInsert)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData    &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData    &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part        &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
+  stk_classic::mesh::Part        &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin ();
-  stk::mesh::Entity &new_entity = bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
+  stk_classic::mesh::Entity &new_entity = bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
   bulk.modification_end ();
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin ();
   bulk.change_entity_parts ( new_entity , blank_part , add_part );
   bulk.modification_end ();
 
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_modified_buckets(0).size() == 0 );
 
-  stk::mesh::PartVector  inserted_parts;
+  stk_classic::mesh::PartVector  inserted_parts;
   bool  found = false;
   bulk.get_transaction_log().get_parts_with_inserted_entities ( inserted_parts );
   for ( size_t i = 0 ; i != inserted_parts.size() ; i++ )
@@ -171,7 +171,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
   }
   STKUNIT_ASSERT ( !found );
 
-  stk::mesh::PartVector  modified_parts;
+  stk_classic::mesh::PartVector  modified_parts;
   found = false;
   bulk.get_transaction_log().get_parts_with_modified_entities ( modified_parts );
   for ( size_t i = 0 ; i != modified_parts.size() ; i++ )
@@ -181,7 +181,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
   }
   STKUNIT_ASSERT ( found );
 
-  stk::mesh::PartVector  deleted_parts;
+  stk_classic::mesh::PartVector  deleted_parts;
   found = false;
   bulk.get_transaction_log().get_parts_with_deleted_entities ( deleted_parts );
   for ( size_t i = 0 ; i != deleted_parts.size() ; i++ )
@@ -199,23 +199,23 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkModify)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part, buffer_vec;
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part, buffer_vec;
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin();
-  stk::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
-  stk::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
+  stk_classic::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
+  stk_classic::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
   bulk.declare_relation ( existing_cell, new_node , 10 );
   bulk.modification_end();
 
@@ -238,33 +238,33 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkAddRelation)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyBulkDelete)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData             &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
   add_part.push_back ( &new_part );
 
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin ();
-  stk::mesh::Entity *new_entity = &bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
+  stk_classic::mesh::Entity *new_entity = &bulk.declare_entity ( 0 , fixture.comm_size()*1000 + fixture.comm_rank() , add_part );
   bulk.modification_end ();
 
-  bulk.reset_transaction ( stk::mesh::Transaction::BULK );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::BULK );
   bulk.modification_begin ();
   bulk.destroy_entity ( new_entity );
   bulk.modification_end ();
 
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_deleted_buckets(0).size() == 0 );
 
-  stk::mesh::PartVector                  inserted_parts;
-  stk::mesh::PartVector                  modified_parts;
-  stk::mesh::PartVector                  deleted_parts;
+  stk_classic::mesh::PartVector                  inserted_parts;
+  stk_classic::mesh::PartVector                  modified_parts;
+  stk_classic::mesh::PartVector                  deleted_parts;
   bool  inserted_found = false;
   bulk.get_transaction_log().get_parts_with_inserted_entities ( inserted_parts );
   for ( size_t i = 0 ; i != deleted_parts.size() ; i++ )
@@ -311,13 +311,13 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
   return ;
 
 
-  stk::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
@@ -326,13 +326,13 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 
   // Here are two modifications.  The first adds an edge to the mesh,
   // the second changes the state of a node
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
   bulk.declare_entity ( 1 , 10001 , blank_part );
   bulk.modification_end();
 
   bulk.modification_begin();
-  stk::mesh::Entity &n = *(*bulk.buckets(0).begin())->begin();
+  stk_classic::mesh::Entity &n = *(*bulk.buckets(0).begin())->begin();
   bulk.change_entity_parts ( n , add_part );
   bulk.modification_end();
 
@@ -341,7 +341,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_modified_buckets(0).size() == 1 );
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_inserted_buckets(1).size() == 1 );
 
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   // Verify the log is cleared
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_inserted_buckets(0).size() == 0 );
   STKUNIT_ASSERT ( bulk.get_transaction_log().get_inserted_buckets(1).size() == 0 );
@@ -363,22 +363,22 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyTransactionSpanningModifications)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData             &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData             &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
   // Add 4 entities to the mesh
-  stk::mesh::Entity *entities[4];
+  stk_classic::mesh::Entity *entities[4];
   entities[0] = &bulk.declare_entity ( 0 , 123456789 , blank_part );
   entities[1] = &bulk.declare_entity ( 1 , 123456789 , blank_part );
   entities[2] = &bulk.declare_entity ( 2 , 123456789 , blank_part );
@@ -400,7 +400,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
     // Make sure the entity is the only thing in the bucket
     STKUNIT_ASSERT_EQUAL ( log.get_inserted_buckets(i)[0]->size() , 1u );
 
-    stk::mesh::Entity &new_entity = *((*log.get_inserted_buckets(i).begin())->begin());
+    stk_classic::mesh::Entity &new_entity = *((*log.get_inserted_buckets(i).begin())->begin());
     // Make sure we find the right entity
     STKUNIT_ASSERT_EQUAL ( &new_entity , entities[i] );
     // Verify nothing happend to modified and deleted
@@ -417,23 +417,23 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalInsert)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
   // Modify the state of a node and entity in the mesh
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity *entities[2];
+  stk_classic::mesh::Entity *entities[2];
   entities[0] = &*bulk.buckets(0)[0]->begin();
   entities[1] = &*bulk.buckets(3)[0]->begin();
   bulk.change_entity_parts ( *entities[0] , add_part );
@@ -447,7 +447,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
     STKUNIT_ASSERT_EQUAL ( log.get_modified_buckets(enttype).size() , 1u );
     // Make sure the entity is the only thing in the bucket
     STKUNIT_ASSERT_EQUAL ( log.get_modified_buckets(enttype)[0]->size() , 1u );
-    stk::mesh::Entity &mod_entity = *log.get_modified_buckets(enttype)[0]->begin();
+    stk_classic::mesh::Entity &mod_entity = *log.get_modified_buckets(enttype)[0]->begin();
     // Make sure we find the right entity
     STKUNIT_ASSERT_EQUAL ( &mod_entity , entities[i] );
     // Verify nothing happend to modified and deleted
@@ -459,7 +459,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
     //  2)  Make sure the previous parts are in the new parts
     STKUNIT_ASSERT ( mod_entity.transaction_bucket() != 0 );
     STKUNIT_ASSERT ( !mod_entity.transaction_bucket()->member ( new_part ) );
-    stk::mesh::PartVector  modified_bucket_parts;
+    stk_classic::mesh::PartVector  modified_bucket_parts;
     mod_entity.transaction_bucket()->supersets ( modified_bucket_parts );
     STKUNIT_ASSERT ( mod_entity.bucket().member_all ( modified_bucket_parts ));
   }
@@ -468,23 +468,23 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalModify)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
   if ( fixture.comm_size() > 1 ) return;
 
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
-  stk::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
+  stk_classic::mesh::Entity  &new_node = bulk.declare_entity ( 0 , 123456789 , blank_part );
+  stk_classic::mesh::Entity  &existing_cell = *bulk.buckets(3)[0]->begin();
   bulk.declare_relation ( existing_cell, new_node , 10 );
   bulk.modification_end();
 
@@ -500,7 +500,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
   STKUNIT_ASSERT_EQUAL ( &*log.get_modified_buckets(3)[0]->begin() , &existing_cell );
 
   // Make sure the parts have not changed for the existing cell
-  stk::mesh::PartVector old_parts , new_parts;
+  stk_classic::mesh::PartVector old_parts , new_parts;
   STKUNIT_ASSERT ( existing_cell.transaction_bucket() != 0 );
   existing_cell.transaction_bucket()->supersets ( old_parts );
   STKUNIT_ASSERT ( existing_cell.bucket().member_all ( old_parts ) );
@@ -512,14 +512,14 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalAddRelation)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::fixtures::BoxFixture fixture;
   fixture.generate_boxes();
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,old_parts;
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,old_parts;
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test need only run in serial
@@ -527,13 +527,13 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
 
   // destroy does not delete.  element will not be deleted until next
   // transaction reset
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin();
-  stk::mesh::Entity     *deleted_cell = &*bulk.buckets(3)[0]->begin();
+  stk_classic::mesh::Entity     *deleted_cell = &*bulk.buckets(3)[0]->begin();
 
   // Record the old parts for testing later
   deleted_cell->bucket().supersets ( old_parts );
-  stk::mesh::EntityId  deleted_cell_id = deleted_cell->identifier();
+  stk_classic::mesh::EntityId  deleted_cell_id = deleted_cell->identifier();
   bulk.destroy_entity ( deleted_cell );
   bulk.modification_end();
 
@@ -546,34 +546,34 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyIncrementalDelete)
   deleted_cell = &*log.get_deleted_buckets(3)[0]->begin();
   STKUNIT_ASSERT ( deleted_cell->transaction_bucket() != 0 );
   STKUNIT_ASSERT ( deleted_cell->transaction_bucket()->member_all ( old_parts ) );
-  stk::mesh::PartVector  old_in_trans;
+  stk_classic::mesh::PartVector  old_in_trans;
   deleted_cell->transaction_bucket()->supersets ( old_in_trans );
   STKUNIT_ASSERT_EQUAL ( old_in_trans.size() , old_parts.size() );
 }
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();  // Comes out of fixture in MODIFIABLE
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  stk::mesh::PartVector   add_part,blank_part;
-//  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  stk_classic::mesh::PartVector   add_part,blank_part;
+//  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
   add_part.push_back ( &new_part );
 
   // This test needs four processes to work
   if ( fixture.comm_size() < 4 ) return;
 
   bulk.modification_begin ();
-  stk::mesh::Entity  *entity = 0;
+  stk_classic::mesh::Entity  *entity = 0;
   bulk.declare_entity ( 0 , fixture.comm_rank()+1 , blank_part );
   if ( fixture.comm_rank() < 3 )
     entity = &bulk.declare_entity ( 0 , 1234 , blank_part );
   bulk.modification_end();
 
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
-  std::vector <stk::mesh::EntityProc> change_owner;
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
+  std::vector <stk_classic::mesh::EntityProc> change_owner;
   if ( entity )
     if ( fixture.comm_rank() == entity->owner_rank() )
     {
@@ -590,7 +590,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
   {
     if ( fixture.comm_rank() < 3 )
     {
-      STKUNIT_ASSERT ( entity->transaction_bucket()->transaction_state() == stk::mesh::Transaction::MODIFIED );
+      STKUNIT_ASSERT ( entity->transaction_bucket()->transaction_state() == stk_classic::mesh::Transaction::MODIFIED );
     }
   }
   ******************/
@@ -598,14 +598,14 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelChangeOwnership)
 
 STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 {
-  stk::mesh::fixtures::BoxFixture fixture;
-  stk::mesh::BulkData                   &bulk = fixture.bulk_data();
+  stk_classic::mesh::fixtures::BoxFixture fixture;
+  stk_classic::mesh::BulkData                   &bulk = fixture.bulk_data();
   bulk.modification_end();
 
-  stk::mesh::Part                       &new_part = fixture.get_test_part();
-  const stk::mesh::MetaData             &meta = fixture.meta_data();
-  const stk::mesh::Transaction   &log = bulk.get_transaction_log();
-  stk::mesh::PartVector   add_part,old_parts;
+  stk_classic::mesh::Part                       &new_part = fixture.get_test_part();
+  const stk_classic::mesh::MetaData             &meta = fixture.meta_data();
+  const stk_classic::mesh::Transaction   &log = bulk.get_transaction_log();
+  stk_classic::mesh::PartVector   add_part,old_parts;
   add_part.push_back ( &new_part );
 
   // This test need only run in parallel
@@ -614,8 +614,8 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 
 
   // Find a node to alter, preferable one that is shared
-  const std::vector<stk::mesh::EntityProc> &shared_entities = bulk.shared_entities();
-  stk::mesh::Entity  *node_to_modify = 0;
+  const std::vector<stk_classic::mesh::EntityProc> &shared_entities = bulk.shared_entities();
+  stk_classic::mesh::Entity  *node_to_modify = 0;
   for ( unsigned i = 0 ; i != shared_entities.size() ;i++ )
   {
     if ( shared_entities[i].first->entity_rank() == 0 )
@@ -629,10 +629,10 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
   // Once found, tell all processes which one.  If not found, tell
   // them that as well
   int       *found_node_list     = new int [ bulk.parallel_size() ];
-  stk::mesh::EntityId  *found_node_id_list  = new stk::mesh::EntityId [ bulk.parallel_size() ];
+  stk_classic::mesh::EntityId  *found_node_id_list  = new stk_classic::mesh::EntityId [ bulk.parallel_size() ];
 
 #ifdef STK_HAS_MPI
-  stk::mesh::EntityId node_id = node_to_modify ? node_to_modify->identifier() : 0;
+  stk_classic::mesh::EntityId node_id = node_to_modify ? node_to_modify->identifier() : 0;
   int found_a_node = node_to_modify ? 1 : 0;
 
   MPI_Allgather ( &found_a_node , 1 , MPI_INT , found_node_list , 1 , MPI_INT , bulk.parallel() );
@@ -640,7 +640,7 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 #endif
 
   // Modify the node
-  bulk.reset_transaction ( stk::mesh::Transaction::INCREMENTAL );
+  bulk.reset_transaction ( stk_classic::mesh::Transaction::INCREMENTAL );
   bulk.modification_begin ();
   if ( node_to_modify )
     bulk.change_entity_parts ( *node_to_modify , add_part );
@@ -648,10 +648,10 @@ STKUNIT_UNIT_TEST(UnitTestTransaction, verifyParallelResolutionModify)
 
   // Verify parallel consistent modification
   // First, loop over everythin in the modified buckets
-  std::vector<stk::mesh::Bucket *>::const_iterator  cur_modified_node_bucket = log.get_modified_buckets(0).begin();
+  std::vector<stk_classic::mesh::Bucket *>::const_iterator  cur_modified_node_bucket = log.get_modified_buckets(0).begin();
   while ( cur_modified_node_bucket != log.get_modified_buckets(0).end() )
   {
-    stk::mesh::BucketIterator  cur_modified_node = (*cur_modified_node_bucket)->begin();
+    stk_classic::mesh::BucketIterator  cur_modified_node = (*cur_modified_node_bucket)->begin();
     while ( cur_modified_node != (*cur_modified_node_bucket)->begin() )
     {
       // For everything located in the buckets, verify it was changed

@@ -35,7 +35,7 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 const unsigned ONE_STATE = 1;
 const unsigned TWO_STATE = 2;
@@ -45,7 +45,7 @@ typedef shards::Wedge<6>      Wedge6 ;
 
 } // namespace
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -171,8 +171,8 @@ void GearsFixture::communicate_model_fields()
   fields.push_back(& cartesian_coord_field);
   fields.push_back(& translation_field);
   fields.push_back(& cylindrical_coord_field);
-  fields.push_back(& displacement_field.field_of_state(stk::mesh::StateNew));
-  fields.push_back(& displacement_field.field_of_state(stk::mesh::StateOld));
+  fields.push_back(& displacement_field.field_of_state(stk_classic::mesh::StateNew));
+  fields.push_back(& displacement_field.field_of_state(stk_classic::mesh::StateOld));
 
   // Parallel collective call:
   communicate_field_data(bulk_data.shared_aura(), fields);
@@ -227,7 +227,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   Selector locally_owned = gear.meta_data.locally_owned_part();
   if (p_rank == 0) {
     BucketVector all_elements;
-    stk::mesh::get_buckets(locally_owned,bulk_data.buckets(gear.meta_data.element_rank()),all_elements);
+    stk_classic::mesh::get_buckets(locally_owned,bulk_data.buckets(gear.meta_data.element_rank()),all_elements);
     std::set<Entity *> node_set; // First come first serve nodal movement.
     for (BucketVector::iterator it = all_elements.begin() ; it != all_elements.end() ; ++it) {
       Bucket & b = **it;
@@ -240,7 +240,7 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
         unsigned destination_processor_rank = destination_processor(gear,radius,angle,height,p_rank,p_size);
         elements_to_change_owner.push_back(EntityProc(element,destination_processor_rank));
         // Now add all related nodes to list to move to this processor:
-        PairIterRelation node_relations = element->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        PairIterRelation node_relations = element->relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
         for ( ; node_relations.first != node_relations.second ; ++(node_relations.first) ) {
           Entity * node = node_relations.first->entity();
           if (node_set.count(node)==0) {
@@ -261,9 +261,9 @@ void distribute_gear_across_processors(Gear & gear, GearsFixture::CylindricalFie
   // Print out how many ended up on each processor:
   //{
   //  BucketVector local_elements;
-  //  stk::mesh::get_buckets(locally_owned,bulk_data.buckets(Element),local_elements);
+  //  stk_classic::mesh::get_buckets(locally_owned,bulk_data.buckets(Element),local_elements);
   //  BucketVector local_nodes;
-  //  stk::mesh::get_buckets(locally_owned,bulk_data.buckets(Node),local_nodes);
+  //  stk_classic::mesh::get_buckets(locally_owned,bulk_data.buckets(Node),local_nodes);
   //  size_t element_count = 0;
   //  for (BucketVector::iterator it = local_elements.begin() ; it != local_elements.end() ; ++it) {
   //    Bucket & b = **it;

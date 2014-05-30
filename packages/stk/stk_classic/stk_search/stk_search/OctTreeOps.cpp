@@ -42,7 +42,7 @@
 #include <stk_util/parallel/ParallelReduce.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace {
 
@@ -65,7 +65,7 @@ inline unsigned int log2(unsigned int x)
 
 bool hsfc_box_covering( const float     * const global_box ,
                         const float     * const small_box ,
-                        stk::OctTreeKey * const covering ,
+                        stk_classic::OctTreeKey * const covering ,
                         unsigned        &       number,
 			double                  scale)
 {
@@ -136,17 +136,17 @@ bool hsfc_box_covering( const float     * const global_box ,
   // Depth is determined by smallest cell depth
   // that could contain the small_box
 
-  unsigned depth = stk::OctTreeKey::MaxDepth ;
+  unsigned depth = stk_classic::OctTreeKey::MaxDepth ;
 
   if ( 0 < unit_size ) {
     const unsigned size_inv = static_cast<unsigned>(1.0 / unit_size);
     depth = log2(size_inv);
-    if (depth > stk::OctTreeKey::MaxDepth) depth = stk::OctTreeKey::MaxDepth;
+    if (depth > stk_classic::OctTreeKey::MaxDepth) depth = stk_classic::OctTreeKey::MaxDepth;
   }
 
   // Determine the oct-tree nodes for each key
 
-  const unsigned shift    = stk::OctTreeKey::BitsPerWord - depth ;
+  const unsigned shift    = stk_classic::OctTreeKey::BitsPerWord - depth ;
   const unsigned num_cell = 1 << depth ;
 
   // At most two cells in each axis at this depth
@@ -159,7 +159,7 @@ bool hsfc_box_covering( const float     * const global_box ,
     const unsigned up  = static_cast<unsigned>( ubox_up[i]  * num_cell );
 
     if ( low + 1 < up ) {
-      std::string msg("stk::hsfc_box_covering FAILED : depth determination logic error");
+      std::string msg("stk_classic::hsfc_box_covering FAILED : depth determination logic error");
       throw std::logic_error( msg );
     }
 
@@ -206,14 +206,14 @@ namespace {
 // those nodes in the range [ k_first , k_last ]
 
 void accumulate_weights(
-  const stk::OctTreeKey &k_node_p ,
-  const stk::OctTreeKey &k_first_p ,
+  const stk_classic::OctTreeKey &k_node_p ,
+  const stk_classic::OctTreeKey &k_first_p ,
   const unsigned ord_end ,
   const unsigned depth ,
         float * const weights )
 {
-  stk::OctTreeKey k_node (k_node_p);
-  stk::OctTreeKey k_first(k_first_p);
+  stk_classic::OctTreeKey k_node (k_node_p);
+  stk_classic::OctTreeKey k_first(k_first_p);
   const unsigned ord_node_2 = 2 * oct_tree_offset( depth , k_node );
 
   if ( k_node.depth() < depth ) {
@@ -235,7 +235,7 @@ void accumulate_weights(
       // Counts of this node and all of its descending nodes
       w += weights[ord_2] + weights[ ord_2 + 1 ] ;
 
-      k_first = stk::OctTreeKey(); // Done with the lower bound
+      k_first = stk_classic::OctTreeKey(); // Done with the lower bound
     }
 
     for ( ++i ; i <= 8 ; ++i ) {
@@ -262,9 +262,9 @@ void accumulate_weights(
 //----------------------------------------------------------------------
 
 void oct_key_split(
-  const stk::OctTreeKey & key ,
+  const stk_classic::OctTreeKey & key ,
   const unsigned     upper_ord ,
-        stk::OctTreeKey & key_upper )
+        stk_classic::OctTreeKey & key_upper )
 {
   // Split key at key.depth() + 1
 
@@ -295,16 +295,16 @@ void oct_key_split(
 //----------------------------------------------------------------------
 
 void partition( 
-  const stk::OctTreeKey & k_first ,
+  const stk_classic::OctTreeKey & k_first ,
   const unsigned     i_end ,
-  const stk::OctTreeKey & key ,
+  const stk_classic::OctTreeKey & key ,
   const unsigned     depth ,
   const float      * weights ,
   const double tolerance ,
   const double target_ratio ,
   double w_lower ,
   double w_upper ,
-  stk::OctTreeKey & k_upper )
+  stk_classic::OctTreeKey & k_upper )
 {
   const unsigned ord_node = oct_tree_offset( depth , key );
   const float * const w_node = weights + ord_node * 2 ;
@@ -319,7 +319,7 @@ void partition(
   unsigned i = ( i_first ) ? i_first : 1 ;
   unsigned j = 8 ;
   {
-    stk::OctTreeKey k_upp = key ;
+    stk_classic::OctTreeKey k_upp = key ;
     k_upp.set_index( d1 , j );
     while ( i_end <= oct_tree_offset( depth , k_upp ) ) {
       k_upp.set_index( d1 , --j );
@@ -360,8 +360,8 @@ void partition(
 
 //    while ( i != j ) {
     while ( i < j ) {
-      stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
-      stk::OctTreeKey kj = key ; kj.set_index( d1 , j );
+      stk_classic::OctTreeKey ki = key ; ki.set_index( d1 , i );
+      stk_classic::OctTreeKey kj = key ; kj.set_index( d1 , j );
 
       const float * const vi = weights + 2 * oct_tree_offset( depth , ki );
       const float * const vj = weights + 2 * oct_tree_offset( depth , kj );
@@ -392,11 +392,11 @@ void partition(
     }
 
     // If 'i' has not incremented then 'k_first' is still in force
-    stk::OctTreeKey nested_k_first ;
+    stk_classic::OctTreeKey nested_k_first ;
     if ( i_first == i ) { nested_k_first = k_first ; }
 
     // Split node nested[i] ?
-    stk::OctTreeKey ki = key ; ki.set_index( d1 , i );
+    stk_classic::OctTreeKey ki = key ; ki.set_index( d1 , i );
 
     const float * const vi = weights + 2 * oct_tree_offset( depth , ki );
     const double vali = vi[0] + vi[1] ;
@@ -430,14 +430,14 @@ void partition(
 
 } // namespace <empty>
 
-unsigned processor( const stk::OctTreeKey * const cuts_b ,
-                    const stk::OctTreeKey * const cuts_e ,
-                    const stk::OctTreeKey & key )
+unsigned processor( const stk_classic::OctTreeKey * const cuts_b ,
+                    const stk_classic::OctTreeKey * const cuts_e ,
+                    const stk_classic::OctTreeKey & key )
 {
-  const stk::OctTreeKey * const cuts_p = std::upper_bound( cuts_b , cuts_e , key );
+  const stk_classic::OctTreeKey * const cuts_p = std::upper_bound( cuts_b , cuts_e , key );
 
   if ( cuts_p == cuts_b ) {
-    std::string msg("stk::processor FAILED: Bad cut-key array");
+    std::string msg("stk_classic::processor FAILED: Bad cut-key array");
     throw std::runtime_error(msg);
   }
 
@@ -453,7 +453,7 @@ void oct_tree_partition_private(
   const double   tolerance ,
   float * const weights ,
   const unsigned cuts_length ,
-  stk::OctTreeKey * const cuts )
+  stk_classic::OctTreeKey * const cuts )
 {
   // split tree between [ p_first , p_end )
   const unsigned p_size  = p_end - p_first ;
@@ -470,7 +470,7 @@ void oct_tree_partition_private(
   //
   // Within a tollerance
 
-  const stk::OctTreeKey k_first = cuts[ p_first ];
+  const stk_classic::OctTreeKey k_first = cuts[ p_first ];
 
   const unsigned i_end   =
     p_end < cuts_length ? oct_tree_offset( depth , cuts[ p_end ] )
@@ -478,10 +478,10 @@ void oct_tree_partition_private(
 
   // Walk the tree [ k_first , k_last ] and accumulate weight
 
-  accumulate_weights( stk::OctTreeKey() , k_first , i_end , depth , weights );
+  accumulate_weights( stk_classic::OctTreeKey() , k_first , i_end , depth , weights );
 
-  stk::OctTreeKey k_root ;
-  stk::OctTreeKey & k_upper = cuts[ p_upper ] ;
+  stk_classic::OctTreeKey k_root ;
+  stk_classic::OctTreeKey & k_upper = cuts[ p_upper ] ;
 
   unsigned w_lower = 0 ;
   unsigned w_upper = 0 ;

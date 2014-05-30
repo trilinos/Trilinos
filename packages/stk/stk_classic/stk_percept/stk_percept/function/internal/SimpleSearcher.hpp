@@ -31,9 +31,9 @@ namespace stk
 
     class SimpleSearcher : public Searcher
     {
-      stk::mesh::BulkData *m_bulk;
+      stk_classic::mesh::BulkData *m_bulk;
     public:
-      SimpleSearcher(stk::mesh::BulkData *bulk);
+      SimpleSearcher(stk_classic::mesh::BulkData *bulk);
 
       virtual ~SimpleSearcher() {}
 
@@ -42,7 +42,7 @@ namespace stk
        *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
        */
 
-      virtual const stk::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
+      virtual const stk_classic::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
                                                    unsigned& found_it, const mesh::Entity *hint_element );
     };
 

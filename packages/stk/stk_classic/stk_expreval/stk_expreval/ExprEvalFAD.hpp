@@ -14,7 +14,7 @@
 
 #include <Sacado_Fad_DFad.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 namespace fad {
 

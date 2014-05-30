@@ -26,7 +26,7 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/OctTree.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 
 //----------------------------------------------------------------------
@@ -60,11 +60,11 @@ bool hsfc_box_covering(
     );
 
 template <class DomainBoundingBox, class RangeBoundingBox>
-void search_tree_statistics( stk::ParallelMachine  arg_comm ,
-                             const std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >  & s ,
+void search_tree_statistics( stk_classic::ParallelMachine  arg_comm ,
+                             const std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >  & s ,
                              unsigned * const data )
 {
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   const unsigned huge = std::numeric_limits<unsigned>::max();
   unsigned avg[2] = { 0 , 0 };
@@ -262,10 +262,10 @@ void SetInsertBuffer<S>::operator()( const typename S::value_type & v )
 /*
 template <class DomainBoundingBox, class RangeBoundingBox>
 void proximity_search_symmetric(
-  const typename std::map< stk::OctTreeKey,
+  const typename std::map< stk_classic::OctTreeKey,
                            std::pair< std::list< DomainBoundingBox >,
                                       std::list< RangeBoundingBox > > >::const_iterator i_beg ,
-  const typename std::map< stk::OctTreeKey,
+  const typename std::map< stk_classic::OctTreeKey,
                            std::pair< std::list< DomainBoundingBox >,
                                       std::list< RangeBoundingBox > > >::const_iterator i_end ,
   SetInsertBuffer< std::set< std::pair< typename DomainBoundingBox::Key,
@@ -273,7 +273,7 @@ void proximity_search_symmetric(
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   typename SearchTree::const_iterator j ;
 
@@ -312,7 +312,7 @@ void proximity_search_symmetric(
   // Outer cell always precedes inner cells
   // Iterate forward until the cell is not contained.
 
-  const stk::OctTreeKey & outer_key = inode.first ;
+  const stk_classic::OctTreeKey & outer_key = inode.first ;
 
   for ( j = i_beg ; ++j != i_end && outer_key.intersect( (*j).first ) ; ) {
 
@@ -353,13 +353,13 @@ void proximity_search_symmetric(
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void proximity_search_asymmetric(
-  const typename std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_beg ,
-  const typename std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_end ,
+  const typename std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_beg ,
+  const typename std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > >::const_iterator i_end ,
   SetInsertBuffer< std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > > & arg_out )
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   typename SearchTree::const_iterator j ;
 
@@ -395,7 +395,7 @@ void proximity_search_asymmetric(
   // Outer cell always precedes inner cells
   // Iterate forward until the cell is not contained.
 
-  const stk::OctTreeKey & outer_key = inode.first ;
+  const stk_classic::OctTreeKey & outer_key = inode.first ;
 
   for ( j = i_beg ; ++j != i_end && outer_key.intersect( (*j).first ) ; ) {
 
@@ -440,27 +440,27 @@ void proximity_search_asymmetric(
   }
 }
 
-unsigned processor( const stk::OctTreeKey * const cuts_b ,
-                    const stk::OctTreeKey * const cuts_e ,
-                    const stk::OctTreeKey & key );
+unsigned processor( const stk_classic::OctTreeKey * const cuts_b ,
+                    const stk_classic::OctTreeKey * const cuts_e ,
+                    const stk_classic::OctTreeKey & key );
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void pack(
   CommAll & comm_all ,
-  const stk::OctTreeKey * const cuts_b ,
-  const std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & send_tree ,
-        std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > * recv_tree )
+  const stk_classic::OctTreeKey * const cuts_b ,
+  const std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & send_tree ,
+        std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > * recv_tree )
 {
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   const unsigned p_rank = comm_all.parallel_rank();
   const unsigned p_size = comm_all.parallel_size();
-  const stk::OctTreeKey * const cuts_e = cuts_b + p_size ;
+  const stk_classic::OctTreeKey * const cuts_e = cuts_b + p_size ;
 
   typename SearchTree::const_iterator i ;
 
   for ( i = send_tree.begin() ; i != send_tree.end() ; ++i ) {
-    const stk::OctTreeKey & key = (*i).first ;
+    const stk_classic::OctTreeKey & key = (*i).first ;
 
     unsigned p = processor( cuts_b , cuts_e , key );
 
@@ -477,7 +477,7 @@ void pack(
         const unsigned dsize = domain.size();
         const unsigned rsize = range.size();
 
-        buf.pack<unsigned>( key.value() , stk::OctTreeKey::NWord );
+        buf.pack<unsigned>( key.value() , stk_classic::OctTreeKey::NWord );
         buf.pack<unsigned>( dsize );
         buf.pack<unsigned>( rsize );
 
@@ -510,14 +510,14 @@ void pack(
 template <class DomainBoundingBox, class RangeBoundingBox>
 void unpack(
   CommAll & comm_all ,
-  std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & tree )
+  std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & tree )
 {
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   unsigned domain_size(0) ;
   unsigned range_size(0) ;
-  unsigned value[ stk::OctTreeKey::NWord ];
-  stk::OctTreeKey key ;
+  unsigned value[ stk_classic::OctTreeKey::NWord ];
+  stk_classic::OctTreeKey key ;
   DomainBoundingBox domain_box ;
   RangeBoundingBox range_box ;
 
@@ -527,7 +527,7 @@ void unpack(
     CommBuffer & buf = comm_all.recv_buffer(p);
 
     while ( buf.remaining() ) {
-      buf.unpack<unsigned>( value , stk::OctTreeKey::NWord );
+      buf.unpack<unsigned>( value , stk_classic::OctTreeKey::NWord );
       buf.unpack<unsigned>( domain_size );
       buf.unpack<unsigned>( range_size );
 
@@ -555,10 +555,10 @@ void unpack(
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 bool communicate(
-  stk::ParallelMachine arg_comm ,
-  const stk::OctTreeKey * const arg_cuts ,
-  const std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & send_tree ,
-        std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & recv_tree ,
+  stk_classic::ParallelMachine arg_comm ,
+  const stk_classic::OctTreeKey * const arg_cuts ,
+  const std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & send_tree ,
+        std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & recv_tree ,
   const bool local_flag )
 {
   const unsigned p_size = parallel_machine_size( arg_comm );
@@ -587,7 +587,7 @@ bool communicate(
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void communicate(
-  stk::ParallelMachine arg_comm ,
+  stk_classic::ParallelMachine arg_comm ,
   const std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & send_relation ,
         std::set< std::pair< typename DomainBoundingBox::Key,  typename RangeBoundingBox::Key > > & recv_relation )
 {
@@ -650,19 +650,19 @@ void communicate(
 
 template <class DomainBoundingBox, class RangeBoundingBox>
 void oct_tree_partition(
-  stk::ParallelMachine        arg_comm ,
-  const std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & arg_tree ,
+  stk_classic::ParallelMachine        arg_comm ,
+  const std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > & arg_tree ,
   const double                arg_tolerance ,
-  std::vector< stk::OctTreeKey > & arg_cuts )
+  std::vector< stk_classic::OctTreeKey > & arg_cuts )
 {
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   enum { tree_depth  = 4 };
   enum { tree_size   = OctTreeSize< tree_depth >::value };
   enum { tree_size_2 = tree_size * 2 };
 
   const unsigned p_size = parallel_machine_size( arg_comm );
-  const stk::OctTreeKey k_null ;
+  const stk_classic::OctTreeKey k_null ;
 
   arg_cuts.assign( p_size , k_null );
 
@@ -676,7 +676,7 @@ void oct_tree_partition(
   for ( typename SearchTree::const_iterator i =  arg_tree.begin() ;
                                    i != arg_tree.end() ; ++i ) {
 
-    const stk::OctTreeKey & key = (*i).first ;
+    const stk_classic::OctTreeKey & key = (*i).first ;
 
     const std::list< DomainBoundingBox > & domain = (*i).second.first ;
     const std::list< RangeBoundingBox > & range  = (*i).second.second ;
@@ -707,7 +707,7 @@ class ProximitySearch {
 public:
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
   typedef void (*proximity_search_work_routine)(
     const typename SearchTree::const_iterator i_beg ,
     const typename SearchTree::const_iterator i_end ,
@@ -824,7 +824,7 @@ ProximitySearch<DomainBoundingBox, RangeBoundingBox>::ProximitySearch(
     TPI_Run_threads(worker, this, NLOCKS );
 
     if ( m_tree_iter != m_tree_end ) {
-      std::string msg("stk::proximity_search FAILED to complete" );
+      std::string msg("stk_classic::proximity_search FAILED to complete" );
       throw std::runtime_error(msg);
     }
   }
@@ -869,7 +869,7 @@ bool oct_tree_proximity_search(
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   enum { Dim = 3 };
 
@@ -889,7 +889,7 @@ bool oct_tree_proximity_search(
   SearchTree search_tree ;
 
   {
-    stk::OctTreeKey covering[8] ;
+    stk_classic::OctTreeKey covering[8] ;
     unsigned   number = 0 ;
 
     double scale = arg_global_box[0+Dim] - arg_global_box[0];
@@ -921,7 +921,7 @@ bool oct_tree_proximity_search(
       if ( ! valid ) { local_violations = true ; }
 
       for ( unsigned k = 0 ; k < number ; ++k ) {
-        const stk::OctTreeKey key = covering[k] ;
+        const stk_classic::OctTreeKey key = covering[k] ;
         search_tree[key].first.push_back(tmp);
       }
     }
@@ -945,7 +945,7 @@ bool oct_tree_proximity_search(
         if ( ! valid ) { local_violations = true ; }
 
         for ( unsigned k = 0 ; k < number ; ++k ) {
-          const stk::OctTreeKey key = covering[k] ;
+          const stk_classic::OctTreeKey key = covering[k] ;
           search_tree[key].second.push_back(tmp);
         }
       }
@@ -982,7 +982,7 @@ bool oct_tree_proximity_search(
     else {
       const double tolerance = 0.001 ;
 
-      std::vector< stk::OctTreeKey > cuts ;
+      std::vector< stk_classic::OctTreeKey > cuts ;
 
       oct_tree_partition( arg_comm , search_tree , tolerance , cuts );
 

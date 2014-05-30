@@ -39,13 +39,13 @@ namespace stk
       typedef typename BBB ::IdentProc IdProc;
       typedef std::vector<std::pair<IdProc, IdProc> > IdentProcRelation;
 
-      stk::mesh::BulkData *m_bulk;
+      stk_classic::mesh::BulkData *m_bulk;
       //std::vector< template<> BuildBoundingBoxes<SpatialDim>::BoundingBox > m_boxes;
       std::vector< BBox > m_boxes;
 
     public:
 
-      STKSearcher(stk::mesh::BulkData *bulk);
+      STKSearcher(stk_classic::mesh::BulkData *bulk);
 
       virtual ~STKSearcher();
 
@@ -58,7 +58,7 @@ namespace stk
        *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
        */
 
-      virtual const stk::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
+      virtual const stk_classic::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                                    unsigned& found_it, const mesh::Entity *hint_element );
 
     private:

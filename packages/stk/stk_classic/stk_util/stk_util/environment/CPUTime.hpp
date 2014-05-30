@@ -9,7 +9,7 @@
 #ifndef stk_util_environment_CPUTime_hpp
 #define stk_util_environment_CPUTime_hpp
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Member function <b>cpu_time</b> returns the accumulated cpu time for the process as a

@@ -6,7 +6,7 @@
 
 #include <functional>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     /** Signatures for predicate objects that can be used to select entities (elements, edges, faces,...) for
@@ -26,16 +26,16 @@ namespace stk {
 
     // Example 
     struct IEdgeBasedAdapterPredicate {
-      stk::mesh::Selector * m_selector;
-      stk::mesh::FieldBase *m_field;
+      stk_classic::mesh::Selector * m_selector;
+      stk_classic::mesh::FieldBase *m_field;
       double m_tolerance;
     protected:
-      IEdgeBasedAdapterPredicate(stk::mesh::Selector * selector = 0, stk::mesh::FieldBase *field = 0, double tolerance=0.0) :
+      IEdgeBasedAdapterPredicate(stk_classic::mesh::Selector * selector = 0, stk_classic::mesh::FieldBase *field = 0, double tolerance=0.0) :
         m_selector(selector), m_field(field), m_tolerance(tolerance) {}
 
       /// for a Refine predicate, Return true for refine, false for ignore
       /// for an Unrefine predicate, return true for unrefine, false for ignore
-      bool operator()(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+      bool operator()(const stk_classic::mesh::Entity& element, unsigned which_edge, stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1,
                       double *coord0, double *coord1, std::vector<int>* existing_edge_marks);
 
     };

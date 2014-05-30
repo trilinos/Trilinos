@@ -27,38 +27,38 @@
 
 namespace stk_examples {
 
-typedef stk::mesh::Field<double>                                ScalarField ;
-typedef stk::mesh::Field<int>                                   ScalarIntField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>          CartesianField ;
-typedef stk::mesh::Field<double, stk::mesh::FullTensor>         FullTensorField ;
-typedef stk::mesh::Field<double, stk::mesh::SymmetricTensor>    SymmetricTensorField ;
+typedef stk_classic::mesh::Field<double>                                ScalarField ;
+typedef stk_classic::mesh::Field<int>                                   ScalarIntField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>          CartesianField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::FullTensor>         FullTensorField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::SymmetricTensor>    SymmetricTensorField ;
 
 
 CartesianField &
 declare_vector_field_on_all_nodes(
-  stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
+  stk_classic::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta_data);  
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), fem.node_rank() , meta_data.universal_part() , n1 );
+  stk_classic::mesh::fem::FEMMetaData &fem = stk_classic::mesh::fem::FEMMetaData::get(meta_data);  
+  return stk_classic::mesh::put_field( meta_data.declare_field<CartesianField>(s), fem.node_rank() , meta_data.universal_part() , n1 );
 }
 
 
 CartesianField &
 declare_vector_field_on_all_elements(
-  stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
+  stk_classic::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
   
-  stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta_data);  
-  const stk::mesh::EntityRank element_rank = fem.element_rank();
+  stk_classic::mesh::fem::FEMMetaData &fem = stk_classic::mesh::fem::FEMMetaData::get(meta_data);  
+  const stk_classic::mesh::EntityRank element_rank = fem.element_rank();
 
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), element_rank , meta_data.universal_part() , n1 );
+  return stk_classic::mesh::put_field( meta_data.declare_field<CartesianField>(s), element_rank , meta_data.universal_part() , n1 );
 }
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 // Example reader / writer
 
-void example_io_1( stk::ParallelMachine comm,
+void example_io_1( stk_classic::ParallelMachine comm,
                    const std::string& in_filename,
                    const std::string& out_filename)
 {
@@ -73,9 +73,9 @@ void example_io_1( stk::ParallelMachine comm,
  << " Use Case 1: Simple mesh I/O                                            \n"
  << "========================================================================\n";
  
-  stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
-  stk::mesh::Part & universal        = meta_data.universal_part();
-  stk::mesh::put_field(meta_data.declare_field< CartesianField >( "coordinates" ) , meta_data.node_rank() , universal , spatial_dimension );
+  stk_classic::mesh::fem::FEMMetaData meta_data( spatial_dimension );
+  stk_classic::mesh::Part & universal        = meta_data.universal_part();
+  stk_classic::mesh::put_field(meta_data.declare_field< CartesianField >( "coordinates" ) , meta_data.node_rank() , universal , spatial_dimension );
 
   //----------------------------------
   const std::string dbtype("exodusii");
@@ -83,16 +83,16 @@ void example_io_1( stk::ParallelMachine comm,
   // Open, read, filter meta data from the input mesh file:
   // The coordinates field will be set to the correct dimension.
 
-  stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
+  stk_classic::io::MeshData mesh_data;
+  stk_classic::io::create_input_mesh(dbtype, in_filename, comm, meta_data, mesh_data);
 
   //----------------------------------
   // Print the parts that were read from the file:
 
-  const stk::mesh::PartVector & io_parts = meta_data.get_parts();
-  for (stk::mesh::PartVector::const_iterator i = io_parts.begin();
+  const stk_classic::mesh::PartVector & io_parts = meta_data.get_parts();
+  for (stk_classic::mesh::PartVector::const_iterator i = io_parts.begin();
            i != io_parts.end(); ++i) {
-    stk::mesh::Part & part = **i ;
+    stk_classic::mesh::Part & part = **i ;
 
     const CellTopologyData * const top = meta_data.get_cell_topology( part ).getCellTopologyData();
 
@@ -118,18 +118,18 @@ void example_io_1( stk::ParallelMachine comm,
   // Create mesh bulk data conforming to the mesh meta data
   // and distributed among the given parallel machine.
 
-  stk::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data), comm);
+  stk_classic::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data), comm);
 
   // Read the model (topology, coordinates, attributes, etc)
   // from the mesh-file into the mesh bulk data.
-  stk::io::populate_bulk_data(bulk_data, mesh_data);
+  stk_classic::io::populate_bulk_data(bulk_data, mesh_data);
 
   //----------------------------------
   // Create a mesh writer that will simply write out what was read.
   // the parts, attributes, and transient arguments can be different
   // that what was read.
 
-  stk::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
+  stk_classic::io::create_output_mesh(out_filename, comm, bulk_data, mesh_data);
 
 }
 

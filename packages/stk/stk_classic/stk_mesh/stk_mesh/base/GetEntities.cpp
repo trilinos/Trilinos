@@ -17,7 +17,7 @@
 
 #include <stk_mesh/base/GetEntities.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------

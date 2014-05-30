@@ -17,7 +17,7 @@
 #include <list>
 #include <typeinfo>
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Struct <code>Marshal</code> is a data packer for sending and receiving parallel messages.

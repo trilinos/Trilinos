@@ -19,20 +19,20 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
 
     void PMMParallelReferenceMeshSmoother::sync_fields(int iter)
     {
-      std::vector< const stk::mesh::FieldBase *> fields;
+      std::vector< const stk_classic::mesh::FieldBase *> fields;
       fields.push_back(m_eMesh->get_coordinates_field());
 
       // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-      stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+      stk_classic::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
       // the shared part (just the shared boundary)
-      //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+      //stk_classic::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
     }
 
 
@@ -40,7 +40,7 @@ namespace stk {
     {
       throw std::runtime_error("not implemented");
 #if 0
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , stk::ReduceMax<1>( & m_dmax ) );
+      stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , stk_classic::ReduceMax<1>( & m_dmax ) );
       bool cond = (m_num_invalid == 0 && m_dmax < gradNorm);
       return cond;
 #endif
@@ -106,11 +106,11 @@ namespace stk {
 
       print_comm_list(*eMesh->get_bulk_data(), false);
 
-      stk::mesh::FieldBase *coord_field           = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field;
-      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
-      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
-      stk::mesh::FieldBase *coord_field_lagged    = eMesh->get_field("coordinates_lagged");
+      stk_classic::mesh::FieldBase *coord_field           = eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase *coord_field_current   = coord_field;
+      stk_classic::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
+      stk_classic::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      stk_classic::mesh::FieldBase *coord_field_lagged    = eMesh->get_field("coordinates_lagged");
 
       m_coord_field_original  = coord_field_original;
       m_coord_field_projected = coord_field_projected;

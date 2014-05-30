@@ -35,7 +35,7 @@ namespace stk
 
     public:
       GeometryVerifier(bool dump=false, double badJac=1.e-10);
-      bool isGeometryBad(stk::mesh::BulkData& bulk, bool printTable=false);
+      bool isGeometryBad(stk_classic::mesh::BulkData& bulk, bool printTable=false);
     };
 
   }//namespace percept

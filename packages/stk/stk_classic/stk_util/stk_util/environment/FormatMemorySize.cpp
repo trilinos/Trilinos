@@ -14,7 +14,7 @@
 
 #include <stk_util/environment/FormatMemorySize.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 std::string
 formatMemorySize(

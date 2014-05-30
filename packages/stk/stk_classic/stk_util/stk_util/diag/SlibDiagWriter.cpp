@@ -48,11 +48,11 @@ theDiagWriterParser()
   return parser;
 }
 
-stk::diag::Writer &
+stk_classic::diag::Writer &
 theDiagWriter()
 {
   /* %TRACE[NONE]% */  /* %TRACE% */
-  static stk::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), theDiagWriterParser().parse(std::getenv("SIERRA_SLIBOUT")));
+  static stk_classic::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), theDiagWriterParser().parse(std::getenv("SIERRA_SLIBOUT")));
 
   return s_diagWriter;
 }
@@ -65,7 +65,7 @@ void bootstrap()
   Diag::registerWriter("slibout", slibout, theDiagWriterParser());
 }
 
-stk::Bootstrap x(&bootstrap);
+stk_classic::Bootstrap x(&bootstrap);
 
 } // namespace <unnamed>
 

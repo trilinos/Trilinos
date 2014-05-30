@@ -11,7 +11,7 @@
 #include <string>
 #include <vector>
 
-namespace stk {
+namespace stk_classic {
   namespace io {
     namespace util {
       class GeneratedMesh

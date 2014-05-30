@@ -12,7 +12,7 @@
 #include <utility>
 #include <iterator>
 
-namespace stk {
+namespace stk_classic {
 
 
 template< class IterType ,

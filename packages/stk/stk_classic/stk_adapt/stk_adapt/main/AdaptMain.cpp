@@ -47,7 +47,7 @@
 extern double s_timers[10]; // = {0,0,0,0,0,0,0,0,0,0};
 
 
-namespace stk { 
+namespace stk_classic { 
 
   namespace adapt {
 
@@ -135,7 +135,7 @@ namespace stk {
       
       static void process_estimate(MemorySizeType tot_mem, PerceptMesh& eMesh, std::vector<RefinementInfoByType>& refInfo, std::string memory_multipliers_file, std::string input_file)
       {
-        //const stk::ParallelMachine& comm = eMesh.get_bulk_data()->parallel();
+        //const stk_classic::ParallelMachine& comm = eMesh.get_bulk_data()->parallel();
 
         // this is a data gather pass
         if (tot_mem)
@@ -146,12 +146,12 @@ namespace stk {
               mesh::Selector sel_universal(eMesh.get_fem_meta_data()->universal_part());
           
               std::vector<unsigned> count ;
-              stk::mesh::count_entities( sel_universal, *eMesh.get_bulk_data(), count );
+              stk_classic::mesh::count_entities( sel_universal, *eMesh.get_bulk_data(), count );
       
               unsigned nnodes = count[0];
 
-              stk::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
-              stk::all_reduce( pm, stk::ReduceSum<1>( &nnodes ) );
+              stk_classic::ParallelMachine pm = eMesh.get_bulk_data()->parallel();
+              stk_classic::all_reduce( pm, stk_classic::ReduceSum<1>( &nnodes ) );
             */
             MemoryMultipliers memMults;
             // FIXME, here's where we would read in some values for memMults from memory_multipliers_file
@@ -196,7 +196,7 @@ namespace stk {
     };
 
 
-    static MemorySizeType memory_dump(int dump_level, const stk::ParallelMachine& comm, stk::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
+    static MemorySizeType memory_dump(int dump_level, const stk_classic::ParallelMachine& comm, stk_classic::mesh::BulkData& bulkData, NodeRegistry* node_reg, std::string msg)
     {
       MemorySizeType returned_total_memory;
       MemorySizeType malloc_used_0 = malloc_used();
@@ -204,25 +204,25 @@ namespace stk {
       MemorySizeType malloc_max_footprint_0 = malloc_max_footprint();
       MemorySizeType MB = 1024*1024;
 
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_used_0 ) );
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_footprint_0 ) );
-      stk::all_reduce( comm, stk::ReduceSum<1>( &malloc_max_footprint_0 ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &malloc_used_0 ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &malloc_footprint_0 ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &malloc_max_footprint_0 ) );
 
-      stk::mesh::MemoryUsage mem_usage;
-      stk::mesh::compute_memory_usage(bulkData, mem_usage);
+      stk_classic::mesh::MemoryUsage mem_usage;
+      stk_classic::mesh::compute_memory_usage(bulkData, mem_usage);
 
       MemorySizeType node_reg_mem = 0;
       if (node_reg) 
         node_reg_mem = node_reg->get_memory_usage();
       MemorySizeType node_reg_mem_sum = node_reg_mem;
       MemorySizeType node_reg_mem_max = node_reg_mem;
-      stk::all_reduce( comm, stk::ReduceSum<1>( &node_reg_mem_sum ) );
-      stk::all_reduce( comm, stk::ReduceMax<1>( &node_reg_mem_max ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &node_reg_mem_sum ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceMax<1>( &node_reg_mem_max ) );
 
       MemorySizeType mem_total_bytes_sum = mem_usage.total_bytes;
       MemorySizeType mem_total_bytes_max = mem_usage.total_bytes;
-      stk::all_reduce( comm, stk::ReduceSum<1>( &mem_total_bytes_sum ) );
-      stk::all_reduce( comm, stk::ReduceMax<1>( &mem_total_bytes_max ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &mem_total_bytes_sum ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceMax<1>( &mem_total_bytes_max ) );
       if (bulkData.parallel_rank() == 0)
         {
 #if !defined(SIERRA_PTMALLOC3_ALLOCATOR) && !defined(SIERRA_PTMALLOC2_ALLOCATOR)
@@ -240,7 +240,7 @@ namespace stk {
               std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump stk_mesh counted memory usage at stage [" << msg << "] " 
                 " parallel sum, max memory [MB]= " << ((double)mem_total_bytes_sum)/MB << " , " << ((double)mem_total_bytes_max)/MB << std::endl;
               if (dump_level > 2)
-                stk::mesh::print_memory_usage(mem_usage, std::cout);
+                stk_classic::mesh::print_memory_usage(mem_usage, std::cout);
 
               std::cout << "P[" << bulkData.parallel_rank() << "] AdaptMain::memory_dump malloc_used total (sum all proc) at stage [" << msg << "] = " 
                         << " malloc_used malloc_footprint malloc_max_footprint [MB]= " << ((double)malloc_used_0)/MB 
@@ -269,8 +269,8 @@ namespace stk {
     //extern void test_memory(int, int);
     void test_memory(percept::PerceptMesh& eMesh, MemorySizeType n_elements, MemorySizeType n_nodes)
     {
-      vector<stk::mesh::Entity *> new_elements;
-      vector<stk::mesh::Entity *> new_nodes;
+      vector<stk_classic::mesh::Entity *> new_elements;
+      vector<stk_classic::mesh::Entity *> new_nodes;
       
       eMesh.get_bulk_data()->modification_begin();
 
@@ -279,7 +279,7 @@ namespace stk {
       std::cout << "... done creating " << n_elements << " elements" << std::endl;
 
       std::cout << "creating " << n_nodes << " nodes..." <<std::endl;
-      eMesh.createEntities( stk::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
+      eMesh.createEntities( stk_classic::mesh::fem::FEMMetaData::NODE_RANK, n_nodes, new_nodes);
       std::cout << "... done creating " << n_nodes << " nodes" << std::endl;
 
       MemorySizeType num_prints = std::min(static_cast<MemorySizeType>(100ul), n_elements);
@@ -293,11 +293,11 @@ namespace stk {
               std::cout << "declare_relation for i_element = " << i_element << " [" << n_elements << "] = " << ((double)i_element)/((double)n_elements)*100 << "%"
                         << std::endl;
             }
-          stk::mesh::Entity& element = *new_elements[i_element];
+          stk_classic::mesh::Entity& element = *new_elements[i_element];
 
           for (int j_node = 0; j_node < n_node_per_element; j_node++)
             {
-              stk::mesh::Entity& node = *new_nodes[i_node];
+              stk_classic::mesh::Entity& node = *new_nodes[i_node];
 
               eMesh.get_bulk_data()->declare_relation(element, node, j_node);
               
@@ -484,8 +484,8 @@ namespace stk {
       bool debug_re = false;
 
       RunEnvironment run_environment(&argc, &argv, debug_re);
-      unsigned p_rank = stk::parallel_machine_rank(run_environment.m_comm);
-      unsigned p_size = stk::parallel_machine_size(run_environment.m_comm);
+      unsigned p_rank = stk_classic::parallel_machine_rank(run_environment.m_comm);
+      unsigned p_size = stk_classic::parallel_machine_size(run_environment.m_comm);
 
 
       std::string options_description_desc = "stk_adapt options";
@@ -861,7 +861,7 @@ namespace stk {
                         if (doRefineMesh)
                           {
                             // FIXME move this next block of code to a method on UniformRefiner
-                            BlockNamesType block_names(stk::percept::EntityRankEnd+1u);
+                            BlockNamesType block_names(stk_classic::percept::EntityRankEnd+1u);
                             if (block_name_inc.length())
                               {
                                 block_names = RefinerUtil::getBlockNames(block_name_inc, eMesh.get_rank(), eMesh);
@@ -895,7 +895,7 @@ namespace stk {
 
                         int scalarDimension = 0; // a scalar
 
-                        stk::mesh::FieldBase* proc_rank_field_ptr = 0;
+                        stk_classic::mesh::FieldBase* proc_rank_field_ptr = 0;
                         if (proc_rank_field)
                           {
                             proc_rank_field_ptr = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
@@ -975,8 +975,8 @@ namespace stk {
 
                         if (doRefineMesh)
                           {
-                            t0 =  stk::wall_time(); 
-                            cpu0 = stk::cpu_time();
+                            t0 =  stk_classic::wall_time(); 
+                            cpu0 = stk_classic::cpu_time();
 
                             UniformRefiner breaker(eMesh, *pattern, proc_rank_field_ptr);
 
@@ -1066,15 +1066,15 @@ namespace stk {
                             if (delete_parents)
                               breaker.deleteParentElements();
 
-                            t1 =  stk::wall_time(); 
-                            cpu1 = stk::cpu_time();
+                            t1 =  stk_classic::wall_time(); 
+                            cpu1 = stk_classic::cpu_time();
 
-                            stk::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
+                            stk_classic::percept::pout() << "P[" << p_rank << "] AdaptMain::  saving mesh... \n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: saving mesh... " << std::endl;
                             if (streaming_size) eMesh.setStreamingSize(m_M);
                             if (remove_geometry_blocks) eMesh.remove_geometry_blocks_on_output(input_geometry);
                             eMesh.save_as(output_mesh);
-                            stk::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
+                            stk_classic::percept::pout() << "P[" << p_rank << "] AdaptMain:: ... mesh saved\n";
                             std::cout << "P[" << p_rank << "]  AdaptMain:: mesh saved" << std::endl;
 
                             if (print_memory_usage)
@@ -1104,14 +1104,14 @@ namespace stk {
                     failed_proc_rank = p_rank+1u;
                   }
 
-                  stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &failed_proc_rank ) );
+                  stk_classic::all_reduce( run_environment.m_comm, stk_classic::ReduceSum<1>( &failed_proc_rank ) );
                   if (failed_proc_rank)
                     {
-                      stk::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
+                      stk_classic::percept::pout() << "P[" << p_rank << "]  exception found on processor " << (failed_proc_rank-1) << "\n";
                       exit(1);
                     }
 
-                  stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
+                  stk_classic::percept::pout() << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
                                        << " cpu time= " << (cpu1 - cpu0) << " (sec)\n";
                   std::cout << "P[" << p_rank << ", " << p_size << "]  wall clock time on processor [" << p_rank << ", " << p_size << "]= " << (t1-t0) << " (sec) "
                             << " cpu time= " << (cpu1 - cpu0) << " (sec) " << std::endl;
@@ -1120,15 +1120,15 @@ namespace stk {
                   double wallMax = (t1-t0);
                   double cpuSum = (cpu1-cpu0);
 
-                  stk::all_reduce( run_environment.m_comm, stk::ReduceSum<1>( &cpuSum ) );
-                  stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &cpuMax ) );
-                  stk::all_reduce( run_environment.m_comm, stk::ReduceMax<1>( &wallMax ) );
+                  stk_classic::all_reduce( run_environment.m_comm, stk_classic::ReduceSum<1>( &cpuSum ) );
+                  stk_classic::all_reduce( run_environment.m_comm, stk_classic::ReduceMax<1>( &cpuMax ) );
+                  stk_classic::all_reduce( run_environment.m_comm, stk_classic::ReduceMax<1>( &wallMax ) );
 
                   if (0 == p_rank)
                     {
-                      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
-                      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
-                      stk::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
+                      stk_classic::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)\n";
+                      stk_classic::percept::pout() << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)\n";
+                      stk_classic::percept::pout() << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)\n";
                       std::cout << "P[" << p_rank << ", " << p_size << "]  max wall clock time = " << wallMax << " (sec)" << std::endl;
                       std::cout << "P[" << p_rank << ", " << p_size << "]  max cpu  clock time = " << cpuMax << " (sec)" << std::endl;
                       std::cout << "P[" << p_rank << ", " << p_size << "]  sum cpu  clock time = " << cpuSum << " (sec)" << std::endl;
@@ -1162,8 +1162,8 @@ namespace stk {
 int main(int argc, char **argv) { 
 
   int res=0;
-  res = stk::adapt::adapt_main(argc, argv);
-  stk::adapt::ParallelMachineFinalize pm(true);
+  res = stk_classic::adapt::adapt_main(argc, argv);
+  stk_classic::adapt::ParallelMachineFinalize pm(true);
   return res;
 }
 //#endif

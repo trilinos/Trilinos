@@ -23,7 +23,7 @@ namespace stk
     {
     protected:
       mesh::BulkData& m_bulkData;
-      stk::mesh::Selector *m_selector;
+      stk_classic::mesh::Selector *m_selector;
       //mesh::Part *m_part;
       bool m_own_selector;
     public:
@@ -47,11 +47,11 @@ namespace stk
           }
         if (!part)
           {
-            m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
+            m_selector = new stk_classic::mesh::Selector(stk_classic::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
           }
         else
           {
-            m_selector = new stk::mesh::Selector(*part);
+            m_selector = new stk_classic::mesh::Selector(*part);
           }
         m_own_selector = true;
       }
@@ -65,7 +65,7 @@ namespace stk
                 VERIFY_OP_ON(m_selector, !=, 0, "FunctionOperator::init");
                 delete m_selector;
               }
-            m_selector = new stk::mesh::Selector(stk::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
+            m_selector = new stk_classic::mesh::Selector(stk_classic::mesh::fem::FEMMetaData::get(m_bulkData).universal_part());
             m_own_selector = true;
           }
       }
@@ -75,7 +75,7 @@ namespace stk
           delete m_selector;
       }
 
-      //stk::mesh::Selector *get_selector() { return m_selector; }
+      //stk_classic::mesh::Selector *get_selector() { return m_selector; }
 
       virtual void operator()(Function& integrand, Function& result) = 0;
 

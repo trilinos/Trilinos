@@ -184,7 +184,7 @@ public:
 
   template<unsigned I>
   unsigned dimension() const {
-    enum { ok = stk::StaticAssert< I < NumDim >::OK };
+    enum { ok = stk_classic::StaticAssert< I < NumDim >::OK };
 
     return BaseType::m_dim[I];
   }
@@ -201,35 +201,35 @@ public:
 
   template<unsigned I>
   unsigned stride() const {
-    enum { ok = stk::StaticAssert< I < NumDim >::OK };
+    enum { ok = stk_classic::StaticAssert< I < NumDim >::OK };
     return BaseType::m_stride[I];
   }
 
   template<class Tag>
   unsigned dimension() const{
     enum { I  = TypeListIndex<TagList, Tag>::value };
-    enum { ok = stk::StaticAssert< 0 <= I >::OK };
+    enum { ok = stk_classic::StaticAssert< 0 <= I >::OK };
     return BaseType::m_dim[I];
   }
 
   template<class Tag, unsigned Ordinal>
   unsigned dimension() const {
     enum { I  = TypeListIndex<TagList, Tag, Ordinal>::value };
-    enum { ok = stk::StaticAssert< 0 <= I >::OK };
+    enum { ok = stk_classic::StaticAssert< 0 <= I >::OK };
     return BaseType::m_dim[I];
   }
 
   template<class Tag>
   unsigned stride() const {
     enum { I  = TypeListIndex<TagList, Tag>::value };
-    enum { ok = stk::StaticAssert< 0 <= I >::OK };
+    enum { ok = stk_classic::StaticAssert< 0 <= I >::OK };
     return BaseType::m_stride[I];
   }
 
   template<class Tag, unsigned Ordinal>
   unsigned stride() const {
     enum { I  = TypeListIndex<TagList, Tag, Ordinal>::value };
-    enum { ok = stk::StaticAssert< 0 <= I >::OK };
+    enum { ok = stk_classic::StaticAssert< 0 <= I >::OK };
     return BaseType::m_stride[I];
   }
 

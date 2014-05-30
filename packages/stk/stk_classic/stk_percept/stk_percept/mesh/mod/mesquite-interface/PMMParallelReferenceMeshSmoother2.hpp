@@ -13,7 +13,7 @@
 
 #include <stk_percept/mesh/mod/mesquite-interface/PMMParallelReferenceMeshSmoother1.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;

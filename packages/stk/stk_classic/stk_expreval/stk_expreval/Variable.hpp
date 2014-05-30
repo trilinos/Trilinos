@@ -13,7 +13,7 @@
 
 #include <stk_util/util/string_case_compare.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 /**

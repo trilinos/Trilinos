@@ -21,7 +21,7 @@
 
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -118,7 +118,7 @@ const PartVector & PartRepository::get_all_parts() const
 
 Part * PartRepository::declare_part( const std::string & arg_name , EntityRank arg_rank )
 {
-  Trace_("stk::mesh::impl::PartRepository::declare_part");
+  Trace_("stk_classic::mesh::impl::PartRepository::declare_part");
 
   const PartVector & all_parts = get_all_parts();
   Part * p = find( all_parts, arg_name );
@@ -135,7 +135,7 @@ Part * PartRepository::declare_part( const std::string & arg_name , EntityRank a
 
 Part * PartRepository::declare_part( const PartVector & part_intersect )
 {
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part" ;
+  static const char method[] = "stk_classic::mesh::impl::PartRepository::declare_part" ;
   Trace_(method);
 
   PartVector pset_clean ;
@@ -231,7 +231,7 @@ void PartRepository::declare_subset_impl( Part & superset_part, Part & subset_pa
 
 void PartRepository::declare_subset( Part & superset, Part & subset )
 {
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_subset" ;
+  static const char method[] = "stk_classic::mesh::impl::PartRepository::declare_subset" ;
   Trace_(method);
 
   if ( ! contain( subset.supersets() , superset ) ) {
@@ -284,7 +284,7 @@ void PartRepository::declare_subset( Part & superset, Part & subset )
 
 void PartRepository::declare_part_relation( Part & root_part, PartRelation relation, Part & target_part )
 {
-  static const char method[] = "stk::mesh::impl::PartRepository::declare_part_relation" ;
+  static const char method[] = "stk_classic::mesh::impl::PartRepository::declare_part_relation" ;
   Trace_(method);
 
   assert_not_same(      root_part   , target_part        , method );

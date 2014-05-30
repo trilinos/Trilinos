@@ -15,7 +15,7 @@
 
 //------------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 
 /** Perform collective all-to-all communication with individually
  *  varying message sizes.  The collective operation uses an
@@ -307,7 +307,7 @@ private:
 //----------------------------------------------------------------------
 // Inlined template implementations for the CommBuffer
 
-namespace stk {
+namespace stk_classic {
 
 template<unsigned N> struct CommBufferAlign ;
 

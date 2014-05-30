@@ -22,18 +22,18 @@
 
 //----------------------------------------------------------------------
 
-using namespace stk::mesh::fixtures;
+using namespace stk_classic::mesh::fixtures;
 
-typedef stk::mesh::Field<double> ScalarField ;
+typedef stk_classic::mesh::Field<double> ScalarField ;
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 namespace use_cases {
 
-bool test_unequal_weights( stk::ParallelMachine pm )
+bool test_unequal_weights( stk_classic::ParallelMachine pm )
 {
-  const unsigned p_size = stk::parallel_machine_size(pm);
-  const unsigned p_rank = stk::parallel_machine_rank(pm);
+  const unsigned p_size = stk_classic::parallel_machine_size(pm);
+  const unsigned p_rank = stk_classic::parallel_machine_rank(pm);
 
   const unsigned ngx = p_size*(p_size+1)/2;
 
@@ -43,22 +43,22 @@ bool test_unequal_weights( stk::ParallelMachine pm )
   unsigned ny = 1;
   unsigned nz = 1;
 
-  stk::mesh::fixtures::HexFixture fixture(pm, nx, ny, nz);
+  stk_classic::mesh::fixtures::HexFixture fixture(pm, nx, ny, nz);
 
-  stk::mesh::fem::FEMMetaData & fem_meta  = fixture.m_fem_meta;
-  stk::mesh::BulkData & bulk  = fixture.m_bulk_data;
+  stk_classic::mesh::fem::FEMMetaData & fem_meta  = fixture.m_fem_meta;
+  stk_classic::mesh::BulkData & bulk  = fixture.m_bulk_data;
 
   // Put weights field on all elements
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
   ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
-  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
+  stk_classic::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
   fem_meta.commit();
 
   bulk.modification_begin();
 
   // Initially put all elements on proc 0
-  std::vector<stk::mesh::EntityId> my_element_ids;
+  std::vector<stk_classic::mesh::EntityId> my_element_ids;
   for ( unsigned i = 0 ; i < nx*ny*nz; ++i )
     my_element_ids.push_back(i+1);
 
@@ -72,9 +72,9 @@ bool test_unequal_weights( stk::ParallelMachine pm )
       for ( unsigned k = 0 ; k < nz ; ++k ) {
         for ( unsigned j = 0 ; j < ny ; ++j ) {
           for ( unsigned i = 0 ; i < l ; ++i ) {
-            const stk::mesh::EntityId elem_id = 1 + nslabs + i + j*ngx + k*ngx*ny; 
-            stk::mesh::Entity * elem = bulk.get_entity(element_rank, elem_id);
-            double * const e_weight = stk::mesh::field_data( weight_field , *elem );
+            const stk_classic::mesh::EntityId elem_id = 1 + nslabs + i + j*ngx + k*ngx*ny; 
+            stk_classic::mesh::Entity * elem = bulk.get_entity(element_rank, elem_id);
+            double * const e_weight = stk_classic::mesh::field_data( weight_field , *elem );
             *e_weight = double(ngx) / double(l);
           }
         }
@@ -88,21 +88,21 @@ bool test_unequal_weights( stk::ParallelMachine pm )
 
   // Use Zoltan to determine new partition
   Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
+  stk_classic::rebalance::Zoltan zoltan_partition(pm, fixture.m_spatial_dimension, emptyList);
 
-  stk::mesh::Selector selector(fem_meta.universal_part());
+  stk_classic::mesh::Selector selector(fem_meta.universal_part());
 
-  stk::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
+  stk_classic::rebalance::rebalance(bulk, selector, &fixture.m_coord_field, &weight_field, zoltan_partition);
 
-  const double imbalance_threshold = stk::rebalance::check_balance(bulk, &weight_field, element_rank);
+  const double imbalance_threshold = stk_classic::rebalance::check_balance(bulk, &weight_field, element_rank);
   const bool do_rebal = 1.5 < imbalance_threshold;
 
   if( 0 == p_rank )
     std::cerr << std::endl 
      << "imbalance_threshold after rebalance = " << imbalance_threshold << ", " << do_rebal << std::endl;
 
-  stk::mesh::Selector owned_selector = fem_meta.locally_owned_part();
-  size_t num_local_elems = stk::mesh::count_selected_entities(owned_selector, bulk.buckets(element_rank));
+  stk_classic::mesh::Selector owned_selector = fem_meta.locally_owned_part();
+  size_t num_local_elems = stk_classic::mesh::count_selected_entities(owned_selector, bulk.buckets(element_rank));
 
   // Check that we satisfy our threshhold
   bool result = true;

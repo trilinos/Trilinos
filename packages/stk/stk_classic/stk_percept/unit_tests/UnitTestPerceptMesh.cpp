@@ -38,7 +38,7 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk 
+namespace stk_classic 
 {
   namespace percept 
   {
@@ -97,16 +97,16 @@ namespace stk
       {
 
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 2)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 12;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -123,8 +123,8 @@ namespace stk
 
         if (p_size <= 2)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 12;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -189,11 +189,11 @@ namespace stk
       {
         fixture_setup();
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
         if (p_size <= 2)
           {
 
@@ -211,48 +211,48 @@ namespace stk
             eMesh.print_info("quad fixture",  print_infoLevel);
             //eMesh.save_as("./output_files/quad_fixture.e");
 
-            stk::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
+            stk_classic::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
 
-            const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
+            const std::vector< stk_classic::mesh::Part * > & parts = metaData.get_parts();
 
             unsigned nparts = parts.size();
             if (1) std::cout << "Number of parts = " << nparts << std::endl;
 
             int surface_id = 2;
             std::string surface_name = "surface_"+toString(surface_id);
-            stk::mesh::Part *part = eMesh.get_non_const_part(surface_name);
-            stk::mesh::Selector in_surface_selector(*part);
-            stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
+            stk_classic::mesh::Part *part = eMesh.get_non_const_part(surface_name);
+            stk_classic::mesh::Selector in_surface_selector(*part);
+            stk_classic::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
             VectorFieldType* coordField = eMesh.get_coordinates_field();
 
-            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.get_spatial_dim() == 2 ? eMesh.edge_rank() : eMesh.face_rank() ) );  // Note
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = bulkData.buckets( (eMesh.get_spatial_dim() == 2 ? eMesh.edge_rank() : eMesh.face_rank() ) );  // Note
             double sum = 0.0;
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (in_surface_selector(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     // in case the cell topology is needed
-                    const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
                     shards::CellTopology cell_topo(cell_topo_data);
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                       {
-                        stk::mesh::Entity& element = bucket[iElement];
+                        stk_classic::mesh::Entity& element = bucket[iElement];
 
-                        const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+                        const stk_classic::mesh::PairIterRelation& elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );  
 
                         unsigned num_node = elem_nodes.size(); 
                         for (unsigned inode=0; inode < num_node; inode++)
                           {
-                            stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
-                            //stk::mesh::EntityId nid = node.identifier();
+                            stk_classic::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                            //stk_classic::mesh::EntityId nid = node.identifier();
 
-                            double * const coord = stk::mesh::field_data( *coordField , node );
+                            double * const coord = stk_classic::mesh::field_data( *coordField , node );
                             // do something with coord's
                             sum += coord[0]*coord[0] + coord[1]*coord[1];
                           }
@@ -280,14 +280,14 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         std::string expected_serialized_mesh_string = 
 	  "P[0] ======================================================== P[0] ========================================================P[0] ========================================================P[0] PerceptMesh::print_info: quad fixtureP[0] Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>    Number of parts = 26 P[0] info>    Part subset info:  P[0] info>     Part[0]= {UNIVERSAL} topology = null primary_entity_rank = 4294967295 subsets = {{OWNS} , {SHARES} , {FEM_ROOT_CELL_TOPOLOGY_PART_Node} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} , {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} , {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} , {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} , block_1 , surface_1 , surface_2 , surface_3 , surface_4 , surface_quad4_edge2_1 , surface_quad4_edge2_2 , surface_quad4_edge2_3 , surface_quad4_edge2_4}P[0] info>     Part[1]= {OWNS} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[2]= {SHARES} topology = null primary_entity_rank = 4294967295 subsets = {}P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} topology = Node primary_entity_rank = 0 subsets = {}P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} topology = Line_2 primary_entity_rank = 1 subsets = {surface_quad4_edge2_1 , surface_quad4_edge2_2 , surface_quad4_edge2_3 , surface_quad4_edge2_4}P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} topology = Line_3 primary_entity_rank = 1 subsets = {}P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} topology = Particle primary_entity_rank = 2 subsets = {}P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} topology = Triangle_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} topology = Triangle_6 primary_entity_rank = 2 subsets = {}P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} topology = Triangle_4 primary_entity_rank = 2 subsets = {}P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} topology = Quadrilateral_4 primary_entity_rank = 2 subsets = {block_1}P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} topology = Quadrilateral_8 primary_entity_rank = 2 subsets = {}P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} topology = Quadrilateral_9 primary_entity_rank = 2 subsets = {}P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} topology = Beam_2 primary_entity_rank = 2 subsets = {}P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} topology = Beam_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} topology = ShellLine_2 primary_entity_rank = 2 subsets = {}P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} topology = ShellLine_3 primary_entity_rank = 2 subsets = {}P[0] info>     Part[17]= block_1 topology = Quadrilateral_4 primary_entity_rank = 2 subsets = {}P[0] info>     Part[18]= surface_1 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2_1}P[0] info>     Part[19]= surface_2 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2_2}P[0] info>     Part[20]= surface_3 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2_3}P[0] info>     Part[21]= surface_4 topology = null primary_entity_rank = 1 subsets = {surface_quad4_edge2_4}P[0] info>     Part[22]= surface_quad4_edge2_1 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[23]= surface_quad4_edge2_2 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[24]= surface_quad4_edge2_3 topology = Line_2 primary_entity_rank = 1 subsets = {}P[0] info>     Part[25]= surface_quad4_edge2_4 topology = Line_2 primary_entity_rank = 1 subsets = {} P[0] info>     Part Uses information:  P[0] info>     Part[0]= {UNIVERSAL} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[1]= {OWNS} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[2]= {SHARES} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[3]= {FEM_ROOT_CELL_TOPOLOGY_PART_Node} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[4]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_2} : Uses { Node = 48 Edge = 48 Face = 0 Elem = 0 }P[0] info>     Part[5]= {FEM_ROOT_CELL_TOPOLOGY_PART_Line_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[6]= {FEM_ROOT_CELL_TOPOLOGY_PART_Particle} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[7]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[8]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_6} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[9]= {FEM_ROOT_CELL_TOPOLOGY_PART_Triangle_4} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[10]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_4} : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[11]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_8} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[12]= {FEM_ROOT_CELL_TOPOLOGY_PART_Quadrilateral_9} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[13]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[14]= {FEM_ROOT_CELL_TOPOLOGY_PART_Beam_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[15]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_2} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[16]= {FEM_ROOT_CELL_TOPOLOGY_PART_ShellLine_3} : Uses { Node = 0 Edge = 0 Face = 0 Elem = 0 }P[0] info>     Part[17]= block_1 : Uses { Node = 169 Edge = 48 Face = 144 Elem = 0 }P[0] info>     Part[18]= surface_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[19]= surface_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[20]= surface_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[21]= surface_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[22]= surface_quad4_edge2_1 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[23]= surface_quad4_edge2_2 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[24]= surface_quad4_edge2_3 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>     Part[25]= surface_quad4_edge2_4 : Uses { Node = 13 Edge = 12 Face = 0 Elem = 0 }P[0] info>    Number of fields = 6P[0] info>    Field[0]= coordinates rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 0 ord= 0 which corresponds to Part= {UNIVERSAL}P[0] info>    Field[1]= surface_1_df rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 1 ord= 22 which corresponds to Part= surface_quad4_edge2_1P[0] info>    Field[2]= surface_2_df rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 1 ord= 23 which corresponds to Part= surface_quad4_edge2_2P[0] info>    Field[3]= surface_3_df rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 1 ord= 24 which corresponds to Part= surface_quad4_edge2_3P[0] info>    Field[4]= surface_4_df rank= 1P[0] info>    number of field restrictions= 1P[0] info>    field restriction 0 stride[0] = 2 type= 1 ord= 25 which corresponds to Part= surface_quad4_edge2_4P[0] info>    Field[5]= distribution_factors rank= 0P[0] info>    number of field restrictions= 0 P[0] ======================================================== P[0] ========================================================P[0] ========================================================";
 
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
         if (p_size <= 2)
           {
 
@@ -328,12 +328,12 @@ namespace stk
               STKUNIT_EXPECT_TRUE(!diff);
             }
 
-            stk::mesh::fem::FEMMetaData& metaData_1 = *eMesh_1.get_fem_meta_data();
-            stk::mesh::fem::FEMMetaData& metaData_2 = *eMesh_2.get_fem_meta_data();
+            stk_classic::mesh::fem::FEMMetaData& metaData_1 = *eMesh_1.get_fem_meta_data();
+            stk_classic::mesh::fem::FEMMetaData& metaData_2 = *eMesh_2.get_fem_meta_data();
 
-            stk::mesh::BulkData& bulkData_1 = *eMesh_1.get_bulk_data();
+            stk_classic::mesh::BulkData& bulkData_1 = *eMesh_1.get_bulk_data();
             VectorFieldType* coordField_1 = eMesh_1.get_coordinates_field();
-            stk::mesh::BulkData& bulkData_2 = *eMesh_2.get_bulk_data();
+            stk_classic::mesh::BulkData& bulkData_2 = *eMesh_2.get_bulk_data();
             //VectorFieldType* coordField_2 = eMesh_2.get_coordinates_field();
 
             MPI_Barrier( MPI_COMM_WORLD );
@@ -344,21 +344,21 @@ namespace stk
               STKUNIT_EXPECT_TRUE(!diff);
             }
 
-            const std::vector<stk::mesh::Bucket*> & buckets = bulkData_1.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = bulkData_1.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 //if (in_surface_selector(**k)) 
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_elements_in_bucket = bucket.size();
                 
                   for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                     {
-                      stk::mesh::Entity& entity = bucket[iEntity];
+                      stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                      double * const coord = stk::mesh::field_data( *coordField_1 , entity );
+                      double * const coord = stk_classic::mesh::field_data( *coordField_1 , entity );
 
                       coord[0] += 0.01;
                     }
@@ -384,11 +384,11 @@ namespace stk
         bool notActive = false;
         if (notActive) return;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
         if (p_size > 1) return;
 
         int thetas[] = {0,10,20,30,40,45,50,60,70,80};
@@ -408,34 +408,34 @@ namespace stk
             fixture.generate_mesh();
 
             percept::PerceptMesh eMesh(&fixture.meta_data, &fixture.bulk_data);
-            //stk::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
-            //const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
+            //stk_classic::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
+            //const std::vector< stk_classic::mesh::Part * > & parts = metaData.get_parts();
 
             if (0 == itheta) eMesh.save_as("2d_duct.e");
-            stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
+            stk_classic::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
             VectorFieldType* coordField = eMesh.get_coordinates_field();
 
-            const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = bulkData.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );  
             // right-shear, theta=angle from vertical, dxdy=tan(theta)
             // up-shear, theta=angle from horizontal, dydx=tan(theta)
             // choose one or other, set other to 0.0
             double dxdy = std::tan(theta);
             double dydx = 0.0;
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 //if (in_surface_selector(**k)) 
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
 
                   const unsigned num_nodes_in_bucket = bucket.size();
                 
                   for (unsigned iNode = 0; iNode < num_nodes_in_bucket; iNode++)
                     {
-                      stk::mesh::Entity& node = bucket[iNode];
-                      //stk::mesh::EntityId nid = node.identifier();
+                      stk_classic::mesh::Entity& node = bucket[iNode];
+                      //stk_classic::mesh::EntityId nid = node.identifier();
 
-                      double * const coord = stk::mesh::field_data( *coordField , node );
+                      double * const coord = stk_classic::mesh::field_data( *coordField , node );
                   
                       coord[0] += dxdy*coord[1];
                       coord[1] += dydx*coord[0];
@@ -455,11 +455,11 @@ namespace stk
         bool notActive = false;
         if (notActive) return;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
         if (p_size != 2) return;
 
         const unsigned n = 2;
@@ -486,9 +486,9 @@ namespace stk
         eMesh.commit();
         //std::cout << "eMesh.get_coordinates_field()->number_of_states() = "  << eMesh.get_coordinates_field()->number_of_states() << std::endl;
         // field, dst, src
-        stk::mesh::FieldBase * coordinates_N = eMesh.get_field("coordinates_N");
-        //stk::mesh::FieldBase * coordinates_NM1 = eMesh.get_field("coordinates_NM1");
-        stk::mesh::FieldBase * coordinates_None = eMesh.get_coordinates_field();
+        stk_classic::mesh::FieldBase * coordinates_N = eMesh.get_field("coordinates_N");
+        //stk_classic::mesh::FieldBase * coordinates_NM1 = eMesh.get_field("coordinates_NM1");
+        stk_classic::mesh::FieldBase * coordinates_None = eMesh.get_coordinates_field();
 
         // dst,src
         eMesh.copy_field(coordinates_N, coordinates_None);

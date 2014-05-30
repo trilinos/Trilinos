@@ -17,7 +17,7 @@
 
 #include <stk_mesh/baseImpl/EntityImpl.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -51,7 +51,7 @@ inline bool is_degenerate_relation ( const Relation &r1 , const Relation &r2 )
 
 void EntityImpl::log_resurrect()
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::log_resurrect", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::log_resurrect", LOG_ENTITY, key());
 
   ThrowErrorMsgIf( EntityLogDeleted != m_mod_log,
       "Trying to resurrect non-deleted entity: " <<
@@ -63,7 +63,7 @@ void EntityImpl::log_resurrect()
 
 void EntityImpl::log_modified_and_propagate()
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::log_modified_and_propagate", LOG_ENTITY, key());
 
   // If already in modified state, return
   if (m_mod_log != EntityLogNoChange) {
@@ -96,7 +96,7 @@ void EntityImpl::compress_relation_capacity()
 
 void EntityImpl::log_created_parallel_copy()
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::log_created_parallel_copy", LOG_ENTITY, key());
 
   if ( EntityLogCreated == m_mod_log ) {
     m_mod_log = EntityLogModified ;
@@ -105,7 +105,7 @@ void EntityImpl::log_created_parallel_copy()
 
 bool EntityImpl::destroy_relation( Entity& e_to, const RelationIdentifier local_id )
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::destroy_relation", LOG_ENTITY, key());
 
   bool destroyed_relations = false;
   for ( RelationVector::iterator
@@ -124,7 +124,7 @@ bool EntityImpl::declare_relation( Entity & e_to,
                                    unsigned sync_count,
                                    bool is_back_relation )
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::declare_relation", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::declare_relation", LOG_ENTITY, key());
 
   const MetaData & meta_data = MetaData::get( bucket() );
 

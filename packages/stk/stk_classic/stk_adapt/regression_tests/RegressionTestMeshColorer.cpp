@@ -47,12 +47,12 @@ namespace stk
 
 #include "RegressionTestFileLoc.hpp"
 
-      static stk::diag::Writer &
+      static stk_classic::diag::Writer &
       dw()
       {
-        //static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+        //static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
         int dw_enabled = 1;
-        static stk::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
+        static stk_classic::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
 
         s_diagWriter.setPrintMask(percept::LOG_NORM | percept::LOG_ALWAYS);
 
@@ -69,7 +69,7 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test1 " << stk::diag::dendl;
+        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test1 " << stk_classic::diag::dendl;
 
         percept::PerceptMesh eMesh(3u);
         if (eMesh.get_parallel_size() <= 3)
@@ -85,7 +85,7 @@ namespace stk
 	
             eMesh.new_mesh(percept::GMeshSpec(config_mesh));
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
+            stk_classic::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
             std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.element_rank());
@@ -105,14 +105,14 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk::diag::dendl;
+        dw().m(percept::LOG_MESH_COLORER) << "STKUNIT_UNIT_TEST::mesh_colorer::test_quad " << stk_classic::diag::dendl;
 
         percept::PerceptMesh eMesh(2u);
         if (eMesh.get_parallel_size() == 1 || eMesh.get_parallel_size() == 3)
           {
             eMesh.open(input_files_loc+"break_test._.quad._.square._.square_quad4.e");
             int vectorDimension = 0;
-            stk::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
+            stk_classic::mesh::FieldBase *element_color_field = eMesh.add_field("element_colors", eMesh.element_rank(), vectorDimension);
             eMesh.commit();
 
             std::vector<mesh::EntityRank> mer;  mer.push_back(eMesh.face_rank());

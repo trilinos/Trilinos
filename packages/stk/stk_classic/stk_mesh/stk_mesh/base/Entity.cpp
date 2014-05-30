@@ -18,22 +18,22 @@
 
 #ifdef SIERRA_MIGRATION
 namespace {
-static const std::vector<stk::mesh::Relation> dummy_vector;
+static const std::vector<stk_classic::mesh::Relation> dummy_vector;
 }
 
 namespace sierra {
 namespace Fmwk {
 
 const unsigned int INVALID_LOCAL_ID = std::numeric_limits<unsigned int>::max();
-const stk::mesh::RelationIterator INVALID_RELATION_ITR = dummy_vector.end(); // Some STL implementation use POD for iterators
+const stk_classic::mesh::RelationIterator INVALID_RELATION_ITR = dummy_vector.end(); // Some STL implementation use POD for iterators
 
-unsigned get_derived_type(const stk::mesh::Entity&);
+unsigned get_derived_type(const stk_classic::mesh::Entity&);
 
 }
 }
 #endif
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------

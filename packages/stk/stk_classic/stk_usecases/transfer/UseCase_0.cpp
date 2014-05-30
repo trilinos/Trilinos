@@ -39,16 +39,16 @@
 
 #define ct_assert(e) extern char (*ct_assert(void)) [sizeof(char[1 - 2*!(e)])]
 
-using namespace stk::diag;
+using namespace stk_classic::diag;
 using namespace use_case;
 
 struct EntityKeyDecomp {
   unsigned operator()( const unsigned p_size ,
-                       const stk::mesh::EntityKey & key ) const
-    { return ( stk::mesh::entity_id( key ) >> 8 ) % p_size ; }
+                       const stk_classic::mesh::EntityKey & key ) const
+    { return ( stk_classic::mesh::entity_id( key ) >> 8 ) % p_size ; }
 };
 
-typedef stk::util::ParallelIndex<stk::mesh::EntityKey,unsigned,EntityKeyDecomp> ParallelIndex;
+typedef stk_classic::util::ParallelIndex<stk_classic::mesh::EntityKey,unsigned,EntityKeyDecomp> ParallelIndex;
 
 
 namespace {
@@ -68,21 +68,21 @@ std::ostream& operator<<(std::ostream& ostr, const std::vector<T> &v){
 }
 
 
-std::ostream &operator<<(std::ostream &os, const stk::mesh::EntityKey &entity_key) {
+std::ostream &operator<<(std::ostream &os, const stk_classic::mesh::EntityKey &entity_key) {
   return os << "[" << entity_rank(entity_key) << ":" << entity_id(entity_key) << "]";
 }
 
 
-void get_idents(stk::mesh::BulkData &bulk_data,
+void get_idents(stk_classic::mesh::BulkData &bulk_data,
                 std::vector<ParallelIndex::Key> &ident_vector)
 {
-  ct_assert(sizeof(ParallelIndex::Key) >= sizeof(stk::mesh::EntityKey));
+  ct_assert(sizeof(ParallelIndex::Key) >= sizeof(stk_classic::mesh::EntityKey));
   ident_vector.clear();
-  const stk::mesh::MetaData&   meta_data = stk::mesh::MetaData::get(bulk_data);
+  const stk_classic::mesh::MetaData&   meta_data = stk_classic::mesh::MetaData::get(bulk_data);
 
-  std::vector<stk::mesh::Entity *> entities;
-  stk::mesh::Selector selector = meta_data.locally_owned_part();
-  get_selected_entities(selector, bulk_data.buckets(stk::mesh::fem::FEMMetaData::NODE_RANK), entities);
+  std::vector<stk_classic::mesh::Entity *> entities;
+  stk_classic::mesh::Selector selector = meta_data.locally_owned_part();
+  get_selected_entities(selector, bulk_data.buckets(stk_classic::mesh::fem::FEMMetaData::NODE_RANK), entities);
   const size_t num_entities = entities.size();
 
   for (size_t i = 0; i < num_entities; ++i) {
@@ -104,9 +104,9 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
     p_e = processor_numbers.end();
 
   for (; r_e != r_i && p_e != p_i; ++r_i, ++p_i) {
-    const stk::mesh::EntityKey ri    = *r_i;
-    const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk_classic::mesh::EntityKey ri    = *r_i;
+    const stk_classic::mesh::EntityKey pi    = p_i->first;
+    const stk_classic::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk_classic::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       std::cout << pi;
 
@@ -137,7 +137,7 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
     }
   }
   if (r_e != r_i) {
-    const stk::mesh::EntityKey ri = *r_i;
+    const stk_classic::mesh::EntityKey ri = *r_i;
     std::cerr
       << " An active and locally owned receiving mesh node with global id "<<ri
       << " was to be paired with a sending node with the same global id.\n"
@@ -147,8 +147,8 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
     std::exit(EXIT_FAILURE);
   }
   if (p_e != p_i) {
-    const stk::mesh::EntityKey pi    = p_i->first;
-    const stk::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
+    const stk_classic::mesh::EntityKey pi    = p_i->first;
+    const stk_classic::mesh::EntityKey pi_p1 = (p_e == p_i + 1) ? stk_classic::mesh::EntityKey(entity_rank(pi), entity_id(pi) + 1) : (p_i+1)->first;
     if (pi == pi_p1) {
       std::cerr
         << " A send mesh node with global id "<<pi
@@ -170,7 +170,7 @@ void check_query( const std::vector<ParallelIndex::Key> &recv_global_id_vector,
 }
 
 void
-use_case_0_driver(stk::ParallelMachine  comm,
+use_case_0_driver(stk_classic::ParallelMachine  comm,
                   const std::string &working_directory,
                   const std::string &range_mesh_filename,
                   const std::string &range_mesh_type,
@@ -179,39 +179,39 @@ use_case_0_driver(stk::ParallelMachine  comm,
                   const std::string &domain_mesh_type,
                   const std::string &domain_entity)
 {
-  stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 
-  stk::CommAll comm_all( comm );
+  stk_classic::CommAll comm_all( comm );
 
-  dw().m(LOG_TRANSFER) << "Use case 2: Point (range) Point (domain) Copy Search" << stk::diag::dendl;
-  dw().m(LOG_TRANSFER) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
-  dw().m(LOG_TRANSFER) << "Domain Entity Type = " << domain_entity << stk::diag::dendl;
+  dw().m(LOG_TRANSFER) << "Use case 2: Point (range) Point (domain) Copy Search" << stk_classic::diag::dendl;
+  dw().m(LOG_TRANSFER) << "Range  Entity Type = " << range_entity  << stk_classic::diag::dendl;
+  dw().m(LOG_TRANSFER) << "Domain Entity Type = " << domain_entity << stk_classic::diag::dendl;
 
   // Initialize IO system.  Registers all element types and storage
   // types and the exodusII default database type.
   Ioss::Init::Initializer init_db;
 
   static const size_t spatial_dimension = 3;
-  stk::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
+  stk_classic::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
 
-  stk::io::MeshData range_mesh_data;
+  stk_classic::io::MeshData range_mesh_data;
   std::string filename = working_directory + range_mesh_filename;
-  stk::io::create_input_mesh(range_mesh_type, filename, comm,
+  stk_classic::io::create_input_mesh(range_mesh_type, filename, comm,
 			     range_meta_data, range_mesh_data);
   range_meta_data.commit();
 
-  stk::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
-  stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
+  stk_classic::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
+  stk_classic::io::populate_bulk_data(range_bulk_data, range_mesh_data);
 
-  stk::mesh::fem::FEMMetaData domain_meta_data( spatial_dimension );
-  stk::io::MeshData domain_mesh_data;
+  stk_classic::mesh::fem::FEMMetaData domain_meta_data( spatial_dimension );
+  stk_classic::io::MeshData domain_mesh_data;
   filename = working_directory + domain_mesh_filename;
-  stk::io::create_input_mesh(domain_mesh_type, filename, comm,
+  stk_classic::io::create_input_mesh(domain_mesh_type, filename, comm,
 			     domain_meta_data, domain_mesh_data);
   domain_meta_data.commit();
 
-  stk::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);
-  stk::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
+  stk_classic::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);
+  stk_classic::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
 
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is a
@@ -224,8 +224,8 @@ use_case_0_driver(stk::ParallelMachine  comm,
   get_idents(range_bulk_data,   range_global_id_vector);
   get_idents(domain_bulk_data,  domain_global_id_vector);
 
-  dw().m(LOG_TRANSFER) << "range  " << range_global_id_vector  << stk::diag::dendl;
-  dw().m(LOG_TRANSFER) << "domain " << domain_global_id_vector << stk::diag::dendl;
+  dw().m(LOG_TRANSFER) << "range  " << range_global_id_vector  << stk_classic::diag::dendl;
+  dw().m(LOG_TRANSFER) << "domain " << domain_global_id_vector << stk_classic::diag::dendl;
 
   ParallelIndex parallel_index(comm, range_global_id_vector);
   std::vector<ParallelIndex::KeyProc> processor_numbers;
@@ -236,13 +236,13 @@ use_case_0_driver(stk::ParallelMachine  comm,
   for (std::vector<ParallelIndex::KeyProc>::const_iterator i=processor_numbers.begin();
        i != processor_numbers.end(); ++i)
   {
-//     stk::mesh::EntityKey entity_key;
+//     stk_classic::mesh::EntityKey entity_key;
 //     entity_key.value(i->first);
-    stk::mesh::EntityKey entity_key(i->first);
+    stk_classic::mesh::EntityKey entity_key(i->first);
 
-    const unsigned entity_rank = stk::mesh::entity_rank( entity_key);
-    const stk::mesh::EntityId entity_id = stk::mesh::entity_id( entity_key );
+    const unsigned entity_rank = stk_classic::mesh::entity_rank( entity_key);
+    const stk_classic::mesh::EntityId entity_id = stk_classic::mesh::entity_id( entity_key );
     const std::string & entity_rank_name = domain_meta_data.entity_rank_name( entity_rank );
-    dw().m(LOG_TRANSFER)<<" contains "<<" "<<entity_rank_name<<"["<<entity_id<<"] Proc:"<<i->second<<stk::diag::dendl;
+    dw().m(LOG_TRANSFER)<<" contains "<<" "<<entity_rank_name<<"["<<entity_id<<"] Proc:"<<i->second<<stk_classic::diag::dendl;
   }
 }

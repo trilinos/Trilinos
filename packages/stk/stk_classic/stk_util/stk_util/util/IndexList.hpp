@@ -10,7 +10,7 @@
 #ifndef stk_util_util_IndexList_h
 #define stk_util_util_IndexList_h
 
-namespace stk {
+namespace stk_classic {
 
 /** \brief Compile-time list of indices.
  *  \ingroup util_module

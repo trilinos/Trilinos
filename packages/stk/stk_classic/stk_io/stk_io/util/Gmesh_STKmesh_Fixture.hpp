@@ -10,7 +10,7 @@
 #include <vector>
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace io {
 namespace util {
 
@@ -31,7 +31,7 @@ class Gmesh_STKmesh_Fixture
    * @param gmesh_spec The specification for the mesh. See Iogn::GeneratedMesh
    * for documentation on how to specify meshes.
    */
-  Gmesh_STKmesh_Fixture(stk::ParallelMachine comm, const std::string& gmesh_spec);
+  Gmesh_STKmesh_Fixture(stk_classic::ParallelMachine comm, const std::string& gmesh_spec);
 
   /**
    * Commits the meta-data of the mesh and populates the bulk-data. Don't call
@@ -80,52 +80,52 @@ class Gmesh_STKmesh_Fixture
   /**
    * Get all the sideset parts.
    */
-  const stk::mesh::PartVector & getSideParts() const
+  const stk_classic::mesh::PartVector & getSideParts() const
   { return m_sideset_parts; }
 
   /**
    * Get a reference to the meta data for the stk-mesh.
-  const stk::mesh::MetaData & getMetaData() const
+  const stk_classic::mesh::MetaData & getMetaData() const
   { return m_meta_data.get_meta_data(m_meta_data); }
    */
 
-  stk::mesh::MetaData & getMetaData()
+  stk_classic::mesh::MetaData & getMetaData()
   { return m_meta_data.get_meta_data(m_meta_data); }
 
-  const stk::mesh::fem::FEMMetaData & getFEMMetaData() const
+  const stk_classic::mesh::fem::FEMMetaData & getFEMMetaData() const
   { return m_meta_data; }
 
-  stk::mesh::fem::FEMMetaData & getFEMMetaData()
+  stk_classic::mesh::fem::FEMMetaData & getFEMMetaData()
   { return m_meta_data; }
 
   /**
    * Get a reference to the bulk data for the stk-mesh.
    */
-  const stk::mesh::BulkData & getBulkData() const
+  const stk_classic::mesh::BulkData & getBulkData() const
   { return m_bulk_data; }
 
-  stk::mesh::BulkData & getBulkData()
+  stk_classic::mesh::BulkData & getBulkData()
   { return m_bulk_data; }
 
  private:
   ///> The meta data for the stk-mesh
-  stk::mesh::fem::FEMMetaData m_meta_data;
+  stk_classic::mesh::fem::FEMMetaData m_meta_data;
 
   ///> The bulk data for the stk-mesh
-  stk::mesh::BulkData m_bulk_data;
+  stk_classic::mesh::BulkData m_bulk_data;
 
   /**
    * The mesh-data for the mesh. This is a special object that maintains some
    * state between the meta data and bulk data portions of the mesh generation
    * process for use cases.
    */
-  stk::io::MeshData m_mesh_data;
+  stk_classic::io::MeshData m_mesh_data;
 
   ///> The names of all the side parts
   std::vector<std::string> m_sideset_names;
 
   ///> Collection of all the side parts
-  stk::mesh::PartVector m_sideset_parts;
+  stk_classic::mesh::PartVector m_sideset_parts;
 
   ///> The number of elements in the X dimension for the mesh
   int m_num_x;

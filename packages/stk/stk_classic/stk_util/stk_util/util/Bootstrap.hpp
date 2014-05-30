@@ -9,7 +9,7 @@
 #ifndef STK_UTIL_UTIL_BOOTSTRAP_HPP
 #define STK_UTIL_UTIL_BOOTSTRAP_HPP
 
-namespace stk {
+namespace stk_classic {
 
 ///
 /// @addtogroup bootstrap_detail

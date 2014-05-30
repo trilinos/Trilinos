@@ -15,7 +15,7 @@
 #include <iosfwd>
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \brief  Data for ghosting mesh entities.

@@ -13,7 +13,7 @@
 #include <stk_util/util/Marshal.hpp>
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 

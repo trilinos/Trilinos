@@ -22,19 +22,19 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     oss.str("");
     oss << std::endl;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
     table.setAutoEndCol(false);
 
     table.setTitle("Test");
 
-    table << "x" << stk::end_col
-          << "y" << stk::end_col << stk::end_header
-          << "2" << stk::end_row
-          << "" << stk::end_col
-          << "3" << stk::end_row
-          << "" << stk::end_col
-          << "" << stk::end_col
-          << "4" << stk::end_row;
+    table << "x" << stk_classic::end_col
+          << "y" << stk_classic::end_col << stk_classic::end_header
+          << "2" << stk_classic::end_row
+          << "" << stk_classic::end_col
+          << "3" << stk_classic::end_row
+          << "" << stk_classic::end_col
+          << "" << stk_classic::end_col
+          << "4" << stk_classic::end_row;
     oss << table;
   }
   STKUNIT_ASSERT_EQUAL((std::string("\n Test\nx y\n- - -\n2\n  3\n    4\n\n") == oss.str()), true);
@@ -43,19 +43,19 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     oss.str("");    
     oss << std::endl;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
 
     table.setTitle("A multiplication table, auto end column");
 
     table << "x" << "|";
     for (int i = 0; i < 10; ++i)
       table << i << "|";
-    table << stk::end_row;
+    table << stk_classic::end_row;
     for (int i = 0; i < 10; ++i) {
       table << i << "|";
       for (int j = 0; j < 10; ++j)
 	table << i*j << "|";
-      table << stk::end_row;
+      table << stk_classic::end_row;
     }
 
     oss << table;
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     oss.str("");
     oss << std::endl;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
 
     table.setTitle("A multiplication table, auto end column");
 
@@ -76,12 +76,12 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     table << "x" << "|";
     for (int i = 0; i < 10; ++i)
       table << i << "|";
-    table << stk::end_row;
+    table << stk_classic::end_row;
     for (int i = 0; i < 10; ++i) {
       table << i << "|";
       for (int j = 0; j < 10; ++j)
 	table << i*j << "|";
-      table << stk::end_row;
+      table << stk_classic::end_row;
     }
 
     oss << table;
@@ -92,22 +92,22 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     oss.str("");
     oss << std::endl;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
 
     table.setTitle("A multiplication table (in hex), no auto end column");
 
     table.setAutoEndCol(false);
     table.setCommentPrefix("# ");
 
-    table << "x" << stk::end_col << "|" << stk::end_col;
+    table << "x" << stk_classic::end_col << "|" << stk_classic::end_col;
     for (int i = 0; i < 10; ++i)
-      table << i << stk::end_col << "|" << stk::end_col;
-    table << stk::end_header;
+      table << i << stk_classic::end_col << "|" << stk_classic::end_col;
+    table << stk_classic::end_header;
     for (int i = 0; i < 10; ++i) {
-      table << i << stk::end_col << "|" << stk::end_col;
+      table << i << stk_classic::end_col << "|" << stk_classic::end_col;
       for (int j = 0; j < 10; ++j)
-	table << std::hex << i*j << stk::end_col << "|" << stk::end_col;
-      table << stk::end_row;
+	table << std::hex << i*j << stk_classic::end_col << "|" << stk_classic::end_col;
+      table << stk_classic::end_row;
     }
 
     oss << table;
@@ -118,7 +118,7 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     oss.str("");
     oss << std::endl;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
     
     table.setTitle("A multiplication table, comma separated values");
 
@@ -128,13 +128,13 @@ STKUNIT_UNIT_TEST( UnitTestPrintTable, UnitTest)
     table << "x";
     for (int i = 0; i < 10; ++i)
       table << i;
-    table << stk::end_header;
+    table << stk_classic::end_header;
 
     for (int i = 0; i < 10; ++i) {
       table << i;
       for (int j = 0; j < 10; ++j)
 	table << i*j;
-      table << stk::end_row;
+      table << stk_classic::end_row;
     }
     
     oss << table;

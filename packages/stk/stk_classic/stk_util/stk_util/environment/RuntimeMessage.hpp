@@ -15,7 +15,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 ///
 /// @addtogroup runtime_message_detail

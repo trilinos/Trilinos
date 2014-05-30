@@ -37,18 +37,18 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk {
+namespace stk_classic {
 namespace percept {
 namespace unit_tests {
 
 
 #if 0
-static stk::diag::Writer &
+static stk_classic::diag::Writer &
 dw()
 {
-  //static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+  //static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
   int dw_enabled = 1;
-  static stk::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
+  static stk_classic::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
 
   s_diagWriter.setPrintMask(LOG_NORM+LOG_ALWAYS);
   return s_diagWriter;
@@ -103,7 +103,7 @@ struct LocalFixture
 //=============================================================================
 //=============================================================================
 
-//stk::diag::WriterThrowSafe _write_throw_safe(dw());
+//stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
 //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
 
@@ -112,7 +112,7 @@ STKUNIT_UNIT_TEST(norm, volume)
   EXCEPTWATCH;
   MPI_Barrier( MPI_COMM_WORLD );
 
-  dw().m(LOG_NORM) << "TEST::norm::volume " << stk::diag::dendl;
+  dw().m(LOG_NORM) << "TEST::norm::volume " << stk_classic::diag::dendl;
 
   LocalFixture fix(3,3,12);
   mesh::fem::FEMMetaData& metaData = fix.metaData;
@@ -275,10 +275,10 @@ STKUNIT_UNIT_TEST(norm, surface_area)
   ConstantFunction sqrt_area1(0.0, "sqrt_area1");
 
   /// Create the operator that will do the work
-  stk::mesh::Part *surface_part = eMesh.get_part("surface_1");
-  stk::mesh::Part *block_part = eMesh.get_part("block_1");
-  stk::mesh::Selector selector(*surface_part);
-  stk::mesh::Selector selector_test(*block_part);
+  stk_classic::mesh::Part *surface_part = eMesh.get_part("surface_1");
+  stk_classic::mesh::Part *block_part = eMesh.get_part("block_1");
+  stk_classic::mesh::Selector selector(*surface_part);
+  stk_classic::mesh::Selector selector_test(*block_part);
   selector_test = selector_test | selector;
   bool is_surface_norm = true;
 
@@ -381,11 +381,11 @@ STKUNIT_UNIT_TEST(norm, surface_area)
 STKUNIT_UNIT_TEST(norm, string_function)
 {
   EXCEPTWATCH;
-  //stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  //stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
 
-  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
+  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk_classic::diag::dendl;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
@@ -507,11 +507,11 @@ STKUNIT_UNIT_TEST(norm, string_function_1)
 void TEST_norm_string_function_turbo_verify_correctness(TurboOption turboOpt)
 {
   EXCEPTWATCH;
-  //stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  //stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
 
-  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
+  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk_classic::diag::dendl;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
@@ -661,11 +661,11 @@ STKUNIT_UNIT_TEST(norm, string_function_turbo_verify_correctness_bucket)
 void TEST_norm_string_function_turbo_timings(TurboOption turboOpt)
 {
   EXCEPTWATCH;
-  //stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  //stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
 
-  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk::diag::dendl;
+  dw().m(LOG_NORM) << "TEST.norm.string_function " << stk_classic::diag::dendl;
 
   /// create a meta data/bulk data empty pair
   PerceptMesh eMesh(3u);
@@ -814,11 +814,11 @@ STKUNIT_UNIT_TEST(norm, string_function_turbo_timings_bucket)
 STKUNIT_UNIT_TEST(norm, field_function)
 {
   EXCEPTWATCH;
-  //stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  //stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
   //dw().setPrintMask(dw_option_mask.parse(vm["dw"].as<std::string>().c_str()));
   //dw().setPrintMask(LOG_NORM+LOG_ALWAYS);
 
-  dw().m(LOG_NORM) << "TEST.norm.field_function " << stk::diag::dendl;
+  dw().m(LOG_NORM) << "TEST.norm.field_function " << stk_classic::diag::dendl;
 
   LocalFixture     fix(4);
   mesh::fem::FEMMetaData&        metaData     = fix.metaData;
@@ -960,7 +960,7 @@ STKUNIT_UNIT_TEST(norm, h1_volume_2)
   PerceptMesh& eMesh = fix.eMesh;
 
   int vectorDimension = 0;  // signifies a scalar field
-  stk::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+  stk_classic::mesh::FieldBase *f_test = eMesh.add_field("test", mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
   eMesh.commit();
   mesh::fem::FEMMetaData& metaData = fix.metaData;
   mesh::BulkData& bulkData = fix.bulkData;

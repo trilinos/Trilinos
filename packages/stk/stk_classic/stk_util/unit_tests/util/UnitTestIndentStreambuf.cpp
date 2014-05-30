@@ -12,25 +12,25 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-using stk::push;
-using stk::pop;
+using stk_classic::push;
+using stk_classic::pop;
 
 namespace {
 
 void plain(std::ostream &os)
 {
   os << "This is an ostream test" << std::endl;
-  os << "This is an ostream test" << stk::PUSH << std::endl;
-  os << "This is an ostream test" << stk::POP << std::endl;
+  os << "This is an ostream test" << stk_classic::PUSH << std::endl;
+  os << "This is an ostream test" << stk_classic::POP << std::endl;
   os << "This is an ostream test" << std::endl;
 }
 
 void deep(std::ostream &log_stream, int depth)
 {
   if (depth < 100) {
-    log_stream << "now " << depth << " deep" << stk::PUSH << std::endl;
+    log_stream << "now " << depth << " deep" << stk_classic::PUSH << std::endl;
     deep(log_stream, depth + 1);
-    log_stream << stk::POP << std::endl;
+    log_stream << stk_classic::POP << std::endl;
   }
 }
 
@@ -58,17 +58,17 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "indented 0\n";
 
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf());
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf());
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << std::endl;
     log_stream << "--- indent_streambuf ---" << std::endl;
 
-    log_stream << "indented 0" << stk::PUSH << std::endl;
+    log_stream << "indented 0" << stk_classic::PUSH << std::endl;
     log_stream << "indented 1" << std::endl;
-    log_stream << stk::PUSH << "indented 2" << std::endl;
+    log_stream << stk_classic::PUSH << "indented 2" << std::endl;
     log_stream << "indented 2" << std::endl;
-    log_stream << stk::LEFT << "no indentation" << std::endl;
+    log_stream << stk_classic::LEFT << "no indentation" << std::endl;
     log_stream << "\017indented 1" << std::endl;
 
     plain(log_stream);
@@ -95,14 +95,14 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "indented 0\n";
     
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk::indent_streambuf::NO_BRACES | stk::indent_streambuf::NO_BLANK_LINES);
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk_classic::indent_streambuf::NO_BRACES | stk_classic::indent_streambuf::NO_BLANK_LINES);
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "--- No braces, no blank lines ---" << std::endl;
 
-    log_stream << "indented 0" << stk::PUSH << std::endl;
+    log_stream << "indented 0" << stk_classic::PUSH << std::endl;
     log_stream << "indented 1" << std::endl;
-    log_stream << stk::PUSH << "indented 2" << std::endl;
+    log_stream << stk_classic::PUSH << "indented 2" << std::endl;
     log_stream << "indented 2" << std::endl;
     log_stream << "\017indented 1" << std::endl;
 
@@ -123,7 +123,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "}\n";
     
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf());
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf());
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "--- push, pop manipulators ---" << std::endl;
@@ -149,7 +149,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "}\n";
     
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf());
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf());
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "--- double push, double pop, push pop, pop push ---" << std::endl;
@@ -184,14 +184,14 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "\n";
     
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk::indent_streambuf::BLANK_LINES);
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk_classic::indent_streambuf::BLANK_LINES);
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "--- No braces, blank lines ---" << std::endl;
 
-    log_stream << "indented 0" << stk::PUSH << std::endl << std::endl;
+    log_stream << "indented 0" << stk_classic::PUSH << std::endl << std::endl;
     log_stream << "indented 1" << std::endl << std::endl;
-    log_stream << stk::PUSH << "indented 2" << std::endl << std::endl;
+    log_stream << stk_classic::PUSH << "indented 2" << std::endl << std::endl;
     log_stream << "indented 2" << std::endl << std::endl;
     log_stream << "\017indented 1" << std::endl << std::endl;
 
@@ -229,14 +229,14 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
       "\n";
     
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk::indent_streambuf::BRACES | stk::indent_streambuf::BLANK_LINES);
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf(), 2, stk_classic::indent_streambuf::BRACES | stk_classic::indent_streambuf::BLANK_LINES);
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "--- Braces, blank lines ---" << std::endl;
 
-    log_stream << "indented 0" << stk::PUSH << std::endl << std::endl;
+    log_stream << "indented 0" << stk_classic::PUSH << std::endl << std::endl;
     log_stream << "indented 1" << std::endl << std::endl;
-    log_stream << stk::PUSH << "indented 2" << std::endl << std::endl;
+    log_stream << stk_classic::PUSH << "indented 2" << std::endl << std::endl;
     log_stream << "indented 2" << std::endl << std::endl;
     log_stream << "\017indented 1" << std::endl << std::endl;
 
@@ -454,7 +454,7 @@ STKUNIT_UNIT_TEST(UnitTestIndentStreambuf, UnitTest)
     
 
     std::ostringstream    dest;
-    stk::indent_streambuf dest_indent_streambuf(dest.rdbuf());
+    stk_classic::indent_streambuf dest_indent_streambuf(dest.rdbuf());
     std::ostream log_stream(&dest_indent_streambuf);
 
     log_stream << "Depth test" << std::endl;

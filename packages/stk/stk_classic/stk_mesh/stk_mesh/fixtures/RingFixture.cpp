@@ -22,7 +22,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -32,7 +32,7 @@ namespace fixtures {
  * the "edges" are actually elements.
  */
 
-RingFixture::RingFixture( stk::ParallelMachine pm ,
+RingFixture::RingFixture( stk_classic::ParallelMachine pm ,
                           unsigned num_edge_per_proc ,
                           bool use_edge_parts )
   : m_spatial_dimension(1),

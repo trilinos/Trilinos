@@ -9,7 +9,7 @@
 #ifndef STK_UTIL_DIAG_WRITER_FWD_HPP
 #define STK_UTIL_DIAG_WRITER_FWD_HPP
 
-namespace stk {
+namespace stk_classic {
 
 ///
 /// @addtogroup diag_writer_detail
@@ -47,23 +47,23 @@ typedef unsigned long PrintMask;
 namespace sierra {
 
 enum LogMask {
-  LOG_ALWAYS = stk::LOG_ALWAYS,
-  LOG_TRACE    = stk::LOG_TRACE,
-  LOG_TRACE_STATS  = stk::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS  = stk::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS    = stk::LOG_MEMBERS,
+  LOG_ALWAYS = stk_classic::LOG_ALWAYS,
+  LOG_TRACE    = stk_classic::LOG_TRACE,
+  LOG_TRACE_STATS  = stk_classic::LOG_TRACE_STATS,
+  LOG_TRACE_SUB_CALLS  = stk_classic::LOG_TRACE_SUB_CALLS,
+  LOG_MEMBERS    = stk_classic::LOG_MEMBERS,
 
-  LOG_STREAM_COMMON  = stk::LOG_STREAM_COMMON,
-  LOG_PARAMETERS  = stk::LOG_PARAMETERS
+  LOG_STREAM_COMMON  = stk_classic::LOG_STREAM_COMMON,
+  LOG_PARAMETERS  = stk_classic::LOG_PARAMETERS
 };
 
 namespace Diag {
 
-typedef stk::diag::Writer Writer;
+typedef stk_classic::diag::Writer Writer;
 
 class PrintTable;
 
-typedef stk::diag::PrintMask PrintMask;
+typedef stk_classic::diag::PrintMask PrintMask;
 
 } // namespace Diag
 

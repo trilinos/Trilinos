@@ -3,7 +3,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -15,7 +15,7 @@ namespace stk {
     class TestLocalRefinerTet_N_3_1 : public Refiner
     {
     public:
-      TestLocalRefinerTet_N_3_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
+      TestLocalRefinerTet_N_3_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
 
       // ElementUnrefineCollection  buildTestUnrefineList();
 
@@ -23,7 +23,7 @@ namespace stk {
 
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, 
             vector<NeededEntityType>& needed_entity_ranks);
 
 

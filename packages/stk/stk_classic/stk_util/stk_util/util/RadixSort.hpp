@@ -127,7 +127,7 @@ inline void radix_sort_unsigned_impl( T* a, long last, T bitMask, unsigned long 
 //
 // Public API
 //
-namespace stk {
+namespace stk_classic {
 namespace util {
 
 /**
@@ -160,7 +160,7 @@ void radix_sort_unsigned( T* a, size_t a_size )
   if ( a_size >= (size_t)Threshold ) {
     if (a_size > (size_t)std::numeric_limits<long>::max()) {
       std::ostringstream msg ;
-      msg << "stk::utility::radix_sort() exceeded allowable array size (";
+      msg << "stk_classic::utility::radix_sort() exceeded allowable array size (";
       msg << a_size << " < " << std::numeric_limits<long>::max() << ")";
       throw std::runtime_error( msg.str() );
     }

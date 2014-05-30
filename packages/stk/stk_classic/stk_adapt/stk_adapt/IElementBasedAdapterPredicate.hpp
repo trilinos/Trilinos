@@ -6,7 +6,7 @@
 
 #include <functional>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     /** Signatures for predicate objects that can be used to select entities (elements, edges, faces,...) for
@@ -25,26 +25,26 @@ namespace stk {
      */
 
     // Example 
-    struct IElementBasedAdapterPredicate : public std::unary_function<const stk::mesh::Entity& , bool> {
-      stk::mesh::Selector * m_selector;
-      stk::mesh::FieldBase *m_field;
+    struct IElementBasedAdapterPredicate : public std::unary_function<const stk_classic::mesh::Entity& , bool> {
+      stk_classic::mesh::Selector * m_selector;
+      stk_classic::mesh::FieldBase *m_field;
       double m_tolerance;
     protected:
-      IElementBasedAdapterPredicate(stk::mesh::Selector * selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+      IElementBasedAdapterPredicate(stk_classic::mesh::Selector * selector=0, stk_classic::mesh::FieldBase *field=0, double tolerance=0.0) :
         m_selector(selector), m_field(field), m_tolerance(tolerance) {}
     };
 
     // Can be instantiated by the user, or used to define your own
     struct ElementRefinePredicate : public IElementBasedAdapterPredicate {
       
-      ElementRefinePredicate(stk::mesh::Selector* selector=0, stk::mesh::FieldBase *field=0, double tolerance=0.0) :
+      ElementRefinePredicate(stk_classic::mesh::Selector* selector=0, stk_classic::mesh::FieldBase *field=0, double tolerance=0.0) :
         IElementBasedAdapterPredicate(selector, field, tolerance) {}
 
       /// Return true for refine, false for ignore
-      int operator()(const stk::mesh::Entity& entity) {
+      int operator()(const stk_classic::mesh::Entity& entity) {
         double *fdata = 0;
         if (m_field) 
-          fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
+          fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(m_field) , entity );
         bool selected = (m_selector==0 || (*m_selector)(entity));
         bool ref_field_criterion = (fdata  && fdata[0] > 0);
         bool unref_field_criterion = (fdata && fdata[0] < 0);
@@ -58,7 +58,7 @@ namespace stk {
     /** Example of how the above is used (pseudo-code):
      *
      * class PredicateAdapter : public Refiner {
-     *   void visit_for_refine_and_unrefin(std::unary_function<stk::mesh::Entity& , bool>& user_predicate_refine)
+     *   void visit_for_refine_and_unrefin(std::unary_function<stk_classic::mesh::Entity& , bool>& user_predicate_refine)
      *     {
      *        foreach (Entity entity in list)
      *          {

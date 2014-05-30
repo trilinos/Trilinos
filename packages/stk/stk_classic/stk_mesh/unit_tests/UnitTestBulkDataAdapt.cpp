@@ -25,25 +25,25 @@
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>
 
-using stk::mesh::Part;
-using stk::mesh::Bucket;
-using stk::mesh::PairIterRelation;
-using stk::mesh::PairIterEntityComm;
-using stk::mesh::MetaData;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Selector;
-using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
-using stk::mesh::PairIterRelation;
-using stk::mesh::EntityProc;
-using stk::mesh::Entity;
-using stk::mesh::EntityId;
-using stk::mesh::EntityKey;
-using stk::mesh::EntityVector;
-using stk::mesh::EntityRank;
-using stk::mesh::fixtures::RingFixture;
-using stk::mesh::fixtures::BoxFixture;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::Bucket;
+using stk_classic::mesh::PairIterRelation;
+using stk_classic::mesh::PairIterEntityComm;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::BaseEntityRank;
+using stk_classic::mesh::PairIterRelation;
+using stk_classic::mesh::EntityProc;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::EntityKey;
+using stk_classic::mesh::EntityVector;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::fixtures::RingFixture;
+using stk_classic::mesh::fixtures::BoxFixture;
 
 namespace {
 const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
@@ -122,12 +122,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   unsigned nelems = sizeof(elems_0)/4/sizeof(EntityId);
   unsigned nnodes = sizeof(nodes_0)/2/sizeof(EntityId);
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
 
-  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim);
+  std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dim);
   entity_rank_names.push_back("FAMILY_TREE");
 
   FEMMetaData meta_data(spatial_dim, entity_rank_names);
@@ -147,7 +147,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting_2)
   //
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create elements
   const EntityRank elem_rank = meta_data.element_rank();

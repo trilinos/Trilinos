@@ -9,9 +9,9 @@
 
 #include <Intrepid_FieldContainer.hpp>
 
-//using namespace stk;
-using namespace stk::percept::util;
-using namespace stk::percept::interface_table;
+//using namespace stk_classic;
+using namespace stk_classic::percept::util;
+using namespace stk_classic::percept::interface_table;
 
 typedef shards::ArrayVector<unsigned, shards::NaturalOrder,Tag1,Tag2> ArrayInt2 ;
 
@@ -72,20 +72,20 @@ namespace stk
         }
       };
 
-      int testSweepMesher(stk::ParallelMachine parallel_machine )
+      int testSweepMesher(stk_classic::ParallelMachine parallel_machine )
       {
         bool verbose = false;
 
-        //stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
+        //stk_classic::ParallelMachine parallel_machine = stk_classic::parallel_machine_init(&argc, &argv);
 
         {
           // FIXME: Please use a mesh from stk_mesh/fixture instead of a use_case mesh
           //if(verbose) std::cout << "Use Case 3 ... ";
-          //stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
+          //stk_classic::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
           //mesh.populate();
-          //const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
+          //const bool local_status = stk_classic::mesh::use_cases::verifyMesh(mesh);
           //if(verbose) std::cout << local_status << std::endl;
-          //stk::mesh::use_cases::verifyMesh(mesh);
+          //stk_classic::mesh::use_cases::verifyMesh(mesh);
           //printStatus(local_status);
           //status = status && local_status;
         }

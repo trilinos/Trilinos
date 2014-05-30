@@ -12,8 +12,8 @@ namespace vector_vector_int {
 typedef std::vector< std::vector<int> > nested_type;
 typedef std::vector< std::pair<int*,int*> > nested_pair_type;
 
-typedef stk::util::nested_range< nested_type > range;
-typedef stk::util::nested_range< nested_pair_type > pair_range;
+typedef stk_classic::util::nested_range< nested_type > range;
+typedef stk_classic::util::nested_range< nested_pair_type > pair_range;
 
 
 }
@@ -66,7 +66,7 @@ prng.begin();
 //
 //typedef std::vector< std::vector<int>* > nested_ptr_type;
 //
-//typedef stk::util::nested_range< nested_ptr_type, std::vector<int>, to_inner_range > ptr_range;
+//typedef stk_classic::util::nested_range< nested_ptr_type, std::vector<int>, to_inner_range > ptr_range;
 //
 //}
 //

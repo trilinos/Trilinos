@@ -1,6 +1,6 @@
 #include <stk_mesh/base/Iterators.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 BucketVectorEntityIteratorRange get_entity_range(const std::vector<Bucket*>& buckets)

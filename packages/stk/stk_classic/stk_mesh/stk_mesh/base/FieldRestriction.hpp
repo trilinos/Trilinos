@@ -18,7 +18,7 @@
 
 #include <stk_util/util/SimpleArrayOps.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /**

@@ -17,9 +17,9 @@ namespace stk_search_unit {
 class OverlappingBoxes {
   public:
 
-    typedef stk::search::ident::IdentProc<uint64_t,unsigned>            IdentProc;
+    typedef stk_classic::search::ident::IdentProc<uint64_t,unsigned>            IdentProc;
     typedef std::vector<std::pair<IdentProc, IdentProc> >               IdentProcRelation;
-    typedef stk::search::box::AxisAlignedBoundingBox<IdentProc,float,3> BoundingVolume;
+    typedef stk_classic::search::box::AxisAlignedBoundingBox<IdentProc,float,3> BoundingVolume;
     typedef std::vector<BoundingVolume>                                 BoundingVolumeVector;
 
     OverlappingBoxes();

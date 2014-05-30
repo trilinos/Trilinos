@@ -19,7 +19,7 @@
 #include <stk_util/util/string_case_compare.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------

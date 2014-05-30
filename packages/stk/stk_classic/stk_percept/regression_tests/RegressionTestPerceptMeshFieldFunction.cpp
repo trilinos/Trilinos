@@ -71,8 +71,8 @@ namespace stk
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
-        eMesh.add_field("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.add_field("velocity", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
@@ -227,8 +227,8 @@ namespace stk
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
-        eMesh.add_field("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        mesh::FieldBase* pressure_field = eMesh.add_field("pressure", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.add_field("velocity", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
@@ -266,15 +266,15 @@ namespace stk
         int scalarDimension = 0; // a scalar
         int vectorDimension = 3;
 
-        eMesh.add_field("pressure", stk::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
-        eMesh.add_field("velocity", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        eMesh.add_field("pressure", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, scalarDimension);
+        eMesh.add_field("velocity", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
 
         /// reopen the mesh to allow for more fields to be added - note that this involves a db write/read operation
         eMesh.reopen(output_files_loc+"optional_temp_filename.e");
-        mesh::FieldBase* momentum_field = eMesh.add_field("momentum", stk::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
+        mesh::FieldBase* momentum_field = eMesh.add_field("momentum", stk_classic::mesh::fem::FEMMetaData::NODE_RANK, vectorDimension);
         eMesh.commit();
 
         // create a field function from the new pressure field

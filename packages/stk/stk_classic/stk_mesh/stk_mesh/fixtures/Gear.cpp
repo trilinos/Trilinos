@@ -25,11 +25,11 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 }
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -85,7 +85,7 @@ Gear::Gear(
 //-----------------------------------------------------------------------------
 //
 
-void Gear::populate_fields(stk::mesh::FieldState state) {
+void Gear::populate_fields(stk_classic::mesh::FieldState state) {
 
   //setup the cylindrical_coord_field on the hex nodes
   for ( size_t ir = 0 ; ir < rad_num-1; ++ir ) {
@@ -169,7 +169,7 @@ void Gear::populate_fields(stk::mesh::FieldState state) {
 
 void Gear::generate_gear()
 {
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = meta_data.element_rank();
 
   std::vector<size_t> requests(meta_data.entity_rank_count(), 0);
   requests[NODE_RANK]     = num_nodes;
@@ -252,8 +252,8 @@ void Gear::generate_gear()
   //cylindrical and cartesian coordinates
   //are 2 state fields.  Need to update
   //both states at construction
-  populate_fields(stk::mesh::StateOld);
-  populate_fields(stk::mesh::StateNew);
+  populate_fields(stk_classic::mesh::StateOld);
+  populate_fields(stk_classic::mesh::StateNew);
 
 }
 
@@ -285,7 +285,7 @@ void Gear::move( const GearMovement & data) {
     BucketArray<CylindricalField> cylindrical_data( cylindrical_coord_field, b);  // ONE STATE
     BucketArray<CartesianField>   translation_data( translation_field, b); // ONE STATE
     const BucketArray<CartesianField>   old_coordinate_data( cartesian_coord_field, b); // ONE STATE
-    BucketArray<CartesianField>   new_displacement_data( displacement_field.field_of_state(stk::mesh::StateNew), b); // TWO STATE
+    BucketArray<CartesianField>   new_displacement_data( displacement_field.field_of_state(stk_classic::mesh::StateNew), b); // TWO STATE
 
     double new_coordinate_data[3] = {0,0,0};
     for (size_t i = 0; i < b.size(); ++i) {

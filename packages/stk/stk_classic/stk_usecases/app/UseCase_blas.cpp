@@ -46,7 +46,7 @@
 // The function 'use_case_14_driver' below is the equivalent of 'main'.
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 static const size_t spatial_dimension = 3;
@@ -63,7 +63,7 @@ bool use_case_blas_driver(MPI_Comm comm,
 {
   bool output = !performance_test; // If running for performance measurements, turn off output
 
-  if (stk::parallel_machine_rank(comm) == 0) {
+  if (stk_classic::parallel_machine_rank(comm) == 0) {
     std::cout << " stk_mesh Use Case Blas - fill, axpby, dot, norm , begin" << std::endl ;
     std::cout << "Running '" << mesh_filename << "' case, num_trials = "
               << num_trials << std::endl;
@@ -73,17 +73,17 @@ bool use_case_blas_driver(MPI_Comm comm,
   const AlgorithmRunnerInterface* alg_runner = NULL ;
   if ( thread_runner.empty() ||
        thread_runner == std::string("NonThreaded") ) {
-    alg_runner = stk::algorithm_runner_non_thread();
+    alg_runner = stk_classic::algorithm_runner_non_thread();
   }
   else if ( thread_runner == std::string("TPI") ) {
-    alg_runner = stk::algorithm_runner_tpi(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tpi(num_threads);
   }
   else if ( thread_runner == std::string("TBB") ) {
-    alg_runner = stk::algorithm_runner_tbb(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tbb(num_threads);
   }
 
   if (alg_runner != NULL) {
-    if (stk::parallel_machine_rank(comm) == 0)
+    if (stk_classic::parallel_machine_rank(comm) == 0)
       std::cout << "Using " << thread_runner
                 << " algorithm runner, num_threads = " << num_threads
                 << std::endl;
@@ -96,8 +96,8 @@ bool use_case_blas_driver(MPI_Comm comm,
   //----------------------------------
 
   // Timing:
-  //   [0] = stk::mesh::MetaData creation
-  //   [1] = stk::mesh::BulkData creation
+  //   [0] = stk_classic::mesh::MetaData creation
+  //   [1] = stk_classic::mesh::BulkData creation
   //   [2] = Initialization
   //   [3] = fill and axpby
   //   [4] = dot and norm2
@@ -110,9 +110,9 @@ bool use_case_blas_driver(MPI_Comm comm,
 
   reset_malloc_stats();
 
-  if ( 0 == stk::parallel_machine_rank( comm ) ) {
+  if ( 0 == stk_classic::parallel_machine_rank( comm ) ) {
     std::cout << "stk_mesh performance use case BLAS" << std::endl
-              << "  Number Processes = " << stk::parallel_machine_size( comm )
+              << "  Number Processes = " << stk_classic::parallel_machine_size( comm )
               << std::endl ;
     std::cout.flush();
   }
@@ -124,17 +124,17 @@ bool use_case_blas_driver(MPI_Comm comm,
   Ioss::Init::Initializer init_db;
 
   {
-    wtime = stk::wall_time();
+    wtime = stk_classic::wall_time();
 
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::fem::FEMMetaData meta_data(  spatial_dimension );
-    stk::io::MeshData mesh_data;
+    stk_classic::mesh::fem::FEMMetaData meta_data(  spatial_dimension );
+    stk_classic::io::MeshData mesh_data;
     std::string filename = working_directory + mesh_filename;
-    stk::io::create_input_mesh(mesh_type, filename, comm,
+    stk_classic::io::create_input_mesh(mesh_type, filename, comm,
 			       meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, meta_data);
+    stk_classic::io::define_input_fields(mesh_data, meta_data);
 
     Fields fields;
     use_case_14_declare_fields(fields, meta_data.get_meta_data(meta_data));
@@ -147,38 +147,38 @@ bool use_case_blas_driver(MPI_Comm comm,
 
     //------------------------------------------------------------------
 
-    time_max[0] = stk::wall_dtime( wtime );
+    time_max[0] = stk_classic::wall_dtime( wtime );
 
     //------------------------------------------------------------------
-    // stk::mesh::BulkData bulk data conforming to the meta data.
-    stk::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data) , comm, bucket_size);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    // stk_classic::mesh::BulkData bulk data conforming to the meta data.
+    stk_classic::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data) , comm, bucket_size);
+    stk_classic::io::populate_bulk_data(bulk_data, mesh_data);
 
     //------------------------------------------------------------------
     // Create output mesh...  (input filename + ".out14")
     if (output) {
       filename = working_directory + mesh_filename + ".blas";
-      stk::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
-      stk::io::define_output_fields(mesh_data, meta_data, true);
+      stk_classic::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
+      stk_classic::io::define_output_fields(mesh_data, meta_data, true);
     }
 
-    stk::app::use_case_14_initialize_nodal_data(bulk_data ,
+    stk_classic::app::use_case_14_initialize_nodal_data(bulk_data ,
                                                 *fields.model_coordinates ,
                                                 *fields.coordinates_field ,
                                                 *fields.velocity_field,
                                                 1.0 /*dt*/);
 
-    time_max[1] = stk::wall_dtime( wtime );
+    time_max[1] = stk_classic::wall_dtime( wtime );
 
     //------------------------------------------------------------------
     // Ready to run the algorithms:
     //------------------------------------------------------------------
 
     //------------------------------------------------------------------
-    time_max[2] = stk::wall_dtime( wtime );
+    time_max[2] = stk_classic::wall_dtime( wtime );
     //------------------------------------------------------------------
 
-    wtime = stk::wall_time();
+    wtime = stk_classic::wall_time();
 
     double dot1 = 0;
 
@@ -187,43 +187,43 @@ bool use_case_blas_driver(MPI_Comm comm,
       // Call BLAS algs.
       //
 
-      wtime = stk::wall_time();
+      wtime = stk_classic::wall_time();
 
-      fill( *alg_runner, bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK , *fields.velocity_field, 0.2 );
+      fill( *alg_runner, bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , *fields.velocity_field, 0.2 );
 
-      fill( *alg_runner, bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK , *fields.fint_field, 1.0 );
+      fill( *alg_runner, bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , *fields.fint_field, 1.0 );
 
-      axpby( *alg_runner, bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK ,
+      axpby( *alg_runner, bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK ,
              0.01, *fields.model_coordinates , 1.0 , *fields.coordinates_field );
 
-      axpby( *alg_runner, bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK ,
+      axpby( *alg_runner, bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK ,
              0.1, *fields.coordinates_field, 1.0 , *fields.velocity_field );
 
-      time_max[3] += stk::wall_dtime( wtime );
+      time_max[3] += stk_classic::wall_dtime( wtime );
 
-      dot1 = dot( *alg_runner, bulk_data, stk::mesh::fem::FEMMetaData::NODE_RANK ,
+      dot1 = dot( *alg_runner, bulk_data, stk_classic::mesh::fem::FEMMetaData::NODE_RANK ,
                   *fields.velocity_field, *fields.coordinates_field );
 
-      double dot2 = dot( *alg_runner, bulk_data, stk::mesh::fem::FEMMetaData::NODE_RANK,
+      double dot2 = dot( *alg_runner, bulk_data, stk_classic::mesh::fem::FEMMetaData::NODE_RANK,
                          *fields.velocity_field, *fields.fint_field );
 
-      double norm_1 = norm2(*alg_runner, bulk_data, stk::mesh::fem::FEMMetaData::NODE_RANK, *fields.velocity_field );
+      double norm_1 = norm2(*alg_runner, bulk_data, stk_classic::mesh::fem::FEMMetaData::NODE_RANK, *fields.velocity_field );
 
-      double norm_2 = norm2(*alg_runner, bulk_data, stk::mesh::fem::FEMMetaData::NODE_RANK, *fields.coordinates_field );
+      double norm_2 = norm2(*alg_runner, bulk_data, stk_classic::mesh::fem::FEMMetaData::NODE_RANK, *fields.coordinates_field );
 
-      if ( stk::parallel_machine_rank( comm ) == 0 ) {
+      if ( stk_classic::parallel_machine_rank( comm ) == 0 ) {
         std::cout << "    " << dot1 << "  " << dot2 << "  " << norm_1 << "  " << norm_2 << std::endl;
       }
 
-      time_max[4] += stk::wall_dtime( wtime );
+      time_max[4] += stk_classic::wall_dtime( wtime );
 
       if (output) {
-        stk::io::process_output_request(mesh_data, bulk_data, n);
+        stk_classic::io::process_output_request(mesh_data, bulk_data, n);
       }
 
     }//end for(..num_trials...
 
-    if ( stk::parallel_machine_rank( comm ) == 0 ) {
+    if ( stk_classic::parallel_machine_rank( comm ) == 0 ) {
       //Try to make sure the number gets printed out just the way we want it,
       //so we can use it as a pass/fail check for a regression test...
       std::cout.precision(6);
@@ -246,7 +246,7 @@ bool use_case_blas_driver(MPI_Comm comm,
     //------------------------------------------------------------------
   }
 
-  time_max[8] = stk::wall_dtime( wtime );
+  time_max[8] = stk_classic::wall_dtime( wtime );
 
   time_min[0] = time_max[0] ;
   time_min[1] = time_max[1] ;
@@ -258,7 +258,7 @@ bool use_case_blas_driver(MPI_Comm comm,
   time_min[7] = time_max[7] ;
   time_min[8] = time_max[8] ;
 
-  stk::all_reduce( comm , stk::ReduceMax<9>( time_max ) & stk::ReduceMin<9>( time_min ) );
+  stk_classic::all_reduce( comm , stk_classic::ReduceMax<9>( time_max ) & stk_classic::ReduceMin<9>( time_min ) );
 
   time_max[3] /= num_trials ;
   time_max[4] /= num_trials ;
@@ -270,12 +270,12 @@ bool use_case_blas_driver(MPI_Comm comm,
   time_min[5] /= num_trials ;
   time_min[6] /= num_trials ;
 
-  //   [0] = stk::mesh::MetaData creation
-  //   [1] = stk::mesh::BulkData creation
+  //   [0] = stk_classic::mesh::MetaData creation
+  //   [1] = stk_classic::mesh::BulkData creation
   //   [2] = Initialization
   //   [3] = Internal force
 
-  if ( ! stk::parallel_machine_rank( comm ) ) {
+  if ( ! stk_classic::parallel_machine_rank( comm ) ) {
     std::cout
       << "stk_mesh performance use case results:" << std::endl
       << "  Number of trials         = " << num_trials << std::endl

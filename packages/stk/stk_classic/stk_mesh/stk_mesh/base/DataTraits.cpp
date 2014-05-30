@@ -16,7 +16,7 @@
 #include <stk_mesh/base/DataTraitsEnum.hpp>
 #include <stk_mesh/base/DataTraitsClass.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------

@@ -17,7 +17,7 @@
 #include <stk_mesh/base/FindRestriction.hpp>
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 

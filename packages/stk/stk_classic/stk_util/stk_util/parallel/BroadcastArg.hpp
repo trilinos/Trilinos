@@ -11,7 +11,7 @@
 
 #include <stk_util/parallel/Parallel.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Class <b>BroadcastArg</b> creates a copy of argc and argv after broadcasting

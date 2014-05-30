@@ -24,8 +24,8 @@ namespace bopt = boost::program_options;
 
 int main(int argc, char** argv)
 {
-  stk::search::Options range;
-  stk::search::Options domain;
+  stk_classic::search::Options range;
+  stk_classic::search::Options domain;
 
   std::string working_directory = "";
   bool performance              = false;
@@ -85,16 +85,16 @@ int main(int argc, char** argv)
      "scale factor to be applied to domain axis-aligned bounding boxes. The bounding box extent will be increased by max_d*scale+offset where max_d is max of max_i-min_i for i=x,y,z)" )
     ("performance",  "Run to measure performance; disable output that may affect runtime.")
     ("helpmesh", "Print detailed description of mesh options and then exit.");
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk_classic::get_variables_map();  
 
   //----------------------------------
 
   if (vm.count("helpmesh")) {
-    stk::io::show_mesh_help();
+    stk_classic::io::show_mesh_help();
     std::exit(EXIT_SUCCESS);
   }
   
@@ -103,13 +103,13 @@ int main(int argc, char** argv)
   
   if (search_type.empty()) {
     std::cerr << "\nOPTION ERROR: A --search_type must be specified.\n\n";
-    std::cerr << stk::get_options_description() << "\n";
+    std::cerr << stk_classic::get_options_description() << "\n";
     std::exit(EXIT_FAILURE);
   }
 
   if (range.mesh_filename.empty()) {
     std::cerr << "\nOPTION ERROR: The '--range_mesh <filename>' option is required for the use cases!\n\n";
-    std::cerr << stk::get_options_description() << "\n";
+    std::cerr << stk_classic::get_options_description() << "\n";
     std::exit(EXIT_FAILURE);
   }
 

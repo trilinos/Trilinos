@@ -24,12 +24,12 @@
 #include <tr1/unordered_map>
 #endif
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
 
-    typedef std::vector<stk::mesh::Entity *> PerceptEntityVector;
-    typedef stk::mesh::Entity *SameRankRelationKey;
+    typedef std::vector<stk_classic::mesh::Entity *> PerceptEntityVector;
+    typedef stk_classic::mesh::Entity *SameRankRelationKey;
     typedef PerceptEntityVector SameRankRelationValue;
     typedef boost::unordered_map<SameRankRelationKey, SameRankRelationValue > SameRankRelation;
 

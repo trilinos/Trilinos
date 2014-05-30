@@ -11,7 +11,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** Create all the internal entities and their relations,

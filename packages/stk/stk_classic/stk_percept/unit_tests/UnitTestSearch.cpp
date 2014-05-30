@@ -18,11 +18,11 @@
 
 #include <iostream>
 
-using namespace stk::diag;
+using namespace stk_classic::diag;
 
 static const int box_count = 100;
 
-namespace stk {
+namespace stk_classic {
 namespace percept {
 namespace unit_tests {
 /// PLATFORM_NOTE gcc4.3
@@ -32,18 +32,18 @@ namespace unit_tests {
 #ifndef REDS
 STKUNIT_UNIT_TEST(search, test1)
 {
-  typedef stk::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
-  typedef stk::search::box::PointBoundingBox<IdentProc,float,DIM> BoundingPoint;
-  typedef stk::search::box::AxisAlignedBoundingBox<IdentProc,float,DIM> BoundingBox;
+  typedef stk_classic::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
+  typedef stk_classic::search::box::PointBoundingBox<IdentProc,float,DIM> BoundingPoint;
+  typedef stk_classic::search::box::AxisAlignedBoundingBox<IdentProc,float,DIM> BoundingBox;
   typedef std::vector<std::pair<IdentProc, IdentProc> > IdentProcRelation;
 
-  stk::ParallelMachine  comm = MPI_COMM_WORLD;
-  //stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  stk_classic::ParallelMachine  comm = MPI_COMM_WORLD;
+  //stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 
-  //!dw().m(LOG_SEARCH) << "Use case 1" << stk::diag::push << stk::diag::dendl;
+  //!dw().m(LOG_SEARCH) << "Use case 1" << stk_classic::diag::push << stk_classic::diag::dendl;
 
-  int parallel_rank = stk::parallel_machine_rank(comm);
-  //  int parallel_size = stk::parallel_machine_size(comm);
+  int parallel_rank = stk_classic::parallel_machine_rank(comm);
+  //  int parallel_size = stk_classic::parallel_machine_size(comm);
 
   std::vector<BoundingBox> domain_vector;
 
@@ -79,15 +79,15 @@ STKUNIT_UNIT_TEST(search, test1)
   //dw().m(LOG_SEARCH) << "range  " << range_vector << dendl;
   //dw().m(LOG_SEARCH) << "domain " << domain_vector << dendl;
 
-  stk::search::FactoryOrder order;
+  stk_classic::search::FactoryOrder order;
   order.m_communicator = comm;
-  order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
+  order.m_algorithm = stk_classic::search::FactoryOrder::BIHTREE;
 
   //dw().m(LOG_SEARCH) << "Search algorithm " << order.m_algorithm << dendl;
 
   IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, domain_vector, range_vector, order);
+  stk_classic::search::coarse_search(relation, domain_vector, range_vector, order);
 
   if (0)
   {
@@ -99,7 +99,7 @@ STKUNIT_UNIT_TEST(search, test1)
   }
   //dw().m(LOG_SEARCH) << "relation " << relation << dendl;
 
-  //dw().m(LOG_SEARCH) << stk::diag::pop;
+  //dw().m(LOG_SEARCH) << stk_classic::diag::pop;
 }
 
 #endif

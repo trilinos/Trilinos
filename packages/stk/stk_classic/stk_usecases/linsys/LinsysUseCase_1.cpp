@@ -45,21 +45,21 @@ enum { MaximumEntityRank = 6 };
 
 //----------------------------------------------------------------------
 
-typedef stk::mesh::Field<double,stk::mesh::Cartesian>    VectorFieldType ;
-typedef stk::mesh::Field<double>              ScalarFieldType ;
+typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian>    VectorFieldType ;
+typedef stk_classic::mesh::Field<double>              ScalarFieldType ;
 
 //--------------------------------
 // prototype for the function that will generate the use-case mesh.
 
 void use_case_1_generate_mesh(
   const std::string& mesh_options,
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
-  stk::mesh::Part & hex_block ,
-  stk::mesh::Part & quad_shell_block );
+  stk_classic::mesh::Part & hex_block ,
+  stk_classic::mesh::Part & quad_shell_block );
 
 void use_case_1_initialize_data(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const VectorFieldType & node_displ ,
   const VectorFieldType & node_rotat );
@@ -72,9 +72,9 @@ void use_case_1_initialize_data(
 bool use_case_1_driver( MPI_Comm comm ,
                         const std::string& mesh_options )
 {
-  if ( 0 == stk::parallel_machine_rank( comm ) ) {
+  if ( 0 == stk_classic::parallel_machine_rank( comm ) ) {
     std::cout << "stk_linsys use case 1" << std::endl
-              << "  Number Processes = " << stk::parallel_machine_size( comm )
+              << "  Number Processes = " << stk_classic::parallel_machine_size( comm )
               << std::endl ;
   }
 
@@ -84,11 +84,11 @@ bool use_case_1_driver( MPI_Comm comm ,
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::fem::FEMMetaData fem_meta;
-    fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim) ) ;
+    stk_classic::mesh::fem::FEMMetaData fem_meta;
+    fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim) ) ;
 
-    stk::mesh::MetaData & mesh_meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-    const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+    stk_classic::mesh::MetaData & mesh_meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+    const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
     //--------------------------------
     // Element-block declarations typically occur when reading the
@@ -96,34 +96,34 @@ bool use_case_1_driver( MPI_Comm comm ,
     // Declaring the element blocks and associating an element traits
     // with each element block.
 
-    stk::mesh::Part & universal        = fem_meta.universal_part();
-    stk::mesh::Part & block_hex        = fem_meta.declare_part("block_1", element_rank);
-    stk::mesh::Part & block_quad_shell = fem_meta.declare_part("block_2", element_rank);
+    stk_classic::mesh::Part & universal        = fem_meta.universal_part();
+    stk_classic::mesh::Part & block_hex        = fem_meta.declare_part("block_1", element_rank);
+    stk_classic::mesh::Part & block_quad_shell = fem_meta.declare_part("block_2", element_rank);
 
-    stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-    stk::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
-    stk::mesh::fem::set_cell_topology( block_hex, hex_top );
-    stk::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
+    stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
+    stk_classic::mesh::fem::CellTopology qshell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<> >());
+    stk_classic::mesh::fem::set_cell_topology( block_hex, hex_top );
+    stk_classic::mesh::fem::set_cell_topology( block_quad_shell, qshell_top );
 
     //--------------------------------
     // Declaring fields of specified types on all nodes:
 
     VectorFieldType & coordinates_field =
-      stk::mesh::put_field(
+      stk_classic::mesh::put_field(
         fem_meta.declare_field< VectorFieldType >( "coordinates" ) ,
-        stk::mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
+        stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     VectorFieldType & displacements_field =
-      stk::mesh::put_field(
+      stk_classic::mesh::put_field(
         fem_meta.declare_field< VectorFieldType >( "displacements" ) ,
-        stk::mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
+        stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
     // Put a scalar "pressure" field on all elements, just to use in demonstrating
     // DOF mappings below:
 
     ScalarFieldType & pressure_field =
-      stk::mesh::put_field(
+      stk_classic::mesh::put_field(
         fem_meta.declare_field< ScalarFieldType >("pressure"),
         element_rank, universal);
 
@@ -131,9 +131,9 @@ bool use_case_1_driver( MPI_Comm comm ,
     // rotation_field only exists on the shell-nodes:
 
     VectorFieldType & rotation_field =
-      stk::mesh::put_field(
+      stk_classic::mesh::put_field(
         fem_meta.declare_field< VectorFieldType >( "rotation" ),
-        stk::mesh::fem::FEMMetaData::NODE_RANK , block_quad_shell , SpatialDim );
+        stk_classic::mesh::fem::FEMMetaData::NODE_RANK , block_quad_shell , SpatialDim );
 
     //--------------------------------
     // Commit (finalize) the meta data.  Is now ready to be used
@@ -142,9 +142,9 @@ bool use_case_1_driver( MPI_Comm comm ,
     fem_meta.commit();
 
     //------------------------------------------------------------------
-    // stk::mesh::BulkData bulk data conforming to the meta data.
+    // stk_classic::mesh::BulkData bulk data conforming to the meta data.
 
-    stk::mesh::BulkData mesh_bulk_data( mesh_meta_data , comm );
+    stk_classic::mesh::BulkData mesh_bulk_data( mesh_meta_data , comm );
 
     // In a typical app, the mesh would be read from file at this point.
     // But in this use-case, we generate the mesh and initialize
@@ -169,26 +169,26 @@ bool use_case_1_driver( MPI_Comm comm ,
 
     const unsigned myProc = mesh_bulk_data.parallel_rank();
 
-    stk::linsys::DofMapper dof_mapper(comm);
+    stk_classic::linsys::DofMapper dof_mapper(comm);
 
     if (myProc == 0) {
       std::cout << "Adding DOF mappings for displacements field for all locally-used "
         << "(owned and shared) nodes..." << std::endl;
     }
 
-    const stk::mesh::Selector select_used =
+    const stk_classic::mesh::Selector select_used =
       fem_meta.locally_owned_part() |
       fem_meta.globally_shared_part();
 
     dof_mapper.add_dof_mappings(mesh_bulk_data, select_used,
-                                stk::mesh::fem::FEMMetaData::NODE_RANK, displacements_field);
+                                stk_classic::mesh::fem::FEMMetaData::NODE_RANK, displacements_field);
 
     if (myProc == 0) {
       std::cout << "Adding DOF mappings for pressure field for all locally-owned "
         << " elements..." << std::endl;
     }
 
-    stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
+    stk_classic::mesh::Selector select_owned = fem_meta.locally_owned_part();
     dof_mapper.add_dof_mappings(mesh_bulk_data, select_owned,
                                 element_rank, pressure_field);
 
@@ -199,11 +199,11 @@ bool use_case_1_driver( MPI_Comm comm ,
           << dof_mapper.get_fei_VectorSpace()->getGlobalNumIndices() << std::endl;
     }
 
-    std::vector<stk::mesh::Entity*> nodes;
-    stk::mesh::get_entities(mesh_bulk_data, stk::mesh::fem::FEMMetaData::NODE_RANK, nodes);
+    std::vector<stk_classic::mesh::Entity*> nodes;
+    stk_classic::mesh::get_entities(mesh_bulk_data, stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodes);
 
-    std::vector<stk::mesh::Entity*> elems;
-    stk::mesh::get_entities(mesh_bulk_data, element_rank, elems);
+    std::vector<stk_classic::mesh::Entity*> elems;
+    stk_classic::mesh::get_entities(mesh_bulk_data, element_rank, elems);
 
     int global_index = 0;
 
@@ -211,7 +211,7 @@ bool use_case_1_driver( MPI_Comm comm ,
       //is the i-th node in the locally-used part? If not, continue.
       if (! select_used( nodes[i]->bucket())) continue;
 
-      global_index = dof_mapper.get_global_index(stk::mesh::fem::FEMMetaData::NODE_RANK, nodes[i]->identifier(), displacements_field);
+      global_index = dof_mapper.get_global_index(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodes[i]->identifier(), displacements_field);
       std::cout << "Proc " << myProc << ", global index for node " << nodes[i]->identifier()
         << ", field '"<<displacements_field.name()<<"' is: " << global_index << std::endl;
     }
@@ -236,22 +236,22 @@ bool use_case_1_driver( MPI_Comm comm ,
 //----------------------------------------------------------------------
 
 void use_case_1_initialize_data(
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
   const VectorFieldType & node_displ ,
   const VectorFieldType & node_rotat )
 {
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+  const std::vector<stk_classic::mesh::Bucket*> & buckets = mesh.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    stk::mesh::Bucket & bucket = **k ;
+    stk_classic::mesh::Bucket & bucket = **k ;
     const unsigned length = bucket.size();
     const unsigned length_3 = length * 3 ;
 
-    double * const coord = stk::mesh::field_data( node_coord , bucket.begin() );
-    double * const displ = stk::mesh::field_data( node_displ , bucket.begin() );
-    double * const rotat = stk::mesh::field_data( node_rotat , bucket.begin() );
+    double * const coord = stk_classic::mesh::field_data( node_coord , bucket.begin() );
+    double * const displ = stk_classic::mesh::field_data( node_displ , bucket.begin() );
+    double * const rotat = stk_classic::mesh::field_data( node_rotat , bucket.begin() );
 
     for ( unsigned i = 0 ; i < length_3 ; ++i ) {
       displ[i] = 0.1 * coord[i] ;
@@ -276,10 +276,10 @@ namespace stk_linsys_usecases {
 
 void use_case_1_generate_mesh(
   const std::string& mesh_options ,
-  stk::mesh::BulkData & mesh ,
+  stk_classic::mesh::BulkData & mesh ,
   const VectorFieldType & node_coord ,
-  stk::mesh::Part & hex_block ,
-  stk::mesh::Part & quad_shell_block )
+  stk_classic::mesh::Part & hex_block ,
+  stk_classic::mesh::Part & quad_shell_block )
 {
   mesh.modification_begin();
 
@@ -300,7 +300,7 @@ void use_case_1_generate_mesh(
     num_nodes = gmesh.node_count_proc();
     num_block = gmesh.block_count();
 
-    t = stk::wall_time();
+    t = stk_classic::wall_time();
 
     std::vector<int> node_map( num_nodes , 0 );
 
@@ -324,7 +324,7 @@ void use_case_1_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
-            const stk::mesh::EntityId node_id[8] = {
+            const stk_classic::mesh::EntityId node_id[8] = {
               local_node_id[0] ,
               local_node_id[1] ,
               local_node_id[2] ,
@@ -335,9 +335,9 @@ void use_case_1_generate_mesh(
               local_node_id[7]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
-            stk::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
+            stk_classic::mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 
             ++num_hex ;
           }
@@ -348,16 +348,16 @@ void use_case_1_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 4 ] ;
 
-            const stk::mesh::EntityId node_id[4] = {
+            const stk_classic::mesh::EntityId node_id[4] = {
               local_node_id[0] ,
               local_node_id[1] ,
               local_node_id[2] ,
               local_node_id[3]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
-            stk::mesh::fem::declare_element( mesh , quad_shell_block , elem_id , node_id );
+            stk_classic::mesh::fem::declare_element( mesh , quad_shell_block , elem_id , node_id );
 
             ++num_shell ;
           }
@@ -382,7 +382,7 @@ void use_case_1_generate_mesh(
     for ( unsigned i = 0 ; i < node_map.size() ; ++i ) {
       const unsigned i3 = i * 3 ;
 
-      stk::mesh::Entity * const node = mesh.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
+      stk_classic::mesh::Entity * const node = mesh.get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK , node_map[i] );
 
       if ( NULL == node ) {
         std::ostringstream msg ;
@@ -412,7 +412,7 @@ void use_case_1_generate_mesh(
     error_flag = 1 ;
   }
 
-  stk::all_reduce( mesh.parallel() , stk::ReduceMax<1>( & error_flag ) );
+  stk_classic::all_reduce( mesh.parallel() , stk_classic::ReduceMax<1>( & error_flag ) );
 
   if ( error_flag ) {
     std::string msg( "Failed mesh generation" );
@@ -421,9 +421,9 @@ void use_case_1_generate_mesh(
 
   mesh.modification_end();
 
-  double dt = stk::wall_dtime( t );
+  double dt = stk_classic::wall_dtime( t );
 
-  stk::all_reduce( mesh.parallel() , stk::ReduceMax<1>( & dt ) );
+  stk_classic::all_reduce( mesh.parallel() , stk_classic::ReduceMax<1>( & dt ) );
 
   std::cout << "  P" << mesh.parallel_rank()
             << ": Meshed Hex = " << num_hex

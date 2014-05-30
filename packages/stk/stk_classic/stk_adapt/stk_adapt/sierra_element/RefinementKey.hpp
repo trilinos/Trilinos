@@ -36,7 +36,7 @@
 #include <vector>
 #include <stk_adapt/sierra_element/stk_percept_code_types.hpp>
 
-namespace stk { namespace adapt {
+namespace stk_classic { namespace adapt {
   namespace Elem {
 
     class RefinementKey {

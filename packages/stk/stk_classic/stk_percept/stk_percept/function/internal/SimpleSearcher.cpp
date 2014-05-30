@@ -13,20 +13,20 @@ namespace stk
   namespace percept
   {
 
-    SimpleSearcher::SimpleSearcher(stk::mesh::BulkData *bulk) : m_bulk(bulk) {}
+    SimpleSearcher::SimpleSearcher(stk_classic::mesh::BulkData *bulk) : m_bulk(bulk) {}
 
     /**
      *  Dimensions of input_phy_points = ([P]=1, [D])
      *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
      */
 
-    const stk::mesh::Entity *SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
+    const stk_classic::mesh::Entity *SimpleSearcher::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       VERIFY_OP(input_phy_points.rank(), ==, found_parametric_coordinates.rank(), "SimpleSearcher::findElement bad dims");
       VERIFY_OP(input_phy_points.rank(), ==, 2, "SimpleSearcher::findElement bad rank");
 
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get( *m_bulk );
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get( *m_bulk );
       mesh::BulkData& bulkData = *m_bulk;
 
       // FIXME consider caching the coords_field

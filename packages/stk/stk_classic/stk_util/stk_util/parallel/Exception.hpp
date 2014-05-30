@@ -812,6 +812,6 @@ typedef ExTemp1<runtime_user_error> RuntimeUserError;
 // parallel there is no reason to print the same message many times.
 #define StackTraceMessage "  exception thrown from "
 #define ParallelStackTraceMessage "  parallel exception thrown from "
-#define ParallelStackTrace std::string(std::string(ParallelStackTraceMessage) + stk::source_relative_path(STR_TRACE))
+#define ParallelStackTrace std::string(std::string(ParallelStackTraceMessage) + stk_classic::source_relative_path(STR_TRACE))
 
 #endif // STK_UTIL_PARALLEL_Exception_hpp

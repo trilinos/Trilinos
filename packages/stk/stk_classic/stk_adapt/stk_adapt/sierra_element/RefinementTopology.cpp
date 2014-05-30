@@ -24,7 +24,7 @@
 
 #include <stk_percept/Util.hpp>
 
-namespace stk { 
+namespace stk_classic { 
 
   using namespace percept;
 

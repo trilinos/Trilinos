@@ -12,7 +12,7 @@
 #include <map>
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Class <b>ProductRegistry</b> maps product names and attributes to
@@ -249,7 +249,7 @@ private:
 
 namespace sierra {
 
-typedef stk::ProductRegistry ProductRegistry;
+typedef stk_classic::ProductRegistry ProductRegistry;
 
 } // namespace sierra
 #endif // STK_BUILT_IN_SIERRA

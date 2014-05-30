@@ -32,17 +32,17 @@
 
 //----------------------------------------------------------------------
 
-namespace stk{
+namespace stk_classic{
   namespace percept {
 
     typedef shards::Tetrahedron<4>         Tet4;
 
-    SingleTetFixture::SingleTetFixture( stk::ParallelMachine comm, bool doCommit, unsigned npts, Point *points, unsigned ntets, TetIds *tetIds,
-                                        stk::mesh::EntityId elem_id_start
+    SingleTetFixture::SingleTetFixture( stk_classic::ParallelMachine comm, bool doCommit, unsigned npts, Point *points, unsigned ntets, TetIds *tetIds,
+                                        stk_classic::mesh::EntityId elem_id_start
                                         ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
-      , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
+      , m_metaData(m_spatial_dimension, stk_classic::mesh::fem::entity_rank_names(m_spatial_dimension) )
+      , m_bulkData( stk_classic::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
       , m_block_tet(        m_metaData.declare_part< Tet4 >( "block_1" ))
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
@@ -51,9 +51,9 @@ namespace stk{
       , m_elem_id_start(elem_id_start)
     {
       // Define where fields exist on the mesh:
-      stk::mesh::Part & universal = m_metaData.universal_part();
+      stk_classic::mesh::Part & universal = m_metaData.universal_part();
 
-      put_field( m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
+      put_field( m_coordinates_field , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universal );
 
       if (doCommit)
         m_metaData.commit();
@@ -90,7 +90,7 @@ namespace stk{
 
       if (m_bulkData.parallel_rank() == 0)
         {
-          stk::mesh::EntityId curr_elem_id = (m_elem_id_start ? m_elem_id_start : 1);
+          stk_classic::mesh::EntityId curr_elem_id = (m_elem_id_start ? m_elem_id_start : 1);
 
           // For each element topology declare elements
           unsigned ntets = 1;
@@ -106,13 +106,13 @@ namespace stk{
               tets = m_tetIds;
             }
           for ( unsigned i = 0 ; i < ntets ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tets[i] );
+            stk_classic::mesh::fem::declare_element( m_bulkData, m_block_tet, curr_elem_id, tets[i] );
             //std::cout << "tmp SingleTetFixture::populate tets[i]= " << i << " " << tets[i][0] << " " << tets[i][1] << " " << tets[i][2] << " " << tets[i][3] << std::endl;
           }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < npts ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
+            stk_classic::mesh::Entity * const node = m_bulkData.get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
             double * const coord = field_data( m_coordinates_field , *node );
             coord[0] = pts[i][0] ;
             coord[1] = pts[i][1] ;

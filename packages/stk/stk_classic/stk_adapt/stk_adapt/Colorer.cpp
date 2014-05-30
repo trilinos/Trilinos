@@ -4,14 +4,14 @@
 
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     using namespace std;
 
     template<typename STD_Set, typename Key > bool contains(STD_Set& set, Key key) { return set.find(key) != set.end(); }
 
-    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks(),
+    Colorer::Colorer(std::vector< ColorerSetType >& element_colors, std::vector<stk_classic::mesh::EntityRank> ranks ) : m_element_colors(element_colors), m_entityRanks(),
                                                                                                                  m_noColoring(true)
     {
       if (ranks.size())
@@ -24,7 +24,7 @@ namespace stk {
         }
     }
 
-    Colorer::Colorer(std::vector<stk::mesh::EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks(), m_noColoring(true)
+    Colorer::Colorer(std::vector<stk_classic::mesh::EntityRank> ranks ) : m_element_colors(m_element_colors_internal), m_entityRanks(), m_noColoring(true)
     {
       if (ranks.size())
         {
@@ -43,7 +43,7 @@ namespace stk {
     getElementColors() { return m_element_colors; }
 
     void Colorer::
-    color(percept::PerceptMesh& eMesh, unsigned * elementType,  stk::mesh::PartVector* fromParts, stk::mesh::FieldBase *element_color_field)
+    color(percept::PerceptMesh& eMesh, unsigned * elementType,  stk_classic::mesh::PartVector* fromParts, stk_classic::mesh::FieldBase *element_color_field)
     {
       const unsigned MAX_COLORS=1000;
       vector< ColorerNodeSetType > node_colors(MAX_COLORS+1); 
@@ -65,7 +65,7 @@ namespace stk {
           selector = mesh::selectUnion(*fromParts);
         }
 
-      stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
+      stk_classic::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
       unsigned ncolor = 0;
       int nelem = 0;
       unsigned num_max_colors = MAX_COLORS;
@@ -79,15 +79,15 @@ namespace stk {
           int num_colored_this_pass = 0;
           for (unsigned irank = 0; irank < m_entityRanks.size(); irank++)
             {
-              const vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
-              for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+              const vector<stk_classic::mesh::Bucket*> & buckets = bulkData.buckets( m_entityRanks[irank] );
+              for ( vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
                 {
                   if (selector(**k))  
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     bool doThisBucket = true;
-                    const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+                    const CellTopologyData * const bucket_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
                     shards::CellTopology topo(bucket_cell_topo_data);
                     if (elementType && (topo.getKey() != *elementType))
                       {
@@ -107,30 +107,30 @@ namespace stk {
                 
                         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
                           {
-                            stk::mesh::Entity& element = bucket[iElement];
+                            stk_classic::mesh::Entity& element = bucket[iElement];
 
                             if (0)
                               std::cout << "tmp color = " << icolor << " bucket topo name= " << topo.getName() << " key= " << topo.getKey() 
                                         << " elementId = " << element.identifier() << " element = " << element << std::endl;
 
-                            stk::mesh::EntityId elem_id = element.identifier();
+                            stk_classic::mesh::EntityId elem_id = element.identifier();
                             
                             if (!m_noColoring && contains(all_elements, elem_id))
                               continue;
 
                             bool none_in_this_color = true;
-                            static std::vector<stk::mesh::EntityId> node_ids(100);
+                            static std::vector<stk_classic::mesh::EntityId> node_ids(100);
                             unsigned num_node = 0;
 
                             if (!m_noColoring)
                               {
-                                const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+                                const stk_classic::mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );  
                                 num_node = elem_nodes.size(); 
                                 node_ids.reserve(num_node);
                                 for (unsigned inode=0; inode < num_node; inode++)
                                   {
-                                    stk::mesh::Entity & node = *elem_nodes[ inode ].entity();
-                                    stk::mesh::EntityId nid = node.identifier();
+                                    stk_classic::mesh::Entity & node = *elem_nodes[ inode ].entity();
+                                    stk_classic::mesh::EntityId nid = node.identifier();
                                     node_ids[inode] = nid;
                                     if (contains(node_colors[icolor], nid))
                                       {
@@ -144,7 +144,7 @@ namespace stk {
                                 ++num_colored_this_pass;
                                 if (element_color_field)
                                   {
-                                    double *fdata = stk::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
+                                    double *fdata = stk_classic::mesh::field_data( *static_cast<const percept::ScalarFieldType *>(element_color_field) , element );
                                     fdata[0] = double(icolor);
                                   }
 #if STK_ADAPT_COLORER_SET_TYPE_USE_VECTOR

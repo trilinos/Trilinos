@@ -6,7 +6,7 @@
 
 #include <set>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //We used to store a static vector 'watch_vector', but its

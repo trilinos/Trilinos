@@ -10,7 +10,7 @@
 #include <boost/type_traits.hpp>
 #include <boost/utility/enable_if.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace util {
 
 /** nested_iterator is a forward iterator that flattens iteration over ranges of ranges

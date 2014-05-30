@@ -14,7 +14,7 @@
 
 STKUNIT_UNIT_TEST(UnitTestTeeStreambuf, UnitTest)
 {
-  stk::tee_streambuf    out_tee_streambuf;
+  stk_classic::tee_streambuf    out_tee_streambuf;
 
   std::ostream          my_out(&out_tee_streambuf);
   

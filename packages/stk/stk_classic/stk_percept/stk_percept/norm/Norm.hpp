@@ -73,11 +73,11 @@ namespace stk
             output_values[i] = std::pow(std::fabs(integrand_values[i]), double(std::fabs(Power)) );
           }
       }
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk_classic::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         (*this)(domain, codomain, time_value_optional);
       }
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk_classic::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         (*this)(domain, codomain, time_value_optional);
       }
@@ -126,7 +126,7 @@ namespace stk
       Norm(mesh::BulkData& bulkData, std::string partName, TurboOption turboOpt=TURBO_NONE, bool is_surface_norm=false) :
         FunctionOperator(bulkData, (mesh::Part*)0), m_is_surface_norm(is_surface_norm), m_turboOpt(turboOpt), m_cubDegree(2)
       {
-        mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partName);
+        mesh::Part * part = stk_classic::mesh::fem::FEMMetaData::get(bulkData).get_part(partName);
         if (!part) throw std::runtime_error(std::string("No part named ") +partName);
         init(part);
         error_check_is_surface_norm();
@@ -139,10 +139,10 @@ namespace stk
         VERIFY_OP_ON(m_own_selector , ==, true, "logic error 1");
         VERIFY_OP_ON(m_selector, !=, 0, "logic error 2");
         delete m_selector;
-        m_selector = new stk::mesh::Selector;
+        m_selector = new stk_classic::mesh::Selector;
         for (int i = 0; i < partNames.dimension(0); i++)
           {
-            mesh::Part * part = stk::mesh::fem::FEMMetaData::get(bulkData).get_part(partNames(i));
+            mesh::Part * part = stk_classic::mesh::fem::FEMMetaData::get(bulkData).get_part(partNames(i));
             if (!part) throw std::runtime_error(std::string("No part named ") +partNames(i));
             *m_selector = (*m_selector) | (*part);
           }
@@ -185,18 +185,18 @@ namespace stk
       ///   of the same rank, and that m_is_surface_norm is set correctly (if not, warn...)
       void error_check_is_surface_norm()
       {
-        stk::mesh::EntityRank element_rank = mesh::fem::FEMMetaData::get(m_bulkData).element_rank();
-        const stk::mesh::PartVector& parts = mesh::fem::FEMMetaData::get(m_bulkData).get_parts();
-        stk::mesh::EntityRank all_ranks = 0;
+        stk_classic::mesh::EntityRank element_rank = mesh::fem::FEMMetaData::get(m_bulkData).element_rank();
+        const stk_classic::mesh::PartVector& parts = mesh::fem::FEMMetaData::get(m_bulkData).get_parts();
+        stk_classic::mesh::EntityRank all_ranks = 0;
         unsigned nparts = parts.size();
         for (unsigned ipart=0; ipart < nparts; ipart++)
           {
-            stk::mesh::Part& part = *parts[ipart];
-            if (stk::mesh::is_auto_declared_part(part)) 
+            stk_classic::mesh::Part& part = *parts[ipart];
+            if (stk_classic::mesh::is_auto_declared_part(part)) 
               continue;
 
             bool in_selector = (*m_selector)(part);
-            stk::mesh::EntityRank rank = part.primary_entity_rank();
+            stk_classic::mesh::EntityRank rank = part.primary_entity_rank();
             //std::cout << "tmp srk Part= " << part.name() << " rank= " << rank << " in_selector= " << in_selector << std::endl;
             if (in_selector)
               {
@@ -245,7 +245,7 @@ namespace stk
 
         if (1 || typeid(integrand) == typeid(FieldFunction))
           {
-            // FIXME - make all stk::percept code const-correct
+            // FIXME - make all stk_classic::percept code const-correct
             PerceptMesh eMesh(&mesh::fem::FEMMetaData::get(m_bulkData), &m_bulkData);
             LN_NormOp<Power> LN_op(integrand);
             CompositeFunction LN_of_integrand("LN_of_integrand", integrand, LN_op);
@@ -255,8 +255,8 @@ namespace stk
               integrated_LN_op.setAccumulationType(IntegratedOp::ACCUMULATE_MAX);
             }
 
-            const stk::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
-            stk::mesh::Selector selector(*m_selector & locally_owned_part);
+            const stk_classic::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
+            stk_classic::mesh::Selector selector(*m_selector & locally_owned_part);
             //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
@@ -285,14 +285,14 @@ namespace stk
             std::vector<double> global_sum(vec_sz, 0.0);
             if (Power != -1)
               {
-                stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
+                stk_classic::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
               }
             else
               {
                 for (unsigned iDim = 0; iDim < local.size(); iDim++)
                   {
                     double global = local[iDim];
-                    stk::all_reduce( m_bulkData.parallel(), stk::ReduceMax<1>( &global ) );
+                    stk_classic::all_reduce( m_bulkData.parallel(), stk_classic::ReduceMax<1>( &global ) );
                     global_sum[iDim] = global;
                   }
               }

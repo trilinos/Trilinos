@@ -3,7 +3,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -13,7 +13,7 @@ namespace stk {
     class UniformRefiner : public Refiner
     {
     public:
-      UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0);
 
     protected:
     };

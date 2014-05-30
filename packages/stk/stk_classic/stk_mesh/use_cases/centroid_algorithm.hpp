@@ -19,7 +19,7 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <use_cases/UseCase_Common.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 

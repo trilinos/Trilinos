@@ -23,7 +23,7 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -44,7 +44,7 @@ class HexFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
+  HexFixture(stk_classic::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz);
 
   const int                     m_spatial_dimension;
   const unsigned                m_nx;

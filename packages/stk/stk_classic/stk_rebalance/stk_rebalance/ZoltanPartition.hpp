@@ -45,7 +45,7 @@ struct Zoltan_Struct;
  * determining a new partition for rebalancing. This is one example where the
  * derived class uses Zoltan to determine the new partition.
  */
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 
 typedef Teuchos::ParameterList Parameters;
@@ -247,7 +247,7 @@ public:
    * mesh entities before rebalancing is performed
    * again.
    */
-  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
+  virtual int get_new_partition(stk_classic::mesh::EntityProcVec &new_partition);
 
   /** \brief Query whether element dependents need to be rebalanced outside this Partition. */
   bool partition_dependents_needed() const

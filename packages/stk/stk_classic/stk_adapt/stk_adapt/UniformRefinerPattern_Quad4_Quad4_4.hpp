@@ -4,7 +4,7 @@
 
 //#include "UniformRefinerPattern.hpp"
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     template <>
@@ -38,21 +38,21 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> quad_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> quad_tuple_type;
         static vector<quad_tuple_type> elems(4);
 
         CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
-        //stk::mesh::Part & active = mesh->ActivePart();
-        //stk::mesh::Part & quad4  = mesh->QuadPart();
+        //stk_classic::mesh::Part & active = mesh->ActivePart();
+        //stk_classic::mesh::Part & quad4  = mesh->QuadPart();
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        std::vector<stk_classic::mesh::Part*> add_parts;
+        std::vector<stk_classic::mesh::Part*> remove_parts;
 
         //add_parts.push_back( &active );
         //FIXME 
@@ -72,7 +72,7 @@ namespace stk {
 
           }
 
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
 
 
 // new_sub_entity_nodes[i][j]
@@ -93,11 +93,11 @@ namespace stk {
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }

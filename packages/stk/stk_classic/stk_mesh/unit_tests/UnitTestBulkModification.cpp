@@ -27,19 +27,19 @@
 #include <algorithm>
 #include <stdexcept>
 
-using stk::mesh::BulkData;
-using stk::mesh::Bucket;
-using stk::mesh::BucketIterator;
-using stk::mesh::Entity;
-using stk::mesh::EntityRank;
-using stk::mesh::fixtures::RingFixture;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Bucket;
+using stk_classic::mesh::BucketIterator;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::fixtures::RingFixture;
 
 class UnitTestStkMeshBulkModification {
  public:
-  UnitTestStkMeshBulkModification(stk::ParallelMachine pm) :
+  UnitTestStkMeshBulkModification(stk_classic::ParallelMachine pm) :
     m_comm(pm),
-    m_num_procs(stk::parallel_machine_size( m_comm )),
-    m_rank(stk::parallel_machine_rank( m_comm )),
+    m_num_procs(stk_classic::parallel_machine_size( m_comm )),
+    m_rank(stk_classic::parallel_machine_rank( m_comm )),
     m_ring_mesh(pm)
   { }
 
@@ -65,7 +65,7 @@ class UnitTestStkMeshBulkModification {
     return bulk_data;
   }
 
-  stk::ParallelMachine m_comm;
+  stk_classic::ParallelMachine m_comm;
   int m_num_procs;
   int m_rank;
   RingFixture m_ring_mesh;
@@ -73,7 +73,7 @@ class UnitTestStkMeshBulkModification {
 
 namespace {
 
-const EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBulkDataNotSyrncronized , testUnit )
 {
@@ -115,14 +115,14 @@ void UnitTestStkMeshBulkModification::test_bulkdata_not_syncronized()
 
   std::vector< Entity *> entities;
   std::vector< Entity *> entities_closure;
-  STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
+  STKUNIT_ASSERT_THROW(stk_classic::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
 }
 
 void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities()
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  const stk::mesh::Ghosting & ghost = bulk_data.shared_aura();
+  const stk_classic::mesh::Ghosting & ghost = bulk_data.shared_aura();
 
   std::vector< Entity* > ghost_receive ;
 
@@ -134,7 +134,7 @@ void UnitTestStkMeshBulkModification::test_closure_of_non_locally_used_entities(
 
     entities.push_back(ghost_receive.front());
 
-    STKUNIT_ASSERT_THROW(stk::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
+    STKUNIT_ASSERT_THROW(stk_classic::mesh::find_closure(bulk_data, entities, entities_closure), std::runtime_error);
   }
 }
 
@@ -153,13 +153,13 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
   {
     // Get a selector for the univeral part (contains local, shared, and ghosted)
-    const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
-    stk::mesh::Selector universal_selector(universal);
+    const stk_classic::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
+    stk_classic::mesh::Selector universal_selector(universal);
 
     // Get the buckets that will give us the universal nodes
     const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
     std::vector<Bucket*> buckets;
-    stk::mesh::get_buckets(universal_selector, node_buckets, buckets);
+    stk_classic::mesh::get_buckets(universal_selector, node_buckets, buckets);
 
     // Get the universal nodes
     std::vector< Entity *> universal_entities;
@@ -173,16 +173,16 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
     buckets.clear();
 
     // sort and unique the universal nodes
-    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess());
-    std::vector<Entity*>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityEqual());
+    std::sort(universal_entities.begin(), universal_entities.end(), stk_classic::mesh::EntityLess());
+    std::vector<Entity*>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk_classic::mesh::EntityEqual());
     universal_entities.erase(new_end, universal_entities.end());
 
     // Get the buckets that will give us the locally used nodes
-    stk::mesh::Selector locally_used_selector =
+    stk_classic::mesh::Selector locally_used_selector =
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
-    stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
+    stk_classic::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
 
     // Get the locally used nodes
     std::vector< Entity *> entities;
@@ -196,14 +196,14 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 
     // Get the closure, passing in the locally used nodes on each proc
     std::vector< Entity *> entities_closure;
-    stk::mesh::find_closure(bulk_data, entities, entities_closure);
+    stk_classic::mesh::find_closure(bulk_data, entities, entities_closure);
 
     // The ghosted nodes on this part will be locally used on one of the other
     // procs, so we expect that they will be part of the closure. In other
     // words, the set of nodes returned by find_closure should exactly match
     // the set of universal nodes.
     STKUNIT_ASSERT_TRUE(universal_entities.size() == entities_closure.size());
-    stk::mesh::EntityEqual ee;
+    stk_classic::mesh::EntityEqual ee;
     for (size_t i = 0; i < entities_closure.size(); ++i) {
       STKUNIT_EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
     }
@@ -213,17 +213,17 @@ void UnitTestStkMeshBulkModification::test_all_local_nodes()
 void UnitTestStkMeshBulkModification::test_all_local_edges()
 {
   BulkData& bulk_data = initialize_ring_fixture();
-  const stk::mesh::EntityRank element_rank = m_ring_mesh.m_meta_data.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = m_ring_mesh.m_meta_data.element_rank();
 
   {
-    const stk::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
-    stk::mesh::Selector universal_selector(universal);
+    const stk_classic::mesh::Part& universal = m_ring_mesh.m_meta_data.universal_part();
+    stk_classic::mesh::Selector universal_selector(universal);
 
     const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
     const std::vector<Bucket*>& edge_buckets = bulk_data.buckets(element_rank);
     std::vector<Bucket*> buckets;
 
-    stk::mesh::get_buckets(universal_selector, node_buckets, buckets);
+    stk_classic::mesh::get_buckets(universal_selector, node_buckets, buckets);
 
     // get all the nodes that this process knows about
     std::vector< Entity *> universal_entities;
@@ -236,7 +236,7 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
     }
     buckets.clear();
 
-    stk::mesh::get_buckets(universal_selector, edge_buckets, buckets);
+    stk_classic::mesh::get_buckets(universal_selector, edge_buckets, buckets);
 
     // get all the edges that this process knows about
     for (std::vector<Bucket*>::iterator itr = buckets.begin();
@@ -250,16 +250,16 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 
     // universal entities should now have all the universal nodes and edges
     // sort and uniq the universal nodes/edges
-    std::sort(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityLess());
-    std::vector<Entity*>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk::mesh::EntityEqual());
+    std::sort(universal_entities.begin(), universal_entities.end(), stk_classic::mesh::EntityLess());
+    std::vector<Entity*>::iterator new_end = std::unique(universal_entities.begin(), universal_entities.end(), stk_classic::mesh::EntityEqual());
     universal_entities.erase(new_end, universal_entities.end());
 
     // get the buckets that we need to traverse to get the locally used edges
-    stk::mesh::Selector locally_used_selector =
+    stk_classic::mesh::Selector locally_used_selector =
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
-    stk::mesh::get_buckets(locally_used_selector, edge_buckets, buckets);
+    stk_classic::mesh::get_buckets(locally_used_selector, edge_buckets, buckets);
 
     // get the locally used edges and store them in entities
     std::vector< Entity *> entities;
@@ -273,7 +273,7 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
 
     // call find_closure, passing in the locally used edges
     std::vector< Entity *> entities_closure;
-    stk::mesh::find_closure(bulk_data, entities, entities_closure);
+    stk_classic::mesh::find_closure(bulk_data, entities, entities_closure);
 
     // The ghosted entities on this proc (edge or node) should be contained
     // in the closure of the locally-used edge on some other proc, so we
@@ -281,7 +281,7 @@ void UnitTestStkMeshBulkModification::test_all_local_edges()
     // words, the set of entities returned by find_closure should exactly match
     // the set of universal entities (nodes and edges).
     STKUNIT_ASSERT_TRUE(universal_entities.size() == entities_closure.size());
-    stk::mesh::EntityEqual ee;
+    stk_classic::mesh::EntityEqual ee;
     for (size_t i = 0; i < entities_closure.size(); ++i) {
       STKUNIT_EXPECT_TRUE(ee(universal_entities[i], entities_closure[i]));
     }
@@ -292,7 +292,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
 {
   BulkData& bulk_data = initialize_ring_fixture();
 
-  stk::CommBroadcast all(bulk_data.parallel(), 0);
+  stk_classic::CommBroadcast all(bulk_data.parallel(), 0);
 
   std::vector< Entity *> entities;
   std::vector< Entity *> entities_closure;
@@ -302,12 +302,12 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   if (m_rank == 0) {
     const std::vector<Bucket*>& node_buckets = bulk_data.buckets(NODE_RANK);
 
-    stk::mesh::Selector locally_used_selector =
+    stk_classic::mesh::Selector locally_used_selector =
       m_ring_mesh.m_meta_data.locally_owned_part() |
       m_ring_mesh.m_meta_data.globally_shared_part();
 
     std::vector<Bucket*> buckets;
-    stk::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
+    stk_classic::mesh::get_buckets(locally_used_selector, node_buckets, buckets);
 
     for (std::vector<Bucket*>::iterator itr = buckets.begin();
          itr != buckets.end(); ++itr) {
@@ -319,7 +319,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   }
 
   // Call find_closure with proc 0 passing in locally-used nodes
-  stk::mesh::find_closure(bulk_data, entities, entities_closure);
+  stk_classic::mesh::find_closure(bulk_data, entities, entities_closure);
 
   // Proc 0 will broadcast the global ids of the nodes it passed to
   // find_closure
@@ -327,7 +327,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // pack entities for sizing
   for (std::vector<Entity*>::const_iterator
           ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>((*ep)->key());
+    all.send_buffer().pack<stk_classic::mesh::EntityKey>((*ep)->key());
   }
 
   all.allocate_buffer();
@@ -335,7 +335,7 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // pack for real
   for (std::vector<Entity*>::const_iterator
          ep = entities.begin() ; ep != entities.end() ; ++ep ) {
-    all.send_buffer().pack<stk::mesh::EntityKey>((*ep)->key());
+    all.send_buffer().pack<stk_classic::mesh::EntityKey>((*ep)->key());
   }
 
   all.communicate();
@@ -343,10 +343,10 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   // clear-out entities and put the nodes that correspond to the keys
   // broadcast by proc 0 into entities.
   entities.clear();
-  stk::CommBuffer& buf = all.recv_buffer();
-  stk::mesh::EntityKey k ;
+  stk_classic::CommBuffer& buf = all.recv_buffer();
+  stk_classic::mesh::EntityKey k ;
   while ( buf.remaining() ) {
-    buf.unpack<stk::mesh::EntityKey>(k);
+    buf.unpack<stk_classic::mesh::EntityKey>(k);
     Entity * e = bulk_data.get_entity(k);
     // If a proc is not aware of a key, that means it has no relationship
     // with that entity, so it can ignore it.
@@ -356,15 +356,15 @@ void UnitTestStkMeshBulkModification::test_parallel_consistency()
   }
 
   // sort and unique entities
-  std::sort(entities.begin(), entities.end(), stk::mesh::EntityLess());
-  std::vector<Entity*>::iterator new_end = std::unique(entities.begin(), entities.end(), stk::mesh::EntityEqual());
+  std::sort(entities.begin(), entities.end(), stk_classic::mesh::EntityLess());
+  std::vector<Entity*>::iterator new_end = std::unique(entities.begin(), entities.end(), stk_classic::mesh::EntityEqual());
   entities.erase(new_end, entities.end());
 
   // If any processor had ghosted nodes that were local to proc 0, those
   // nodes should be in the closure because proc 0 passed them in to
   // find_closure.
   STKUNIT_ASSERT_TRUE(entities.size() == entities_closure.size());
-  stk::mesh::EntityEqual ee;
+  stk_classic::mesh::EntityEqual ee;
   for (size_t i = 0; i < entities_closure.size(); ++i) {
     STKUNIT_EXPECT_TRUE(ee(entities[i], entities_closure[i]));
   }

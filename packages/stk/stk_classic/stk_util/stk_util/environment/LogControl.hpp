@@ -16,7 +16,7 @@
 
 #include <stk_util/util/string_case_compare.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Interface <code>LogControlRule</code> describes the interface to a log control rule.

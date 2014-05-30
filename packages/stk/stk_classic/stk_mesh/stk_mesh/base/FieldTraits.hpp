@@ -15,16 +15,16 @@
 
 #include <Shards_Array.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /**
  * FieldTraits provide an API for making queries about field types.
  * Examples:
  *   - Get the scalar data type contained by a field
- *     stk::mesh::FieldTraits< field_type >::data_type
+ *     stk_classic::mesh::FieldTraits< field_type >::data_type
  *   - Get the dimensional rank (number of dimensions) in a field type
- *     stk::mesh::FieldTraits< field_type >::Rank
+ *     stk_classic::mesh::FieldTraits< field_type >::Rank
  */
 
 template<>

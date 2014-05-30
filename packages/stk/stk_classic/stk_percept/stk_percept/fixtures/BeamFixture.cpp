@@ -28,15 +28,15 @@
 
 //----------------------------------------------------------------------
 
-namespace stk{
+namespace stk_classic{
   namespace percept {
 
     typedef shards::Beam<2>               Beam2;
 
-    BeamFixture::BeamFixture( stk::ParallelMachine comm, bool doCommit ) :
+    BeamFixture::BeamFixture( stk_classic::ParallelMachine comm, bool doCommit ) :
       m_spatial_dimension(3)
-      , m_metaData(m_spatial_dimension, stk::mesh::fem::entity_rank_names(m_spatial_dimension) )
-      , m_bulkData( stk::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
+      , m_metaData(m_spatial_dimension, stk_classic::mesh::fem::entity_rank_names(m_spatial_dimension) )
+      , m_bulkData( stk_classic::mesh::fem::FEMMetaData::get_meta_data(m_metaData) , comm )
       , m_block_beam( m_metaData.declare_part< Beam2 >( "block_2" ) )
       , m_elem_rank( m_metaData.element_rank() )
       , m_coordinates_field( m_metaData.declare_field< VectorFieldType >( "coordinates" ))
@@ -46,11 +46,11 @@ namespace stk{
       , m_element_node_coordinates_field( m_metaData.declare_field< ElementNodePointerFieldType >( "elem_node_coord" ))
     {
       // Define where fields exist on the mesh:
-      stk::mesh::Part & universal = m_metaData.universal_part();
+      stk_classic::mesh::Part & universal = m_metaData.universal_part();
 
-      put_field( m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
+      put_field( m_coordinates_field , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universal );
       put_field( m_centroid_field , m_elem_rank , universal );
-      put_field( m_temperature_field, stk::mesh::fem::FEMMetaData::NODE_RANK, universal );
+      put_field( m_temperature_field, stk_classic::mesh::fem::FEMMetaData::NODE_RANK, universal );
       put_field( m_volume_field, m_elem_rank, m_block_beam );
 
       // Define the field-relation such that the values of the
@@ -65,7 +65,7 @@ namespace stk{
 
       m_metaData.declare_field_relation(
                                         m_element_node_coordinates_field ,
-                                        stk::mesh::fem::get_element_node_stencil(3) ,
+                                        stk_classic::mesh::fem::get_element_node_stencil(3) ,
                                         m_coordinates_field
                                         );
 
@@ -94,7 +94,7 @@ namespace stk{
       };
 
       // Hard coded beam node ids for all the beam nodes in the entire mesh
-      static const stk::mesh::EntityId beam_node_ids[number_beam][ Beam2::node_count ] = {
+      static const stk_classic::mesh::EntityId beam_node_ids[number_beam][ Beam2::node_count ] = {
         { 1,2 } ,
         { 3,4 }
       };
@@ -111,16 +111,16 @@ namespace stk{
 
       if (m_bulkData.parallel_rank() == 0)
         {
-          stk::mesh::EntityId curr_elem_id = 1;
+          stk_classic::mesh::EntityId curr_elem_id = 1;
 
           // For each element topology declare elements
           for ( unsigned i = 0 ; i < number_beam ; ++i , ++curr_elem_id ) {
-            stk::mesh::fem::declare_element( m_bulkData, m_block_beam, curr_elem_id, beam_node_ids[i] );
+            stk_classic::mesh::fem::declare_element( m_bulkData, m_block_beam, curr_elem_id, beam_node_ids[i] );
           }
 
           // For all nodes assign nodal coordinates
           for ( unsigned i = 0 ; i < node_count ; ++i ) {
-            stk::mesh::Entity * const node = m_bulkData.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
+            stk_classic::mesh::Entity * const node = m_bulkData.get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
             double * const coord = field_data( m_coordinates_field , *node );
             coord[0] = node_coord_data[i][0] ;
             coord[1] = node_coord_data[i][1] ;

@@ -18,18 +18,18 @@
 
 namespace stk_linsys_unit_tests {
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
 static const size_t spatial_dimension = 3;
 
-//------------- here is the unit-test of stk::linsys::impl functions... -----------------------
+//------------- here is the unit-test of stk_classic::linsys::impl functions... -----------------------
 
 void testImpl( MPI_Comm comm )
 {
   //First create and initialize a MetaData to use in our testing:
 
-  stk::mesh::MetaData meta_data( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk_classic::mesh::MetaData meta_data( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
 
   const unsigned number_of_states = 1;
 
@@ -42,12 +42,12 @@ void testImpl( MPI_Comm comm )
 
   //Now test the linsys::impl::map_field_to_int function:
 
-  stk::linsys::FieldIdMap field_id_map;
+  stk_classic::linsys::FieldIdMap field_id_map;
 
-  int fieldid = stk::linsys::impl::map_field_to_int(field_id_map, temperature_field);
+  int fieldid = stk_classic::linsys::impl::map_field_to_int(field_id_map, temperature_field);
   STKUNIT_ASSERT_EQUAL( fieldid, (int)0 );
 
-  fieldid = stk::linsys::impl::query_field_to_int_mapping(field_id_map, temperature_field);
+  fieldid = stk_classic::linsys::impl::query_field_to_int_mapping(field_id_map, temperature_field);
   STKUNIT_ASSERT_EQUAL( fieldid, (int)0 );
 
   //test query_field_to_int_mapping for the case where the specified field is not in the map.
@@ -55,7 +55,7 @@ void testImpl( MPI_Comm comm )
   std::cout << "\nTesting query_field_to_int_mapping with un-mapped field..." << std::endl;
   bool threw_exc0 = false;
   try {
-    fieldid = stk::linsys::impl::query_field_to_int_mapping(field_id_map, pressure_field);
+    fieldid = stk_classic::linsys::impl::query_field_to_int_mapping(field_id_map, pressure_field);
   }
   catch(std::exception& exc) {
     threw_exc0 = true;
@@ -64,21 +64,21 @@ void testImpl( MPI_Comm comm )
   STKUNIT_ASSERT_EQUAL( threw_exc0, (bool)true );
 
   //now add the pressure field...
-  fieldid = stk::linsys::impl::map_field_to_int(field_id_map, pressure_field);
+  fieldid = stk_classic::linsys::impl::map_field_to_int(field_id_map, pressure_field);
   STKUNIT_ASSERT_EQUAL( fieldid, (int)1 );
 
-  fieldid = stk::linsys::impl::map_field_to_int(field_id_map, velocity_field);
+  fieldid = stk_classic::linsys::impl::map_field_to_int(field_id_map, velocity_field);
   STKUNIT_ASSERT_EQUAL( fieldid, (int)2 );
 
   //here the pressure field is already in the map.
-  fieldid = stk::linsys::impl::map_field_to_int(field_id_map, pressure_field);
+  fieldid = stk_classic::linsys::impl::map_field_to_int(field_id_map, pressure_field);
   STKUNIT_ASSERT_EQUAL( fieldid, (int)1 );
 
   //confirm that the map is the expected size:
   STKUNIT_ASSERT_EQUAL( field_id_map.size(), (size_t)3 );
 
   //test the linsys::impl::get_field function:
-  const stk::mesh::FieldBase* field = stk::linsys::impl::get_field(field_id_map, 2);
+  const stk_classic::mesh::FieldBase* field = stk_classic::linsys::impl::get_field(field_id_map, 2);
 
   STKUNIT_ASSERT_EQUAL( field->name() == velocity_field.name(), true );
 
@@ -86,7 +86,7 @@ void testImpl( MPI_Comm comm )
   //exception is thrown.
   bool threw_exc1 = false;
   try {
-    field = stk::linsys::impl::get_field(field_id_map, 5);
+    field = stk_classic::linsys::impl::get_field(field_id_map, 5);
   }
   catch(std::exception& exc) {
     threw_exc1 = true;
@@ -96,14 +96,14 @@ void testImpl( MPI_Comm comm )
 
   //Now test the linsys::impl::entityid_to_int function:
 
-  stk::mesh::EntityId id = 42;
-  int int_id1 = stk::linsys::impl::entityid_to_int(id);
+  stk_classic::mesh::EntityId id = 42;
+  int int_id1 = stk_classic::linsys::impl::entityid_to_int(id);
 
   STKUNIT_ASSERT_EQUAL( int_id1, (int)42 );
 
   //3 billion is too large to represent as int...
   uint64_t big_id = 3000000000u;
-  STKUNIT_ASSERT_THROW( stk::linsys::impl::verify_convertible_to_int(big_id, "linsys unit-test"), std::runtime_error);
+  STKUNIT_ASSERT_THROW( stk_classic::linsys::impl::verify_convertible_to_int(big_id, "linsys unit-test"), std::runtime_error);
 }
 
 } // namespace stk_linsys_unit_tests

@@ -17,7 +17,7 @@
 STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
 {
   {
-    stk::IdentifierA id1("identifier1");
+    stk_classic::IdentifierA id1("identifier1");
 
     STKUNIT_ASSERT(id1 == "identifier1");
     STKUNIT_ASSERT(id1 == "IDENTIFIER1");
@@ -43,13 +43,13 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     STKUNIT_ASSERT(id1 >= "IDENTIFIER1");
     STKUNIT_ASSERT(id1 >= std::string("identifier1"));
 
-    stk::IdentifierA id2(id1);
+    stk_classic::IdentifierA id2(id1);
 
     STKUNIT_ASSERT(id1 == id2);
 
     std::cout << id1 << std::endl;
 
-    stk::IdentifierA id3 = id1 + "test1";
+    stk_classic::IdentifierA id3 = id1 + "test1";
     STKUNIT_ASSERT(id3 == "identifier1test1");
 
     id3 += "test2";
@@ -58,19 +58,19 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     id3 = "identifier3";
     STKUNIT_ASSERT(id3 == "identifier3");
 
-    typedef std::map<stk::IdentifierA, int> IdIntMap;
+    typedef std::map<stk_classic::IdentifierA, int> IdIntMap;
 
     IdIntMap id_int_map;
 
-    id_int_map[stk::IdentifierA("identifier1")] = 1;
-    id_int_map[stk::IdentifierA("IDENTIFIER1")] = 2;
+    id_int_map[stk_classic::IdentifierA("identifier1")] = 1;
+    id_int_map[stk_classic::IdentifierA("IDENTIFIER1")] = 2;
 
-    STKUNIT_ASSERT(id_int_map[stk::IdentifierA("identifier1")] == 2);
+    STKUNIT_ASSERT(id_int_map[stk_classic::IdentifierA("identifier1")] == 2);
   }
 
 
   {
-    stk::IdentifierB id1("identifier1");
+    stk_classic::IdentifierB id1("identifier1");
 
 
     STKUNIT_ASSERT(id1 == "identifier1");
@@ -97,13 +97,13 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     STKUNIT_ASSERT(id1 >= "IDENTIFIER1");
     STKUNIT_ASSERT(id1 >= std::string("identifier1"));
 
-    stk::IdentifierB id2(id1);
+    stk_classic::IdentifierB id2(id1);
 
     STKUNIT_ASSERT(id1 == id2);
 
     std::cout << id1 << std::endl;
 
-    stk::IdentifierB id3 = id1 + "test1";
+    stk_classic::IdentifierB id3 = id1 + "test1";
     STKUNIT_ASSERT(id3 == "identifier1test1");
 
     id3 += "test2";
@@ -112,14 +112,14 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     id3 = "identifier3";
     STKUNIT_ASSERT(id3 == "identifier3");
 
-    typedef std::map<stk::IdentifierB, int> IdIntMap;
+    typedef std::map<stk_classic::IdentifierB, int> IdIntMap;
 
     IdIntMap id_int_map;
 
-    id_int_map[stk::IdentifierB("identifier1")] = 1;
-    id_int_map[stk::IdentifierB("IDENTIFIER1")] = 2;
+    id_int_map[stk_classic::IdentifierB("identifier1")] = 1;
+    id_int_map[stk_classic::IdentifierB("IDENTIFIER1")] = 2;
 
-    STKUNIT_ASSERT(id_int_map[stk::IdentifierB("identifier1")] == 2);
+    STKUNIT_ASSERT(id_int_map[stk_classic::IdentifierB("identifier1")] == 2);
   }
 }
 

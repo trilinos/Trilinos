@@ -51,9 +51,9 @@ namespace stk
     using namespace util;
 
 
-    typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-    typedef stk::mesh::Field<double>                      ScalarFieldType ;
-    typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerFieldType ;
+    typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> VectorFieldType ;
+    typedef stk_classic::mesh::Field<double>                      ScalarFieldType ;
+    typedef stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> ElementNodePointerFieldType ;
 
     template<typename T> void push_back( std::vector<T>& dst, const std::vector<T>& src)
     {
@@ -109,7 +109,7 @@ namespace stk
 
     //typedef ArrayVector<unsigned,NaturalOrder,Tag1,Tag2> ArrayInt2 ;
 
-    /** \class stk::utils::SweepMesher
+    /** \class stk_classic::utils::SweepMesher
      *  \brief A simple utility to product tensor product (line, quad, hex) meshes by sweeping
      *         as well as non-tensor product mesh by breaking into sub-elements (tri, tet, wedge, pyramid)
      *
@@ -198,17 +198,17 @@ namespace stk
           m_elems[i] = source.m_elems[i];
       }
 
-      stk::mesh::BulkData * get_bulk_data() { return m_bulkData;}
-      stk::mesh::fem::FEMMetaData * getMetaData() { return m_metaData; }
+      stk_classic::mesh::BulkData * get_bulk_data() { return m_bulkData;}
+      stk_classic::mesh::fem::FEMMetaData * getMetaData() { return m_metaData; }
 
     private:
       bool m_dump;
       unsigned m_spatial_dimension;
-      stk::mesh::fem::FEMMetaData * m_metaData;
-      stk::mesh::BulkData * m_bulkData;
-      std::vector<stk::mesh::Part *> m_parts;
-      stk::mesh::Part *m_block_hex;
-      stk::mesh::Part *m_block_wedge;
+      stk_classic::mesh::fem::FEMMetaData * m_metaData;
+      stk_classic::mesh::BulkData * m_bulkData;
+      std::vector<stk_classic::mesh::Part *> m_parts;
+      stk_classic::mesh::Part *m_block_hex;
+      stk_classic::mesh::Part *m_block_wedge;
 
       VectorFieldType * m_coordinates_field;
       //         VectorFieldType & m_centroid_field;
@@ -582,10 +582,10 @@ namespace stk
 
 
       /// create a std::mesh representation of this
-      void stkMeshCreate(stk::ParallelMachine& );
+      void stkMeshCreate(stk_classic::ParallelMachine& );
 
-      void stkMeshCreateMetaNoCommit(stk::ParallelMachine& );
-      void stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& );
+      void stkMeshCreateMetaNoCommit(stk_classic::ParallelMachine& );
+      void stkMeshCreateBulkAfterMetaCommit(stk_classic::ParallelMachine& );
 
       void writeSTKMesh(const char* filename);
 

@@ -36,18 +36,18 @@
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 #include <stk_search_util/stk_mesh/PrintBoundingBox.hpp>
 
-using namespace stk::diag;
-using namespace stk::search;
+using namespace stk_classic::diag;
+using namespace stk_classic::search;
 using namespace use_case;
 
-typedef stk::mesh::Field<double>                        ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>  VectorField ;
+typedef stk_classic::mesh::Field<double>                        ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>  VectorField ;
 
 static const size_t spatial_dimension = 3;
 
 void
 use_case_1_driver(
-  stk::ParallelMachine  comm,
+  stk_classic::ParallelMachine  comm,
   const std::string &working_directory,
   const std::string &range_mesh_filename,
   const std::string &range_mesh_type,
@@ -56,35 +56,35 @@ use_case_1_driver(
   const std::string &domain_mesh_type,
   const std::string &domain_entity)
 {
-  stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 
-  dw().m(LOG_SEARCH) << "Use case 1: Point (range) in Box (domain) Search" << stk::diag::push << stk::diag::dendl;
-  dw().m(LOG_SEARCH) << "Range  Entity Type = " << range_entity  << stk::diag::dendl;
-  dw().m(LOG_SEARCH) << "Domain Entity Type = " << domain_entity << stk::diag::dendl;
+  dw().m(LOG_SEARCH) << "Use case 1: Point (range) in Box (domain) Search" << stk_classic::diag::push << stk_classic::diag::dendl;
+  dw().m(LOG_SEARCH) << "Range  Entity Type = " << range_entity  << stk_classic::diag::dendl;
+  dw().m(LOG_SEARCH) << "Domain Entity Type = " << domain_entity << stk_classic::diag::dendl;
 
   // Initialize IO system.  Registers all element types and storage
   // types and the exodusII default database type.
   Ioss::Init::Initializer init_db;
 
-  stk::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
-  stk::io::MeshData range_mesh_data;
+  stk_classic::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
+  stk_classic::io::MeshData range_mesh_data;
   std::string filename = working_directory + range_mesh_filename;
-  stk::io::create_input_mesh(range_mesh_type, filename, comm,
+  stk_classic::io::create_input_mesh(range_mesh_type, filename, comm,
 			     range_meta_data, range_mesh_data);
   range_meta_data.commit();
 
-  stk::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
-  stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
+  stk_classic::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
+  stk_classic::io::populate_bulk_data(range_bulk_data, range_mesh_data);
 
-  stk::mesh::fem::FEMMetaData domain_meta_data(  spatial_dimension );
-  stk::io::MeshData domain_mesh_data;
+  stk_classic::mesh::fem::FEMMetaData domain_meta_data(  spatial_dimension );
+  stk_classic::io::MeshData domain_mesh_data;
   filename = working_directory + domain_mesh_filename;
-  stk::io::create_input_mesh(domain_mesh_type, domain_mesh_filename, comm,
+  stk_classic::io::create_input_mesh(domain_mesh_type, domain_mesh_filename, comm,
 			     domain_meta_data, domain_mesh_data);
   domain_meta_data.commit();
 
-  stk::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);
-  stk::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
+  stk_classic::mesh::BulkData domain_bulk_data(domain_meta_data.get_meta_data(domain_meta_data) , comm);
+  stk_classic::io::populate_bulk_data(domain_bulk_data, domain_mesh_data);
 
   // For this use case, the domain consists of an axis-aligned
   // bounding box for each 'domain_entity' in the mesh.  The range is a
@@ -96,18 +96,18 @@ use_case_1_driver(
 
   VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
   std::vector<PointBoundingBox3D> range_vector;
-  stk::search_util::build_centroid_bbox(range_bulk_data,
+  stk_classic::search_util::build_centroid_bbox(range_bulk_data,
                                         range_meta_data.entity_rank(range_entity),
                                         range_coord_field, range_vector);
 
   VectorField *domain_coord_field = domain_meta_data.get_field<VectorField>("coordinates");
   std::vector<AxisAlignedBoundingBox3D> domain_vector;
-  stk::search_util::build_axis_aligned_bbox(domain_bulk_data,
+  stk_classic::search_util::build_axis_aligned_bbox(domain_bulk_data,
                                             domain_meta_data.entity_rank(domain_entity),
                                             domain_coord_field, domain_vector);
 
   // ========================================================================
-  // NOTE: There should be no stk::mesh dependencies below this point...
+  // NOTE: There should be no stk_classic::mesh dependencies below this point...
   // ========================================================================
   if (range_vector.size() <= 100){
     dw().m(LOG_SEARCH) << "range  " << range_vector << dendl;
@@ -122,20 +122,20 @@ use_case_1_driver(
 
   FactoryOrder order;
   order.m_communicator = comm;
-  //order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
+  //order.m_algorithm = stk_classic::search::FactoryOrder::BIHTREE;
 
   dw() << "Search algorithm " << order.m_algorithm << dendl;
   //  dw().m(LOG_SEARCH) << "Search tree " << *range_search << dendl;
 
   IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, range_vector, domain_vector,order);
+  stk_classic::search::coarse_search(relation, range_vector, domain_vector,order);
 
   if (relation.size() <= 100)
     dw().m(LOG_SEARCH) << "relation " << relation << dendl;
   else
     dw().m(LOG_SEARCH) << "relation size = " << relation.size() << dendl;
 
-  dw().m(LOG_SEARCH) << stk::diag::pop;
+  dw().m(LOG_SEARCH) << stk_classic::diag::pop;
 }
 

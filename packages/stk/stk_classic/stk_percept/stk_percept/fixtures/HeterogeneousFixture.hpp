@@ -36,12 +36,12 @@
 
 #define HET_FIX_INCLUDE_EXTRA_ELEM_TYPES 0
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
-    typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
-    typedef stk::mesh::Field<double>                          ScalarFieldType ;
-    typedef stk::mesh::Field<double*, stk::mesh::ElementNode> ElementNodePointerFieldType ;
+    typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorFieldType ;
+    typedef stk_classic::mesh::Field<double>                          ScalarFieldType ;
+    typedef stk_classic::mesh::Field<double*, stk_classic::mesh::ElementNode> ElementNodePointerFieldType ;
 
     /** Use case with mixed element topologies and
      *  field relations to provide fast access to node field data
@@ -56,28 +56,28 @@ namespace stk {
 
       ~HeterogeneousFixture();
 
-      HeterogeneousFixture( stk::ParallelMachine comm, bool doCommit = true, bool do_sidesets=false);
+      HeterogeneousFixture( stk_classic::ParallelMachine comm, bool doCommit = true, bool do_sidesets=false);
 
       void populate();
 
       const int m_spatial_dimension;
-      stk::mesh::fem::FEMMetaData m_metaData;
-      stk::mesh::BulkData m_bulkData;
+      stk_classic::mesh::fem::FEMMetaData m_metaData;
+      stk_classic::mesh::BulkData m_bulkData;
 
-      stk::mesh::Part & m_block_hex;
-      stk::mesh::Part & m_block_wedge;
-      stk::mesh::Part & m_block_tet;
-      stk::mesh::Part & m_block_pyramid;
+      stk_classic::mesh::Part & m_block_hex;
+      stk_classic::mesh::Part & m_block_wedge;
+      stk_classic::mesh::Part & m_block_tet;
+      stk_classic::mesh::Part & m_block_pyramid;
 #if HET_FIX_INCLUDE_EXTRA_ELEM_TYPES
-      stk::mesh::Part & m_block_quad_shell;
-      stk::mesh::Part & m_block_tri_shell;
+      stk_classic::mesh::Part & m_block_quad_shell;
+      stk_classic::mesh::Part & m_block_tri_shell;
 #endif
-      stk::mesh::Part * m_sideset_quad;
-      stk::mesh::Part * m_sideset_quad_subset;
-      stk::mesh::Part * m_sideset_tri;
-      stk::mesh::Part * m_sideset_tri_subset;
+      stk_classic::mesh::Part * m_sideset_quad;
+      stk_classic::mesh::Part * m_sideset_quad_subset;
+      stk_classic::mesh::Part * m_sideset_tri;
+      stk_classic::mesh::Part * m_sideset_tri_subset;
 
-      const stk::mesh::EntityRank m_elem_rank;
+      const stk_classic::mesh::EntityRank m_elem_rank;
 
       VectorFieldType & m_coordinates_field;
       VectorFieldType & m_centroid_field;

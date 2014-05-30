@@ -34,7 +34,7 @@
 
 #include <stk_percept/mesh/gen/SweepMesher.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
       class WedgeFixture
@@ -43,7 +43,7 @@ namespace stk {
 
       public:
 
-        mesh::BulkData * createMesh(stk::ParallelMachine parallel_machine, 
+        mesh::BulkData * createMesh(stk_classic::ParallelMachine parallel_machine, 
                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
                         double xmin, double xmax,
                         double ymin, double ymax,
@@ -127,15 +127,15 @@ namespace stk {
 
         mesh::fem::FEMMetaData *getMetaData() { return m_sweepMesher.getMetaData() ; }
 
-        //stk::mesh::BulkData* 
+        //stk_classic::mesh::BulkData* 
         void
-        createBulkAfterMetaCommit(stk::ParallelMachine parallel_machine)
+        createBulkAfterMetaCommit(stk_classic::ParallelMachine parallel_machine)
         {
           m_sweepMesher.stkMeshCreateBulkAfterMetaCommit(parallel_machine);
           //return m_sweepMesher.get_bulk_data();
         }
 
-        void createFixedSizeMesh(stk::ParallelMachine parallel_machine, std::string output_filename)
+        void createFixedSizeMesh(stk_classic::ParallelMachine parallel_machine, std::string output_filename)
         {
           bool verbose = true;
 

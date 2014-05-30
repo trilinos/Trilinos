@@ -17,7 +17,7 @@
 /// Command line option descriptions describe the options available to the user from the
 /// command line.  These desciptions also provide help documentation and grouping.  Since
 /// many modules may be interested in adding command line option desciptions to the
-/// system, the singleton stk::env::get_options_description() provides the global command
+/// system, the singleton stk_classic::env::get_options_description() provides the global command
 /// line option descriptions.  Each module utilizes the bootstrapping mechanism to add its
 /// options to this description.
 ///
@@ -36,10 +36,10 @@
 ///     ("performance", "run performance test")
 ///     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
 /// 
-///   stk::env::get_options_description().add(desc);
+///   stk_classic::env::get_options_description().add(desc);
 /// }
 /// 
-/// stk::Bootstrap x(&bootstrap);
+/// stk_classic::Bootstrap x(&bootstrap);
 /// 
 /// } // namespace <empty>
 ///
@@ -65,20 +65,20 @@
 ///   char **       argv)
 /// {
 ///   &nbsp;// Execute product bootstraps
-///   stk::Bootstrap::bootstrap();
+///   stk_classic::Bootstrap::bootstrap();
 /// 
 ///   &nbsp;// Initialize parallel machine
-///   stk::ParallelMachine parallel_machine;
-///   parallel_machine = stk::parallel_machine_init(&argc, &argv);
+///   stk_classic::ParallelMachine parallel_machine;
+///   parallel_machine = stk_classic::parallel_machine_init(&argc, &argv);
 /// 
 ///   &nbsp;// Broadcast argc and argv to all processors.
-///   stk::BroadcastArg b_arg(parallel_machine, argc, argv);
+///   stk_classic::BroadcastArg b_arg(parallel_machine, argc, argv);
 /// 
 ///   &nbsp;// Process the broadcast command line arguments
 ///   namespace opt = boost::program_options;
 ///   
 ///   opt::variables_map vm;                
-///   opt::store(opt::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk::env::get_options_description()), vm);
+///   opt::store(opt::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk_classic::env::get_options_description()), vm);
 ///   opt::notify(vm);
 /// 
 /// \endcode

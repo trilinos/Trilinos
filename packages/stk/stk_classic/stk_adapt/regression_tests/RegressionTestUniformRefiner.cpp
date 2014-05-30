@@ -110,12 +110,12 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_mesh
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD);
 
         bool do_sidesets = true;
 
@@ -124,7 +124,7 @@ namespace stk
             // create the mesh
             {
               bool doCommit = false;
-              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, doCommit, do_sidesets);
+              stk_classic::percept::PyramidFixture mesh(MPI_COMM_WORLD, doCommit, do_sidesets);
               mesh.m_metaData.commit();
               mesh.populate();
 
@@ -151,7 +151,7 @@ namespace stk
                 //URP_Heterogeneous_3D break_pattern(eMesh1);
                 Pyramid5_Pyramid5_10 break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
@@ -177,10 +177,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         // this case can't be load balanced (I presume there are too few elements)
 
@@ -201,7 +201,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -227,17 +227,17 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size(pm);
+        const unsigned p_size = stk_classic::parallel_machine_size(pm);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
 
-              stk::percept::BeamFixture mesh(pm, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              stk_classic::percept::BeamFixture mesh(pm, false);
+              stk_classic::io::put_io_part_attribute(  mesh.m_block_beam );
               mesh.m_metaData.commit();
               mesh.populate();
 
@@ -249,12 +249,12 @@ namespace stk
 
             // enrich
             {
-              stk::percept::PerceptMesh eMesh(3u);
+              stk_classic::percept::PerceptMesh eMesh(3u);
               eMesh.open(input_files_loc+"beam_enrich_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam3_1 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.save_as(output_files_loc+"beam_enrich_0.e");
@@ -277,17 +277,17 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size(pm);
+        const unsigned p_size = stk_classic::parallel_machine_size(pm);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
 
-              stk::percept::BeamFixture mesh(pm, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              stk_classic::percept::BeamFixture mesh(pm, false);
+              stk_classic::io::put_io_part_attribute(  mesh.m_block_beam );
               mesh.m_metaData.commit();
               mesh.populate();
 
@@ -299,12 +299,12 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh(3u);
+              stk_classic::percept::PerceptMesh eMesh(3u);
               eMesh.open(input_files_loc+"beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.save_as(output_files_loc+"beam_0.e");
@@ -334,9 +334,9 @@ namespace stk
         MPI_Barrier( MPI_COMM_WORLD );
         Elem::StdMeshObjTopologies::bootstrap();
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1)
           {
             std::ofstream file("./generated_refinement_tables.hpp");
@@ -424,10 +424,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         // this case can't be load balanced (I presume there are too few elements)
 
@@ -448,7 +448,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -475,7 +475,7 @@ namespace stk
             ShellQuad8_ShellQuad8_4 break_quad8_to_quad_8(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -504,10 +504,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         // this case can't be load balanced (I presume there are too few elements)
 
@@ -528,7 +528,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -556,7 +556,7 @@ namespace stk
             ShellQuad9_ShellQuad9_4 break_quad9_to_quad_9(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -586,10 +586,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         // this case can't be load balanced (I presume there are too few elements)
 
@@ -610,7 +610,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -633,10 +633,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         // this case can't be load balanced (I presume there are too few elements)
 
         if (p_size <= 1)
@@ -658,7 +658,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -740,9 +740,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_tri
@@ -756,7 +756,7 @@ namespace stk
             int scalarDimension = 0; // a scalar
             //         int vectorDimension = 3;
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -783,9 +783,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
 
@@ -797,7 +797,7 @@ namespace stk
 
             int scalarDimension = 0; // a scalar
 
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -825,9 +825,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
@@ -836,7 +836,7 @@ namespace stk
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4 > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.print_info("quad mesh");
@@ -861,9 +861,9 @@ namespace stk
       {
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_quad_to_quad
@@ -872,7 +872,7 @@ namespace stk
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.print_info("quad mesh");
@@ -897,9 +897,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         //FIXME
         if (0)
@@ -918,7 +918,7 @@ namespace stk
 
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.print_info("quad mesh");
@@ -959,7 +959,7 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+        stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.add_field("velocity", mesh::Node, vectorDimension);
         //         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
@@ -1002,7 +1002,7 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+        stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.add_field("velocity", mesh::Node, vectorDimension);
         //         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
@@ -1033,9 +1033,9 @@ namespace stk
         // start_demo_uniformRefiner_hex8_tet4_6_12_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             percept::PerceptMesh eMesh(3u);
@@ -1045,7 +1045,7 @@ namespace stk
             Hex8_Tet4_6_12 break_hex_to_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.print_info("test",2);
@@ -1070,15 +1070,15 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, quad4_quad4_4_test_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 12;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -1101,12 +1101,12 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         bool doGenSideSets = true;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size == 1 || p_size == 3)
           {
@@ -1138,7 +1138,7 @@ namespace stk
                 eMesh1.open(fileName);
                 UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
                 int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 //                 if (iBreak != 0)
@@ -1176,10 +1176,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad_to_quad_sierra_2)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
@@ -1209,7 +1209,7 @@ namespace stk
             eMesh1.open(fileName);
             UniformRefinerPattern<shards::Quadrilateral<4>, shards::Quadrilateral<4>, 4, SierraPort > break_quad_to_quad_4(eMesh1);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh1.commit();
 
             UNIFORM_REFINER breaker(eMesh1, break_quad_to_quad_4, proc_rank_field);
@@ -1236,10 +1236,10 @@ namespace stk
         EXCEPTWATCH;
 
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
@@ -1256,7 +1256,7 @@ namespace stk
 
             Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1280,10 +1280,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad4_to_quad8)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
@@ -1300,7 +1300,7 @@ namespace stk
 
             Quad4_Quad8_1 break_quad4_to_quad8_1(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1325,10 +1325,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_quad8_to_quad8)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
@@ -1337,7 +1337,7 @@ namespace stk
 
             Quad8_Quad8_4 break_quad8_to_quad8_4(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -1358,12 +1358,12 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         bool doGenSideSets = false;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 1)
           {
@@ -1380,7 +1380,7 @@ namespace stk
 
               Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -1399,7 +1399,7 @@ namespace stk
               em1.open(input_files_loc+"quad_1x1_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = em1.add_field("proc_rank", em1.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = em1.add_field("proc_rank", em1.element_rank(), scalarDimension);
 
               em1.commit();
 
@@ -1423,12 +1423,12 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         bool doGenSideSets = true;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 3)
           {
@@ -1446,7 +1446,7 @@ namespace stk
 
               Quad4_Quad9_1 break_quad4_to_quad9_1(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -1468,7 +1468,7 @@ namespace stk
               em1.open(input_files_loc+"quad_fixture_quad9_quad9_0.e");
               Quad9_Quad9_4 break_q9_q9(em1);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = em1.add_field("proc_rank", em1.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = em1.add_field("proc_rank", em1.element_rank(), scalarDimension);
 
               em1.commit();
 
@@ -1492,10 +1492,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri_to_tri_sierra_0)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size <= 3)
           {
             const unsigned n = 12;
@@ -1525,10 +1525,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri_to_tri_sierra_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size <= 3)
           {
             const unsigned n = 12;
@@ -1543,9 +1543,9 @@ namespace stk
 
             Tri3_Tri3_4 break_tri_to_tri_4(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //stk::mesh::FieldBase* proc_rank_field_edge =
+            //stk_classic::mesh::FieldBase* proc_rank_field_edge =
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
@@ -1585,10 +1585,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri3_to_tri6_sierra)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size <= 3)
           {
             const unsigned n = 12;
@@ -1603,9 +1603,9 @@ namespace stk
 
             Tri3_Tri6_1 break_tri3_to_tri6(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //stk::mesh::FieldBase* proc_rank_field_edge =
+            //stk_classic::mesh::FieldBase* proc_rank_field_edge =
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
 
             //             std::cout << "proc_rank_field rank= " << proc_rank_field->rank() << std::endl;
@@ -1646,10 +1646,10 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_uniformRefiner, break_tri3_to_tri6_to_tri6_sierra)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size <= 3)
           {
             // start_demo_break_tri3_to_tri6_to_tri6_sierra
@@ -1659,9 +1659,9 @@ namespace stk
 
             Tri6_Tri6_4 break_tri6_to_tri6(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
-            //stk::mesh::FieldBase* proc_rank_field_edge =
+            //stk_classic::mesh::FieldBase* proc_rank_field_edge =
             eMesh.add_field("proc_rank_edge", eMesh.edge_rank(), scalarDimension);
             eMesh.commit();
 
@@ -1687,9 +1687,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4
@@ -1712,9 +1712,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
@@ -1724,7 +1724,7 @@ namespace stk
             Tet4_Tet4_8 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info("tet mesh");
@@ -1751,9 +1751,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
@@ -1763,7 +1763,7 @@ namespace stk
             Tet4_Tet10_1 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info("tet mesh");
@@ -1789,9 +1789,9 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             // start_demo_uniformRefiner_break_tet4_tet4_1
@@ -1801,7 +1801,7 @@ namespace stk
             Tet4_Tet10_1 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info("tet mesh");
@@ -1825,7 +1825,7 @@ namespace stk
             Tet10_Tet10_8 break_tet_tet(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.print_info("tet mesh");
@@ -1871,7 +1871,7 @@ namespace stk
         int scalarDimension = 0; // a scalar
         //         int vectorDimension = 3;
 
-        stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+        stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
         //         eMesh.add_field("velocity", mesh::Node, vectorDimension);
         //         eMesh.add_field("element_volume", eMesh.element_rank(), scalarDimension);
 
@@ -1901,9 +1901,9 @@ namespace stk
         // start_demo_uniformRefiner_hex8_hex8_8_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             percept::PerceptMesh eMesh(3u);
@@ -1913,7 +1913,7 @@ namespace stk
             Hex8_Hex8_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info();
@@ -1953,7 +1953,7 @@ namespace stk
         Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
         int scalarDimension = 0; // a scalar
-        stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+        stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.print_info();
@@ -1981,9 +1981,9 @@ namespace stk
         // start_demo_uniformRefiner_hex8_hex27_1_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             percept::PerceptMesh eMesh(3u);
@@ -1993,7 +1993,7 @@ namespace stk
             Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info();
@@ -2031,7 +2031,7 @@ namespace stk
         Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
         int scalarDimension = 0; // a scalar
-        stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+        stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
         eMesh.commit();
         eMesh.print_info();
@@ -2061,9 +2061,9 @@ namespace stk
         // start_demo_uniformRefiner_hex8_hex20_1_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             percept::PerceptMesh eMesh(3u);
@@ -2073,7 +2073,7 @@ namespace stk
             Hex8_Hex20_1 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.print_info();
@@ -2113,7 +2113,7 @@ namespace stk
             Hex20_Hex20_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.save_as(std::string(output_files_loc+"")+std::string("hex20_hex20_cube1x1x")+toString(p_size)+std::string("_0.e"));
@@ -2141,9 +2141,9 @@ namespace stk
         // start_demo_uniformRefiner_hex20_hex20_1_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             percept::PerceptMesh eMesh(3u);
@@ -2153,7 +2153,7 @@ namespace stk
             Hex20_Hex20_8 break_hex_to_hex(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             eMesh.save_as(output_files_loc+"cylinder_hex20_hex20_0.e");
@@ -2191,7 +2191,7 @@ namespace stk
 
           Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
-          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+          stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
           eMesh.commit();
           eMesh.print_info();
@@ -2214,8 +2214,8 @@ namespace stk
 
           Hex27_Hex27_8 break_hex_to_hex(eMesh);
 
-          //stk::mesh::FieldBase* proc_rank_field = eMesh.get_field("proc_rank");
-          stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+          //stk_classic::mesh::FieldBase* proc_rank_field = eMesh.get_field("proc_rank");
+          stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
           eMesh.commit();
           //eMesh.print_info();
@@ -2246,9 +2246,9 @@ namespace stk
         // start_demo_uniformRefiner_hex8_hex27_1_2
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
             {
@@ -2259,7 +2259,7 @@ namespace stk
               Hex8_Hex27_1 break_hex_to_hex(eMesh);
 
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
               eMesh.print_info();
@@ -2278,9 +2278,9 @@ namespace stk
 
               Hex27_Hex27_8 break_hex_to_hex(eMesh);
 
-              //stk::mesh::FieldBase* proc_rank_field = eMesh.get_field("proc_rank");
+              //stk_classic::mesh::FieldBase* proc_rank_field = eMesh.get_field("proc_rank");
               int scalarDimension = 0;
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
               eMesh.commit();
 
@@ -2316,7 +2316,7 @@ namespace stk
         if (p_size == 1)
           {
 
-            //         void createMesh(stk::ParallelMachine parallel_machine,
+            //         void createMesh(stk_classic::ParallelMachine parallel_machine,
             //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
             //                         double xmin, double xmax,
             //                         double ymin, double ymax,
@@ -2337,7 +2337,7 @@ namespace stk
             Wedge6_Wedge6_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2367,7 +2367,7 @@ namespace stk
         unsigned p_size = eMesh.get_parallel_size();
         if (p_size == 1)
           {
-            //         void createMesh(stk::ParallelMachine parallel_machine,
+            //         void createMesh(stk_classic::ParallelMachine parallel_machine,
             //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
             //                         double xmin, double xmax,
             //                         double ymin, double ymax,
@@ -2388,7 +2388,7 @@ namespace stk
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2413,7 +2413,7 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_enrich_refine
 
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD );
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
 
         if (p_size == 1)
           {
@@ -2432,7 +2432,7 @@ namespace stk
             Wedge6_Wedge15_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
             UNIFORM_REFINER breaker(eMesh, break_wedge, proc_rank_field);
             breaker.doBreak();
@@ -2448,7 +2448,7 @@ namespace stk
             Wedge15_Wedge15_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -2473,18 +2473,18 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_mesh
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
-              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
+              stk_classic::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
 
               mesh.m_metaData.commit();
               mesh.populate();
@@ -2513,7 +2513,7 @@ namespace stk
 
                 URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
@@ -2538,18 +2538,18 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_mesh
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
-              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false, true);
+              stk_classic::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false, true);
 
               mesh.m_metaData.commit();
               mesh.populate();
@@ -2578,7 +2578,7 @@ namespace stk
 
                 URP_Heterogeneous_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
@@ -2604,18 +2604,18 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_mesh_enrich
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
-              stk::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
+              stk_classic::percept::PyramidFixture mesh(MPI_COMM_WORLD, false);
               mesh.m_metaData.commit();
               mesh.populate();
 
@@ -2644,7 +2644,7 @@ namespace stk
 
                 URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
                 //int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
                 eMesh1.commit();
                 //eMesh1.print_info("hetero_enrich_2", 4);
 
@@ -2673,17 +2673,17 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        const unsigned p_size = stk::parallel_machine_size(pm);
+        const unsigned p_size = stk_classic::parallel_machine_size(pm);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
 
-              stk::percept::BeamFixture mesh(pm, false);
-              stk::io::put_io_part_attribute(  mesh.m_block_beam );
+              stk_classic::percept::BeamFixture mesh(pm, false);
+              stk_classic::io::put_io_part_attribute(  mesh.m_block_beam );
               mesh.m_metaData.commit();
               mesh.populate();
 
@@ -2695,12 +2695,12 @@ namespace stk
 
             // refine
             {
-              stk::percept::PerceptMesh eMesh(3u);
+              stk_classic::percept::PerceptMesh eMesh(3u);
               eMesh.open(input_files_loc+"beam_0.e");
               //URP_Heterogeneous_3D break_pattern(eMesh);
               Beam2_Beam2_2 break_pattern(eMesh);
               int scalarDimension = 0; // a scalar
-              stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+              stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
               eMesh.commit();
 
               eMesh.save_as(output_files_loc+"beam_0.e");
@@ -2728,10 +2728,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
         // this case can't be load balanced?
 
@@ -2750,7 +2750,7 @@ namespace stk
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             eMesh.print_info("biplane", 2);
@@ -2776,10 +2776,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         std::cout << "p_size= " << p_size << std::endl;
         // this case can't be load balanced (I presume there are too few elements)
         if (p_size <= 1)
@@ -2797,7 +2797,7 @@ namespace stk
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
@@ -2826,10 +2826,10 @@ namespace stk
       {
         EXCEPTWATCH;
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         // this case can't be load balanced (I presume there are too few elements)
         //if (p_size <= 3)
         if (p_size == 1)
@@ -2846,7 +2846,7 @@ namespace stk
 
             URP_Heterogeneous_3D break_pattern(eMesh);
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             eMesh.commit();
 
             UNIFORM_REFINER breaker(eMesh, break_pattern, proc_rank_field);
@@ -2871,18 +2871,18 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_mesh_enrich
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size( MPI_COMM_WORLD);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size( MPI_COMM_WORLD);
 
         if (p_size <= 1)
           {
             // create the mesh
             {
-              stk::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
+              stk_classic::percept::HeterogeneousFixture mesh(MPI_COMM_WORLD, false);
 
               mesh.m_metaData.commit();
               mesh.populate();
@@ -2913,7 +2913,7 @@ namespace stk
 
                 URP_Heterogeneous_Enrich_3D break_pattern(eMesh1);
                 //int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = 0;      //eMesh1.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
                 eMesh1.commit();
                 //eMesh1.print_info("hetero_enrich_2", 4);
 
@@ -2940,12 +2940,12 @@ namespace stk
         EXCEPTWATCH;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
         // start_demo_heterogeneous_quadratic_refine
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size(pm);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size(pm);
 
         if (p_size <= 1)
           {
@@ -2958,7 +2958,7 @@ namespace stk
 
                 URP_Heterogeneous_QuadraticRefine_3D break_pattern(eMesh1);
                 int scalarDimension = 0; // a scalar
-                stk::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
+                stk_classic::mesh::FieldBase* proc_rank_field = eMesh1.add_field("proc_rank", eMesh1.element_rank(), scalarDimension);
                 eMesh1.commit();
 
                 UNIFORM_REFINER breaker(eMesh1, break_pattern, proc_rank_field);
@@ -2987,16 +2987,16 @@ namespace stk
 
         // start_demo_regr_uniformRefiner_wedge6_wedge18_enrich
 
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( MPI_COMM_WORLD);
-        const unsigned p_size = stk::parallel_machine_size(pm);
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD);
+        const unsigned p_size = stk_classic::parallel_machine_size(pm);
 
 
         //unsigned p_size = eMesh.get_parallel_size();
         if (p_size == 1)
           {
-            //         void createMesh(stk::ParallelMachine parallel_machine,
+            //         void createMesh(stk_classic::ParallelMachine parallel_machine,
             //                         unsigned n_nodes_x, unsigned n_nodes_y, unsigned n_nodes_z,
             //                         double xmin, double xmax,
             //                         double ymin, double ymax,
@@ -3021,7 +3021,7 @@ namespace stk
             Wedge6_Wedge18_1 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
             //eMesh.print_info();
@@ -3060,7 +3060,7 @@ namespace stk
             Wedge15_Wedge15_8 break_wedge(eMesh);
 
             int scalarDimension = 0; // a scalar
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
 
             eMesh.commit();
 
@@ -3084,11 +3084,11 @@ namespace stk
       STKUNIT_UNIT_TEST(regr_perceptMesquite, tet_4)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
 
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= 2)
           {
@@ -3100,7 +3100,7 @@ namespace stk
             eMesh.addParallelInfoFields(true,true);
             eMesh.add_coordinate_state_fields();
             int scalarDimension=0;
-            stk::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
+            stk_classic::mesh::FieldBase* proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension);
             Hex8_Tet4_6_12 convert_pattern(eMesh);
             eMesh.commit();
 
@@ -3108,32 +3108,32 @@ namespace stk
             converter.doBreak();
             eMesh.save_as(input_files_loc+"tet_4_smooth.0.0.e");
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5#Triangle_3#") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6#Triangle_3#") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6#Triangle_3#") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
             // cluster the mesh towards the bump
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 //if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];
                       }
                   }
@@ -3144,19 +3144,19 @@ namespace stk
             // field, dst, src: 
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
                         double iy = data[1];
                         data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
@@ -3182,7 +3182,7 @@ namespace stk
 
             {
               PerceptMesquiteMesh pmm(&eMesh, 0, &boundarySelector);
-              stk::percept::PMMParallelShapeImprover pmmpsi(innerIter, 1.e-4, 1);
+              stk_classic::percept::PMMParallelShapeImprover pmmpsi(innerIter, 1.e-4, 1);
               pmmpsi.run(pmm, 0, always_smooth, msq_debug);
             }
 

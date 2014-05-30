@@ -22,18 +22,18 @@
 #include <stk_mesh/base/FieldRelation.hpp>
 #include <stk_mesh/base/PartRelation.hpp>
 
-using stk::mesh::MetaData;
-using stk::mesh::Part;
-using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
-using stk::mesh::impl::PartRepository;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::PartRelation;
+using stk_classic::mesh::impl::PartRepository;
 
 namespace {
 
 STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
 {
   const int spatial_dimension = 3;
-  MetaData m(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData m(stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
   PartRepository partRepo(&m);
   PartRepository partRepo2(&m);
   PartRepository partRepo3(&m);
@@ -177,9 +177,9 @@ STKUNIT_UNIT_TEST(UnitTestPart, testUnit)
       std::vector< std::string > dummy_names(1);
       dummy_names[0].assign("dummy");
 
-      stk::mesh::MetaData meta2( dummy_names );
+      stk_classic::mesh::MetaData meta2( dummy_names );
 
-      stk::mesh::Part &part_not_in_same_universe = meta2.declare_part ( "part_not_in_same_universe");
+      stk_classic::mesh::Part &part_not_in_same_universe = meta2.declare_part ( "part_not_in_same_universe");
       meta2.commit();
 
        intersection4.push_back( &part_not_in_same_universe );
@@ -275,11 +275,11 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 {
   //Test to cover assert_contain in PartRepository - Part is not a subset
   const int spatial_dimension = 3;
-  MetaData m(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData m(stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
   PartVector intersection;
   PartRepository partRepo(&m);
 
-  stk::mesh::Part &part_not_a_subset =  m.declare_part ( "part_not_a_subset");
+  stk_classic::mesh::Part &part_not_a_subset =  m.declare_part ( "part_not_a_subset");
   m.commit();
 
   intersection.push_back( &part_not_a_subset );
@@ -295,7 +295,7 @@ STKUNIT_UNIT_TEST(UnitTestPart, testPartNotaSubset)
 STKUNIT_UNIT_TEST(UnitTestPart, testPartVector)
 {
   const int spatial_dimension = 3;
-  MetaData m(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData m(stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
   PartRepository partRepo(&m);
 
   Part * const pa =  partRepo.declare_part( std::string("a") , 0 );

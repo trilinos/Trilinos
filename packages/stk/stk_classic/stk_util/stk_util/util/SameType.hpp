@@ -9,7 +9,7 @@
 #ifndef stk_util_util_SameType_hpp
 #define stk_util_util_SameType_hpp
 
-namespace stk {
+namespace stk_classic {
 
 //----------------------------------------------------------------------
 /** \class  SameType

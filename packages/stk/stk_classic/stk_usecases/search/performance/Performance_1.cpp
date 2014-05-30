@@ -44,15 +44,15 @@
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 #include <stk_search_util/stk_mesh/PrintBoundingBox.hpp>
 
-using namespace stk::diag;
+using namespace stk_classic::diag;
 using namespace use_case;
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>       VectorField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>       VectorField ;
 
 namespace {
   void get_domain_range_used(const IdentProcRelation &relation,
-			     std::vector<stk::mesh::EntityKey> &domain_used,
-			     std::vector<stk::mesh::EntityKey> &range_used,
+			     std::vector<stk_classic::mesh::EntityKey> &domain_used,
+			     std::vector<stk_classic::mesh::EntityKey> &range_used,
 			     int &on_proc, int &off_proc,
 			     unsigned int my_rank,
 			     bool same_mesh);
@@ -66,24 +66,24 @@ namespace {
 
 
 void
-performance_driver(stk::ParallelMachine  comm,
+performance_driver(stk_classic::ParallelMachine  comm,
 		   const std::string &working_directory,
 		   const std::string &search_type,
-		   const stk::search::Options &range,
-		   const stk::search::Options &domain,
+		   const stk_classic::search::Options &range,
+		   const stk_classic::search::Options &domain,
 		   bool performance)
 {
   static const size_t spatial_dimension = 3;
   
-  stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 
-  stk::diag::Timer timer("SearchPerformance", use_case::TIMER_SEARCH, use_case::timer());
-  stk::diag::Timer timer_search_performance(domain.mesh_filename + " to " + range.mesh_filename, timer);
-  stk::diag::Timer timer_range_bb("Range bounding box", timer_search_performance);
-  stk::diag::Timer timer_domain_bb("Domain bounding box", timer_search_performance);
-  stk::diag::Timer timer_range_search("Search", timer_search_performance);
+  stk_classic::diag::Timer timer("SearchPerformance", use_case::TIMER_SEARCH, use_case::timer());
+  stk_classic::diag::Timer timer_search_performance(domain.mesh_filename + " to " + range.mesh_filename, timer);
+  stk_classic::diag::Timer timer_range_bb("Range bounding box", timer_search_performance);
+  stk_classic::diag::Timer timer_domain_bb("Domain bounding box", timer_search_performance);
+  stk_classic::diag::Timer timer_range_search("Search", timer_search_performance);
 
-  stk::diag::TimeBlock timer_search_performance_block(timer_search_performance);
+  stk_classic::diag::TimeBlock timer_search_performance_block(timer_search_performance);
 
   bool do_output = !performance;
 
@@ -109,26 +109,26 @@ performance_driver(stk::ParallelMachine  comm,
     domain_use_universal_set = false;
   }
 
-  stk::CommAll comm_all( comm );
+  stk_classic::CommAll comm_all( comm );
 
-  dw() << "Performance use case: " << search_type   << stk::diag::dendl;
-  dw() << "Range  Entity Type =  " << range.entity  << stk::diag::dendl;
-  dw() << "Domain Entity Type =  " << domain.entity << stk::diag::dendl;
+  dw() << "Performance use case: " << search_type   << stk_classic::diag::dendl;
+  dw() << "Range  Entity Type =  " << range.entity  << stk_classic::diag::dendl;
+  dw() << "Domain Entity Type =  " << domain.entity << stk_classic::diag::dendl;
 
   // Initialize IO system.  Registers all element types and storage
   // types and the exodusII default database type.
   Ioss::Init::Initializer init_db;
 
-  stk::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
-  stk::io::MeshData range_mesh_data;
+  stk_classic::mesh::fem::FEMMetaData range_meta_data( spatial_dimension );
+  stk_classic::io::MeshData range_mesh_data;
 
   dw() << "Build range metadata...\n";
   std::string filename = working_directory + range.mesh_filename;
-  stk::io::create_input_mesh(range.mesh_type, filename, comm, range_meta_data, range_mesh_data);
+  stk_classic::io::create_input_mesh(range.mesh_type, filename, comm, range_meta_data, range_mesh_data);
 
-  stk::mesh::Part *range_skin_part = NULL;
-  stk::mesh::Part *domain_skin_part = NULL;
-  stk::mesh::fem::CellTopology skin_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk_classic::mesh::Part *range_skin_part = NULL;
+  stk_classic::mesh::Part *domain_skin_part = NULL;
+  stk_classic::mesh::fem::CellTopology skin_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
   if ((range.entity == "face" && range_use_universal_set) ||
       (same_mesh && domain.entity == "face" && domain_use_universal_set)) {
@@ -138,23 +138,23 @@ performance_driver(stk::ParallelMachine  comm,
   range_meta_data.commit();
 
   dw() << "Build range bulkdata...\n";
-  stk::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
-  stk::io::populate_bulk_data(range_bulk_data, range_mesh_data);
+  stk_classic::mesh::BulkData range_bulk_data(range_meta_data.get_meta_data(range_meta_data) , comm);
+  stk_classic::io::populate_bulk_data(range_bulk_data, range_mesh_data);
 
   if ((range.entity == "face" && range_use_universal_set) ||
       (same_mesh && domain.entity == "face" && domain_use_universal_set)) {
-    stk::mesh::skin_mesh( range_bulk_data, range_meta_data.element_rank(), range_skin_part);
+    stk_classic::mesh::skin_mesh( range_bulk_data, range_meta_data.element_rank(), range_skin_part);
   }
 
-  stk::mesh::fem::FEMMetaData *domain_meta_data = NULL;
-  stk::mesh::BulkData *domain_bulk_data = NULL;
+  stk_classic::mesh::fem::FEMMetaData *domain_meta_data = NULL;
+  stk_classic::mesh::BulkData *domain_bulk_data = NULL;
 
   if (!same_mesh) {
-    stk::io::MeshData domain_mesh_data;
+    stk_classic::io::MeshData domain_mesh_data;
     dw() << "Build domain metadata...\n";
-    domain_meta_data = new stk::mesh::fem::FEMMetaData( spatial_dimension );
+    domain_meta_data = new stk_classic::mesh::fem::FEMMetaData( spatial_dimension );
     filename = working_directory + domain.mesh_filename;
-    stk::io::create_input_mesh(domain.mesh_type, filename, comm, *domain_meta_data, domain_mesh_data);
+    stk_classic::io::create_input_mesh(domain.mesh_type, filename, comm, *domain_meta_data, domain_mesh_data);
 
     if (domain.entity == "face" && domain_use_universal_set) {
       domain_skin_part = &domain_meta_data->declare_part("skin", skin_top);
@@ -162,11 +162,11 @@ performance_driver(stk::ParallelMachine  comm,
     domain_meta_data->commit();
 
     dw() << "Build domain bulkdata...\n";
-    domain_bulk_data = new stk::mesh::BulkData(domain_meta_data->get_meta_data(*domain_meta_data) , comm);
-    stk::io::populate_bulk_data(*domain_bulk_data, domain_mesh_data);
+    domain_bulk_data = new stk_classic::mesh::BulkData(domain_meta_data->get_meta_data(*domain_meta_data) , comm);
+    stk_classic::io::populate_bulk_data(*domain_bulk_data, domain_mesh_data);
 
     if (domain.entity == "face" && domain_use_universal_set) {
-      stk::mesh::skin_mesh( *domain_bulk_data, domain_meta_data->element_rank(), domain_skin_part);
+      stk_classic::mesh::skin_mesh( *domain_bulk_data, domain_meta_data->element_rank(), domain_skin_part);
     }
   } else {
     dw() << "Domain shares metadata and bulkdata with range...\n";
@@ -181,7 +181,7 @@ performance_driver(stk::ParallelMachine  comm,
   // ========================================================================
 
 
-  stk::search::FactoryOrder order;
+  stk_classic::search::FactoryOrder order;
   order.m_communicator = comm;
 
   VectorField *range_coord_field = range_meta_data.get_field<VectorField>("coordinates");
@@ -200,8 +200,8 @@ performance_driver(stk::ParallelMachine  comm,
 
     {
       dw() << "Build range bbox...\n";
-      stk::diag::TimeBlock __timer_range_bb(timer_range_bb);
-      stk::search_util::build_centroid_bbox(range_bulk_data,
+      stk_classic::diag::TimeBlock __timer_range_bb(timer_range_bb);
+      stk_classic::search_util::build_centroid_bbox(range_bulk_data,
 					    range_meta_data.entity_rank(range.entity),
 					    range_coord_field, range_vector,
 					    range_use_universal_set);
@@ -210,28 +210,28 @@ performance_driver(stk::ParallelMachine  comm,
     std::vector<AxisAlignedBoundingBox3D> domain_vector;
     {
       dw() << "Build domain bbox...\n";
-      stk::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
-      stk::search_util::build_axis_aligned_bbox(*domain_bulk_data,
+      stk_classic::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
+      stk_classic::search_util::build_axis_aligned_bbox(*domain_bulk_data,
 						domain_meta_data->entity_rank(domain.entity),
 						domain_coord_field, domain_vector,
 						domain_use_universal_set,
-						stk::search_util::OffsetScaleOp(domain.scale,
+						stk_classic::search_util::OffsetScaleOp(domain.scale,
 										domain.offset));
     }
 
     {
-      stk::diag::TimeBlock __timer_range_search(timer_range_search);
+      stk_classic::diag::TimeBlock __timer_range_search(timer_range_search);
       dw() << "Build search object...\n";
 
       dw() << "Perform search...\n";
-      stk::search::coarse_search(relation, range_vector, domain_vector,order);
+      stk_classic::search::coarse_search(relation, range_vector, domain_vector,order);
     }
 
     if (do_output) {
       dw() << "Search algorithm " << order.m_algorithm << dendl;
-      dw() << "range  " << range_vector  << stk::diag::dendl;
-      dw() << "domain " << domain_vector << stk::diag::dendl;
-      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::fem::entity_rank_names(spatial_dimension), relation);
+      dw() << "range  " << range_vector  << stk_classic::diag::dendl;
+      dw() << "domain " << domain_vector << stk_classic::diag::dendl;
+      stk_classic::search_util::print_stk_mesh_relation_map(dw(), stk_classic::mesh::fem::entity_rank_names(spatial_dimension), relation);
     }
     range_vector_size = range_vector.size();
     domain_vector_size = domain_vector.size();
@@ -244,36 +244,36 @@ performance_driver(stk::ParallelMachine  comm,
 
     std::vector<AxisAlignedBoundingBox3D> range_vector;
     {
-      stk::diag::TimeBlock __timer_range_bb(timer_range_bb);
-      stk::search_util::build_axis_aligned_bbox(range_bulk_data,
+      stk_classic::diag::TimeBlock __timer_range_bb(timer_range_bb);
+      stk_classic::search_util::build_axis_aligned_bbox(range_bulk_data,
 						range_meta_data.entity_rank(range.entity),
 						range_coord_field, range_vector,
 						range_use_universal_set,
-						stk::search_util::OffsetScaleOp(range.scale,
+						stk_classic::search_util::OffsetScaleOp(range.scale,
 										range.offset));
     }
 
     std::vector<AxisAlignedBoundingBox3D> domain_vector;
     {
-      stk::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
-      stk::search_util::build_axis_aligned_bbox(*domain_bulk_data,
+      stk_classic::diag::TimeBlock __timer_domain_bb(timer_domain_bb);
+      stk_classic::search_util::build_axis_aligned_bbox(*domain_bulk_data,
 						domain_meta_data->entity_rank(domain.entity),
 						domain_coord_field, domain_vector,
 						domain_use_universal_set,
-						stk::search_util::OffsetScaleOp(domain.scale,
+						stk_classic::search_util::OffsetScaleOp(domain.scale,
 										domain.offset));
     }
 
     {
-      stk::diag::TimeBlock __timer_range_search(timer_range_search);
-      stk::search::coarse_search(relation, range_vector, domain_vector, order);
+      stk_classic::diag::TimeBlock __timer_range_search(timer_range_search);
+      stk_classic::search::coarse_search(relation, range_vector, domain_vector, order);
     }
 
     if (do_output) {
       dw() << "Search algorithm " << order.m_algorithm << dendl;
-      dw() << "range  " << range_vector  << stk::diag::dendl;
-      dw() << "domain " << domain_vector << stk::diag::dendl;
-      stk::search_util::print_stk_mesh_relation_map(dw(), stk::mesh::fem::entity_rank_names(spatial_dimension), relation);
+      dw() << "range  " << range_vector  << stk_classic::diag::dendl;
+      dw() << "domain " << domain_vector << stk_classic::diag::dendl;
+      stk_classic::search_util::print_stk_mesh_relation_map(dw(), stk_classic::mesh::fem::entity_rank_names(spatial_dimension), relation);
     }
     range_vector_size = range_vector.size();
     domain_vector_size = domain_vector.size();
@@ -291,8 +291,8 @@ performance_driver(stk::ParallelMachine  comm,
   //    are filtered by the detailed... Also, cost of a detailed
   //    search/entity...
   //
-  std::vector<stk::mesh::EntityKey> domain_used;
-  std::vector<stk::mesh::EntityKey> range_used;
+  std::vector<stk_classic::mesh::EntityKey> domain_used;
+  std::vector<stk_classic::mesh::EntityKey> range_used;
   int lsizes[] = {0,0,0,0,0,0,0};
   int gsizes[] = {0,0,0,0,0,0,0};
 
@@ -332,16 +332,16 @@ performance_driver(stk::ParallelMachine  comm,
 }
 
 namespace {
-  void uniqify(std::vector<stk::mesh::EntityKey> &vec)
+  void uniqify(std::vector<stk_classic::mesh::EntityKey> &vec)
   {
     std::sort(vec.begin(), vec.end());
-    std::vector<stk::mesh::EntityKey>::iterator i = std::unique(vec.begin(), vec.end());
+    std::vector<stk_classic::mesh::EntityKey>::iterator i = std::unique(vec.begin(), vec.end());
     vec.erase(i, vec.end());
   }
 
   void get_domain_range_used(const IdentProcRelation &relation,
-			     std::vector<stk::mesh::EntityKey> &domain_used,
-			     std::vector<stk::mesh::EntityKey> &range_used,
+			     std::vector<stk_classic::mesh::EntityKey> &domain_used,
+			     std::vector<stk_classic::mesh::EntityKey> &range_used,
 			     int &on_proc, int &off_proc, unsigned int my_rank, bool same_mesh)
   {
     IdentProcRelation::const_iterator i=relation.begin(), end=relation.end();

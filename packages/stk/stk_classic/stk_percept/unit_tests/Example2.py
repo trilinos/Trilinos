@@ -67,7 +67,7 @@ class UseCases(unittest.TestCase):
         p_size = parallel_machine_size(pm)
         if p_size == 1:
             wedgeFixture = WedgeFixture()
-            bulk = wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1,"")   # create stk::mesh::BulkData from wedge fixture
+            bulk = wedgeFixture.createMesh(MPI.COMM_WORLD, 4,3,2,0,1,0,1,0,1,"")   # create stk_classic::mesh::BulkData from wedge fixture
             eMesh = PerceptMesh(wedgeFixture.getMetaData(), bulk, False)           # adopt bulk data
             scalarDimension = 0
             proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), scalarDimension)

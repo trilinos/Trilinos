@@ -71,27 +71,27 @@ work()
 }
 
 
-stk::diag::TimerSet &
+stk_classic::diag::TimerSet &
 unitTestTimerSet()
 {
-  static stk::diag::TimerSet s_unitTestTimerSet(TIMER_REGION);
+  static stk_classic::diag::TimerSet s_unitTestTimerSet(TIMER_REGION);
 
   return s_unitTestTimerSet;
 }
 
 
-stk::diag::TimerSet &
+stk_classic::diag::TimerSet &
 unitTestSecondTimerSet()
 {
-  static stk::diag::TimerSet s_unitTestSecondTimerSet(TIMER_APP_3);
+  static stk_classic::diag::TimerSet s_unitTestSecondTimerSet(TIMER_APP_3);
 
   return s_unitTestSecondTimerSet;
 }
 
 
-stk::diag::Timer &unitTestTimer() {
+stk_classic::diag::Timer &unitTestTimer() {
   const std::string name("Unit test timer");
-  static stk::diag::Timer s_unitTestTimer (stk::diag::createRootTimer(name, unitTestTimerSet()));
+  static stk_classic::diag::Timer s_unitTestTimer (stk_classic::diag::createRootTimer(name, unitTestTimerSet()));
 
   return s_unitTestTimer;
 }
@@ -103,7 +103,7 @@ struct RootObject
     : m_timer("Root object", TIMER_REGION, unitTestTimer())
   {}
 
-  stk::diag::Timer      m_timer;
+  stk_classic::diag::Timer      m_timer;
 };
 
 
@@ -128,13 +128,13 @@ struct Object
   }
 
   void run() {
-    stk::diag::TimeBlock _time(m_timer);
+    stk_classic::diag::TimeBlock _time(m_timer);
     m_x += work();
   }
   
   int                   m_id;
   std::string           m_name;
-  stk::diag::Timer      m_timer;
+  stk_classic::diag::Timer      m_timer;
   double                m_x;
 };
 
@@ -142,15 +142,15 @@ struct Object
 
 STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 {
-  stk::diag::TimeBlock root_time_block(unitTestTimer());
+  stk_classic::diag::TimeBlock root_time_block(unitTestTimer());
 
   std::ostringstream strout;
   
   // Create subtimer and test lap time
   {
-    static stk::diag::Timer lap_timer("One second Wall time twice", unitTestTimer());
+    static stk_classic::diag::Timer lap_timer("One second Wall time twice", unitTestTimer());
     
-    stk::diag::TimeBlock _time(lap_timer);
+    stk_classic::diag::TimeBlock _time(lap_timer);
     double x = quick_work();
     x = x;
     std::ostringstream oss;
@@ -160,7 +160,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 
     lap_timer.lap();
     
-    stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
+    stk_classic::diag::MetricTraits<stk_classic::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk_classic::diag::WallTime>().getLap();
   
     STKUNIT_ASSERT(lap_time >= 1.0);
 
@@ -168,50 +168,50 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 
     lap_timer.stop();
     
-    lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
+    lap_time = lap_timer.getMetric<stk_classic::diag::WallTime>().getLap();
   
     STKUNIT_ASSERT(lap_time >= 2.0);
   }
 
   // 
   {
-    static stk::diag::Timer run_timer("Run 100 times twice", unitTestTimer());
+    static stk_classic::diag::Timer run_timer("Run 100 times twice", unitTestTimer());
     
     for (int i = 0; i < 100; ++i) {
-      stk::diag::TimeBlock _time(run_timer);
+      stk_classic::diag::TimeBlock _time(run_timer);
       work();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = run_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
   
     STKUNIT_ASSERT(lap_count == 100);
   }
 
   // Create second timer set
   {
-    static stk::diag::Timer second_timer("Second timer set", unitTestTimer(), unitTestSecondTimerSet());
-    static stk::diag::Timer second_timer_on_default("On default", second_timer);
-    static stk::diag::Timer second_timer_on("On", TIMER_APP_3, second_timer);
-    static stk::diag::Timer second_timer_off("Off", TIMER_APP_1, second_timer);
+    static stk_classic::diag::Timer second_timer("Second timer set", unitTestTimer(), unitTestSecondTimerSet());
+    static stk_classic::diag::Timer second_timer_on_default("On default", second_timer);
+    static stk_classic::diag::Timer second_timer_on("On", TIMER_APP_3, second_timer);
+    static stk_classic::diag::Timer second_timer_off("Off", TIMER_APP_1, second_timer);
     
-    stk::diag::TimeBlock _time(second_timer);
-    stk::diag::TimeBlock _time1(second_timer_on_default);
-    stk::diag::TimeBlock _time2(second_timer_on);
-    stk::diag::TimeBlock _time3(second_timer_off);
+    stk_classic::diag::TimeBlock _time(second_timer);
+    stk_classic::diag::TimeBlock _time1(second_timer_on_default);
+    stk_classic::diag::TimeBlock _time2(second_timer_on);
+    stk_classic::diag::TimeBlock _time3(second_timer_off);
 
     ::sleep(1);
   }
 
   // Grab previous subtimer and run 100 laps
   {
-    static stk::diag::Timer run_timer("Run 100 times twice", unitTestTimer());
+    static stk_classic::diag::Timer run_timer("Run 100 times twice", unitTestTimer());
     
     for (int i = 0; i < 100; ++i) {
-      stk::diag::TimeBlock _time(run_timer);
+      stk_classic::diag::TimeBlock _time(run_timer);
       work();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = run_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
   
     STKUNIT_ASSERT(lap_count == 200);
   }
@@ -220,7 +220,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
   RootObject root_object;
     
   {
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
   
     STKUNIT_ASSERT(lap_count == 0);
   }
@@ -233,7 +233,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
       time_object.run();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
   
     STKUNIT_ASSERT(lap_count == 100);
   }
@@ -256,47 +256,47 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
       }
     }
     
-    stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk_classic::diag::printTimersTable(strout, unitTestTimer(), stk_classic::diag::METRICS_ALL, false);
     
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = 0;
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j) 
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(0));
 
     for (size_t j = 0; j < object_vector.size(); ++j) 
       object_vector[j].run();
 
-    stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, false);    
+    stk_classic::diag::printTimersTable(strout, unitTestTimer(), stk_classic::diag::METRICS_ALL, false);    
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j) 
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(object_vector.size()));
 
     for (size_t i = 1; i < 100; ++i) 
       for (size_t j = 0; j < object_vector.size(); ++j) 
         object_vector[j].run();
 
-    stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, false);    
+    stk_classic::diag::printTimersTable(strout, unitTestTimer(), stk_classic::diag::METRICS_ALL, false);    
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j) 
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
+    STKUNIT_ASSERT_EQUAL(lap_count, stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(100*object_vector.size()));
 
-    stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk_classic::diag::printTimersTable(strout, unitTestTimer(), stk_classic::diag::METRICS_ALL, true);
 
     for (size_t i = 1; i < 100; ++i) 
       for (size_t j = 0; j < object_vector.size(); ++j) 
         object_vector[j].run();
 
-    stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk_classic::diag::printTimersTable(strout, unitTestTimer(), stk_classic::diag::METRICS_ALL, true);
 
     std::cout << strout.str() << std::endl;
     
-//    dw().m(LOG_TIMER) << strout.str() << stk::diag::dendl;
+//    dw().m(LOG_TIMER) << strout.str() << stk_classic::diag::dendl;
   }
 }

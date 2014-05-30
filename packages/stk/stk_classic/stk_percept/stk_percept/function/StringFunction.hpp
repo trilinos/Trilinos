@@ -15,7 +15,7 @@ namespace stk
   namespace percept
   {
 
-    class StringFunction : public Function, public stk::expreval::VariableMap::Resolver
+    class StringFunction : public Function, public stk_classic::expreval::VariableMap::Resolver
     {
     public:
 
@@ -54,20 +54,20 @@ namespace stk
 
       StringFunction(const StringFunction& s);
 
-      void resolve(stk::expreval::VariableMap::iterator & var_it);
+      void resolve(stk_classic::expreval::VariableMap::iterator & var_it);
 
       Teuchos::RCP<Function > derivative_test(MDArrayString& deriv_spec);
       Teuchos::RCP<Function > derivative_test_fd(MDArrayString& deriv_spec, double eps=1.e-6);
 
       virtual void operator()(MDArray& in, MDArray& out, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0);
-      virtual void operator()(MDArray& in, MDArray& out, const stk::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, const stk_classic::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0);
+      virtual void operator()(MDArray& in, MDArray& out, const stk_classic::mesh::Bucket& bucket, const MDArray& parametric_coords, double time_value_optional=0.0);
 
     private:
       void evalFunctions(MDArray& in, double time_value_optional=0.0);
 
       std::string m_func_string;
-      stk::expreval::Eval m_functionExpr;
+      stk_classic::expreval::Eval m_functionExpr;
       //std::vector<std::string> m_gradient_string;
       std::string m_gradient_string;
       //Expr::Eval gradientExpr;
@@ -80,8 +80,8 @@ namespace stk
       //Map of function names to their evalutation values
       std::map<Function *, std::vector<double> > m_func_to_value;
 
-      const stk::mesh::Entity * m_element;
-      const stk::mesh::Bucket * m_bucket;
+      const stk_classic::mesh::Entity * m_element;
+      const stk_classic::mesh::Bucket * m_bucket;
       MDArray m_parametric_coordinates;
       bool m_have_element;
       bool m_have_bucket;

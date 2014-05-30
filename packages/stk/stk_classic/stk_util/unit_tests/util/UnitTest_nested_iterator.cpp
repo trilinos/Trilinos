@@ -11,14 +11,14 @@ namespace vector_vector_int {
 
   typedef std::vector< std::vector<int> > nested_type;
 
-  typedef stk::util::nested_iterator< std::vector<std::vector<int> >,
+  typedef stk_classic::util::nested_iterator< std::vector<std::vector<int> >,
                                       std::vector<int>,
-                                      stk::util::details::identity<std::vector<int> >
+                                      stk_classic::util::details::identity<std::vector<int> >
                                     > nested_iterator;
 
-  typedef stk::util::nested_iterator< const std::vector<std::vector<int> >,
+  typedef stk_classic::util::nested_iterator< const std::vector<std::vector<int> >,
                                       std::vector<int>,
-                                      stk::util::details::identity<std::vector<int> >
+                                      stk_classic::util::details::identity<std::vector<int> >
                                     > const_nested_iterator;
 }
 
@@ -98,9 +98,9 @@ namespace list_vector_int {
 
   typedef std::list< std::vector<int> > nested_type;
 
-  typedef stk::util::nested_iterator< std::list<std::vector<int> >,
+  typedef stk_classic::util::nested_iterator< std::list<std::vector<int> >,
                                       std::vector<int>,
-                                      stk::util::details::identity<std::vector<int> >
+                                      stk_classic::util::details::identity<std::vector<int> >
                                     > nested_iterator;
 }
 

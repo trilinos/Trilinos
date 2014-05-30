@@ -32,14 +32,14 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 enum { SpatialDim = 3 };
 
 }
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
@@ -117,7 +117,7 @@ bool verify_elem_node_coord(
 }
 
 bool verify_elem_node_coord_by_part(
-    stk::mesh::Part & part,
+    stk_classic::mesh::Part & part,
     const std::vector<Bucket *> & bucket_vector,
     const ElementNodePointerFieldType & elem_node_coord,
     const VectorFieldType & node_coord,

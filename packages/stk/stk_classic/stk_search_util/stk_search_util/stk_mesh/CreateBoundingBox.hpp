@@ -16,13 +16,13 @@
 #include <stk_search/BoundingBox.hpp>
 #include <stk_search/IdentProc.hpp>
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian> CartesianField ;
-typedef stk::search::ident::IdentProc<stk::mesh::EntityKey, unsigned> IdentProc;
-typedef stk::search::box::AxisAlignedBoundingBox<IdentProc, double, 3> AxisAlignedBoundingBox3D;
-typedef stk::search::box::PointBoundingBox<IdentProc, double, 3> PointBoundingBox3D;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> CartesianField ;
+typedef stk_classic::search::ident::IdentProc<stk_classic::mesh::EntityKey, unsigned> IdentProc;
+typedef stk_classic::search::box::AxisAlignedBoundingBox<IdentProc, double, 3> AxisAlignedBoundingBox3D;
+typedef stk_classic::search::box::PointBoundingBox<IdentProc, double, 3> PointBoundingBox3D;
 typedef std::vector<std::pair<IdentProc, IdentProc> > IdentProcRelation;
 
-namespace stk {
+namespace stk_classic {
 
 namespace mesh {
 class BulkData;
@@ -53,14 +53,14 @@ struct NoOp : public Op
   {}
 };
 
-void build_axis_aligned_bbox(stk::mesh::BulkData &bulk_data, stk::mesh::EntityRank type,
+void build_axis_aligned_bbox(stk_classic::mesh::BulkData &bulk_data, stk_classic::mesh::EntityRank type,
                              CartesianField *coordinates,
                              std::vector<AxisAlignedBoundingBox3D> &box_vector,
 			     bool use_universal_part = false,
 			     const Op &op = NoOp());
 
 
-void build_centroid_bbox(stk::mesh::BulkData &bulk_data,  stk::mesh::EntityRank type,
+void build_centroid_bbox(stk_classic::mesh::BulkData &bulk_data,  stk_classic::mesh::EntityRank type,
                          CartesianField *coordinates,
                          std::vector<PointBoundingBox3D> &box_vector,
                          bool use_universal_part = false);

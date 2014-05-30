@@ -26,11 +26,11 @@
 namespace use_case {
 
 enum LogMask {
-  LOG_ALWAYS		= stk::LOG_ALWAYS,
-  LOG_TRACE		= stk::LOG_TRACE,
-  LOG_TRACE_STATS	= stk::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS	= stk::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS		= stk::LOG_MEMBERS,
+  LOG_ALWAYS		= stk_classic::LOG_ALWAYS,
+  LOG_TRACE		= stk_classic::LOG_TRACE,
+  LOG_TRACE_STATS	= stk_classic::LOG_TRACE_STATS,
+  LOG_TRACE_SUB_CALLS	= stk_classic::LOG_TRACE_SUB_CALLS,
+  LOG_MEMBERS		= stk_classic::LOG_MEMBERS,
 
   LOG_SEARCH            = 0x0000010,
   LOG_TRANSFER          = 0x0000020,
@@ -42,8 +42,8 @@ enum LogMask {
  *
  */
 enum message_type {
-  MSG_WARNING = stk::MSG_WARNING,
-  MSG_FATAL = stk::MSG_DOOMED,
+  MSG_WARNING = stk_classic::MSG_WARNING,
+  MSG_FATAL = stk_classic::MSG_DOOMED,
   MSG_INFORMATION,
   MSG_EXCEPTION,
   MSG_PARALLEL_EXCEPTION
@@ -55,7 +55,7 @@ enum message_type {
  *
  */
 enum message_throttle_type {
-  MSG_APPLICATION = stk::MSG_APPLICATION,
+  MSG_APPLICATION = stk_classic::MSG_APPLICATION,
   MSG_TIME_STEP
 };
 
@@ -76,11 +76,11 @@ std::ostream &tout();               ///< Regression test textual output stream
 
 std::ostream &dwout();              ///< Diagnostic writer stream
 
-stk::diag::Writer &dw();
+stk_classic::diag::Writer &dw();
 
-stk::diag::TimerSet &timerSet();
+stk_classic::diag::TimerSet &timerSet();
 
-stk::diag::Timer &timer();
+stk_classic::diag::Timer &timer();
 
 void my_report_handler(const char *message, int type);
 
@@ -91,7 +91,7 @@ void my_report_handler(const char *message, int type);
  *
  * Returns true if all procs passed.
  */
-bool print_status(stk::ParallelMachine comm, bool success);
+bool print_status(stk_classic::ParallelMachine comm, bool success);
 
 struct UseCaseEnvironment
 {
@@ -99,14 +99,14 @@ struct UseCaseEnvironment
   UseCaseEnvironment(int *argc, char ***argv);
 
   // Assumes already-initialized comm
-  UseCaseEnvironment(int *argc, char ***argv, stk::ParallelMachine comm);
+  UseCaseEnvironment(int *argc, char ***argv, stk_classic::ParallelMachine comm);
 
   // shared constructor implementation; do not call directly
   void initialize(int* argc, char ***argv);
 
   ~UseCaseEnvironment();
 
-  const stk::ParallelMachine    m_comm;
+  const stk_classic::ParallelMachine    m_comm;
   std::string                   m_workingDirectory;
   bool                          m_need_to_finalize;
 };

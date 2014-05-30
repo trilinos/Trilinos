@@ -10,7 +10,7 @@
 
 #include <sys/time.h>
 
-namespace stk {
+namespace stk_classic {
 
 double
 wall_time()

@@ -12,7 +12,7 @@
 
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 const char * ElementNode::name() const

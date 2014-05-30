@@ -21,7 +21,7 @@ namespace stk
 
     void MeshDifference::run(int argc, char** argv)
     {
-      //stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
+      //stk_classic::ParallelMachine parallel_machine = stk_classic::parallel_machine_init(&argc, &argv);
 
       std::string file_name1, file_name2;
 

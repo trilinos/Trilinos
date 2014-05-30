@@ -21,14 +21,14 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
-using stk::mesh::Part;
-using stk::mesh::MetaData;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Entity;
-using stk::mesh::Selector;
-using stk::mesh::PartVector;
-using stk::mesh::fixtures::RingFixture;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::fixtures::RingFixture;
 
 //----------------------------------------------------------------------
 
@@ -38,11 +38,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // by looking at bucket supersets. We use contrived entities
   // (as opposed to a fixture) for simplicity and clarity.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
 
   // Single process, no sharing
 
@@ -171,7 +171,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts)
   // entity_0_1 (which is in part_A_0). After the relation
   // is added, there is an induced membership of entity_0_1
   // within part A_1.
-  stk::mesh::RelationIdentifier test_rel_id = 0;
+  stk_classic::mesh::RelationIdentifier test_rel_id = 0;
   {
     bulk.declare_relation( entity_1_1 , entity_0_1 , test_rel_id );
     entity_0_1.bucket().supersets( tmp );
@@ -361,12 +361,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
   // more realistic test than the test above but it's a bit harder
   // to read.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const unsigned nPerProc   = 10;
-  const unsigned p_rank     = stk::parallel_machine_rank( pm );
-  const unsigned p_size     = stk::parallel_machine_size( pm );
+  const unsigned p_rank     = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size     = stk_classic::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
   
@@ -378,12 +378,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeParts_ringmesh)
 
   bulk.modification_begin();
   ring_mesh.generate_mesh( );
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+  STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk,
                                                           false /* no aura */));
 
   bulk.modification_begin();
   ring_mesh.fixup_node_ownership();
-  STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+  STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk,
                                                           false /* no aura */));
 
   Part & part_owns = ring_mesh.m_meta_data.locally_owned_part();

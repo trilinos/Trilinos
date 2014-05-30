@@ -100,7 +100,7 @@ void test_no_expr_error()
 STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
 {
   // Setting assert handler to NULL should cause exception
-  STKUNIT_ASSERT_THROW(stk::set_assert_handler(0), std::runtime_error);
+  STKUNIT_ASSERT_THROW(stk_classic::set_assert_handler(0), std::runtime_error);
 
   // Check that Throw*Msg works
   STKUNIT_ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
@@ -183,37 +183,37 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
   
   // Check that setting handler for asserts works.
 
-  stk::ErrorHandler orig = stk::set_assert_handler(test_assert_handler);
+  stk_classic::ErrorHandler orig = stk_classic::set_assert_handler(test_assert_handler);
 
   ThrowRequireMsg(false, "test");
 
   STKUNIT_ASSERT(test_assert_handler_called);
 
-  stk::set_assert_handler(orig);
+  stk_classic::set_assert_handler(orig);
 
   STKUNIT_ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
 
   // Check that setting handler for errors works.
 
-  orig = stk::set_error_handler(test_error_handler);
+  orig = stk_classic::set_error_handler(test_error_handler);
 
   ThrowErrorMsgIf(true, "test");
 
   STKUNIT_ASSERT(test_error_handler_called);
 
-  stk::set_error_handler(orig);
+  stk_classic::set_error_handler(orig);
 
   STKUNIT_ASSERT_THROW(force_throw_error_trigger(), std::runtime_error);
 
   // Check that setting handler for invalid args works.
 
-  orig = stk::set_invalid_arg_handler(test_invarg_handler);
+  orig = stk_classic::set_invalid_arg_handler(test_invarg_handler);
 
   ThrowInvalidArgMsgIf(true, "test");
 
   STKUNIT_ASSERT(test_invarg_handler_called);
 
-  stk::set_invalid_arg_handler(orig);
+  stk_classic::set_invalid_arg_handler(orig);
 
   STKUNIT_ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
 }

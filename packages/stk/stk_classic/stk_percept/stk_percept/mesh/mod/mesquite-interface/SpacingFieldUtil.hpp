@@ -14,7 +14,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include "JacobianUtil.hpp"
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     class SpacingFieldUtil 

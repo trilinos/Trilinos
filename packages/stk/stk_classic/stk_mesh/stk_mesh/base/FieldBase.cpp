@@ -13,7 +13,7 @@
 #include <stk_mesh/base/FieldBase.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 std::ostream & operator << ( std::ostream & s , const FieldBase & field )

@@ -20,7 +20,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 bool comm_mesh_counts( BulkData & M ,

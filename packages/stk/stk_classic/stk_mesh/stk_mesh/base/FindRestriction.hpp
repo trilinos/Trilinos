@@ -15,7 +15,7 @@
 #include <stk_mesh/base/FieldRestriction.hpp>
 #include <stk_mesh/base/Selector.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {

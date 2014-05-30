@@ -28,7 +28,7 @@
 #include <stk_adapt/RefinementInfoByType.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace adapt {
 
 class RefinerUtil

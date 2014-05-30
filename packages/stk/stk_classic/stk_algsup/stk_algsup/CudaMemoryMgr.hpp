@@ -15,7 +15,7 @@
 
 #include <stk_algsup/CudaCall.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 /** Helper class for managing CUDA device memory.
  *

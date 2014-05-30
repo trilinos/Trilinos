@@ -13,7 +13,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_algsup/AlgorithmRunner.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 //----------------------------------------------------------------------
 

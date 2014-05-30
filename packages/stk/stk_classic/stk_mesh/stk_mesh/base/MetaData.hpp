@@ -28,7 +28,7 @@
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace fem {
@@ -48,8 +48,8 @@ print_entity_key( const MetaData & meta_data, const EntityKey & key );
 
 //----------------------------------------------------------------------
 /** \brief  The manager of an integrated collection of
- *          \ref stk::mesh::Part "parts" and
- *          \ref stk::mesh::Field "fields".
+ *          \ref stk_classic::mesh::Part "parts" and
+ *          \ref stk_classic::mesh::Field "fields".
  *
  *  Mesh meta data must be identical on all processors.
  */
@@ -149,9 +149,9 @@ public:
 
   /** \brief  Declare an entity-relationship between parts.
    *
-   *  If \ref stk::mesh::Entity "entity" <b> e1 </b> is a member
+   *  If \ref stk_classic::mesh::Entity "entity" <b> e1 </b> is a member
    *  of <em> root_part </em> and there exists an
-   *  \ref stk::mesh::Relation "entity relation"
+   *  \ref stk_classic::mesh::Relation "entity relation"
    *  from <b> e1 </b> to <b> e2 </b> that satisfies the
    *  \ref stk_mesh_relations "relation stencil"
    *  then <b> e2 </b> must be a member of the <em> target_part </em>.
@@ -208,7 +208,7 @@ public:
    *
    *  \exception std::runtime_error
    *    If the field exits and the
-   *    \ref stk::mesh::Field "field_type" does not match or
+   *    \ref stk_classic::mesh::Field "field_type" does not match or
    *    if required_by != NULL and a field of that name is not found.
    */
   template< class field_type >
@@ -220,7 +220,7 @@ public:
   }
 
   /** \brief  Declare a field of the given
-   *          \ref stk::mesh::Field "field_type", test name,
+   *          \ref stk_classic::mesh::Field "field_type", test name,
    *          and number of states.
    *
    *  A compatible redeclaration returns the previously declared field.
@@ -299,7 +299,7 @@ public:
    *
    *  \exception std::runtime_error
    *    If the property exits and the
-   *    \ref stk::mesh::Property "type" does not match or
+   *    \ref stk_classic::mesh::Property "type" does not match or
    */
   template< typename DataType >
   Property<DataType> * get_property( const std::string & name ) const ;
@@ -309,7 +309,7 @@ public:
     { return m_properties ; }
 
   /** \brief  Declare a property of the given
-   *          \ref stk::mesh::Property "type", name, and dimensions.
+   *          \ref stk_classic::mesh::Property "type", name, and dimensions.
    *
    *  A compatible redeclaration returns the previously declared property.
    *  \exception std::runtime_error  If a redeclaration is incompatible
@@ -326,7 +326,7 @@ public:
 
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
-   *          \ref stk::mesh::BulkData "mesh bulk data".
+   *          \ref stk_classic::mesh::BulkData "mesh bulk data".
    *
    *  Verifies consistency of the meta data and clean out redundant
    *  field data allocation rules.
@@ -558,7 +558,7 @@ field_type & put_field( field_type & field ,
 
 #ifndef DOXYGEN_COMPILE
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 inline
@@ -578,7 +578,7 @@ field_type * MetaData::get_field( const std::string & name ) const
   Traits::assign_tags( tags );
 
   FieldBase * const field =
-    m_field_repo.get_field( "stk::mesh::MetaData::get_field" ,
+    m_field_repo.get_field( "stk_classic::mesh::MetaData::get_field" ,
                           name , dt , Traits::Rank , tags , 0 );
 
   return static_cast< field_type * >( field );

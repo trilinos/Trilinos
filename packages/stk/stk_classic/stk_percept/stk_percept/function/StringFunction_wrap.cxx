@@ -2792,7 +2792,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_0(PyObject *SWIGUNUSEDPARM(s
   Dimensions arg3 ;
   Dimensions arg4 ;
   unsigned int arg5 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -2860,7 +2860,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_0(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(ecode5), "in method '" "new_StringFunction" "', argument " "5"" of type '" "unsigned int""'");
   } 
   arg5 = static_cast< unsigned int >(val5);
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((char const *)arg1,arg2,arg3,arg4,arg5);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((char const *)arg1,arg2,arg3,arg4,arg5);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
@@ -2876,7 +2876,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_1(PyObject *SWIGUNUSEDPARM(s
   Name arg2 ;
   Dimensions arg3 ;
   Dimensions arg4 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -2936,7 +2936,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_1(PyObject *SWIGUNUSEDPARM(s
       if (SWIG_IsNewObj(res4)) delete temp;
     }
   }
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((char const *)arg1,arg2,arg3,arg4);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((char const *)arg1,arg2,arg3,arg4);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
@@ -2951,7 +2951,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_2(PyObject *SWIGUNUSEDPARM(s
   char *arg1 = (char *) 0 ;
   Name arg2 ;
   Dimensions arg3 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -2995,7 +2995,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_2(PyObject *SWIGUNUSEDPARM(s
       if (SWIG_IsNewObj(res3)) delete temp;
     }
   }
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((char const *)arg1,arg2,arg3);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((char const *)arg1,arg2,arg3);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
@@ -3009,7 +3009,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_3(PyObject *SWIGUNUSEDPARM(s
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
   Name arg2 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -3037,7 +3037,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_3(PyObject *SWIGUNUSEDPARM(s
       if (SWIG_IsNewObj(res2)) delete temp;
     }
   }
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((char const *)arg1,arg2);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((char const *)arg1,arg2);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
@@ -3050,7 +3050,7 @@ fail:
 SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
   char *arg1 = (char *) 0 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   int res1 ;
   char *buf1 = 0 ;
   int alloc1 = 0 ;
@@ -3062,7 +3062,7 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_4(PyObject *SWIGUNUSEDPARM(s
     SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_StringFunction" "', argument " "1"" of type '" "char const *""'");
   }
   arg1 = buf1;
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((char const *)arg1);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((char const *)arg1);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   if (alloc1 == SWIG_NEWOBJ) delete[] buf1;
   return resultobj;
@@ -3074,8 +3074,8 @@ fail:
 
 SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  stk::encore::StringFunction *result = 0 ;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  stk_classic::encore::StringFunction *result = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
@@ -3083,13 +3083,13 @@ SWIGINTERN PyObject *_wrap_new_StringFunction__SWIG_5(PyObject *SWIGUNUSEDPARM(s
   if (!PyArg_ParseTuple(args,(char *)"O:new_StringFunction",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0  | 0);
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_StringFunction" "', argument " "1"" of type '" "stk::encore::StringFunction const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "new_StringFunction" "', argument " "1"" of type '" "stk_classic::encore::StringFunction const &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_StringFunction" "', argument " "1"" of type '" "stk::encore::StringFunction const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "new_StringFunction" "', argument " "1"" of type '" "stk_classic::encore::StringFunction const &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
-  result = (stk::encore::StringFunction *)new stk::encore::StringFunction((stk::encore::StringFunction const &)*arg1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
+  result = (stk_classic::encore::StringFunction *)new stk_classic::encore::StringFunction((stk_classic::encore::StringFunction const &)*arg1);
   resultobj = SWIG_NewPointerObj(SWIG_as_voidptr(result), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_NEW |  0 );
   return resultobj;
 fail:
@@ -3206,8 +3206,8 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction_resolve(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
-  stk::expreval::VariableMap::iterator *arg2 = 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
+  stk_classic::expreval::VariableMap::iterator *arg2 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -3218,17 +3218,17 @@ SWIGINTERN PyObject *_wrap_StringFunction_resolve(PyObject *SWIGUNUSEDPARM(self)
   if (!PyArg_ParseTuple(args,(char *)"OO:StringFunction_resolve",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_resolve" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_resolve" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_stk__expreval__VariableMap__iterator,  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction_resolve" "', argument " "2"" of type '" "stk::expreval::VariableMap::iterator &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction_resolve" "', argument " "2"" of type '" "stk_classic::expreval::VariableMap::iterator &""'"); 
   }
   if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction_resolve" "', argument " "2"" of type '" "stk::expreval::VariableMap::iterator &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction_resolve" "', argument " "2"" of type '" "stk_classic::expreval::VariableMap::iterator &""'"); 
   }
-  arg2 = reinterpret_cast< stk::expreval::VariableMap::iterator * >(argp2);
+  arg2 = reinterpret_cast< stk_classic::expreval::VariableMap::iterator * >(argp2);
   (arg1)->resolve(*arg2);
   resultobj = SWIG_Py_Void();
   return resultobj;
@@ -3239,7 +3239,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction_getFunctionString(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   std::string result;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3248,9 +3248,9 @@ SWIGINTERN PyObject *_wrap_StringFunction_getFunctionString(PyObject *SWIGUNUSED
   if (!PyArg_ParseTuple(args,(char *)"O:StringFunction_getFunctionString",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_getFunctionString" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_getFunctionString" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   result = (arg1)->getFunctionString();
   resultobj = SWIG_NewPointerObj((new std::string(static_cast< const std::string& >(result))), SWIGTYPE_p_std__string, SWIG_POINTER_OWN |  0 );
   return resultobj;
@@ -3261,7 +3261,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction_derivative(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArrayString *arg2 = 0 ;
   Teuchos::RCP<Function > result;
   void *argp1 = 0 ;
@@ -3274,9 +3274,9 @@ SWIGINTERN PyObject *_wrap_StringFunction_derivative(PyObject *SWIGUNUSEDPARM(se
   if (!PyArg_ParseTuple(args,(char *)"OO:StringFunction_derivative",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_derivative" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction_derivative" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArrayString,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction_derivative" "', argument " "2"" of type '" "MDArrayString &""'"); 
@@ -3295,7 +3295,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
   double arg4 ;
@@ -3315,9 +3315,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_0(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOOO:StringFunction___call__",&obj0,&obj1,&obj2,&obj3)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3349,7 +3349,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
   void *argp1 = 0 ;
@@ -3365,9 +3365,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_1(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOO:StringFunction___call__",&obj0,&obj1,&obj2)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3394,10 +3394,10 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Entity *arg4 = 0 ;
+  stk_classic::mesh::Entity *arg4 = 0 ;
   MDArray *arg5 = 0 ;
   double arg6 ;
   void *argp1 = 0 ;
@@ -3422,9 +3422,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:StringFunction___call__",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3443,12 +3443,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Entity,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Entity const &""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Entity const &""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Entity * >(argp4);
+  arg4 = reinterpret_cast< stk_classic::mesh::Entity * >(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3462,7 +3462,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_2(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "StringFunction___call__" "', argument " "6"" of type '" "double""'");
   } 
   arg6 = static_cast< double >(val6);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity const &)*arg4,(MDArray const &)*arg5,arg6);
+  (arg1)->operator ()(*arg2,*arg3,(stk_classic::mesh::Entity const &)*arg4,(MDArray const &)*arg5,arg6);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3472,10 +3472,10 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Entity *arg4 = 0 ;
+  stk_classic::mesh::Entity *arg4 = 0 ;
   MDArray *arg5 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3496,9 +3496,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:StringFunction___call__",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3517,12 +3517,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Entity,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Entity const &""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Entity const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Entity const &""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Entity * >(argp4);
+  arg4 = reinterpret_cast< stk_classic::mesh::Entity * >(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3531,7 +3531,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_3(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
   }
   arg5 = reinterpret_cast< MDArray * >(argp5);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Entity const &)*arg4,(MDArray const &)*arg5);
+  (arg1)->operator ()(*arg2,*arg3,(stk_classic::mesh::Entity const &)*arg4,(MDArray const &)*arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3541,10 +3541,10 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_4(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Bucket *arg4 = 0 ;
+  stk_classic::mesh::Bucket *arg4 = 0 ;
   MDArray *arg5 = 0 ;
   double arg6 ;
   void *argp1 = 0 ;
@@ -3569,9 +3569,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_4(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOOOOO:StringFunction___call__",&obj0,&obj1,&obj2,&obj3,&obj4,&obj5)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3590,12 +3590,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_4(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Bucket,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Bucket const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Bucket const &""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Bucket const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Bucket const &""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Bucket * >(argp4);
+  arg4 = reinterpret_cast< stk_classic::mesh::Bucket * >(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3609,7 +3609,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_4(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ArgError(ecode6), "in method '" "StringFunction___call__" "', argument " "6"" of type '" "double""'");
   } 
   arg6 = static_cast< double >(val6);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Bucket const &)*arg4,(MDArray const &)*arg5,arg6);
+  (arg1)->operator ()(*arg2,*arg3,(stk_classic::mesh::Bucket const &)*arg4,(MDArray const &)*arg5,arg6);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3619,10 +3619,10 @@ fail:
 
 SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_5(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   MDArray *arg2 = 0 ;
   MDArray *arg3 = 0 ;
-  stk::mesh::Bucket *arg4 = 0 ;
+  stk_classic::mesh::Bucket *arg4 = 0 ;
   MDArray *arg5 = 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
@@ -3643,9 +3643,9 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_5(PyObject *SWIGUNUSEDP
   if (!PyArg_ParseTuple(args,(char *)"OOOOO:StringFunction___call__",&obj0,&obj1,&obj2,&obj3,&obj4)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, 0 |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "StringFunction___call__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_MDArray,  0 );
   if (!SWIG_IsOK(res2)) {
     SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "StringFunction___call__" "', argument " "2"" of type '" "MDArray &""'"); 
@@ -3664,12 +3664,12 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_5(PyObject *SWIGUNUSEDP
   arg3 = reinterpret_cast< MDArray * >(argp3);
   res4 = SWIG_ConvertPtr(obj3, &argp4, SWIGTYPE_p_stk__mesh__Bucket,  0  | 0);
   if (!SWIG_IsOK(res4)) {
-    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Bucket const &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res4), "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Bucket const &""'"); 
   }
   if (!argp4) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk::mesh::Bucket const &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "4"" of type '" "stk_classic::mesh::Bucket const &""'"); 
   }
-  arg4 = reinterpret_cast< stk::mesh::Bucket * >(argp4);
+  arg4 = reinterpret_cast< stk_classic::mesh::Bucket * >(argp4);
   res5 = SWIG_ConvertPtr(obj4, &argp5, SWIGTYPE_p_MDArray,  0  | 0);
   if (!SWIG_IsOK(res5)) {
     SWIG_exception_fail(SWIG_ArgError(res5), "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
@@ -3678,7 +3678,7 @@ SWIGINTERN PyObject *_wrap_StringFunction___call____SWIG_5(PyObject *SWIGUNUSEDP
     SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "StringFunction___call__" "', argument " "5"" of type '" "MDArray const &""'"); 
   }
   arg5 = reinterpret_cast< MDArray * >(argp5);
-  (arg1)->operator ()(*arg2,*arg3,(stk::mesh::Bucket const &)*arg4,(MDArray const &)*arg5);
+  (arg1)->operator ()(*arg2,*arg3,(stk_classic::mesh::Bucket const &)*arg4,(MDArray const &)*arg5);
   resultobj = SWIG_Py_Void();
   return resultobj;
 fail:
@@ -3869,7 +3869,7 @@ fail:
 
 SWIGINTERN PyObject *_wrap_delete_StringFunction(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = (stk::encore::StringFunction *) 0 ;
+  stk_classic::encore::StringFunction *arg1 = (stk_classic::encore::StringFunction *) 0 ;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
@@ -3877,9 +3877,9 @@ SWIGINTERN PyObject *_wrap_delete_StringFunction(PyObject *SWIGUNUSEDPARM(self),
   if (!PyArg_ParseTuple(args,(char *)"O:delete_StringFunction",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1,SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_DISOWN |  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_StringFunction" "', argument " "1"" of type '" "stk::encore::StringFunction *""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "delete_StringFunction" "', argument " "1"" of type '" "stk_classic::encore::StringFunction *""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   delete arg1;
   
   resultobj = SWIG_Py_Void();
@@ -3898,9 +3898,9 @@ SWIGINTERN PyObject *StringFunction_swigregister(PyObject *SWIGUNUSEDPARM(self),
 
 SWIGINTERN PyObject *_wrap___sub____SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  stk::encore::StringFunction *arg2 = 0 ;
-  SwigValueWrapper<stk::encore::StringFunction > result;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  stk_classic::encore::StringFunction *arg2 = 0 ;
+  SwigValueWrapper<stk_classic::encore::StringFunction > result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -3911,22 +3911,22 @@ SWIGINTERN PyObject *_wrap___sub____SWIG_0(PyObject *SWIGUNUSEDPARM(self), PyObj
   if (!PyArg_ParseTuple(args,(char *)"OO:__sub__",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__sub__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__sub__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__sub__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__sub__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg2 = reinterpret_cast< stk::encore::StringFunction * >(argp2);
-  result = stk::encore::operator -(*arg1,*arg2);
-  resultobj = SWIG_NewPointerObj((new stk::encore::StringFunction(static_cast< const stk::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
+  arg2 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp2);
+  result = stk_classic::encore::operator -(*arg1,*arg2);
+  resultobj = SWIG_NewPointerObj((new stk_classic::encore::StringFunction(static_cast< const stk_classic::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3935,9 +3935,9 @@ fail:
 
 SWIGINTERN PyObject *_wrap___add__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  stk::encore::StringFunction *arg2 = 0 ;
-  SwigValueWrapper<stk::encore::StringFunction > result;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  stk_classic::encore::StringFunction *arg2 = 0 ;
+  SwigValueWrapper<stk_classic::encore::StringFunction > result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -3948,22 +3948,22 @@ SWIGINTERN PyObject *_wrap___add__(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
   if (!PyArg_ParseTuple(args,(char *)"OO:__add__",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__add__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__add__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__add__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__add__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__add__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__add__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__add__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__add__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg2 = reinterpret_cast< stk::encore::StringFunction * >(argp2);
-  result = stk::encore::operator +(*arg1,*arg2);
-  resultobj = SWIG_NewPointerObj((new stk::encore::StringFunction(static_cast< const stk::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
+  arg2 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp2);
+  result = stk_classic::encore::operator +(*arg1,*arg2);
+  resultobj = SWIG_NewPointerObj((new stk_classic::encore::StringFunction(static_cast< const stk_classic::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -3972,9 +3972,9 @@ fail:
 
 SWIGINTERN PyObject *_wrap___div__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  stk::encore::StringFunction *arg2 = 0 ;
-  SwigValueWrapper<stk::encore::StringFunction > result;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  stk_classic::encore::StringFunction *arg2 = 0 ;
+  SwigValueWrapper<stk_classic::encore::StringFunction > result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -3985,22 +3985,22 @@ SWIGINTERN PyObject *_wrap___div__(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
   if (!PyArg_ParseTuple(args,(char *)"OO:__div__",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__div__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__div__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__div__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__div__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__div__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__div__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__div__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__div__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg2 = reinterpret_cast< stk::encore::StringFunction * >(argp2);
-  result = stk::encore::operator /(*arg1,*arg2);
-  resultobj = SWIG_NewPointerObj((new stk::encore::StringFunction(static_cast< const stk::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
+  arg2 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp2);
+  result = stk_classic::encore::operator /(*arg1,*arg2);
+  resultobj = SWIG_NewPointerObj((new stk_classic::encore::StringFunction(static_cast< const stk_classic::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4009,9 +4009,9 @@ fail:
 
 SWIGINTERN PyObject *_wrap___mul__(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  stk::encore::StringFunction *arg2 = 0 ;
-  SwigValueWrapper<stk::encore::StringFunction > result;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  stk_classic::encore::StringFunction *arg2 = 0 ;
+  SwigValueWrapper<stk_classic::encore::StringFunction > result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   void *argp2 = 0 ;
@@ -4022,22 +4022,22 @@ SWIGINTERN PyObject *_wrap___mul__(PyObject *SWIGUNUSEDPARM(self), PyObject *arg
   if (!PyArg_ParseTuple(args,(char *)"OO:__mul__",&obj0,&obj1)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__mul__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__mul__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__mul__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__mul__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
   res2 = SWIG_ConvertPtr(obj1, &argp2, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res2)) {
-    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__mul__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res2), "in method '" "__mul__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp2) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__mul__" "', argument " "2"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__mul__" "', argument " "2"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg2 = reinterpret_cast< stk::encore::StringFunction * >(argp2);
-  result = stk::encore::operator *(*arg1,*arg2);
-  resultobj = SWIG_NewPointerObj((new stk::encore::StringFunction(static_cast< const stk::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
+  arg2 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp2);
+  result = stk_classic::encore::operator *(*arg1,*arg2);
+  resultobj = SWIG_NewPointerObj((new stk_classic::encore::StringFunction(static_cast< const stk_classic::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4046,8 +4046,8 @@ fail:
 
 SWIGINTERN PyObject *_wrap___sub____SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObject *args) {
   PyObject *resultobj = 0;
-  stk::encore::StringFunction *arg1 = 0 ;
-  SwigValueWrapper<stk::encore::StringFunction > result;
+  stk_classic::encore::StringFunction *arg1 = 0 ;
+  SwigValueWrapper<stk_classic::encore::StringFunction > result;
   void *argp1 = 0 ;
   int res1 = 0 ;
   PyObject * obj0 = 0 ;
@@ -4055,14 +4055,14 @@ SWIGINTERN PyObject *_wrap___sub____SWIG_1(PyObject *SWIGUNUSEDPARM(self), PyObj
   if (!PyArg_ParseTuple(args,(char *)"O:__sub__",&obj0)) SWIG_fail;
   res1 = SWIG_ConvertPtr(obj0, &argp1, SWIGTYPE_p_stk__encore__StringFunction,  0 );
   if (!SWIG_IsOK(res1)) {
-    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__sub__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ArgError(res1), "in method '" "__sub__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
   if (!argp1) {
-    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "1"" of type '" "stk::encore::StringFunction &""'"); 
+    SWIG_exception_fail(SWIG_ValueError, "invalid null reference " "in method '" "__sub__" "', argument " "1"" of type '" "stk_classic::encore::StringFunction &""'"); 
   }
-  arg1 = reinterpret_cast< stk::encore::StringFunction * >(argp1);
-  result = stk::encore::operator -(*arg1);
-  resultobj = SWIG_NewPointerObj((new stk::encore::StringFunction(static_cast< const stk::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
+  arg1 = reinterpret_cast< stk_classic::encore::StringFunction * >(argp1);
+  result = stk_classic::encore::operator -(*arg1);
+  resultobj = SWIG_NewPointerObj((new stk_classic::encore::StringFunction(static_cast< const stk_classic::encore::StringFunction& >(result))), SWIGTYPE_p_stk__encore__StringFunction, SWIG_POINTER_OWN |  0 );
   return resultobj;
 fail:
   return NULL;
@@ -4210,10 +4210,10 @@ static swig_type_info _swigt__p_Name = {"_p_Name", "Name *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_Teuchos__RCPTFunction_t = {"_p_Teuchos__RCPTFunction_t", "Teuchos::RCP<Function > *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_char = {"_p_char", "char *", 0, 0, (void*)0, 0};
 static swig_type_info _swigt__p_std__string = {"_p_std__string", "std::string *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_stk__encore__StringFunction = {"_p_stk__encore__StringFunction", "stk::encore::StringFunction *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_stk__expreval__VariableMap__iterator = {"_p_stk__expreval__VariableMap__iterator", "stk::expreval::VariableMap::iterator *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_stk__mesh__Bucket = {"_p_stk__mesh__Bucket", "stk::mesh::Bucket *", 0, 0, (void*)0, 0};
-static swig_type_info _swigt__p_stk__mesh__Entity = {"_p_stk__mesh__Entity", "stk::mesh::Entity *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_stk__encore__StringFunction = {"_p_stk__encore__StringFunction", "stk_classic::encore::StringFunction *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_stk__expreval__VariableMap__iterator = {"_p_stk__expreval__VariableMap__iterator", "stk_classic::expreval::VariableMap::iterator *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_stk__mesh__Bucket = {"_p_stk__mesh__Bucket", "stk_classic::mesh::Bucket *", 0, 0, (void*)0, 0};
+static swig_type_info _swigt__p_stk__mesh__Entity = {"_p_stk__mesh__Entity", "stk_classic::mesh::Entity *", 0, 0, (void*)0, 0};
 
 static swig_type_info *swig_type_initial[] = {
   &_swigt__p_Dimensions,

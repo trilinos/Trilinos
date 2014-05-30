@@ -34,8 +34,8 @@
 
 #include <iostream>
 
-using stk::mesh::EntityId;
-using stk::mesh::EntityRank;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::EntityRank;
 
 //---------------------------------------------------------------------------------------
 
@@ -43,16 +43,16 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -79,7 +79,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
     EntityId element_id = 1;
     EntityId node_ids[8] = { 1, 2, 3, 4, 5, 6, 7, 8};
 
-    stk::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
 
   }
 
@@ -89,19 +89,19 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinPocket)
     EntityId element_id = 2;
     EntityId node_ids[8] = { 2, 9, 10, 3, 13, 11, 12, 7};
 
-    stk::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //each element should have 6 faces attached to it
   for (EntityId element_id = 1; element_id < 3; ++element_id) {
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, element_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, element_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
     }
   }
@@ -111,16 +111,16 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinTwoStackedShells)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -149,7 +149,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinTwoStackedShells)
     bool create_shell_on_proc = static_cast<int>(p_rank) == 0;
     if (create_shell_on_proc) {
       EntityId element_id = static_cast<EntityId>(1);
-      stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+      stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
     }
   }
 
@@ -157,23 +157,23 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinTwoStackedShells)
     bool create_shell_on_proc = static_cast<int>(p_rank) == (std::max(0,static_cast<int>(p_size)-1));
     if (create_shell_on_proc) {
       EntityId element_id = static_cast<EntityId>(2);
-      stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+      stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
     }
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //count number of sides in mesh
   {
-    stk::mesh::Selector select_sides = meta_data.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& side_buckets = bulk_data.buckets(side_rank);
-    int num_sides = stk::mesh::count_selected_entities( select_sides, side_buckets);
+    stk_classic::mesh::Selector select_sides = meta_data.locally_owned_part()  ;
+    const std::vector<stk_classic::mesh::Bucket*>& side_buckets = bulk_data.buckets(side_rank);
+    int num_sides = stk_classic::mesh::count_selected_entities( select_sides, side_buckets);
 
 
-    stk::all_reduce(MPI_COMM_WORLD, stk::ReduceSum<1>(&num_sides));
+    stk_classic::all_reduce(MPI_COMM_WORLD, stk_classic::ReduceSum<1>(&num_sides));
 
     // Verify that the correct 2 sides are present.
 
@@ -186,16 +186,16 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -233,29 +233,29 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
     bool create_shell_on_proc = static_cast<int>(p_rank) == (std::max(0,static_cast<int>(p_size)-1-i));
     if (create_shell_on_proc) {
       EntityId element_id = static_cast<EntityId>(i+1);
-      stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids+i);
+      stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids+i);
     }
 
     bool create_reverse_shell_on_proc = static_cast<int>(p_rank) == (std::max(0,static_cast<int>(p_size)-1-4-i));
     if (create_reverse_shell_on_proc) {
       EntityId reverse_element_id = static_cast<EntityId>(i+1+4);
-      stk::mesh::fem::declare_element( bulk_data, shell_part, reverse_element_id, reverse_node_ids+i);
+      stk_classic::mesh::fem::declare_element( bulk_data, shell_part, reverse_element_id, reverse_node_ids+i);
     }
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //count number of sides in mesh
   {
-    stk::mesh::Selector select_sides = meta_data.locally_owned_part()  ;
-    const std::vector<stk::mesh::Bucket*>& side_buckets = bulk_data.buckets( side_rank);
-    int num_sides = stk::mesh::count_selected_entities( select_sides, side_buckets);
+    stk_classic::mesh::Selector select_sides = meta_data.locally_owned_part()  ;
+    const std::vector<stk_classic::mesh::Bucket*>& side_buckets = bulk_data.buckets( side_rank);
+    int num_sides = stk_classic::mesh::count_selected_entities( select_sides, side_buckets);
 
 
-    stk::all_reduce(MPI_COMM_WORLD, stk::ReduceSum<1>(&num_sides));
+    stk_classic::all_reduce(MPI_COMM_WORLD, stk_classic::ReduceSum<1>(&num_sides));
 
     // Verify that the correct 2 sides are present.
 
@@ -267,9 +267,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
     EntityId face_1_id = 0; //invalid face id
     EntityId face_2_id = 0; //invalid face id
     for (EntityId shell_id = 1; shell_id < 5; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
+      stk_classic::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
       if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+        stk_classic::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
 
         STKUNIT_ASSERT_TRUE( shell_side_relations.size() == 2);
 
@@ -301,9 +301,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShells)
     }
 
     for (EntityId shell_id = 5; shell_id < 9; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
+      stk_classic::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
       if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+        stk_classic::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
 
         STKUNIT_ASSERT_TRUE( shell_side_relations.size() == 2);
 
@@ -342,18 +342,18 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
+  stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -382,7 +382,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
     EntityId element_id = 1;
     EntityId node_ids[8] = { 1, 2, 3, 4, 5, 6, 7, 8};
 
-    stk::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
 
   }
 
@@ -392,20 +392,20 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
     EntityId element_id = 2;
     EntityId node_ids[8] = { 1, 2, 6, 5};
 
-    stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -419,9 +419,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinShellOnHex)
   //check shell
   {
     EntityId shell_id = 2;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 1);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -439,18 +439,18 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
+  stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -480,7 +480,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
     EntityId element_id = 1;
     EntityId node_ids[8] = { 1, 2, 3, 4, 5, 6, 7, 8};
 
-    stk::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
 
   }
 
@@ -490,20 +490,20 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
     EntityId element_id = 2;
     EntityId node_ids[8] = { 1, 2, 5, 6};
 
-    stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 6);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -517,9 +517,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinInvertedShellOnHex)
   //check shell
   {
     EntityId shell_id = 2;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, shell_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 2);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -537,18 +537,18 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
 {
   enum { SpatialDim = 3 };
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(SpatialDim, stk::mesh::fem::entity_rank_names(SpatialDim));
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , pm );
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
-  stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(SpatialDim, stk_classic::mesh::fem::entity_rank_names(SpatialDim));
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , pm );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::Part & hex_part = fem_meta.declare_part( "hex_part", hex_top );
+  stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part( "shell_part", shell_top );
   const EntityRank element_rank = fem_meta.element_rank();
   const EntityRank side_rank    = fem_meta.side_rank();
 
@@ -582,7 +582,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
     EntityId element_id = 1;
     EntityId node_ids[8] = { 1, 2, 3, 4, 5, 6, 7, 8};
 
-    stk::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, hex_part, element_id, node_ids);
 
   }
 
@@ -591,7 +591,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
     EntityId element_id = 2;
     EntityId node_ids[8] = { 1, 2, 6, 5};
 
-    stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
   }
 
   if (create_shell_2_this_proc)
@@ -599,7 +599,7 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
     EntityId element_id = 3;
     EntityId node_ids[8] = { 6, 5, 1, 2};
 
-    stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
   }
 
   if (create_shell_3_this_proc)
@@ -607,20 +607,20 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
     EntityId element_id = 4;
     EntityId node_ids[8] = { 1, 5, 6, 2};
 
-    stk::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
+    stk_classic::mesh::fem::declare_element( bulk_data, shell_part, element_id, node_ids);
   }
 
   bulk_data.modification_end();
 
   //skin the mesh
-  stk::mesh::skin_mesh(bulk_data, element_rank);
+  stk_classic::mesh::skin_mesh(bulk_data, element_rank);
 
   //check hex
   {
     EntityId hex_id = 1;
-    stk::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
+    stk_classic::mesh::Entity * element = bulk_data.get_entity( element_rank, hex_id);
     if ( element != NULL) {
-      stk::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
+      stk_classic::mesh::PairIterRelation element_side_relations = element->relations(side_rank);
       STKUNIT_EXPECT_TRUE( element_side_relations.size() == 5);
       for (; !element_side_relations.empty(); ++element_side_relations) {
         unsigned local_side_id = element_side_relations->identifier();
@@ -635,9 +635,9 @@ STKUNIT_UNIT_TEST( UnitTestSkin, SkinStackedShellOnHex)
   {
     EntityId face_id = 0; //invalid face id
     for (EntityId shell_id = 2; shell_id < 5; ++shell_id) {
-      stk::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
+      stk_classic::mesh::Entity * shell = bulk_data.get_entity( element_rank, shell_id);
       if ( shell != NULL) {
-        stk::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
+        stk_classic::mesh::PairIterRelation shell_side_relations = shell->relations(side_rank);
 
         STKUNIT_EXPECT_TRUE( shell_side_relations.size() == 1);
 

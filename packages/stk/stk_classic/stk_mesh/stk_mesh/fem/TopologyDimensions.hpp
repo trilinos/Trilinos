@@ -21,7 +21,7 @@
 
 #include <stk_mesh/fem/Stencils.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /**

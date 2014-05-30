@@ -25,7 +25,7 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     static bool m_use_local_scaling = false;
@@ -39,7 +39,7 @@ namespace stk {
     const bool do_tot_test = false;
     bool do_print_elem_val = false;
 
-    void PMMParallelReferenceMeshSmoother1::nodal_gradient(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
+    void PMMParallelReferenceMeshSmoother1::nodal_gradient(stk_classic::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid, double *ng)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
@@ -74,7 +74,7 @@ namespace stk {
         }
     }
 
-    double PMMParallelReferenceMeshSmoother1::nodal_metric(stk::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
+    double PMMParallelReferenceMeshSmoother1::nodal_metric(stk_classic::mesh::Entity& node, double alpha, double *coord_current, double *cg_d, bool& valid)
     {
       int spatialDim = m_eMesh->get_spatial_dim();
       valid = true;
@@ -93,10 +93,10 @@ namespace stk {
           coord_current[i] += dt;  
         }
 
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      stk_classic::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          stk_classic::mesh::Entity& element = *node_elems[i_elem].entity();
           bool local_valid = true;
           double val = m_metric->metric(element, local_valid);
           if (combine == COP_SUM)
@@ -115,15 +115,15 @@ namespace stk {
       return nm;
     }
 
-    double PMMParallelReferenceMeshSmoother1::nodal_edge_length_ave(stk::mesh::Entity& node)
+    double PMMParallelReferenceMeshSmoother1::nodal_edge_length_ave(stk_classic::mesh::Entity& node)
     {
       //int spatialDim = m_eMesh->get_spatial_dim();
       double nm=0.0;
 
-      stk::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
+      stk_classic::mesh::PairIterRelation node_elems = node.relations(m_eMesh->element_rank());
       for (unsigned i_elem=0; i_elem < node_elems.size(); i_elem++)
         {
-          stk::mesh::Entity& element = *node_elems[i_elem].entity();
+          stk_classic::mesh::Entity& element = *node_elems[i_elem].entity();
           double elem_edge_len = m_eMesh->edge_length_ave(element, m_coord_field_original);
           nm += elem_edge_len;
         }
@@ -159,7 +159,7 @@ namespace stk {
       return false;
     }
 
-    double PMMParallelReferenceMeshSmoother1::metric(stk::mesh::Entity& element, bool& valid)
+    double PMMParallelReferenceMeshSmoother1::metric(stk_classic::mesh::Entity& element, bool& valid)
     {
       return m_metric->metric(element,valid);
     }
@@ -169,14 +169,14 @@ namespace stk {
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
-      stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field;
-      stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
-      stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
-      stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
+      stk_classic::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase *coord_field_current   = coord_field;
+      stk_classic::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk_classic::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      stk_classic::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
 
-      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
       bool valid=true;
 
@@ -189,17 +189,17 @@ namespace stk {
       if (m_metric->is_nodal())
         {
           // node loop
-          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               if (on_locally_owned_part(**k))
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
                   const unsigned num_nodes_in_bucket = bucket.size();
 
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
-                      stk::mesh::Entity& node = bucket[i_node];
+                      stk_classic::mesh::Entity& node = bucket[i_node];
                       bool fixed = pmm->get_fixed_flag(&node);
                       if (fixed)
                         {
@@ -239,22 +239,22 @@ namespace stk {
       else
         {
           // element loop: compute deltas
-          const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+          const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
 
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh))
                 //if (on_locally_owned_part(**k))  
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
                   const unsigned num_elements_in_bucket = bucket.size();
                   m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
 
                   for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                     {
-                      stk::mesh::Entity& element = bucket[i_element];
+                      stk_classic::mesh::Entity& element = bucket[i_element];
 
-                      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+                      const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
                       unsigned num_node = elem_nodes.size();
 
                       double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
@@ -484,21 +484,21 @@ namespace stk {
         } // element loop...
 
       VectorFieldType *cg_g_field_v = static_cast<VectorFieldType *>(cg_g_field);
-      stk::mesh::parallel_reduce(*m_eMesh->get_bulk_data(), stk::mesh::sum(*cg_g_field_v));
+      stk_classic::mesh::parallel_reduce(*m_eMesh->get_bulk_data(), stk_classic::mesh::sum(*cg_g_field_v));
 
       {
-        std::vector< const stk::mesh::FieldBase *> fields;
+        std::vector< const stk_classic::mesh::FieldBase *> fields;
         fields.push_back(cg_g_field);
 
         // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+        stk_classic::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
 
         // the shared part (just the shared boundary)
-        //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+        //stk_classic::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
       }
 
       {
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
+        stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
         m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
         PRINT("tmp srk m_scale= " << m_scale);
       }
@@ -513,35 +513,35 @@ namespace stk {
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
-      stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
-      stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
-      stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
+      stk_classic::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk_classic::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
+      stk_classic::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
 
-      stk::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
+      stk_classic::mesh::FieldBase *cg_h_field    = (m_use_hessian_scaling? eMesh->get_field("cg_h") : 0);
 
-      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
 
       m_scale = 1.e-10;
 
       // element loop
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
 
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             // FIXME
             if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk_classic::mesh::Entity& element = bucket[i_element];
 
-                    const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+                    const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
                     unsigned num_node = elem_nodes.size();
 
                     double edge_length_ave = m_eMesh->edge_length_ave(element, m_coord_field_original);
@@ -575,7 +575,7 @@ namespace stk {
         }
       else
         {
-          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
+          stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scale ) );
           m_scale = (m_scale < 1.0) ? 1.0 : 1.0/m_scale;
           PRINT("tmp srk m_scale= " << m_scale);
         }
@@ -587,18 +587,18 @@ namespace stk {
       //double pw=std::max(m_metric->length_scaling_power() - 1.0,0.0);
 
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
 
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             if (on_locally_owned_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk_classic::mesh::Entity& node = bucket[i_node];
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     VERIFY_OP_ON(isGhostNode, ==, false, "hmmmm");
                     bool fixed = pmm->get_fixed_flag(&node);
@@ -701,7 +701,7 @@ namespace stk {
       }
 
       {
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
+        stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_scaled_grad_norm ) );
         PRINT("tmp srk m_scaled_grad_norm= " << m_scaled_grad_norm << " gn= " << gn << " el= " << el << " es1= " << es1 << " es2=  " << es2);
       }
 
@@ -714,13 +714,13 @@ namespace stk {
       m_pmm  = pmm;
       PerceptMesh *eMesh = pmm->getPerceptMesh();
 
-      stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
-      stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
-      stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
-      stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
+      stk_classic::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk_classic::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
+      stk_classic::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      stk_classic::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
 
-      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       bool total_valid=true;
 
       if (m_iter == 0)
@@ -994,26 +994,26 @@ namespace stk {
     {
       if (0)
         {
-          //stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
-          //stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+          //stk_classic::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+          //stk_classic::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
           int spatialDim = m_eMesh->get_spatial_dim();
-          stk::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
-          stk::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
-          stk::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
-          stk::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
+          stk_classic::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
+          stk_classic::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
+          stk_classic::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
+          stk_classic::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
 
-          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               // update local and globally shared 
               //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk_classic::mesh::Entity& node = bucket[i_node];
 
                     double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
                     double *cg_d = PerceptMesh::field_data(cg_d_field, node);
@@ -1048,13 +1048,13 @@ namespace stk {
 
       if (1)
         {
-          stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
-          stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+          stk_classic::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+          stk_classic::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
           int spatialDim = m_eMesh->get_spatial_dim();
-          stk::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
-          stk::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
-          stk::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
-          stk::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
+          stk_classic::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
+          stk_classic::mesh::FieldBase *cg_g_field    = m_eMesh->get_field("cg_g");
+          stk_classic::mesh::FieldBase *cg_r_field    = m_eMesh->get_field("cg_r");
+          stk_classic::mesh::FieldBase *cg_s_field    = m_eMesh->get_field("cg_s");
 
           //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
           unsigned ids[] = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,71,84,97};
@@ -1064,11 +1064,11 @@ namespace stk {
             {
               MPI_Barrier( MPI_COMM_WORLD );
 
-              //stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
-              stk::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
+              //stk_classic::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, ids[i_node]);
+              stk_classic::mesh::Entity* node_p = m_eMesh->get_bulk_data()->get_entity(0, i_node+1);
               if (node_p)
                 {
-                  stk::mesh::Entity& node = *node_p;
+                  stk_classic::mesh::Entity& node = *node_p;
 
                   double *coord_current = PerceptMesh::field_data(m_coord_field_current, node);
                   double *cg_d = PerceptMesh::field_data(cg_d_field, node);
@@ -1124,29 +1124,29 @@ namespace stk {
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
-      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = eMesh->get_spatial_dim();
-      stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
-      //stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk_classic::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      //stk_classic::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
 
       m_dmax = 0.0;
       //debug_print(alpha);
 
       // node loop: update node positions
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             // update local and globally shared 
             if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk_classic::mesh::Entity& node = bucket[i_node];
                     bool fixed = pmm->get_fixed_flag(&node);
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     if (fixed || isGhostNode)
@@ -1168,17 +1168,17 @@ namespace stk {
           }
       }
 
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_dmax ) );
+      stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & m_dmax ) );
 
       {
-        std::vector< const stk::mesh::FieldBase *> fields;
+        std::vector< const stk_classic::mesh::FieldBase *> fields;
         fields.push_back(m_eMesh->get_coordinates_field());
         //fields.push_back(cg_g_field);
 
         // only the aura = !locally_owned_part && !globally_shared_part (outer layer)
-        stk::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
+        stk_classic::mesh::communicate_field_data(m_eMesh->get_bulk_data()->shared_aura(), fields); 
         // the shared part (just the shared boundary)
-        //stk::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
+        //stk_classic::mesh::communicate_field_data(*m_eMesh->get_bulk_data()->ghostings()[0], fields);
       }
 
 
@@ -1187,14 +1187,14 @@ namespace stk {
     double PMMParallelReferenceMeshSmoother1::total_metric(Mesh *mesh, double alpha, double multiplicative_edge_scaling, bool& valid, int* num_invalid)
     {
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
-      stk::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field;
-      stk::mesh::FieldBase *coord_field_lagged  = m_eMesh->get_field("coordinates_lagged");
+      stk_classic::mesh::FieldBase *coord_field = m_eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase *coord_field_current   = coord_field;
+      stk_classic::mesh::FieldBase *coord_field_lagged  = m_eMesh->get_field("coordinates_lagged");
 
-      stk::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
+      stk_classic::mesh::FieldBase *cg_d_field    = m_eMesh->get_field("cg_d");
 
-      stk::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( m_eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( m_eMesh->get_fem_meta_data()->globally_shared_part() );
       int spatialDim = m_eMesh->get_spatial_dim();
 
       double mtot = 0.0;
@@ -1205,18 +1205,18 @@ namespace stk {
 
       // node loop
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             // update local and globally shared 
             if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk_classic::mesh::Entity& node = bucket[i_node];
                     bool fixed = pmm->get_fixed_flag(&node);
                     if (fixed)
                       {
@@ -1240,17 +1240,17 @@ namespace stk {
       if (m_metric->is_nodal())
         {
           // node loop
-          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+          for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               if (on_locally_owned_part(**k))
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
                   const unsigned num_nodes_in_bucket = bucket.size();
 
                   for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                     {
-                      stk::mesh::Entity& node = bucket[i_node];
+                      stk_classic::mesh::Entity& node = bucket[i_node];
                       bool fixed = pmm->get_fixed_flag(&node);
                       if (fixed)
                         {
@@ -1272,20 +1272,20 @@ namespace stk {
       else
         {
           // element loop
-          const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
+          const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
 
-          for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+          for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
             {
               if (PerceptMesquiteMesh::select_bucket(**k, m_eMesh) && on_locally_owned_part(**k))
                 {
-                  stk::mesh::Bucket & bucket = **k ;
+                  stk_classic::mesh::Bucket & bucket = **k ;
                   m_metric->m_topology_data = m_eMesh->get_cell_topology(bucket);
             
                   const unsigned num_elements_in_bucket = bucket.size();
 
                   for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                     {
-                      stk::mesh::Entity& element = bucket[i_element];
+                      stk_classic::mesh::Entity& element = bucket[i_element];
                       bool local_valid=true;
                       double mm = metric(element, local_valid);
                       if (!local_valid) n_invalid++;
@@ -1302,13 +1302,13 @@ namespace stk {
       // reset coordinates
       m_eMesh->copy_field(coord_field_current, coord_field_lagged);
 
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
-      stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & valid ) );
+      stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( & mtot ) );
+      stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMin<1>( & valid ) );
 
       if (num_invalid)
         {
           *num_invalid = n_invalid;
-          stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( num_invalid ) );
+          stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceSum<1>( num_invalid ) );
         }
 
       return mtot;

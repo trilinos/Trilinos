@@ -34,35 +34,35 @@ void printStatus(bool status)
 int main ( int argc, char * argv[] )
 {
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+  stk_classic::ParallelMachine parallel_machine = use_case_environment.m_comm;
 
   bool status = true;
   {
     std::cout << "Use Case 1, unequal element weights ... ";
-    bool local_status = stk::rebalance::use_cases::test_unequal_weights(parallel_machine);
-    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
+    bool local_status = stk_classic::rebalance::use_cases::test_unequal_weights(parallel_machine);
+    stk_classic::all_reduce(parallel_machine, stk_classic::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 2, heavy entities ... ";
-    bool local_status = stk::rebalance::use_cases::test_heavy_nodes(parallel_machine);
-    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
+    bool local_status = stk_classic::rebalance::use_cases::test_heavy_nodes(parallel_machine);
+    stk_classic::all_reduce(parallel_machine, stk_classic::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
 
   {
     std::cout << "Use Case 3, contact surfaces ... ";
-    bool local_status = stk::rebalance::use_cases::test_contact_surfaces(parallel_machine);
-    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
+    bool local_status = stk_classic::rebalance::use_cases::test_contact_surfaces(parallel_machine);
+    stk_classic::all_reduce(parallel_machine, stk_classic::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }
   {
     std::cout << "Use Case 4, greedy sideset ... ";
-    bool local_status = stk::rebalance::use_cases::test_greedy_sideset(parallel_machine);
-    stk::all_reduce(parallel_machine, stk::ReduceMin<1>(&local_status));
+    bool local_status = stk_classic::rebalance::use_cases::test_greedy_sideset(parallel_machine);
+    stk_classic::all_reduce(parallel_machine, stk_classic::ReduceMin<1>(&local_status));
     printStatus(local_status);
     status = status && local_status;
   }

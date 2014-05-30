@@ -34,7 +34,7 @@
 /// @{
 ///
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 class Timer;
@@ -661,11 +661,11 @@ inline Writer &operator<<(Writer &dout, const Timer &timer) {
 namespace sierra {
 namespace Diag {
 
-typedef stk::diag::Timer Timer;
-typedef stk::diag::TimerSet TimerSet;
-typedef stk::TimeFormat TimeFormat;
-typedef stk::diag::TimeBlock TimeBlock;
-typedef stk::diag::TimeBlockSynchronized TimeBlockSynchronized;
+typedef stk_classic::diag::Timer Timer;
+typedef stk_classic::diag::TimerSet TimerSet;
+typedef stk_classic::TimeFormat TimeFormat;
+typedef stk_classic::diag::TimeBlock TimeBlock;
+typedef stk_classic::diag::TimeBlockSynchronized TimeBlockSynchronized;
 
 /**
  * @brief Enumeration <b><unnnamed></b> defines the bit mask values for the diagnostic
@@ -775,12 +775,12 @@ void setTimerNameMaxWidth(size_t width);
  */
 size_t getTimerNameMaxWidth();
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getCPULapTime(Timer timer);
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type getCPULapTime(Timer timer);
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getCPUAccumulatedLapTime(Timer timer);
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type getCPUAccumulatedLapTime(Timer timer);
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getSierraCPUTime();
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type getSierraWallTime();
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type getSierraCPUTime();
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type getSierraWallTime();
 
 
 /**
@@ -818,8 +818,8 @@ public:
    */
   virtual void parseArg(const std::string &name, const std::string &arg) const;  
 
-  mutable stk::diag::MetricsMask        m_metricsSetMask;
-  mutable stk::diag::MetricsMask        m_metricsMask;
+  mutable stk_classic::diag::MetricsMask        m_metricsSetMask;
+  mutable stk_classic::diag::MetricsMask        m_metricsMask;
 };
 
 
@@ -828,10 +828,10 @@ class SierraRootTimer
   public:
     SierraRootTimer();
     virtual ~SierraRootTimer();
-    stk::diag::Timer & sierraTimer();
+    stk_classic::diag::Timer & sierraTimer();
 
   private:
-    stk::diag::Timer m_sierraTimer; 
+    stk_classic::diag::Timer m_sierraTimer; 
 };
 
 } // namespace Diag

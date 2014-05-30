@@ -11,7 +11,7 @@
 #include <vector>
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fem {
 
@@ -45,7 +45,7 @@ namespace fem {
 // * Implement get_cell_topology for Part.
 // * Implement declare_part with cell topology
 // Non-critical:
-// * Implement stk::mesh::fem::get namespace to include getters for MetaData,
+// * Implement stk_classic::mesh::fem::get namespace to include getters for MetaData,
 //   BulkData, FEMMetaData, FEMBulkData, CellTopology from things like Part,
 //   Bucket, Entity, etc.
 // * Create impl class inside the handle classes to hold their parent pointer
@@ -63,14 +63,14 @@ class FEMMetaData {
 #ifdef SWIG   //SRK from NLM, this is to avoid pulling in a bunch more headers just to define EntityRank
 	enum
 	{
-    INVALID_RANK = stk::mesh::InvalidEntityRank,
+    INVALID_RANK = stk_classic::mesh::InvalidEntityRank,
     NODE_RANK = 0u,
     EDGE_RANK = 1u,
     FACE_RANK = 2u,
     VOLUME_RANK = 3u
 	};
 #else
-  static const EntityRank INVALID_RANK = stk::mesh::InvalidEntityRank;
+  static const EntityRank INVALID_RANK = stk_classic::mesh::InvalidEntityRank;
 	static const EntityRank NODE_RANK = 0u;
   static const EntityRank EDGE_RANK = 1u;
   static const EntityRank FACE_RANK = 2u;
@@ -330,9 +330,9 @@ class FEMMetaData {
 
   /** \brief  Declare an entity-relationship between parts.
    *
-   *  If \ref stk::mesh::Entity "entity" <b> e1 </b> is a member
+   *  If \ref stk_classic::mesh::Entity "entity" <b> e1 </b> is a member
    *  of <em> root_part </em> and there exists an
-   *  \ref stk::mesh::Relation "entity relation"
+   *  \ref stk_classic::mesh::Relation "entity relation"
    *  from <b> e1 </b> to <b> e2 </b> that satisfies the
    *  \ref stk_mesh_relations "relation stencil"
    *  then <b> e2 </b> must be a member of the <em> target_part </em>.
@@ -404,7 +404,7 @@ class FEMMetaData {
    *
    *  \exception std::runtime_error
    *    If the field exits and the
-   *    \ref stk::mesh::Field "field_type" does not match or
+   *    \ref stk_classic::mesh::Field "field_type" does not match or
    *    if required_by != NULL and a field of that name is not found.
    */
   template< class field_type >
@@ -417,7 +417,7 @@ class FEMMetaData {
   }
 
   /** \brief  Declare a field of the given
-   *          \ref stk::mesh::Field "field_type", test name,
+   *          \ref stk_classic::mesh::Field "field_type", test name,
    *          and number of states.
    *
    *  A compatible redeclaration returns the previously declared field.
@@ -457,7 +457,7 @@ class FEMMetaData {
 
   /** \brief  Commit the part and field declarations so that the
    *          meta data manager can be used to create
-   *          \ref stk::mesh::BulkData "mesh bulk data".
+   *          \ref stk_classic::mesh::BulkData "mesh bulk data".
    *
    *  Verifies consistency of the meta data and clean out redundant
    *  field data allocation rules.
@@ -527,7 +527,7 @@ void set_cell_topology( Part &part, const fem::CellTopology cell_topology);
 template<class Topology>
 inline void set_cell_topology(Part & part)
 {
-  stk::mesh::fem::set_cell_topology(part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
+  stk_classic::mesh::fem::set_cell_topology(part, fem::CellTopology(shards::getCellTopologyData<Topology>()));
 }
 
 

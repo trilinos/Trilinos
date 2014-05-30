@@ -96,9 +96,9 @@ std::ostream& operator<<(std::ostream& os, const MemoryInfo& mem)
 
 STKUNIT_UNIT_TEST(adapt, count_memory)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD ;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
   if (p_size == 1)
     {
       const unsigned n = 20;
@@ -118,9 +118,9 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       const size_t num_nodes_per_tri = 3;
       const size_t num_new_nodes = num_new_tris*num_nodes_per_tri;
       MemoryInfo mem_delta_node;
-      double time = -stk::percept::Util::cpu_time();
+      double time = -stk_classic::percept::Util::cpu_time();
 
-      std::vector<stk::mesh::Entity *> new_nodes, new_elements;
+      std::vector<stk_classic::mesh::Entity *> new_nodes, new_elements;
 
       eMesh.get_bulk_data()->modification_begin();
       eMesh.createEntities(eMesh.node_rank(), num_new_nodes, new_nodes);
@@ -154,7 +154,7 @@ STKUNIT_UNIT_TEST(adapt, count_memory)
       double mem_per_elem_0 = double(mem_delta_elem_0.m_malloc_used)/double(num_new_tris);
       double mem_per_elem_1 = double(mem_delta_elem_1.m_malloc_used)/double(num_new_tris);
 
-      time += stk::percept::Util::cpu_time();
+      time += stk_classic::percept::Util::cpu_time();
 
       std::cout << "\nstk_mesh count_memory mem_per_elem (no connectivity) = " << mem_per_elem_0 << " with connectivity= " << mem_per_elem_1 << " cpu= " << time << std::endl;
 

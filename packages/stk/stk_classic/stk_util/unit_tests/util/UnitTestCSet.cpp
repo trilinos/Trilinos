@@ -10,7 +10,7 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace cset_unit {
 
 class A {
@@ -88,8 +88,8 @@ public:
 }//namespace cset_unit
 }//namespace stk
 
-using namespace stk;
-using namespace stk::cset_unit;
+using namespace stk_classic;
+using namespace stk_classic::cset_unit;
 
 STKUNIT_UNIT_TEST( UnitTestCSet, UnitTest)
 {

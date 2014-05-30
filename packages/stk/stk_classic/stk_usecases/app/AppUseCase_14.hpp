@@ -14,21 +14,21 @@ int use_case_14();
 #include <app/UseCase_14_Common.hpp>
 #include <app/UseCase_14_Fields.hpp>
 
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>       VectorField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>       VectorField ;
 
 class MyHexInternalForceAlg
 {
 public:
-  MyHexInternalForceAlg(const stk::app::Fields &fields,
+  MyHexInternalForceAlg(const stk_classic::app::Fields &fields,
 			lame::matParams &matParameters,
 			lame::Material *matModel,
-                        stk::mesh::MetaData &md);
+                        stk_classic::mesh::MetaData &md);
  
   enum { maximum_entity_count = 1000 };
 
-  void apply( stk::mesh::Bucket::iterator ,
-              stk::mesh::Bucket::iterator ,
-              const stk::mesh::PartVector & ) const ;
+  void apply( stk_classic::mesh::Bucket::iterator ,
+              stk_classic::mesh::Bucket::iterator ,
+              const stk_classic::mesh::PartVector & ) const ;
 
 private:
   MyHexInternalForceAlg& operator=(const MyHexInternalForceAlg&);
@@ -36,11 +36,11 @@ private:
 
   APSHex8ug                             hex_element;
   lame::matParams &                     materialParameters;
-  stk::mesh::Property<double> *         delta_t;
-  stk::mesh::Property<lame::MatProps> * m_materialProperties;
+  stk_classic::mesh::Property<double> *         delta_t;
+  stk_classic::mesh::Property<lame::MatProps> * m_materialProperties;
   lame::Material *                      matmodel;
 
-  stk::app::Fields                      m_fields;
+  stk_classic::app::Fields                      m_fields;
 };
 
 //--------------------------------------------------------------------
@@ -49,12 +49,12 @@ private:
 class MyNodalForceScatterAlg
 {
 public:
-  MyNodalForceScatterAlg(const stk::app::Fields &fields, stk::mesh::EntityRank element_rank);
+  MyNodalForceScatterAlg(const stk_classic::app::Fields &fields, stk_classic::mesh::EntityRank element_rank);
 
   enum { maximum_entity_count = 0 }; /**< Don't slice the buckets */
 
-  void apply( stk::mesh::Bucket::iterator ,
-              stk::mesh::Bucket::iterator ) const ;
+  void apply( stk_classic::mesh::Bucket::iterator ,
+              stk_classic::mesh::Bucket::iterator ) const ;
 
 
 private:
@@ -63,7 +63,7 @@ private:
 
   ElementNodeVectorField *      force_new_field;
   VectorField *                 fint_field;
-  stk::mesh::EntityRank         m_elementRank;
+  stk_classic::mesh::EntityRank         m_elementRank;
 };
 
 #undef INLINE /* */

@@ -33,15 +33,15 @@
 
 //----------------------------------------------------------------------
 
-namespace stk{
+namespace stk_classic{
 namespace mesh {
 namespace use_cases {
 
 // Functions to generate the use case mesh information:
 namespace {
-void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] );
-void usecase_2_node_coordinates( stk::mesh::EntityId node_id ,
+void usecase_2_elem_node_ids( stk_classic::mesh::EntityId elem_id ,
+                              stk_classic::mesh::EntityId node_ids[] );
+void usecase_2_node_coordinates( stk_classic::mesh::EntityId node_id ,
                                  double coord[] );
 
 const double TEMPERATURE_VALUE_GOLD = 98.6;
@@ -61,7 +61,7 @@ typedef shards::Hexahedron<8>  ElementTraits ;
 // however, it could be done incrementally outside of
 // the constructor.
 
-UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
+UseCase_2_Mesh::UseCase_2_Mesh( stk_classic::ParallelMachine comm ) :
   m_fem_metaData( SpatialDim )
   , m_bulkData( fem::FEMMetaData::get_meta_data(m_fem_metaData) , comm , field_data_chunk_size )
   , m_partLeft( fem::declare_part<ElementTraits>( m_fem_metaData, "block_left"))
@@ -76,12 +76,12 @@ UseCase_2_Mesh::UseCase_2_Mesh( stk::ParallelMachine comm ) :
 {
   // Put the coordinates and temperature field on all nodes
 
-  stk::mesh::Part & universal = m_fem_metaData.universal_part();
-  stk::mesh::put_field( m_coordinates_field , m_node_rank , universal , SpatialDim );
-  stk::mesh::put_field( m_temperature_field, m_node_rank, universal );
+  stk_classic::mesh::Part & universal = m_fem_metaData.universal_part();
+  stk_classic::mesh::put_field( m_coordinates_field , m_node_rank , universal , SpatialDim );
+  stk_classic::mesh::put_field( m_temperature_field, m_node_rank, universal );
 
   // Put the volume field on all elements:
-  stk::mesh::put_field( m_volume_field , m_elem_rank , universal );
+  stk_classic::mesh::put_field( m_volume_field , m_elem_rank , universal );
 
   // Done populating the mesh meta data.
   // Commit the meta data: this locks out changes,
@@ -107,8 +107,8 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
 
     m_bulkData.modification_begin(); // Begin modifying the mesh
 
-    stk::mesh::EntityId curr_elem_id = 1 ;
-    stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+    stk_classic::mesh::EntityId curr_elem_id = 1 ;
+    stk_classic::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
 
     // Note declare_element expects a cell topology
     // to have been attached to m_partLeft.
@@ -116,7 +116,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     // Declare nleft elements
     for ( unsigned j = 0 ; j < nleft ; ++j , ++curr_elem_id ) {
       usecase_2_elem_node_ids( curr_elem_id , node_ids );
-      stk::mesh::fem::declare_element( m_bulkData, m_partLeft, curr_elem_id, node_ids );
+      stk_classic::mesh::fem::declare_element( m_bulkData, m_partLeft, curr_elem_id, node_ids );
     }
 
     // Note declare_element expects a cell topology
@@ -125,7 +125,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     // Declare nright elements
     for ( unsigned j = 0 ; j < nright ; ++j , ++curr_elem_id ) {
       usecase_2_elem_node_ids( curr_elem_id , node_ids );
-      stk::mesh::fem::declare_element( m_bulkData, m_partRight, curr_elem_id, node_ids );
+      stk_classic::mesh::fem::declare_element( m_bulkData, m_partRight, curr_elem_id, node_ids );
     }
 
     // Done modifying the mesh.
@@ -142,14 +142,14 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
 
 
     // Iterate over all nodes by getting all node buckets and iterating over each bucket.
-    const std::vector<stk::mesh::Bucket*> & node_buckets =
+    const std::vector<stk_classic::mesh::Bucket*> & node_buckets =
       m_bulkData.buckets( m_node_rank );
 
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
           node_bucket_it = node_buckets.begin() ;
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
 
-      const stk::mesh::Bucket & bucket = **node_bucket_it;
+      const stk_classic::mesh::Bucket & bucket = **node_bucket_it;
 
       // Fill the nodal coordinates.
       // Create a multidimensional array view of the
@@ -157,7 +157,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is two dimensional ( Cartesian X NumberNodes )
       // and indexed by ( 0..2 , 0..NumberNodes-1 )
 
-      stk::mesh::BucketArray<VectorFieldType>
+      stk_classic::mesh::BucketArray<VectorFieldType>
         coordinates_array( m_coordinates_field, bucket );
 
       const int num_nodes_in_bucket = coordinates_array.dimension(1);
@@ -177,7 +177,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is one dimensional ( NumberNodes )
       // and indexed by ( 0..NumberNodes-1 )
 
-      stk::mesh::BucketArray<ScalarFieldType>
+      stk_classic::mesh::BucketArray<ScalarFieldType>
         temperature_array( m_temperature_field, bucket );
 
       const int num_temps = temperature_array.dimension(0);
@@ -197,13 +197,13 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
     // and can be parallel inconsistent.  A user may communicate
     // field data as needed to force consistency.
 
-    const std::vector<stk::mesh::Bucket*> & elem_buckets =
+    const std::vector<stk_classic::mesh::Bucket*> & elem_buckets =
       m_bulkData.buckets( m_elem_rank );
 
     // Volume field:
 
     // Iterate over all element buckets and populate volume field.
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
           element_bucket_it = elem_buckets.begin();
           element_bucket_it != elem_buckets.end() ; ++element_bucket_it ) {
 
@@ -215,7 +215,7 @@ void UseCase_2_Mesh::populate( unsigned nleft , unsigned nright )
       // The array is one dimensional ( NumberElements )
       // and indexed by ( 0..NumberElements-1 )
 
-      stk::mesh::BucketArray<ScalarFieldType>
+      stk_classic::mesh::BucketArray<ScalarFieldType>
         volume_array( m_volume_field, element_bucket );
 
       const unsigned num_elements = volume_array.dimension(0);
@@ -248,8 +248,8 @@ bool verifyCellTopology( const UseCase_2_Mesh & mesh )
 {
   // Verify that cell topology for left and right parts is a hex
 
-  stk::mesh::Part & partLeft = mesh.m_partLeft ;
-  stk::mesh::Part & partRight = mesh.m_partRight ;
+  stk_classic::mesh::Part & partLeft = mesh.m_partLeft ;
+  stk_classic::mesh::Part & partRight = mesh.m_partRight ;
 
   bool result = true;
   const CellTopologyData * left_cell_topology = mesh.m_fem_metaData.get_cell_topology( partLeft ).getCellTopologyData();
@@ -273,9 +273,9 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh,
 {
   // Verify that we have the expected numbers of entities in each part
 
-  const stk::mesh::BulkData & bulkData = mesh.m_bulkData ;
-  stk::mesh::Part & partLeft = mesh.m_partLeft ;
-  stk::mesh::Part & partRight = mesh.m_partRight ;
+  const stk_classic::mesh::BulkData & bulkData = mesh.m_bulkData ;
+  stk_classic::mesh::Part & partLeft = mesh.m_partLeft ;
+  stk_classic::mesh::Part & partRight = mesh.m_partRight ;
 
   // Compute expected number of entities for each entity rank
   const unsigned expected_num_left_nodes = (nleft+1)*4;
@@ -290,8 +290,8 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh,
   // (nodes, edges, faces, elements)
   // that are members of the left element block..
   // Use the selector to count those entities.
-  stk::mesh::Selector selector_left(partLeft);
-  stk::mesh::count_entities( selector_left, bulkData , entity_counts );
+  stk_classic::mesh::Selector selector_left(partLeft);
+  stk_classic::mesh::count_entities( selector_left, bulkData , entity_counts );
 
   // Verify expected number of entities for left part
   if ( entity_counts[mesh.m_node_rank] != expected_num_left_nodes ||
@@ -306,8 +306,8 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh,
   // (nodes, edges, faces, elements)
   // that are members of the right element block..
   // Use the selector to count those entities.
-  stk::mesh::Selector selector_right(partRight);
-  stk::mesh::count_entities( selector_right, bulkData , entity_counts );
+  stk_classic::mesh::Selector selector_right(partRight);
+  stk_classic::mesh::count_entities( selector_right, bulkData , entity_counts );
 
   // Verify expected number of entities for right part
   if ( entity_counts[mesh.m_node_rank] != expected_num_right_nodes ||
@@ -323,46 +323,46 @@ bool verifyEntityCounts( const UseCase_2_Mesh & mesh,
 bool verifyRelations( const UseCase_2_Mesh & mesh,
                       unsigned nleft, unsigned nright )
 {
-  const stk::mesh::BulkData & bulkData = mesh.m_bulkData ;
-  stk::mesh::Part & partLeft  = mesh.m_partLeft ;
-  stk::mesh::Part & partRight = mesh.m_partRight ;
-  std::vector<stk::mesh::Part*> both_parts;
+  const stk_classic::mesh::BulkData & bulkData = mesh.m_bulkData ;
+  stk_classic::mesh::Part & partLeft  = mesh.m_partLeft ;
+  stk_classic::mesh::Part & partRight = mesh.m_partRight ;
+  std::vector<stk_classic::mesh::Part*> both_parts;
   both_parts.push_back(&partLeft);
   both_parts.push_back(&partRight);
 
   bool result = true;
 
-  const std::vector<stk::mesh::Bucket*> & all_elem_buckets = bulkData.buckets( mesh.m_elem_rank );
+  const std::vector<stk_classic::mesh::Bucket*> & all_elem_buckets = bulkData.buckets( mesh.m_elem_rank );
 
   // For both left and right parts
   // Verify the element-node relationships for each part:
-  for( std::vector<stk::mesh::Part*>::const_iterator iter_part = both_parts.begin();  iter_part < both_parts.end(); iter_part++)
+  for( std::vector<stk_classic::mesh::Part*>::const_iterator iter_part = both_parts.begin();  iter_part < both_parts.end(); iter_part++)
   {
-    std::vector<stk::mesh::Bucket*> selected_elem_buckets ;
+    std::vector<stk_classic::mesh::Bucket*> selected_elem_buckets ;
 
     // From all element buckets select part buckets
-    stk::mesh::Selector selector(**iter_part);
-    stk::mesh::get_buckets( selector , all_elem_buckets ,
+    stk_classic::mesh::Selector selector(**iter_part);
+    stk_classic::mesh::get_buckets( selector , all_elem_buckets ,
                                             selected_elem_buckets );
 
     // Iterate over part buckets
     for ( size_t j = 0 ; j < selected_elem_buckets.size() ; ++j ) {
 
-      const stk::mesh::Bucket & elem_bucket = *selected_elem_buckets[j] ;
+      const stk_classic::mesh::Bucket & elem_bucket = *selected_elem_buckets[j] ;
 
       // Iterate over all elements in this bucket
       for ( size_t i = 0 ; i < elem_bucket.size() ; ++i ) {
-        stk::mesh::Entity & elem = elem_bucket[i] ;
+        stk_classic::mesh::Entity & elem = elem_bucket[i] ;
 
         // Query the node ids for this element.
-        stk::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
+        stk_classic::mesh::EntityId node_ids[ shards::Hexahedron<8> ::node_count ];
         usecase_2_elem_node_ids( elem.identifier() , node_ids );
 
         // Pair of iterators for all of the element's relations.
         // This class has convenience functions for size and indexing.
         //   rel.size() == std::distance( rel.first , rel.second );
         //   rel[i] == *( rel.first + i );
-        stk::mesh::PairIterRelation rel = elem.relations();
+        stk_classic::mesh::PairIterRelation rel = elem.relations();
 
         // Verify that the number of nodes in this element is correct.
         if( shards::Hexahedron<8> ::node_count != rel.size() ) {
@@ -375,7 +375,7 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
         // have the correct relation-identifiers and
         // are members of the block.
         for ( unsigned k = 0 ; k < shards::Hexahedron<8> ::node_count ; ++k ) {
-          stk::mesh::Entity & rel_node = * rel[k].entity();
+          stk_classic::mesh::Entity & rel_node = * rel[k].entity();
           if ( node_ids[k] != rel_node.identifier() ||
                ! rel_node.bucket().member(**iter_part) ) {
               std::cerr << "Error, an element's node is just plain wrong!"
@@ -395,13 +395,13 @@ bool verifyRelations( const UseCase_2_Mesh & mesh,
 // field data from the nodes of an element.
 template< class field_type >
 bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
-                        const stk::mesh::Entity & entity ,
-                        typename stk::mesh::FieldTraits< field_type >::data_type * dst,
-                        stk::mesh::EntityRank entity_rank )
+                        const stk_classic::mesh::Entity & entity ,
+                        typename stk_classic::mesh::FieldTraits< field_type >::data_type * dst,
+                        stk_classic::mesh::EntityRank entity_rank )
 {
-  typedef typename stk::mesh::FieldTraits< field_type >::data_type T ;
+  typedef typename stk_classic::mesh::FieldTraits< field_type >::data_type T ;
 
-  stk::mesh::PairIterRelation rel = entity.relations( entity_rank );
+  stk_classic::mesh::PairIterRelation rel = entity.relations( entity_rank );
 
   bool result = expected_num_rel == (unsigned) rel.size();
 
@@ -414,7 +414,7 @@ bool gather_field_data( unsigned expected_num_rel, const field_type & field ,
       if (!src) {
         break;
       }
-      stk::Copy<SpatialDim>( dst , src );
+      stk_classic::Copy<SpatialDim>( dst , src );
     }
     result = dst == dst_end ;
   }
@@ -442,26 +442,26 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
   const VectorFieldType & coordinates_field = mesh.m_coordinates_field ;
   const ScalarFieldType & volume_field = mesh.m_volume_field ;
-  const stk::mesh::BulkData & bulkData = mesh.m_bulkData ;
+  const stk_classic::mesh::BulkData & bulkData = mesh.m_bulkData ;
 
   // All element buckets:
-  const std::vector<stk::mesh::Bucket*> & elem_buckets =
+  const std::vector<stk_classic::mesh::Bucket*> & elem_buckets =
     bulkData.buckets( mesh.m_elem_rank );
 
   // Verify coordinates_field by gathering the nodal coordinates
   // from each element's nodes.
 
   // Iterate over all element buckets
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         element_bucket_it = elem_buckets.begin();
         element_bucket_it != elem_buckets.end() ; ++element_bucket_it ) {
 
-    const stk::mesh::Bucket& bucket = **element_bucket_it;
+    const stk_classic::mesh::Bucket& bucket = **element_bucket_it;
     const size_t num_elements_in_bucket = bucket.size();
 
     // Iterate over all elements in bucket
     for( size_t bucket_index = 0; bucket_index < num_elements_in_bucket; ++bucket_index) {
-      const stk::mesh::Entity & elem = bucket[bucket_index] ;
+      const stk_classic::mesh::Entity & elem = bucket[bucket_index] ;
 
       // Gather nodal coordinates of this element
       double elem_coord[ ElementTraits::node_count ][ SpatialDim ];
@@ -511,7 +511,7 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 
     // Verify volume_field
 
-    stk::mesh::BucketArray<ScalarFieldType> volume_array(
+    stk_classic::mesh::BucketArray<ScalarFieldType> volume_array(
         volume_field,
         **element_bucket_it
         );
@@ -533,15 +533,15 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
     const ScalarFieldType & temperature_field = mesh.m_temperature_field ;
 
     // Get all node buckets
-    const std::vector<stk::mesh::Bucket*> & node_buckets =
+    const std::vector<stk_classic::mesh::Bucket*> & node_buckets =
       bulkData.buckets( mesh.m_node_rank );
 
     // Iterate over all node buckets
-    for ( std::vector<stk::mesh::Bucket*>::const_iterator
+    for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
           node_bucket_it = node_buckets.begin();
           node_bucket_it != node_buckets.end() ; ++node_bucket_it ) {
-      const stk::mesh::Bucket & bucket = **node_bucket_it;
-      stk::mesh::BucketArray<ScalarFieldType> temperature_array(
+      const stk_classic::mesh::Bucket & bucket = **node_bucket_it;
+      stk_classic::mesh::BucketArray<ScalarFieldType> temperature_array(
           temperature_field,
           bucket
           );
@@ -567,8 +567,8 @@ bool verifyFields( const UseCase_2_Mesh & mesh )
 namespace {
 
 //Given an element id compute the ids of the associated nodes.
-void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
-                              stk::mesh::EntityId node_ids[] )
+void usecase_2_elem_node_ids( stk_classic::mesh::EntityId elem_id ,
+                              stk_classic::mesh::EntityId node_ids[] )
 {
   ThrowRequireMsg( elem_id != 0,
                    "usecase_2_elem_node_ids: ERROR, elem_id ("
@@ -587,7 +587,7 @@ void usecase_2_elem_node_ids( stk::mesh::EntityId elem_id ,
 }
 
 // Given a node_id compute its spatial coordinates
-void usecase_2_node_coordinates( stk::mesh::EntityId node_id , double coord[] )
+void usecase_2_node_coordinates( stk_classic::mesh::EntityId node_id , double coord[] )
 {
   // i_length is the same as the number of the side it occurs in
   // i_plane is the position of the node in the side

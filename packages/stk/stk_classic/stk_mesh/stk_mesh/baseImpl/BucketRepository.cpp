@@ -16,7 +16,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -68,7 +68,7 @@ BucketRepository::~BucketRepository()
 
 void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * bucket_to_be_deleted )
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket_to_be_deleted);
+  TraceIfWatching("stk_classic::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket_to_be_deleted);
 
   ThrowRequireMsg(MetaData::get(m_mesh).check_rank(entity_rank),
                   "Entity rank " << entity_rank << " is invalid");
@@ -110,7 +110,7 @@ void BucketRepository::destroy_bucket( const unsigned & entity_rank , Bucket * b
 //----------------------------------------------------------------------
 void BucketRepository::destroy_bucket( Bucket * bucket )
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
+  TraceIfWatching("stk_classic::mesh::impl::BucketRepository::destroy_bucket", LOG_BUCKET, bucket);
 
   delete bucket;
 }
@@ -121,7 +121,7 @@ void BucketRepository::destroy_bucket( Bucket * bucket )
 void
 BucketRepository::declare_nil_bucket()
 {
-  TraceIf("stk::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::declare_nil_bucket", LOG_BUCKET);
 
   if (m_nil_bucket == NULL) {
     // Key layout:
@@ -177,7 +177,7 @@ BucketRepository::declare_bucket(
 {
   enum { KEY_TMP_BUFFER_SIZE = 64 };
 
-  TraceIf("stk::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::declare_bucket", LOG_BUCKET);
 
   const unsigned max = static_cast<unsigned>(-1);
 
@@ -276,7 +276,7 @@ BucketRepository::declare_bucket(
 
 void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
+  TraceIfWatching("stk_classic::mesh::impl::BucketRepository::initialize_fields", LOG_BUCKET, &k_dst);
   k_dst.m_bucketImpl.initialize_fields(i_dst);
 }
 
@@ -284,7 +284,7 @@ void BucketRepository::initialize_fields( Bucket & k_dst , unsigned i_dst )
 
 void BucketRepository::update_field_data_states() const
 {
-  TraceIf("stk::mesh::impl::BucketRepository::update_field_data_states", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::update_field_data_states", LOG_BUCKET);
 
   for ( std::vector< std::vector<Bucket*> >::const_iterator
         i = m_buckets.begin() ; i != m_buckets.end() ; ++i ) {
@@ -304,7 +304,7 @@ void BucketRepository::update_field_data_states() const
 
 void BucketRepository::internal_sort_bucket_entities()
 {
-  TraceIf("stk::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::internal_sort_bucket_entities", LOG_BUCKET);
 
   for ( EntityRank entity_rank = 0 ;
         entity_rank < m_buckets.size() ; ++entity_rank ) {
@@ -410,7 +410,7 @@ void BucketRepository::internal_sort_bucket_entities()
 
 void BucketRepository::optimize_buckets()
 {
-  TraceIf("stk::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::optimize_buckets", LOG_BUCKET);
 
   for ( EntityRank entity_rank = 0 ;
       entity_rank < m_buckets.size() ; ++entity_rank )
@@ -507,7 +507,7 @@ void BucketRepository::optimize_buckets()
 
 void BucketRepository::remove_entity( Bucket * k , unsigned i )
 {
-  TraceIfWatching("stk::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
+  TraceIfWatching("stk_classic::mesh::impl::BucketRepository::remove_entity", LOG_BUCKET, k);
 
   ThrowRequireMsg( k != m_nil_bucket, "Cannot remove entity from nil_bucket" );
 
@@ -552,7 +552,7 @@ void BucketRepository::remove_entity( Bucket * k , unsigned i )
 
 void BucketRepository::internal_propagate_relocation( Entity & entity )
 {
-  TraceIf("stk::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
+  TraceIf("stk_classic::mesh::impl::BucketRepository::internal_propagate_relocation", LOG_BUCKET);
 
   const EntityRank erank = entity.entity_rank();
   PairIterRelation rel = entity.relations();

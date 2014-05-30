@@ -16,7 +16,7 @@
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 bool use_case_7_driver( MPI_Comm comm ,
@@ -77,19 +77,19 @@ namespace bopt = boost::program_options;
 int main(int argc, char** argv)
 {
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  stk::ParallelMachine comm = use_case_environment.m_comm;
+  stk_classic::ParallelMachine comm = use_case_environment.m_comm;
 
   //----------------------------------
   // Broadcast argc and argv to all processors.
 
-  stk::BroadcastArg b_arg(comm, argc, argv);
+  stk_classic::BroadcastArg b_arg(comm, argc, argv);
 
   //----------------------------------
   // Process the broadcast command line arguments
 
   bopt::options_description desc("options");
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 
   int num_trials = 0;
   int nthreads = 1;
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
     ("runtest,r",     bopt::value<std::string>(), "runtest pid file" )
     ("threads",       bopt::value<int>(&nthreads)->default_value(1),   "number of threads [14/14a/blas only]")
     ("trials",        bopt::value<int>(&num_trials)->default_value(1),   "number of trials (execute loops) [14/14a/blas only]")
-    ("bucket_size",    bopt::value<int>(&bucket_size)->default_value(1000),   "size of buckets used internally in stk::mesh [14/14a/blas only]")
+    ("bucket_size",    bopt::value<int>(&bucket_size)->default_value(1000),   "size of buckets used internally in stk_classic::mesh [14/14a/blas only]")
     ("tbb",           "Use Threaded Building Blocks algorithm thread runner [14/14a/blas only]")
     ("tpi",           "Use Thread Pool Interface algorithm thread runner [14/14a/blas only]")
     ("nonthreaded",   "Run algorithms non-threaded [default] [14/14a/blas only]")
@@ -179,23 +179,23 @@ int main(int argc, char** argv)
       std::exit(EXIT_FAILURE);
     }
 
-    success = stk::app::use_case_7_driver( comm , run_performance_test , in_filename , nthreads, thread_runner );
+    success = stk_classic::app::use_case_7_driver( comm , run_performance_test , in_filename , nthreads, thread_runner );
   }
 
   else if ( vm.count( use_case_blas ) ) {
-    success = stk::app::use_case_blas_driver(comm, nthreads, num_trials, working_directory,
+    success = stk_classic::app::use_case_blas_driver(comm, nthreads, num_trials, working_directory,
                                              in_filename, in_filetype, thread_runner, bucket_size,
                                              run_performance_test);
   }
 
   else if ( vm.count( use_case_14 ) ) {
-    success = stk::app::use_case_14_driver(comm, nthreads, num_trials, working_directory,
+    success = stk_classic::app::use_case_14_driver(comm, nthreads, num_trials, working_directory,
                                            in_filename, in_filetype, thread_runner, bucket_size,
                                            run_performance_test);
   }
 
   else if ( vm.count( use_case_14a ) ) {
-    success = stk::app::use_case_14a_driver(comm, nthreads, num_trials, working_directory,
+    success = stk_classic::app::use_case_14a_driver(comm, nthreads, num_trials, working_directory,
                                             in_filename, in_filetype, thread_runner, bucket_size,
                                             run_performance_test);
   }
@@ -211,7 +211,7 @@ int main(int argc, char** argv)
       std::exit(EXIT_FAILURE);
     }
 
-    success = stk::app::use_case_24_driver( comm, working_directory, in_filename, "1mCube.e" );
+    success = stk_classic::app::use_case_24_driver( comm, working_directory, in_filename, "1mCube.e" );
   }
   else {
     std::cout << "OPTION ERROR: Missing a use case selection option.  Use --help option to see valid options.\n";

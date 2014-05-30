@@ -19,25 +19,25 @@
 
 using namespace use_case;
 
-using namespace stk::diag;
+using namespace stk_classic::diag;
 
 
-typedef stk::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
-typedef stk::search::box::AxisAlignedBoundingBox<IdentProc,float,3> BoundingBox;
+typedef stk_classic::search::ident::IdentProc<uint64_t,unsigned> IdentProc;
+typedef stk_classic::search::box::AxisAlignedBoundingBox<IdentProc,float,3> BoundingBox;
 typedef std::vector<std::pair<IdentProc, IdentProc> > IdentProcRelation;
 
 static const int box_count = 100;
 
 void
 use_case_4_driver(
-  stk::ParallelMachine  comm)
+  stk_classic::ParallelMachine  comm)
 {
-  stk::diag::WriterThrowSafe _write_throw_safe(dw());
+  stk_classic::diag::WriterThrowSafe _write_throw_safe(dw());
 
-  dw().m(LOG_SEARCH) << "Use case 4" << stk::diag::push << stk::diag::dendl;
+  dw().m(LOG_SEARCH) << "Use case 4" << stk_classic::diag::push << stk_classic::diag::dendl;
 
-  int parallel_rank = stk::parallel_machine_rank(comm);
-//  int parallel_size = stk::parallel_machine_size(comm);
+  int parallel_rank = stk_classic::parallel_machine_rank(comm);
+//  int parallel_size = stk_classic::parallel_machine_size(comm);
 
   std::vector<BoundingBox> range_vector;
 
@@ -66,7 +66,7 @@ use_case_4_driver(
   dw().m(LOG_SEARCH) << "range " << range_vector << dendl;
   dw().m(LOG_SEARCH) << "domain " << domain_vector << dendl;
 
-  stk::search::FactoryOrder order;
+  stk_classic::search::FactoryOrder order;
   order.m_communicator = comm;
 
 
@@ -74,9 +74,9 @@ use_case_4_driver(
 
   IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, range_vector, domain_vector,order);
+  stk_classic::search::coarse_search(relation, range_vector, domain_vector,order);
 
   dw().m(LOG_SEARCH) << "relation " << relation << dendl;
 
-  dw().m(LOG_SEARCH) << stk::diag::pop;
+  dw().m(LOG_SEARCH) << stk_classic::diag::pop;
 }

@@ -41,7 +41,7 @@
 #include <google/dense_hash_map>
 #endif
 
-namespace stk {
+namespace stk_classic {
 namespace percept {
 namespace unit_tests {
 
@@ -163,14 +163,14 @@ static void doTest(MAP& map,  ITER& it, unsigned N, unsigned niter, FUNC& fm, st
 {
   EXCEPTWATCH;
 
-  double t0 =  stk::cpu_time();
+  double t0 =  stk_classic::cpu_time();
   setupMap(map, N);
-  double t1 =  stk::cpu_time();
+  double t1 =  stk_classic::cpu_time();
   std::cout << "maptest:   setup time  = " << (t1-t0)/60. << " [min] for " << msg << std::endl;
 
-  double t2s =  stk::cpu_time();
+  double t2s =  stk_classic::cpu_time();
   double dd= dot1(map, it, N, niter, fm);
-  double t2e =  stk::cpu_time();
+  double t2e =  stk_classic::cpu_time();
 
   std::cout << "maptest:  lookup time  = " << (t2e-t2s)/60. << " [min] for " << msg << " dd= " << dd << std::endl;
 }

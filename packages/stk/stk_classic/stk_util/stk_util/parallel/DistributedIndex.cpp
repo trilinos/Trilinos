@@ -17,7 +17,7 @@
 
 #include <stk_util/util/RadixSort.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace parallel {
 
 //----------------------------------------------------------------------
@@ -47,7 +47,7 @@ void sort_unique( std::vector<DistributedIndex::KeyProc> & key_usage )
 
 void sort_unique( std::vector<DistributedIndex::KeyType> & keys )
 {
-  stk::util::radix_sort_unsigned((keys.empty() ? NULL : &keys[0]), keys.size());
+  stk_classic::util::radix_sort_unsigned((keys.empty() ? NULL : &keys[0]), keys.size());
 
   std::vector<DistributedIndex::KeyType>::iterator
     i = keys.begin() ,
@@ -310,7 +310,7 @@ void DistributedIndex::query(
     bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
 
     if ( bad_key ) {
-      throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
+      throw std::runtime_error("stk_classic::parallel::DistributedIndex::query given a key which is out of range");
     }
 
     for ( std::vector<KeyType>::const_iterator
@@ -355,7 +355,7 @@ void DistributedIndex::query_to_usage(
     bad_key = all.allocate_buffers( m_comm_size / 4 , false , bad_key );
 
     if ( bad_key ) {
-      throw std::runtime_error("stk::parallel::DistributedIndex::query given a key which is out of range");
+      throw std::runtime_error("stk_classic::parallel::DistributedIndex::query given a key which is out of range");
     }
 
     for ( std::vector<KeyType>::const_iterator
@@ -491,7 +491,7 @@ void DistributedIndex::update_keys(
     std::ostringstream msg ;
 
     if ( 0 < local_bad_input ) {
-      msg << "stk::parallel::DistributedIndex::update_keys ERROR Given "
+      msg << "stk_classic::parallel::DistributedIndex::update_keys ERROR Given "
           << local_bad_input << " of " << add_new_keys.size()
           << " add_new_keys outside of any span" ;
     }
@@ -1008,7 +1008,7 @@ void DistributedIndex::generate_new_keys(
   // Unpacking
   unpack_recv_buffer( all, m_comm_size, new_keys);
 
-  stk::util::radix_sort_unsigned((new_keys.empty() ? NULL : &new_keys[0]), new_keys.size());
+  stk_classic::util::radix_sort_unsigned((new_keys.empty() ? NULL : &new_keys[0]), new_keys.size());
 
   requested_keys.resize( m_span_count );
 

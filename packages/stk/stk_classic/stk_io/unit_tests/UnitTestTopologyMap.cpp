@@ -56,7 +56,7 @@ int testElement(const std::string &name)
   }
 
   // Get the corresponding shards CellTopologyData* ..
-  const CellTopologyData *cell_data = stk::io::map_topology_ioss_to_cell(element);
+  const CellTopologyData *cell_data = stk_classic::io::map_topology_ioss_to_cell(element);
   if (cell_data == NULL) {
     std::cerr << "\tERROR: Could not find a shards CellTopology corresponding to the Ioss::ElementTopology element '"
               << name << "'.";
@@ -66,7 +66,7 @@ int testElement(const std::string &name)
 
   // See if we get the same element back when converting from
   // CellTopologyData to Ioss::ElementToplogy
-  std::string new_name = stk::io::map_topology_cell_to_ioss(cell_data, element->spatial_dimension());
+  std::string new_name = stk_classic::io::map_topology_cell_to_ioss(cell_data, element->spatial_dimension());
   Ioss::ElementTopology *new_element = Ioss::ElementTopology::factory(new_name);
   if (element->name() != new_element->name()) {
     std::cerr << "\tERROR: New name = '" << new_element->name()
@@ -120,7 +120,7 @@ int testElement(const std::string &name)
         Ioss::ElementTopology *face = element->face_type(i+1);
         const CellTopologyData *cell_face = cell.getCellTopologyData(cell.getDimension()-1,i);
         errors += my_assert(face->name(),
-                            stk::io::map_topology_cell_to_ioss(cell_face,face->spatial_dimension()),
+                            stk_classic::io::map_topology_cell_to_ioss(cell_face,face->spatial_dimension()),
                             "face type");
 
         Ioss::IntVector fcon = element->face_connectivity(i+1);
@@ -154,7 +154,7 @@ int testElement(const std::string &name)
         Ioss::ElementTopology *edge = element->edge_type(i+1);
         const CellTopologyData *cell_edge = cell.getCellTopologyData(cell.getDimension()-1,i);
         errors += my_assert(edge->name(),
-                            stk::io::map_topology_cell_to_ioss(cell_edge, edge->spatial_dimension()),
+                            stk_classic::io::map_topology_cell_to_ioss(cell_edge, edge->spatial_dimension()),
                             "edge type");
 
         Ioss::IntVector econ = element->edge_connectivity(i+1);

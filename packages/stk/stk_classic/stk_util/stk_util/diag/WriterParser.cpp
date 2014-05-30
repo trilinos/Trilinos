@@ -8,7 +8,7 @@
 #include <stk_util/diag/Writer_fwd.hpp>
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 WriterParser::WriterParser()

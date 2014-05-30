@@ -17,7 +17,7 @@
 
 #include <stk_util/diag/Writer_fwd.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///
@@ -321,7 +321,7 @@ public:
    * @return      a <b>Writer</b> reference to this object.
    */
   Writer &t(PrintMask line_mask = 0) {
-    setLineMask(line_mask | stk::LOG_TRACE);
+    setLineMask(line_mask | stk_classic::LOG_TRACE);
 
     return *this;
   }
@@ -355,7 +355,7 @@ public:
    */
   bool isLoggable(PrintMask line_mask) {
     return line_mask == 0            // Always
-      || ((line_mask & m_printMask & stk::LOG_TRACE)      // LOG_TRACE?
+      || ((line_mask & m_printMask & stk_classic::LOG_TRACE)      // LOG_TRACE?
           ? isTracing()              // Yes, must be tracing
 //    : (line_mask & m_printMask) != 0);        // No, any matching bits
           : (line_mask & m_printMask) == line_mask);      // No, all matching bits
@@ -488,7 +488,7 @@ public:
    */
   bool isTracing() {
     return m_traceDepth <= 0 ? false
-      : (m_traceDepth == 1 || (m_traceDepth > 1 && (m_printMask & stk::LOG_TRACE_SUB_CALLS)));
+      : (m_traceDepth == 1 || (m_traceDepth > 1 && (m_printMask & stk_classic::LOG_TRACE_SUB_CALLS)));
   }
 
   /**
@@ -499,7 +499,7 @@ public:
    *        active, or if tracing is disabled.
    */
   bool isTraceable() {
-    return isTracing() || (m_printMask & stk::LOG_TRACE) != 0; // Currently in a trace or tracing bit set
+    return isTracing() || (m_printMask & stk_classic::LOG_TRACE) != 0; // Currently in a trace or tracing bit set
   }
 
 private:
@@ -787,22 +787,22 @@ Writer &operator<<(Writer &dout, const c_ptr_func_<T, R> &c) {
 namespace sierra {
 
 
-using stk::diag::push;
-using stk::diag::pop;
-using stk::diag::dendl;
-using stk::diag::dflush;
+using stk_classic::diag::push;
+using stk_classic::diag::pop;
+using stk_classic::diag::dendl;
+using stk_classic::diag::dflush;
 
 namespace Diag {
 
-using stk::diag::push;
-using stk::diag::pop;
-using stk::diag::dendl;
-using stk::diag::dflush;
-using stk::diag::setlinemask;
-using stk::diag::resetlinemask;
-using stk::diag::c_ptr;
-using stk::diag::c_ptr_func;
-using stk::diag::c_ptr_func_;
+using stk_classic::diag::push;
+using stk_classic::diag::pop;
+using stk_classic::diag::dendl;
+using stk_classic::diag::dflush;
+using stk_classic::diag::setlinemask;
+using stk_classic::diag::resetlinemask;
+using stk_classic::diag::c_ptr;
+using stk_classic::diag::c_ptr_func;
+using stk_classic::diag::c_ptr_func_;
 
 }
 

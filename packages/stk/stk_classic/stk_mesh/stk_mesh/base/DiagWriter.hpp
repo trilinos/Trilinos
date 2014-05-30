@@ -14,7 +14,7 @@
 // Note, this classes/functions in this header are for internal use only.
 // The API for tracing is defined in Trace.hpp
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class Part;
@@ -24,8 +24,8 @@ union EntityKey;
 // Must be called before theDiagWriter/meshlog
 void initDiagWriter(std::ostream& stream);
 
-stk::diag::Writer &theDiagWriter();
-#define meshlog stk::mesh::theDiagWriter()
+stk_classic::diag::Writer &theDiagWriter();
+#define meshlog stk_classic::mesh::theDiagWriter()
 
 class DiagWriterParser : public diag::WriterParser
 {
@@ -63,13 +63,13 @@ public:
 // can address that here by defining an operator<< for that object. Note
 // that Writer handles vectors and pointers automatically.
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part);
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const Part& part);
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity);
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const Entity& entity);
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key);
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const EntityKey& key);
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc);
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const EntityProc& entity_proc);
 
 } // namespace mesh
 } // namespace stk

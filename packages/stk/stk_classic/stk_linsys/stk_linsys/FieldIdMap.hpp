@@ -12,12 +12,12 @@
 #include <map>
 #include <stk_mesh/base/Field.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
-/** Mappings from stk::mesh::Field objects to integer ids used by fei objects.
+/** Mappings from stk_classic::mesh::Field objects to integer ids used by fei objects.
  */
-typedef std::map<const stk::mesh::FieldBase*,int> FieldIdMap;
+typedef std::map<const stk_classic::mesh::FieldBase*,int> FieldIdMap;
 
 }//namespace linsys
 }//namespace stk

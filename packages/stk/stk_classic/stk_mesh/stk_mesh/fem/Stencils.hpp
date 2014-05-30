@@ -15,7 +15,7 @@
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fem {
 

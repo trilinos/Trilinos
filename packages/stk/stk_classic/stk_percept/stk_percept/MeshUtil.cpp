@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 #include <stk_percept/MeshUtil.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
     using shards::CellTopology;
 
@@ -17,10 +17,10 @@ namespace stk {
     // ================================================================================================================================================================
     // ================================================================================================================================================================
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::EntityId>& side_nodes)
+    void MeshUtil::fillSideNodes(stk_classic::mesh::Entity& element, unsigned iside, std::vector<stk_classic::mesh::EntityId>& side_nodes)
     {
-      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      CellTopology cell_topo(stk_classic::percept::PerceptMesh::get_cell_topology(element));
+      const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
       side_nodes.resize(nfn);
@@ -31,10 +31,10 @@ namespace stk {
         }
     }
 
-    void MeshUtil::fillSideNodes(stk::mesh::Entity& element, unsigned iside, std::vector<stk::mesh::Entity *>& side_nodes)
+    void MeshUtil::fillSideNodes(stk_classic::mesh::Entity& element, unsigned iside, std::vector<stk_classic::mesh::Entity *>& side_nodes)
     {
-      CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      CellTopology cell_topo(stk_classic::percept::PerceptMesh::get_cell_topology(element));
+      const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
       int nfn = cell_topo.getCellTopologyData()->side[iside].topology->vertex_count;
       side_nodes.resize(nfn);
@@ -45,9 +45,9 @@ namespace stk {
         }
     }
 
-    double MeshUtil::triFaceArea(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, unsigned iside)
+    double MeshUtil::triFaceArea(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& element, unsigned iside)
     {
-      std::vector<stk::mesh::Entity *> side_nodes;
+      std::vector<stk_classic::mesh::Entity *> side_nodes;
       fillSideNodes(element, iside, side_nodes);
 
       //int spatialDim = eMesh.get_spatial_dim();
@@ -55,9 +55,9 @@ namespace stk {
       double b[3]={0,0,0};
       double c[3]={0,0,0};
 
-      double *fdata0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[0]);
-      double *fdata1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[1]);
-      double *fdata2 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[2]);
+      double *fdata0 = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[0]);
+      double *fdata1 = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[1]);
+      double *fdata2 = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *side_nodes[2]);
       for (int idim=0; idim < 3; idim++)
         {
           a[idim] = fdata1[idim] - fdata0[idim];
@@ -70,7 +70,7 @@ namespace stk {
       return 0.5*std::sqrt(c[0]*c[0] + c[1]*c[1] + c[2]*c[2]);
     }
 
-    bool MeshUtil::nodesMatch(  std::vector<stk::mesh::EntityId>& side1, std::vector<stk::mesh::EntityId>& side2, bool reverse)
+    bool MeshUtil::nodesMatch(  std::vector<stk_classic::mesh::EntityId>& side1, std::vector<stk_classic::mesh::EntityId>& side2, bool reverse)
     {
       if (side1.size() != side2.size()) return false;
       //std::cout << "tmp side1= " << side1 << " side2= " << side2 << std::endl;
@@ -110,15 +110,15 @@ namespace stk {
       return false;
     }
 
-    bool MeshUtil::sharesFace(stk::mesh::Entity& element1, stk::mesh::Entity& element2, unsigned& iside1, unsigned& iside2)
+    bool MeshUtil::sharesFace(stk_classic::mesh::Entity& element1, stk_classic::mesh::Entity& element2, unsigned& iside1, unsigned& iside2)
     {
-      CellTopology cell_topo1(stk::percept::PerceptMesh::get_cell_topology(element1));
-      CellTopology cell_topo2(stk::percept::PerceptMesh::get_cell_topology(element2));
+      CellTopology cell_topo1(stk_classic::percept::PerceptMesh::get_cell_topology(element1));
+      CellTopology cell_topo2(stk_classic::percept::PerceptMesh::get_cell_topology(element2));
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
         
-      std::vector<stk::mesh::EntityId> side1;
-      std::vector<stk::mesh::EntityId> side2;
+      std::vector<stk_classic::mesh::EntityId> side1;
+      std::vector<stk_classic::mesh::EntityId> side2;
       unsigned nsides = (unsigned)cell_topo1.getSideCount();
       for (iside1 = 0; iside1 < nsides; iside1++)
         {
@@ -138,14 +138,14 @@ namespace stk {
       return false;
     }
 
-    bool MeshUtil::facesConsistent1(percept::PerceptMesh& eMesh, stk::mesh::Entity& element1, stk::mesh::Entity& element2)
+    bool MeshUtil::facesConsistent1(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& element1, stk_classic::mesh::Entity& element2)
     {
       //int spatialDim = eMesh.get_spatial_dim();
       //unsigned side_rank = (spatialDim == 3 ? m_eMesh.face_rank() : m_eMesh.edge_rank());
       double tol = 1.e-5;
 
-      CellTopology cell_topo1(stk::percept::PerceptMesh::get_cell_topology(element1));
-      CellTopology cell_topo2(stk::percept::PerceptMesh::get_cell_topology(element2));
+      CellTopology cell_topo1(stk_classic::percept::PerceptMesh::get_cell_topology(element1));
+      CellTopology cell_topo2(stk_classic::percept::PerceptMesh::get_cell_topology(element2));
 
       if (cell_topo1.getKey() != cell_topo2.getKey())
         return false;
@@ -162,7 +162,7 @@ namespace stk {
                 {
                   throw std::runtime_error("triFaceArea inconsistent parent");
                 }
-              std::vector<stk::mesh::Entity *> children1, children2;
+              std::vector<stk_classic::mesh::Entity *> children1, children2;
               bool hasChildren1 = eMesh.getChildren(element1, children1, true, true);  // check_for_family_tree, only_if_element_is_parent_leaf
               bool hasChildren2 = eMesh.getChildren(element2, children2, true, true);
               VERIFY_OP_ON(hasChildren1, &&, hasChildren2, "no children");
@@ -172,8 +172,8 @@ namespace stk {
                 {
                   for (unsigned ichild2 = 0; ichild2 < children2.size(); ichild2++)
                     {
-                      stk::mesh::Entity& child1 = *children1[ichild1];
-                      stk::mesh::Entity& child2 = *children2[ichild2];
+                      stk_classic::mesh::Entity& child1 = *children1[ichild1];
+                      stk_classic::mesh::Entity& child2 = *children2[ichild2];
                       if (sharesFace(child1, child2, ichild_side1, ichild_side2))
                         {
                           double ctriFaceArea1 = triFaceArea(eMesh, child1, ichild_side1);
@@ -203,25 +203,25 @@ namespace stk {
 
     bool MeshUtil::facesConsistent(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
-          stk::mesh::Bucket & bucket = **k ;
+          stk_classic::mesh::Bucket & bucket = **k ;
 
           const unsigned num_elements_in_bucket = bucket.size();
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
             {
-              stk::mesh::Entity& element = bucket[iElement];
+              stk_classic::mesh::Entity& element = bucket[iElement];
 
-              for ( std::vector<stk::mesh::Bucket*>::const_iterator k1 = buckets.begin() ; k1 != buckets.end() ; ++k1 ) 
+              for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k1 = buckets.begin() ; k1 != buckets.end() ; ++k1 ) 
                 {
-                  stk::mesh::Bucket & bucket1 = **k1 ;
+                  stk_classic::mesh::Bucket & bucket1 = **k1 ;
 
                   const unsigned num_elements_in_bucket1 = bucket1.size();
                   for (unsigned iElement1 = 0; iElement1 < num_elements_in_bucket1; iElement1++)
                     {
-                      stk::mesh::Entity& element1 = bucket1[iElement1];
+                      stk_classic::mesh::Entity& element1 = bucket1[iElement1];
                       if (&element1 != &element)
                         {
                           bool isConsistent = facesConsistent1(eMesh, element, element1);
@@ -237,20 +237,20 @@ namespace stk {
 
     void MeshUtil::checkTopology(percept::PerceptMesh& eMesh)
     {
-      const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( eMesh.element_rank() );
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
-          stk::mesh::Bucket & bucket = **k ;
+          stk_classic::mesh::Bucket & bucket = **k ;
 
           const unsigned num_elements_in_bucket = bucket.size();
           for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
             {
-              stk::mesh::Entity& element = bucket[iElement];
-              if (!stk::percept::PerceptMesh::get_cell_topology(element))
+              stk_classic::mesh::Entity& element = bucket[iElement];
+              if (!stk_classic::percept::PerceptMesh::get_cell_topology(element))
                 {
                   // an empty element
-                  if (element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK).size() == 0)
+                  if (element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK).size() == 0)
                     continue;
 
                   std::cout << "Error MeshUtil::checkTopology null" << std::endl;

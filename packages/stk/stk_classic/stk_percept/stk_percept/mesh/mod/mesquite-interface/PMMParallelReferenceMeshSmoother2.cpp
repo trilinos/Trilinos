@@ -23,7 +23,7 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
@@ -37,13 +37,13 @@ namespace stk {
 
       int spatialDim = m_eMesh->get_spatial_dim();
 
-      stk::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
-      stk::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
-      stk::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
-      stk::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
+      stk_classic::mesh::FieldBase *cg_g_field    = eMesh->get_field("cg_g");
+      stk_classic::mesh::FieldBase *cg_r_field    = eMesh->get_field("cg_r");
+      stk_classic::mesh::FieldBase *cg_d_field    = eMesh->get_field("cg_d");
+      stk_classic::mesh::FieldBase *cg_s_field    = eMesh->get_field("cg_s");
 
-      stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-      stk::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
+      stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+      stk_classic::mesh::Selector on_globally_shared_part =  ( eMesh->get_fem_meta_data()->globally_shared_part() );
       bool total_valid=true;
 
       bool reduced_metric=false;
@@ -75,19 +75,19 @@ namespace stk {
       double alpha_min = 1.e+30;
       double alpha_max = 0.0;
       {
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             // update local and globally shared 
             //if (on_locally_owned_part(**k) || on_globally_shared_part(**k))
             if (on_locally_owned_part(**k))
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_nodes_in_bucket = bucket.size();
 
                 for (unsigned i_node = 0; i_node < num_nodes_in_bucket; i_node++)
                   {
-                    stk::mesh::Entity& node = bucket[i_node];
+                    stk_classic::mesh::Entity& node = bucket[i_node];
                     bool fixed = pmm->get_fixed_flag(&node);
                     bool isGhostNode = !(on_locally_owned_part(node) || on_globally_shared_part(node));
                     if (fixed || isGhostNode)

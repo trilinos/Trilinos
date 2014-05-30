@@ -8,7 +8,7 @@
 
 #include <stk_util/util/Pool.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace util {
 
 Pool::Pool(unsigned int sz)

@@ -25,7 +25,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -44,7 +44,7 @@ class RingFixture {
   const size_t          m_num_edge_per_proc ;
   std::vector<EntityId> m_node_ids , m_edge_ids ;
 
-  RingFixture( stk::ParallelMachine pm ,
+  RingFixture( stk_classic::ParallelMachine pm ,
                unsigned num_edge_per_proc = 10 ,
                bool use_edge_parts = false );
 

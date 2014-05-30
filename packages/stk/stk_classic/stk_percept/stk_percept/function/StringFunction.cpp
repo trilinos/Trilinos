@@ -395,7 +395,7 @@ namespace stk
     ///  Dimensions of parametric_coordinates and input_phy_points are required to be ([P],[D])
     /// output_values: ([P], [DOF])
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
-                                    const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional) 
+                                    const stk_classic::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional) 
     {
       PRINT("tmp srk StringFunction::operator(element) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
 
@@ -420,12 +420,12 @@ namespace stk
       m_element = 0;
 
       // *  Dimensions of parametric_coordinates are required to be ([P],[D])
-      //FieldFunction:: void operator()(const stk::mesh::Entity *element, const MDArray& parametric_coordinates, MDArray& out);
+      //FieldFunction:: void operator()(const stk_classic::mesh::Entity *element, const MDArray& parametric_coordinates, MDArray& out);
 
     }
 
     void StringFunction::operator()(MDArray& input_phy_points, MDArray& output_values,
-                                    const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
+                                    const stk_classic::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional) 
     {
       PRINT("tmp srk StringFunction::operator(bucket) getName()= " << getName() << " input_phy_points= " << input_phy_points << " output_values= " << output_values);
 
@@ -438,7 +438,7 @@ namespace stk
       const unsigned num_elements_in_bucket = bucket.size();
       for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
         {
-          stk::mesh::Entity& element = bucket[iElement];
+          stk_classic::mesh::Entity& element = bucket[iElement];
           for (int iPoint = 0; iPoint<nPoints; iPoint++)
             {
               for (int iSpaceDim=0; iSpaceDim < nSpaceDim; iSpaceDim++)
@@ -458,9 +458,9 @@ namespace stk
     }
 
     void
-    StringFunction::resolve(stk::expreval::VariableMap::iterator & var_it)
+    StringFunction::resolve(stk_classic::expreval::VariableMap::iterator & var_it)
     {
-      // /* %TRACE% */ Traceback trace__("sierra::Encr::StringFunction::resolve(stk::expreval::VariableMap::iterator & var_it)"); /* %TRACE% */
+      // /* %TRACE% */ Traceback trace__("sierra::Encr::StringFunction::resolve(stk_classic::expreval::VariableMap::iterator & var_it)"); /* %TRACE% */
       //  Fmwk::Parameters * global_params = Fmwk::Domain::singleton()->parameters().get_nested(FUNCTION_ROOT)->get_nested(GLOBAL_FUNCTION_PARAMETERS);
       //  const Fmwk::Parameters * use_funcs = parameters->get_nested(USE_FUNCTIONS);
 

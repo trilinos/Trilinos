@@ -10,15 +10,15 @@
 
 #include <stk_util/parallel/BroadcastArg.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 BroadcastArg::BroadcastArg(
-  stk::ParallelMachine  parallel_machine,
+  stk_classic::ParallelMachine  parallel_machine,
   int                   argc,
   char **               argv)
 {
 #ifdef STK_HAS_MPI
-  int rank = stk::parallel_machine_rank(parallel_machine);
+  int rank = stk_classic::parallel_machine_rank(parallel_machine);
 #else
   int rank = 0;
 #endif

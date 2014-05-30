@@ -13,7 +13,7 @@
 #include <stk_util/environment/ProgramOptions.hpp>
 #include <stk_util/use_cases/UseCaseEnvironment.hpp>
 
-void use_case_1_driver(stk::ParallelMachine  comm,
+void use_case_1_driver(stk_classic::ParallelMachine  comm,
 		       const std::string &working_directory,
 		       const std::string &range_mesh,
 		       const std::string &range_mesh_type,
@@ -21,7 +21,7 @@ void use_case_1_driver(stk::ParallelMachine  comm,
 		       const std::string &domain_mesh,
 		       const std::string &domain_mesh_type,
 		       const std::string &domain_entity);
-void use_case_4_driver(stk::ParallelMachine  comm,
+void use_case_4_driver(stk_classic::ParallelMachine  comm,
 		       const std::string &working_directory,
 		       const std::string &range_mesh,
 		       const std::string &range_mesh_type,
@@ -61,17 +61,17 @@ int main(int argc, char** argv)
     ("use_case_1",   "search use case 1" )
     ("use_case_4",   "search use case 4" );
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
-  bopt::variables_map &vm = stk::get_variables_map();  
+  bopt::variables_map &vm = stk_classic::get_variables_map();  
 
   //----------------------------------
 
   if (range_mesh.empty()) {
     std::cerr << "OPTION ERROR: The '--range_mesh <filename>' option is required for the use cases!\n";
-    std::cerr << stk::get_options_description() << std::endl;
+    std::cerr << stk_classic::get_options_description() << std::endl;
     std::exit(EXIT_FAILURE);
   }
 

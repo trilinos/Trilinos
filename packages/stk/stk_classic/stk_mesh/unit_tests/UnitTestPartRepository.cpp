@@ -18,10 +18,10 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
-using stk::mesh::MetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Part;
-using stk::mesh::impl::PartRepository;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::impl::PartRepository;
 
 class UnitTestPartRepository
 {
@@ -31,26 +31,26 @@ public:
 
    const int spatial_dimension;
    MetaData meta;
-   stk::mesh::impl::PartRepository partRepo;
-   stk::mesh::impl::PartRepository partRepo_1;
-   stk::mesh::impl::PartRepository partRepo_2;
+   stk_classic::mesh::impl::PartRepository partRepo;
+   stk_classic::mesh::impl::PartRepository partRepo_1;
+   stk_classic::mesh::impl::PartRepository partRepo_2;
 
-   stk::mesh::Part * universal_part;
-   stk::mesh::Part * part_A;
-   stk::mesh::Part * part_B;
-   stk::mesh::Part * part_C;
-   stk::mesh::Part * part_D;
-   stk::mesh::Part * part_1_A;
-   stk::mesh::Part * part_1_B;
-   stk::mesh::Part * part_2_A;
-   std::vector<stk::mesh::Part *> intersection;
-   stk::mesh::PartRelation relation;
+   stk_classic::mesh::Part * universal_part;
+   stk_classic::mesh::Part * part_A;
+   stk_classic::mesh::Part * part_B;
+   stk_classic::mesh::Part * part_C;
+   stk_classic::mesh::Part * part_D;
+   stk_classic::mesh::Part * part_1_A;
+   stk_classic::mesh::Part * part_1_B;
+   stk_classic::mesh::Part * part_2_A;
+   std::vector<stk_classic::mesh::Part *> intersection;
+   stk_classic::mesh::PartRelation relation;
    const CellTopologyData * singleton;
 };
 
 UnitTestPartRepository::UnitTestPartRepository()
   : spatial_dimension(3)
-  , meta( stk::mesh::fem::entity_rank_names(spatial_dimension) )
+  , meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) )
   , partRepo( &meta )
   , partRepo_1( &meta )
   , partRepo_2( &meta )

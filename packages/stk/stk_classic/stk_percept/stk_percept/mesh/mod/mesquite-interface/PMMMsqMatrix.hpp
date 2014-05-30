@@ -14,7 +14,7 @@
 
 #include <MsqMatrix.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
 

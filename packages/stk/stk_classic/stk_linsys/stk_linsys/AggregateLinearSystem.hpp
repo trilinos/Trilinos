@@ -16,7 +16,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 /** Container for holding and manipulating collections of matrices and vectors.
@@ -124,7 +124,7 @@ class AggregateLinearSystem : public LinearSystemInterface {
  private:
 
   fei::SharedPtr<fei::Factory> m_fei_factory;
-  stk::linsys::LinearSystem m_linear_system;
+  stk_classic::linsys::LinearSystem m_linear_system;
 
   std::vector<fei::SharedPtr<fei::Matrix> > m_matrices;
   std::vector<fei::SharedPtr<fei::Vector> > m_rhsvecs;

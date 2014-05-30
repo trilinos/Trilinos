@@ -9,7 +9,7 @@
 #ifndef STK_UTIL_UTIL_StaticAssert_hpp
 #define STK_UTIL_UTIL_StaticAssert_hpp
 
-namespace stk {
+namespace stk_classic {
 
 //----------------------------------------------------------------------
 /** \brief  Compile-time assertion

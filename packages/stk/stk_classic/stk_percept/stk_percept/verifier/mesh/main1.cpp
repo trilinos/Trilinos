@@ -8,7 +8,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 
-using namespace stk;
+using namespace stk_classic;
 using namespace percept;
 
 #define doMPI 0

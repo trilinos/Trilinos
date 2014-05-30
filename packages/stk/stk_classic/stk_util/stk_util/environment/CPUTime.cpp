@@ -10,7 +10,7 @@
 
 #include <sys/resource.h>
 
-namespace stk {
+namespace stk_classic {
 
 double
 cpu_time()

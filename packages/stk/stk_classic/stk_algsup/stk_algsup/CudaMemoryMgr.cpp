@@ -8,7 +8,7 @@
 
 #include <stk_algsup/CudaMemoryMgr.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 #ifdef STK_HAVE_CUDA
 

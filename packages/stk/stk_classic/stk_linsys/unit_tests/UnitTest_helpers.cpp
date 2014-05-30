@@ -22,32 +22,32 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
-void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta, bool use_temperature)
+void fill_utest_mesh_meta_data(stk_classic::mesh::fem::FEMMetaData& fem_meta, bool use_temperature)
 {
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  stk::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
+  stk_classic::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
 
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::fem::set_cell_topology( elem_block, hex_top );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::fem::set_cell_topology( elem_block, hex_top );
 
   const unsigned number_of_states = 1;
 
   if (use_temperature) {
     ScalarField& temperature_field = fem_meta.declare_field<ScalarField>( "temperature", number_of_states );
-    stk::mesh::put_field( temperature_field, NODE_RANK,    elem_block );
+    stk_classic::mesh::put_field( temperature_field, NODE_RANK,    elem_block );
   }
 
   ScalarField& pressure_field = fem_meta.declare_field<ScalarField>( "pressure", number_of_states );
   VectorField& velocity_field = fem_meta.declare_field<VectorField>( "velocity",    number_of_states );
 
-  stk::mesh::put_field( pressure_field, element_rank, elem_block );
-  stk::mesh::put_field( velocity_field, NODE_RANK,     elem_block );
+  stk_classic::mesh::put_field( pressure_field, element_rank, elem_block );
+  stk_classic::mesh::put_field( velocity_field, NODE_RANK,     elem_block );
 
   fem_meta.commit();
 }
@@ -83,7 +83,7 @@ void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta, bool use_t
 // shared between each neighboring pair of processors.
 //----------------------------------------------------------------------
 
-void elem_node_ids( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[] )
+void elem_node_ids( stk_classic::mesh::EntityId elem_id , stk_classic::mesh::EntityId node_ids[] )
 {
   if ( elem_id == 0 ) {
     std::cout << "use_case_1, elem_node_ids: ERROR, elem_id ("
@@ -102,49 +102,49 @@ void elem_node_ids( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[]
   node_ids[7] = base + 3 ;
 }
 
-void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
+void fill_utest_mesh_bulk_data(stk_classic::mesh::BulkData& bulk_data)
 {
   bulk_data.modification_begin();
 
   const unsigned num_elems = 4;
 
   //int numProcs = 1; 
-  //numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  //numProcs = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
 
   int myProc = 0;
-  myProc = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  myProc = stk_classic::parallel_machine_rank( MPI_COMM_WORLD );
 
-  stk::mesh::EntityId elem_id = 1 + myProc*num_elems;
-  stk::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];
+  stk_classic::mesh::EntityId elem_id = 1 + myProc*num_elems;
+  stk_classic::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];
 
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-  stk::mesh::Part& elem_block = *(fem_meta.get_part( "block_1" ));
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+  stk_classic::mesh::Part& elem_block = *(fem_meta.get_part( "block_1" ));
 
   for(unsigned i = 0; i<num_elems; ++i) {
     elem_node_ids( elem_id+i, node_ids );
-    stk::mesh::fem::declare_element( bulk_data, elem_block, elem_id+i, node_ids );
+    stk_classic::mesh::fem::declare_element( bulk_data, elem_block, elem_id+i, node_ids );
   }
 
   bulk_data.modification_end();
 }
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls)
+void assemble_elem_matrices_and_vectors(stk_classic::mesh::BulkData& mesh, ScalarField& field, stk_classic::linsys::LinearSystemInterface& ls)
 {
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(mesh);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
+  const std::vector<stk_classic::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 
-  std::vector<stk::mesh::Bucket*> part_buckets;
-  stk::mesh::Selector select_owned(stk::mesh::MetaData::get(mesh).locally_owned_part());
-  stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
+  std::vector<stk_classic::mesh::Bucket*> part_buckets;
+  stk_classic::mesh::Selector select_owned(stk_classic::mesh::MetaData::get(mesh).locally_owned_part());
+  stk_classic::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
-  stk::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
+  stk_classic::linsys::DofMapper& dof_mapper = ls.get_DofMapper();
 
   int field_id = dof_mapper.get_field_id(field);
 
-  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
+  stk_classic::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk_classic::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
   int num_nodes_per_elem = rel.second - rel.first;
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -182,11 +182,11 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   fei::SharedPtr<fei::Vector> rhs = ls.get_fei_LinearSystem()->getRHS();
 
   for(size_t i=0; i<part_buckets.size(); ++i) {
-    stk::mesh::Bucket::iterator
+    stk_classic::mesh::Bucket::iterator
       b_iter = part_buckets[i]->begin(),
              b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity& elem = *b_iter;
+      stk_classic::mesh::Entity& elem = *b_iter;
       rel = elem.relations(NODE_RANK);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
         node_ids[j] = rel.first->entity()->identifier();
@@ -201,21 +201,21 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   }
 }
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
+void assemble_elem_matrices_and_vectors(stk_classic::mesh::BulkData& mesh, ScalarField& field, stk_classic::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs)
 {
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(mesh);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  const std::vector<stk::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
+  const std::vector<stk_classic::mesh::Bucket*>& mesh_buckets = mesh.buckets(element_rank);
 
-  std::vector<stk::mesh::Bucket*> part_buckets;
-  stk::mesh::Selector select_owned(stk::mesh::MetaData::get(mesh).locally_owned_part());
-  stk::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
+  std::vector<stk_classic::mesh::Bucket*> part_buckets;
+  stk_classic::mesh::Selector select_owned(stk_classic::mesh::MetaData::get(mesh).locally_owned_part());
+  stk_classic::mesh::get_buckets(select_owned, mesh_buckets, part_buckets);
 
   int field_id = dof_mapper.get_field_id(field);
 
-  stk::mesh::Entity& first_entity = *(part_buckets[0]->begin());
-  stk::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
+  stk_classic::mesh::Entity& first_entity = *(part_buckets[0]->begin());
+  stk_classic::mesh::PairIterRelation rel = first_entity.relations(NODE_RANK);
   int num_nodes_per_elem = rel.second - rel.first;
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = matrix.getMatrixGraph();
@@ -251,11 +251,11 @@ void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& 
   std::vector<int> eqn_indices(vecsize);
 
   for(size_t i=0; i<part_buckets.size(); ++i) {
-    stk::mesh::Bucket::iterator
+    stk_classic::mesh::Bucket::iterator
       b_iter = part_buckets[i]->begin(),
              b_end  = part_buckets[i]->end();
     for(; b_iter != b_end; ++b_iter) {
-      stk::mesh::Entity& elem = *b_iter;
+      stk_classic::mesh::Entity& elem = *b_iter;
       rel = elem.relations(NODE_RANK);
       for(int j=0; rel.first != rel.second; ++rel.first, ++j) {
         node_ids[j] = rel.first->entity()->identifier();

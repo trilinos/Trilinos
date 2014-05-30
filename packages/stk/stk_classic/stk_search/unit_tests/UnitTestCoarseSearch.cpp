@@ -27,14 +27,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfSearchCoarse, octtree)
 {
   MPI_Barrier( MPI_COMM_WORLD );
 
-  stk::search::FactoryOrder order;
-  order.m_algorithm = stk::search::FactoryOrder::OCTREE;
+  stk_classic::search::FactoryOrder order;
+  order.m_algorithm = stk_classic::search::FactoryOrder::OCTREE;
   order.m_communicator = MPI_COMM_WORLD;
 
   OverlappingBoxes box_test;
   OverlappingBoxes::IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, box_test.range(), box_test.domain(), order);
+  stk_classic::search::coarse_search(relation, box_test.range(), box_test.domain(), order);
   STKUNIT_ASSERT_TRUE(box_test.check_results(relation));
 }
 
@@ -42,14 +42,14 @@ STKUNIT_UNIT_TEST(UnitTestingOfSearchCoarse, bihtree)
 {
   MPI_Barrier( MPI_COMM_WORLD );
 
-  stk::search::FactoryOrder order;
-  order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
+  stk_classic::search::FactoryOrder order;
+  order.m_algorithm = stk_classic::search::FactoryOrder::BIHTREE;
   order.m_communicator = MPI_COMM_WORLD;
 
   OverlappingBoxes box_test;
   OverlappingBoxes::IdentProcRelation relation;
 
-  stk::search::coarse_search(relation, box_test.range(), box_test.domain(), order);
+  stk_classic::search::coarse_search(relation, box_test.range(), box_test.domain(), order);
   STKUNIT_ASSERT_TRUE(box_test.check_results(relation));
 }
 

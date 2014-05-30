@@ -9,11 +9,11 @@
 //#include "UniformRefinerPattern_Line2_Line2_2_sierra.hpp"
 #include "RefinerPattern_Line2_Line2_N.hpp"
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     typedef boost::tuple<unsigned, unsigned, unsigned> tri_tuple_type_local;
-    typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+    typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> tri_tuple_type;
 
     /// general refinement pattern
     
@@ -103,7 +103,7 @@ namespace stk {
 #define T_VERT_N(i) (i)
 #define T_EDGE_N(i) ((i)+3)
 
-      static void triangulate_face(PerceptMesh& eMesh, stk::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
+      static void triangulate_face(PerceptMesh& eMesh, stk_classic::mesh::Entity *elem_nodes[3], unsigned edge_marks[3], 
                                    vector<tri_tuple_type_local>& elems)
       {
         elems.resize(0);
@@ -111,7 +111,7 @@ namespace stk {
         const CellTopologyData * const cell_topo_data = shards::getCellTopologyData< shards::Triangle<3> >();
 
         shards::CellTopology cell_topo(cell_topo_data);
-        //const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK); /NLM
+        //const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK); /NLM
         VectorFieldType* coordField = eMesh.get_coordinates_field();
 
         unsigned num_edges_marked=0;
@@ -190,21 +190,21 @@ namespace stk {
 
                 if (num_nodes_on_edge)
                   {
-                    stk::mesh::Entity * node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
-                    stk::mesh::Entity * node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
+                    stk_classic::mesh::Entity * node_0 = elem_nodes[cell_topo_data->edge[iedge].node[0]];
+                    stk_classic::mesh::Entity * node_1 = elem_nodes[cell_topo_data->edge[iedge].node[1]];
 
                     //bool reverse = false;
                     // ensure edge_len is computed identically, independent of edge orientation
                     if (node_0->identifier() > node_1->identifier())
                       {
                         //reverse = true;
-                        stk::mesh::Entity *node_temp = node_0;
+                        stk_classic::mesh::Entity *node_temp = node_0;
                         node_0 = node_1;
                         node_1 = node_temp;
                       }
 
-                    double * const coord_0 = stk::mesh::field_data( *coordField , *node_0 );
-                    double * const coord_1 = stk::mesh::field_data( *coordField , *node_1 );
+                    double * const coord_0 = stk_classic::mesh::field_data( *coordField , *node_0 );
+                    double * const coord_1 = stk_classic::mesh::field_data( *coordField , *node_1 );
                     double edge_len_squared = 0.0;
 
                     edge_len_squared = 
@@ -249,7 +249,7 @@ namespace stk {
                 throw std::runtime_error("RefinerPattern_Tri3_Tri3_N jedge < 0");
               }
 
-            //stk::mesh::Entity & node0 = *elem_nodes[iii].entity();
+            //stk_classic::mesh::Entity & node0 = *elem_nodes[iii].entity();
             int i0 = cell_topo_data->edge[jedge].node[0];
             if (i0 != jedge)
               {
@@ -310,27 +310,27 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         if (0 && eMesh.check_entity_duplicate(element))
           {
             throw std::logic_error("RefinerPattern_Tri3_Tri3_N::createNewElements bad duplicate element of PARENT!");
           }
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tri_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> tri_tuple_type;
         typedef boost::tuple<int, int, int> tri_tuple_type_int;
         static vector<tri_tuple_type> elems(4);
         static vector<tri_tuple_type_local> elems_local(4);
         unsigned num_new_elems=0;
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        std::vector<stk_classic::mesh::Part*> add_parts;
+        std::vector<stk_classic::mesh::Part*> remove_parts;
         add_parts = m_toParts;
         
         unsigned edge_marks[3] = {0,0,0};
@@ -347,7 +347,7 @@ namespace stk {
         if (num_edges_marked == 0)
           return;
 
-        stk::mesh::Entity *elem_nodes_local[3] = {0,0,0};
+        stk_classic::mesh::Entity *elem_nodes_local[3] = {0,0,0};
         for (int inode=0; inode < 3; inode++)
           {
             elem_nodes_local[inode] = elem_nodes[inode].entity();
@@ -365,15 +365,15 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tri3_Tri3_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 if (fdata)
                   fdata[0] = double(newElement.owner_rank());

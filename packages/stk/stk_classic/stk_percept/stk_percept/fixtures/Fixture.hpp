@@ -17,7 +17,7 @@
 #include <stk_percept/RunEnvironment.hpp>
 
 
-namespace stk { 
+namespace stk_classic { 
   namespace percept { 
 
 #define STKUNIT_EXPECT_DOUBLE_EQ_APPROX_TOL(expected, actual, tol)                  \
@@ -38,11 +38,11 @@ namespace stk {
 
 #define TIME_IT(expr,total_time)                \
       {                                         \
-        double tstart =  stk::wall_time();      \
+        double tstart =  stk_classic::wall_time();      \
         {                                       \
           expr                                  \
             }                                   \
-        total_time = stk::wall_dtime(tstart);   \
+        total_time = stk_classic::wall_dtime(tstart);   \
       }
 
 

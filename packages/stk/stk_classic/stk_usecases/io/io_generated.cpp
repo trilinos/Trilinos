@@ -34,7 +34,7 @@
 #include <Ioss_SubSystem.h>
 
 namespace {
-  void driver(stk::ParallelMachine  comm,
+  void driver(stk_classic::ParallelMachine  comm,
               size_t dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
@@ -77,7 +77,7 @@ int main(int argc, char** argv)
     ("db_integer_size", bopt::value<int>(&db_integer_size), "use 4 or 8-byte integers on output database" );
     
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
 
@@ -104,7 +104,7 @@ int main(int argc, char** argv)
 }
 
 namespace {
-  void driver(stk::ParallelMachine  comm,
+  void driver(stk_classic::ParallelMachine  comm,
               size_t spatial_dimension,
 	      const std::string &working_directory,
 	      const std::string &filename,
@@ -119,9 +119,9 @@ namespace {
     // types and the exodusII default database type.
     Ioss::Init::Initializer init_db;
 
-    stk::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension );
-    stk::mesh::MetaData &meta_data = fem_meta_data.get_meta_data( fem_meta_data );
-    stk::io::MeshData mesh_data;
+    stk_classic::mesh::fem::FEMMetaData fem_meta_data( spatial_dimension );
+    stk_classic::mesh::MetaData &meta_data = fem_meta_data.get_meta_data( fem_meta_data );
+    stk_classic::io::MeshData mesh_data;
 
     bool use_netcdf4 = false;
     if (!decomp_method.empty()) {
@@ -145,25 +145,25 @@ namespace {
       
     std::string file = working_directory;
     file += filename;
-    stk::io::create_input_mesh(type, file, comm, fem_meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, fem_meta_data);
+    stk_classic::io::create_input_mesh(type, file, comm, fem_meta_data, mesh_data);
+    stk_classic::io::define_input_fields(mesh_data, fem_meta_data);
 
     fem_meta_data.commit();
-    stk::mesh::BulkData bulk_data(meta_data , comm);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    stk_classic::mesh::BulkData bulk_data(meta_data , comm);
+    stk_classic::io::populate_bulk_data(bulk_data, mesh_data);
 
     //------------------------------------------------------------------
     // Create output mesh...  ("generated_mesh.out") ("exodus_mesh.out")
     std::string output_filename = working_directory + type + "_mesh.out";
-    stk::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
-    stk::io::define_output_fields(mesh_data, fem_meta_data);
+    stk_classic::io::create_output_mesh(output_filename, comm, bulk_data, mesh_data);
+    stk_classic::io::define_output_fields(mesh_data, fem_meta_data);
 
     // Determine number of timesteps on input database...
     int timestep_count = mesh_data.m_input_region->get_property("state_count").get_int();
     for (int step=1; step <= timestep_count; step++) {
       double time = mesh_data.m_input_region->get_state_time(step);
-      stk::io::process_input_request(mesh_data, bulk_data, step);
-      stk::io::process_output_request(mesh_data, bulk_data, time);
+      stk_classic::io::process_input_request(mesh_data, bulk_data, step);
+      stk_classic::io::process_output_request(mesh_data, bulk_data, time);
     }
   }
 }

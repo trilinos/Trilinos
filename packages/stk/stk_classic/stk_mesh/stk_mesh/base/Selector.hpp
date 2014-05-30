@@ -15,12 +15,12 @@
 #include <stk_mesh/base/Types.hpp>
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //An operator to obtain a part-ordinal from a part-iterator.
 //This general template handles cases where the part-iterator
-//iterates either stk::mesh::Part or Fmwk::MeshPart objects.
+//iterates either stk_classic::mesh::Part or Fmwk::MeshPart objects.
 //Specializations for part-ordinal-pointers follow below.
 template<typename PartIterator>
 struct GetPartIterOrdinal {
@@ -95,8 +95,8 @@ struct OpType {
  *  \{
  */
 
-/** \brief This is a class for selecting \ref stk::mesh::Bucket "buckets" based on a set of
- * \ref stk::mesh::Part "meshparts" and set logic.
+/** \brief This is a class for selecting \ref stk_classic::mesh::Bucket "buckets" based on a set of
+ * \ref stk_classic::mesh::Part "meshparts" and set logic.
  *
  * The selector allows complements, unions and intersections.  All of
  * this logic is converted to NAND, meaning nots and AND logic.  Each

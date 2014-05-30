@@ -80,8 +80,8 @@
   #include <stk_util/util/hash_map_rdestl.h>
 #endif
 
-using stk::mesh::EntityKey;
-using stk::mesh::Entity;
+using stk_classic::mesh::EntityKey;
+using stk_classic::mesh::Entity;
 
 namespace {
 
@@ -94,20 +94,20 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   std::cout << "For " << mapname << std::endl;
 
   // Populate map
-  double start_time = stk::wall_time();
+  double start_time = stk_classic::wall_time();
   for (int i = 0; i < iters ; ++i) {
     testmap[EntityKey(1,i)] = i;
   }
-  double timing0 = stk::wall_dtime(start_time);
+  double timing0 = stk_classic::wall_dtime(start_time);
   std::cout << mapname << "\ttiming map growth: \t"  << timing0 << " s" << std::endl;
 
   // Time item lookup - sequential
-  start_time = stk::wall_time();
+  start_time = stk_classic::wall_time();
   int counter_to_fool_optimizer = 0;
   for (int i = 0; i < iters; ++i) {
     counter_to_fool_optimizer += testmap[EntityKey(1,i)];
   }
-  double timing = stk::wall_dtime(start_time);
+  double timing = stk_classic::wall_dtime(start_time);
   std::cout << mapname << "\tsequential timing map lookups: \t"  << timing << " s" << std::endl;
 
   //
@@ -121,12 +121,12 @@ void time_map(MapType& testmap, int iters, const std::string& mapname)
   }
 
   // Do random key lookups
-  start_time = stk::wall_time();
+  start_time = stk_classic::wall_time();
   counter_to_fool_optimizer = 0;
   for (int i = 0; i < iters; ++i) {
     counter_to_fool_optimizer += testmap[EntityKey(1,num_array[i])];
   }
-  double timing2 = stk::wall_dtime(start_time);
+  double timing2 = stk_classic::wall_dtime(start_time);
   delete[] num_array;
 
   std::cout << mapname << "\trandom timing map lookups: \t"  << timing2 << " s" << std::endl;

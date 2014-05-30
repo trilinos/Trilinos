@@ -3,7 +3,7 @@
 
 #include "Fixture.hpp"
 
-namespace stk { 
+namespace stk_classic { 
   namespace percept { 
 
 #if 0

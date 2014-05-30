@@ -21,7 +21,7 @@
 
 #define PERCEPT_USE_MOAB_REFINER 1
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     /*---------------------------------------------------------------------*/
@@ -93,7 +93,7 @@ namespace stk {
     static unsigned tbl_tet_edge_nodes[6][2]     = { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} };
 
     typedef boost::tuple<unsigned, unsigned, unsigned, unsigned> TetTupleTypeLocal;
-    typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> TetTupleType;
+    typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> TetTupleType;
 
     /// general refinement pattern
     
@@ -152,11 +152,11 @@ namespace stk {
       // FIXME - for now, create more than we need (to fix this right we need a change to the Refiner.cpp interface)
       virtual unsigned getNumNewElemPerElem() { return 8; }
 
-      static stk::mesh::Entity* get_new_node(percept::PerceptMesh& eMesh)
+      static stk_classic::mesh::Entity* get_new_node(percept::PerceptMesh& eMesh)
       {
-        //stk::mesh::PartVector empty ;
-        std::vector<stk::mesh::Entity *> requested_entities;
-        eMesh.createEntities(stk::mesh::fem::FEMMetaData::NODE_RANK, 1, requested_entities);
+        //stk_classic::mesh::PartVector empty ;
+        std::vector<stk_classic::mesh::Entity *> requested_entities;
+        eMesh.createEntities(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, 1, requested_entities);
         return requested_entities[0];
       }
 
@@ -321,7 +321,7 @@ namespace stk {
 #define TET_VERT_N(i) (i)
 #define TET_EDGE_N(i) ((i)+4)
 
-      static void triangulate_tet(PerceptMesh& eMesh, stk::mesh::Entity *tet_elem_nodes[4], unsigned edge_marks[6], 
+      static void triangulate_tet(PerceptMesh& eMesh, stk_classic::mesh::Entity *tet_elem_nodes[4], unsigned edge_marks[6], 
                                   std::vector<TetTupleTypeLocal>& tets)
       {
 
@@ -351,7 +351,7 @@ namespace stk {
             // FIXME - use MOAB
 
             // FIXME - use StdMeshObjTopologies directly
-            //stk::adapt::Elem::MeshObjTopology mesh_obj_topo;
+            //stk_classic::adapt::Elem::MeshObjTopology mesh_obj_topo;
             //const RefinementTopology *ref_topo = mesh_obj_topo.getRefinementTopology(Elem::CellTopology(cell_topo));
 
             /**
@@ -390,7 +390,7 @@ namespace stk {
                 double * node_coords[4];
                 for (int inode=0; inode < 4; inode++)
                   {
-                    node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
+                    node_coords[inode] = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                     if (0) std::cout << "tmp RP node_coords= " 
                                      << node_coords[inode][0] << " "
                                      << node_coords[inode][1] << " "
@@ -409,7 +409,7 @@ namespace stk {
                   {
                     for (int inode=0; inode < 4; inode++)
                       {
-                        node_coords[inode] = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
+                        node_coords[inode] = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                         std::cout << "tmp RefPatt::createNewElements node_coords after= " 
                                   << node_coords[inode][0] << " "
                                   << node_coords[inode][1] << " "
@@ -436,8 +436,8 @@ namespace stk {
             std::vector<tri_tuple_type_local> tet_faces;
 
             // algorithm: triangulate each face, create tets from centroid, collapse shortest edge
-            static stk::mesh::Entity *centroid_node = 0;
-            static stk::mesh::Entity *temp_edge_nodes[6] = {0,0,0,0,0,0};
+            static stk_classic::mesh::Entity *centroid_node = 0;
+            static stk_classic::mesh::Entity *temp_edge_nodes[6] = {0,0,0,0,0,0};
             if (!centroid_node)
               {
                 centroid_node = get_new_node(eMesh);
@@ -456,7 +456,7 @@ namespace stk {
                     tri_face_edge_marks[iedge] = edge_marks[tbl_tet_face_edge_map[iface][iedge]];
                   }
 
-                stk::mesh::Entity *tri_elem_nodes_local[3] = {0,0,0};
+                stk_classic::mesh::Entity *tri_elem_nodes_local[3] = {0,0,0};
                 for (int inode=0; inode < 3; inode++)
                   {
                     tri_elem_nodes_local[inode] = tet_elem_nodes[tbl_tet_face_nodes[iface][inode]];
@@ -491,20 +491,20 @@ namespace stk {
 
             // compute centroid and temp_edge_nodes
             double * node_coords[10];  // all node coords in order, vertices {0-3}, edges {4-9}
-            double * centroid_coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *centroid_node);
+            double * centroid_coord = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *centroid_node);
             for (int dim=0; dim < 3; dim++) centroid_coord[dim] = 0.0;
             for (int inode=0; inode < 4; inode++)
               {
-                double * coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
+                double * coord = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[inode] );
                 for (int dim=0; dim < 3; dim++) centroid_coord[dim] += coord[dim]/4.;
                 node_coords[inode] = coord;
               }
             int jnode = 4;
             for (int iedge=0; iedge < 6; iedge++)
               {
-                double * coord0 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][0]] );
-                double * coord1 = stk::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][1]] );
-                double * temp_node_coord = stk::mesh::field_data( *eMesh.get_coordinates_field() , *temp_edge_nodes[iedge] );
+                double * coord0 = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][0]] );
+                double * coord1 = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *tet_elem_nodes[tbl_tet_edge_nodes[iedge][1]] );
+                double * temp_node_coord = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *temp_edge_nodes[iedge] );
                 node_coords[jnode++] = temp_node_coord;
                 for (int dim=0; dim < 3; dim++) temp_node_coord[dim] = 0.5*(coord0[dim] + coord1[dim]);
               }
@@ -516,20 +516,20 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, std::vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, std::vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
         static std::vector<TetTupleType> elems(8);
         static std::vector<TetTupleTypeLocal> elems_local(8);
         unsigned num_new_elems=0;
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
         //VectorFieldType* coordField = eMesh.get_coordinates_field();
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        std::vector<stk_classic::mesh::Part*> add_parts;
+        std::vector<stk_classic::mesh::Part*> remove_parts;
         add_parts = m_toParts;
         
         unsigned edge_marks[6] = {0,0,0,0,0,0};
@@ -546,7 +546,7 @@ namespace stk {
         if (num_edges_marked == 0)
           return;
 
-        stk::mesh::Entity *elem_nodes_local[4] = {0,0,0,0};
+        stk_classic::mesh::Entity *elem_nodes_local[4] = {0,0,0,0};
         for (int inode=0; inode < 4; inode++)
           {
             elem_nodes_local[inode] = elem_nodes[inode].entity();
@@ -571,15 +571,15 @@ namespace stk {
 
         //std::cout << "tmp RefinerPattern_Tet4_Tet4_N::num_edges_marked= " << num_edges_marked << std::endl;
 
-        //nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
+        //nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), m_eMesh.element_rank(), 0u);
         
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 //fdata[0] = double(m_eMesh.get_rank());
                 fdata[0] = double(newElement.owner_rank());
               }

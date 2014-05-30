@@ -24,7 +24,7 @@ namespace stk
 
     void Verifier::verify(int argc, char** argv)
     {
-      //stk::ParallelMachine parallel_machine = stk::parallel_machine_init(&argc, &argv);
+      //stk_classic::ParallelMachine parallel_machine = stk_classic::parallel_machine_init(&argc, &argv);
 
       bool printTable = false;
       bool fullJacobianPrints = false;

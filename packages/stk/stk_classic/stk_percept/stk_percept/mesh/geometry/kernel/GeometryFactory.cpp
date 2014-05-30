@@ -2,7 +2,7 @@
 #include <stk_percept/PerceptMesh.hpp>
 #include <stk_percept/Util.hpp>
 
-using namespace stk;
+using namespace stk_classic;
 using namespace mesh;
 using namespace percept;
 

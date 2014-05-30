@@ -22,11 +22,11 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
     namespace interface_table {
 
-      typedef void (*stk_set_cell_topology_fptr)(stk::mesh::Part & );
+      typedef void (*stk_set_cell_topology_fptr)(stk_classic::mesh::Part & );
 
  
       enum  ElemTypes { 

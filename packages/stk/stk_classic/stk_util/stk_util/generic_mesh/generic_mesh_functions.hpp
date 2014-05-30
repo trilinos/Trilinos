@@ -1,7 +1,7 @@
 #ifndef STK_UTIL_GENERIC_MESH_FUNCTIONS_HPP
 #define STK_UTIL_GENERIC_MESH_FUNCTIONS_HPP
 
-namespace stk {
+namespace stk_classic {
 
 // Generic API:  add_entity that uses default constructable entity_value type.
 template <typename Mesh>

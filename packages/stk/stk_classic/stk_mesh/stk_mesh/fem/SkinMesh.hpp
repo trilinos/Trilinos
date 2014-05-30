@@ -11,7 +11,7 @@
 
 #include <vector>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class BulkData;

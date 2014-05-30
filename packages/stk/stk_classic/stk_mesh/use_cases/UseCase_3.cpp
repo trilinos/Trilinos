@@ -31,7 +31,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
@@ -42,7 +42,7 @@ typedef shards::Pyramid<5>             Pyramid4;
 typedef shards::ShellQuadrilateral<4>  ShellQuad4;
 typedef shards::ShellTriangle<3>       ShellTriangle3;
 
-UseCase_3_Mesh::UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit ) :
+UseCase_3_Mesh::UseCase_3_Mesh( stk_classic::ParallelMachine comm, bool doCommit ) :
   m_spatial_dimension(3)
   , m_fem_metaData( m_spatial_dimension )
   , m_bulkData( fem::FEMMetaData::get_meta_data(m_fem_metaData) , comm )

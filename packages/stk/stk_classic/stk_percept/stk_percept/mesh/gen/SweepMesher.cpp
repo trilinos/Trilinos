@@ -66,31 +66,31 @@ namespace stk
       { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
       { 1 , 1 , -2 } };
 
-    static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
+    static const stk_classic::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<> ::node_count ] = {
       { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
       { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
       { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-    static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
+    static const stk_classic::mesh::EntityId wedge_node_ids[3][ shards::Wedge<> ::node_count ] = {
       { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
       { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
       { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-    static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
+    static const stk_classic::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<> ::node_count ] = {
       { 15 , 19 , 16 , 21 } ,
       { 19 , 20 , 16 , 21 } ,
       { 16 , 20 , 17 , 21 } };
 
-    static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
+    static const stk_classic::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<> ::node_count ] = {
       { 11 , 15 , 16 , 12 , 21 } ,
       { 12 , 16 , 17 , 13 , 21 } };
 
-    static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
+    static const stk_classic::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<> ::node_count ]={
       { 9 , 6 , 16 , 19 } ,
       { 6 , 7 , 17 , 16 } ,
       { 7 , 8 , 18 , 17 } };
 
-    static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
+    static const stk_classic::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<> ::node_count ] ={
       { 19 , 16 , 21 } ,
       { 16 , 17 , 21 } ,
       { 17 , 13 , 21 } };
@@ -439,8 +439,8 @@ namespace stk
         }
     }
 
-    /// based on UseCase_3 in stk_mesh/use_cases - creates nodes and elements in stk::mesh database
-    void SweepMesher::stkMeshCreate(stk::ParallelMachine& comm)
+    /// based on UseCase_3 in stk_mesh/use_cases - creates nodes and elements in stk_classic::mesh database
+    void SweepMesher::stkMeshCreate(stk_classic::ParallelMachine& comm)
     {
       stkMeshCreateMetaNoCommit(comm);
       m_metaData->commit();
@@ -449,7 +449,7 @@ namespace stk
 
     static std::vector<std::string> get_entity_rank_names(unsigned dim)
     {
-      std::vector<std::string> names = stk::mesh::fem::entity_rank_names(dim);
+      std::vector<std::string> names = stk_classic::mesh::fem::entity_rank_names(dim);
 #if PERCEPT_USE_FAMILY_TREE
       names.push_back("FAMILY_TREE");
 #endif
@@ -459,12 +459,12 @@ namespace stk
       return names;
     }
 
-    void SweepMesher::stkMeshCreateMetaNoCommit(stk::ParallelMachine& comm)
+    void SweepMesher::stkMeshCreateMetaNoCommit(stk_classic::ParallelMachine& comm)
     {
-      //m_metaData = new stk::mesh::fem::FEMMetaData(3); //  stk::mesh::fem::fem_entity_rank_names() );  // FAMILY_TREE search
-      m_metaData = new stk::mesh::fem::FEMMetaData(3, get_entity_rank_names(3u) ); //  stk::mesh::fem::fem_entity_rank_names() );
-      //m_metaData = & stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
-      m_bulkData = new stk::mesh::BulkData( stk::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
+      //m_metaData = new stk_classic::mesh::fem::FEMMetaData(3); //  stk_classic::mesh::fem::fem_entity_rank_names() );  // FAMILY_TREE search
+      m_metaData = new stk_classic::mesh::fem::FEMMetaData(3, get_entity_rank_names(3u) ); //  stk_classic::mesh::fem::fem_entity_rank_names() );
+      //m_metaData = & stk_classic::mesh::fem::FEMMetaData::get_meta_data(*m_metaData);
+      m_bulkData = new stk_classic::mesh::BulkData( stk_classic::mesh::fem::FEMMetaData::get_meta_data(*m_metaData) , comm );
       m_parts.resize(NUM_ELEM_TYPES);
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
@@ -484,18 +484,18 @@ namespace stk
           if (m_elems[ieletype].size() > 0)
             {
               m_elemInfo[ieletype].setCellTopoFptr(*m_parts[ieletype]);
-              stk::io::put_io_part_attribute(*m_parts[ieletype]);
+              stk_classic::io::put_io_part_attribute(*m_parts[ieletype]);
             }
         }
 
       // Field restrictions:
-      stk::mesh::Part & universal = m_metaData->universal_part();
+      stk_classic::mesh::Part & universal = m_metaData->universal_part();
 
-      put_field( *m_coordinates_field , stk::mesh::fem::FEMMetaData::NODE_RANK , universal );
+      put_field( *m_coordinates_field , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universal );
   
       m_metaData->declare_field_relation(
                                          *m_element_node_coordinates_field ,
-                                         stk::mesh::fem::get_element_node_stencil(3) ,
+                                         stk_classic::mesh::fem::get_element_node_stencil(3) ,
                                          *m_coordinates_field 
                                          );
 
@@ -514,21 +514,21 @@ namespace stk
         }
     }
 
-    void SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk::ParallelMachine& comm)
+    void SweepMesher::stkMeshCreateBulkAfterMetaCommit(stk_classic::ParallelMachine& comm)
     {
 
-      //stk::mesh::BulkData & bulkData = modifiableBulkData();
-      stk::mesh::BulkData & bulkData = *m_bulkData;
+      //stk_classic::mesh::BulkData & bulkData = modifiableBulkData();
+      stk_classic::mesh::BulkData & bulkData = *m_bulkData;
       bulkData.modification_begin();
 
-      stk::mesh::EntityId elem_id = 1 ;
+      stk_classic::mesh::EntityId elem_id = 1 ;
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {
           if (m_elems[ieletype].size() > 0)
             {
-              static stk::mesh::EntityId node_ids[27];  // FIXME - do we have more than 27 nodes?
-              stk::mesh::Part & part =  *m_parts[ieletype];
+              static stk_classic::mesh::EntityId node_ids[27];  // FIXME - do we have more than 27 nodes?
+              stk_classic::mesh::Part & part =  *m_parts[ieletype];
               unsigned nodes_per_elem = m_elemInfo[ieletype].vertex_count;
               unsigned numElems = m_elems[ieletype].size()/nodes_per_elem;
                 
@@ -542,14 +542,14 @@ namespace stk
                     }
 
                   //std::cout << "elem_id = " << elem_id << std::endl;
-                  stk::mesh::fem::declare_element( bulkData , part , elem_id , node_ids );
+                  stk_classic::mesh::fem::declare_element( bulkData , part , elem_id , node_ids );
                 }
             }
         }
 
       unsigned node_count_1 = m_node_coords.size();
       for ( unsigned i = 0 ; i < node_count_1 ; ++i ) {
-        stk::mesh::Entity * const node = m_bulkData->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
+        stk_classic::mesh::Entity * const node = m_bulkData->get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK , i + 1 );
         double * const coord = field_data( *m_coordinates_field , *node );
 
         coord[0] = m_node_coords[i][0];
@@ -563,7 +563,7 @@ namespace stk
 
     void SweepMesher::dumpSTK()
     {
-      const stk::mesh::BulkData & bulkData = *m_bulkData;
+      const stk_classic::mesh::BulkData & bulkData = *m_bulkData;
 
       for (unsigned ieletype = 0; ieletype < NUM_ELEM_TYPES; ieletype++)
         {
@@ -575,7 +575,7 @@ namespace stk
 
               //std::cout << " elems[" << m_elemInfo[ieletype].name << "] = " << numElems << std::endl;
 
-              stk::mesh::Part & part = *m_parts[ieletype];
+              stk_classic::mesh::Part & part = *m_parts[ieletype];
 
               const unsigned expected_num_nodes = m_node_coords.size();
               const unsigned expected_num_elems = numElems;
@@ -584,14 +584,14 @@ namespace stk
   
               //bool result = true;
               std::vector<unsigned> entity_counts;
-              stk::mesh::Selector selector(part);
-              stk::mesh::count_entities( selector, bulkData , entity_counts );
+              stk_classic::mesh::Selector selector(part);
+              stk_classic::mesh::count_entities( selector, bulkData , entity_counts );
               if (0) std::cout << "num_nodes = " << entity_counts[0] << " " << expected_num_nodes << std::endl;
               if (0) std::cout << "num_elems = " << entity_counts[m_metaData->element_rank()] << " " << expected_num_elems << std::endl;
                 
 
               if (
-                  //(entity_counts[stk::mesh::fem::FEMMetaData::NODE_RANK] != expected_num_nodes) ||  
+                  //(entity_counts[stk_classic::mesh::fem::FEMMetaData::NODE_RANK] != expected_num_nodes) ||  
                   //(entity_counts[Edge] != expected_num_edges) ||
                   //(entity_counts[Face] != expected_num_faces) ||
                   (entity_counts[m_metaData->element_rank()] != expected_num_elems)
@@ -610,7 +610,7 @@ namespace stk
       //const std::string out_filename("tp2.e");
       const std::string out_filename(filename);
 
-      std::vector< stk::mesh::Part * > parts;
+      std::vector< stk_classic::mesh::Part * > parts;
       for (unsigned ielemType = 0; ielemType < NUM_ELEM_TYPES; ielemType++)
         {
           if (m_elems[ielemType].size())
@@ -619,11 +619,11 @@ namespace stk
             }
         }
 
-      const stk::ParallelMachine& comm = m_bulkData->parallel();
+      const stk_classic::ParallelMachine& comm = m_bulkData->parallel();
 
       Ioss::Init::Initializer init_db;
-      stk::io::MeshData mesh;
-      stk::io::create_output_mesh(out_filename, comm, *m_bulkData, mesh);
+      stk_classic::io::MeshData mesh;
+      stk_classic::io::create_output_mesh(out_filename, comm, *m_bulkData, mesh);
     }
 
     void SweepMesher::sweep(const VectorOfCoord& path, const VectorOfCoord& dir)

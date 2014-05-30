@@ -5,7 +5,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMLaplaceSmoother1.hpp>
 
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
     using namespace Mesquite;
 

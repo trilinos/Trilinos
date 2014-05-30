@@ -31,18 +31,18 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-using stk::mesh::Entity;
-using stk::mesh::EntityRank;
-using stk::mesh::EntityVector;
-using stk::mesh::Part;
-using stk::mesh::Relation;
-using stk::mesh::Selector;
-using stk::mesh::EntityId;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Ghosting;
-using stk::mesh::fixtures::BoxFixture;
-using stk::mesh::fixtures::RingFixture;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::EntityVector;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::Relation;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Ghosting;
+using stk_classic::mesh::fixtures::BoxFixture;
+using stk_classic::mesh::fixtures::RingFixture;
 
 namespace {
 
@@ -53,11 +53,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   (void)test_info_;
   // Unit test the Part functionality in isolation:
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier ( MPI_COMM_WORLD );
 
-  typedef stk::mesh::Field<double>  ScalarFieldType;
- // static const char method[] = "stk::mesh::UnitTestRelation" ;
+  typedef stk_classic::mesh::Field<double>  ScalarFieldType;
+ // static const char method[] = "stk_classic::mesh::UnitTestRelation" ;
 
   std::vector<std::string> entity_names(10);
   for ( size_t i = 0 ; i < 10 ; ++i ) {
@@ -92,11 +92,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   Part & universal2 = meta2.universal_part ();
   Part & owned      = meta.locally_owned_part ();
 
-  stk::mesh::put_field ( temperature , NODE_RANK , universal );
-  stk::mesh::put_field ( volume , element_rank  , universal );
+  stk_classic::mesh::put_field ( temperature , NODE_RANK , universal );
+  stk_classic::mesh::put_field ( volume , element_rank  , universal );
   meta.commit();
-  stk::mesh::put_field ( temperature2 , NODE_RANK , universal2 );
-  stk::mesh::put_field ( volume2 , element_rank  , universal2 );
+  stk_classic::mesh::put_field ( temperature2 , NODE_RANK , universal2 );
+  stk_classic::mesh::put_field ( volume2 , element_rank  , universal2 );
 
   meta2.commit();
 
@@ -115,10 +115,10 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
     // Test for coverage of comm_procs in EntityComm.cpp
     EntityVector nodes;
-    stk::mesh::get_entities(bulk, NODE_RANK, nodes);
+    stk_classic::mesh::get_entities(bulk, NODE_RANK, nodes);
     std::vector<unsigned> procs ;
     STKUNIT_ASSERT(!nodes.empty());
-    stk::mesh::comm_procs( gg, *nodes.front() , procs );
+    stk_classic::mesh::comm_procs( gg, *nodes.front() , procs );
 
     STKUNIT_ASSERT(bulk.modification_end());
 
@@ -148,7 +148,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   parts.push_back ( &universal );
   parts.push_back ( &owned );
   bulk.modification_begin();
-  stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
+  stk_classic::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
   Entity &edge = bulk.declare_entity ( 1 , new_id , parts );
 
   Entity &cell2 = *(bulk2.buckets (3)[0]->begin());
@@ -169,8 +169,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
   //Testing on in_send_ghost and in_shared in EntityComm.cpp
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
   const unsigned nLocalEdge = nPerProc ;
   FEMMetaData meta3( spatial_dimension );
@@ -181,7 +181,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
   Selector select_used = meta3.locally_owned_part() ;
   Selector select_all(  meta3.universal_part() );
 
-  stk::mesh::PartVector no_parts ;
+  stk_classic::mesh::PartVector no_parts ;
 
   std::vector<unsigned> local_count ;
 
@@ -193,11 +193,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
 
     mesh2.m_bulk_data.modification_begin();
     mesh2.generate_mesh( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
                                                             aura_flag));
     mesh2.m_bulk_data.modification_begin();
     mesh2.fixup_node_ownership( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
                                                             aura_flag));
 
     // This process' first element in the loop
@@ -275,7 +275,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   // To test this, we set up an element that has several relations
   // to the same node and then delete them one by one.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
 
   // Set up meta and bulk data
@@ -289,7 +289,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   mesh.modification_begin();
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create element
   const EntityRank entity_rank = meta_data.element_rank();
@@ -322,7 +322,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   (void)test_info_;
   // Test relation attribute
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -335,7 +335,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   mesh.modification_begin();
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create element
   const EntityRank entity_rank = meta_data.element_rank();
@@ -373,7 +373,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // sharers to declare the same relations, but instead allowing just
   // the owner to declare relations, that should be tested here.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( MPI_COMM_WORLD );
 
   // Set up meta and bulk data
@@ -399,7 +399,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 
   if (p_rank < 2) {
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+    stk_classic::mesh::PartVector empty_parts;
 
     // Create element
     const EntityRank entity_rank = meta_data.element_rank();

@@ -17,7 +17,7 @@
 
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace io {
 namespace util {
 
@@ -29,9 +29,9 @@ class IO_Fixture
 {
  public:
 
-  typedef stk::mesh::Field< double, stk::mesh::Cartesian> coord_field_type;
+  typedef stk_classic::mesh::Field< double, stk_classic::mesh::Cartesian> coord_field_type;
 
-  IO_Fixture(stk::ParallelMachine comm);
+  IO_Fixture(stk_classic::ParallelMachine comm);
   ~IO_Fixture();
 
   /**
@@ -54,12 +54,12 @@ class IO_Fixture
   /**
    * Set this fixture's meta data directly with your own meta data.
    */
-  void set_meta_data( Teuchos::RCP<stk::mesh::fem::FEMMetaData> arg_meta_data );
+  void set_meta_data( Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData> arg_meta_data );
 
   /**
    * Set this fixture's bulk data directly with your own meta data.
    */
-  void set_bulk_data( Teuchos::RCP<stk::mesh::BulkData> arg_bulk_data );
+  void set_bulk_data( Teuchos::RCP<stk_classic::mesh::BulkData> arg_bulk_data );
 
   /**
    * Set the input region. Use this if you initialzed meta/bulk data with the
@@ -83,19 +83,19 @@ class IO_Fixture
    */
   void initialize_bulk_data();
 
-  stk::mesh::fem::FEMMetaData & meta_data()
+  stk_classic::mesh::fem::FEMMetaData & meta_data()
   {
     ThrowRequire( !Teuchos::is_null(m_fem_meta_data)) ;
     return *m_fem_meta_data;
   }
 
-  stk::mesh::BulkData & bulk_data()
+  stk_classic::mesh::BulkData & bulk_data()
   {
     ThrowRequire( !Teuchos::is_null(m_bulk_data)) ;
     return *m_bulk_data;
   }
 
-  stk::io::MeshData & mesh_data()
+  stk_classic::io::MeshData & mesh_data()
   {
     return m_mesh_data;
   }
@@ -112,15 +112,15 @@ class IO_Fixture
   void output_ioss_region(Teuchos::RCP<Ioss::Region>);
 
  private:
-  stk::ParallelMachine                       m_comm;
-  Teuchos::RCP<stk::mesh::fem::FEMMetaData>  m_fem_meta_data;
-  Teuchos::RCP<stk::mesh::BulkData>          m_bulk_data;
+  stk_classic::ParallelMachine                       m_comm;
+  Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData>  m_fem_meta_data;
+  Teuchos::RCP<stk_classic::mesh::BulkData>          m_bulk_data;
 
   Teuchos::RCP<Ioss::Region>                 m_ioss_input_region;
   Teuchos::RCP<Ioss::Region>                 m_ioss_output_region;
 
   std::string                                m_mesh_type;
-  stk::io::MeshData                          m_mesh_data;
+  stk_classic::io::MeshData                          m_mesh_data;
 
   //disallow copy constructor and assignment operator
   IO_Fixture( const IO_Fixture & );

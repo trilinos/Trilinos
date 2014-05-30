@@ -177,7 +177,7 @@
 ///       DiagWriterParser();
 ///     };
 ///     
-///     stk::diag::Writer &theDiagWriter();
+///     stk_classic::diag::Writer &theDiagWriter();
 ///     
 ///     DiagWriterParser &theDiagWriterParser();
 ///     
@@ -214,11 +214,11 @@
 ///       return parser;
 ///     }
 ///     
-///     stk::diag::Writer &
+///     stk_classic::diag::Writer &
 ///     theDiagWriter()
 ///     {
 ///       /* %TRACE[NONE]% */  /* %TRACE% */
-///       static stk::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), theDiagWriterParser().parse(std::getenv("APPLOG")));
+///       static stk_classic::diag::Writer s_diagWriter(sierra::dwout().rdbuf(), theDiagWriterParser().parse(std::getenv("APPLOG")));
 ///     
 ///       return s_diagWriter;
 ///     }
@@ -257,7 +257,7 @@
 ///       Diag::registerWriter("applog", applog, theDiagWriterParser());
 ///     }
 ///     
-///     stk::Bootstrap x(&bootstrap);
+///     stk_classic::Bootstrap x(&bootstrap);
 ///     
 ///     } // namespace <empty>
 ///     
@@ -426,7 +426,7 @@
 ///
 /// \code
 /// 	try { // TimeStepError
-///       stk::diag::WriterThrowSafe throw_safe_sentry;
+///       stk_classic::diag::WriterThrowSafe throw_safe_sentry;
 /// 
 ///       appout.m(LOG_TEST) << "Executing run_it() on " << name() << push << dendl;
 ///       run_it();

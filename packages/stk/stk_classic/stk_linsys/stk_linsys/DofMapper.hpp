@@ -18,7 +18,7 @@
 #include <stk_linsys/FieldIdMap.hpp>
 #include <stk_linsys/FeiBaseIncludes.hpp>
 
-namespace stk {
+namespace stk_classic {
 /** Linear-System Assembly
 */
 namespace linsys {
@@ -46,8 +46,8 @@ The FEI library is utilized for accumulating and storing the mappings. (fei::Vec
 DOF-mappings, and fei::ReverseMapper provides reverse-DOF-mappings.)
 
 Since the FEI works entirely with primitive data types (e.g., int) and has no knowledge
-of stk::mesh types, this DofMapper class essentially acts as a translation bridge
-between stk::mesh and the FEI library.
+of stk_classic::mesh types, this DofMapper class essentially acts as a translation bridge
+between stk_classic::mesh and the FEI library.
 */
 class DofMapper {
  public:
@@ -68,10 +68,10 @@ class DofMapper {
    *  This method may be called repeatedly, to add dof mappings for different parts,
    *  different entity-types, different fields, etc.
    */
-  void add_dof_mappings( const stk::mesh::BulkData& mesh_bulk,
-                         const stk::mesh::Selector& selector,
-                         stk::mesh::EntityRank ent_type,
-                         const stk::mesh::FieldBase& field );
+  void add_dof_mappings( const stk_classic::mesh::BulkData& mesh_bulk,
+                         const stk_classic::mesh::Selector& selector,
+                         stk_classic::mesh::EntityRank ent_type,
+                         const stk_classic::mesh::FieldBase& field );
 
   /** This method internally calls fei::VectorSpace::initComplete(), which finalizes
    * and synchronizes the DOF-mappings (ensures that indices for shared-entities are
@@ -91,7 +91,7 @@ class DofMapper {
   /** Return the integer id that the specified field is mapped to.
    * The integer id is the FEI's representation of the field.
    */
-  int get_field_id(const stk::mesh::FieldBase& field) const;
+  int get_field_id(const stk_classic::mesh::FieldBase& field) const;
 
   /** Return a global equation index for the specified entity type/id pair and field.
    *
@@ -100,9 +100,9 @@ class DofMapper {
    *
    * Note2: this method may not work correctly until after 'finalize()' has been called.
    */
-  int get_global_index(stk::mesh::EntityRank ent_type,
-                       stk::mesh::EntityId ent_id,
-                       stk::mesh::FieldBase& field,
+  int get_global_index(stk_classic::mesh::EntityRank ent_type,
+                       stk_classic::mesh::EntityId ent_id,
+                       stk_classic::mesh::FieldBase& field,
                        int offset_into_field=0);
 
   /** Given a global_index, return the specification for the DOF that it corresponds to.
@@ -111,9 +111,9 @@ class DofMapper {
    * Note: this method will be const after the corresponding fei query is corrected for constness.
    */
   void get_dof(int global_index,
-               stk::mesh::EntityRank& ent_type,
-               stk::mesh::EntityId& ent_id,
-               const stk::mesh::FieldBase*& field,
+               stk_classic::mesh::EntityRank& ent_type,
+               stk_classic::mesh::EntityId& ent_id,
+               const stk_classic::mesh::FieldBase*& field,
                int& offset_into_field) const;
 
   /** Return the underlying fei::VectorSpace object.

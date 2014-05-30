@@ -18,7 +18,7 @@
 #include <stk_util/environment/FormatTime.hpp>
 #include <stk_util/diag/Platform.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 Trace::ExtraFuncPtr
@@ -325,7 +325,7 @@ Trace::~Trace()
     }
 
     if (m_diagWriter.shouldPrint(LOG_TRACE_STATS)) {
-      m_diagWriter.m(m_lineMask) << "[" << stk::formatTime(m_startCpuTime)
+      m_diagWriter.m(m_lineMask) << "[" << stk_classic::formatTime(m_startCpuTime)
                                  << "s, " << format_memory(m_startMemAlloc) << "]" << dendl;
     }
 

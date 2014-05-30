@@ -23,7 +23,7 @@
 #include <stk_util/util/string_case_compare.hpp>
 #include <stk_util/util/Marshal.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 namespace {
 struct ParallelTimer;
@@ -37,7 +37,7 @@ Marshal &operator<<(Marshal &mout, const diag::Timer &t);
 Marshal &operator>>(Marshal &min, diag::ParallelTimer &t);
 }
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 namespace {
@@ -384,7 +384,7 @@ collect_timers(
                             parallel_root, comm);
     if (MPI_SUCCESS != result) {
       std::ostringstream message ;
-      message << "stk::diag::collect_timers FAILED: MPI_Gather = " << result ;
+      message << "stk_classic::diag::collect_timers FAILED: MPI_Gather = " << result ;
       throw std::runtime_error(message.str());
     }
   
@@ -409,7 +409,7 @@ collect_timers(
                            parallel_root, comm);
       if (MPI_SUCCESS != result) {
         std::ostringstream message ;
-        message << "stk::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
+        message << "stk_classic::diag::collect_timers FAILED: MPI_Gatherv = " << result ;
         throw std::runtime_error(message.str());
       }
   
@@ -607,7 +607,7 @@ printTable(
 
   ParallelTimer parallel_timer;
 
-  stk::diag::collect_timers(root_timer, parallel_timer, timer_checkpoint, parallel_machine);
+  stk_classic::diag::collect_timers(root_timer, parallel_timer, timer_checkpoint, parallel_machine);
 
   int parallel_rank = parallel_machine_rank(parallel_machine);
   if (parallel_rank == 0) {
@@ -679,7 +679,7 @@ printTable(
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint)
 {
-  stk::PrintTable print_table;
+  stk_classic::PrintTable print_table;
 
   printTable(print_table, root_timer, metrics_mask, 40, timer_checkpoint);
 
@@ -691,7 +691,7 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine)
 {
-  stk::PrintTable print_table;
+  stk_classic::PrintTable print_table;
   
   int parallel_size = parallel_machine_size(parallel_machine);
   if (parallel_size == 1)
@@ -712,7 +712,7 @@ std::ostream &printSubXML(std::ostream &os, MetricsMask metrics_mask, int depth,
 
 } // namespace diag
 
-Marshal &operator<<(stk::Marshal &mout, const diag::Timer &t);
+Marshal &operator<<(stk_classic::Marshal &mout, const diag::Timer &t);
 
 template <class T>
 Marshal &operator<<(Marshal &mout, const diag::Timer::Metric<T> &t) {

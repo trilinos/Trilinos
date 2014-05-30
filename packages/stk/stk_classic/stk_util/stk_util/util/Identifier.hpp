@@ -20,7 +20,7 @@ namespace tr1 {
 }
 }
 
-namespace stk {
+namespace stk_classic {
 
 class IdentifierA
 {
@@ -242,15 +242,15 @@ bool operator!=(const IdentifierB &s1, const char *s2);
 namespace boost {
 
 template <>
-struct hash<stk::IdentifierA>
+struct hash<stk_classic::IdentifierA>
 {
-  std::size_t operator()(const stk::IdentifierA &s) const;
+  std::size_t operator()(const stk_classic::IdentifierA &s) const;
 };
   
 template <>
-struct hash<stk::IdentifierB>
+struct hash<stk_classic::IdentifierB>
 {
-  std::size_t operator()(const stk::IdentifierB &s) const;
+  std::size_t operator()(const stk_classic::IdentifierB &s) const;
 };
   
 } // namespace boost

@@ -12,7 +12,7 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
@@ -84,7 +84,7 @@ namespace stk {
     }
 
     /// modeled after code from Mesquite::IdealWeightMeanRatio::evaluate()
-    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+    bool JacobianUtil::operator()(double& m,  PerceptMesh& eMesh, stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *coord_field,
                                   const CellTopologyData * topology_data )
     {
       MsqError err;
@@ -105,16 +105,16 @@ namespace stk {
       static const Vector3D d_con(1.0, 1.0, 1.0);
 
       bool metric_valid = false;
-      if (!topology_data) topology_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      if (!topology_data) topology_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
 
-      stk::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
+      stk_classic::mesh::PairIterRelation v_i = element.relations(eMesh.node_rank());
       m_num_nodes = v_i.size();
 
       //#define VERTEX_2D(vi) vector_2D( eMesh.field_data(coord_field, *vi.entity() ) )
       //#define VERTEX_3D(vi) vector_3D( eMesh.field_data(coord_field, *vi.entity() ) )
 
-#define VERTEX_2D(vi) vector_2D( stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
-#define VERTEX_3D(vi) vector_3D( stk::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
+#define VERTEX_2D(vi) vector_2D( stk_classic::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
+#define VERTEX_3D(vi) vector_3D( stk_classic::mesh::field_data( *static_cast<const VectorFieldType *>(coord_field) , *vi.entity() ) )
 
 
       switch(topology_data->key) 

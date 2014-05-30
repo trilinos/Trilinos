@@ -9,7 +9,7 @@
 #ifndef stk_util_environment_WallTime_hpp
 #define stk_util_environment_WallTime_hpp
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Member function <b>wall_time</b> returns the epoch as a double precision value in seconds

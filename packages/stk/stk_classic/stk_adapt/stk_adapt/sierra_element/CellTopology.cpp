@@ -40,7 +40,7 @@
 
 using namespace shards;
 
-namespace stk { namespace adapt {
+namespace stk_classic { namespace adapt {
   namespace Elem {
 
     namespace {

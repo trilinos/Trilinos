@@ -164,8 +164,8 @@ caused the problem.
  *
  *     - General Notes:
  *       - Remember that these tests will be read 10x more than they're written (especially during refactoring)
- *       - Place code in namespace stk::unit_test
- *       - Use namespaces judiciously to improve readability ( Prefer: using stk::mesh::MetaData; over using namespace stk; and namespace stk { )
+ *       - Place code in namespace stk_classic::unit_test
+ *       - Use namespaces judiciously to improve readability ( Prefer: using stk_classic::mesh::MetaData; over using namespace stk_classic; and namespace stk_classic { )
  *       - Avoid “unsigned” and use pre-defined typedefs instead (EntityRank, size_t, PartOrdinal, FieldOrdinal, etc…)
  *
  *     - STKUNIT macros for verifying results inside STKUNIT_UNIT_TEST macro:

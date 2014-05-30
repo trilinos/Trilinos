@@ -12,8 +12,8 @@
 
 #include <stk_rebalance/Partition.hpp>
 
-using namespace stk;
-namespace stk {
+using namespace stk_classic;
+namespace stk_classic {
   using namespace rebalance;
 }
 

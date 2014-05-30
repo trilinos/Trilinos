@@ -25,8 +25,8 @@
 #include <stk_rebalance/Rebalance.hpp>
 #include <stk_rebalance/Partition.hpp>
 
-using namespace stk;
-using namespace stk::rebalance;
+using namespace stk_classic;
+using namespace stk_classic::rebalance;
 
 namespace {
 
@@ -60,11 +60,11 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
                                    const Partition         * partition,
                                    const mesh::EntityRank  & dep_rank,
                                    mesh::EntityProcVec     & entity_procs,
-                                   const stk::mesh::EntityRank rank)
+                                   const stk_classic::mesh::EntityRank rank)
 {
 
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+  const stk_classic::mesh::EntityRank element_rank = (rank != stk_classic::mesh::InvalidEntityRank) ? rank :
                                              fem_meta.element_rank();
 
   if (dep_rank == element_rank) return;
@@ -98,7 +98,7 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
     mesh::EntityVector related_entities;
     mesh::EntityVector elems(1);
     elems[0] = *r_iter;
-    stk::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
+    stk_classic::mesh::get_entities_through_relations(elems, dep_rank, related_entities);
     for( size_t j = 0; j < related_entities.size(); ++j ) {
       dep_entity_procs[related_entities[j]->identifier()] = elem_procs[elem_id];
     }
@@ -112,7 +112,7 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
     mesh::Entity * de = bulk_data.get_entity( dep_rank, c_iter->first );
     if( parallel_machine_rank(partition->parallel()) == de->owner_rank() )
     {
-      stk::mesh::EntityProc dep_proc(de, c_iter->second);
+      stk_classic::mesh::EntityProc dep_proc(de, c_iter->second);
       entity_procs.push_back(dep_proc);
     }
   }
@@ -121,30 +121,30 @@ void rebalance_dependent_entities( const mesh::BulkData    & bulk_data ,
 
 bool full_rebalance(mesh::BulkData  & bulk_data ,
                     Partition       * partition,
-                    const stk::mesh::EntityRank rank)
+                    const stk_classic::mesh::EntityRank rank)
 {
   mesh::EntityProcVec cs_elem;
   bool rebalancingHasOccurred =  balance_comm_spec_domain( partition, cs_elem );
 
   if(rebalancingHasOccurred && partition->partition_dependents_needed() )
   {
-    stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
+    stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
 
-    const stk::mesh::EntityRank node_rank = fem_meta.node_rank();
-    const stk::mesh::EntityRank edge_rank = fem_meta.edge_rank();
-    const stk::mesh::EntityRank face_rank = fem_meta.face_rank();
-    const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
-    const stk::mesh::EntityRank cons_rank = elem_rank+1;
+    const stk_classic::mesh::EntityRank node_rank = fem_meta.node_rank();
+    const stk_classic::mesh::EntityRank edge_rank = fem_meta.edge_rank();
+    const stk_classic::mesh::EntityRank face_rank = fem_meta.face_rank();
+    const stk_classic::mesh::EntityRank elem_rank = fem_meta.element_rank();
+    const stk_classic::mesh::EntityRank cons_rank = elem_rank+1;
 
     // Don't know the rank of the elements rebalanced, assume all are dependent.
     rebalance_dependent_entities( bulk_data, partition, node_rank, cs_elem, rank );
-    if (stk::mesh::InvalidEntityRank != edge_rank && rank != edge_rank)
+    if (stk_classic::mesh::InvalidEntityRank != edge_rank && rank != edge_rank)
       rebalance_dependent_entities( bulk_data, partition, edge_rank, cs_elem, rank );
-    if (stk::mesh::InvalidEntityRank != face_rank && rank != face_rank)
+    if (stk_classic::mesh::InvalidEntityRank != face_rank && rank != face_rank)
       rebalance_dependent_entities( bulk_data, partition, face_rank, cs_elem, rank );
-    if (stk::mesh::InvalidEntityRank != elem_rank && rank != elem_rank)
+    if (stk_classic::mesh::InvalidEntityRank != elem_rank && rank != elem_rank)
       rebalance_dependent_entities( bulk_data, partition, elem_rank, cs_elem, rank );
-    if (stk::mesh::InvalidEntityRank != cons_rank && rank != cons_rank)
+    if (stk_classic::mesh::InvalidEntityRank != cons_rank && rank != cons_rank)
       rebalance_dependent_entities( bulk_data, partition, cons_rank, cs_elem, rank );
   }
 
@@ -161,15 +161,15 @@ bool full_rebalance(mesh::BulkData  & bulk_data ,
 } // namespace
 
 
-bool stk::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
+bool stk_classic::rebalance::rebalance(mesh::BulkData   & bulk_data  ,
                                const mesh::Selector  & selector ,
                                const VectorField     * rebal_coord_ref ,
                                const ScalarField     * rebal_elem_weight_ref ,
                                Partition & partition,
-                               const stk::mesh::EntityRank rank)
+                               const stk_classic::mesh::EntityRank rank)
 {
-  stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-  const stk::mesh::EntityRank element_rank = (rank != stk::mesh::InvalidEntityRank) ? rank :
+  stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+  const stk_classic::mesh::EntityRank element_rank = (rank != stk_classic::mesh::InvalidEntityRank) ? rank :
                                              fem_meta.element_rank();
 
   mesh::EntityVector rebal_elem_ptrs;

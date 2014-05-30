@@ -32,7 +32,7 @@
 //using sierra::Diag::Tracespec;
 //#define RuntimeError() std::runtime_exception
 
-namespace stk { 
+namespace stk_classic { 
 
   using namespace percept;
   

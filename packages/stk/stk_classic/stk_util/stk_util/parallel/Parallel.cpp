@@ -13,7 +13,7 @@
 
 #if defined( STK_HAS_MPI )
 
-namespace stk {
+namespace stk_classic {
 
 unsigned parallel_machine_size( ParallelMachine parallel_machine )
 {
@@ -48,7 +48,7 @@ void parallel_machine_barrier( ParallelMachine parallel_machine )
 
 #else
 
-namespace stk {
+namespace stk_classic {
 
 unsigned parallel_machine_size( ParallelMachine parallel_machine) { return 1 ; }
 

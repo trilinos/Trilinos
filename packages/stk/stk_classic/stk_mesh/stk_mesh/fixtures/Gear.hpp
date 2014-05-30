@@ -27,7 +27,7 @@ const double TWO_PI = 2 * PI;
 } // namespace 
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -129,7 +129,7 @@ class Gear {
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return static_cast<stk::mesh::EntityId>(iz + height_num * ( ir + rad_num * ia ));
+    return static_cast<stk_classic::mesh::EntityId>(iz + height_num * ( ir + rad_num * ia ));
   }
 
   EntityId elem_index(
@@ -137,10 +137,10 @@ class Gear {
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return static_cast<stk::mesh::EntityId>(num_nodes + iz + (height_num-1) * ( ir + (rad_num-1) * ia ));
+    return static_cast<stk_classic::mesh::EntityId>(num_nodes + iz + (height_num-1) * ( ir + (rad_num-1) * ia ));
   }
 
-  void populate_fields(stk::mesh::FieldState state);
+  void populate_fields(stk_classic::mesh::FieldState state);
 
   Part & cylindrical_coord_part;
   Part & hex_part;

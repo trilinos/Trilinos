@@ -17,10 +17,10 @@
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-using stk::mesh::Part;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Entity;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Entity;
 
 namespace {
 
@@ -36,11 +36,11 @@ bool has_part(const Entity& entity, const Part& part)
 //        element_ranked_part subset of unranked_superset_part
 // modification cycle is left uncompleted
 #define SETUP_MESH()                            \
-  stk::ParallelMachine pm = MPI_COMM_SELF;              \
+  stk_classic::ParallelMachine pm = MPI_COMM_SELF;              \
                                                   \
   const unsigned spatial_dim = 2;                                       \
                                                                         \
-  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim); \
+  std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dim); \
   FEMMetaData meta_data(spatial_dim, entity_rank_names);                \
   Part& unranked_part = meta_data.declare_part("unranked_part");        \
   Part& element_rank_part = meta_data.declare_part("element_rank_part", meta_data.element_rank()); \
@@ -55,7 +55,7 @@ bool has_part(const Entity& entity, const Part& part)
                                                                         \
   mesh.modification_begin();                                            \
                                                                         \
-  stk::mesh::PartVector parts;                                          \
+  stk_classic::mesh::PartVector parts;                                          \
   parts.push_back(&unranked_part);                                       \
   parts.push_back(&element_rank_part);                                   \
   Entity& elem = mesh.declare_entity(meta_data.element_rank(), 1 /*id*/, parts); \

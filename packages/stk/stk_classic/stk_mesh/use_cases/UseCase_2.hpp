@@ -56,12 +56,12 @@
  * </PRE>
  */
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
-typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorFieldType ;
-typedef stk::mesh::Field<double>                      ScalarFieldType ;
+typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> VectorFieldType ;
+typedef stk_classic::mesh::Field<double>                      ScalarFieldType ;
 
 // Two part MetaData with four entity types:
 // Node, Edge, Face, Element
@@ -72,21 +72,21 @@ class UseCase_2_Mesh
 public:
   ~UseCase_2_Mesh();
 
-  UseCase_2_Mesh( stk::ParallelMachine comm );
+  UseCase_2_Mesh( stk_classic::ParallelMachine comm );
 
   void populate( unsigned nleft , unsigned nright );
 
-  stk::mesh::fem::FEMMetaData m_fem_metaData;
-  stk::mesh::BulkData m_bulkData;
-  stk::mesh::Part   & m_partLeft;
-  stk::mesh::Part   & m_partRight;
+  stk_classic::mesh::fem::FEMMetaData m_fem_metaData;
+  stk_classic::mesh::BulkData m_bulkData;
+  stk_classic::mesh::Part   & m_partLeft;
+  stk_classic::mesh::Part   & m_partRight;
   VectorFieldType   & m_coordinates_field;
   ScalarFieldType   & m_temperature_field;
   ScalarFieldType   & m_volume_field;
-  const stk::mesh::EntityRank m_elem_rank;
-  const stk::mesh::EntityRank m_side_rank;
-  const stk::mesh::EntityRank m_edge_rank;
-  const stk::mesh::EntityRank m_node_rank;
+  const stk_classic::mesh::EntityRank m_elem_rank;
+  const stk_classic::mesh::EntityRank m_side_rank;
+  const stk_classic::mesh::EntityRank m_edge_rank;
+  const stk_classic::mesh::EntityRank m_node_rank;
 };
 
 /**

@@ -19,7 +19,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \ingroup stk_mesh_module
@@ -33,7 +33,7 @@ public:
   MetaData & mesh_meta_data() const { return m_meta_data ; }
 
   /** \brief  Internally generated ordinal of this property that is unique
-   *          within the owning \ref stk::mesh::MetaData "meta data manager".
+   *          within the owning \ref stk_classic::mesh::MetaData "meta data manager".
    */
   unsigned mesh_meta_data_ordinal() const { return m_meta_data_ordinal ; }
 
@@ -91,7 +91,7 @@ protected:
 
 private:
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+  /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns this property.
    */
   MetaData & meta_data() const { return m_meta_data ; }

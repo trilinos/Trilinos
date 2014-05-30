@@ -19,7 +19,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 typedef std::set<Entity *, EntityLess> EntitySet;
@@ -140,10 +140,10 @@ void find_closure( const BulkData & bulk,
     std::ostringstream msg;
     //parallel consisent throw
     if (bulk_not_synchronized) {
-      msg << "stk::mesh::find_closure( const BulkData & bulk, ... ) bulk is not synchronized";
+      msg << "stk_classic::mesh::find_closure( const BulkData & bulk, ... ) bulk is not synchronized";
     }
     else if ( 0 < non_used_entities) {
-      msg << "stk::mesh::find_closure( const BulkData & bulk, std::vector<Entity *> entities, ... ) \n"
+      msg << "stk_classic::mesh::find_closure( const BulkData & bulk, std::vector<Entity *> entities, ... ) \n"
           << "entities contains " << non_used_entities << " non locally used entities \n";
     }
 

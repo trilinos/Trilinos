@@ -7,7 +7,7 @@
 /*--------------------------------------------------------------------*/
 #include <unit_tests/UnitTestSupport.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
     namespace unit_tests {
 

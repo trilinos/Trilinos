@@ -19,7 +19,7 @@
 
 #include <algorithm>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -35,8 +35,8 @@ public:
   ~EntityImpl(){}
 
   // Exposed in external interface:
-  EntityRank entity_rank() const { return stk::mesh::entity_rank( m_key ); }
-  EntityId identifier() const { return stk::mesh::entity_id( m_key ); }
+  EntityRank entity_rank() const { return stk_classic::mesh::entity_rank( m_key ); }
+  EntityId identifier() const { return stk_classic::mesh::entity_id( m_key ); }
   const EntityKey & key() const { return m_key ; }
   PairIterRelation relations() const { return PairIterRelation(m_relation); }
   PairIterRelation relations( unsigned rank ) const ;
@@ -92,7 +92,7 @@ public:
 
   void set_bucket_and_ordinal( Bucket * in_bucket, unsigned ordinal )
   {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
+    TraceIfWatching("stk_classic::mesh::impl::EntityRepository::set_bucket_and_ordinal", LOG_ENTITY, key());
 
     m_bucket = in_bucket;
     m_bucket_ord = ordinal;
@@ -101,7 +101,7 @@ public:
   // return true if entity was actually modified
   bool set_owner_rank( unsigned in_owner_rank )
   {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
+    TraceIfWatching("stk_classic::mesh::impl::EntityRepository::set_owner_rank", LOG_ENTITY, key());
 
     if ( in_owner_rank != m_owner_rank ) {
       m_owner_rank = in_owner_rank;
@@ -112,7 +112,7 @@ public:
 
   void set_sync_count( size_t sync_count )
   {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
+    TraceIfWatching("stk_classic::mesh::impl::EntityRepository::set_sync_count", LOG_ENTITY, key());
 
     m_sync_count = sync_count;
   }
@@ -122,14 +122,14 @@ public:
 
   void log_clear()
   {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
+    TraceIfWatching("stk_classic::mesh::impl::EntityRepository::log_clear", LOG_ENTITY, key());
 
     m_mod_log = EntityLogNoChange;
   }
 
   void log_deleted()
   {
-    TraceIfWatching("stk::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
+    TraceIfWatching("stk_classic::mesh::impl::EntityRepository::log_deleted", LOG_ENTITY, key());
 
     m_mod_log = EntityLogDeleted;
   }
@@ -202,7 +202,7 @@ EntityImpl::EntityImpl( const EntityKey & arg_key )
     m_sync_count(0),
     m_mod_log( EntityLogCreated )
 {
-  TraceIfWatching("stk::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
+  TraceIfWatching("stk_classic::mesh::impl::EntityImpl::EntityImpl", LOG_ENTITY, arg_key);
 }
 
 inline

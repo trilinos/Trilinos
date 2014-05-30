@@ -28,40 +28,40 @@
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace io {
 namespace util {
 
 //----------------------------------------------------------------------
 
-GearFields::GearFields( stk::mesh::fem::FEMMetaData & S )
+GearFields::GearFields( stk_classic::mesh::fem::FEMMetaData & S )
   : gear_coord(          S.get_meta_data(S).declare_field<CylindricalField>( std::string("gear_coordinates") ) ),
     model_coord(         S.get_meta_data(S).declare_field<CartesianField>( std::string("coordinates") ) )
 {
-  const stk::mesh::Part & universe = S.get_meta_data(S).universal_part();
+  const stk_classic::mesh::Part & universe = S.get_meta_data(S).universal_part();
 
-  stk::mesh::put_field( gear_coord    , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
-  stk::mesh::put_field( model_coord   , stk::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
+  stk_classic::mesh::put_field( gear_coord    , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
+  stk_classic::mesh::put_field( model_coord   , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , universe , SpatialDimension );
 }
 
 //----------------------------------------------------------------------
 
 namespace {
 
-stk::mesh::EntityId
+stk_classic::mesh::EntityId
 identifier( size_t nthick ,  // Number of entities through the thickness
 		    size_t nradius , // Number of entities through the radius
 		    size_t iz ,      // Thickness index
 		    size_t ir ,      // Radial index
 		    size_t ia )      // Angle index
 {
-  return static_cast<stk::mesh::EntityId>(iz + nthick * ( ir + nradius * ia ));
+  return static_cast<stk_classic::mesh::EntityId>(iz + nthick * ( ir + nradius * ia ));
 }
 
 }
 
 
-Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
+Gear::Gear( stk_classic::mesh::fem::FEMMetaData & S ,
             const std::string & name ,
             const GearFields & gear_fields ,
             const double center[] ,
@@ -85,13 +85,13 @@ Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
   typedef shards::Quadrilateral<> Quad ;
   enum { SpatialDimension = GearFields::SpatialDimension };
 
-  stk::io::put_io_part_attribute(m_gear);
-  stk::io::put_io_part_attribute(m_surf);
-  stk::mesh::fem::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk_classic::io::put_io_part_attribute(m_gear);
+  stk_classic::io::put_io_part_attribute(m_surf);
+  stk_classic::mesh::fem::CellTopology hex_top (shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
 
-  stk::mesh::fem::set_cell_topology( m_gear, hex_top );
-  stk::mesh::fem::set_cell_topology( m_surf, quad_top );
+  stk_classic::mesh::fem::set_cell_topology( m_gear, hex_top );
+  stk_classic::mesh::fem::set_cell_topology( m_surf, quad_top );
 
   // Meshing parameters for this gear:
 
@@ -120,8 +120,8 @@ Gear::Gear( stk::mesh::fem::FEMMetaData & S ,
 
 //----------------------------------------------------------------------
 
-stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts ,
-                                     stk::mesh::EntityId node_id_base ,
+stk_classic::mesh::Entity &Gear::create_node(const std::vector<stk_classic::mesh::Part*> & parts ,
+                                     stk_classic::mesh::EntityId node_id_base ,
                                      size_t iz ,
                                      size_t ir ,
                                      size_t ia ) const
@@ -137,10 +137,10 @@ stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts
 
   // Create the node and set the model_coordinates
 
-  stk::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
-  stk::mesh::EntityId id = node_id_base + id_gear ;
+  stk_classic::mesh::EntityId id_gear = identifier( m_z_num, m_rad_num, iz, ir, ia );
+  stk_classic::mesh::EntityId id = node_id_base + id_gear ;
 
-  stk::mesh::Entity & node = m_mesh->declare_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, id , parts );
+  stk_classic::mesh::Entity & node = m_mesh->declare_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK, id , parts );
 
   double * const gear_data    = field_data( m_gear_coord , node );
   double * const model_data   = field_data( m_model_coord , node );
@@ -158,16 +158,16 @@ stk::mesh::Entity &Gear::create_node(const std::vector<stk::mesh::Part*> & parts
 
 //----------------------------------------------------------------------
 
-void Gear::mesh( stk::mesh::BulkData & M )
+void Gear::mesh( stk_classic::mesh::BulkData & M )
 {
-  stk::mesh::EntityRank element_rank;
-  stk::mesh::EntityRank side_rank    ;
+  stk_classic::mesh::EntityRank element_rank;
+  stk_classic::mesh::EntityRank side_rank    ;
   if (m_mesh_fem_meta_data) {
     element_rank = m_mesh_fem_meta_data->element_rank();
     side_rank    = m_mesh_fem_meta_data->side_rank();
   }
   else {
-    stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(M);
+    stk_classic::mesh::fem::FEMMetaData &fem = stk_classic::mesh::fem::FEMMetaData::get(M);
     element_rank = fem.element_rank();
     side_rank    = fem.side_rank();
   }
@@ -180,24 +180,24 @@ void Gear::mesh( stk::mesh::BulkData & M )
   const unsigned p_rank = M.parallel_rank();
 
   std::vector<size_t> counts ;
-  stk::mesh::comm_mesh_counts(M, counts);
+  stk_classic::mesh::comm_mesh_counts(M, counts);
 
   // max_id is no longer available from comm_mesh_stats.
   // If we assume uniform numbering from 1.., then max_id
   // should be equal to counts...
-  const stk::mesh::EntityId node_id_base = counts[ stk::mesh::fem::FEMMetaData::NODE_RANK ] + 1 ;
-  const stk::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
+  const stk_classic::mesh::EntityId node_id_base = counts[ stk_classic::mesh::fem::FEMMetaData::NODE_RANK ] + 1 ;
+  const stk_classic::mesh::EntityId elem_id_base = counts[ element_rank ] + 1 ;
 
   const unsigned long elem_id_gear_max =
     m_angle_num * ( m_rad_num - 1 ) * ( m_z_num - 1 );
 
-  std::vector<stk::mesh::Part*> elem_parts ;
-  std::vector<stk::mesh::Part*> face_parts ;
-  std::vector<stk::mesh::Part*> node_parts ;
+  std::vector<stk_classic::mesh::Part*> elem_parts ;
+  std::vector<stk_classic::mesh::Part*> face_parts ;
+  std::vector<stk_classic::mesh::Part*> node_parts ;
 
   {
-    stk::mesh::Part * const p_gear = & m_gear ;
-    stk::mesh::Part * const p_surf = & m_surf ;
+    stk_classic::mesh::Part * const p_gear = & m_gear ;
+    stk_classic::mesh::Part * const p_surf = & m_surf ;
 
     elem_parts.push_back( p_gear );
     face_parts.push_back( p_surf );
@@ -207,11 +207,11 @@ void Gear::mesh( stk::mesh::BulkData & M )
     for ( unsigned ir = 0 ; ir < m_rad_num - 1 ; ++ir ) {
       for ( unsigned iz = 0 ; iz < m_z_num - 1 ; ++iz ) {
 
-        stk::mesh::EntityId elem_id_gear = identifier( m_z_num-1 , m_rad_num-1 , iz , ir , ia );
+        stk_classic::mesh::EntityId elem_id_gear = identifier( m_z_num-1 , m_rad_num-1 , iz , ir , ia );
 
         if ( ( ( elem_id_gear * p_size ) / elem_id_gear_max ) == p_rank ) {
 
-          stk::mesh::EntityId elem_id = elem_id_base + elem_id_gear ;
+          stk_classic::mesh::EntityId elem_id = elem_id_base + elem_id_gear ;
 
           // Create the node and set the model_coordinates
 
@@ -219,7 +219,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
           const size_t ir_1 = ir + 1 ;
           const size_t iz_1 = iz + 1 ;
 
-          stk::mesh::Entity * node[8] ;
+          stk_classic::mesh::Entity * node[8] ;
 
           node[0] = &create_node( node_parts, node_id_base, iz  , ir  , ia_1 );
           node[1] = &create_node( node_parts, node_id_base, iz_1, ir  , ia_1 );
@@ -264,7 +264,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
           }
 #endif
 
-          stk::mesh::Entity & elem =
+          stk_classic::mesh::Entity & elem =
             M.declare_entity( element_rank, elem_id, elem_parts );
 
           for ( size_t j = 0 ; j < 8 ; ++j ) {
@@ -284,17 +284,17 @@ void Gear::mesh( stk::mesh::BulkData & M )
     for ( size_t ia = 0 ; ia < m_angle_num ; ++ia ) {
       for ( size_t iz = 0 ; iz < m_z_num - 1 ; ++iz ) {
 
-        stk::mesh::EntityId elem_id_gear =
+        stk_classic::mesh::EntityId elem_id_gear =
           identifier( m_z_num-1 , m_rad_num-1 , iz , ir-1 , ia );
 
         if ( ( ( elem_id_gear * p_size ) / elem_id_gear_max ) == p_rank ) {
 
-          stk::mesh::EntityId elem_id = elem_id_base + elem_id_gear ;
+          stk_classic::mesh::EntityId elem_id = elem_id_base + elem_id_gear ;
 
           unsigned face_ord = 5 ;
-          stk::mesh::EntityId face_id = elem_id * 10 + face_ord + 1;
+          stk_classic::mesh::EntityId face_id = elem_id * 10 + face_ord + 1;
 
-          stk::mesh::Entity * node[4] ;
+          stk_classic::mesh::Entity * node[4] ;
 
           const size_t ia_1 = ( ia + 1 ) % m_angle_num ;
           const size_t iz_1 = iz + 1 ;
@@ -304,7 +304,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
           node[2] = &create_node( node_parts, node_id_base, iz_1, ir  , ia   );
           node[3] = &create_node( node_parts, node_id_base, iz  , ir  , ia   );
 
-          stk::mesh::Entity & face =
+          stk_classic::mesh::Entity & face =
             M.declare_entity( side_rank, face_id, face_parts );
 
           for ( size_t j = 0 ; j < 4 ; ++j ) {
@@ -312,7 +312,7 @@ void Gear::mesh( stk::mesh::BulkData & M )
                                 static_cast<unsigned>(j) );
           }
 
-          stk::mesh::Entity & elem = * M.get_entity(element_rank, elem_id);
+          stk_classic::mesh::Entity & elem = * M.get_entity(element_rank, elem_id);
 
           M.declare_relation( elem , face , face_ord );
         }
@@ -330,15 +330,15 @@ void Gear::turn( double /* turn_angle */ ) const
 #if 0
   const unsigned Length = 3 ;
 
-  const std::vector<stk::mesh::Bucket*> & ks = m_mesh->buckets( stk::mesh::Node );
-  const std::vector<stk::mesh::Bucket*>::const_iterator ek = ks.end();
-  std::vector<stk::mesh::Bucket*>::const_iterator ik = ks.begin();
+  const std::vector<stk_classic::mesh::Bucket*> & ks = m_mesh->buckets( stk_classic::mesh::Node );
+  const std::vector<stk_classic::mesh::Bucket*>::const_iterator ek = ks.end();
+  std::vector<stk_classic::mesh::Bucket*>::const_iterator ik = ks.begin();
   for ( ; ik != ek ; ++ik ) {
-    stk::mesh::Bucket & k = **ik ;
+    stk_classic::mesh::Bucket & k = **ik ;
     if ( k.has_superset( m_gear ) ) {
       const size_t n = k.size();
-      double * const bucket_gear_data    = stk::mesh::field_data( m_gear_coord,    k.begin() );
-      double * const bucket_model_data   = stk::mesh::field_data( m_model_coord,   k.begin() );
+      double * const bucket_gear_data    = stk_classic::mesh::field_data( m_gear_coord,    k.begin() );
+      double * const bucket_model_data   = stk_classic::mesh::field_data( m_model_coord,   k.begin() );
 
       for ( size_t i = 0 ; i < n ; ++i ) {
         double * const gear_data    = bucket_gear_data    + i * Length ;

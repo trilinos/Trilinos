@@ -18,7 +18,7 @@ namespace Ioss {
   class Region;
 }
 
-namespace stk {
+namespace stk_classic {
   namespace mesh {
     class Part;
     class BulkData;
@@ -69,7 +69,7 @@ namespace stk {
        * active/inactive entities.  If present, then this selector is
        * *anded* with the normal selectors use for output
        */
-      stk::mesh::Selector *m_anded_selector;
+      stk_classic::mesh::Selector *m_anded_selector;
 
     private:
       MeshData(const MeshData&); // Do not implement
@@ -130,7 +130,7 @@ namespace stk {
     void create_input_mesh(const std::string &type,
 			   const std::string &filename,
 			   MPI_Comm comm,
-			   stk::mesh::fem::FEMMetaData &metadata,
+			   stk_classic::mesh::fem::FEMMetaData &metadata,
 			   MeshData &mesh_data,
                            bool lower_case_variable_names=true);
 
@@ -189,7 +189,7 @@ namespace stk {
     void create_input_mesh(const std::string &type,
 			   const std::string &filename,
 			   MPI_Comm comm,
-			   stk::mesh::fem::FEMMetaData &metadata,
+			   stk_classic::mesh::fem::FEMMetaData &metadata,
 			   MeshData &mesh_data,
                            const std::vector<std::string>& names_to_add,
                            bool lower_case_variable_names=true);
@@ -204,7 +204,7 @@ namespace stk {
      * membership.  Note that meta_data.commit() needs to be called
      * prior to calling this function.
      */
-    void populate_bulk_data(stk::mesh::BulkData &bulk_data, stk::io::MeshData &mesh_data);
+    void populate_bulk_data(stk_classic::mesh::BulkData &bulk_data, stk_classic::io::MeshData &mesh_data);
 
     /**
      * Read/Generate the bulk data for the mesh.  The bulk_data must
@@ -219,7 +219,7 @@ namespace stk {
      * must be called upon return from this function. The above populate_bulk_data call
      * is a wrapper for this function.
      */
-    void process_mesh_bulk_data(Ioss::Region *region, stk::mesh::BulkData &bulk_data);
+    void process_mesh_bulk_data(Ioss::Region *region, stk_classic::mesh::BulkData &bulk_data);
 
     /**
      * Iterate over all Ioss entities in the input mesh database and
@@ -235,7 +235,7 @@ namespace stk {
      * process_input_request().
      *
      */
-    void define_input_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &meta_data);
+    void define_input_fields(MeshData &mesh_data, stk_classic::mesh::fem::FEMMetaData &meta_data);
 
     /**
      * For all transient input fields defined either manually or via
@@ -243,7 +243,7 @@ namespace stk {
      * specified database step 'step' (1-based) and populate the stk
      * data structures with those values.
      */
-    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, int step);
+    void process_input_request(MeshData &mesh_data, stk_classic::mesh::BulkData &bulk, int step);
 
     /**
      * For all transient input fields defined either manually or via
@@ -252,7 +252,7 @@ namespace stk {
      * data structures with those values.  The database time closest
      * to the specified time will be used with no interpolation (yet).
      */
-    void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time);
+    void process_input_request(MeshData &mesh_data, stk_classic::mesh::BulkData &bulk, double time);
 
     /**
      * For all transient input fields defined either manually or via
@@ -264,7 +264,7 @@ namespace stk {
      * must be called upon return from this function. Also note 
      * that the two above functions are wrappers for this one.
      */
-    void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk_data, int step);
+    void input_mesh_fields(Ioss::Region *region, stk_classic::mesh::BulkData &bulk_data, int step);
 
     /**
      * For all transient input fields defined either manually or via
@@ -276,7 +276,7 @@ namespace stk {
      * calling this function. Further, bulk_data.modification_end()
      * must be called upon return from this function.
      */
-    void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk_data, double time);
+    void input_mesh_fields(Ioss::Region *region, stk_classic::mesh::BulkData &bulk_data, double time);
 
     /**
      * Create an exodus mesh database with the specified
@@ -292,8 +292,8 @@ namespace stk {
      * returns true.  By default, all parts read from the mesh
      * database in the create_input_mesh() function will return true
      * as will all stk parts on which the function
-     * stk::io::put_io_part_attribute() was called.  The function
-     * stk::io::remove_io_part_attribute(part) can be called to omit a
+     * stk_classic::io::put_io_part_attribute() was called.  The function
+     * stk_classic::io::remove_io_part_attribute(part) can be called to omit a
      * part from being output.
      *
      * \param[in] filename The full pathname to the file which will be
@@ -314,7 +314,7 @@ namespace stk {
      */
     void create_output_mesh(const std::string &filename,
 			    MPI_Comm comm,
-			    stk::mesh::BulkData &bulk_data,
+			    stk_classic::mesh::BulkData &bulk_data,
 			    MeshData &mesh_data,
                             bool lower_case_variable_names=true);
 
@@ -323,14 +323,14 @@ namespace stk {
      * defined on a part that is output to the mesh file, define a
      * corresponding database field. The database field will have the
      * same name as the stk field.  A transient field will be defined
-     * if the stk::io::is_valid_part_field() returns true.  This can
-     * be set via a call to stk::io::set_field_role().
+     * if the stk_classic::io::is_valid_part_field() returns true.  This can
+     * be set via a call to stk_classic::io::set_field_role().
      *
      * If the 'add_all_fields' param is true, then all transient
      * stk fields will have a corresponding database field defined.
      */
     void define_output_fields(const MeshData &mesh_data,
-			      const stk::mesh::fem::FEMMetaData &fem_meta,
+			      const stk_classic::mesh::fem::FEMMetaData &fem_meta,
 			      bool add_all_fields = false);
 
     /**
@@ -338,9 +338,9 @@ namespace stk {
      * output the data for all defined fields to the database.
      */
     int process_output_request(MeshData &mesh_data,
-			       stk::mesh::BulkData &bulk,
+			       stk_classic::mesh::BulkData &bulk,
 			       double time,
-                               const std::set<const stk::mesh::Part*> &exclude=std::set<const stk::mesh::Part*>());
+                               const std::set<const stk_classic::mesh::Part*> &exclude=std::set<const stk_classic::mesh::Part*>());
     /**
      * Method to query a MeshData for the number of element blocks and the
      * number of elements in each. MeshData is input, std:vector is output

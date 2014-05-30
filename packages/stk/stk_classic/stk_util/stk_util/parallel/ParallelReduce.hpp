@@ -17,7 +17,7 @@
 
 //------------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 
 /** \addtogroup parallel_module
  *  \{
@@ -83,7 +83,7 @@ void all_reduce( ParallelMachine , const ReduceOp & );
 
 #ifndef DOXYGEN_COMPILE
 
-namespace stk {
+namespace stk_classic {
 namespace {
 // Blank namespace so that this class produces local symbols,
 // avoiding complaints from a linker of multiple-define symbols.
@@ -153,7 +153,7 @@ void Reduce<Op,T,Next>::void_op( void*inv, void*inoutv,int*,ParallelDatatype*)
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 
 template<unsigned N, typename T>
 inline

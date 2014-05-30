@@ -8,7 +8,7 @@
 
 #include <boost/math/distributions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
   namespace bmp  = boost::math::policies;

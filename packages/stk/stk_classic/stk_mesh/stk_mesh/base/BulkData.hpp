@@ -30,7 +30,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \addtogroup stk_mesh_module
@@ -39,9 +39,9 @@ namespace mesh {
 
 //----------------------------------------------------------------------
 /** \brief  Manager for an integrated collection of
- *          \ref stk::mesh::Entity "entities",
- *          \ref stk::mesh::Relation "entity relations", and
- *          \ref stk::mesh::Bucket "buckets" of
+ *          \ref stk_classic::mesh::Entity "entities",
+ *          \ref stk_classic::mesh::Relation "entity relations", and
+ *          \ref stk_classic::mesh::Bucket "buckets" of
  *          \ref stk_mesh_field_data "field data".
  *
  *  Bulk data should be distributed among all processors.
@@ -60,7 +60,7 @@ public:
   ~BulkData();
 
   /** \brief  Construct mesh bulk data manager conformal to the given
-   *          \ref stk::mesh::MetaData "meta data manager" and will
+   *          \ref stk_classic::mesh::MetaData "meta data manager" and will
    *          distribute bulk data over the given parallel machine.
    *
    *  - The maximum number of entities per bucket may be supplied.
@@ -552,7 +552,7 @@ private:
 
   // FIXME: Remove this friend once unit-testing has been refactored
   friend class UnitTestModificationEndWrapper;
-  friend class ::stk::mesh::MetaData;
+  friend class ::stk_classic::mesh::MetaData;
 #endif /* DOXYGEN_COMPILE */
 };
 
@@ -622,7 +622,7 @@ void BulkData::change_entity_parts( Entity & entity,
                                     RemoveIterator begin_remove_parts, RemoveIterator end_remove_parts,
                                     bool always_propagate_internal_changes)
 {
-  TraceIfWatching("stk::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
+  TraceIfWatching("stk_classic::mesh::BulkData::change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
   //DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
   //DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);

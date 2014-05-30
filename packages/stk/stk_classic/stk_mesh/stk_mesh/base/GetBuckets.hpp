@@ -18,7 +18,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \addtogroup stk_mesh_module

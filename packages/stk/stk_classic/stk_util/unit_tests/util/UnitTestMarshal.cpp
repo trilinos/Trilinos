@@ -46,25 +46,25 @@ struct S2
 };
 
 // Define Marshal for S1 type in S1's namespace
-stk::Marshal &operator<<(stk::Marshal &mout, const S1 &s) {
+stk_classic::Marshal &operator<<(stk_classic::Marshal &mout, const S1 &s) {
   return mout << s.m_string << s.m_int;
 }
 
-stk::Marshal &operator>>(stk::Marshal &min, S1 &s) {
+stk_classic::Marshal &operator>>(stk_classic::Marshal &min, S1 &s) {
   return min >> s.m_string >> s.m_int;
 }
 
 
 // Define Marshal for S2 type in stk's namespace
-namespace stk {
+namespace stk_classic {
 
 template<>
-stk::Marshal &operator<<(stk::Marshal &mout, const S2 &s) {
+stk_classic::Marshal &operator<<(stk_classic::Marshal &mout, const S2 &s) {
   return mout << s.m_string << s.m_int;
 }
 
 template<>
-stk::Marshal &operator>>(stk::Marshal &min, S2 &s) {
+stk_classic::Marshal &operator>>(stk_classic::Marshal &min, S2 &s) {
   return min >> s.m_string >> s.m_int;
 }
 
@@ -75,10 +75,10 @@ template <class T>
 void
 test(const T &t_in) 
 {
-  stk::Marshal mout(stk::Marshal::TYPE_CHECK_ALL);
+  stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);
   mout << t_in;
 
-  stk::Marshal min(mout.str());
+  stk_classic::Marshal min(mout.str());
   T t_out;
   min >> t_out;
 
@@ -106,13 +106,13 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
   // Marshal/Unmarshal more than one POD in a single message
   {
-    stk::Marshal mout(stk::Marshal::TYPE_CHECK_ALL);;
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);;
     std::string s_out("this is a test");
     int i_out = 7;
       
     mout << s_out << i_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::string s_in;
     int i_in;
 
@@ -127,11 +127,11 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
   // Marshal/Unmarshal locally defined class/struct
   {
-    stk::Marshal mout;
+    stk_classic::Marshal mout;
     S1 s_out("this is a test", 5);
     mout << s_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     S1 s_in;
 
     min >> s_in;
@@ -142,14 +142,14 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
 
   // Marshal/Unmarshal std::vector of S2's (uses the stk namespace operator>> and operator<<)
   {
-    stk::Marshal mout;
+    stk_classic::Marshal mout;
     S2 s_out("this is a test", 5);
     std::vector<S2> v_out;
     v_out.push_back(s_out);
     
     mout << v_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::vector<S2> v_in;
     
     min >> v_in;
@@ -160,13 +160,13 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
   // Marshal/Unmarshal error from type mismatch
   {
     
-    stk::Marshal mout(stk::Marshal::TYPE_CHECK_ALL);;
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);;
     std::string s_out("this is a test");
     int i_out = 7;
       
     mout << s_out << i_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::string s_in;
     double x_in;
 
@@ -175,14 +175,14 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
   
   // Marshal error for STL container mismatch
   {
-    stk::Marshal mout(stk::Marshal::TYPE_CHECK_ALL);
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);
     S1 s_out("this is a test", 5);
     std::vector<S1> v_out;
     v_out.push_back(s_out);
     
     mout << v_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::list<S1> v_in;
     
     STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
@@ -190,14 +190,14 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
   
   // Marshal error for STL container mismatch
   {
-    stk::Marshal mout(stk::Marshal::TYPE_CHECK_ALL);
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_ALL);
     S1 s_out("this is a test", 5);
     std::list<S1> v_out;
     v_out.push_back(s_out);
     
     mout << v_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::vector<S1> v_in;
     
     STKUNIT_ASSERT_THROW(min >> v_in, std::runtime_error);
@@ -205,14 +205,14 @@ STKUNIT_UNIT_TEST(UnitTestMarshal, UnitTest)
   
   // Marshal without error for STL container mismatch
   {
-    stk::Marshal mout(stk::Marshal::TYPE_CHECK_NONE);
+    stk_classic::Marshal mout(stk_classic::Marshal::TYPE_CHECK_NONE);
     S1 s_out("this is a test", 5);
     std::vector<S1> v_out;
     v_out.push_back(s_out);
     
     mout << v_out;
 
-    stk::Marshal min(mout.str());
+    stk_classic::Marshal min(mout.str());
     std::list<S1> v_in;
     
     STKUNIT_ASSERT_NO_THROW(min >> v_in);

@@ -11,7 +11,7 @@
 #include "UniformRefinerPattern_Quad4_Quad9_1_sierra.hpp"
 #endif
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     template <>
@@ -94,7 +94,7 @@ namespace stk {
         needed_entities.resize(2);
         needed_entities[0].first  = m_eMesh.edge_rank();    
         needed_entities[0].second = 1u;
-        // FIXME - this is a problem with the definition of what a needed entity rank is, and what an stk::mesh::Entity rank is
+        // FIXME - this is a problem with the definition of what a needed entity rank is, and what an stk_classic::mesh::Entity rank is
         needed_entities[1].first  = m_eMesh.face_rank(); // FIXME m_eMesh.element_rank();
         //needed_entities[1].first  = m_eMesh.element_rank();
         needed_entities[1].second = 1u;
@@ -105,8 +105,8 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry, 
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         genericEnrich_createNewElements(eMesh, nodeRegistry,
                                         element, new_sub_entity_nodes, element_pool,

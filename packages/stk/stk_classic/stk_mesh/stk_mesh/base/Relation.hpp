@@ -19,14 +19,14 @@
 
 #ifdef SIERRA_MIGRATION
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 class Entity;
 }
 }
 #endif
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \addtogroup stk_mesh_module

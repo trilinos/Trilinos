@@ -3,7 +3,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -76,16 +76,16 @@ namespace stk {
       virtual ElementUnrefineCollection  buildUnrefineList() = 0;
 
     protected:
-      IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0);
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, 
                                               vector<NeededEntityType>& needed_entity_ranks) = 0;
 
 
     };
 
-    IAdapter::IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    IAdapter::IAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }

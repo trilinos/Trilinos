@@ -2,7 +2,7 @@
 #define stk_percept_ParallelUtilDef_hpp
 
 
-namespace stk { 
+namespace stk_classic { 
   namespace percept { 
 
 
@@ -147,7 +147,7 @@ namespace stk {
 
       template<class T>
       inline
-      void stk_percept_global_lex_min(stk::ParallelMachine comm,  int n , T local_min[] , T global_min[] )
+      void stk_percept_global_lex_min(stk_classic::ParallelMachine comm,  int n , T local_min[] , T global_min[] )
       {
 #if defined( STK_HAS_MPI )
         ParallelReduceOp p_op = reinterpret_cast<ParallelReduceOp>(&    stk_percept_reduce_min_lex<double>::void_op );

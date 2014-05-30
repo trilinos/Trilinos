@@ -16,23 +16,23 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::MetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Selector;
-using stk::mesh::Entity;
-using stk::mesh::EntityProc;
-using stk::mesh::fixtures::RingFixture;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityProc;
+using stk_classic::mesh::fixtures::RingFixture;
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 {
   // A unit test to verify the correctness of the RingFixture fixture.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   // Create the ring fixture we'll be testing
@@ -41,7 +41,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   FEMMetaData& meta = fixture.m_meta_data;
   BulkData& bulk = fixture.m_bulk_data;
 
-  const stk::mesh::EntityRank element_rank = meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = meta.element_rank();
 
   meta.commit();
 
@@ -64,7 +64,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   Selector select_all(  meta.universal_part() );
 
   std::vector<unsigned> local_count;
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[NODE_RANK]     , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[element_rank] , nLocalEdge );
 
@@ -84,7 +84,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 
   // Verify declarations and sharing two end nodes:
 
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
@@ -110,11 +110,11 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
   bulk.change_entity_owner( change );
   STKUNIT_ASSERT( bulk.modification_end());
 
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
-  stk::mesh::count_entities( select_all , bulk , local_count );
+  stk_classic::mesh::count_entities( select_all , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode + n_extra );
   STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge + n_extra );
 
@@ -124,15 +124,15 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 
   // Make sure that edge->owner_rank() == edge->node[1]->owner_rank()
   if ( 1 < p_size ) {
-    stk::mesh::count_entities( select_all , bulk , local_count );
+    stk_classic::mesh::count_entities( select_all , bulk , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode + n_extra );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge + n_extra );
 
-    stk::mesh::count_entities( select_used , bulk , local_count );
+    stk_classic::mesh::count_entities( select_used , bulk , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 
-    stk::mesh::count_entities( select_owned , bulk , local_count );
+    stk_classic::mesh::count_entities( select_owned , bulk , local_count );
     STKUNIT_ASSERT_EQUAL( local_count[0] , nPerProc );
     STKUNIT_ASSERT_EQUAL( local_count[1] , nPerProc );
   }
@@ -140,7 +140,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyRingFixture )
 
 }
 
-namespace stk {
+namespace stk_classic {
 namespace unit_test {
 
 void test_shift_ring( RingFixture& ring, bool generate_aura=true )
@@ -205,7 +205,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
 
   STKUNIT_ASSERT( bulk.modification_begin() );
   bulk.change_entity_owner( change );
-  STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( bulk , generate_aura ) );
+  STKUNIT_ASSERT( stk_classic::unit_test::modification_end_wrapper( bulk , generate_aura ) );
 
   send_edge_1 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send ] );
   send_edge_2 = bulk.get_entity( 1 , ring.m_edge_ids[ id_send + 1 ] );
@@ -217,7 +217,7 @@ void test_shift_ring( RingFixture& ring, bool generate_aura=true )
   STKUNIT_ASSERT( NULL != recv_edge_1 && p_rank == recv_edge_1->owner_rank() );
   STKUNIT_ASSERT( NULL != recv_edge_2 && p_rank == recv_edge_2->owner_rank() );
 
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[0] , nLocalNode );
   STKUNIT_ASSERT_EQUAL( local_count[1] , nLocalEdge );
 

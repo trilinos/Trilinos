@@ -25,7 +25,7 @@
 
 #define USE_HARDWIRED_NUMBER_NODES 1
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 //----------------------------------------------------------------------
@@ -343,10 +343,10 @@ void scale_sum( const unsigned number ,
 #endif
 }
 
-void ElementMeanValue::apply( stk::mesh::Bucket::iterator ibegin ,
-                              stk::mesh::Bucket::iterator iend ) const
+void ElementMeanValue::apply( stk_classic::mesh::Bucket::iterator ibegin ,
+                              stk_classic::mesh::Bucket::iterator iend ) const
 {
-  const stk::mesh::BucketArray< stk::mesh::Field<double*,stk::mesh::ElementNode> >
+  const stk_classic::mesh::BucketArray< stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> >
     elem_node( elem_node_field , ibegin , iend );
 
   const double * const * const node_ptr = elem_node.contiguous_data();
@@ -375,11 +375,11 @@ void ElementMeanValue::apply( stk::mesh::Bucket::iterator ibegin ,
   }
 }
 
-void ElementMeanValue_Gather::apply( stk::mesh::Bucket::iterator ibegin ,
-                                     stk::mesh::Bucket::iterator iend ) const
+void ElementMeanValue_Gather::apply( stk_classic::mesh::Bucket::iterator ibegin ,
+                                     stk_classic::mesh::Bucket::iterator iend ) const
 
 {
-  const stk::mesh::BucketArray< stk::mesh::Field<double*,stk::mesh::ElementNode> >
+  const stk_classic::mesh::BucketArray< stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> >
     elem_node( elem_node_field , ibegin , iend );
 
   const double * const * const node_ptr = elem_node.contiguous_data();
@@ -435,8 +435,8 @@ void ElementMeanValue_Gather::apply( stk::mesh::Bucket::iterator ibegin ,
 
 //----------------------------------------------------------------------
 
-void NodeScaleSum::apply( stk::mesh::Bucket::iterator ibegin ,
-                          stk::mesh::Bucket::iterator iend ) const
+void NodeScaleSum::apply( stk_classic::mesh::Bucket::iterator ibegin ,
+                          stk_classic::mesh::Bucket::iterator iend ) const
 {
   enum { SpaceDim = 3 };
 
@@ -452,21 +452,21 @@ void NodeScaleSum::apply( stk::mesh::Bucket::iterator ibegin ,
 //----------------------------------------------------------------------
 
 void verify_elem_node_coord(
-  stk::mesh::BulkData & mesh ,
-  const stk::mesh::Field<double*,stk::mesh::ElementNode> & elem_node_coord ,
-  const stk::mesh::Field<double,stk::mesh::Cartesian>    & node_coord )
+  stk_classic::mesh::BulkData & mesh ,
+  const stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> & elem_node_coord ,
+  const stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian>    & node_coord )
 {
-  typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElemNodeFieldType ;
+  typedef stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> ElemNodeFieldType ;
 
-  const stk::mesh::EntityRank element_rank = stk::mesh::fem::FEMMetaData::get(mesh).element_rank();
+  const stk_classic::mesh::EntityRank element_rank = stk_classic::mesh::fem::FEMMetaData::get(mesh).element_rank();
 
-  const std::vector<stk::mesh::Bucket*> & buckets = mesh.buckets( element_rank );
+  const std::vector<stk_classic::mesh::Bucket*> & buckets = mesh.buckets( element_rank );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator
         k = buckets.begin() ; k != buckets.end() ; ++k ) {
-    stk::mesh::Bucket & bucket = **k ;
+    stk_classic::mesh::Bucket & bucket = **k ;
 
-    stk::mesh::BucketArray< ElemNodeFieldType > array( elem_node_coord , bucket );
+    stk_classic::mesh::BucketArray< ElemNodeFieldType > array( elem_node_coord , bucket );
 
     const unsigned num_node = array.dimension<0>();
     const unsigned size     = array.dimension<1>();
@@ -474,12 +474,12 @@ void verify_elem_node_coord(
     double * const * elem_data = array.contiguous_data();
 
     for ( unsigned i = 0 ; i < size ; ++i ) {
-      stk::mesh::Entity & elem = bucket[i] ;
+      stk_classic::mesh::Entity & elem = bucket[i] ;
 
-      stk::mesh::PairIterRelation rel = elem.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      stk_classic::mesh::PairIterRelation rel = elem.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
       for ( unsigned j = 0 ; j < num_node ; ++j , ++elem_data ) {
-        stk::mesh::Entity & node = * rel[j].entity();
+        stk_classic::mesh::Entity & node = * rel[j].entity();
 
         double * const node_data = field_data( node_coord , node );
         if ( *elem_data != node_data ) {

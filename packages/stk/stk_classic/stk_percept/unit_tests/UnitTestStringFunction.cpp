@@ -21,7 +21,7 @@
 #include <iostream>
 #include <math.h>
 
-namespace stk {
+namespace stk_classic {
 namespace percept {
 namespace unit_tests {
 
@@ -653,7 +653,7 @@ STKUNIT_UNIT_TEST(function, stringFunction_expressions)
   TIME_IT(DO_SF_TIMING_TEST_STRING(expr,numIt),string_time);            \
   if (0) std::cout << "for expression= " << QUOTE(expr) << " timings= " << std::endl; \
   if (0) std::cout << "cpp_time= " << cpp_time << " string_time= " << string_time << " ratio= " << string_time/cpp_time << std::endl; \
-  table << COL_SEP <<  stk::cell_width(EXPR_CELL_WIDTH) << QUOTE(expr) << COL_SEP << cpp_time << COL_SEP << string_time << COL_SEP << (string_time/cpp_time)<< COL_SEP << stk::end_row; \
+  table << COL_SEP <<  stk_classic::cell_width(EXPR_CELL_WIDTH) << QUOTE(expr) << COL_SEP << cpp_time << COL_SEP << string_time << COL_SEP << (string_time/cpp_time)<< COL_SEP << stk_classic::end_row; \
 }
 
 //=============================================================================
@@ -676,15 +676,15 @@ STKUNIT_UNIT_TEST(function, stringFunction_timing)
     //double PI = M_PI;
     //double E = M_E;
 
-    stk::PrintTable table;
+    stk_classic::PrintTable table;
     std::ostringstream msg; msg << "Timings for " << numIt << " iterations for  point # " << ipts << " x,y,z,t= " << x << " "<< y << " "<< z << " "<< t << " ";
     table.setTitle(msg.str());
 
-    table << COL_SEP << stk::cell_width(EXPR_CELL_WIDTH) << "expression" << COL_SEP
+    table << COL_SEP << stk_classic::cell_width(EXPR_CELL_WIDTH) << "expression" << COL_SEP
           << "cpp time" << COL_SEP
           << "string time" << COL_SEP
           << "ratio" << COL_SEP
-          << stk::end_header;
+          << stk_classic::end_header;
 
     TIME_IT1(EXPR_TO_TEST1A, numIt);
     TIME_IT1(EXPR_TO_TEST1B, numIt);

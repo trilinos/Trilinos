@@ -10,7 +10,7 @@
 #include <cstring>
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 

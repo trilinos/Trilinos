@@ -18,7 +18,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \ingroup stk_mesh_module
@@ -36,9 +36,9 @@ namespace mesh {
  *     in stk_mesh/fem/CoordinateSystems.hpp, but apps are free to define their own as well.
  *     - Examples:
  *       - A scalar double field-type:
- *           stk::mesh::Field<double>
+ *           stk_classic::mesh::Field<double>
  *       - A vector field type using the Cartesian array-dim-tag from CoordinateSystems:
- *           stk::mesh::Field<double, stk::mesh::Cartesian>
+ *           stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>
  *
  *   - Field declaration: Defines/creates a specific field of a specified type. The API for
  *     declaring fields is in (FEM)MetaData. Declaration of a field requires a field-type,
@@ -47,7 +47,7 @@ namespace mesh {
  *     can advance/rotate the states by calling BulkData::update_field_data_states(). FieldState.hpp
  *     contains an enum that clients should use to refer to the various states.
  *     - Examples:
- *       typedef stk::mesh::Field<double, stk::mesh::Cartesian>  CoordFieldType;
+ *       typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>  CoordFieldType;
  *       CoordFieldType& coord_field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
  *
  *   - Field restrictions: Defines the set of entities that have a field and the dimensions of the
@@ -69,19 +69,19 @@ namespace mesh {
  *     must be identical.
  *     - Examples:
  *       - Put a scalar field on all nodes in a part
- *           typedef stk::mesh::Field<double>  ScalarFieldType;
+ *           typedef stk_classic::mesh::Field<double>  ScalarFieldType;
  *           ScalarFieldType& field = meta.declare_field<ScalarFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>);
+ *           stk_classic::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>);
  *
  *       - Put a 1d (of size 3) field of doubles on all nodes in a part
- *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d>  CoordFieldType;
+ *           typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian3d>  CoordFieldType;
  *           CoordFieldType& field = meta.declare_field<CoordFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size);
+ *           stk_classic::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size);
  *
  *       - Put a 2d (of sizes 3 and 3) field of doubles on all nodes in a part
- *           typedef stk::mesh::Field<double, stk::mesh::Cartesian3d, stk::mesh::Cartesian3d> MultiDimFieldType;
+ *           typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian3d, stk_classic::mesh::Cartesian3d> MultiDimFieldType;
  *           MultiFieldType& field = meta.declare_field<MultiFieldType>("<name>", <num_states>);
- *           stk::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
+ *           stk_classic::mesh::put_field(field, fem::FEMMetaData::NODE_RANK, <part>, Cartesian3d::Size, Cartesian3d::Size);
  *
  * Items of interest
  *   - Accessing field data: see FieldData.hpp

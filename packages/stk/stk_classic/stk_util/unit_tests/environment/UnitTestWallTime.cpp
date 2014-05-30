@@ -16,15 +16,15 @@
 
 STKUNIT_UNIT_TEST(UnitTestWallTime, UnitTest)
 {
-  double wall_now = stk::wall_time();
+  double wall_now = stk_classic::wall_time();
   
   ::sleep(1);
   
-  double wall_delta = stk::wall_time() - wall_now;
+  double wall_delta = stk_classic::wall_time() - wall_now;
   
   STKUNIT_ASSERT(wall_delta >= 1.0 && wall_delta <= 2.0);
 
-  double wall_delta2 = stk::wall_dtime(wall_now);
+  double wall_delta2 = stk_classic::wall_dtime(wall_now);
 
   STKUNIT_ASSERT(wall_delta2 >= 1.0 && wall_delta2 <= 2.0);
 }

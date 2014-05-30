@@ -26,9 +26,9 @@
 
 #include <stk_rebalance/GeomDecomp.hpp>
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 
 std::vector<const mesh::Entity *> GeomDecomp::entity_coordinates(const mesh::Entity                 & entity,

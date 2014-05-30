@@ -21,7 +21,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace {
 
 //----------------------------------------------------------------------
@@ -134,7 +134,7 @@ AlgorithmRunnerInterface * algorithm_runner_tpi( int nthreads )
 
 #else
 
-namespace stk {
+namespace stk_classic {
 
 AlgorithmRunnerInterface * algorithm_runner_tpi( int nthreads )
 {

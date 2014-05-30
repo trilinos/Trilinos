@@ -56,7 +56,7 @@
  *
  */
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
@@ -67,7 +67,7 @@ public:
 
   ~UseCase_4_Mesh();
 
-  UseCase_4_Mesh( stk::ParallelMachine comm, bool doCommit=true );
+  UseCase_4_Mesh( stk_classic::ParallelMachine comm, bool doCommit=true );
 
   void populate();
 

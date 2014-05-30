@@ -12,7 +12,7 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------

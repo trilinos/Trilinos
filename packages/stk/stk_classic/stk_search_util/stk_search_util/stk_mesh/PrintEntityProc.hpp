@@ -20,7 +20,7 @@
 #include <stk_search_util/stk_mesh/CreateBoundingBox.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 class Entity;
 }
@@ -32,9 +32,9 @@ namespace search_util {
  * Used to output the results of a coarse or direct search to
  * verify which entity contains another entity.
  */
-void print_entity_map(stk::diag::Writer &writer,
-                      const std::vector<std::pair<stk::mesh::Entity*,
-                      stk::mesh::Entity*> >& entity_map,
+void print_entity_map(stk_classic::diag::Writer &writer,
+                      const std::vector<std::pair<stk_classic::mesh::Entity*,
+                      stk_classic::mesh::Entity*> >& entity_map,
                       const std::string & relation);
 
 /**
@@ -49,8 +49,8 @@ void print_entity_map(stk::diag::Writer &writer,
  *
  * Example output: "Share NODE 37 with processor 12"
  */
-void print_entity_proc_map(stk::diag::Writer &writer,
-                           const std::vector<stk::mesh::EntityProc>& entity_proc,
+void print_entity_proc_map(stk_classic::diag::Writer &writer,
+                           const std::vector<stk_classic::mesh::EntityProc>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);
 
@@ -66,22 +66,22 @@ void print_entity_proc_map(stk::diag::Writer &writer,
  *
  * Example output: "Share NODE 37 with processor 12"
  */
-void print_entity_proc_map(stk::diag::Writer &writer,
-                           const std::vector<stk::mesh::Entity*>& entity_proc,
+void print_entity_proc_map(stk_classic::diag::Writer &writer,
+                           const std::vector<stk_classic::mesh::Entity*>& entity_proc,
                            const std::string &action,
                            const std::string &to_from);
 
-void print_entity_proc_map( stk::diag::Writer & writer ,
-                            const stk::mesh::BulkData & mesh );
+void print_entity_proc_map( stk_classic::diag::Writer & writer ,
+                            const stk_classic::mesh::BulkData & mesh );
 
 /**
  * Used to output the results of a relation vector in human
  * readable form.  This function cannot be used as the default
  * output of an IdentProcRelation since it is using knowledge that
- * what is really being stored in the IdentProc is stk::mesh
+ * what is really being stored in the IdentProc is stk_classic::mesh
  * entity keys.
  */
-void print_stk_mesh_relation_map(stk::diag::Writer &writer,
+void print_stk_mesh_relation_map(stk_classic::diag::Writer &writer,
                                  const std::vector<std::string> &entity_names,
                                  IdentProcRelation relation);
 } // namespace search_util

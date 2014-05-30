@@ -15,7 +15,7 @@
 
 STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 {
-  using namespace stk::mesh;
+  using namespace stk_classic::mesh;
 
   const unsigned NX = 50;
   const unsigned NY = 50;
@@ -37,7 +37,7 @@ STKUNIT_UNIT_TEST( UnitTestChangeEntityId, change_id )
 
   hf.generate_mesh();
 
-  stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  stk_classic::mesh::BulkData & mesh = hf.m_bulk_data;
 
   mesh.modification_begin();
 

@@ -16,7 +16,7 @@
 #include <stk_percept/mesh/mod/mesquite-interface/PMMMsqMatrix.hpp>
 #include <stk_percept/math/Math.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     enum CombineOp {
@@ -34,22 +34,22 @@ namespace stk {
         m_coord_field_original  = eMesh->get_field("coordinates_NM1");
       }
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)=0;
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)=0;
 
       const CellTopologyData * m_topology_data ;
-      void set_node(stk::mesh::Entity *node) { m_node=node; }
-      stk::mesh::Entity *get_node() { return m_node; }
+      void set_node(stk_classic::mesh::Entity *node) { m_node=node; }
+      stk_classic::mesh::Entity *get_node() { return m_node; }
       void set_combine_op(CombineOp combine) { m_combine= combine; }
       CombineOp get_combine_op() { return m_combine; }
       bool is_nodal() { return m_is_nodal; }
 
     protected:
       PerceptMesh *m_eMesh;
-      stk::mesh::Entity *m_node; // for metrics that are node-based
+      stk_classic::mesh::Entity *m_node; // for metrics that are node-based
       bool m_is_nodal;
       CombineOp m_combine;
-      stk::mesh::FieldBase *m_coord_field_current;
-      stk::mesh::FieldBase *m_coord_field_original;
+      stk_classic::mesh::FieldBase *m_coord_field_current;
+      stk_classic::mesh::FieldBase *m_coord_field_original;
       
     };
 
@@ -64,7 +64,7 @@ namespace stk {
       }
       virtual double length_scaling_power() { return 3.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -95,7 +95,7 @@ namespace stk {
     public:
       PMMSmootherMetricShapeSizeOrient(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -141,7 +141,7 @@ namespace stk {
       { m_is_nodal=true; m_combine=COP_MAX; }
       virtual double length_scaling_power() { return 1.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         VERIFY_OP_ON(m_node, !=, 0, "must set a node");
         valid = true;
@@ -154,7 +154,7 @@ namespace stk {
         jacW(W_, *m_eMesh, element, m_coord_field_original, m_topology_data);
         double val=0.0, val_shape=0.0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(m_eMesh->node_rank());
+        stk_classic::mesh::PairIterRelation elem_nodes = element.relations(m_eMesh->node_rank());
         VERIFY_OP_ON((int)elem_nodes.size(), ==, jacA.m_num_nodes, "node num mismatch");
         val_shape = 0.0;
         bool found = false;
@@ -194,7 +194,7 @@ namespace stk {
       PMMSmootherMetricScaledJacobianElemental(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
       virtual double length_scaling_power() { return 1.0; }
 
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacSA, jacW;
@@ -245,7 +245,7 @@ namespace stk {
       PMMSmootherMetricShapeB1(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 1.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA, jacW;
@@ -322,7 +322,7 @@ namespace stk {
       PMMSmootherMetricLaplace(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 2.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA;
@@ -358,7 +358,7 @@ namespace stk {
       PMMSmootherMetricVolumetricEnergy(PerceptMesh *eMesh) : PMMSmootherMetric(eMesh) {}
 
       virtual double length_scaling_power() { return 6.0; }
-      virtual double metric(stk::mesh::Entity& element, bool& valid)
+      virtual double metric(stk_classic::mesh::Entity& element, bool& valid)
       {
         valid = true;
         JacobianUtil jacA;

@@ -32,7 +32,7 @@
 #include <boost/unordered_map.hpp>
 #include <stk_percept/PerceptBoostArray.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     static const std::string PMM_global_id_name = "msq_parallel_global_id";
@@ -44,33 +44,33 @@ namespace stk {
     {
       PerceptMesh *m_eMesh;
       PerceptMesquiteMeshDomain *m_meshDomain;
-      stk::mesh::Selector *m_boundarySelector;
-      //std::map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
-      typedef boost::unordered_map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > MesquiteNodeDataMapType;
+      stk_classic::mesh::Selector *m_boundarySelector;
+      //std::map<stk_classic::mesh::Entity *, std::pair<stk_classic::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
+      typedef boost::unordered_map<stk_classic::mesh::Entity *, std::pair<stk_classic::mesh::EntityId, unsigned char> > MesquiteNodeDataMapType;
       MesquiteNodeDataMapType m_mesquiteNodeDataMap;
 
       typedef boost::array<double,3> Array3;
-      typedef boost::unordered_map<stk::mesh::Entity *, Array3> NodeCoordsType;
+      typedef boost::unordered_map<stk_classic::mesh::Entity *, Array3> NodeCoordsType;
       NodeCoordsType m_nodeCoords;
       bool m_nodeCoords_tag_is_created;
       bool m_is_proc_id_active;
       bool m_is_global_id_active;
 
-      typedef boost::unordered_map<stk::mesh::Entity *, int > ParallelHelperLocalIdType;
+      typedef boost::unordered_map<stk_classic::mesh::Entity *, int > ParallelHelperLocalIdType;
       ParallelHelperLocalIdType m_parallelHelperLocalIdMap;
       bool m_parallelHelperLocalIdMap_is_created;
 
     public:
 
-      PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain* domain=0, stk::mesh::Selector *boundarySelector=0);
+      PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain* domain=0, stk_classic::mesh::Selector *boundarySelector=0);
       void init(PerceptMesh *eMesh);
       int setup();
 
-      stk::mesh::Selector *getBoundarySelector() { return m_boundarySelector; }
-      void setBoundarySelector(stk::mesh::Selector *sel) { m_boundarySelector = sel; }
+      stk_classic::mesh::Selector *getBoundarySelector() { return m_boundarySelector; }
+      void setBoundarySelector(stk_classic::mesh::Selector *sel) { m_boundarySelector = sel; }
 
       PerceptMesh *getPerceptMesh() { return m_eMesh; }
-      bool get_fixed_flag(stk::mesh::Entity* node_ptr);
+      bool get_fixed_flag(stk_classic::mesh::Entity* node_ptr);
       
       class PMMParallelMesh : public Mesquite::ParallelMeshImpl
       {
@@ -286,12 +286,12 @@ namespace stk {
         bool get_jacobi_vertex_coords(CMLNode *node_ptr, CubitVector &coords);
       */
   
-      static bool select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh);
+      static bool select_bucket(stk_classic::mesh::Bucket& bucket, PerceptMesh *eMesh);
 
     private:
 
-      bool select_bucket(stk::mesh::Bucket& bucket) const;
-      bool select_element(stk::mesh::Entity& element) const;
+      bool select_bucket(stk_classic::mesh::Bucket& bucket) const;
+      bool select_element(stk_classic::mesh::Entity& element) const;
 
 #if 0
       // sjowen debug

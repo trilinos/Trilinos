@@ -10,11 +10,11 @@
 #include <stk_adapt/UniformRefiner.hpp>
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 
-    UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    UniformRefiner::UniformRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }

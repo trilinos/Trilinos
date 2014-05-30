@@ -21,10 +21,10 @@
 ///     ("performance", "run performance test")
 ///     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
 /// 
-///   stk::env::get_options_description().add(desc);
+///   stk_classic::env::get_options_description().add(desc);
 /// }
 /// 
-/// stk::Bootstrap x(&bootstrap);
+/// stk_classic::Bootstrap x(&bootstrap);
 /// 
 /// } // namespace <empty>
 ///

@@ -22,9 +22,9 @@ namespace stk_search_identproc_test {
 
 void tests() {
 
-  stk::search::ident::IdentProc<uint64_t,unsigned> a(1,0), b;
+  stk_classic::search::ident::IdentProc<uint64_t,unsigned> a(1,0), b;
   b = a;
-  stk::search::ident::IdentProc<uint64_t,unsigned> c(a), d(1,1), e(0,0);
+  stk_classic::search::ident::IdentProc<uint64_t,unsigned> c(a), d(1,1), e(0,0);
 
 
   STKUNIT_ASSERT_EQUAL(a == b,true);

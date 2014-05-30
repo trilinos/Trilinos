@@ -22,7 +22,7 @@
 #include <map>
 #include <algorithm>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
 #define PRINT_ERROR(a) do { std::cout << "PerceptMesquite::Mesh::ERROR: " << a << std::endl; } while (0)
@@ -36,8 +36,8 @@ namespace stk {
             Mesquite::Vector3D &coordinate) const {
 
       if (!m_meshGeometry) return;
-      stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
-      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+      stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(entity_handle);
+      stk_classic::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
       double f_data_save[3] = {f_data[0], f_data[1], 0};
@@ -53,7 +53,7 @@ namespace stk {
       if (m_eMesh->get_spatial_dim() > 2) 
         f_data[2] = coordinate[2];
 
-      static std::vector<stk::mesh::Entity *> nodes(1);
+      static std::vector<stk_classic::mesh::Entity *> nodes(1);
       nodes[0] = node_ptr;
       m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
       coordinate[0] = f_data[0];
@@ -107,8 +107,8 @@ namespace stk {
       coordinate[2] = 1.0;
       if (m_eMesh->get_spatial_dim() == 3)
         {
-          stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(entity_handle);
-          //stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+          stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(entity_handle);
+          //stk_classic::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
           //double *f_data = PerceptMesh::field_data(field, *node_ptr);
           if (!m_meshGeometry)
             {
@@ -140,14 +140,14 @@ namespace stk {
         }
       if (!m_meshGeometry) return;
 
-      stk::mesh::Entity* element_ptr = reinterpret_cast<stk::mesh::Entity*>(entity_handle);
+      stk_classic::mesh::Entity* element_ptr = reinterpret_cast<stk_classic::mesh::Entity*>(entity_handle);
 
-      stk::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
+      stk_classic::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
       double nodes_size = nodes.size();
 
       for (unsigned inode=0; inode < nodes.size(); inode++)
         {
-          stk::mesh::Entity& node = *nodes[inode].entity();
+          stk_classic::mesh::Entity& node = *nodes[inode].entity();
 
           std::vector<double> normal(3,0.0);
           m_meshGeometry->normal_at(m_eMesh, &node, normal);
@@ -200,8 +200,8 @@ namespace stk {
 
       // this could be more efficient if the MeshGeometry interface supported an
       // auxiliary coordinate (e.g. the "position" arg)
-      stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle);
-      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+      stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(handle);
+      stk_classic::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
       if (!m_meshGeometry)
         {
@@ -222,7 +222,7 @@ namespace stk {
       if (m_eMesh->get_spatial_dim() > 2) 
         f_data[2] = position[2];
 
-      static std::vector<stk::mesh::Entity *> nodes(1);
+      static std::vector<stk_classic::mesh::Entity *> nodes(1);
       nodes[0] = node_ptr;
       m_meshGeometry->snap_points_to_geometry(m_eMesh, nodes);
 
@@ -264,7 +264,7 @@ namespace stk {
     }
                                 
     int PerceptMesquiteMeshDomain::
-    classify_node(stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const
+    classify_node(stk_classic::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const
     {
       int dof =0;
       if (m_meshGeometry)
@@ -294,7 +294,7 @@ namespace stk {
 
       for (size_t i = 0; i < num_handles; i++)
         {
-          stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(handle_array[i]);
+          stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(handle_array[i]);
           int dof = classify_node(*node_ptr, curveOrSurfaceEvaluator);
 
           if (dof < 0)

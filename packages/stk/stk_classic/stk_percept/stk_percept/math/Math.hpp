@@ -17,7 +17,7 @@
 #include <boost/numeric/ublas/matrix_expression.hpp>
 #include <boost/numeric/ublas/io.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     namespace ublas =  boost::numeric::ublas;

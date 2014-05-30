@@ -5,7 +5,7 @@
 
 #include <stk_adapt/IAdapter.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -17,7 +17,7 @@ namespace stk {
      *  The functor @class RefinePredicate should supply an operator() that returns an entry from AdaptInstruction, 
      *    either to do nothing, refine, unrefine, or both refine & unrefine (useful for unit testing, etc.)
      */
-    typedef std::unary_function<stk::mesh::Entity& , bool> AdapterPredicateFunctor;
+    typedef std::unary_function<stk_classic::mesh::Entity& , bool> AdapterPredicateFunctor;
 
     template<class RefinePredicate>
     class PredicateBasedElementAdapter : public IAdapter
@@ -27,7 +27,7 @@ namespace stk {
     public:
 
       PredicateBasedElementAdapter(RefinePredicate& predicate_refine,
-                           percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0) :
+                           percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0) :
         IAdapter(eMesh, bp, proc_rank_field), m_predicate_refine(predicate_refine)
       {
       }
@@ -36,17 +36,17 @@ namespace stk {
       {
         ElementUnrefineCollection elements_to_unref;
 
-        const vector<stk::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
+        const vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh.get_bulk_data()->buckets( m_eMesh.element_rank() );
 
-        for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+        for ( vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
           {
             {
-              stk::mesh::Bucket & bucket = **k ;
+              stk_classic::mesh::Bucket & bucket = **k ;
 
               const unsigned num_entity_in_bucket = bucket.size();
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
-                  stk::mesh::Entity& element = bucket[ientity];
+                  stk_classic::mesh::Entity& element = bucket[ientity];
 
                   // FIXME
                   // skip elements that are already a parent (if there's no family tree yet, it's not a parent, so avoid throwing an error is isParentElement)
@@ -56,7 +56,7 @@ namespace stk {
                   if (isParent)
                     continue;
                 
-                  const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+                  const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
                   if (elem_nodes.size() && m_eMesh.isChildWithoutNieces(element, false))
                     {
@@ -74,13 +74,13 @@ namespace stk {
     protected:
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, 
             vector<NeededEntityType>& needed_entity_ranks)
       {
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
                 
         CellTopology cell_topo(cell_topo_data);
-        const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
         //VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
@@ -89,7 +89,7 @@ namespace stk {
         for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
           {
             unsigned numSubDimNeededEntities = 0;
-            stk::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
+            stk_classic::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
 
             if (needed_entity_rank == m_eMesh.edge_rank())
               {

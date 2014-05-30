@@ -14,7 +14,7 @@
 #include <stk_search/IdentProc.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 
 template <class DomainBoundingBox, class RangeBoundingBox>
@@ -31,7 +31,7 @@ bool oct_tree_bih_tree_proximity_search(
 {
   typedef typename DomainBoundingBox::Key DomainKey;
   typedef typename RangeBoundingBox::Key RangeKey;
-  typedef std::map< stk::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
+  typedef std::map< stk_classic::OctTreeKey, std::pair< std::list< DomainBoundingBox >, std::list< RangeBoundingBox > > > SearchTree ;
 
   enum { Dim = 3 };
 
@@ -46,7 +46,7 @@ bool oct_tree_bih_tree_proximity_search(
   SearchTree search_tree ;
 
   {
-    stk::OctTreeKey covering[8] ;
+    stk_classic::OctTreeKey covering[8] ;
     unsigned   number = 0 ;
 
     double scale = arg_global_box[0+Dim] - arg_global_box[0];
@@ -78,7 +78,7 @@ bool oct_tree_bih_tree_proximity_search(
       if ( ! valid ) { local_violations = true ; }
 
       for ( unsigned k = 0 ; k < number ; ++k ) {
-        const stk::OctTreeKey key = covering[k] ;
+        const stk_classic::OctTreeKey key = covering[k] ;
         search_tree[key].first.push_back(tmp);
       }
     }
@@ -102,7 +102,7 @@ bool oct_tree_bih_tree_proximity_search(
       if ( ! valid ) { local_violations = true ; }
 
       for ( unsigned k = 0 ; k < number ; ++k ) {
-        const stk::OctTreeKey key = covering[k] ;
+        const stk_classic::OctTreeKey key = covering[k] ;
         search_tree[key].second.push_back(tmp);
       }
     }
@@ -128,7 +128,7 @@ bool oct_tree_bih_tree_proximity_search(
     else {
       const double tolerance = 0.001 ;
 
-      std::vector< stk::OctTreeKey > cuts ;
+      std::vector< stk_classic::OctTreeKey > cuts ;
 
       oct_tree_partition( arg_comm , search_tree , tolerance , cuts );
 
@@ -144,8 +144,8 @@ bool oct_tree_bih_tree_proximity_search(
           arg_search_tree_stats );
     }
 
-    std::set<DomainBoundingBox, stk::search::box::compare::Compare< DomainBoundingBox, box::compare::KEY> > domain;
-    std::set<RangeBoundingBox,  stk::search::box::compare::Compare< RangeBoundingBox , box::compare::KEY> > range;
+    std::set<DomainBoundingBox, stk_classic::search::box::compare::Compare< DomainBoundingBox, box::compare::KEY> > domain;
+    std::set<RangeBoundingBox,  stk_classic::search::box::compare::Compare< RangeBoundingBox , box::compare::KEY> > range;
 
     for (typename SearchTree::iterator i = local_tree.begin(); i != local_tree.end(); ++i) {
       //insert domain list
@@ -159,7 +159,7 @@ bool oct_tree_bih_tree_proximity_search(
         range.insert(*j);
     }
 
-    stk::search::bih::BihTree<RangeBoundingBox> tree(range.begin(),range.end());
+    stk_classic::search::bih::BihTree<RangeBoundingBox> tree(range.begin(),range.end());
     for (typename  std::set<DomainBoundingBox, box::compare::Compare<DomainBoundingBox,box::compare::KEY> >::iterator i = domain.begin();
         i != domain.end() ; ++i)
     {

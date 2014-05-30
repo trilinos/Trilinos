@@ -73,10 +73,10 @@ void bootstrap()
     ("developer-mode", "Activate developer specific features")
     ("architecture", boost::program_options::value<std::string>(), "Specifies the architecture running the sierra application");
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 }
 
-stk::Bootstrap x(&bootstrap);
+stk_classic::Bootstrap x(&bootstrap);
 
 struct EnvData
 {
@@ -90,7 +90,7 @@ struct EnvData
 
   EnvData()
     : m_productName("not specified"),
-      m_vm(stk::get_variables_map()),
+      m_vm(stk_classic::get_variables_map()),
       m_nullBuf(),
       m_outputNull(&m_nullBuf),
       m_outputP0(&std::cout),
@@ -112,28 +112,28 @@ struct EnvData
     m_execMap[EXEC_TYPE_LAG].m_groupComm   = MPI_COMM_NULL;
     m_execMap[EXEC_TYPE_FLUID].m_master    = -1;
     m_execMap[EXEC_TYPE_FLUID].m_groupComm = MPI_COMM_NULL;
-    stk::register_log_ostream(std::cout, "cout");
-    stk::register_log_ostream(std::cerr, "cerr");
+    stk_classic::register_log_ostream(std::cout, "cout");
+    stk_classic::register_log_ostream(std::cerr, "cerr");
     
-    stk::register_ostream(sierra::out(), "out");
-    stk::register_ostream(sierra::pout(), "pout");
-    stk::register_ostream(sierra::dout(), "dout");
-    stk::register_ostream(sierra::tout(), "tout");
+    stk_classic::register_ostream(sierra::out(), "out");
+    stk_classic::register_ostream(sierra::pout(), "pout");
+    stk_classic::register_ostream(sierra::dout(), "dout");
+    stk_classic::register_ostream(sierra::tout(), "tout");
     
-    static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
+    static_cast<stk_classic::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(sierra::dout().rdbuf());
   }
 
   ~EnvData()
   {
-    static_cast<stk::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(std::cout.rdbuf());
+    static_cast<stk_classic::indent_streambuf *>(sierra::dwout().rdbuf())->redirect(std::cout.rdbuf());
   
-    stk::unregister_ostream(tout());
-    stk::unregister_ostream(dout());
-    stk::unregister_ostream(pout());
-    stk::unregister_ostream(out());
+    stk_classic::unregister_ostream(tout());
+    stk_classic::unregister_ostream(dout());
+    stk_classic::unregister_ostream(pout());
+    stk_classic::unregister_ostream(out());
 
-    stk::unregister_log_ostream(std::cerr);
-    stk::unregister_log_ostream(std::cout);
+    stk_classic::unregister_log_ostream(std::cerr);
+    stk_classic::unregister_log_ostream(std::cout);
   }
   
   std::string           m_productName;
@@ -397,7 +397,7 @@ bool StartupSierra(int *			  argc,
   const std::vector<int> *peer_sizes) {
   bool returnValue = false;
  
-  stk::Bootstrap::bootstrap();
+  stk_classic::Bootstrap::bootstrap();
   
   EnvData &env_data = EnvData::instance();
 
@@ -423,8 +423,8 @@ bool StartupSierra(int *			  argc,
   // Process the broadcast command line arguments
   namespace opt = boost::program_options;
     
-  opt::variables_map &vm = stk::get_variables_map();
-  opt::options_description &od = stk::get_options_description();
+  opt::variables_map &vm = stk_classic::get_variables_map();
+  opt::options_description &od = stk_classic::get_options_description();
   {
     boost::program_options::options_description desc("Diagnostic writers", 120);
     
@@ -466,7 +466,7 @@ bool StartupSierra(int *			  argc,
                 << "  For additional information see:" << std::endl
                 << "      http://sierra-dev.sandia.gov/stk/group__stk__util__output__log__detail.html#stk_util_output_log_howto_use_in_sierra_app" << std::endl << std::endl
                 << product_name << " options are:" << std::endl
-                << stk::get_options_description() << std::endl;
+                << stk_classic::get_options_description() << std::endl;
       std::exit(0);
     }
   }
@@ -630,12 +630,12 @@ bool StartupSierra(int *			  argc,
     
     std::string out_ostream;
 
-    if (!stk::get_log_ostream(out_path))
+    if (!stk_classic::get_log_ostream(out_path))
       if (out_path.size() && out_path[0] != '/')
         out_path = working_directory() + out_path;
 
     if (parallel_rank() == 0) {
-      if (!stk::get_log_ostream(out_path)) {
+      if (!stk_classic::get_log_ostream(out_path)) {
         output_description << "outfile=\"" << out_path << "\"";
         out_ostream = "outfile";
       }
@@ -652,20 +652,20 @@ bool StartupSierra(int *			  argc,
       if (pout_path == "-") {
         std::ostringstream s;
 
-        if (stk::get_log_ostream(out_path))
+        if (stk_classic::get_log_ostream(out_path))
           s << working_directory() << "sierra.log." << parallel_size() << "." << parallel_rank();
         else
           s << out_path << "." << parallel_size() << "." << parallel_rank();
         pout_path = s.str();
       }
-      else if (pout_path.find("/") == std::string::npos && !stk::get_log_ostream(pout_path)) {
+      else if (pout_path.find("/") == std::string::npos && !stk_classic::get_log_ostream(pout_path)) {
         std::ostringstream s;
 
         s << working_directory() << pout_path << "." << parallel_size() << "." << parallel_rank();
         pout_path = s.str();
       }
       
-      if (!stk::get_log_ostream(pout_path)) {
+      if (!stk_classic::get_log_ostream(pout_path)) {
         output_description << " poutfile=\"" << pout_path << "\"";
         pout_ostream = "poutfile";
       }
@@ -677,7 +677,7 @@ bool StartupSierra(int *			  argc,
     std::string dout_ostream;    
     if (vm.count("dout")) {
       std::string dout_path = vm["dout"].as<std::string>();
-      if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
+      if (!dout_path.empty() && stk_classic::is_registered_ostream(dout_path))
         dout_ostream = dout_path;
       else {
         std::ostringstream s;
@@ -701,7 +701,7 @@ bool StartupSierra(int *			  argc,
     output_description << " pout>" << pout_ostream << " dout>" << dout_ostream;
 
 
-    stk::bind_output_streams(output_description.str());
+    stk_classic::bind_output_streams(output_description.str());
   }
   
   env_data.m_outputP0 = &sierra::out();
@@ -834,15 +834,15 @@ void parse_options(MPI_Comm  comm,
     }
   
     // Broadcast argc and argv to all processors.
-    stk::BroadcastArg b_arg(comm, *argc, argv2);
+    stk_classic::BroadcastArg b_arg(comm, *argc, argv2);
 
     for (int i = 0; i < *argc; ++i)
       delete[] argv2[i];
     delete[] argv2;
 
     namespace opt = boost::program_options;
-    opt::variables_map &vm = stk::get_variables_map();
-    opt::options_description &od = stk::get_options_description();
+    opt::variables_map &vm = stk_classic::get_variables_map();
+    opt::options_description &od = stk_classic::get_options_description();
     opt::store(opt::parse_command_line(b_arg.m_argc, b_arg.m_argv, od, opt::command_line_style::unix_style), vm);
     opt::notify(vm);
 
@@ -1104,9 +1104,9 @@ output_flush()
 {
   EnvData &env_data = EnvData::instance();
 
-  stk::report_deferred_messages(Env::parallel_comm());
+  stk_classic::report_deferred_messages(Env::parallel_comm());
   
-  stk::all_write_string(Env::parallel_comm(), *env_data.m_outputP0, env_data.m_output.str());
+  stk_classic::all_write_string(Env::parallel_comm(), *env_data.m_outputP0, env_data.m_output.str());
   env_data.m_output.str("");
 }
 
@@ -1181,8 +1181,8 @@ set_param(
 
   namespace opt = boost::program_options;
 
-  opt::variables_map &vm = stk::get_variables_map();
-  opt::options_description &od = stk::get_options_description();
+  opt::variables_map &vm = stk_classic::get_variables_map();
+  opt::options_description &od = stk_classic::get_options_description();
 
   int argc = 1;
   char *s = std::strcpy(new char[std::strlen(option) + 1], option);

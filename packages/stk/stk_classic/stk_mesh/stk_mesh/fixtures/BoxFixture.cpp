@@ -22,18 +22,18 @@
 
 #include <stdexcept>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
-BoxFixture::BoxFixture( stk::ParallelMachine pm ,
+BoxFixture::BoxFixture( stk_classic::ParallelMachine pm ,
                         unsigned block_size,
                         const std::vector<std::string>& entity_names )
   : m_fem_meta ( spatial_dimension, entity_names ),
     m_bulk_data ( fem::FEMMetaData::get_meta_data(m_fem_meta) , pm , block_size ),
-    m_comm_rank( stk::parallel_machine_rank( pm ) ),
-    m_comm_size( stk::parallel_machine_size( pm ) ),
-    m_previous_state ( stk::mesh::BulkData::MODIFIABLE )
+    m_comm_rank( stk_classic::parallel_machine_rank( pm ) ),
+    m_comm_size( stk_classic::parallel_machine_size( pm ) ),
+    m_previous_state ( stk_classic::mesh::BulkData::MODIFIABLE )
 {}
 
 Entity& BoxFixture::get_new_entity ( EntityRank rank , EntityId parallel_dependent_id )
@@ -64,7 +64,7 @@ void BoxFixture::generate_boxes( const BOX   root_box,
 
   std::vector<unsigned> local_count ;
 
-  const stk::mesh::PartVector no_parts ;
+  const stk_classic::mesh::PartVector no_parts ;
 
   for ( int k = local_box[2][0] ; k < local_box[2][1] ; ++k ) {
   for ( int j = local_box[1][0] ; j < local_box[1][1] ; ++j ) {

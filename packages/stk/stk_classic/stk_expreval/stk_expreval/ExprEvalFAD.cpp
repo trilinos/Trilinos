@@ -32,7 +32,7 @@
 #include <stk_expreval/ExprEvalFAD.hpp>
 #include <stk_expreval/Lexer.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 namespace fad {
 
@@ -490,7 +490,7 @@ parseAssign(
   LexemVector::const_iterator	to)
 {
   if ((*from).getToken() != TOKEN_IDENTIFIER) //  || from + 1 != assign_it) {
-    throw std::runtime_error("stk::expreval::parseAssign: expected identifier");
+    throw std::runtime_error("stk_classic::expreval::parseAssign: expected identifier");
 
   Node *assign;
 

@@ -12,7 +12,7 @@
 #include <streambuf>
 #include <utility>
 
-namespace stk {
+namespace stk_classic {
 
 static const char PUSH = '\016';                                ///< Meta-character to increase indentation
 static const char POP = '\017';                                 ///< Meta-character to decrease indentation
@@ -381,7 +381,7 @@ operator<<(std::basic_ostream<Ch, Tr> &os, IndentFlags indent_flags) {
   return os;
 }
 
-typedef stk::basic_indent_streambuf<char> indent_streambuf;
+typedef stk_classic::basic_indent_streambuf<char> indent_streambuf;
 
 } // namespace stk
 

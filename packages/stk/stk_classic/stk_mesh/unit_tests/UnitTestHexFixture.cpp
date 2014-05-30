@@ -13,9 +13,9 @@
 
 namespace {
 
-using stk::mesh::Entity;
-using stk::mesh::EntityRank;
-using stk::mesh::EntityId;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::EntityId;
 
 STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
 {
@@ -23,7 +23,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_x )
   const unsigned NX = 3;
   const unsigned NY = 1;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -37,7 +37,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_x )
   const unsigned NX = 3;
   const unsigned NY = 3;
   const unsigned NZ = 3;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -51,7 +51,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_y )
   const unsigned NX = 1;
   const unsigned NY = 3;
   const unsigned NZ = 1;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_y )
   const unsigned NX = 3;
   const unsigned NY = 3;
   const unsigned NZ = 3;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -79,7 +79,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_1d_z )
   const unsigned NX = 1;
   const unsigned NY = 1;
   const unsigned NZ = 3;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -93,7 +93,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_z )
   const unsigned NX = 3;
   const unsigned NY = 3;
   const unsigned NZ = 3;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -107,7 +107,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, elem_ids_3d_diag )
   const unsigned NX = 3;
   const unsigned NY = 3;
   const unsigned NZ = 3;
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh();
   STKUNIT_EXPECT_EQUAL( hf.elem_id(0,0,0), 1u );
@@ -120,8 +120,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   // Test a customized element distribution with one element on proc 0 and 1
   // and none on the other procs
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const unsigned p_rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+  const unsigned p_size = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -144,7 +144,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
@@ -154,7 +154,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, trivial_parallel_2 )
     hf.generate_mesh( empty_vector ) ;
   }
 
-  stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  stk_classic::mesh::BulkData & mesh = hf.m_bulk_data;
 
   // Verify element_id 1 is owned by proc 0
   // Verify element_id 2 is owned by proc 1
@@ -177,8 +177,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
 {
   // Test a customized element distribution with one element on each proc
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const unsigned p_rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+  const unsigned p_size = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
 
   const unsigned NX = p_size;
   const unsigned NY = 1;
@@ -194,10 +194,10 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_psizex1x1 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   hf.generate_mesh(parallel_distribution[p_rank]);
-  stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  stk_classic::mesh::BulkData & mesh = hf.m_bulk_data;
   const EntityRank element_rank = hf.m_fem_meta.element_rank();
 
   // We should always know about, and own, the element assigned to us
@@ -231,8 +231,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   // [ p_1, p_0, p_1, p_1 ]
   //
 
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const unsigned p_rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+  const unsigned p_size = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -262,7 +262,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
@@ -272,7 +272,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_4x2x1 )
     hf.generate_mesh( empty_vector ) ;
   }
 
-  stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  stk_classic::mesh::BulkData & mesh = hf.m_bulk_data;
 
   // Verify that the entities and known and owned by the appropriate procs
   const EntityRank element_rank = hf.m_fem_meta.element_rank();
@@ -336,8 +336,8 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   // [ e_1, e_2, e_3, e_4, e_5 ] elements
   // [ p_0, p_1, p_1, p_1, p_0 ] processors
   //
-  const unsigned p_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  const unsigned p_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  const unsigned p_rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+  const unsigned p_size = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
 
   // Skip unless p_size is at least 2
   if (p_size < 2)
@@ -364,7 +364,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
   }
 
   // Create the fixture
-  stk::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
+  stk_classic::mesh::fixtures::HexFixture hf(MPI_COMM_WORLD,NX,NY,NZ);
   hf.m_fem_meta.commit();
   if (p_rank <= 1) {
     hf.generate_mesh(parallel_distribution[p_rank]);
@@ -374,7 +374,7 @@ STKUNIT_UNIT_TEST( UnitTestHexFixture, disjoint_parallel_5x1x1 )
     hf.generate_mesh( empty_vector ) ;
   }
 
-  stk::mesh::BulkData & mesh = hf.m_bulk_data;
+  stk_classic::mesh::BulkData & mesh = hf.m_bulk_data;
 
   // Verify that the entities and known and owned by the appropriate procs
   const EntityRank element_rank = hf.m_fem_meta.element_rank();

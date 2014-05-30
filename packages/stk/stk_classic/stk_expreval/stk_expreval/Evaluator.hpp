@@ -14,7 +14,7 @@
 #include <stk_expreval/Constants.hpp>
 #include <stk_expreval/Variable.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 class Node;

@@ -23,7 +23,7 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -44,7 +44,7 @@ class QuadFixture
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny );
+  QuadFixture( stk_classic::ParallelMachine pm, unsigned nx , unsigned ny );
 
   ~QuadFixture() {}
 

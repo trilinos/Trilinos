@@ -18,15 +18,15 @@
 
 //----------------------------------------------------------------------
 
-double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
+double stk_classic::rebalance::check_balance(mesh::BulkData &    bulk_data,
                                       const mesh::Field<double> * load_measure,
-                                      const stk::mesh::EntityRank rank,
+                                      const stk_classic::mesh::EntityRank rank,
                                       const mesh::Selector *selector)
 {
   const ParallelMachine    &comm = bulk_data.parallel();
   double my_load = 0.0;
 
-  const mesh::MetaData & meta_data = stk::mesh::MetaData::get(bulk_data);
+  const mesh::MetaData & meta_data = stk_classic::mesh::MetaData::get(bulk_data);
 
   mesh::EntityVector local_elems;
   if (selector) {
@@ -66,22 +66,22 @@ double stk::rebalance::check_balance(mesh::BulkData &    bulk_data,
 
 
 
-bool stk::rebalance::verify_dependent_ownership( const stk::mesh::EntityRank & parent_rank,
-                                                 stk::mesh::EntityVector & entities )
+bool stk_classic::rebalance::verify_dependent_ownership( const stk_classic::mesh::EntityRank & parent_rank,
+                                                 stk_classic::mesh::EntityVector & entities )
 {
   bool is_with_elem = true;
   for( size_t i = 0; i < entities.size(); ++i )
   {
     is_with_elem = false;
 
-    stk::mesh::Entity * entity = entities[i];
+    stk_classic::mesh::Entity * entity = entities[i];
     unsigned owner_proc = entity->owner_rank();
-    const stk::mesh::PairIterRelation rel = entity->relations( parent_rank );
+    const stk_classic::mesh::PairIterRelation rel = entity->relations( parent_rank );
     const unsigned num_elems = rel.size();
 
     for ( unsigned j = 0 ; j < num_elems ; ++j )
     {
-      stk::mesh::Entity & elem = * rel[j].entity();
+      stk_classic::mesh::Entity & elem = * rel[j].entity();
       if( owner_proc == elem.owner_rank() )
       {
         is_with_elem = true;

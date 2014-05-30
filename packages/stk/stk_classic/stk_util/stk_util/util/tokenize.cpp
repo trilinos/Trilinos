@@ -1,6 +1,6 @@
 #include "tokenize.hpp"
 
-void stk::util::tokenize(const std::string& str, const std::string& separators,
+void stk_classic::util::tokenize(const std::string& str, const std::string& separators,
 			 std::vector<std::string>& tokens)
 {
   std::string curr_token = "";

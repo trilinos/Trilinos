@@ -9,7 +9,7 @@
 #include <stk_util/environment/ReportHandler.hpp>
 #include <stk_util/environment/RuntimeWarning.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 unsigned 
 get_warning_count()

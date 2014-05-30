@@ -25,7 +25,7 @@ namespace sierra {
 
 // int get_next_message_id(int max_id_messages) {
 //   if(max_id_messages == -1) max_id_messages = get_default_max_message_id_displayed();
-//   return stk::stk_get_next_message_id(max_id_messages);
+//   return stk_classic::stk_get_next_message_id(max_id_messages);
 // }
 
 namespace {
@@ -80,20 +80,20 @@ test_error_messages_to_file_report_handler(const char *		message,  int			type) {
 
 
 
-  int msgType =   (type & stk::MSG_TYPE_MASK);
+  int msgType =   (type & stk_classic::MSG_TYPE_MASK);
 
 
   bool dieNow = false;
 
-  if((msgType == stk::MSG_WARNING) && s_dieOnFirstWarning) {
+  if((msgType == stk_classic::MSG_WARNING) && s_dieOnFirstWarning) {
     dieNow = true;
   }
 
-  if((msgType == stk::MSG_DOOMED) && s_dieOnFirstError) {
+  if((msgType == stk_classic::MSG_DOOMED) && s_dieOnFirstError) {
     dieNow = true;
   }
 
-  if((msgType == stk::MSG_EXCEPTION) && s_dieOnFirstError) {
+  if((msgType == stk_classic::MSG_EXCEPTION) && s_dieOnFirstError) {
     dieNow = true;
   }
 
@@ -117,7 +117,7 @@ set_test_error_messages_file(
   s_testErrorMessagesFile = new std::ofstream(s_testErrorMessagesPath.c_str(), std::ios::out);
   *s_testErrorMessagesFile << "===== STARTING ERROR FILE \"" << s_testErrorMessagesPath << "\" =====" << std::endl;
 
-  stk::set_report_handler(test_error_messages_to_file_report_handler);
+  stk_classic::set_report_handler(test_error_messages_to_file_report_handler);
 }
 
 

@@ -3,7 +3,7 @@
 
 #include <map>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 
@@ -351,12 +351,12 @@ protected:
 } // namespace stk
 
 namespace sierra {
-typedef stk::diag::OptionMask OptionMask;
-typedef stk::diag::OptionDescription OptionDescription;
-typedef stk::diag::Option Option;
-typedef stk::diag::OptionMaskName OptionMaskName;
-typedef stk::diag::OptionMaskNameMap OptionMaskNameMap;
-typedef stk::diag::OptionMaskParser OptionMaskParser;
+typedef stk_classic::diag::OptionMask OptionMask;
+typedef stk_classic::diag::OptionDescription OptionDescription;
+typedef stk_classic::diag::Option Option;
+typedef stk_classic::diag::OptionMaskName OptionMaskName;
+typedef stk_classic::diag::OptionMaskNameMap OptionMaskNameMap;
+typedef stk_classic::diag::OptionMaskParser OptionMaskParser;
 } // namespace sierra
 
 #endif // STK_UTIL_DIAG_Option_h

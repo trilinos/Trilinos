@@ -36,15 +36,15 @@ The following fixture creates the mesh below
 37---38---39---40---41
 */
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
 
-GridFixture::GridFixture(stk::ParallelMachine pm)
+GridFixture::GridFixture(stk_classic::ParallelMachine pm)
   : m_spatial_dimension(2)
   , m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) )
-  , m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm )
+  , m_bulk_data( stk_classic::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm )
   , m_quad_part( fem::declare_part<shards::Quadrilateral<4> >(m_fem_meta, "quad_part") )
   , m_dead_part( m_fem_meta.declare_part("dead_part"))
 {}

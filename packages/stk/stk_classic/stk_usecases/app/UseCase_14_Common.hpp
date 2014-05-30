@@ -23,23 +23,23 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
-typedef stk::mesh::Field<double>                                  ScalarField;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>            CartesianField;
-typedef stk::mesh::Field<double, stk::mesh::SymmetricTensor>      SymmetricTensorField;
-typedef stk::mesh::Field<double, stk::mesh::FullTensor>           FullTensorField;
+typedef stk_classic::mesh::Field<double>                                  ScalarField;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>            CartesianField;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::SymmetricTensor>      SymmetricTensorField;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::FullTensor>           FullTensorField;
 
 //--------------------------------------------------------------------
 
 template< class FieldType >
-void zero_field_data( stk::mesh::BulkData & mesh ,
-		      stk::mesh::EntityRank type , const FieldType & field )
+void zero_field_data( stk_classic::mesh::BulkData & mesh ,
+		      stk_classic::mesh::EntityRank type , const FieldType & field )
 {
-  typedef stk::mesh::BucketArray< FieldType > array_type ;
+  typedef stk_classic::mesh::BucketArray< FieldType > array_type ;
 
-  const std::vector<stk::mesh::Bucket*> & ks = mesh.buckets( type );
+  const std::vector<stk_classic::mesh::Bucket*> & ks = mesh.buckets( type );
 
-  for ( std::vector<stk::mesh::Bucket*>::const_iterator ik = ks.begin() ; ik != ks.end() ; ++ik ) {
-    stk::mesh::Bucket & bucket = **ik ;
+  for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator ik = ks.begin() ; ik != ks.end() ; ++ik ) {
+    stk_classic::mesh::Bucket & bucket = **ik ;
     array_type data( field , bucket );
     std::fill(data.contiguous_data(), data.contiguous_data() + data.size(), 0 );
   }
@@ -99,16 +99,16 @@ const char * HourglassModes::name() const
 
 //----------------------------------------------------------------------
 
-typedef stk::mesh::Field<double, HourglassOp>     HourglassOpField;
-typedef stk::mesh::Field<double, HourglassModes>  HourglassArrayField;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian, stk::mesh::ElementNode> ElementNodeVectorField;
+typedef stk_classic::mesh::Field<double, HourglassOp>     HourglassOpField;
+typedef stk_classic::mesh::Field<double, HourglassModes>  HourglassArrayField;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian, stk_classic::mesh::ElementNode> ElementNodeVectorField;
 
 enum { SpatialDim = 3 };
 
 
 // Specification for the aggressive gather pointer-field for elements.
 
-typedef stk::mesh::Field<double*,stk::mesh::ElementNode> ElementNodePointerField ;
+typedef stk_classic::mesh::Field<double*,stk_classic::mesh::ElementNode> ElementNodePointerField ;
 
 namespace lame {
 typedef std::map<std::string, std::vector<double> > MatProps;

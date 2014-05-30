@@ -19,7 +19,7 @@
 #include <stk_mesh/base/FieldParallel.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 void communicate_field_data(

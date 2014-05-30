@@ -17,7 +17,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 Selector::Selector( )

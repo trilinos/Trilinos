@@ -21,7 +21,7 @@
 
 #include <stk_percept/PerceptMesh.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
@@ -46,7 +46,7 @@ namespace stk {
       {
       }
 
-      bool operator()(double& averageJ, PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::FieldBase *coord_field,
+      bool operator()(double& averageJ, PerceptMesh& eMesh, stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *coord_field,
                       const CellTopologyData * topology_data_in = 0 );
 
     };

@@ -32,7 +32,7 @@
  *  class that is passed into the rebalance function.
  */
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 
 /** \brief Rebalance with a Partition object.
@@ -42,7 +42,7 @@ namespace rebalance {
  * \param selector       Used to select a subset of mesh entities to compute measure.
  *
  * \param coord_ref      The field containing the nodal coordinates. For the default
- *                       ZoltanPartition class in stk::reblance, this should be non-NULL.
+ *                       ZoltanPartition class in stk_classic::reblance, this should be non-NULL.
  *
  * \param elem_weight_ref This field will be used by the \a Partition class and 
  *                        can be NULL.
@@ -55,7 +55,7 @@ namespace rebalance {
  *
  * This \a rebalance function will use the \a Partition object passed
  * to perform the rebalancing.  It will be necessary to use one of the 
- * pre-defined derived classes in stk::rebalance, like \a ZoltanPartition,
+ * pre-defined derived classes in stk_classic::rebalance, like \a ZoltanPartition,
  * or to define your own.
  */
 bool rebalance(mesh::BulkData & bulk_data ,
@@ -63,7 +63,7 @@ bool rebalance(mesh::BulkData & bulk_data ,
                const VectorField * coord_ref ,
                const ScalarField * elem_weight_ref,
                Partition & partition,
-               const stk::mesh::EntityRank rank = stk::mesh::InvalidEntityRank);
+               const stk_classic::mesh::EntityRank rank = stk_classic::mesh::InvalidEntityRank);
 
 /** \} */
 

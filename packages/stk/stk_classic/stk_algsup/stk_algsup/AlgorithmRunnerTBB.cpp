@@ -21,7 +21,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/Bucket.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace {
 
 //----------------------------------------------------------------------
@@ -199,7 +199,7 @@ AlgorithmRunnerInterface * algorithm_runner_tbb( int nthreads )
 
 #else
 
-namespace stk {
+namespace stk_classic {
 
 AlgorithmRunnerInterface * algorithm_runner_tbb( int nthreads )
 {

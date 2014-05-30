@@ -26,7 +26,7 @@ namespace stk
     {
     }
 
-    bool IsInElement::operator()(const stk::mesh::Entity& element, const mesh::BulkData& bulkData)
+    bool IsInElement::operator()(const stk_classic::mesh::Entity& element, const mesh::BulkData& bulkData)
     {
 
       unsigned found_it;
@@ -55,11 +55,11 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(bulkData);
+      const mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
-      const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+      const CellTopologyData * const bucket_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
 
       unsigned numCells = 1; // FIXME
 
@@ -76,7 +76,7 @@ namespace stk
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
               mesh::Entity& node = *elem_nodes[iNode].entity();
-              double * node_coord_data = stk::mesh::field_data( *coords_field , node);
+              double * node_coord_data = stk_classic::mesh::field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {
                   cellWorkset(iCell, iNode, iDim) = node_coord_data[iDim];

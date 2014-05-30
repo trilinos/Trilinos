@@ -14,13 +14,13 @@
 
 // #include <stk_util/util/TeeStreambuf.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 template<class Ch, class Tr>
 class basic_tee_streambuf;
 
 /// Tee stream buffer for char
-typedef stk::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;
+typedef stk_classic::basic_tee_streambuf<char, std::char_traits<char> > tee_streambuf;
 
 ///
 /// @addtogroup output_log_detail

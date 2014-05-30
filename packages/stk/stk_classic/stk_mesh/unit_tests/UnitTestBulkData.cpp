@@ -26,22 +26,22 @@
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <unit_tests/UnitTestRingFixture.hpp>
 
-using stk::mesh::Part;
-using stk::mesh::MetaData;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Selector;
-using stk::mesh::PartVector;
-using stk::mesh::BaseEntityRank;
-using stk::mesh::PairIterRelation;
-using stk::mesh::EntityProc;
-using stk::mesh::Entity;
-using stk::mesh::EntityId;
-using stk::mesh::EntityKey;
-using stk::mesh::EntityVector;
-using stk::mesh::EntityRank;
-using stk::mesh::fixtures::RingFixture;
-using stk::mesh::fixtures::BoxFixture;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::BaseEntityRank;
+using stk_classic::mesh::PairIterRelation;
+using stk_classic::mesh::EntityProc;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::EntityKey;
+using stk_classic::mesh::EntityVector;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::fixtures::RingFixture;
+using stk_classic::mesh::fixtures::BoxFixture;
 
 namespace {
 
@@ -106,7 +106,7 @@ void donate_one_element( BulkData & mesh , bool aura )
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+  STKUNIT_ASSERT( stk_classic::unit_test::modification_end_wrapper( mesh , aura ) );
 
   count_entities( select_owned , mesh , after_count );
 
@@ -141,7 +141,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
         i != entity_comm.end() &&
         (**i).entity_rank() == BaseEntityRank ; ++i ) {
     Entity * const node = *i ;
-    const stk::mesh::PairIterEntityComm ec = node->sharing();
+    const stk_classic::mesh::PairIterEntityComm ec = node->sharing();
 
     if ( node->owner_rank() == p_rank && ! ec.empty() ) {
       change.push_back( EntityProc( node , ec->proc ) );
@@ -150,7 +150,7 @@ void donate_all_shared_nodes( BulkData & mesh , bool aura )
 
   STKUNIT_ASSERT( mesh.modification_begin() );
   mesh.change_entity_owner( change );
-  STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( mesh , aura ) );
+  STKUNIT_ASSERT( stk_classic::unit_test::modification_end_wrapper( mesh , aura ) );
 
   count_entities( select_used , mesh , after_count );
 
@@ -167,7 +167,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
 {
   // Unit test the Part functionality in isolation:
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   std::vector<std::string> entity_names(10);
@@ -220,18 +220,18 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testBulkData)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
   const unsigned id_total = nPerProc * p_size ;
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   const int spatial_dimension = 3;
-  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
   BulkData bulk( meta , pm , 100 );
 
   const PartVector no_parts ;
@@ -334,13 +334,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
 
   if ( 1 < p_size ) {
 
@@ -349,7 +349,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
     const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
     const int spatial_dimension = 3;
-    MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+    MetaData meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
 
     const PartVector no_parts ;
 
@@ -425,12 +425,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testCreateMore)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
   const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
@@ -445,11 +445,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 
     bulk.modification_begin();
     ring_mesh.generate_mesh( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk, aura));
 
     bulk.modification_begin();
     ring_mesh.fixup_node_ownership( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk, aura));
 
     const Selector select_used = ring_mesh.m_meta_data.locally_owned_part() |
                                  ring_mesh.m_meta_data.globally_shared_part() ;
@@ -466,7 +466,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     if ( 1 < p_size ) {
       // Shift ring by two nodes and edges.
 
-      stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
+      stk_classic::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_used , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nLocalNode );
@@ -508,7 +508,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      stk::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
+      stk_classic::unit_test::test_shift_ring( ring_mesh, false /* no aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
@@ -554,7 +554,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
     STKUNIT_ASSERT( local_count[1] == nLocalEdge + n_extra );
 
     if ( 1 < p_size ) {
-      stk::unit_test::test_shift_ring( ring_mesh, true /* with aura */ );
+      stk_classic::unit_test::test_shift_ring( ring_mesh, true /* with aura */ );
 
       count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
       STKUNIT_ASSERT( local_count[0] == nPerProc );
@@ -647,7 +647,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 
     STKUNIT_ASSERT( ring_mesh.m_bulk_data.modification_begin() );
     ring_mesh.m_bulk_data.change_entity_owner( change );
-    STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper( ring_mesh.m_bulk_data , false ) );
+    STKUNIT_ASSERT( stk_classic::unit_test::modification_end_wrapper( ring_mesh.m_bulk_data , false ) );
 
     count_entities( select_owned , ring_mesh.m_bulk_data , local_count );
     const unsigned n_node = p_rank == 0          ? nPerProc + 1 : (
@@ -675,15 +675,15 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
 
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
   const int spatial_dimension = 3;
-  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
@@ -697,7 +697,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 
     bulk.modification_begin();
     fixture.generate_boxes( root_box, local_box );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk, aura));
 
     if ( 1 < p_size ) {
       donate_one_element( bulk , aura );
@@ -713,7 +713,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 
     bulk.modification_begin();
     fixture.generate_boxes( root_box, local_box );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk, aura));
 
     donate_all_shared_nodes( bulk , aura );
   }
@@ -727,7 +727,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeOwner_box)
 
     bulk.modification_begin();
     fixture.generate_boxes( root_box, local_box );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk, aura));
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk, aura));
 
     donate_one_element( bulk , false /* no aura */ );
   }
@@ -776,19 +776,19 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
   // by grabbing a node off of a ring mesh, modifying it, and
   // checking that its edge also gets marked as modified.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const unsigned nPerProc = 2;
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
   // this test only needs to be run w/ one processor
   if (p_size > 1) return;
 
   // Make a ring_mesh and add an extra part
   RingFixture ring_mesh( pm , nPerProc, false /* don't use edge parts */);
-  stk::mesh::Part& special_part =
-    ring_mesh.m_meta_data.declare_part("special_node_part", stk::mesh::BaseEntityRank );
+  stk_classic::mesh::Part& special_part =
+    ring_mesh.m_meta_data.declare_part("special_node_part", stk_classic::mesh::BaseEntityRank );
   ring_mesh.m_meta_data.commit();
   BulkData& bulk = ring_mesh.m_bulk_data;
 
@@ -802,25 +802,25 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testModifyPropagation)
 
   // grab the first edge
   EntityVector edges;
-  const stk::mesh::EntityRank element_rank = ring_mesh.m_meta_data.element_rank();
-  stk::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, edges );
-  stk::mesh::Entity& edge = *( edges.front() );
+  const stk_classic::mesh::EntityRank element_rank = ring_mesh.m_meta_data.element_rank();
+  stk_classic::mesh::get_entities( ring_mesh.m_bulk_data, element_rank, edges );
+  stk_classic::mesh::Entity& edge = *( edges.front() );
 
   // get one of the nodes related to this edge
-  PairIterRelation node_relations = edge.relations( stk::mesh::BaseEntityRank );
+  PairIterRelation node_relations = edge.relations( stk_classic::mesh::BaseEntityRank );
   STKUNIT_ASSERT( !node_relations.empty() );
-  stk::mesh::Entity& node = *( node_relations.front().entity());
-  STKUNIT_ASSERT_EQUAL( node.entity_rank(), (unsigned) stk::mesh::BaseEntityRank );
+  stk_classic::mesh::Entity& node = *( node_relations.front().entity());
+  STKUNIT_ASSERT_EQUAL( node.entity_rank(), (unsigned) stk_classic::mesh::BaseEntityRank );
 
   // make a modification to the node by changing its parts
   ring_mesh.m_bulk_data.modification_begin();
-  stk::mesh::PartVector parts;
+  stk_classic::mesh::PartVector parts;
   parts.push_back( &special_part );
   ring_mesh.m_bulk_data.change_entity_parts( node, parts );
 
   // check that the node AND it's edge are marked as modified
-  STKUNIT_ASSERT_EQUAL ( node.log_query(), stk::mesh::EntityLogModified );
-  STKUNIT_ASSERT_EQUAL ( edge.log_query(), stk::mesh::EntityLogModified );
+  STKUNIT_ASSERT_EQUAL ( node.log_query(), stk_classic::mesh::EntityLogModified );
+  STKUNIT_ASSERT_EQUAL ( edge.log_query(), stk_classic::mesh::EntityLogModified );
 
   STKUNIT_ASSERT ( ring_mesh.m_bulk_data.modification_end() );
 }
@@ -838,7 +838,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
   // we change the ownership of a few nodes to the same proc that already
   // owns them.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -861,7 +861,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerFromSelfToSelf)
 
   if (p_rank < 2) {
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+    stk_classic::mesh::PartVector empty_parts;
 
     // Create element
     const EntityRank elem_rank = meta_data.element_rank();
@@ -934,7 +934,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   // proc, one elem per proc. We will take the edge shared by the last
   // two (rightmost) elements and change the ownership to proc 0.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -959,7 +959,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityOwnerOfShared)
   EntityKey edge_key_chg_own(edge_rank, 1 /*id*/);
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create element
   Entity & elem = mesh.declare_entity(elem_rank,
@@ -1091,12 +1091,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   // just the single rank-2 elements.  Then we check that they are properly
   // ghosted after modification_end.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
 
-  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim);
+  std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dim);
   entity_rank_names.push_back("FAMILY_TREE");
 
   FEMMetaData meta_data(spatial_dim, entity_rank_names);
@@ -1120,7 +1120,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
   const EntityId my_family_tree_id = p_rank+1;
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create element
   const EntityRank elem_rank = meta_data.element_rank();
@@ -1179,7 +1179,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testFamilyTreeGhosting)
     STKUNIT_ASSERT(expected_ghosted_family_tree);
     STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == expected_ghosted_family_tree->owner_rank());
 
-    stk::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
+    stk_classic::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
     STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
   }
 }
@@ -1194,12 +1194,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   // To test this, we use the mesh above, with each elem going on a separate
   // proc, one elem per proc.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
 
-  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dim);
+  std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dim);
   //entity_rank_names.push_back("FAMILY_TREE");
 
   FEMMetaData meta_data(spatial_dim, entity_rank_names);
@@ -1223,7 +1223,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
 
   // We're just going to add everything to the universal part
-  stk::mesh::PartVector empty_parts;
+  stk_classic::mesh::PartVector empty_parts;
 
   // Create element
   const EntityRank elem_rank = meta_data.element_rank();
@@ -1332,7 +1332,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_other_ghosting)
     STKUNIT_ASSERT(expected_ghosted_family_tree);
     STKUNIT_ASSERT(expected_ghosted_family_tree_id - 1 == expected_ghosted_family_tree->owner_rank());
 
-    stk::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
+    stk_classic::mesh::Bucket& bucket = expected_ghosted_family_tree->bucket();
     STKUNIT_ASSERT(!bucket.member(owned) && !bucket.member(shared));
   }
 #endif
@@ -1353,7 +1353,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
   // proc, one elem per proc. Node 3 is the node we'll be testing.
   //
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -1361,7 +1361,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
   const EntityRank node_rank = meta_data.node_rank();
   const EntityRank elem_rank = meta_data.element_rank();
 
-  stk::mesh::Part& extra_node_part = meta_data.declare_part("extra_node_part", node_rank);
+  stk_classic::mesh::Part& extra_node_part = meta_data.declare_part("extra_node_part", node_rank);
   meta_data.commit();
 
   BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
@@ -1381,7 +1381,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
     EntityKey node_key_to_move(node_rank, 3 /*id*/);
 
     // We're just going to add everything to the universal part
-    stk::mesh::PartVector empty_parts;
+    stk_classic::mesh::PartVector empty_parts;
 
     // Create element
     Entity & elem = mesh.declare_entity(elem_rank,
@@ -1443,7 +1443,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testChangeEntityPartsOfShared)
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, test_final_modification_end)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
   const unsigned spatial_dim = 2;
   FEMMetaData meta_data(spatial_dim);

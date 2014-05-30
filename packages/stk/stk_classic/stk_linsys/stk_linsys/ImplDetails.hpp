@@ -16,7 +16,7 @@
 #include <stdexcept>
 #include <stk_mesh/base/Field.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 /** Linear-System Assembly
 */
@@ -31,7 +31,7 @@ namespace impl {
   This is useful because FEI classes/functions use integer ids for fields.
 */
 int map_field_to_int(FieldIdMap& field_id_map,
-                     const stk::mesh::FieldBase& field);
+                     const stk_classic::mesh::FieldBase& field);
 
 /** Given a map and a Field, return the int id that the field is mapped to.
   If the field is not found in the map, an exception is thrown.
@@ -39,25 +39,25 @@ int map_field_to_int(FieldIdMap& field_id_map,
 */
 int
 query_field_to_int_mapping(const FieldIdMap& field_id_map,
-                           const stk::mesh::FieldBase& field);
+                           const stk_classic::mesh::FieldBase& field);
 
 /** Given an integer field_id, return a reference to the corresponding field.
  Throw an exception if field_id not found.
 */
-const stk::mesh::FieldBase* get_field(const FieldIdMap& field_id_map,
+const stk_classic::mesh::FieldBase* get_field(const FieldIdMap& field_id_map,
                                       int field_id);
 
 /** Given an EntityId, return the value as an int.
   Throws an exception if id is too large to represent as an int.
   This is useful because FEI classes/functions use integer ids for entities.
 */
-int entityid_to_int(stk::mesh::EntityId id);
+int entityid_to_int(stk_classic::mesh::EntityId id);
 
 /** Given an EntityRank, return the value as an int.
   Throws an exception if id is too large to represent as an int.
   This is useful because FEI classes/functions use integer ids for entity-types.
 */
-int entitytype_to_int(stk::mesh::EntityRank entity_rank);
+int entitytype_to_int(stk_classic::mesh::EntityRank entity_rank);
 
 /** Determine whether 'id' can be converted to an int.
  * If so, do nothing. If 'id' is too large to be represented

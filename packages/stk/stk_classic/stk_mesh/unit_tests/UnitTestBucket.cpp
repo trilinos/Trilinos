@@ -39,21 +39,21 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::MetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Part;
-using stk::mesh::PartVector;
-using stk::mesh::EntityRank;
-using stk::mesh::EntityId;
-using stk::mesh::PairIterEntityComm;
-using stk::mesh::Entity;
-using stk::mesh::Bucket;
-using stk::mesh::BucketIterator;
-using stk::mesh::Selector;
-using stk::mesh::Field;
-using stk::mesh::FieldBase;
-using stk::mesh::put_field;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::PairIterEntityComm;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::Bucket;
+using stk_classic::mesh::BucketIterator;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::Field;
+using stk_classic::mesh::FieldBase;
+using stk_classic::mesh::put_field;
 
 typedef Field<double> ScalarFieldType;
 
@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
 {
   // Unit test the Part functionality in isolation:
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   // Create a mesh for testing buckets...
@@ -80,7 +80,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket)
 
   // Create MetaData, BulkData
   unsigned max_bucket_size = 4;
-  stk::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
+  stk_classic::mesh::fixtures::BoxFixture fixture(pm, max_bucket_size, entity_names);
   FEMMetaData& meta = fixture.fem_meta();
   BulkData& bulk = fixture.bulk_data();
   const EntityRank element_rank = meta.element_rank();
@@ -171,7 +171,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 {
   // Tests to cover get_involved_parts for GetBuckets.cpp - C.Brickley - 12 May 2010
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const int spatial_dimension = 3;
@@ -184,9 +184,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
   involved_parts[0] = & meta.universal_part();
   involved_parts[1] = & meta.locally_owned_part();
 
-  Part & partLeft_1 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
+  Part & partLeft_1 = stk_classic::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
 
-  Part & partLeft_2 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_2" );
+  Part & partLeft_2 = stk_classic::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_2" );
 
   meta.commit();
 
@@ -200,8 +200,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testGetInvolvedParts)
 
   bulk.modification_begin();
   int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  rank = stk_classic::parallel_machine_rank( pm );
+  size = stk_classic::parallel_machine_size( pm );
 
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
@@ -259,7 +259,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 {
   // Tests to cover print, has_superset and BucketLess::operator() for Buckets.cpp - C.Brickley - 2nd June 2010
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const int spatial_dimension = 3;
@@ -272,7 +272,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   Part & partLeft_1 = meta.declare_part("block_left_1", element_rank);
 
-  Part & partLeft_3 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_3" );
+  Part & partLeft_3 = stk_classic::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_3" );
 
   meta.commit();
 
@@ -282,8 +282,8 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testBucket2)
 
   bulk.modification_begin();
   int  size , rank;
-  rank = stk::parallel_machine_rank( pm );
-  size = stk::parallel_machine_size( pm );
+  rank = stk_classic::parallel_machine_rank( pm );
+  size = stk_classic::parallel_machine_size( pm );
 
   for ( int id_base = 0 ; id_base < 99 ; ++id_base )
   {
@@ -380,7 +380,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
   // FIXME: With so much code commented out, this unit-test does
   // not appear to be testing anything.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const int spatial_dimension = 3;
@@ -389,13 +389,13 @@ STKUNIT_UNIT_TEST(UnitTestingOfBucket, testEntityComm)
   BulkData bulk ( FEMMetaData::get_meta_data(meta) , pm , 100 );
   std::vector<Part *>  add_part4;
 
-  Part & partLeft_1 = stk::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
+  Part & partLeft_1 = stk_classic::mesh::fem::declare_part<shards::Tetrahedron<4> >( meta, "block_left_1" );
   meta.commit();
 
   add_part4.push_back ( &partLeft_1 );
 
-  //int rank = stk::parallel_machine_rank( pm );
-  // int size = stk::parallel_machine_size( pm );
+  //int rank = stk_classic::parallel_machine_rank( pm );
+  // int size = stk_classic::parallel_machine_size( pm );
   PartVector tmp(1);
 
   bulk.modification_begin();

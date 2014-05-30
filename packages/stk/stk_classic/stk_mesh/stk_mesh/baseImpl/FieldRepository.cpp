@@ -16,7 +16,7 @@
 #include <sstream>
 #include <stdexcept>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -114,7 +114,7 @@ FieldBase * FieldRepository::declare_field(
   unsigned                            arg_num_states ,
   MetaData                          * arg_meta_data )
 {
-  TraceIf("stk::mesh::impl::FieldRepository::declare_field", LOG_FIELD);
+  TraceIf("stk_classic::mesh::impl::FieldRepository::declare_field", LOG_FIELD);
 
   static const char* reserved_state_suffix[6] = {
     "_STKFS_OLD",
@@ -205,7 +205,7 @@ void FieldRepository::verify_and_clean_restrictions(
     const Part& superset, const Part& subset,
     const PartVector & arg_all_parts )
 {
-  TraceIf("stk::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
+  TraceIf("stk_classic::mesh::impl::FieldRepository::verify_and_clean_restrictions", LOG_FIELD);
 
   for ( FieldVector::iterator f = m_fields.begin() ; f != m_fields.end() ; ++f ) {
     (*f)->m_impl.verify_and_clean_restrictions( arg_method, superset, subset, arg_all_parts );

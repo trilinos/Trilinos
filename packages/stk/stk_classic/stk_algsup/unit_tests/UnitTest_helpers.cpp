@@ -18,19 +18,19 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
-void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta)
+void fill_utest_mesh_meta_data(stk_classic::mesh::fem::FEMMetaData& fem_meta)
 {
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  stk::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
+  stk_classic::mesh::Part& elem_block = fem_meta.declare_part( "block_1" , element_rank );
 
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
-  stk::mesh::fem::set_cell_topology( elem_block, hex_top );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+  stk_classic::mesh::fem::set_cell_topology( elem_block, hex_top );
 
   const unsigned number_of_states = 1;
 
@@ -38,9 +38,9 @@ void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta)
   ScalarField& pressure_field = fem_meta.declare_field<ScalarField>( "pressure", number_of_states );
   VectorField& velocity_field = fem_meta.declare_field<VectorField>( "velocity",    number_of_states );
 
-  stk::mesh::put_field( temperature_field, NODE_RANK,     elem_block );
-  stk::mesh::put_field( pressure_field,    element_rank, elem_block );
-  stk::mesh::put_field( velocity_field,    NODE_RANK,     elem_block );
+  stk_classic::mesh::put_field( temperature_field, NODE_RANK,     elem_block );
+  stk_classic::mesh::put_field( pressure_field,    element_rank, elem_block );
+  stk_classic::mesh::put_field( velocity_field,    NODE_RANK,     elem_block );
 
   fem_meta.commit();
 }
@@ -76,7 +76,7 @@ void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta)
 // shared between each neighboring pair of processors.
 //----------------------------------------------------------------------
 
-void elem_node_ids( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[] )
+void elem_node_ids( stk_classic::mesh::EntityId elem_id , stk_classic::mesh::EntityId node_ids[] )
 {
   if ( elem_id == 0 ) {
     std::cout << "use_case_1, elem_node_ids: ERROR, elem_id ("
@@ -95,22 +95,22 @@ void elem_node_ids( stk::mesh::EntityId elem_id , stk::mesh::EntityId node_ids[]
   node_ids[7] = base + 3 ;
 }
 
-void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data)
+void fill_utest_mesh_bulk_data(stk_classic::mesh::BulkData& bulk_data)
 {
   bulk_data.modification_begin();
   const unsigned num_elems = 4;
 
   const unsigned myProc = bulk_data.parallel_rank();
 
-  stk::mesh::EntityId elem_id = 1 + myProc*num_elems;
-  stk::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];
+  stk_classic::mesh::EntityId elem_id = 1 + myProc*num_elems;
+  stk_classic::mesh::EntityId node_ids[ shards::Hexahedron<8>::node_count ];
 
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-  stk::mesh::Part& elem_block = *(fem_meta.get_part( "block_1" ));
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+  stk_classic::mesh::Part& elem_block = *(fem_meta.get_part( "block_1" ));
 
   for(unsigned i = 0; i<num_elems; ++i) {
     elem_node_ids( elem_id+i, node_ids );
-    stk::mesh::fem::declare_element( bulk_data, elem_block, elem_id+i, node_ids );
+    stk_classic::mesh::fem::declare_element( bulk_data, elem_block, elem_id+i, node_ids );
   }
   bulk_data.modification_end();
 }

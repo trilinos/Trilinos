@@ -60,28 +60,28 @@ work()
   return x;
 }
 
-stk::diag::TimerSet &
+stk_classic::diag::TimerSet &
 unitTestTimerSet()
 {
-  static stk::diag::TimerSet s_unitTestTimerSet(TIMER_REGION);
+  static stk_classic::diag::TimerSet s_unitTestTimerSet(TIMER_REGION);
 
   return s_unitTestTimerSet;
 }
 
 
-struct UseCaseRootTimer : public stk::diag::Timer
+struct UseCaseRootTimer : public stk_classic::diag::Timer
 {
   UseCaseRootTimer()
-    : stk::diag::Timer(stk::diag::createRootTimer("Unit test timer", unitTestTimerSet()))
+    : stk_classic::diag::Timer(stk_classic::diag::createRootTimer("Unit test timer", unitTestTimerSet()))
   {}
 
   ~UseCaseRootTimer() {
-    stk::diag::deleteRootTimer(*this);
+    stk_classic::diag::deleteRootTimer(*this);
   }
 };
 
 
-stk::diag::Timer &unitTestTimer() {
+stk_classic::diag::Timer &unitTestTimer() {
   static UseCaseRootTimer s_unitTestTimer;
 
   return s_unitTestTimer;
@@ -94,7 +94,7 @@ struct RootObject
     : m_timer("Root object", TIMER_REGION, unitTestTimer())
   {}
 
-  stk::diag::Timer      m_timer;
+  stk_classic::diag::Timer      m_timer;
 };
 
 
@@ -119,14 +119,14 @@ struct Object
   }
 
   void run() {
-    stk::diag::TimeBlock _time(m_timer);
+    stk_classic::diag::TimeBlock _time(m_timer);
     m_x = work();
   }
 
   int                   m_id;
   double                m_x;
   std::string           m_name;
-  stk::diag::Timer      m_timer;
+  stk_classic::diag::Timer      m_timer;
 };
 
 } // namespace <empty>
@@ -136,43 +136,43 @@ int
 use_case_timer(
   UseCaseEnvironment &  use_case_environment)
 {
-  int parallel_rank = stk::parallel_machine_rank(use_case_environment.m_comm);
+  int parallel_rank = stk_classic::parallel_machine_rank(use_case_environment.m_comm);
 
-  stk::diag::TimeBlock root_time_block(unitTestTimer());
+  stk_classic::diag::TimeBlock root_time_block(unitTestTimer());
   
-  stk::diag::updateRootTimer(unitTestTimer());
+  stk_classic::diag::updateRootTimer(unitTestTimer());
 
   // Check lap count
   {
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = unitTestTimer().getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = unitTestTimer().getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
     ThrowRequire(lap_count == 1);
   }
   
   // Create subtimer and run 100 laps
   {
-    static stk::diag::Timer run_timer("Run 100 times twice", TIMER_REGION, unitTestTimer());
+    static stk_classic::diag::Timer run_timer("Run 100 times twice", TIMER_REGION, unitTestTimer());
 
     for (int i = 0; i < 100; ++i) {
-      stk::diag::TimeBlock _time(run_timer);
+      stk_classic::diag::TimeBlock _time(run_timer);
       work();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = run_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
     ThrowRequire(lap_count == 100);
   }
 
   // Grab previous subtimer and run 100 laps
   {
-    static stk::diag::Timer run_timer("Run 100 times twice", TIMER_REGION, unitTestTimer());
+    static stk_classic::diag::Timer run_timer("Run 100 times twice", TIMER_REGION, unitTestTimer());
 
     for (int i = 0; i < 100; ++i) {
-      stk::diag::TimeBlock _time(run_timer);
+      stk_classic::diag::TimeBlock _time(run_timer);
       work();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = run_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
     ThrowRequire(lap_count == 200);
   }
@@ -181,7 +181,7 @@ use_case_timer(
   RootObject root_object;
 
   {
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
     ThrowRequire(lap_count == 0);
   }
@@ -194,7 +194,7 @@ use_case_timer(
       time_object.run();
     }
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
     ThrowRequire(lap_count == 100);
   }
@@ -219,26 +219,26 @@ use_case_timer(
 
     out() << "One object run 100 times" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false);
 
-    stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = 0;
+    stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
-    ThrowRequire(lap_count == stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
+    ThrowRequire(lap_count == stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(0));
 
     for (size_t j = 0; j < object_vector.size(); ++j)
       object_vector[j].run();
 
     out() << "Object tree run once" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false);
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
-    ThrowRequire(lap_count == stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
+    ThrowRequire(lap_count == stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(object_vector.size()));
 
     for (size_t i = 1; i < 100; ++i)
       for (size_t j = 0; j < object_vector.size(); ++j)
@@ -246,13 +246,13 @@ use_case_timer(
 
     out() << "Object tree 100 times (checkpointed)" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, true);
 
     lap_count = 0;
     for (size_t j = 0; j < object_vector.size(); ++j)
-      lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
+      lap_count += object_vector[j].m_timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(false);
 
-    ThrowRequire(lap_count == stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
+    ThrowRequire(lap_count == stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type(100*object_vector.size()));
 
     for (size_t i = 0; i < 100; ++i)
       for (size_t j = 0; j < object_vector.size(); ++j)
@@ -260,59 +260,59 @@ use_case_timer(
 
     out() << "Object tree 100 more times (checkpointed)" << std::endl;
 
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, true);
 
     out() << "Object tree (not checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false);
 
     // Add a static function timer on odd processors
     if (parallel_rank%2 == 1) {
-      static stk::diag::Timer s_functionTimer("Odd processor function timer", TIMER_REGION, unitTestTimer());
+      static stk_classic::diag::Timer s_functionTimer("Odd processor function timer", TIMER_REGION, unitTestTimer());
       {
-        stk::diag::TimeBlock _time(s_functionTimer);
+        stk_classic::diag::TimeBlock _time(s_functionTimer);
         work();
       }
       if (parallel_rank%3 == 1) {
-        static stk::diag::Timer s_functionTimer2("Odd processor function timer 2", TIMER_REGION, s_functionTimer);
+        static stk_classic::diag::Timer s_functionTimer2("Odd processor function timer 2", TIMER_REGION, s_functionTimer);
         {
-          stk::diag::TimeBlock _time(s_functionTimer2);
+          stk_classic::diag::TimeBlock _time(s_functionTimer2);
           work();
         }
       }
     }
 
     out() << "Add asymetric timers on odd processors, parallel collected output (checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, true);
 
     for (size_t i = 0; i < 100; ++i)
       for (size_t j = 0; j < object_vector.size(); ++j)
         object_vector[j].run();
 
     out() << "Object tree 100 more times, parallel collected output (checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, true, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, true, MPI_COMM_WORLD);
 
     out() << "Object tree, parallel collected output (not checkpointed)" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
-    stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS);
+    stk_classic::diag::setTimerTimeFormat(stk_classic::TIMEFORMAT_SECONDS);
     
     out() << "Object tree, parallel collected output (not checkpointed), seconds" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
-    stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_SECONDS | stk::TIMEFORMAT_MILLIS);
+    stk_classic::diag::setTimerTimeFormat(stk_classic::TIMEFORMAT_SECONDS | stk_classic::TIMEFORMAT_MILLIS);
     
     out() << "Object tree, parallel collected output (not checkpointed), seconds and milliseconds" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
-    stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS);
+    stk_classic::diag::setTimerTimeFormat(stk_classic::TIMEFORMAT_HMS);
     
     out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false, MPI_COMM_WORLD);
 
-    stk::diag::setTimerTimeFormat(stk::TIMEFORMAT_HMS | stk::TIMEFORMAT_MILLIS);
+    stk_classic::diag::setTimerTimeFormat(stk_classic::TIMEFORMAT_HMS | stk_classic::TIMEFORMAT_MILLIS);
     
     out() << "Object tree, parallel collected output (not checkpointed), hh:mm:ss.mmm" << std::endl;
-    stk::diag::printTimersTable(out(), unitTestTimer(), stk::diag::METRICS_ALL, false, MPI_COMM_WORLD);
+    stk_classic::diag::printTimersTable(out(), unitTestTimer(), stk_classic::diag::METRICS_ALL, false, MPI_COMM_WORLD);
   }
 
   return 0;

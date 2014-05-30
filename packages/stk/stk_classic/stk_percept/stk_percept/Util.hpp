@@ -85,10 +85,10 @@ namespace shards {
   std::ostream& operator<<(std::ostream& os, const shards::Array<double, shards::NaturalOrder>& container) ;
 }
 
-namespace stk { 
+namespace stk_classic { 
 
   namespace mesh { 
-    std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity& entity);
+    std::ostream &operator<<(std::ostream& out, const stk_classic::mesh::Entity& entity);
   }
 
   namespace percept { 
@@ -137,7 +137,7 @@ namespace stk {
             replace(str, " ", "");
           }
         std::vector<std::string> tokens;
-        stk::util::tokenize(str, separators, tokens);
+        stk_classic::util::tokenize(str, separators, tokens);
         return tokens;
       }
       static std::string join(std::vector<std::string> tokens, std::string separator, bool add_spaces=true)
@@ -217,12 +217,12 @@ namespace stk {
     enum {
       PERCEPT_TIMER_ROOT = 0x00001000		///< Enable root timer
     };
-    stk::diag::TimerSet& perceptTimerSet();
-    stk::diag::Timer& perceptTimer() ;
-    typedef stk::diag::MetricTraits<stk::diag::WallTime>::Type LapTimeType;
-    LapTimeType getLapTime(stk::diag::Timer& lap_timer);
-    typedef stk::diag::MetricTraits<stk::diag::LapCount>::Type LapCountType;
-    LapCountType getAccumulatedLap(stk::diag::Timer& timer, bool option=false);
+    stk_classic::diag::TimerSet& perceptTimerSet();
+    stk_classic::diag::Timer& perceptTimer() ;
+    typedef stk_classic::diag::MetricTraits<stk_classic::diag::WallTime>::Type LapTimeType;
+    LapTimeType getLapTime(stk_classic::diag::Timer& lap_timer);
+    typedef stk_classic::diag::MetricTraits<stk_classic::diag::LapCount>::Type LapCountType;
+    LapCountType getAccumulatedLap(stk_classic::diag::Timer& timer, bool option=false);
 
     //========================================================================================================================
 

@@ -30,7 +30,7 @@
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <init/Ionit_Initializer.h>
 
-using namespace stk ;
+using namespace stk_classic ;
 
 namespace stk_examples {
 
@@ -46,10 +46,10 @@ typedef mesh::Field<double,mesh::Cartesian> VectorFieldType ;
 //
 
 void use_case_5_generate_mesh_meta_data(
-  stk::mesh::fem::FEMMetaData & meta_data ,
+  stk_classic::mesh::fem::FEMMetaData & meta_data ,
   VectorFieldType & node_coord )
 {
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = meta_data.element_rank();
 
   mesh::Part & universal        = meta_data.universal_part();
   mesh::Part & block_hex        = meta_data.declare_part("hexes",element_rank);
@@ -59,19 +59,19 @@ void use_case_5_generate_mesh_meta_data(
   mesh::Part & block_quad_shell = meta_data.declare_part("quad_shells",element_rank);
   mesh::Part & block_tri_shell  = meta_data.declare_part("tri_shells",element_rank);
 
-  stk::io::put_io_part_attribute(block_hex);
-  stk::io::put_io_part_attribute(block_wedge);
-  stk::io::put_io_part_attribute(block_tet);
-  stk::io::put_io_part_attribute(block_pyramid);
-  stk::io::put_io_part_attribute(block_quad_shell);
-  stk::io::put_io_part_attribute(block_tri_shell);
+  stk_classic::io::put_io_part_attribute(block_hex);
+  stk_classic::io::put_io_part_attribute(block_wedge);
+  stk_classic::io::put_io_part_attribute(block_tet);
+  stk_classic::io::put_io_part_attribute(block_pyramid);
+  stk_classic::io::put_io_part_attribute(block_quad_shell);
+  stk_classic::io::put_io_part_attribute(block_tri_shell);
 
-  stk::mesh::fem::set_cell_topology(block_hex            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8>         >()));
-  stk::mesh::fem::set_cell_topology(block_wedge          , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Wedge<6>              >()));
-  stk::mesh::fem::set_cell_topology(block_tet            , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>        >()));
-  stk::mesh::fem::set_cell_topology(block_pyramid        , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Pyramid<5>            >()));
-  stk::mesh::fem::set_cell_topology(block_quad_shell     , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()));
-  stk::mesh::fem::set_cell_topology(block_tri_shell      , stk::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
+  stk_classic::mesh::fem::set_cell_topology(block_hex            , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Hexahedron<8>         >()));
+  stk_classic::mesh::fem::set_cell_topology(block_wedge          , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Wedge<6>              >()));
+  stk_classic::mesh::fem::set_cell_topology(block_tet            , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Tetrahedron<4>        >()));
+  stk_classic::mesh::fem::set_cell_topology(block_pyramid        , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::Pyramid<5>            >()));
+  stk_classic::mesh::fem::set_cell_topology(block_quad_shell     , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >()));
+  stk_classic::mesh::fem::set_cell_topology(block_tri_shell      , stk_classic::mesh::fem::CellTopology(shards::getCellTopologyData<shards::ShellTriangle<3>      >()));
 
   const mesh::FieldBase::Restriction & res =
     node_coord.restriction( mesh::fem::FEMMetaData::NODE_RANK , universal );
@@ -144,31 +144,31 @@ static const double node_coord_data[ node_count ][ SpatialDim ] = {
   { 0 , 2 , -1 } , { 1 , 2 , -1 } ,
   { 1 , 1 , -2 } };
 
-static const stk::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<8> ::node_count ] = {
+static const stk_classic::mesh::EntityId hex_node_ids[3][ shards::Hexahedron<8> ::node_count ] = {
   { 1 , 2 , 12 , 11 , 5 , 6 , 16 , 15 } ,
   { 2 , 3 , 13 , 12 , 6 , 7 , 17 , 16 } ,
   { 3 , 4 , 14 , 13 , 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId wedge_node_ids[3][ shards::Wedge<6> ::node_count ] = {
+static const stk_classic::mesh::EntityId wedge_node_ids[3][ shards::Wedge<6> ::node_count ] = {
   { 15 , 16 , 19 ,  5 ,  6 ,  9 } ,
   { 10 ,  9 ,  6 , 20 , 19 , 16 } ,
   { 16 , 17 , 20 ,  6 ,  7 , 10 } };
 
-static const stk::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<4> ::node_count ] = {
+static const stk_classic::mesh::EntityId tetra_node_ids[3][ shards::Tetrahedron<4> ::node_count ] = {
   { 15 , 19 , 16 , 21 } ,
   { 19 , 20 , 16 , 21 } ,
   { 16 , 20 , 17 , 21 } };
 
-static const stk::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<5> ::node_count ] = {
+static const stk_classic::mesh::EntityId pyramid_node_ids[2][ shards::Pyramid<5> ::node_count ] = {
   { 11 , 15 , 16 , 12 , 21 } ,
   { 12 , 16 , 17 , 13 , 21 } };
 
-static const stk::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<4> ::node_count ]={
+static const stk_classic::mesh::EntityId shell_quad_node_ids[3][ shards::ShellQuadrilateral<4> ::node_count ]={
   { 9 , 6 , 16 , 19 } ,
   { 6 , 7 , 17 , 16 } ,
   { 7 , 8 , 18 , 17 } };
 
-static const stk::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<3> ::node_count ] ={
+static const stk_classic::mesh::EntityId shell_tri_node_ids[3][ shards::ShellTriangle<3> ::node_count ] ={
   { 19 , 16 , 21 } ,
   { 16 , 17 , 21 } ,
   { 17 , 13 , 21 } };
@@ -187,7 +187,7 @@ void use_case_5_generate_mesh_bulk_data(
 
   bulk_data.modification_begin();
 
-  const mesh::fem::FEMMetaData & meta_data = stk::mesh::fem::FEMMetaData::get(bulk_data);
+  const mesh::fem::FEMMetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
 
   mesh::Part & hex_block        = * meta_data.get_part("hexes",method);
   mesh::Part & wedge_block      = * meta_data.get_part("wedges",method);
@@ -237,11 +237,11 @@ void use_case_5_generate_mesh_bulk_data(
 }
 
 
-void use_case_5_write_mesh( stk::ParallelMachine comm ,
+void use_case_5_write_mesh( stk_classic::ParallelMachine comm ,
                             const std::string & filename )
 {
   Ioss::Init::Initializer init_db;
-  stk::mesh::fem::FEMMetaData meta_data(SpatialDim);
+  stk_classic::mesh::fem::FEMMetaData meta_data(SpatialDim);
 
   VectorFieldType & node_coord =
     meta_data.declare_field<VectorFieldType>("coordinates");
@@ -257,8 +257,8 @@ void use_case_5_write_mesh( stk::ParallelMachine comm ,
 
   use_case_5_generate_mesh_bulk_data( bulk_data , node_coord );
 
-  stk::io::MeshData mesh;
-  stk::io::create_output_mesh(filename, comm, bulk_data, mesh);
+  stk_classic::io::MeshData mesh;
+  stk_classic::io::create_output_mesh(filename, comm, bulk_data, mesh);
 }
 
 } // namespace stk_examples

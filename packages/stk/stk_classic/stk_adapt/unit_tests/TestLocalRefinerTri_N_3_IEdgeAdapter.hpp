@@ -3,7 +3,7 @@
 
 #include <stk_adapt/IEdgeAdapter.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -15,7 +15,7 @@ namespace stk {
     class TestLocalRefinerTri_N_3_IEdgeAdapter : public IEdgeAdapter
     {
     public:
-      TestLocalRefinerTri_N_3_IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0);
+      TestLocalRefinerTri_N_3_IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0);
 
       //virtual ElementUnrefineCollection  buildUnrefList();
 
@@ -23,21 +23,21 @@ namespace stk {
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+      virtual int mark(const stk_classic::mesh::Entity& element, unsigned which_edge, stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1,
                            double *coord0, double *coord1, std::vector<int>* existing_edge_marks) ;
 
     };
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3_IEdgeAdapter in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTri_N_3_IEdgeAdapter::TestLocalRefinerTri_N_3_IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    TestLocalRefinerTri_N_3_IEdgeAdapter::TestLocalRefinerTri_N_3_IEdgeAdapter(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field) : 
       IEdgeAdapter(eMesh, bp, proc_rank_field)
     {
     }
 
 
     int TestLocalRefinerTri_N_3_IEdgeAdapter::
-    mark(const stk::mesh::Entity& element, unsigned which_edge, stk::mesh::Entity & node0, stk::mesh::Entity & node1,
+    mark(const stk_classic::mesh::Entity& element, unsigned which_edge, stk_classic::mesh::Entity & node0, stk_classic::mesh::Entity & node1,
              double *coord0, double *coord1, std::vector<int>* existing_edge_marks)
     {
       int mark=0;

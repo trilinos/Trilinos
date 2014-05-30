@@ -27,7 +27,7 @@
 
 /** stk_mesh Use Case 3 */
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
@@ -41,7 +41,7 @@ public:
 
   ~UseCase_3_Mesh();
 
-  UseCase_3_Mesh( stk::ParallelMachine comm, bool doCommit = true);
+  UseCase_3_Mesh( stk_classic::ParallelMachine comm, bool doCommit = true);
 
   void populate();
 

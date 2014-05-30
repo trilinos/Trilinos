@@ -19,7 +19,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class DataTraits ;

@@ -40,7 +40,7 @@
 #include <tr1/unordered_set>
 #endif
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 #if STK_ADAPT_COLORER_STORED_ENTITYID

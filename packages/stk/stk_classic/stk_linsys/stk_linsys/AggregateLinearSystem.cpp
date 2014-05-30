@@ -14,7 +14,7 @@
 
 #include <stk_linsys/LinsysFunctions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 AggregateLinearSystem::AggregateLinearSystem(MPI_Comm comm, fei::SharedPtr<fei::Factory> factory, size_t num_matrices, size_t num_rhsvecs)
@@ -69,7 +69,7 @@ fei::SharedPtr<fei::Matrix>
 AggregateLinearSystem::get_matrix(size_t index)
 {
   if (index >= m_matrices.size()) {
-    throw std::runtime_error("stk::linsys::AggregateLinearSystem::get_matrix ERROR, index out of range.");
+    throw std::runtime_error("stk_classic::linsys::AggregateLinearSystem::get_matrix ERROR, index out of range.");
   }
 
   return m_matrices[index];
@@ -79,7 +79,7 @@ fei::SharedPtr<fei::Vector>
 AggregateLinearSystem::get_rhsvec(size_t index)
 {
   if (index >= m_rhsvecs.size()) {
-    throw std::runtime_error("stk::linsys::AggregateLinearSystem::get_rhsvec ERROR, index out of range.");
+    throw std::runtime_error("stk_classic::linsys::AggregateLinearSystem::get_rhsvec ERROR, index out of range.");
   }
 
   return m_rhsvecs[index];
@@ -90,11 +90,11 @@ AggregateLinearSystem::aggregate_system(const std::vector<double>& mat_scalars,
                                         const std::vector<double>& rhs_scalars)
 {
   if (mat_scalars.size() != m_matrices.size()) {
-    throw std::runtime_error("stk::linsys::AggregateLinearSystem::aggregate_system ERROR, mat_scalars.size() != m_matrices.size().");
+    throw std::runtime_error("stk_classic::linsys::AggregateLinearSystem::aggregate_system ERROR, mat_scalars.size() != m_matrices.size().");
   }
 
   if (rhs_scalars.size() != m_rhsvecs.size()) {
-    throw std::runtime_error("stk::linsys::AggregateLinearSystem::aggregate_system ERROR, rhs_scalars.size() != m_rhsvecs.size().");
+    throw std::runtime_error("stk_classic::linsys::AggregateLinearSystem::aggregate_system ERROR, rhs_scalars.size() != m_rhsvecs.size().");
   }
 
   fei::SharedPtr<fei::LinearSystem> fei_linsys = m_linear_system.get_fei_LinearSystem();
@@ -105,14 +105,14 @@ AggregateLinearSystem::aggregate_system(const std::vector<double>& mat_scalars,
   matrix->putScalar(0.0);
 
   for(size_t i=0; i<m_matrices.size(); ++i) {
-    stk::linsys::add_matrix_to_matrix(mat_scalars[i], *m_matrices[i], *matrix);
+    stk_classic::linsys::add_matrix_to_matrix(mat_scalars[i], *m_matrices[i], *matrix);
   }
 
   rhsvec->gatherFromOverlap();
   rhsvec->putScalar(0.0);
 
   for(size_t i=0; i<m_rhsvecs.size(); ++i) {
-    stk::linsys::add_vector_to_vector(rhs_scalars[i], *m_rhsvecs[i], *rhsvec);
+    stk_classic::linsys::add_vector_to_vector(rhs_scalars[i], *m_rhsvecs[i], *rhsvec);
   }
 }
 

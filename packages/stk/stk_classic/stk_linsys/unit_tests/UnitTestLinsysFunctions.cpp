@@ -33,12 +33,12 @@
 
 #include <unit_tests/UnitTest_helpers.hpp>
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 namespace stk_linsys_unit_tests {
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
 bool confirm_vector_values(const fei::Vector& vec, double expected_value)
 {
@@ -97,21 +97,21 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
-  stk::mesh::fem::FEMMetaData fem_meta2;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta2;
   fem_meta.FEM_initialize(spatial_dimension);
   fem_meta2.FEM_initialize(spatial_dimension);
 
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::MetaData & meta_data2 = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta2);
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::MetaData & meta_data2 = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta2);
 
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
-  stk::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::BulkData bulk_data2( meta_data2, comm, bucket_size );
 
   //create a boundary-condition part for testing later:
-  stk::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
+  stk_classic::mesh::Part& bcpart = fem_meta.declare_part("bcpart");
 
   fill_utest_mesh_meta_data( fem_meta );
 
@@ -121,49 +121,49 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   fill_utest_mesh_bulk_data( bulk_data );
   fill_utest_mesh_bulk_data( bulk_data2 );
 
-  //set owner-processors to lowest-sharing (stk::mesh defaults to
+  //set owner-processors to lowest-sharing (stk_classic::mesh defaults to
   //highest-sharing) If highest-sharing owns, then it isn't correct for the
   //way the fei library sets ownership of shared nodes for vectors etc.
-  stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
+  stk_classic::mesh::set_owners<stk_classic::mesh::LowestRankSharingProcOwns>( bulk_data );
 
   //put a node in our boundary-condition part. arbitrarily choose the
   //first locally-owned node:
 
   bulk_data.modification_begin();
 
-  std::vector<stk::mesh::Entity*> local_nodes;
-  stk::mesh::Selector select_owned(meta_data.locally_owned_part());
-  stk::mesh::get_selected_entities(select_owned,
+  std::vector<stk_classic::mesh::Entity*> local_nodes;
+  stk_classic::mesh::Selector select_owned(meta_data.locally_owned_part());
+  stk_classic::mesh::get_selected_entities(select_owned,
                                    bulk_data.buckets(NODE_RANK),
                                    local_nodes);
 
-  stk::mesh::EntityId bc_node_id = 0;
+  stk_classic::mesh::EntityId bc_node_id = 0;
 
   if (local_nodes.size() > 0) {
-    stk::mesh::PartVector partvector;
+    stk_classic::mesh::PartVector partvector;
     partvector.push_back(&bcpart);
     bulk_data.change_entity_parts(*local_nodes[0], partvector);
-    bc_node_id = stk::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
+    bc_node_id = stk_classic::linsys::impl::entityid_to_int(local_nodes[0]->identifier());
   }
 
   bulk_data.modification_end();
 
-  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
+  stk_classic::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
-  stk::mesh::count_entities(selector, bulk_data, count);
+  stk_classic::mesh::count_entities(selector, bulk_data, count);
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
-  //Create a fei Factory and stk::linsys::LinearSystem object:
+  //Create a fei Factory and stk_classic::linsys::LinearSystem object:
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
 
-  stk::linsys::LinearSystem ls(comm, factory);
+  stk_classic::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
+  stk_classic::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -193,7 +193,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   }
 
   //now we'll impose a dirichlet bc on our one-node bcpart:
-  stk::linsys::dirichlet_bc(ls, bulk_data, bcpart, NODE_RANK,
+  stk_classic::linsys::dirichlet_bc(ls, bulk_data, bcpart, NODE_RANK,
                             *temperature_field, 0, 9.0);
 
   ls.finalize_assembly();
@@ -210,25 +210,25 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   bool bc_val_is_correct = std::abs(rhs_bc_val - 9.0) < 1.e-13;
   STKUNIT_ASSERT( bc_val_is_correct );
 
-  stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data);
+  stk_classic::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data);
 
-  stk::mesh::Entity* bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0]->identifier());
+  stk_classic::mesh::Entity* bc_node = bulk_data.get_entity(NODE_RANK, local_nodes[0]->identifier());
 
-  stk::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk::mesh::field_data(*temperature_field, *bc_node);
+  stk_classic::mesh::FieldTraits<ScalarField>::data_type* bc_node_data = stk_classic::mesh::field_data(*temperature_field, *bc_node);
 
   bool bc_node_data_is_correct = std::abs(bc_node_data[0] - 9.0) < 1.e-13;
   STKUNIT_ASSERT( bc_node_data_is_correct );
 
   //now make sure we get a throw if we use the wrong bulk-data (that doesn't have the
   //temperature field defined)
-  STKUNIT_ASSERT_THROW(stk::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data2), std::runtime_error);
+  STKUNIT_ASSERT_THROW(stk_classic::linsys::copy_vector_to_mesh( *rhsvec, ls.get_DofMapper(), bulk_data2), std::runtime_error);
 
   //obtain and zero the solution vector
   fei::SharedPtr<fei::Vector> solnvec = ls.get_fei_LinearSystem()->getSolutionVector();
   solnvec->putScalar(0);
 
   //copy the vector of zeros into the mesh:
-  stk::linsys::copy_vector_to_mesh( *solnvec, ls.get_DofMapper(), bulk_data);
+  stk_classic::linsys::copy_vector_to_mesh( *solnvec, ls.get_DofMapper(), bulk_data);
 
   //assert that our bc node's data is now zero.
   bc_node_data_is_correct = std::abs(bc_node_data[0] - 0) < 1.e-13;
@@ -243,7 +243,7 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test1)
   ls.solve(status, params);
 
   //copy the solution-vector into the mesh:
-  stk::linsys::copy_vector_to_mesh( *solnvec, ls.get_DofMapper(), bulk_data);
+  stk_classic::linsys::copy_vector_to_mesh( *solnvec, ls.get_DofMapper(), bulk_data);
 
   //now assert that the value 9 (bc value) produced by the solve is in this
   //node's data.
@@ -264,39 +264,39 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension);
 
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
 
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   fill_utest_mesh_meta_data( fem_meta );
 
   fill_utest_mesh_bulk_data( bulk_data );
 
-  //set owner-processors to lowest-sharing (stk::mesh defaults to
+  //set owner-processors to lowest-sharing (stk_classic::mesh defaults to
   //highest-sharing) If highest-sharing owns, then it isn't correct for the
   //way the fei library sets ownership of shared nodes for vectors etc.
-  stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
+  stk_classic::mesh::set_owners<stk_classic::mesh::LowestRankSharingProcOwns>( bulk_data );
 
-  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
+  stk_classic::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
-  stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::count_entities(selector, bulk_data, count);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
-  //Create a fei Factory and stk::linsys::LinearSystem object:
+  //Create a fei Factory and stk_classic::linsys::LinearSystem object:
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
 
-  stk::linsys::LinearSystem ls(comm, factory);
+  stk_classic::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
+  stk_classic::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -314,8 +314,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test2)
 
   fei::SharedPtr<fei::Vector> rhsvec = ls.get_fei_LinearSystem()->getRHS();
 
-  stk::linsys::scale_vector(2, *rhsvec);
-  stk::linsys::scale_matrix(2, *mat);
+  stk_classic::linsys::scale_vector(2, *rhsvec);
+  stk_classic::linsys::scale_matrix(2, *mat);
 
   //now confirm that the rhs and matrix contain 6:
 
@@ -335,37 +335,37 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension);
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   fill_utest_mesh_meta_data( fem_meta );
 
   fill_utest_mesh_bulk_data( bulk_data );
 
-  //set owner-processors to lowest-sharing (stk::mesh defaults to
+  //set owner-processors to lowest-sharing (stk_classic::mesh defaults to
   //highest-sharing) If highest-sharing owns, then it isn't correct for the
   //way the fei library sets ownership of shared nodes for vectors etc.
-  stk::mesh::set_owners<stk::mesh::LowestRankSharingProcOwns>( bulk_data );
+  stk_classic::mesh::set_owners<stk_classic::mesh::LowestRankSharingProcOwns>( bulk_data );
 
-  stk::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
+  stk_classic::mesh::Selector selector = ( meta_data.locally_owned_part() | meta_data.globally_shared_part() ) & *meta_data.get_part("block_1");
   std::vector<unsigned> count;
-  stk::mesh::count_entities(selector, bulk_data, count);
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::count_entities(selector, bulk_data, count);
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],     (unsigned)20 );
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
-  //Create a fei Factory and stk::linsys::LinearSystem object:
+  //Create a fei Factory and stk_classic::linsys::LinearSystem object:
 
   fei::SharedPtr<fei::Factory> factory(new Factory_Trilinos(comm));
 
-  stk::linsys::LinearSystem ls(comm, factory);
+  stk_classic::linsys::LinearSystem ls(comm, factory);
 
-  stk::linsys::add_connectivities(ls, element_rank, NODE_RANK,
+  stk_classic::linsys::add_connectivities(ls, element_rank, NODE_RANK,
                                   *temperature_field, selector, bulk_data);
 
   fei::SharedPtr<fei::MatrixGraph> matgraph = ls.get_fei_MatrixGraph();
@@ -383,8 +383,8 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
 
   fei::SharedPtr<fei::Vector> rhsvec = ls.get_fei_LinearSystem()->getRHS();
 
-  stk::linsys::scale_vector(2, *rhsvec);
-  stk::linsys::scale_matrix(2, *mat);
+  stk_classic::linsys::scale_vector(2, *rhsvec);
+  stk_classic::linsys::scale_matrix(2, *mat);
 
   //now the rhs and matrix contain 6.
 
@@ -395,14 +395,14 @@ STKUNIT_UNIT_TEST(UnitTestLinsysFunctions, test3)
   vec2->putScalar(3.0);
 
   //add 3*mat to mat2
-  stk::linsys::add_matrix_to_matrix(3.0, *mat, *mat2);
+  stk_classic::linsys::add_matrix_to_matrix(3.0, *mat, *mat2);
 
   //confirm that mat2 contains 21:
   bool result = confirm_matrix_values(*mat2, 21);
   STKUNIT_ASSERT(result);
 
   //add 3*rhsvec to vec2:
-  stk::linsys::add_vector_to_vector(3.0, *rhsvec, *vec2);
+  stk_classic::linsys::add_vector_to_vector(3.0, *rhsvec, *vec2);
 
   //confirm that vec2 contains 21:
   result = confirm_vector_values(*vec2, 21);

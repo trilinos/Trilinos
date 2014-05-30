@@ -18,29 +18,29 @@
 
 #include <stk_mesh/base/FieldData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace usecase {
 
 size_t is_in_element(VectorField *domain_coordinates,
                      VectorField *range_coordinates,
-                     const std::vector<std::pair<stk::mesh::Entity*, stk::mesh::Entity*> > &entity_map,
+                     const std::vector<std::pair<stk_classic::mesh::Entity*, stk_classic::mesh::Entity*> > &entity_map,
                      std::vector<std::size_t> &not_in_element)
 {
   // For each pair of mesh entities, determine if the second is contained in the first.
   const std::size_t num_entities = entity_map.size();
 
   for (std::size_t i = 0; i < num_entities; ++i) {
-    stk::mesh::Entity* domain_entity = entity_map[i].first;
-    assert(domain_entity->entity_rank() > stk::mesh::fem::FEMMetaData::NODE_RANK);
+    stk_classic::mesh::Entity* domain_entity = entity_map[i].first;
+    assert(domain_entity->entity_rank() > stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
-    stk::mesh::Entity* range_entity  = entity_map[i].second;
-    assert(range_entity->entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK);
+    stk_classic::mesh::Entity* range_entity  = entity_map[i].second;
+    assert(range_entity->entity_rank() == stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
-    const CellTopologyData * const cell_topo = stk::mesh::fem::get_cell_topology(*domain_entity).getCellTopologyData();
+    const CellTopologyData * const cell_topo = stk_classic::mesh::fem::get_cell_topology(*domain_entity).getCellTopologyData();
     const int nodes_per_entity = cell_topo->node_count;
 
-    const stk::mesh::PairIterRelation entity_nodes = domain_entity->relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
-    double *domain_fld_data = static_cast<double*>(stk::mesh::field_data(*domain_coordinates, *entity_nodes[0].entity()));
+    const stk_classic::mesh::PairIterRelation entity_nodes = domain_entity->relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
+    double *domain_fld_data = static_cast<double*>(stk_classic::mesh::field_data(*domain_coordinates, *entity_nodes[0].entity()));
     assert(domain_fld_data != NULL);
     double xmin = domain_fld_data[0];
     double ymin = domain_fld_data[1];
@@ -51,7 +51,7 @@ size_t is_in_element(VectorField *domain_coordinates,
     double zmax = domain_fld_data[2];
 
     for (int j = 1; j < nodes_per_entity; ++j) {
-      domain_fld_data = static_cast<double*>(stk::mesh::field_data(*domain_coordinates, *entity_nodes[j].entity()));
+      domain_fld_data = static_cast<double*>(stk_classic::mesh::field_data(*domain_coordinates, *entity_nodes[j].entity()));
       assert(domain_fld_data != NULL);
       xmin = domain_fld_data[0] < xmin ? domain_fld_data[0] : xmin;
       ymin = domain_fld_data[1] < ymin ? domain_fld_data[1] : ymin;
@@ -61,7 +61,7 @@ size_t is_in_element(VectorField *domain_coordinates,
       ymax = domain_fld_data[1] > ymax ? domain_fld_data[1] : ymax;
       zmax = domain_fld_data[2] > zmax ? domain_fld_data[2] : zmax;
     }
-    double *range_fld_data = static_cast<double*>(stk::mesh::field_data(*range_coordinates, *range_entity));
+    double *range_fld_data = static_cast<double*>(stk_classic::mesh::field_data(*range_coordinates, *range_entity));
     assert(range_fld_data != NULL);
     const double x=range_fld_data[0];
     const double y=range_fld_data[1];

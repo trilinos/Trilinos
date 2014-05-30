@@ -12,7 +12,7 @@
 #include <string>
 #include <stk_util/parallel/Parallel.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 class Options
 {
@@ -32,11 +32,11 @@ private:
 }
 }
 
-void performance_driver(stk::ParallelMachine  comm,
+void performance_driver(stk_classic::ParallelMachine  comm,
                         const std::string &working_directory,
                         const std::string &search_type,
-                        const stk::search::Options &range,
-                        const stk::search::Options &domain,
+                        const stk_classic::search::Options &range,
+                        const stk_classic::search::Options &domain,
                         bool               performance);
 
 #endif

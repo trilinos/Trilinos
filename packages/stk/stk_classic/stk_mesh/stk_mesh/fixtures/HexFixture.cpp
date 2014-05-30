@@ -21,17 +21,17 @@
 #include <stk_mesh/fem/FEMHelpers.hpp>
 #include <stk_mesh/fem/BoundaryAnalysis.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
-HexFixture::HexFixture(stk::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
+HexFixture::HexFixture(stk_classic::ParallelMachine pm, unsigned nx, unsigned ny, unsigned nz)
   : m_spatial_dimension(3),
     m_nx(nx),
     m_ny(ny),
     m_nz(nz),
     m_fem_meta( m_spatial_dimension, fem::entity_rank_names(m_spatial_dimension) ),
-    m_bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm ),
+    m_bulk_data( stk_classic::mesh::fem::FEMMetaData::get_meta_data(m_fem_meta) , pm ),
     m_hex_part( fem::declare_part<shards::Hexahedron<8> >(m_fem_meta, "hex_part") ),
     m_node_part( m_fem_meta.declare_part("node_part", m_fem_meta.node_rank() ) ),
     m_coord_field( m_fem_meta.declare_field<CoordFieldType>("Coordinates") ),
@@ -132,7 +132,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       unsigned ix = 0, iy = 0, iz = 0;
       elem_x_y_z(entity_id, ix, iy, iz);
 
-      stk::mesh::EntityId elem_node[8] ;
+      stk_classic::mesh::EntityId elem_node[8] ;
 
       elem_node[0] = node_id( ix   , iy   , iz   );
       elem_node[1] = node_id( ix+1 , iy   , iz   );
@@ -143,10 +143,10 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
       elem_node[6] = node_id( ix+1 , iy+1 , iz+1 );
       elem_node[7] = node_id( ix   , iy+1 , iz+1 );
 
-      stk::mesh::fem::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
+      stk_classic::mesh::fem::declare_element( m_bulk_data, m_hex_part, elem_id( ix , iy , iz ) , elem_node);
 
       for (unsigned i = 0; i<8; ++i) {
-        stk::mesh::Entity * const node = m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
+        stk_classic::mesh::Entity * const node = m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , elem_node[i] );
         m_bulk_data.change_entity_parts(*node, add_parts);
 
         ThrowRequireMsg( node != NULL,
@@ -156,7 +156,7 @@ void HexFixture::generate_mesh(std::vector<EntityId> & element_ids_on_this_proce
         unsigned nx = 0, ny = 0, nz = 0;
         node_x_y_z(elem_node[i], nx, ny, nz);
 
-        Scalar * data = stk::mesh::field_data( m_coord_field , *node );
+        Scalar * data = stk_classic::mesh::field_data( m_coord_field , *node );
 
         data[0] = nx ;
         data[1] = ny ;

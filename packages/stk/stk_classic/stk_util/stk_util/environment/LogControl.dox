@@ -35,7 +35,7 @@
 ///
 /// \code
 ///    
-///    stk::LogControl log_control(sierra::out(), m_name);
+///    stk_classic::LogControl log_control(sierra::out(), m_name);
 ///    
 ///    while (!done) {
 ///      .

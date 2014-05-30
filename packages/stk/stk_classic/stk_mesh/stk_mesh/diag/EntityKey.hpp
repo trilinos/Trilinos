@@ -13,11 +13,11 @@
 #include <stk_mesh/base/EntityKey.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 inline
-stk::diag::Writer &operator<<(stk::diag::Writer &dout, const EntityKey &entity_key)  {
+stk_classic::diag::Writer &operator<<(stk_classic::diag::Writer &dout, const EntityKey &entity_key)  {
   return dout << entity_rank(entity_key) << ":" << entity_id(entity_key);
 }
 

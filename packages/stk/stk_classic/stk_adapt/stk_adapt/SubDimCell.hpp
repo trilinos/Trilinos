@@ -26,7 +26,7 @@
 #endif
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 
@@ -114,12 +114,12 @@ namespace stk {
 
     /// We assume we don't have any sub-dimensional entities with more than 4 nodes
     template<class T, std::size_t N=4, class CompareClass = SubDimCellCompare<T> >
-    class SubDimCell : public stk::percept::NoMallocArray<T,N>
+    class SubDimCell : public stk_classic::percept::NoMallocArray<T,N>
     {
       std::size_t m_hash;
       
     public:
-      typedef stk::percept::NoMallocArray<T,N> base_type;
+      typedef stk_classic::percept::NoMallocArray<T,N> base_type;
       typedef std::size_t    size_type;
 
       typedef SubDimCell<T,N> VAL;
@@ -203,7 +203,7 @@ namespace stk {
     template<class T, std::size_t N, class CompareClass >
     inline int SubDimCell<T,N,CompareClass>::hashCode()
     {
-      typedef stk::percept::NoMallocArray<T,N> base_type;
+      typedef stk_classic::percept::NoMallocArray<T,N> base_type;
 
       std::size_t sum = 0;
 

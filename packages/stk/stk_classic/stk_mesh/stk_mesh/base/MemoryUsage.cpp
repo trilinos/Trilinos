@@ -12,7 +12,7 @@
 
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 void compute_memory_usage(const BulkData& bulk, MemoryUsage& mem_usage)

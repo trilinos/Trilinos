@@ -12,7 +12,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
   namespace rebalance {
 
 /** \addtogroup stk_rebalance_module
@@ -45,11 +45,11 @@ namespace stk {
 
     double check_balance(mesh::BulkData      & bulk_data,
                       const mesh::Field<double> * load_measure,
-                      const stk::mesh::EntityRank rank,
+                      const stk_classic::mesh::EntityRank rank,
                       const mesh::Selector      * selector=NULL);
 
-    bool verify_dependent_ownership(const stk::mesh::EntityRank & parent_rank,
-                                    stk::mesh::EntityVector & entities );
+    bool verify_dependent_ownership(const stk_classic::mesh::EntityRank & parent_rank,
+                                    stk_classic::mesh::EntityVector & entities );
 
   } // namepsace rebalance
 } // namepsace stk

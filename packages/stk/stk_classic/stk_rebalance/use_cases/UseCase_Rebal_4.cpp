@@ -31,11 +31,11 @@
 
 //----------------------------------------------------------------------
 
-using namespace stk::mesh::fixtures;
+using namespace stk_classic::mesh::fixtures;
 
-typedef stk::mesh::Field<double> ScalarField ;
+typedef stk_classic::mesh::Field<double> ScalarField ;
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 namespace use_cases {
 
@@ -56,7 +56,7 @@ class GreedySideset : public Partition {
     ~MeshInfo() {}
   };
   explicit GreedySideset(ParallelMachine pm,
-                         const stk::mesh::PartVector & surfaces,
+                         const stk_classic::mesh::PartVector & surfaces,
                          mesh::BulkData   & bulk_data);
   virtual ~GreedySideset();
   virtual void reset_dest_proc_data();
@@ -65,21 +65,21 @@ class GreedySideset : public Partition {
                                const ScalarField   * elem_weight_ref=NULL);
   virtual void determine_new_partition(bool &RebalancingNeeded);
   virtual unsigned num_elems() const;
-  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition);
+  virtual int get_new_partition(stk_classic::mesh::EntityProcVec &new_partition);
   virtual bool partition_dependents_needed()const;
   bool find_mesh_entity(const mesh::Entity * entity, unsigned & moid) const;
   unsigned destination_proc(const unsigned moid) const;
   void set_destination_proc(const unsigned moid, const unsigned proc );
   MeshInfo  mesh_information_;
   unsigned  total_number_entities_;
-  const stk::mesh::PartVector & surfaces_;
+  const stk_classic::mesh::PartVector & surfaces_;
   mesh::BulkData   & bulk_data_;
 };
 
 GreedySideset::GreedySideset(ParallelMachine pm,
-                             const stk::mesh::PartVector & surfaces,
+                             const stk_classic::mesh::PartVector & surfaces,
                              mesh::BulkData   & bulk_data) :
-  stk::rebalance::Partition(pm),
+  stk_classic::rebalance::Partition(pm),
   mesh_information_(),
   surfaces_(surfaces),
   bulk_data_(bulk_data) {}
@@ -106,13 +106,13 @@ void GreedySideset::set_mesh_info ( const std::vector<mesh::Entity *> &mesh_enti
       The length of the dest_proc_ids vector is the same
       length as the mesh_entities vector.
   */
-  mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk::parallel_machine_rank(comm_));
+  mesh_info.dest_proc_ids.assign(mesh_entities.size(), stk_classic::parallel_machine_rank(comm_));
 
   mesh_information_ = mesh_info;
 }
 
 unsigned GreedySideset::num_elems() const {return total_number_entities_ ;}
-int GreedySideset::get_new_partition(stk::mesh::EntityProcVec &new_partition){
+int GreedySideset::get_new_partition(stk_classic::mesh::EntityProcVec &new_partition){
 std::vector<mesh::Entity*>::iterator i=mesh_information_.mesh_entities.begin();
 std::vector<unsigned>     ::iterator j=mesh_information_.dest_proc_ids.begin();
   for (;i != mesh_information_.mesh_entities.end(),
@@ -151,13 +151,13 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
 
   reset_dest_proc_data();
 
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get(bulk_data_);
-  const stk::mesh::EntityRank side_rank = fem_meta.side_rank();
-  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data_);
+  const stk_classic::mesh::EntityRank side_rank = fem_meta.side_rank();
+  const stk_classic::mesh::EntityRank elem_rank = fem_meta.element_rank();
 
   // Select active ghosted side faces.
-  stk::mesh::Selector selector(!fem_meta.locally_owned_part() &
-                                stk::mesh::selectIntersection(surfaces_));
+  stk_classic::mesh::Selector selector(!fem_meta.locally_owned_part() &
+                                stk_classic::mesh::selectIntersection(surfaces_));
 
   mesh::EntityVector sides;
   mesh::get_selected_entities(selector, bulk_data_.buckets(side_rank), sides);
@@ -172,7 +172,7 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
     ThrowRequireMsg(sideProc!=p_rank,
      "When iterating Non-locally owned sides, found a locally owned side.");
 
-    stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
+    stk_classic::mesh::PairIterRelation iElem = side.relations(elem_rank);
     for ( ; iElem.first != iElem.second; ++iElem.first ) {
       const mesh::Entity & elem = *iElem.first->entity();
       unsigned moid;
@@ -197,32 +197,32 @@ void GreedySideset::determine_new_partition(bool &RebalancingNeeded) {
     }
   }
   size_t global_changes = 0;
-  stk::all_reduce_sum (comm_, &local_changes, &global_changes, 1);
+  stk_classic::all_reduce_sum (comm_, &local_changes, &global_changes, 1);
   RebalancingNeeded = global_changes > 0;
 }
 
 enum { nx = 3, ny = 3 };
 
-bool test_greedy_sideset ( stk::ParallelMachine comm )
+bool test_greedy_sideset ( stk_classic::ParallelMachine comm )
 {
   unsigned spatial_dimension = 2;
-  std::vector<std::string> rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
-  stk::mesh::fem::FEMMetaData fem_meta;
+  std::vector<std::string> rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dimension);
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension, rank_names);
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
-  const stk::mesh::EntityRank node_rank       = fem_meta.node_rank();
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , comm , 100 );
+  const stk_classic::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank node_rank       = fem_meta.node_rank();
 
-  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::Line<2> >());
-  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
-  stk::mesh::Part & side_part( fem_meta.declare_part("line", line_top ) );
+  stk_classic::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk_classic::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::Line<2> >());
+  stk_classic::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  stk_classic::mesh::Part & side_part( fem_meta.declare_part("line", line_top ) );
   VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
   ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , node_rank , fem_meta.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
+  stk_classic::mesh::put_field( coord_field , node_rank , fem_meta.universal_part() );
+  stk_classic::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
   fem_meta.commit();
   const unsigned p_rank = bulk_data.parallel_rank();
@@ -230,37 +230,37 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   if ( !p_rank ) {
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<std::vector<stk_classic::mesh::Entity*> > quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
+        stk_classic::mesh::Entity &q = stk_classic::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
         quads[ix][iy] = &q;
       }
     }
 
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk_classic::mesh::field_data( weight_field , *e );
         *e_weight = 1.0;
       }
     }
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
-        stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( node_rank, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk_classic::mesh::EntityId nid = 1 + ix + iy * nnx ;
+        stk_classic::mesh::Entity * n = bulk_data.get_entity( node_rank, nid );
+        double * const coord = stk_classic::mesh::field_data( coord_field , *n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -271,17 +271,17 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   bulk_data.modification_end();
 
   // create some sides and faces to rebalance.
-  stk::mesh::PartVector add_parts;
-  stk::mesh::create_adjacent_entities(bulk_data, add_parts);
+  stk_classic::mesh::PartVector add_parts;
+  stk_classic::mesh::create_adjacent_entities(bulk_data, add_parts);
 
   bulk_data.modification_begin();
 
-  const stk::mesh::PartVector surfaces(1, &side_part);
+  const stk_classic::mesh::PartVector surfaces(1, &side_part);
   {
-    const stk::mesh::PartVector empty_remove_parts;
-    stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-    const stk::mesh::EntityRank side_rank = fmeta.side_rank();
-    stk::mesh::Selector selector2( fmeta.locally_owned_part());
+    const stk_classic::mesh::PartVector empty_remove_parts;
+    stk_classic::mesh::fem::FEMMetaData & fmeta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk_classic::mesh::EntityRank side_rank = fmeta.side_rank();
+    stk_classic::mesh::Selector selector2( fmeta.locally_owned_part());
     mesh::EntityVector sides;
     mesh::get_selected_entities(selector2, bulk_data.buckets(side_rank), sides);
 
@@ -296,12 +296,12 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   }
   bulk_data.modification_end();
 
-  // Zoltan partition is specialized form a virtual base class, stk::rebalance::Partition.
+  // Zoltan partition is specialized form a virtual base class, stk_classic::rebalance::Partition.
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
-  stk::mesh::Selector selector3(fem_meta.locally_owned_part());
-  stk::rebalance::rebalance(bulk_data, selector3, &coord_field, NULL, zoltan_partition);
+  stk_classic::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
+  stk_classic::mesh::Selector selector3(fem_meta.locally_owned_part());
+  stk_classic::rebalance::rebalance(bulk_data, selector3, &coord_field, NULL, zoltan_partition);
   {
     const int  print_stats = 1;
     int        nentity     = 0;
@@ -319,14 +319,14 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
     std::cout <<" Number on Boundary:     :"<<nboundary <<std::endl;
     std::cout <<" Number Adjancent:       :"<<nadj      <<std::endl;
     {
-      stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-      const stk::mesh::EntityRank side_rank = fmeta.side_rank();
-      const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
+      stk_classic::mesh::fem::FEMMetaData & fmeta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+      const stk_classic::mesh::EntityRank side_rank = fmeta.side_rank();
+      const stk_classic::mesh::EntityRank elem_rank = fmeta.element_rank();
       const mesh::Entity *s = bulk_data.get_entity(side_rank,7);
       if (s) {
         const mesh::Entity & side = *s;
         if (p_rank == side.owner_rank()) {
-          stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
+          stk_classic::mesh::PairIterRelation iElem = side.relations(elem_rank);
           for ( ; iElem.first != iElem.second; ++iElem.first ) {
             const mesh::Entity & elem = *iElem.first->entity();
             const unsigned elemProc = elem.owner_rank();
@@ -343,32 +343,32 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
   }
 
   const double imbalance_threshold = 1.5;
-  bool do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
+  bool do_rebal = imbalance_threshold < stk_classic::rebalance::check_balance(bulk_data, NULL, element_rank);
 
   if( !p_rank )
     std::cout << std::endl
      << "Use Case 4: imbalance_threshold after rebalance 1 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
 
   {
-    stk::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
-    stk::mesh::Selector selector4(fem_meta.locally_owned_part());
-    stk::rebalance::rebalance(bulk_data, selector4, &coord_field, NULL, greedy_sideset);
+    stk_classic::rebalance::use_cases::GreedySideset greedy_sideset(comm, surfaces, bulk_data);
+    stk_classic::mesh::Selector selector4(fem_meta.locally_owned_part());
+    stk_classic::rebalance::rebalance(bulk_data, selector4, &coord_field, NULL, greedy_sideset);
   }
 
-  do_rebal = imbalance_threshold < stk::rebalance::check_balance(bulk_data, NULL, element_rank);
+  do_rebal = imbalance_threshold < stk_classic::rebalance::check_balance(bulk_data, NULL, element_rank);
 
   if( !p_rank )
     std::cout << std::endl
      << "Use Case 4: imbalance_threshold after rebalance 2 = " << imbalance_threshold <<", "<<do_rebal << std::endl;
   {
-    stk::mesh::fem::FEMMetaData & fmeta = stk::mesh::fem::FEMMetaData::get(bulk_data);
-    const stk::mesh::EntityRank side_rank = fmeta.side_rank();
-    const stk::mesh::EntityRank elem_rank = fmeta.element_rank();
+    stk_classic::mesh::fem::FEMMetaData & fmeta = stk_classic::mesh::fem::FEMMetaData::get(bulk_data);
+    const stk_classic::mesh::EntityRank side_rank = fmeta.side_rank();
+    const stk_classic::mesh::EntityRank elem_rank = fmeta.element_rank();
     mesh::Entity *s = bulk_data.get_entity(side_rank,7);
     if (s) {
       mesh::Entity & side = *s;
       if (p_rank == side.owner_rank()) {
-        stk::mesh::PairIterRelation iElem = side.relations(elem_rank);
+        stk_classic::mesh::PairIterRelation iElem = side.relations(elem_rank);
         for ( ; iElem.first != iElem.second; ++iElem.first ) {
           const mesh::Entity & elem = *iElem.first->entity();
           const unsigned elemProc = elem.owner_rank();
@@ -386,8 +386,8 @@ bool test_greedy_sideset ( stk::ParallelMachine comm )
 
   // And verify that all dependent entities are on the same proc as their parent element
   {
-    stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector5 = fem_meta.locally_owned_part();
+    stk_classic::mesh::EntityVector entities;
+    stk_classic::mesh::Selector selector5 = fem_meta.locally_owned_part();
 
     get_selected_entities(selector5, bulk_data.buckets(node_rank), entities);
     result &= verify_dependent_ownership(element_rank, entities);

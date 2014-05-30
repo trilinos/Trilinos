@@ -18,7 +18,7 @@
 #include <Teuchos_ParameterList.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 /** Add connectivities (matrix-graph sparsity contributions) to the
@@ -32,12 +32,12 @@ namespace linsys {
   given selector.
 
 */
-void add_connectivities(stk::linsys::LinearSystemInterface& ls,
-                        stk::mesh::EntityRank from_type,
-                        stk::mesh::EntityRank to_connected_type,
-                        const stk::mesh::FieldBase& field,
-                        const stk::mesh::Selector& selector,
-                        const stk::mesh::BulkData& mesh_bulk);
+void add_connectivities(stk_classic::linsys::LinearSystemInterface& ls,
+                        stk_classic::mesh::EntityRank from_type,
+                        stk_classic::mesh::EntityRank to_connected_type,
+                        const stk_classic::mesh::FieldBase& field,
+                        const stk_classic::mesh::Selector& selector,
+                        const stk_classic::mesh::BulkData& mesh_bulk);
 
 /** Apply a Dirichlet boundary-condition for the specified field, on
  * entities of the specified entity-type which are members of the
@@ -47,11 +47,11 @@ void add_connectivities(stk::linsys::LinearSystemInterface& ls,
  * The corresponding modifications to the matrix and vector will be made
  * when LinearSystemInterface::finalize_assembly() is called.
  */
-void dirichlet_bc(stk::linsys::LinearSystemInterface& ls,
-                  const stk::mesh::BulkData& mesh,
-                  const stk::mesh::Part& bcpart,
-                  stk::mesh::EntityRank entity_rank,
-                  const stk::mesh::FieldBase& field,
+void dirichlet_bc(stk_classic::linsys::LinearSystemInterface& ls,
+                  const stk_classic::mesh::BulkData& mesh,
+                  const stk_classic::mesh::Part& bcpart,
+                  stk_classic::mesh::EntityRank entity_rank,
+                  const stk_classic::mesh::FieldBase& field,
                   unsigned field_component,
                   double prescribed_value);
 
@@ -78,13 +78,13 @@ int fei_solve(int & status, fei::LinearSystem &fei_ls, const Teuchos::ParameterL
 double compute_residual_norm2(fei::LinearSystem& fei_ls, fei::Vector& r);
 
 /** Copy the contents of an fei::Vector to the corresponding field-data
- * locations in a stk::mesh::BulkData instance.
+ * locations in a stk_classic::mesh::BulkData instance.
  * This function first calls vec.scatterToOverlap() to ensure that coefficients
  * for shared-entities are available on all sharing processors.
  */
 void copy_vector_to_mesh( fei::Vector & vec,
                           const DofMapper & dof,
-                          stk::mesh::BulkData & mesh_bulk_data
+                          stk_classic::mesh::BulkData & mesh_bulk_data
                         );
 
 /** Scale matrix by a scalar: matrix = scalar*matrix

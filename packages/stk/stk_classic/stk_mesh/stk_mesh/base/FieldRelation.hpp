@@ -10,7 +10,7 @@
 #ifndef stk_mesh_FieldRelation_hpp
 #define stk_mesh_FieldRelation_hpp
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class FieldBase;
@@ -23,18 +23,18 @@ class FieldBase;
  *          <em> directly </em> used within application code.
  *
  *  <b> Let </b>
- *  - <b> rel </b> be the \ref stk::mesh::Relation "relation" from
- *    \ref stk::mesh::Entity "entity" <b>e1</b> to
- *    \ref stk::mesh::Entity "entity" <b>e2</b>
+ *  - <b> rel </b> be the \ref stk_classic::mesh::Relation "relation" from
+ *    \ref stk_classic::mesh::Entity "entity" <b>e1</b> to
+ *    \ref stk_classic::mesh::Entity "entity" <b>e2</b>
  *
  *  <b> If </b>
- *  - \ref stk::mesh::Field "field" <b> m_root </b>
+ *  - \ref stk_classic::mesh::Field "field" <b> m_root </b>
  *    has a pointer scalar type 'T *' AND
- *  - \ref stk::mesh::Field "field" <b> m_target </b>
+ *  - \ref stk_classic::mesh::Field "field" <b> m_target </b>
  *    has a scalar type 'T' AND
  *  - \ref stk_mesh_field_data "field_data"( *m_root , e1 ) exists AND
  *  - \ref stk_mesh_field_data "field_data"( *m_target , e2 ) exists AND
- *  - \ref stk::mesh::Relation "relation" <b> rel </b> is in the domain of
+ *  - \ref stk_classic::mesh::Relation "relation" <b> rel </b> is in the domain of
  *    \ref stk_mesh_relation_stencil "relation stencil" <b> m_function </b>
  *
  *  <b> then </b>

@@ -25,7 +25,7 @@ namespace Diag {
  * writer.
  *
  */
-class WriterRegistry : public std::map<std::string, std::pair<stk::diag::Writer *, OptionMaskParser *>, stk::LessCase>
+class WriterRegistry : public std::map<std::string, std::pair<stk_classic::diag::Writer *, OptionMaskParser *>, stk_classic::LessCase>
 {
 public:  
   WriterRegistry();
@@ -41,7 +41,7 @@ public:
   ~WriterThrowSafe();
 
 private:
-  std::vector<stk::diag::WriterThrowSafe *>     m_writerVector;
+  std::vector<stk_classic::diag::WriterThrowSafe *>     m_writerVector;
 };
   
 /**

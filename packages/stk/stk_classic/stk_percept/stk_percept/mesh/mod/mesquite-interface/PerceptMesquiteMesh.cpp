@@ -25,7 +25,7 @@
 
 #define DEBUG_PRINT 0
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
 
@@ -69,7 +69,7 @@ namespace stk {
     // Author: sjowen
     // Date: 03/30/2011, 11/15/11
     //============================================================================
-    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain *domain, stk::mesh::Selector *boundarySelector) 
+    PerceptMesquiteMesh::PerceptMesquiteMesh(PerceptMesh *eMesh, PerceptMesquiteMeshDomain *domain, stk_classic::mesh::Selector *boundarySelector) 
       : m_meshDomain(domain), m_boundarySelector(boundarySelector), m_nodeCoords_tag_is_created(false), m_is_proc_id_active(false),
         m_is_global_id_active(false), m_parallelHelperLocalIdMap_is_created(false)
     {  
@@ -126,12 +126,12 @@ namespace stk {
       return (size_t) m_eMesh->get_number_nodes();
     }
 
-    bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket) const
+    bool PerceptMesquiteMesh::select_bucket(stk_classic::mesh::Bucket& bucket) const
     {
       return select_bucket(bucket, m_eMesh);
     }
 
-    bool PerceptMesquiteMesh::select_bucket(stk::mesh::Bucket& bucket, PerceptMesh *eMesh) 
+    bool PerceptMesquiteMesh::select_bucket(stk_classic::mesh::Bucket& bucket, PerceptMesh *eMesh) 
     {
       const CellTopologyData * cell_topo_data = eMesh->get_cell_topology(bucket);
       shards::CellTopology cell_topo(cell_topo_data);
@@ -149,7 +149,7 @@ namespace stk {
         }
     }
 
-    bool PerceptMesquiteMesh::select_element(stk::mesh::Entity& element) const
+    bool PerceptMesquiteMesh::select_element(stk_classic::mesh::Entity& element) const
     {
       return select_bucket(element.bucket());
     }
@@ -166,15 +166,15 @@ namespace stk {
       //return (size_t) m_eMesh->get_number_elements();
       size_t num_elem=0;
 
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
       unsigned buckets_size = buckets.size();
       if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           //if (removePartSelector(**k))
           {
-            stk::mesh::Bucket & bucket = **k ;
+            stk_classic::mesh::Bucket & bucket = **k ;
 
             if (select_bucket(bucket))
               {
@@ -182,7 +182,7 @@ namespace stk {
 
                 for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                   {
-                    stk::mesh::Entity& element = bucket[ientity];
+                    stk_classic::mesh::Entity& element = bucket[ientity];
                     if (m_eMesh->hasFamilyTree(element) && m_eMesh->isParentElement(element, false))
                       continue;
                     ++num_elem;
@@ -210,18 +210,18 @@ namespace stk {
       //int index = 0;
       vertices.clear();
   
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->node_rank() );
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           //if (removePartSelector(**k))
           {
-            stk::mesh::Bucket & bucket = **k ;
+            stk_classic::mesh::Bucket & bucket = **k ;
 
             const unsigned num_entity_in_bucket = bucket.size();
             for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
               {
-                stk::mesh::Entity& node = bucket[ientity];
+                stk_classic::mesh::Entity& node = bucket[ientity];
                 vertices.push_back(reinterpret_cast<Mesquite::Mesh::VertexHandle>( &node ) );
               }
           }
@@ -239,16 +239,16 @@ namespace stk {
     {
       elements.clear();
 
-      const std::vector<stk::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = m_eMesh->get_bulk_data()->buckets( m_eMesh->element_rank() );
       unsigned buckets_size = buckets.size();
       if (DEBUG_PRINT) std::cout << "tmp srk buckets_size= " << buckets_size << std::endl;
       
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
         {
           //if (removePartSelector(**k))
           {
-            stk::mesh::Bucket & bucket = **k ;
+            stk_classic::mesh::Bucket & bucket = **k ;
 
             if (select_bucket(bucket))
               {
@@ -259,7 +259,7 @@ namespace stk {
                 const unsigned num_entity_in_bucket = bucket.size();
                 for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                   {
-                    stk::mesh::Entity& element = bucket[ientity];
+                    stk_classic::mesh::Entity& element = bucket[ientity];
                     if (DEBUG_PRINT) {
                       std::cout << "tmp srk printing entity: ";
                       m_eMesh->print_entity(std::cout, element, m_eMesh->get_coordinates_field() );
@@ -275,7 +275,7 @@ namespace stk {
       if (DEBUG_PRINT) std::cout << "tmp srk get_all_elements num_elem= " << elements.size() << std::endl;
     }
 
-    bool PerceptMesquiteMesh::get_fixed_flag(stk::mesh::Entity* node_ptr)
+    bool PerceptMesquiteMesh::get_fixed_flag(stk_classic::mesh::Entity* node_ptr)
     {
       int dof = -1;
       bool fixed=true;
@@ -358,7 +358,7 @@ namespace stk {
     
       for (i = 0; i < num_vtx; ++i)
         {
-          stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(vert_array[i]);
+          stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vert_array[i]);
     
           //if we've got a null pointer, something is wrong.
           if(node_ptr==NULL)
@@ -393,7 +393,7 @@ namespace stk {
     
       for (i = 0; i < num_vtx; ++i)
         {
-          stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity *>(vert_array[i]);
+          stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vert_array[i]);
     
           //if we've got a null pointer, something is wrong.
           if(node_ptr==NULL){
@@ -424,10 +424,10 @@ namespace stk {
                                                        Mesquite::MsqError &err)
     {
       unsigned int i;
-      stk::mesh::Entity* node_ptr = NULL;
+      stk_classic::mesh::Entity* node_ptr = NULL;
       for (i = 0; i<num_vtx; ++i){
     
-        node_ptr=reinterpret_cast<stk::mesh::Entity*>(vert_array[i]);
+        node_ptr=reinterpret_cast<stk_classic::mesh::Entity*>(vert_array[i]);
     
         //if null pointer, there is a problem somewhere.  We set the vector's
         // position to (0,0,0) just to avoid un-initialized variable issues.
@@ -438,7 +438,7 @@ namespace stk {
           return;
         }
         //set coordinates to the vertex's position.
-        stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+        stk_classic::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
         double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
         coordinates[i].set(f_data[0], f_data[1], (m_eMesh->get_spatial_dim() == 2 ? 0 : f_data[2]) );
@@ -456,7 +456,7 @@ namespace stk {
                                                      const Mesquite::Vector3D &coordinates,
                                                      Mesquite::MsqError &err)
     {
-      stk::mesh::Entity* node_ptr = reinterpret_cast<stk::mesh::Entity*>(vertex);
+      stk_classic::mesh::Entity* node_ptr = reinterpret_cast<stk_classic::mesh::Entity*>(vertex);
     
       //if null pointer, there is a problem somewhere.  We set the vector's
       // position to (0,0,0) just to avoid un-initialized variable issues.
@@ -466,7 +466,7 @@ namespace stk {
         return;
       }
 
-      stk::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase* field = m_eMesh->get_coordinates_field();
       double *f_data = PerceptMesh::field_data(field, *node_ptr);
 
       f_data[0] = coordinates[0];
@@ -490,7 +490,7 @@ namespace stk {
                                                unsigned char byte,
                                                Mesquite::MsqError &err)
     {
-      stk::mesh::Entity* node_ptr=reinterpret_cast<stk::mesh::Entity*>(vertex);
+      stk_classic::mesh::Entity* node_ptr=reinterpret_cast<stk_classic::mesh::Entity*>(vertex);
   
       //make sure there isn't a null pointer.
       if(node_ptr==NULL) {
@@ -499,7 +499,7 @@ namespace stk {
         return;
       }
   
-      std::pair<stk::mesh::EntityId, unsigned char> msq_data = std::pair<stk::mesh::EntityId, unsigned char>(node_ptr->identifier(), byte);
+      std::pair<stk_classic::mesh::EntityId, unsigned char> msq_data = std::pair<stk_classic::mesh::EntityId, unsigned char>(node_ptr->identifier(), byte);
 
       m_mesquiteNodeDataMap[node_ptr] = msq_data;
     }
@@ -534,7 +534,7 @@ namespace stk {
                                               unsigned char *byte,
                                               Mesquite::MsqError &err)
     {
-      stk::mesh::Entity* node_ptr=reinterpret_cast<stk::mesh::Entity*>(vertex);
+      stk_classic::mesh::Entity* node_ptr=reinterpret_cast<stk_classic::mesh::Entity*>(vertex);
   
       //make sure there isn't a null pointer.
       if(node_ptr==NULL) {
@@ -615,14 +615,14 @@ namespace stk {
       size_t i=0;
       elements.clear();
       offsets.clear();
-      stk::mesh::Entity* node_ptr=NULL;
+      stk_classic::mesh::Entity* node_ptr=NULL;
       ElementHandle temp_e_handle;
       size_t offset_counter = 0;
   
       for(i=0; i<num_vertex; ++i)
         {
           offsets.push_back(offset_counter);
-          node_ptr=reinterpret_cast<stk::mesh::Entity*>(vertex_array[i]);
+          node_ptr=reinterpret_cast<stk_classic::mesh::Entity*>(vertex_array[i]);
     
           //make sure there isn't a null pointer
           if(node_ptr==NULL) {
@@ -631,12 +631,12 @@ namespace stk {
             return;
           }
     
-          stk::mesh::PairIterRelation elements_of_node = node_ptr->relations(m_eMesh->element_rank());
+          stk_classic::mesh::PairIterRelation elements_of_node = node_ptr->relations(m_eMesh->element_rank());
           //sort_hexes( hex_patch, hex_list );  // to ensure parallel consistency
 
           for (unsigned iele=0; iele < elements_of_node.size(); iele++)
             {
-              stk::mesh::Entity& ele = *elements_of_node[iele].entity();
+              stk_classic::mesh::Entity& ele = *elements_of_node[iele].entity();
 
               // only return hexes in the includedElements set
               //if (includedElements.find(ent_ptr) != includedElements.end())
@@ -682,7 +682,7 @@ namespace stk {
         }      
   
       size_t i;
-      stk::mesh::Entity* element_ptr=0;
+      stk_classic::mesh::Entity* element_ptr=0;
 
   
       //get a list of all nodes that are in these elements (the elements
@@ -691,7 +691,7 @@ namespace stk {
       for(i=0; i < ((size_t) num_elems);++i)
         {
           offsets.push_back(offset_counter);
-          element_ptr = reinterpret_cast<stk::mesh::Entity*>(elem_handles[i]);
+          element_ptr = reinterpret_cast<stk_classic::mesh::Entity*>(elem_handles[i]);
           if(element_ptr==NULL){
             PRINT_ERROR("elements_get_attached_vertices: unexpected null pointer, element_ptr.\n");
             MSQ_SETERR(err)("elements_get_attached_vertices: unexpected null pointer, element_ptr.",
@@ -701,7 +701,7 @@ namespace stk {
 
           VertexHandle temp_v_handle = NULL;
 
-          stk::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
+          stk_classic::mesh::PairIterRelation nodes = element_ptr->relations(m_eMesh->node_rank());
           if (DEBUG_PRINT) {
             std::cout << "tmp srk in elements_get_attached_vertices, nodes.size= " << nodes.size() 
                       << " elem= ";
@@ -718,7 +718,7 @@ namespace stk {
                 MSQ_SETERR(err)("elements_get_attached_vertices: unexpected null pointer, nodes[inode].entity().",
                                 Mesquite::MsqError::INVALID_STATE);
               }
-              stk::mesh::Entity& node = *nodes[inode].entity();
+              stk_classic::mesh::Entity& node = *nodes[inode].entity();
         
               temp_v_handle = reinterpret_cast<VertexHandle>(&node);
       
@@ -750,12 +750,12 @@ namespace stk {
                                                       Mesquite::MsqError &err)
     {
   
-      stk::mesh::Entity *ent = NULL;
+      stk_classic::mesh::Entity *ent = NULL;
   
       //loop over the elements
       for ( ; num_elements--; )
         {
-          ent = reinterpret_cast<stk::mesh::Entity*>(element_handle_array[num_elements]);
+          ent = reinterpret_cast<stk_classic::mesh::Entity*>(element_handle_array[num_elements]);
           if(ent==NULL){
             PRINT_ERROR("elements_get_topologies: unexpected null pointer.\n");
             MSQ_SETERR(err)("elements_get_topologies: unexpected null pointer.",
@@ -1111,7 +1111,7 @@ namespace stk {
             {
               double *coords = &coords_0[inode*3];
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               NodeCoordsType::iterator iter = m_nodeCoords.find(node_ptr);
               if (iter == m_nodeCoords.end())
                 {
@@ -1141,7 +1141,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               m_parallelHelperLocalIdMap[node_ptr] = lid[inode];
             }
         }
@@ -1151,7 +1151,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               if (!proc_id || !node_ptr || (int)node_ptr->owner_rank() != proc_id[inode])
                 {
                   PRINT_ERROR("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n");
@@ -1165,7 +1165,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               if (!global_id || !node_ptr || (size_t)node_ptr->identifier() != global_id[inode])
                 {
                   PRINT_ERROR("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_set_vertex_data\n");
@@ -1232,7 +1232,7 @@ namespace stk {
             {
               double *coords = &coords_0[inode*3];
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               NodeCoordsType::iterator iter = m_nodeCoords.find(node_ptr);
               if (iter == m_nodeCoords.end())
                 {
@@ -1264,7 +1264,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               ParallelHelperLocalIdType::iterator iter = m_parallelHelperLocalIdMap.find(node_ptr);
               if (iter == m_parallelHelperLocalIdMap.end())
                 {
@@ -1284,7 +1284,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               if (!proc_id || !node_ptr)
                 {
                   PRINT_ERROR("proc_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n");
@@ -1299,7 +1299,7 @@ namespace stk {
           for(int inode = 0; inode < (int)num_nodes; inode++)
             {
               Mesquite::Mesh::VertexHandle vhandle = node_array[inode];
-              stk::mesh::Entity *node_ptr = reinterpret_cast<stk::mesh::Entity *>(vhandle);
+              stk_classic::mesh::Entity *node_ptr = reinterpret_cast<stk_classic::mesh::Entity *>(vhandle);
               if (!global_id || !node_ptr)
                 {
                   PRINT_ERROR("global_id/node_ptr/consistency problem in PerceptMesquiteMesh::tag_get_vertex_data\n");

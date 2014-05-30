@@ -14,7 +14,7 @@
 
 #include <stk_mesh/base/BulkData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 typedef std::less<unsigned> LowestRankSharingProcOwns;
@@ -22,7 +22,7 @@ typedef std::greater<unsigned> HighestRankSharingProcOwns;
 
 /** Sets the owner for shared entities according to the template parameter OwnershipRule.
  * OwnershipRule is used as a the comparison operator in a std::set.
- * The default behavior of stk::mesh is to give ownership to the highest-rank sharing proc.
+ * The default behavior of stk_classic::mesh is to give ownership to the highest-rank sharing proc.
 */
 template<class OwnershipRule>
 void set_owners(BulkData& mesh_bulk_data)

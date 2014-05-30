@@ -30,17 +30,17 @@
 #include <iomanip>
 #include <algorithm>
 
-using stk::mesh::MetaData;
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::Part;
-using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
-using stk::mesh::Entity;
-using stk::mesh::EntityVector;
-using stk::mesh::EntityRank;
-using stk::mesh::Selector;
-using stk::mesh::BulkData;
-using stk::ParallelMachine;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::PartRelation;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityVector;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::BulkData;
+using stk_classic::ParallelMachine;
 using std::cout;
 using std::endl;
 
@@ -49,19 +49,19 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   //Coverage of GridFixture, Hexfixture, BoxFixture,QuadFixture
   //and RingFixture in fixture directory for more than one
   //processor.
-  stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
+  stk_classic::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
-  stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
-  stk::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+  stk_classic::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
+  stk_classic::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
+  const stk_classic::mesh::EntityRank elem_rank = fem_meta.element_rank();
   
   int  size , rank;
-  rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  rank = stk_classic::parallel_machine_rank( MPI_COMM_WORLD );
+  size = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
-  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
+  stk_classic::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
+  stk_classic::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
 
   fem_meta.commit();
 
@@ -77,10 +77,10 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   const unsigned num_shell_2_faces = 2*size + rank;
   const unsigned num_shell_faces = num_shell_1_faces + num_shell_2_faces;
 
-  stk::mesh::PartVector shell_parts;
+  stk_classic::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
 
-  std::vector<stk::mesh::Entity*> shell_faces;
+  std::vector<stk_classic::mesh::Entity*> shell_faces;
 
   unsigned id_base = 0;
   unsigned id_offset = 500; // a safe offset to avoid id overlap
@@ -88,7 +88,7 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   for (id_base = 1; id_base <= num_shell_faces; ++id_base) {
 
     int new_id = rank * num_shell_faces + id_base;
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(elem_rank,
+    stk_classic::mesh::Entity& new_shell = bulk_data.declare_entity(elem_rank,
                                                             id_offset + new_id,
                                                             shell_parts);
     shell_faces.push_back(&new_shell);

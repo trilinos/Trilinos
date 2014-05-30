@@ -11,7 +11,7 @@
 
 #include <stk_adapt/sierra_element/CellTopology.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
     namespace Elem {
 

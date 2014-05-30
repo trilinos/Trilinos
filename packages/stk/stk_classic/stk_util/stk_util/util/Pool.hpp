@@ -21,7 +21,7 @@
 //of memory having size determined by the argument to the class
 //constructor.
 
-namespace stk {
+namespace stk_classic {
 namespace util {
 class Pool {
  public:

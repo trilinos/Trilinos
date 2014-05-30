@@ -11,7 +11,7 @@
 
 #include <boost/range.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 template <class It>
 inline

@@ -32,23 +32,23 @@
 #include <assert.h>
 
 namespace {
-void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_surface_entity(Ioss::SideSet *sset, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   assert(sset->type() == Ioss::SIDESET);
   const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
-  stk::io::default_part_processing(blocks, fem_meta);
+  stk_classic::io::default_part_processing(blocks, fem_meta);
 
-  stk::mesh::Part* const ss_part = fem_meta.get_part(sset->name());
+  stk_classic::mesh::Part* const ss_part = fem_meta.get_part(sset->name());
   assert(ss_part != NULL);
 
-  stk::mesh::Field<double, stk::mesh::ElementNode> *distribution_factors_field = NULL;
+  stk_classic::mesh::Field<double, stk_classic::mesh::ElementNode> *distribution_factors_field = NULL;
   bool surface_df_defined = false; // Has the surface df field been defined yet?
 
   size_t block_count = sset->block_count();
   for (size_t i=0; i < block_count; i++) {
     Ioss::SideBlock *sb = sset->get_block(i);
-    if (stk::io::include_entity(sb)) {
-      stk::mesh::Part * const sb_part = fem_meta.get_part(sb->name());
+    if (stk_classic::io::include_entity(sb)) {
+      stk_classic::mesh::Part * const sb_part = fem_meta.get_part(sb->name());
       assert(sb_part != NULL);
       fem_meta.declare_part_subset(*ss_part, *sb_part);
 
@@ -56,31 +56,31 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fe
         if (!surface_df_defined) {
           std::string field_name = sset->name() + "_df";
           distribution_factors_field =
-            &fem_meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
-          stk::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
-          stk::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
+            &fem_meta.declare_field<stk_classic::mesh::Field<double, stk_classic::mesh::ElementNode> >(field_name);
+          stk_classic::io::set_field_role(*distribution_factors_field, Ioss::Field::MESH);
+          stk_classic::io::set_distribution_factor_field(*ss_part, *distribution_factors_field);
           surface_df_defined = true;
         }
-        stk::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
+        stk_classic::io::set_distribution_factor_field(*sb_part, *distribution_factors_field);
         int side_node_count = sb->topology()->number_nodes();
-        stk::mesh::put_field(*distribution_factors_field,
-                             stk::io::part_primary_entity_rank(*sb_part),
+        stk_classic::mesh::put_field(*distribution_factors_field,
+                             stk_classic::io::part_primary_entity_rank(*sb_part),
                              *sb_part, side_node_count);
       }
     }
   }
 }
 
-  size_t get_entities(stk::mesh::Part &part,
-		      const stk::mesh::BulkData &bulk,
-		      std::vector<stk::mesh::Entity*> &entities,
-		      const stk::mesh::Selector *anded_selector)
+  size_t get_entities(stk_classic::mesh::Part &part,
+		      const stk_classic::mesh::BulkData &bulk,
+		      std::vector<stk_classic::mesh::Entity*> &entities,
+		      const stk_classic::mesh::Selector *anded_selector)
   {
-    stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    stk::mesh::EntityRank type = stk::io::part_primary_entity_rank(part);
+    stk_classic::mesh::MetaData & meta = stk_classic::mesh::MetaData::get(part);
+    stk_classic::mesh::EntityRank type = stk_classic::io::part_primary_entity_rank(part);
     
-    stk::mesh::Selector own = meta.locally_owned_part();
-    stk::mesh::Selector selector = part & own;
+    stk_classic::mesh::Selector own = meta.locally_owned_part();
+    stk_classic::mesh::Selector selector = part & own;
     if (anded_selector) selector &= *anded_selector;
     
     get_selected_entities(selector, bulk.buckets(type), entities);
@@ -90,44 +90,44 @@ void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &fe
 
 // ========================================================================
 template <typename INT>
-void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk, INT /*dummy*/)
+void process_surface_entity(const Ioss::SideSet* sset, stk_classic::mesh::BulkData & bulk, INT /*dummy*/)
 {
   assert(sset->type() == Ioss::SIDESET);
 
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   size_t block_count = sset->block_count();
   for (size_t i=0; i < block_count; i++) {
     Ioss::SideBlock *block = sset->get_block(i);
-    if (stk::io::include_entity(block)) {
+    if (stk_classic::io::include_entity(block)) {
       std::vector<INT> side_ids ;
       std::vector<INT> elem_side ;
 
-      stk::mesh::Part * const sb_part = fem_meta.get_part(block->name());
-      stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
+      stk_classic::mesh::Part * const sb_part = fem_meta.get_part(block->name());
+      stk_classic::mesh::EntityRank elem_rank = fem_meta.element_rank();
 
       block->get_field_data("ids", side_ids);
       block->get_field_data("element_side", elem_side);
 
       assert(side_ids.size() * 2 == elem_side.size());
-      stk::mesh::PartVector add_parts( 1 , sb_part );
+      stk_classic::mesh::PartVector add_parts( 1 , sb_part );
 
       size_t side_count = side_ids.size();
-      std::vector<stk::mesh::Entity*> sides(side_count);
+      std::vector<stk_classic::mesh::Entity*> sides(side_count);
       for(size_t is=0; is<side_count; ++is) {
-        stk::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
+        stk_classic::mesh::Entity* const elem = bulk.get_entity(elem_rank, elem_side[is*2]);
 
         // If NULL, then the element was probably assigned to an
         // element block that appears in the database, but was
         // subsetted out of the analysis mesh. Only process if
         // non-null.
         if (elem != NULL) {
-          // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
+          // Ioss uses 1-based side ordinal, stk_classic::mesh uses 0-based.
           int side_ordinal = elem_side[is*2+1] - 1;
 
-          stk::mesh::Entity* side_ptr = NULL;
-          side_ptr = &stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
-          stk::mesh::Entity& side = *side_ptr;
+          stk_classic::mesh::Entity* side_ptr = NULL;
+          side_ptr = &stk_classic::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+          stk_classic::mesh::Entity& side = *side_ptr;
 
           bulk.change_entity_parts( side, add_parts );
           sides[is] = &side;
@@ -136,10 +136,10 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
         }
       }
 
-      const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-        stk::io::get_distribution_factor_field(*sb_part);
+      const stk_classic::mesh::Field<double, stk_classic::mesh::ElementNode> *df_field =
+        stk_classic::io::get_distribution_factor_field(*sb_part);
       if (df_field != NULL) {
-        stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+        stk_classic::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
       }
 
       // Add all attributes as fields.
@@ -150,23 +150,23 @@ void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bul
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+        stk_classic::mesh::FieldBase *field = fem_meta.get_field<stk_classic::mesh::FieldBase> (*I);
         if (field)
-          stk::io::field_data_from_ioss(field, sides, block, *I);
+          stk_classic::io::field_data_from_ioss(field, sides, block, *I);
       }
     }
   }
 }
 
-void process_surface_entity(const Ioss::SideSet* sset, stk::mesh::BulkData & bulk)
+void process_surface_entity(const Ioss::SideSet* sset, stk_classic::mesh::BulkData & bulk)
 {
-  if (stk::io::db_api_int_size(sset) == 4)
+  if (stk_classic::io::db_api_int_size(sset) == 4)
     process_surface_entity(sset, bulk, (int)0);
   else
     process_surface_entity(sset, bulk, (int64_t)0);
 }
 
-void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_nodeblocks(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
@@ -177,34 +177,34 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_m
   Ioss::Field coordinates = nb->get_field("mesh_model_coordinates");
   int spatial_dim = coordinates.transformed_storage()->component_count();
 
-  stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-    fem_meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+  stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> & coord_field =
+    fem_meta.declare_field<stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> >("coordinates");
 
-  stk::mesh::put_field( coord_field, fem_meta.node_rank(), fem_meta.universal_part(), spatial_dim);
-  stk::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, fem_meta.universal_part(), 0);
+  stk_classic::mesh::put_field( coord_field, fem_meta.node_rank(), fem_meta.universal_part(), spatial_dim);
+  stk_classic::io::define_io_fields(nb, Ioss::Field::ATTRIBUTE, fem_meta.universal_part(), 0);
 }
 
-void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void process_nodeblocks(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
   // This must be called after the "process_element_blocks" call
   // since there may be nodes that exist in the database that are
   // not part of the analysis mesh due to subsetting of the element
   // blocks.
 
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
 
-  std::vector<stk::mesh::Entity*> nodes;
-  stk::io::get_entity_list(nb, fem_meta.node_rank(), bulk, nodes);
+  std::vector<stk_classic::mesh::Entity*> nodes;
+  stk_classic::io::get_entity_list(nb, fem_meta.node_rank(), bulk, nodes);
 
-  stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
-    fem_meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+  stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> *coord_field =
+    fem_meta.get_field<stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> >("coordinates");
 
-  stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+  stk_classic::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
 
   // Add all attributes as fields.
   // If the only attribute is 'attribute', then add it; otherwise the other attributes are the
@@ -214,35 +214,35 @@ void process_nodeblocks(Ioss::Region &region, stk::mesh::BulkData &bulk)
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
     if(*I == "attribute" && names.size() > 1)
       continue;
-    stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+    stk_classic::mesh::FieldBase *field = fem_meta.get_field<stk_classic::mesh::FieldBase> (*I);
     if (field)
-      stk::io::field_data_from_ioss(field, nodes, nb, *I);
+      stk_classic::io::field_data_from_ioss(field, nodes, nb, *I);
   }
 }
 
 // ========================================================================
-void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_elementblocks(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
-  stk::io::default_part_processing(elem_blocks, fem_meta);
+  stk_classic::io::default_part_processing(elem_blocks, fem_meta);
 }
 
 template <typename INT>
-void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_elementblocks(Ioss::Region &region, stk_classic::mesh::BulkData &bulk, INT /*dummy*/)
 {
-  const stk::mesh::fem::FEMMetaData& fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData& fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin();
       it != elem_blocks.end(); ++it) {
     Ioss::ElementBlock *entity = *it;
 
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       const std::string &name = entity->name();
-      stk::mesh::Part* const part = fem_meta.get_part(name);
+      stk_classic::mesh::Part* const part = fem_meta.get_part(name);
       assert(part != NULL);
 
-      const CellTopologyData* cell_topo = stk::io::get_cell_topology(*part);
+      const CellTopologyData* cell_topo = stk_classic::io::get_cell_topology(*part);
       if (cell_topo == NULL) {
         std::ostringstream msg ;
         msg << " INTERNAL_ERROR: Part " << part->name() << " returned NULL from get_cell_topology()";
@@ -258,13 +258,13 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       size_t element_count = elem_ids.size();
       int nodes_per_elem = cell_topo->node_count ;
 
-      std::vector<stk::mesh::EntityId> id_vec(nodes_per_elem);
-      std::vector<stk::mesh::Entity*> elements(element_count);
+      std::vector<stk_classic::mesh::EntityId> id_vec(nodes_per_elem);
+      std::vector<stk_classic::mesh::Entity*> elements(element_count);
 
       for(size_t i=0; i<element_count; ++i) {
         INT *conn = &connectivity[i*nodes_per_elem];
         std::copy(&conn[0], &conn[0+nodes_per_elem], id_vec.begin());
-        elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
+        elements[i] = &stk_classic::mesh::fem::declare_element(bulk, *part, elem_ids[i], &id_vec[0]);
       }
 
       // Add all element attributes as fields.
@@ -275,9 +275,9 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+        stk_classic::mesh::FieldBase *field = fem_meta.get_field<stk_classic::mesh::FieldBase> (*I);
         if (field)
-          stk::io::field_data_from_ioss(field, elements, entity, *I);
+          stk_classic::io::field_data_from_ioss(field, elements, entity, *I);
       }
     }
   }
@@ -285,14 +285,14 @@ void process_elementblocks(Ioss::Region &region, stk::mesh::BulkData &bulk, INT 
 
 // ========================================================================
 // ========================================================================
-void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_nodesets(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  stk::io::default_part_processing(node_sets, fem_meta);
+  stk_classic::io::default_part_processing(node_sets, fem_meta);
 
-  stk::mesh::Field<double> & distribution_factors_field =
-    fem_meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
-  stk::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
+  stk_classic::mesh::Field<double> & distribution_factors_field =
+    fem_meta.declare_field<stk_classic::mesh::Field<double> >("distribution_factors");
+  stk_classic::io::set_field_role(distribution_factors_field, Ioss::Field::MESH);
 
   /** \todo REFACTOR How to associate distribution_factors field
    * with the nodeset part if a node is a member of multiple
@@ -303,28 +303,28 @@ void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_met
       it != node_sets.end(); ++it) {
     Ioss::NodeSet *entity = *it;
 
-    if (stk::io::include_entity(entity)) {
-      stk::mesh::Part* const part = fem_meta.get_part(entity->name());
+    if (stk_classic::io::include_entity(entity)) {
+      stk_classic::mesh::Part* const part = fem_meta.get_part(entity->name());
       assert(part != NULL);
       assert(entity->field_exists("distribution_factors"));
 
-      stk::mesh::put_field(distribution_factors_field, fem_meta.node_rank(), *part);
+      stk_classic::mesh::put_field(distribution_factors_field, fem_meta.node_rank(), *part);
     }
   }
 }
 
 // ========================================================================
 // ========================================================================
-void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void process_sidesets(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::SideSetContainer& side_sets = region.get_sidesets();
-  stk::io::default_part_processing(side_sets, fem_meta);
+  stk_classic::io::default_part_processing(side_sets, fem_meta);
 
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
       it != side_sets.end(); ++it) {
     Ioss::SideSet *entity = *it;
 
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       process_surface_entity(entity, fem_meta);
     }
   }
@@ -332,39 +332,39 @@ void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_met
 
 // ========================================================================
 template <typename INT>
-void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dummy*/)
+void process_nodesets(Ioss::Region &region, stk_classic::mesh::BulkData &bulk, INT /*dummy*/)
 {
   // Should only process nodes that have already been defined via the element
   // blocks connectivity lists.
   const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   for(Ioss::NodeSetContainer::const_iterator it = node_sets.begin();
       it != node_sets.end(); ++it) {
     Ioss::NodeSet *entity = *it;
 
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       const std::string & name = entity->name();
-      stk::mesh::Part* const part = fem_meta.get_part(name);
+      stk_classic::mesh::Part* const part = fem_meta.get_part(name);
       assert(part != NULL);
-      stk::mesh::PartVector add_parts( 1 , part );
+      stk_classic::mesh::PartVector add_parts( 1 , part );
 
       std::vector<INT> node_ids ;
       size_t node_count = entity->get_field_data("ids", node_ids);
 
-      std::vector<stk::mesh::Entity*> nodes(node_count);
-      stk::mesh::EntityRank n_rank = fem_meta.node_rank();
+      std::vector<stk_classic::mesh::Entity*> nodes(node_count);
+      stk_classic::mesh::EntityRank n_rank = fem_meta.node_rank();
       for(size_t i=0; i<node_count; ++i) {
         nodes[i] = bulk.get_entity(n_rank, node_ids[i] );
         if (nodes[i] != NULL)
           bulk.declare_entity(n_rank, node_ids[i], add_parts );
       }
 
-      stk::mesh::Field<double> *df_field =
-        fem_meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+      stk_classic::mesh::Field<double> *df_field =
+        fem_meta.get_field<stk_classic::mesh::Field<double> >("distribution_factors");
 
       if (df_field != NULL) {
-        stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+        stk_classic::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
       }
 
       // Add all attributes as fields.
@@ -375,16 +375,16 @@ void process_nodesets(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*dum
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase> (*I);
+        stk_classic::mesh::FieldBase *field = fem_meta.get_field<stk_classic::mesh::FieldBase> (*I);
         if (field)
-          stk::io::field_data_from_ioss(field, nodes, entity, *I);
+          stk_classic::io::field_data_from_ioss(field, nodes, entity, *I);
       }
     }
   }
 }
 
 // ========================================================================
-void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void process_sidesets(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
   const Ioss::SideSetContainer& side_sets = region.get_sidesets();
 
@@ -392,20 +392,20 @@ void process_sidesets(Ioss::Region &region, stk::mesh::BulkData &bulk)
       it != side_sets.end(); ++it) {
     Ioss::SideSet *entity = *it;
 
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       process_surface_entity(entity, bulk);
     }
   }
 }
 
 // ========================================================================
-void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
-                    stk::mesh::EntityRank part_type,
+void put_field_data(stk_classic::mesh::BulkData &bulk, stk_classic::mesh::Part &part,
+                    stk_classic::mesh::EntityRank part_type,
                     Ioss::GroupingEntity *io_entity,
                     Ioss::Field::RoleType filter_role,
-		    const stk::mesh::Selector *anded_selector=NULL)
+		    const stk_classic::mesh::Selector *anded_selector=NULL)
 {
-  std::vector<stk::mesh::Entity*> entities;
+  std::vector<stk_classic::mesh::Entity*> entities;
   if (io_entity->type() == Ioss::SIDEBLOCK) {
     // Temporary Kluge to handle sideblocks which contain internally generated sides
     // where the "ids" field on the io_entity doesn't work to get the correct side...
@@ -421,27 +421,27 @@ void put_field_data(stk::mesh::BulkData &bulk, stk::mesh::Part &part,
         throw std::runtime_error( msg.str() );
     }
   } else {
-    stk::io::get_entity_list(io_entity, part_type, bulk, entities);
+    stk_classic::io::get_entity_list(io_entity, part_type, bulk, entities);
   }
 
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
-  const std::vector<stk::mesh::FieldBase*> &fields = fem_meta.get_fields();
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
+  const std::vector<stk_classic::mesh::FieldBase*> &fields = fem_meta.get_fields();
 
-  std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
+  std::vector<stk_classic::mesh::FieldBase *>::const_iterator I = fields.begin();
   while (I != fields.end()) {
-    const stk::mesh::FieldBase *f = *I; ++I;
-    stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
+    const stk_classic::mesh::FieldBase *f = *I; ++I;
+    stk_classic::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
   }
 }
 
-void internal_process_output_request(stk::io::MeshData &mesh_data,
-                                     stk::mesh::BulkData &bulk,
+void internal_process_output_request(stk_classic::io::MeshData &mesh_data,
+                                     stk_classic::mesh::BulkData &bulk,
                                      int step,
-                                     const std::set<const stk::mesh::Part*> &exclude)
+                                     const std::set<const stk_classic::mesh::Part*> &exclude)
 {
   Ioss::Region *region = mesh_data.m_output_region;
   region->begin_state(step);
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   // Special processing for nodeblock (all nodes in model)...
   put_field_data(bulk, fem_meta.universal_part(), fem_meta.node_rank(),
@@ -449,18 +449,18 @@ void internal_process_output_request(stk::io::MeshData &mesh_data,
 		 mesh_data.m_anded_selector);
 
   // Now handle all non-nodeblock parts...
-  const stk::mesh::PartVector & all_parts = fem_meta.get_parts();
-  for ( stk::mesh::PartVector::const_iterator
+  const stk_classic::mesh::PartVector & all_parts = fem_meta.get_parts();
+  for ( stk_classic::mesh::PartVector::const_iterator
           ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
-    stk::mesh::Part * const part = *ip;
+    stk_classic::mesh::Part * const part = *ip;
 
     // Check whether this part should be output to results database.
-    if (stk::io::is_part_io_part(*part) && !exclude.count(part)) {
+    if (stk_classic::io::is_part_io_part(*part) && !exclude.count(part)) {
       // Get Ioss::GroupingEntity corresponding to this part...
       Ioss::GroupingEntity *entity = region->get_entity(part->name());
       if (entity != NULL && entity->type() != Ioss::SIDESET) {
-        put_field_data(bulk, *part, stk::io::part_primary_entity_rank(*part),
+        put_field_data(bulk, *part, stk_classic::io::part_primary_entity_rank(*part),
                        entity, Ioss::Field::Field::TRANSIENT,
 		       mesh_data.m_anded_selector);
       }
@@ -469,7 +469,7 @@ void internal_process_output_request(stk::io::MeshData &mesh_data,
   region->end_state(step);
 }
 
-namespace stk {
+namespace stk_classic {
 namespace io {
 
 MeshData::~MeshData()
@@ -583,9 +583,9 @@ void show_mesh_help()
 
 void create_input_mesh(const std::string &mesh_type,
                        const std::string &mesh_filename,
-                       stk::ParallelMachine comm,
-                       stk::mesh::fem::FEMMetaData &fem_meta,
-                       stk::io::MeshData &mesh_data,
+                       stk_classic::ParallelMachine comm,
+                       stk_classic::mesh::fem::FEMMetaData &fem_meta,
+                       stk_classic::io::MeshData &mesh_data,
                        bool lower_case_variable_names)
 {
   Ioss::Region *in_region = mesh_data.m_input_region;
@@ -618,7 +618,7 @@ void create_input_mesh(const std::string &mesh_type,
   }
 
   size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
-  initialize_spatial_dimension(fem_meta, spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension));
+  initialize_spatial_dimension(fem_meta, spatial_dimension, stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
 
   process_elementblocks(*in_region, fem_meta);
   process_nodeblocks(*in_region,    fem_meta);
@@ -628,9 +628,9 @@ void create_input_mesh(const std::string &mesh_type,
 
 void create_input_mesh(const std::string &mesh_type,
                        const std::string &mesh_filename,
-                       stk::ParallelMachine comm,
-                       stk::mesh::fem::FEMMetaData &fem_meta,
-                       stk::io::MeshData &mesh_data,
+                       stk_classic::ParallelMachine comm,
+                       stk_classic::mesh::fem::FEMMetaData &fem_meta,
+                       stk_classic::io::MeshData &mesh_data,
                        const std::vector<std::string>& names_to_add,
                        bool lower_case_variable_names)
 {
@@ -665,7 +665,7 @@ void create_input_mesh(const std::string &mesh_type,
 
   size_t spatial_dimension = in_region->get_property("spatial_dimension").get_int();
 
-  std::vector<std::string> entity_rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
+  std::vector<std::string> entity_rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dimension);
 
   for(std::size_t i = 0; i < names_to_add.size(); i++)
     entity_rank_names.push_back(names_to_add[i]);
@@ -680,8 +680,8 @@ void create_input_mesh(const std::string &mesh_type,
 
 
 void create_output_mesh(const std::string &filename,
-                        stk::ParallelMachine comm,
-                        stk::mesh::BulkData &bulk_data,
+                        stk_classic::ParallelMachine comm,
+                        stk_classic::mesh::BulkData &bulk_data,
                         MeshData &mesh_data,
                        bool lower_case_variable_names)
 {
@@ -695,7 +695,7 @@ void create_output_mesh(const std::string &filename,
 	// may have forms similar to: "2x2x1|size:.05|height:-0.1,1"
 	// Strip the name at the first "+:|," character:
 	std::vector<std::string> tokens;
-	stk::util::tokenize(out_filename, "+|:,", tokens);
+	stk_classic::util::tokenize(out_filename, "+|:,", tokens);
 	out_filename = tokens[0];
   }
 
@@ -714,16 +714,16 @@ void create_output_mesh(const std::string &filename,
   // NOTE: 'out_region' owns 'dbo' pointer at this time...
   out_region = new Ioss::Region(dbo, "results_output");
 
-  stk::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region, mesh_data.m_anded_selector);
-  stk::io::write_output_db(*out_region,  bulk_data, mesh_data.m_anded_selector);
+  stk_classic::io::define_output_db(*out_region, bulk_data, mesh_data.m_input_region, mesh_data.m_anded_selector);
+  stk_classic::io::write_output_db(*out_region,  bulk_data, mesh_data.m_anded_selector);
   mesh_data.m_output_region = out_region;
 }
 
 // ========================================================================
 int process_output_request(MeshData &mesh_data,
-                           stk::mesh::BulkData &bulk,
+                           stk_classic::mesh::BulkData &bulk,
                            double time,
-                           const std::set<const stk::mesh::Part*> &exclude)
+                           const std::set<const stk_classic::mesh::Part*> &exclude)
 {
   Ioss::Region *region = mesh_data.m_output_region;
   region->begin_mode(Ioss::STATE_TRANSIENT);
@@ -737,7 +737,7 @@ int process_output_request(MeshData &mesh_data,
 }
 
 // ========================================================================
-void populate_bulk_data(stk::mesh::BulkData &bulk_data,
+void populate_bulk_data(stk_classic::mesh::BulkData &bulk_data,
                         MeshData &mesh_data)
 {
   Ioss::Region *region = mesh_data.m_input_region;
@@ -755,7 +755,7 @@ void populate_bulk_data(stk::mesh::BulkData &bulk_data,
 }
 
 // ========================================================================
-void process_mesh_bulk_data(Ioss::Region *region, stk::mesh::BulkData &bulk_data)
+void process_mesh_bulk_data(Ioss::Region *region, stk_classic::mesh::BulkData &bulk_data)
 {
     bool ints64bit = db_api_int_size(region) == 8;
     if (ints64bit) {
@@ -780,28 +780,28 @@ namespace {
 // field with the same name as the database field.
 // Assumes that mesh is positioned at the correct state for reading.
 void internal_process_input_request(Ioss::GroupingEntity *io_entity,
-                                    stk::mesh::EntityRank entity_rank,
-                                    stk::mesh::BulkData &bulk)
+                                    stk_classic::mesh::EntityRank entity_rank,
+                                    stk_classic::mesh::BulkData &bulk)
 {
   assert(io_entity != NULL);
-  std::vector<stk::mesh::Entity*> entity_list;
-  stk::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
+  std::vector<stk_classic::mesh::Entity*> entity_list;
+  stk_classic::io::get_entity_list(io_entity, entity_rank, bulk, entity_list);
 
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
 
   Ioss::NameList names;
   io_entity->field_describe(Ioss::Field::TRANSIENT, &names);
   for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
-    stk::mesh::FieldBase *field = fem_meta.get_field<stk::mesh::FieldBase>(*I);
+    stk_classic::mesh::FieldBase *field = fem_meta.get_field<stk_classic::mesh::FieldBase>(*I);
     if (field) {
-      stk::io::field_data_from_ioss(field, entity_list, io_entity, *I);
+      stk_classic::io::field_data_from_ioss(field, entity_list, io_entity, *I);
     }
   }
 }
 
-void input_nodeblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void input_nodeblock_fields(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
@@ -809,31 +809,31 @@ void input_nodeblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
   internal_process_input_request(nb, fem_meta.node_rank(), bulk);
 }
 
-void input_elementblock_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void input_elementblock_fields(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(size_t i=0; i < elem_blocks.size(); i++) {
-    if (stk::io::include_entity(elem_blocks[i])) {
+    if (stk_classic::io::include_entity(elem_blocks[i])) {
       internal_process_input_request(elem_blocks[i], fem_meta.element_rank(), bulk);
     }
   }
 }
 
-void input_nodeset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void input_nodeset_fields(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
   const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
   for(size_t i=0; i < nodesets.size(); i++) {
-    if (stk::io::include_entity(nodesets[i])) {
+    if (stk_classic::io::include_entity(nodesets[i])) {
       internal_process_input_request(nodesets[i], fem_meta.node_rank(), bulk);
     }
   }
 }
 
-void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
+void input_sideset_fields(Ioss::Region &region, stk_classic::mesh::BulkData &bulk)
 {
-  const stk::mesh::fem::FEMMetaData &fem_meta = stk::mesh::fem::FEMMetaData::get(bulk);
+  const stk_classic::mesh::fem::FEMMetaData &fem_meta = stk_classic::mesh::fem::FEMMetaData::get(bulk);
   if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
     return;
 
@@ -841,10 +841,10 @@ void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
       it != side_sets.end(); ++it) {
     Ioss::SideSet *entity = *it;
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
       for(size_t i=0; i < blocks.size(); i++) {
-        if (stk::io::include_entity(blocks[i])) {
+        if (stk_classic::io::include_entity(blocks[i])) {
           internal_process_input_request(blocks[i], fem_meta.side_rank(), bulk);
         }
       }
@@ -852,43 +852,43 @@ void input_sideset_fields(Ioss::Region &region, stk::mesh::BulkData &bulk)
   }
 }
 
-void define_input_nodeblock_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void define_input_nodeblock_fields(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
   assert(node_blocks.size() == 1);
 
   Ioss::NodeBlock *nb = node_blocks[0];
-  stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
+  stk_classic::io::define_io_fields(nb, Ioss::Field::TRANSIENT,
                             fem_meta.universal_part(), fem_meta.node_rank());
 }
 
-void define_input_elementblock_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void define_input_elementblock_fields(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
   for(size_t i=0; i < elem_blocks.size(); i++) {
-    if (stk::io::include_entity(elem_blocks[i])) {
-      stk::mesh::Part* const part = fem_meta.get_part(elem_blocks[i]->name());
+    if (stk_classic::io::include_entity(elem_blocks[i])) {
+      stk_classic::mesh::Part* const part = fem_meta.get_part(elem_blocks[i]->name());
       assert(part != NULL);
-      stk::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
+      stk_classic::io::define_io_fields(elem_blocks[i], Ioss::Field::TRANSIENT,
                                 *part, part_primary_entity_rank(*part));
     }
   }
 }
 
-void define_input_nodeset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void define_input_nodeset_fields(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   const Ioss::NodeSetContainer& nodesets = region.get_nodesets();
   for(size_t i=0; i < nodesets.size(); i++) {
-    if (stk::io::include_entity(nodesets[i])) {
-      stk::mesh::Part* const part = fem_meta.get_part(nodesets[i]->name());
+    if (stk_classic::io::include_entity(nodesets[i])) {
+      stk_classic::mesh::Part* const part = fem_meta.get_part(nodesets[i]->name());
       assert(part != NULL);
-      stk::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
+      stk_classic::io::define_io_fields(nodesets[i], Ioss::Field::TRANSIENT,
                                 *part, part_primary_entity_rank(*part));
     }
   }
 }
 
-void define_input_sideset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaData &fem_meta)
+void define_input_sideset_fields(Ioss::Region &region, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   if (fem_meta.spatial_dimension() <= fem_meta.side_rank())
     return;
@@ -897,13 +897,13 @@ void define_input_sideset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaDa
   for(Ioss::SideSetContainer::const_iterator it = side_sets.begin();
       it != side_sets.end(); ++it) {
     Ioss::SideSet *entity = *it;
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       const Ioss::SideBlockContainer& blocks = entity->get_side_blocks();
       for(size_t i=0; i < blocks.size(); i++) {
-        if (stk::io::include_entity(blocks[i])) {
-          stk::mesh::Part* const part = fem_meta.get_part(blocks[i]->name());
+        if (stk_classic::io::include_entity(blocks[i])) {
+          stk_classic::mesh::Part* const part = fem_meta.get_part(blocks[i]->name());
           assert(part != NULL);
-          stk::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
+          stk_classic::io::define_io_fields(blocks[i], Ioss::Field::TRANSIENT,
                                     *part, part_primary_entity_rank(*part));
         }
       }
@@ -925,7 +925,7 @@ void define_input_sideset_fields(Ioss::Region &region, stk::mesh::fem::FEMMetaDa
 //
 // To populate the stk field with data from the database, call
 // process_input_request().
-void define_input_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &fem_meta)
+void define_input_fields(MeshData &mesh_data, stk_classic::mesh::fem::FEMMetaData &fem_meta)
 {
   Ioss::Region *region = mesh_data.m_input_region;
   if (region) {
@@ -948,7 +948,7 @@ void define_input_fields(MeshData &mesh_data, stk::mesh::fem::FEMMetaData &fem_m
 // To export the data to the database, call
 // process_output_request().
 
-void define_output_fields(const MeshData &mesh_data, const stk::mesh::fem::FEMMetaData &fem_meta,
+void define_output_fields(const MeshData &mesh_data, const stk_classic::mesh::fem::FEMMetaData &fem_meta,
                           bool add_all_fields)
 {
   Ioss::Region *region = mesh_data.m_output_region;
@@ -956,22 +956,22 @@ void define_output_fields(const MeshData &mesh_data, const stk::mesh::fem::FEMMe
 	region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
 	// Special processing for nodeblock (all nodes in model)...
-	stk::io::ioss_add_fields(fem_meta.universal_part(), fem_meta.node_rank(),
+	stk_classic::io::ioss_add_fields(fem_meta.universal_part(), fem_meta.node_rank(),
                              region->get_node_blocks()[0],
                              Ioss::Field::TRANSIENT, add_all_fields);
 
-	const stk::mesh::PartVector & all_parts = fem_meta.get_parts();
-	for ( stk::mesh::PartVector::const_iterator
+	const stk_classic::mesh::PartVector & all_parts = fem_meta.get_parts();
+	for ( stk_classic::mesh::PartVector::const_iterator
             ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
 
-	  stk::mesh::Part * const part = *ip;
+	  stk_classic::mesh::Part * const part = *ip;
 
 	  // Check whether this part should be output to results database.
-	  if (stk::io::is_part_io_part(*part)) {
+	  if (stk_classic::io::is_part_io_part(*part)) {
 	    // Get Ioss::GroupingEntity corresponding to this part...
 	    Ioss::GroupingEntity *entity = region->get_entity(part->name());
 	    if (entity != NULL) {
-	      stk::io::ioss_add_fields(*part, part_primary_entity_rank(*part),
+	      stk_classic::io::ioss_add_fields(*part, part_primary_entity_rank(*part),
                                    entity, Ioss::Field::TRANSIENT, add_all_fields);
 	    }
 	  }
@@ -983,7 +983,7 @@ void define_output_fields(const MeshData &mesh_data, const stk::mesh::fem::FEMMe
   }
 }
 // ========================================================================
-void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, double time)
+void process_input_request(MeshData &mesh_data, stk_classic::mesh::BulkData &bulk, double time)
 {
   // Find the step on the database with time closest to the requested time...
   Ioss::Region *region = mesh_data.m_input_region;
@@ -1005,7 +1005,7 @@ void process_input_request(MeshData &mesh_data, stk::mesh::BulkData &bulk, doubl
 }
 
 void process_input_request(MeshData &mesh_data,
-                           stk::mesh::BulkData &bulk,
+                           stk_classic::mesh::BulkData &bulk,
                            int step)
 {
   if (step <= 0)
@@ -1025,7 +1025,7 @@ void process_input_request(MeshData &mesh_data,
   }
 }
 
-void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
+void input_mesh_fields(Ioss::Region *region, stk_classic::mesh::BulkData &bulk,
                            double time)
 {
   // Find the step on the database with time closest to the requested time...
@@ -1046,7 +1046,7 @@ void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
   input_mesh_fields(region, bulk, step_min+1);
 }
 
-void input_mesh_fields(Ioss::Region *region, stk::mesh::BulkData &bulk,
+void input_mesh_fields(Ioss::Region *region, stk_classic::mesh::BulkData &bulk,
                            int step)
 {
 	// Pick which time index to read into solution field.
@@ -1069,7 +1069,7 @@ void get_element_block_sizes(MeshData &mesh_data,
   const Ioss::ElementBlockContainer& elem_blocks = io->get_element_blocks();
   for(Ioss::ElementBlockContainer::const_iterator it = elem_blocks.begin(); it != elem_blocks.end(); ++it) {
     Ioss::ElementBlock *entity = *it;
-    if (stk::io::include_entity(entity)) {
+    if (stk_classic::io::include_entity(entity)) {
       el_blocks.push_back(entity->get_property("entity_count").get_int());
     }
   }

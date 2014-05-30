@@ -19,7 +19,7 @@
  *
  */
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace use_cases {
 
@@ -28,12 +28,12 @@ class UseCase_1_Mesh
 public:
   ~UseCase_1_Mesh();
 
-  UseCase_1_Mesh( stk::ParallelMachine comm );
+  UseCase_1_Mesh( stk_classic::ParallelMachine comm );
 
   enum { SpatialDim = 1};
 
-  stk::mesh::MetaData m_metaData;
-  stk::mesh::BulkData m_bulkData;
+  stk_classic::mesh::MetaData m_metaData;
+  stk_classic::mesh::BulkData m_bulkData;
 };
 
 

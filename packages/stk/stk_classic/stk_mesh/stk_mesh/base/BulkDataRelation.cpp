@@ -24,7 +24,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 void set_field_relations( Entity & e_from ,
@@ -130,8 +130,8 @@ void BulkData::declare_relation( Entity & e_from ,
                                  Entity & e_to ,
                                  const RelationIdentifier local_id )
 {
-  TraceIfWatching("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
-  TraceIfWatchingDec("stk::mesh::BulkData::declare_relation", LOG_ENTITY, e_to.key(), 1);
+  TraceIfWatching("stk_classic::mesh::BulkData::declare_relation", LOG_ENTITY, e_from.key());
+  TraceIfWatchingDec("stk_classic::mesh::BulkData::declare_relation", LOG_ENTITY, e_to.key(), 1);
   DiagIfWatching(LOG_ENTITY, e_from.key(),
                  "from: " << e_from << ";  " <<
                  "to: " << e_to << ";  " <<
@@ -192,8 +192,8 @@ bool BulkData::destroy_relation( Entity & e_from ,
                                  Entity & e_to,
                                  const RelationIdentifier local_id )
 {
-  TraceIfWatching("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
-  TraceIfWatchingDec("stk::mesh::BulkData::destroy_relation", LOG_ENTITY, e_to.key(), 1);
+  TraceIfWatching("stk_classic::mesh::BulkData::destroy_relation", LOG_ENTITY, e_from.key());
+  TraceIfWatchingDec("stk_classic::mesh::BulkData::destroy_relation", LOG_ENTITY, e_to.key(), 1);
   DiagIfWatching(LOG_ENTITY, e_from.key(),
                  "from: " << e_from << ";  " <<
                  "to: " << e_to << ";  " <<
@@ -276,7 +276,7 @@ void BulkData::internal_propagate_part_changes(
   Entity           & entity ,
   const PartVector & removed )
 {
-  TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
+  TraceIfWatching("stk_classic::mesh::BulkData::internal_propagate_part_changes",
                   LOG_ENTITY,
                   entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
@@ -360,7 +360,7 @@ void BulkData::internal_propagate_part_changes(
   Entity           & entity ,
   const OrdinalVector & removed )
 {
-  TraceIfWatching("stk::mesh::BulkData::internal_propagate_part_changes",
+  TraceIfWatching("stk_classic::mesh::BulkData::internal_propagate_part_changes",
                   LOG_ENTITY,
                   entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);

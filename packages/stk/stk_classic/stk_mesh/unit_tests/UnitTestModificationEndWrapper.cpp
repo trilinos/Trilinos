@@ -1,10 +1,10 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
-bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh, bool generate_aura)
+bool UnitTestModificationEndWrapper::wrap(stk_classic::mesh::BulkData& mesh, bool generate_aura)
 {
   return mesh.internal_modification_end(generate_aura);
 }
@@ -13,9 +13,9 @@ bool UnitTestModificationEndWrapper::wrap(stk::mesh::BulkData& mesh, bool genera
 
 namespace unit_test {
 
-bool modification_end_wrapper(stk::mesh::BulkData& mesh, bool generate_aura)
+bool modification_end_wrapper(stk_classic::mesh::BulkData& mesh, bool generate_aura)
 {
-  return stk::mesh::UnitTestModificationEndWrapper::wrap(mesh, generate_aura);
+  return stk_classic::mesh::UnitTestModificationEndWrapper::wrap(mesh, generate_aura);
 }
 
 } // namespace unit_test

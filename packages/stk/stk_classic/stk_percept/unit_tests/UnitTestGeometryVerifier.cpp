@@ -32,18 +32,18 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk {
+namespace stk_classic {
 namespace percept {
 namespace unit_tests {
 
 // on pathscale platform this doesn't work (something to do with static variables)
 
 static int dw_enabled = 1;
-static stk::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
-static stk::diag::Writer &
+static stk_classic::diag::Writer s_diagWriter(std::cout.rdbuf(), dw_enabled);
+static stk_classic::diag::Writer &
 dw()
 {
-  //static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+  //static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
 
   s_diagWriter.setPrintMask(LOG_NORM+LOG_ALWAYS);
 
@@ -58,7 +58,7 @@ dw()
 
 STKUNIT_UNIT_TEST(geom, volume)
 {
-  dw().m(LOG_GEOMETRY_VERIFIER) << "TEST::geom::volume " << stk::diag::dendl;
+  dw().m(LOG_GEOMETRY_VERIFIER) << "TEST::geom::volume " << stk_classic::diag::dendl;
 
   const size_t num_x = 3;
   const size_t num_y = 3;

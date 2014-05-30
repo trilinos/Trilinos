@@ -22,7 +22,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class EntityComm
@@ -95,7 +95,7 @@ inline PairIterEntityComm EntityComm::comm( const EntityKey & key, const Ghostin
 
 inline bool EntityComm::insert( const EntityKey & key, const EntityCommInfo & val )
 {
-  TraceIfWatching("stk::mesh::EntityComm::insert", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::EntityComm::insert", LOG_ENTITY, key());
   EntityCommInfoVector & m_comm = m_comm_map[key];
 
   std::vector< EntityCommInfo >::iterator i =
@@ -112,7 +112,7 @@ inline bool EntityComm::insert( const EntityKey & key, const EntityCommInfo & va
 
 inline bool EntityComm::erase( const EntityKey & key, const EntityCommInfo & val )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(comm)", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::EntityComm::erase(comm)", LOG_ENTITY, key());
   EntityCommInfoVector & m_comm = m_comm_map[key];
 
   std::vector< EntityCommInfo >::iterator i =
@@ -129,7 +129,7 @@ inline bool EntityComm::erase( const EntityKey & key, const EntityCommInfo & val
 
 inline bool EntityComm::erase( const EntityKey & key, const Ghosting & ghost )
 {
-  TraceIfWatching("stk::mesh::EntityComm::erase(ghost)", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::EntityComm::erase(ghost)", LOG_ENTITY, key());
   EntityCommInfoVector & m_comm = m_comm_map[key];
 
   const EntityCommInfo s_begin( ghost.ordinal() ,     0 );
@@ -152,7 +152,7 @@ inline bool EntityComm::erase( const EntityKey & key, const Ghosting & ghost )
 
 inline void EntityComm::comm_clear_ghosting(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear_ghosting", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::EntityComm::comm_clear_ghosting", LOG_ENTITY, key());
   EntityCommInfoVector & m_comm = m_comm_map[key];
 
   std::vector< EntityCommInfo >::iterator j = m_comm.begin();
@@ -162,7 +162,7 @@ inline void EntityComm::comm_clear_ghosting(const EntityKey & key)
 
 inline void EntityComm::comm_clear(const EntityKey & key)
 {
-  TraceIfWatching("stk::mesh::EntityComm::comm_clear", LOG_ENTITY, key());
+  TraceIfWatching("stk_classic::mesh::EntityComm::comm_clear", LOG_ENTITY, key());
   EntityCommInfoVector& commvec = m_comm_map[key];
   commvec.clear();
 }

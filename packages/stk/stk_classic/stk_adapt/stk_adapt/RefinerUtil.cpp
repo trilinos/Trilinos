@@ -9,7 +9,7 @@
 
 #include <stk_adapt/RefinerUtil.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace adapt {
 
 using namespace std;
@@ -20,7 +20,7 @@ using namespace percept;
 // FIXME move this to a utils class
 BlockNamesType RefinerUtil::getBlockNames(std::string& block_name, unsigned proc_rank, percept::PerceptMesh& eMesh)
 {
-  BlockNamesType blocks(stk::percept::EntityRankEnd+1u);
+  BlockNamesType blocks(stk_classic::percept::EntityRankEnd+1u);
   if (block_name.length() == 0)
     return blocks;
 
@@ -299,7 +299,7 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
   if (blocks[eMesh.element_rank()].size() == 0)
     return blocks;
 
-  stk::mesh::EntityRank subDimRank = (eMesh.get_spatial_dim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
+  stk_classic::mesh::EntityRank subDimRank = (eMesh.get_spatial_dim() == 3 ? eMesh.face_rank() : eMesh.edge_rank());
 
   mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
   for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
@@ -309,10 +309,10 @@ BlockNamesType RefinerUtil::correctBlockNamesForPartPartConsistency(percept::Per
     for (mesh::PartVector::iterator i_surfacePart = all_parts.begin(); i_surfacePart != all_parts.end(); ++i_surfacePart)
     {
       mesh::Part *  surfacePart = *i_surfacePart ;
-      if ( stk::mesh::is_auto_declared_part(*surfacePart) )
+      if ( stk_classic::mesh::is_auto_declared_part(*surfacePart) )
         continue;
 
-      const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(*surfacePart);
+      const CellTopologyData * part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(*surfacePart);
       CellTopology surf_topo(part_cell_topo_data);
       //if (EXTRA_PRINT_UR_GETBLOCKS) std::cout << "tmp srk surfacePart= " << surfacePart->name() << " topo= " << (part_cell_topo_data?surf_topo.getName() : "NULL") << std::endl;
 

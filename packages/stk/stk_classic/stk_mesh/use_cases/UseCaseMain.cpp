@@ -37,10 +37,10 @@ void printStatus(bool status)
 int main ( int argc, char * argv[] )
 {
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  stk::ParallelMachine parallel_machine = use_case_environment.m_comm;
+  stk_classic::ParallelMachine parallel_machine = use_case_environment.m_comm;
 
   const bool single_process =
-    stk::parallel_machine_size( parallel_machine ) <= 1 ;
+    stk_classic::parallel_machine_size( parallel_machine ) <= 1 ;
 
   bool status = true;
 
@@ -48,7 +48,7 @@ int main ( int argc, char * argv[] )
     std::cout << "Use Case 1 ... ";
     bool local_status = true ;
     try {
-      stk::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
+      stk_classic::mesh::use_cases::UseCase_1_Mesh mesh(parallel_machine);
       printStatus(local_status);
     }
     catch ( const std::exception & x ) {
@@ -63,9 +63,9 @@ int main ( int argc, char * argv[] )
     std::cout << "Use Case 2 ... ";
     bool local_status = true ;
     try {
-      stk::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
+      stk_classic::mesh::use_cases::UseCase_2_Mesh mesh(parallel_machine);
       mesh.populate(1,3);
-      local_status = stk::mesh::use_cases::verifyMesh(mesh,1,3);
+      local_status = stk_classic::mesh::use_cases::verifyMesh(mesh,1,3);
       printStatus(local_status);
     }
     catch ( const std::exception & x ) {
@@ -80,9 +80,9 @@ int main ( int argc, char * argv[] )
     std::cout << "Use Case 3 ... ";
     bool local_status = true ;
     try {
-      stk::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
+      stk_classic::mesh::use_cases::UseCase_3_Mesh mesh(parallel_machine);
       mesh.populate();
-      local_status = stk::mesh::use_cases::verifyMesh(mesh);
+      local_status = stk_classic::mesh::use_cases::verifyMesh(mesh);
       printStatus(local_status);
     }
     catch ( const std::exception & x ) {
@@ -95,10 +95,10 @@ int main ( int argc, char * argv[] )
 
   if ( single_process ) {
     std::cout << "Use Case 4 ... ";
-    stk::mesh::use_cases::UseCase_4_Mesh mesh(parallel_machine);
+    stk_classic::mesh::use_cases::UseCase_4_Mesh mesh(parallel_machine);
     mesh.populate();
-    stk::mesh::use_cases::runAlgorithms(mesh);
-    const bool local_status = stk::mesh::use_cases::verifyMesh(mesh);
+    stk_classic::mesh::use_cases::runAlgorithms(mesh);
+    const bool local_status = stk_classic::mesh::use_cases::verifyMesh(mesh);
     printStatus(local_status);
     status = status && local_status;
   }

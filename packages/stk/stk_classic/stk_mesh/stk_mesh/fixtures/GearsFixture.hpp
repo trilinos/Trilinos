@@ -23,7 +23,7 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -65,7 +65,7 @@ class GearsFixture{
 
   enum { SpatialDimension = 3 };
 
-  GearsFixture( stk::ParallelMachine pm, size_t num_gears,
+  GearsFixture( stk_classic::ParallelMachine pm, size_t num_gears,
                 GearParams gear_params=GearParams());
   ~GearsFixture();
 

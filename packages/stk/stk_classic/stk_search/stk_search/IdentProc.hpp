@@ -15,7 +15,7 @@
 #include <stk_search/SearchTypes.hpp>
 #include <stk_util/util/SimpleArrayOps.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace ident {
 

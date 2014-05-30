@@ -63,13 +63,13 @@ namespace Intrepid {
 	class Basis;
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     typedef mesh::Field<double>                          ScalarFieldType ;
-    typedef mesh::Field<double, stk::mesh::Cartesian>    VectorFieldType ;
-    typedef mesh::Field<double, stk::mesh::Cartesian, stk::mesh::Cartesian>    TensorFieldType ;
-    typedef mesh::Field<double, stk::mesh::Cartesian, stk::mesh::Cartesian, stk::mesh::Cartesian>    QPTensorFieldType ;
+    typedef mesh::Field<double, stk_classic::mesh::Cartesian>    VectorFieldType ;
+    typedef mesh::Field<double, stk_classic::mesh::Cartesian, stk_classic::mesh::Cartesian>    TensorFieldType ;
+    typedef mesh::Field<double, stk_classic::mesh::Cartesian, stk_classic::mesh::Cartesian, stk_classic::mesh::Cartesian>    QPTensorFieldType ;
 
 
     static const unsigned EntityRankEnd = 6;
@@ -121,12 +121,12 @@ namespace stk {
 
       // ctor constructor
       /// Create a Mesh object that owns its constituent FEMMetaData and BulkData (which are created by this object)
-      //PerceptMesh( stk::ParallelMachine comm =  MPI_COMM_WORLD );
-      PerceptMesh(size_t spatialDimension = 3u, stk::ParallelMachine comm =  MPI_COMM_WORLD );
+      //PerceptMesh( stk_classic::ParallelMachine comm =  MPI_COMM_WORLD );
+      PerceptMesh(size_t spatialDimension = 3u, stk_classic::ParallelMachine comm =  MPI_COMM_WORLD );
 
       /// Create a Mesh object that doesn't own its constituent FEMMetaData and BulkData, pointers to which are adopted
       /// by this constructor.
-      PerceptMesh(const stk::mesh::fem::FEMMetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      PerceptMesh(const stk_classic::mesh::fem::FEMMetaData* metaData, stk_classic::mesh::BulkData* bulkData, bool isCommitted=true);
 
       /// reads and commits mesh, editing disabled
       void
@@ -145,10 +145,10 @@ namespace stk {
       new_mesh(const GMeshSpec gmesh_spec);
 
       /// add a field to the mesh
-      stk::mesh::FieldBase *
+      stk_classic::mesh::FieldBase *
       add_field(const std::string& name, const unsigned entity_rank, int vectorDimension=0, const std::string part_name="universal_part");
 
-      stk::mesh::FieldBase *
+      stk_classic::mesh::FieldBase *
       get_field(const std::string& name);
 
       /// commits mesh  - any operations done on a non-committed mesh, except to add fields will throw an exception
@@ -201,9 +201,9 @@ namespace stk {
       unsigned get_parallel_size() { return get_bulk_data()->parallel_size(); }
 
       /// print a node, edge, element, etc; optionally pass in a field to dump data associated with the entity
-      void print_entity(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
+      void print_entity(const stk_classic::mesh::Entity& entity, stk_classic::mesh::FieldBase* field=0) { print_entity(std::cout, entity, field); };
       /// shorter output for print_entity
-      std::string print_entity_compact(const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      std::string print_entity_compact(const stk_classic::mesh::Entity& entity, stk_classic::mesh::FieldBase* field=0);
 
       /// print elements on the given part
       void dump_elements(const std::string& partName = "");
@@ -211,63 +211,63 @@ namespace stk {
       void dump_elements_compact(const std::string& partName = "");
 
       /// get the low-level bulk data pointer from stk_mesh
-      stk::mesh::BulkData * get_bulk_data();
+      stk_classic::mesh::BulkData * get_bulk_data();
       /// get the low-level meta data pointer from stk_mesh
-      stk::mesh::fem::FEMMetaData * get_fem_meta_data();
+      stk_classic::mesh::fem::FEMMetaData * get_fem_meta_data();
 
       /// get a pointer to a stk_mesh Part with the given name
       mesh::Part* get_part(const std::string& part_name) { return get_non_const_part(part_name); }
 
       // entity data setter/getters
       /// get the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
-      double get_field_data(const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
+      double get_field_data(const stk_classic::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0)
       {
         double *val= field_data_entity(field,*entity);
         return val ? val[ordinal] : 0.0;
       }
       /// set the value of a field on the given entity; if a vector field, pass in the index of the vector required (ordinal)
-      void set_field_data(double value, const stk::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0 )
+      void set_field_data(double value, const stk_classic::mesh::FieldBase *field, const mesh::Entity* entity, unsigned ordinal=0 )
       {
         double *val= field_data_entity(field,*entity);
         if( val) val[ordinal] = value;
       }
 
       /// get the value of a field on the given node; if a vector field, pass in the index of the vector required (ordinal)
-      double get_node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
+      double get_node_field_data(stk_classic::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
       {
         double *val = node_field_data(field, node_id);
         return val ? val[ordinal] : 0.0;
       }
       /// set the value of a field on the given node; if a vector field, pass in the index of the vector required (ordinal)
-      void set_node_field_data(double value, stk::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
+      void set_node_field_data(double value, stk_classic::mesh::FieldBase *field, const mesh::EntityId node_id, unsigned ordinal=0)
       {
         double *val = node_field_data(field, node_id);
         if( val) val[ordinal] = value;
       }
 
       /// get a pointer to a node with given id
-      stk::mesh::Entity *get_node(const mesh::EntityId node_id) 
+      stk_classic::mesh::Entity *get_node(const mesh::EntityId node_id) 
       {
         return get_bulk_data()->get_entity(node_rank(), node_id);
       }
 
       /// get a pointer to an element with given id
-      stk::mesh::Entity *get_element(const mesh::EntityId element_id) 
+      stk_classic::mesh::Entity *get_element(const mesh::EntityId element_id) 
       {
         return get_bulk_data()->get_entity(element_rank(), element_id);
       }
 
       /// get a pointer to an entity with given id
-      stk::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
+      stk_classic::mesh::Entity *get_entity( mesh::EntityRank rank, const mesh::EntityId id) 
       {
         return get_bulk_data()->get_entity(rank, id);
       }
 
       /// find and return pointer to node closest to given point - in parallel, check return for null (if null, closest node is on another proc)
-      stk::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
+      stk_classic::mesh::Entity *get_node(double x, double y, double z=0, double t=0) ;
 
       /// find and return pointer to element that contains given point - in parallel, check return for null (if null, element containing point is on another proc)
-      stk::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
+      stk_classic::mesh::Entity *get_element(double x, double y, double z=0, double t=0) ;
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
       static bool mesh_difference(PerceptMesh& mesh1, PerceptMesh& mesh2,
@@ -281,35 +281,35 @@ namespace stk {
       }
 
       /// return the rank of a node
-      stk::mesh::EntityRank node_rank() const
+      stk_classic::mesh::EntityRank node_rank() const
       {
         return m_metaData->node_rank();
       }
 
       /** \brief Returns the edge rank which changes depending on spatial dimension
        */
-      stk::mesh::EntityRank edge_rank() const
+      stk_classic::mesh::EntityRank edge_rank() const
       {
         return m_metaData->edge_rank();
       }
 
       /** \brief Returns the face rank which changes depending on spatial dimension
        */
-      stk::mesh::EntityRank face_rank() const
+      stk_classic::mesh::EntityRank face_rank() const
       {
         return m_metaData->face_rank();
       }
 
       /** \brief Returns the side rank which changes depending on spatial dimension
        */
-      stk::mesh::EntityRank side_rank() const
+      stk_classic::mesh::EntityRank side_rank() const
       {
         return m_metaData->side_rank();
       }
 
       /** \brief Returns the element rank which is always equal to spatial dimension
        */
-      stk::mesh::EntityRank element_rank() const
+      stk_classic::mesh::EntityRank element_rank() const
       {
         return m_metaData->element_rank();
       }
@@ -345,36 +345,36 @@ namespace stk {
       void add_spacing_fields();
 
       /// set proc_rank on each element
-      void set_proc_rank_field(stk::mesh::FieldBase *proc_rank_field=0);
+      void set_proc_rank_field(stk_classic::mesh::FieldBase *proc_rank_field=0);
 
       /// get number of coordinate field states needed
       bool has_coordinate_state_fields() { return m_num_coordinate_field_states != 1; }
 
       /// copy field state data from one state (src_state) to another (dest_state)
-      void copy_field_state(stk::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);
+      void copy_field_state(stk_classic::mesh::FieldBase* field, unsigned dest_state, unsigned src_state);
 
       /// copy field data from one field (field_src) to another (field_dest)
-      void copy_field(stk::mesh::FieldBase* field_dest, stk::mesh::FieldBase* field_src);
+      void copy_field(stk_classic::mesh::FieldBase* field_dest, stk_classic::mesh::FieldBase* field_src);
 
       /// axpby calculates: y = alpha*x + beta*y 
-      void nodal_field_state_axpby(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state);
+      void nodal_field_state_axpby(stk_classic::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state);
 
       /// axpby calculates: y = alpha*x + beta*y
-      void nodal_field_axpby(double alpha, stk::mesh::FieldBase* field_x, double beta, stk::mesh::FieldBase* field_y);
+      void nodal_field_axpby(double alpha, stk_classic::mesh::FieldBase* field_x, double beta, stk_classic::mesh::FieldBase* field_y);
 
       /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
-      void nodal_field_state_axpbypgz(stk::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state);
+      void nodal_field_state_axpbypgz(stk_classic::mesh::FieldBase* field, double alpha, unsigned x_state, double beta, unsigned y_state, double gamma, unsigned z_state);
 
       /// axpbypgz calculates: z = alpha*x + beta*y + gamma*z
-      void nodal_field_axpbypgz(double alpha, stk::mesh::FieldBase* field_x, 
-                                double beta, stk::mesh::FieldBase* field_y,
-                                double gamma, stk::mesh::FieldBase* field_z);
+      void nodal_field_axpbypgz(double alpha, stk_classic::mesh::FieldBase* field_x, 
+                                double beta, stk_classic::mesh::FieldBase* field_y,
+                                double gamma, stk_classic::mesh::FieldBase* field_z);
 
       /// dot calculates: x.y
-      double nodal_field_dot(stk::mesh::FieldBase* field_x, stk::mesh::FieldBase* field_y);
+      double nodal_field_dot(stk_classic::mesh::FieldBase* field_x, stk_classic::mesh::FieldBase* field_y);
 
       /// set field to constant value
-      void nodal_field_set_value(stk::mesh::FieldBase* field_x, double value=0.0);
+      void nodal_field_set_value(stk_classic::mesh::FieldBase* field_x, double value=0.0);
 
       /// remove blocks in the mesh used solely for geometry association, during output of the mesh to Exodus.
       /// @param geometry_file_name = name of the OpenNURBS file (*.3dm) containing the geometry info
@@ -393,10 +393,10 @@ namespace stk {
       void transform_mesh(Math::Matrix& matrix);
 
       /// return true if the two meshes are different; if @param print is true, print diffs; set print_all_field_diffs to get more output
-      static bool mesh_difference(stk::mesh::fem::FEMMetaData& metaData_1,
-                                  stk::mesh::fem::FEMMetaData& metaData_2,
-                                  stk::mesh::BulkData& bulkData_1,
-                                  stk::mesh::BulkData& bulkData_2,
+      static bool mesh_difference(stk_classic::mesh::fem::FEMMetaData& metaData_1,
+                                  stk_classic::mesh::fem::FEMMetaData& metaData_2,
+                                  stk_classic::mesh::BulkData& bulkData_1,
+                                  stk_classic::mesh::BulkData& bulkData_2,
                                   std::string msg,
                                   bool print=true, bool print_all_field_diffs=false);
 
@@ -407,18 +407,18 @@ namespace stk {
       void
       openEmpty();
 
-      stk::mesh::Entity *get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
+      stk_classic::mesh::Entity *get_closest_node(double x, double y, double z=0, double t=0, double *sum_min_ret=0) ;
 
-      //PerceptMesh(const stk::mesh::MetaData* metaData, stk::mesh::BulkData* bulkData, bool isCommitted=true);
+      //PerceptMesh(const stk_classic::mesh::MetaData* metaData, stk_classic::mesh::BulkData* bulkData, bool isCommitted=true);
 
       ~PerceptMesh() ;
-      void init( stk::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
+      void init( stk_classic::ParallelMachine comm  =  MPI_COMM_WORLD, bool no_alloc=false );      // FIXME - make private
       void destroy();       // FIXME - make private
 
       const mesh::Part*
       getPart(const std::string& part_name) ;
 
-      void print_entity(std::ostream& out, const stk::mesh::Entity& entity, stk::mesh::FieldBase* field=0);
+      void print_entity(std::ostream& out, const stk_classic::mesh::Entity& entity, stk_classic::mesh::FieldBase* field=0);
 
       // allow setting spatial dim after creation (for compatability with new FEMMetaData)
       void setSpatialDim(int sd);
@@ -430,7 +430,7 @@ namespace stk {
       /// reads the given file into a temporary model and prints info about it
       void dump(const std::string& file="");
 
-      bool isGhostElement(const stk::mesh::Entity& element)
+      bool isGhostElement(const stk_classic::mesh::Entity& element)
       {
         //throw std::runtime_error("not impl"); // FIXME
         bool isGhost = element.owner_rank() != get_rank();
@@ -439,7 +439,7 @@ namespace stk {
 
       // checks if this entity has a duplicate (ie all nodes are the same)
       bool
-      check_entity_duplicate(stk::mesh::Entity& entity);
+      check_entity_duplicate(stk_classic::mesh::Entity& entity);
 
       void delete_side_sets();
 
@@ -454,7 +454,7 @@ namespace stk {
 
       /// fill the fields from addParallelInfoFields with data from stk_mesh database
       void populateParallelInfoFields(bool elemental, bool nodal, 
-                                      stk::mesh::Selector* fixed_node_selector=0,
+                                      stk_classic::mesh::Selector* fixed_node_selector=0,
                                       std::string elemental_proc_rank_name = "proc_rank",
                                       std::string nodal_fixed_flag="fixed", // boundary flag for telling Mesquite these nodes shouldn't be moved
                                       std::string nodal_global_id_name="GLOBAL_ID", 
@@ -483,52 +483,52 @@ namespace stk {
        *    where we are looking for the family tree of the element associated with it being a parent).
        * 
        */
-      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk::mesh::Entity& element);
+      unsigned getFamilyTreeRelationIndex(FamiltyTreeLevel level, const stk_classic::mesh::Entity& element);
 
       /// the element is not a parent of the 0'th family_tree relation
-      bool isChildElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildElement( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       // either has no family tree or is a child
-      bool isLeafElement( const stk::mesh::Entity& element);
+      bool isLeafElement( const stk_classic::mesh::Entity& element);
 
       /// the element is not a parent of any family tree relation
-      bool isChildElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildElementLeaf( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
-      bool hasFamilyTree(const stk::mesh::Entity& element);
+      bool hasFamilyTree(const stk_classic::mesh::Entity& element);
 
       /// if the element is a parent at any level, return true
-      bool isParentElement( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElement( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a parent at the leaf level (either there is only one level, and it's a parent, or
       ///    if more than one, the element is a child and a parent and its children have no children)
-      bool isParentElementLeaf( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElementLeaf( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a parent at level 2 (meaning that it is both a child and a parent)
-      bool isParentElementLevel2( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isParentElementLevel2( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       /// is element a child with siblings with no nieces or nephews (siblings with children)
       ///  (alternative would be "is child and is parent not a grandparent")
-      bool isChildWithoutNieces( const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      bool isChildWithoutNieces( const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       // return false if we couldn't get the children
-      bool getChildren( const stk::mesh::Entity& element, std::vector<stk::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
+      bool getChildren( const stk_classic::mesh::Entity& element, std::vector<stk_classic::mesh::Entity*>& children, bool check_for_family_tree=true, bool only_if_element_is_parent_leaf=false);
 
-      void printParentChildInfo(const stk::mesh::Entity& element, bool check_for_family_tree=true);
+      void printParentChildInfo(const stk_classic::mesh::Entity& element, bool check_for_family_tree=true);
 
       static inline
-      stk::mesh::EntityRank fem_entity_rank( unsigned int t ) {
-        return  t < EntityRankEnd ? stk::mesh::EntityRank(t) : stk::mesh::InvalidEntityRank ;
+      stk_classic::mesh::EntityRank fem_entity_rank( unsigned int t ) {
+        return  t < EntityRankEnd ? stk_classic::mesh::EntityRank(t) : stk_classic::mesh::InvalidEntityRank ;
       }
 
 
-      stk::mesh::Entity & createOrGetNode(stk::mesh::EntityId nid, double* x=0);
+      stk_classic::mesh::Entity & createOrGetNode(stk_classic::mesh::EntityId nid, double* x=0);
 
-      void createEntities(stk::mesh::EntityRank entityRank, int count, std::vector<stk::mesh::Entity *>& requested_entities);
+      void createEntities(stk_classic::mesh::EntityRank entityRank, int count, std::vector<stk_classic::mesh::Entity *>& requested_entities);
 
 
-      static double * field_data(const stk::mesh::FieldBase *field, const stk::mesh::Bucket & bucket, unsigned *stride=0);
-      static double * field_data(const stk::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
-      static double * field_data_entity(const stk::mesh::FieldBase *field, const mesh::Entity& entity, unsigned *stride=0);
+      static double * field_data(const stk_classic::mesh::FieldBase *field, const stk_classic::mesh::Bucket & bucket, unsigned *stride=0);
+      static double * field_data(const stk_classic::mesh::FieldBase *field, const mesh::Entity& node, unsigned *stride=0);
+      static double * field_data_entity(const stk_classic::mesh::FieldBase *field, const mesh::Entity& entity, unsigned *stride=0);
 
       static inline double *
       field_data_inlined(const mesh::FieldBase *field, const mesh::Entity& node)
@@ -536,52 +536,52 @@ namespace stk {
         return field_data(field, node);
 //         return
 //           field->rank() == 0 ?
-//           stk::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node )
+//           stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(field) , node )
 //           :
-//           stk::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
+//           stk_classic::mesh::field_data( *static_cast<const VectorFieldType *>(field) , node );
       }
 
 
-      double * node_field_data(stk::mesh::FieldBase *field, const mesh::EntityId node_id);
+      double * node_field_data(stk_classic::mesh::FieldBase *field, const mesh::EntityId node_id);
 
       static BasisTypeRCP getBasis(shards::CellTopology& topo);
       static void setupBasisTable();
 
-      void nodalOpLoop(GenericFunction& nodalOp, stk::mesh::FieldBase *field=0, stk::mesh::Selector* selector=0);
-      void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
-      void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field=0, stk::mesh::Part *part = 0);
-      void elementOpLoop(ElementOp& elementOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
-      void bucketOpLoop(BucketOp& bucketOp, stk::mesh::FieldBase *field, stk::mesh::Selector* selector, bool is_surface_norm=false );
+      void nodalOpLoop(GenericFunction& nodalOp, stk_classic::mesh::FieldBase *field=0, stk_classic::mesh::Selector* selector=0);
+      void elementOpLoop(ElementOp& elementOp, stk_classic::mesh::FieldBase *field=0, stk_classic::mesh::Part *part = 0);
+      void bucketOpLoop(BucketOp& bucketOp, stk_classic::mesh::FieldBase *field=0, stk_classic::mesh::Part *part = 0);
+      void elementOpLoop(ElementOp& elementOp, stk_classic::mesh::FieldBase *field, stk_classic::mesh::Selector* selector, bool is_surface_norm=false );
+      void bucketOpLoop(BucketOp& bucketOp, stk_classic::mesh::FieldBase *field, stk_classic::mesh::Selector* selector, bool is_surface_norm=false );
 
-      static unsigned size1(const stk::mesh::Bucket& bucket) { return bucket.size(); }
-      static unsigned size1(const stk::mesh::Entity& element) { return 1; }
+      static unsigned size1(const stk_classic::mesh::Bucket& bucket) { return bucket.size(); }
+      static unsigned size1(const stk_classic::mesh::Entity& element) { return 1; }
 
       /// \brief Fill the array cellNodes(numCells, numNodesPerCell, nDof) with DOF values from the given Field
       /// The stride of the data (last dimension in cellNodes) is taken to be that of the field's stride; however,
       /// in some cases you may want to pass in an array where nDof is less than the stride (e.g., pull out 2
       /// coordinates from a 3D coordinate field).  In that case, the dataStride argument can be set (to e.g. "2").
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Bucket &bucket,
-                                 //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+      static void fillCellNodes( const stk_classic::mesh::Bucket &bucket,
+                                 //stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
       /// \brief see comment for fillCellNodes(Bucket& ...)
       template<class ArrayType>
-      static void fillCellNodes( const stk::mesh::Entity &element,
-                                 //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+      static void fillCellNodes( const stk_classic::mesh::Entity &element,
+                                 //stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>& coord_field,
                                  //VectorFieldType& coord_field,
                                  mesh::FieldBase* field,
                                  ArrayType& cellNodes, unsigned dataStride=0 );
 
-      double edge_length_ave(const stk::mesh::Entity &entity, mesh::FieldBase* coord_field = 0);
+      double edge_length_ave(const stk_classic::mesh::Entity &entity, mesh::FieldBase* coord_field = 0);
 
-      static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+      static void findMinMaxEdgeLength(const mesh::Bucket &bucket,  stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>& coord_field,
                                        Intrepid::FieldContainer<double>& elem_min_edge_length, Intrepid::FieldContainer<double>& elem_max_edge_length);
 
       static void
-      element_side_nodes( const mesh::Entity & elem , int local_side_id, stk::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
+      element_side_nodes( const mesh::Entity & elem , int local_side_id, stk_classic::mesh::EntityRank side_entity_rank, std::vector<mesh::Entity *>& side_node_entities );
 
       static void
       element_side_permutation(const mesh::Entity& element, const mesh::Entity& side, unsigned iSubDimOrd, int& returnedIndex, int& returnedPolarity);
@@ -595,10 +595,10 @@ namespace stk {
       /// here @param thing is a Part, Bucket, Entity, or Field or BulkData
       template<class T>
       static
-      const stk::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing)
+      const stk_classic::mesh::fem::FEMMetaData& get_fem_meta_data(const T& thing)
       {
-        //const stk::mesh::fem::FEMMetaData& meta = stk::mesh::fem::FEMMetaData::get(thing);
-        const stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get ( thing );
+        //const stk_classic::mesh::fem::FEMMetaData& meta = stk_classic::mesh::fem::FEMMetaData::get(thing);
+        const stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get ( thing );
         return fem_meta;
       }
 
@@ -611,8 +611,8 @@ namespace stk {
         return cell_topo_data;
       }
 
-      const stk::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
-      void set_io_omitted_parts(stk::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
+      const stk_classic::mesh::PartVector& get_io_omitted_parts() { return m_io_omitted_parts; }
+      void set_io_omitted_parts(stk_classic::mesh::PartVector& io_omitted_parts) { m_io_omitted_parts = io_omitted_parts; }
 
 
     private:
@@ -649,21 +649,21 @@ namespace stk {
       // write in exodus format to given file
       void writeModel( const std::string& out_filename );
 
-      stk::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
-                                         const stk::mesh::Part* arg_part=0);
+      stk_classic::mesh::FieldBase * createField(const std::string& name, const unsigned entity_rank, const std::vector<int>& dimensions,
+                                         const stk_classic::mesh::Part* arg_part=0);
 
       //static void transformMesh(GenericFunction& coordinate_transform);
 
 #endif // SWIG
 
     private:
-      //stk::mesh::fem::FEMMetaData *         m_fem_meta_data;
-      stk::mesh::fem::FEMMetaData *                 m_metaData;
-      stk::mesh::BulkData *                 m_bulkData;
-      stk::io::util::Gmesh_STKmesh_Fixture* m_fixture;
+      //stk_classic::mesh::fem::FEMMetaData *         m_fem_meta_data;
+      stk_classic::mesh::fem::FEMMetaData *                 m_metaData;
+      stk_classic::mesh::BulkData *                 m_bulkData;
+      stk_classic::io::util::Gmesh_STKmesh_Fixture* m_fixture;
       //Teuchos::RCP<Ioss::Region>            m_iossRegion;
       Ioss::Region*                         m_iossRegion;   // the input region
-      Teuchos::RCP<stk::io::MeshData>       m_iossMeshData;
+      Teuchos::RCP<stk_classic::io::MeshData>       m_iossMeshData;
       bool                                  m_iossMeshData_created;
       bool                                  m_sync_io_regions;
       VectorFieldType*                      m_coordinatesField;
@@ -675,14 +675,14 @@ namespace stk {
       bool                                  m_isAdopted;
       bool                                  m_dontCheckState;
       std::string                           m_filename;
-      stk::ParallelMachine                  m_comm;
+      stk_classic::ParallelMachine                  m_comm;
 
       //static std::map<unsigned, BasisType *> m_basisTable;
       static BasisTableMap m_basisTable;
 
       SameRankRelation m_adapt_parent_to_child_relations;
 
-      stk::mesh::PartVector                 m_io_omitted_parts;
+      stk_classic::mesh::PartVector                 m_io_omitted_parts;
 
       // normally 0, unless using streaming refine
       int                                   m_streaming_size;
@@ -747,13 +747,13 @@ namespace stk {
     // static
     template<class ArrayType>
     void PerceptMesh::fillCellNodes( const mesh::Bucket &bucket,
-                                  //stk::mesh::Cartesian>& coord_field,
+                                  //stk_classic::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   mesh::FieldBase* field,
                                   ArrayType& cellNodes, unsigned dataStrideArg)
     {
       unsigned number_elems = bucket.size();
-      //const CellTopologyData * const bucket_cell_topo_data = stk::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
+      //const CellTopologyData * const bucket_cell_topo_data = stk_classic::mesh::fem::get_cell_topology(bucket).getCellTopologyData();
       const CellTopologyData * const bucket_cell_topo_data = get_cell_topology(bucket);
 
       shards::CellTopology cell_topo(bucket_cell_topo_data);
@@ -764,7 +764,7 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
+          const stk_classic::mesh::FieldBase::Restriction & r = field->restriction(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.dimension() ;
         }
       //std::cout << "bucket dataStride= " << dataStride << std::endl;
@@ -795,8 +795,8 @@ namespace stk {
 
     // static
     template<class ArrayType>
-    void PerceptMesh::fillCellNodes( const stk::mesh::Entity &element,
-                                  //stk::mesh::Field<double, stk::mesh::Cartesian>& coord_field,
+    void PerceptMesh::fillCellNodes( const stk_classic::mesh::Entity &element,
+                                  //stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>& coord_field,
                                   //VectorFieldType& coord_field,
                                   mesh::FieldBase* field,
                                   ArrayType& cellNodes,
@@ -805,11 +805,11 @@ namespace stk {
       unsigned dataStride = dataStrideArg;
       if (!dataStrideArg)
         {
-          const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
+          const stk_classic::mesh::FieldBase::Restriction & r = field->restriction(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
           dataStride = r.dimension() ;
         }
       //std::cout << "element dataStride= " << dataStride << std::endl;
-      const mesh::PairIterRelation element_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      const mesh::PairIterRelation element_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
       unsigned numNodes = element_nodes.size();
 
       unsigned iCell = 0;

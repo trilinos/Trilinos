@@ -17,7 +17,7 @@
 // #include <demangle.h>
 // #endif
 
-namespace stk {
+namespace stk_classic {
 
 #ifdef STK_USE_PLATFORM_DEMANGLER
 

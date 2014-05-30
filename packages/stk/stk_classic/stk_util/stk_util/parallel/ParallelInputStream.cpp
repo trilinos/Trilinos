@@ -12,7 +12,7 @@
 
 /*--------------------------------------------------------------------*/
 
-namespace stk {
+namespace stk_classic {
 namespace {
 
 #if defined( STK_HAS_MPI )
@@ -31,7 +31,7 @@ void broadcast( ParallelMachine , void * , int ) {}
 
 /*--------------------------------------------------------------------*/
 
-namespace stk {
+namespace stk_classic {
 namespace {
 
 //----------------------------------------------------------------------
@@ -72,7 +72,7 @@ ParInBuf::ParInBuf( ParallelMachine comm , const char * const file_name )
 
   if ( ! result ) {
     std::string msg;
-    msg.append("stk::ParallelInputStream( " );
+    msg.append("stk_classic::ParallelInputStream( " );
     if ( 0 == parallel_machine_rank( comm ) && NULL != file_name ) {
       msg.append( file_name );
     }
@@ -119,7 +119,7 @@ namespace {
 void throw_overflow()
 {
   std::string msg ;
-  msg.append("stk::ParallelInputStream::overflow CALL IS ERRONEOUS" );
+  msg.append("stk_classic::ParallelInputStream::overflow CALL IS ERRONEOUS" );
   throw std::runtime_error(msg);
 }
 

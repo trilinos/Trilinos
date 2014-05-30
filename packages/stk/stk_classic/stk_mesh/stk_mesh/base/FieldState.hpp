@@ -10,7 +10,7 @@
 #ifndef stk_mesh_FieldState_hpp
 #define stk_mesh_FieldState_hpp
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
   /** \addtogroup stk_mesh_module
@@ -18,7 +18,7 @@ namespace mesh {
  */
 
 /** \brief  Enumeration of states for multi-state
- *          \ref stk::mesh::Field "fields".
+ *          \ref stk_classic::mesh::Field "fields".
  *
  *  A field may be declared to have field data for multiple states.
  *  -  Field states <b>StateNone</b>, <b>StateNew</b>, or <b>StateNP1</b>
@@ -43,7 +43,7 @@ enum FieldState {
   StateNM4  = 5   ///< \brief Previous-4 state of a field with six states
 };
 
-/** \brief Maximum number of states that a \ref stk::mesh::Field "field"
+/** \brief Maximum number of states that a \ref stk_classic::mesh::Field "field"
  *         can have.
  */
 enum { MaximumFieldStates = 6 };

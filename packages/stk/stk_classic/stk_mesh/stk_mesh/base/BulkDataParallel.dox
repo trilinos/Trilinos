@@ -1,7 +1,7 @@
 
 /** \addtogroup stk_mesh_bulk_data_parallel
  *
- *  Parallel distributed \ref stk::mesh::Entity "entities" have
+ *  Parallel distributed \ref stk_classic::mesh::Entity "entities" have
  *  relations to entities that cross proessor boundaries.
  *  Such a cross-processor relation can be viewed as follows.
  *

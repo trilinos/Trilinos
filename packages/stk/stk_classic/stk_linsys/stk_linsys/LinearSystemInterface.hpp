@@ -14,7 +14,7 @@
 
 #include <Teuchos_ParameterList.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 class LinearSystemInterface {

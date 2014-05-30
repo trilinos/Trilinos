@@ -59,9 +59,9 @@ namespace stk
         MPI_Barrier( MPI_COMM_WORLD );
 
         // start_demo_nodeRegistry_test_parallel_1
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if ( p_size == 3)
           {
 
@@ -78,11 +78,11 @@ namespace stk
             mesh.modification_begin();
 
             // We're just going to add everything to the universal part
-            stk::mesh::PartVector empty_parts;
-            stk::mesh::Part *  owned_part = & meta_data.locally_owned_part();
-            stk::mesh::Part *  shared_part = & meta_data.globally_shared_part();
-            stk::mesh::PartVector owned_parts(1,owned_part);
-            stk::mesh::PartVector shared_parts(1,shared_part);
+            stk_classic::mesh::PartVector empty_parts;
+            stk_classic::mesh::Part *  owned_part = & meta_data.locally_owned_part();
+            stk_classic::mesh::Part *  shared_part = & meta_data.globally_shared_part();
+            stk_classic::mesh::PartVector owned_parts(1,owned_part);
+            stk_classic::mesh::PartVector shared_parts(1,shared_part);
 
             // Create nodes
             Entity *node=0;
@@ -126,9 +126,9 @@ namespace stk
         MPI_Barrier( MPI_COMM_WORLD );
 
         // start_demo_nodeRegistry_test_parallel_1
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         if (p_size == 1 || p_size == 3)
           {
 
@@ -166,8 +166,8 @@ namespace stk
                   unsigned elem_num_ghost = 5;  // edge #2
                   unsigned elem_20 = 20;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
+                  stk_classic::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local);
+                  stk_classic::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
                   if (p_rank == 2)
                     {
                       element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_ghost);
@@ -182,8 +182,8 @@ namespace stk
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
                   dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-                  stk::mesh::Entity& element_local = *element_local_p;
-                  stk::mesh::Entity& element_ghost = *element_ghost_p;
+                  stk_classic::mesh::Entity& element_local = *element_local_p;
+                  stk_classic::mesh::Entity& element_ghost = *element_ghost_p;
 
                   std::cout << "P["<<p_rank<<"] element_local isGhost = " << eMesh.isGhostElement(element_local) << " " << element_local << std::endl;
                   std::cout << "P["<<p_rank<<"] element_ghost isGhost = " << eMesh.isGhostElement(element_ghost) << " " << element_ghost << std::endl;
@@ -261,7 +261,7 @@ namespace stk
                       //if (!nodeIds_onSE[0])
                       //  throw std::logic_error("nodeRegistry_regr.parallel_2 logic err3");
 
-                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
+                      stk_classic::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE.m_entity_id_vector[0]);
 
                       //EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 42u);
                       EXPECT_EQ(nodeIds_onSE.m_entity_id_vector[0], 41u);
@@ -297,9 +297,9 @@ namespace stk
         MPI_Barrier( MPI_COMM_WORLD );
 
         // start_demo_nodeRegistry_test_parallel_2
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         std::cout << "nodeRegistry_regr.test_parallel_2: p_size = " << p_size << std::endl;
 
         if (p_size == 1 || p_size == 3)
@@ -344,8 +344,8 @@ namespace stk
                   unsigned elem_num_local_proc_1 = elem_num_local;
                   unsigned elem_num_local_proc_2 = elem_num_ghost;
 
-                  stk::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
-                  stk::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
+                  stk_classic::mesh::Entity* element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_1);
+                  stk_classic::mesh::Entity* element_ghost_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
                   if (p_rank == 2)
                     {
                       element_local_p = eMesh.get_bulk_data()->get_entity(eMesh.element_rank(), elem_num_local_proc_2);
@@ -360,8 +360,8 @@ namespace stk
                   dw() << "P["<<p_rank<<"] elem_num_local = " << elem_num_local << DWENDL;
                   dw() << "P["<<p_rank<<"] elem_num_ghost = " << elem_num_ghost << DWENDL;
 
-                  stk::mesh::Entity& element_local = *element_local_p;
-                  stk::mesh::Entity& element_ghost = *element_ghost_p;
+                  stk_classic::mesh::Entity& element_local = *element_local_p;
+                  stk_classic::mesh::Entity& element_ghost = *element_ghost_p;
 
                   std::cout << "P["<< p_rank <<"] element_local isGhost = " << eMesh.isGhostElement(element_local) << " " << element_local << std::endl;
                   std::cout << "P["<< p_rank <<"] element_ghost isGhost = " << eMesh.isGhostElement(element_ghost) << " " << element_ghost << std::endl;
@@ -438,7 +438,7 @@ namespace stk
                       NodeIdsOnSubDimEntityType& nodeIds_onSE = *(nodeRegistry.getNewNodesOnSubDimEntity(element_local, needed_entity_ranks[0].first, iSubDimOrd));
                       if (!nodeIds_onSE[0])
                         throw std::logic_error("nodeRegistry_regr.parallel_2 logic err1");
-                      stk::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
+                      stk_classic::mesh::Entity*  node   = eMesh.get_bulk_data()->get_entity(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE[0]->identifier());
 
                       //EXPECT_EQ(nodeId, 42u);
                       // should be the same node on each proc
@@ -453,7 +453,7 @@ namespace stk
                           if (!nodeIds_onSE_1[0])
                             throw std::logic_error("nodeRegistry_regr.parallel_2 logic err2");
 
-                          stk::mesh::Entity*  node_1   = eMesh.get_bulk_data()->get_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
+                          stk_classic::mesh::Entity*  node_1   = eMesh.get_bulk_data()->get_entity(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodeIds_onSE_1[0]->identifier());
 
                           std::cout << "P[" << p_rank << "] nodeId_1 = " << nodeIds_onSE_1 << " node_1= " << node_1 << std::endl;
 

@@ -14,7 +14,7 @@
 
 namespace {
 
-using stk::mesh::fixtures::VariableSelectorFixture ;
+using stk_classic::mesh::fixtures::VariableSelectorFixture ;
 
 }
 
@@ -22,11 +22,11 @@ STKUNIT_UNIT_TEST( PerformanceTestSelector, start)
 {
   size_t N = 5;
   VariableSelectorFixture fix(N);
-  stk::mesh::Selector selectUnion;
+  stk_classic::mesh::Selector selectUnion;
   for (size_t part_i = 0 ; part_i<N ; ++part_i) {
     selectUnion |= *fix.m_declared_part_vector[part_i];
   }
-  std::vector<stk::mesh::Bucket*> buckets_out;
+  std::vector<stk_classic::mesh::Bucket*> buckets_out;
   unsigned entity_rank = 0;
   get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
   STKUNIT_ASSERT_EQUAL( buckets_out.size(), N );
@@ -51,21 +51,21 @@ STKUNIT_UNIT_TEST( PerformanceTestSelector, timings)
 
   std::vector<double> selector_creation(N/2);
   std::vector<double> get_buckets_usage(N/2);
-  double start_time = stk::wall_time();
+  double start_time = stk_classic::wall_time();
   size_t timing_index = 0;
   for (size_t n = 1 ; n<N; n*=2) {
     // Selector creation
-    stk::mesh::Selector selectUnion;
+    stk_classic::mesh::Selector selectUnion;
     for (size_t part_i = 0 ; part_i<n ; ++part_i) {
       selectUnion |= *fix.m_declared_part_vector[part_i];
     }
-    selector_creation[timing_index] = stk::wall_dtime(start_time);
+    selector_creation[timing_index] = stk_classic::wall_dtime(start_time);
 
     // Selector usage:
-    std::vector<stk::mesh::Bucket*> buckets_out;
+    std::vector<stk_classic::mesh::Bucket*> buckets_out;
     unsigned entity_rank = 0;
     get_buckets(selectUnion, fix.m_BulkData.buckets(entity_rank), buckets_out);
-    get_buckets_usage[timing_index] = stk::wall_dtime(start_time);
+    get_buckets_usage[timing_index] = stk_classic::wall_dtime(start_time);
     ++timing_index;
   }
 

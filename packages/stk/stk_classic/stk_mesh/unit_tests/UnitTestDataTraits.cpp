@@ -19,9 +19,9 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-using stk::mesh::DataTraits;
-using stk::mesh::data_traits;
-using stk::CommAll;
+using stk_classic::mesh::DataTraits;
+using stk_classic::mesh::data_traits;
+using stk_classic::CommAll;
 
 //----------------------------------------------------------------------
 
@@ -31,7 +31,7 @@ STKUNIT_UNIT_TEST(TestDataTraits, testVoid)
 {
   // Test the DataTrait for void
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   const DataTraits & traits = data_traits<void>();
@@ -80,9 +80,9 @@ void test_fundamental_type()
 {
   // Test DataTrait for fundamental type T
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  int p_rank = stk::parallel_machine_rank( pm );
-  int p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk_classic::parallel_machine_rank( pm );
+  int p_size = stk_classic::parallel_machine_size( pm );
   MPI_Barrier( pm );
 
   // Test data trait properties of type T
@@ -244,7 +244,7 @@ void test_fundamental_pointer()
 {
   // Test DataTrait for fundamenter pointer type T*
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   // Test data trait properties of type T*
@@ -362,10 +362,10 @@ STKUNIT_UNIT_TEST(TestDataTraits, testFundamental_double_ptr)
 
 enum EType { val_a = 'a' , val_b = 'b' , val_c = 'c' };
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
-// This enum will only work within the stk::mesh namespace
+// This enum will only work within the stk_classic::mesh namespace
 DATA_TRAITS_ENUM_3( EType , val_a , val_b , val_c )
 
 }
@@ -377,9 +377,9 @@ STKUNIT_UNIT_TEST(TestDataTraits, testEnum)
 {
   // Test interaction of DataTraits with enums
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  int p_rank = stk::parallel_machine_rank( pm );
-  int p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk_classic::parallel_machine_rank( pm );
+  int p_size = stk_classic::parallel_machine_size( pm );
   MPI_Barrier( pm );
 
   typedef EType T ;
@@ -479,10 +479,10 @@ STKUNIT_UNIT_TEST(TestDataTraits, testEnum)
 
 struct Vec3 { double x , y , z ; };
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
-// This enum will only work within the stk::mesh namespace
+// This enum will only work within the stk_classic::mesh namespace
 DATA_TRAITS_POD_CLASS_3( Vec3 , x , y , z )
 
 }
@@ -494,9 +494,9 @@ STKUNIT_UNIT_TEST(TestDataTraits, testClass)
 {
   // Test interaction of DataTraits with classes
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
-  int p_rank = stk::parallel_machine_rank( pm );
-  int p_size = stk::parallel_machine_size( pm );
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
+  int p_rank = stk_classic::parallel_machine_rank( pm );
+  int p_size = stk_classic::parallel_machine_size( pm );
   MPI_Barrier( pm );
 
   typedef Vec3 T ;

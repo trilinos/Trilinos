@@ -3,7 +3,7 @@
 #include <stk_mesh/base/Part.hpp>
 #include <sstream>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
   void FieldRestriction::print(

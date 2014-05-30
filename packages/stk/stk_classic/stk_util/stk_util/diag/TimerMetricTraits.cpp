@@ -15,7 +15,7 @@
 #include <stk_util/environment/FormatTime.hpp>
 #include <stk_util/environment/FormatMemorySize.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 namespace {
@@ -48,13 +48,13 @@ MetricTraits<LapCount>::value_now()
 MetricTraits<CPUTime>::Type
 MetricTraits<CPUTime>::value_now()
 {
-  return stk::cpu_time();
+  return stk_classic::cpu_time();
 }
 
 MetricTraits<WallTime>::Type
 MetricTraits<WallTime>::value_now()
 {
-  return stk::wall_time();
+  return stk_classic::wall_time();
 }
 
 MetricTraits<MPICount>::Type

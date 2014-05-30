@@ -14,7 +14,7 @@
 #include <string>
 #include <functional>
 
-namespace stk {
+namespace stk_classic {
 
 /** \addtogroup util_module
  *  \{

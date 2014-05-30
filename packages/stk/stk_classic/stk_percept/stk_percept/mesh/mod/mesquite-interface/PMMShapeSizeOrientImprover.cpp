@@ -28,7 +28,7 @@
 #include <TetDihedralWeight.hpp>
 #include <RemainingWeight.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;

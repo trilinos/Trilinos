@@ -8,7 +8,7 @@
 
 #include <stk_util/diag/WriterManip.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 Writer &operator<<(Writer &dout, _setw set_width) {

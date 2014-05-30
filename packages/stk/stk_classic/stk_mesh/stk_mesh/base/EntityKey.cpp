@@ -16,7 +16,7 @@
 
 #include <stk_mesh/base/EntityKey.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 EntityKey::EntityKey( EntityRank entity_rank ,

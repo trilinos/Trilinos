@@ -293,7 +293,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
   
   memset(pointers, 0, MAXP*sizeof(pointers[0]));
 
-  start_time = stk::cpu_time();
+  start_time = stk_classic::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
   free(malloc(1));
   
@@ -368,7 +368,7 @@ STKUNIT_UNIT_TEST(UnitTestMalloc, Performance)
       }
     }
 
-    end_time = stk::cpu_time();
+    end_time = stk_classic::cpu_time();
 #if defined SIERRA_PTMALLOC3_ALLOCATOR || defined SIERRA_PTMALLOC2_ALLOCATOR
     end_mem = malloc_used();
     end_footprint = malloc_footprint();

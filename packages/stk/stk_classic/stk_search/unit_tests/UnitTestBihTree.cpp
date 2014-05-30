@@ -14,9 +14,9 @@
 #include <stk_search/BihTree.hpp>
 #include <stk_search/BoundingBox.hpp>
 
-typedef stk::search::box::AxisAlignedBoundingBox<int,float,3> BoundingVolume;
+typedef stk_classic::search::box::AxisAlignedBoundingBox<int,float,3> BoundingVolume;
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace bih {
 
@@ -54,8 +54,8 @@ void UnitTestBihTree::testNode()
 
 
   //test leaf node
-  stk::search::bih::BihTree<BoundingVolume>::Node & leftChild  = test.left();
-  stk::search::bih::BihTree<BoundingVolume>::Node & rightChild  = test.right();
+  stk_classic::search::bih::BihTree<BoundingVolume>::Node & leftChild  = test.left();
+  stk_classic::search::bih::BihTree<BoundingVolume>::Node & rightChild  = test.right();
 
 
   leftChild.make_leaf_node(0,0);
@@ -84,7 +84,7 @@ void test_tree(
   unsigned max_depth,
   unsigned items_per_leaf)
 {
-  stk::search::bih::BihTree<BoundingVolume> tree(range.begin(),range.end(),max_depth,items_per_leaf);
+  stk_classic::search::bih::BihTree<BoundingVolume> tree(range.begin(),range.end(),max_depth,items_per_leaf);
 
   int extra_intersections = 0;
 
@@ -150,7 +150,7 @@ void UnitTestBihTree::testTree( )
 
   {
     //test bih tree with single box
-    stk::search::bih::BihTree<BoundingVolume> tree(range.begin(),range.begin()+1);
+    stk_classic::search::bih::BihTree<BoundingVolume> tree(range.begin(),range.begin()+1);
   }
 
   {
@@ -180,7 +180,7 @@ void UnitTestBihTree::testTree( )
       unbalanced.push_back(box);
     }
 
-    stk::search::bih::BihTree<BoundingVolume> tree(unbalanced.begin(),unbalanced.end());
+    stk_classic::search::bih::BihTree<BoundingVolume> tree(unbalanced.begin(),unbalanced.end());
 
     std::set< std::pair< BoundingVolume::Key, BoundingVolume::Key> > self_relations_set;
     //test for self intersection
@@ -195,7 +195,7 @@ void UnitTestBihTree::testTree( )
 STKUNIT_UNIT_TEST(UnitTestingOfSearchBih, testUnit)
 {
   MPI_Barrier( MPI_COMM_WORLD );
-  stk::search::bih::UnitTestBihTree unitTest;
+  stk_classic::search::bih::UnitTestBihTree unitTest;
   unitTest.testNode();
   unitTest.testTree();
 }

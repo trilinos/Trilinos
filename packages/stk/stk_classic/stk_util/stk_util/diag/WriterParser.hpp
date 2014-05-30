@@ -3,7 +3,7 @@
 
 #include <stk_util/diag/Option.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///
@@ -68,7 +68,7 @@ public:
 namespace sierra {
 namespace Diag {
 
-typedef stk::diag::WriterParser WriterParser;
+typedef stk_classic::diag::WriterParser WriterParser;
 
 } // namespace Diag
 } // namespace sierra

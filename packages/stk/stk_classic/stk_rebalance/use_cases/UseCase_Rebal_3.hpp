@@ -11,11 +11,11 @@
 
 #include <stk_mesh/fixtures/HexFixture.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 namespace use_cases {
 
-  bool test_contact_surfaces( stk::ParallelMachine comm );
+  bool test_contact_surfaces( stk_classic::ParallelMachine comm );
 
 } //namespace use_cases
 } //namespace rebalance

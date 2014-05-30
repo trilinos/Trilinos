@@ -33,11 +33,11 @@
 
 namespace std {
 
-ostream & operator << ( ostream & os , const stk::OctTreeKey & otk )
+ostream & operator << ( ostream & os , const stk_classic::OctTreeKey & otk )
 {
   unsigned j = 0 ;
 
-  while ( j < stk::OctTreeKey::MaxDepth ) {
+  while ( j < stk_classic::OctTreeKey::MaxDepth ) {
     os << otk.index(++j);
   }
   
@@ -46,7 +46,7 @@ ostream & operator << ( ostream & os , const stk::OctTreeKey & otk )
 
 }
 
-namespace stk {
+namespace stk_classic {
 
 enum { OK = StaticAssert< OctTreeKey::NWord == 2 >::OK };
 
@@ -60,7 +60,7 @@ namespace {
   
   void throw_depth( const unsigned min_depth, const unsigned depth )
   {
-    const unsigned m = stk::OctTreeKey::MaxDepth ;
+    const unsigned m = stk_classic::OctTreeKey::MaxDepth ;
     std::ostringstream msg ;
     msg << "OctTree.cpp: depth = " << depth << " is out of range [" << min_depth << ".." << m << "]" ;
     throw std::range_error( msg.str() );
@@ -183,7 +183,7 @@ const unsigned tree_size[11] = {
 
 unsigned oct_tree_size( const unsigned Depth )
 {
-  if ( stk::OctTreeKey::MaxDepth < Depth )
+  if ( stk_classic::OctTreeKey::MaxDepth < Depth )
     { throw_depth( 0, Depth ); }
 
   return tree_size[ Depth ];
@@ -191,7 +191,7 @@ unsigned oct_tree_size( const unsigned Depth )
 
 unsigned oct_tree_offset( const unsigned Depth , const OctTreeKey & k )
 {
-  if ( stk::OctTreeKey::MaxDepth < Depth )
+  if ( stk_classic::OctTreeKey::MaxDepth < Depth )
     { throw_depth( 0, Depth ); }
 
   unsigned index = 0 ;

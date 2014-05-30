@@ -27,7 +27,7 @@
 
 #include <stk_mesh/baseImpl/FieldRepository.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 MetaData & MetaData::get( const BulkData & bulk_data) {
@@ -239,7 +239,7 @@ Part & MetaData::declare_part( const PartVector & part_intersect )
 
 void MetaData::declare_part_subset( Part & superset , Part & subset )
 {
-  static const char method[] = "stk::mesh::MetaData::declare_part_subset" ;
+  static const char method[] = "stk_classic::mesh::MetaData::declare_part_subset" ;
 
   require_not_committed();
   require_same_mesh_meta_data( MetaData::get(superset) );

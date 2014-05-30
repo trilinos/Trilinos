@@ -22,17 +22,17 @@
 #include <stk_mesh/fem/FEMMetaData.hpp>
 #include <stk_mesh/fem/FEMHelpers.hpp>
 
-using stk::mesh::MetaData;
-using stk::mesh::Part;
-using stk::mesh::Property;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::Property;
 
 namespace {
 
 STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
 {
   const int spatial_dimension = 3;
-  MetaData meta_data(stk::mesh::fem::entity_rank_names(spatial_dimension));
-  MetaData meta_data2(stk::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData meta_data(stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
+  MetaData meta_data2(stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
   unsigned size = 0;
   unsigned EntityRank = 0;
 
@@ -73,20 +73,20 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
   //Covers add_property in Property.hpp and put_property in MetaData.hpp
   meta_data.put_property( pi , meta_data.locally_owned_part() );
   //covers property_data in Property.hpp
-  STKUNIT_ASSERT( stk::mesh::property_data( pi , meta_data.locally_owned_part() ) != NULL);
-  STKUNIT_ASSERT( !stk::mesh::property_data( px , meta_data.locally_owned_part() ) );
+  STKUNIT_ASSERT( stk_classic::mesh::property_data( pi , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT( !stk_classic::mesh::property_data( px , meta_data.locally_owned_part() ) );
 
   //Coverage of virtual const data_type * data( unsigned key ) const in Property.hpp
-  STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi2 , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT_FALSE( stk_classic::mesh::property_data( pi2 , meta_data.locally_owned_part() ) != NULL);
 
   //Cover unsigned data type in Property.hpp
-  STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned , meta_data.locally_owned_part() ) != NULL);
-  STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned_2 , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT_FALSE( stk_classic::mesh::property_data( pi_unsigned , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT_FALSE( stk_classic::mesh::property_data( pi_unsigned_2 , meta_data.locally_owned_part() ) != NULL);
   STKUNIT_ASSERT( ! pi_unsigned.type_is<int>() );
 
   //Cover unsigned const data type in Property.hpp
-  STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned_const , meta_data.locally_owned_part() ) != NULL);
-  STKUNIT_ASSERT_FALSE( stk::mesh::property_data( pi_unsigned_const_2 , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT_FALSE( stk_classic::mesh::property_data( pi_unsigned_const , meta_data.locally_owned_part() ) != NULL);
+  STKUNIT_ASSERT_FALSE( stk_classic::mesh::property_data( pi_unsigned_const_2 , meta_data.locally_owned_part() ) != NULL);
 
   //Coverage of Property.hpp to test two unequal parts for const property_type and cover of property_data_throw
   STKUNIT_ASSERT_THROW(property_data( pi2 , part_not_equal_to_pi2 ),
@@ -106,7 +106,7 @@ STKUNIT_UNIT_TEST(UnitTestProperty, testProperty)
       );
 
   //More coverage of Property.hpp to test two parts with different meta data
-  STKUNIT_ASSERT_THROW(stk::mesh::property_data( pi , part_not_equal_to_pi ),
+  STKUNIT_ASSERT_THROW(stk_classic::mesh::property_data( pi , part_not_equal_to_pi ),
                        std::logic_error);
 
   //Final coverage of MetaData.hpp - declare_property

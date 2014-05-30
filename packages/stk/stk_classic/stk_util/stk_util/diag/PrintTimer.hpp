@@ -14,7 +14,7 @@
 #include <stk_util/diag/Timer.hpp>
 #include <stk_util/parallel/Parallel.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 std::ostream &printXML(std::ostream& os, MetricsMask metrics_mask, bool checkpoint);

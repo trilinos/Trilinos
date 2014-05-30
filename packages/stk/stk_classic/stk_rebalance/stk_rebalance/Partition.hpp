@@ -51,7 +51,7 @@
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace rebalance {
 
 typedef mesh::Field<double, mesh::Cartesian>  VectorField ;
@@ -83,7 +83,7 @@ class Partition {
 public:
 
   /** \brief Constructors.  */
-  Partition(stk::ParallelMachine comm);
+  Partition(stk_classic::ParallelMachine comm);
 private:
   Partition(const Partition &p);
 public:
@@ -141,7 +141,7 @@ public:
    * mesh entities before rebalancing is performed
    * again.
    */
-  virtual int get_new_partition(stk::mesh::EntityProcVec &new_partition) = 0;
+  virtual int get_new_partition(stk_classic::mesh::EntityProcVec &new_partition) = 0;
 
   /** \brief Query whether element dependents need to be rebalanced outside this Partition. */
   virtual bool partition_dependents_needed() const = 0;
@@ -149,7 +149,7 @@ public:
 
 protected:
 
-  const stk::ParallelMachine comm_;
+  const stk_classic::ParallelMachine comm_;
 };
 
 /** \} */

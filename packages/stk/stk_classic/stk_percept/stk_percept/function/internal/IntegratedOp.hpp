@@ -51,7 +51,7 @@ namespace stk
           }
         if (field)
           {
-            const stk::mesh::FieldBase::Restriction & r = field->restriction(stk::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
+            const stk_classic::mesh::FieldBase::Restriction & r = field->restriction(stk_classic::mesh::fem::FEMMetaData::NODE_RANK, mesh::fem::FEMMetaData::get(*field).universal_part());
             unsigned stride = r.dimension() ;
             m_nDOFs = stride;
           }
@@ -85,11 +85,11 @@ namespace stk
 
       /// innermost operation of an bucket-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Bucket& bucket,  stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
+      virtual bool operator()(const stk_classic::mesh::Bucket& bucket,  stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
 
       /// innermost operation of an element-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
+      virtual bool operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData);
       void init_elementOp() { init(); }
       void fini_elementOp() {}
 
@@ -97,11 +97,11 @@ namespace stk
 
 
       template<class BucketOrEntity>
-      bool helper(const BucketOrEntity& bucket_or_element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+      bool helper(const BucketOrEntity& bucket_or_element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         EXCEPTWATCH;
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket_or_element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket_or_element);
         CellTopology cell_topo(cell_topo_data);
 
         int cell_dimension = cell_topo.getDimension();
@@ -204,7 +204,7 @@ namespace stk
         /// DOF's, it works on scalars only for the integration routines, or at least that's how I understand
         /// it currently.
 
-        // create an array that stk::percept::Function will like to hold the results
+        // create an array that stk_classic::percept::Function will like to hold the results
         ivDims[ivDims.size()-1] = m_nDOFs;
 
         MDArray iv_mda ( Teuchos::Array<int>(ivDims.begin(), ivDims.end()));
@@ -271,23 +271,23 @@ namespace stk
        *   6. get products with cubature weights
        */
 
-      bool helperSubDim(const stk::mesh::Bucket& bucket, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+      bool helperSubDim(const stk_classic::mesh::Bucket& bucket, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         const unsigned num_elements_in_bucket = bucket.size();
 
         for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
           {
-            stk::mesh::Entity& element = bucket[iElement];
+            stk_classic::mesh::Entity& element = bucket[iElement];
             helperSubDim(element, field, bulkData);
           }
         return false;
       }
 
-      bool helperSubDim(const stk::mesh::Entity& child_element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+      bool helperSubDim(const stk_classic::mesh::Entity& child_element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
       {
         EXCEPTWATCH;
 
-        const CellTopologyData * const child_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(child_element);
+        const CellTopologyData * const child_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(child_element);
         CellTopology child_cell_topo(child_cell_topo_data);
         int child_cell_dimension = child_cell_topo.getDimension();
         int meta_dimension = mesh::fem::FEMMetaData::get_meta_data(mesh::fem::FEMMetaData::get(bulkData)).get_spatial_dimension();
@@ -305,12 +305,12 @@ namespace stk
 
         typedef IntrepidManager IM;
         unsigned cubDegree = m_cubDegree;
-        const stk::mesh::PairIterRelation parent_elements = child_element.relations(child_element.entity_rank() + 1);
+        const stk_classic::mesh::PairIterRelation parent_elements = child_element.relations(child_element.entity_rank() + 1);
         VERIFY_OP_ON(parent_elements.size(), ==, 1, "cant find parent");
-        const stk::mesh::Entity& element = *parent_elements[0].entity();
+        const stk_classic::mesh::Entity& element = *parent_elements[0].entity();
         unsigned i_face = parent_elements[0].identifier();
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
         CellTopology cell_topo(cell_topo_data);
         int cell_dimension = cell_topo.getDimension();
         VERIFY_OP_ON(cell_dimension, ==, meta_dimension , "Dimensions don't match");
@@ -432,7 +432,7 @@ namespace stk
         /// DOF's, it works on scalars only for the integration routines, or at least that's how I understand
         /// it currently.
 
-        // create an array that stk::percept::Function will like to hold the results
+        // create an array that stk_classic::percept::Function will like to hold the results
 
         ivDims[ivDims.size()-1] = m_nDOFs;
 
@@ -508,7 +508,7 @@ namespace stk
     //template<>
 
 
-    bool IntegratedOp::operator()(const stk::mesh::Bucket& bucket,  stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    bool IntegratedOp::operator()(const stk_classic::mesh::Bucket& bucket,  stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
     {
       EXCEPTWATCH;
       helper(bucket, field, bulkData);
@@ -517,7 +517,7 @@ namespace stk
 
     /// innermost operation of an element-based loop; return value of true forces the enclosing loop to terminate and this class'
     ///   derived classes can return info back to the loop invoker
-    bool IntegratedOp::operator()(const stk::mesh::Entity& element, stk::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
+    bool IntegratedOp::operator()(const stk_classic::mesh::Entity& element, stk_classic::mesh::FieldBase *field,  const mesh::BulkData& bulkData)
     {
       EXCEPTWATCH;
       helper(element, field, bulkData);

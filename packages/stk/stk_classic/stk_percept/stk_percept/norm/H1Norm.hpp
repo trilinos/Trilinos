@@ -55,12 +55,12 @@ namespace stk
           }
       }
 
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk_classic::mesh::Entity& element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         (*this)(domain, codomain, time_value_optional);
       }
 
-      virtual void operator()(MDArray& domain, MDArray& codomain, const stk::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
+      virtual void operator()(MDArray& domain, MDArray& codomain, const stk_classic::mesh::Bucket& element, const MDArray& parametric_coords, double time_value_optional=0.0)
       {
         (*this)(domain, codomain, time_value_optional);
       }
@@ -111,7 +111,7 @@ namespace stk
         //std::cout << "type= " << typeid(integrand).name() << " " << typeid(FieldFunction).name() << std::endl;
 
           {
-            // FIXME - make all stk::percept code const-correct
+            // FIXME - make all stk_classic::percept code const-correct
             PerceptMesh eMesh(&mesh::fem::FEMMetaData::get(m_bulkData), &m_bulkData);
             int spatialDim = eMesh.get_spatial_dim();
             H1_NormOp H1_op(integrand, spatialDim);
@@ -119,8 +119,8 @@ namespace stk
             IntegratedOp integrated_H1_op(H1_op, m_turboOpt);
             integrated_H1_op.setCubDegree(m_cubDegree);
 
-            const stk::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
-            stk::mesh::Selector selector(*m_selector & locally_owned_part);
+            const stk_classic::mesh::Part& locally_owned_part = mesh::fem::FEMMetaData::get(m_bulkData).locally_owned_part();
+            stk_classic::mesh::Selector selector(*m_selector & locally_owned_part);
             //eMesh.print_info("Norm");
             if (m_turboOpt == TURBO_NONE || m_turboOpt == TURBO_ELEMENT)
               {
@@ -138,7 +138,7 @@ namespace stk
             //std::cout  << "P["<<p_rank<<"] value = " << local << std::endl;
 
             std::vector<double> global_sum(vec_sz, 0.0);
-            stk::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
+            stk_classic::all_reduce_sum(m_bulkData.parallel(), &local[0], &global_sum[0], vec_sz);
 
             std::vector<double> result1(vec_sz);
             H1_op.finalOp(global_sum, result1);

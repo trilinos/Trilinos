@@ -37,7 +37,7 @@
 #include <stk_util/diag/Option.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///

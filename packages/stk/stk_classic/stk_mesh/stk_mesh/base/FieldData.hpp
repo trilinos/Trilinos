@@ -18,7 +18,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/Entity.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \addtogroup stk_mesh_field_data
@@ -36,10 +36,10 @@ namespace mesh {
  *
  * Examples:
  *   - Get raw data for an entity:
- *     double* data = stk::mesh::field_data(field, entity);
+ *     double* data = stk_classic::mesh::field_data(field, entity);
  *
  *   - Get raw data for a bucket:
- *     double* data = stk::mesh::field_data(field, bucket);
+ *     double* data = stk_classic::mesh::field_data(field, bucket);
  *
  *   - Get EntityArray data for an entity, assuming field type: Field<double, Cartesian>:
  *     EntityArray<Field<double, Cartesian> > data_array(field, entity);
@@ -59,13 +59,13 @@ namespace mesh {
  */
 
 /** \class BucketArray
- *  \brief  \ref stk::mesh::Field "Field" data \ref shards::Array "Array"
+ *  \brief  \ref stk_classic::mesh::Field "Field" data \ref shards::Array "Array"
  *          for a given array field and bucket
  */
 template< class FieldType > struct BucketArray {};
 
 /** \class EntityArray
- *  \brief  \ref stk::mesh::Field "Field" data \ref shards::Array "Array"
+ *  \brief  \ref stk_classic::mesh::Field "Field" data \ref shards::Array "Array"
  *          for a given array field and entity
  */
 template< class FieldType > struct EntityArray {};
@@ -150,7 +150,7 @@ private:
 };
 #endif /* DOXYGEN_COMPILE */
 
-/** \brief  \ref stk::mesh::Field "Field" data \ref shards::Array "Array"
+/** \brief  \ref stk_classic::mesh::Field "Field" data \ref shards::Array "Array"
  *          for a given array field and entity
  */
 template< typename ScalarType ,
@@ -191,7 +191,7 @@ public:
  *         of a BucketArray.
  *
  *  \ref stk_mesh_field_data "array field data" obtained from a
- *  \ref stk::mesh::Bucket "bucket".
+ *  \ref stk_classic::mesh::Bucket "bucket".
  */
 struct EntityDimension : public shards::ArrayDimTag {
 
@@ -206,7 +206,7 @@ private:
 };
 
 
-/** \brief  \ref stk::mesh::Field "Field" data \ref shards::Array "Array"
+/** \brief  \ref stk_classic::mesh::Field "Field" data \ref shards::Array "Array"
  *          for a given scalar field and bucket
  */
 template< typename ScalarType >
@@ -254,7 +254,7 @@ public:
 };
 
 //----------------------------------------------------------------------
-/** \brief  \ref stk::mesh::Field "Field" data \ref shards::Array "Array"
+/** \brief  \ref stk_classic::mesh::Field "Field" data \ref shards::Array "Array"
  *          for a given array field and bucket
  */
 template< typename ScalarType ,

@@ -15,7 +15,7 @@
 #include <stk_util/diag/Writer.hpp>
 #include <iostream>
 
-namespace stk {
+namespace stk_classic {
 
 void
 PrintTable::transpose_table() const

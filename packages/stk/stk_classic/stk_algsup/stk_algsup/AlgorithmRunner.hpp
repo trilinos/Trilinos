@@ -14,7 +14,7 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/GetBuckets.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 //----------------------------------------------------------------------
 

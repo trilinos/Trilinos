@@ -66,7 +66,7 @@
 ///     }
 ///
 ///     if (symmetric_runtime_warning_condition) { // Limited to 5 warning messages on each time step
-///         static MessageCode message_code(5, stk::MSG_TIME_STEP);
+///         static MessageCode message_code(5, stk_classic::MSG_TIME_STEP);
 ///	    RuntimeWarningSymmetric(message_code) << "My useful message about " << some_data;
 ///     }
 ///
@@ -105,7 +105,7 @@
 ///     }
 ///
 ///     if (symmetric_runtime_warning_condition) { // Limited to 5 warning messages on each time step
-///         static MessageCode message_code(5, stk::MSG_TIME_STEP);
+///         static MessageCode message_code(5, stk_classic::MSG_TIME_STEP);
 ///	    RuntimeWarningSymmetric(message_code) << "My useful message about " << some_data;
 ///     }
 ///
@@ -143,7 +143,7 @@
 ///     }
 ///
 ///     if (runtime_warning_condition) { // Limited to 5 warning messages on each time step on this processor
-///         static MessageCode message_code(5, stk::MSG_TIME_STEP);
+///         static MessageCode message_code(5, stk_classic::MSG_TIME_STEP);
 ///	    RuntimeWarning(message_code) << "My useful message about " << some_data;
 ///     }
 ///
@@ -174,7 +174,7 @@
 ///     }
 ///
 ///     if (runtime_warning_condition) { // Limited to 5 warning messages on each time step
-///         static MessageCode message_code(5, stk::MSG_TIME_STEP);
+///         static MessageCode message_code(5, stk_classic::MSG_TIME_STEP);
 ///	    RuntimeWarningDeferred(message_code) << "My useful message about " << some_data;
 ///     }
 ///
@@ -186,7 +186,7 @@
 ///     }
 ///
 ///     if (runtime_warning_condition) { // Limited to 5 warning messages on each time step
-///         static MessageCode message_code(5, stk::MSG_TIME_STEP);
+///         static MessageCode message_code(5, stk_classic::MSG_TIME_STEP);
 ///	    RuntimeWarningDeferred x(message_code);
 ///         x << "My useful message about " << some_data;
 ///         x.aggregate << "my proc info";
@@ -236,7 +236,7 @@
 ///     if (runtime_doomed_condition) { // Unlimited fatal error output
 ///	    std::ostringstream s;
 ///         x << "My useful message about " << some_data << " and will die soon";
-///         stk::report_symmetic_warning(s.str());
+///         stk_classic::report_symmetic_warning(s.str());
 ///     }
 ///
 /// \endcode

@@ -9,7 +9,7 @@
 #ifndef stk_adapt_sierra_element_StdMeshObjTopologies_hpp
 #define stk_adapt_sierra_element_StdMeshObjTopologies_hpp
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
     enum { END_UINT_ARRAY = 99999 };
 

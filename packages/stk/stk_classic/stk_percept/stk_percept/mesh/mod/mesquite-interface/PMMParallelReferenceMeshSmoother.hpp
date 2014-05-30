@@ -16,7 +16,7 @@
 #include <boost/unordered_map.hpp>
 #include <stk_mesh/base/FieldParallel.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;
@@ -27,7 +27,7 @@ namespace stk {
     public:  
 
       typedef std::vector<double> Vector;
-      typedef boost::unordered_map<stk::mesh::Entity *, Vector  > NodeMap;
+      typedef boost::unordered_map<stk_classic::mesh::Entity *, Vector  > NodeMap;
       
         
       PMMParallelReferenceMeshSmoother(int inner_iterations = 100,
@@ -68,8 +68,8 @@ namespace stk {
       void check_equal(T& val)
       {
         T global_min = val, global_max=val;
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
-        stk::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
+        stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
+        stk_classic::all_reduce( m_eMesh->get_bulk_data()->parallel() , ReduceMax<1>( & global_max ) );
         VERIFY_OP_ON( global_max, ==, val , "bad parallel val");
         VERIFY_OP_ON( global_min, ==, val , "bad parallel val");
         VERIFY_OP_ON( global_max, ==, global_min , "bad parallel val");
@@ -100,10 +100,10 @@ namespace stk {
       PerceptMesquiteMesh *m_pmm;
       PerceptMesh *m_eMesh;
 
-      stk::mesh::FieldBase *m_coord_field_original;
-      stk::mesh::FieldBase *m_coord_field_projected;
-      stk::mesh::FieldBase *m_coord_field_current;
-      stk::mesh::FieldBase *m_coord_field_lagged;
+      stk_classic::mesh::FieldBase *m_coord_field_original;
+      stk_classic::mesh::FieldBase *m_coord_field_projected;
+      stk_classic::mesh::FieldBase *m_coord_field_current;
+      stk_classic::mesh::FieldBase *m_coord_field_lagged;
 
       PMMSmootherMetric *m_metric;
       

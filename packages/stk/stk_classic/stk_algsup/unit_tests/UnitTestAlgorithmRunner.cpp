@@ -22,15 +22,15 @@
 
 #include <unit_tests/UnitTest_helpers.hpp>
 
-static const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 class MyAlg {
 public:
   MyAlg() : maximum_entity_count(0), num_applys(0) {}
   virtual ~MyAlg() {}
 
-  void apply(stk::mesh::Bucket::iterator /*ibeg*/,
-             stk::mesh::Bucket::iterator /*iend*/) const
+  void apply(stk_classic::mesh::Bucket::iterator /*ibeg*/,
+             stk_classic::mesh::Bucket::iterator /*iend*/) const
   {
     ++num_applys;
   }
@@ -42,47 +42,47 @@ public:
 STKUNIT_UNIT_TEST( UnitTestAlgorithmRunner, UnitTest)
 {
 #ifdef STK_HAS_MPI
-  stk::ParallelMachine comm(MPI_COMM_WORLD);
+  stk_classic::ParallelMachine comm(MPI_COMM_WORLD);
 #else
-  stk::ParallelMachine comm(0);
+  stk_classic::ParallelMachine comm(0);
 #endif
 
-  const stk::AlgorithmRunnerInterface* alg_runner = NULL;
+  const stk_classic::AlgorithmRunnerInterface* alg_runner = NULL;
 
 #ifdef STK_HAVE_TBB
   const int num_threads = 1;
-  alg_runner = stk::algorithm_runner_tbb(num_threads);
+  alg_runner = stk_classic::algorithm_runner_tbb(num_threads);
 #elif defined(STK_HAVE_TPI)
   const int num_threads = 1;
-  alg_runner = stk::algorithm_runner_tpi(num_threads);
+  alg_runner = stk_classic::algorithm_runner_tpi(num_threads);
 #else
-  alg_runner = stk::algorithm_runner_non_thread();
+  alg_runner = stk_classic::algorithm_runner_non_thread();
 #endif
 
   STKUNIT_ASSERT( alg_runner != NULL );
 
-  const stk::AlgorithmRunnerInterface* alg_run_nothread = stk::algorithm_runner_non_thread();
+  const stk_classic::AlgorithmRunnerInterface* alg_run_nothread = stk_classic::algorithm_runner_non_thread();
 
   STKUNIT_ASSERT( alg_run_nothread != NULL );
 
   const unsigned spatial_dim = 3;
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dim);
 
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
 
-  stk::mesh::BulkData bulk_data( meta_data, comm );
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm );
 
   fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
 
-  stk::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part();
-  std::vector<stk::mesh::Bucket*> used_node_buckets;
-  stk::mesh::get_buckets(selector, bulk_data.buckets(NODE_RANK), used_node_buckets);
+  stk_classic::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part();
+  std::vector<stk_classic::mesh::Bucket*> used_node_buckets;
+  stk_classic::mesh::get_buckets(selector, bulk_data.buckets(NODE_RANK), used_node_buckets);
 
   MyAlg my_alg;
 
-  stk::mesh::PartVector empty_union_vector;
+  stk_classic::mesh::PartVector empty_union_vector;
   alg_run_nothread->run(selector, empty_union_vector, bulk_data.buckets(NODE_RANK), my_alg);
 
   unsigned num_applys = my_alg.num_applys;

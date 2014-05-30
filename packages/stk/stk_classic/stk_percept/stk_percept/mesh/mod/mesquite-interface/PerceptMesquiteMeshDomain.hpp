@@ -28,7 +28,7 @@
 
 class MeshGeometry;
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     class PerceptMesquiteMeshDomain : public Mesquite::MeshDomain
@@ -36,8 +36,8 @@ namespace stk {
       PerceptMesh *m_eMesh;
       MeshGeometry *m_meshGeometry;
 
-      //       stk::mesh::Selector *m_boundarySelector;
-      //       std::map<stk::mesh::Entity *, std::pair<stk::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
+      //       stk_classic::mesh::Selector *m_boundarySelector;
+      //       std::map<stk_classic::mesh::Entity *, std::pair<stk_classic::mesh::EntityId, unsigned char> > m_mesquiteNodeDataMap;
 
     public:
 
@@ -49,7 +49,7 @@ namespace stk {
 
       //       void init(PerceptMesh *eMesh);
       //       int setup();
-      //       bool is_on_my_patch_boundary(stk::mesh::Entity *node_ptr);
+      //       bool is_on_my_patch_boundary(stk_classic::mesh::Entity *node_ptr);
       //       void clean_out();
 
     public:
@@ -130,7 +130,7 @@ namespace stk {
                                size_t num_handles,
                                Mesquite::MsqError& err ) const ;
                              
-      int classify_node(stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const;
+      int classify_node(stk_classic::mesh::Entity& node, size_t& curveOrSurfaceEvaluator) const;
 
     };
 

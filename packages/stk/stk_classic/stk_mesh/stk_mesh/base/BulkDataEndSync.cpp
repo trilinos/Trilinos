@@ -32,7 +32,7 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 bool comm_mesh_verify_parallel_consistency(
@@ -183,7 +183,7 @@ void communicate_entity_modification( const BulkData & mesh ,
 void BulkData::internal_update_distributed_index(
   std::vector<Entity*> & shared_new )
 {
-  Trace_("stk::mesh::BulkData::internal_update_distributed_index");
+  Trace_("stk_classic::mesh::BulkData::internal_update_distributed_index");
 
   std::vector< parallel::DistributedIndex::KeyType >
     local_created_or_modified , // only store locally owned/shared entities
@@ -331,7 +331,7 @@ void resolve_shared_removed_from_owned_closure( BulkData & mesh )
 
 void BulkData::internal_resolve_shared_modify_delete()
 {
-  Trace_("stk::mesh::BulkData::internal_resolve_shared_modify_delete");
+  Trace_("stk_classic::mesh::BulkData::internal_resolve_shared_modify_delete");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -461,7 +461,7 @@ void BulkData::internal_resolve_shared_modify_delete()
 
 void BulkData::internal_resolve_ghosted_modify_delete()
 {
-  Trace_("stk::mesh::BulkData::internal_resolve_ghosted_modify_delete");
+  Trace_("stk_classic::mesh::BulkData::internal_resolve_ghosted_modify_delete");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
   // Resolve modifications for ghosted entities:
@@ -581,7 +581,7 @@ void BulkData::internal_resolve_ghosted_modify_delete()
 //  * m_entity_comm is up-to-date
 void BulkData::internal_resolve_parallel_create()
 {
-  Trace_("stk::mesh::BulkData::internal_resolve_parallel_create");
+  Trace_("stk_classic::mesh::BulkData::internal_resolve_parallel_create");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 
@@ -728,7 +728,7 @@ void BulkData::internal_resolve_parallel_create()
 
 bool BulkData::modification_end()
 {
-  Trace_("stk::mesh::BulkData::modification_end");
+  Trace_("stk_classic::mesh::BulkData::modification_end");
 
   return internal_modification_end( true );
 }
@@ -777,7 +777,7 @@ void print_comm_list( const BulkData & mesh , bool doit )
 
 bool BulkData::internal_modification_end( bool regenerate_aura )
 {
-  Trace_("stk::mesh::BulkData::internal_modification_end");
+  Trace_("stk_classic::mesh::BulkData::internal_modification_end");
 
   if ( m_sync_state == SYNCHRONIZED ) { return false ; }
 
@@ -964,7 +964,7 @@ void pack_part_memberships( CommAll & comm ,
 
 void BulkData::internal_resolve_shared_membership()
 {
-  Trace_("stk::mesh::BulkData::internal_resolve_shared_membership");
+  Trace_("stk_classic::mesh::BulkData::internal_resolve_shared_membership");
 
   ThrowRequireMsg(parallel_size() > 1, "Do not call this in serial");
 

@@ -20,14 +20,14 @@
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
 class PartImpl {
 public:
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+  /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns this part
    */
   MetaData & mesh_meta_data() const { return *m_mesh_meta_data ; }
@@ -45,7 +45,7 @@ public:
   const std::string & name() const { return m_name ; }
 
   /** \brief  Internally generated ordinal of this part that is unique
-   *          within the owning \ref stk::mesh::MetaData "meta data manager".
+   *          within the owning \ref stk_classic::mesh::MetaData "meta data manager".
    */
   unsigned mesh_meta_data_ordinal() const { return m_universe_ordinal ; }
 

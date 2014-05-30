@@ -23,7 +23,7 @@
 #ifdef SIERRA_MIGRATION
 #include <stk_mesh/base/Relation.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 typedef RelationVector::const_iterator   RelationIterator;
 typedef boost::iterator_range<RelationIterator> RelationRange;
@@ -64,28 +64,28 @@ class MeshObjSharedAttr;
 class MeshBulkData;
 
 extern const unsigned int INVALID_LOCAL_ID;
-extern const stk::mesh::RelationIterator INVALID_RELATION_ITR;
+extern const stk_classic::mesh::RelationIterator INVALID_RELATION_ITR;
 
 namespace detail {
-bool set_attributes( stk::mesh::Entity & , const int , const MeshObjSharedAttr*, const int);
-bool set_attributes( stk::mesh::Entity & , const MeshObjSharedAttr*, const int);
-void unset_shared_attr(stk::mesh::Entity& );
+bool set_attributes( stk_classic::mesh::Entity & , const int , const MeshObjSharedAttr*, const int);
+bool set_attributes( stk_classic::mesh::Entity & , const MeshObjSharedAttr*, const int);
+void unset_shared_attr(stk_classic::mesh::Entity& );
 }
 
 namespace roster_only {
-void destroy_meshobj(stk::mesh::Entity*);
-void set_shared_attr(stk::mesh::Entity&, const MeshObjSharedAttr*);
+void destroy_meshobj(stk_classic::mesh::Entity*);
+void set_shared_attr(stk_classic::mesh::Entity&, const MeshObjSharedAttr*);
 }
 
-const MeshObjSharedAttr * get_shared_attr(const stk::mesh::Entity&);
-bool insert_relation( stk::mesh::Entity * const, const stk::mesh::Relation::RelationType, stk::mesh::Entity * const, const unsigned, const unsigned, const bool, MeshBulkData &);
-bool remove_relation(stk::mesh::Entity &, const stk::mesh::RelationIterator, MeshBulkData &);
-bool verify_relations(const stk::mesh::Entity &);
+const MeshObjSharedAttr * get_shared_attr(const stk_classic::mesh::Entity&);
+bool insert_relation( stk_classic::mesh::Entity * const, const stk_classic::mesh::Relation::RelationType, stk_classic::mesh::Entity * const, const unsigned, const unsigned, const bool, MeshBulkData &);
+bool remove_relation(stk_classic::mesh::Entity &, const stk_classic::mesh::RelationIterator, MeshBulkData &);
+bool verify_relations(const stk_classic::mesh::Entity &);
 }
 }
 #endif
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace impl {
@@ -154,13 +154,13 @@ public:
   size_t synchronized_count() const { return m_entityImpl.synchronized_count(); }
 
   //------------------------------------
-  /** \brief  All \ref stk::mesh::Relation "Entity relations"
+  /** \brief  All \ref stk_classic::mesh::Relation "Entity relations"
    *          for which this entity is a member. The relations are ordered
    *          from lowest entity-rank to highest entity-rank.
    */
   PairIterRelation relations() const { return m_entityImpl.relations(); }
 
-  /** \brief  \ref stk::mesh::Relation "Entity relations" for which this
+  /** \brief  \ref stk_classic::mesh::Relation "Entity relations" for which this
    *          entity is a member, the other entity is of a given type.
    */
   PairIterRelation relations( EntityRank type ) const { return m_entityImpl.relations(type); }
@@ -222,11 +222,11 @@ private:
   friend bool sierra::Fmwk::detail::set_attributes( Entity &, const int, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend bool sierra::Fmwk::detail::set_attributes( Entity &, const sierra::Fmwk::MeshObjSharedAttr *, const int);
   friend void sierra::Fmwk::detail::unset_shared_attr(Entity &);
-  friend bool sierra::Fmwk::insert_relation( Entity * const, const stk::mesh::Relation::RelationType, Entity * const, const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
-  friend bool sierra::Fmwk::remove_relation(Entity &, const stk::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
+  friend bool sierra::Fmwk::insert_relation( Entity * const, const stk_classic::mesh::Relation::RelationType, Entity * const, const unsigned, const unsigned, const bool, sierra::Fmwk::MeshBulkData &);
+  friend bool sierra::Fmwk::remove_relation(Entity &, const stk_classic::mesh::RelationIterator, sierra::Fmwk::MeshBulkData &);
   friend bool sierra::Fmwk::verify_relations(const Entity &);
-  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk::mesh::Entity*);
-  friend void sierra::Fmwk::roster_only::set_shared_attr(stk::mesh::Entity&, const sierra::Fmwk::MeshObjSharedAttr*);
+  friend void sierra::Fmwk::roster_only::destroy_meshobj(stk_classic::mesh::Entity*);
+  friend void sierra::Fmwk::roster_only::set_shared_attr(stk_classic::mesh::Entity&, const sierra::Fmwk::MeshObjSharedAttr*);
 
   typedef unsigned DerivedType; ///< Derived type identifier, the admissible values may be extended
 
@@ -546,17 +546,17 @@ public:
 class EntityEqual
 {
 public:
-  bool operator()(const stk::mesh::Entity* lhs, const stk::mesh::Entity* rhs) const
+  bool operator()(const stk_classic::mesh::Entity* lhs, const stk_classic::mesh::Entity* rhs) const
   {
-    const stk::mesh::EntityKey lhs_key = lhs ? lhs->key() : stk::mesh::EntityKey();
-    const stk::mesh::EntityKey rhs_key = rhs ? rhs->key() : stk::mesh::EntityKey();
+    const stk_classic::mesh::EntityKey lhs_key = lhs ? lhs->key() : stk_classic::mesh::EntityKey();
+    const stk_classic::mesh::EntityKey rhs_key = rhs ? rhs->key() : stk_classic::mesh::EntityKey();
     return lhs_key == rhs_key;
   }
 
-  bool operator()(const stk::mesh::Entity& lhs, const stk::mesh::Entity& rhs) const
+  bool operator()(const stk_classic::mesh::Entity& lhs, const stk_classic::mesh::Entity& rhs) const
   {
-    const stk::mesh::EntityKey lhs_key = lhs.key();
-    const stk::mesh::EntityKey rhs_key = rhs.key();
+    const stk_classic::mesh::EntityKey lhs_key = lhs.key();
+    const stk_classic::mesh::EntityKey rhs_key = rhs.key();
     return lhs_key == rhs_key;
   }
 };

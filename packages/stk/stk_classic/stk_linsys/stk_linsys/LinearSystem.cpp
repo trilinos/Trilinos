@@ -15,7 +15,7 @@
 
 #include <fei_Trilinos_Helpers.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace linsys {
 
 LinearSystem::LinearSystem(MPI_Comm comm, fei::SharedPtr<fei::Factory> factory)

@@ -24,7 +24,7 @@
 #include <stk_util/util/Null_Streambuf.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 Writer &
@@ -33,7 +33,7 @@ operator<<(
   const std::type_info &        t)
 {
   if (dout.shouldPrint())
-    dout << stk::demangle(t.name());
+    dout << stk_classic::demangle(t.name());
   return dout;
 }
 

@@ -10,7 +10,7 @@
 
 #include <stk_util/environment/LogControl.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 

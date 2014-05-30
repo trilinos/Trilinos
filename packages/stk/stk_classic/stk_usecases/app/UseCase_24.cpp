@@ -33,7 +33,7 @@
 #include <stk_io/MeshReadWriteUtils.hpp>
 #include <init/Ionit_Initializer.h>
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
 //----------------------------------------------------------------------
@@ -100,7 +100,7 @@ bool use_case_24_driver(
 
   //------------------------------------------------------------------
   // Declare the mesh meta data: element blocks and associated fields
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(SpatialDim);
   const mesh::EntityRank element_rank = fem_meta.element_rank();
   const mesh::EntityRank side_rank    = fem_meta.side_rank();
@@ -115,8 +115,8 @@ bool use_case_24_driver(
   mesh::Part & allParts = fem_meta.universal_part();
   mesh::Part & hex_io1 = fem_meta.declare_part("block_1", element_rank);
 
-  stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
-  stk::mesh::fem::set_cell_topology( hex_io1, hex_top );
+  stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<> >());
+  stk_classic::mesh::fem::set_cell_topology( hex_io1, hex_top );
 
     //--------------------------------
     // Surface-block declarations
@@ -235,18 +235,18 @@ bool use_case_24_driver(
   //found in the input mesh file.
 
   const std::string dbtype("exodusii");
-  stk::io::MeshData mesh_data;
-  stk::mesh::MetaData & meta_data =
-        stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::io::MeshData mesh_data;
+  stk_classic::mesh::MetaData & meta_data =
+        stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
   std::string filename = working_directory + meshName;
-  stk::io::create_input_mesh(dbtype, filename, comm, fem_meta, mesh_data);
+  stk_classic::io::create_input_mesh(dbtype, filename, comm, fem_meta, mesh_data);
 
   // Commit (finalize) the meta data (part and field definitions).
   // Is now ready to be used in the creation and management of mesh bulk data.
 
   // Output the pressure and velocity fields...
-  stk::io::set_field_role(pressure, Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(velocity, Ioss::Field::TRANSIENT);
+  stk_classic::io::set_field_role(pressure, Ioss::Field::TRANSIENT);
+  stk_classic::io::set_field_role(velocity, Ioss::Field::TRANSIENT);
 
   fem_meta.commit();
 
@@ -257,7 +257,7 @@ bool use_case_24_driver(
   mesh::BulkData mesh_bulk_data( meta_data , comm );
 
   // Read bulk data from mesh file
-  stk::io::populate_bulk_data(mesh_bulk_data, mesh_data);
+  stk_classic::io::populate_bulk_data(mesh_bulk_data, mesh_data);
 
   {
     std::vector<unsigned> count ;
@@ -286,9 +286,9 @@ bool use_case_24_driver(
                                   momentum_flux_bip, pressure, velocity,
                                   nodal_momentum_flux );
 
-  stk::io::create_output_mesh(outputName, comm, mesh_bulk_data, mesh_data);
-  stk::io::define_output_fields(mesh_data, fem_meta);
-  stk::io::process_output_request(mesh_data, mesh_bulk_data, 0.0);
+  stk_classic::io::create_output_mesh(outputName, comm, mesh_bulk_data, mesh_data);
+  stk_classic::io::define_output_fields(mesh_data, fem_meta);
+  stk_classic::io::process_output_request(mesh_data, mesh_bulk_data, 0.0);
 
   return true;
 }

@@ -8,7 +8,7 @@
 
 #include <stk_util/environment/ProgramOptions.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 boost::program_options::options_description &
 get_options_description()

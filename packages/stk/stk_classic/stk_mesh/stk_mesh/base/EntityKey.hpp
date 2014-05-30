@@ -15,7 +15,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 
@@ -49,15 +49,15 @@ namespace mesh {
  * not created by some erroneous operation such as assignment from a
  * smaller type like a 32-bit int.
  *
- * Note that an instance of stk::mesh may place further restrictions on a
+ * Note that an instance of stk_classic::mesh may place further restrictions on a
  * 'valid' key, such as requiring that
  *         0 <= entity_rank(key) < meta_data.entity_rank_count().
  *
- * Typically stk::mesh does not take EntityKeys as input. A user of
- * stk::mesh would (for instance) request that an Entity be created by
+ * Typically stk_classic::mesh does not take EntityKeys as input. A user of
+ * stk_classic::mesh would (for instance) request that an Entity be created by
  * specifying an entity-type and entity-id as input. The resulting
  * Entity would then hold a mesh-created EntityKey that could be queried.
- * Thus stk::mesh can control the validity of EntityKeys associated with
+ * Thus stk_classic::mesh can control the validity of EntityKeys associated with
  * the mesh.
  */
 union EntityKey {

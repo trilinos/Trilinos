@@ -43,7 +43,7 @@
 #include "/usr/netpub/valgrind-3.6.0/include/valgrind/callgrind.h"
 #endif
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     using namespace Mesquite;

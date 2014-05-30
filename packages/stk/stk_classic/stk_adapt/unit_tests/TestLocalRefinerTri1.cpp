@@ -22,29 +22,29 @@
 // #include <stk_mesh/base/Entity.hpp>
 // FIXME
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 
-    TestLocalRefinerTri1::TestLocalRefinerTri1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    TestLocalRefinerTri1::TestLocalRefinerTri1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }
 
     void TestLocalRefinerTri1::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
                 
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
       //      VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
           unsigned numSubDimNeededEntities = 0;
-          stk::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
+          stk_classic::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
 
           if (needed_entity_rank == m_eMesh.edge_rank())
             {

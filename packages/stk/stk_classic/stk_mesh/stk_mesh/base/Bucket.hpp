@@ -42,7 +42,7 @@ class MeshBulkData;
 
 #endif
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace impl {
@@ -54,7 +54,7 @@ class BucketRepository;
  *  \{
  */
 
-/** \brief  Print the \ref stk::mesh::Part "part" names
+/** \brief  Print the \ref stk_classic::mesh::Part "part" names
  *          for which this bucket is a subset.
  */
 std::ostream & operator << ( std::ostream & , const Bucket & );
@@ -68,17 +68,17 @@ bool bucket_part_equal( const unsigned * lhs , const unsigned * rhs );
 
 //----------------------------------------------------------------------
 /** \brief  Is this bucket a subset of the given
- *          \ref stk::mesh::Part "part"
+ *          \ref stk_classic::mesh::Part "part"
  */
 bool has_superset( const Bucket & ,  const Part & p );
 
 /** \brief  Is this bucket a subset of the given
- *          \ref stk::mesh::Part "part" by partID
+ *          \ref stk_classic::mesh::Part "part" by partID
  */
 bool has_superset( const Bucket & ,  const unsigned & ordinal );
 
 /** \brief  Is this bucket a subset of all of the given
- *          \ref stk::mesh::Part "parts"
+ *          \ref stk_classic::mesh::Part "parts"
  */
 bool has_superset( const Bucket & , const PartVector & );
 
@@ -86,7 +86,7 @@ bool has_superset( const Bucket & , const PartVector & );
 //----------------------------------------------------------------------
 /** \brief  A container for the \ref stk_mesh_field_data "field data"
  *          of a homogeneous collection of
- *          \ref stk::mesh::Entity "entities".
+ *          \ref stk_classic::mesh::Entity "entities".
  *
  *  The entities are homogeneous in that they are of the same entity type
  *  and are members of the same of parts.
@@ -158,7 +158,7 @@ public:
   { return m_bucketImpl.field_data(field,entity.bucket_ordinal()); }
 
   //--------------------------------
-  /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
+  /** \brief  The \ref stk_classic::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
   BulkData & mesh() const { return m_bucketImpl.mesh(); }
@@ -166,7 +166,7 @@ public:
   /** \brief  Type of entities in this bucket */
   unsigned entity_rank() const { return m_bucketImpl.entity_rank(); }
 
-  /** \brief  This bucket is a subset of these \ref stk::mesh::Part "parts" */
+  /** \brief  This bucket is a subset of these \ref stk_classic::mesh::Part "parts" */
   void supersets( PartVector & ) const ;
   void supersets( OrdinalVector & ) const ;
 
@@ -218,7 +218,7 @@ public:
 #endif
 
 private:
-  /** \brief  The \ref stk::mesh::BulkData "bulk data manager"
+  /** \brief  The \ref stk_classic::mesh::BulkData "bulk data manager"
    *          that owns this bucket.
    */
   BulkData & bulk_data() const { return m_bucketImpl.mesh(); }
@@ -236,7 +236,7 @@ private:
           size_t arg_capacity
         );
 
-  friend class ::stk::mesh::BulkData;
+  friend class ::stk_classic::mesh::BulkData;
 };
 
 

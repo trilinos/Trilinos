@@ -12,7 +12,7 @@ namespace stk
   {
 
     template<int SpatialDim>
-    STKSearcher<SpatialDim>::STKSearcher(stk::mesh::BulkData *bulk) : m_bulk(bulk), m_boxes()
+    STKSearcher<SpatialDim>::STKSearcher(stk_classic::mesh::BulkData *bulk) : m_bulk(bulk), m_boxes()
     {
     }
 
@@ -23,7 +23,7 @@ namespace stk
     void
     STKSearcher<SpatialDim>::setupSearch()
     {
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulk);
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(*m_bulk);
       mesh::BulkData& bulkData = *m_bulk;
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -45,12 +45,12 @@ namespace stk
      */
 
     template<int SpatialDim>
-    const stk::mesh::Entity *
+    const stk_classic::mesh::Entity *
     STKSearcher<SpatialDim>::findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates,
                                          unsigned& found_it, const mesh::Entity *hint_element )
     {
       //return 0;
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulk);
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(*m_bulk);
       mesh::BulkData& bulkData = *m_bulk;
 
       //VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
@@ -67,9 +67,9 @@ namespace stk
       pointBoundingBox.set_center(pts);
       std::vector<BPoint> points(1, pointBoundingBox);
 
-      stk::search::FactoryOrder order;
+      stk_classic::search::FactoryOrder order;
       order.m_communicator = bulkData.parallel();
-      order.m_algorithm = stk::search::FactoryOrder::BIHTREE;
+      order.m_algorithm = stk_classic::search::FactoryOrder::BIHTREE;
 
       if (0 || EXTRA_PRINT)
         {
@@ -85,8 +85,8 @@ namespace stk
       if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: nboxes=  " << m_boxes.size()  << std::endl;
 
       IdentProcRelation relation;
-      stk::search::coarse_search(relation,  m_boxes, points, order);
-      //stk::search::coarse_search(relation,   points, m_boxes, order);
+      stk_classic::search::coarse_search(relation,  m_boxes, points, order);
+      //stk_classic::search::coarse_search(relation,   points, m_boxes, order);
 
       if (0 || EXTRA_PRINT) std::cout << "STKSearcher::findElement: found  " << relation.size() << " containing bboxes"  << std::endl;
 

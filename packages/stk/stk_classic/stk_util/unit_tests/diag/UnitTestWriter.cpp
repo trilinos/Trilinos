@@ -27,14 +27,14 @@
 
 #include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-using namespace stk::diag;
+using namespace stk_classic::diag;
 
 enum LogMask {
-  LOG_ALWAYS		= stk::LOG_ALWAYS,
-  LOG_TRACE		= stk::LOG_TRACE,
-  LOG_TRACE_STATS	= stk::LOG_TRACE_STATS,
-  LOG_TRACE_SUB_CALLS	= stk::LOG_TRACE_SUB_CALLS,
-  LOG_MEMBERS		= stk::LOG_MEMBERS,
+  LOG_ALWAYS		= stk_classic::LOG_ALWAYS,
+  LOG_TRACE		= stk_classic::LOG_TRACE,
+  LOG_TRACE_STATS	= stk_classic::LOG_TRACE_STATS,
+  LOG_TRACE_SUB_CALLS	= stk_classic::LOG_TRACE_SUB_CALLS,
+  LOG_MEMBERS		= stk_classic::LOG_MEMBERS,
 
   LOG_TEST1             = 0x0000010,
   LOG_TEST2             = 0x0000020
@@ -53,7 +53,7 @@ oss()
 std::ostream &
 dwout()
 {
-  static stk::indent_streambuf s_dwoutStreambuf(oss().rdbuf());
+  static stk_classic::indent_streambuf s_dwoutStreambuf(oss().rdbuf());
   static std::ostream s_dwout(&s_dwoutStreambuf);
   
   return s_dwout;
@@ -61,10 +61,10 @@ dwout()
 
 
 // Diagnostic writer
-stk::diag::Writer &
+stk_classic::diag::Writer &
 dw()
 {
-  static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+  static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
 
   return s_diagWriter;
 }
@@ -84,7 +84,7 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
 
   oss().str("");
   {
-    stk::diag::WriterThrowSafe throw_safe__(dw());
+    stk_classic::diag::WriterThrowSafe throw_safe__(dw());
     
     dw() << "Level 0" << push << dendl
          << "Level 1" << push << dendl
@@ -135,16 +135,16 @@ STKUNIT_UNIT_TEST(UnitTestWriter, UnitTest)
   dw() << std::dec << 16 << dendl;
   dw() << std::fixed << 3.14159265 << dendl;
   dw() << std::scientific << 3.14159265 << dendl;
-  dw() << stk::diag::hex << 16 << dendl;
-  dw() << stk::diag::oct << 16 << dendl;
-  dw() << stk::diag::dec << 16 << dendl;
-  dw() << stk::diag::fixed << 3.14159265 << dendl;
-  dw() << stk::diag::scientific << 3.14159265 << dendl;
-  dw() << stk::diag::setw(5) << 3.14159265 << dendl;
-  dw() << stk::diag::setprecision(5) << 3.14159265 << dendl;
-  dw() << stk::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
-  dw() << stk::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
-  dw() << stk::diag::setfill('#') << stk::diag::setw(10) << "x" << dendl;
+  dw() << stk_classic::diag::hex << 16 << dendl;
+  dw() << stk_classic::diag::oct << 16 << dendl;
+  dw() << stk_classic::diag::dec << 16 << dendl;
+  dw() << stk_classic::diag::fixed << 3.14159265 << dendl;
+  dw() << stk_classic::diag::scientific << 3.14159265 << dendl;
+  dw() << stk_classic::diag::setw(5) << 3.14159265 << dendl;
+  dw() << stk_classic::diag::setprecision(5) << 3.14159265 << dendl;
+  dw() << stk_classic::diag::setiosflags(std::ios::fixed) << 3.14159265 << dendl;
+  dw() << stk_classic::diag::resetiosflags(std::ios::fixed) << 3.14159265 << dendl;
+  dw() << stk_classic::diag::setfill('#') << stk_classic::diag::setw(10) << "x" << dendl;
   STKUNIT_ASSERT_EQUAL((std::string("10\n20\n16\n3.141593\n3.141593e+00\n10\n20\n16\n3.141593\n3.141593e+00\n3.141593e+00\n3.14159e+00\n3.1416\n3.14159e+00\n#########x\n") == oss().str()), true);
 
   oss().str("");

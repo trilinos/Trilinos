@@ -17,12 +17,12 @@
 #include <stdexcept>
 #include <sstream>
 
-using namespace stk::io::util;
+using namespace stk_classic::io::util;
 
 static const size_t spatial_dimension = 3;
 
 ///////////////////////////////////////////////////////////////////////////////
-Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
+Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk_classic::ParallelMachine comm,
                                              const std::string& gmesh_spec)
 ///////////////////////////////////////////////////////////////////////////////
   : 
@@ -36,8 +36,8 @@ Gmesh_STKmesh_Fixture::Gmesh_STKmesh_Fixture(stk::ParallelMachine comm,
   // types and the exodusII default database type.
   Ioss::Init::Initializer init_db;
 
-  stk::io::MeshData mesh_data;
-  stk::io::create_input_mesh("generated", gmesh_spec, comm,
+  stk_classic::io::MeshData mesh_data;
+  stk_classic::io::create_input_mesh("generated", gmesh_spec, comm,
 			     m_meta_data, m_mesh_data);
 
   const Iogn::DatabaseIO* database =
@@ -64,7 +64,7 @@ void Gmesh_STKmesh_Fixture::commit()
 {
   m_meta_data.commit();
 
-  stk::io::populate_bulk_data(m_bulk_data, m_mesh_data);
+  stk_classic::io::populate_bulk_data(m_bulk_data, m_mesh_data);
 }
 
 ///////////////////////////////////////////////////////////////////////////////

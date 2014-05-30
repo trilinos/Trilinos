@@ -13,13 +13,13 @@
 
 // must be in same namespace as BulkData to make friending w/out exposure possible
 
-namespace stk {
+namespace stk_classic {
 namespace unit_test {
 
 /**
  * TODO - Document what this does
  */
-void test_shift_ring( stk::mesh::fixtures::RingFixture& ring,
+void test_shift_ring( stk_classic::mesh::fixtures::RingFixture& ring,
                       bool generate_aura=true );
 
 } // namespace unit_test

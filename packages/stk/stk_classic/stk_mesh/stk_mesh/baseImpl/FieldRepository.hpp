@@ -20,7 +20,7 @@
 
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 typedef std::vector<FieldBase *> FieldVector;

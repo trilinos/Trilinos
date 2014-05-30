@@ -48,11 +48,11 @@ namespace {
   OptionMaskParser dw_option_mask("stk_percept diagnostic writer");
   OptionMaskParser timer_option_mask("stk_percept timers");
 
-  //!stk::Bootstrap x(bootstrap);
+  //!stk_classic::Bootstrap x(bootstrap);
 
 } // namespace <empty>
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     // Output streams
@@ -86,17 +86,17 @@ namespace stk {
 
     std::ostream &
     dwout() {
-      static stk::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
+      static stk_classic::indent_streambuf s_dwoutStreambuf(std::cout.rdbuf());
       static std::ostream s_dwout(&s_dwoutStreambuf);
 
       return s_dwout;
     }
 
     // Diagnostic writer
-    stk::diag::Writer &
+    stk_classic::diag::Writer &
     dw()
     {
-      static stk::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
+      static stk_classic::diag::Writer s_diagWriter(dwout().rdbuf(), 0);
 
       return s_diagWriter;
     }
@@ -107,7 +107,7 @@ namespace stk {
                std::ostream &	os,
                message_type           type)
     {
-      switch (type & stk::MSG_TYPE_MASK) {
+      switch (type & stk_classic::MSG_TYPE_MASK) {
       case MSG_WARNING:
         os << "Warning";
         break;
@@ -132,7 +132,7 @@ namespace stk {
                    const char *		message,
                    int                   type)
     {
-      if (type & stk::MSG_DEFERRED)
+      if (type & stk_classic::MSG_DEFERRED)
         pout() << "Deferred " << (message_type) type << ": " << message << std::endl;
 
       else
@@ -141,16 +141,16 @@ namespace stk {
 
 
     // Timers
-    stk::diag::TimerSet &
+    stk_classic::diag::TimerSet &
     timerSet()
     {
-      static stk::diag::TimerSet s_timerSet(TIMER_ALL);
+      static stk_classic::diag::TimerSet s_timerSet(TIMER_ALL);
 
       return s_timerSet;
     }
 
-    stk::diag::Timer &timer() {
-      static stk::diag::Timer s_timer = stk::diag::createRootTimer("root timer", timerSet());
+    stk_classic::diag::Timer &timer() {
+      static stk_classic::diag::Timer s_timer = stk_classic::diag::createRootTimer("root timer", timerSet());
 
       return s_timer;
     }
@@ -161,7 +161,7 @@ namespace stk {
                                    int  *        argc,
                                    char ***      argv, bool debug)
       : ParallelMachineFinalize(false),
-      m_comm( stk::parallel_machine_init(argc, argv)),
+      m_comm( stk_classic::parallel_machine_init(argc, argv)),
       m_need_to_finalize(true), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
       //,m_par_finalize(false)
     {
@@ -171,7 +171,7 @@ namespace stk {
     RunEnvironment::RunEnvironment(
                                    int   *      argc,
                                    char ***      argv,
-                                   stk::ParallelMachine comm, bool debug)
+                                   stk_classic::ParallelMachine comm, bool debug)
       : ParallelMachineFinalize(false),
         m_comm(comm),
         m_need_to_finalize(false), m_debug(debug), m_processCommandLine_invoked(false), m_argv_new(0),m_argc(0),m_argv(0)
@@ -184,8 +184,8 @@ namespace stk {
     void RunEnvironment::internal_initialize(int argc, char** argv)
     {
       // Broadcast argc and argv to all processors.
-      int parallel_rank = stk::parallel_machine_rank(m_comm);
-      //int parallel_size = stk::parallel_machine_size(m_comm);
+      int parallel_rank = stk_classic::parallel_machine_rank(m_comm);
+      //int parallel_size = stk_classic::parallel_machine_size(m_comm);
 
       if (m_debug && !parallel_rank)
         {
@@ -237,19 +237,19 @@ namespace stk {
       dout_opt = "out";
       runtest_opt = "";
 
-      stk::register_log_ostream(std::cout, "cout");
-      stk::register_log_ostream(std::cerr, "cerr");
+      stk_classic::register_log_ostream(std::cout, "cout");
+      stk_classic::register_log_ostream(std::cerr, "cerr");
 
-      stk::register_ostream(out(), "out");
-      stk::register_ostream(pout(), "pout");
-      stk::register_ostream(dout(), "dout");
-      stk::register_ostream(tout(), "tout");
+      stk_classic::register_ostream(out(), "out");
+      stk_classic::register_ostream(pout(), "pout");
+      stk_classic::register_ostream(dout(), "dout");
+      stk_classic::register_ostream(tout(), "tout");
 
-      static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(dout().rdbuf());
+      static_cast<stk_classic::indent_streambuf *>(dwout().rdbuf())->redirect(dout().rdbuf());
 
-      stk::set_report_handler(report_handler);
+      stk_classic::set_report_handler(report_handler);
 
-      stk::Bootstrap::bootstrap();
+      stk_classic::Bootstrap::bootstrap();
 
       if (0)
       for (int i = 0; i < m_argc; ++i) {
@@ -263,7 +263,7 @@ namespace stk {
       }
 
       Util::setRank(parallel_rank);
-      stk::BroadcastArg b_arg(m_comm, argc, argv);
+      stk_classic::BroadcastArg b_arg(m_comm, argc, argv);
 
       bootstrap();
 
@@ -273,8 +273,8 @@ namespace stk {
 
     int RunEnvironment::processCommandLine(int argc, char** argv)
     {
-      int parallel_rank = stk::parallel_machine_rank(m_comm);
-      int parallel_size = stk::parallel_machine_size(m_comm);
+      int parallel_rank = stk_classic::parallel_machine_rank(m_comm);
+      int parallel_size = stk_classic::parallel_machine_size(m_comm);
 
       unsigned failed = 0;
 
@@ -298,7 +298,7 @@ namespace stk {
           MPI_Barrier( m_comm );
           MPI_Finalize();
 #endif
-          //stk::RuntimeDoomedSymmetric() << "parse_command_line";
+          //stk_classic::RuntimeDoomedSymmetric() << "parse_command_line";
           exit(1);
         }
 
@@ -306,7 +306,7 @@ namespace stk {
       dw().setPrintMask(dw_option_mask.parse(dw_opt.c_str()));
 
       // Parse timer metrics and classes to display
-      stk::diag::setEnabledTimerMetricsMask(stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME);
+      stk_classic::diag::setEnabledTimerMetricsMask(stk_classic::diag::METRICS_CPU_TIME | stk_classic::diag::METRICS_WALL_TIME);
       timerSet().setEnabledTimerMask(timer_option_mask.parse(timer_opt.c_str()));
 
       // Set working directory
@@ -318,7 +318,7 @@ namespace stk {
 
       std::string output_description = build_log_description( m_workingDirectory, parallel_rank, parallel_size);
 
-      stk::bind_output_streams(output_description);
+      stk_classic::bind_output_streams(output_description);
 
       dout() << "Output log binding: " << output_description << std::endl;
 
@@ -336,30 +336,30 @@ namespace stk {
         {
           throw std::runtime_error("RunEnvironment:: you must now invoke processCommandLine after constructing a RunEnvironment");
         }
-      stk::report_deferred_messages(m_comm);
+      stk_classic::report_deferred_messages(m_comm);
 
       // Stop stk_percept root timer
       timer().stop();
 
-      stk::diag::printTimersTable(out(), timer(), stk::diag::METRICS_CPU_TIME | stk::diag::METRICS_WALL_TIME, false, m_comm);
+      stk_classic::diag::printTimersTable(out(), timer(), stk_classic::diag::METRICS_CPU_TIME | stk_classic::diag::METRICS_WALL_TIME, false, m_comm);
 
-      stk::diag::deleteRootTimer(timer());
+      stk_classic::diag::deleteRootTimer(timer());
 
-      static_cast<stk::indent_streambuf *>(dwout().rdbuf())->redirect(std::cout.rdbuf());
+      static_cast<stk_classic::indent_streambuf *>(dwout().rdbuf())->redirect(std::cout.rdbuf());
 
-      stk::unregister_ostream(tout());
-      stk::unregister_ostream(dout());
-      stk::unregister_ostream(pout());
-      stk::unregister_ostream(out());
+      stk_classic::unregister_ostream(tout());
+      stk_classic::unregister_ostream(dout());
+      stk_classic::unregister_ostream(pout());
+      stk_classic::unregister_ostream(out());
 
-      stk::unregister_log_ostream(std::cerr);
-      stk::unregister_log_ostream(std::cout);
+      stk_classic::unregister_log_ostream(std::cerr);
+      stk_classic::unregister_log_ostream(std::cout);
 
       if (m_argv_new) delete[] m_argv_new;
       if (m_argv) delete[] m_argv;
 
       if (m_need_to_finalize) {
-        //stk::parallel_machine_finalize();
+        //stk_classic::parallel_machine_finalize();
       }
     }
 
@@ -374,18 +374,18 @@ namespace stk {
     {
       /// \todo REFACTOR  Put these program options in a function
       ///                 that can be called without the bootstrapping.
-      //* dw_option_mask.mask("search", stk::percept::LOG_SEARCH, "log search diagnostics");
-      //* dw_option_mask.mask("transfer", stk::percept::LOG_TRANSFER, "log transfer diagnostics");
-      //* dw_option_mask.mask("timer", stk::percept::LOG_TIMER, "log timer diagnostics");
-      dw_option_mask.mask("all", stk::percept::LOG_ALWAYS, "log all");
+      //* dw_option_mask.mask("search", stk_classic::percept::LOG_SEARCH, "log search diagnostics");
+      //* dw_option_mask.mask("transfer", stk_classic::percept::LOG_TRANSFER, "log transfer diagnostics");
+      //* dw_option_mask.mask("timer", stk_classic::percept::LOG_TIMER, "log timer diagnostics");
+      dw_option_mask.mask("all", stk_classic::percept::LOG_ALWAYS, "log all");
 
-      timer_option_mask.mask("mesh", stk::percept::TIMER_MESH, "mesh operations timers");
-      //* timer_option_mask.mask("meshio", stk::percept::TIMER_MESH_IO, "mesh I/O timers");
-      //* timer_option_mask.mask("transfer", stk::percept::TIMER_TRANSFER, "transfer timers");
-      //* timer_option_mask.mask("search", stk::percept::TIMER_SEARCH, "search timers");
+      timer_option_mask.mask("mesh", stk_classic::percept::TIMER_MESH, "mesh operations timers");
+      //* timer_option_mask.mask("meshio", stk_classic::percept::TIMER_MESH_IO, "mesh I/O timers");
+      //* timer_option_mask.mask("transfer", stk_classic::percept::TIMER_TRANSFER, "transfer timers");
+      //* timer_option_mask.mask("search", stk_classic::percept::TIMER_SEARCH, "search timers");
 
 
-      //!stk::get_options_description().add(desc);
+      //!stk_classic::get_options_description().add(desc);
 
     }
 
@@ -531,12 +531,12 @@ namespace stk {
 
       std::string out_ostream;
 
-      if (!stk::get_log_ostream(out_path))
+      if (!stk_classic::get_log_ostream(out_path))
         if (out_path.size() && out_path[0] != '/')
           out_path = working_directory + out_path;
 
       if (parallel_rank == 0) {
-        if (!stk::get_log_ostream(out_path)) {
+        if (!stk_classic::get_log_ostream(out_path)) {
           output_description << "outfile=\"" << out_path << "\"";
           out_ostream = "outfile";
         }
@@ -552,20 +552,20 @@ namespace stk {
         if (pout_path == "-") {
           std::ostringstream s;
 
-          if (stk::get_log_ostream(out_path))
+          if (stk_classic::get_log_ostream(out_path))
             s << working_directory << "sierra.log." << parallel_size << "." << parallel_rank;
           else
             s << out_path << "." << parallel_size << "." << parallel_rank;
           pout_path = s.str();
         }
-        else if (pout_path.find("/") == std::string::npos && !stk::get_log_ostream(pout_path)) {
+        else if (pout_path.find("/") == std::string::npos && !stk_classic::get_log_ostream(pout_path)) {
           std::ostringstream s;
 
           s << working_directory << pout_path << "." << parallel_size << "." << parallel_rank;
           pout_path = s.str();
         }
 
-        if (!stk::get_log_ostream(pout_path)) {
+        if (!stk_classic::get_log_ostream(pout_path)) {
           output_description << " poutfile=\"" << pout_path << "\"";
           pout_ostream = "poutfile";
         }
@@ -576,7 +576,7 @@ namespace stk {
       std::string dout_ostream;
       if (true) {
         std::string dout_path = dout_opt;
-        if (!dout_path.empty() && stk::is_registered_ostream(dout_path))
+        if (!dout_path.empty() && stk_classic::is_registered_ostream(dout_path))
           dout_ostream = dout_path;
         else {
           std::ostringstream s;
@@ -604,10 +604,10 @@ namespace stk {
 
     // broken - do not use - for reference purposes only
     void RunEnvironment::
-    doSierraLoadBalance(stk::ParallelMachine comm, std::string meshFileName)
+    doSierraLoadBalance(stk_classic::ParallelMachine comm, std::string meshFileName)
     {
-      unsigned p_size = stk::parallel_machine_size(comm);
-      unsigned p_rank = stk::parallel_machine_rank(comm);
+      unsigned p_size = stk_classic::parallel_machine_size(comm);
+      unsigned p_rank = stk_classic::parallel_machine_rank(comm);
       if (!p_rank)
         {
           FILE *fpipe;
@@ -757,13 +757,13 @@ namespace stk {
     }
 
     void RunEnvironment::
-    doLoadBalance(stk::ParallelMachine comm, std::string meshFileName)
+    doLoadBalance(stk_classic::ParallelMachine comm, std::string meshFileName)
     {
 
       if (meshFileName.length() == 0) return;
 
-      unsigned p_size = stk::parallel_machine_size(comm);
-      unsigned p_rank = stk::parallel_machine_rank(comm);
+      unsigned p_size = stk_classic::parallel_machine_size(comm);
+      unsigned p_rank = stk_classic::parallel_machine_rank(comm);
       int err=0;
       std::string errString;
 
@@ -813,7 +813,7 @@ namespace stk {
             }
         }
 
-      stk::all_reduce( comm, stk::ReduceSum<1>( &err ) );
+      stk_classic::all_reduce( comm, stk_classic::ReduceSum<1>( &err ) );
 
       if (err && !p_rank)
         {

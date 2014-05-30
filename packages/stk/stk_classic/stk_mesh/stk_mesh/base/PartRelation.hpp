@@ -3,7 +3,7 @@
 
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class Part;
@@ -15,15 +15,15 @@ class Part;
 //----------------------------------------------------------------------
 /** \ingroup stk_mesh_relations
  *  \brief  A defined entity-relationship between
- *          \ref stk::mesh::Part "parts".
+ *          \ref stk_classic::mesh::Part "parts".
  *          An internal class that should never need to be
  *          <em> directly </em> used within application code.
  *
  *  <b> If </b> an
- *     \ref stk::mesh::Entity "entity" <b> e1 </b> is a member of
- *     \ref stk::mesh::Part "part" <em> m_root </em> and
+ *     \ref stk_classic::mesh::Entity "entity" <b> e1 </b> is a member of
+ *     \ref stk_classic::mesh::Part "part" <em> m_root </em> and
  *     there exists a
- *     \ref stk::mesh::Relation "relation"
+ *     \ref stk_classic::mesh::Relation "relation"
  *     from entity <b> e1 </b> to entity <b> e2 </b> that
  *     is in the domain of the
  *     \ref stk_mesh_relations "relation stencil"
@@ -66,6 +66,6 @@ struct PartRelation {
 /** \} */
 
 } // namespace mesh 
-} // namespace stk 
+} // namespace stk_classic 
 
 #endif // stk_mesh_PartRelation_hpp

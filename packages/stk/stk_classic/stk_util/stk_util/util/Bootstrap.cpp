@@ -8,7 +8,7 @@
 
 #include <stk_util/util/Bootstrap.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 Bootstrap *
 Bootstrap::s_front = 0;

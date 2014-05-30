@@ -13,7 +13,7 @@
 
 #include <stk_algsup/CudaCall.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 class CudaDeviceMgr {
   public:

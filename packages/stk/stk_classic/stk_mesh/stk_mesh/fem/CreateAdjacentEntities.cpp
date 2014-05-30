@@ -19,7 +19,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {
@@ -129,7 +129,7 @@ void internal_count_entities_to_create( BulkData & mesh, std::vector<size_t> & e
       const fem::CellTopology topo = fem::get_cell_topology(b);
 
       ThrowErrorMsgIf( is_degenerate(topo),
-          "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
+          "stk_classic::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
 
 
       if ( !is_degenerate(topo) ) { // don't loop over shell elements
@@ -390,7 +390,7 @@ void complete_connectivity( BulkData & mesh ) {
         const fem::CellTopology topo = fem::get_cell_topology(b);
 
         ThrowErrorMsgIf( is_degenerate(topo),
-          "stk::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
+          "stk_classic::mesh::create_adjacent_entities(...) does not yet support degenerate topologies (i.e. shells and beams)");
 
         {
           for (size_t i = 0; i<b.size(); ++i) {
@@ -457,7 +457,7 @@ void complete_connectivity( BulkData & mesh ) {
 void create_adjacent_entities( BulkData & mesh, PartVector & arg_add_parts)
 {
   ThrowErrorMsgIf(mesh.synchronized_state() == BulkData::MODIFIABLE,
-                  "stk::mesh::skin_mesh is not SYNCHRONIZED");
+                  "stk_classic::mesh::skin_mesh is not SYNCHRONIZED");
 
   // to handle degenerate topologies we anticipate the following order of operations
   //

@@ -65,24 +65,24 @@
 
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     using std::vector;
-    //using namespace stk::percept;
+    //using namespace stk_classic::percept;
 
     using shards::CellTopology;
 
     typedef std::vector<std::vector<std::string> > BlockNamesType;
     typedef std::map<std::string, std::string> StringStringMap;
 
-    typedef vector<vector<vector<stk::mesh::EntityId> > > NewSubEntityNodesType;
+    typedef vector<vector<vector<stk_classic::mesh::EntityId> > > NewSubEntityNodesType;
     typedef Elem::StdMeshObjTopologies::RefTopoX RefTopoX;
 
     typedef Elem::StdMeshObjTopologies::RefinementTopologyExtraEntry *RefTopoX_arr;
 
     // useful tools
-#define NODE_COORD(node) stk::mesh::field_data( *eMesh.get_coordinates_field() , node )
+#define NODE_COORD(node) stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , node )
 #define VERT_COORD(ivert) NODE_COORD(*elem_nodes[ivert].entity())
 #define EDGE_COORD(iedge,inode) NODE_COORD(*elem_nodes[cell_topo_data->edge[iedge].node[inode]].entity())
 #define FACE_COORD(iface,inode) NODE_COORD(*elem_nodes[cell_topo_data->side[iface].node[inode]].entity())
@@ -161,19 +161,19 @@ namespace stk {
           
         };
 
-      stk::mesh::PartVector m_fromParts;
-      stk::mesh::PartVector m_toParts;
+      stk_classic::mesh::PartVector m_fromParts;
+      stk_classic::mesh::PartVector m_toParts;
       const std::string m_appendConvertString; //="_urpconv_"
       const std::string m_appendOriginalString; //="_urporig_100000"
       static const std::string m_oldElementsPartName;
-      stk::mesh::EntityRank m_primaryEntityRank;
+      stk_classic::mesh::EntityRank m_primaryEntityRank;
     public:
       //typedef ToTopology TTopo;
 
       UniformRefinerPatternBase() : m_appendConvertString("_urpconv"),
                                     m_appendOriginalString(percept::PerceptMesh::s_omit_part+"_1000"),  // _100000
                                     //m_oldElementsPartName("urp_oldElements"),
-                                    m_primaryEntityRank(stk::mesh::fem::FEMMetaData::INVALID_RANK)
+                                    m_primaryEntityRank(stk_classic::mesh::fem::FEMMetaData::INVALID_RANK)
       {
         Elem::StdMeshObjTopologies::bootstrap();
 
@@ -186,7 +186,7 @@ namespace stk {
       virtual const CellTopologyData *  getFromTopology()=0;
       virtual const CellTopologyData *  getToTopology()=0;
 
-      stk::mesh::EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
+      stk_classic::mesh::EntityRank getPrimaryEntityRank() { return m_primaryEntityRank; }
       /// must be provided by derived classes
       /// ------------------------------------------------------------------------------------------------------------------------
 
@@ -207,18 +207,18 @@ namespace stk {
       ///   create all new sub-elements of the refined element
       virtual void
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)=0;
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)=0;
 
       /// if numChild is passed in as non-null, use that value, else use getNumNewElemPerElem() as size of child vector
-      void set_parent_child_relations(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement, unsigned ordinal, unsigned *numChild=0);
+      void set_parent_child_relations(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& old_owning_elem, stk_classic::mesh::Entity& newElement, unsigned ordinal, unsigned *numChild=0);
 
-      void interpolateElementFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement);
+      void interpolateElementFields(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& old_owning_elem, stk_classic::mesh::Entity& newElement);
       
       /// given a new element (child) that is a child of an original element (parent), look at parent's side to elem
       ///   relations and from the children of the element, choose an element to connect the new side to (using connectSides)
-      bool findSideRelations(percept::PerceptMesh& eMesh, stk::mesh::Entity *parent, stk::mesh::Entity *child);
-      bool connectSides(percept::PerceptMesh& eMesh, stk::mesh::Entity *element, stk::mesh::Entity *side_elem);
+      bool findSideRelations(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity *parent, stk_classic::mesh::Entity *child);
+      bool connectSides(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity *element, stk_classic::mesh::Entity *side_elem);
 
       /// optionally overridden (must be overridden if sidesets are to work properly) to provide info on which sub pattern
       /// should be used to refine side sets (and edge sets)
@@ -244,8 +244,8 @@ namespace stk {
       virtual std::string getToTopoPartName() =0;
       virtual std::string getName() { return std::string(); }
 
-      stk::mesh::PartVector& getToParts() { return m_toParts; }
-      stk::mesh::PartVector& getFromParts() { return m_fromParts; }
+      stk_classic::mesh::PartVector& getToParts() { return m_toParts; }
+      stk_classic::mesh::PartVector& getFromParts() { return m_fromParts; }
       const std::string& getAppendConvertString() { return m_appendConvertString; }
       const std::string& getAppendOriginalString() { return m_appendOriginalString; }
       static const std::string& getOldElementsPartName() { return m_oldElementsPartName; }
@@ -599,13 +599,13 @@ namespace stk {
       typedef boost::array<unsigned, ToTopology::node_count > refined_element_type;
 
 
-      void interpolateLine3(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field,
-                            MDArray& output_pts, stk::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
+      void interpolateLine3(percept::PerceptMesh& eMesh, stk_classic::mesh::FieldBase* field,
+                            MDArray& output_pts, stk_classic::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
       {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
+        stk_classic::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
         double xi = input_param_coords(0, 0);
 
         // FIXME assumes {-1,0,1} element parametric coords
@@ -619,7 +619,7 @@ namespace stk {
           }
         for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
           {
-            stk::mesh::Entity *node = elem_nodes[i_node].entity();
+            stk_classic::mesh::Entity *node = elem_nodes[i_node].entity();
             double *f_data = eMesh.field_data(field, *node, null_u);
             for (int i_stride=0; i_stride < fieldStride; i_stride++)
               {
@@ -628,13 +628,13 @@ namespace stk {
           }
       }
 
-      void interpolateIntrepid(percept::PerceptMesh& eMesh, stk::mesh::FieldBase* field, shards::CellTopology& cell_topo,
-                               MDArray& output_pts, stk::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
+      void interpolateIntrepid(percept::PerceptMesh& eMesh, stk_classic::mesh::FieldBase* field, shards::CellTopology& cell_topo,
+                               MDArray& output_pts, stk_classic::mesh::Entity& element, MDArray& input_param_coords, double time_val=0.0)
       {
         int fieldStride = output_pts.dimension(1);
         unsigned *null_u = 0;
 
-        stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
+        stk_classic::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
         MDArray basis_val(elem_nodes.size(), 1);
         //std::cout << "tmp fieldStride= " << fieldStride << " elem_nodes.size()= " << elem_nodes.size() << std::endl;
 
@@ -653,7 +653,7 @@ namespace stk {
         for (unsigned i_node = 0; i_node < elem_nodes.size(); i_node++)
           {
             //std::cout << "tmp basis_val[" << i_node <<"]= " << basis_val(i_node,0) << std::endl;
-            stk::mesh::Entity *node = elem_nodes[i_node].entity();
+            stk_classic::mesh::Entity *node = elem_nodes[i_node].entity();
             double *f_data = eMesh.field_data(field, *node, null_u);
             for (int i_stride=0; i_stride < fieldStride; i_stride++)
               {
@@ -668,21 +668,21 @@ namespace stk {
 
 
       /// This version uses Intrepid for interpolation
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement,  const unsigned *child_nodes,
-                             RefTopoX_arr ref_topo_x, stk::mesh::FieldBase *field)
+      void interpolateFields(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& element, stk_classic::mesh::Entity& newElement,  const unsigned *child_nodes,
+                             RefTopoX_arr ref_topo_x, stk_classic::mesh::FieldBase *field)
       {
         EXCEPTWATCH;
 
         unsigned *null_u = 0;
 
-        shards::CellTopology cell_topo(stk::percept::PerceptMesh::get_cell_topology(element));
+        shards::CellTopology cell_topo(stk_classic::percept::PerceptMesh::get_cell_topology(element));
 
         // FIXME - need topo dimensions here
         int topoDim = getTopoDim(cell_topo);
         
 
         int fieldStride = 0;
-        stk::mesh::EntityRank fr_type = stk::mesh::fem::FEMMetaData::NODE_RANK;
+        stk_classic::mesh::EntityRank fr_type = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " topoDim= " << topoDim << std::endl;
 
@@ -693,24 +693,24 @@ namespace stk {
           if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << std::endl;
           for (unsigned ifr = 0; ifr < nfr; ifr++)
             {
-              const stk::mesh::FieldRestriction& fr = field->restrictions()[ifr];
+              const stk_classic::mesh::FieldRestriction& fr = field->restrictions()[ifr];
               fr_type = fr.entity_rank();
               fieldStride = fr.dimension() ;
-              stk::mesh::Part& frpart = eMesh.get_fem_meta_data()->get_part(fr.part_ordinal());
+              stk_classic::mesh::Part& frpart = eMesh.get_fem_meta_data()->get_part(fr.part_ordinal());
               if (EXTRA_PRINT_URP_IF && nfr != 1 ) std::cout << "tmp P[" << 0 << "] info>    number of field restrictions= " << nfr << " fr_type= " << fr_type
                                             << " fieldStride = " << fieldStride << " frpart= " << frpart.name()
                                             << std::endl;
             }
           {
-            const stk::mesh::FieldBase::Restriction & r =
-              field->restriction(fr_type, stk::mesh::fem::FEMMetaData::get(*field).universal_part());
+            const stk_classic::mesh::FieldBase::Restriction & r =
+              field->restriction(fr_type, stk_classic::mesh::fem::FEMMetaData::get(*field).universal_part());
             fieldStride = r.dimension();
             if (EXTRA_PRINT_URP_IF) std::cout << "tmp stride = " <<  r.dimension() << " fieldStride= " << fieldStride
                                               << " fr_type= " << fr_type << std::endl;
           }
         }
         // FIXME
-        if (!fieldStride || fr_type != stk::mesh::fem::FEMMetaData::NODE_RANK)
+        if (!fieldStride || fr_type != stk_classic::mesh::fem::FEMMetaData::NODE_RANK)
           return;
 
         //FieldFunction field_func("tmp", field, eMesh, topoDim, fieldStride);
@@ -734,7 +734,7 @@ namespace stk {
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_quad8      = " << topo_key_quad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_shellquad8 = " << topo_key_shellquad8 << " cell_topo= " << cell_topo.getName() << std::endl;
                 std::cout << "tmp toTopoKey: " << toTopoKey << " topo_key_hex20      = " << topo_key_hex20 << " cell_topo= " << cell_topo.getName() << std::endl;
-                stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
+                stk_classic::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
 
 
                 PerceptMesh::BasisTypeRCP basis = eMesh.getBasis(cell_topo);
@@ -769,7 +769,7 @@ namespace stk {
               }
           }
 
-        stk::mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::fem::FEMMetaData::NODE_RANK);
+        stk_classic::mesh::PairIterRelation new_elem_nodes = newElement.relations(mesh::fem::FEMMetaData::NODE_RANK);
         for (unsigned i_new_node = 0; i_new_node < new_elem_nodes.size(); i_new_node++)
           {
             unsigned childNodeIdx = child_nodes[i_new_node];
@@ -820,7 +820,7 @@ namespace stk {
                   }
               }
 
-            stk::mesh::Entity *new_node = new_elem_nodes[i_new_node].entity();
+            stk_classic::mesh::Entity *new_node = new_elem_nodes[i_new_node].entity();
 
             {
               double *f_data_new = eMesh.field_data(field, *new_node, null_u);
@@ -839,15 +839,15 @@ namespace stk {
 
       /// do interpolation for all fields
       /// This version uses Intrepid
-      void interpolateFields(percept::PerceptMesh& eMesh, stk::mesh::Entity& element, stk::mesh::Entity& newElement, const unsigned *child_nodes,
+      void interpolateFields(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& element, stk_classic::mesh::Entity& newElement, const unsigned *child_nodes,
                              RefTopoX_arr ref_topo_x)
       {
-        const stk::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
+        const stk_classic::mesh::FieldVector & fields = eMesh.get_fem_meta_data()->get_fields();
         unsigned nfields = fields.size();
         //std::cout << "P[" << p_rank << "] info>    Number of fields = " << fields.size() << std::endl;
         for (unsigned ifld = 0; ifld < nfields; ifld++)
           {
-            stk::mesh::FieldBase *field = fields[ifld];
+            stk_classic::mesh::FieldBase *field = fields[ifld];
             //std::cout << "P[" << eMesh.get_rank() << "] field = " << field->name() << std::endl;
 
             interpolateFields(eMesh, element, newElement, child_nodes, ref_topo_x, field);
@@ -855,10 +855,10 @@ namespace stk {
       }
 
 
-      stk::mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk::mesh::EntityId eid)
+      stk_classic::mesh::Entity& createOrGetNode(NodeRegistry& nodeRegistry, PerceptMesh& eMesh, stk_classic::mesh::EntityId eid)
       {
 #if STK_ADAPT_NODEREGISTRY_USE_ENTITY_REPO
-        stk::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk::mesh::fem::FEMMetaData::NODE_RANK, eid);
+        stk_classic::mesh::Entity *node_p = nodeRegistry.get_entity_node_Ib(*eMesh.get_bulk_data(), stk_classic::mesh::fem::FEMMetaData::NODE_RANK, eid);
         if (node_p)
           return *node_p;
         else
@@ -872,23 +872,23 @@ namespace stk {
 
       void
       genericEnrich_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                                      stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                                      stk::mesh::FieldBase *proc_rank_field=0)
+                                      stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                                      stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
 
         typedef boost::array<unsigned, ToTopology::node_count > quadratic_type;
 
         static vector<quadratic_type> elems(NumNewElements_Enrich);
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
-        std::vector<stk::mesh::Part*> add_parts;
-        std::vector<stk::mesh::Part*> remove_parts;
+        std::vector<stk_classic::mesh::Part*> add_parts;
+        std::vector<stk_classic::mesh::Part*> remove_parts;
 
         unsigned n_edges = cell_topo_data->edge_count;
 
@@ -915,9 +915,9 @@ namespace stk {
 
             for (unsigned iSubDim = 0; iSubDim < nSubDimEntities; iSubDim++)
               {
-                 nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                 nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
-                 nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.addToExistingParts(*const_cast<stk_classic::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                 nodeRegistry.interpolateFields(*const_cast<stk_classic::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
               }
           }
 #endif
@@ -991,12 +991,12 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < elems.size(); ielem++)
           {
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             // FIXME
             if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
 
@@ -1004,14 +1004,14 @@ namespace stk {
 
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
-                stk::mesh::EntityId eid = elems[ielem][inode];
+                stk_classic::mesh::EntityId eid = elems[ielem][inode];
                 if (!eid)
                   {
                     std::cout << "P[" << eMesh.get_rank() << "] eid = 0 for inode = " << inode << std::endl;
                     throw std::logic_error("UniformRefinerPatternBase::genericEnrich_createNewElements bad entity id = 0 ");
                   }
-                //stk::mesh::Entity& node = eMesh.createOrGetNode(eid);
-                stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
+                //stk_classic::mesh::Entity& node = eMesh.createOrGetNode(eid);
+                stk_classic::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 eMesh.get_bulk_data()->declare_relation(newElement, node, inode);
               }
 
@@ -1054,7 +1054,7 @@ namespace stk {
 
       */
 
-      int getPermutation(int num_verts, stk::mesh::Entity& element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
+      int getPermutation(int num_verts, stk_classic::mesh::Entity& element, shards::CellTopology& cell_topo, unsigned rank_of_subcell, unsigned ordinal_of_subcell)
       {
         if (rank_of_subcell == 0 || rank_of_subcell == 3) return 0;
 
@@ -1065,7 +1065,7 @@ namespace stk {
         static std::vector<unsigned> vector_sdcell_global_baseline(4);
         static std::vector<unsigned> subCell_from_element(4);
 
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(mesh::fem::FEMMetaData::NODE_RANK);
 
         const unsigned * inodes = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].node;
         int num_subcell_verts = cell_topo.getCellTopologyData()->subcell[rank_of_subcell][ordinal_of_subcell].topology->vertex_count;
@@ -1179,19 +1179,19 @@ namespace stk {
 
       //static std::vector<NeededEntityType> s_needed_entities;
       //static vector<refined_element_type> s_elems;
-      //static std::vector<stk::mesh::Part*> s_add_parts;
-      //static std::vector<stk::mesh::Part*> s_remove_parts;
+      //static std::vector<stk_classic::mesh::Part*> s_add_parts;
+      //static std::vector<stk_classic::mesh::Part*> s_remove_parts;
 
       void
       genericRefine_createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                                      stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                                      stk::mesh::FieldBase *proc_rank_field=0)
+                                      stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                                      stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
         static std::vector<NeededEntityType> needed_entities;
         fillNeededEntities(needed_entities);
 
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
 
         static vector<refined_element_type> elems;
         elems.resize(getNumNewElemPerElem());
@@ -1204,7 +1204,7 @@ namespace stk {
         //  isLinearElement = true;
         //std::cout << "tmp cell_topo= " << cell_topo.getName() << " isLinearElement= " << isLinearElement << std::endl;
 
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
         int topoDim = cell_topo.getDimension();
         //unsigned cell_topo_key = fromTopoKey;
@@ -1251,10 +1251,10 @@ namespace stk {
               {
                 //!
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-                nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                nodeRegistry.addToExistingParts(*const_cast<stk_classic::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
                 if (isLinearElement)
                   {
-                    nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
+                    nodeRegistry.interpolateFields(*const_cast<stk_classic::mesh::Entity *>(&element), needed_entities[i_need].first, iSubDim);
                   }
 #endif
 
@@ -1488,11 +1488,11 @@ namespace stk {
         for (unsigned iChild = 0; iChild < num_child; iChild++)
           {
             int iChildRefTopo = iChild + iChildStart;
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             if (m_primaryEntityRank == m_eMesh.element_rank() &&  proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
 
@@ -1500,7 +1500,7 @@ namespace stk {
 
             for (int inode=0; inode < ToTopology::node_count; inode++)
               {
-                stk::mesh::EntityId eid = elems[iChild][inode];
+                stk_classic::mesh::EntityId eid = elems[iChild][inode];
                 if (!eid)
                   {
                     std::cout << "P[" << eMesh.get_rank() << "] eid = 0 for inode = " << inode << " iChild = " << iChild << std::endl;
@@ -1513,7 +1513,7 @@ namespace stk {
                   }
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_createOrGetNode);
-                stk::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
+                stk_classic::mesh::Entity& node = createOrGetNode(nodeRegistry, eMesh, eid);
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_1(CONNECT_LOCAL_URP_createOrGetNode);
 
                 /**/                                                         TRACE_CPU_TIME_AND_MEM_0(CONNECT_LOCAL_URP_declare_relation);
@@ -2408,29 +2408,29 @@ namespace stk {
 
         for (unsigned i_fromPart = 0; i_fromPart < m_fromParts.size(); i_fromPart++)
           {
-            stk::mesh::Part& fromPart = *m_fromParts[i_fromPart];
+            stk_classic::mesh::Part& fromPart = *m_fromParts[i_fromPart];
 
-            stk::mesh::EntityRank switch_fromPart_primary_entity_rank  = fromPart.primary_entity_rank();
+            stk_classic::mesh::EntityRank switch_fromPart_primary_entity_rank  = fromPart.primary_entity_rank();
 
               //case
             if(switch_fromPart_primary_entity_rank == eMesh.edge_rank() ||
                switch_fromPart_primary_entity_rank == eMesh.face_rank() )
               {
-                stk::mesh::Part& toPart = *m_toParts[i_fromPart];
+                stk_classic::mesh::Part& toPart = *m_toParts[i_fromPart];
 
-                const stk::mesh::PartVector from_subsets = fromPart.subsets();
+                const stk_classic::mesh::PartVector from_subsets = fromPart.subsets();
                 for (unsigned i_from_subset = 0; i_from_subset < from_subsets.size(); i_from_subset++)
                   {
-                    stk::mesh::Part& from_subset = *from_subsets[i_from_subset];
-                    const CellTopologyData * from_subset_part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(from_subset);
-                    const CellTopologyData * to_subset_part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(toPart);
+                    stk_classic::mesh::Part& from_subset = *from_subsets[i_from_subset];
+                    const CellTopologyData * from_subset_part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(from_subset);
+                    const CellTopologyData * to_subset_part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(toPart);
                     if (!from_subset_part_cell_topo_data || !to_subset_part_cell_topo_data) 
                       continue;
                     std::string to_subset_name = from_subset.name() + "#" + to_subset_part_cell_topo_data->name + "#" + getAppendConvertString();
 
-                    stk::mesh::Part* to_subset_p = eMesh.get_fem_meta_data()->get_part(to_subset_name);
+                    stk_classic::mesh::Part* to_subset_p = eMesh.get_fem_meta_data()->get_part(to_subset_name);
                     VERIFY_OP_ON(to_subset_p, !=, 0, std::string("fixSubsets couldn't find part error, part= ")+to_subset_name);
-                    stk::mesh::Part& to_subset = *to_subset_p;
+                    stk_classic::mesh::Part& to_subset = *to_subset_p;
 
                     eMesh.get_fem_meta_data()->declare_part_subset(toPart, to_subset);
 
@@ -2446,16 +2446,16 @@ namespace stk {
 
       const CellTopologyData * get_effective_topo(mesh::Part& part)
       {
-        const CellTopologyData * part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(part);
+        const CellTopologyData * part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(part);
 
         // check subsets
         if (!part_cell_topo_data)
           {
-            const stk::mesh::PartVector subsets = part.subsets();
+            const stk_classic::mesh::PartVector subsets = part.subsets();
             for (unsigned i_subset = 0; i_subset < subsets.size(); i_subset++)
               {
-                stk::mesh::Part& subset = *subsets[i_subset];
-                part_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(subset);
+                stk_classic::mesh::Part& subset = *subsets[i_subset];
+                part_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(subset);
                 if (part_cell_topo_data)
                   return part_cell_topo_data;
               }
@@ -2473,10 +2473,10 @@ namespace stk {
         // a part to hold new nodes
         if (1)  // FIXME - this is causing an exception in parallel runs, why?
           {
-            stk::mesh::Part* new_nodes_part = eMesh.get_non_const_part("refine_new_nodes_part");
+            stk_classic::mesh::Part* new_nodes_part = eMesh.get_non_const_part("refine_new_nodes_part");
             if (!new_nodes_part)
               {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_new_nodes_part", mesh::fem::FEMMetaData::NODE_RANK);
+                stk_classic::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_new_nodes_part", mesh::fem::FEMMetaData::NODE_RANK);
                 mesh::MetaData & meta = mesh::MetaData::get(part);
                 meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
@@ -2485,17 +2485,17 @@ namespace stk {
         // a part to hold active elements (i.e. leaf elements), and parent (non-active) elements
         if (1)
           {
-            stk::mesh::Part* active_elements_part = eMesh.get_non_const_part("refine_active_elements_part");
+            stk_classic::mesh::Part* active_elements_part = eMesh.get_non_const_part("refine_active_elements_part");
             if (!active_elements_part)
               {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
+                stk_classic::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_active_elements_part", eMesh.element_rank());
                 mesh::MetaData & meta = mesh::MetaData::get(part);
                 meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
-            stk::mesh::Part* inactive_elements_part = eMesh.get_non_const_part("refine_inactive_elements_part");
+            stk_classic::mesh::Part* inactive_elements_part = eMesh.get_non_const_part("refine_inactive_elements_part");
             if (!inactive_elements_part)
               {
-                stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
+                stk_classic::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part("refine_inactive_elements_part", eMesh.element_rank());
                 mesh::MetaData & meta = mesh::MetaData::get(part);
                 meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
               }
@@ -2503,7 +2503,7 @@ namespace stk {
 
         if (block_names_ranks.size() == 0)
           {
-            block_names_ranks.resize(stk::percept::EntityRankEnd);
+            block_names_ranks.resize(stk_classic::percept::EntityRankEnd);
           }
 
         m_fromParts.resize(0);
@@ -2511,33 +2511,33 @@ namespace stk {
 
         if (DEBUG_SET_NEEDED_PARTS)
           {
-            stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+            stk_classic::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
             std::cout << "\n\n====>\ntmp 0 setNeededParts: for From= " << getFromTopoPartName() << " To= " << getToTopoPartName();
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
-                stk::mesh::Part *  part = *i_part ;
-                if ( stk::mesh::is_auto_declared_part(*part) )
+                stk_classic::mesh::Part *  part = *i_part ;
+                if ( stk_classic::mesh::is_auto_declared_part(*part) )
                   continue;
                 std::cout << ", " << part->name();
               }
             std::cout << std::endl;
           }
 
-        for (unsigned irank = 0; irank < stk::percept::EntityRankEnd; irank++)
+        for (unsigned irank = 0; irank < stk_classic::percept::EntityRankEnd; irank++)
           {
             if (m_primaryEntityRank != irank)
               continue;
 
             std::vector<std::string>& block_names_include = block_names_ranks[irank];
 
-            stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+            stk_classic::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
             bool found_include_only_block = false;
             for (unsigned ib = 0; ib < block_names_include.size(); ib++)
               {
                 bool foundPart = false;
                 for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
                   {
-                    stk::mesh::Part * part = *i_part ;
+                    stk_classic::mesh::Part * part = *i_part ;
 
                     std::string bname = block_names_include[ib];
                     if ('+' == bname[0])
@@ -2558,10 +2558,10 @@ namespace stk {
 
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
-                stk::mesh::Part *  part = *i_part ;
+                stk_classic::mesh::Part *  part = *i_part ;
 
                 //if (part->name()[0] == '{' "{")   // is_auto_declared_part, ie. UNIVERSAL universal_part
-                if ( stk::mesh::is_auto_declared_part(*part) )
+                if ( stk_classic::mesh::is_auto_declared_part(*part) )
                   continue;
 
                 bool doThisPart = (block_names_ranks[m_eMesh.element_rank()].size() == 0);
@@ -2647,13 +2647,13 @@ namespace stk {
 
                 if (doThisPart)
                   {
-                    stk::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
+                    stk_classic::mesh::EntityRank switch_part_primary_entity_rank  =  part->primary_entity_rank() ;
 
                     if (switch_part_primary_entity_rank == eMesh.edge_rank() ||
                         switch_part_primary_entity_rank == eMesh.element_rank() ||
                         switch_part_primary_entity_rank == eMesh.face_rank())
                       {
-                        stk::mesh::Part *  block_to=0;
+                        stk_classic::mesh::Part *  block_to=0;
                         if (sameTopology)
                           {
                             block_to = part;
@@ -2664,8 +2664,8 @@ namespace stk {
                             block_to = &eMesh.get_fem_meta_data()->declare_part(newPartName, part->primary_entity_rank());
                             if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part name= " << newPartName
                                                                   << " with topo= " << getToTopoPartName() << std::endl;
-                            stk::mesh::fem::set_cell_topology< ToTopology  >( *block_to );
-                            stk::io::put_io_part_attribute(*block_to);
+                            stk_classic::mesh::fem::set_cell_topology< ToTopology  >( *block_to );
+                            stk_classic::io::put_io_part_attribute(*block_to);
                           }
 
 
@@ -2682,12 +2682,12 @@ namespace stk {
         fixSubsets(eMesh, sameTopology);
 
         {
-          stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+          stk_classic::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
           std::string oldPartName = UniformRefinerPatternBase::getOldElementsPartName() + toString(m_primaryEntityRank);
           bool foundOldPart = false;
           for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
             {
-              stk::mesh::Part *  part = *i_part ;
+              stk_classic::mesh::Part *  part = *i_part ;
               if (oldPartName == part->name())
                 {
                   foundOldPart = true;
@@ -2699,7 +2699,7 @@ namespace stk {
             {
               if (DEBUG_SET_NEEDED_PARTS) std::cout << "tmp setNeededParts:: declare_part for oldPartName = " 
                                                     << oldPartName << " rank= " << m_primaryEntityRank << std::endl;
-              stk::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
+              stk_classic::mesh::Part& part = eMesh.get_fem_meta_data()->declare_part(oldPartName, m_primaryEntityRank);
               mesh::MetaData & meta = mesh::MetaData::get(part);
               meta.declare_attribute_no_delete(part, &stk_adapt_auto_part);
             }
@@ -2708,10 +2708,10 @@ namespace stk {
 
 #define DEBUG_CHANGE_ENTITY_PARTS 0
 
-      void change_entity_parts(percept::PerceptMesh& eMesh, stk::mesh::Entity& old_owning_elem, stk::mesh::Entity& newElement)
+      void change_entity_parts(percept::PerceptMesh& eMesh, stk_classic::mesh::Entity& old_owning_elem, stk_classic::mesh::Entity& newElement)
       {
-        static std::vector<stk::mesh::Part*> add_parts(1);
-        static std::vector<stk::mesh::Part*> remove_parts;
+        static std::vector<stk_classic::mesh::Part*> add_parts(1);
+        static std::vector<stk_classic::mesh::Part*> remove_parts;
 
         bool found = false;
         for (unsigned i_part = 0; i_part < m_fromParts.size(); i_part++)
@@ -2743,10 +2743,10 @@ namespace stk {
               }
             //bool found_in_another_part = false;
 
-            stk::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
+            stk_classic::mesh::PartVector all_parts = eMesh.get_fem_meta_data()->get_parts();
             for (mesh::PartVector::iterator i_part = all_parts.begin(); i_part != all_parts.end(); ++i_part)
               {
-                stk::mesh::Part *  part = *i_part ;
+                stk_classic::mesh::Part *  part = *i_part ;
 
                 if (old_owning_elem.bucket().member(*part))
                   {
@@ -2850,7 +2850,7 @@ namespace stk {
 #include "RefinerPattern_Tet4_Tet4_N.hpp"
 
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     // refine

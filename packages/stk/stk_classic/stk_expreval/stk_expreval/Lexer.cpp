@@ -5,7 +5,7 @@
 
 #include <stk_expreval/Lexer.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 template <class T>

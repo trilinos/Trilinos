@@ -15,22 +15,22 @@
 #include <stk_mesh/base/Bucket.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {
 
-static stk::diag::Writer* s_diagWriter = NULL;
+static stk_classic::diag::Writer* s_diagWriter = NULL;
 
 }
 
 void initDiagWriter(std::ostream& stream)
 {
-  s_diagWriter = new stk::diag::Writer(stream.rdbuf(),
+  s_diagWriter = new stk_classic::diag::Writer(stream.rdbuf(),
                                        theDiagWriterParser().parse(std::getenv("MESHLOG")));
 }
 
-stk::diag::Writer & theDiagWriter()
+stk_classic::diag::Writer & theDiagWriter()
 {
   ThrowRequireMsg(s_diagWriter != NULL, "Please call initDiagWwriter before theDiagWriter");
   return *s_diagWriter;
@@ -44,7 +44,7 @@ DiagWriterParser & theDiagWriterParser()
 }
 
 DiagWriterParser::DiagWriterParser()
-  : stk::diag::WriterParser()
+  : stk_classic::diag::WriterParser()
 {
   mask("entity", (unsigned long) (LOG_ENTITY), "Display entity diagnostic information");
   mask("bucket", (unsigned long) (LOG_BUCKET), "Display bucket diagnostic information");
@@ -79,16 +79,16 @@ std::string log_to_str(EntityModificationLog log)
   return "";
 }
 
-stk::Bootstrap x(&bootstrap);
+stk_classic::Bootstrap x(&bootstrap);
 
 } // namespace <unnamed>
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const Part& part)
 {
   return writer << "Part[" << part.name() << ", " << part.mesh_meta_data_ordinal() << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity)
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const Entity& entity)
 {
   // Get bucket of entity
   Bucket* bucket = NULL;
@@ -138,12 +138,12 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity)
   return writer << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const EntityKey& key)
 {
   return writer << "Entity[rank:" << key.rank() << ", id:" << key.id() << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc)
+stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const EntityProc& entity_proc)
 {
   return writer << "EntityProc[entity:" << *entity_proc.first << ", proc: " << entity_proc.second << "]";
 }

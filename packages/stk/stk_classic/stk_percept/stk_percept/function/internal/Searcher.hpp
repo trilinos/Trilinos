@@ -22,7 +22,7 @@ namespace stk
        *  Dimensions of input_phy_points = ([P]=1, [D]) 
        *  Dimensions of found_parametric_coordinates = ([P]=1, [D])
        */
-      virtual const stk::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
+      virtual const stk_classic::mesh::Entity *findElement(MDArray& input_phy_points, MDArray& found_parametric_coordinates, 
                                                    unsigned& found_it, const mesh::Entity *hint_element )=0;
       virtual void setupSearch() {}
       virtual void tearDownSearch() {}

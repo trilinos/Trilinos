@@ -9,7 +9,7 @@ UseCaseMain.cpp creates the UseCase_<n>_Mesh object, then calls functions
 'populate' and 'verifyMesh'.
 
 
-For a completely different example of using stk::mesh, see the
+For a completely different example of using stk_classic::mesh, see the
 Mantevo 'miniFE' application, which is a miniature finite-element application.
 miniFE can be downloaded from http://software.sandia.gov/mantevo.
 After unpacking the miniFE source code, see the file stk_mesh_description.hpp.

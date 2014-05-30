@@ -137,17 +137,17 @@ namespace shards {
 
 }
 
-namespace stk { 
+namespace stk_classic { 
 
   namespace mesh { 
 
-    std::ostream &operator<<(std::ostream& out, const stk::mesh::Entity& entity)
+    std::ostream &operator<<(std::ostream& out, const stk_classic::mesh::Entity& entity)
     {
-      if (entity.entity_rank() != stk::mesh::fem::FEMMetaData::NODE_RANK)
+      if (entity.entity_rank() != stk_classic::mesh::fem::FEMMetaData::NODE_RANK)
         {
           out << "Elem: " << entity.identifier() << " rank= " << entity.entity_rank() << " nodes: ";
 
-          const mesh::PairIterRelation elem_nodes = entity.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          const mesh::PairIterRelation elem_nodes = entity.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
           unsigned num_node = elem_nodes.size();
           for (unsigned inode=0; inode < num_node; inode++)
             {
@@ -159,7 +159,7 @@ namespace stk {
 
         }
 
-      else if (entity.entity_rank() == stk::mesh::fem::FEMMetaData::NODE_RANK)
+      else if (entity.entity_rank() == stk_classic::mesh::fem::FEMMetaData::NODE_RANK)
         {
           out << "Node: " << entity.identifier();
 
@@ -429,22 +429,22 @@ get_heap_info(
 
 
     //========================================================================================================================
-    stk::diag::TimerSet& perceptTimerSet()
+    stk_classic::diag::TimerSet& perceptTimerSet()
     {
-      static stk::diag::TimerSet s_perceptTimerSet(PERCEPT_TIMER_ROOT);
+      static stk_classic::diag::TimerSet s_perceptTimerSet(PERCEPT_TIMER_ROOT);
 
       return s_perceptTimerSet;
     }
 
-    stk::diag::Timer& perceptTimer() {
+    stk_classic::diag::Timer& perceptTimer() {
       const std::string name("PerceptTimer");
-      static stk::diag::Timer s_perceptTimer (stk::diag::createRootTimer(name, perceptTimerSet()));
+      static stk_classic::diag::Timer s_perceptTimer (stk_classic::diag::createRootTimer(name, perceptTimerSet()));
 
       return s_perceptTimer;
     }
 
-    LapTimeType getLapTime(stk::diag::Timer& lap_timer) { return lap_timer.getMetric<stk::diag::WallTime>().getLap(); }
-    LapCountType getAccumulatedLap(stk::diag::Timer& timer, bool option) { return timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(option); }
+    LapTimeType getLapTime(stk_classic::diag::Timer& lap_timer) { return lap_timer.getMetric<stk_classic::diag::WallTime>().getLap(); }
+    LapCountType getAccumulatedLap(stk_classic::diag::Timer& timer, bool option) { return timer.getMetric<stk_classic::diag::LapCount>().getAccumulatedLap(option); }
 
 
 

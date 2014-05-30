@@ -18,7 +18,7 @@
 
 #include <stk_search/BoundingBox.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace bih {
 
@@ -26,7 +26,7 @@ class UnitTestBihTree;
 
 /** Bih tree */
 
-template <class RangeBoundingVolume, int COMPARE_MODE = stk::search::box::compare::MIDDLE>
+template <class RangeBoundingVolume, int COMPARE_MODE = stk_classic::search::box::compare::MIDDLE>
 class BihTree
 {
   public:
@@ -178,7 +178,7 @@ class BihTree
         void operator = (const Node &);
 
         friend class BihTree<RangeBoundingVolume,COMPARE_MODE>;
-        friend class ::stk::search::bih::UnitTestBihTree;
+        friend class ::stk_classic::search::bih::UnitTestBihTree;
     }; //end class Node
 
 
@@ -328,7 +328,7 @@ class BihTree
     explicit BihTree( const BihTree &);
     void operator = ( const BihTree &);
 
-    friend class ::stk::search::bih::UnitTestBihTree;
+    friend class ::stk_classic::search::bih::UnitTestBihTree;
 };
 
 
@@ -355,7 +355,7 @@ void BihTree<RangeBoundingVolume, COMPARE_MODE>::build_tree(
   bool split_by_space = find_split_plane(begin,end, axis, split_plane);
 
   if (split_by_space) { // split by space
-    k =  std::partition(begin,end,stk::search::box::compare::Partition<RangeBoundingVolume,COMPARE_MODE>(axis,split_plane));
+    k =  std::partition(begin,end,stk_classic::search::box::compare::Partition<RangeBoundingVolume,COMPARE_MODE>(axis,split_plane));
 
     float ratio = static_cast<float>(k-begin) / (end-begin);
     ratio -= 0.5f;
@@ -363,11 +363,11 @@ void BihTree<RangeBoundingVolume, COMPARE_MODE>::build_tree(
 
     if (ratio > 0.35f) {
       k = begin + (end - begin)/2;
-      std::nth_element(begin,k,end,stk::search::box::compare::Compare<RangeBoundingVolume,COMPARE_MODE>(axis));
+      std::nth_element(begin,k,end,stk_classic::search::box::compare::Compare<RangeBoundingVolume,COMPARE_MODE>(axis));
     }
   }
   else { // split by length
-    k =  std::partition(begin,end,stk::search::box::compare::Partition<RangeBoundingVolume,stk::search::box::compare::LENGTH>(axis,split_plane));
+    k =  std::partition(begin,end,stk_classic::search::box::compare::Partition<RangeBoundingVolume,stk_classic::search::box::compare::LENGTH>(axis,split_plane));
   }
 
   float clip_planes[2] = {-FLT_MAX,FLT_MAX};

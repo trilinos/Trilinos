@@ -15,8 +15,8 @@
 STKUNIT_UNIT_TEST( UnitTestCudaMgr, UnitTest)
 {
 #ifdef STK_HAVE_CUDA
-  stk::CudaDeviceMgr cuda_device;
-  stk::CudaMemoryMgr cuda_memory;
+  stk_classic::CudaDeviceMgr cuda_device;
+  stk_classic::CudaMemoryMgr cuda_memory;
 
   //create a vector (length 100) of ones:
   std::vector<int> ibuf(100, 1);

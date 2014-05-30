@@ -27,39 +27,39 @@
 
 #include <stk_rebalance_utils/RebalanceUtils.hpp>
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-typedef stk::mesh::Field<double> ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
+typedef stk_classic::mesh::Field<double> ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> VectorField ;
 
 enum { nx = 2, ny = 2 };
 
 STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 {
 #ifdef STK_HAS_MPI
-  stk::ParallelMachine comm(MPI_COMM_WORLD);
+  stk_classic::ParallelMachine comm(MPI_COMM_WORLD);
 #else
-  stk::ParallelMachine comm(0);
+  stk_classic::ParallelMachine comm(0);
 #endif
 
   unsigned spatial_dimension = 2;
-  std::vector<std::string> rank_names = stk::mesh::fem::entity_rank_names(spatial_dimension);
-  const stk::mesh::EntityRank constraint_rank = rank_names.size();
+  std::vector<std::string> rank_names = stk_classic::mesh::fem::entity_rank_names(spatial_dimension);
+  const stk_classic::mesh::EntityRank constraint_rank = rank_names.size();
   rank_names.push_back("Constraint");
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize( spatial_dimension, rank_names );
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  const stk::mesh::EntityRank element_rank    = fem_meta.element_rank();
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , comm , 100 );
+  const stk_classic::mesh::EntityRank element_rank    = fem_meta.element_rank();
 
-  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  stk_classic::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk_classic::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
   VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
   ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
+  stk_classic::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
+  stk_classic::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
   fem_meta.commit();
 
@@ -70,39 +70,39 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   if ( p_rank == 0 ) {
 
-    std::vector<std::vector<stk::mesh::Entity*> > quads(nx);
+    std::vector<std::vector<stk_classic::mesh::Entity*> > quads(nx);
     for ( unsigned ix = 0 ; ix < nx ; ++ix ) quads[ix].resize(ny);
 
     const unsigned nnx = nx + 1 ;
     const unsigned nny = ny + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::Entity &q = stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
+        stk_classic::mesh::Entity &q = stk_classic::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
         quads[ix][iy] = &q; 
       }
     }
 
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk_classic::mesh::field_data( weight_field , *e );
         *e_weight = 1.0;
       }
     }
 
     for ( unsigned iy = 0 ; iy <= ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
-        stk::mesh::EntityId nid = 1 + ix + iy * nnx ;
-        stk::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
-        double * const coord = stk::mesh::field_data( coord_field , *n );
+        stk_classic::mesh::EntityId nid = 1 + ix + iy * nnx ;
+        stk_classic::mesh::Entity * n = bulk_data.get_entity( NODE_RANK, nid );
+        double * const coord = stk_classic::mesh::field_data( coord_field , *n );
         coord[0] = .1*ix;
         coord[1] = .1*iy;
         coord[2] = 0;
@@ -112,14 +112,14 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
     {
       const unsigned iy_left  =  0; 
       const unsigned iy_right = ny; 
-      stk::mesh::PartVector add(1, &fem_meta.locally_owned_part());
+      stk_classic::mesh::PartVector add(1, &fem_meta.locally_owned_part());
       for ( unsigned ix = 0 ; ix <= nx ; ++ix ) {
-        stk::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
-        stk::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
-        stk::mesh::Entity * n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
-        stk::mesh::Entity * n_right = bulk_data.get_entity( NODE_RANK, nid_right );
-        const stk::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
-        stk::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
+        stk_classic::mesh::EntityId nid_left  = 1 + ix + iy_left  * nnx ;
+        stk_classic::mesh::EntityId nid_right = 1 + ix + iy_right * nnx ;
+        stk_classic::mesh::Entity * n_left  = bulk_data.get_entity( NODE_RANK, nid_left  );
+        stk_classic::mesh::Entity * n_right = bulk_data.get_entity( NODE_RANK, nid_right );
+        const stk_classic::mesh::EntityId constraint_entity_id =  1 + ix + nny * nnx;
+        stk_classic::mesh::Entity & c = bulk_data.declare_entity( constraint_rank, constraint_entity_id, add );
         bulk_data.declare_relation( c , *n_left  , 0 );
         bulk_data.declare_relation( c , *n_right , 1 );
       }
@@ -141,21 +141,21 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
   bulk_data.modification_end();
 
   // create some sides and faces to rebalance.
-  stk::mesh::PartVector add_parts;
-  stk::mesh::create_adjacent_entities(bulk_data, add_parts);
+  stk_classic::mesh::PartVector add_parts;
+  stk_classic::mesh::create_adjacent_entities(bulk_data, add_parts);
 
-  // Zoltan partition is specialized fomm a virtual base class, stk::rebalance::Partition.
+  // Zoltan partition is specialized fomm a virtual base class, stk_classic::rebalance::Partition.
   // Other specializations are possible.
   Teuchos::ParameterList emptyList;
-  stk::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
+  stk_classic::rebalance::Zoltan zoltan_partition(comm, spatial_dimension, emptyList);
 
   {
-    stk::mesh::Selector selector(fem_meta.universal_part());
+    stk_classic::mesh::Selector selector(fem_meta.universal_part());
 
-    stk::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
+    stk_classic::rebalance::rebalance(bulk_data, selector, &coord_field, &weight_field, zoltan_partition);
   }
 
-  const double imbalance_threshold = stk::rebalance::check_balance(bulk_data, &weight_field, element_rank);
+  const double imbalance_threshold = stk_classic::rebalance::check_balance(bulk_data, &weight_field, element_rank);
   const bool do_rebal = 1.5 < imbalance_threshold;
 
   // Check that we satisfy our threshhold
@@ -171,13 +171,13 @@ STKUNIT_UNIT_TEST(UnitTestZoltanSimple, testUnit)
 
   // And verify that all dependent entities are on the same proc as their parent element
   {
-    stk::mesh::EntityVector entities;
-    stk::mesh::Selector selector = fem_meta.locally_owned_part();
+    stk_classic::mesh::EntityVector entities;
+    stk_classic::mesh::Selector selector = fem_meta.locally_owned_part();
 
     get_selected_entities(selector, bulk_data.buckets(NODE_RANK), entities);
-    bool result = stk::rebalance::verify_dependent_ownership(element_rank, entities);
+    bool result = stk_classic::rebalance::verify_dependent_ownership(element_rank, entities);
     //get_selected_entities(selector, bulk_data.buckets(constraint_rank), entities);
-    //result &= stk::rebalance::verify_dependent_ownership(element_rank, entities);
+    //result &= stk_classic::rebalance::verify_dependent_ownership(element_rank, entities);
     STKUNIT_ASSERT( result );
   }
 }

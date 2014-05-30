@@ -18,7 +18,7 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 class MetaData;
 class BulkData;
@@ -31,14 +31,14 @@ struct GearFields {
 
   enum { SpatialDimension = 3 };
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian>            CartesianField ;
-  typedef stk::mesh::Field<double,stk::mesh::Cylindrical>          CylindricalField ;
+  typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian>            CartesianField ;
+  typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cylindrical>          CylindricalField ;
 
   CylindricalField & gear_coord ;
   CartesianField   & model_coord ;
 
-  GearFields( stk::mesh::MetaData & S );
-  GearFields( stk::mesh::fem::FEMMetaData & S );
+  GearFields( stk_classic::mesh::MetaData & S );
+  GearFields( stk_classic::mesh::fem::FEMMetaData & S );
 
 private:
   GearFields();
@@ -48,7 +48,7 @@ private:
 
 class Gear {
 public:
-  Gear( stk::mesh::fem::FEMMetaData & S ,
+  Gear( stk_classic::mesh::fem::FEMMetaData & S ,
         const std::string & name ,
         const GearFields & gear_fields ,
         const double   center[] ,
@@ -61,14 +61,14 @@ public:
         const size_t   angle_num ,
         const int      turn_direction );
 
-  void mesh( stk::mesh::BulkData &M );
+  void mesh( stk_classic::mesh::BulkData &M );
   void turn( double turn_angle ) const ;
 
-  stk::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
-  stk::mesh::MetaData & m_mesh_meta_data ;
-  stk::mesh::BulkData * m_mesh ;
-  stk::mesh::Part & m_gear ;
-  stk::mesh::Part & m_surf ;
+  stk_classic::mesh::fem::FEMMetaData *m_mesh_fem_meta_data ;
+  stk_classic::mesh::MetaData & m_mesh_meta_data ;
+  stk_classic::mesh::BulkData * m_mesh ;
+  stk_classic::mesh::Part & m_gear ;
+  stk_classic::mesh::Part & m_surf ;
   const GearFields::CylindricalField  & m_gear_coord ;
   const GearFields::CartesianField    & m_model_coord ;
 
@@ -90,8 +90,8 @@ private:
   size_t m_angle_num ;
   int    m_turn_dir ;
 
-  stk::mesh::Entity &create_node( const std::vector<stk::mesh::Part*> &parts ,
-                                  stk::mesh::EntityId node_id_base ,
+  stk_classic::mesh::Entity &create_node( const std::vector<stk_classic::mesh::Part*> &parts ,
+                                  stk_classic::mesh::EntityId node_id_base ,
                                   size_t iz ,
                                   size_t ir ,
                                   size_t ia ) const ;

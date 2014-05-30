@@ -35,13 +35,13 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
-              stk::mesh::Bucket::iterator bucket_j ) const
+  void apply( stk_classic::mesh::Bucket::iterator bucket_i ,
+              stk_classic::mesh::Bucket::iterator bucket_j ) const
   {
-    typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
+    typedef typename stk_classic::mesh::FieldTraits<field_type>::data_type scalar ;
 
-    stk::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
-    stk::mesh::BucketArray<field_type> ya( y_ , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> ya( y_ , bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * yi = ya.contiguous_data();
@@ -78,12 +78,12 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
-              stk::mesh::Bucket::iterator bucket_j ) const
+  void apply( stk_classic::mesh::Bucket::iterator bucket_i ,
+              stk_classic::mesh::Bucket::iterator bucket_j ) const
   {
-    typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
+    typedef typename stk_classic::mesh::FieldTraits<field_type>::data_type scalar ;
 
-    stk::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> xa( x_ , bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * xe = xi + xa.size();
@@ -107,9 +107,9 @@ private:
 
 template< class field_type >
 inline
-void axpby( const stk::AlgorithmRunnerInterface& alg_runner,
-            stk::mesh::BulkData& bulk,
-            stk::mesh::EntityRank entitytype,
+void axpby( const stk_classic::AlgorithmRunnerInterface& alg_runner,
+            stk_classic::mesh::BulkData& bulk,
+            stk_classic::mesh::EntityRank entitytype,
             double alpha,
             field_type& x,
             double beta,
@@ -117,37 +117,37 @@ void axpby( const stk::AlgorithmRunnerInterface& alg_runner,
 {
   AxpbyAlg<field_type> axpby_alg(alpha, x, beta, y);
 
-  const std::vector<stk::mesh::Bucket*>
+  const std::vector<stk_classic::mesh::Bucket*>
     & all_entity_buckets = bulk.buckets( entitytype );
 
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
-  stk::mesh::Selector select_used =
+  const stk_classic::mesh::MetaData & meta = stk_classic::mesh::MetaData::get(bulk);
+  stk_classic::mesh::Selector select_used =
     meta.locally_owned_part() |
     meta.globally_shared_part() ;
 
-  stk::mesh::PartVector empty_union_vector;
+  stk_classic::mesh::PartVector empty_union_vector;
   alg_runner.run( select_used , empty_union_vector, all_entity_buckets , axpby_alg );
 }
 
 template< class field_type >
 inline
-void fill( const stk::AlgorithmRunnerInterface& alg_runner,
-           stk::mesh::BulkData& bulk,
-           stk::mesh::EntityRank entitytype,
+void fill( const stk_classic::AlgorithmRunnerInterface& alg_runner,
+           stk_classic::mesh::BulkData& bulk,
+           stk_classic::mesh::EntityRank entitytype,
            field_type& x,
            double value)
 {
   FillAlg<field_type> fillalg(x, value);
 
-  const std::vector<stk::mesh::Bucket*>
+  const std::vector<stk_classic::mesh::Bucket*>
     & all_entity_buckets = bulk.buckets( entitytype );
 
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
-  stk::mesh::Selector select_used =
+  const stk_classic::mesh::MetaData & meta = stk_classic::mesh::MetaData::get(bulk);
+  stk_classic::mesh::Selector select_used =
     meta.locally_owned_part() |
     meta.globally_shared_part() ;
 
-  stk::mesh::PartVector empty_union_vector;
+  stk_classic::mesh::PartVector empty_union_vector;
   alg_runner.run( select_used , empty_union_vector, all_entity_buckets , fillalg );
 }
 
@@ -159,7 +159,7 @@ public:
   const field_type & field_x ;
   const field_type & field_y ;
 
-  typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
+  typedef typename stk_classic::mesh::FieldTraits<field_type>::data_type scalar ;
 
   DotAlg( const field_type & x , const field_type & y )
     : field_x( x ), field_y( y ) {}
@@ -177,12 +177,12 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
-              stk::mesh::Bucket::iterator bucket_j ,
+  void apply( stk_classic::mesh::Bucket::iterator bucket_i ,
+              stk_classic::mesh::Bucket::iterator bucket_j ,
               reduce_type * inout ) const
   {
-    stk::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
-    stk::mesh::BucketArray<field_type> ya( field_y , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> ya( field_y , bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * yi = ya.contiguous_data();
@@ -200,10 +200,10 @@ private:
 
 
 template< class field_type >
-typename stk::mesh::FieldTraits<field_type>::data_type
-dot( const stk::AlgorithmRunnerInterface & alg_runner ,
-     const stk::mesh::BulkData& bulk,
-     const stk::mesh::EntityRank entitytype,
+typename stk_classic::mesh::FieldTraits<field_type>::data_type
+dot( const stk_classic::AlgorithmRunnerInterface & alg_runner ,
+     const stk_classic::mesh::BulkData& bulk,
+     const stk_classic::mesh::EntityRank entitytype,
      const field_type & x ,
      const field_type & y )
 {
@@ -211,18 +211,18 @@ dot( const stk::AlgorithmRunnerInterface & alg_runner ,
 
   DotAlg<field_type> alg_dot(x,y);
 
-  const std::vector<stk::mesh::Bucket*>
+  const std::vector<stk_classic::mesh::Bucket*>
     & all_entity_buckets = bulk.buckets( entitytype );
 
-  stk::mesh::Selector
-    select_owned( stk::mesh::MetaData::get(bulk).locally_owned_part());
+  stk_classic::mesh::Selector
+    select_owned( stk_classic::mesh::MetaData::get(bulk).locally_owned_part());
 
   double local_dot = 0 ;
   double global_dot = 0 ;
 
   // Local parallel execution of the algorithm
 
-  stk::mesh::PartVector empty_union_vector;
+  stk_classic::mesh::PartVector empty_union_vector;
   alg_runner.run( select_owned , empty_union_vector, all_entity_buckets , alg_dot , & local_dot );
 
   // Global sum
@@ -241,7 +241,7 @@ class Norm2Alg {
 public:
   const field_type & field_x ;
 
-  typedef typename stk::mesh::FieldTraits<field_type>::data_type scalar ;
+  typedef typename stk_classic::mesh::FieldTraits<field_type>::data_type scalar ;
 
   explicit Norm2Alg( const field_type & x ) : field_x( x ) {}
 
@@ -258,11 +258,11 @@ public:
 
   enum { maximum_entity_count = 0 }; /* Don't slice buckets */
 
-  void apply( stk::mesh::Bucket::iterator bucket_i ,
-              stk::mesh::Bucket::iterator bucket_j ,
+  void apply( stk_classic::mesh::Bucket::iterator bucket_i ,
+              stk_classic::mesh::Bucket::iterator bucket_j ,
               reduce_type * inout ) const
   {
-    stk::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
+    stk_classic::mesh::BucketArray<field_type> xa( field_x , bucket_i , bucket_j );
 
     scalar * xi = xa.contiguous_data();
     scalar * xe = xi + xa.size();
@@ -279,28 +279,28 @@ private:
 };
 
 template< class field_type >
-typename stk::mesh::FieldTraits<field_type>::data_type
-norm2( const stk::AlgorithmRunnerInterface & alg_runner ,
-       const stk::mesh::BulkData           & bulk ,
-       const stk::mesh::EntityRank           entitytype ,
+typename stk_classic::mesh::FieldTraits<field_type>::data_type
+norm2( const stk_classic::AlgorithmRunnerInterface & alg_runner ,
+       const stk_classic::mesh::BulkData           & bulk ,
+       const stk_classic::mesh::EntityRank           entitytype ,
        const field_type                    & x )
 {
   // Construct algorithm to hand to local parallel algorithm runner
 
   Norm2Alg<field_type> alg_norm2(x);
 
-  const std::vector<stk::mesh::Bucket*>
+  const std::vector<stk_classic::mesh::Bucket*>
     & all_entity_buckets = bulk.buckets( entitytype );
 
-  stk::mesh::Selector
-    select_owned(stk::mesh::MetaData::get(bulk).locally_owned_part());
+  stk_classic::mesh::Selector
+    select_owned(stk_classic::mesh::MetaData::get(bulk).locally_owned_part());
 
   double local_dot = 0 ;
   double global_dot = 0 ;
 
   // Local parallel execution of the algorithm
 
-  stk::mesh::PartVector empty_union_vector;
+  stk_classic::mesh::PartVector empty_union_vector;
   alg_runner.run( select_owned , empty_union_vector, all_entity_buckets , alg_norm2 , & local_dot );
 
   // Global sum

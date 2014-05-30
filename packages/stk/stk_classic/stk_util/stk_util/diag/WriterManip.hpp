@@ -14,7 +14,7 @@
 #include <stk_util/diag/Writer_fwd.hpp>
 #include <stk_util/diag/Writer.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 ///
@@ -167,9 +167,9 @@ Writer &oct(Writer &dout);
 namespace sierra {
 namespace Diag {
 
-using stk::diag::setw;
-using stk::diag::setfill;
-using stk::diag::setprecision;
+using stk_classic::diag::setw;
+using stk_classic::diag::setfill;
+using stk_classic::diag::setprecision;
 
 } // namespace Diag
 } // namespace sierra

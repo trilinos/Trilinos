@@ -20,7 +20,7 @@
 #include <string>
 #include <typeinfo>
 
-namespace stk {
+namespace stk_classic {
 namespace adapt {
 namespace unit_tests {
 

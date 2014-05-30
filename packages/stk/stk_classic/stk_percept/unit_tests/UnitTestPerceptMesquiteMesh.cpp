@@ -88,13 +88,13 @@
 #include <typeinfo>
 #include <math.h>
 
-namespace stk 
+namespace stk_classic 
 {
   namespace percept 
   {
     namespace unit_tests 
     {
-      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector);
+      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk_classic::mesh::Selector *boundarySelector);
 
 
 #define DO_TESTS 0
@@ -122,17 +122,17 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = 1;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
         if (p_size <= par_size_max)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 2;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -150,11 +150,11 @@ namespace stk
             eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
@@ -162,11 +162,11 @@ namespace stk
             eMesh.save_as(input_files_loc+"quad_smooth.0.e");
 
             unsigned center_node_id = 5;
-            stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
+            stk_classic::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
             double *data = 0;
             if (node)
               {
-                data = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+                data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *node );
                 //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
                 data[0] += .2;
                 data[1] += .3;
@@ -209,17 +209,17 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_2)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = 1;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
           if (p_size <= par_size_max)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 3;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -237,10 +237,10 @@ namespace stk
             unsigned center_node_id[4] = {6,7,10,11};
             for (int ii=0; ii < 4; ii++)
               {
-                stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id[ii]);
+                stk_classic::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id[ii]);
                 if (node)
                   {
-                    double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+                    double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *node );
                     //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
                     data[0] += .02*(ii+1);
                     data[1] += .03*(ii+1);
@@ -249,11 +249,11 @@ namespace stk
 
             eMesh.save_as(input_files_loc+"quad_2_smooth.0_perturbed.e");
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             bool do_jacobi = false;
 
@@ -289,11 +289,11 @@ namespace stk
             eMesh.open(input_files_loc+"quad_2_smooth.0_perturbed.e");
             eMesh.commit();
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             //bool do_jacobi = true;
             //Mesquite::MsqDebug::enable(1);
@@ -332,12 +332,12 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_3)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
         
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
           if (p_size <= par_size_max)
           {
@@ -358,29 +358,29 @@ namespace stk
             eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_1(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0]/double(n);
                         data[1] += (ix)*(1.0-ix)*0.8*double(n);
                         //std::cout << "tmp srk surface 1 node = " << data[0] << " " << data[1] << std::endl;
@@ -441,12 +441,12 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_4)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
         
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
         if (1 || p_size <= par_size_max)
           {
@@ -467,30 +467,30 @@ namespace stk
             eMesh.reopen();
             eMesh.add_coordinate_state_fields();
             eMesh.add_spacing_fields();
-            stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
+            stk_classic::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
             eMesh.commit();
             eMesh.set_proc_rank_field(proc_rank_field);
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& node = bucket[iEntity];
+                        stk_classic::mesh::Entity& node = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double iy = data[1]; // /double(nele);
                         iy = iy*iy;
                         data[1] = iy; // *double(nele);
@@ -505,19 +505,19 @@ namespace stk
             // field, dst, src: 
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_1(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& node = bucket[iEntity];
+                        stk_classic::mesh::Entity& node = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , node );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , node );
                         double ix = data[0]; // /double(nele);
                         //double bump_size=2.8; // 0.8
                         double bump_size=2.8; // 0.8
@@ -592,17 +592,17 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, quad_4_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = 1;
 
-        //const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 2)
         if (p_size <= par_size_max)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             const unsigned n = 2;
             //const unsigned nx = n , ny = n , nz = p_size*n ;
@@ -619,16 +619,16 @@ namespace stk
             eMesh.reopen();
             //eMesh.addParallelInfoFields(true,true);
             eMesh.add_coordinate_state_fields();
-            stk::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
+            stk_classic::mesh::FieldBase *proc_rank_field = eMesh.add_field("proc_rank", eMesh.element_rank(), 0);
             //eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
             eMesh.set_proc_rank_field(proc_rank_field);
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4;
 
             //eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
@@ -638,11 +638,11 @@ namespace stk
             eMesh.copy_field(eMesh.get_field("coordinates_NM1"), eMesh.get_coordinates_field());
 
             unsigned center_node_id = 5;
-            stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
+            stk_classic::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, center_node_id);
             double *data = 0;
             if (node)
               {
-                data = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+                data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *node );
                 //std::cout << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
                 if (1)
                   {
@@ -687,17 +687,17 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_1)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
 
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= par_size_max)
           {
-            //const unsigned p_rank = stk::parallel_machine_rank( pm );
-            //const unsigned p_size = stk::parallel_machine_size( pm );
+            //const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+            //const unsigned p_size = stk_classic::parallel_machine_size( pm );
 
             unsigned n = 4;
             std::cout << "P[" << p_rank << "] " << "tmp srk doing Laplace smoothing for hex_1 case, n = " << n << std::endl;
@@ -710,23 +710,23 @@ namespace stk
             eMesh.commit();
             eMesh.save_as(input_files_loc+"hex_1_smooth.0.e");
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk_classic::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             //double delta_max = 0.01/(double(n));
             double delta_max = 0.001/(double(n));
             for (unsigned ii=1; ii <= (nn*nn*nn); ii++)
               {
-                stk::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, ii);
+                stk_classic::mesh::Entity* node = eMesh.get_bulk_data()->get_entity(0, ii);
                 if (node)
                   {
                     if (boundarySelector(*node)) continue;
-                    double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node );
+                    double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *node );
                     //std::cout << "P["<<p_rank<<"] " << "tmp srk  center node= " << data[0] << " " << data[1] << std::endl;
                     data[0] += delta_max*double(ii)/double(n);
                     data[1] += 2*delta_max*double(ii)/double(n);
@@ -775,13 +775,13 @@ namespace stk
 
             std::cout << "tmp srk doing Shape smoothing for hex_1 case..." << std::endl;
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk_classic::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             //bool do_jacobi = true;
             //Mesquite::MsqDebug::enable(1);
@@ -815,7 +815,7 @@ namespace stk
       //=============================================================================
 
       // Mesquite utilities...
-      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk::mesh::Selector *boundarySelector)
+      Mesquite::MeshImpl *create_mesquite_mesh(PerceptMesh *eMesh, stk_classic::mesh::Selector *boundarySelector)
       {
         using namespace Mesquite;
 
@@ -830,20 +830,20 @@ namespace stk
         //unsigned rank=eMesh->get_parallel_rank();
         //unsigned psize=eMesh->get_parallel_size();
 
-        const std::vector<stk::mesh::Bucket*> & node_buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = node_buckets.begin() ; k != node_buckets.end() ; ++k )
+        const std::vector<stk_classic::mesh::Bucket*> & node_buckets = eMesh->get_bulk_data()->buckets( eMesh->node_rank() );
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = node_buckets.begin() ; k != node_buckets.end() ; ++k )
           {
             //if (removePartSelector(**k))
             {
-              stk::mesh::Bucket & bucket = **k ;
+              stk_classic::mesh::Bucket & bucket = **k ;
               const unsigned num_entity_in_bucket = bucket.size();
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
-                  stk::mesh::Entity& node = bucket[ientity];
+                  stk_classic::mesh::Entity& node = bucket[ientity];
                   bool is_fixed=false;
                   if (boundarySelector && ((*boundarySelector)(node))) is_fixed = true;
                   fixed.push_back(is_fixed);
-                  double * const coord = stk::mesh::field_data( *eMesh->get_coordinates_field() , node );
+                  double * const coord = stk_classic::mesh::field_data( *eMesh->get_coordinates_field() , node );
                   coords.push_back(coord[0]);
                   coords.push_back(coord[1]);
                   if (eMesh->get_spatial_dim()==3) 
@@ -859,18 +859,18 @@ namespace stk
             }
           }
 
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             //if (removePartSelector(**k))
             {
-              stk::mesh::Bucket & bucket = **k ;
+              stk_classic::mesh::Bucket & bucket = **k ;
               const unsigned num_entity_in_bucket = bucket.size();
               for (unsigned ientity = 0; ientity < num_entity_in_bucket; ientity++)
                 {
-                  stk::mesh::Entity& element = bucket[ientity];
+                  stk_classic::mesh::Entity& element = bucket[ientity];
                   ++num_elem;
-                  const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+                  const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
                   for (unsigned j = 0; j < elem_nodes.size(); j++)
                     {
                       mesh::Entity & node = * elem_nodes[ j ].entity();
@@ -885,7 +885,7 @@ namespace stk
         Mesquite::MsqError err;
         // FIXME - works for hexes only...
         EntityTopology topo = HEXAHEDRON;
-        const CellTopologyData *const topology = stk::percept::PerceptMesh::get_cell_topology(*buckets[0]);
+        const CellTopologyData *const topology = stk_classic::percept::PerceptMesh::get_cell_topology(*buckets[0]);
         switch(topology->key) 
           {
           case shards::Triangle<3>::key:
@@ -973,12 +973,12 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_2)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
 
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= par_size_max)
           {
@@ -992,32 +992,32 @@ namespace stk
             eMesh.addParallelInfoFields(true,true);
             eMesh.commit();
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk_classic::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
             eMesh.save_as(input_files_loc+"hex_2_smooth.0.e");
 
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
                         double iy = data[1];
                         data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*.5;
@@ -1034,19 +1034,19 @@ namespace stk
             msqMesh->write_vtk(vtk_file.str().c_str(), err); 
             if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
                         double iy = data[1];
                         data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;
@@ -1103,12 +1103,12 @@ namespace stk
       STKUNIT_UNIT_TEST(unit_perceptMesquite, hex_4)
       {
         EXCEPTWATCH;
-        stk::ParallelMachine pm = MPI_COMM_WORLD ;
+        stk_classic::ParallelMachine pm = MPI_COMM_WORLD ;
         MPI_Barrier( MPI_COMM_WORLD );
         unsigned par_size_max = s_par_size_max;
 
-        const unsigned p_rank = stk::parallel_machine_rank( pm );
-        const unsigned p_size = stk::parallel_machine_size( pm );
+        const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+        const unsigned p_size = stk_classic::parallel_machine_size( pm );
         //if (p_size == 1 || p_size == 3)
         if (p_size <= par_size_max)
           {
@@ -1123,32 +1123,32 @@ namespace stk
             eMesh.add_coordinate_state_fields();
             eMesh.commit();
 
-            stk::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
-            stk::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
-            stk::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
-            stk::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
-            stk::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
-            stk::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
-            stk::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
+            stk_classic::mesh::Selector boundarySelector_1(*eMesh.get_non_const_part("surface_1") );
+            stk_classic::mesh::Selector boundarySelector_2(*eMesh.get_non_const_part("surface_2") );
+            stk_classic::mesh::Selector boundarySelector_3(*eMesh.get_non_const_part("surface_3") );
+            stk_classic::mesh::Selector boundarySelector_4(*eMesh.get_non_const_part("surface_4") );
+            stk_classic::mesh::Selector boundarySelector_5(*eMesh.get_non_const_part("surface_5") );
+            stk_classic::mesh::Selector boundarySelector_6(*eMesh.get_non_const_part("surface_6") );
+            stk_classic::mesh::Selector boundarySelector = boundarySelector_1 | boundarySelector_2 | boundarySelector_3 | boundarySelector_4 | boundarySelector_5 | boundarySelector_6;
 
             eMesh.populateParallelInfoFields(true,true,&boundarySelector);
 
-            const std::vector<stk::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+            const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh.get_bulk_data()->buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
             // cluster the mesh towards the bump
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 //if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         data[2] = data[2]*data[2];
                       }
                   }
@@ -1167,19 +1167,19 @@ namespace stk
             msqMesh->write_vtk(vtk_file.str().c_str(), err); 
             if (err) {std::cout << err << endl;  STKUNIT_EXPECT_TRUE(false);}
 
-            for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+            for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
               {
                 if (boundarySelector_5(**k)) 
                   {
-                    stk::mesh::Bucket & bucket = **k ;
+                    stk_classic::mesh::Bucket & bucket = **k ;
 
                     const unsigned num_elements_in_bucket = bucket.size();
                 
                     for (unsigned iEntity = 0; iEntity < num_elements_in_bucket; iEntity++)
                       {
-                        stk::mesh::Entity& entity = bucket[iEntity];
+                        stk_classic::mesh::Entity& entity = bucket[iEntity];
 
-                        double * data = stk::mesh::field_data( *eMesh.get_coordinates_field() , entity );
+                        double * data = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , entity );
                         double ix = data[0];
                         double iy = data[1];
                         data[2] = (ix)*(1.0-ix)*(iy)*(1.0-iy)*2.0*4.;

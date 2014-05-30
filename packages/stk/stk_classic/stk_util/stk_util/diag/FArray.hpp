@@ -369,13 +369,13 @@ public:
 
   template<unsigned I>
   unsigned dimension() const {
-    enum { ok = stk::StaticAssert<I < NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<I < NumDim>::OK };
     return m_dim[I];
   }
 
   template<unsigned I>
   unsigned stride() const {
-    enum { ok = stk::StaticAssert<I < NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<I < NumDim>::OK };
     return m_stride[I];
   }
 
@@ -429,7 +429,7 @@ public:
 			    const unsigned i4, const unsigned i5,
 			    const unsigned i6, const unsigned i7)
   {
-    enum { ok = stk::StaticAssert<8 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<8 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -451,7 +451,7 @@ public:
 			    const unsigned i4, const unsigned i5,
 			    const unsigned i6)
   {
-    enum { ok = stk::StaticAssert<7 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<7 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -471,7 +471,7 @@ public:
 			    const unsigned i2, const unsigned i3,
 			    const unsigned i4, const unsigned i5)
   {
-    enum { ok = stk::StaticAssert<6 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<6 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -489,7 +489,7 @@ public:
 			    const unsigned i2, const unsigned i3,
 			    const unsigned i4)
   {
-    enum { ok = stk::StaticAssert<5 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<5 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -505,7 +505,7 @@ public:
   value_type & operator()(const unsigned i0, const unsigned i1,
 			    const unsigned i2, const unsigned i3)
   {
-    enum { ok = stk::StaticAssert<4 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<4 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -519,7 +519,7 @@ public:
   value_type & operator()(const unsigned i0, const unsigned i1,
 			    const unsigned i2)
   {
-    enum { ok = stk::StaticAssert<3 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<3 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -530,7 +530,7 @@ public:
   }
 
   value_type & operator()(const unsigned i0, const unsigned i1) {
-    enum { ok = stk::StaticAssert<2 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<2 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -539,7 +539,7 @@ public:
   }
 
   value_type & operator()(const unsigned i0) {
-    enum { ok = stk::StaticAssert<1 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<1 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
 
@@ -569,7 +569,7 @@ public:
 				  const unsigned i4, const unsigned i5,
 				  const unsigned i6, const unsigned i7) const
   {
-    enum { ok = stk::StaticAssert<8 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<8 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -591,7 +591,7 @@ public:
 				  const unsigned i4, const unsigned i5,
 				  const unsigned i6) const
   {
-    enum { ok = stk::StaticAssert<7 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<7 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -611,7 +611,7 @@ public:
 				  const unsigned i2, const unsigned i3,
 				  const unsigned i4, const unsigned i5) const
   {
-    enum { ok = stk::StaticAssert<6 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<6 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -629,7 +629,7 @@ public:
 				  const unsigned i2, const unsigned i3,
 				  const unsigned i4) const
   {
-    enum { ok = stk::StaticAssert<5 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<5 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -645,7 +645,7 @@ public:
   const value_type & operator()(const unsigned i0, const unsigned i1,
 				  const unsigned i2, const unsigned i3) const
   {
-    enum { ok = stk::StaticAssert<4 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<4 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -659,7 +659,7 @@ public:
   const value_type & operator()(const unsigned i0, const unsigned i1,
 				  const unsigned i2) const
   {
-    enum { ok = stk::StaticAssert<3 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<3 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -670,7 +670,7 @@ public:
   }
 
   const value_type & operator()(const unsigned i0, const unsigned i1) const {
-    enum { ok = stk::StaticAssert<2 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<2 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
     array_dimension_verify(1, i1, m_dim[1]);
@@ -679,7 +679,7 @@ public:
   }
 
   const value_type & operator()(const unsigned i0) const {
-    enum { ok = stk::StaticAssert<1 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<1 == NumDim>::OK };
 
     array_dimension_verify(0, i0, m_dim[0]);
 
@@ -702,7 +702,7 @@ public:
 			const unsigned n4, const unsigned n5,
 			const unsigned n6, const unsigned n7) const
   {
-    enum { ok = stk::StaticAssert<8 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<8 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2 && m_dim[3] == n3 &&
       m_dim[4] == n4 && m_dim[5] == n5 &&
@@ -714,7 +714,7 @@ public:
 			const unsigned n4, const unsigned n5,
 			const unsigned n6) const
   {
-    enum { ok = stk::StaticAssert<7 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<7 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2 && m_dim[3] == n3 &&
       m_dim[4] == n4 && m_dim[5] == n5 &&
@@ -725,7 +725,7 @@ public:
 			const unsigned n2, const unsigned n3,
 			const unsigned n4, const unsigned n5) const
   {
-    enum { ok = stk::StaticAssert<6 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<6 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2 && m_dim[3] == n3 &&
       m_dim[4] == n4 && m_dim[5] == n5;
@@ -735,7 +735,7 @@ public:
 			const unsigned n2, const unsigned n3,
 			const unsigned n4) const
   {
-    enum { ok = stk::StaticAssert<5 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<5 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2 && m_dim[3] == n3 &&
       m_dim[4] == n4;
@@ -744,7 +744,7 @@ public:
   bool verify_dimension(const unsigned n0, const unsigned n1,
 			const unsigned n2, const unsigned n3) const
   {
-    enum { ok = stk::StaticAssert<4 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<4 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2 && m_dim[3] == n3;
   }
@@ -752,18 +752,18 @@ public:
   bool verify_dimension(const unsigned n0, const unsigned n1,
 			const unsigned n2) const
   {
-    enum { ok = stk::StaticAssert<3 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<3 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1 &&
       m_dim[2] == n2;
   }
 
   bool verify_dimension(const unsigned n0, const unsigned n1) const {
-    enum { ok = stk::StaticAssert<2 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<2 == NumDim>::OK };
     return m_dim[0] == n0 && m_dim[1] == n1;
   }
 
   bool verify_dimension(const unsigned n0) const {
-    enum { ok = stk::StaticAssert<1 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<1 == NumDim>::OK };
     return m_dim[0] == n0;
   }
 
@@ -779,7 +779,7 @@ public:
 		   const unsigned n4, const unsigned n5,
 		   const unsigned n6, const unsigned n7)
   {
-    enum { ok = stk::StaticAssert<8 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<8 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -798,7 +798,7 @@ public:
 		   const unsigned n4, const unsigned n5,
 		   const unsigned n6)
   {
-    enum { ok = stk::StaticAssert<7 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<7 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -815,7 +815,7 @@ public:
 		   const unsigned n2, const unsigned n3,
 		   const unsigned n4, const unsigned n5)
   {
-    enum { ok = stk::StaticAssert<6 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<6 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -831,7 +831,7 @@ public:
 		   const unsigned n2, const unsigned n3,
 		   const unsigned n4)
   {
-    enum { ok = stk::StaticAssert<5 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<5 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -845,7 +845,7 @@ public:
   unsigned set_dim(const unsigned n0, const unsigned n1,
 		   const unsigned n2, const unsigned n3)
   {
-    enum { ok = stk::StaticAssert<4 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<4 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -858,7 +858,7 @@ public:
   unsigned set_dim(const unsigned n0, const unsigned n1,
 		   const unsigned n2)
   {
-    enum { ok = stk::StaticAssert<3 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<3 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -869,7 +869,7 @@ public:
 
   unsigned set_dim(const unsigned n0, const unsigned n1)
   {
-    enum { ok = stk::StaticAssert<2 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<2 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);
@@ -879,7 +879,7 @@ public:
 
   unsigned set_dim(const unsigned n0)
   {
-    enum { ok = stk::StaticAssert<1 == NumDim>::OK };
+    enum { ok = stk_classic::StaticAssert<1 == NumDim>::OK };
 
     m_stride[0] = 1;
     m_stride[1] = m_stride[0] * (m_dim[0] = n0);

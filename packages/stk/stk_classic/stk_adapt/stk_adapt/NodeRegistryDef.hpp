@@ -3,10 +3,10 @@
 
 #include <stk_adapt/NodeRegistry.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
-    NodeIdsOnSubDimEntityType* NodeRegistry::getNewNodesOnSubDimEntity(const stk::mesh::Entity& element,  stk::mesh::EntityRank& needed_entity_rank, 
+    NodeIdsOnSubDimEntityType* NodeRegistry::getNewNodesOnSubDimEntity(const stk_classic::mesh::Entity& element,  stk_classic::mesh::EntityRank& needed_entity_rank, 
                                                                        unsigned iSubDimOrd)
     {
       EXCEPTWATCH;
@@ -22,7 +22,7 @@ namespace stk {
         {
           if (0)
             {
-              const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+              const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
               CellTopology cell_topo(cell_topo_data);
 
               std::cout << "NodeRegistry::getNewNodesOnSubDimEntity: no node found, cell_topo = " << cell_topo.getName()
@@ -40,7 +40,7 @@ namespace stk {
       return &nodeId;
     }
 
-    bool NodeRegistry::is_empty( const stk::mesh::Entity& element, stk::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
+    bool NodeRegistry::is_empty( const stk_classic::mesh::Entity& element, stk_classic::mesh::EntityRank needed_entity_rank, unsigned iSubDimOrd)
     {
       static SubDimCell_SDSEntityType subDimEntity;
       getSubDimEntity(subDimEntity, element, needed_entity_rank, iSubDimOrd);

@@ -2,7 +2,7 @@
 #define STK_UTIL_GENERIC_MESH_TRAITS_HPP
 
 
-namespace stk {
+namespace stk_classic {
 
 template <typename Mesh>
 struct generic_mesh_traits {

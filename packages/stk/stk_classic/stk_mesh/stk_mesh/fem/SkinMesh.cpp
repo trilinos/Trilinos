@@ -18,7 +18,7 @@
 
 #include <stk_util/parallel/ParallelComm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {
@@ -147,7 +147,7 @@ void add_owned_sides_to_map(
     const EntitySideVector & boundary,
     BoundaryMap & side_map)
 {
-  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
+  for (stk_classic::mesh::EntitySideVector::const_iterator itr = boundary.begin();
       itr != boundary.end(); ++itr) {
     const EntitySideComponent & inside = itr->inside;
     const EntitySideComponent & outside = itr->outside;
@@ -198,7 +198,7 @@ void add_non_owned_sides_to_map(
     const EntitySideVector & boundary,
     BoundaryMap & side_map)
 {
-  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
+  for (stk_classic::mesh::EntitySideVector::const_iterator itr = boundary.begin();
       itr != boundary.end(); ++itr) {
     const EntitySideComponent & inside = itr->inside;
     const EntitySideComponent & outside = itr->outside;
@@ -368,16 +368,16 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
           add_parts.push_back(skin_part);
           fem::CellTopology topo = fem_meta_data.get_cell_topology(*topo_part);
           const PartVector topo_parts =  skin_part->subsets();
-          for (stk::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
+          for (stk_classic::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
             // Decode side to element topology. Specific to tri and quad on linear hex and wedges
             if (topo == fem_meta_data.get_cell_topology(**i)) {
               if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice 
                 // Quad could be the face of a hex or wedge.
-                if (std::string("Hexahedron_8") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
+                if (std::string("Hexahedron_8") == stk_classic::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
                                                    std::string::npos != (*i)->name().find("hex8")) { // Magic string
                   add_parts.push_back(*i);
                 }
-                else if (std::string("Wedge_6") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
+                else if (std::string("Wedge_6") == stk_classic::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("wedge6")) { // Magic string
                   add_parts.push_back(*i);
                 }
@@ -467,16 +467,16 @@ void reskin_mesh( BulkData & mesh, EntityRank element_rank, EntityVector & owned
           add_parts.push_back(skin_part);
           fem::CellTopology topo = fem_meta_data.get_cell_topology(*topo_part);
           PartVector topo_parts =  skin_part->subsets();
-          for (stk::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
+          for (stk_classic::mesh::PartVector::const_iterator i=topo_parts.begin(); i!=topo_parts.end(); ++i) {
             // Decode side to element topology. Specific to tri and quad on linear hex and wedges
             if (topo == fem_meta_data.get_cell_topology(**i)) {
               if (std::string(side_key.first->name) == "Quadrilateral_4") { // A enum would be nice 
                 // Quad could be the face of a hex or wedge.
-                if (std::string("Hexahedron_8") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
+                if (std::string("Hexahedron_8") == stk_classic::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() && 
                                                    std::string::npos != (*i)->name().find("hex8")) { // Magic string
                   add_parts.push_back(*i);
                 }
-                else if (std::string("Wedge_6") == stk::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
+                else if (std::string("Wedge_6") == stk_classic::mesh::fem::get_cell_topology(*side_vector.front().entity).getName() &&
                                                    std::string::npos != (*i)->name().find("wedge6")) { // Magic string
                   add_parts.push_back(*i);
                 }

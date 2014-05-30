@@ -23,7 +23,7 @@
 
 #include <unit_tests/UnitTest_helpers.hpp>
 
-static const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 namespace stk_linsys_unit_tests {
 
@@ -37,42 +37,42 @@ void testDofMapper( MPI_Comm comm )
 
   const unsigned bucket_size = 100; //for a real application mesh, bucket_size would be much bigger...
 
-  stk::mesh::fem::FEMMetaData fem_meta;
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
   fem_meta.FEM_initialize(spatial_dimension);
 
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
 
-  stk::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
+  stk_classic::mesh::BulkData bulk_data( meta_data, comm, bucket_size );
 
   fill_utest_mesh_meta_data( fem_meta );
   fill_utest_mesh_bulk_data( bulk_data );
 
-  stk::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
+  stk_classic::mesh::Selector selector = meta_data.locally_owned_part() | meta_data.globally_shared_part() ;
   std::vector<unsigned> count;
-  stk::mesh::count_entities(selector, bulk_data, count);
+  stk_classic::mesh::count_entities(selector, bulk_data, count);
 
   STKUNIT_ASSERT_EQUAL( count[element_rank], (unsigned)4 );
   STKUNIT_ASSERT_EQUAL( count[NODE_RANK],    (unsigned)20 );
 
-  std::vector<stk::mesh::Entity*> nodes;
-  stk::mesh::get_entities(bulk_data, NODE_RANK, nodes);
+  std::vector<stk_classic::mesh::Entity*> nodes;
+  stk_classic::mesh::get_entities(bulk_data, NODE_RANK, nodes);
 
   ScalarField* temperature_field = meta_data.get_field<ScalarField>("temperature");
 
   //Now we're ready to test the DofMapper:
 
-  stk::linsys::DofMapper dof_mapper(comm);
+  stk_classic::linsys::DofMapper dof_mapper(comm);
 
-  const stk::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part();
+  const stk_classic::mesh::Selector select_used = meta_data.locally_owned_part() | meta_data.globally_shared_part();
 
   dof_mapper.add_dof_mappings(bulk_data, select_used,
                               NODE_RANK, *temperature_field);
 
-  stk::mesh::EntityRank ent_type;
-  stk::mesh::EntityId ent_id;
-  const stk::mesh::FieldBase* field = NULL;
+  stk_classic::mesh::EntityRank ent_type;
+  stk_classic::mesh::EntityId ent_id;
+  const stk_classic::mesh::FieldBase* field = NULL;
   int offset_into_field;
   int index = 0;
   //DofMapper::get_dof can't be called until after DofMapper::finalize() has
@@ -93,11 +93,11 @@ void testDofMapper( MPI_Comm comm )
   std::cout << "Testing error condition: " << std::endl;
   //call DofMapper::get_global_index with a non-existent ID and verify that an
   //exception is thrown:
-  STKUNIT_ASSERT_THROW(dof_mapper.get_global_index(NODE_RANK, (stk::mesh::EntityId)999999, *temperature_field), std::runtime_error);
+  STKUNIT_ASSERT_THROW(dof_mapper.get_global_index(NODE_RANK, (stk_classic::mesh::EntityId)999999, *temperature_field), std::runtime_error);
   std::cout << "...Completed testing error condition." << std::endl;
 
   int numProcs = 1;
-  numProcs = stk::parallel_machine_size( MPI_COMM_WORLD );
+  numProcs = stk_classic::parallel_machine_size( MPI_COMM_WORLD );
 
   fei::SharedPtr<fei::VectorSpace> fei_vspace = dof_mapper.get_fei_VectorSpace();
   int numIndices = fei_vspace->getGlobalNumIndices();

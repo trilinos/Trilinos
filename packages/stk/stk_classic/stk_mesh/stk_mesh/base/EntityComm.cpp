@@ -15,7 +15,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------------

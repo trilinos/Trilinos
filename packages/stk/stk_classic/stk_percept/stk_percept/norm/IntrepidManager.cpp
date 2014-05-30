@@ -427,14 +427,14 @@ namespace stk
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::Entity& element, const MDArray& parametric_coordinates)
+    operator()(const stk_classic::mesh::Entity& element, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(element, parametric_coordinates, *this);
     }
 
     void
     IntrepidManager::Bases::
-    operator()(const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
+    operator()(const stk_classic::mesh::Bucket& bucket, const MDArray& parametric_coordinates)
     {
       m_cb.getBases(bucket, parametric_coordinates, *this);
     }
@@ -446,12 +446,12 @@ namespace stk
     IntrepidManager::FieldValues::
     FieldValues(IM& im) : BaseType(NUM(Elements_Tag), NUM(Cub_Points_Tag), NUM(DOFs_Tag)) {}
 
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
+    void IntrepidManager::FieldValues::operator()(const stk_classic::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field)
     {
       ComputeFieldValues cfv;
       cfv.get_fieldValues(element, transformed_basis_values, field, *this);
     }
-    void IntrepidManager::FieldValues::operator()(const stk::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
+    void IntrepidManager::FieldValues::operator()(const stk_classic::mesh::Entity& element, MDArray& transformed_basis_values, mesh::FieldBase* field, MDArray& output_field_values)
     {
       ComputeFieldValues cfv;
       cfv.get_fieldValues(element, transformed_basis_values, field, output_field_values);
@@ -565,7 +565,7 @@ namespace stk
       found_it = 0;
 
       // FIXME consider caching the coords_field in FieldFunction
-      const mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(bulkData);
+      const mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(bulkData);
       VectorFieldType *coords_field = metaData.get_field<VectorFieldType >("coordinates");
 
       const mesh::Bucket & bucket = element.bucket();
@@ -585,14 +585,14 @@ namespace stk
       MDArray cellWorkset(numCells, numNodes, cellDim);
 
       /// FIXME -- fill cellWorkset
-      const mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      const mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
       for (unsigned iCell = 0; iCell < numCells; iCell++)
         {
           for (unsigned iNode = 0; iNode < numNodes; iNode++)
             {
               mesh::Entity& node = *elem_nodes[iNode].entity();
-              double * node_coord_data = stk::mesh::field_data( *coords_field , node);
+              double * node_coord_data = stk_classic::mesh::field_data( *coords_field , node);
               for (unsigned iDim=0; iDim < cellDim; iDim++)
                 {
                   cellWorkset(iCell, iNode, iDim) = node_coord_data[iDim];

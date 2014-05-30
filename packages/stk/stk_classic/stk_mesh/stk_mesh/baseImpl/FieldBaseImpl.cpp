@@ -22,7 +22,7 @@
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/Trace.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 
@@ -68,7 +68,7 @@ FieldBaseImpl::FieldBaseImpl(
   m_initial_value(NULL),
   m_initial_value_num_bytes(0)
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
+  TraceIfWatching("stk_classic::mesh::impl::FieldBaseImpl::FieldBaseImpl", LOG_FIELD, m_ordinal);
 
   FieldBase * const pzero = NULL ;
   const shards::ArrayDimTag * const dzero = NULL ;
@@ -119,7 +119,7 @@ void FieldBaseImpl::insert_restriction(
   const unsigned * arg_stride,
   const void*      arg_init_value )
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
+  TraceIfWatching("stk_classic::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
   FieldRestriction tmp( arg_entity_rank , arg_part.mesh_meta_data_ordinal() );
 
@@ -249,7 +249,7 @@ void FieldBaseImpl::insert_restriction(
   const unsigned * arg_stride,
   const void*      arg_init_value )
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
+  TraceIfWatching("stk_classic::mesh::impl::FieldBaseImpl::insert_restriction", LOG_FIELD, m_ordinal);
 
   FieldRestriction tmp( arg_entity_rank , arg_selector );
 
@@ -337,7 +337,7 @@ void FieldBaseImpl::verify_and_clean_restrictions(
   const Part& subset,
   const PartVector & arg_all_parts )
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
+  TraceIfWatching("stk_classic::mesh::impl::FieldBaseImpl::verify_and_clean_restrictions", LOG_FIELD, m_ordinal);
 
   FieldRestrictionVector & restrs = restrictions();
 
@@ -442,7 +442,7 @@ unsigned FieldBaseImpl::max_size( unsigned entity_rank ) const
 
 void FieldBaseImpl::set_field_states( FieldBase ** field_states)
 {
-  TraceIfWatching("stk::mesh::impl::FieldBaseImpl::set_field_states", LOG_FIELD, m_ordinal);
+  TraceIfWatching("stk_classic::mesh::impl::FieldBaseImpl::set_field_states", LOG_FIELD, m_ordinal);
 
   for (unsigned i = 0; i < m_num_states; ++i) {
     m_field_states[i] = field_states[i];

@@ -47,16 +47,16 @@ const std::vector<GeometryEvaluator*>& MeshGeometry::getGeomEvaluators()
 /**
  * Return 0,1,2,3 if the node is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_node(const stk::mesh::Entity& node, size_t& curveOrSurfaceEvaluator)
+int MeshGeometry::classify_node(const stk_classic::mesh::Entity& node, size_t& curveOrSurfaceEvaluator)
 {
-  const stk::mesh::Bucket& bucket = node.bucket();
+  const stk_classic::mesh::Bucket& bucket = node.bucket();
   return classify_bucket(bucket, curveOrSurfaceEvaluator);
 }
 
 /**
  * Return 0,1,2,3 if the bucket is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
+int MeshGeometry::classify_bucket(const stk_classic::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
 {
   int classify_value = 0;
    if (m_cache_classify_bucket_is_active)
@@ -96,7 +96,7 @@ int MeshGeometry::classify_bucket(const stk::mesh::Bucket& bucket, size_t& curve
 /**
  * Return 0,1,2,3 if the bucket is on a geometry vertex, curve, surface or domain.
  */
-int MeshGeometry::classify_bucket_internal(const stk::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
+int MeshGeometry::classify_bucket_internal(const stk_classic::mesh::Bucket& bucket, size_t& curveOrSurfaceEvaluator)
 {
   // Each bucket contains the set of nodes with unique part intersections.
   // This means that every nodes will be in exactly one bucket.  But, the
@@ -166,7 +166,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 
   // Get all of the nodes.
   std::vector<Entity*> nodes;
-  stk::mesh::get_entities(bulkData, stk::mesh::fem::FEMMetaData::NODE_RANK, nodes);
+  stk_classic::mesh::get_entities(bulkData, stk_classic::mesh::fem::FEMMetaData::NODE_RANK, nodes);
 
   VectorFieldType* coordField = eMesh->get_coordinates_field();
 
@@ -197,7 +197,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
     // keep the best one.
     if(evaluators.size() > 1)
     {
-      double * coords = stk::mesh::field_data(*coordField , *cur_node);
+      double * coords = stk_classic::mesh::field_data(*coordField , *cur_node);
       double orig_pos[3] = {coords[0], coords[1], coords[2]};
       double smallest_dist_sq = 9999999.9;
       double best_pos[3] = {0,0,0};
@@ -232,7 +232,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 
 #if 0
   BulkData& bulkData = *eMesh->get_bulk_data();
-  const std::vector<Bucket*> & buckets = bulkData.buckets( stk::mesh::fem::FEMMetaData::NODE_RANK );
+  const std::vector<Bucket*> & buckets = bulkData.buckets( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
   for ( std::vector<Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
   {
@@ -273,7 +273,7 @@ void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh)
 #endif
 }
 
-void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::vector<double>& normal)
+void MeshGeometry::normal_at(PerceptMesh* eMesh, stk_classic::mesh::Entity * node, std::vector<double>& normal)
 {
   {
     Bucket& bucket = node->bucket();
@@ -315,7 +315,7 @@ void MeshGeometry::normal_at(PerceptMesh* eMesh, stk::mesh::Entity * node, std::
   }
 }
 
-void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk::mesh::Entity *>& nodes)
+void MeshGeometry::snap_points_to_geometry(PerceptMesh* eMesh, std::vector<stk_classic::mesh::Entity *>& nodes)
 {
   for (unsigned inode=0; inode < nodes.size(); inode++)
   {
@@ -383,7 +383,7 @@ void MeshGeometry::snap_node
 
   {
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = stk_classic::mesh::field_data( *coordField , node );
     double delta[3] = {coord[0], coord[1], coord[2]};
     double coord_0[3] = {coord[0], coord[1], coord[2]};
     bool doPrint = m_doPrint; //DEBUG_GEOM_SNAP
@@ -404,7 +404,7 @@ void MeshGeometry::snap_node
     }
 
     double cpu0 = 0.0, cpu1 = 0.0;
-    if (doCheckCPUTime) cpu0 = stk::cpu_time();
+    if (doCheckCPUTime) cpu0 = stk_classic::cpu_time();
 
     // Look at the neighboring edges and calculate an average edge length.  This will be 
     // used as a tolerance to tell the projection code that if the projected point
@@ -412,7 +412,7 @@ void MeshGeometry::snap_node
     // greatly reduce the number of iterations the projection code has to do.
     double edge_length_ave=0.0;
     // get edge lengths
-    stk::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
+    stk_classic::mesh::PairIterRelation node_elements = node.relations(eMesh->element_rank());
     for(unsigned ii=0; ii < node_elements.size(); ii++)
     {
       edge_length_ave += eMesh->edge_length_ave(*node_elements[ii].entity());
@@ -421,7 +421,7 @@ void MeshGeometry::snap_node
 
     geomKernel->snap_to(coord, geomEvaluators[evaluator_idx]->mGeometry, &edge_length_ave);
 
-    if (doCheckCPUTime) cpu1 = stk::cpu_time() - cpu0;
+    if (doCheckCPUTime) cpu1 = stk_classic::cpu_time() - cpu0;
 
     delta[0] = coord[0] - delta[0];
     delta[1] = coord[1] - delta[1];
@@ -518,7 +518,7 @@ void MeshGeometry::normal_at
 
   {
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = stk_classic::mesh::field_data( *coordField , node );
     bool doPrint = DEBUG_GEOM_SNAP;
     if (doPrint)
     {
@@ -578,7 +578,7 @@ bool MeshGeometry::contains_dbg_node
   {
     Entity& node = bucket[iNode];
 
-    double * coord = stk::mesh::field_data( *coordField , node );
+    double * coord = stk_classic::mesh::field_data( *coordField , node );
     if ( is_dbg_node( coord ) )
     {
       return true;

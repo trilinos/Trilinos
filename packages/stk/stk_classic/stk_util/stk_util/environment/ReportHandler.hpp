@@ -13,7 +13,7 @@
 #include <string>
 #include <sstream>
 
-namespace stk {
+namespace stk_classic {
 
 ///
 /// @addtogroup runtime_message_detail
@@ -181,7 +181,7 @@ void handle_invalid_arg(const char* expr,
 
 #endif
 
-#define StackTrace std::string(std::string("  exception thrown from ") + stk::source_relative_path(STR_TRACE))
+#define StackTrace std::string(std::string("  exception thrown from ") + stk_classic::source_relative_path(STR_TRACE))
 
 // The do-while is necessary to prevent usage of this macro from changing
 // program semantics (e.g. dangling-else problem). The obvious implementation:
@@ -196,7 +196,7 @@ void handle_invalid_arg(const char* expr,
     if ( !(expr) ) {                                                    \
       std::ostringstream stk_util_internal_throw_require_oss;           \
       stk_util_internal_throw_require_oss << message;                   \
-      stk::handler( #expr,                                              \
+      stk_classic::handler( #expr,                                              \
                     STR_TRACE,                                          \
                     stk_util_internal_throw_require_oss );              \
     }                                                                   \
@@ -209,7 +209,7 @@ void handle_invalid_arg(const char* expr,
   do {                                                                  \
     std::ostringstream stk_util_internal_throw_require_oss;             \
     stk_util_internal_throw_require_oss << message;                     \
-    stk::handler( "",                                                   \
+    stk_classic::handler( "",                                                   \
                   STR_TRACE,                                            \
                   stk_util_internal_throw_require_oss );                \
 } while (false)

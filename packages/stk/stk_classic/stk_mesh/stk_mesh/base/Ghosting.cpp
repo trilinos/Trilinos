@@ -11,7 +11,7 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/base/EntityComm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 void Ghosting::send_list( std::vector< EntityProc > & v ) const

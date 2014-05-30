@@ -4,7 +4,7 @@
 #include "UniformRefinerPattern.hpp"
 #include "UniformRefinerPattern_Quad4_Tri3_2.hpp"
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     /** From Shards_BasicTopologies.hpp
@@ -127,26 +127,26 @@ namespace stk {
 
       void 
       createNewElements(percept::PerceptMesh& eMesh, NodeRegistry& nodeRegistry,
-                        stk::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk::mesh::Entity *>::iterator& element_pool,
-                        stk::mesh::FieldBase *proc_rank_field=0)
+                        stk_classic::mesh::Entity& element,  NewSubEntityNodesType& new_sub_entity_nodes, vector<stk_classic::mesh::Entity *>::iterator& element_pool,
+                        stk_classic::mesh::FieldBase *proc_rank_field=0)
       {
         EXCEPTWATCH;
-        const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
-        typedef boost::tuple<stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId, stk::mesh::EntityId> tet_tuple_type;
+        const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
+        typedef boost::tuple<stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId, stk_classic::mesh::EntityId> tet_tuple_type;
         vector<tet_tuple_type> new_elements(6);
 
         shards::CellTopology cell_topo(cell_topo_data);
-        const stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+        const stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
         // for cases that have a single center node, we just compute the new node's quantities here instead of globally
-        //stk::mesh::Entity * node = get_bulk_data()->get_entity( Node, node_id );
+        //stk_classic::mesh::Entity * node = get_bulk_data()->get_entity( Node, node_id );
 
 #define CENTROID_N NN(m_eMesh.element_rank(), 0)  
 
 #if STK_ADAPT_URP_LOCAL_NODE_COMPS
-        nodeRegistry.makeCentroidCoords(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
-        nodeRegistry.addToExistingParts(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
-        nodeRegistry.interpolateFields(*const_cast<stk::mesh::Entity *>(&element), Element, 0u);
+        nodeRegistry.makeCentroidCoords(*const_cast<stk_classic::mesh::Entity *>(&element), Element, 0u);
+        nodeRegistry.addToExistingParts(*const_cast<stk_classic::mesh::Entity *>(&element), Element, 0u);
+        nodeRegistry.interpolateFields(*const_cast<stk_classic::mesh::Entity *>(&element), Element, 0u);
 #endif
 
         // following code is from SweepMesher::breakElement, modified here for stk_mesh
@@ -157,12 +157,12 @@ namespace stk {
 
           static unsigned element_globalIds[8] = {0,0,0,0, 0,0,0,0};
           //static std::vector<unsigned> element_globalIds(8);
-          const stk::mesh::PairIterRelation elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+          const stk_classic::mesh::PairIterRelation elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
           //std::cout << "tmp hex elem= " << element << std::endl;
           for (int inode=0; inode < 8; inode++)
             {
-              stk::mesh::Entity & node = * elem_nodes[inode].entity();
+              stk_classic::mesh::Entity & node = * elem_nodes[inode].entity();
               element_globalIds[inode] = node.identifier();
             }
 
@@ -317,14 +317,14 @@ namespace stk {
 
         for (unsigned ielem=0; ielem < new_elements.size(); ielem++)
           {
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
-            //stk::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk_classic::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
+            //stk_classic::mesh::Entity& newElement = eMesh.get_bulk_data()->declare_entity(Element, *element_id_pool, eMesh.getPart(interface_table::shards_Triangle_3) );
 
-            stk::mesh::Entity& newElement = *(*element_pool);
+            stk_classic::mesh::Entity& newElement = *(*element_pool);
 
             if (proc_rank_field)
               {
-                double *fdata = stk::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
+                double *fdata = stk_classic::mesh::field_data( *static_cast<const ScalarFieldType *>(proc_rank_field) , newElement );
                 fdata[0] = double(newElement.owner_rank());
               }
 
@@ -359,7 +359,7 @@ namespace stk {
                 ++element_pool;
               }
             //nodes_to_destroy.push_back(CENTROID_N)
-            stk::mesh::Entity * node = eMesh.get_bulk_data()->get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, CENTROID_N);
+            stk_classic::mesh::Entity * node = eMesh.get_bulk_data()->get_entity( stk_classic::mesh::fem::FEMMetaData::NODE_RANK, CENTROID_N);
             if (!node)
               {
                 throw std::logic_error("UniformRefinerPattern_Hex8_Tet4_6_12:: node is null");

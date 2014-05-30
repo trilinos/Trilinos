@@ -5,7 +5,7 @@
 
 #include <stk_mesh/base/GetBuckets.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     void exact_nodal_solution(const double *xyz, double *field, const int spatial_dim)
@@ -40,28 +40,28 @@ namespace stk {
       
       static bool first_run = true;
 
-      stk::mesh::Part * activeElementsPart = eMesh.get_non_const_part("refine_active_elements_part");
+      stk_classic::mesh::Part * activeElementsPart = eMesh.get_non_const_part("refine_active_elements_part");
 
-      stk::mesh::Selector selector = first_run  ? 
+      stk_classic::mesh::Selector selector = first_run  ? 
 	eMesh.get_fem_meta_data()->locally_owned_part() : 
 	( eMesh.get_fem_meta_data()->locally_owned_part() & (*activeElementsPart) );
 
       first_run = false;
 
       std::vector<unsigned> count ;
-      stk::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
+      stk_classic::mesh::count_entities( selector, *eMesh.get_bulk_data(), count );
 
       const double num_elems = (double) count[eMesh.element_rank()];
       local_error_tol /= sqrt(num_elems);
 
-      std::vector<stk::mesh::Bucket*> buckets;
-      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.element_rank() ), buckets );
+      std::vector<stk_classic::mesh::Bucket*> buckets;
+      stk_classic::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.element_rank() ), buckets );
       
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
+      for ( vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
-	stk::mesh::Bucket & bucket = **k ;
+	stk_classic::mesh::Bucket & bucket = **k ;
 	
-	shards::CellTopology ct = stk::mesh::fem::get_cell_topology(bucket);
+	shards::CellTopology ct = stk_classic::mesh::fem::get_cell_topology(bucket);
 	const int Nnpe = ct.getNodeCount();
 
 	std::vector<double> nodal_interp(Nnpe);
@@ -70,14 +70,14 @@ namespace stk {
 	const unsigned num_elems_in_bucket = bucket.size();	
 	for (unsigned i = 0; i < num_elems_in_bucket; i++) {
 
-	  stk::mesh::Entity& element = bucket[i];
+	  stk_classic::mesh::Entity& element = bucket[i];
 
 	  // gather nodal coords and compute centroid
 	  std::vector<double> centroid(spatial_dim, 0.0);
-	  stk::mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+	  stk_classic::mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 	  for (unsigned inode=0; inode < elem_nodes.size(); inode++) {
-	    stk::mesh::Entity *node = elem_nodes[inode].entity();
-	    double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , *node);
+	    stk_classic::mesh::Entity *node = elem_nodes[inode].entity();
+	    double *coords = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , *node);
 	    
 	    for (int d=0; d<spatial_dim; d++) {
 	      centroid[d] += coords[d];
@@ -108,7 +108,7 @@ namespace stk {
 
 	  const double local_error = fabs(err_centroid) * area;
 
-	  double *ratio = stk::mesh::field_data( *elem_ratio_field , element);
+	  double *ratio = stk_classic::mesh::field_data( *elem_ratio_field , element);
 
 	  // calc elem ratio
 	  *ratio = sqrt(local_error / local_error_tol);
@@ -129,14 +129,14 @@ namespace stk {
         percept::PerceptMesh& eMesh, 
 	UniformRefinerPatternBase & bp, 
 	ScalarFieldType * elem_ratio_field,
-	stk::mesh::FieldBase *proc_rank_field=0);
+	stk_classic::mesh::FieldBase *proc_rank_field=0);
 
     protected:
 
       /// Client supplies these methods - given an element, which edge, 
       // and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
-      virtual int mark(const stk::mesh::Entity& element);
+      virtual int mark(const stk_classic::mesh::Entity& element);
 
       ScalarFieldType * m_elem_ratio_field;
       const double m_Rup;
@@ -148,7 +148,7 @@ namespace stk {
       percept::PerceptMesh& eMesh, 
       UniformRefinerPatternBase &  bp, 
       ScalarFieldType * elem_ratio_field,
-      stk::mesh::FieldBase *proc_rank_field) 
+      stk_classic::mesh::FieldBase *proc_rank_field) 
       : 
       IElementAdapter(eMesh, bp, proc_rank_field),
       m_elem_ratio_field(elem_ratio_field),
@@ -156,12 +156,12 @@ namespace stk {
     {}
 
     int 
-    TestLocalRefinerTri_N_3_MeshSizeRatio::mark(const stk::mesh::Entity& element)
+    TestLocalRefinerTri_N_3_MeshSizeRatio::mark(const stk_classic::mesh::Entity& element)
     {
       int mark=0;
 
       // TEST simplest case: ratio > Rup
-      const double & ratio = *( stk::mesh::field_data( *m_elem_ratio_field , element) );
+      const double & ratio = *( stk_classic::mesh::field_data( *m_elem_ratio_field , element) );
 
       if (ratio > m_Rup)
 	mark |= DO_REFINE;

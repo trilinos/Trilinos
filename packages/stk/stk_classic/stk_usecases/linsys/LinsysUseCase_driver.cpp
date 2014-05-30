@@ -57,19 +57,19 @@ namespace bopt = boost::program_options;
 int main(int argc, char** argv)
 {
   use_case::UseCaseEnvironment use_case_environment(&argc, &argv);
-  stk::ParallelMachine comm = use_case_environment.m_comm;
+  stk_classic::ParallelMachine comm = use_case_environment.m_comm;
 
   //----------------------------------
   // Broadcast argc and argv to all processors.
 
-  stk::BroadcastArg b_arg(comm, argc, argv);
+  stk_classic::BroadcastArg b_arg(comm, argc, argv);
 
   //----------------------------------
   // Process the broadcast command line arguments
 
   bopt::options_description desc("options");
 
-  stk::get_options_description().add(desc);
+  stk_classic::get_options_description().add(desc);
 
   int nthreads = 1;
   int bucket_size = 1000;
@@ -81,7 +81,7 @@ int main(int argc, char** argv)
     ("output-log,o",  bopt::value<std::string>(), "output log path" )
     ("runtest,r",     bopt::value<std::string>(), "runtest pid file" )
     ("threads",       bopt::value<int>(&nthreads)->default_value(1),   "number of threads")
-    ("bucket_size",    bopt::value<int>(&bucket_size)->default_value(1000),   "size of buckets used internally in stk::mesh")
+    ("bucket_size",    bopt::value<int>(&bucket_size)->default_value(1000),   "size of buckets used internally in stk_classic::mesh")
     ("tbb",           "Use Threaded Building Blocks algorithm thread runner")
     ("tpi",           "Use Thread Pool Interface algorithm thread runner")
     ("nonthreaded",   "Run algorithms non-threaded [default]")
@@ -101,7 +101,7 @@ int main(int argc, char** argv)
   catch (std::exception &x) {
     std::cout << x.what() << std::endl;
     std::cout << "Test Failed" << std::endl;
-    stk::parallel_machine_finalize();
+    stk_classic::parallel_machine_finalize();
     std::exit(1);
   }
 

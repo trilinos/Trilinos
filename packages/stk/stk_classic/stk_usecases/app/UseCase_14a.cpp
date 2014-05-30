@@ -49,26 +49,26 @@
 
 namespace {
 
-inline stk::mesh::EntityRank get_element_rank(const stk::mesh::fem::FEMMetaData& meta_data)
+inline stk_classic::mesh::EntityRank get_element_rank(const stk_classic::mesh::fem::FEMMetaData& meta_data)
 {
   return meta_data.element_rank();
 }
 
-inline stk::mesh::EntityRank get_element_rank(const stk::mesh::Part& part)
+inline stk_classic::mesh::EntityRank get_element_rank(const stk_classic::mesh::Part& part)
 {
-  return get_element_rank(stk::mesh::fem::FEMMetaData::get(part));
+  return get_element_rank(stk_classic::mesh::fem::FEMMetaData::get(part));
 }
 
 }
 
-namespace stk {
+namespace stk_classic {
 namespace app {
 
-typedef stk::mesh::Field<double>                                ScalarField ;
-typedef stk::mesh::Field<int>                                   ScalarIntField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>          CartesianField ;
-typedef stk::mesh::Field<double, stk::mesh::FullTensor>         FullTensorField ;
-typedef stk::mesh::Field<double, stk::mesh::SymmetricTensor>    SymmetricTensorField ;
+typedef stk_classic::mesh::Field<double>                                ScalarField ;
+typedef stk_classic::mesh::Field<int>                                   ScalarIntField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>          CartesianField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::FullTensor>         FullTensorField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::SymmetricTensor>    SymmetricTensorField ;
 
 int g_lockCollision = 0;
 
@@ -76,71 +76,71 @@ enum { SpatialDim = 3 };
 
 CartesianField &
 declare_vector_field_on_all_nodes(
-  stk::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
+  stk_classic::mesh::MetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), stk::mesh::fem::FEMMetaData::NODE_RANK , meta_data.universal_part() , n1 );
+  return stk_classic::mesh::put_field( meta_data.declare_field<CartesianField>(s), stk_classic::mesh::fem::FEMMetaData::NODE_RANK , meta_data.universal_part() , n1 );
 }
 
 
 CartesianField &
 declare_vector_field_on_all_elements(
-  stk::mesh::fem::FEMMetaData & meta_data , const std::string & s , unsigned n1 )
+  stk_classic::mesh::fem::FEMMetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  return stk::mesh::put_field( meta_data.declare_field<CartesianField>(s), get_element_rank(meta_data), meta_data.universal_part() , n1 );
+  return stk_classic::mesh::put_field( meta_data.declare_field<CartesianField>(s), get_element_rank(meta_data), meta_data.universal_part() , n1 );
 }
 
 
 ScalarField &
 declare_scalar_field_on_all_elements(
-  stk::mesh::fem::FEMMetaData & meta_data , const std::string & s )
+  stk_classic::mesh::fem::FEMMetaData & meta_data , const std::string & s )
 {
-  return stk::mesh::put_field( meta_data.declare_field<ScalarField>(s), get_element_rank(meta_data), meta_data.universal_part() );
+  return stk_classic::mesh::put_field( meta_data.declare_field<ScalarField>(s), get_element_rank(meta_data), meta_data.universal_part() );
 }
 
 
 ScalarIntField &
-declare_scalar_int_field_on_all_nodes( stk::mesh::MetaData & meta_data , const std::string & n )
+declare_scalar_int_field_on_all_nodes( stk_classic::mesh::MetaData & meta_data , const std::string & n )
 {
-  return put_field( meta_data.declare_field<ScalarIntField>(n) , stk::mesh::fem::FEMMetaData::NODE_RANK, meta_data.universal_part() );
+  return put_field( meta_data.declare_field<ScalarIntField>(n) , stk_classic::mesh::fem::FEMMetaData::NODE_RANK, meta_data.universal_part() );
 }
 
 
 SymmetricTensorField &
 declare_symmetric_tensor_field_on_all_elements(
-  stk::mesh::fem::FEMMetaData & meta_data , const std::string & s , unsigned n1 )
+  stk_classic::mesh::fem::FEMMetaData & meta_data , const std::string & s , unsigned n1 )
 {
-  return stk::mesh::put_field( meta_data.declare_field<SymmetricTensorField>(s) , get_element_rank(meta_data), meta_data.universal_part() , n1 );
+  return stk_classic::mesh::put_field( meta_data.declare_field<SymmetricTensorField>(s) , get_element_rank(meta_data), meta_data.universal_part() , n1 );
 }
 
 
 template< typename Type , class T1 >
-stk::mesh::Field<Type,T1> &
-put_field_on_elements( stk::mesh::Field<Type,T1> & f , stk::mesh::Part & p , unsigned n1 )
+stk_classic::mesh::Field<Type,T1> &
+put_field_on_elements( stk_classic::mesh::Field<Type,T1> & f , stk_classic::mesh::Part & p , unsigned n1 )
 {
-  stk::mesh::put_field( f , get_element_rank(p) , p , n1 );
+  stk_classic::mesh::put_field( f , get_element_rank(p) , p , n1 );
   return f ;
 }
 
 
 template< typename Type , class T1 , class T2>
-stk::mesh::Field<Type,T1,T2> &
-put_field_on_elements( stk::mesh::Field<Type,T1,T2> & f , stk::mesh::Part & p , unsigned n1 , unsigned n2 )
+stk_classic::mesh::Field<Type,T1,T2> &
+put_field_on_elements( stk_classic::mesh::Field<Type,T1,T2> & f , stk_classic::mesh::Part & p , unsigned n1 , unsigned n2 )
 {
-  stk::mesh::put_field( f , get_element_rank(p) , p , n1 , n2);
+  stk_classic::mesh::put_field( f , get_element_rank(p) , p , n1 , n2);
   return f ;
 }
 
 
 template< typename Type , class T1 >
-stk::mesh::Field<Type,T1> & put_field_on_all_elements( stk::mesh::Field<Type,T1> & f , unsigned n1 )
+stk_classic::mesh::Field<Type,T1> & put_field_on_all_elements( stk_classic::mesh::Field<Type,T1> & f , unsigned n1 )
 {
-  put_field_on_elements( f , stk::mesh::MetaData::get(f).universal_part() , n1 );
+  put_field_on_elements( f , stk_classic::mesh::MetaData::get(f).universal_part() , n1 );
   return f ;
 }
 
 // ------------------------------------------------------------------------
 
-typedef stk::mesh::Field<int *,stk::mesh::ElementNode> ElementNodeLockField ;
+typedef stk_classic::mesh::Field<int *,stk_classic::mesh::ElementNode> ElementNodeLockField ;
 
 extern int g_lockCollision;
 
@@ -217,7 +217,7 @@ class MyHexInternalForceAlg2 {
 public:
   MyHexInternalForceAlg2(lame::matParams& matParameters, lame::MatProps& matProperties,
                          lame::Material* matModel,
-                         stk::mesh::MetaData& md, int max_kernel_size)
+                         stk_classic::mesh::MetaData& md, int max_kernel_size)
     : hex_element(),
       materialParameters(matParameters),
       materialProperties(matProperties),
@@ -262,58 +262,58 @@ public:
 
     MidHourglassOp = md.get_field<HourglassOpField>("mid_hourglass_operator");
 
-    coord_gather = md.get_field<stk::mesh::ElementNodePointerField>("coord_gather");
-    velocity_gather = md.get_field<stk::mesh::ElementNodePointerField>("velocity_gather");
-    fint_gather = md.get_field<stk::mesh::ElementNodePointerField>("fint_gather");
-    fint_lock_gather = md.get_field<stk::mesh::ElementNodeLockField>("fint_lock_gather");
+    coord_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("coord_gather");
+    velocity_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("velocity_gather");
+    fint_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("fint_gather");
+    fint_lock_gather = md.get_field<stk_classic::mesh::ElementNodeLockField>("fint_lock_gather");
 
     force_new_field = md.get_field<ElementNodeVectorField>("force_new_field");
 
-    HourglassResistanceOld = &HourglassResistanceNew->field_of_state( stk::mesh::StateOld );
-    StressOld              = &StressNew->field_of_state( stk::mesh::StateOld );
-    RotationOld            = &RotationNew->field_of_state( stk::mesh::StateOld );
+    HourglassResistanceOld = &HourglassResistanceNew->field_of_state( stk_classic::mesh::StateOld );
+    StressOld              = &StressNew->field_of_state( stk_classic::mesh::StateOld );
+    RotationOld            = &RotationNew->field_of_state( stk_classic::mesh::StateOld );
   }
 
   enum { maximum_entity_count = 1000 };
 
-  void apply( stk::mesh::Bucket::iterator ibegin ,
-	      stk::mesh::Bucket::iterator iend ) const
+  void apply( stk_classic::mesh::Bucket::iterator ibegin ,
+	      stk_classic::mesh::Bucket::iterator iend ) const
   {
     enum { nodes_per_elem = 8, num_nodes_X_3 = 24 };
 
     const int num_elements = iend - ibegin;
-    double *mid_hg_op_ptr                 = stk::mesh::field_data( *MidHourglassOp,          ibegin);
-    double *material_eff_twomu_ptr        = stk::mesh::field_data( *Material_eff_twomu,      ibegin);
-    double *material_eff_bulk_modulus_ptr = stk::mesh::field_data( *Material_eff_bulk_mod,   ibegin);
-    double *mid_step_volume_ptr           = stk::mesh::field_data( *Midstep_volume,          ibegin);
-    double *element_time_step_ptr         = stk::mesh::field_data( *Element_time_step,       ibegin);
-    double *element_mass_ptr              = stk::mesh::field_data( *Element_mass,            ibegin);
-    double *hg_energy_ptr                 = stk::mesh::field_data( *Hourglass_energy,        ibegin);
-    double *internal_energy_ptr           = stk::mesh::field_data (*Internal_energy,         ibegin);
-    double *shear_modulus_ptr             = stk::mesh::field_data( *Shear_Modulus,           ibegin);
-    double *dilatational_modulus_ptr      = stk::mesh::field_data( *Dilatational_Modulus,    ibegin );
+    double *mid_hg_op_ptr                 = stk_classic::mesh::field_data( *MidHourglassOp,          ibegin);
+    double *material_eff_twomu_ptr        = stk_classic::mesh::field_data( *Material_eff_twomu,      ibegin);
+    double *material_eff_bulk_modulus_ptr = stk_classic::mesh::field_data( *Material_eff_bulk_mod,   ibegin);
+    double *mid_step_volume_ptr           = stk_classic::mesh::field_data( *Midstep_volume,          ibegin);
+    double *element_time_step_ptr         = stk_classic::mesh::field_data( *Element_time_step,       ibegin);
+    double *element_mass_ptr              = stk_classic::mesh::field_data( *Element_mass,            ibegin);
+    double *hg_energy_ptr                 = stk_classic::mesh::field_data( *Hourglass_energy,        ibegin);
+    double *internal_energy_ptr           = stk_classic::mesh::field_data (*Internal_energy,         ibegin);
+    double *shear_modulus_ptr             = stk_classic::mesh::field_data( *Shear_Modulus,           ibegin);
+    double *dilatational_modulus_ptr      = stk_classic::mesh::field_data( *Dilatational_Modulus,    ibegin );
 
-    double *rotation_old_ptr              = stk::mesh::field_data( *RotationOld,             ibegin);
-    double *rotation_new_ptr              = stk::mesh::field_data( *RotationNew,             ibegin);
+    double *rotation_old_ptr              = stk_classic::mesh::field_data( *RotationOld,             ibegin);
+    double *rotation_new_ptr              = stk_classic::mesh::field_data( *RotationNew,             ibegin);
 
-    double *stretch_ptr      = stk::mesh::field_data( *Stretch,  ibegin);
-    double *strain_rate_ptr  = stk::mesh::field_data( *StrainRate,  ibegin);
-    double *stress_old_ptr   = stk::mesh::field_data( *StressOld,  ibegin);
-    double *stress_new_ptr   = stk::mesh::field_data( *StressNew,  ibegin);
-    double *rotated_stress_ptr =  stk::mesh::field_data( *RotatedStress,  ibegin);
+    double *stretch_ptr      = stk_classic::mesh::field_data( *Stretch,  ibegin);
+    double *strain_rate_ptr  = stk_classic::mesh::field_data( *StrainRate,  ibegin);
+    double *stress_old_ptr   = stk_classic::mesh::field_data( *StressOld,  ibegin);
+    double *stress_new_ptr   = stk_classic::mesh::field_data( *StressNew,  ibegin);
+    double *rotated_stress_ptr =  stk_classic::mesh::field_data( *RotatedStress,  ibegin);
 
-    double *hg_resistance_old_ptr =  stk::mesh::field_data( *HourglassResistanceOld,  ibegin);
-    double *hg_resistance_new_ptr =  stk::mesh::field_data( *HourglassResistanceNew,  ibegin);
+    double *hg_resistance_old_ptr =  stk_classic::mesh::field_data( *HourglassResistanceOld,  ibegin);
+    double *hg_resistance_new_ptr =  stk_classic::mesh::field_data( *HourglassResistanceNew,  ibegin);
 
-    double *vorticity_ptr    =  stk::mesh::field_data( *Vorticity,  ibegin);
+    double *vorticity_ptr    =  stk_classic::mesh::field_data( *Vorticity,  ibegin);
 
     const double **coord    =
-      (const double **) stk::mesh::field_data( *coord_gather,     ibegin);
+      (const double **) stk_classic::mesh::field_data( *coord_gather,     ibegin);
     const double **velocity =
-      (const double **) stk::mesh::field_data( *velocity_gather,  ibegin);
-    double* force_new = stk::mesh::field_data( *force_new_field,  ibegin);
-   double **fint        = stk::mesh::field_data( *fint_gather,  ibegin);
-   int **fint_lock        = stk::mesh::field_data( *fint_lock_gather,  ibegin);
+      (const double **) stk_classic::mesh::field_data( *velocity_gather,  ibegin);
+    double* force_new = stk_classic::mesh::field_data( *force_new_field,  ibegin);
+   double **fint        = stk_classic::mesh::field_data( *fint_gather,  ibegin);
+   int **fint_lock        = stk_classic::mesh::field_data( *fint_lock_gather,  ibegin);
 
     const int num_elem_nodes = nodes_per_elem * num_elements ;
 
@@ -474,7 +474,7 @@ class MyHexInternalForceAlg3 {
 public:
   MyHexInternalForceAlg3(lame::matParams& matParameters, lame::MatProps& matProperties,
                          lame::Material* matModel,
-                         stk::mesh::MetaData& md, int max_bucket_size)
+                         stk_classic::mesh::MetaData& md, int max_bucket_size)
     : m_lock(0),
       hex_element(),
       materialParameters(matParameters),
@@ -521,54 +521,54 @@ public:
 
     MidHourglassOp = md.get_field<HourglassOpField>("mid_hourglass_operator");
 
-    coord_gather = md.get_field<stk::mesh::ElementNodePointerField>("coord_gather");
-    velocity_gather = md.get_field<stk::mesh::ElementNodePointerField>("velocity_gather");
-    fint_gather = md.get_field<stk::mesh::ElementNodePointerField>("fint_gather");
+    coord_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("coord_gather");
+    velocity_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("velocity_gather");
+    fint_gather = md.get_field<stk_classic::mesh::ElementNodePointerField>("fint_gather");
 
     force_new_field = md.get_field<ElementNodeVectorField>("force_new_field");
 
-    HourglassResistanceOld = &HourglassResistanceNew->field_of_state( stk::mesh::StateOld );
-    StressOld              = &StressNew->field_of_state( stk::mesh::StateOld );
-    RotationOld            = &RotationNew->field_of_state( stk::mesh::StateOld );
+    HourglassResistanceOld = &HourglassResistanceNew->field_of_state( stk_classic::mesh::StateOld );
+    StressOld              = &StressNew->field_of_state( stk_classic::mesh::StateOld );
+    RotationOld            = &RotationNew->field_of_state( stk_classic::mesh::StateOld );
   }
 
-//  void run(const stk::mesh::Bucket& bucket, int ibegin, int iend )
-  void operator()(const stk::mesh::Bucket::iterator & ibegin, const stk::mesh::Bucket::iterator iend )
+//  void run(const stk_classic::mesh::Bucket& bucket, int ibegin, int iend )
+  void operator()(const stk_classic::mesh::Bucket::iterator & ibegin, const stk_classic::mesh::Bucket::iterator iend )
   {
     enum { nodes_per_elem = 8, num_nodes_X_3 = 24 };
 
     const int num_elements = iend - ibegin;
-    double *mid_hg_op_ptr                 = stk::mesh::field_data( *MidHourglassOp,          ibegin);
-    double *material_eff_twomu_ptr        = stk::mesh::field_data( *Material_eff_twomu,      ibegin);
-    double *material_eff_bulk_modulus_ptr = stk::mesh::field_data( *Material_eff_bulk_mod,   ibegin);
-    double *mid_step_volume_ptr           = stk::mesh::field_data( *Midstep_volume,          ibegin);
-    double *element_time_step_ptr         = stk::mesh::field_data( *Element_time_step,       ibegin);
-    double *element_mass_ptr              = stk::mesh::field_data( *Element_mass,            ibegin);
-    double *hg_energy_ptr                 = stk::mesh::field_data( *Hourglass_energy,        ibegin);
-    double *internal_energy_ptr           = stk::mesh::field_data (*Internal_energy,         ibegin);
-    double *shear_modulus_ptr             = stk::mesh::field_data( *Shear_Modulus,           ibegin);
-    double *dilatational_modulus_ptr      = stk::mesh::field_data( *Dilatational_Modulus,    ibegin );
+    double *mid_hg_op_ptr                 = stk_classic::mesh::field_data( *MidHourglassOp,          ibegin);
+    double *material_eff_twomu_ptr        = stk_classic::mesh::field_data( *Material_eff_twomu,      ibegin);
+    double *material_eff_bulk_modulus_ptr = stk_classic::mesh::field_data( *Material_eff_bulk_mod,   ibegin);
+    double *mid_step_volume_ptr           = stk_classic::mesh::field_data( *Midstep_volume,          ibegin);
+    double *element_time_step_ptr         = stk_classic::mesh::field_data( *Element_time_step,       ibegin);
+    double *element_mass_ptr              = stk_classic::mesh::field_data( *Element_mass,            ibegin);
+    double *hg_energy_ptr                 = stk_classic::mesh::field_data( *Hourglass_energy,        ibegin);
+    double *internal_energy_ptr           = stk_classic::mesh::field_data (*Internal_energy,         ibegin);
+    double *shear_modulus_ptr             = stk_classic::mesh::field_data( *Shear_Modulus,           ibegin);
+    double *dilatational_modulus_ptr      = stk_classic::mesh::field_data( *Dilatational_Modulus,    ibegin );
 
-    double *rotation_old_ptr              = stk::mesh::field_data( *RotationOld,             ibegin);
-    double *rotation_new_ptr              = stk::mesh::field_data( *RotationNew,             ibegin);
+    double *rotation_old_ptr              = stk_classic::mesh::field_data( *RotationOld,             ibegin);
+    double *rotation_new_ptr              = stk_classic::mesh::field_data( *RotationNew,             ibegin);
 
-    double *stretch_ptr      = stk::mesh::field_data( *Stretch,  ibegin);
-    double *strain_rate_ptr  = stk::mesh::field_data( *StrainRate,  ibegin);
-    double *stress_old_ptr   = stk::mesh::field_data( *StressOld,  ibegin);
-    double *stress_new_ptr   = stk::mesh::field_data( *StressNew,  ibegin);
-    double *rotated_stress_ptr =  stk::mesh::field_data( *RotatedStress,  ibegin);
+    double *stretch_ptr      = stk_classic::mesh::field_data( *Stretch,  ibegin);
+    double *strain_rate_ptr  = stk_classic::mesh::field_data( *StrainRate,  ibegin);
+    double *stress_old_ptr   = stk_classic::mesh::field_data( *StressOld,  ibegin);
+    double *stress_new_ptr   = stk_classic::mesh::field_data( *StressNew,  ibegin);
+    double *rotated_stress_ptr =  stk_classic::mesh::field_data( *RotatedStress,  ibegin);
 
-    double *hg_resistance_old_ptr =  stk::mesh::field_data( *HourglassResistanceOld,  ibegin);
-    double *hg_resistance_new_ptr =  stk::mesh::field_data( *HourglassResistanceNew,  ibegin);
+    double *hg_resistance_old_ptr =  stk_classic::mesh::field_data( *HourglassResistanceOld,  ibegin);
+    double *hg_resistance_new_ptr =  stk_classic::mesh::field_data( *HourglassResistanceNew,  ibegin);
 
-    double *vorticity_ptr    =  stk::mesh::field_data( *Vorticity,  ibegin);
+    double *vorticity_ptr    =  stk_classic::mesh::field_data( *Vorticity,  ibegin);
 
     const double **coord    =
-      (const double **) stk::mesh::field_data( *coord_gather,     ibegin);
+      (const double **) stk_classic::mesh::field_data( *coord_gather,     ibegin);
     const double **velocity =
-      (const double **) stk::mesh::field_data( *velocity_gather,  ibegin);
-    double* force_new = stk::mesh::field_data( *force_new_field,  ibegin);
-    double **fint        = stk::mesh::field_data( *fint_gather,  ibegin);
+      (const double **) stk_classic::mesh::field_data( *velocity_gather,  ibegin);
+    double* force_new = stk_classic::mesh::field_data( *force_new_field,  ibegin);
+    double **fint        = stk_classic::mesh::field_data( *fint_gather,  ibegin);
 
     const int num_elem_nodes = nodes_per_elem * num_elements ;
 
@@ -737,7 +737,7 @@ bool use_case_14a_driver(MPI_Comm comm,
 {
   bool output = !performance_test; // If running for performance measurements, turn off output
 
-  if (stk::parallel_machine_rank(comm) == 0) {
+  if (stk_classic::parallel_machine_rank(comm) == 0) {
     std::cout << " stk_mesh Use Case #14a - element internal force, begin" << std::endl ;
   }
 
@@ -747,17 +747,17 @@ bool use_case_14a_driver(MPI_Comm comm,
   const AlgorithmRunnerInterface* alg_runner = NULL ;
   if ( thread_runner.empty() ||
        thread_runner == std::string("NonThreaded") ) {
-    alg_runner = stk::algorithm_runner_non_thread();
+    alg_runner = stk_classic::algorithm_runner_non_thread();
   }
   else if ( thread_runner == std::string("TPI") ) {
-    alg_runner = stk::algorithm_runner_tpi(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tpi(num_threads);
   }
   else if ( thread_runner == std::string("TBB") ) {
-    alg_runner = stk::algorithm_runner_tbb(num_threads);
+    alg_runner = stk_classic::algorithm_runner_tbb(num_threads);
   }
 
   if (alg_runner != NULL) {
-    if (stk::parallel_machine_rank(comm) == 0)
+    if (stk_classic::parallel_machine_rank(comm) == 0)
       std::cout << "Using " << thread_runner << " algorithm runner, num_threads = " << num_threads << std::endl;
   } else {
     std::cout << "ERROR, failed to obtain requested AlgorithmRunner '" << thread_runner << "'." << std::endl;
@@ -806,8 +806,8 @@ bool use_case_14a_driver(MPI_Comm comm,
   materialParameters.dt = dt;
 
   // Timing:
-  //   [0] = stk::mesh::MetaData creation
-  //   [1] = stk::mesh::BulkData creation
+  //   [0] = stk_classic::mesh::MetaData creation
+  //   [1] = stk_classic::mesh::BulkData creation
   //   [2] = Initialization
   //   [3] = Internal force
   //   [4] = Parallel swap-add of internal force
@@ -820,9 +820,9 @@ bool use_case_14a_driver(MPI_Comm comm,
 
   reset_malloc_stats();
 
-  if ( 0 == stk::parallel_machine_rank( comm ) ) {
+  if ( 0 == stk_classic::parallel_machine_rank( comm ) ) {
     std::cout << "stk_mesh performance use case #14a" << std::endl
-              << "  Number Processes = " << stk::parallel_machine_size( comm )
+              << "  Number Processes = " << stk_classic::parallel_machine_size( comm )
               << std::endl ;
     std::cout.flush();
   }
@@ -834,48 +834,48 @@ bool use_case_14a_driver(MPI_Comm comm,
   Ioss::Init::Initializer init_db;
 
   {
-    wtime = stk::wall_time();
+    wtime = stk_classic::wall_time();
 
     //------------------------------------------------------------------
     // Declare the mesh meta data: element blocks and associated fields
 
-    stk::mesh::fem::FEMMetaData meta_data( SpatialDim );
-    stk::io::MeshData mesh_data;
+    stk_classic::mesh::fem::FEMMetaData meta_data( SpatialDim );
+    stk_classic::io::MeshData mesh_data;
     std::string filename = working_directory + mesh_filename;
-    stk::io::create_input_mesh(mesh_type, filename, comm,
+    stk_classic::io::create_input_mesh(mesh_type, filename, comm,
 			       meta_data, mesh_data);
-    stk::io::define_input_fields(mesh_data, meta_data);
+    stk_classic::io::define_input_fields(mesh_data, meta_data);
 
-    stk::mesh::Part & universal              = meta_data.universal_part();
-    const stk::mesh::EntityRank node_rank    = meta_data.node_rank();
-    const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+    stk_classic::mesh::Part & universal              = meta_data.universal_part();
+    const stk_classic::mesh::EntityRank node_rank    = meta_data.node_rank();
+    const stk_classic::mesh::EntityRank element_rank = meta_data.element_rank();
     // Nodal vector fields
-    CartesianField &model_coordinates  = stk::mesh::put_field(meta_data.declare_field<CartesianField>("coordinates"), 
+    CartesianField &model_coordinates  = stk_classic::mesh::put_field(meta_data.declare_field<CartesianField>("coordinates"), 
                                                                                        node_rank, universal, SpatialDim);
-    CartesianField &coordinates_field  = stk::mesh::put_field(meta_data.declare_field<CartesianField>("current_coordinates"), 
+    CartesianField &coordinates_field  = stk_classic::mesh::put_field(meta_data.declare_field<CartesianField>("current_coordinates"), 
                                                                                        node_rank, universal, SpatialDim);
-    CartesianField &velocity_field     = stk::mesh::put_field(meta_data.declare_field<CartesianField>("velocity"),    
+    CartesianField &velocity_field     = stk_classic::mesh::put_field(meta_data.declare_field<CartesianField>("velocity"),    
                                                                                        node_rank, universal, SpatialDim);
-    CartesianField &fint_field         = stk::mesh::put_field(meta_data.declare_field<CartesianField>("force_internal"), 
+    CartesianField &fint_field         = stk_classic::mesh::put_field(meta_data.declare_field<CartesianField>("force_internal"), 
                                                                                        node_rank, universal, SpatialDim);
 
-    ScalarIntField &fint_lock_field    = stk::mesh::put_field(meta_data.declare_field<ScalarIntField>("force_internal_lock"),
+    ScalarIntField &fint_lock_field    = stk_classic::mesh::put_field(meta_data.declare_field<ScalarIntField>("force_internal_lock"),
                                                                                        node_rank, universal);
 
     // Element vector fields:
-    CartesianField &Vorticity          = stk::mesh::put_field(meta_data.declare_field<CartesianField>("Vorticity"), 
+    CartesianField &Vorticity          = stk_classic::mesh::put_field(meta_data.declare_field<CartesianField>("Vorticity"), 
                                                                                        element_rank, universal, SpatialDim);
 
     // Element scalar fields:
-    ScalarField &Shear_Modulus         = stk::mesh::put_field(meta_data.declare_field<ScalarField>("shear_modulus" ), element_rank, universal);
-    ScalarField &Dilatational_Modulus  = stk::mesh::put_field(meta_data.declare_field<ScalarField>("dilatational_modulus"), element_rank, universal);
-    ScalarField &Material_eff_twomu    = stk::mesh::put_field(meta_data.declare_field<ScalarField>("material_effictive_two_mu"), element_rank, universal);
-    ScalarField &Material_eff_bulk_mod = stk::mesh::put_field(meta_data.declare_field<ScalarField>("material_effective_bulk_moduli"), element_rank, universal);
-    ScalarField &Midstep_volume        = stk::mesh::put_field(meta_data.declare_field<ScalarField>("mid_step_volume"), element_rank, universal);
-                                         stk::mesh::put_field(meta_data.declare_field<ScalarField>("element_time_step"), element_rank, universal);
-    ScalarField &Element_mass          = stk::mesh::put_field(meta_data.declare_field<ScalarField>("element_mass"), element_rank, universal);
-    ScalarField &Hourglass_energy      = stk::mesh::put_field(meta_data.declare_field<ScalarField>("hourglass_energy"), element_rank, universal);
-    ScalarField &Internal_energy       = stk::mesh::put_field(meta_data.declare_field<ScalarField>("internal_energy"), element_rank, universal);
+    ScalarField &Shear_Modulus         = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("shear_modulus" ), element_rank, universal);
+    ScalarField &Dilatational_Modulus  = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("dilatational_modulus"), element_rank, universal);
+    ScalarField &Material_eff_twomu    = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("material_effictive_two_mu"), element_rank, universal);
+    ScalarField &Material_eff_bulk_mod = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("material_effective_bulk_moduli"), element_rank, universal);
+    ScalarField &Midstep_volume        = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("mid_step_volume"), element_rank, universal);
+                                         stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("element_time_step"), element_rank, universal);
+    ScalarField &Element_mass          = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("element_mass"), element_rank, universal);
+    ScalarField &Hourglass_energy      = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("hourglass_energy"), element_rank, universal);
+    ScalarField &Internal_energy       = stk_classic::mesh::put_field(meta_data.declare_field<ScalarField>("internal_energy"), element_rank, universal);
 
     // Element symmetric tensor fields:
     SymmetricTensorField &Stretch      = declare_symmetric_tensor_field_on_all_elements(meta_data, "stretch",    6 );
@@ -961,73 +961,73 @@ bool use_case_14a_driver(MPI_Comm comm,
 
     //------------------------------------------------------------------
 
-    time_max[0] = stk::wall_dtime( wtime );
+    time_max[0] = stk_classic::wall_dtime( wtime );
 
     //------------------------------------------------------------------
-    // stk::mesh::BulkData bulk data conforming to the meta data.
-    stk::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data) , comm, max_entity_per_bucket);
-    stk::io::populate_bulk_data(bulk_data, mesh_data);
+    // stk_classic::mesh::BulkData bulk data conforming to the meta data.
+    stk_classic::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data) , comm, max_entity_per_bucket);
+    stk_classic::io::populate_bulk_data(bulk_data, mesh_data);
 
     //------------------------------------------------------------------
     // Create output mesh...  (input filename + ".out14")
     if (output) {
       filename = working_directory + mesh_filename + ".out14a";
-      stk::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
-      stk::io::define_output_fields(mesh_data, meta_data, true);
+      stk_classic::io::create_output_mesh(filename, comm, bulk_data, mesh_data);
+      stk_classic::io::define_output_fields(mesh_data, meta_data, true);
     }
 
-    stk::app::use_case_14_initialize_nodal_data(bulk_data ,
+    stk_classic::app::use_case_14_initialize_nodal_data(bulk_data ,
 						model_coordinates ,
 						coordinates_field ,
 						velocity_field, dt);
 
-    time_max[1] = stk::wall_dtime( wtime );
+    time_max[1] = stk_classic::wall_dtime( wtime );
 
     //------------------------------------------------------------------
     // Ready to run the algorithms:
     //------------------------------------------------------------------
 
-    const std::vector< stk::mesh::Bucket * >
+    const std::vector< stk_classic::mesh::Bucket * >
       & element_buckets = bulk_data.buckets( get_element_rank(meta_data) );
 
-    stk::mesh::Selector
-      select_owned_buckets( stk::mesh::MetaData::get(bulk_data).locally_owned_part() );
+    stk_classic::mesh::Selector
+      select_owned_buckets( stk_classic::mesh::MetaData::get(bulk_data).locally_owned_part() );
 
     size_t maximum_bucket_size = 0 ;
     size_t minimum_bucket_size = INT_MAX ;
 
-    for ( std::vector< stk::mesh::Bucket * >::const_iterator
+    for ( std::vector< stk_classic::mesh::Bucket * >::const_iterator
           k = element_buckets.begin(); k != element_buckets.end() ; ++k )
       if ( select_owned_buckets( **k ) ) {
-        const stk::mesh::Bucket & bucket = **k ;
+        const stk_classic::mesh::Bucket & bucket = **k ;
         if ( maximum_bucket_size < bucket.size() ) { maximum_bucket_size = bucket.size(); }
         if ( minimum_bucket_size > bucket.size() ) { minimum_bucket_size = bucket.size(); }
     }
 
     // Need both the the old and new states of these two-state fields:
 
-    HourglassArrayField  & HourglassResistanceOld = HourglassResistanceNew.field_of_state( stk::mesh::StateOld );
-    SymmetricTensorField & StressOld              = StressNew.field_of_state( stk::mesh::StateOld );
-    FullTensorField      & RotationOld            = RotationNew.field_of_state( stk::mesh::StateOld );
+    HourglassArrayField  & HourglassResistanceOld = HourglassResistanceNew.field_of_state( stk_classic::mesh::StateOld );
+    SymmetricTensorField & StressOld              = StressNew.field_of_state( stk_classic::mesh::StateOld );
+    FullTensorField      & RotationOld            = RotationNew.field_of_state( stk_classic::mesh::StateOld );
 
-    for ( std::vector< stk::mesh::Bucket * >::const_iterator
+    for ( std::vector< stk_classic::mesh::Bucket * >::const_iterator
             k = element_buckets.begin(); k != element_buckets.end() ; ++k ) if ( select_owned_buckets( **k ) ) {
-      const stk::mesh::Bucket & bucket = **k ;
+      const stk_classic::mesh::Bucket & bucket = **k ;
 
       const int num_elements = bucket.size();
 
-      double * stretch        = stk::mesh::field_data( Stretch,    bucket.begin() );
-      double * strain_rate    = stk::mesh::field_data( StrainRate, bucket.begin() );
-      double * stress_new     = stk::mesh::field_data( StressNew,  bucket.begin() );
-      double * stress_old     = stk::mesh::field_data( StressOld , bucket.begin() );
-      double * rotated_stress = stk::mesh::field_data( RotatedStress , bucket.begin() );
-      double * rotation_old   = stk::mesh::field_data( RotationOld , bucket.begin() );
-      double * rotation_new   = stk::mesh::field_data( RotationNew , bucket.begin() );
-      double * mass           = stk::mesh::field_data( Element_mass , bucket.begin() );
-      double * hg_old         = stk::mesh::field_data( HourglassResistanceOld , bucket.begin() );
-      double * hg_new         = stk::mesh::field_data( HourglassResistanceNew , bucket.begin() );
-      double * vorticity_ptr  = stk::mesh::field_data( Vorticity, bucket.begin());
-      double * mid_hg_op_ptr  = stk::mesh::field_data( MidHourglassOp, bucket.begin());
+      double * stretch        = stk_classic::mesh::field_data( Stretch,    bucket.begin() );
+      double * strain_rate    = stk_classic::mesh::field_data( StrainRate, bucket.begin() );
+      double * stress_new     = stk_classic::mesh::field_data( StressNew,  bucket.begin() );
+      double * stress_old     = stk_classic::mesh::field_data( StressOld , bucket.begin() );
+      double * rotated_stress = stk_classic::mesh::field_data( RotatedStress , bucket.begin() );
+      double * rotation_old   = stk_classic::mesh::field_data( RotationOld , bucket.begin() );
+      double * rotation_new   = stk_classic::mesh::field_data( RotationNew , bucket.begin() );
+      double * mass           = stk_classic::mesh::field_data( Element_mass , bucket.begin() );
+      double * hg_old         = stk_classic::mesh::field_data( HourglassResistanceOld , bucket.begin() );
+      double * hg_new         = stk_classic::mesh::field_data( HourglassResistanceNew , bucket.begin() );
+      double * vorticity_ptr  = stk_classic::mesh::field_data( Vorticity, bucket.begin());
+      double * mid_hg_op_ptr  = stk_classic::mesh::field_data( MidHourglassOp, bucket.begin());
 
       std::fill(strain_rate,    strain_rate    +  6*num_elements, 0.0);
       std::fill(stress_new,     stress_new     +  6*num_elements, 0.0);
@@ -1074,22 +1074,22 @@ bool use_case_14a_driver(MPI_Comm comm,
         rotation_new += 9;
       }
     }
-    if (stk::parallel_machine_rank(comm) == 0)
+    if (stk_classic::parallel_machine_rank(comm) == 0)
       std::cout << "KHP: Done element field init\n";
 
-    for ( std::vector< stk::mesh::Bucket * >::const_iterator
+    for ( std::vector< stk_classic::mesh::Bucket * >::const_iterator
             k = element_buckets.begin(); k != element_buckets.end() ; ++k ) if ( select_owned_buckets( **k ) ) {
-      const stk::mesh::Bucket & bucket = **k ;
+      const stk_classic::mesh::Bucket & bucket = **k ;
 
       const unsigned num_elements = bucket.size();
 
-      double * const sm = stk::mesh::field_data( Shear_Modulus , bucket.begin() );
-      double * const dm = stk::mesh::field_data( Dilatational_Modulus , bucket.begin() );
-      double * const twomu = stk::mesh::field_data( Material_eff_twomu , bucket.begin() );
-      double * const bulk = stk::mesh::field_data( Material_eff_bulk_mod , bucket.begin() );
-      double * const mv = stk::mesh::field_data( Midstep_volume , bucket.begin() );
-      double * const hg_energy = stk::mesh::field_data( Hourglass_energy , bucket.begin() );
-      double * const internal_energy = stk::mesh::field_data( Internal_energy , bucket.begin() );
+      double * const sm = stk_classic::mesh::field_data( Shear_Modulus , bucket.begin() );
+      double * const dm = stk_classic::mesh::field_data( Dilatational_Modulus , bucket.begin() );
+      double * const twomu = stk_classic::mesh::field_data( Material_eff_twomu , bucket.begin() );
+      double * const bulk = stk_classic::mesh::field_data( Material_eff_bulk_mod , bucket.begin() );
+      double * const mv = stk_classic::mesh::field_data( Midstep_volume , bucket.begin() );
+      double * const hg_energy = stk_classic::mesh::field_data( Hourglass_energy , bucket.begin() );
+      double * const internal_energy = stk_classic::mesh::field_data( Internal_energy , bucket.begin() );
 
       std::fill(sm,              sm+num_elements,           SM);
       std::fill(dm,              dm+num_elements,           DM);
@@ -1100,13 +1100,13 @@ bool use_case_14a_driver(MPI_Comm comm,
       std::fill(internal_energy, internal_energy+num_elements, 0.0);
     }
 
-    zero_field_data( bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK , fint_lock_field );
+    zero_field_data( bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , fint_lock_field );
 
     //------------------------------------------------------------------
-    time_max[2] = stk::wall_dtime( wtime );
+    time_max[2] = stk_classic::wall_dtime( wtime );
     //------------------------------------------------------------------
 
-    wtime = stk::wall_time();
+    wtime = stk_classic::wall_time();
 
     MyHexInternalForceAlg2 elem_alg(materialParameters, materialProperties, matmodel,
                                     meta_data.get_meta_data(meta_data), maximum_bucket_size);
@@ -1118,23 +1118,23 @@ bool use_case_14a_driver(MPI_Comm comm,
       // Call Internal Force!!!
       //
 
-      wtime = stk::wall_time();
+      wtime = stk_classic::wall_time();
 
       // Need to zero out the old accumulated internal force so that it
       // does not pollute the new accumulation.
-      zero_field_data( bulk_data , stk::mesh::fem::FEMMetaData::NODE_RANK , fint_field );
+      zero_field_data( bulk_data , stk_classic::mesh::fem::FEMMetaData::NODE_RANK , fint_field );
 
       mesh::PartVector empty_union_vector;
       alg_runner->run( select_owned_buckets , empty_union_vector, element_buckets , elem_alg );
 
-      time_max[3] += stk::wall_dtime( wtime );
+      time_max[3] += stk_classic::wall_dtime( wtime );
 
-      stk::mesh::parallel_reduce( bulk_data , stk::mesh::sum(fint_field) );
+      stk_classic::mesh::parallel_reduce( bulk_data , stk_classic::mesh::sum(fint_field) );
 
-      time_max[4] += stk::wall_dtime( wtime );
+      time_max[4] += stk_classic::wall_dtime( wtime );
 
       if (output) {
-        stk::io::process_output_request(mesh_data, bulk_data, n);
+        stk_classic::io::process_output_request(mesh_data, bulk_data, n);
       }
 
     }//end for(..num_trials...
@@ -1156,7 +1156,7 @@ bool use_case_14a_driver(MPI_Comm comm,
     //------------------------------------------------------------------
   }
 
-  time_max[8] = stk::wall_dtime( wtime );
+  time_max[8] = stk_classic::wall_dtime( wtime );
 
   time_min[0] = time_max[0] ;
   time_min[1] = time_max[1] ;
@@ -1168,7 +1168,7 @@ bool use_case_14a_driver(MPI_Comm comm,
   time_min[7] = time_max[7] ;
   time_min[8] = time_max[8] ;
 
-  stk::all_reduce( comm , stk::ReduceMax<9>( time_max ) & stk::ReduceMin<9>( time_min ) );
+  stk_classic::all_reduce( comm , stk_classic::ReduceMax<9>( time_max ) & stk_classic::ReduceMin<9>( time_min ) );
 
   time_max[3] /= num_trials ;
   time_max[4] /= num_trials ;
@@ -1180,12 +1180,12 @@ bool use_case_14a_driver(MPI_Comm comm,
   time_min[5] /= num_trials ;
   time_min[6] /= num_trials ;
 
-  //   [0] = stk::mesh::MetaData creation
-  //   [1] = stk::mesh::BulkData creation
+  //   [0] = stk_classic::mesh::MetaData creation
+  //   [1] = stk_classic::mesh::BulkData creation
   //   [2] = Initialization
   //   [3] = Internal force
 
-  if ( ! stk::parallel_machine_rank( comm ) ) {
+  if ( ! stk_classic::parallel_machine_rank( comm ) ) {
     std::cout
       << "stk_mesh performance use case results:" << std::endl
       << "  Number trials       = " << num_trials << std::endl

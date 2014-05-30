@@ -18,7 +18,7 @@
 #include <stk_util/parallel/ParallelComm.hpp>
 #include <stk_util/util/PairIter.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace util {
 
 template <class K, class P>

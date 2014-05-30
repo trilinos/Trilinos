@@ -13,7 +13,7 @@
 
 #include <stk_util/environment/RuntimeMessage.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 typedef std::ostream &(*OStreamFunctionPtr)(std::ostream &);
 typedef std::ios_base &(*IOSBaseFunctionPtr)(std::ios_base &);

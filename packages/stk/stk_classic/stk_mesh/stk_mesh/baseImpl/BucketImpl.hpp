@@ -18,7 +18,7 @@
 #include <boost/pool/pool_alloc.hpp>
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace impl {
 

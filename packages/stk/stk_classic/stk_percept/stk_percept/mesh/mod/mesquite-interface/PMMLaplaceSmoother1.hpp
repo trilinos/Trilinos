@@ -44,7 +44,7 @@
 // Owner         : Steve Owen
 //-------------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
 
     class PMMLaplaceSmoother1 : public Mesquite::LaplaceWrapper

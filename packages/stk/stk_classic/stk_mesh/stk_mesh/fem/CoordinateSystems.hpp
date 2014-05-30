@@ -14,7 +14,7 @@
 
 #include <Shards_Array.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /** \addtogroup stk_mesh_field_dimension_tags
@@ -27,7 +27,7 @@ namespace mesh {
  * have the freedom to define their own ArrayDimTags as well.
  *
  * Example use of Cartesian ArrayDimTag to create a field type:
- *   stk::mesh::Field<double, stk::mesh::Cartesian>
+ *   stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>
  */
 
 SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( SimpleArrayTag )

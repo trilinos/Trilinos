@@ -16,7 +16,7 @@
 #include <stk_adapt/sierra_element/RefinementKey.hpp>
 #include <stk_adapt/sierra_element/CellTopology.hpp>
 
-namespace stk { namespace adapt {
+namespace stk_classic { namespace adapt {
   namespace Elem {
 
     class MeshObjTopology;

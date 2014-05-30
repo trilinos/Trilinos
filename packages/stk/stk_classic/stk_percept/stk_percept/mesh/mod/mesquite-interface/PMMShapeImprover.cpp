@@ -10,7 +10,7 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
     using namespace Mesquite;
 
@@ -221,7 +221,7 @@ namespace stk {
       //q.remove_quality_assessor( 0, err ); MSQ_ERRZERO(err);
       const QualityAssessor::Assessor* inv_b = inv_check.get_results( &metric );
       int num_invalid = inv_b->get_invalid_element_count();
-      stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceSum<1>( &num_invalid ) );
       
       return num_invalid;
     }

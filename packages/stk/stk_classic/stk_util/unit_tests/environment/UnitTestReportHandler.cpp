@@ -44,21 +44,21 @@ test_report_handler(
 STKUNIT_UNIT_TEST(UnitTestReportHandler, UnitTest)
 {
   // Set and restore report handler.
-  stk::report("This is a test", 0);
+  stk_classic::report("This is a test", 0);
 
-  stk::REH original_reh = stk::set_report_handler(test_report_handler);
+  stk_classic::REH original_reh = stk_classic::set_report_handler(test_report_handler);
 
-  stk::report("This is a test", 0);
+  stk_classic::report("This is a test", 0);
   
-  stk::set_report_handler(original_reh);
+  stk_classic::set_report_handler(original_reh);
 
-  STKUNIT_ASSERT_THROW(stk::set_report_handler(0), std::runtime_error);
+  STKUNIT_ASSERT_THROW(stk_classic::set_report_handler(0), std::runtime_error);
   
   STKUNIT_ASSERT_EQUAL((std::string("Message type 0: This is a test\n") == test_ostringstream().str()), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Test.cpp") == stk::source_relative_path("/src/Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Test.hpp") == stk::source_relative_path("/include/Test.hpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("Apps_Test.cpp") == stk::source_relative_path("/Apps_Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("stk_Test.cpp") == stk::source_relative_path("/stk_Test.cpp")), true);
-  STKUNIT_ASSERT_EQUAL((std::string("/smile/Test.cpp") == stk::source_relative_path("/smile/Test.cpp")), true);
+  STKUNIT_ASSERT_EQUAL((std::string("Test.cpp") == stk_classic::source_relative_path("/src/Test.cpp")), true);
+  STKUNIT_ASSERT_EQUAL((std::string("Test.hpp") == stk_classic::source_relative_path("/include/Test.hpp")), true);
+  STKUNIT_ASSERT_EQUAL((std::string("Apps_Test.cpp") == stk_classic::source_relative_path("/Apps_Test.cpp")), true);
+  STKUNIT_ASSERT_EQUAL((std::string("stk_Test.cpp") == stk_classic::source_relative_path("/stk_Test.cpp")), true);
+  STKUNIT_ASSERT_EQUAL((std::string("/smile/Test.cpp") == stk_classic::source_relative_path("/smile/Test.cpp")), true);
 }
 

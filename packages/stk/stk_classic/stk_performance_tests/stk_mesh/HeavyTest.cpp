@@ -31,12 +31,12 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
   // This test uses IO_Fixture to conveniently get a usable mesh from
   // an exodus file.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
 
-  const size_t p_size = stk::parallel_machine_size(pm);
-  const size_t p_rank = stk::parallel_machine_rank(pm);
+  const size_t p_size = stk_classic::parallel_machine_size(pm);
+  const size_t p_rank = stk_classic::parallel_machine_rank(pm);
 
-  stk::io::util::IO_Fixture fixture(pm);
+  stk_classic::io::util::IO_Fixture fixture(pm);
 
   // Test constants:
 
@@ -80,59 +80,59 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   // time meta_data initialize
   {
-    double start_time = stk::wall_time();
+    double start_time = stk_classic::wall_time();
     fixture.initialize_meta_data( input_base_filename, "exodusii" );
-    timings[INIT_META_DATA_PHASE_ID] = stk::wall_dtime(start_time);
+    timings[INIT_META_DATA_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
   // Commit meta_data
-  stk::mesh::fem::FEMMetaData & meta_data = fixture.meta_data();
+  stk_classic::mesh::fem::FEMMetaData & meta_data = fixture.meta_data();
   meta_data.commit();
 
   // time bulk_data initialize
   {
-    double start_time = stk::wall_time();
+    double start_time = stk_classic::wall_time();
     fixture.initialize_bulk_data();
-    timings[INIT_BULK_DATA_PHASE_ID] = stk::wall_dtime(start_time);
+    timings[INIT_BULK_DATA_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
-  stk::mesh::BulkData & bulk_data = fixture.bulk_data();
+  stk_classic::mesh::BulkData & bulk_data = fixture.bulk_data();
 
   // time rebalance bulk_data
   {
     Teuchos::ParameterList emptyList;
-    stk::rebalance::Zoltan zoltan_partition(pm, meta_data.spatial_dimension(), emptyList);
-    stk::mesh::Selector selector(meta_data.locally_owned_part());
+    stk_classic::rebalance::Zoltan zoltan_partition(pm, meta_data.spatial_dimension(), emptyList);
+    stk_classic::mesh::Selector selector(meta_data.locally_owned_part());
 
-    double start_time = stk::wall_time();
-    stk::rebalance::rebalance(bulk_data,
+    double start_time = stk_classic::wall_time();
+    stk_classic::rebalance::rebalance(bulk_data,
                               selector,
                               &fixture.get_coordinate_field(),
                               NULL /*weight field*/,
                               zoltan_partition);
-    timings[REBALANCE_PHASE_ID] = stk::wall_dtime(start_time);
+    timings[REBALANCE_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
   // time skin bulk_data
   {
-    double start_time = stk::wall_time();
-    stk::mesh::skin_mesh( bulk_data, meta_data.spatial_dimension());
-    timings[SKIN_MESH_PHASE_ID] = stk::wall_dtime(start_time);
+    double start_time = stk_classic::wall_time();
+    stk_classic::mesh::skin_mesh( bulk_data, meta_data.spatial_dimension());
+    timings[SKIN_MESH_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
   // time exodus file creation
   {
-    double start_time = stk::wall_time();
+    double start_time = stk_classic::wall_time();
     fixture.create_output_mesh( output_base_filename, "exodusii" );
-    timings[EXODUS_CREATE_PHASE_ID] = stk::wall_dtime(start_time);
+    timings[EXODUS_CREATE_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
   // time process output
   {
     double time_step = 0;
-    double start_time = stk::wall_time();
+    double start_time = stk_classic::wall_time();
     fixture.add_timestep_to_output_mesh( time_step );
-    timings[PROCESS_OUTPUT_PHASE_ID] = stk::wall_dtime(start_time);
+    timings[PROCESS_OUTPUT_PHASE_ID] = stk_classic::wall_dtime(start_time);
   }
 
   // Sum times:
@@ -144,10 +144,10 @@ STKUNIT_UNIT_TEST( HeavyTest, heavytest )
 
   // Now process and print times, we print in XML to make parsing easier
   {
-    stk::all_reduce(pm, stk::ReduceMax<NUM_PHASES+1>(&timings[0]));
+    stk_classic::all_reduce(pm, stk_classic::ReduceMax<NUM_PHASES+1>(&timings[0]));
 
     std::vector<size_t> counts ;
-    stk::mesh::fem::comm_mesh_counts( bulk_data , counts);
+    stk_classic::mesh::fem::comm_mesh_counts( bulk_data , counts);
 
     if (p_rank == 0) {
       std::cout << "\n\n";

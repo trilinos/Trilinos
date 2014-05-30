@@ -45,10 +45,10 @@ namespace {
   [ save as animation with 60fps ]
 **/
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-typedef stk::mesh::fixtures::GearsFixture::CartesianField CartesianField;
-typedef stk::mesh::Field<int> IntField;
+typedef stk_classic::mesh::fixtures::GearsFixture::CartesianField CartesianField;
+typedef stk_classic::mesh::Field<int> IntField;
 
 //
 //-----------------------------------------------------------------------------
@@ -61,10 +61,10 @@ typedef stk::mesh::Field<int> IntField;
 // if do_separate_wedge == true then wedge must be nonnull pointer
 void separate_wedge(
     bool do_separate_wedge,
-    stk::mesh::fixtures::GearsFixture   & fixture,
-    stk::mesh::Entity * wedge,
+    stk_classic::mesh::fixtures::GearsFixture   & fixture,
+    stk_classic::mesh::Entity * wedge,
     CartesianField & velocity_field,
-    stk::mesh::Part & skin_part
+    stk_classic::mesh::Part & skin_part
     )
 {
   // Parallel collective call:
@@ -73,7 +73,7 @@ void separate_wedge(
   // Request new nodes
   const size_t num_nodes_per_wedge = 6;
   const size_t spatial_dim = fixture.meta_data.spatial_dimension();
-  stk::mesh::EntityVector new_nodes;
+  stk_classic::mesh::EntityVector new_nodes;
 
   std::vector<size_t> requests(fixture.meta_data.entity_rank_count(), 0);
   if (do_separate_wedge) {
@@ -88,19 +88,19 @@ void separate_wedge(
   if (do_separate_wedge) {
 
     // Remove wedge from cylidrical_coord_part
-    stk::mesh::PartVector empty_parts, remove_parts;
+    stk_classic::mesh::PartVector empty_parts, remove_parts;
     remove_parts.push_back(& fixture.cylindrical_coord_part);
     fixture.bulk_data.change_entity_parts(*wedge, empty_parts, remove_parts);
 
     // Replace wedge's nodes with new nodes because any nodes shared with other
     // entities cannot be taken along with the separated wedge. As a
     // simplification, we simply leave all the old nodes behind.
-    stk::mesh::PairIterRelation relations = wedge->relations(NODE_RANK);
+    stk_classic::mesh::PairIterRelation relations = wedge->relations(NODE_RANK);
     ThrowRequire(relations.size() == num_nodes_per_wedge);
 
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & old_node = *(relations[ i ].entity());
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk_classic::mesh::Entity & old_node = *(relations[ i ].entity());
+      stk_classic::mesh::Entity & new_node = *(new_nodes[i]);
 
       fixture.bulk_data.destroy_relation(*wedge, old_node, i);
       fixture.bulk_data.declare_relation(*wedge, new_node, i);
@@ -113,12 +113,12 @@ void separate_wedge(
     // all the nodes to have the same velocity; otherwise, the wedge will stretch
     std::vector<double> avg_velocity_data(spatial_dim, 0);
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk_classic::mesh::Entity & new_node = *(new_nodes[i]);
       const double * const new_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), new_node);
+        stk_classic::mesh::field_data( fixture.displacement_field.field_of_state(stk_classic::mesh::StateNew), new_node);
 
       const double * const old_displacement_data =
-        stk::mesh::field_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), new_node);
+        stk_classic::mesh::field_data( fixture.displacement_field.field_of_state(stk_classic::mesh::StateOld), new_node);
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         avg_velocity_data[k] += new_displacement_data[k] - old_displacement_data[k];
@@ -132,9 +132,9 @@ void separate_wedge(
 
     const double detached_wedge_speedup_multiplier = 1.1;
     for (size_t i = 0; i < num_nodes_per_wedge; ++i) {
-      stk::mesh::Entity & new_node = *(new_nodes[i]);
+      stk_classic::mesh::Entity & new_node = *(new_nodes[i]);
       double * const velocity_data =
-        stk::mesh::field_data( velocity_field , new_node );
+        stk_classic::mesh::field_data( velocity_field , new_node );
 
       for (size_t k=0 ; k < spatial_dim ; ++k) {
         velocity_data[k] = detached_wedge_speedup_multiplier*avg_velocity_data[k];
@@ -147,7 +147,7 @@ void separate_wedge(
   fixture.bulk_data.modification_end();
 
   // Parallel collective call:
-  stk::mesh::skin_mesh( fixture.bulk_data, fixture.element_rank, &skin_part);
+  stk_classic::mesh::skin_mesh( fixture.bulk_data, fixture.element_rank, &skin_part);
 
   // Parallel collective call:
   fixture.communicate_model_fields();
@@ -163,20 +163,20 @@ void separate_wedge(
  * in the wedges argument.
  */
 void find_and_shuffle_wedges_to_separate(
-    stk::mesh::fixtures::GearsFixture & fixture,
-    stk::mesh::EntityVector & wedges
+    stk_classic::mesh::fixtures::GearsFixture & fixture,
+    stk_classic::mesh::EntityVector & wedges
     )
 {
   // Get all wedges still attached to the cylinder and shuffle them.
 
-  stk::mesh::Selector select_wedge =
+  stk_classic::mesh::Selector select_wedge =
     fixture.cylindrical_coord_part &
     fixture.wedge_part &
     fixture.meta_data.locally_owned_part();
 
-  const stk::mesh::BucketVector wedge_buckets = fixture.bulk_data.buckets(fixture.element_rank);
+  const stk_classic::mesh::BucketVector wedge_buckets = fixture.bulk_data.buckets(fixture.element_rank);
 
-  stk::mesh::get_selected_entities(
+  stk_classic::mesh::get_selected_entities(
       select_wedge,
       wedge_buckets,
       wedges
@@ -194,22 +194,22 @@ void find_and_shuffle_wedges_to_separate(
  * continue flying through the air.
  */
 void move_detached_wedges(
-    stk::mesh::fixtures::GearsFixture & fixture,
+    stk_classic::mesh::fixtures::GearsFixture & fixture,
     CartesianField & velocity_field
     )
 {
 
   // Select all detached nodes by creating a selector for things not in the
   // cylinder part.
-  stk::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
+  stk_classic::mesh::Selector select_detached_wedges =  (! fixture.cylindrical_coord_part ) &
     (fixture.meta_data.locally_owned_part() | fixture.meta_data.globally_shared_part());
 
-  const stk::mesh::BucketVector all_node_buckets =
+  const stk_classic::mesh::BucketVector all_node_buckets =
     fixture.bulk_data.buckets(NODE_RANK);
 
-  stk::mesh::BucketVector node_buckets;
+  stk_classic::mesh::BucketVector node_buckets;
 
-  stk::mesh::get_buckets(
+  stk_classic::mesh::get_buckets(
       select_detached_wedges,
       all_node_buckets,
       node_buckets
@@ -217,15 +217,15 @@ void move_detached_wedges(
 
   // Iterate over selected node_buckets, then iterate over each node in the
   // bucket, adjusting the node's displacement according to its velocity.
-  for (stk::mesh::BucketVector::iterator b_itr = node_buckets.begin();
+  for (stk_classic::mesh::BucketVector::iterator b_itr = node_buckets.begin();
       b_itr != node_buckets.end();
       ++b_itr)
   {
-    stk::mesh::Bucket & b = **b_itr;
+    stk_classic::mesh::Bucket & b = **b_itr;
 
-    const stk::mesh::BucketArray<CartesianField>  velocity_data( velocity_field, b);
-    stk::mesh::BucketArray<CartesianField>  old_displacement_data( fixture.displacement_field.field_of_state(stk::mesh::StateOld), b);
-    stk::mesh::BucketArray<CartesianField>  new_displacement_data( fixture.displacement_field.field_of_state(stk::mesh::StateNew), b);
+    const stk_classic::mesh::BucketArray<CartesianField>  velocity_data( velocity_field, b);
+    stk_classic::mesh::BucketArray<CartesianField>  old_displacement_data( fixture.displacement_field.field_of_state(stk_classic::mesh::StateOld), b);
+    stk_classic::mesh::BucketArray<CartesianField>  new_displacement_data( fixture.displacement_field.field_of_state(stk_classic::mesh::StateNew), b);
 
     for (size_t i = 0; i < b.size(); ++i) {
       for (size_t j = 0; j < fixture.meta_data.spatial_dimension(); ++j) {
@@ -241,30 +241,30 @@ void move_detached_wedges(
 //
 
 
-void populate_processor_id_field_data( stk::mesh::fixtures::GearsFixture & fixture,
+void populate_processor_id_field_data( stk_classic::mesh::fixtures::GearsFixture & fixture,
     IntField & processor_field
     )
 {
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
 
-  stk::mesh::Selector locally_owned_selector = fixture.meta_data.locally_owned_part();
+  stk_classic::mesh::Selector locally_owned_selector = fixture.meta_data.locally_owned_part();
 
-  stk::mesh::BucketVector all_element_buckets =
+  stk_classic::mesh::BucketVector all_element_buckets =
     fixture.bulk_data.buckets(fixture.element_rank);
-  stk::mesh::BucketVector element_buckets;
+  stk_classic::mesh::BucketVector element_buckets;
 
-  stk::mesh::get_buckets(
+  stk_classic::mesh::get_buckets(
       locally_owned_selector,
       all_element_buckets,
       element_buckets
       );
 
-  for (stk::mesh::BucketVector::iterator b_itr = element_buckets.begin();
+  for (stk_classic::mesh::BucketVector::iterator b_itr = element_buckets.begin();
       b_itr != element_buckets.end();
       ++b_itr)
   {
-    stk::mesh::Bucket & b = **b_itr;
-    stk::mesh::BucketArray<IntField> processor_data( processor_field, b);
+    stk_classic::mesh::Bucket & b = **b_itr;
+    stk_classic::mesh::BucketArray<IntField> processor_data( processor_field, b);
     for (size_t index = 0; index < b.size(); ++index) {
       processor_data(index) = p_rank;
     }
@@ -281,7 +281,7 @@ namespace {
 
 Ioss::Region *create_output_mesh(
     const std::string &mesh_filename,
-    stk::mesh::BulkData &bulk_data,
+    stk_classic::mesh::BulkData &bulk_data,
     const bool skin = false)
 {
   const bool add_all_fields = false;
@@ -302,22 +302,22 @@ Ioss::Region *create_output_mesh(
   Ioss::Region *out_region = new Ioss::Region(dbo, name);
 
   const Ioss::Region * null_in_region = NULL;
-  stk::io::define_output_db(*out_region, bulk_data, null_in_region);
-  stk::io::write_output_db (*out_region, bulk_data);
+  stk_classic::io::define_output_db(*out_region, bulk_data, null_in_region);
+  stk_classic::io::write_output_db (*out_region, bulk_data);
 
   out_region->begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
   // Special processing for nodeblock (all nodes in model)...
   const Ioss::Field::RoleType role_type = skin ? Ioss::Field::ATTRIBUTE : Ioss::Field::TRANSIENT;
-  stk::io::ioss_add_fields(stk::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
+  stk_classic::io::ioss_add_fields(stk_classic::mesh::MetaData::get(bulk_data).universal_part(), NODE_RANK,
                            out_region->get_node_blocks()[0], role_type, add_all_fields);
 
-  const stk::mesh::PartVector & all_parts = stk::mesh::MetaData::get(bulk_data).get_parts();
-  for ( stk::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
-    stk::mesh::Part * const part = *ip; 
+  const stk_classic::mesh::PartVector & all_parts = stk_classic::mesh::MetaData::get(bulk_data).get_parts();
+  for ( stk_classic::mesh::PartVector::const_iterator ip = all_parts.begin(); ip != all_parts.end(); ++ip ) {
+    stk_classic::mesh::Part * const part = *ip; 
 
     // Check whether this part should be output to results database.
-    if (stk::io::is_part_io_part(*part)) {
+    if (stk_classic::io::is_part_io_part(*part)) {
       // Get Ioss::GroupingEntity corresponding to this part...
       Ioss::GroupingEntity *entity = out_region->get_entity(part->name());
       if (entity != NULL) {
@@ -331,12 +331,12 @@ Ioss::Region *create_output_mesh(
             }
             for (unsigned i=0; i < sset->block_count(); i++) {
               Ioss::SideBlock *fb = sset->get_block(i);
-              stk::io::ioss_add_fields(*part, part->primary_entity_rank(),
+              stk_classic::io::ioss_add_fields(*part, part->primary_entity_rank(),
                                        fb, Ioss::Field::TRANSIENT);
             }
           }
         } else if (entity->type() == Ioss::ELEMENTBLOCK) {
-          stk::io::ioss_add_fields(*part, part->primary_entity_rank(), 
+          stk_classic::io::ioss_add_fields(*part, part->primary_entity_rank(), 
                                     entity, Ioss::Field::TRANSIENT, add_all_fields);
         } 
       }
@@ -358,42 +358,42 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
 
   const size_t NUM_GEARS = 1;
 
-  stk::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS);
+  stk_classic::mesh::fixtures::GearsFixture fixture(MPI_COMM_WORLD, NUM_GEARS);
   const unsigned p_rank = fixture.bulk_data.parallel_rank();
   std::srand(p_rank); // Seed pseudo-random generator based on processor rank.
 
-  stk::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.element_rank-1);
+  stk_classic::mesh::Part & skin_part = fixture.meta_data.declare_part("Skin_part",fixture.element_rank-1);
 
   const unsigned ONE_STATE = 1;
   CartesianField & velocity_field = fixture.meta_data.declare_field<CartesianField>("velocity",ONE_STATE);
   CartesianField & displacement = fixture.meta_data.declare_field<CartesianField>("face_displacement",ONE_STATE);
   IntField & processor_field = fixture.meta_data.declare_field<IntField>("processor_id",ONE_STATE);
 
-  stk::mesh::put_field(
+  stk_classic::mesh::put_field(
       velocity_field,
       NODE_RANK,
       fixture.meta_data.universal_part(),
       fixture.meta_data.spatial_dimension()
       );
 
-  stk::mesh::put_field(
+  stk_classic::mesh::put_field(
       processor_field,
       fixture.element_rank,
       fixture.meta_data.universal_part()
       );
 
   // add io parts
-  stk::io::put_io_part_attribute( fixture.hex_part);
-  stk::io::put_io_part_attribute( fixture.wedge_part);
-  stk::io::put_io_part_attribute( skin_part);
-  stk::io::set_field_role(fixture.displacement_field.field_of_state(stk::mesh::StateNew), Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
-  stk::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
+  stk_classic::io::put_io_part_attribute( fixture.hex_part);
+  stk_classic::io::put_io_part_attribute( fixture.wedge_part);
+  stk_classic::io::put_io_part_attribute( skin_part);
+  stk_classic::io::set_field_role(fixture.displacement_field.field_of_state(stk_classic::mesh::StateNew), Ioss::Field::TRANSIENT);
+  stk_classic::io::set_field_role(displacement,    Ioss::Field::TRANSIENT);
+  stk_classic::io::set_field_role(processor_field, Ioss::Field::TRANSIENT);
 
-  std::set<const stk::mesh::Part*> skin_io_parts; skin_io_parts.insert(&skin_part);
-  const stk::mesh::PartVector & parts = fixture.meta_data.get_parts();
-  for ( stk::mesh::PartVector::const_iterator ip = parts.begin(); ip != parts.end(); ++ip ) {
-    stk::mesh::Part & topo_part = **ip;
+  std::set<const stk_classic::mesh::Part*> skin_io_parts; skin_io_parts.insert(&skin_part);
+  const stk_classic::mesh::PartVector & parts = fixture.meta_data.get_parts();
+  for ( stk_classic::mesh::PartVector::const_iterator ip = parts.begin(); ip != parts.end(); ++ip ) {
+    stk_classic::mesh::Part & topo_part = **ip;
     if(topo_part.primary_entity_rank() == fixture.element_rank-1 && std::string::npos!=topo_part.name().find("FEM_ROOT_CELL_TOPOLOGY_PART"))  {
       std::string t;
       if      (t.npos != topo_part.name().find("Triangle_3"))      t = "skin_wedge6_tri3_1";
@@ -406,31 +406,31 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
         t = topo_part.name()+std::string("_Skin_part");
         t.erase(t.find("FEM_ROOT_CELL_TOPOLOGY_PART"), sizeof("FEM_ROOT_CELL_TOPOLOGY_PART"));
       }
-      stk::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+      stk_classic::mesh::Part & topo_skin_part = fixture.meta_data.declare_part(t, fixture.element_rank-1);
       skin_io_parts.insert(&topo_skin_part);
-      stk::io::put_io_part_attribute(topo_skin_part);
+      stk_classic::io::put_io_part_attribute(topo_skin_part);
       fixture.meta_data.declare_part_subset(topo_part, topo_skin_part);
       fixture.meta_data.declare_part_subset(skin_part, topo_skin_part);
       if (   t == "skin_hex8_quad4_4" || t == "skin_hex20_quad8_5") {
         if  (t == "skin_hex8_quad4_4")   t = "skin_wedge6_quad4_4";
         else                             t = "skin_wedge15_quad4_8";
-        stk::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, fixture.element_rank-1);
+        stk_classic::mesh::Part & topo_skin_part2 = fixture.meta_data.declare_part(t, fixture.element_rank-1);
         skin_io_parts.insert(&topo_skin_part2);
-        stk::io::put_io_part_attribute(topo_skin_part2);
+        stk_classic::io::put_io_part_attribute(topo_skin_part2);
         fixture.meta_data.declare_part_subset(topo_part, topo_skin_part2);
         fixture.meta_data.declare_part_subset(skin_part, topo_skin_part2);
       }
     } 
   }
-  stk::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
+  stk_classic::mesh::Selector surface_select = fixture.meta_data.locally_owned_part();
   {
-    stk::mesh::put_field( displacement, fixture.element_rank-1, skin_part);
-    const stk::mesh::PartVector &surf_parts = skin_part.subsets();
-    for ( stk::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
-      stk::mesh::Part & surf_part = **ip;
+    stk_classic::mesh::put_field( displacement, fixture.element_rank-1, skin_part);
+    const stk_classic::mesh::PartVector &surf_parts = skin_part.subsets();
+    for ( stk_classic::mesh::PartVector::const_iterator ip = surf_parts.begin(); ip != surf_parts.end(); ++ip ) {
+      stk_classic::mesh::Part & surf_part = **ip;
       if (surf_part.primary_entity_rank() == fixture.element_rank-1) {
         surface_select |= surf_part;
-        stk::mesh::put_field( displacement, fixture.element_rank-1, surf_part);
+        stk_classic::mesh::put_field( displacement, fixture.element_rank-1, surf_part);
       }
     }
   }
@@ -442,9 +442,9 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   populate_processor_id_field_data(fixture,processor_field);
 
   const size_t spatial_dim = fixture.meta_data.spatial_dimension();
-  stk::mesh::skin_mesh( fixture.bulk_data, spatial_dim, &skin_part);
+  stk_classic::mesh::skin_mesh( fixture.bulk_data, spatial_dim, &skin_part);
 
-  stk::mesh::EntityVector wedges_to_separate;
+  stk_classic::mesh::EntityVector wedges_to_separate;
 
   find_and_shuffle_wedges_to_separate( fixture, wedges_to_separate );
 
@@ -455,12 +455,12 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
   const double x = 0;
   const double y = 0;
   const double z = 0;
-  const stk::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
+  const stk_classic::mesh::fixtures::GearMovement gear_movement_data(rotation,x,y,z);
 
   Ioss::Region * volume_out_region = NULL;
   Ioss::Region * surface_out_region = NULL;
 
-  stk::mesh::fixtures::Gear & gear = fixture.get_gear(0);
+  stk_classic::mesh::fixtures::Gear & gear = fixture.get_gear(0);
 
   // Iterate over the time steps, updating the locations of the entities and
   // writing the current mesh state to output files.
@@ -476,7 +476,7 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
 
       // Move the gear; this will only rotate the gear since x,y,z are all 0
       gear.move(gear_movement_data);
-      stk::mesh::Entity * wedge = NULL;
+      stk_classic::mesh::Entity * wedge = NULL;
 
       // Separate the wedge if it's time
       if (do_separate_wedge) {
@@ -501,20 +501,20 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
     }
 
     // update a face field 
-    stk::mesh::BucketVector face_buckets;
-    stk::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(fixture.element_rank-1);
-    stk::mesh::get_buckets( surface_select, all_face_buckets, face_buckets);
-    for (stk::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
-      stk::mesh::Bucket & b = **b_itr;
+    stk_classic::mesh::BucketVector face_buckets;
+    stk_classic::mesh::BucketVector all_face_buckets = fixture.bulk_data.buckets(fixture.element_rank-1);
+    stk_classic::mesh::get_buckets( surface_select, all_face_buckets, face_buckets);
+    for (stk_classic::mesh::BucketVector::iterator b_itr = face_buckets.begin(); b_itr != face_buckets.end(); ++b_itr) {
+      stk_classic::mesh::Bucket & b = **b_itr;
       for (size_t i = 0; i < b.size(); ++i) {
-        stk::mesh::Entity& face = b[i];
+        stk_classic::mesh::Entity& face = b[i];
         double *elem_node_disp = field_data(displacement, face);
         if (elem_node_disp) {
-          stk::mesh::PairIterRelation node_rels = face.node_relations();
+          stk_classic::mesh::PairIterRelation node_rels = face.node_relations();
           const size_t num_nodes = node_rels.size();
           for(; !node_rels.empty(); ++node_rels) {
-            const stk::mesh::Entity& node = *node_rels->entity();
-            double* node_disp = stk::mesh::field_data(fixture.displacement_field, node);
+            const stk_classic::mesh::Entity& node = *node_rels->entity();
+            double* node_disp = stk_classic::mesh::field_data(fixture.displacement_field, node);
             elem_node_disp[0] = node_disp[0];
             elem_node_disp[1] = node_disp[1];
             elem_node_disp[2] = node_disp[2];
@@ -545,12 +545,12 @@ STKUNIT_UNIT_TEST( GearsDemo, skin_gear ) {
         surface_out_region = create_output_mesh( surface_out_filename.str(), fixture.bulk_data,  true);
       }
 
-      stk::io::MeshData mesh;
+      stk_classic::io::MeshData mesh;
       mesh.m_output_region=volume_out_region;
-      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0, skin_io_parts);
+      stk_classic::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0, skin_io_parts);
       mesh.m_output_region = NULL;
       mesh.m_output_region=surface_out_region;
-      stk::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0);
+      stk_classic::io::process_output_request(mesh, fixture.bulk_data, time_step/60.0);
       mesh.m_output_region = NULL;
     }
   }

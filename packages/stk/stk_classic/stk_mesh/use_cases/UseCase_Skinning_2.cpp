@@ -22,13 +22,13 @@
 
 namespace {
 
-unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin_part, stk::mesh::EntityRank skin_rank)
+unsigned count_skin_entities( stk_classic::mesh::BulkData & mesh, stk_classic::mesh::Part & skin_part, stk_classic::mesh::EntityRank skin_rank)
 {
-  const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(mesh);
+  const stk_classic::mesh::MetaData & meta = stk_classic::mesh::MetaData::get(mesh);
 
-  stk::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
+  stk_classic::mesh::Selector select_skin = skin_part & meta.locally_owned_part()  ;
 
-  const std::vector<stk::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
+  const std::vector<stk_classic::mesh::Bucket*>& buckets = mesh.buckets( skin_rank );
 
   return count_selected_entities( select_skin, buckets);
 }
@@ -37,23 +37,23 @@ unsigned count_skin_entities( stk::mesh::BulkData & mesh, stk::mesh::Part & skin
 
 // Destroy this entity and any lower ranking entities in this entity's closure that no longer
 // have any upward relations.
-void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * entity)
+void destroy_entity_closure( stk_classic::mesh::BulkData & mesh, stk_classic::mesh::Entity * entity)
 {
-  stk::mesh::PairIterRelation relations = entity->relations();
-  stk::mesh::EntityRank entity_rank = entity->entity_rank();
+  stk_classic::mesh::PairIterRelation relations = entity->relations();
+  stk_classic::mesh::EntityRank entity_rank = entity->entity_rank();
 
   ThrowErrorMsgIf( !relations.empty() &&
                    relations.back().entity()->entity_rank() > entity_rank,
                    "Unable to destroy and entity with upward relations" );
 
   for (; !entity->relations().empty();) {
-    stk::mesh::Entity * related_entity = (entity->relations().back().entity());
-    stk::mesh::RelationIdentifier rel_id = entity->relations().back().identifier();
-    stk::mesh::EntityRank related_entity_rank = related_entity->entity_rank();
+    stk_classic::mesh::Entity * related_entity = (entity->relations().back().entity());
+    stk_classic::mesh::RelationIdentifier rel_id = entity->relations().back().identifier();
+    stk_classic::mesh::EntityRank related_entity_rank = related_entity->entity_rank();
 
     mesh.destroy_relation( *entity, *related_entity, rel_id );
 
-    stk::mesh::PairIterRelation related_entity_relations = related_entity->relations();
+    stk_classic::mesh::PairIterRelation related_entity_relations = related_entity->relations();
 
     //  Only destroy if there are no upward relations
     if ( related_entity_relations.empty() ||
@@ -71,7 +71,7 @@ void destroy_entity_closure( stk::mesh::BulkData & mesh, stk::mesh::Entity * ent
 // \TODO ASCII art to illustrate the whole use case geometry
 //       both before and after.
 
-bool skinning_use_case_2(stk::ParallelMachine pm)
+bool skinning_use_case_2(stk_classic::ParallelMachine pm)
 {
   const unsigned nx = 2 , ny = 1 , nz = 1 ;
 
@@ -80,17 +80,17 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
   //TODO check the skin after each update to ensure that the appropriate
   //number of faces  and particles exist.
   try {
-    stk::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
-    const stk::mesh::EntityRank element_rank = fixture.m_fem_meta.element_rank();
-    const stk::mesh::EntityRank side_rank = fixture.m_fem_meta.side_rank();
+    stk_classic::mesh::fixtures::HexFixture fixture( pm , nx , ny , nz );
+    const stk_classic::mesh::EntityRank element_rank = fixture.m_fem_meta.element_rank();
+    const stk_classic::mesh::EntityRank side_rank = fixture.m_fem_meta.side_rank();
 
     const unsigned p_rank = fixture.m_bulk_data.parallel_rank();
     const unsigned p_size = fixture.m_bulk_data.parallel_size();
 
-    stk::mesh::Part & skin_part = fixture.m_fem_meta.declare_part("skin_part");
+    stk_classic::mesh::Part & skin_part = fixture.m_fem_meta.declare_part("skin_part");
 
-    stk::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
-    stk::mesh::Part & shell_part = fixture.m_fem_meta.declare_part("shell_part", shell_top);
+    stk_classic::mesh::fem::CellTopology shell_top(shards::getCellTopologyData<shards::ShellQuadrilateral<4> >());
+    stk_classic::mesh::Part & shell_part = fixture.m_fem_meta.declare_part("shell_part", shell_top);
 
     fixture.m_fem_meta.commit();
 
@@ -102,7 +102,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
       // Verifies when all three elements on different processes, for p_size > 2
       //add shell between the two elements
 
-      stk::mesh::EntityId elem_node[4] ;
+      stk_classic::mesh::EntityId elem_node[4] ;
 
       // Query nodes from this simple grid fixture via the (i,j,k) indices.
       elem_node[0] = fixture.node_id( 1, 0, 0 );
@@ -110,13 +110,13 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
       elem_node[2] = fixture.node_id( 1, 1, 1 );
       elem_node[3] = fixture.node_id( 1, 0, 1 );
 
-      stk::mesh::EntityId elem_id = 3;
+      stk_classic::mesh::EntityId elem_id = 3;
 
-      stk::mesh::fem::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
+      stk_classic::mesh::fem::declare_element( fixture.m_bulk_data, shell_part, elem_id, elem_node);
     }
     fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh(fixture.m_bulk_data, element_rank, &skin_part);
+    stk_classic::mesh::skin_mesh(fixture.m_bulk_data, element_rank, &skin_part);
 
     //----------------------------------------------------------------------
     //Actual usecase
@@ -125,7 +125,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
     {
       int num_skin_entities = count_skin_entities( fixture.m_bulk_data, skin_part, side_rank);
 
-      stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
+      stk_classic::all_reduce(pm, stk_classic::ReduceSum<1>(&num_skin_entities));
 
       if ( num_skin_entities != 10 ) {
         result = false;
@@ -136,7 +136,7 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     // Kill element on the "left" of the shell:
     fixture.m_bulk_data.modification_begin();
-    stk::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
+    stk_classic::mesh::Entity * elem_to_kill = fixture.elem( 0 , 0 , 0 ); // (i,j,k) indices
     if ( elem_to_kill != NULL && p_rank == elem_to_kill->owner_rank() ) {
       // Destroy element and its sides and nodes
       // that are not in the closure of another element.
@@ -145,12 +145,12 @@ bool skinning_use_case_2(stk::ParallelMachine pm)
 
     fixture.m_bulk_data.modification_end();
 
-    stk::mesh::skin_mesh( fixture.m_bulk_data, element_rank, &skin_part);
+    stk_classic::mesh::skin_mesh( fixture.m_bulk_data, element_rank, &skin_part);
 
     {
       int num_skin_entities = count_skin_entities( fixture.m_bulk_data, skin_part, side_rank);
 
-      stk::all_reduce(pm, stk::ReduceSum<1>(&num_skin_entities));
+      stk_classic::all_reduce(pm, stk_classic::ReduceSum<1>(&num_skin_entities));
 
       // Verify that the correct 6 sides are present.
 

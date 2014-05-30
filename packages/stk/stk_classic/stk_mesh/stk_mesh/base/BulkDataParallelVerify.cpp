@@ -27,7 +27,7 @@
 #include <stk_mesh/base/EntityComm.hpp>
 #include <stk_mesh/base/Comm.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {

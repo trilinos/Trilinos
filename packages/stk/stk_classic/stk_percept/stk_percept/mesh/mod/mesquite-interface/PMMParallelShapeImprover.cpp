@@ -24,7 +24,7 @@ namespace MESQUITE_NS {
   extern int get_parallel_rank();
 }
 
-namespace stk {
+namespace stk_classic {
   namespace percept {
     using namespace Mesquite;
 
@@ -99,10 +99,10 @@ namespace stk {
 
       PerceptMesquiteMesh *pmm = dynamic_cast<PerceptMesquiteMesh *>(mesh);
       PerceptMesh *eMesh = pmm->getPerceptMesh();
-      stk::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_current   = coord_field;
-      stk::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
-      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      stk_classic::mesh::FieldBase *coord_field = eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase *coord_field_current   = coord_field;
+      stk_classic::mesh::FieldBase *coord_field_projected = eMesh->get_field("coordinates_N"); 
+      stk_classic::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
 
       //double alphas[] = {0.0,0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
       //double alphas[] = {0.001,0.01,0.1,0.2,0.4,0.6,0.8,1.0};
@@ -150,8 +150,8 @@ namespace stk {
     int PMMParallelShapeImprover::parallel_count_invalid_elements(PerceptMesh *eMesh)
     {
       PMMSmootherMetricUntangle utm(eMesh);
-      stk::mesh::FieldBase *coord_field_current   = eMesh->get_coordinates_field();
-      stk::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
+      stk_classic::mesh::FieldBase *coord_field_current   = eMesh->get_coordinates_field();
+      stk_classic::mesh::FieldBase *coord_field_original  = eMesh->get_field("coordinates_NM1");
       JacobianUtil jacA, jacW;
 
       double detA_min = std::numeric_limits<double>::max();
@@ -163,20 +163,20 @@ namespace stk {
       int num_invalid=0;
       // element loop
       {
-        stk::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
-        const std::vector<stk::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
+        stk_classic::mesh::Selector on_locally_owned_part =  ( eMesh->get_fem_meta_data()->locally_owned_part() );
+        const std::vector<stk_classic::mesh::Bucket*> & buckets = eMesh->get_bulk_data()->buckets( eMesh->element_rank() );
 
-        for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
+        for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k )
           {
             if (PerceptMesquiteMesh::select_bucket(**k, eMesh) && on_locally_owned_part(**k))  
               {
-                stk::mesh::Bucket & bucket = **k ;
+                stk_classic::mesh::Bucket & bucket = **k ;
                 const unsigned num_elements_in_bucket = bucket.size();
                 const CellTopologyData* topology_data = eMesh->get_cell_topology(bucket);
 
                 for (unsigned i_element = 0; i_element < num_elements_in_bucket; i_element++)
                   {
-                    stk::mesh::Entity& element = bucket[i_element];
+                    stk_classic::mesh::Entity& element = bucket[i_element];
                     bool valid=true;
                     if (get_mesh_diagnostics)
                       {
@@ -214,13 +214,13 @@ namespace stk {
               }
           }
       }
-      stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceSum<1>( &num_invalid ) );
       if (get_mesh_diagnostics)
         {
-          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &detA_min ) );
-          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMin<1>( &detW_min ) );
-          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &shapeA_max ) );
-          stk::all_reduce( MPI_COMM_WORLD, stk::ReduceMax<1>( &shapeW_max ) );
+          stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceMin<1>( &detA_min ) );
+          stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceMin<1>( &detW_min ) );
+          stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceMax<1>( &shapeA_max ) );
+          stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceMax<1>( &shapeW_max ) );
           if (eMesh->get_rank() == 0)
             {
               std::cout << "P[0] detA_min= " << detA_min << " detW_min= " << detW_min 
@@ -269,7 +269,7 @@ namespace stk {
           num_invalid = inv_b->get_invalid_element_count();
         }
 
-      stk::all_reduce( MPI_COMM_WORLD, stk::ReduceSum<1>( &num_invalid ) );
+      stk_classic::all_reduce( MPI_COMM_WORLD, stk_classic::ReduceSum<1>( &num_invalid ) );
       
       return num_invalid;
     }

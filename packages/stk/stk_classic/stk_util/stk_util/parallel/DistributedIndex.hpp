@@ -17,7 +17,7 @@
 
 class UnitTestSTKParallelDistributedIndex ;
 
-namespace stk {
+namespace stk_classic {
 namespace parallel {
 
 /** \brief Parallel cross-reference index for a collection of keys.

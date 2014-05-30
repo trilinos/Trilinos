@@ -12,7 +12,7 @@
 #include <vector>
 #include <stk_mesh/base/Types.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
   /** \brief Determine closure of the entities vector

@@ -14,7 +14,7 @@
 #include <stk_mesh/baseImpl/PartImpl.hpp>
 
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class MetaData;

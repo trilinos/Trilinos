@@ -14,7 +14,7 @@
 #define STK_VERSION "0.1a"
 #endif
 
-namespace stk {
+namespace stk_classic {
 
 const std::string
 ProductRegistry::NAME = "Name";
@@ -176,7 +176,7 @@ void
 product_registry_add(
   const char *		name )
 {
-  stk::ProductRegistry::instance().addProduct(name ? name : "<unknown>");
+  stk_classic::ProductRegistry::instance().addProduct(name ? name : "<unknown>");
 }
 
 
@@ -186,14 +186,14 @@ product_registry_add_tpl(
   const char *		version,
   const char *		qualifier )
 {
-  stk::ProductRegistry::instance().addTPL(name ? name : "<unknown>", version ? version : "", qualifier ? qualifier : "");
+  stk_classic::ProductRegistry::instance().addTPL(name ? name : "<unknown>", version ? version : "", qualifier ? qualifier : "");
 }
 
 
 size_t
 product_registry_size()
 {
-  return stk::ProductRegistry::instance().getProductMap().size();
+  return stk_classic::ProductRegistry::instance().getProductMap().size();
 }
 
 } // extern "C"

@@ -28,10 +28,10 @@
 //
 // A common pattern for code that wants tracing (put this code somewhere before
 // the code you want to trace).
-//   stk::mesh::setStream(use_case::dwout());
-//   meshlog.setPrintMask(stk::mesh::LOG_ENTITY | stk::mesh::LOG_TRACE | stk::mesh::LOG_TRACE_SUB_CALLS);
-//   stk::mesh::watch(stk::mesh::EntityKey(0, 11)); // Node 11
-//   stk::diag::Trace::addTraceFunction("stk::mesh::");
+//   stk_classic::mesh::setStream(use_case::dwout());
+//   meshlog.setPrintMask(stk_classic::mesh::LOG_ENTITY | stk_classic::mesh::LOG_TRACE | stk_classic::mesh::LOG_TRACE_SUB_CALLS);
+//   stk_classic::mesh::watch(stk_classic::mesh::EntityKey(0, 11)); // Node 11
+//   stk_classic::diag::Trace::addTraceFunction("stk_classic::mesh::");
 //
 // Other common items to watch are Parts, Buckets, and Fields
 //
@@ -59,7 +59,7 @@
 #include <typeinfo>
 #include <vector>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 ////////////////////// INTERNAL ////////////////////
@@ -126,25 +126,25 @@ inline void setStream(std::ostream& stream)
   initDiagWriter(stream);
 }
 
-#define Trace_(location) stk::mesh::Trace trace__(location)
+#define Trace_(location) stk_classic::mesh::Trace trace__(location)
 
-#define TraceIf(location, mask) stk::mesh::Trace trace__(location, mask)
+#define TraceIf(location, mask) stk_classic::mesh::Trace trace__(location, mask)
 
 #define TraceIfWatching(location, mask, item) \
-stk::mesh::Trace trace__(location, mask, stk::mesh::internal_is_watching(item)); \
-DiagIfWatching(mask, item, "Watched item is: " << item << stk::diag::dendl)
+stk_classic::mesh::Trace trace__(location, mask, stk_classic::mesh::internal_is_watching(item)); \
+DiagIfWatching(mask, item, "Watched item is: " << item << stk_classic::diag::dendl)
 
 // Useful if you need two traces in the same scope, dec is used to modify the
 // name of the trace object to avoid conflicting.
 #define TraceIfWatchingDec(location, mask, item, dec) \
-stk::mesh::Trace trace##dec__(location, mask, stk::mesh::internal_is_watching(item)); \
-DiagIfWatching(mask, item, "Watched item is: " << item << stk::diag::dendl)
+stk_classic::mesh::Trace trace##dec__(location, mask, stk_classic::mesh::internal_is_watching(item)); \
+DiagIfWatching(mask, item, "Watched item is: " << item << stk_classic::diag::dendl)
 
 #define DiagIfWatching(mask, item, message)                             \
-meshlog.w(stk::mesh::internal_is_watching(item), mask) << message << stk::diag::dendl
+meshlog.w(stk_classic::mesh::internal_is_watching(item), mask) << message << stk_classic::diag::dendl
 
 #define DiagIf(mask, message)                   \
-meshlog.m(mask) << message << stk::diag::dendl
+meshlog.m(mask) << message << stk_classic::diag::dendl
 
 /////////////////////////////////////////////////
 

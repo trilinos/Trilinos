@@ -7,7 +7,7 @@
 
 // this is here only to avoid a warning on Mac builds - it was complaining about no symbols existing in this file
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
     void dummyAllocateMethodForMacBuildWarning()
     {

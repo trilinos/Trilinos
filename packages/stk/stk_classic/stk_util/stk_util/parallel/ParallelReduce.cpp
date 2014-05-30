@@ -13,7 +13,7 @@
 #include <sstream>
 #include <vector>
 
-namespace stk {
+namespace stk_classic {
 
 #if defined( STK_HAS_MPI )
 
@@ -45,7 +45,7 @@ void all_write_string( ParallelMachine arg_comm ,
 
   if ( MPI_SUCCESS != result ) {
     std::ostringstream msg ;
-    msg << "stk::all_write FAILED: MPI_Gather = " << result ;
+    msg << "stk_classic::all_write FAILED: MPI_Gather = " << result ;
     throw std::runtime_error( msg.str() );
   }
 
@@ -73,7 +73,7 @@ void all_write_string( ParallelMachine arg_comm ,
 
   if ( MPI_SUCCESS != result ) {
     std::ostringstream msg ;
-    msg << "stk::all_write FAILED: MPI_Gatherv = " << result ;
+    msg << "stk_classic::all_write FAILED: MPI_Gatherv = " << result ;
     throw std::runtime_error( msg.str() );
   }
 
@@ -121,7 +121,7 @@ void all_reduce( ParallelMachine  arg_comm ,
 
   if ( MPI_SUCCESS != result_reduce || MPI_SUCCESS != result_bcast ) {
     std::ostringstream msg ;
-    msg << "stk::all_reduce FAILED: MPI_Reduce = " << result_reduce
+    msg << "stk_classic::all_reduce FAILED: MPI_Reduce = " << result_reduce
         << " MPI_Bcast = " << result_bcast ;
     throw std::runtime_error( msg.str() );
   }

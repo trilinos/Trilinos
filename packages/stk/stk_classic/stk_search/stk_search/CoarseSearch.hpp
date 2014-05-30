@@ -22,7 +22,7 @@
 #include <stk_search/BihTreeParallelOps.hpp>
 #include <stk_search/OctTreeOps.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 
 // Structure to hold factory specification
@@ -39,7 +39,7 @@ struct FactoryOrder {
   };
 
   Algorithm             m_algorithm;
-  stk::ParallelMachine  m_communicator;
+  stk_classic::ParallelMachine  m_communicator;
   Cuts *                m_cuts;
   unsigned *            m_search_tree_stats;
   unsigned              m_debug_level;
@@ -62,7 +62,7 @@ bool parallel_bihtree_search(
 
   //find the global box
   std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
+  stk_classic::search::box_global_bounds(order.m_communicator,
       domain.size() ,
       &domain[0] ,
       range.size(),
@@ -70,7 +70,7 @@ bool parallel_bihtree_search(
       &global_box[0]);
 
   //
-  stk::search::oct_tree_bih_tree_proximity_search(order.m_communicator,
+  stk_classic::search::oct_tree_bih_tree_proximity_search(order.m_communicator,
       &global_box[0],
       domain.size() ,
       &domain[0] ,
@@ -116,14 +116,14 @@ bool coarse_search_octree(
 {
 
   std::vector<float> global_box(6);
-  stk::search::box_global_bounds(order.m_communicator,
+  stk_classic::search::box_global_bounds(order.m_communicator,
       domain.size() ,
       &domain[0] ,
       range.size(),
       &range[0],
       &global_box[0]);
 
-  stk::search::oct_tree_proximity_search(order.m_communicator,
+  stk_classic::search::oct_tree_proximity_search(order.m_communicator,
       &global_box[0],
       domain.size() ,
       &domain[0] ,

@@ -34,7 +34,7 @@ namespace stk
     void FieldFunction::interpolateFrom(Function& function)
     {
       EXCEPTWATCH;
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_my_field);
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(*m_my_field);
       mesh::BulkData& bulkData = *m_bulkData;
 
       PerceptMesh meshUtil(&metaData, &bulkData);
@@ -62,7 +62,7 @@ namespace stk
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
                                 //, m_parallelEval(true)
     {
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*bulk);
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(*bulk);
       m_coordinatesField = metaData.get_field<VectorFieldType >("coordinates");
     }
 
@@ -76,7 +76,7 @@ namespace stk
       m_cached_topo_key(0), m_cached_basis(0), m_searchType(searchType), m_get_derivative(false)
     {
 
-      mesh::fem::FEMMetaData& metaData = stk::mesh::fem::FEMMetaData::get(*m_bulkData);
+      mesh::fem::FEMMetaData& metaData = stk_classic::mesh::fem::FEMMetaData::get(*m_bulkData);
       m_coordinatesField = metaData.get_field<VectorFieldType >("coordinates");
 
     }
@@ -193,7 +193,7 @@ namespace stk
                     }
                 }
 
-              const stk::mesh::Entity *found_element = 0;
+              const stk_classic::mesh::Entity *found_element = 0;
               {
                 EXCEPTWATCH;
                 //if (m_searchType==STK_SEARCH) std::cout << "find" << std::endl;
@@ -270,14 +270,14 @@ namespace stk
      */
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
-                                   const stk::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional)
+                                   const stk_classic::mesh::Entity& element, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
       helper(input_phy_points, output_field_values, element, parametric_coordinates, time_value_optional);
     }
 
     void FieldFunction::operator()(MDArray& input_phy_points, MDArray& output_field_values,
-                                   const stk::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional)
+                                   const stk_classic::mesh::Bucket& bucket, const MDArray& parametric_coordinates, double time_value_optional)
     {
       EXCEPTWATCH;
 #ifndef NDEBUG

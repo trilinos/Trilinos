@@ -12,15 +12,15 @@
 #include <stk_linsys/LinearSystemInterface.hpp>
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
-typedef stk::mesh::Field<double>                          ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian>    VectorField ;
+typedef stk_classic::mesh::Field<double>                          ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian>    VectorField ;
 
-void fill_utest_mesh_meta_data(stk::mesh::fem::FEMMetaData& fem_meta, bool use_temperature=true);
-void fill_utest_mesh_bulk_data(stk::mesh::BulkData& bulk_data);
+void fill_utest_mesh_meta_data(stk_classic::mesh::fem::FEMMetaData& fem_meta, bool use_temperature=true);
+void fill_utest_mesh_bulk_data(stk_classic::mesh::BulkData& bulk_data);
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::LinearSystemInterface& ls);
+void assemble_elem_matrices_and_vectors(stk_classic::mesh::BulkData& mesh, ScalarField& field, stk_classic::linsys::LinearSystemInterface& ls);
 
-void assemble_elem_matrices_and_vectors(stk::mesh::BulkData& mesh, ScalarField& field, stk::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
+void assemble_elem_matrices_and_vectors(stk_classic::mesh::BulkData& mesh, ScalarField& field, stk_classic::linsys::DofMapper& dof_mapper, fei::Matrix& matrix, fei::Vector& rhs);
 
 #endif
 

@@ -7,13 +7,13 @@ namespace Diag {
 WriterThrowSafe::WriterThrowSafe()
 {
   for (Diag::WriterRegistry::iterator it = Diag::getWriterRegistry().begin(); it != Diag::getWriterRegistry().end(); ++it)
-    m_writerVector.push_back(new stk::diag::WriterThrowSafe(*(*it).second.first));
+    m_writerVector.push_back(new stk_classic::diag::WriterThrowSafe(*(*it).second.first));
 }
 
 
 WriterThrowSafe::~WriterThrowSafe()
 {
-  for (std::vector<stk::diag::WriterThrowSafe *>::iterator it = m_writerVector.begin(); it != m_writerVector.end(); ++it)
+  for (std::vector<stk_classic::diag::WriterThrowSafe *>::iterator it = m_writerVector.begin(); it != m_writerVector.end(); ++it)
     delete (*it);
 }
 

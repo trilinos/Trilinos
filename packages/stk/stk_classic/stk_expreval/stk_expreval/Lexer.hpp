@@ -4,7 +4,7 @@
 #include <vector>
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 template <class T>

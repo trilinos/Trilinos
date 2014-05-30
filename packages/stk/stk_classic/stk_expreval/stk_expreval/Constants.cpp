@@ -1,6 +1,6 @@
 #include <stk_expreval/Constants.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace expreval {
 
 ConstantMap &

@@ -10,7 +10,7 @@
 #include <boost/mpl/assert.hpp>
 #include <boost/type_traits.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace util {
 
 namespace details {

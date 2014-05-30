@@ -26,7 +26,7 @@
 #include <stk_mesh/base/FieldRestriction.hpp>
 #include <stk_mesh/baseImpl/FieldBaseImpl.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class UnitTestFieldImpl;
@@ -53,12 +53,12 @@ class FieldRepository;
 class FieldBase
 {
   public:
-   /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+   /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns this field
    */
   MetaData & mesh_meta_data() const { return m_impl.meta_data(); }
   /** \brief  Internally generated ordinal of this field that is unique
-   *          within the owning \ref stk::mesh::MetaData "meta data manager".
+   *          within the owning \ref stk_classic::mesh::MetaData "meta data manager".
    */
   unsigned mesh_meta_data_ordinal() const { return m_impl.ordinal(); }
 
@@ -69,7 +69,7 @@ class FieldBase
   template<class Type> bool type_is() const
   { return m_impl.type_is<Type>(); }
 
-  /** \brief  Return the \ref stk::mesh::DataTraits "data traits"
+  /** \brief  Return the \ref stk_classic::mesh::DataTraits "data traits"
    *          for this field's type
    */
   const DataTraits & data_traits() const { return m_impl.data_traits() ; }
@@ -111,7 +111,7 @@ class FieldBase
   typedef FieldRestrictionVector RestrictionVector;
 
   /** \brief  Vector of field restriction which is volatile until the owning
-   *          \ref stk::mesh::MetaData "meta data manager" is committed.
+   *          \ref stk_classic::mesh::MetaData "meta data manager" is committed.
    */
   const RestrictionVector &restrictions() const {
     return m_impl.restrictions();
@@ -122,7 +122,7 @@ class FieldBase
   }
 
   /** \brief  Query a field restriction, result is volatile until the owning
-   *          \ref stk::mesh::MetaData "meta data manager" is committed.
+   *          \ref stk_classic::mesh::MetaData "meta data manager" is committed.
    */
   const Restriction & restriction( unsigned entity_rank , const Part & part ) const {
     return m_impl.restriction( entity_rank, part);
@@ -142,17 +142,17 @@ class FieldBase
 
 private:
 
-  /** \brief  The \ref stk::mesh::MetaData "meta data manager"
+  /** \brief  The \ref stk_classic::mesh::MetaData "meta data manager"
    *          that owns this field
    */
   MetaData & meta_data() const { return m_impl.meta_data(); }
 
-  friend class ::stk::mesh::MetaData ;
-  friend class ::stk::mesh::impl::FieldRepository ;
-  friend class ::stk::mesh::impl::FieldBaseImpl ;
+  friend class ::stk_classic::mesh::MetaData ;
+  friend class ::stk_classic::mesh::impl::FieldRepository ;
+  friend class ::stk_classic::mesh::impl::FieldBaseImpl ;
 
   /** \brief  Allow the unit test driver access */
-  friend class ::stk::mesh::UnitTestFieldImpl ;
+  friend class ::stk_classic::mesh::UnitTestFieldImpl ;
 
   FieldBase(
       MetaData                   * arg_mesh_meta_data ,

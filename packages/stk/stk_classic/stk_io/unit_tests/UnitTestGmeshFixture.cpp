@@ -33,8 +33,8 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   std::string config_mesh = Ioss::Utils::to_string(num_x) + "x" +
                             Ioss::Utils::to_string(num_y) + "x" +
                             Ioss::Utils::to_string(num_z) + "|sideset:xXyYzZ";
-  stk::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
-  stk::mesh::fem::FEMMetaData & fem_meta = stk::mesh::fem::FEMMetaData::get( fixture.getMetaData() );
+  stk_classic::io::util::Gmesh_STKmesh_Fixture fixture(MPI_COMM_WORLD, config_mesh);
+  stk_classic::mesh::fem::FEMMetaData & fem_meta = stk_classic::mesh::fem::FEMMetaData::get( fixture.getMetaData() );
 
   fixture.commit();
 
@@ -67,42 +67,42 @@ STKUNIT_UNIT_TEST(UnitTestGmeshFixture, testUnit)
   STKUNIT_ASSERT_EQUAL( total_node_count, fixture.getNodeCount() );
 
   // Needed to test field data
-  stk::mesh::Field<double,stk::mesh::Cartesian> * coord_field =
-    fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+  stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> * coord_field =
+    fixture.getMetaData().get_field<stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> >("coordinates");
   STKUNIT_ASSERT( coord_field );
 
   // All side buckets
-  const std::vector<stk::mesh::Bucket*> & all_side_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
+  const std::vector<stk_classic::mesh::Bucket*> & all_side_buckets = fixture.getBulkData().buckets( fem_meta.side_rank() );
 
-  std::vector<stk::mesh::Entity *> entities;
+  std::vector<stk_classic::mesh::Entity *> entities;
 
-  const stk::mesh::PartVector & side_parts = fixture.getSideParts();
+  const stk_classic::mesh::PartVector & side_parts = fixture.getSideParts();
   STKUNIT_ASSERT_EQUAL( sideset_names.size(), side_parts.size() );
 
   for( size_t ifset = 0; ifset < side_parts.size(); ++ifset )
   {
     std::pair<int, double> expected = fixture.getSurfCoordInfo(ifset);
 
-    stk::mesh::Selector selector = *side_parts[ifset];
+    stk_classic::mesh::Selector selector = *side_parts[ifset];
     entities.clear();
-    stk::mesh::get_selected_entities(selector, all_side_buckets, entities);
+    stk_classic::mesh::get_selected_entities(selector, all_side_buckets, entities);
     STKUNIT_ASSERT_EQUAL( fixture.getSurfElemCount(ifset), entities.size() );
 
     for ( size_t i = 0 ; i < entities.size() ; ++i ) {
-      stk::mesh::Entity & side = *entities[i] ;
+      stk_classic::mesh::Entity & side = *entities[i] ;
 
-      const CellTopologyData * cell_topology = stk::mesh::fem::get_cell_topology(side).getCellTopologyData();
+      const CellTopologyData * cell_topology = stk_classic::mesh::fem::get_cell_topology(side).getCellTopologyData();
 
       STKUNIT_ASSERT( cell_topology );
 
-      stk::mesh::PairIterRelation rel = side.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );
+      stk_classic::mesh::PairIterRelation rel = side.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );
 
       STKUNIT_ASSERT_EQUAL( cell_topology->node_count, rel.size() );
 
       for ( unsigned j = 0 ; j < cell_topology->node_count ; ++j )
       {
-        stk::mesh::Entity & rel_node = *rel[j].entity();
-        double * coords = stk::mesh::field_data(*coord_field, rel_node);
+        stk_classic::mesh::Entity & rel_node = *rel[j].entity();
+        double * coords = stk_classic::mesh::field_data(*coord_field, rel_node);
 	STKUNIT_ASSERT( coords );
         //std::cerr << "( " << coords[0] << ", " << coords[1] << ", " << coords[2] << ")" << std::endl;
 

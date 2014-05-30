@@ -50,7 +50,7 @@
 
 #include <stk_util/diag/WriterExt.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 namespace {
@@ -965,17 +965,17 @@ s_timerNameMaxWidth = DEFAULT_TIMER_NAME_MAX_WIDTH;		///< Maximum width for name
 // SierraRootTimer member functions:
 // 
 SierraRootTimer::SierraRootTimer()
-  : m_sierraTimer(stk::diag::createRootTimer("Sierra", sierraTimerSet()))
+  : m_sierraTimer(stk_classic::diag::createRootTimer("Sierra", sierraTimerSet()))
 { }
 
 
 SierraRootTimer::~SierraRootTimer()
 {
-  stk::diag::deleteRootTimer(m_sierraTimer);
+  stk_classic::diag::deleteRootTimer(m_sierraTimer);
 }
 
 
-stk::diag::Timer & SierraRootTimer::sierraTimer()
+stk_classic::diag::Timer & SierraRootTimer::sierraTimer()
 {
   return m_sierraTimer;
 }
@@ -1030,24 +1030,24 @@ getEnabledTimerMask()
 
 void
 setTimeFormat(int time_format) {
-  stk::diag::setTimerTimeFormat(time_format);
+  stk_classic::diag::setTimerTimeFormat(time_format);
 }
 
 
 void
 setTimeFormatMillis()
 {
-  if ((getTimeFormat() & stk::TIMEFORMAT_STYLE_MASK ) == stk::TIMEFORMAT_HMS) {
+  if ((getTimeFormat() & stk_classic::TIMEFORMAT_STYLE_MASK ) == stk_classic::TIMEFORMAT_HMS) {
     if (getSierraWallTime() > 3600.0)
-      setTimeFormat(getTimeFormat() & ~stk::TIMEFORMAT_MILLIS);
+      setTimeFormat(getTimeFormat() & ~stk_classic::TIMEFORMAT_MILLIS);
     else
-      setTimeFormat(getTimeFormat() | stk::TIMEFORMAT_MILLIS);
+      setTimeFormat(getTimeFormat() | stk_classic::TIMEFORMAT_MILLIS);
   }
-  else if ((getTimeFormat() & stk::TIMEFORMAT_STYLE_MASK ) == stk::TIMEFORMAT_SECONDS) {
+  else if ((getTimeFormat() & stk_classic::TIMEFORMAT_STYLE_MASK ) == stk_classic::TIMEFORMAT_SECONDS) {
     if (getSierraWallTime() > 1000.0)
-      setTimeFormat(getTimeFormat() & ~stk::TIMEFORMAT_MILLIS);
+      setTimeFormat(getTimeFormat() & ~stk_classic::TIMEFORMAT_MILLIS);
     else
-      setTimeFormat(getTimeFormat() | stk::TIMEFORMAT_MILLIS);
+      setTimeFormat(getTimeFormat() | stk_classic::TIMEFORMAT_MILLIS);
   }
 }
 
@@ -1055,7 +1055,7 @@ setTimeFormatMillis()
 int
 getTimeFormat()
 {
-  return stk::diag::getTimerTimeFormat();
+  return stk_classic::diag::getTimerTimeFormat();
 }
 
 
@@ -1074,28 +1074,28 @@ getTimerNameMaxWidth()
 }
 
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type
 getSierraCPUTime()
 {
-  return sierraTimer().getMetric<stk::diag::CPUTime>().getAccumulatedLap(false);
+  return sierraTimer().getMetric<stk_classic::diag::CPUTime>().getAccumulatedLap(false);
 }
 
 
-stk::diag::MetricTraits<stk::diag::WallTime>::Type
+stk_classic::diag::MetricTraits<stk_classic::diag::WallTime>::Type
 getSierraWallTime()
 {
-  return sierraTimer().getMetric<stk::diag::WallTime>().getAccumulatedLap(false);
+  return sierraTimer().getMetric<stk_classic::diag::WallTime>().getAccumulatedLap(false);
 }
 
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type
 getCPULapTime(Timer timer) {
-  return timer.getMetric<stk::diag::CPUTime>().getLap();
+  return timer.getMetric<stk_classic::diag::CPUTime>().getLap();
 }
 
-stk::diag::MetricTraits<stk::diag::CPUTime>::Type
+stk_classic::diag::MetricTraits<stk_classic::diag::CPUTime>::Type
 getCPUAccumulatedLapTime(Timer timer) {
-  return timer.getMetric<stk::diag::CPUTime>().getAccumulatedLap(false);
+  return timer.getMetric<stk_classic::diag::CPUTime>().getAccumulatedLap(false);
 }
 
 
@@ -1163,7 +1163,7 @@ TimerParser::parse(
   setEnabledTimerMask(m_optionMask);
   
   if (m_metricsSetMask != 0)
-    stk::diag::setEnabledTimerMetricsMask(m_metricsMask);
+    stk_classic::diag::setEnabledTimerMetricsMask(m_metricsMask);
     
   return m_optionMask;
 }
@@ -1175,27 +1175,27 @@ TimerParser::parseArg(
   const std::string &   arg) const
 {
   if (name == "cpu") {
-    m_metricsMask |= stk::diag::METRICS_CPU_TIME;
-    m_metricsSetMask |= stk::diag::METRICS_CPU_TIME;
+    m_metricsMask |= stk_classic::diag::METRICS_CPU_TIME;
+    m_metricsSetMask |= stk_classic::diag::METRICS_CPU_TIME;
   }
   else if (name == "wall") {
-    m_metricsMask |= stk::diag::METRICS_WALL_TIME;
-    m_metricsSetMask |= stk::diag::METRICS_WALL_TIME;
+    m_metricsMask |= stk_classic::diag::METRICS_WALL_TIME;
+    m_metricsSetMask |= stk_classic::diag::METRICS_WALL_TIME;
   }
   else if (name == "heap") {
-    m_metricsMask |= stk::diag::METRICS_HEAP_ALLOC;
-    m_metricsSetMask |= stk::diag::METRICS_HEAP_ALLOC;
+    m_metricsMask |= stk_classic::diag::METRICS_HEAP_ALLOC;
+    m_metricsSetMask |= stk_classic::diag::METRICS_HEAP_ALLOC;
   }
   else if (name == "none") {
     m_optionMask = 0;
-    m_metricsSetMask = stk::diag::METRICS_WALL_TIME | stk::diag::METRICS_CPU_TIME;
+    m_metricsSetMask = stk_classic::diag::METRICS_WALL_TIME | stk_classic::diag::METRICS_CPU_TIME;
   }
 
   else if (name == "hms") {
-    Diag::setTimeFormat(stk::TIMEFORMAT_HMS);
+    Diag::setTimeFormat(stk_classic::TIMEFORMAT_HMS);
   }
   else if (name == "seconds") {
-    Diag::setTimeFormat(stk::TIMEFORMAT_SECONDS);
+    Diag::setTimeFormat(stk_classic::TIMEFORMAT_SECONDS);
   }
 
   else

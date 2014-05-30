@@ -9,7 +9,7 @@
 #ifndef stk_util_util_SimpleArrayOps_hpp
 #define stk_util_util_SimpleArrayOps_hpp
 
-namespace stk {
+namespace stk_classic {
 
   /// \todo REFACTOR: Add a sub-namespace?
 

@@ -26,7 +26,7 @@
 
 #include <Shards_BasicTopologies.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 class UnitTestFieldImpl {
@@ -46,19 +46,19 @@ namespace {
 
 STKUNIT_UNIT_TEST(UnitTestField, testUnit)
 {
-  stk::mesh::UnitTestFieldImpl ufield;
+  stk_classic::mesh::UnitTestFieldImpl ufield;
   ufield.testField();
 }
 
 STKUNIT_UNIT_TEST(UnitTestFieldRestriction, testUnit)
 {
-  stk::mesh::UnitTestFieldImpl ufield;
+  stk_classic::mesh::UnitTestFieldImpl ufield;
   ufield.testFieldRestriction();
 }
 
 STKUNIT_UNIT_TEST(UnitTestFieldRelation, testUnit)
 {
-  stk::mesh::UnitTestFieldImpl ufield;
+  stk_classic::mesh::UnitTestFieldImpl ufield;
   ufield.testFieldRelation();
 }
 
@@ -66,7 +66,7 @@ STKUNIT_UNIT_TEST(UnitTestFieldRelation, testUnit)
 
 //----------------------------------------------------------------------
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {
@@ -249,7 +249,7 @@ void UnitTestFieldImpl::testField()
 
   //Coverage of EntityDimension::name in FieldData.cpp
   {
-    const stk::mesh::EntityDimension&  entity_dimension_tag = stk::mesh::EntityDimension::tag();
+    const stk_classic::mesh::EntityDimension&  entity_dimension_tag = stk_classic::mesh::EntityDimension::tag();
     // static const char * name();
 
     entity_dimension_tag.name();
@@ -278,7 +278,7 @@ void UnitTestFieldImpl::testFieldRestriction()
 
   //------------------------------
 
-  typedef stk::mesh::Field<double,stk::mesh::Cartesian> VectorField;
+  typedef stk_classic::mesh::Field<double,stk_classic::mesh::Cartesian> VectorField;
   
   FieldBase * const f2 =
     &meta_data.declare_field<VectorField>( std::string("F2"), 1/* # states */ );
@@ -406,10 +406,10 @@ std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_d
 
     meta_data.declare_field_restriction(*f4, 0 , pA , stride );
     meta_data.declare_field_restriction(*f4, 1 , pB , stride + 1 );
-    stk::mesh::impl::print(std::cout, "Field f4", *f4);
+    stk_classic::mesh::impl::print(std::cout, "Field f4", *f4);
 
     //test stride[i] / stride[i-1] section of else-if
-    stk::mesh::print(std::cout, "Field f4", *f4);
+    stk_classic::mesh::print(std::cout, "Field f4", *f4);
   }
 
   //Further tests to cover print function in FieldBase.cpp
@@ -432,7 +432,7 @@ std::cout<<"pA ord: "<<pA.mesh_meta_data_ordinal()<<", pD ord: "<<pD.mesh_meta_d
     }
     meta_data.declare_field_restriction(*f5, 0 , pA, stride2 );
 
-    stk::mesh::print(std::cout, "Field f5", *f5);
+    stk_classic::mesh::print(std::cout, "Field f5", *f5);
 
   }
 

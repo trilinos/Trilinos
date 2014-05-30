@@ -21,7 +21,7 @@
 #include <stk_mesh/base/Entity.hpp>
 #include <stk_mesh/base/BulkData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 /**

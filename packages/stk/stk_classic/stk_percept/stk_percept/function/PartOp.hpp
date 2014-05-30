@@ -17,9 +17,9 @@ namespace stk
     public:
       /// innermost operation of an part-based loop; return value of true forces the enclosing loop to terminate and this class'
       ///   derived classes can return info back to the loop invoker
-      virtual bool operator()(const stk::mesh::Part& part, 
+      virtual bool operator()(const stk_classic::mesh::Part& part, 
                               mesh::Selector& select_owned,   // select which buckets to use
-                              stk::mesh::FieldBase *field,  
+                              stk_classic::mesh::FieldBase *field,  
                               const mesh::BulkData& bulkData)=0;
     };
 

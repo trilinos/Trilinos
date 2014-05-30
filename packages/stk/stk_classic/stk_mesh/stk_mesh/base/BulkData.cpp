@@ -31,7 +31,7 @@
 
 #include <boost/foreach.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 namespace {
@@ -171,7 +171,7 @@ void BulkData::require_metadata_committed() const
 
 bool BulkData::modification_begin()
 {
-  Trace_("stk::mesh::BulkData::modification_begin");
+  Trace_("stk_classic::mesh::BulkData::modification_begin");
 
   parallel_machine_barrier( m_parallel_machine );
 
@@ -220,7 +220,7 @@ Entity & BulkData::declare_entity( EntityRank ent_rank , EntityId ent_id ,
   require_good_rank_and_id(ent_rank, ent_id);
 
   EntityKey key( ent_rank , ent_id );
-  TraceIfWatching("stk::mesh::BulkData::declare_entity", LOG_ENTITY, key);
+  TraceIfWatching("stk_classic::mesh::BulkData::declare_entity", LOG_ENTITY, key);
   DiagIfWatching(LOG_ENTITY, key, "declaring entity with parts " << parts);
 
   std::pair< Entity * , bool > result = m_entity_repo.internal_create_entity( key );
@@ -475,7 +475,7 @@ void BulkData::internal_change_entity_parts(
   const PartVector & add_parts ,
   const PartVector & remove_parts )
 {
-  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
+  TraceIfWatching("stk_classic::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
   DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
   DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
@@ -580,7 +580,7 @@ void BulkData::internal_change_entity_parts(
   const OrdinalVector & remove_parts,
   bool always_propagate_internal_changes )
 {
-  TraceIfWatching("stk::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
+  TraceIfWatching("stk_classic::mesh::BulkData::internal_change_entity_parts", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
   DiagIfWatching(LOG_ENTITY, entity.key(), "add_parts: " << add_parts);
   DiagIfWatching(LOG_ENTITY, entity.key(), "remove_parts: " << remove_parts);
@@ -699,7 +699,7 @@ bool BulkData::destroy_entity( Entity * & entity_in )
 {
   Entity & entity = *entity_in ;
 
-  TraceIfWatching("stk::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
+  TraceIfWatching("stk_classic::mesh::BulkData::destroy_entity", LOG_ENTITY, entity.key());
   DiagIfWatching(LOG_ENTITY, entity.key(), "entity state: " << entity);
 
   require_ok_to_modify( );
@@ -773,9 +773,9 @@ bool BulkData::destroy_entity( Entity * & entity_in )
 void BulkData::generate_new_entities(const std::vector<size_t>& requests,
                                  std::vector<Entity *>& requested_entities)
 {
-  Trace_("stk::mesh::BulkData::generate_new_entities");
+  Trace_("stk_classic::mesh::BulkData::generate_new_entities");
 
-  typedef stk::parallel::DistributedIndex::KeyType KeyType;
+  typedef stk_classic::parallel::DistributedIndex::KeyType KeyType;
   std::vector< std::vector<KeyType> >
     requested_key_types;
   m_entities_index.generate_new_keys(requests, requested_key_types);

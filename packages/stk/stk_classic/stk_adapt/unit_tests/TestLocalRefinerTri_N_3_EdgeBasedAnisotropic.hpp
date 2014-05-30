@@ -5,7 +5,7 @@
 
 #include <stk_mesh/base/GetBuckets.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     void exact_hessian(const int id, const double *xyz, double *hess, const int spatial_dim)
@@ -69,25 +69,25 @@ namespace stk {
     {
       const int spatial_dim = eMesh.get_spatial_dim();
 
-      stk::mesh::Selector selector = 
+      stk_classic::mesh::Selector selector = 
 	eMesh.get_fem_meta_data()->locally_owned_part() | 
 	eMesh.get_fem_meta_data()->globally_shared_part();
 
-      std::vector<stk::mesh::Bucket*> buckets;
-      stk::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.node_rank() ), buckets );
+      std::vector<stk_classic::mesh::Bucket*> buckets;
+      stk_classic::mesh::get_buckets( selector, eMesh.get_bulk_data()->buckets( eMesh.node_rank() ), buckets );
       
-      for ( vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
+      for ( vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) {
 
-	stk::mesh::Bucket & bucket = **k ;
+	stk_classic::mesh::Bucket & bucket = **k ;
 	
 	const unsigned num_nodes_in_bucket = bucket.size();	
 
 	for (unsigned i = 0; i < num_nodes_in_bucket; i++) {
 
-	  stk::mesh::Entity& node = bucket[i];
+	  stk_classic::mesh::Entity& node = bucket[i];
 
-	  const double *coords = stk::mesh::field_data( *eMesh.get_coordinates_field() , node);
-	  double *hess = stk::mesh::field_data( *nodal_hessian_field , node);
+	  const double *coords = stk_classic::mesh::field_data( *eMesh.get_coordinates_field() , node);
+	  double *hess = stk_classic::mesh::field_data( *nodal_hessian_field , node);
 	    
 	  exact_hessian(hess_id, coords, hess, spatial_dim);
 	}
@@ -104,17 +104,17 @@ namespace stk {
         percept::PerceptMesh& eMesh, 
 	UniformRefinerPatternBase & bp, 
 	VectorFieldType * nodal_hessian_field,
-	stk::mesh::FieldBase *proc_rank_field=0);
+	stk_classic::mesh::FieldBase *proc_rank_field=0);
 
     protected:
 
       /// Client supplies these methods - given an element, which edge, and the nodes on the edge, return instruction on what to do to the edge,
       ///    DO_NOTHING (nothing), DO_REFINE (refine), DO_UNREFINE
       virtual int mark(
-        const stk::mesh::Entity& element, 
+        const stk_classic::mesh::Entity& element, 
 	unsigned which_edge, 
-	stk::mesh::Entity & node0, 
-	stk::mesh::Entity & node1,
+	stk_classic::mesh::Entity & node0, 
+	stk_classic::mesh::Entity & node1,
 	double *coord0, 
 	double *coord1, 
 	std::vector<int>* existing_edge_marks) ;
@@ -129,7 +129,7 @@ namespace stk {
       percept::PerceptMesh& eMesh, 
       UniformRefinerPatternBase &  bp, 
       VectorFieldType * nodal_hessian_field,
-      stk::mesh::FieldBase *proc_rank_field) 
+      stk_classic::mesh::FieldBase *proc_rank_field) 
       : 
       IEdgeAdapter(eMesh, bp, proc_rank_field),
       m_nodal_hessian_field(nodal_hessian_field),
@@ -142,10 +142,10 @@ namespace stk {
 
     int 
     TestLocalRefinerTri_N_3_EdgeBasedAnisotropic::mark(
-      const stk::mesh::Entity& element, 
+      const stk_classic::mesh::Entity& element, 
       unsigned which_edge, 
-      stk::mesh::Entity & node0, 
-      stk::mesh::Entity & node1,
+      stk_classic::mesh::Entity & node0, 
+      stk_classic::mesh::Entity & node1,
       double *coord0, double *coord1, 
       std::vector<int>* existing_edge_marks)
     {
@@ -156,8 +156,8 @@ namespace stk {
       std::vector<double> hessian(spatial_dim*spatial_dim, 0.0);
 
       // Hessian from midpoint interp of nodal Hessian field
-      const double *hess0 = stk::mesh::field_data( *m_nodal_hessian_field , node0);
-      const double *hess1 = stk::mesh::field_data( *m_nodal_hessian_field , node1);
+      const double *hess0 = stk_classic::mesh::field_data( *m_nodal_hessian_field , node0);
+      const double *hess1 = stk_classic::mesh::field_data( *m_nodal_hessian_field , node1);
       for (int d=0; d<spatial_dim*spatial_dim; d++) {
  	hessian[d] += 0.5*(hess0[d]+hess1[d]);
       }

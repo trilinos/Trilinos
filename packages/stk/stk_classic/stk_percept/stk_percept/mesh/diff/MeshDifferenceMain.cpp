@@ -4,7 +4,7 @@
 #include "MeshDifference.hpp"
 
 
-using namespace stk;
+using namespace stk_classic;
 using namespace percept;
 
 int main(int argc,  char **argv)

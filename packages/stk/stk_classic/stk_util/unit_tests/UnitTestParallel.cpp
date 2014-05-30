@@ -15,8 +15,8 @@
 
 STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
 {
-  int mpi_rank = stk::parallel_machine_rank(MPI_COMM_WORLD);
-  int mpi_size = stk::parallel_machine_size(MPI_COMM_WORLD);
+  int mpi_rank = stk_classic::parallel_machine_rank(MPI_COMM_WORLD);
+  int mpi_size = stk_classic::parallel_machine_size(MPI_COMM_WORLD);
 
   std::string s;
   std::ostringstream strout;
@@ -28,7 +28,7 @@ STKUNIT_UNIT_TEST(UnitTestParallel, testUnit)
     if (mpi_rank == 0 && i%1000 == 0)
       std::cout << "." << std::flush;
     
-    stk::all_write_string(MPI_COMM_WORLD, strout, s);
+    stk_classic::all_write_string(MPI_COMM_WORLD, strout, s);
   }
   
   STKUNIT_ASSERT_LT(mpi_rank, mpi_size);

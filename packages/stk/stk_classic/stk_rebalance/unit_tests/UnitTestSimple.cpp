@@ -26,16 +26,16 @@
 #include <stk_rebalance_utils/RebalanceUtils.hpp>
 // end relevant headers
 
-static const size_t NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+static const size_t NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
-typedef stk::mesh::Field<double> ScalarField ;
-typedef stk::mesh::Field<double, stk::mesh::Cartesian> VectorField ;
+typedef stk_classic::mesh::Field<double> ScalarField ;
+typedef stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> VectorField ;
 
 static const int spatial_dimension = 2;
 
 enum { nx = 2, ny = 2 };
 
-class MockPartition : public stk::rebalance::Partition
+class MockPartition : public stk_classic::rebalance::Partition
 {
   public:
 
@@ -44,8 +44,8 @@ class MockPartition : public stk::rebalance::Partition
         SECOND,
         THIRD   };
 
-  MockPartition( stk::mesh::fem::FEMMetaData & fmd, stk::mesh::BulkData & bd ) :
-      stk::rebalance::Partition(bd.parallel()),
+  MockPartition( stk_classic::mesh::fem::FEMMetaData & fmd, stk_classic::mesh::BulkData & bd ) :
+      stk_classic::rebalance::Partition(bd.parallel()),
       m_fem_meta(fmd),
       m_bulk_data(bd),
       m_step(FIRST)
@@ -56,7 +56,7 @@ class MockPartition : public stk::rebalance::Partition
     void set_balance_step(BALANCE_TEST_STEP step)
     { m_step = step; }
 
-    void set_mesh_info ( const std::vector<stk::mesh::Entity *> &mesh_entities,
+    void set_mesh_info ( const std::vector<stk_classic::mesh::Entity *> &mesh_entities,
                          const VectorField   * nodal_coord_ref,
                          const ScalarField   * elem_weight_ref)
     { total_number_entities_ = mesh_entities.size(); }
@@ -67,7 +67,7 @@ class MockPartition : public stk::rebalance::Partition
     void determine_new_partition(bool &RebalancingNeeded)
     { RebalancingNeeded = (m_bulk_data.parallel_size() > 1); }
 
-    int get_new_partition(std::vector<stk::mesh::EntityProc> &new_partition);
+    int get_new_partition(std::vector<stk_classic::mesh::EntityProc> &new_partition);
 
     bool partition_dependents_needed() const
     { return false; /* I handle both element and dependent node partitioning */ }
@@ -75,17 +75,17 @@ class MockPartition : public stk::rebalance::Partition
   private:
 
     unsigned total_number_entities_;
-    stk::mesh::fem::FEMMetaData & m_fem_meta;
-    stk::mesh::BulkData & m_bulk_data;
+    stk_classic::mesh::fem::FEMMetaData & m_fem_meta;
+    stk_classic::mesh::BulkData & m_bulk_data;
     BALANCE_TEST_STEP m_step;
 };
 
 int
-MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partition)
+MockPartition::get_new_partition(std::vector<stk_classic::mesh::EntityProc> &new_partition)
 {
   const unsigned p_size = m_bulk_data.parallel_size();
   const unsigned p_rank = m_bulk_data.parallel_rank();
-  const stk::mesh::EntityRank element_rank = m_fem_meta.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = m_fem_meta.element_rank();
 
   new_partition.clear();
 
@@ -99,17 +99,17 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
           const unsigned nny = ny + 1 ;
           for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
             for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nnx ;
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nnx ;
               unsigned proc = ix < nx/2 ? 1 : 2;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
               new_partition.push_back( tmp );
             }
           }
           for ( unsigned iy = ny / 2 ; iy < ny ; ++iy ) {
             for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nx ;
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nx ;
               unsigned proc = ix < nx/2 ? 1 : 2;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , proc );
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , proc );
               new_partition.push_back( tmp );
             }
           }
@@ -120,15 +120,15 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
           const unsigned nny = ny + 1 ;
           for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
             for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nnx ;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nnx ;
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
               new_partition.push_back( tmp );
             }
           }
           for ( unsigned iy = ny / 2 ; iy < ny ; ++iy ) {
             for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nx ;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , 1 );
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nx ;
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , 1 );
               new_partition.push_back( tmp );
             }
           }
@@ -143,15 +143,15 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
         const unsigned nny = ny + 1 ;
         for ( unsigned iy = 0 ; iy < nny / 2 ; ++iy ) {
           for ( unsigned ix = 0 ; ix < nnx ; ++ix ) {
-            stk::mesh::EntityId id = 1 + ix + iy * nnx ;
-            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
+            stk_classic::mesh::EntityId id = 1 + ix + iy * nnx ;
+            stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , 1 );
             new_partition.push_back( tmp );
           }
         }
         for ( unsigned iy = 0 ; iy < ny / 2 ; ++iy ) {
           for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-            stk::mesh::EntityId id = 1 + ix + iy * nx ;
-            stk::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , 1 );
+            stk_classic::mesh::EntityId id = 1 + ix + iy * nx ;
+            stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , 1 );
             new_partition.push_back( tmp );
           }
         }
@@ -168,17 +168,17 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
           const unsigned nny = ny + 1 ;
           for ( unsigned iy = nny / 2 ; iy < nny ; ++iy ) {
             for ( unsigned ix = nx / 2 ; ix < nnx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nnx ;
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nnx ;
               unsigned proc = 1;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( NODE_RANK , id ) , proc );
               new_partition.push_back( tmp );
             }
           }
           for ( unsigned iy = ny / 2 ; iy < ny ; ++iy ) {
             for ( unsigned ix = nx / 2 ; ix < nx ; ++ix ) {
-              stk::mesh::EntityId id = 1 + ix + iy * nx ;
+              stk_classic::mesh::EntityId id = 1 + ix + iy * nx ;
               unsigned proc = 1;
-              stk::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , proc );
+              stk_classic::mesh::EntityProc tmp( m_bulk_data.get_entity( element_rank , id ) , proc );
               new_partition.push_back( tmp );
             }
           }
@@ -194,24 +194,24 @@ MockPartition::get_new_partition(std::vector<stk::mesh::EntityProc> &new_partiti
 STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 {
 #ifdef STK_HAS_MPI
-  stk::ParallelMachine comm(MPI_COMM_WORLD);
+  stk_classic::ParallelMachine comm(MPI_COMM_WORLD);
 #else
-  stk::ParallelMachine comm(0);
+  stk_classic::ParallelMachine comm(0);
 #endif
 
   unsigned spatial_dimension = 2;
-  stk::mesh::fem::FEMMetaData fem_meta;
-  fem_meta.FEM_initialize(spatial_dimension, stk::mesh::fem::entity_rank_names(spatial_dimension) );
-  stk::mesh::MetaData & meta_data = stk::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
-  stk::mesh::BulkData bulk_data( meta_data , comm , 100 );
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
-  stk::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
-  stk::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
+  stk_classic::mesh::fem::FEMMetaData fem_meta;
+  fem_meta.FEM_initialize(spatial_dimension, stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
+  stk_classic::mesh::MetaData & meta_data = stk_classic::mesh::fem::FEMMetaData::get_meta_data(fem_meta);
+  stk_classic::mesh::BulkData bulk_data( meta_data , comm , 100 );
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::fem::CellTopology quad_top(shards::getCellTopologyData<shards::Quadrilateral<4> >());
+  stk_classic::mesh::Part & quad_part( fem_meta.declare_part("quad", quad_top ) );
   VectorField & coord_field( fem_meta.declare_field< VectorField >( "coordinates" ) );
   ScalarField & weight_field( fem_meta.declare_field< ScalarField >( "element_weights" ) );
 
-  stk::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
-  stk::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
+  stk_classic::mesh::put_field( coord_field , NODE_RANK , fem_meta.universal_part() );
+  stk_classic::mesh::put_field(weight_field , element_rank , fem_meta.universal_part() );
 
   fem_meta.commit();
 
@@ -225,14 +225,14 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
     const unsigned nnx = nx + 1 ;
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::EntityId nodes[4] ;
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::EntityId nodes[4] ;
         nodes[0] = 1 + ix + iy * nnx ;
         nodes[1] = 2 + ix + iy * nnx ;
         nodes[2] = 2 + ix + ( iy + 1 ) * nnx ;
         nodes[3] = 1 + ix + ( iy + 1 ) * nnx ;
 
-        stk::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
+        stk_classic::mesh::fem::declare_element( bulk_data , quad_part , elem , nodes );
       }
     }
     // end create initial mesh
@@ -240,9 +240,9 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
     // assign element weights
     for ( unsigned iy = 0 ; iy < ny ; ++iy ) {
       for ( unsigned ix = 0 ; ix < nx ; ++ix ) {
-        stk::mesh::EntityId elem = 1 + ix + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk_classic::mesh::EntityId elem = 1 + ix + iy * nx ;
+        stk_classic::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk_classic::mesh::field_data( weight_field , *e );
         *e_weight = 1.0;
       }
     }
@@ -263,11 +263,11 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
 
   // Create our Partition and Selector objects
   MockPartition partition(fem_meta, bulk_data);
-  stk::mesh::Selector selector(fem_meta.universal_part());
+  stk_classic::mesh::Selector selector(fem_meta.universal_part());
 
   partition.set_balance_step(MockPartition::FIRST);
   // Exercise the threshhold calculation by using imblance_threshhold > 1.0
-  bool do_rebal = 1.5 < stk::rebalance::check_balance(bulk_data, &weight_field, element_rank);
+  bool do_rebal = 1.5 < stk_classic::rebalance::check_balance(bulk_data, &weight_field, element_rank);
   if( do_rebal )
   {
     // Pick a few values as negative to exercise a check in rebalance::rebalance(...)
@@ -276,21 +276,21 @@ STKUNIT_UNIT_TEST(UnitTestRebalanceSimple, testUnit)
     {
       for ( unsigned iy = 0 ; iy < ny ; ++iy )
       {
-        stk::mesh::EntityId elem = 1 + iy * nx ;
-        stk::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
-        double * const e_weight = stk::mesh::field_data( weight_field , *e );
+        stk_classic::mesh::EntityId elem = 1 + iy * nx ;
+        stk_classic::mesh::Entity * e = bulk_data.get_entity( element_rank, elem );
+        double * const e_weight = stk_classic::mesh::field_data( weight_field , *e );
         *e_weight = -2.0;
       }
     }
     // Do the actual rebalance
-    stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+    stk_classic::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
   }
 
   partition.set_balance_step(MockPartition::SECOND);
-  stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+  stk_classic::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   partition.set_balance_step(MockPartition::THIRD);
-  stk::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
+  stk_classic::rebalance::rebalance(bulk_data, selector, NULL, &weight_field, partition);
 
   if ( 1 < p_size ) {
     // Only P1 has any nodes or elements

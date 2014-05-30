@@ -21,7 +21,7 @@
 
 #include <mpi.h>
 
-namespace stk {
+namespace stk_classic {
 
 /** \addtogroup parallel_module
  * @{
@@ -85,7 +85,7 @@ inline void parallel_machine_finalize()
 #define MPI_COMM_SELF 0
 #define MPI_Barrier( a ) (void)a
 
-namespace stk {
+namespace stk_classic {
 
 typedef int ParallelMachine ;
 typedef int ParallelDatatype ;
@@ -105,7 +105,7 @@ inline void parallel_machine_finalize()
 //----------------------------------------------------------------------
 // Common parallel machine needs.
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Member function <b>parallel_machine_size</b> ...

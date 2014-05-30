@@ -3,7 +3,7 @@
 
 #include <stk_adapt/Refiner.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
     //========================================================================================================================
@@ -15,14 +15,14 @@ namespace stk {
     class TestLocalRefinerTet_N_2_1 : public Refiner
     {
     public:
-      TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
+      TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase & bp, stk_classic::mesh::FieldBase *proc_rank_field=0, unsigned edge_mark_bitcode=1);
 
       // ElementUnrefineCollection  buildTestUnrefineList();
 
     protected:
 
       virtual void 
-      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, 
+      refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, 
             vector<NeededEntityType>& needed_entity_ranks);
 
 
@@ -31,28 +31,28 @@ namespace stk {
 
     // This is a very specialized test that is used in unit testing only (see unit_localRefiner/break_tri_to_tri_N_3 in UnitTestLocalRefiner.cpp)
 
-    TestLocalRefinerTet_N_2_1::TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
+    TestLocalRefinerTet_N_2_1::TestLocalRefinerTet_N_2_1(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field, unsigned edge_mark_bitcode) : 
       Refiner(eMesh, bp, proc_rank_field), m_edge_mark_bitcode(edge_mark_bitcode)
     {
     }
 
 
     void TestLocalRefinerTet_N_2_1::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
       //static int n_seq = 400;
 
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
                 
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
       //VectorFieldType* coordField = m_eMesh.get_coordinates_field();
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
           unsigned numSubDimNeededEntities = 0;
-          stk::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
+          stk_classic::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
 
           if (needed_entity_rank == m_eMesh.edge_rank())
             {
@@ -89,10 +89,10 @@ namespace stk {
               if (needed_entity_rank == m_eMesh.edge_rank())
                 {
 #if 0
-                  stk::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
-                  stk::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
-                  double * const coord0 = stk::mesh::field_data( *coordField , node0 );
-                  double * const coord1 = stk::mesh::field_data( *coordField , node1 );
+                  stk_classic::mesh::Entity & node0 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[0]].entity();
+                  stk_classic::mesh::Entity & node1 = *elem_nodes[cell_topo_data->edge[iSubDimOrd].node[1]].entity();
+                  double * const coord0 = stk_classic::mesh::field_data( *coordField , node0 );
+                  double * const coord1 = stk_classic::mesh::field_data( *coordField , node1 );
                   
                   // vertical line position
                   const double vx = 0.21;

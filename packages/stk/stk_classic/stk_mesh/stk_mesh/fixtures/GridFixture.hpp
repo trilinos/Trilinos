@@ -15,14 +15,14 @@
 #include <stk_mesh/base/BulkData.hpp>
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
 class GridFixture
 {
 public:
-  GridFixture(stk::ParallelMachine pm);
+  GridFixture(stk_classic::ParallelMachine pm);
 
   ~GridFixture();
 

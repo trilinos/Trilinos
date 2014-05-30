@@ -16,7 +16,7 @@
 #include <stk_mesh/fem/TopologyDimensions.hpp>
 #include <app/UseCase_14_Common.hpp>
 
-namespace stk {
+namespace stk_classic {
   namespace mesh {
     class Bucket;
   }
@@ -73,14 +73,14 @@ namespace stk {
     };
 
     //--------------------------------------------------------------------
-    void use_case_14_declare_fields(Fields &fields, stk::mesh::MetaData &meta_data);
+    void use_case_14_declare_fields(Fields &fields, stk_classic::mesh::MetaData &meta_data);
     void use_case_14_initialize_element_fields(
       Fields &fields,
-      const stk::mesh::Selector & selector ,
-      const std::vector< stk::mesh::Bucket * > & element_buckets,
+      const stk_classic::mesh::Selector & selector ,
+      const std::vector< stk_classic::mesh::Bucket * > & element_buckets,
       double YM, double PR);
 
-    void use_case_14_initialize_nodal_data(stk::mesh::BulkData & mesh ,
+    void use_case_14_initialize_nodal_data(stk_classic::mesh::BulkData & mesh ,
                                            const CartesianField & model_coordinates ,
                                            const CartesianField & coordinates ,
                                            const CartesianField & velocity,

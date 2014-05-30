@@ -12,7 +12,7 @@
 #include <Shards_CellTopologyData.h>
 #include <Shards_BasicTopologies.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fem {
 

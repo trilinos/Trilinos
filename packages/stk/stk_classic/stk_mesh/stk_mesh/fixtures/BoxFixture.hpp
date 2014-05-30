@@ -15,7 +15,7 @@
 
 #include <stk_mesh/fem/FEMMetaData.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 namespace fixtures {
 
@@ -25,9 +25,9 @@ static const size_t spatial_dimension = 3;
  */
 class  BoxFixture {
 public:
-  BoxFixture(stk::ParallelMachine pm = MPI_COMM_WORLD,
+  BoxFixture(stk_classic::ParallelMachine pm = MPI_COMM_WORLD,
              unsigned block_size = 1000,
-             const std::vector<std::string>& entity_names = stk::mesh::fem::entity_rank_names(spatial_dimension));
+             const std::vector<std::string>& entity_names = stk_classic::mesh::fem::entity_rank_names(spatial_dimension));
 
   ~BoxFixture () {}
 

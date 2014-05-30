@@ -17,13 +17,13 @@
 #include <stk_mesh/base/Selector.hpp>
 #include <stk_mesh/base/GetEntities.hpp>
 
-using stk::mesh::fem::FEMMetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Selector;
-using stk::mesh::Entity;
-using stk::mesh::EntityId;
-using stk::mesh::EntityRank;
-using stk::mesh::fixtures::BoxFixture;
+using stk_classic::mesh::fem::FEMMetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::EntityRank;
+using stk_classic::mesh::fixtures::BoxFixture;
 
 namespace {
 
@@ -46,7 +46,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
 {
   // A unit test to verify the correctness of the BoxFixture fixture.
 
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   // Create the box fixture we'll be testing
@@ -114,11 +114,11 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
     Entity* elem = bulk.get_entity( element_rank, elem_id );
 
     std::vector<Entity*> elems ;
-    stk::mesh::get_entities_through_relations( nodes , elems );
+    stk_classic::mesh::get_entities_through_relations( nodes , elems );
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
     STKUNIT_ASSERT_EQUAL( elems[0] , elem );
 
-    stk::mesh::get_entities_through_relations(nodes, element_rank, elems);
+    stk_classic::mesh::get_entities_through_relations(nodes, element_rank, elems);
     STKUNIT_ASSERT_EQUAL( elems.size() , size_t(1) );
     STKUNIT_ASSERT_EQUAL( elems[0] , elem );
 
@@ -131,7 +131,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
                          meta.globally_shared_part();
   Selector select_all( meta.universal_part() );
 
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( e_local , local_count[3] );
   STKUNIT_ASSERT_EQUAL( 0u , local_count[2] );
   STKUNIT_ASSERT_EQUAL( 0u , local_count[1] );
@@ -141,7 +141,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
 
   // Verify declarations and sharing
 
-  stk::mesh::count_entities( select_used , bulk , local_count );
+  stk_classic::mesh::count_entities( select_used , bulk , local_count );
   STKUNIT_ASSERT_EQUAL( local_count[3] , e_local );
   STKUNIT_ASSERT_EQUAL( local_count[2] , 0u );
   STKUNIT_ASSERT_EQUAL( local_count[1] , 0u );
@@ -185,7 +185,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
                 Entity * const node = bulk.get_entity( node_type , node_id );
                 STKUNIT_ASSERT( node != NULL );
                 // Must be shared with 'p'
-                stk::mesh::PairIterEntityComm iter = node->sharing();
+                stk_classic::mesh::PairIterEntityComm iter = node->sharing();
                 for ( ; ! iter.empty() && iter->proc != p ; ++iter );
                 STKUNIT_ASSERT( ! iter.empty() );
 
@@ -200,7 +200,7 @@ STKUNIT_UNIT_TEST( UnitTestBoxFixture, verifyBoxFixture )
        i = bulk.entity_comm().begin() ;
        i != bulk.entity_comm().end() ;
        ++i) {
-    const stk::mesh::PairIterEntityComm ec = (**i).sharing();
+    const stk_classic::mesh::PairIterEntityComm ec = (**i).sharing();
     count_shared_entities += ec.size();
   }
   STKUNIT_ASSERT_EQUAL( count_shared_entities , count_shared_node_pairs );

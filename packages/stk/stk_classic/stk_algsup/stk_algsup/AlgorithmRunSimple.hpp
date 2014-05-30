@@ -17,7 +17,7 @@
 #include <stk_mesh/base/FieldData.hpp>
 #include <stk_algsup/AlgorithmRunner.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 /** \ingroup stk_mesh_module
  *  \brief  Field with defined data type and multi-dimensions (if any)
@@ -51,7 +51,7 @@ struct AlgField
   virtual ~AlgField()
   {}
   
-  virtual void set(const stk::mesh::Bucket &bucket) = 0;
+  virtual void set(const stk_classic::mesh::Bucket &bucket) = 0;
 };
 
 
@@ -61,7 +61,7 @@ typedef std::vector<AlgField *> AlgFieldVector;
 class Algorithm
 {
 public:
-  Algorithm(stk::mesh::MetaData &meta_data)
+  Algorithm(stk_classic::mesh::MetaData &meta_data)
     : m_metaData(meta_data)
   {}
 
@@ -77,12 +77,12 @@ public:
 //   static void number_cruncher(.....);
 
   
-//   void run(const stk::mesh::Bucket& bucket, int begin, int end ) {
+//   void run(const stk_classic::mesh::Bucket& bucket, int begin, int end ) {
 //     run(bucket, begin, end);
 //   }
   
 public:
-  const stk::mesh::MetaData &   m_metaData;
+  const stk_classic::mesh::MetaData &   m_metaData;
 
 private:
   AlgFieldVector                m_fieldVector;
@@ -92,7 +92,7 @@ private:
 template <class T>
 struct AlgFieldPtr : public AlgField
 {
-  typedef typename stk::mesh::FieldTraits<T>::data_type Scalar;
+  typedef typename stk_classic::mesh::FieldTraits<T>::data_type Scalar;
   
   AlgFieldPtr(Algorithm *algorithm, const char *name)
     : m_field(*algorithm->m_metaData.get_field<T>(name))
@@ -100,7 +100,7 @@ struct AlgFieldPtr : public AlgField
     algorithm->add_field(this);
   }
   
-  AlgFieldPtr(Algorithm *algorithm, const char *name, stk::mesh::FieldState field_state)
+  AlgFieldPtr(Algorithm *algorithm, const char *name, stk_classic::mesh::FieldState field_state)
     : m_field(algorithm->m_metaData.get_field<T>(name)->field_of_state(field_state))
   {
     algorithm->add_field(this);
@@ -112,7 +112,7 @@ struct AlgFieldPtr : public AlgField
     algorithm->add_field(this);
   }
 
-  AlgFieldPtr(Algorithm *algorithm, T &field, stk::mesh::FieldState field_state)
+  AlgFieldPtr(Algorithm *algorithm, T &field, stk_classic::mesh::FieldState field_state)
     : m_field(field.field_of_state(field_state))
   {
     algorithm->add_field(this);
@@ -121,8 +121,8 @@ struct AlgFieldPtr : public AlgField
   virtual ~AlgFieldPtr()
   {}
   
-  virtual void set(const stk::mesh::Bucket &bucket) {
-    m_ptr = stk::mesh::field_data<T>(m_field, bucket.begin());
+  virtual void set(const stk_classic::mesh::Bucket &bucket) {
+    m_ptr = stk_classic::mesh::field_data<T>(m_field, bucket.begin());
   }
   
   T &                   m_field;
@@ -149,9 +149,9 @@ struct DimTagInfo;
 
 
 template <>
-struct DimTagInfo<stk::mesh::Cartesian>
+struct DimTagInfo<stk_classic::mesh::Cartesian>
 {
-  static unsigned value(const stk::mesh::Bucket &bucket) {
+  static unsigned value(const stk_classic::mesh::Bucket &bucket) {
     return 3;
   }
 };
@@ -160,7 +160,7 @@ struct DimTagInfo<stk::mesh::Cartesian>
 template <>
 struct DimTagInfo<void>
 {
-  static unsigned value(const stk::mesh::Bucket &bucket) {
+  static unsigned value(const stk_classic::mesh::Bucket &bucket) {
     return 0;
   }
 };
@@ -173,11 +173,11 @@ class AlgFieldGather;
 template< typename Scalar , 
           class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7, class Relation>
-struct AlgFieldGather< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation> > : public AlgField
+struct AlgFieldGather< stk_classic::mesh::GatherField <stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation> > : public AlgField
 {
-  typedef stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> T;
-  typedef typename stk::mesh::GatherField<stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::PtrField PtrField;
-  typedef typename ToArrayVector<typename shards::ArrayAppend< typename shards::ArrayAppend< shards::Array<Scalar,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::type, stk::mesh::EntityDimension >::type>::ArrayVectorType ScratchArray;
+  typedef stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> T;
+  typedef typename stk_classic::mesh::GatherField<stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::PtrField PtrField;
+  typedef typename ToArrayVector<typename shards::ArrayAppend< typename shards::ArrayAppend< shards::Array<Scalar,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::type, stk_classic::mesh::EntityDimension >::type>::ArrayVectorType ScratchArray;
   
   AlgFieldGather(Algorithm *algorithm, const char *name)
     : m_field(*algorithm->m_metaData.get_field<PtrField>(name)),
@@ -186,7 +186,7 @@ struct AlgFieldGather< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2
     algorithm->add_field(this);
   }
   
-  AlgFieldGather(Algorithm *algorithm, const char *name, stk::mesh::FieldState field_state)
+  AlgFieldGather(Algorithm *algorithm, const char *name, stk_classic::mesh::FieldState field_state)
     : m_field(algorithm->m_metaData.get_field<PtrField>(name)->field_of_state(field_state)),
       m_array()
   {
@@ -200,7 +200,7 @@ struct AlgFieldGather< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2
 //     algorithm->add_field(this);
 //   }
 
-//   AlgFieldGather(Algorithm *algorithm, T &field, stk::mesh::FieldState field_state)
+//   AlgFieldGather(Algorithm *algorithm, T &field, stk_classic::mesh::FieldState field_state)
 //     : m_field(field.field_of_state(field_state)),
 //       m_array()
 //   {
@@ -210,9 +210,9 @@ struct AlgFieldGather< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2
   virtual ~AlgFieldGather()
   {}
   
-  virtual void set(const stk::mesh::Bucket &bucket) {
-    m_begin = stk::mesh::field_data<PtrField>(m_field, bucket.begin());
-    m_end = stk::mesh::field_data<PtrField>(m_field, bucket.end());
+  virtual void set(const stk_classic::mesh::Bucket &bucket) {
+    m_begin = stk_classic::mesh::field_data<PtrField>(m_field, bucket.begin());
+    m_end = stk_classic::mesh::field_data<PtrField>(m_field, bucket.end());
     
     unsigned dims[8];
     dims[0] = DimTagInfo<Tag1>::value(bucket);
@@ -224,10 +224,10 @@ struct AlgFieldGather< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2
     dims[6] = DimTagInfo<Tag7>::value(bucket);
     dims[7] = 0;
 
-    stk::mesh::BucketArray<PtrField> gather_array(m_field, bucket);
+    stk_classic::mesh::BucketArray<PtrField> gather_array(m_field, bucket);
 
-    dims[stk::mesh::FieldTraits<T>::Rank] = gather_array.dimension(0);
-    dims[stk::mesh::FieldTraits<T>::Rank + 1] = gather_array.dimension(1);
+    dims[stk_classic::mesh::FieldTraits<T>::Rank] = gather_array.dimension(0);
+    dims[stk_classic::mesh::FieldTraits<T>::Rank + 1] = gather_array.dimension(1);
 
     m_array.resize(&dims[0]);
     m_size = 1;
@@ -283,11 +283,11 @@ class AlgFieldX;
 template< typename Scalar , 
           class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7, class Relation>
-struct AlgFieldX< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation> > : public AlgField
+struct AlgFieldX< stk_classic::mesh::GatherField <stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation> > : public AlgField
 {
-  typedef stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> T;
-  typedef typename stk::mesh::GatherField<stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::PtrField PtrField;
-  typedef typename shards::ArrayAppend< typename shards::ArrayAppend< shards::Array<Scalar,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::type, stk::mesh::EntityDimension >::type Array;
+  typedef stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> T;
+  typedef typename stk_classic::mesh::GatherField<stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::PtrField PtrField;
+  typedef typename shards::ArrayAppend< typename shards::ArrayAppend< shards::Array<Scalar,shards::FortranOrder,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7>, Relation>::type, stk_classic::mesh::EntityDimension >::type Array;
   
   AlgFieldX(Algorithm *algorithm, const char *name)
     : m_field(*algorithm->m_metaData.get_field<PtrField>(name)),
@@ -298,7 +298,7 @@ struct AlgFieldX< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3
     algorithm->add_field(this);
   }
   
-  AlgFieldX(Algorithm *algorithm, const char *name, stk::mesh::FieldState field_state)
+  AlgFieldX(Algorithm *algorithm, const char *name, stk_classic::mesh::FieldState field_state)
     : m_field(algorithm->m_metaData.get_field<PtrField>(name)->field_of_state(field_state)),
       m_begin(0),
       m_end(0),
@@ -314,7 +314,7 @@ struct AlgFieldX< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3
 //     algorithm->add_field(this);
 //   }
 
-//   AlgFieldX(Algorithm *algorithm, T &field, stk::mesh::FieldState field_state)
+//   AlgFieldX(Algorithm *algorithm, T &field, stk_classic::mesh::FieldState field_state)
 //     : m_field(field.field_of_state(field_state)),
 //       m_array()
 //   {
@@ -324,9 +324,9 @@ struct AlgFieldX< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3
   virtual ~AlgFieldX()
   {}
   
-  virtual void set(const stk::mesh::Bucket &bucket) {
-    m_begin = stk::mesh::field_data<PtrField>(m_field, bucket.begin());
-    m_end = stk::mesh::field_data<PtrField>(m_field, bucket.end());
+  virtual void set(const stk_classic::mesh::Bucket &bucket) {
+    m_begin = stk_classic::mesh::field_data<PtrField>(m_field, bucket.begin());
+    m_end = stk_classic::mesh::field_data<PtrField>(m_field, bucket.end());
     m_ptr = m_begin;
   }
 
@@ -345,9 +345,9 @@ struct AlgFieldX< stk::mesh::GatherField <stk::mesh::Field<Scalar,Tag1,Tag2,Tag3
 
 
 template <class T>
-struct AlgFieldArray : public AlgField, public stk::mesh::BucketArray<T>
+struct AlgFieldArray : public AlgField, public stk_classic::mesh::BucketArray<T>
 {
-  typedef stk::mesh::BucketArray<T> Array;
+  typedef stk_classic::mesh::BucketArray<T> Array;
   
   AlgFieldArray(Algorithm *algorithm, const char *name)
     : m_field(*algorithm->m_metaData.get_field<T>(name))
@@ -355,7 +355,7 @@ struct AlgFieldArray : public AlgField, public stk::mesh::BucketArray<T>
     algorithm->add_field(this);
   }
   
-  AlgFieldArray(Algorithm *algorithm, const char *name, stk::mesh::FieldState field_state)
+  AlgFieldArray(Algorithm *algorithm, const char *name, stk_classic::mesh::FieldState field_state)
     : m_field(algorithm->m_metaData.get_field<T>(name)->field_of_state(field_state))
   {
     algorithm->add_field(this);
@@ -367,13 +367,13 @@ struct AlgFieldArray : public AlgField, public stk::mesh::BucketArray<T>
     algorithm->add_field(this);
   }
 
-  AlgFieldArray(Algorithm *algorithm, T &field, stk::mesh::FieldState field_state)
+  AlgFieldArray(Algorithm *algorithm, T &field, stk_classic::mesh::FieldState field_state)
     : m_field(field.field_of_state(field_state))
   {
     algorithm->add_field(this);
   }
 
-  virtual void set(const stk::mesh::Bucket &bucket) {
+  virtual void set(const stk_classic::mesh::Bucket &bucket) {
     Array::setup(m_field, bucket);
   }
   
@@ -387,10 +387,10 @@ class FillFieldAlgorithm;
 template< typename Scalar , 
           class Tag1 , class Tag2 , class Tag3 , class Tag4 ,
           class Tag5 , class Tag6 , class Tag7>
-class FillFieldAlgorithm< stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> >
+class FillFieldAlgorithm< stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> >
 {
 public:
-  typedef stk::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> Field;
+  typedef stk_classic::mesh::Field<Scalar,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> Field;
   typedef shards::ArrayVector<Scalar,shards::FortranOrder, Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> FillArray;
   
   FillFieldAlgorithm(Field &field, const FillArray &fill_value)
@@ -413,18 +413,18 @@ public:
 
   enum { chunk_size = 0 }; ///< Don't slice the buckets
 
-  void apply( const stk::AlgorithmWork & work )
+  void apply( const stk_classic::AlgorithmWork & work )
   {
-    //const stk::mesh::Bucket& bucket = work.bucket ;
+    //const stk_classic::mesh::Bucket& bucket = work.bucket ;
     if (m_fillValue.size()) { 
-      Scalar *begin_p = stk::mesh::field_data<Field>(m_field, work.bucket_slice_begin);
-      Scalar *end_p = stk::mesh::field_data<Field>(m_field, work.bucket_slice_end);
+      Scalar *begin_p = stk_classic::mesh::field_data<Field>(m_field, work.bucket_slice_begin);
+      Scalar *end_p = stk_classic::mesh::field_data<Field>(m_field, work.bucket_slice_end);
       for (Scalar *p = begin_p; p != end_p; p += m_fillValue.size())
         std::copy(m_fillValue.contiguous_data(), m_fillValue.contiguous_data() + m_fillValue.size(), p);
     }
     else {        
-      Scalar *begin_p = stk::mesh::field_data<Field>(m_field, work.bucket_slice_begin);
-      Scalar *end_p = stk::mesh::field_data<Field>(m_field, work.bucket_slice_end);
+      Scalar *begin_p = stk_classic::mesh::field_data<Field>(m_field, work.bucket_slice_begin);
+      Scalar *end_p = stk_classic::mesh::field_data<Field>(m_field, work.bucket_slice_end);
       std::fill(begin_p, end_p, m_value);
     }
   }

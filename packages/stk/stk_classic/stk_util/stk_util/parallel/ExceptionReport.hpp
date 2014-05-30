@@ -14,34 +14,34 @@
  * @brief Macro WarnTrace makes a pretty warning message with file and line number.
  *
  */
-#define WarnTrace std::string(std::string("  warning at ") + stk::source_relative_path(STR_TRACE))
+#define WarnTrace std::string(std::string("  warning at ") + stk_classic::source_relative_path(STR_TRACE))
 
 /**
  * @ingroup Exception
  * @brief Macro ErrorTrace makes a pretty error message with file and line number.
  *
  */
-#define ErrorTrace std::string(std::string("  error thrown from ") + stk::source_relative_path(STR_TRACE))
+#define ErrorTrace std::string(std::string("  error thrown from ") + stk_classic::source_relative_path(STR_TRACE))
 
 namespace sierra {
 
   enum ErrorDieEnum{DIE_ON_WARN=0, DIE_ON_ERROR=1, DIE_ON_MESSAGE=2};
 
-typedef stk::MessageCode MessageCode;
+typedef stk_classic::MessageCode MessageCode;
 
-typedef stk::RuntimeWarningAdHoc RuntimeWarning;                ///< Deprecated
-typedef stk::RuntimeWarningSymmetric RuntimeWarningP0;          ///< Deprecated
+typedef stk_classic::RuntimeWarningAdHoc RuntimeWarning;                ///< Deprecated
+typedef stk_classic::RuntimeWarningSymmetric RuntimeWarningP0;          ///< Deprecated
 
-typedef stk::RuntimeWarningAdHoc RuntimeWarningAdHoc;
-typedef stk::RuntimeWarningSymmetric RuntimeWarningSymmetric;
-typedef stk::RuntimeWarningDeferred RuntimeWarningDeferred;
+typedef stk_classic::RuntimeWarningAdHoc RuntimeWarningAdHoc;
+typedef stk_classic::RuntimeWarningSymmetric RuntimeWarningSymmetric;
+typedef stk_classic::RuntimeWarningDeferred RuntimeWarningDeferred;
 
-typedef stk::RuntimeDoomedAdHoc RuntimeDoomed;                  ///< Deprecated
-typedef stk::RuntimeDoomedSymmetric RuntimeDoomedP0;            ///< Deprecated
+typedef stk_classic::RuntimeDoomedAdHoc RuntimeDoomed;                  ///< Deprecated
+typedef stk_classic::RuntimeDoomedSymmetric RuntimeDoomedP0;            ///< Deprecated
 
-typedef stk::RuntimeDoomedAdHoc RuntimeDoomedAdHoc;
-typedef stk::RuntimeDoomedSymmetric RuntimeDoomedSymmetric;
-typedef stk::RuntimeDoomedDeferred RuntimeDoomedDeferred;
+typedef stk_classic::RuntimeDoomedAdHoc RuntimeDoomedAdHoc;
+typedef stk_classic::RuntimeDoomedSymmetric RuntimeDoomedSymmetric;
+typedef stk_classic::RuntimeDoomedDeferred RuntimeDoomedDeferred;
 
 void set_test_error_messages_file(const std::string &test_error_messages_path);
 

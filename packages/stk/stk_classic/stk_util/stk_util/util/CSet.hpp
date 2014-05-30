@@ -12,7 +12,7 @@
 #include <typeinfo>
 #include <vector>
 
-namespace stk {
+namespace stk_classic {
 
 //----------------------------------------------------------------------
 /** \ingroup util_module
@@ -101,7 +101,7 @@ private:
 
 #ifndef DOXYGEN_COMPILE
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 template<class T>

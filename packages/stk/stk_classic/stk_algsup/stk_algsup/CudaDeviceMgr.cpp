@@ -13,7 +13,7 @@
 
 #include <stk_algsup/CudaDeviceMgr.hpp>
 
-namespace stk {
+namespace stk_classic {
 
 CudaDeviceMgr& CudaDeviceMgr::get_singleton()
 {

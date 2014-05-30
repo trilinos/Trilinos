@@ -21,21 +21,21 @@
 
 namespace {
 
-const stk::mesh::EntityRank NODE_RANK = stk::mesh::fem::FEMMetaData::NODE_RANK;
+const stk_classic::mesh::EntityRank NODE_RANK = stk_classic::mesh::fem::FEMMetaData::NODE_RANK;
 
 STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
 {
   // Test BulkData's generate_new_entities method.
 
-  stk::ParallelMachine pm(MPI_COMM_WORLD);
+  stk_classic::ParallelMachine pm(MPI_COMM_WORLD);
 
   const int spatial_dimension = 3;
-  stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
-  stk::mesh::BulkData bulk_data( stk::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm );
+  stk_classic::mesh::fem::FEMMetaData meta_data( spatial_dimension );
+  stk_classic::mesh::BulkData bulk_data( stk_classic::mesh::fem::FEMMetaData::get_meta_data(meta_data) , pm );
 
   meta_data.commit();
 
-  const stk::mesh::PartVector no_parts;
+  const stk_classic::mesh::PartVector no_parts;
 
   bulk_data.modification_begin();
 
@@ -51,12 +51,12 @@ STKUNIT_UNIT_TEST( UnitTestStkMeshGenerateNewEntities , testUnit )
   bulk_data.modification_begin();
 
   // generate_new_entities creates new blank entities of the requested ranks
-  stk::mesh::EntityVector new_nodes;
+  stk_classic::mesh::EntityVector new_nodes;
   bulk_data.generate_new_entities(requests, new_nodes);
   STKUNIT_ASSERT_EQ(new_nodes.size(), num_nodes_requested);
 
   // confirm that the nodes we created earlier are not in the new entities
-  for (stk::mesh::EntityVector::const_iterator itr = new_nodes.begin();
+  for (stk_classic::mesh::EntityVector::const_iterator itr = new_nodes.begin();
        itr != new_nodes.end(); ++itr) {
     STKUNIT_ASSERT_GT((*itr)->identifier(), bulk_data.parallel_size());
   }

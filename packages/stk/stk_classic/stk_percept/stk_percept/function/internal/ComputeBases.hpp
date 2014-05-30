@@ -42,7 +42,7 @@ namespace stk
       /// ([P],[D])
       // parametric_coordinates: ([P],[D])
       // transformed_basis_values: ([C],[B],[P]), or ([C],[B],[P],[D]) for GRAD
-      void getBases(const stk::mesh::Bucket &bucket, const MDArray& parametric_coordinates, MDArray& transformed_basis_values, int which_cell = -1)
+      void getBases(const stk_classic::mesh::Bucket &bucket, const MDArray& parametric_coordinates, MDArray& transformed_basis_values, int which_cell = -1)
       {
         VERIFY_OP(parametric_coordinates.rank(), ==, 2, "ComputeBases::operator() parametric_coordinates bad rank");
         VERIFY_OP(transformed_basis_values.rank(), ==, 3, "ComputeBases::operator() transformed_basis_values bad rank");
@@ -54,7 +54,7 @@ namespace stk
         int numInterpPoints = parametric_coordinates.dimension(0);
 
         //const mesh::Bucket & bucket = element->bucket();
-        const CellTopologyData * const bucket_cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+        const CellTopologyData * const bucket_cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
 
         //unsigned stride = 0;
         //double * fdata_bucket = PerceptMesh::field_data( m_my_field , bucket, &stride);
@@ -112,7 +112,7 @@ namespace stk
         Intrepid::FunctionSpaceTools::HGRADtransformVALUE<double>(transformed_basis_values, basis_values);
       }
 
-      void getBases(const stk::mesh::Entity &element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)
+      void getBases(const stk_classic::mesh::Entity &element, const MDArray& parametric_coordinates, MDArray& transformed_basis_values)
       {
         // FIXME this will need to be changed when the bases have gradients and thus depend on which element they're assoc with
         const mesh::Bucket & bucket = element.bucket();

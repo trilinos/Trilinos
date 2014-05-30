@@ -11,7 +11,7 @@
 #include <iostream>
 #include <stdexcept>
 
-namespace stk {
+namespace stk_classic {
 
 namespace {
 

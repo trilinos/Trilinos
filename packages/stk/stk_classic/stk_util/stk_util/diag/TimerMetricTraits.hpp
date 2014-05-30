@@ -11,7 +11,7 @@
 
 #include <string>
 
-namespace stk {
+namespace stk_classic {
 namespace diag {
 
 typedef unsigned long MetricsMask;

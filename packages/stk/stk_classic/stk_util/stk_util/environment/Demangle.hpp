@@ -15,7 +15,7 @@
 #define STK_USE_PLATFORM_DEMANGLER
 #endif
 
-namespace stk {
+namespace stk_classic {
 
 /**
  * @brief Function <b>demangle</b> returns the demangled C++ symbol from the mangled

@@ -18,32 +18,32 @@
 
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 
-using stk::mesh::Part;
-using stk::mesh::MetaData;
-using stk::mesh::BulkData;
-using stk::mesh::Entity;
-using stk::mesh::Selector;
-using stk::mesh::PartVector;
-using stk::mesh::EntityId;
-using stk::mesh::fixtures::RingFixture;
+using stk_classic::mesh::Part;
+using stk_classic::mesh::MetaData;
+using stk_classic::mesh::BulkData;
+using stk_classic::mesh::Entity;
+using stk_classic::mesh::Selector;
+using stk_classic::mesh::PartVector;
+using stk_classic::mesh::EntityId;
+using stk_classic::mesh::fixtures::RingFixture;
 
 //----------------------------------------------------------------------
 // Testing for mesh entities without relations
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestroy_nodes)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
   const unsigned id_total = nPerProc * p_size ;
   const unsigned id_begin = nPerProc * p_rank ;
   const unsigned id_end   = nPerProc * ( p_rank + 1 );
 
   const int spatial_dimension = 3;
-  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
 
   const PartVector no_parts ;
 
@@ -114,17 +114,17 @@ void assert_is_destroyed( const Entity * const entity )
 
 STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 {
-  stk::ParallelMachine pm = MPI_COMM_WORLD;
+  stk_classic::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier( pm );
 
   enum { nPerProc = 10 };
-  const unsigned p_rank = stk::parallel_machine_rank( pm );
-  const unsigned p_size = stk::parallel_machine_size( pm );
+  const unsigned p_rank = stk_classic::parallel_machine_rank( pm );
+  const unsigned p_size = stk_classic::parallel_machine_size( pm );
   // const unsigned nLocalNode = nPerProc + ( 1 < p_size ? 1 : 0 );
   const unsigned nLocalEdge = nPerProc ;
 
   const int spatial_dimension = 3;
-  MetaData meta( stk::mesh::fem::entity_rank_names(spatial_dimension) );
+  MetaData meta( stk_classic::mesh::fem::entity_rank_names(spatial_dimension) );
 
   meta.commit();
 
@@ -146,12 +146,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
 
     bulk.modification_begin();
     mesh.generate_mesh( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk,
                                                            false /*no aura*/));
 
     bulk.modification_begin();
     mesh.fixup_node_ownership();
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(bulk,
+    STKUNIT_ASSERT(stk_classic::unit_test::modification_end_wrapper(bulk,
                                                            false /*no aura*/));
 
     // This process' first element in the loop
@@ -188,7 +188,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfBulkData, testDestory_ring)
       STKUNIT_ASSERT( bulk.destroy_entity( node1 ) );
       STKUNIT_ASSERT( NULL == node1 );
     }
-    STKUNIT_ASSERT( stk::unit_test::modification_end_wrapper(bulk, aura_flag) );
+    STKUNIT_ASSERT( stk_classic::unit_test::modification_end_wrapper(bulk, aura_flag) );
 
     if ( NULL != node0 ) {
       STKUNIT_ASSERT_EQUAL( node0_edges - 1 , node0->relations().size() );

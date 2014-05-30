@@ -15,14 +15,14 @@
 #include <stk_util/diag/Writer.hpp>
 #include <stk_search/BoundingBox.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace search {
 namespace box {
 
 template <class K, class T, int DIMENSION>
-stk::diag::Writer &
+stk_classic::diag::Writer &
 operator<<(
-  stk::diag::Writer &                   dout,
+  stk_classic::diag::Writer &                   dout,
   const PointBoundingBox<K, T, DIMENSION> &  point_)
 {
   if (dout.shouldPrint()) {
@@ -56,9 +56,9 @@ operator<<(
 }
 
 template <class K, class T, int DIMENSION>
-stk::diag::Writer &
+stk_classic::diag::Writer &
 operator<<(
-  stk::diag::Writer &                   dout,
+  stk_classic::diag::Writer &                   dout,
   const AxisAlignedBoundingBox<K,T, DIMENSION> &  box_)
 {
   if (dout.shouldPrint()) {
@@ -93,9 +93,9 @@ operator<<(
 
 
 template <class K, class T, int DIMENSION>
-stk::diag::Writer &
+stk_classic::diag::Writer &
 operator<<(
-  stk::diag::Writer &                   dout,
+  stk_classic::diag::Writer &                   dout,
   const SphereBoundingBox<K, T, DIMENSION> &  sphere_)
 {
   if (dout.shouldPrint()) {

@@ -1,5 +1,5 @@
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 } // namespace mesh
 } // namespace stk
@@ -18,42 +18,42 @@ namespace mesh {
  *  which <em> implements </em> a discretization of an
  *  application's problem domain.
  *
- *  - \ref stk::mesh::MetaData "Meta data"
- *    = { { \ref stk::mesh::Part "Part" } + 
- *        { \ref stk::mesh::Field "Field" } }
- *  - \ref stk::mesh::BulkData "Bulk data"
- *    = { { \ref stk::mesh::Entity "Entity" } +
- *        { \ref stk::mesh::Relation "Relation" } +
+ *  - \ref stk_classic::mesh::MetaData "Meta data"
+ *    = { { \ref stk_classic::mesh::Part "Part" } + 
+ *        { \ref stk_classic::mesh::Field "Field" } }
+ *  - \ref stk_classic::mesh::BulkData "Bulk data"
+ *    = { { \ref stk_classic::mesh::Entity "Entity" } +
+ *        { \ref stk_classic::mesh::Relation "Relation" } +
  *        { \ref stk_mesh_field_data "Field data" stored in
- *          \ref stk::mesh::Bucket "Buckets" } }
+ *          \ref stk_classic::mesh::Bucket "Buckets" } }
  *
- *  A \ref stk::mesh::BulkData "bulk data manager"
+ *  A \ref stk_classic::mesh::BulkData "bulk data manager"
  *  owns and manages an integrated collection of
- *  \ref stk::mesh::Entity "entities" (e.g. nodes and elements),
- *  \ref stk::mesh::Relation "relations" between entities (i.e. connectivity),
+ *  \ref stk_classic::mesh::Entity "entities" (e.g. nodes and elements),
+ *  \ref stk_classic::mesh::Relation "relations" between entities (i.e. connectivity),
  *  and computational
  *  \ref stk_mesh_field_data "field data" associated with entities of the mesh.
  *  \ref stk_mesh_field_data "Field data" for homogeneous subsets of entities 
- *  is aggregated into \ref stk::mesh::Bucket "buckets", i.e.
+ *  is aggregated into \ref stk_classic::mesh::Bucket "buckets", i.e.
  *  contiguous blocks of memory.
- *  A \ref stk::mesh::MetaData "meta data manager"
+ *  A \ref stk_classic::mesh::MetaData "meta data manager"
  *  owns and manages an integrated collection of
- *  \ref stk::mesh::Part "parts" and 
- *  \ref stk::mesh::Field "fields".
- *  A \ref stk::mesh::Part "part" <em> defines </em> an expected
+ *  \ref stk_classic::mesh::Part "parts" and 
+ *  \ref stk_classic::mesh::Field "fields".
+ *  A \ref stk_classic::mesh::Part "part" <em> defines </em> an expected
  *  subset of entities in the problem domain.
- *  A \ref stk::mesh::Field "field" <em> defines </em> the expected
+ *  A \ref stk_classic::mesh::Field "field" <em> defines </em> the expected
  *  computational \ref stk_mesh_field_data "field data" for a
  *  discretization of the problem domain.
  *
  *  \section  stk_mesh_example  Simple Example
  *
  *  An application must first create a
- *  \ref stk::mesh::MetaData "meta data manager".
+ *  \ref stk_classic::mesh::MetaData "meta data manager".
  *  An application owns the meta data manager that it creates;
  *  however, a meta data manager owns its parts and fields.
  *  \code
- *  using namespace stk ;
+ *  using namespace stk_classic ;
  *
  *  mesh::MetaData meta_mgr ; // Owned by the application
  *
@@ -65,7 +65,7 @@ namespace mesh {
  *  \endcode
  *
  *  An application defines <em> types </em> for the
- *  \ref stk::mesh::Field "fields" that it will use.
+ *  \ref stk_classic::mesh::Field "fields" that it will use.
  *  The first template parameter of a field type is the numerical
  *  type of the field.  The remaining template parameters (if any)
  *  define the ranks of the multidimensional array.
@@ -158,10 +158,10 @@ namespace mesh {
 /** \ingroup  stk_mesh_module
  *  \defgroup stk_mesh_relations  Mesh Entity Relationships
  *  \brief  An seemingly simple
- *          \ref stk::mesh::Relation "relationship" between two
- *          \ref stk::mesh::Entity "mesh entities"
+ *          \ref stk_classic::mesh::Relation "relationship" between two
+ *          \ref stk_classic::mesh::Entity "mesh entities"
  *          has consequences for entity membership in 
- *          \ref stk::mesh::Part "parts"
+ *          \ref stk_classic::mesh::Part "parts"
  *          and derived field relationships.
  */
 
@@ -178,7 +178,7 @@ namespace mesh {
 /** \ingroup  stk_mesh_module
  *  \defgroup stk_mesh_field_data  Mesh Field Bulk Data
  *  \brief  Computational data associated with the
- *          \ref stk::mesh::Entity "entities" within a mesh.
+ *          \ref stk_classic::mesh::Entity "entities" within a mesh.
  */
 
 /** \ingroup  stk_mesh_module
@@ -188,7 +188,7 @@ namespace mesh {
 
 /** \ingroup  stk_mesh_module
  *  \defgroup stk_mesh_bulk_data_element  Bulk Data Finite Element Entities
- *  \brief  Create \ref stk::mesh::Entity "entities" with common used
+ *  \brief  Create \ref stk_classic::mesh::Entity "entities" with common used
  *          \ref discrete_module "finite element topologies".
  */
 

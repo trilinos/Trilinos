@@ -22,18 +22,18 @@
 // #include <stk_mesh/base/Entity.hpp>
 // FIXME
 
-namespace stk {
+namespace stk_classic {
   namespace adapt {
 
 
-    TestLocalRefiner::TestLocalRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk::mesh::FieldBase *proc_rank_field) : 
+    TestLocalRefiner::TestLocalRefiner(percept::PerceptMesh& eMesh, UniformRefinerPatternBase &  bp, stk_classic::mesh::FieldBase *proc_rank_field) : 
       Refiner(eMesh, bp, proc_rank_field)
     {
     }
 
     // test uniform refinement using bulk data and buckets directly (not using the element color vectors)
     unsigned TestLocalRefiner::
-    doForAllElements(stk::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
+    doForAllElements(stk_classic::mesh::EntityRank rank, NodeRegistry::ElementFunctionPrototype function, 
                      vector< ColorerSetType >& elementColors, unsigned elementType,
                      vector<NeededEntityType>& needed_entity_ranks, 
                      bool only_count, bool doAllElements)
@@ -59,24 +59,24 @@ namespace stk {
       percept::PerceptMesh& eMesh = m_eMesh;
 
 #if 0
-      stk::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
-      const std::vector< stk::mesh::Part * > & parts = metaData.get_parts();
+      stk_classic::mesh::fem::FEMMetaData& metaData = *eMesh.get_fem_meta_data();
+      const std::vector< stk_classic::mesh::Part * > & parts = metaData.get_parts();
       unsigned nparts = parts.size();
       if (1) std::cout << "Number of parts = " << nparts << std::endl;
       VectorFieldType* coordField = eMesh.get_coordinates_field();
 #endif
-      stk::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
+      stk_classic::mesh::BulkData& bulkData = *eMesh.get_bulk_data();
 
-      const std::vector<stk::mesh::Bucket*> & buckets = bulkData.buckets( rank );  
+      const std::vector<stk_classic::mesh::Bucket*> & buckets = bulkData.buckets( rank );  
 
-      for ( std::vector<stk::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
+      for ( std::vector<stk_classic::mesh::Bucket*>::const_iterator k = buckets.begin() ; k != buckets.end() ; ++k ) 
         {
           //if (in_surface_selector(**k)) 
           {
-            stk::mesh::Bucket & bucket = **k ;
+            stk_classic::mesh::Bucket & bucket = **k ;
 
             // in case the cell topology is needed
-            const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(bucket);
+            const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(bucket);
             shards::CellTopology cell_topo(cell_topo_data);
 
             if (cell_topo.getKey() != elementType)
@@ -86,11 +86,11 @@ namespace stk {
             
             for (unsigned iElement = 0; iElement < num_elements_in_bucket; iElement++)
               {
-                const stk::mesh::Entity& element = bucket[iElement];
+                const stk_classic::mesh::Entity& element = bucket[iElement];
 
-                //const stk::mesh::PairIterRelation& elem_nodes = element.relations( stk::mesh::fem::FEMMetaData::NODE_RANK );  
+                //const stk_classic::mesh::PairIterRelation& elem_nodes = element.relations( stk_classic::mesh::fem::FEMMetaData::NODE_RANK );  
 
-                //const stk::mesh::Entity& element = * element_p;
+                //const stk_classic::mesh::Entity& element = * element_p;
 
                 bool elementIsGhost = m_eMesh.isGhostElement(element);
                 if (!elementIsGhost) 
@@ -122,17 +122,17 @@ namespace stk {
     }
 
     void TestLocalRefiner::
-    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
+    refineMethodApply(NodeRegistry::ElementFunctionPrototype function, const stk_classic::mesh::Entity& element, vector<NeededEntityType>& needed_entity_ranks)
     {
-      const CellTopologyData * const cell_topo_data = stk::percept::PerceptMesh::get_cell_topology(element);
+      const CellTopologyData * const cell_topo_data = stk_classic::percept::PerceptMesh::get_cell_topology(element);
                 
       CellTopology cell_topo(cell_topo_data);
-      const mesh::PairIterRelation elem_nodes = element.relations(stk::mesh::fem::FEMMetaData::NODE_RANK);
+      const mesh::PairIterRelation elem_nodes = element.relations(stk_classic::mesh::fem::FEMMetaData::NODE_RANK);
 
       for (unsigned ineed_ent=0; ineed_ent < needed_entity_ranks.size(); ineed_ent++)
         {
           unsigned numSubDimNeededEntities = 0;
-          stk::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
+          stk_classic::mesh::EntityRank needed_entity_rank = needed_entity_ranks[ineed_ent].first;
 
           if (needed_entity_rank == m_eMesh.edge_rank())
             {

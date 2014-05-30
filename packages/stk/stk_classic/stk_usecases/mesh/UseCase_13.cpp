@@ -34,7 +34,7 @@
 
 #include <common/gnu_malloc_hooks.hpp>
 
-using namespace stk ;
+using namespace stk_classic ;
 
 //----------------------------------------------------------------------
 // This file contains the implementation of use-case 13
@@ -101,9 +101,9 @@ void use_case_13_driver( MPI_Comm comm )
     // Declare the mesh meta data and bulk data.
 
     mesh::fem::FEMMetaData mesh_meta_data( SpatialDim );
-    const stk::mesh::EntityRank element_rank = mesh_meta_data.element_rank();
-    const stk::mesh::EntityRank side_rank    = mesh_meta_data.side_rank();
-    const stk::mesh::EntityRank edge_rank    = mesh_meta_data.edge_rank();
+    const stk_classic::mesh::EntityRank element_rank = mesh_meta_data.element_rank();
+    const stk_classic::mesh::EntityRank side_rank    = mesh_meta_data.side_rank();
+    const stk_classic::mesh::EntityRank edge_rank    = mesh_meta_data.edge_rank();
     mesh::BulkData mesh_bulk_data( mesh_meta_data.get_meta_data(mesh_meta_data) , MPI_COMM_WORLD );
 
     //--------------------------------
@@ -115,7 +115,7 @@ void use_case_13_driver( MPI_Comm comm )
     mesh::Part & universal = mesh_meta_data.universal_part();
     mesh::Part & block_hex = mesh_meta_data.declare_part("block_1", element_rank);
 
-    stk::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
+    stk_classic::mesh::fem::CellTopology hex_top(shards::getCellTopologyData<shards::Hexahedron<8> >());
     mesh::fem::set_cell_topology(block_hex, hex_top );
 
     //--------------------------------
@@ -124,7 +124,7 @@ void use_case_13_driver( MPI_Comm comm )
     VectorFieldType & coordinates_field =
       mesh_meta_data.declare_field< VectorFieldType >( "coordinates" );
 
-    stk::mesh::put_field(
+    stk_classic::mesh::put_field(
       coordinates_field , mesh::fem::FEMMetaData::NODE_RANK , universal , SpatialDim );
 
     //--------------------------------
@@ -135,9 +135,9 @@ void use_case_13_driver( MPI_Comm comm )
     VectorFieldType & elem_field =
       mesh_meta_data.declare_field< VectorFieldType >( "elem_flux" );
 
-    stk::mesh::put_field(elem_field , element_rank , block_hex , SpatialDim );
+    stk_classic::mesh::put_field(elem_field , element_rank , block_hex , SpatialDim );
 
-    stk::mesh::put_field(face_field , side_rank , universal , SpatialDim );
+    stk_classic::mesh::put_field(face_field , side_rank , universal , SpatialDim );
 
     //--------------------------------
     // Declare an aggressive "gather" field which is an
@@ -163,7 +163,7 @@ void use_case_13_driver( MPI_Comm comm )
     // is the number of nodes of the elements.
     // This size is different for each element block.
 
-    stk::mesh::put_field(
+    stk_classic::mesh::put_field(
         elem_node_coord , element_rank, block_hex , shards::Hexahedron<8> ::node_count );
 
     //--------------------------------
@@ -196,7 +196,7 @@ void use_case_13_driver( MPI_Comm comm )
       count_entities( selector, mesh_bulk_data, count );
 
       std::cout << "  P" << p_rank << ": Uses {"
-                << " Node = " << count[ stk::mesh::fem::FEMMetaData::NODE_RANK ]
+                << " Node = " << count[ stk_classic::mesh::fem::FEMMetaData::NODE_RANK ]
                 << " Edge = " << count[ edge_rank ]
                 << " Face = " << count[ side_rank ]
                 << " Elem = " << count[ element_rank ]
@@ -267,7 +267,7 @@ void use_case_13_algorithm(
 {
   const mesh::fem::FEMMetaData & meta_data = mesh::fem::FEMMetaData::get(M);
 
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = meta_data.element_rank();
 
   {
     // Communicate the element field data that we care about
@@ -469,7 +469,7 @@ void use_case_13_generate_sides(
   mesh::BulkData & mesh , const bool skin_only )
 {
   const mesh::fem::FEMMetaData & meta_data = mesh::fem::FEMMetaData::get(mesh);
-  const stk::mesh::EntityRank element_rank = meta_data.element_rank();
+  const stk_classic::mesh::EntityRank element_rank = meta_data.element_rank();
   const unsigned p_rank = mesh.parallel_rank();
 
   mesh.modification_begin();
@@ -616,7 +616,7 @@ void use_case_13_generate_mesh(
 
             const int * const local_node_id = & elem_conn[ j * 8 ] ;
 
-            const stk::mesh::EntityId node_id[8] = {
+            const stk_classic::mesh::EntityId node_id[8] = {
 	      local_node_id[0] ,
 	      local_node_id[1] ,
 	      local_node_id[2] ,
@@ -627,7 +627,7 @@ void use_case_13_generate_mesh(
 	      local_node_id[7]
             };
 
-            const stk::mesh::EntityId elem_id = elem_map[ j ];
+            const stk_classic::mesh::EntityId elem_id = elem_map[ j ];
 
             mesh::fem::declare_element( mesh , hex_block , elem_id , node_id );
 

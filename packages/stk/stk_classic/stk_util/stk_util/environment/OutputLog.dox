@@ -119,23 +119,23 @@
 ///
 ///     main()
 ///     {
-///       stk::register_log_ostream(std::cout, "cout"); // Make standard out available
-///       stk::register_log_ostream(std::cerr, "cerr"); // Make standard error available
+///       stk_classic::register_log_ostream(std::cout, "cout"); // Make standard out available
+///       stk_classic::register_log_ostream(std::cerr, "cerr"); // Make standard error available
 ///     
-///       stk::register_ostream(out(), "out");
-///       stk::register_ostream(pout(), "pout");
-///       stk::register_ostream(dout(), "dout", true);
-///       stk::register_ostream(tout(), "tout");
+///       stk_classic::register_ostream(out(), "out");
+///       stk_classic::register_ostream(pout(), "pout");
+///       stk_classic::register_ostream(dout(), "dout", true);
+///       stk_classic::register_ostream(tout(), "tout");
 ///
 ///       . . .
 ///    
-///       stk::unregister_ostream(out());
-///       stk::unregister_ostream(pout());
-///       stk::unregister_ostream(dout());
-///       stk::unregister_ostream(tout());
+///       stk_classic::unregister_ostream(out());
+///       stk_classic::unregister_ostream(pout());
+///       stk_classic::unregister_ostream(dout());
+///       stk_classic::unregister_ostream(tout());
 ///
-///       stk::unregister_log_ostream(std::cout);
-///       stk::unregister_log_ostream(std::cerr);
+///       stk_classic::unregister_log_ostream(std::cout);
+///       stk_classic::unregister_log_ostream(std::cerr);
 ///     }
 ///    
 /// \endcode
@@ -190,7 +190,7 @@
 ///     // regular log file and to the per-processor output stream, throw per-processor output away and
 ///     // send diagnostic output to the output stream.
 ///
-///     stk::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
+///     stk_classic::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
 ///                              "out>logfile+pout "            // Send output to the log file and to the per-processor stream
 ///                              "pout>null "                   // Throw per-processor output away
 ///                              "dout>out");                   // Send diagnostic output to the regular output stream
@@ -198,7 +198,7 @@
 ///     // On other processors, send regular output to the per-processor output stream, throw
 ///     // per-processor output away, and send diagnostic output to the log file.
 ///
-///     stk::bind_output_streams("out>pout "                    // Send output to the per-processor stream
+///     stk_classic::bind_output_streams("out>pout "                    // Send output to the per-processor stream
 ///                              "pout>null "                   // Throw per-processor output away
 ///                              "dout>out");                   // Send diagnostic output to the regular output stream
 /// \endcode
@@ -212,7 +212,7 @@
 ///     // output stream, send the per-processor output to the per-processor log file, and send
 ///     // diagnostic output to the log file.
 ///
-///     stk::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
+///     stk_classic::bind_output_streams("logfile=\"sierra.log\" "      // Create sierra.log
 ///                              "plogfile=\"debug.log.3.0\" "  // Create per-processor debug.log
 ///                              "out>logfile+pout "            // Send output to the log file and to the per-processor stream
 ///                              "pout>plogfile "               // Send per-processor output to the per-processor log file
@@ -222,7 +222,7 @@
 ///     // per-processor output to the per-processor log file, and send diagnostic output to the
 ///     // output stream.
 ///
-///     stk::bind_output_streams("debug.log.3.1\" "             // Create per-processor debug.log
+///     stk_classic::bind_output_streams("debug.log.3.1\" "             // Create per-processor debug.log
 ///                              "out>pout "                    // Send output to the per-processor stream
 ///                              "pout>plogfile "               // Send per-processor output to the per-processor log file
 ///                              "dout>out");                   // Send diagnostic output to the regular output stream

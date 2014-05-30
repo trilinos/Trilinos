@@ -302,10 +302,10 @@ public:
    *
    * @return			a <b>std::ostream</b> reference to <it>os</i>.
    */
-  stk::diag::Writer &verbose_print(stk::diag::Writer &dout) const;
+  stk_classic::diag::Writer &verbose_print(stk_classic::diag::Writer &dout) const;
 };
 
-inline stk::diag::Writer &operator<<(stk::diag::Writer &dout, const Registry &registry) {
+inline stk_classic::diag::Writer &operator<<(stk_classic::diag::Writer &dout, const Registry &registry) {
   return registry.verbose_print(dout);
 }
 

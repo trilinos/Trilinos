@@ -131,32 +131,32 @@ namespace {
 
 //Finds the sides that need to be created between the live and dead entities
 void find_sides_to_be_created(
-    const stk::mesh::EntitySideVector & boundary,
-    const stk::mesh::Selector & select,
-    std::vector<stk::mesh::EntitySideComponent> & sides
+    const stk_classic::mesh::EntitySideVector & boundary,
+    const stk_classic::mesh::Selector & select,
+    std::vector<stk_classic::mesh::EntitySideComponent> & sides
     );
 
 //Finds entities from the closure of the entities_to_be_killed
 //that only have relations with dead entities
 void find_lower_rank_entities_to_kill(
-    const stk::mesh::EntityVector & entities_closure,
+    const stk_classic::mesh::EntityVector & entities_closure,
     unsigned closure_rank,
     unsigned entity_rank,
-    const stk::mesh::Selector & select_owned,
-    const stk::mesh::Selector & select_live,
-    stk::mesh::EntityVector & kill_list
+    const stk_classic::mesh::Selector & select_owned,
+    const stk_classic::mesh::Selector & select_live,
+    stk_classic::mesh::EntityVector & kill_list
     );
 
 }
 
-bool element_death_use_case_1(stk::ParallelMachine pm)
+bool element_death_use_case_1(stk_classic::ParallelMachine pm)
 {
   //set up the mesh
-  stk::mesh::fixtures::GridFixture fixture(pm);
+  stk_classic::mesh::fixtures::GridFixture fixture(pm);
 
-  stk::mesh::BulkData& mesh = fixture.bulk_data();
-  stk::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
-  const stk::mesh::EntityRank element_rank = fem_meta.element_rank();
+  stk_classic::mesh::BulkData& mesh = fixture.bulk_data();
+  stk_classic::mesh::fem::FEMMetaData& fem_meta = fixture.fem_meta();
+  const stk_classic::mesh::EntityRank element_rank = fem_meta.element_rank();
 
   fem_meta.commit();
 
@@ -164,16 +164,16 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
   fixture.generate_grid();
   mesh.modification_end();
 
-  stk::mesh::skin_mesh(mesh, element_rank);
+  stk_classic::mesh::skin_mesh(mesh, element_rank);
 
   // Nothing happens on iteration #0,
   // so the initial mesh should pass this validation.
 
   if ( ! validate_iteration( pm, fixture, 0) ) { return false ; }
 
-  stk::mesh::Part & dead_part = *fixture.dead_part();
+  stk_classic::mesh::Part & dead_part = *fixture.dead_part();
 
-  stk::mesh::PartVector dead_parts;
+  stk_classic::mesh::PartVector dead_parts;
   dead_parts.push_back( & dead_part);
 
   bool passed = true;
@@ -182,7 +182,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
 
   for (int iteration = 0; iteration <NUM_ITERATIONS; ++iteration) {
     //find the entities to kill in this iteration
-    stk::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration, element_rank);
+    stk_classic::mesh::EntityVector entities_to_kill = entities_to_be_killed(mesh, iteration, element_rank);
 
     // find the parallel-consistent closure of the entities to be killed
     // The closure of an entity includes the entity and any lower ranked
@@ -193,15 +193,15 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // The find closure function will return a sorted parallel consistent vector
     // which contains all the entities that make up the closure of the input
     // vector.
-    stk::mesh::EntityVector entities_closure;
-    stk::mesh::find_closure(mesh,
+    stk_classic::mesh::EntityVector entities_closure;
+    stk_classic::mesh::find_closure(mesh,
         entities_to_kill,
         entities_closure);
 
 
     // find the boundary of the entities we're killing
-    stk::mesh::EntitySideVector boundary;
-    stk::mesh::boundary_analysis(mesh,
+    stk_classic::mesh::EntitySideVector boundary;
+    stk_classic::mesh::boundary_analysis(mesh,
         entities_closure,
         mesh_rank,
         boundary);
@@ -212,18 +212,18 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     // of the boundary is both live and owned and
     // a side separating the live and dead doesn't
     // already exist.
-    stk::mesh::Selector select_owned = fem_meta.locally_owned_part();
-    stk::mesh::Selector select_live = ! dead_part ;
-    stk::mesh::Selector select_live_and_owned = select_live & select_owned;
+    stk_classic::mesh::Selector select_owned = fem_meta.locally_owned_part();
+    stk_classic::mesh::Selector select_live = ! dead_part ;
+    stk_classic::mesh::Selector select_live_and_owned = select_live & select_owned;
 
-    std::vector<stk::mesh::EntitySideComponent> skin;
+    std::vector<stk_classic::mesh::EntitySideComponent> skin;
     find_sides_to_be_created( boundary, select_live_and_owned, skin);
 
 
     mesh.modification_begin();
 
     // Kill entities by moving them to the dead part.
-    for (stk::mesh::EntityVector::iterator itr = entities_to_kill.begin();
+    for (stk_classic::mesh::EntityVector::iterator itr = entities_to_kill.begin();
         itr != entities_to_kill.end(); ++itr) {
       mesh.change_entity_parts(**itr, dead_parts);
     }
@@ -235,17 +235,17 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     requests[mesh_rank-1] = skin.size();
 
     // generate_new_entities creates new blank entities of the requested ranks
-    stk::mesh::EntityVector requested_entities;
+    stk_classic::mesh::EntityVector requested_entities;
     mesh.generate_new_entities(requests, requested_entities);
 
     // Create boundaries between live and dead entities
     // by creating a relation between the new entities and the live entities
     for ( size_t i = 0; i < skin.size(); ++i) {
-      stk::mesh::Entity & entity = *(skin[i].entity);
+      stk_classic::mesh::Entity & entity = *(skin[i].entity);
       const unsigned side_ordinal  = skin[i].side_ordinal;
-      stk::mesh::Entity & side   = * (requested_entities[i]);
+      stk_classic::mesh::Entity & side   = * (requested_entities[i]);
 
-      stk::mesh::fem::declare_element_side(entity, side, side_ordinal);
+      stk_classic::mesh::fem::declare_element_side(entity, side, side_ordinal);
     }
 
     mesh.modification_end();
@@ -255,7 +255,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
     //find lower ranked entity that are only related to the dead entities
     //and kill them
     for (int rank = mesh_rank -1; rank >= 0; --rank) {
-      stk::mesh::EntityVector kill_list;
+      stk_classic::mesh::EntityVector kill_list;
       find_lower_rank_entities_to_kill(
           entities_closure,
           mesh_rank,
@@ -268,7 +268,7 @@ bool element_death_use_case_1(stk::ParallelMachine pm)
       //need to communicate killing the higher ranking entities among
       //processors before killing the lower.
       mesh.modification_begin();
-      for (stk::mesh::EntityVector::iterator itr = kill_list.begin();
+      for (stk_classic::mesh::EntityVector::iterator itr = kill_list.begin();
           itr != kill_list.end(); ++itr) {
         mesh.change_entity_parts(**itr, dead_parts);
       }
@@ -287,18 +287,18 @@ namespace {
 
 //----------------------------------------------------------------------------------
 void find_sides_to_be_created(
-    const stk::mesh::EntitySideVector & boundary,
-    const stk::mesh::Selector & select,
-    std::vector<stk::mesh::EntitySideComponent> & sides
+    const stk_classic::mesh::EntitySideVector & boundary,
+    const stk_classic::mesh::Selector & select,
+    std::vector<stk_classic::mesh::EntitySideComponent> & sides
     )
 {
   //look at the outside of the boundary since the inside will be kill this
   //iteration
 
-  for (stk::mesh::EntitySideVector::const_iterator itr = boundary.begin();
+  for (stk_classic::mesh::EntitySideVector::const_iterator itr = boundary.begin();
       itr != boundary.end(); ++itr) {
 
-    const stk::mesh::EntitySideComponent & outside = itr->outside;
+    const stk_classic::mesh::EntitySideComponent & outside = itr->outside;
 
 
     // examine the boundary of the outside of the closure.
@@ -306,8 +306,8 @@ void find_sides_to_be_created(
 
       //make sure the side does not already exist
       const unsigned side_ordinal = outside.side_ordinal;
-      const stk::mesh::Entity & entity = * outside.entity;
-      stk::mesh::PairIterRelation existing_sides = entity.relations(entity.entity_rank()-1);
+      const stk_classic::mesh::Entity & entity = * outside.entity;
+      stk_classic::mesh::PairIterRelation existing_sides = entity.relations(entity.entity_rank()-1);
 
       for (; existing_sides.first != existing_sides.second &&
           existing_sides.first->identifier() != side_ordinal ;
@@ -323,37 +323,37 @@ void find_sides_to_be_created(
 
 //----------------------------------------------------------------------------------
 void find_lower_rank_entities_to_kill(
-    const stk::mesh::EntityVector & entities_closure,
+    const stk_classic::mesh::EntityVector & entities_closure,
     unsigned mesh_rank,
     unsigned entity_rank,
-    const stk::mesh::Selector & select_owned,
-    const stk::mesh::Selector & select_live,
-    stk::mesh::EntityVector & kill_list
+    const stk_classic::mesh::Selector & select_owned,
+    const stk_classic::mesh::Selector & select_live,
+    stk_classic::mesh::EntityVector & kill_list
     )
 {
 
   kill_list.clear();
 
   //find the first entity in the closure
-  stk::mesh::EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
+  stk_classic::mesh::EntityVector::const_iterator itr = std::lower_bound(entities_closure.begin(),
       entities_closure.end(),
-      stk::mesh::EntityKey(entity_rank, 0),
-      stk::mesh::EntityLess());
+      stk_classic::mesh::EntityKey(entity_rank, 0),
+      stk_classic::mesh::EntityLess());
 
-  const stk::mesh::EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
+  const stk_classic::mesh::EntityVector::const_iterator end = std::lower_bound(entities_closure.begin(),
       entities_closure.end(),
-      stk::mesh::EntityKey(entity_rank+1, 0),
-      stk::mesh::EntityLess());
+      stk_classic::mesh::EntityKey(entity_rank+1, 0),
+      stk_classic::mesh::EntityLess());
 
   for (; itr != end; ++itr) {
-    stk::mesh::Entity & entity = **itr;
+    stk_classic::mesh::Entity & entity = **itr;
 
     if (select_owned(entity.bucket())) {
       bool found_live = false;
 
       for(unsigned rank = entity_rank + 1; rank<=mesh_rank && !found_live; ++rank) {
 
-        stk::mesh::PairIterRelation relations_pair = entity.relations(rank);
+        stk_classic::mesh::PairIterRelation relations_pair = entity.relations(rank);
 
         for (; relations_pair.first != relations_pair.second && !found_live; ++relations_pair.first) {
 

@@ -20,7 +20,7 @@
 
 #include <stk_mesh/fem/CoordinateSystems.hpp>
 
-namespace stk {
+namespace stk_classic {
 namespace mesh {
 
 //----------------------------------------------------------------------
