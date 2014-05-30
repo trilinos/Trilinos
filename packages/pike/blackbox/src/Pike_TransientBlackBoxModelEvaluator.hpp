@@ -5,15 +5,6 @@
 
 namespace pike {
 
-  /** \brief Returns the time range for a model evaluator. */
-  template<typename Scalar>
-  struct TimeRange {
-    //! Returns the last time value that was "accepted" via a call to pike::TransientBlackBoxModelEvaluator::acceptTimeStep().  If no steps have been accepted, this value is the initial start time of the transient simulation time.
-    Scalar accepted;
-    //! Returns the current time that was used in the last call to pike::BlackBoxModelEvaluator::solve().  If this value is different than the accepted value, then a call to solve() has been performed, but the time step has not been accepted yet.
-    Scalar current;
-  }
-
   /** A pure virtual base class that extends the pike::BlackBoxModelEvaluator for transient problems.
 
       This interface allows pike to query physics models for a
@@ -32,17 +23,23 @@ namespace pike {
       reduced time step and attempt a new solve of the coupled system.
    */
   template<typename Scalar>
-  class TransientBlackBoxModelEvaluator : public pike::BlackBoxModelEvaluator {
+  class TransientBlackBoxModelEvaluator {
 
   public:
 
     virtual ~TransientBlackBoxModelEvaluator() {}
 
-    /** \brief Returns the time range for a tentative time step solve.  See pike::TimeRange for more details. */
-    virtual pike::TimeRange<Scalar> getTimeRange() const = 0;
+    /** \brief Returns the last time value that was "accepted" via a call to pike::TransientBlackBoxModelEvaluator::acceptTimeStep().  If no steps have been accepted, this value is the initial start time of the transient simulation time. */
+    virtual Scalar getCurrentTime() const = 0;
+
+    /** \brief Returns the current time that was used in the last call to pike::BlackBoxModelEvaluator::solve().  If this value is different than the accepted value, then a call to solve() has been performed, but the time step has not been accepted yet. **/
+    virtual Scalar getTentativeTime() const = 0;
+
+    /** \brief Returns true if a tentative time step has been solved but not accepted yet */
+    virtual bool solvedTentativeStep() const = 0; 
 
     /** \brief Returns the currently set time step size. */
-    virtual Scalar getCurrentTimeStep() const = 0;
+    virtual Scalar getCurrentTimeStepSize() const = 0;
 
     /** \brief Returns the time step size that the physics model wants to take next (e.g. to satisfy its stability or local truncation error targets). */ 
     virtual Scalar getDesiredTimeStepSize() const = 0;
