@@ -559,7 +559,10 @@ namespace MueLu {
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
+      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("P",           newP);
+      manager.SetFactory("Coordinates", newP);
 
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
@@ -568,14 +571,11 @@ namespace MueLu {
       newRparams.set("implicit",          !this->doPRrebalance_);
       newRparams.set("implicit transpose", this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
-        newR->SetFactory("R",           manager.GetFactory("R"));
-        manager.SetFactory("R",           newR);
+        newR->SetFactory("R",              manager.GetFactory("R"));
+        manager.SetFactory("R",            newR);
       }
-      manager.SetFactory("Coordinates", newR);
 
       // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
       // level if a user does not do that. For all other levels it simply passes
@@ -583,7 +583,7 @@ namespace MueLu {
       // repartitioning, that factory is "TentativePFactory"; if we do, it is
       // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
       // the "Nullspace" of the manager
-      nullSpace->SetFactory("Nullspace", newR);
+      nullSpace->SetFactory("Nullspace", newP);
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif
