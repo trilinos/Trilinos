@@ -48,9 +48,9 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_search_util
+  stkclassic_search_util
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_mesh_fem stk_util_diag
+  DEPLIBS stkclassic_mesh_fem stkclassic_util_diag
   SOURCES ${SOURCES}
   )
 

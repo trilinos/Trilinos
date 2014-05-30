@@ -39,9 +39,9 @@ APPEND_SET(HEADERS ${DIR}/${PACKAGE_NAME}_config.h )
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 TRIBITS_ADD_LIBRARY(
-	stk_adapt
+	stkclassic_adapt
 	HEADERS	${HEADERS}
-  DEPLIBS stk_percept
+  DEPLIBS stkclassic_percept
 	SOURCES ${SOURCES}
 )
 

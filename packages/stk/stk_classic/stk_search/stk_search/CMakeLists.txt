@@ -57,7 +57,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_search
+  stkclassic_search
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

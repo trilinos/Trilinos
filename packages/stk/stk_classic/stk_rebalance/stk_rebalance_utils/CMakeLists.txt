@@ -12,9 +12,9 @@ FILE(GLOB SOURCES *.cpp)
 FILE(GLOB HEADERS *.hpp)
 
 TRIBITS_ADD_LIBRARY(
-  stk_rebalance_utils
+  stkclassic_rebalance_utils
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_util_env stk_mesh_base
+  DEPLIBS stkclassic_util_env stkclassic_mesh_base
   SOURCES ${SOURCES}
   )
 

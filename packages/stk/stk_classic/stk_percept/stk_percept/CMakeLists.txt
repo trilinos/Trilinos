@@ -61,9 +61,9 @@ APPEND_GLOB(SOURCES ${DIR}/*.cpp)
 SET_AND_INC_DIRS(DIR ${CMAKE_CURRENT_SOURCE_DIR}/..)
 
 TRIBITS_ADD_LIBRARY(
-	stk_percept
+	stkclassic_percept
 	HEADERS	${HEADERS}
-  DEPLIBS stk_mesh_fem stk_io_util stk_util_diag stk_search stk_expreval
+  DEPLIBS stkclassic_mesh_fem stkclassic_io_util stkclassic_util_diag stkclassic_search stkclassic_expreval
 	SOURCES ${SOURCES}
 )
 

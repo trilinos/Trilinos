@@ -43,7 +43,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_util_use_cases
+  stkclassic_util_use_cases
   NOINSTALLHEADERS ${HEADERS}
   SOURCES ${SOURCES}
   )

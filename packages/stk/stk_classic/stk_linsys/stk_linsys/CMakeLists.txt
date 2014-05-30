@@ -39,8 +39,8 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_linsys
+  stkclassic_linsys
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_mesh_base
+  DEPLIBS stkclassic_mesh_base
   SOURCES ${SOURCES}
   )

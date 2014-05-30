@@ -7,7 +7,7 @@ INCLUDE(TribitsAddOptionAndDefine)
 #
 
 # ENABLE_SHADOWING_WARNINGS  not possible, because of TBB
-TRIBITS_PACKAGE( STK )
+TRIBITS_SUBPACKAGE(Classic)
 
 #
 # B) Set up package-specific options
@@ -20,18 +20,18 @@ TRIBITS_ADD_OPTION_AND_DEFINE(
   ON
   )
 
-# set fortran mangling options
-
-IF("${FC_FN_UNDERSCORE}" STREQUAL "NO_UNDER")
-  SET(FORTRAN_NO_UNDERSCORE ON)
-ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "UNDER")
-  SET(FORTRAN_ONE_UNDERSCORE ON)
-ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "SECOND_UNDER")
-  SET(FORTRAN_TWO_UNDERSCORES ON)
-ELSE()
-  MESSAGE("Could not determine the Fortran mangling defaulting to no underscore.")
-  SET(FORTRAN_NO_UNDERSCORE ON)
-ENDIF()
+## set fortran mangling options
+#
+#IF("${FC_FN_UNDERSCORE}" STREQUAL "NO_UNDER")
+#  SET(FORTRAN_NO_UNDERSCORE ON)
+#ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "UNDER")
+#  SET(FORTRAN_ONE_UNDERSCORE ON)
+#ELSEIF("${FC_FN_UNDERSCORE}" STREQUAL "SECOND_UNDER")
+#  SET(FORTRAN_TWO_UNDERSCORES ON)
+#ELSE()
+#  MESSAGE("Could not determine the Fortran mangling defaulting to no underscore.")
+#  SET(FORTRAN_NO_UNDERSCORE ON)
+#ENDIF()
 
 #
 # C) Add the libraries, tests, and examples
@@ -81,4 +81,4 @@ ENDIF()
 # D) Do standard postprocessing
 #
 
-TRIBITS_PACKAGE_POSTPROCESS()
+TRIBITS_SUBPACKAGE_POSTPROCESS()

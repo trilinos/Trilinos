@@ -10,7 +10,7 @@
 #define stk_mesh_unit_tests_stk_utest_macros_hpp
 
 #ifndef STK_BUILT_IN_SIERRA
-#include <STK_config.h>
+#include <STKClassic_config.h>
 #else
 #define HAVE_MPI
 #endif

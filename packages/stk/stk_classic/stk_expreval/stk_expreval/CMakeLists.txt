@@ -41,7 +41,7 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_expreval
+  stkclassic_expreval
   NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
   SOURCES ${SOURCES} ${SOURCES_IMPL}
   )

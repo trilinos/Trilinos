@@ -48,10 +48,10 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_mesh_base
+  stkclassic_mesh_base
   NOINSTALLHEADERS ${HEADERS} ${HEADERS_IMPL}
   SOURCES ${SOURCES} ${SOURCES_IMPL}
-  DEPLIBS stk_util_env stk_util_parallel
+  DEPLIBS stkclassic_util_env stkclassic_util_parallel
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION

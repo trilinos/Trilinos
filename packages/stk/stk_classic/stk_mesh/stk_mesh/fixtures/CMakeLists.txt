@@ -48,9 +48,9 @@ ENDIF()
 #
 
 TRIBITS_ADD_LIBRARY(
-  stk_mesh_fixtures
+  stkclassic_mesh_fixtures
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_mesh_base stk_mesh_fem
+  DEPLIBS stkclassic_mesh_base stkclassic_mesh_fem
   SOURCES ${SOURCES}
   )
 
