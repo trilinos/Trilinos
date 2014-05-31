@@ -65,20 +65,15 @@
 #include <Kokkos_Atomic.hpp>
 #include <Kokkos_hwloc.hpp>
 
-namespace Kokkos {
-  static void initialize() {
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
-      Impl::DefaultDeviceType::host_mirror_device_type::initialize();
-    }
-    Impl::DefaultDeviceType::initialize();
-  }
 
-  static void finalize() {
-    if(!Impl::is_same<Impl::DefaultDeviceType, Impl::DefaultDeviceType::host_mirror_device_type>::value) {
-      Impl::DefaultDeviceType::host_mirror_device_type::finalize();
-    }
-    Impl::DefaultDeviceType::finalize();
-  }
+namespace Kokkos {
+  void initialize();
+
+  void initialize(int narg, char* arg[]);
+
+  void finalize();
+  
+  void fence();
 }
 
 #endif

@@ -173,6 +173,8 @@ public:
 
   //! Initialize, telling the CUDA run-time library which device to use.
   static void initialize( const SelectDevice = SelectDevice() );
+  static void initialize( int device );
+  static void initialize( int device , int );
 
   static int is_initialized();
 
