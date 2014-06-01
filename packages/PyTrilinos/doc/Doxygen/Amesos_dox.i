@@ -253,15 +253,13 @@ Amesos_BaseSolver::SetParameters(Teuchos::ParameterList
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -394,7 +392,8 @@ Redistribute the data based on the owner computes rule
 Instantiates an Amesos solver for each of the diagonal blocks
 
 Calls SymbolicFactorization() on each of the diagonal blocks
-\\\\return Integer error code, set to 0 if successful. ";
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Btf::NumericFactorization "int
 Amesos_Btf::NumericFactorization()
@@ -402,15 +401,17 @@ Amesos_Btf::NumericFactorization()
 Performs NumericFactorization on the matrix A.
 
 Calls NumericFactorization() on each of the diagonal blocks
-\\\\return Integer error code, set to 0 if successful. ";
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Btf::Solve "int Amesos_Btf::Solve()
 
 Solves A X = B (or AT X = B)
 
 Foreach block i:    For each block j      Compute x_i -= A_{i,j} x_j
-Call Solve(x_i,b_i)     Broadcast x_i \\\\return Integer error code,
-set to 0 if successful. ";
+Call Solve(x_i,b_i)     Broadcast x_i
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Btf::GetProblem "const
 Epetra_LinearProblem* Amesos_Btf::GetProblem() const
@@ -458,14 +459,12 @@ Amesos_Btf::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subsequent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subsequent calls to NumericFactorization()    and Solve().</li>
+<li>All parameters whose value are to differ from the default values
+must be included in ParameterList. Parameters not specified in
 ParameterList revert to their default values.
 
 Integer error code, set to 0 if successful. ";
@@ -504,11 +503,10 @@ Print information about the factorization and solution phases. ";
 Amesos_Component: A pure virtual class for direct solvers to be used
 within Amesos_Merikos to form a parallel direct solver.
 
-The Amesos_Component interface specifies what Amesos_Merikos needs.
+<p>The Amesos_Component interface specifies what Amesos_Merikos needs.
 Any Amesos class that implements Amesos_Component can be used by
-Amesos_Merikos to perform partial solves on subblocks of the matrix.
-
-<H1>Member functions added by Amesos_Component.</H1>   <ul>
+Amesos_Merikos to perform partial solves on subblocks of the
+matrix.<H1>Member functions added by Amesos_Component.</H1>   <ul>
 <li>PartialFactorization() <ul>    <li>PartialFactorization performs
 factors at most the first SubMatrixSize_ rows and columns.
 PartialFactorization delays the factorization of any columns which
@@ -528,7 +526,9 @@ columns) actually factored. SchurComplement - Returns the Schur
 complement, i.e. L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
 U12(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
 
-<H1>Usage Examples</H1>   <H2>Basic calling sequence</H2>
+Usage Examples
+
+Basic calling sequence
 
 Epetra_LinearProblem Problem(A,X,B);     Amesos_SolverName
 Solver(Problem);
@@ -628,20 +628,19 @@ GetSchurComplement. ";
 Amesos_ComponentBaseSolver: A pure virtual class for direct solvers to
 be used within Amesos_Merikos to form a parallel direct solver.
 
-The Amesos_ComponentBaseSolver interface specifies what Amesos_Merikos
-needs. Any Amesos class that implements Amesos_ComponentBaseSolver can
-be used by Amesos_Merikos to perform partial solves on subblocks of
-the matrix.
-
-<H1>Member functions added by Amesos_ComponentBaseSolver.</H1>   <ul>
-<li>PartialFactorization() <ul>    <li>PartialFactorization performs
-factors at most the first SubMatrixSize_ rows and columns.
-PartialFactorization delays the factorization of any columns which
-generate unstable (i.e. too small) pivots. PartialFactorization
-computes and returns the schur complement. PartialFactorization does
-not need a symbolic factorization phase. It uses the permutation given
-by SetRowPermutation.  Lsolve performs a raw partial solve, treating
-the unfactored rows and columns as the identity without row or column
+<p>The Amesos_ComponentBaseSolver interface specifies what
+Amesos_Merikos needs. Any Amesos class that implements
+Amesos_ComponentBaseSolver can be used by Amesos_Merikos to perform
+partial solves on subblocks of the matrix.<H1>Member functions added
+by Amesos_ComponentBaseSolver.</H1>   <ul> <li>PartialFactorization()
+<ul>    <li>PartialFactorization performs factors at most the first
+SubMatrixSize_ rows and columns. PartialFactorization delays the
+factorization of any columns which generate unstable (i.e. too small)
+pivots. PartialFactorization computes and returns the schur
+complement. PartialFactorization does not need a symbolic
+factorization phase. It uses the permutation given by
+SetRowPermutation.  Lsolve performs a raw partial solve, treating the
+unfactored rows and columns as the identity without row or column
 permutation. Usolve performs a raw partial solve, treating the
 unfactored rows and columns as the identity without row or column
 permutation. SetRowPermutation - sets the row permutation
@@ -653,7 +652,9 @@ columns) actually factored. SchurComplement - Returns the Schur
 complement, i.e. L21(SubMatrixSize+1:MatrixSize,1:SubMatrixSize) *
 U12(1:SubMatrixSize,SubMatrixSize+1:MatrixSize)
 
-<H1>Usage Examples</H1>   <H2>Basic calling sequence</H2>
+Usage Examples
+
+Basic calling sequence
 
 Epetra_LinearProblem Problem(A,X,B);     Amesos_SolverName
 Solver(Problem);
@@ -978,15 +979,13 @@ Amesos_Dscpack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -1173,15 +1172,13 @@ Amesos_Klu::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -1565,7 +1562,7 @@ block of the matrix.     Endfor Create an Amesos instance for the
 trailing block of the matrix. Call SymbolicFactorization on the
 trailing block      Call NumericFactorization on the trailing block
 
-\\\\return Integer error code, set to 0 if successful. ";
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Merikos::LSolve "int
 Amesos_Merikos::LSolve()
@@ -1580,7 +1577,8 @@ parallel       Lsolve()          i.e. L11.Solve(X1, B1) and
 L22.Solve(X2, B2)        Update the elements of B corresponding to the
 seperator,         i.e. B3 = B3 - L31 X1 - L32 X2      Endfor Perform
 a solve on the trailing matrix:       i.e. L33.LSolve(X3,B3)
-\\\\return Integer error code, set to 0 if successful. ";
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Merikos::USolve "int
 Amesos_Merikos::USolve()
@@ -1594,8 +1592,9 @@ Perform a solve on the trailing matrix:       i.e. U33.USolve(X3,B3)
 Foreach subblock of the matrix do:       Note: this will happen in
 parallel       Update the elements of B corresponding to this block
 i.e. B2 = B2 - U23 X3 ; B1 = B1 - U13 X3        Usolve()          i.e.
-U11.Solve(X1, B1) and U22.Solve(X2, B2)      Endfor \\\\return Integer
-error code, set to 0 if successful. ";
+U11.Solve(X1, B1) and U22.Solve(X2, B2)      Endfor
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Merikos::Solve "int
 Amesos_Merikos::Solve()
@@ -1614,8 +1613,9 @@ a solve on the trailing matrix:       i.e. A33.Solve(X3,B3)
 B = X ;     Foreach subblock of the matrix do:       Note:  this will
 happen in parallel       Update the elements of B corresponding to
 this block         i.e. B2 = B2 - U23 X3 ; B1 = B1 - U13 X3 Usolve()
-i.e. U11.Solve(X1, B1) and U22.Solve(X2, B2) Endfor \\\\return Integer
-error code, set to 0 if successful. ";
+i.e. U11.Solve(X1, B1) and U22.Solve(X2, B2) Endfor
+
+Integer error code, set to 0 if successful. ";
 
 %feature("docstring")  Amesos_Merikos::GetProblem "const
 Epetra_LinearProblem* Amesos_Merikos::GetProblem() const
@@ -1876,15 +1876,13 @@ Amesos_Mumps::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -2210,15 +2208,13 @@ Amesos_Paraklete::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -2615,14 +2611,12 @@ Amesos_Scalapack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subsequent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subsequent calls to NumericFactorization()    and Solve().</li>
+<li>All parameters whose value are to differ from the default values
+must be included in ParameterList. Parameters not specified in
 ParameterList revert to their default values.
 
 Integer error code, set to 0 if successful. ";
@@ -2894,15 +2888,13 @@ Amesos_Superlu::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3094,15 +3086,13 @@ Amesos_Superludist::SetParameters(Teuchos::ParameterList
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3294,15 +3284,13 @@ Amesos_Taucs::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3880,15 +3868,13 @@ Amesos_Umfpack::SetParameters(Teuchos::ParameterList &ParameterList)
 
 Updates internal variables.
 
-<br >Preconditions: None.
-
-<br >Postconditions: Internal variables controlling the factorization
-and solve will be updated and take effect on all subseuent calls to
-NumericFactorization() and Solve().
-
-All parameters whose value are to differ from the default values must
-be included in ParameterList. Parameters not specified in
-ParameterList revert to their default values.
+<br \\\\>Preconditions:<ul>   <li>None.</li>   </ul>    <br
+\\\\>Postconditions:<ul>    <li>Internal variables controlling the
+factorization and solve will   be updated and take effect on all
+subseuent calls to NumericFactorization()    and Solve().</li> <li>All
+parameters whose value are to differ from the default values must be
+included in ParameterList. Parameters not specified in ParameterList
+revert to their default values.
 
 Integer error code, set to 0 if successful. ";
 
@@ -3967,7 +3953,7 @@ Amesos_Utils::SetMaxProcesses(int &MaxProcesses, const
 Epetra_RowMatrix &A) ";
 
 
-// File: structSLUData.xml
+// File: classSLUData.xml
 %feature("docstring") SLUData "";
 
 %feature("docstring")  SLUData::SLUData "SLUData::SLUData() ";

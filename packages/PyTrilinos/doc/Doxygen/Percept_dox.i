@@ -24,10 +24,10 @@ Implementation of the default H(grad)-compatible FEM basis of
 INCOMPLETE degree 2 on Hexahedron cell.
 
 Implements Lagrangian basis of incomplete degree 2 on the reference
-Hexahedron cell. The basis has cardinality 20 and spans an INCOMPLETE
-tri-quadratic polynomial space. Basis functions are dual to a
-unisolvent set of degrees-of-freedom (DoF) defined and enumerated as
-follows:
+Hexahedron cell. The basis has       cardinality 20 and spans an
+INCOMPLETE tri-quadratic polynomial space. Basis functions are dual
+to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated
+as follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
@@ -125,9 +125,10 @@ Intrepid::Basis_HGRAD_HEX_C2_Serendipity_FEM< Scalar, ArrayScalar
 
 Evaluation of a FEM basis on a reference Hexahedron cell.
 
-Returns values of operatorType acting on FEM basis functions for a set
-of points in the reference Hexahedron cell. For rank and dimensions of
-I/O array arguments see Section basis_md_array_sec.
+Returns values of <var>operatorType</var> acting on FEM basis
+functions for a set of     points in the <strong>reference
+Hexahedron</strong> cell. For rank and dimensions of     I/O array
+arguments see Section \\\\ref basis_md_array_sec.
 
 Parameters:
 -----------
@@ -172,10 +173,10 @@ Implementation of the default H(grad)-compatible FEM serendipity basis
 of incomplete degree 2 on Quadrilateral cell.
 
 Implements Lagrangian serendipity basis of degree 2 on the reference
-Quadrilateral cell. The basis has cardinality 8 and spans an
-INCOMPLETE bi-quadratic polynomial space. Basis functions are dual to
-a unisolvent set of degrees-of-freedom (DoF) defined and enumerated as
-follows:
+Quadrilateral cell. The basis has       cardinality 8 and spans an
+INCOMPLETE bi-quadratic polynomial space. Basis functions are dual
+to a unisolvent set of degrees-of-freedom (DoF) defined and enumerated
+as follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
@@ -228,9 +229,10 @@ Intrepid::Basis_HGRAD_QUAD_C2_Serendipity_FEM< Scalar, ArrayScalar
 
 FEM basis evaluation on a reference Quadrilateral cell.
 
-Returns values of operatorType acting on FEM basis functions for a set
-of points in the reference Quadrilateral cell. For rank and dimensions
-of I/O array arguments see Section basis_md_array_sec .
+Returns values of <var>operatorType</var> acting on FEM basis
+functions for a set of     points in the <strong>reference
+Quadrilateral</strong> cell. For rank and dimensions of      I/O array
+arguments see Section \\\\ref basis_md_array_sec .
 
 Parameters:
 -----------
@@ -275,9 +277,10 @@ Implementation of the default H(grad)-compatible FEM basis of
 incomplete degree 2 on Wedge cell.
 
 Implements Lagrangian basis of degree 2 on the reference Wedge cell.
-The basis has cardinality 15 and spans a INCOMPLETE bi-quadratic
-polynomial space. Basis functions are dual to a unisolvent set of
-degrees-of-freedom (DoF) defined and enumerated as follows:
+The basis has       cardinality 15 and spans a INCOMPLETE bi-
+quadratic polynomial space. Basis functions are dual        to a
+unisolvent set of degrees-of-freedom (DoF) defined and enumerated as
+follows:
 
 =================================================================================================
 |         |           degree-of-freedom-tag table                    |
@@ -334,14 +337,14 @@ L_14(u)= u( 0,1/2, 1)   |
 |=========|==============|==============|==============|=============|===========================|
 |   MAX   |  maxScDim=2  |  maxScOrd=8  |  maxDfOrd=0  |      -      |
 |
-|=========|==============|==============|==============|=============|===========================|\\\\remark
+|=========|==============|==============|==============|=============|===========================|
+
 Ordering of DoFs follows the node order in Wedge<15> topology. Note
-that node           order in this topology does not follow the natural
-oder of k-subcells where the nodes           are located, except for
-nodes 0 to 5 which coincide with the vertices of the base
-Wedge<6> topology. As a result, L_0 to L_5 are associated with nodes 0
-to 5, but           L_6 to L_14 are not associated with edges 0 to 9
-in that order.
+that node order in this topology does not follow the natural oder of
+k-subcells where the nodes are located, except for nodes 0 to 5 which
+coincide with the vertices of the base Wedge<6> topology. As a result,
+L_0 to L_5 are associated with nodes 0 to 5, but L_6 to L_14 are not
+associated with edges 0 to 9 in that order.
 
 C++ includes: Intrepid_HGRAD_WEDGE_C2_Serendipity_FEM.hpp ";
 
@@ -360,9 +363,10 @@ Intrepid::Basis_HGRAD_WEDGE_C2_Serendipity_FEM< Scalar, ArrayScalar
 
 FEM basis evaluation on a reference Wedge cell.
 
-Returns values of operatorType acting on FEM basis functions for a set
-of points in the reference Wedge cell. For rank and dimensions of I/O
-array arguments see Section basis_md_array_sec .
+Returns values of <var>operatorType</var> acting on FEM basis
+functions for a set of     points in the <strong>reference
+Wedge</strong> cell. For rank and dimensions of      I/O array
+arguments see Section \\\\ref basis_md_array_sec .
 
 Parameters:
 -----------
@@ -3282,6 +3286,11 @@ stk::percept::PerceptMesh::fillCellNodes(const mesh::Bucket &bucket,
 mesh::FieldBase *field, ArrayType &cellNodes, unsigned dataStrideArg)
 ";
 
+%feature("docstring")  stk::percept::PerceptMesh::fillCellNodes "void
+stk::percept::PerceptMesh::fillCellNodes(const stk::mesh::Entity
+&element, mesh::FieldBase *field, ArrayType &cellNodes, unsigned
+dataStrideArg) ";
+
 
 // File: classstk_1_1percept_1_1IntrepidManager_1_1PhysicalCoords.xml
 %feature("docstring") stk::percept::IntrepidManager::PhysicalCoords "
@@ -3642,7 +3651,32 @@ stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra "";
 stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra::refinement_topology
 "RefTopoX
 stk::adapt::Elem::StdMeshObjTopologies::RefinementTopologyExtra<
-shards::Line< 2 > >::refinement_topology New ref topo info
+shards::Line< 2 > >::refinement_topology 0 1 PARENT Linear Edge
+Element Nodes (SPACE_DIM = 1!) o------o
+
+After refinement:
+
+0 2 1 CHILD Linear Edge Element Nodes (new nodes = *) o-*-o
+| CHILD Linear Edge Node Maps (global node numbers!) 0 1 | o-o | E#1 |
+Element (or edge) 0: childNodeMap[0] = { 0, 2 }; | 0 1 | o-o | E#2 |
+Element (or edge) 1: childNodeMap[1] = { 2, 1 };
+
+Refined Linear Edge (or Linear Bar element) PERMUTATION Node Maps:
+
+Polarity = 1 { 0, 1; 2 } Polarity = 0 { 1, 0; 2 } 0 2 1 PARENT 3-Node
+Line Object Nodes o-o-o
+
+After refinement:
+
+0 3 2 4 1 CHILD Objects (new nodes = *) o*o*o               | CHILD
+Line Node Maps (global node numbers!) 0 2 1 | ooo | E#1 | Object (or
+line) 0: childNodeMap[0] = { 0, 2, 3 }; | 0 2 1 | ooo | E#2 | Object
+(or line) 1: childNodeMap[1] = { 2, 1, 4 };
+
+Refined 3-Node Line Object PERMUTATION Node Maps:
+
+Polarity = 1 { 0, 1, 2; 3, 4 }Polarity = 0 { 1, 0, 2; 4, 3 } New ref
+topo info
 
 {Ord, Rnk-assoc, Ord-rnk-assoc, Ord-node-on-subcell, num-rnk-assoc,
 param-coord}
@@ -3862,9 +3896,12 @@ ghost or non-ghost element
 
 Global element ops: here's where we e.g. connect the new elements by
 declaring new relations
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 
 Global node loop operations: this is where we perform ops like adding
-new nodes to the right parts, interpolating fields, etc. ";
+new nodes to the right parts, interpolating fields, etc.
+//////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
+";
 
 %feature("docstring")  stk::adapt::Refiner::setRemoveOldElements "void stk::adapt::Refiner::setRemoveOldElements(bool do_remove) ";
 
@@ -4082,11 +4119,7 @@ shards::Tetrahedron< 4 >, shards::Tetrahedron< 4 >,-1
 >::createNewElements(percept::PerceptMesh &eMesh, NodeRegistry
 &nodeRegistry, stk::mesh::Entity &element, NewSubEntityNodesType
 &new_sub_entity_nodes, std::vector< stk::mesh::Entity * >::iterator
-&element_pool, stk::mesh::FieldBase *proc_rank_field=0)
-
-given the node database ( NodeRegistry), and the newly created nodes,
-and an iterator for the elements in the element pool, create all new
-sub-elements of the refined element ";
+&element_pool, stk::mesh::FieldBase *proc_rank_field=0) ";
 
 
 // File: classstk_1_1adapt_1_1RefinerPattern_3_01shards_1_1Triangle_3_013_01_4_00_01shards_1_1Triangle_3_013_01_4_00_012_01_4.xml
@@ -4831,7 +4864,7 @@ Then use sweep to create a hex mesh (this example breaks a quad to
 create two Tri's, then creates a mixed hex/wedge mesh)
 
 boost::array< double, 3> dir = {0,0,1}; std::vector<Transform *>
-xforms(1,  &TransformDir( dir ) );
+xforms(1, &TransformDir( dir ) );
 
 // break one of the quads into tris unsigned quadElemIndex = 1;
 tp2.breakElem<SweepMesher::ET_Quad4,
@@ -9320,9 +9353,11 @@ stk::adapt::Elem::StdMeshObjTopologies::line(UInt eclass, UInt nnode)
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::tri "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::tri(UInt eclass, UInt nnode)
 
-2 PARENT Linear 3-Node Triangle Element Nodes o (SPACE_DIM = 2!) /
-\\\\ / \\\\ (PARENT) Linear 3-Node Triangle Edge Node Map: / \\\\ /
-\\\\ { {0, 1}, {1, 2}, {2, 0} }; / \\\\ / \\\\ / \\\\ o---------o 0 1
+2            PARENT Linear 3-Node Triangle Element Nodes       o
+(SPACE_DIM = 2!)      / \\\\     /   \\\\          (PARENT) Linear
+3-Node Triangle Edge Node Map:    /     \\\\   /       \\\\        {
+{0, 1}, {1, 2}, {2, 0} };  /         \\\\ /           \\\\ / \\\\ o
+---------o 0 1
 
 After refinement:    2            CHILD Linear 3-Node Triangle Element
 Nodes     o (new nodes = *)    / \\\\   /   \\\\  /     \\\\ 5 *-* 4 /
@@ -9357,9 +9392,10 @@ Rotation Polarity 0 1 { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11, 12, 13,
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::tri4 "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::tri4(UInt eclass)
 
-2 PARENT 4-Node Triangle Object Nodes o / \\\\ / \\\\ (PARENT) 4-Node
-Triangle Object Edge Node Map: / \\\\ / \\\\ { {0, 1}, {1, 2}, {2, 0}
-}; / o \\\\ / 3 \\\\ / \\\\ o------------o 0 1
+2            PARENT 4-Node Triangle Object Nodes       o      / \\\\
+/   \\\\          (PARENT) 4-Node Triangle Object Edge Node Map:    /
+\\\\   /       \\\\        { {0, 1}, {1, 2}, {2, 0} }; /    o    \\\\
+/     3     \\\\ / \\\\ o------------o 0 1
 
 After refinement:    2            CHILD 4-Node Triangle Object Nodes
 o (new nodes = *)    / \\\\   / 9 \\\\  /  *  \\\\ 6 *----* 5 / \\\\ o
@@ -9387,10 +9423,9 @@ After Refinement and using child node numbering: Rotation Polarity
 stk::adapt::Elem::StdMeshObjTopologies::quad(UInt eclass, UInt nnode)
 
 3 2 PARENT Linear 4-Node Quadrilateral Element Nodes o---------o
-(SPACE_DIM = 2!)
-
-| | (PARENT) Linear 4-Node Quadrilateral | | Element Edge Node Map: |
-| | | { {0, 1}, {1, 2}, {2, 3} {3, 0} }; | | o---------o 0 1
+(SPACE_DIM = 2!) | | | | | | | | | | (PARENT) Linear 4-Node
+Quadrilateral | | Element Edge Node Map: | | | | { {0, 1}, {1, 2}, {2,
+3} {3, 0} }; | | o---------o 0 1
 
 After refinement:
 
@@ -9421,11 +9456,10 @@ Rotation Polarity 0 1 { 0, 1, 2, 3; 4, 5, 6, 7, 8 } 0 0 { 0, 3, 2, 1;
 7, 6, 5, 4, 8 } 1 1 { 3, 0, 1, 2; 7, 4, 5, 6, 8 } 1 0 { 3, 2, 1, 0; 6,
 5, 4, 7, 8 } 2 1 { 2, 3, 0, 1; 6, 7, 4, 5, 8 } 2 0 { 2, 1, 0, 3; 5, 4,
 7, 6, 8 } 3 1 { 1, 2, 3, 0; 5, 6, 7, 4, 8 } 3 0 { 1, 0, 3, 2; 4, 7, 6,
-5, 8 } 3 6 2 PARENT 9-Node Quadrilateral Object Nodes o----o----o
-
-8  7 o o o 5 (PARENT) 9-Node Quadrilateral Object's | | Edge Node Map:
-| | | | { {0, 1, 4}, {1, 2, 5}, {2, 3, 6} {3, 0, 7} }; o----o----o 0 4
-1
+5, 8 } 3 6 2 PARENT 9-Node Quadrilateral Object Nodes o----o----o | |
+| | | 8 | 7 o o o 5 (PARENT) 9-Node Quadrilateral Object's | | Edge
+Node Map: | | | | { {0, 1, 4}, {1, 2, 5}, {2, 3, 6} {3, 0, 7} }; o----
+o----o 0 4 1
 
 After refinement:
 
@@ -9482,14 +9516,15 @@ Rotation Polarity 0 1 { 0, 1, 2, 3, 4, 5, 6, 7; 8, 9, 10, 11, 12, 13,
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::tet "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::tet(UInt nnode)
 
-PARENT 4-Node Tetrahedron Object Nodes 3 o /|\\\\ / | \\\\ (PARENT)
-4-Node Tetrahedron Object / | \\\\ Edge Node Map: / | \\\\ / | \\\\ {
-{0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3}, {2, 3} }; 0 o|o 2 \\\\ | /
-\\\\ | / \\\\ | / \\\\ | / |/ o 1
-
-After refinement (new nodes = *):     3      o     /|\\\\    / | \\\\
-7 *  |  * 9  /   |   \\\\ /   6| \\\\ 0 o-*|o 2 \\\\ *8 / \\\\ | / 4 *
-| * 5 \\\\ | / |/ o 1
+PARENT 4-Node Tetrahedron Object Nodes          3 o         /|\\\\
+/ | \\\\       (PARENT) 4-Node Tetrahedron Object       /  |  \\\\
+Edge Node Map:      /   |   \\\\ /    |    \\\\    { {0, 1}, {1, 2},
+{2, 0}, {0, 3}, {1, 3}, {2, 3} }; 0 o-----|-----o 2     \\\\    |    /
+\\\\   |   /       \\\\  | /        \\\\ | /         \\\\|/          o
+1  After refinement (new nodes = *):           3          o
+/|\\\\ / | \\\\     7 *  |  * 9      /   |   \\\\     /   6|    \\\\
+0 o----*|-----o 2     \\\\    *8   /      \\\\   |   /     4 *  |  * 5
+\\\\ | /         \\\\|/          o          1
 
 CHILD 4-Node Tetrahedron 3D Object Node Maps: | | static const UInt
 child_0[] = { 0, 4, 6, 7 }; // srkenno 091410 fixed (used to be {0, 4,
@@ -9529,16 +9564,15 @@ UInt cfn_3[] = {7, 8, 3, 23, 20, 19, 8, 9, 3, 32, 21, 20, 7, 3, 9, 19,
 UInt cfn_6[] = {9, 8, 6, 32, 22, 33, 8, 7, 6, 23, 25, 22, 9, 6, 7, 33,
 25, 29, 9, 7, 8, 29, 23, 32 }; | static const UInt cfn_7[] = {5, 6, 8,
 24, 22, 26, 6, 4, 8, 31, 34, 22, 5, 8, 4, 26, 34, 30, 5, 4, 6, 30, 31,
-24 }; |
-
-Face #0:               Face #1:               Face #2:        3 3
-3       o                      o o      / \\\\                    /
-\\\\                    / \\\\ 19*   *20              20*   *21
-21*   *19    / 23  \\\\ / 32  \\\\                / 29  \\\\    < 7
-o---*---o 8          8 o---*---o 9          9 o---*---o 7  \\\\  /
-\\\\     / \\\\ / \\\\     / \\\\            / \\\\     / \\\\    \\\\
-16* 27* 34 17 17 26 28 18 18 33 25 *16 | / \\\\ / \\\\ / \\\\ / \\\\ /
-\\\\ / \\\\ | oo*o o*o*o o*o*o # 0 10 4 11 1 1 12 5 13 2 2 14 6 15 0
+24 }; | Face #0:               Face #1:               Face #2:
+3 3                      3       o                      o o      /
+\\\\                    / \\\\                    / \\\\ 19*   *20
+20*   *21              21*   *19    / 23  \\\\ / 32  \\\\
+/ 29  \\\\    < 7 o---*---o 8          8 o---*---o 9          9
+o---*---o 7  \\\\  / \\\\     / \\\\ / \\\\     / \\\\            /
+\\\\     / \\\\    \\\\ 16* 27* 34 17 17 26 28 18 18 33 25 *16 | /
+\\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ | oo*o o*o*o o*o*o # 0 10 4 11
+1 1 12 5 13 2 2 14 6 15 0
 
 \\\\ \\\\ \\\\ \\\\>>
 
@@ -9585,12 +9619,10 @@ on 2D surface containing nodes 1, 2, 3 0 o--|--o 2 \\\\ 4 | + /
 Node Map: \\\\ | / \\\\ | / { {0, 1}, {1, 2}, {2, 0}, {0, 3}, {1, 3},
 {2, 3} } |/ o 1
 
-3          o         /|\\\\         \"Back faces (note mid- face-node
-does not follow face ordering!)\"        / | \\\\ Node 7 on 2D surface
-containing nodes 0, 3, 2       /  |  \\\\ Node 6 on 2D surface
-containing nodes 0, 2, 1      /   |+  \\\\     / |7   \\\\  0
-o-----|-----o 2     \\\\   6|    /      \\\\  +|   / \\\\  |  /
-\\\\ | /         \\\\|/          o          1
+3 o /|\\\\ \"Back faces (note mid-face-node does not follow face
+ordering!)\" / | \\\\ Node 7 on 2D surface containing nodes 0, 3, 2 /
+| \\\\ Node 6 on 2D surface containing nodes 0, 2, 1 / |+ \\\\ / |7
+\\\\ 0 o--|--o 2 \\\\ 6| / \\\\ +| / \\\\ | / \\\\ | / |/ o 1
 
 After refinement (new nodes = *):        3         o        /|\\\\
 / | \\\\    11*  |  *13     / |   \\\\    /  10|    \\\\ 0
@@ -9615,17 +9647,16 @@ const UInt cfn_3[] = | { 11, 12, 3, 22, 12, 13, 3, 23, 11, 3, 13, 21,
 cfn_5[] = | { 10, 13, 9, 32, 13, 12, 9, 5, 10, 9, 12, 27, 10, 12, 13,
 28 }; | static const UInt cfn_6[] = | { 13, 12, 10, 28, 12, 11, 10,
 26, 13, 10, 11, 7, 13, 11, 12, 33 }; | static const UInt cfn_7[] = | {
-9, 10, 12, 27, 10, 8, 12, 29, 9, 12, 8, 31, 9, 8, 10, 6 }; |
-
-Face #0:               Face #1:               Face #2:        3 3
-3       o                      o o      / \\\\                    /
-\\\\                    / \\\\ / 16\\\\                  / 19\\\\
-/ 24\\\\    /  * \\\\                /  *  \\\\                /  *
-\\\\    < 11*-------*12          12*-------*13          13*-------*11
-\\\\  / \\\\  o  / \\\\            / \\\\  o  / \\\\            / \\\\
-o  / \\\\    \\\\ /14 \\\\ 4 /15 \\\\          /17 \\\\ 5 /18 \\\\ /25
-\\\\ 7 / 23\\\\    | / * \\\\ / * \\\\ / * \\\\ / * \\\\ / * \\\\ / *
-\\\\ | o----*----o o----*----o o----*----o # 0 8 1 1 9 2 2 10 0
+9, 10, 12, 27, 10, 8, 12, 29, 9, 12, 8, 31, 9, 8, 10, 6 }; | Face #0:
+Face #1:               Face #2:        3 3                      3
+o                      o o      / \\\\                    / \\\\
+/ \\\\ / 16\\\\                  / 19\\\\                  / 24\\\\
+/  * \\\\                /  *  \\\\                /  *  \\\\    <
+11*-------*12          12*-------*13          13*-------*11  \\\\  /
+\\\\  o  / \\\\            / \\\\  o  / \\\\            / \\\\  o  /
+\\\\    \\\\ /14 \\\\ 4 /15 \\\\          /17 \\\\ 5 /18 \\\\ /25 \\\\
+7 / 23\\\\    | / * \\\\ / * \\\\ / * \\\\ / * \\\\ / * \\\\ / * \\\\
+| o----*----o o----*----o o----*----o # 0 8 1 1 9 2 2 10 0
 
 \\\\ \\\\ \\\\ \\\\>>
 
@@ -9661,16 +9692,17 @@ static const UInt child_7[] = { 9, 10, 8, 12, 27, 29, 31, 6 }; | ";
 %feature("docstring")  stk::adapt::Elem::StdMeshObjTopologies::hex "const MeshObjTopology *
 stk::adapt::Elem::StdMeshObjTopologies::hex(UInt nnode)
 
-PARENT Linear 8-Node Hexahedron Nodes 7 6 (SPACE_DIM = 3!) o---------o
-/| /| / | / | / | / | / | / | / | / | / | / | 4 / | 5 / | o---------o
-| | | | | | 3 o-|-o 2 | / | / | / | / | / | / | / | / | / | / | / | /
-|/ |/ o---------o 0 1                   (PARENT) Linear 8-Node
-Hexahedron 3D Element Edge Node Map:                           { {0,
-1}, {1, 2}, {2, 3}, {3, 0},                            {4, 5}, {5, 6},
-{6, 7}, {7, 4},                            {0, 4}, {1, 5}, {2, 6}, {3,
-7}  }; 3D Element Face Node Map:                           { {0, 1, 5,
-4}, {1, 2, 6, 5}, { 2, 3, 7, 6}, { 0, 4, 7, 3},  { 0, 3, 2, 1}, { 4,
-5, 6, 7} }; Shards face list info:
+PARENT Linear 8-Node Hexahedron Nodes 7                    6
+(SPACE_DIM = 3!)      o------------------o /|                 /|    /
+|                / |   /  |               / |  /   |              /
+| /    |             /    | / | / | 4 / | 5 / | o---------o | | | | |
+| 3 o-|-o 2 | / | / | / | / | / | / | / | / | / | / | / | / |/ |/ o
+---------o 0 1                   (PARENT) Linear 8-Node Hexahedron 3D
+Element Edge Node Map:                           { {0, 1}, {1, 2}, {2,
+3}, {3, 0},                            {4, 5}, {5, 6}, {6, 7}, {7, 4},
+{0, 4}, {1, 5}, {2, 6}, {3, 7}  }; 3D Element Face Node Map:
+{ {0, 1, 5, 4}, {1, 2, 6, 5}, { 2, 3, 7, 6}, { 0, 4, 7, 3},  { 0, 3,
+2, 1}, { 4, 5, 6, 7} }; Shards face list info:
 
 typedef MakeTypeList< IndexList< 0, 1, 5, 4,   8, 13, 16, 12,   25 > ,
 IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > , IndexList< 2, 3, 7,
@@ -9678,18 +9710,15 @@ IndexList< 1, 2, 6, 5,   9, 14, 17, 13,   24 > , IndexList< 2, 3, 7,
 23 > , IndexList< 0, 3, 2, 1,  11, 10,  9,  8,   21 > , IndexList< 4,
 5, 6, 7,  16, 17, 18, 19,   22 > >::type HexahedronFaceNodeMap ;
 
-After refinement (new nodes = *):
-
-7         18         6       o---------*--------o      /| /|       /|
-/ |       / |      / | 19 /  |    22/  |     /  |
-*---------*--------*17 |  /| 15*----/|---*---/|---*14 / |  /|   / |
-/|26/ |  /|                                 |   (PARENT) Linear 8-Node
-Hexahedron 4 / | / |16/ | / | / | / | | 3D Element Edge Node to mid-
-edge quadratic node map o*20-o5 |/ | | | 23*|-|*- 10| 24 | | { 8, 9,
-10, 11, | /| 3o-|/||/|o 2 | 16, 17, 18, 19, | / | / | / | / | / | / |
-12, 13, 14, 15 } |/ | / 25|/ | / |/ | / | 12** 13 |/ | Face to mid-
-face quadratic node map | 11|*-|* 9 | { 25, 24, 26, 23, 21, 22 } | / |
-/21 | / | 0, 1, 2, 3, 4, 5 | / | / | / |/ |/ |/ o*o 0 8 1
+After refinement (new nodes = *):   7         18         6
+o---------*--------o    /|        /| /|   / |       / |      / | 19 /
+| 22/ | / | ** 17 | /| 15-/|*/| 14 / | /| / | /|26/ | /| | (PARENT)
+Linear 8-Node Hexahedron 4 / | / |16/ | / | / | / | | 3D Element Edge
+Node to mid-edge quadratic node map o20-o5 |/ | | | 23*|-|*- 10| 24 |
+| { 8, 9, 10, 11, | /| 3o-|/||/|o 2 | 16, 17, 18, 19, | / | / | / | /
+| / | / | 12, 13, 14, 15 } |/ | / 25|/ | / |/ | / | 12** 13 |/ | Face
+to mid-face quadratic node map | 11|*-|* 9 | { 25, 24, 26, 23, 21, 22
+} | / | /21 | / | 0, 1, 2, 3, 4, 5 | / | / | / |/ |/ |/ o*o 0 8 1
 
 CHILD Linear 8-Node Hexahedron 3D Element Node Maps: | | static const
 UInt child_0[] = { 0, 8, 21, 11, 12, 25, 20, 23 }; | static const UInt
@@ -9737,14 +9766,12 @@ PARENT Quadratic 27-Node Hexahedron Nodes 7 18 6 (SPACE_DIM = 3!) o
 -----o------o /| /| / | / | / | / | 19o | 17o | / 15o / o14 / | / | 4
 / | 16 / | o------o-----o 5 | | | 10 | | | 3 o----o|----o 2 | / | / |
 / | / 12o / o13 / | o11 | o9 | / | / | / | / |/ |/ o------o-----o 0 8
-1
-
-x--------x---------x      /|                 /|     / | / |    /  |
-22          /  |   x   |    o         x   |  /    x o26   /    x
-(Node #20 is at centroid of element) /     | /     | / | / | \"2D
-surface\" containing nodes 0, 8, 1, 13, 5, 16, 4, 12 has x------x-----
-x | node 25 at center.... | 23o | | o24 | | x----x|----x | / | / | /
-25 | / x / o x / | x o21 | x | / | / | / | / |/ |/ x------x-----x
+1     x--------x---------x     /|                 /|    / | / |   /  |
+22          /  |  x   |    o         x   | /    x o26   /    x
+(Node #20 is at centroid of element) / | / | / | / | \"2D surface\"
+containing nodes 0, 8, 1, 13, 5, 16, 4, 12 has x------x-----x | node
+25 at center.... | 23o | | o24 | | x----x|----x | / | / | / 25 | / x /
+o x / | x o21 | x | / | / | / | / |/ |/ x------x-----x
 
 PARENT Quadratic 27-Node Hexahedron 3D Element Edge Node Map:
 
@@ -9873,9 +9900,7 @@ o-*-o-*-o 11 11 o-*-o-*-o 9 | 24 | | | 26 | | | 28 | | | | | | | | | |
 | | | o-*-o-*-o o-*-o-*-o o-*-o-*-o # 0 18 6 19 1 1 20 7 21 2 2 22 8
 23 0
 
-\\\\ \\\\ \\\\ \\\\>>
-
-Face #4                          Face #5
+\\\\ \\\\ \\\\ \\\\>>   Face #4                          Face #5
 
 2 21 7 20 1 5 33 13 32 4 o--*--o--*--o o--*--o--*--o \\\\ / \\\\ /
 \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / \\\\ / 22* 36* 38 *19 34 42* 44 *31

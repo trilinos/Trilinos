@@ -8,18 +8,18 @@ Trilinos_Util::CommandLineParser: A class for managing the input
 arguments and variables.
 
 Using Trilinos_Util::CommandLineParser, it is easy to handle input
-line arguments and shell variables. For instance, the user can write  $
+line arguments and shell variables. For instance, the user can write$
 ./a.out -nx 10 -tol 1e-6 -solver=cg and then easily retrive the value
 of nx, tol, and solver.
 
 A simple code using this class is as follows:int main(int argc, char
 *argv[])  { Trilinos_Util::CommandLineParser CLP(argc,argv);   int nx
 = CLP.GetInt(\"-nx\", 123);   int ny = CLP.GetInt(\"-ny\", 145);
-double tol = CLP.GetDouble(\"-tol\", 1e-12);   string solver =
+double tol = CLP.GetDouble(\"-tol\", 1e-12);   std::string solver =
 CLP.GetInt(\"-solver\");    cout << \"nx = \" << nx << endl;   cout <<
 \"ny = \" << ny << \" (default value)\" << endl;   cout << \"tol = \"
 << tol << endl;   cout << \"solver = \" << solver << endl;    return
-0;    }
+0;  }
 
 Each line option can have a value or not. For options with a value,
 the user can specify this values as follows. Let -tolerance be the
@@ -45,7 +45,7 @@ GetDouble
 GetString
 
 If option name is not found in the database, a value of 0, 0.0 or an
-empty string is returned. If needed, the user can also specify a
+empty std::string is returned. If needed, the user can also specify a
 default value to return when the option name is not found in the
 database. Method HaveOption can be used to query the database for an
 option.
@@ -57,8 +57,8 @@ Add
 (GetInt, GetDouble, GetString, Set and Add are derived from the base
 class, Trilinos_Util_Map).
 
-Finally, the user can retrive the integer, double or string value of a
-shell environmental variable using: GetIntShellVariable
+Finally, the user can retrive the integer, double or std::string value
+of a shell environmental variable using: GetIntShellVariable
 
 GetDoubleShellVariable
 
@@ -79,7 +79,7 @@ shell line. ";
 Trilinos_Util::CommandLineParser::GetProgramName "string
 Trilinos_Util::CommandLineParser::GetProgramName(void)
 
-Returns the name of the program as a C++ string. ";
+Returns the name of the program as a C++ std::string. ";
 
 %feature("docstring")
 Trilinos_Util::CommandLineParser::GetIntShellVariable "int
@@ -105,7 +105,8 @@ Trilinos_Util::CommandLineParser::GetStringShellVariable "string
 Trilinos_Util::CommandLineParser::GetStringShellVariable(const char
 *str)
 
-Returns the value of the environmenta variable str as a C++ string.
+Returns the value of the environmenta variable str as a C++
+std::string.
 
 This methods returns the value of the environmenta variable str. If
 the variable does not exists, returns \"\". ";
@@ -138,8 +139,8 @@ Parameters:
 In:  comm - Epetra communicator ";
 
 %feature("docstring")
-Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const string name,
-const Epetra_Map &map)
+Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery "Trilinos_Util::CrsMatrixGallery::CrsMatrixGallery(const std::string
+name, const Epetra_Map &map)
 
 Creates an Triutils_Gallery object using a given map.
 
@@ -159,26 +160,26 @@ Trilinos_Util::CrsMatrixGallery::~CrsMatrixGallery "Trilinos_Util::CrsMatrixGall
 Triutils_Gallery destructor. ";
 
 %feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
-Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const int
-value)
+Trilinos_Util::CrsMatrixGallery::Set(const std::string parameter,
+const int value)
 
 Sets a gallery options using an interger value. ";
 
 %feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
-Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
-string value)
+Trilinos_Util::CrsMatrixGallery::Set(const std::string parameter,
+const std::string value)
 
 Sets a gallery options using a C++ string . ";
 
 %feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
-Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
-double value)
+Trilinos_Util::CrsMatrixGallery::Set(const std::string parameter,
+const double value)
 
 Sets a gallery options using an double value. ";
 
 %feature("docstring")  Trilinos_Util::CrsMatrixGallery::Set "int
-Trilinos_Util::CrsMatrixGallery::Set(const string parameter, const
-Epetra_Vector &value)
+Trilinos_Util::CrsMatrixGallery::Set(const std::string parameter,
+const Epetra_Vector &value)
 
 Sets a gallery options using an Epetra_Vector.
 
@@ -263,7 +264,8 @@ and the exact solution. ";
 
 %feature("docstring")
 Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors "void
-Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(ostream &os)
+Trilinos_Util::CrsMatrixGallery::PrintMatrixAndVectors(std::ostream
+&os)
 
 Print out matrix and vectors. ";
 
@@ -278,7 +280,7 @@ double *&y, double *&z)
 
 Get pointers to double vectors containing coordinates of points. ";
 
-%feature("docstring")  Trilinos_Util::CrsMatrixGallery::WriteMatrix "int Trilinos_Util::CrsMatrixGallery::WriteMatrix(const string
+%feature("docstring")  Trilinos_Util::CrsMatrixGallery::WriteMatrix "int Trilinos_Util::CrsMatrixGallery::WriteMatrix(const std::string
 &FileName, const bool UseSparse=true)
 
 Print matrix on file in MATLAB format. ";
@@ -297,12 +299,13 @@ Trilinos_Util::InputFileReader::~InputFileReader "Trilinos_Util::InputFileReader
 %feature("docstring")  Trilinos_Util::InputFileReader::GetFileName "string Trilinos_Util::InputFileReader::GetFileName(void) const ";
 
 %feature("docstring")  Trilinos_Util::InputFileReader::SetCommentChars
-"void Trilinos_Util::InputFileReader::SetCommentChars(const string c)
-";
+"void Trilinos_Util::InputFileReader::SetCommentChars(const
+std::string c) ";
 
 %feature("docstring")
 Trilinos_Util::InputFileReader::SetSeparationChars "void
-Trilinos_Util::InputFileReader::SetSeparationChars(const string c) ";
+Trilinos_Util::InputFileReader::SetSeparationChars(const std::string
+c) ";
 
 %feature("docstring")  Trilinos_Util::InputFileReader::ReadFile "int
 Trilinos_Util::InputFileReader::ReadFile() ";
@@ -318,43 +321,47 @@ FileName[]) ";
 // File: classTrilinos__Util__Map.xml
 %feature("docstring") Trilinos_Util_Map "";
 
-%feature("docstring")  Trilinos_Util_Map::Get "int
-Trilinos_Util_Map::Get(const string input, const int def_value)
+%feature("docstring")  Trilinos_Util_Map::Get "virtual int
+Trilinos_Util_Map::Get(const std::string input, const int def_value)
 
 Gets the value of the specified option as an integer. If not found,
 returns the specified default value. ";
 
-%feature("docstring")  Trilinos_Util_Map::Get "double
-Trilinos_Util_Map::Get(const string input, const double def_value)
+%feature("docstring")  Trilinos_Util_Map::Get "virtual double
+Trilinos_Util_Map::Get(const std::string input, const double
+def_value)
 
 Gets the value of the specified option as a double. If not found,
 returns the specified default value. ";
 
-%feature("docstring")  Trilinos_Util_Map::Get "string
-Trilinos_Util_Map::Get(const string input, const string def_value)
+%feature("docstring")  Trilinos_Util_Map::Get "virtual std::string
+Trilinos_Util_Map::Get(const std::string input, const std::string
+def_value)
 
-Gets the value of the specified option as a string. If not found,
+Gets the value of the specified option as a std::string. If not found,
 returns the specified default value. ";
 
-%feature("docstring")  Trilinos_Util_Map::Set "bool
-Trilinos_Util_Map::Set(const string input, const char *value)
+%feature("docstring")  Trilinos_Util_Map::Set "virtual bool
+Trilinos_Util_Map::Set(const std::string input, const char *value)
 
 Modify the value of a database entry.
 
 This method modifies the value of a database entry. If the entry does
 not exist in the database, return false. Otherwise, returns true. ";
 
-%feature("docstring")  Trilinos_Util_Map::Set "bool
-Trilinos_Util_Map::Set(const string input, const string value) ";
+%feature("docstring")  Trilinos_Util_Map::Set "virtual bool
+Trilinos_Util_Map::Set(const std::string input, const std::string
+value) ";
 
-%feature("docstring")  Trilinos_Util_Map::Set "bool
-Trilinos_Util_Map::Set(const string input, const int value) ";
+%feature("docstring")  Trilinos_Util_Map::Set "virtual bool
+Trilinos_Util_Map::Set(const std::string input, const int value) ";
 
-%feature("docstring")  Trilinos_Util_Map::Set "bool
-Trilinos_Util_Map::Set(const string input, const double value) ";
+%feature("docstring")  Trilinos_Util_Map::Set "virtual bool
+Trilinos_Util_Map::Set(const std::string input, const double value) ";
 
 %feature("docstring")  Trilinos_Util_Map::Add "bool
-Trilinos_Util_Map::Add(const string input, const string value)
+Trilinos_Util_Map::Add(const std::string input, const std::string
+value)
 
 Add an entry to the databse.
 
@@ -363,13 +370,13 @@ entry does not exist. If it exists, the method returns false.
 Otherwise, it adds the entry and returns true. ";
 
 %feature("docstring")  Trilinos_Util_Map::SetLabel "bool
-Trilinos_Util_Map::SetLabel(string Label) ";
+Trilinos_Util_Map::SetLabel(std::string Label) ";
 
-%feature("docstring")  Trilinos_Util_Map::GetLabel "string
-Trilinos_Util_Map::GetLabel(string Label) ";
+%feature("docstring")  Trilinos_Util_Map::GetLabel "std::string
+Trilinos_Util_Map::GetLabel(std::string Label) ";
 
 %feature("docstring")  Trilinos_Util_Map::Has "bool
-Trilinos_Util_Map::Has(const string input)
+Trilinos_Util_Map::Has(const std::string input)
 
 Check wheter an option is in the database or not.
 
@@ -400,8 +407,8 @@ Trilinos_Util_Map::~Trilinos_Util_Map() ";
 %feature("docstring") Trilinos_Util::VbrMatrixGallery "";
 
 %feature("docstring")
-Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery "Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery(const string name,
-const Epetra_Map &map) ";
+Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery "Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery(const std::string
+name, const Epetra_Map &map) ";
 
 %feature("docstring")
 Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery "Trilinos_Util::VbrMatrixGallery::VbrMatrixGallery(const string name,
@@ -487,7 +494,8 @@ and the exact solution for the VBR problem. ";
 
 %feature("docstring")
 Trilinos_Util::VbrMatrixGallery::PrintVbrMatrixAndVectors "void
-Trilinos_Util::VbrMatrixGallery::PrintVbrMatrixAndVectors(ostream &os)
+Trilinos_Util::VbrMatrixGallery::PrintVbrMatrixAndVectors(std::ostream
+&os)
 
 Print out Vbr matrix and vectors. ";
 

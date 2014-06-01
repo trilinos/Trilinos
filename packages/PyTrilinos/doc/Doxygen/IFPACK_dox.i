@@ -3168,6 +3168,10 @@ Otherwise, return a newly created preconditioner object. Note that the
 client is responsible for calling delete on the returned object once
 it is finished using it! ";
 
+%feature("docstring")  Ifpack_DynamicFactory::buildPreconditioner "Ifpack_Preconditioner*
+Ifpack_DynamicFactory::buildPreconditioner(Epetra_RowMatrix *Matrix,
+int Overlap, bool Serial, bool OverrideSerialDefault) ";
+
 
 // File: classIfpack__Element.xml
 %feature("docstring") Ifpack_Element "";
@@ -5490,6 +5494,33 @@ partioning). ";
 Computes the partitions. Returns 0 if successful. ";
 
 
+// File: classIfpack__LinePartitioner.xml
+%feature("docstring") Ifpack_LinePartitioner "";
+
+%feature("docstring")  Ifpack_LinePartitioner::Ifpack_LinePartitioner
+"Ifpack_LinePartitioner::Ifpack_LinePartitioner(const Ifpack_Graph
+*Graph)
+
+Constructor. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::~Ifpack_LinePartitioner
+"virtual Ifpack_LinePartitioner::~Ifpack_LinePartitioner()
+
+Destructor. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::SetPartitionParameters
+"int
+Ifpack_LinePartitioner::SetPartitionParameters(Teuchos::ParameterList
+&List)
+
+Sets all the parameters for the partitioner. ";
+
+%feature("docstring")  Ifpack_LinePartitioner::ComputePartitions "int
+Ifpack_LinePartitioner::ComputePartitions()
+
+Computes the partitions. Returns 0 if successful. ";
+
+
 // File: classIfpack__LocalFilter.xml
 %feature("docstring") Ifpack_LocalFilter "
 
@@ -6344,27 +6375,6 @@ Returns the number of global matrix columns. ";
 
 %feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalDiagonals
 "virtual int Ifpack_OverlappingRowMatrix::NumGlobalDiagonals() const
-
-Returns the number of global nonzero diagonal entries, based on global
-row/column index comparisons. ";
-
-%feature("docstring")
-Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64 "virtual long long
-Ifpack_OverlappingRowMatrix::NumGlobalNonzeros64() const
-
-Returns the number of nonzero entries in the global matrix. ";
-
-%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalRows64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalRows64() const
-
-Returns the number of global matrix rows. ";
-
-%feature("docstring")  Ifpack_OverlappingRowMatrix::NumGlobalCols64 "virtual long long Ifpack_OverlappingRowMatrix::NumGlobalCols64() const
-
-Returns the number of global matrix columns. ";
-
-%feature("docstring")
-Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64 "virtual long long
-Ifpack_OverlappingRowMatrix::NumGlobalDiagonals64() const
 
 Returns the number of global nonzero diagonal entries, based on global
 row/column index comparisons. ";
@@ -8580,9 +8590,6 @@ TIfpack_HashTable< key_type >::getRecommendedHashSize(int n) ";
 // File: namespace@30.xml
 
 
-// File: namespacestd.xml
-
-
 // File: namespaceTeuchos.xml
 
 
@@ -9003,6 +9010,12 @@ int(*fkeep)(int, int, double, void *), void *other) ";
 
 
 // File: Ifpack__LinearPartitioner_8h.xml
+
+
+// File: Ifpack__LinePartitioner_8cpp.xml
+
+
+// File: Ifpack__LinePartitioner_8h.xml
 
 
 // File: Ifpack__LocalFilter_8cpp.xml

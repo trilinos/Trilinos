@@ -131,7 +131,7 @@ traversed is not specified and is up to the adapter implementation.
 
 NumMyRowEntries: Provide the number of entries for a specified local
 row.  An alternative is possible if you do not want to provide a non-
-trivial implementation of the ExtraMyEntryView   methods (See
+trivial implementation of the ExtraMyEntryView  methods (See
 Epetra_VbrRowMatrix for an example): Implement ExtractMyRowCopy and
 NumMyRowEntries as above.
 
@@ -191,9 +191,9 @@ C++ includes: Epetra_BasicRowMatrix.h ";
 Epetra_BasicRowMatrix constructor.
 
 This constructor requires a valid Epetra_Comm object as its only
-argument. The constructor will use Comm to build Epetra_Maps objects:
-RowMap, ColMap, DomainMap and RangeMap. However, these will be zero-
-length (trivial) maps that must be reset by calling one of the two
+argument.  The constructor will use Comm to build Epetra_Maps objects:
+RowMap, ColMap, DomainMap and RangeMap.  However, these will be zero-
+length (trivial) maps that @e must be reset by calling one of the two
 SetMap() methods listed below.
 
 Parameters:
@@ -213,11 +213,11 @@ Epetra_Map &ColMap)
 
 Set maps (Version 1); call this function or the next, but not both.
 
-This method takes a row and column map. On each processor these maps
+This method takes a row and column map.  On each processor these maps
 describe the global rows and columns, resp, that the processor will
-care about. Note that the ColMap does not have to be one-to-one. In
-other words, a column ID can appear on more than one processor. The
-RowMap must be 1-to-1.
+care about.  Note that the ColMap does not have to be one-to-one.  In
+other words, a column ID can appear on more than one processor.  The
+RowMap \\\\e must be 1-to-1.
 
 Parameters:
 -----------
@@ -226,13 +226,11 @@ RowMap:  An Epetra_Map containing on each processor a list of GIDs of
 rows that the processor cares about.
 
 ColMap:  An Epetra_Map containing on each processor a list of GIDs of
-columns that the processor cares about.
-
-In this method, the domain and range maps are assumed to be the same
-as the row map. Note that this requires that the global matrix be
-square. If the matrix is not square, or the domain vectors or range
-vectors do not have the same layout as the rows, then the second
-constructor should be called. ";
+columns that the processor cares about.In this method, the domain and
+range maps are assumed to be the same as the row map.  Note that this
+requires that the global matrix be square.  If the matrix is not
+square, or the domain vectors or range vectors do not have the same
+layout as the rows, then the second constructor should be called. ";
 
 %feature("docstring")  Epetra_BasicRowMatrix::SetMaps "void
 Epetra_BasicRowMatrix::SetMaps(const Epetra_Map &RowMap, const
@@ -242,11 +240,11 @@ Epetra_Map &ColMap, const Epetra_Map &DomainMap, const Epetra_Map
 Set maps (Version 2); call this function or the previous, but not
 both.
 
-This constructor takes a row, column, domain and range map. On each
+This constructor takes a row, column, domain and range map.  On each
 processor these maps describe the global rows, columns, domain and
-range, resp, that the processor will care about. The domain and range
+range, resp, that the processor will care about.  The domain and range
 maps must be one-to-one, but note that the row and column maps do not
-have to be one-to-one. In other words, a row ID can appear on more
+have to be one-to-one.  In other words, a row ID can appear on more
 than one processor, as can a column ID.
 
 Parameters:
@@ -515,9 +513,8 @@ Epetra_BasicRowMatrix::NormInf() const
 
 Returns the infinity norm of the global matrix.
 
-Returns the quantity $ \\\\| A \\\\|_\\\\infty$ such that \\\\[\\\\| A
-\\\\|_\\\\infty = \\\\max_{1\\\\lei\\\\lem} \\\\sum_{j=1}^n |a_{ij}|
-\\\\].
+Returns the quantity \\\\form#0 such that \\\\[\\\\| A \\\\|_\\\\infty
+= \\\\max_{1\\\\lei\\\\lem} \\\\sum_{j=1}^n |a_{ij}| \\\\].
 
 WARNING:  This method is supported if and only if the Epetra_RowMatrix
 Object that was used to create this supports this method. ";
@@ -527,8 +524,8 @@ Epetra_BasicRowMatrix::NormOne() const
 
 Returns the one norm of the global matrix.
 
-Returns the quantity $ \\\\| A \\\\|_1$ such that \\\\[\\\\| A
-\\\\|_1= \\\\max_{1\\\\lej\\\\len} \\\\sum_{i=1}^m |a_{ij}| \\\\].
+Returns the quantity \\\\form#2 such that \\\\[\\\\| A \\\\|_1=
+\\\\max_{1\\\\lej\\\\len} \\\\sum_{i=1}^m |a_{ij}| \\\\].
 
 WARNING:  This method is supported if and only if the Epetra_RowMatrix
 Object that was used to create this supports this method. ";
@@ -1158,7 +1155,7 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
+ElementSize, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 ElementSize, long long IndexBase, const Epetra_Comm &Comm) ";
@@ -1199,7 +1196,7 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-NumMyElements, int ElementSize, long long IndexBase, const Epetra_Comm
+NumMyElements, int ElementSize, int IndexBase, const Epetra_Comm
 &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
@@ -1250,8 +1247,8 @@ number of processors.
 Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
-NumMyElements, const long long *MyGlobalElements, int ElementSize,
-long long IndexBase, const Epetra_Comm &Comm) ";
+NumMyElements, const long long *MyGlobalElements, int ElementSize, int
+IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, int ElementSize,
@@ -1303,7 +1300,7 @@ Pointer to a Epetra_BlockMap object. ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
-*ElementSizeList, long long IndexBase, const Epetra_Comm &Comm) ";
+*ElementSizeList, int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_BlockMap::Epetra_BlockMap "Epetra_BlockMap::Epetra_BlockMap(long long NumGlobalElements, int
 NumMyElements, const long long *MyGlobalElements, const int
@@ -6455,7 +6452,7 @@ that will transfer objects built with SourceMap to objects built with
 TargetMap.A Epetra_Export object categorizes the elements of the
 target map into three sets as follows: <ol> <li> All elements in the
 target map that have the same GID as the corresponding element of the
-source map, starting with the first       element in the target map,
+source map, starting with the first      element in the target map,
 going up to the first element that is different from the source map.
 The number of      these IDs is returned by NumSameIDs(). <li> All
 elements that are local to the processor, but are not part of the
@@ -6469,7 +6466,7 @@ PermuteFromLIDs(). The list of elements (local IDs) in the target map
 that are the new locations      of the source elements can be found in
 the list PermuteToLIDs(). <li> All remaining elements of the target
 map correspond to global IDs that are owned by remote processors.  The
-number       of these elements is returned by NumRemoteIDs() and the
+number      of these elements is returned by NumRemoteIDs() and the
 list of these is returned by RemoteLIDs(). </ol>
 
 Given the above information, the Epetra_Export constructor builds a
@@ -6498,7 +6495,7 @@ entries on PE 0, and so on. Suppose that the entries of this forcing
 vector are computed by integrating over linear \"hat\" functions:
 
 ^  ^  ^  ^  ^  ^  ^  ^  ^  \\\\/ \\\\/ \\\\/ \\\\/ \\\\/ \\\\/ \\\\/
-\\\\/   /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\
+\\\\/  /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\ /\\\\
 +--+--+--+--+--+--+--+--+ 0  1  2  3  4  5  6  7  8
 
 In this case, PE 0 will make contributions to entries 0 through 3, PE
@@ -6735,7 +6732,7 @@ the owning processor with a \"sumInto\" or accumulate operation. This
 is a collective method every processor must enter it before any will
 complete it.
 
-NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
+***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
 arguments ' DomainMap()' and ' RangeMap()', which are the map
 attributes held by the base-class CrsMatrix and its graph. If a
 rectangular matrix is being assembled, the domain-map and range-map
@@ -6763,10 +6760,10 @@ the owning processor with a \"sumInto\" or accumulate operation. This
 is a collective method every processor must enter it before any will
 complete it.
 
-NOTE***: When GlobalAssemble() (the other overloading of this method)
-calls FillComplete(), it passes the arguments ' DomainMap()' and '
-RangeMap()', which are the map attributes already held by the base-
-class CrsMatrix and its graph. If a rectangular matrix is being
+***NOTE***: When GlobalAssemble() (the other overloading of this
+method) calls FillComplete(), it passes the arguments ' DomainMap()'
+and ' RangeMap()', which are the map attributes already held by the
+base-class CrsMatrix and its graph. If a rectangular matrix is being
 assembled, the domain-map and range-map must be specified. Otherwise,
 GlobalAssemble() has no way of knowing what these maps should really
 be.
@@ -6816,7 +6813,7 @@ onto the owning processors as determined by the map provided at
 construction. Users should note that the GlobalAssemble() method has
 an optional argument which determines whether GlobalAssemble() in turn
 calls FillComplete() after the data-exchange has occurred. If not
-explicitly supplied, this argument defaults to true. NOTE***: When
+explicitly supplied, this argument defaults to true. ***NOTE***: When
 GlobalAssemble() calls FillComplete(), it passes the arguments '
 DomainMap()' and ' RangeMap()', which are the map attributes held by
 the base-class CrsMatrix and its graph. If a rectangular matrix is
@@ -7493,7 +7490,7 @@ the owning processor with a \"sumInto\" or accumulate operation. This
 is a collective method every processor must enter it before any will
 complete it.
 
-NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
+***NOTE***: When GlobalAssemble() calls FillComplete(), it passes the
 arguments ' DomainMap()' and ' RangeMap()', which are the map
 attributes held by the base-class CrsMatrix and its graph. If a
 rectangular matrix is being assembled, the domain-map and range-map
@@ -7522,10 +7519,10 @@ the owning processor with a \"sumInto\" or accumulate operation. This
 is a collective method every processor must enter it before any will
 complete it.
 
-NOTE***: When GlobalAssemble() (the other overloading of this method)
-calls FillComplete(), it passes the arguments ' DomainMap()' and '
-RangeMap()', which are the map attributes already held by the base-
-class CrsMatrix and its graph. If a rectangular matrix is being
+***NOTE***: When GlobalAssemble() (the other overloading of this
+method) calls FillComplete(), it passes the arguments ' DomainMap()'
+and ' RangeMap()', which are the map attributes already held by the
+base-class CrsMatrix and its graph. If a rectangular matrix is being
 assembled, the domain-map and range-map must be specified. Otherwise,
 GlobalAssemble() has no way of knowing what these maps should really
 be.
@@ -8534,7 +8531,7 @@ Epetra_IntSerialDenseMatrix::Random()
 Set matrix values to random numbers.
 
 IntSerialDenseMatrix uses the random number generator provided by
-Epetra_Util. The matrix values will be set to random values on the
+Epetra_Util.     The matrix values will be set to random values on the
 interval (0, 2^31 - 1).
 
 Integer error code, set to 0 if successful. ";
@@ -8779,7 +8776,7 @@ Epetra_IntSerialDenseVector::Random()
 Set vector values to random numbers.
 
 IntSerialDenseVector uses the random number generator provided by
-Epetra_Util. The vector values will be set to random values on the
+Epetra_Util.     The vector values will be set to random values on the
 interval (0, 2^31 - 1).
 
 Integer error code, set to 0 if successful. ";
@@ -10575,7 +10572,7 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
+%feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, int
 IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_LocalMap::Epetra_LocalMap "Epetra_LocalMap::Epetra_LocalMap(long long NumMyElements, long long
@@ -11380,8 +11377,8 @@ number of processors.
 
 Pointer to a Epetra_Map object. ";
 
-%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
-IndexBase, const Epetra_Comm &Comm) ";
+%feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int IndexBase,
+const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, long long
 IndexBase, const Epetra_Comm &Comm) ";
@@ -11416,7 +11413,7 @@ number of processors.
 Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
-long long IndexBase, const Epetra_Comm &Comm) ";
+int IndexBase, const Epetra_Comm &Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 long long IndexBase, const Epetra_Comm &Comm) ";
@@ -11459,8 +11456,8 @@ number of processors.
 Pointer to a Epetra_Map object. ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
-const long long *MyGlobalElements, long long IndexBase, const
-Epetra_Comm &Comm) ";
+const long long *MyGlobalElements, int IndexBase, const Epetra_Comm
+&Comm) ";
 
 %feature("docstring")  Epetra_Map::Epetra_Map "Epetra_Map::Epetra_Map(long long NumGlobalElements, int NumMyElements,
 const long long *MyGlobalElements, long long IndexBase, const
@@ -14219,18 +14216,18 @@ This function performs a variety of matrix-matrix multiply operations,
 interpreting the Epetra_MultiVectors ( this-aka C , A and B) as 2D
 matrices. Variations are due to the fact that A, B and C can be local
 replicated or global distributed Epetra_MultiVectors and that we may
-or may not operate with the transpose of A and B. Possible cases
-are:Total of 32 case (2^5). Num OPERATIONS                        case
-Notes 1) C(local) = A^X(local) * B^X(local)  4   (X=Transpose or Not,
-No comm needed)  2) C(local) = A^T(distr) * B  (distr)  1   (2D dot
-product, replicate C) 3) C(distr) = A  (distr) * B^X(local)  2   (2D
-vector update, no comm needed)  Note that the following operations are
-not meaningful for  1D distributions:  1) C(local) = A^T(distr) *
-B^T(distr)  1 2) C(local) = A  (distr) * B^X(distr)  2 3) C(distr) =
-A^X(local) * B^X(local)  4 4) C(distr) = A^X(local) * B^X(distr)  4 5)
-C(distr) = A^T(distr) * B^X(local)  2 6) C(local) = A^X(distr) *
-B^X(local)  4 7) C(distr) = A^X(distr) * B^X(local)  4 8) C(local) =
-A^X(local) * B^X(distr)  4
+or may not operate with the transpose of A and B. Possible cases are:
+Total of 32 case (2^5).    Num    OPERATIONS case  Notes    1)
+C(local) = A^X(local) * B^X(local)  4   (X=Transpose or Not, No comm
+needed)    2) C(local) = A^T(distr) * B  (distr)  1 (2D dot product,
+replicate C)    3) C(distr) = A  (distr) * B^X(local) 2   (2D vector
+update, no comm needed)     Note that the following operations are not
+meaningful for    1D distributions:     1) C(local) = A^T(distr) *
+B^T(distr)  1    2) C(local) = A  (distr) * B^X(distr) 2    3)
+C(distr) = A^X(local) * B^X(local)  4    4) C(distr) = A^X(local) *
+B^X(distr)  4    5) C(distr) = A^T(distr) * B^X(local)  2 6) C(local)
+= A^X(distr) * B^X(local)  4    7) C(distr) = A^X(distr) * B^X(local)
+4    8) C(local) = A^X(local) * B^X(distr)  4
 
 Parameters:
 -----------
@@ -14786,31 +14783,21 @@ Epetra_OskiMatrix.
 
 List:  (In) Any options or data wanted or needed for the conversion.
 
-Pointer to an Epetra_OskiMatrix.  Options that can be passed to the
-List are presented below. They are: \"<type> <option name> <default
-value>: <description of purpose>\"
-
-bool autotune false: If true, Epetra tries to set as many hints as
-possible based on its knowledge of the matrix.
-
-string matrixtype general: Other types that can be taken are:
-uppertri, lowertri, uppersymm, lowersymm, fullsymm, upperherm,
-lowerherm and fullherm.
-
-bool diagstored false: If true, the diagonal entries are not stored in
-the matrix and are all assumed to be 1.
-
-bool zerobased false: If true, the array is zero based, as in C.
-Otherwise, it is 1 based, as in Fortran.
-
-bool sorted false: If true, all elements in the passed in array are
-sorted.
-
-bool unique false: If true, a value in a column only appears once in
-each row.
-
-bool deepcopy false: If true, when the OSKI matrix is created it will
-be a deepcopy of the data in the function. ";
+Pointer to an Epetra_OskiMatrix.       Options that can be passed to
+the List are presented below. They are: \"<type> <option name>
+<default value>: <description of purpose>\"         - bool autotune
+false: If true, Epetra tries to set as many hints as possible based on
+its knowledge of the matrix. - string matrixtype general: Other types
+that can be taken are: uppertri, lowertri, uppersymm, lowersymm,
+fullsymm, upperherm, lowerherm and fullherm.        - bool diagstored
+false: If true, the diagonal entries are not stored in the matrix and
+are all assumed to be 1.        - bool zerobased false: If true, the
+array is zero based, as in C. Otherwise, it is 1 based, as in Fortran.
+- bool sorted false: If true, all elements in the passed in array are
+sorted. - bool unique false: If true, a value in a column only appears
+once in each row.        - bool deepcopy false: If true, when the OSKI
+matrix is created it will be a deepcopy of the data in the function.
+";
 
 %feature("docstring")  Epetra_OskiMatrix::~Epetra_OskiMatrix "virtual
 Epetra_OskiMatrix::~Epetra_OskiMatrix()
@@ -16452,19 +16439,25 @@ Generate a new Epetra_CrsMatrix as the transpose of an
 Epetra_RowMatrix passed into the constructor.
 
 Constructs a new Epetra_CrsMatrix that is a copy of the
-Epetra_RowMatrix passed in to the constructor.    \\\\param
-MakeDataContiguous (In) Causes the output matrix, LHS and RHS to be
-stored in a form compatible with            Fortran- style solvers.
-The output matrix will be compatible with the Harwell- Boeing
-compressed                              column format.  The RHS and
-LHS will be stored such that the last value in column j of the
-multivector is stored next to the first value in column j+1. \\\\param
-TransposeRowMap (Optional/In) If this argument is defined, the
-transpose matrix will be distributed            using this map as the
-row map for the transpose.  If it is set to zero, the transpose matrix
-will use                              the
-OrigMatrix->RowMatrixDomainMap as the row map.      \\\\return Integer
-error code, 0 if no errors.  Negative if some fatal error occured. ";
+Epetra_RowMatrix passed in to the constructor.
+
+Parameters:
+-----------
+
+MakeDataContiguous:  (In) Causes the output matrix, LHS and RHS to be
+stored in a form compatible with Fortran-style solvers. The output
+matrix will be compatible with the Harwell-Boeing compressed column
+format. The RHS and LHS will be stored such that the last value in
+column j of the multivector is stored next to the first value in
+column j+1.
+
+TransposeRowMap:  (Optional/In) If this argument is defined, the
+transpose matrix will be distributed using this map as the row map for
+the transpose. If it is set to zero, the transpose matrix will use the
+OrigMatrix->RowMatrixDomainMap as the row map.
+
+Integer error code, 0 if no errors. Negative if some fatal error
+occured. ";
 
 %feature("docstring")
 Epetra_RowMatrixTransposer::UpdateTransposeValues "int
@@ -18210,7 +18203,7 @@ same dimensions. ";
 Causes equilibration to be called just before the matrix factorization
 as part of the call to Factor.
 
-This function must be called before the factorization is performed. If
+This function must be called before the factorization is performed.If
 Flag is true, causes all subsequent function calls to work with the
 transpose of this matrix, otherwise not. ";
 
@@ -18614,7 +18607,7 @@ Epetra_SerialDenseVector::Random()
 Set vector values to random numbers.
 
 SerialDenseVector uses the random number generator provided by
-Epetra_Util. The vector values will be set to random values on the
+Epetra_Util.     The vector values will be set to random values on the
 interval (-1.0, 1.0).
 
 Integer error code, set to 0 if successful. ";
@@ -19526,6 +19519,11 @@ Makes an exact copy of an existing Epetra_Util instance. ";
 %feature("docstring")  Epetra_Util::~Epetra_Util "Epetra_Util::~Epetra_Util()
 
 Epetra_Util Destructor. ";
+
+%feature("docstring")  Epetra_Util::Sort "void Epetra_Util::Sort(bool
+SortAscending, int NumKeys, T *Keys, int NumDoubleCompanions, double
+**DoubleCompanions, int NumIntCompanions, int **IntCompanions, int
+NumLongLongCompanions, long long **LongLongCompanions) ";
 
 
 // File: classEpetra__VbrMatrix.xml

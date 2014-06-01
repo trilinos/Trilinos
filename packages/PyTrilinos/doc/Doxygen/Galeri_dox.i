@@ -3875,9 +3875,6 @@ const double diff, const double alpha) ";
 Galeri::Matrices::Vander(const Epetra_Map *Map, const double value) ";
 
 
-// File: namespacestd.xml
-
-
 // File: namespaceTeuchos.xml
 
 
