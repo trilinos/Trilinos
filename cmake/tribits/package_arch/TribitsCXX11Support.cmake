@@ -51,7 +51,7 @@ INCLUDE(CheckCXXSourceCompiles)
 # passes the try-compile test is set into the cache variable
 # ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS on output.
 # 
-FUNCTION(TRIBITS_ENABLE_CXX11)
+FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
 
   ##
   ## Only try introspection if we have not already
@@ -67,12 +67,11 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
      ## List of possible compiler flags to use
      ##
      SET(CXX11_FLAG_OPTIONS
-         "/Qstd=c++11"   # intel windows
-         "-std=complete-nonsense"   # Nonsense!
-         "-std=c++11"    # intel/clang linux/mac
-         "-std=gnu++11"  # gcc
-         "-std=c++0x"  # Older gcc
-     )
+       "-std=c++11"    # intel/clang linux/mac
+       "-std=c++0x"    # Older gcc
+       "-std=gnu++11"  # gcc
+       "/Qstd=c++11"   # intel windows
+       )
 
      ##
      ## Same CXX11 source
