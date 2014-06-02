@@ -385,7 +385,7 @@ public:
 
   void * get_shmem( const int size );
 
-  KOKKOS_INLINE_FUNCTION void team_barrier()
+  inline void team_barrier()
     {
       const int rank_rev = m_team_size - ( m_team_rank + 1 );
 
@@ -402,7 +402,7 @@ public:
     }
 
   template< class ArgType >
-  KOKKOS_INLINE_FUNCTION
+  inline
   ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
     {
       // Sequence of m_team_state states:
@@ -549,10 +549,10 @@ inline void Threads::print_configuration( std::ostream & s , const bool detail )
   Impl::ThreadsExec::print_configuration( s , detail );
 }
 
-KOKKOS_INLINE_FUNCTION unsigned Threads::team_max()
+inline unsigned Threads::team_max()
 { return Impl::ThreadsExec::team_max() ; }
 
-KOKKOS_INLINE_FUNCTION unsigned Threads::team_recommended()
+inline unsigned Threads::team_recommended()
 { return Impl::ThreadsExec::team_recommended() ; }
 
 inline bool Threads::sleep()
@@ -564,32 +564,32 @@ inline bool Threads::wake()
 inline void Threads::fence()
 { Impl::ThreadsExec::fence() ; }
 
-KOKKOS_INLINE_FUNCTION int Threads::league_rank() const
+inline int Threads::league_rank() const
 { return m_exec.m_league_rank ; }
 
-KOKKOS_INLINE_FUNCTION int Threads::league_size() const
+inline int Threads::league_size() const
 { return m_exec.m_league_size ; }
 
-KOKKOS_INLINE_FUNCTION int Threads::team_rank() const
+inline int Threads::team_rank() const
 { return m_exec.m_team_rank ; }
 
-KOKKOS_INLINE_FUNCTION int Threads::team_size() const
+inline int Threads::team_size() const
 { return m_exec.m_team_size ; }
 
-KOKKOS_INLINE_FUNCTION void Threads::team_barrier()
+inline void Threads::team_barrier()
 { return m_exec.team_barrier(); }
 
 inline Threads::Threads( Impl::ThreadsExec & t ) : m_exec( t ) {}
 
 template< typename Type >
-KOKKOS_INLINE_FUNCTION Type Threads::team_scan( const Type & value )
+inline Type Threads::team_scan( const Type & value )
 { return m_exec.team_scan( value ); }
 
 template< typename TypeLocal , typename TypeGlobal >
-KOKKOS_INLINE_FUNCTION TypeGlobal Threads::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
+inline TypeGlobal Threads::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
 { return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
-KOKKOS_INLINE_FUNCTION
+inline
 void * Threads::get_shmem( const int size ) { return m_exec.get_shmem( size ); }
 
 } /* namespace Kokkos */

@@ -54,12 +54,12 @@ namespace Kokkos {
 namespace Impl {
 namespace {
 
-KOKKOS_INLINE_FUNCTION
+inline
 int kokkos_omp_in_parallel();
 
 int kokkos_omp_in_critical_region = ( Kokkos::HostSpace::register_in_parallel( kokkos_omp_in_parallel ) , 0 );
 
-KOKKOS_INLINE_FUNCTION
+inline
 int kokkos_omp_in_parallel()
 {
 #ifndef __CUDA_ARCH__
@@ -73,7 +73,7 @@ unsigned s_threads_per_core = 0 ;
 unsigned s_threads_per_numa = 0 ;
 bool s_using_hwloc = false;
 
-KOKKOS_INLINE_FUNCTION
+inline
 unsigned fan_size( const unsigned rank , const unsigned size )
 {
   const unsigned rank_rev = size - ( rank + 1 );

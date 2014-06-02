@@ -154,7 +154,7 @@ public:
   KOKKOS_FUNCTION
   void * get_shmem( const int );
 
-  KOKKOS_INLINE_FUNCTION
+  inline
   void team_barrier()
     {
       if(m_team_size==1) return;
@@ -173,7 +173,7 @@ public:
     }
 
   template< class ArgType >
-  KOKKOS_INLINE_FUNCTION
+  inline
   ArgType team_scan( const ArgType & value , ArgType * const global_accum = 0 )
     {
       // Sequence of m_scan_state states:
@@ -279,28 +279,28 @@ namespace Kokkos {
 
 inline OpenMP::OpenMP( Impl::OpenMPexec & e ) : m_exec(e) {}
 
-KOKKOS_INLINE_FUNCTION
+inline
 int OpenMP::league_rank() const { return m_exec.m_league_rank ; }
-KOKKOS_INLINE_FUNCTION
+inline
 int OpenMP::league_size() const { return m_exec.m_league_size ; }
-KOKKOS_INLINE_FUNCTION
+inline
 int OpenMP::team_rank() const { return m_exec.m_team_rank ; }
-KOKKOS_INLINE_FUNCTION
+inline
 int OpenMP::team_size() const { return m_exec.m_team_size ; }
 
-KOKKOS_INLINE_FUNCTION
+inline
 void OpenMP::team_barrier() { m_exec.team_barrier() ; }
 
-KOKKOS_INLINE_FUNCTION
+inline
 void * OpenMP::get_shmem( const int size ) { return m_exec.get_shmem(size) ; }
 
 template< typename Type >
-KOKKOS_INLINE_FUNCTION
+inline
 Type OpenMP::team_scan( const Type & value )
 { return m_exec.team_scan( value ); }
 
 template< typename TypeLocal , typename TypeGlobal >
-KOKKOS_INLINE_FUNCTION
+inline
 TypeGlobal OpenMP::team_scan( const TypeLocal & value , TypeGlobal * const global_accum )
 { return m_exec.template team_scan< TypeGlobal >( value , global_accum ); }
 
