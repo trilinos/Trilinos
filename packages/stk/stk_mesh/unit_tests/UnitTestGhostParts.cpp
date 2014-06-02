@@ -39,6 +39,7 @@
 #include "stk_util/util/PairIter.hpp"   // for PairIter
 #include "stk_io/StkMeshIoBroker.hpp"
 
+//-BEGIN
 TEST(UnitTestGhostParts, Aura)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
@@ -143,4 +144,4 @@ TEST(UnitTestGhostParts, Custom1)
 
   EXPECT_EQ(expected_num_elems_for_custom_ghosting, counted_elements);
 }
-
+//-END
