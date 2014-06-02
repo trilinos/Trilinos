@@ -269,6 +269,39 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy, Storage, Layout )
   success = checkPCEView(v, out);
 }
 
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_NonContiguous, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::UQ::PCE<Storage> PCE;
+  typedef typename ApplyView<PCE*,Layout,Device>::type ViewType;
+  typedef typename Device::host_mirror_device_type HostDevice;
+  typedef Kokkos::View<PCE*,typename ViewType::array_layout,HostDevice,Kokkos::MemoryUnmanaged> HostViewType;
+  typedef typename ViewType::size_type size_type;
+  typedef typename PCE::cijk_type Cijk;
+
+  // Build Cijk tensor
+  const int stoch_dim = 2;
+  const int poly_ord = 3;
+  Cijk cijk = build_cijk<Cijk>(stoch_dim, poly_ord);
+
+  const size_type num_rows = 11;
+  const size_type num_cols = cijk.dimension();
+  ViewType v("view", cijk, num_rows, num_cols);
+
+  Teuchos::Array<PCE> a(num_rows);
+  for (size_type i=0; i<num_rows; ++i) {
+    a[i].reset(cijk);
+    for (size_type j=0; j<num_cols; ++j)
+      a[i].fastAccessCoeff(j) = generate_pce_coefficient<Scalar>(
+        num_rows, num_cols, i, j);
+  }
+  HostViewType ha(a.getRawPtr(), cijk, num_rows, num_cols);
+  Kokkos::deep_copy(v, ha);
+
+  success = checkPCEView(v, out);
+}
+
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeepCopy_ConstantScalar, Storage, Layout )
 {
   typedef typename Storage::device_type Device;
@@ -488,10 +521,14 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_PCE, DeviceAtomic, Storage, Layou
   success = checkConstantPCEView(v, val, out);
 }
 
+/*
+*/
 
 #define VIEW_UQ_PCE_TESTS_STORAGE_LAYOUT( STORAGE, LAYOUT )             \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy, STORAGE, LAYOUT )                        \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_PCE, DeepCopy_NonContiguous, STORAGE, LAYOUT )          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_PCE, DeepCopy_ConstantScalar, STORAGE, LAYOUT )         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \

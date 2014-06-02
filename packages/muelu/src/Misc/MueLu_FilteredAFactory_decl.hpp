@@ -99,6 +99,9 @@ namespace MueLu {
     void Build(Level& currentLevel) const;
 
     //@}
+  private:
+    void BuildReuse(const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
+    void BuildNew  (const Matrix& A, const GraphBase& G, const bool lumping, Matrix& filteredA) const;
 
   }; //class FilteredAFactory
 

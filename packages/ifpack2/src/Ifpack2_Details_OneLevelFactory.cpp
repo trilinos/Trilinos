@@ -50,25 +50,27 @@
 #  include "Ifpack2_ExplicitInstantiationHelpers.hpp"
 #  include "Ifpack2_ETIHelperMacros.h"
 
+// Explicit instantiation macro for OneLevelFactory.
+// Only invoke this macro in the Ifpack2::Details namespace.
+#  define LCLINST(S, LO, GO) \
+  template<> \
+  class OneLevelFactory< \
+  Tpetra::CrsMatrix< \
+    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; \
+  template<> \
+  class OneLevelFactory< \
+  Tpetra::RowMatrix< \
+    S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+
 namespace Ifpack2 {
 namespace Details {
 
-  // mfh 09 Nov 2013: We can't use the usual IFPACK2_* class macro
-  // here because OneLevelFactory is not a templated class; its methods are.
-  //
-  // mfh 12 Dec 2013: For some reason, this all has to be on one line,
-  // otherwise the macro definition includes the whole rest of the file.
-// #define LCLINST(S, LO, GO) template<> class OneLevelFactory<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >; template<> class OneLevelFactory<Tpetra::RowMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+  IFPACK2_ETI_MANGLING_TYPEDEFS()
 
-//   //template<> class OneLevelFactory<Tpetra::CrsMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
-//   //template<> class OneLevelFactory<Tpetra::RowMatrix<S, LO, GO, KokkosClassic::DefaultNode::DefaultNodeType> >;
+  IFPACK2_INSTANTIATE_SLG( LCLINST )
 
-//   IFPACK2_ETI_MANGLING_TYPEDEFS()
-
-//   IFPACK2_INSTANTIATE_SLG( LCLINST )
-
-  template<>
-  class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode> >;
+  // template<>
+  // class OneLevelFactory<Tpetra::CrsMatrix<double, int, int, KokkosClassic::SerialNode> >;
 
 #if defined(HAVE_KOKKOSCLASSIC_THRUST) && defined(HAVE_KOKKOSCLASSIC_CUDA_DOUBLE) && defined(HAVE_TPETRA_INST_DOUBLE)
   template<>

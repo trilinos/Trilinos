@@ -54,6 +54,5 @@
 #if defined(HAVE_MUELU_AMESOS2)
 #include "Stokhos_Amesos2_UQ_PCE.hpp"
 #endif
-#include "MueLu_Constraint_UQ_PCE.hpp"
 
 #endif // STOKHOS_MUELU_UQ_PCE_HPP

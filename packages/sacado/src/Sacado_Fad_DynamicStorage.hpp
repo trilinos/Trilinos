@@ -116,6 +116,24 @@ namespace Sacado {
         sz_ = sz;
       }
 
+      //! Resize the derivative array to sz
+      /*!
+       * This method doest not preserve any existing derivative components but
+       * sets any that are added to zero.
+       */
+      KOKKOS_INLINE_FUNCTION
+      void resizeAndZero(int sz) {
+        if (sz > len_) {
+          if (len_ != 0)
+            ds_array<S>::destroy_and_release(dx_, len_);
+          dx_ = ds_array<S>::get_and_fill(sz);
+          len_ = sz;
+        }
+        else if (sz > sz_)
+          ds_array<S>::zero(dx_+sz_, sz-sz_);
+        sz_ = sz;
+      }
+
       //! Expand derivative array to size sz
       /*!
        * This method preserves any existing derivative components and

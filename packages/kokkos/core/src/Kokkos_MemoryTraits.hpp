@@ -46,6 +46,7 @@
 #ifndef KOKKOS_MEMORYTRAITS_HPP
 #define KOKKOS_MEMORYTRAITS_HPP
 
+#include <impl/Kokkos_Tags.hpp>
 //----------------------------------------------------------------------------
 
 namespace Kokkos {
@@ -65,6 +66,9 @@ enum MemoryTraitsFlags
 
 template < unsigned T >
 struct MemoryTraits {
+  //! The tag (what type of kokkos_object is this).
+  typedef Impl::MemoryTraitsTag       kokkos_tag ;
+
   enum { Unmanaged  = T & unsigned(Kokkos::Unmanaged) };
   enum { RandomAccess = T & unsigned(Kokkos::RandomAccess) };
 

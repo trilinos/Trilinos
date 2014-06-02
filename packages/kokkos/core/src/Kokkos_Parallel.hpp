@@ -51,67 +51,12 @@
 #include <Kokkos_Macros.hpp>
 #include <Kokkos_View.hpp>
 #include <impl/Kokkos_Traits.hpp>
-
-namespace Kokkos {
-#if   defined ( KOKKOS_HAVE_CUDA )
-class Cuda ;
-#endif
-#if   defined ( KOKKOS_HAVE_OPENMP )
-class OpenMP ;
-#endif
-#if   defined ( KOKKOS_HAVE_PTHREAD )
-class Threads ;
-#endif
-class Serial ;
-} // namespace Kokkos
-
-
-//----------------------------------------------------------------------------
-//----------------------------------------------------------------------------
-
-namespace Kokkos {
-namespace Impl {
-  #if   defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef Cuda DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef OpenMP DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL )
-    typedef Threads DefaultDeviceType;
-  #elif defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS ) && \
-       !defined ( KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA )
-    typedef Serial DefaultDeviceType;
-  #else
-    #if   defined ( KOKKOS_HAVE_CUDA )
-      typedef Kokkos::Cuda DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_CUDA
-    #elif defined ( KOKKOS_HAVE_OPENMP )
-      typedef OpenMP DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_OPENMP
-    #elif defined ( KOKKOS_HAVE_PTHREAD )
-      typedef Threads DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_THREADS
-    #else
-      typedef Serial DefaultDeviceType;
-      #define KOKKOS_HAVE_DEFAULT_DEVICE_TYPE_SERIAL
-    #endif
-  #endif
-}
-}
+#include <impl/Kokkos_Tags.hpp>
 
 namespace Kokkos {
 namespace Impl {
 
+/// A way to find out whether a Functor has device_type defined
 template< class FunctorType , class Enable = void >
 struct FunctorHasDeviceType : public false_type {};
 
@@ -166,7 +111,7 @@ namespace Kokkos {
 /** \brief Execute \c functor \c work_count times in parallel.
  *
  * A "functor" is a class containing the function to execute in
- * parallel, any data needed for that execution, and a \c device_type
+ * parallel, any data needed for that execution, and an optional \c device_type
  * typedef.  Here is an example functor for parallel_for:
  *
  * \code
@@ -182,6 +127,7 @@ namespace Kokkos {
  * <tt>operator()</tt> method defines the operation to parallelize,
  * over the range of integer indices <tt>iwork=[0,work_count-1]</tt>.
  * This compares to a single iteration \c iwork of a \c for loop.
+ * If \c device_type is not defined DefaultDeviceType will be used.
  */
 template< class FunctorType >
 inline
@@ -311,10 +257,55 @@ template< class FunctorType >
 inline
 void parallel_reduce( const size_t work_count ,
                       const FunctorType & functor ,
-                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
+                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result,
+                      typename Impl::enable_if<Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0)
 {
   Impl::ParallelReduce< FunctorType, size_t >
     reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
+
+  reduce.wait();
+}
+
+namespace Impl {
+template<class FunctorType, class ReturnType, class DeviceType>
+struct WrapperFunctorSizeT {
+
+  const FunctorType f;
+  typedef DeviceType device_type;
+  typedef ReturnType value_type;
+
+  WrapperFunctorSizeT(const FunctorType& f_):f(f_) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(const size_t i, value_type& val) const
+  {
+    f(i,val);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & update ) const
+  {
+    update = value_type();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & update, volatile value_type const & input ) const
+  {
+    update += input;
+  }
+};
+}
+
+template< class FunctorType, class ReturnType >
+inline
+void parallel_reduce( const size_t work_count ,
+                      const FunctorType & functor ,
+                      ReturnType& result,
+                      typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0)
+{
+
+  Impl::ParallelReduce< Impl::WrapperFunctorSizeT<FunctorType, ReturnType, Impl::DefaultDeviceType>, size_t >
+    reduce( functor , work_count , Kokkos::Impl::ReduceAdapter< Impl::WrapperFunctorSizeT<FunctorType, ReturnType, Impl::DefaultDeviceType> >::pointer( result ) );
 
   reduce.wait();
 }
@@ -480,7 +471,7 @@ namespace Kokkos {
 ///
 ///   // lastIndex_ is the last valid index (zero-based) of x.
 ///   // If x has length zero, then lastIndex_ won't be used anyway.
-///   ExclScanFunctor (Kokkos::View<value_type*, device_type> x) :
+///   OffsetScanFunctor (Kokkos::View<value_type*, device_type> x) :
 ///     x_ (x), last_index_ (x.dimension_0 () == 0 ? 0 : x.dimension_0 () - 1)
 ///   {}
 ///
@@ -551,9 +542,20 @@ struct ParallelWorkRequest {
 template< class FunctorType >
 inline
 void parallel_for( const ParallelWorkRequest & request ,
-                   const FunctorType         & functor )
+                   const FunctorType         & functor ,
+     typename Impl::enable_if<Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
 {
   Kokkos::Impl::ParallelFor< FunctorType , ParallelWorkRequest >( functor , request );
+}
+
+template< class FunctorType >
+inline
+void parallel_for( const ParallelWorkRequest & request ,
+                   const FunctorType         & functor ,
+     typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
+{
+  Kokkos::Impl::ParallelFor< FunctorType , ParallelWorkRequest, Impl::DefaultDeviceType  >
+     ( functor , request );
 }
 
 } // namespace Kokkos
@@ -600,12 +602,60 @@ template< class FunctorType >
 inline
 void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
                       const FunctorType          & functor ,
-                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result )
+                      typename Kokkos::Impl::ReduceAdapter< FunctorType >::reference_type result,
+                      typename Impl::enable_if<Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0 )
 {
   Impl::ParallelReduce< FunctorType , Kokkos::ParallelWorkRequest >
     reduce( functor , request , Kokkos::Impl::ReduceAdapter< FunctorType >::pointer( result ) );
 
   reduce.wait(); // Wait for reduce to complete and output result
+}
+
+namespace Impl {
+template<class FunctorType, class ReturnType, class DeviceType>
+struct WrapperFunctorDevice {
+
+  const FunctorType f;
+  typedef DeviceType device_type;
+  typedef ReturnType value_type;
+
+  WrapperFunctorDevice(const FunctorType& f_):f(f_) {}
+
+  KOKKOS_FORCEINLINE_FUNCTION
+  void operator()(device_type dev, value_type& val) const
+  {
+    f(dev,val);
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void init( value_type & update ) const
+  {
+    update = value_type();
+  }
+
+  KOKKOS_INLINE_FUNCTION
+  void join( volatile value_type & update, volatile value_type const & input ) const
+  {
+    update += input;
+  }
+};
+}
+
+template< class FunctorType, class ReturnType >
+inline
+void parallel_reduce( const Kokkos::ParallelWorkRequest  & request ,
+                      const FunctorType & functor ,
+                      ReturnType& result,
+                      typename Impl::enable_if<!Impl::FunctorHasDeviceType<FunctorType>::value,int>::type = 0)
+{
+
+
+  Impl::ParallelReduce< Impl::WrapperFunctorDevice<FunctorType, ReturnType, Impl::DefaultDeviceType>, Kokkos::ParallelWorkRequest >
+    reduce( functor , request , Kokkos::Impl::ReduceAdapter<
+        Impl::WrapperFunctorDevice<FunctorType, ReturnType, Impl::DefaultDeviceType>
+   >::pointer( result ) );
+
+  reduce.wait();
 }
 
 } // namespace Kokkos

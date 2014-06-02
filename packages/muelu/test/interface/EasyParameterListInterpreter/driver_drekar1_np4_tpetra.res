@@ -51,6 +51,7 @@ Level 1
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse graph = 1   [unused]
      filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
@@ -144,6 +145,7 @@ Level 2
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse graph = 1   [unused]
      filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)
@@ -237,6 +239,7 @@ Level 3
       algorithm = laplacian
       
      lumping = 1   [unused]
+     filtered matrix: reuse graph = 1   [unused]
      filtered matrix: reuse eigenvalue = 1   [unused]
      
      Build (MueLu::TentativePFactory)

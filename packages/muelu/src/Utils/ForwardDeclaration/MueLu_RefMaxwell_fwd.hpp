@@ -46,8 +46,7 @@
 #ifndef MUELU_REFMAXWELL_FWD_HPP
 #define MUELU_REFMAXWELL_FWD_HPP
 
-
-
+#if defined(HAVE_MUELU_TPETRA) && defined(HAVE_MUELU_IFPACK2)
 
 namespace MueLu {
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -58,6 +57,6 @@ namespace MueLu {
 #define MUELU_REFMAXWELL_SHORT
 #endif
 
-
+#endif
 
 #endif // MUELU_REFMAXWELL_FWD_HPP

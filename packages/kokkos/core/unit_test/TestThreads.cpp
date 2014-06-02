@@ -375,6 +375,9 @@ TEST_F( threads , compiler_macros )
 TEST_F( threads , cxx11 )
 {
   ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(1) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(2) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(3) ) );
+  ASSERT_TRUE( ( TestCXX11::Test< Kokkos::Threads >(4) ) );
 }
 #endif
 

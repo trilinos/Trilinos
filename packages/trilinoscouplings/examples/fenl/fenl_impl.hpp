@@ -146,13 +146,12 @@ Perf fenl(
   typedef Tpetra::CrsMatrix<Scalar,int,int,NodeType>               GlobalMatrixType;
   typedef Tpetra::Map<int, int, NodeType>                          MapType;
   typedef RCP<const MapType>                                       pMapType;
-  typedef typename ::Tpetra::MultiVector<Scalar,int,int,NodeType>  GlobalVectorType;
+  typedef typename ::Tpetra::Vector<Scalar,int,int,NodeType>       GlobalVectorType;
   typedef Kokkos::Example::BoxElemFixture< Device , ElemOrder >    FixtureType ;
 
   typedef typename GlobalMatrixType::k_local_matrix_type LocalMatrixType ;
 
-  typedef typename LocalMatrixType::StaticCrsGraphType
-    LocalGraphType ;
+  typedef typename LocalMatrixType::StaticCrsGraphType LocalGraphType ;
 
   typedef Kokkos::Example::FENL::NodeNodeGraph< typename FixtureType::elem_node_type , LocalGraphType , FixtureType::ElemNode >
      NodeNodeGraphType ;
@@ -359,7 +358,7 @@ Perf fenl(
     // Create Tpetra Matrix: this uses the already allocated matrix data
     GlobalMatrixType g_jacobian(RowMap,ColMap,jacobian);
 
-    // Create Tpetra MultiVectors: this uses the already allocated vector data
+    // Create Tpetra Vectors: this uses the already allocated vector data
     GlobalVectorType g_nodal_solution(ColMap,k_nodal_solution);
     GlobalVectorType g_nodal_residual(RowMap,k_nodal_residual);
     GlobalVectorType g_nodal_delta(RowMap,k_nodal_delta);
@@ -432,18 +431,14 @@ Perf fenl(
       //--------------------------------
       // Evaluate convergence
 
-      Teuchos::Array<Magnitude> residual_norm(1);
-      g_nodal_residual.norm2(residual_norm());
+      const Magnitude residual_norm = g_nodal_residual.norm2();
 
-      perf.newton_residual = residual_norm[0] ;
+      perf.newton_residual = residual_norm ;
 
-      if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm[0] ; }
+      if ( 0 == perf.newton_iter_count ) { residual_norm_init = residual_norm ; }
 
-      if ( residual_norm[0] < residual_norm_init * newton_iteration_tolerance ) { break ; }
+      if ( residual_norm < residual_norm_init * newton_iteration_tolerance ) { break ; }
 
-      std::string xmlFileName="muelu.xml";
-      Teuchos::RCP<MueLu::TpetraOperator<double,int,int,NodeType> > mueluPreconditioner;
-      mueluPreconditioner = MueLu::CreateTpetraPreconditioner<double,int,int,NodeType>(rcpFromRef(g_jacobian),xmlFileName);
       //--------------------------------
       // Solve for nonlinear update
 
@@ -473,12 +468,11 @@ Perf fenl(
       //--------------------------------
 
       if ( print_flag ) {
-        Teuchos::Array<Magnitude> delta_norm(1);
-        g_nodal_delta.norm2(delta_norm());
+        const double delta_norm = g_nodal_delta.norm2();
 
         std::cout << "Newton iteration[" << perf.newton_iter_count << "]"
                   << " residual[" << perf.newton_residual << "]"
-                  << " update[" << delta_norm[0] << "]"
+                  << " update[" << delta_norm << "]"
                   << " cg_iteration[" << cgsolve.iteration << "]"
                   << " cg_residual[" << cgsolve.norm_res << "]"
                   << std::endl ;

@@ -214,6 +214,23 @@ struct if_c< true , TrueType , FalseType >
   value_type & select( value_type & v , const F & ) { return v ; }
 };
 
+template< typename TrueType >
+struct if_c< false , TrueType , void >
+{
+  enum { value = false };
+
+  typedef void type ;
+  typedef void value_type ;
+};
+
+template< typename FalseType >
+struct if_c< true , void , FalseType >
+{
+  enum { value = true };
+
+  typedef void type ;
+  typedef void value_type ;
+};
 
 template <typename Cond, typename TrueType, typename FalseType>
 struct if_ : public if_c<Cond::value, TrueType, FalseType> {};

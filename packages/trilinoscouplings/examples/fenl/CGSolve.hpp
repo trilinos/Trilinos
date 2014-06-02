@@ -93,7 +93,7 @@ template<class CrsMatrix, class Vector>
 result_struct cg_solve(
   Teuchos::RCP<CrsMatrix> A, Teuchos::RCP<Vector> b, Teuchos::RCP<Vector> x,
   int max_iter = 200,
-  typename CrsMatrix::scalar_type tolerance =
+  typename Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::mag_type tolerance =
     Kokkos::Details::ArithTraits<typename CrsMatrix::scalar_type>::epsilon(),
   int print = 0)
 {
@@ -111,9 +111,9 @@ result_struct cg_solve(
   // fill with initial Values (make this a functor call or something)
   int length = r->getLocalLength();
   for(int i = 0;i<length;i++) {
-    x->replaceLocalValue(i,0,0);
-    r->replaceLocalValue(i,0,1);
-    Ap->replaceLocalValue(i,0,1);
+    x->replaceLocalValue(i,0);
+    r->replaceLocalValue(i,1);
+    Ap->replaceLocalValue(i,1);
   }
 
   MagnitudeType normr = 0;
@@ -139,10 +139,7 @@ result_struct cg_solve(
   r->update(1.0,*b,-1.0,*Ap,0.0);
   addtime += timer.seconds(); timer.reset();
 
-  //rtrans = r->dot(*r);
-  Teuchos::Array<double> dots(1);
-  r->dot(*r,dots());
-  rtrans = dots[0];
+  rtrans = r->dot(*r);
   dottime += timer.seconds(); timer.reset();
 
   normr = std::sqrt(rtrans);
@@ -164,9 +161,7 @@ result_struct cg_solve(
     }
     else {
       oldrtrans = rtrans;
-      //rtrans = r->dot(*r);
-      r->dot(*r,dots());
-      rtrans = dots[0];
+      rtrans = r->dot(*r);
       dottime += timer.seconds(); timer.reset();
       MagnitudeType beta = rtrans/oldrtrans;
       p->update(beta,*p,1.0,*r,0.0);
@@ -181,9 +176,7 @@ result_struct cg_solve(
     MagnitudeType p_ap_dot = 0;
     A->apply(*p, *Ap);
     matvectime += timer.seconds(); timer.reset();
-    //p_ap_dot = Ap->dot(*p);
-    Ap->dot(*p,dots());
-    p_ap_dot = dots[0];
+    p_ap_dot = Ap->dot(*p);
 
     dottime += timer.seconds(); timer.reset();
 
@@ -202,9 +195,7 @@ result_struct cg_solve(
     addtime += timer.seconds(); timer.reset();
 
   }
-  //rtrans = r->dot(*r);
-  r->dot(*r,dots());
-  rtrans = dots[0];
+  rtrans = r->dot(*r);
 
   normr = std::sqrt(rtrans);
 

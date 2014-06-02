@@ -219,10 +219,6 @@ private:
 // Definitions
 ////////////////////////////////////////////////////////////////
 
-int find_surnd_elems()
-{
-}
-
 template <typename User>
 PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
   dimension_(0)
@@ -266,7 +262,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   Acoords_ = new double [num_elem_ * dimension_];
   long long a = 0;
-  std::vector<std::vector<long long> > sur_elem:
+  std::vector<std::vector<long long> > sur_elem;
+  sur_elem.resize(num_nodes_);
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
@@ -281,17 +278,12 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
       }
 
       for(long long j = 0; j < num_nodes_per_elem[b]; j++) {
-	Acoords_[a] +=
-	  coords_[connect[b][i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
-	Acoords_[num_nodes_ + a] +=
-	  coords_[connect[b]
-		  [num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-1];
+	long long node = connect[b][i * num_nodes_per_elem[b] + j] - 1;
+	Acoords_[a] += coords_[node];
+	Acoords_[num_nodes_ + a] += coords_[num_nodes_ + node];
 
 	if(3 == dimension_) {
-	  Acoords_[2 * num_nodes_ + a] +=
-	    coords_[connect[b]
-		   [2*num_nodes_+i*num_elem_this_blk[b]+num_nodes_per_elem[b]]-
-		   1];
+	  Acoords_[2 * num_nodes_ + a] += coords_[2 * num_nodes_ + node];
 	}
       }
 

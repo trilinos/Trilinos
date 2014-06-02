@@ -167,6 +167,7 @@ namespace panzer_stk {
       pl->sublist("Output").sublist("Cell Average Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Cell Quantities").disableRecursiveValidation();
       pl->sublist("Output").sublist("Nodal Quantities").disableRecursiveValidation();
+      pl->sublist("Output").sublist("Allocate Nodal Quantities").disableRecursiveValidation();
 
       // Assembly sublist
       {
@@ -331,6 +332,20 @@ namespace panzer_stk {
     Teuchos::ParameterList & nodalQuants = output_list.sublist("Nodal Quantities");
     for(Teuchos::ParameterList::ConstIterator itr=nodalQuants.begin();
         itr!=nodalQuants.end();++itr) {
+       const std::string & blockId = itr->first;
+       const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
+       std::vector<std::string> tokens;
+
+       // break up comma seperated fields
+       panzer::StringTokenizer(tokens,fields,",",true);
+
+       for(std::size_t i=0;i<tokens.size();i++)
+          mesh->addSolutionField(tokens[i],blockId);
+    }
+
+    Teuchos::ParameterList & allocNodalQuants = output_list.sublist("Allocate Nodal Quantities");
+    for(Teuchos::ParameterList::ConstIterator itr=allocNodalQuants.begin();
+        itr!=allocNodalQuants.end();++itr) {
        const std::string & blockId = itr->first;
        const std::string & fields = Teuchos::any_cast<std::string>(itr->second.getAny());
        std::vector<std::string> tokens;

@@ -99,7 +99,14 @@ namespace MueLu {
   // Similar to the above macro, we all try to take a value from the default list
   // NOTE: this essentially converts UserAPI parameter names into MueLu internal ones
 #define MUELU_TEST_AND_SET_PARAM(listWrite, varNameWrite, paramList, defaultList, varNameRead, T) \
-  if      (paramList.isParameter(varNameRead))   listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+  if      (paramList.isParameter(varNameRead)) { \
+    try { \
+      listWrite.set(varNameWrite, paramList.get<T>(varNameRead)); \
+    } \
+    catch(Teuchos::Exceptions::InvalidParameterType) { \
+      TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,Teuchos::Exceptions::InvalidParameterType,"Error: parameter \"" << varNameRead << "\" must be of type " << Teuchos::TypeNameTraits<T>::name()); \
+    } \
+  } \
   else if (defaultList.isParameter(varNameRead)) listWrite.set(varNameWrite, defaultList.get<T>(varNameRead));
 
   template <class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
@@ -552,7 +559,10 @@ namespace MueLu {
       newP->  SetParameterList(newPparams);
       newP->  SetFactory("Importer",    manager.GetFactory("Importer"));
       newP->  SetFactory("P",           manager.GetFactory("P"));
+      newP->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
+      newP->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
       manager.SetFactory("P",           newP);
+      manager.SetFactory("Coordinates", newP);
 
       // Rebalanced R
       RCP<RebalanceTransferFactory> newR = rcp(new RebalanceTransferFactory());
@@ -561,14 +571,11 @@ namespace MueLu {
       newRparams.set("implicit",          !this->doPRrebalance_);
       newRparams.set("implicit transpose", this->implicitTranspose_);
       newR->  SetParameterList(newRparams);
-      newR->  SetFactory("Importer",    manager.GetFactory("Importer"));
-      newR->  SetFactory("Nullspace",   manager.GetFactory("Ptent"));
-      newR->  SetFactory("Coordinates", manager.GetFactory("Coordinates"));
+      newR->  SetFactory("Importer",       manager.GetFactory("Importer"));
       if (!this->implicitTranspose_) {
-        newR->SetFactory("R",           manager.GetFactory("R"));
-        manager.SetFactory("R",           newR);
+        newR->SetFactory("R",              manager.GetFactory("R"));
+        manager.SetFactory("R",            newR);
       }
-      manager.SetFactory("Coordinates", newR);
 
       // NOTE: the role of NullspaceFactory is to provide nullspace on the finest
       // level if a user does not do that. For all other levels it simply passes
@@ -576,7 +583,7 @@ namespace MueLu {
       // repartitioning, that factory is "TentativePFactory"; if we do, it is
       // "RebalanceTransferFactory". But we still have to have NullspaceFactory as
       // the "Nullspace" of the manager
-      nullSpace->SetFactory("Nullspace", newR);
+      nullSpace->SetFactory("Nullspace", newP);
 #else
       throw Exceptions::RuntimeError("No repartitioning available for a serial run");
 #endif

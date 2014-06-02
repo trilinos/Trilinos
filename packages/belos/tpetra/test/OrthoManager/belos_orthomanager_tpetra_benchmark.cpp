@@ -81,8 +81,8 @@ typedef Tpetra::CrsMatrix<scalar_type, local_ordinal_type, global_ordinal_type, 
 
 /// \fn main
 /// \brief Benchmark driver for (Mat)OrthoManager subclasses
-int 
-main (int argc, char *argv[]) 
+int
+main (int argc, char *argv[])
 {
   using Belos::OrthoManager;
   using Belos::OrthoManagerFactory;
@@ -94,7 +94,7 @@ main (int argc, char *argv[])
   using Teuchos::rcp;
 
   Teuchos::GlobalMPISession mpiSession (&argc, &argv, &std::cout);
-  RCP<const Teuchos::Comm<int> > pComm = 
+  RCP<const Teuchos::Comm<int> > pComm =
     Tpetra::DefaultPlatform::getDefaultPlatform().getComm();
 
   // This factory object knows how to make a (Mat)OrthoManager
@@ -119,7 +119,7 @@ main (int argc, char *argv[])
   bool debug = false;   // Whether to print debugging-level output
   // Whether or not to run the benchmark.  If false, we let this
   // "test" pass trivially.
-  bool benchmark = false; 
+  bool benchmark = false;
 
   // Whether to display benchmark results compactly (in a CSV format),
   // or in a human-readable table.
@@ -143,21 +143,21 @@ main (int argc, char *argv[])
   int numTrials = 3;
 
   CommandLineProcessor cmdp (false, true);
-  cmdp.setOption ("benchmark", "nobenchmark", &benchmark, 
-		  "Whether to run the benchmark.  If not, this \"test\" "
-		  "passes trivially.");
+  cmdp.setOption ("benchmark", "nobenchmark", &benchmark,
+      "Whether to run the benchmark.  If not, this \"test\" "
+      "passes trivially.");
   cmdp.setOption ("verbose", "quiet", &verbose,
-		  "Print messages and results.");
+      "Print messages and results.");
   cmdp.setOption ("debug", "nodebug", &debug,
-		  "Print debugging information.");
+      "Print debugging information.");
   cmdp.setOption ("compact", "human", &displayResultsCompactly,
-		  "Whether to display benchmark results compactly (in a "
-		  "CSV format), or in a human-readable table.");
+      "Whether to display benchmark results compactly (in a "
+      "CSV format), or in a human-readable table.");
   cmdp.setOption ("filename", &filename,
-		  "Filename of a Harwell-Boeing sparse matrix, used as the "
-		  "inner product operator by the orthogonalization manager."
-		  "  If not provided, no matrix is read and the Euclidean "
-		  "inner product is used.");
+      "Filename of a Harwell-Boeing sparse matrix, used as the "
+      "inner product operator by the orthogonalization manager."
+      "  If not provided, no matrix is read and the Euclidean "
+      "inner product is used.");
   {
     std::ostringstream os;
     const int numValid = factory.numOrthoManagers();
@@ -169,21 +169,21 @@ main (int argc, char *argv[])
     os << ".  If none is provided, the test trivially passes.";
     cmdp.setOption ("ortho", &orthoManName, os.str().c_str());
   }
-  cmdp.setOption ("normalization", &normalization, 
-		  "For SimpleOrthoManager (--ortho=Simple): the normalization "
-		  "method to use.  Valid values: \"MGS\", \"CGS\".");
-  cmdp.setOption ("numRowsPerProcess", &numRowsPerProcess, 
-		  "Number of rows per MPI process in the test multivectors.  "
-		  "If an input matrix is given, this value is ignored, since "
-		  "the vectors must be commensurate with the dimensions of "
-		  "the matrix.");
-  cmdp.setOption ("numCols", &numCols, 
-		  "Number of columns in the input multivector (>= 1).");
-  cmdp.setOption ("numBlocks", &numBlocks, 
-		  "Number of block(s) to benchmark (>= 1).");
+  cmdp.setOption ("normalization", &normalization,
+      "For SimpleOrthoManager (--ortho=Simple): the normalization "
+      "method to use.  Valid values: \"MGS\", \"CGS\".");
+  cmdp.setOption ("numRowsPerProcess", &numRowsPerProcess,
+      "Number of rows per MPI process in the test multivectors.  "
+      "If an input matrix is given, this value is ignored, since "
+      "the vectors must be commensurate with the dimensions of "
+      "the matrix.");
+  cmdp.setOption ("numCols", &numCols,
+      "Number of columns in the input multivector (>= 1).");
+  cmdp.setOption ("numBlocks", &numBlocks,
+      "Number of block(s) to benchmark (>= 1).");
   cmdp.setOption ("numTrials", &numTrials,
-		  "Number of trial(s) per timing run (>= 1).");
-  
+      "Number of trial(s) per timing run (>= 1).");
+
   // Parse the command-line arguments.
   {
     const CommandLineProcessor::EParseCommandLineReturn parseResult = cmdp.parse (argc,argv);
@@ -191,132 +191,138 @@ main (int argc, char *argv[])
     // explicitly say to run the benchmark, we let this "test" pass
     // trivially.
     if (! benchmark || parseResult == CommandLineProcessor::PARSE_HELP_PRINTED)
-      {
-	if (Teuchos::rank(*pComm) == 0)
-	  std::cout << "End Result: TEST PASSED" << endl;
-	return EXIT_SUCCESS;
-      }
-    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL, 
-		       std::invalid_argument, 
-		       "Failed to parse command-line arguments");
+    {
+      if (Teuchos::rank(*pComm) == 0)
+        std::cout << "End Result: TEST PASSED" << endl;
+      return EXIT_SUCCESS;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(parseResult != CommandLineProcessor::PARSE_SUCCESSFUL,
+        std::invalid_argument,
+        "Failed to parse command-line arguments");
   }
-  // Total number of rows in the test vector(s).
-  // This may be changed if we load in a sparse matrix.
-  int numRows = numRowsPerProcess * pComm->getSize();
-  //
-  // Validate command-line arguments
-  //
-  TEUCHOS_TEST_FOR_EXCEPTION(numRowsPerProcess <= 0, std::invalid_argument, 
-		     "numRowsPerProcess <= 0 is not allowed");
-  TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument, 
-		     "numCols <= 0 is not allowed");
-  TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument, 
-		     "numBlocks <= 0 is not allowed");  
-    
-  // Declare an output manager for handling local output.  Initialize,
-  // using the caller's desired verbosity level.
-  RCP<OutputManager<scalar_type> > outMan = 
-    Belos::Test::makeOutputManager<scalar_type> (verbose, debug);
 
-  // Stream for debug output.  If debug output is not enabled, then
-  // this stream doesn't print anything sent to it (it's a "black
-  // hole" stream).
-  std::ostream& debugOut = outMan->stream(Belos::Debug);
-  Belos::Test::printVersionInfo (debugOut);
+  bool success = false;
+  try {
+    // Total number of rows in the test vector(s).
+    // This may be changed if we load in a sparse matrix.
+    int numRows = numRowsPerProcess * pComm->getSize();
+    //
+    // Validate command-line arguments
+    //
+    TEUCHOS_TEST_FOR_EXCEPTION(numRowsPerProcess <= 0, std::invalid_argument,
+        "numRowsPerProcess <= 0 is not allowed");
+    TEUCHOS_TEST_FOR_EXCEPTION(numCols <= 0, std::invalid_argument,
+        "numCols <= 0 is not allowed");
+    TEUCHOS_TEST_FOR_EXCEPTION(numBlocks <= 0, std::invalid_argument,
+        "numBlocks <= 0 is not allowed");
 
-  // Load the inner product operator matrix from the given filename.
-  // If filename == "", use the identity matrix as the inner product
-  // operator (the Euclidean inner product), and leave M as
-  // Teuchos::null.  Also return an appropriate Map (which will
-  // always be initialized; it should never be Teuchos::null).
-  RCP<map_type> map;
-  RCP<sparse_matrix_type> M; 
-  {
-    using Belos::Test::loadSparseMatrix;
-    // If the sparse matrix is loaded successfully, this call will
-    // modify numRows to be the total number of rows in the sparse
-    // matrix.  Otherwise, it will leave numRows alone.
-    std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results = 
-      loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
-    map = results.first;
-    M = results.second;
-  }
-  TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
-		     "Error: (Mat)OrthoManager test code failed to "
-		     "initialize the Map");
-  if (M.is_null())
+    // Declare an output manager for handling local output.  Initialize,
+    // using the caller's desired verbosity level.
+    RCP<OutputManager<scalar_type> > outMan =
+      Belos::Test::makeOutputManager<scalar_type> (verbose, debug);
+
+    // Stream for debug output.  If debug output is not enabled, then
+    // this stream doesn't print anything sent to it (it's a "black
+    // hole" stream).
+    std::ostream& debugOut = outMan->stream(Belos::Debug);
+    Belos::Test::printVersionInfo (debugOut);
+
+    // Load the inner product operator matrix from the given filename.
+    // If filename == "", use the identity matrix as the inner product
+    // operator (the Euclidean inner product), and leave M as
+    // Teuchos::null.  Also return an appropriate Map (which will
+    // always be initialized; it should never be Teuchos::null).
+    RCP<map_type> map;
+    RCP<sparse_matrix_type> M;
+    {
+      using Belos::Test::loadSparseMatrix;
+      // If the sparse matrix is loaded successfully, this call will
+      // modify numRows to be the total number of rows in the sparse
+      // matrix.  Otherwise, it will leave numRows alone.
+      std::pair<RCP<map_type>, RCP<sparse_matrix_type> > results =
+        loadSparseMatrix<local_ordinal_type, global_ordinal_type, node_type> (pComm, filename, numRows, debugOut);
+      map = results.first;
+      M = results.second;
+    }
+    TEUCHOS_TEST_FOR_EXCEPTION(map.is_null(), std::logic_error,
+        "Error: (Mat)OrthoManager test code failed to "
+        "initialize the Map");
+    if (M.is_null())
     {
       // Number of rows per process has to be >= number of rows.
       TEUCHOS_TEST_FOR_EXCEPTION(numRowsPerProcess <= numCols,
-			 std::invalid_argument,
-			 "numRowsPerProcess <= numCols is not allowed");
+          std::invalid_argument,
+          "numRowsPerProcess <= numCols is not allowed");
     }
-  // Loading the sparse matrix may have changed numRows, so check
-  // again that the number of rows per process is >= numCols.
-  // getNodeNumElements() returns a size_t, which is unsigned, and you
-  // shouldn't compare signed and unsigned values.  
-  if (map->getNodeNumElements() < static_cast<size_t>(numCols))
+    // Loading the sparse matrix may have changed numRows, so check
+    // again that the number of rows per process is >= numCols.
+    // getNodeNumElements() returns a size_t, which is unsigned, and you
+    // shouldn't compare signed and unsigned values.
+    if (map->getNodeNumElements() < static_cast<size_t>(numCols))
     {
       std::ostringstream os;
-      os << "The number of elements on this process " << pComm->getRank() 
-	 << " is too small for the number of columns that you want to test."
-	 << "  There are " << map->getNodeNumElements() << " elements on "
-	"this process, but the normalize() method of the MatOrthoManager "
-	"subclass will need to process a multivector with " << numCols 
-	 << " columns.  Not all MatOrthoManager subclasses can handle a "
-	"local row block with fewer rows than columns.";
+      os << "The number of elements on this process " << pComm->getRank()
+        << " is too small for the number of columns that you want to test."
+        << "  There are " << map->getNodeNumElements() << " elements on "
+        "this process, but the normalize() method of the MatOrthoManager "
+        "subclass will need to process a multivector with " << numCols
+        << " columns.  Not all MatOrthoManager subclasses can handle a "
+        "local row block with fewer rows than columns.";
       // QUESTION (mfh 26 Jan 2011) Should this be a logic error
       // instead?  It's really TSQR's fault that it can't handle a
       // local number of elements less than the number of columns.
       throw std::invalid_argument(os.str());
     }
 
-  // Using the factory object, instantiate the specified OrthoManager
-  // subclass to be tested.  Specify "fast" parameters for a fair
-  // benchmark comparison, but override the fast parameters to get the
-  // desired normalization method for SimpleOrthoManaager.
-  RCP<OrthoManager<scalar_type, MV> > orthoMan;
-  {
-    std::string label (orthoManName);
-    RCP<ParameterList> params = 
-      parameterList (*(factory.getFastParameters (orthoManName)));
-    if (orthoManName == "Simple") {
-      params->set ("Normalization", normalization);
-      label = label + " (" + normalization + " normalization)";
+    // Using the factory object, instantiate the specified OrthoManager
+    // subclass to be tested.  Specify "fast" parameters for a fair
+    // benchmark comparison, but override the fast parameters to get the
+    // desired normalization method for SimpleOrthoManaager.
+    RCP<OrthoManager<scalar_type, MV> > orthoMan;
+    {
+      std::string label (orthoManName);
+      RCP<ParameterList> params =
+        parameterList (*(factory.getFastParameters (orthoManName)));
+      if (orthoManName == "Simple") {
+        params->set ("Normalization", normalization);
+        label = label + " (" + normalization + " normalization)";
+      }
+      orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
     }
-    orthoMan = factory.makeOrthoManager (orthoManName, M, outMan, label, params);
+
+    // "Prototype" multivector.  The test code will use this (via
+    // Belos::MultiVecTraits) to clone other multivectors as necessary.
+    // (This means the test code doesn't need the Map, and it also makes
+    // the test code independent of the idea of a Map.)  We only have to
+    // allocate one column, because the entries are S are not even read.
+    // (We could allocate zero columns, if the MV object allows it.  We
+    // play it safe and allocate 1 column instead.)
+    RCP<MV> X = rcp (new MV (map, 1));
+
+    // "Compact" mode means that we have to override
+    // TimeMonitor::summarize(), which both handles multiple MPI
+    // processes correctly (only Rank 0 prints to std::cout), and prints
+    // verbosely in a table form.  We deal with the former by making an
+    // ostream which is std::cout on Rank 0, and prints nothing (is a
+    // "bit bucket") elsewhere.  We deal with the latter inside the
+    // benchmark itself.
+    Teuchos::oblackholestream bitBucket;
+    std::ostream& resultStream =
+      (displayResultsCompactly && Teuchos::rank(*pComm) != 0) ? bitBucket : std::cout;
+
+    // Benchmark the OrthoManager subclass.
+    typedef Belos::Test::OrthoManagerBenchmarker<scalar_type, MV> benchmarker_type;
+    benchmarker_type::benchmark (orthoMan, orthoManName, normalization, X,
+        numCols, numBlocks, numTrials,
+        outMan, resultStream, displayResultsCompactly);
+
+    success = true;
+
+    // Only Rank 0 gets to write to cout.
+    if (Teuchos::rank(*pComm) == 0)
+      std::cout << "End Result: TEST PASSED" << endl;
   }
+  TEUCHOS_STANDARD_CATCH_STATEMENTS(verbose, std::cerr, success);
 
-  // "Prototype" multivector.  The test code will use this (via
-  // Belos::MultiVecTraits) to clone other multivectors as necessary.
-  // (This means the test code doesn't need the Map, and it also makes
-  // the test code independent of the idea of a Map.)  We only have to
-  // allocate one column, because the entries are S are not even read.
-  // (We could allocate zero columns, if the MV object allows it.  We
-  // play it safe and allocate 1 column instead.)
-  RCP<MV> X = rcp (new MV (map, 1));
-
-  // "Compact" mode means that we have to override
-  // TimeMonitor::summarize(), which both handles multiple MPI
-  // processes correctly (only Rank 0 prints to std::cout), and prints
-  // verbosely in a table form.  We deal with the former by making an
-  // ostream which is std::cout on Rank 0, and prints nothing (is a
-  // "bit bucket") elsewhere.  We deal with the latter inside the
-  // benchmark itself.
-  Teuchos::oblackholestream bitBucket;
-  std::ostream& resultStream = 
-    (displayResultsCompactly && Teuchos::rank(*pComm) != 0) ? bitBucket : std::cout;
-
-  // Benchmark the OrthoManager subclass.
-  typedef Belos::Test::OrthoManagerBenchmarker<scalar_type, MV> benchmarker_type;
-  benchmarker_type::benchmark (orthoMan, orthoManName, normalization, X, 
-			       numCols, numBlocks, numTrials, 
-			       outMan, resultStream, displayResultsCompactly);
-  // Only Rank 0 gets to write to cout.
-  if (Teuchos::rank(*pComm) == 0)
-    std::cout << "End Result: TEST PASSED" << endl;
-  return EXIT_SUCCESS;
+  return ( success ? EXIT_SUCCESS : EXIT_FAILURE );
 }
-
-
-

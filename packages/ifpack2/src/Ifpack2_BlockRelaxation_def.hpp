@@ -677,15 +677,15 @@ DoGaussSeidel (MV& X, MV& Y) const
       A_->getLocalRowCopy (LID, Indices (), Values (), NumEntries);
 
       for (size_t m = 0; m < NumVectors; ++m) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+        ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
-	r_local[LID] = x_local[LID];	
-	for (size_t k = 0; k < NumEntries; ++k) {
-	  const local_ordinal_type col = Indices[k];
-	  r_local[LID] -= Values[k] * y2_local[col];
-	}
+        r_local[LID] = x_local[LID];
+        for (size_t k = 0; k < NumEntries; ++k) {
+          const local_ordinal_type col = Indices[k];
+          r_local[LID] -= Values[k] * y2_local[col];
+        }
       }
     }
     // solve with this block
@@ -790,13 +790,13 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 
       //set tmpresid = initresid - A*correction
       for (size_t m = 0; m < NumVectors; ++m) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+        ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
         r_local[LID] = x_local[LID];
-	for (size_t k = 0 ; k < NumEntries ; k++) {
-	  local_ordinal_type col = Indices[k];
+        for (size_t k = 0 ; k < NumEntries ; k++) {
+          local_ordinal_type col = Indices[k];
           r_local[LID] -= Values[k] * y2_local[col];
         }
       }
@@ -835,18 +835,18 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
 
       //set tmpresid = initresid - A*correction
       for (size_t m = 0; m < NumVectors; ++m) {
-	ArrayView<const scalar_type> x_local = (x_ptr())[m]();
-	ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
-	ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
+        ArrayView<const scalar_type> x_local = (x_ptr())[m]();
+        ArrayView<scalar_type>      y2_local = (y2_ptr())[m]();
+        ArrayView<scalar_type>       r_local = (residual_ptr())[m]();
 
         r_local [LID] = x_local[LID];
-	for (size_t k = 0; k < NumEntries; ++k)  {
-	  local_ordinal_type col = Indices[k];       
+        for (size_t k = 0; k < NumEntries; ++k)  {
+          local_ordinal_type col = Indices[k];
           r_local[LID] -= Values[k] * y2_local[col];
-	}
+        }
       }
     }
-    
+
     // solve with this block
     //
     // Note: I'm abusing the ordering information, knowing that X/Y
@@ -872,7 +872,6 @@ BlockRelaxation<MatrixType,ContainerType>::DoSGS (MV& X, MV& Y) const
     }
   }
 }
-
 
 template<class MatrixType, class ContainerType>
 std::string BlockRelaxation<MatrixType,ContainerType>::description () const
@@ -991,14 +990,28 @@ describe (Teuchos::FancyOStream &out, const Teuchos::EVerbosityLevel verbLevel) 
 
 }//namespace Ifpack2
 
+
+#ifdef HAVE_IFPACK2_EXPLICIT_INSTANTIATION
+
 // For ETI
-#include "Ifpack2_SparseContainer.hpp"
-#include "Ifpack2_ILUT.hpp"
+#include "Ifpack2_DenseContainer_decl.hpp"
+#include "Ifpack2_SparseContainer_decl.hpp"
+#include "Ifpack2_ILUT_decl.hpp"
 
 #define IFPACK2_BLOCKRELAXATION_INSTANT(S,LO,GO,N) \
-  template class Ifpack2::BlockRelaxation< \
+  template \
+  class Ifpack2::BlockRelaxation<      \
     Tpetra::CrsMatrix<S, LO, GO, N>, \
-    Ifpack2::SparseContainer< Tpetra::CrsMatrix<S, LO, GO, N>, \
-                              Ifpack2::ILUT<Tpetra::CrsMatrix<S,LO,GO,N> > > >;
+    Ifpack2::SparseContainer<       \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      Ifpack2::ILUT< ::Tpetra::CrsMatrix<S,LO,GO,N> > > >; \
+  template \
+  class Ifpack2::BlockRelaxation<      \
+    Tpetra::CrsMatrix<S, LO, GO, N>, \
+    Ifpack2::DenseContainer<        \
+      Tpetra::CrsMatrix<S, LO, GO, N>, \
+      S > >;
+
+#endif // HAVE_IFPACK2_EXPLICIT_INSTANTIATION
 
 #endif // IFPACK2_BLOCKRELAXATION_DEF_HPP

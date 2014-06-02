@@ -28,7 +28,7 @@
       <Parameter name= "fact: iluk level-of-fill"         type="int"    value="2"/>
       <Parameter name= "fact: absolute threshold"         type="double" value="0."/>
       <Parameter name= "fact: relative threshold"         type="double" value="1."/>
-      <Parameter name= "fact: relax value"                type="double" value="0."/> 
+      <Parameter name= "fact: relax value"                type="double" value="0."/>
     </ParameterList>
   </ParameterList>
 
