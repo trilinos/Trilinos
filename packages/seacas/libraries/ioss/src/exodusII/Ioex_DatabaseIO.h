@@ -214,7 +214,11 @@ namespace Ioex {
         free_file_pointer();
       }
 
+  public:
+      // Temporarily made public for use during Salinas transition
+      // to using Ioss
       int get_file_pointer() const; // Open file and set exodusFilePtr.
+  private:
       int free_file_pointer() const; // Close file and set exodusFilePtr.
 
       int get_current_state() const; // Get current state with error checks and usage message.
