@@ -287,7 +287,7 @@ public:
    *  All ghosts of all entities effected by the changed ownerships
    *  deleted.
    */
-  void change_entity_owner( const std::vector<EntityProc> & arg_change);
+  void change_entity_owner( const EntityProcVec & arg_change);
 
   /** \brief  Rotate the field data of multistate fields.
    *

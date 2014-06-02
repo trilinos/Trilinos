@@ -2156,3 +2156,81 @@ TEST(UnitTestOfEntityGhostData, get_ghost_data)
     }
 }
 
+TEST(UnitTestBulkData, ChangeSharedOwner)
+{
+  // This test verifies that you can change the owner of shared nodes to
+  // explicitly make the higher parallel-rank processor the owner.
+  // This is also tested in UnitTestingOfBulkData.testChangeOwner_box, but it is a bit too complex.
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  int numProcs = 1;
+  MPI_Comm_size(communicator, &numProcs);
+  if (numProcs != 3) {
+    return;
+  }
+
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  const std::string generatedMeshSpecification = "generated:1x1x3";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+  stkMeshIoBroker.populate_bulk_data();
+
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::BulkData &stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
+  int target_proc = stkMeshBulkData.parallel_rank()==2 ? 2 : stkMeshBulkData.parallel_rank()+1;
+  stk::mesh::EntityProcVec vec;
+  stk::mesh::Selector locally_owned_and_globally_shared_selector = stkMeshMetaData.locally_owned_part() & stkMeshMetaData.globally_shared_part();
+  {
+      const stk::mesh::BucketVector& locally_owned_and_globally_shared_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locally_owned_and_globally_shared_selector);
+      int num_locally_owned_and_shared_nodes = 0;
+      for (size_t k=0 ; k<locally_owned_and_globally_shared_buckets.size() ; ++k) {
+          stk::mesh::Bucket & b = *locally_owned_and_globally_shared_buckets[k];
+          for (size_t i=0 ; i<b.size() ; ++i) {
+              stk::mesh::EntityProc tmp( b[i], target_proc );
+              vec.push_back(tmp);
+              ++num_locally_owned_and_shared_nodes;
+          }
+      }
+      if (stkMeshBulkData.parallel_rank() == 0) {
+          EXPECT_EQ( 4, num_locally_owned_and_shared_nodes );
+      }
+      else if (stkMeshBulkData.parallel_rank() == 1) {
+          EXPECT_EQ( 4, num_locally_owned_and_shared_nodes );
+      }
+      else {
+          EXPECT_EQ( 0, num_locally_owned_and_shared_nodes );
+      }
+  }
+  stkMeshBulkData.modification_begin();
+  stkMeshBulkData.change_entity_owner(vec);
+  stkMeshBulkData.modification_end();
+
+  {
+      const stk::mesh::BucketVector& locally_owned_and_globally_shared_buckets = stkMeshBulkData.get_buckets(stk::topology::NODE_RANK, locally_owned_and_globally_shared_selector);
+      int num_locally_owned_and_shared_nodes = 0;
+      for (size_t k=0 ; k<locally_owned_and_globally_shared_buckets.size() ; ++k) {
+          stk::mesh::Bucket & b = *locally_owned_and_globally_shared_buckets[k];
+          for (size_t i=0 ; i<b.size() ; ++i) {
+              stk::mesh::EntityProc tmp( b[i], target_proc );
+              ++num_locally_owned_and_shared_nodes;
+          }
+      }
+      if (stkMeshBulkData.parallel_rank() == 0) {
+          EXPECT_EQ( 0, num_locally_owned_and_shared_nodes );
+      }
+      else if (stkMeshBulkData.parallel_rank() == 1) {
+          EXPECT_EQ( 4, num_locally_owned_and_shared_nodes );
+      }
+      else {
+          EXPECT_EQ( 4, num_locally_owned_and_shared_nodes );
+      }
+      // We also expect the previously locally owned & shared nodes to not be locally owned now.
+      for (size_t i=0 ; i<vec.size() ; ++i) {
+          EXPECT_TRUE( stkMeshBulkData.parallel_rank() != stkMeshBulkData.entity_comm_owner(stkMeshBulkData.entity_key(vec[i].first)) );
+          EXPECT_EQ( vec[i].second, stkMeshBulkData.entity_comm_owner(stkMeshBulkData.entity_key(vec[i].first)) );
+      }
+  }
+
+}
+
