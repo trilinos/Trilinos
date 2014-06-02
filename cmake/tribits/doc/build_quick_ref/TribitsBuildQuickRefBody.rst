@@ -526,11 +526,20 @@ g) Enable and disable shadowing warnings for all <Project> packages:
 
 h) Removing warnings as errors for CLEANED packages:
 
-  To remove the -Werror flag (or some other flag that is set) from being
+  To remove the ``-Werror`` flag (or some other flag that is set) from being
   applied to compile CLEANED packages like Teuchos, set the following when
   configuring::
 
     -D <Project>_WARNINGS_AS_ERRORS_FLAGS:STRING=""
+
+i) Adding debug symbols to the build:
+
+  To get the compiler to add debug symbols to the build, configure with::
+
+    -D <Project>_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+
+  This will add ``-g`` on most compilers.  NOTE: One does **not** generally
+  need to create a fully debug build to get debug symbols on most compilers.
 
 
 Enabling support for C++11

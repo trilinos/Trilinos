@@ -924,12 +924,23 @@ package.</p>
 <li>Removing warnings as errors for CLEANED packages:</li>
 </ol>
 <blockquote>
-<p>To remove the -Werror flag (or some other flag that is set) from being
+<p>To remove the <tt class="docutils literal"><span class="pre">-Werror</span></tt> flag (or some other flag that is set) from being
 applied to compile CLEANED packages like Teuchos, set the following when
 configuring:</p>
 <pre class="literal-block">
 -D &lt;Project&gt;_WARNINGS_AS_ERRORS_FLAGS:STRING=&quot;&quot;
 </pre>
+</blockquote>
+<ol class="lowerroman simple">
+<li>Adding debug symbols to the build:</li>
+</ol>
+<blockquote>
+<p>To get the compiler to add debug symbols to the build, configure with:</p>
+<pre class="literal-block">
+-D &lt;Project&gt;_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+</pre>
+<p>This will add <tt class="docutils literal"><span class="pre">-g</span></tt> on most compilers.  NOTE: One does <strong>not</strong> generally
+need to create a fully debug build to get debug symbols on most compilers.</p>
 </blockquote>
 </div>
 <div class="section" id="enabling-support-for-c-11">
