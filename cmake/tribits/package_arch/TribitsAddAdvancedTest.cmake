@@ -144,10 +144,12 @@ INCLUDE(PrintVar)
 #     ``${PACKAGE_NAME}_<testName>``.  If the directory
 #     ``<overallWorkingDir>`` exists before the test runs, it will be deleted
 #     and created again.  Therefore, if one wants to preserve the contents of
-#     this directory between test runs one needs to copy the files it
-#     somewhere else.  This is a good option to use if the commands create
-#     intermediate files and one wants to make sure they get deleted before
-#     the test cases are run again.
+#     this directory between test runs then one needs to copy the files it
+#     contains somewhere else.  This is a good option to use if the commands
+#     create intermediate files and one wants to make sure they get deleted
+#     before the test cases are run again.  This is also a very useful option
+#     to use if multiple tests are defined in the same ``CMakeLists.txt`` file
+#     that read/write files with the same name.
 #
 #   ``FAIL_FAST``
 #

@@ -7393,10 +7393,12 @@ given, then the working directory will be given the name
 <tt class="docutils literal">${PACKAGE_NAME}_&lt;testName&gt;</tt>.  If the directory
 <tt class="docutils literal">&lt;overallWorkingDir&gt;</tt> exists before the test runs, it will be deleted
 and created again.  Therefore, if one wants to preserve the contents of
-this directory between test runs one needs to copy the files it
-somewhere else.  This is a good option to use if the commands create
-intermediate files and one wants to make sure they get deleted before
-the test cases are run again.</blockquote>
+this directory between test runs then one needs to copy the files it
+contains somewhere else.  This is a good option to use if the commands
+create intermediate files and one wants to make sure they get deleted
+before the test cases are run again.  This is also a very useful option
+to use if multiple tests are defined in the same <tt class="docutils literal">CMakeLists.txt</tt> file
+that read/write files with the same name.</blockquote>
 <p><tt class="docutils literal">FAIL_FAST</tt></p>
 <blockquote>
 If specified, then the remaining test commands will be aborted when any
