@@ -37,8 +37,20 @@
 # ************************************************************************
 # @HEADER
 
-INCLUDE(CheckCXXSourceRuns)
+INCLUDE(CheckCXXSourceCompiles)
 
+
+#
+# Sets up C++11 flags if not already set.
+#
+# On input, if ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS is already set, then this
+# function does nothing.  If not already set on input, then a set of
+# try-compile (but not try-run) commands are performed to try common C++11
+# compiler flags testing against known flags.  If a set of flags is found that
+# enables C++11, then those flags are used.  The first set of flags that
+# passes the try-compile test is set into the cache variable
+# ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS on output.
+# 
 FUNCTION(TRIBITS_ENABLE_CXX11)
 
   ##
@@ -46,7 +58,7 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
   ## or if the user has not overridden then
   ##
 
-  IF(NOT TRIBITS_CXX11_FLAGS)
+  IF(NOT ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS)
 
      MESSAGE("-- " "Search for CXX11 compiler flag.")
      INCLUDE(CheckCXXSourceCompiles)
@@ -56,8 +68,10 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
      ##
      SET(CXX11_FLAG_OPTIONS
          "/Qstd=c++11"   # intel windows
+         "-std=complete-nonsense"   # Nonsense!
          "-std=c++11"    # intel/clang linux/mac
          "-std=gnu++11"  # gcc
+         "-std=c++0x"  # Older gcc
      )
 
      ##
@@ -66,6 +80,7 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
      SET(TSOURCE
         "
         #include <vector>
+        #include <algorithm>
         int main() {
           // check >> closing brackets
           std::vector<std::vector<float>> vecvecfloat(1);
@@ -93,16 +108,21 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
      ##
      ## Try to compile with each flag
      ##
+
+     SET(TOPTION_IDX "0")
      FOREACH( TOPTION ${CXX11_FLAG_OPTIONS})
 
         IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
           MESSAGE("-- " "Testing CXX11 flag: ${TOPTION}")
         ENDIF()
 
-        SET(CMAKE_REQUIRED_FLAGS "${TOPTION}")
+        SET(CMAKE_REQUIRED_FLAGS "${CMAKE_CXX_FLAGS} ${TOPTION}")
 
-        CHECK_CXX_SOURCE_COMPILES("${TSOURCE}" CXX11_FLAGS_COMPILE_RESULT
+        SET(CXX11_FLAGS_COMPILE_RESULT_VAR CXX11_FLAGS_COMPILE_RESULT_${TOPTION_IDX})
+
+        CHECK_CXX_SOURCE_COMPILES("${TSOURCE}" ${CXX11_FLAGS_COMPILE_RESULT_VAR}
            ## Some compilers do not fail with a bad flag
+           FAIL_REGEX "unrecognized .*option"                     # GNU
            FAIL_REGEX "unrecognized .*option"                     # GNU
            FAIL_REGEX "ignoring unknown option"                   # MSVC
            FAIL_REGEX "warning D9002"                             # MSVC, any lang
@@ -111,18 +131,15 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
            FAIL_REGEX "command option .* is not recognized"       # XL
         )
 
-        IF(CXX11_FLAGS_COMPILE_RESULT)
-          # CACHE the successful flags
-          #SET(CXX11_FLAGS_COMPILE_RESULT "${TOPTION}" CACHE INTERNAL "cxx11 support flag")
-          # Append compiler flag to CMAKE_CXX_FLAGS
-          SET(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} ${TOPTION}" CACHE INTERNAL "")
+        IF(${CXX11_FLAGS_COMPILE_RESULT_VAR})
           MESSAGE("-- " "Successful CXX11 flag: '${TOPTION}'")
-          SET(TRIBITS_CXX11_FLAGS ${TOPTION} PARENT_SCOPE)
+          SET(${PROJECT_NAME}_TRIBITS_CXX11_FLAGS ${TOPTION} CACHE STRING
+            "Special C++ compiler flags to turn on C++11 support.")
           BREAK()
-        ELSE()
-          # NOTE: You have to set this in case 
-          SET(CXX11_FLAGS_COMPILE_RESULT TRUE)
         ENDIF()
+
+        MATH(EXPR TOPTION_IDX "${TOPTION_IDX}+1")
+
      ENDFOREACH()
 
   ELSE()
@@ -130,14 +147,24 @@ FUNCTION(TRIBITS_ENABLE_CXX11)
      ##
      ## We already detected or set the cxx11 flags
      ##
-     MESSAGE("-- " "CXX11 Flags already set: '${TRIBITS_CXX11_FLAGS}'")
+     MESSAGE("-- " "CXX11 Flags already set: '${${PROJECT_NAME}_TRIBITS_CXX11_FLAGS}'")
 
   ENDIF()
 
 ENDFUNCTION()
 
 
+#
+# Assert of C++11 support is working and otherwise disable support.
+#
+
 FUNCTION(TRIBITS_CHECK_CXX11_SUPPORT VARNAME)
+
+  INCLUDE(CheckCXXSourceCompiles)
+
+  IF (${PROJECT_NAME}_TRIBITS_CXX11_FLAGS)
+    SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${${PROJECT_NAME}_TRIBITS_CXX11_FLAGS}")
+  ENDIF()
 
   # support for >> in addition to > > when closing double templates
   SET(SOURCE_CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS
@@ -152,7 +179,8 @@ int main() {
 }
   "
   )
-  CHECK_CXX_SOURCE_RUNS("${SOURCE_CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS}" CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS)
+  CHECK_CXX_SOURCE_COMPILES("${SOURCE_CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS}"
+    CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS)
 
   # support for auto and typedecl()
   SET(SOURCE_CXX11_AUTOTYPEDVARIABLES
@@ -167,7 +195,8 @@ int main() {
 }
   "
   )
-  CHECK_CXX_SOURCE_RUNS("${SOURCE_CXX11_AUTOTYPEDVARIABLES}" CXX11_AUTOTYPEDVARIABLES)
+  CHECK_CXX_SOURCE_COMPILES("${SOURCE_CXX11_AUTOTYPEDVARIABLES}"
+    CXX11_AUTOTYPEDVARIABLES)
 
   # support for lambda expressions
   SET(SOURCE_CXX11_LAMBDAS
@@ -191,7 +220,7 @@ int main() {
   "
   )
 
-  CHECK_CXX_SOURCE_RUNS("${SOURCE_CXX11_LAMBDAS}" CXX11_LAMBDAS)
+  CHECK_CXX_SOURCE_COMPILES("${SOURCE_CXX11_LAMBDAS}" CXX11_LAMBDAS)
 
   IF (NOT CXX11_CONSECUTIVE_RIGHT_ANGLE_BRACKETS OR
     NOT CXX11_AUTOTYPEDVARIABLES OR
