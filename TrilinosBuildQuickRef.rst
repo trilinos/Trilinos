@@ -43,6 +43,10 @@ that support them.  To print the timers at the end of the program, call
 ``Teuchos::TimeMonitor::summarize()``.
 
 
+.. Common references to other documents
+
+.. _Package Dependencies and Enable/Disable Logic: ../developers_guide/TribitsDevelopersGuide.html#package-dependencies-and-enable-disable-logic
+
 
 Getting set up to use CMake
 ===========================
@@ -172,6 +176,8 @@ a) Create a 'do-configure' script such as [Recommended]::
   CASL and other CMake-generated files before configuring again (see
   `Reconfiguring completely from scratch`_).
 
+.. _Trilinos_CONFIGURE_OPTIONS_FILE:
+
 b) Create a CMake file fragment and point to it [Recommended].
 
   Create a do-configure script like::
@@ -214,18 +220,34 @@ d) Using the QT CMake configuration GUI:
   On systems where the QT CMake GUI is installed (e.g. Windows) the CMake GUI
   can be a nice way to configure Trilinos if you are a user.  To make your
   configuration easily repeatable, you might want to create a fragment file
-  and just load it by setting Trilinos_CONFIGURE_OPTIONS_FILE (see above) in
-  the GUI.
+  and just load it by setting `Trilinos_CONFIGURE_OPTIONS_FILE`_ (see above)
+  in the GUI.
 
 Selecting the list of packages to enable
 ----------------------------------------
 
-In order to see the list of avaiable Trilinos SE Packages to enable, just run
-a basic CMake configure, enabling nothing, and then grep the output to see
+The Trilinos project is broken up into a set of packages that can be enabled
+(or disbled).  For details and generic examples, see `Package Dependencies and
+Enable/Disable Logic`_.
+
+See the following use cases:
+
+* `Determine the list of packages that can be enabled`_
+* `Enable a set of packages`_
+* `Enable to test all effects of changing a given package(s)`_
+* `Enable all packages with tests and examples`_
+* `Disable a package and all its dependencies`_
+* `Remove all package enables in the cache`_
+
+Determine the list of packages that can be enabled
+++++++++++++++++++++++++++++++++++++++++++++++++++
+
+In order to see the list of available Trilinos SE Packages to enable, just
+run a basic CMake configure, enabling nothing, and then grep the output to see
 what packages are avaiable to enable.  The full set of defined packages is
 contained the lines starting with ``'Final set of enabled SE packages'`` and
 ``'Final set of non-enabled SE packages'``.  If no SE packages are enabled by
-default (which is base behavior), the full list of pacakges will be listed on
+default (which is base behavior), the full list of packages will be listed on
 the line ``'Final set of non-enabled SE packages'``.  Therefore, to see the
 full list of defined packages, run::
 
@@ -235,94 +257,123 @@ Any of the packages shown on those lines can potentially be enabled using ``-D
 Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON`` (unless they are forcabily
 disabled for some reason, see the CMake ouptut for package disable warnings).
 
-a) Configuring a package(s) along with all of the packages it can use::
+Enable a set of packages
+++++++++++++++++++++++++
 
-    $ ./do-configure \
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
-       -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-       -D Trilinos_ENABLE_TESTS:BOOL=ON
+To enable an SE package ``<TRIBITS_PACKAGE>`` (and optionally also its tests
+and examples), configure with::
 
-  NOTE: This set of arguments allows a user to turn on <TRIBITS_PACKAGE> as well as
-  all packages that <TRIBITS_PACKAGE> can use.  However, tests and examples will
-  only be turned on for <TRIBITS_PACKAGE> (or any other packages specifically
-  enabled).
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
 
-  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
-  etc.), then enabling the package is equivalent to typing::
+This set of arguments allows a user to turn on ``<TRIBITS_PACKAGE>`` as well
+as all packages that ``<TRIBITS_PACKAGE>`` can use.  All of the package's
+optional "can use" upstream dependent packages are enabled with
+``-DTrilinos_ENABLE_ALL_OPTIONAL_PACKAGES=ON``.  However,
+``-DTrilinos_ENABLE_TESTS=ON`` will only enable tests and examples for
+``<TRIBITS_PACKAGE>`` (or any other packages specifically enabled).
 
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
-       ...
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
+``<B>``, etc.), then enabling the package is equivalent to setting::
 
-  However, a TriBITS subpackage will only be enabled if it is not disabled
-  either explicitly or implicitly.
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=ON \
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=ON \
+   ...
 
-b) Configuring Trilinos to test all effects of changing a given package(s)::
+However, a TriBITS subpackage will only be enabled if it is not already
+disabled either explicitly or implicitly.
 
-    $ ./do-configure \
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
-       -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
-       -D Trilinos_ENABLE_TESTS:BOOL=ON
+Enable to test all effects of changing a given package(s)
++++++++++++++++++++++++++++++++++++++++++++++++++++++++++
 
-  NOTE: The above set of arguments will result in package <TRIBITS_PACKAGE>
-  and all packages that depend on <TRIBITS_PACKAGE> to be enabled and have all
-  of their tests turned on.  Tests will not be enabled in packages that do not
-  depend on <TRIBITS_PACKAGE> in this case.  This speeds up and robustifies
-  pre-checkin testing.
+To enable an SE package ``<TRIBITS_PACKAGE>`` to test it and all of its
+down-stream packages, configure with::
 
-c) Configuring to build all packages with tests and examples::
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_FORWARD_DEP_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
 
-    $ ./do-configure \
-       -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
-       -D Trilinos_ENABLE_TESTS:BOOL=ON
+The above set of arguments will result in package ``<TRIBITS_PACKAGE>`` and
+all packages that depend on ``<TRIBITS_PACKAGE>`` to be enabled and have all
+of their tests turned on.  Tests will not be enabled in packages that do not
+depend on ``<TRIBITS_PACKAGE>`` in this case.  This speeds up and robustifies
+pre-push testing.
 
-  NOTE: Specific packages can be disabled with
-  Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF.  This will also disable all
-  packages that depend on <TRIBITS_PACKAGE>.
+Enable all packages with tests and examples
++++++++++++++++++++++++++++++++++++++++++++
 
-  NOTE: All examples are enabled by default when setting
-  Trilinos_ENABLE_TESTS:BOOL=ON.
+To enable all SE packages (and optionally also their tests and examples), add
+the configure options::
 
-  NOTE: By default, setting Trilinos_ENABLE_ALL_PACKAGES=ON only enables
-  primary tested (PT) code.  To have this also enable all secondary tested
-  (ST) code, one must also set Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON.
+  -D Trilinos_ENABLE_ALL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_TESTS:BOOL=ON \
 
-d) Disable a package and all its dependencies::
+Specific packages can be disabled with
+``Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF``.  This will also disable all
+packages that depend on ``<TRIBITS_PACKAGE>``.
 
-      $ ./do-configure \
-         -D Trilinos_ENABLE_<PACKAGE_A>:BOOL=ON \
-         -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
-         -D Trilinos_ENABLE_<PACKAGE_B>:BOOL=OFF
+All examples are enabled by default when setting
+``Trilinos_ENABLE_TESTS:BOOL=ON``.
 
-  Above, this will enable <PACKAGE_A> and all of the packages that it
-  depends on except for <PACKAGE_B> and all of its forward dependencies.
+By default, setting ``Trilinos_ENABLE_ALL_PACKAGES=ON`` only enables primary
+tested (PT) code.  To have this also enable all secondary tested (ST) code,
+one must also set ``Trilinos_ENABLE_SECONDARY_TESTED_CODE=ON``.
 
-  NOTE: If a TriBITS package <TRIBITS_PACKAGE> has subpackages (e.g. <A>, <B>,
-  etc.), then disabling the package is equivalent to typing::
+Disable a package and all its dependencies
+++++++++++++++++++++++++++++++++++++++++++
 
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
-       -D Trilinos_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
-       ...
+To disable an SE package and all of the packages that depend on it, add the
+configure options::
 
-  The disable of the subpackage is this case will override any enables.
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE>:BOOL=OFF
 
-  NOTE: If a disabled package is a required dependency of some explicitly
-  enabled downstream package, then the configure will error out if
-  Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF.  Otherwise, a WARNING
-  will be printed and the downstream package will be disabled and
-  configuration will continue.
+For example::
 
-e) Removing all package enables in the Cache
+  -D Trilinos_ENABLE_<PACKAGE_A>:BOOL=ON \
+  -D Trilinos_ENABLE_ALL_OPTIONAL_PACKAGES:BOOL=ON \
+  -D Trilinos_ENABLE_<PACKAGE_B>:BOOL=ON \
 
-  ::
+will enable ``<PACKAGE_A>`` and all of the packages that it depends on except
+for ``<PACKAGE_B>`` and all of its forward dependencies.
 
-    $ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+If a TriBITS package ``<TRIBITS_PACKAGE>`` has subpackages (e.g. ``<A>``,
+``<B>``, etc.), then disabling the package is equivalent to setting::
 
-  This option will set to empty '' all package enables, leaving all other
-  cache variables as they are.  You can then reconfigure with a new set of
-  package enables for a different set of packages.  This allows you to avoid
-  more expensive configure time checks and to preserve other cache variables
-  that you have set and don't want to loose.
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE><A>:BOOL=OFF \
+  -D Trilinos_ENABLE_<TRIBITS_PACKAGE><B>:BOOL=OFF \
+  ...
+
+The disable of the subpackage is this case will override any enables.
+
+If a disabled package is a required dependency of some explicitly enabled
+downstream package, then the configure will error out if
+``Trilinos_DISABLE_ENABLED_FORWARD_DEP_PACKAGES=OFF``.  Otherwise, a WARNING
+will be printed and the downstream package will be disabled and configuration
+will continue.
+
+Print package dependencies
+++++++++++++++++++++++++++
+
+The set of package dependenices in a project will be printed in the ``cmake``
+STDOUT by setting::
+
+  -D Trilinos_DUMP_PACKAGE_DEPENDENCIES:BOOL=ON
+
+Remove all package enables in the cache
++++++++++++++++++++++++++++++++++++++++
+
+To wipe the set of pakage enables in the CMakeCache.txt file so they can be
+reset again from scratch, configure with::
+
+  $ ./-do-confiugre -D Trilinos_UNENABLE_ENABLED_PACKAGES:BOOL=TRUE
+
+This option will set to empty '' all package enables, leaving all other cache
+variables as they are.  You can then reconfigure with a new set of package
+enables for a different set of packages.  This allows you to avoid more
+expensive configure time checks and to preserve other cache variables that you
+have set and don't want to loose.  For example, one would want to do this to
+avoid compiler and TPL checks.
 
 Selecting compiler and linker options
 -------------------------------------
@@ -348,7 +399,7 @@ users to set and override these compiler flag variables globally and on a
 package-by-package basis.  Below, the facilities for manipulating compiler
 flags is described.
 
-The Trilinos TriBiTS CMake build system will set up default compile flags for
+The Trilinos TriBITS CMake build system will set up default compile flags for
 GCC ('GNU') in development mode
 (i.e. ``Trilinos_ENABLE_DEVELOPMENT_MODE=ON``) on order to help produce
 portable code.  These flags set up strong warning options and enforce langauge
@@ -520,11 +571,20 @@ g) Enable and disable shadowing warnings for all Trilinos packages:
 
 h) Removing warnings as errors for CLEANED packages:
 
-  To remove the -Werror flag (or some other flag that is set) from being
+  To remove the ``-Werror`` flag (or some other flag that is set) from being
   applied to compile CLEANED packages like Teuchos, set the following when
   configuring::
 
     -D Trilinos_WARNINGS_AS_ERRORS_FLAGS:STRING=""
+
+i) Adding debug symbols to the build:
+
+  To get the compiler to add debug symbols to the build, configure with::
+
+    -D Trilinos_ENABLE_DEBUG_SYMBOLS:BOOL=ON
+
+  This will add ``-g`` on most compilers.  NOTE: One does **not** generally
+  need to create a fully debug build to get debug symbols on most compilers.
 
 
 Enabling support for C++11
@@ -533,13 +593,18 @@ Enabling support for C++11
 To enable support for C++11 in packages that support C++11 (either optionally
 or required), configure with::
 
-  -D Trilinos_ENABLE_CXX11:BOOL=ON \
-  -D CMAKE_CXX_FLAGS:STRING=-std=c++11
+  -D Trilinos_ENABLE_CXX11:BOOL=ON
 
-where the C++ flags passed in may depend on the compiler you are using.  This
-will be followed by a set of configure-time tests to see if several C++11
-features are actually supported by the configured C++ compiler and support
-will be disabled if all of these features are not supported.
+By default, the system will try to automatically find compiler flags that will
+enable C++11 features.  If it finds flags that allow a test C++11 program to
+compile, then it will an additional set of configure-time tests to see if
+several C++11 features are actually supported by the configured C++ compiler
+and support will be disabled if all of these features are not supported.
+
+In order to pre-set and/or override the C++11 compiler flags used, set the
+cache variable::
+
+  -D Trilinos_CXX11_FLAGS:STRING="<compiler flags>"
 
 
 Disabling the Fortran compiler and all Fortran code
@@ -914,6 +979,8 @@ Generating verbose output
 There are several different ways to generate verbose output to debug problems
 when they occur:
 
+.. _Trilinos_TRACE_FILE_PROCESSING:
+
 a) **Trace file processing during configure:**
 
   ::
@@ -928,8 +995,8 @@ a) **Trace file processing during configure:**
   helpful in debugging configure problems without generating too much extra
   output.
 
-  This is set to ``ON`` automatically when
-  ``Trilinos_VERBOSE_CONFIGURE:BOOL=ON``.
+  Note that `Trilinos_TRACE_FILE_PROCESSING`_ is set to ``ON`` automatically
+  when ``Trilinos_VERBOSE_CONFIGURE:BOOL=ON``.
 
 b) **Getting verbose output from TriBITS configure:**
 
@@ -1039,14 +1106,15 @@ Enabling different test categories
 
 To turn on a set a given set of tests by test category, set::
 
-  -D Trilinos_TEST_CATEGORIES:STRING="<CATEGORY1>;<CATEGORY2>;..." 
+  -D Trilinos_TEST_CATEGORIES:STRING="<CATEGORY0>;<CATEGORY1>;..." 
 
-Valid categories include BASIC, CONTINUOUS, NIGHTLY, WEEKLY and PERFORMANCE.
-BASIC tests get built and run for pre-push testing, CI testing, and nightly
-testing.  CONTINUOUS tests are for post-posh testing and nightly testing.
-NIGHTLY tests are for nightly testing only.  WEEKLY tests are for more
-expensive tests that are run approximately weekly.  PERFORMANCE tests are for
-performance testing only.
+Valid categories include ``BASIC``, ``CONTINUOUS``, ``NIGHTLY``, ``WEEKLY``
+and ``PERFORMANCE``.  ``BASIC`` tests get built and run for pre-push testing,
+CI testing, and nightly testing.  ``CONTINUOUS`` tests are for post-push
+testing and nightly testing.  ``NIGHTLY`` tests are for nightly testing only.
+``WEEKLY`` tests are for more expensive tests that are run approximately
+weekly.  ``PERFORMANCE`` tests a special category used only for performance
+testing.
 
 
 Disabling specific tests
@@ -1619,36 +1687,38 @@ using::
 
   $ git clean -fd -x
 
-You can also include generated files, such as Doxygen output files first, then
-run ``make package_source`` and it will be included in the distribution.
+You can include generated files in the tarball, such as Doxygen output files,
+by creating them first, then running ``make package_source`` and they will be
+included in the distribution (unless there is an internal exclude set).
 
-While this TriBITS project has a default, disabled subpackages can be included
-or excluded from the tarball by setting
-``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION``.  If
-``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and one wants
-to include some subpackages that are otherwise excluded, just enable them or
-their outer package so they will be included in the source tarball.  To get a
-printout of the files being excluded, set::
+Disabled subpackages can be included or excluded from the tarball by setting
+``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION`` (the TriBITS
+project has its own default, check ``CMakeCache.txt`` to see what the default
+is).  If ``Trilinos_EXCLUDE_DISABLED_SUBPACKAGES_FROM_DISTRIBUTION=ON`` and
+but one wants to include some subpackages that are otherwise excluded, just
+enable them or their outer package so they will be included in the source
+tarball.  To get a printout of set regular expresions that will be used to
+match files to exclude, set::
 
   -D Trilinos_DUMP_CPACK_SOURCE_IGNORE_FILES:BOOL=ON
 
-While a set of default CPack source generator types is defined, it can be
-overridden using, for example::
+While a set of default CPack source generator types is defined for this
+project (see the ``CMakeCache.txt`` file), it can be overridden using, for
+example::
 
   -D Trilinos_CPACK_SOURCE_GENERATOR:STRING="TGZ;TBZ2"
 
 (see CMake documentation to find out the types of supported CPack source
 generators on your system).
 
-NOTE: When untarring the source with missing packages, one must configure
-with::
+NOTE: When configuring from an untarred source tree that has missing packages,
+one must configure with::
 
   -D Trilinos_ASSERT_MISSING_PACKAGES:BOOL=OFF
 
-so that missing packages will be ignored.  Otherwise, TriBITS will error out
-about missing packages.  (Note that ``Trilinos_ASSERT_MISSING_PACKAGES`` will
-default to ```OFF``` in release mode,
-i.e. ``Trilinos_ENABLE_DEVELOPMENT_MODE==OFF``.)
+Otherwise, TriBITS will error out complaining about missing packages.  (Note
+that ``Trilinos_ASSERT_MISSING_PACKAGES`` will default to ```OFF``` in
+release mode, i.e. ``Trilinos_ENABLE_DEVELOPMENT_MODE==OFF``.)
 
 
 Dashboard submissions
@@ -1666,7 +1736,7 @@ with::
 
   $ make dashboard
 
-This invokes the advanced TriBiTS CTest scripts to do an experimental build
+This invokes the advanced TriBITS CTest scripts to do an experimental build
 for all of the packages that you have explicitly enabled.  The packages that
 are implicitly enabled due to package dependencies are not directly processed
 by the experimental_build_test.cmake script.
