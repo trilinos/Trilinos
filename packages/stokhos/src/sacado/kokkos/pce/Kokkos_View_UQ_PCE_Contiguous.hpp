@@ -222,6 +222,7 @@ class View< DataType , Arg1Type , Arg2Type , Arg3Type , Impl::ViewPCEContiguous 
 {
 public:
 
+  typedef Impl::ViewTag kokkos_tag;
   typedef ViewTraits< DataType
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::array_layout
                     , typename ViewTraits< DataType , Arg1Type, Arg2Type, Arg3Type >::device_type
