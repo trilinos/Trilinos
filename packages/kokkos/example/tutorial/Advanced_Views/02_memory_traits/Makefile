@@ -1,4 +1,4 @@
-KOKKOS_PATH = ../../..
+KOKKOS_PATH = ../../../..
 SRC = $(wildcard *.cpp)
 
 ifeq ($(CUDA), yes)
@@ -20,7 +20,7 @@ DEPFLAGS = -M
 OBJ = $(SRC:.cpp=.o)
 LIB = libkokkoscore.a
 
-include ../../../Makefile.kokkos
+include $(KOKKOS_PATH)/Makefile.kokkos
 
 EXTRA_INC = $(KOKKOS_INC)
 EXTRA_LIB = $(KOKKOS_LIB)
