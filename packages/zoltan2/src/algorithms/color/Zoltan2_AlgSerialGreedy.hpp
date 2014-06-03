@@ -42,18 +42,15 @@
 // ***********************************************************************
 //
 // @HEADER
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #ifndef _ZOLTAN2_ALGSERIALGREEDY_HPP_
 #define _ZOLTAN2_ALGSERIALGREEDY_HPP_
 
 #include <Zoltan2_GraphModel.hpp>
 #include <Zoltan2_ColoringSolution.hpp>
 
-
 ////////////////////////////////////////////////////////////////////////
 //! \file Zoltan2_AlgSerialGreedy.hpp
 //! \brief Serial greedy first-fit graph coloring (local graph only)
-
 
 namespace Zoltan2{
 
@@ -156,4 +153,3 @@ class AlgSerialGreedy
 };
 }
 #endif
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL

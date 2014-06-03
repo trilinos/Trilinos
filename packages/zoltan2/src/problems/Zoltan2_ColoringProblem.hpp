@@ -51,7 +51,6 @@
 #define _ZOLTAN2_COLORINGPROBLEM_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 
 #include <Zoltan2_Problem.hpp>
 #include <Zoltan2_ColoringAlgorithms.hpp>
@@ -176,7 +175,6 @@ void ColoringProblem<Adapter>::solve(bool newData)
 
   size_t nVtx = this->baseModel_->getLocalNumObjects();
 
-  // TODO: Assuming one MPI process now. nVtx = ngids = nlids
   try
   {
       this->solution_ = rcp(new ColoringSolution<Adapter>(nVtx));
@@ -197,15 +195,10 @@ void ColoringProblem<Adapter>::solve(bool newData)
       alg.color(this->solution_, this->params_);
   }
 #if 0 // TODO later
-  else if (method.compare("JP") == 0)
+  else if (method.compare("speculative") == 0) // Gebremedhin-Manne
   {
-      AlgJP<base_adapter_t> alg;
-      alg.color(this->identifierModel_, this->solution_, this->params_, problemComm_);
-  }
-  else if (method.compare("GM") == 0)
-  {
-      AlgGM<base_adapter_t> alg;
-      alg.color(this->identifierModel_, this->solution_, this->params_, problemComm_);
+      AlgGM<base_adapter_t> alg(this->graphModel_, problemComm_);
+      alg.color(this->solution_, this->params_);
   }
 #endif
   }
@@ -306,5 +299,4 @@ void ColoringProblem<Adapter>::createColoringProblem()
 }
 } //namespace Zoltan2
 
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
 #endif

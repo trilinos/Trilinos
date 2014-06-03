@@ -51,7 +51,6 @@
 #define _ZOLTAN2_COLORINGSOLUTION_HPP_
 
 #include <Zoltan2_Standards.hpp>
-#ifdef INCLUDE_ZOLTAN2_EXPERIMENTAL
 #include <Zoltan2_Solution.hpp>
 
 namespace Zoltan2 {
@@ -132,5 +131,4 @@ protected:
 
 }
 
-#endif //INCLUDE_ZOLTAN2_EXPERIMENTAL
 #endif
