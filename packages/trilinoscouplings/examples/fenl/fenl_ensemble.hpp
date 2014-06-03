@@ -1,4 +1,5 @@
 /*
+//@HEADER
 // ************************************************************************
 //
 //   Kokkos: Manycore Performance-Portable Multidimensional Arrays
@@ -37,65 +38,64 @@
 // Questions? Contact  H. Carter Edwards (hcedwar@sandia.gov)
 //
 // ************************************************************************
+//@HEADER
 */
 
-#include <fenl_ensemble.hpp>
+#ifndef KOKKOS_EXAMPLE_FENL_ENSEMBLE_HPP
+#define KOKKOS_EXAMPLE_FENL_ENSEMBLE_HPP
 
-#include <Kokkos_Threads.hpp>
-#include <HexElement.hpp>
-#include <fenl_impl.hpp>
+//----------------------------------------------------------------------------
+// Specializations for ensemble scalar type
+//----------------------------------------------------------------------------
 
-#include <Teuchos_GlobalMPISession.hpp>
+#include "Stokhos_Tpetra_MP_Vector.hpp"
+#include "Belos_TpetraAdapter_MP_Vector.hpp"
+#include "Stokhos_MueLu_MP_Vector.hpp"
+
+#include <fenl.hpp>
 
 namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 4;
+template <typename T, typename L, typename M>
+struct LocalViewTraits< Kokkos::View<T,L,Kokkos::Cuda,M,Kokkos::Impl::ViewMPVectorContiguous> > {
+  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
+  typedef Kokkos::View<T,L,Kokkos::Cuda,M,Specialize> view_type;
+  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
+  typedef typename local_view_type::value_type local_value_type;
+  static const bool use_team = true;
 
-#if defined (KOKKOS_HAVE_PTHREAD)
+  KOKKOS_INLINE_FUNCTION
+  static local_view_type create_local_view(const view_type& v,
+                                           const unsigned local_rank)
+  {
+    const Sacado::MP::VectorPartition part(local_rank, local_rank+1);
+    local_view_type local_v = Kokkos::subview<local_view_type>(v, part);
+    return local_v;
+  }
+};
 
-typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Threads> Storage_Threads;
-typedef Sacado::MP::Vector<Storage_Threads> Scalar_Threads;
-typedef ElementComputationKLCoefficient<Scalar_Threads,double,Threads> KL_Vector_Threads;
-typedef ElementComputationKLCoefficient<double,double,Threads> KL_Scalar_Threads;
+template <typename T, typename M, typename V>
+struct LocalViewTraits< Kokkos::View<T,Kokkos::Cuda,M,V,Kokkos::Impl::ViewMPVectorContiguous> > {
+  typedef Kokkos::Impl::ViewMPVectorContiguous Specialize;
+  typedef Kokkos::View<T,Kokkos::Cuda,M,V,Specialize> view_type;
+  typedef typename Kokkos::LocalMPVectorView<view_type,1>::type local_view_type;
+  typedef typename local_view_type::value_type local_value_type;
+  static const bool use_team = true;
 
-INST_FENL( Scalar_Threads , Threads , BoxElemPart::ElemLinear ,
-           KL_Vector_Threads , TrivialManufacturedSolution )
-INST_FENL( Scalar_Threads , Threads , BoxElemPart::ElemQuadratic ,
-           KL_Vector_Threads , TrivialManufacturedSolution )
-INST_KL( Scalar_Threads , double , Threads )
-
-INST_FENL( double , Threads , BoxElemPart::ElemLinear ,
-           KL_Scalar_Threads , TrivialManufacturedSolution )
-INST_FENL( double , Threads , BoxElemPart::ElemQuadratic ,
-           KL_Scalar_Threads , TrivialManufacturedSolution )
-INST_KL( double , double , Threads )
-
-#endif
-
-#if defined (KOKKOS_HAVE_OPENMP)
-
-typedef Stokhos::StaticFixedStorage<int,double,VectorSize,OpenMP> Storage_OpenMP;
-typedef Sacado::MP::Vector<Storage_OpenMP> Scalar_OpenMP;
-typedef ElementComputationKLCoefficient<Scalar_OpenMP,double,Threads> KL_Vector_OpenMP;
-typedef ElementComputationKLCoefficient<double,double,Threads> KL_Scalar_OpenMP;
-
-INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemLinear ,
-           KL_Vector_OpenMP , TrivialManufacturedSolution )
-INST_FENL( Scalar_OpenMP , OpenMP , BoxElemPart::ElemQuadratic ,
-           KL_Vector_OpenMP , TrivialManufacturedSolution )
-INST_KL( Scalar_OpenMP , double , OpenMP )
-
-INST_FENL( double , OpenMP , BoxElemPart::ElemLinear ,
-           KL_Scalar_OpenMP , TrivialManufacturedSolution )
-INST_FENL( double , OpenMP , BoxElemPart::ElemQuadratic ,
-           KL_Scalar_OpenMP , TrivialManufacturedSolution )
-INST_KL( double , double , OpenMP )
-
-#endif
-
+  KOKKOS_INLINE_FUNCTION
+  static local_view_type create_local_view(const view_type& v,
+                                           const unsigned local_rank)
+  {
+    const Sacado::MP::VectorPartition part(local_rank, local_rank+1);
+    local_view_type local_v = Kokkos::subview<local_view_type>(v, part);
+    return local_v;
+  }
+};
 
 } /* namespace FENL */
 } /* namespace Example */
 } /* namespace Kokkos */
+
+#endif /* #ifndef KOKKOS_EXAMPLE_FENL_ENSEMBLE_HPP */

@@ -117,7 +117,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
+    typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
+    HRV hrv = Kokkos::create_mirror_view(rv);
 
     const int num_qp_blocks = ( num_quad_points + VectorSize-1 ) / VectorSize;
 
@@ -127,10 +129,11 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       const int qp_end = qp_begin + VectorSize <= num_quad_points ?
         qp_begin+VectorSize : num_quad_points;
 
-      // Set random variables -- using UVM here
+      // Set random variables
       for (int i=0; i<dim; ++i)
         for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
-          rv(i).fastAccessCoeff(j) = quad_points[qp][i];
+          hrv(i).fastAccessCoeff(j) = quad_points[qp][i];
+      Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
       Scalar response = 0;
@@ -181,14 +184,17 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     typedef ElementComputationKLCoefficient< Scalar, double, Device > KL;
     KL diffusion_coefficient( kl_mean, kl_variance, kl_correlation, dim );
     typedef typename KL::RandomVariableView RV;
+    typedef typename RV::HostMirror HRV;
     RV rv = diffusion_coefficient.getRandomVariables();
+    HRV hrv = Kokkos::create_mirror_view(rv);
 
     // Loop over quadrature points
     for (int qp=0; qp<num_quad_points; ++qp) {
 
-      // Set random variables -- using UVM here
+      // Set random variables
       for (int i=0; i<dim; ++i)
-        rv(i) = quad_points[qp][i];
+        hrv(i) = quad_points[qp][i];
+      Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
       Scalar response = 0;
