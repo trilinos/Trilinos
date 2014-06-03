@@ -690,7 +690,7 @@ def runProjectTestsWithCommandLineArgs(commandLineArgs, configuration = {}):
   clp.add_option(
     '--src-dir', dest="srcDir", type="string",
     default=srcDirDefault,
-    help="The source base directory for code to be tested." )
+    help="The source base directory for code to be tested.  Default assumes is <tribitsDir>/../.." )
 
   clp.add_option(
     '--trilinos-src-dir', dest="srcDir", type="string",
