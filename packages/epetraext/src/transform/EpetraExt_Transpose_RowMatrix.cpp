@@ -80,18 +80,17 @@ RowMatrix_Transpose::
 }
 
 //=========================================================================
-  Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::BuildTempTrans() 
+  Epetra_CrsMatrix* EpetraExt::RowMatrix_Transpose::CreateTransposeLocal(OriginalTypeRef orig) 
 {
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   Teuchos::Time myTime("global");
   Teuchos::TimeMonitor MM(myTime);
   Teuchos::RCP<Teuchos::Time> mtime;
-  mtime=MM.getNewTimer("Transpose: BuildTempTrans 1");
+  mtime=MM.getNewTimer("Transpose: CreateTransposeLocal 1");
   mtime->start();
 #endif
 
   int i,j,err;
-  const Epetra_RowMatrix & orig    = *origObj_;
   const Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&orig);
   const Epetra_Map & TransMap      = orig.RowMatrixColMap();
   int TransNnz                     = orig.NumMyNonzeros();
@@ -166,7 +165,7 @@ RowMatrix_Transpose::
 
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   mtime->stop();
-  mtime=MM.getNewTimer("Transpose: BuildTempTrans 2");
+  mtime=MM.getNewTimer("Transpose: CreateTransposeLocal 2");
   mtime->start();
 #endif
 
@@ -181,7 +180,7 @@ RowMatrix_Transpose::
 
 #ifdef ENABLE_TRANSPOSE_TIMINGS
   mtime->stop();
-  mtime=MM.getNewTimer("Transpose: BuildTempTrans 3");
+  mtime=MM.getNewTimer("Transpose: CreateTransposeLocal 3");
   mtime->start();
 #endif
 
@@ -222,7 +221,7 @@ operator()( OriginalTypeRef orig )
 
   // First get the local indices to count how many nonzeros will be in the 
   // transpose graph on each processor
-  Epetra_CrsMatrix * TempTransA1 = BuildTempTrans();  
+  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(orig);  
 
   if(!TempTransA1->Exporter()) {
     // Short Circuit: There is no need to make another matrix since TransposeRowMap_== TransMap
@@ -254,7 +253,7 @@ operator()( OriginalTypeRef orig )
 //=========================================================================
 bool EpetraExt::RowMatrix_Transpose::fwd()
 {
-  Epetra_CrsMatrix * TempTransA1 = BuildTempTrans();  
+  Epetra_CrsMatrix * TempTransA1 = CreateTransposeLocal(*origObj_);  
   const Epetra_Export * TransposeExporter=0;
   bool DeleteExporter = false;
   

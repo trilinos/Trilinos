@@ -80,7 +80,7 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
     OrigMatrixIsCrsMatrix_(false)
   {}
 
-  //! Transpose Tranform Operator
+  //! Transpose Transform Operator
   NewTypeRef operator()( OriginalTypeRef orig );
 
   //! Foward Data Migration
@@ -92,9 +92,11 @@ class RowMatrix_Transpose : public SameTypeTransform<Epetra_RowMatrix>
   //! Release the pointer to TransposeMatrix_ (so you can take the matrix out w/o worring about deallocation)
   void ReleaseTranspose() {TransposeMatrix_=0;}
 
- private:
-  Epetra_CrsMatrix * BuildTempTrans();
+  //! Local-only transpose operator.  Don't use this unless you're sure you know what you're doing.
+  /*! This pointer is not kept by the RowMatrix_Transpose object */
+  Epetra_CrsMatrix * CreateTransposeLocal( OriginalTypeRef orig );
 
+ private:
   Epetra_CrsMatrix * TransposeMatrix_;
 
   Epetra_Map * TransposeRowMap_;
