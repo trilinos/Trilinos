@@ -2600,6 +2600,9 @@ void unpack_not_owned_verify_compare_parts(const BulkData &  mesh,
   std::vector<Part*>::const_iterator ip = recv_parts.begin();
 
   for ( ; ! bad_part && ip != recv_parts.end() ; ++ip ) {
+    while(!meta.get_part(*k).entity_membership_is_parallel_consistent()) {
+      ++k;
+    }
     if ( owns_part != *ip ) {
       if ( shares_part != *ip && (*ip)->entity_membership_is_parallel_consistent() ) {
         // All not-owned and not-shares parts must match:
