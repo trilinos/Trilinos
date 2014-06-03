@@ -39,13 +39,6 @@ namespace stk
       {
       }
 
-      void init(std::vector<AABoundingBox>& boxes, VectorFieldType *coords_field) 
-      {
-        m_boxes(boxes);
-        //m_boxes = boxes;
-        m_coords_field(coords_field);
-      }
-
       void init_elementOp()
       {
       }
