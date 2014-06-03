@@ -230,35 +230,42 @@ namespace MueLu {
 
       this->AddFactoryManager(levelID, 1, levelManager);
     }
-    
-    bool strictParameterChecking = paramList.get<bool> ("strict parameter checking", false);
-    if (strictParameterChecking) {
-      ParameterList::ConstIterator itr;
+
+    if (paramList.isParameter("strict parameter checking") &&
+        paramList.get<bool>  ("strict parameter checking")) {
       ParameterList unusedParamList;
-      //check for unused parameters that aren't lists
-      for (itr = paramList.begin(); itr != paramList.end(); ++itr) {
-        if ( !( (paramList.entry(itr)).isUsed() ) && !( (paramList.entry(itr)).isList() ) )
-          unusedParamList.setEntry(paramList.name(itr), paramList.entry(itr));
+
+      // Check for unused parameters that aren't lists
+      for (ParameterList::ConstIterator itr = paramList.begin(); itr != paramList.end(); ++itr) {
+        const ParameterEntry& entry = paramList.entry(itr);
+
+        if (!entry.isList() && !entry.isUsed())
+          unusedParamList.setEntry(paramList.name(itr), entry);
       }
-      //check for unused parameters in level-specific sublists
-      //for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
-      //  std::string levelStr = "level" + toString(levelID);
-      //  if (paramList.isSublist(levelStr)) {
-      //    const ParameterList& levelList = paramList.sublist(levelStr);
-      //    for (itr = levelList.begin(); itr != levelList.end(); ++itr) {
-      //      if ( !( (levelList.entry(itr)).isUsed() ) && !( (levelList.entry(itr)).isList() ) ) {
-      //        ParameterList &unusedSubList = unusedParamList.sublist(levelStr);
-      //        unusedSubList.setEntry(levelList.name(itr), levelList.entry(itr));
-      //      }
-      //    }
-      //  }
-      //}
+#if 0
+      // Check for unused parameters in level-specific sublists
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level" + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
+            const ParameterEntry& entry = levelList.entry(itr);
+
+            if (!entry.isList() && !entry.isUsed())
+              unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+          }
+        }
+      }
+#endif
       if (unusedParamList.numParams() > 0) {
         std::ostringstream unusedParamsStream;
-        int indent=4;
-        unusedParamList.print(unusedParamsStream,indent);
+        int indent = 4;
+        unusedParamList.print(unusedParamsStream, indent);
 
-        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true,Teuchos::Exceptions::InvalidParameter,"WARNING: Unused parameters were detected.  Please check spelling and type." << std::endl << unusedParamsStream.str());
+        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameter,
+                                            "WARNING: Unused parameters were detected. Please check spelling and type." << std::endl << unusedParamsStream.str());
       }
     }
 
