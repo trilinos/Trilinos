@@ -30,6 +30,7 @@ LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/mpih.hpp")
 FILE(GLOB SOURCES *.cpp)
 #removing references to mpih which is not available in Trilinos
 LIST(REMOVE_ITEM SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/mpih.cpp")
+LIST(REMOVE_ITEM HEADERS "${CMAKE_CURRENT_SOURCE_DIR}/Exception.hpp")
 
 #
 # C) Define the targets for package's library(s)
