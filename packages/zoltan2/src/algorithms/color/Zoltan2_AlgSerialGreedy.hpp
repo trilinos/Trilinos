@@ -144,9 +144,6 @@ class AlgSerialGreedy
       }
     }
   
-    // Set numColors in solution
-    solution->setNumColors(maxColor); // solution->numColors_ = maxColor;
-
     return;
   }
   

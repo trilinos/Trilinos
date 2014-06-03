@@ -106,26 +106,27 @@ public:
   inline int * getColors()  {return &(*colors_);}
 
   /*! \brief Get local number of colors.
+   *  This is computed from the coloring each time, as this is cheap.
    */
-  inline int getNumColors()  {return numColors_;} 
+  int getNumColors()  
+  { 
+    int maxColor = 0;
+    for (size_t i=0; i<length_; i++){
+      if (colors_[i] > maxColor)
+        maxColor = colors_[i];
+    }
+    return maxColor;
+  } 
 
   /*! \brief Get global number of colors.
    */
   //int getGlobalNumColors(); // TODO
  
-  //////////////////////////////////////////////
-  // Set methods, allowing algorithms to store data.
-  //
-  void setNumColors(int nc)
-  {
-    numColors_ = nc;
-  }
-
 protected:
   // Coloring solution consists of permutation vector(s).
   size_t length_;
   ArrayRCP<int> colors_;   // zero-based local color array
-  int numColors_;          // Number of colors (local on this proc)
+  //int numColors_;        // Number of colors (local on this proc)
   //int numColorsGlobal_;  // For future distributed coloring
 };
 
