@@ -6,7 +6,7 @@ SET(SUBPACKAGES_DIRS_CLASSIFICATIONS_OPTREQS
   Search     stk_search      SS  OPTIONAL
   SearchUtil stk_search_util SS  OPTIONAL
   Transfer   stk_transfer    SS  OPTIONAL
-  Sddm       stk_sddm        SS  OPTIONAL
+#  Sddm       stk_sddm        SS  OPTIONAL
 )
 
 SET(LIB_REQUIRED_DEP_PACKAGES)
