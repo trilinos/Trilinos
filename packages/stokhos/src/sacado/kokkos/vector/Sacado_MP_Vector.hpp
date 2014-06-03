@@ -810,7 +810,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
 #endif
 
@@ -843,7 +843,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
 #endif
 
@@ -876,7 +876,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
 #endif
 
@@ -909,7 +909,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator+=():  Mismatched sizes");
 #endif
 
@@ -942,7 +942,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
 #endif
 
@@ -975,7 +975,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
 #endif
 
@@ -1008,7 +1008,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
 #endif
 
@@ -1041,7 +1041,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator-=():  Mismatched sizes");
 #endif
 
@@ -1074,7 +1074,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
 #endif
 
@@ -1107,7 +1107,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
 #endif
 
@@ -1140,7 +1140,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
 #endif
 
@@ -1173,7 +1173,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator*=():  Mismatched sizes");
 #endif
 
@@ -1206,7 +1206,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
 #endif
 
@@ -1239,7 +1239,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
 #endif
 
@@ -1272,7 +1272,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
 #endif
 
@@ -1305,7 +1305,7 @@ namespace Sacado {
           this->reset(x.size());
 
 #ifdef STOKHOS_DEBUG
-        if (s.size() != x.size())
+        if (s.size() < x.size())
           Kokkos::Impl::raise_error("Vector::operator/=():  Mismatched sizes");
 #endif
 
