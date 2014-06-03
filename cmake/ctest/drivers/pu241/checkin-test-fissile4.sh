@@ -30,7 +30,7 @@ TRILINOS_BASE_DIR_ABS=$(readlink -f $TRILINOS_BASE_DIR)
 
 DRIVERS_BASE_DIR="$TRILINOS_BASE_DIR_ABS/Trilinos/cmake/ctest/drivers/pu241"
 
-# Pakage in Trilinos to disable (mostly for auotmated CI server)
+# Packages in Trilinos to disable (mostly for auotmated CI server)
 DISABLE_PACKAGES=CTrilinos,ForTrilinos,PyTrilinos,Didasko,Mesquite,Phdmesh,Pliris,Claps,Amesos2,Ifpack2
 
 # Check to make sure that the env has been loaded correctly
@@ -62,11 +62,11 @@ echo "
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-mpi-debug-ss-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.6.1.cmake'
-" > MPI_DEBUG_SS.config
+" > MPI_DEBUG_ST.config
 
 echo "
 -DTrilinos_CONFIGURE_OPTIONS_FILE:FILEPATH='$DRIVERS_BASE_DIR/gcc-4.6.1-serial-release-ss-options.cmake,$DRIVERS_BASE_DIR/trilinos-tpls-gcc.4.6.1.cmake'
-" > SERIAL_RELEASE_SS.config
+" > SERIAL_RELEASE_ST.config
 
 #
 # Extra builds
@@ -85,7 +85,7 @@ echo "
 $TRILINOS_BASE_DIR/Trilinos/checkin-test.py \
 -j16 \
 --ctest-timeout=180 \
---ss-extra-builds=MPI_DEBUG_SS,SERIAL_RELEASE_SS \
+--st-extra-builds=MPI_DEBUG_ST,SERIAL_RELEASE_ST \
 --disable-packages=$DISABLE_PACKAGES \
 --skip-case-no-email \
 --ctest-options="-E '(Piro_AnalysisDriver|Stokhos_Linear2D_Diffusion_GMRES_KLR|Panzer_STK_ResponseLibraryTest|MueLu_|Amesos2_|Rythmos_ImplicitRK_UnitTest_MPI_1)'" \
