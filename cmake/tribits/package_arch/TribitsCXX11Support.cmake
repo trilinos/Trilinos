@@ -43,13 +43,13 @@ INCLUDE(CheckCXXSourceCompiles)
 #
 # Sets up C++11 flags if not already set.
 #
-# On input, if ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS is already set, then this
+# On input, if ${PROJECT_NAME}_CXX11_FLAGS is already set, then this
 # function does nothing.  If not already set on input, then a set of
 # try-compile (but not try-run) commands are performed to try common C++11
 # compiler flags testing against known flags.  If a set of flags is found that
 # enables C++11, then those flags are used.  The first set of flags that
 # passes the try-compile test is set into the cache variable
-# ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS on output.
+# ${PROJECT_NAME}_CXX11_FLAGS on output.
 # 
 FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
 
@@ -58,9 +58,9 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
   ## or if the user has not overridden then
   ##
 
-  IF(NOT ${PROJECT_NAME}_TRIBITS_CXX11_FLAGS)
+  IF(NOT ${PROJECT_NAME}_CXX11_FLAGS)
 
-     MESSAGE("-- " "Search for CXX11 compiler flag.")
+     MESSAGE("-- " "Search for C++11 compiler flag ...")
      INCLUDE(CheckCXXSourceCompiles)
 
      ##
@@ -112,7 +112,7 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
      FOREACH( TOPTION ${CXX11_FLAG_OPTIONS})
 
         IF(${PROJECT_NAME}_VERBOSE_CONFIGURE OR TRIBITS_ENABLE_CXX11_DEBUG_DUMP)
-          MESSAGE("-- " "Testing CXX11 flag: ${TOPTION}")
+          MESSAGE("-- " "Testing C++11 flag: ${TOPTION}")
         ENDIF()
 
         SET(CMAKE_REQUIRED_FLAGS "${CMAKE_CXX_FLAGS} ${TOPTION}")
@@ -131,9 +131,11 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
         )
 
         IF(${CXX11_FLAGS_COMPILE_RESULT_VAR})
-          MESSAGE("-- " "Successful CXX11 flag: '${TOPTION}'")
-          SET(${PROJECT_NAME}_TRIBITS_CXX11_FLAGS ${TOPTION} CACHE STRING
-            "Special C++ compiler flags to turn on C++11 support.")
+          MESSAGE("-- " "Successful C++11 flag: '${TOPTION}'")
+          ADVANCED_SET(${PROJECT_NAME}_CXX11_FLAGS ${TOPTION}
+            CACHE STRING
+            "Special C++ compiler flags to turn on C++11 support.  Determined automatically by default."
+            )
           BREAK()
         ENDIF()
 
@@ -146,7 +148,7 @@ FUNCTION(TRIBITS_FIND_CXX11_FLAGS)
      ##
      ## We already detected or set the cxx11 flags
      ##
-     MESSAGE("-- " "CXX11 Flags already set: '${${PROJECT_NAME}_TRIBITS_CXX11_FLAGS}'")
+     MESSAGE("-- " "C++11 Flags already set: '${${PROJECT_NAME}_CXX11_FLAGS}'")
 
   ENDIF()
 
@@ -161,8 +163,8 @@ FUNCTION(TRIBITS_CHECK_CXX11_SUPPORT VARNAME)
 
   INCLUDE(CheckCXXSourceCompiles)
 
-  IF (${PROJECT_NAME}_TRIBITS_CXX11_FLAGS)
-    SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${${PROJECT_NAME}_TRIBITS_CXX11_FLAGS}")
+  IF (${PROJECT_NAME}_CXX11_FLAGS)
+    SET(CMAKE_REQUIRED_FLAGS "${CMAKE_REQUIRED_FLAGS} ${${PROJECT_NAME}_CXX11_FLAGS}")
   ENDIF()
 
   # support for >> in addition to > > when closing double templates
