@@ -559,7 +559,6 @@ struct Stokhos_MV_Multiply_Op {
 };
 
 typedef Kokkos_MV_Multiply_Op KokkosMultiply;
-typedef Stokhos_MV_Multiply_Op<Stokhos::EnsembleMultiply> EnsembleMultiply;
 typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> DefaultMultiply;
 
 #define CRSMATRIX_MP_VECTOR_TESTS_MATRIXSCALAR( SCALAR )                \
