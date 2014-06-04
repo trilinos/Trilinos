@@ -40,6 +40,7 @@ enum { CMD_USE_THREADS = 0
        , CMD_USE_UQ_ENSEMBLE
        , CMD_USE_UQ_DIM
        , CMD_USE_UQ_ORDER
+       , CMD_USE_SPARSE
        , CMD_PRINT
        , CMD_ECHO
        , CMD_ERROR
@@ -82,6 +83,12 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_USE_UQ_DIM ] ) {
     s << " UQ order(" << cmd[ CMD_USE_UQ_ORDER ] << ")" << ")" ;
   }
+  if ( cmd[ CMD_USE_SPARSE ] ) {
+    s << " Sparse grid" ;
+  }
+  if ( !cmd[ CMD_USE_SPARSE ] ) {
+    s << " Tensor grid" ;
+  }
   if ( cmd[ CMD_USE_CUDA ] ) {
     s << " CUDA(" << cmd[ CMD_USE_CUDA_DEV ] << ")" ;
   }
@@ -120,6 +127,9 @@ print_headers( std::ostream & s , const int cmd[] , const int comm_rank )
     if ( cmd[ CMD_USE_UQ_ENSEMBLE ] ) { s << " , USING UQ ENSEMBLE" ; }
     if ( cmd[ CMD_USE_UQ_DIM ] ) { s << " , UQ DIM , " << cmd[ CMD_USE_UQ_DIM ]; }
     if ( cmd[ CMD_USE_UQ_ORDER ] ) { s << " , UQ ORDER , " << cmd[ CMD_USE_UQ_ORDER ]; }
+
+    if ( cmd[ CMD_USE_SPARSE ] ) { s << " , USING SPARSE GRID" ; }
+    else { s << " , USING TENSOR GRID" ; }
   }
 
   std::vector< std::pair<std::string,std::string> > headers;
@@ -224,6 +234,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   cmdline[CMD_USE_UQ_ORDER] = 0;      clp.setOption("uq-order",                 cmdline+CMD_USE_UQ_ORDER,  "UQ order");
 
+  bool useSparse = false;           clp.setOption("sparse", "tensor",  &useSparse,  "use sparse or tensor grid");
+
   bool useAtomic = false;             clp.setOption("atomic", "no-atomic",      &useAtomic,  "atomic");
 
   cmdline[CMD_USE_TRIALS] = 1;        clp.setOption("trials",                   cmdline+CMD_USE_TRIALS,  "trials");
@@ -251,6 +263,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
     cmdline[CMD_USE_CUDA] = true;
   cmdline[CMD_USE_FIXTURE_QUADRATIC] = useQuadratic;
   cmdline[CMD_USE_UQ_ENSEMBLE]       = useEnsemble;
+  cmdline[CMD_USE_SPARSE]            = useSparse;
   cmdline[CMD_USE_ATOMIC]            = useAtomic;
   cmdline[CMD_USE_BELOS]             = useBelos;
   cmdline[CMD_USE_MUELU]             = useMueLu;

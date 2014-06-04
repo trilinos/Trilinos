@@ -59,14 +59,21 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   typedef Stokhos::LegendreBasis<int,double> legendre_basis;
   typedef Stokhos::LexographicLess< Stokhos::MultiIndex<int> > order_type;
   typedef Stokhos::TotalOrderBasis<int,double,order_type> product_basis;
-  typedef Stokhos::TensorProductQuadrature<int,double> quadrature;
+  typedef Stokhos::Quadrature<int,double> quadrature;
   const int dim = cmd[ CMD_USE_UQ_DIM ];
   const int order = cmd[ CMD_USE_UQ_ORDER ];
   Array< RCP<const one_d_basis> > bases(dim);
   for (int i=0; i<dim; i++)
     bases[i] = rcp(new legendre_basis(order, true));
   RCP<const product_basis> basis = rcp(new product_basis(bases));
-  RCP<const quadrature> quad     = rcp(new quadrature(basis));
+  RCP<const quadrature> quad;
+  if ( cmd[ CMD_USE_SPARSE ] ) {
+    Stokhos::TotalOrderIndexSet<int> index_set(dim, order);
+    quad = rcp(new Stokhos::SmolyakSparseGridQuadrature<int,double>(basis,
+                                                                    index_set));
+  }
+  else
+    quad = rcp(new Stokhos::TensorProductQuadrature<int,double>(basis));
   const int num_quad_points                 = quad->size();
   const Array<double>& quad_weights         = quad->getQuadWeights();
   const Array< Array<double> >& quad_points = quad->getQuadPoints();
