@@ -92,6 +92,9 @@ RowMatrix_Transpose::
 
   int i,j,err;
   const Epetra_CrsMatrix * OrigCrsMatrix = dynamic_cast<const Epetra_CrsMatrix*>(&orig);
+  if(OrigCrsMatrix) OrigMatrixIsCrsMatrix_ = true;
+  else OrigMatrixIsCrsMatrix_ = false;
+
   const Epetra_Map & TransMap      = orig.RowMatrixColMap();
   int TransNnz                     = orig.NumMyNonzeros();
   int NumIndices;
@@ -100,6 +103,8 @@ RowMatrix_Transpose::
   Epetra_IntSerialDenseVector & TransRowptr = TempTransA1->ExpertExtractIndexOffset();
   Epetra_IntSerialDenseVector & TransColind = TempTransA1->ExpertExtractIndices();
   double *&                     TransVals   = TempTransA1->ExpertExtractValues();  
+  NumMyRows_ = orig.NumMyRows();
+  NumMyCols_ = orig.NumMyCols();
 
   TransRowptr.Resize(NumMyCols_+1);
   TransColind.Resize(TransNnz);
@@ -185,7 +190,7 @@ RowMatrix_Transpose::
 #endif
 
   // Call ExpertStaticFillComplete
-  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),*TransposeRowMap_,myimport,myexport);
+  err = TempTransA1->ExpertStaticFillComplete(orig.OperatorRangeMap(),orig.OperatorDomainMap(),myimport,myexport);
   if (err != 0) {
     throw TempTransA1->ReportError("ExpertStaticFillComplete failed.",err);
   }
