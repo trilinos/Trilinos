@@ -120,7 +120,7 @@ scalar generate_multi_vector_coefficient( const ordinal nFEM,
 #if defined(__CUDACC__)
 const int VectorSize = 16;
 #else
-const int VectorSize = 8;
+const int VectorSize = 16;
 #endif
 
 //

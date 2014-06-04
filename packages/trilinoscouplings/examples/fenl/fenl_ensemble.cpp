@@ -51,7 +51,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 4;
+static const int VectorSize = 16;
 
 #if defined (KOKKOS_HAVE_PTHREAD)
 

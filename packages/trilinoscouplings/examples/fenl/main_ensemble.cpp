@@ -107,7 +107,7 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
     static const bool is_cuda =
       Kokkos::Impl::is_same<Device,Kokkos::Cuda>::value;
-    static const int VectorSize = is_cuda ? 16 : 4;
+    static const int VectorSize = is_cuda ? 16 : 16;
     typedef Stokhos::StaticFixedStorage<int,double,VectorSize,Device> Storage;
     typedef Sacado::MP::Vector<Storage> Scalar;
 
