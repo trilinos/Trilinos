@@ -31,15 +31,12 @@ TEST(UnitTestGetFieldByName, test1)
   //
   stk::mesh::Field<double>& nodeField1 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
   stk::mesh::Field<double,stk::mesh::Cartesian>& nodeField2 = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "field2");
-  stk::mesh::Field<double>& nodeField3 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field3");
 
   stk::mesh::Field<double>& faceField1 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::FACE_RANK, "field1");
   stk::mesh::Field<double,stk::mesh::Cartesian>& faceField2 = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::FACE_RANK, "field2");
-  stk::mesh::Field<double>& faceField3 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::FACE_RANK, "field3");
 
   stk::mesh::Field<double>& elemField1 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "field1");
   stk::mesh::Field<double,stk::mesh::Cartesian>& elemField2 = meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::ELEM_RANK, "field2");
-  stk::mesh::Field<double>& elemField3 = meta.declare_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "field3");
 
   stk::mesh::EntityRank side_rank = meta.side_rank();
   EXPECT_EQ(stk::topology::FACE_RANK, static_cast<stk::topology::rank_t>(side_rank));
@@ -53,10 +50,6 @@ TEST(UnitTestGetFieldByName, test1)
   stk::mesh::FieldBase* get_field_nodeField2 = meta.get_field(stk::topology::NODE_RANK, "field2");
   EXPECT_EQ(nodeField2.mesh_meta_data_ordinal(), get_field_nodeField2->mesh_meta_data_ordinal());
 
-  stk::mesh::Field<double>* get_field_nodeField3 = meta.get_node_field<stk::mesh::Field<double> >("field3");
-  EXPECT_EQ(nodeField3.mesh_meta_data_ordinal(), get_field_nodeField3->mesh_meta_data_ordinal());
-
-
   //side/face fields:
   stk::mesh::Field<double>* get_field_sideField1 = meta.get_field<stk::mesh::Field<double> >(side_rank, "field1");
   EXPECT_EQ(faceField1.mesh_meta_data_ordinal(), get_field_sideField1->mesh_meta_data_ordinal());
@@ -64,19 +57,12 @@ TEST(UnitTestGetFieldByName, test1)
   stk::mesh::FieldBase* get_field_sideField2 = meta.get_field(stk::topology::FACE_RANK, "field2");
   EXPECT_EQ(faceField2.mesh_meta_data_ordinal(), get_field_sideField2->mesh_meta_data_ordinal());
 
-  stk::mesh::Field<double>* get_field_sideField3 = meta.get_side_field<stk::mesh::Field<double> >("field3");
-  EXPECT_EQ(faceField3.mesh_meta_data_ordinal(), get_field_sideField3->mesh_meta_data_ordinal());
-
-
   //elem fields:
   stk::mesh::Field<double>* get_field_elemField1 = meta.get_field<stk::mesh::Field<double> >(stk::topology::ELEM_RANK, "field1");
   EXPECT_EQ(elemField1.mesh_meta_data_ordinal(), get_field_elemField1->mesh_meta_data_ordinal());
 
   stk::mesh::FieldBase* get_field_elemField2 = meta.get_field(stk::topology::ELEM_RANK, "field2");
   EXPECT_EQ(elemField2.mesh_meta_data_ordinal(), get_field_elemField2->mesh_meta_data_ordinal());
-
-  stk::mesh::Field<double>* get_field_elemField3 = meta.get_elem_field<stk::mesh::Field<double> >("field3");
-  EXPECT_EQ(elemField3.mesh_meta_data_ordinal(), get_field_elemField3->mesh_meta_data_ordinal());
 }
 } //namespace <anonymous>
 

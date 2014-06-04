@@ -334,27 +334,7 @@ public:
   template< class field_type >
   field_type * get_field( stk::mesh::EntityRank entity_rank, const std::string & name ) const ;
 
-  template< class field_type >
-  field_type * get_node_field( const std::string & name ) const
-  { return get_field<field_type>(stk::topology::NODE_RANK, name); }
-
-  template< class field_type >
-  field_type * get_edge_field( const std::string & name ) const
-  { return get_field<field_type>(stk::topology::EDGE_RANK, name); }
-
-  template< class field_type >
-  field_type * get_face_field( const std::string & name ) const
-  { return get_field<field_type>(stk::topology::FACE_RANK, name); }
-
-  template< class field_type >
-  field_type * get_elem_field( const std::string & name ) const
-  { return get_field<field_type>(stk::topology::ELEM_RANK, name); }
-
-  template< class field_type >
-  field_type * get_side_field( const std::string & name ) const
-  { ThrowAssertMsg(static_cast<stk::topology::rank_t>(m_side_rank) != stk::topology::INVALID_RANK, "MetaData::get_side_field ERROR, side-rank invalid, probably because spatial-dimension hasn't been set yet.");
-    return get_field<field_type>(m_side_rank, name); }
-
+  // Deprecated:
   template< class field_type >
   field_type * get_field( const std::string & name ) const ;
 
@@ -365,15 +345,8 @@ public:
    * E.g., 'TEMPERATURE' is the same as 'temperature'.
    */
   FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
-  FieldBase* get_node_field( const std::string& name ) const { return get_field(stk::topology::NODE_RANK, name); }
-  FieldBase* get_edge_field( const std::string& name ) const { return get_field(stk::topology::EDGE_RANK, name); }
-  FieldBase* get_face_field( const std::string& name ) const { return get_field(stk::topology::FACE_RANK, name); }
-  FieldBase* get_elem_field( const std::string& name ) const { return get_field(stk::topology::ELEM_RANK, name); }
 
-  FieldBase* get_side_field( const std::string& name ) const
-  { ThrowAssertMsg(static_cast<stk::topology::rank_t>(m_side_rank) != stk::topology::INVALID_RANK, "MetaData::get_side_field ERROR, side-rank invalid, probably because spatial-dimension hasn't been set yet.");
-    return get_field(m_side_rank, name); }
-
+  // Deprecated:
   FieldBase* get_field( const std::string& name ) const;
 
   /** \brief  Get/Set the coordinate field */
