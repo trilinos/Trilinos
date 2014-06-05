@@ -131,8 +131,8 @@ struct FastMeshIndex
 
 typedef unsigned Ordinal;
 static const Ordinal InvalidOrdinal = static_cast<Ordinal>(-1); // std::numeric_limits<PartOrdinal>::max();
-typedef stk::topology::rank_t EntityRank ;
-//typedef Ordinal EntityRank ;
+//typedef stk::topology::rank_t EntityRank ;
+typedef Ordinal EntityRank ;
 typedef Ordinal PartOrdinal;
 typedef Ordinal FieldOrdinal;
 typedef Ordinal RelationIdentifier;
