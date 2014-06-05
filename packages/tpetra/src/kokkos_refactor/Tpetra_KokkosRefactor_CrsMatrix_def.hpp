@@ -3116,6 +3116,19 @@ namespace Tpetra {
     using Teuchos::rcp_const_cast;
     using Teuchos::rcpFromRef;
 
+    // mfh 05 Jun 2014: Special case for alpha == 0.  I added this to
+    // fix an Ifpack2 test (RILUKSingleProcessUnitTests), which was
+    // failing only for the Kokkos refactor version of Tpetra.  It's a
+    // good idea regardless to have the bypass.
+    if (alpha == STS::zero ()) {
+      if (beta == STS::zero ()) {
+        Y_in.putScalar (STS::zero ());
+      } else if (beta != STS::one ()) {
+        Y_in.scale (beta);
+      }
+      return;
+    }
+
     // because of Views, it is difficult to determine if X and Y point to the same data.
     // however, if they reference the exact same object, we will do the user the favor of copying X into new storage (with a warning)
     // we ony need to do this if we have trivial importers; otherwise, we don't actually apply the operator from X into Y
