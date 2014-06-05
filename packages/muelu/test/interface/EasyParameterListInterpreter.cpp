@@ -196,7 +196,7 @@ int main(int argc, char *argv[]) {
 
       std::string sed_pref = "sed -i ";
 #ifdef __APPLE__
-      sed_pref = sed_pref +  "\"\" "
+      sed_pref = sed_pref +  "\"\" ";
 #endif
 
       // Ignore the value of "lambdaMin"
@@ -214,7 +214,7 @@ int main(int argc, char *argv[]) {
       std::vector<std::string> classes;
       classes.push_back("Xpetra::Matrix");
       classes.push_back("MueLu::Constraint");
-      for (int k = 0; k < classes.size(); k++) {
+      for (size_t k = 0; k < classes.size(); k++) {
         sed_cmd = sed_pref + "'s/" + classes[k] + "<.*>/" + classes[k] + "<ignored> >/' ";
         system((sed_cmd + baseFile + ".res").c_str());
         system((sed_cmd + baseFile + ".out").c_str());
