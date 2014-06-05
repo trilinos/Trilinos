@@ -193,6 +193,8 @@ SET(HEADERS ${HEADERS}
   Stokhos_SparseGridQuadratureImp.hpp
   Stokhos_AnisoSparseGridQuadrature.hpp
   Stokhos_AnisoSparseGridQuadratureImp.hpp
+  Stokhos_SmolyakSparseGridQuadrature.hpp
+  Stokhos_SmolyakSparseGridQuadratureImp.hpp
   Stokhos_UserDefinedQuadrature.hpp
   Stokhos_UserDefinedQuadratureImp.hpp
   Stokhos_QuadratureFactory.hpp
