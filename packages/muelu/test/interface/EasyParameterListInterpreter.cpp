@@ -152,10 +152,24 @@ int main(int argc, char *argv[]) {
       mueluFactory.SetupHierarchy(*H);
 
     } catch (Teuchos::ExceptionBase& e) {
+      std::string msg = e.what();
+      msg = msg.substr(msg.find_last_of('\n')+1);
+
       if (myRank == 0) {
-        std::string msg = e.what();
-        msg = msg.substr(msg.find_last_of('\n')+1);
         std::cout << "Caught exception: " << msg << std::endl;
+
+        // Redirect output back
+        std::cout.rdbuf(oldbuffer);
+        buffer.close();
+      }
+
+      if (msg == "Zoltan interface is not available" ||
+          msg == "Zoltan2 interface is not available") {
+
+        if (myRank == 0)
+          std::cout << xmlFile << ": skipped (missing library)" << std::endl;
+
+        continue;
       }
     }
 

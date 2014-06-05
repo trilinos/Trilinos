@@ -4981,10 +4981,14 @@ template<class TransferType>
   }
 
   /***************************************************/
-  /**** 6) Sort                                  ****/
+  /**** 6) Sort (and merge if needed)            ****/
   /***************************************************/
   // Sort the entries
-  Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
+  const Epetra_Import* xferAsImport = dynamic_cast<const Epetra_Import*> (&RowTransfer);
+  if(xferAsImport)
+    Epetra_Util::SortCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
+  else 
+    Epetra_Util::SortAndMergeCrsEntries(N, CSR_rowptr.Values(), CSR_colind.Values(), CSR_vals);
 
   /***************************************************/
   /**** 7) Build Importer & Call ESFC             ****/
@@ -5046,5 +5050,24 @@ Epetra_CrsMatrix::Epetra_CrsMatrix(const Epetra_CrsMatrix & SourceMatrix, const 
 {
   FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
 } // end fused export constructor
+
+
+// ===================================================================
+void Epetra_CrsMatrix::FusedImport(const Epetra_CrsMatrix & SourceMatrix,
+				   const Epetra_Import & RowImporter,
+				   const Epetra_Map * DomainMap,
+				   const Epetra_Map * RangeMap,
+				   bool RestrictCommunicator) {
+  FusedTransfer<Epetra_Import>(SourceMatrix,RowImporter,DomainMap,RangeMap,RestrictCommunicator);
+}  // end fused import non-constructor
+
+// ===================================================================
+void Epetra_CrsMatrix::FusedExport(const Epetra_CrsMatrix & SourceMatrix,
+				   const Epetra_Export & RowExporter,
+				   const Epetra_Map * DomainMap,
+				   const Epetra_Map * RangeMap,
+				   bool RestrictCommunicator) {
+  FusedTransfer<Epetra_Export>(SourceMatrix,RowExporter,DomainMap,RangeMap,RestrictCommunicator);
+} // end fused export non-constructor
 
 

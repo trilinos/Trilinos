@@ -99,13 +99,12 @@ namespace panzer {
     //typedef Sacado::CacheFad::DFad<double> FadType;
     //typedef Sacado::ELRFad::DFad<double> FadType;
     // typedef Sacado::ELRCacheFad::DFad<double> FadType;
-    typedef PANZER_FADTYPE<double> FadType;
+    typedef PANZER_FADTYPE FadType;
 
     #ifdef HAVE_STOKHOS
        typedef Stokhos::StandardStorage<int,RealType> SGStorageType;
        typedef Sacado::PCE::OrthogPoly<RealType,SGStorageType> SGType;
-       // typedef Sacado::Fad::DFad<SGType> SGFadType;
-       typedef PANZER_FADTYPE<SGType> SGFadType;
+       typedef Sacado::Fad::DFad<SGType> SGFadType;
     #endif
     
     // ******************************************************************
@@ -134,7 +133,7 @@ namespace panzer {
     typedef Sacado::mpl::vector< RealType,bool > ResidualDataTypes;
   
     // Jacobian (default scalar type is Fad<double, double>)
-    typedef Sacado::mpl::vector< FadType,bool > JacobianDataTypes;
+    typedef Sacado::mpl::vector< FadType, RealType, bool > JacobianDataTypes;
 
     // Tangent (default scalar type is Fad<double, double>)
     typedef Sacado::mpl::vector< FadType,bool > TangentDataTypes;

@@ -1659,6 +1659,19 @@ private:
 		     const Epetra_Map * RangeMap,
 		     bool RestrictCommunicator);
 
+ public:
+
+  void FusedImport(const Epetra_CrsMatrix & SourceMatrix,
+		   const Epetra_Import & RowImporter,
+		   const Epetra_Map * DomainMap,
+		   const Epetra_Map * RangeMap,
+		   bool RestrictCommunicator);
+
+  void FusedExport(const Epetra_CrsMatrix & SourceMatrix,
+		   const Epetra_Export & RowExporter,
+		   const Epetra_Map * DomainMap,
+		   const Epetra_Map * RangeMap,
+		   bool RestrictCommunicator);
 
 
 };

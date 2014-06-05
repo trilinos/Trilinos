@@ -1,12 +1,12 @@
 // @HEADER
 // ***********************************************************************
-// 
+//
 //                           Stokhos Package
 //                 Copyright (2009) Sandia Corporation
-// 
+//
 // Under terms of Contract DE-AC04-94AL85000, there is a non-exclusive
 // license for use of this work by or on behalf of the U.S. Government.
-// 
+//
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are
 // met:
@@ -35,7 +35,7 @@
 // SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 //
 // Questions? Contact Eric T. Phipps (etphipp@sandia.gov).
-// 
+//
 // ***********************************************************************
 // @HEADER
 
@@ -53,32 +53,31 @@ namespace SparseGridQuadratureUnitTest {
   template <typename OrdinalType, typename ValueType>
   struct UnitTestSetup {
     Teuchos::RCP<const Stokhos::CompletePolynomialBasis<OrdinalType,ValueType> > basis;
-    Teuchos::RCP<const Stokhos::Quadrature<OrdinalType,ValueType> > quad;
-    
-    UnitTestSetup() {
-      const OrdinalType d = 2;
-      const OrdinalType p = 5;
-      
+    const OrdinalType d;
+    const OrdinalType p;
+
+    UnitTestSetup() : d(2), p(5) {
+
       // Create product basis
       Teuchos::Array< Teuchos::RCP<const Stokhos::OneDOrthogPolyBasis<OrdinalType,ValueType> > > bases(d);
       for (OrdinalType i=0; i<d; i++)
-	bases[i] = 
-	  Teuchos::rcp(new Stokhos::RysBasis<OrdinalType,ValueType>(p, 1.0, 
-								    false));
+        bases[i] =
+          Teuchos::rcp(new Stokhos::LegendreBasis<OrdinalType,ValueType>(
+                         p, true, Stokhos::MODERATE_GROWTH));
       basis =
-	Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
-      
-      // Sparse grid quadrature
-      quad = 
-	Teuchos::rcp(new Stokhos::SparseGridQuadrature<OrdinalType,ValueType>(basis, p, 1e-12, Pecos::MODERATE_RESTRICTED_GROWTH));
+        Teuchos::rcp(new Stokhos::CompletePolynomialBasis<OrdinalType,ValueType>(bases));
     }
-    
+
   };
 
   UnitTestSetup<int,double> setup;
 
+#ifdef HAVE_STOKHOS_DAKOTA
+
   TEUCHOS_UNIT_TEST( Stokhos_SparseGridQuadrature, NumPoints ) {
-    const Teuchos::Array<double>& weights = setup.quad->getQuadWeights();
+    const Stokhos::SparseGridQuadrature<int,double> quad(
+      setup.basis, setup.p, 1e-12, Pecos::MODERATE_RESTRICTED_GROWTH);
+    const Teuchos::Array<double>& weights = quad.getQuadWeights();
     int nqp = weights.size();
     int nqp_gold = 181;
 
@@ -88,10 +87,34 @@ namespace SparseGridQuadratureUnitTest {
       success = false;
 
     out << std::endl
-	<< "Check: quad_weight.size() = " << nqp << " == " << nqp_gold
-	<< " : ";
+        << "Check: quad_weight.size() = " << nqp << " == " << nqp_gold
+        << " : ";
     if (success) out << "Passed.";
-    else 
+    else
+      out << "Failed!";
+    out << std::endl;
+  }
+
+#endif
+
+  TEUCHOS_UNIT_TEST( Stokhos_SmolyakSparseGridQuadrature, NumPoints ) {
+    const Stokhos::TotalOrderIndexSet<int> index_set(setup.d, setup.p);
+    const Stokhos::SmolyakSparseGridQuadrature<int,double> quad(
+      setup.basis, index_set, 1e-12);
+    const Teuchos::Array<double>& weights = quad.getQuadWeights();
+    int nqp = weights.size();
+    int nqp_gold = 181;
+
+    if (nqp == nqp_gold)
+      success = true;
+    else
+      success = false;
+
+    out << std::endl
+        << "Check: quad_weight.size() = " << nqp << " == " << nqp_gold
+        << " : ";
+    if (success) out << "Passed.";
+    else
       out << "Failed!";
     out << std::endl;
   }

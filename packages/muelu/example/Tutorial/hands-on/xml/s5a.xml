@@ -82,13 +82,13 @@
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Interpolation"/>
       <Parameter name="P"                                   type="string" value="myProlongatorFact"/>
+      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceRestrictionFact">
       <Parameter name="factory"                             type="string" value="RebalanceTransferFactory"/>
       <Parameter name="type"                                type="string" value="Restriction"/>
       <Parameter name="R"                                   type="string" value="myRestrictorFact"/>
-      <Parameter name="Nullspace"                           type="string" value="myTentativePFact"/>
     </ParameterList>
 
     <ParameterList name="myRebalanceAFact">
@@ -144,7 +144,7 @@
       <Parameter name="startLevel"                          type="int"      value="0"/>
       <Parameter name="Smoother"                            type="string"   value="SymGaussSeidel"/>
       <Parameter name="Aggregates"                          type="string"   value="UncoupledAggregationFact"/>
-      <Parameter name="Nullspace"                           type="string"   value="myRebalanceRestrictionFact"/>
+      <Parameter name="Nullspace"                           type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="P"                                   type="string"   value="myRebalanceProlongatorFact"/>
       <Parameter name="R"                                   type="string"   value="myRebalanceRestrictionFact"/>
       <Parameter name="A"                                   type="string"   value="myRebalanceAFact"/>

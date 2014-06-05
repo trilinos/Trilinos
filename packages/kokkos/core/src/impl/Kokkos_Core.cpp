@@ -93,17 +93,17 @@ namespace Kokkos {
          }
 
          char *str;
-         if (str = getenv("SLURM_LOCALID")) {
+         if ((str = getenv("SLURM_LOCALID"))) {
            int local_rank = atoi(str);
            device = local_rank % ngpu;
            if (device >= skip_gpu) device++;
          }
-         if (str = getenv("MV2_COMM_WORLD_LOCAL_RANK")) {
+         if ((str = getenv("MV2_COMM_WORLD_LOCAL_RANK"))) {
            int local_rank = atoi(str);
            device = local_rank % ngpu;
            if (device >= skip_gpu) device++;
          }
-         if (str = getenv("OMPI_COMM_WORLD_LOCAL_RANK")) {
+         if ((str = getenv("OMPI_COMM_WORLD_LOCAL_RANK"))) {
            int local_rank = atoi(str);
            device = local_rank % ngpu;
            if (device >= skip_gpu) device++;

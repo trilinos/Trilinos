@@ -230,6 +230,45 @@ namespace MueLu {
 
       this->AddFactoryManager(levelID, 1, levelManager);
     }
+
+    if (paramList.isParameter("strict parameter checking") &&
+        paramList.get<bool>  ("strict parameter checking")) {
+      ParameterList unusedParamList;
+
+      // Check for unused parameters that aren't lists
+      for (ParameterList::ConstIterator itr = paramList.begin(); itr != paramList.end(); ++itr) {
+        const ParameterEntry& entry = paramList.entry(itr);
+
+        if (!entry.isList() && !entry.isUsed())
+          unusedParamList.setEntry(paramList.name(itr), entry);
+      }
+#if 0
+      // Check for unused parameters in level-specific sublists
+      for (int levelID = 0; levelID < this->numDesiredLevel_; levelID++) {
+        std::string levelStr = "level" + toString(levelID);
+
+        if (paramList.isSublist(levelStr)) {
+          const ParameterList& levelList = paramList.sublist(levelStr);
+
+          for (ParameterList::ConstIterator itr = levelList.begin(); itr != levelList.end(); ++itr) {
+            const ParameterEntry& entry = levelList.entry(itr);
+
+            if (!entry.isList() && !entry.isUsed())
+              unusedParamList.sublist(levelStr).setEntry(levelList.name(itr), entry);
+          }
+        }
+      }
+#endif
+      if (unusedParamList.numParams() > 0) {
+        std::ostringstream unusedParamsStream;
+        int indent = 4;
+        unusedParamList.print(unusedParamsStream, indent);
+
+        TEUCHOS_TEST_FOR_EXCEPTION_PURE_MSG(true, Teuchos::Exceptions::InvalidParameter,
+                                            "WARNING: Unused parameters were detected. Please check spelling and type." << std::endl << unusedParamsStream.str());
+      }
+    }
+
     // FIXME: parameters passed to packages, like Ifpack2, are not touched by us, resulting in "[unused]" flag
     // being displayed. On the other hand, we don't want to simply iterate through them touching. I don't know
     // what a good solution looks like
@@ -540,6 +579,7 @@ namespace MueLu {
       MUELU_TEST_AND_SET_PARAM(repartParams, "nonzeroImbalance",    paramList, defaultList, "repartition: max imbalance",     double);
       MUELU_TEST_AND_SET_PARAM(repartParams, "remapPartitions",     paramList, defaultList, "repartition: remap parts",       bool);
       MUELU_TEST_AND_SET_PARAM(repartParams, "alwaysKeepProc0",     paramList, defaultList, "repartition: keep proc 0",       bool);
+      MUELU_TEST_AND_SET_PARAM(repartParams, "repartition: print partition distribution", paramList, defaultList, "repartition: print partition distribution", bool);
       repartFactory->SetParameterList(repartParams);
       repartFactory->SetFactory("A",         manager.GetFactory("A"));
       repartFactory->SetFactory("Partition", manager.GetFactory("Partition"));

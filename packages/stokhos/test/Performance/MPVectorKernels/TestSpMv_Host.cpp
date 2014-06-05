@@ -54,7 +54,7 @@ void mainHost(int nGrid, int nIter, Kokkos::DeviceConfig dev_config) {
   const int entry_step = 8;
 #else
   const int entry_min = 4;
-  const int entry_max = 24;
+  const int entry_max = 32;
   const int entry_step = 4;
 #endif
 

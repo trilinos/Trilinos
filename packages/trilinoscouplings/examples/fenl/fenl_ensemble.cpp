@@ -39,9 +39,7 @@
 // ************************************************************************
 */
 
-#include "Stokhos_Tpetra_MP_Vector.hpp"
-#include "Belos_TpetraAdapter_MP_Vector.hpp"
-#include "Stokhos_MueLu_MP_Vector.hpp"
+#include <fenl_ensemble.hpp>
 
 #include <Kokkos_Threads.hpp>
 #include <HexElement.hpp>
@@ -53,7 +51,7 @@ namespace Kokkos {
 namespace Example {
 namespace FENL {
 
-static const int VectorSize = 4;
+static const int VectorSize = 16;
 
 #if defined (KOKKOS_HAVE_PTHREAD)
 

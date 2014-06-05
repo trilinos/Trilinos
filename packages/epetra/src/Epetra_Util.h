@@ -201,6 +201,11 @@ class EPETRA_LIB_DLL_EXPORT Epetra_Util {
   // Use shell sort. Stable sort so it is fast if indices are already sorted.
   static int SortCrsEntries(int NumRows, const int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
 
+  //! Epetra_Util SortAndMergeCrsEntries function
+  // For each row, sort column entries from smallest to largest, merging column ids that are identical by adding values.
+  // Use shell sort. Stable sort so it is fast if indices are already sorted.
+  static int SortAndMergeCrsEntries(int NumRows, int *CRS_rowptr, int *CRS_colind, double *CRS_vals);
+
   //! Epetra_Util GetPidGidPairs function
   /*!  For each GID in the TargetMap, find who owns the GID in the SourceMap.
     This works entirely from the Distributor and has no communication at all.

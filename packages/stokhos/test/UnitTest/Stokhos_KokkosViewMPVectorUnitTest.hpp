@@ -128,25 +128,24 @@ checkVectorView(const ViewType& v,
 template <typename ViewType>
 bool
 checkConstantVectorView(const ViewType& v,
-                        const typename ViewType::array_type::value_type& val_expected,
+                        const typename ViewType::value_type& v_expected,
                         Teuchos::FancyOStream& out) {
   typedef ViewType view_type;
   typedef typename view_type::size_type size_type;
   typedef typename view_type::HostMirror host_view_type;
-  typedef typename host_view_type::array_type host_array_type;
-  typedef typename host_array_type::value_type scalar_type;
+  typedef typename host_view_type::intrinsic_scalar_type scalar_type;
 
   // Copy to host
   host_view_type h_v = Kokkos::create_mirror_view(v);
   Kokkos::deep_copy(h_v, v);
-  host_array_type h_a = h_v;
 
-  const size_type num_rows = h_a.dimension_0();
-  const size_type num_cols = h_a.dimension_1();
+  const size_type num_rows = h_v.dimension_0();
+  const size_type num_cols = h_v.sacado_size();
   bool success = true;
   for (size_type i=0; i<num_rows; ++i) {
     for (size_type j=0; j<num_cols; ++j) {
-      scalar_type val = h_a(i,j);
+      scalar_type val = h_v(i).fastAccessCoeff(j);
+      scalar_type val_expected = v_expected.fastAccessCoeff(j);
       TEUCHOS_TEST_EQUALITY(val, val_expected, out, success);
     }
   }
@@ -222,7 +221,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantScalar, Stor
 
   Kokkos::deep_copy( v, val );
 
-  success = checkConstantVectorView(v, val, out);
+  success = checkConstantVectorView(v, Vector(num_cols, val), out);
 }
 
 TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector, Storage, Layout )
@@ -239,6 +238,27 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector, Stor
   Scalar val = 1.2345;
 
   Kokkos::deep_copy( v, Vector(val) );
+
+  success = checkConstantVectorView(v, Vector(num_cols, val), out);
+}
+
+TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeepCopy_ConstantVector2, Storage, Layout )
+{
+  typedef typename Storage::device_type Device;
+  typedef typename Storage::value_type Scalar;
+  typedef Sacado::MP::Vector<Storage> Vector;
+  typedef typename ApplyView<Vector*,Layout,Device>::type ViewType;
+  typedef typename ViewType::size_type size_type;
+
+  const size_type num_rows = global_num_rows;
+  const size_type num_cols = Storage::is_static ? Storage::static_size : global_num_cols;
+  ViewType v("view", num_rows, num_cols);
+  Vector val(num_cols, 0.0);
+  for (size_type j=0; j<num_cols; ++j)
+    val.fastAccessCoeff(j) =
+      generate_vector_coefficient<Scalar>(num_rows, num_cols, size_type(0), j);
+
+  Kokkos::deep_copy( v, val );
 
   success = checkConstantVectorView(v, val, out);
 }
@@ -396,6 +416,8 @@ TEUCHOS_UNIT_TEST_TEMPLATE_2_DECL( Kokkos_View_MP, DeviceAtomic, Storage, Layout
     Kokkos_View_MP, DeepCopy_ConstantScalar, STORAGE, LAYOUT )          \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, DeepCopy_ConstantVector, STORAGE, LAYOUT )          \
+  TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
+    Kokkos_View_MP, DeepCopy_ConstantVector2, STORAGE, LAYOUT )         \
   TEUCHOS_UNIT_TEST_TEMPLATE_2_INSTANT(                                 \
     Kokkos_View_MP, Unmanaged, STORAGE, LAYOUT )
 

@@ -227,15 +227,15 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
   NUM_MPI_PROCS 1
   )
 
-IF(Stokhos_ENABLE_TriKota)
+TRIBITS_ADD_EXECUTABLE_AND_TEST(
+  SparseGridQuadratureUnitTest
+  SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
+  COMM serial mpi
+  STANDARD_PASS_OUTPUT
+  NUM_MPI_PROCS 1
+  )
 
-  TRIBITS_ADD_EXECUTABLE_AND_TEST(
-    SparseGridQuadratureUnitTest
-    SOURCES Stokhos_SparseGridQuadratureUnitTest.cpp
-    COMM serial mpi
-    STANDARD_PASS_OUTPUT
-    NUM_MPI_PROCS 1
-    )
+IF(Stokhos_ENABLE_TriKota)
 
   TRIBITS_ADD_EXECUTABLE_AND_TEST(
     SmolyakPseudoSpectralOperatorUnitTest

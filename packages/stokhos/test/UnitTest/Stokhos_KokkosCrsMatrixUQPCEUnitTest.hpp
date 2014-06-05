@@ -487,11 +487,11 @@ bool test_embedded_pce(const typename PCEType::ordinal_type nGrid,
   cijk_type cijk = build_cijk<cijk_type>(stoch_dim, poly_ord);
   const ordinal_type stoch_length = cijk.dimension();
 
-  // Check ensemble_length == storage_type::static_size for static storage
+  // Check pce_length == storage_type::static_size for static storage
   TEUCHOS_TEST_FOR_EXCEPTION(
     storage_type::is_static && storage_type::static_size != stoch_length,
     std::logic_error,
-    "Static storage size must equal ensemble size");
+    "Static storage size must equal pce size");
 
   // Generate FEM graph:
   const ordinal_type fem_length = nGrid * nGrid * nGrid;
@@ -660,8 +660,6 @@ struct Stokhos_MV_Multiply_Op {
 };
 
 typedef Kokkos_MV_Multiply_Op KokkosMultiply;
-// typedef Stokhos_MV_Multiply_Op<Stokhos::EnsembleMultiply> EnsembleMultiply;
-// typedef Stokhos_MV_Multiply_Op<Stokhos::DefaultMultiply> DefaultMultiply;
 
 #define CRSMATRIX_UQ_PCE_TESTS_MATRIXSCALAR( SCALAR )                   \
   TEUCHOS_UNIT_TEST_TEMPLATE_1_INSTANT(                                 \

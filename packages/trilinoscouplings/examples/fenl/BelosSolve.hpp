@@ -149,15 +149,16 @@ belos_solve(
 namespace Kokkos {
 namespace Example {
 
-template <class S, class LO, class GO, class N, class LMO>
+template <class SM, class SV, class LO, class GO, class N, class LMO>
 result_struct
 belos_solve(
-  const Teuchos::RCP<Tpetra::CrsMatrix<S,LO,GO,N,LMO> >& A,
-  const Teuchos::RCP<Tpetra::Vector<S,LO,GO,N> >& b,
-  const Teuchos::RCP<Tpetra::Vector<S,LO,GO,N> >& x,
+  const Teuchos::RCP<Tpetra::CrsMatrix<SM,LO,GO,N,LMO> >& A,
+  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& b,
+  const Teuchos::RCP<Tpetra::Vector<SV,LO,GO,N> >& x,
+  const int use_muelu,
   const unsigned max_iter = 200,
-  const typename Kokkos::Details::ArithTraits<S>::mag_type tolerance =
-    Kokkos::Details::ArithTraits<S>::epsilon())
+  const typename Kokkos::Details::ArithTraits<SV>::mag_type tolerance =
+    Kokkos::Details::ArithTraits<SV>::epsilon())
 {
   TEUCHOS_TEST_FOR_EXCEPTION(true, std::runtime_error,
                              "Belos solver requested but not compiled!");

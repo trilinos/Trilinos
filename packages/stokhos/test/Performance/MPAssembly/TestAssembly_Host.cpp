@@ -60,7 +60,7 @@ void mainHost(const Teuchos::RCP<const Teuchos::Comm<int> >& comm ,
   const int entry_step = 8;
 #else
   const int entry_min = 4;
-  const int entry_max = 24;
+  const int entry_max = 32;
   const int entry_step = 4;
   // const int entry_min = 16;
   // const int entry_max = 16;

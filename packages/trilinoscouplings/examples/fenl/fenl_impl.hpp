@@ -305,14 +305,30 @@ Perf fenl(
     const LocalVectorType nodal_delta =
       Kokkos::subview<LocalVectorType>(k_nodal_delta.d_view,Kokkos::ALL(),0);
 
+    // Hard code CUDA thread blocks for now.  Should read these in from
+    // command line and/or xml file
+    Kokkos::DeviceConfig dev_config_elem, dev_config_gath, dev_config_bc;
+    if ( Kokkos::Impl::is_same< Device, Kokkos::Cuda >::value ) {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , 16 , 64/16 );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , 16 , 128/16 );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , 16 , 256/16 );
+    }
+    else {
+      dev_config_elem = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_gath = Kokkos::DeviceConfig( 0 , 1 , 1 );
+      dev_config_bc   = Kokkos::DeviceConfig( 0 , 1 , 1 );
+    }
+
     // Create element computation functor
     const ElementComputationType elemcomp(
       use_atomic ? ElementComputationType( fixture , coeff_function ,
                                            nodal_solution ,
                                            mesh_to_graph.elem_graph ,
-                                           jacobian , nodal_residual )
+                                           jacobian , nodal_residual ,
+                                           dev_config_elem )
                  : ElementComputationType( fixture , coeff_function ,
-                                           nodal_solution ) );
+                                           nodal_solution ,
+                                           dev_config_elem ) );
 
     const NodeElemGatherFillType gatherfill(
       use_atomic ? NodeElemGatherFillType()
@@ -321,14 +337,16 @@ Perf fenl(
                                            nodal_residual ,
                                            jacobian ,
                                            elemcomp.elem_residuals ,
-                                           elemcomp.elem_jacobians ) );
+                                           elemcomp.elem_jacobians ,
+                                           dev_config_gath ) );
 
     // Create boundary condition functor
     const DirichletComputationType dirichlet(
       fixture , nodal_solution , jacobian , nodal_residual ,
       2 /* apply at 'z' ends */ ,
       bc_lower_value ,
-      bc_upper_value );
+      bc_upper_value ,
+      dev_config_bc );
 
     // Create Distributed Objects
 
@@ -406,8 +424,8 @@ Perf fenl(
 
       wall_clock.reset();
 
-      Kokkos::deep_copy( nodal_residual , Scalar(0) );
-      Kokkos::deep_copy( jacobian.values , Scalar(0) );
+      Kokkos::deep_copy( nodal_residual , 0.0 );
+      Kokkos::deep_copy( jacobian.values ,0.0 );
 
       elemcomp.apply();
 
