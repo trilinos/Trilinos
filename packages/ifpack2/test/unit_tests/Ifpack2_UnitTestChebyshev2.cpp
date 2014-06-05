@@ -221,7 +221,7 @@ private:
     A.getLocalDiagCopy (*D);
 
     typedef KokkosClassic::MultiVector<ST, typename MAT::node_type> KMV;
-    KMV& localDiag = D->getLocalMVNonConst ();
+    KMV localDiag = D->getLocalMV ();
     typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
     KMVT::ReciprocalThreshold (localDiag, STS::eps ());
 

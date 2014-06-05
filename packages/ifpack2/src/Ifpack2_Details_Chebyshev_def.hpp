@@ -785,7 +785,7 @@ makeInverseDiagonal (const row_matrix_type& A, const bool useDiagOffsets) const
   // Invert the diagonal entries, replacing entries less (in
   // magnitude) than the user-specified value with that value.
   typedef KokkosClassic::MultiVector<ST, typename MV::node_type> KMV;
-  KMV& localDiag = D_rangeMap->getLocalMVNonConst ();
+  KMV localDiag = D_rangeMap->getLocalMV ();
   typedef KokkosClassic::DefaultArithmetic<KMV> KMVT;
   KMVT::ReciprocalThreshold (localDiag, minDiagVal_);
   return Teuchos::rcp_const_cast<const V> (D_rangeMap);
