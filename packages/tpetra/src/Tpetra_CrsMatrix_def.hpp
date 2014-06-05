@@ -3848,8 +3848,14 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localMultiply()";
 #endif // HAVE_TPETRA_DEBUG
     typedef Teuchos::ScalarTraits<RangeScalar> RST;
-    const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
-    KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
+    // const KokkosClassic::MultiVector<DomainScalar,Node> *lclX = &X.getLocalMV();
+    KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
+    const KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
+
+    KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
+    // KokkosClassic::MultiVector<RangeScalar,Node>        *lclY = &Y.getLocalMVNonConst();
+    KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
+
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(
       mode == NO_TRANS && X.getMap() != getColMap() && *X.getMap() != *getColMap(),
@@ -3900,9 +3906,9 @@ namespace Tpetra {
                     const RangeScalar& dampingFactor,
                     const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,Node> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,Node> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,Node> d = D.getLocalMV ();
 
     lclMatOps_->template gaussSeidel<DomainScalar, RangeScalar> (b, x, d, dampingFactor, direction);
   }
@@ -3920,9 +3926,9 @@ namespace Tpetra {
                              const RangeScalar& dampingFactor,
                              const KokkosClassic::ESweepDirection direction) const
   {
-    KokkosClassic::MultiVector<DomainScalar,Node>& x = X.getLocalMVNonConst ();
-    const KokkosClassic::MultiVector<RangeScalar,Node>& b = B.getLocalMV ();
-    const KokkosClassic::MultiVector<RangeScalar,Node>& d = D.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,Node> x = X.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,Node> b = B.getLocalMV ();
+    KokkosClassic::MultiVector<RangeScalar,Node> d = D.getLocalMV ();
 
     lclMatOps_->template reorderedGaussSeidel<DomainScalar, RangeScalar> (b, x, d, rowIndices, dampingFactor, direction);
   }
@@ -3941,8 +3947,14 @@ namespace Tpetra {
     const char tfecfFuncName[] = "localSolve()";
 #endif // HAVE_TPETRA_DEBUG
 
-    const KokkosClassic::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
-    KokkosClassic::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+    //const KokkosClassic::MultiVector<RangeScalar,Node> *lclY = &Y.getLocalMV();
+    KokkosClassic::MultiVector<RangeScalar,Node> Y_lcl = Y.getLocalMV ();
+    const KokkosClassic::MultiVector<RangeScalar,Node>* lclY = &Y_lcl;
+
+    //KokkosClassic::MultiVector<DomainScalar,Node>      *lclX = &X.getLocalMVNonConst();
+    KokkosClassic::MultiVector<DomainScalar,Node> X_lcl = X.getLocalMV ();
+    KokkosClassic::MultiVector<DomainScalar,Node>* lclX = &X_lcl;
+
 #ifdef HAVE_TPETRA_DEBUG
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(!isFillComplete(),                                              std::runtime_error, " until fillComplete() has been called.");
     TEUCHOS_TEST_FOR_EXCEPTION_CLASS_FUNC(X.getNumVectors() != Y.getNumVectors(),                         std::runtime_error, ": X and Y must have the same number of vectors.");
