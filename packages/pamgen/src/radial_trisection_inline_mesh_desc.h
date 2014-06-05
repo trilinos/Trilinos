@@ -99,26 +99,22 @@ public:
 			     long long * const * side_set_nodes,
 			     long long * const * side_set_node_counter);
 
-  virtual Partition * Decompose(std::list <long long> & global_el_ids,long long & err_codes);
+  virtual long long  Decompose(std::set <long long> & global_el_ids);
 
-  virtual void Build_Global_Lists(std::list <long long> & element_list, 
+  virtual void Build_Global_Lists(const std::set <long long> & element_list, 
 			  std::vector <long long> & element_vector,
 			  std::list <long long> & global_node_list,
 			  std::vector <long long> & global_node_vector,
 			  std::map <long long, long long> & global_node_map,
 			  std::map <long long, long long> & global_element_map);
 
-  virtual void Calc_Serial_Component(Partition * my_part,
-			     std::vector <long long> & element_vector,
-			     std::list <long long> & global_node_list,
-			     std::vector<long long> & global_node_vector,
-			     std::map <long long, long long> & global_node_map,
-			     std::map <long long, long long> & global_element_map);
+  virtual void Calc_Serial_Component(const std::set <long long> & gloabl_element_ids,
+			     const std::vector<long long> & global_node_vector);
 
 virtual  void Calc_Parallel_Info(
-			 std::vector <long long> & element_vector,
-			 std::vector<long long> & global_node_vector,
-			 std::map <long long, long long> & global_node_map,                             
+			 const std::vector <long long> & element_vector,
+			 const std::vector<long long> & global_node_vector,
+			 const std::map <long long, long long> & global_node_map,                             
 			 std::list <long long> & internal_node_list,
 			 std::list <long long> & border_nodes_list,
 			 std::list <long long> & internal_element_list,
