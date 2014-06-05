@@ -194,28 +194,35 @@ int main(int argc, char *argv[]) {
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
-      // Ignore the value of "lambdaMin"
-#ifndef __APPLE__
-      sed_cmd = "sed -i      's/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
-#else
-      sed_cmd = "sed -i \"\" 's/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
+      std::string sed_pref = "sed -i ";
+#ifdef __APPLE__
+      sed_pref = sed_pref +  "\"\" "
 #endif
+
+      // Ignore the value of "lambdaMin"
+      sed_cmd = sed_pref + "'s/lambdaMin:\\ [0-9]*\\.[0-9]*/lambdaMin\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
       // Ignore the value of "chebyshev: max eigenvalue"
       // NOTE: we skip lines with default value ([default])
-#ifndef __APPLE__
-      sed_cmd = "sed -i      '/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
-#else
-      sed_cmd = "sed -i \"\" '/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
-#endif
+      sed_cmd = sed_pref + "'/[default]/! s/chebyshev:\\ max\\ eigenvalue\\ =\\ [0-9]*\\.[0-9]*/chebyshev:\\ max\\ eigenvalue\\ =\\ <ignored>/' ";
       system((sed_cmd + baseFile + ".res").c_str());
       system((sed_cmd + baseFile + ".out").c_str());
 
+      // Stript template args for some classes
+      std::vector<std::string> classes;
+      classes.push_back("Xpetra::Matrix");
+      classes.push_back("MueLu::Constraint");
+      for (int k = 0; k < classes.size(); k++) {
+        sed_cmd = sed_pref + "'s/" + classes[k] + "<.*>/" + classes[k] + "<ignored> >/' ";
+        system((sed_cmd + baseFile + ".res").c_str());
+        system((sed_cmd + baseFile + ".out").c_str());
+      }
+
 #ifdef __APPLE__
       // Some Macs print outs ptrs as 0x0 instead of 0, fix that
-      sed_cmd = "sed -i \"\" '/RCP/ s/=0x0/=0/g' ";
+      sed_cmd = sed_pref + "'/RCP/ s/=0x0/=0/g' ";
       system((sed_cmd + baseFile + ".out").c_str());
 #endif
 
