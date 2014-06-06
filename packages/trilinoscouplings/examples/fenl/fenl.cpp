@@ -40,6 +40,7 @@
 */
 
 #include <Kokkos_Threads.hpp>
+#include <Kokkos_OpenMP.hpp>
 #include <HexElement.hpp>
 #include <fenl_impl.hpp>
 
