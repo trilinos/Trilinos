@@ -2043,7 +2043,7 @@ struct EntityGhostData
         if (egd.bulkData != NULL) {
             s << "(Entity_gid=";
             s << egd.bulkData->identifier(egd.entity)
-              << ", rank=" << egd.bulkData->entity_rank(egd.entity);
+              << ", rank=" << static_cast<unsigned int>(egd.bulkData->entity_rank(egd.entity));
         }
         else {
             s << "(Entity_lid=";
