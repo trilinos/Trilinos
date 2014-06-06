@@ -21,6 +21,8 @@ IF (NOT Trilinos_NO_64BIT_GLOBAL_INDICES)
 	ADD_SUBDIRECTORY(verySimple_LL)
 ENDIF()
 
+ADD_SUBDIRECTORY(Lessons)
+
 # Below this line are subdirectories in epetra/example that are not exposed using autotools
 
 # Linking error
