@@ -145,6 +145,10 @@ public:
   /** \brief Copy constructor
    *
    * \param source [in] source MDVector
+   *
+   * Create a new MDVector with the same structure of the source
+   * MDVector and perform a deep copy of the source MDVector data into
+   * the new MDVector.
    */
   MDVector(const MDVector< Scalar, Node > & source);
 
@@ -1096,8 +1100,8 @@ MDVector< Scalar, Node >::
 MDVector(const MDVector< Scalar, Node > & source) :
   _teuchosComm(source.getMDMap()->getTeuchosComm()),
   _mdMap(source.getMDMap()),
-  _mdArrayRcp(source._mdArrayRcp),
-  _mdArrayView(source._mdArrayView),
+  _mdArrayRcp(),
+  _mdArrayView(),
   _nextAxis(0),
   _sliceBndryPad(source._sliceBndryPad),
   _sendMessages(),
@@ -1105,6 +1109,26 @@ MDVector(const MDVector< Scalar, Node > & source) :
   _requests()
 {
   setObjectLabel("Domi::MDVector");
+
+  // Obtain the array of dimensions
+  int numDims = _mdMap->numDims();
+  Teuchos::Array< dim_type > dims(numDims);
+  for (int axis = 0; axis < numDims; ++axis)
+    dims[axis] = _mdMap->getLocalDim(axis,true);
+
+  // Reset the MDArrayRCP and set the MDArrayView
+  _mdArrayRcp  = MDArrayRCP< Scalar >(dims, 0, source.getLayout());
+  _mdArrayView = _mdArrayRcp();
+
+  // Copy the source data to the new MDVector
+  typedef typename MDArrayView< Scalar >::iterator iterator;
+  typedef typename MDArrayView< Scalar >::const_iterator const_iterator;
+  const_iterator src = source.getData().begin();
+  for (iterator trg = _mdArrayView.begin(); trg != _mdArrayView.end(); ++trg)
+  {
+    *trg = *src;
+    ++src;
+  }
 }
 
 ////////////////////////////////////////////////////////////////////////
