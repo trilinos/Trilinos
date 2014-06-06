@@ -40,13 +40,18 @@ you want to add example source codes (see Step 3 below), point to them
 by using the Doxygen \example command.  You may point to one or more
 examples in your index.doc file.
 
-3. In that subdirectory, add example source code(s), if any.
+3. Tell Tpetra's Doxygen system about the new index.doc file.
+
+Edit ../../doc/Doxyfile and add the path to the new index.doc file to
+the INPUT list.  Use existing Lessons as models.
+
+4. In the Lesson subdirectory, add example source code(s), if any.
 
 Look at Lesson01-Init/lesson01_mpi_only_through_Tpetra.cpp as an
 example.  The top of the file has Doxygen markup which marks the file
 as an example, and points back to the Lesson which uses the example.
 
-4. To that subdirectory, add a CMakeLists.txt file to tell CMake how
+5. To that subdirectory, add a CMakeLists.txt file to tell CMake how
    to build the examples.
 
 Look at Lesson01-Init/CMakeLists.txt for an example.  This follows the
