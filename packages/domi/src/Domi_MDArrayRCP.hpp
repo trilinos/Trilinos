@@ -951,6 +951,7 @@ MDArrayRCP< T >::operator=(const MDArrayRCP< T > & r_ptr)
   _array      = r_ptr._array;
   _layout     = r_ptr._layout;
   _ptr        = r_ptr._ptr;
+  return *this;
 }
 
 ////////////////////////////////////////////////////////////////////////
