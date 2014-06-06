@@ -1245,6 +1245,31 @@ is_auto_declared_part(const Part &part)
   return !part_name.empty() && part_name[0] == '{';
 }
 
+template< class field_type >
+field_type * get_field_by_name( const std::string & name, const MetaData & metaData )
+{
+  field_type* field = NULL;
+  unsigned num_nonnull_fields = 0;
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
+    field_type* thisfield = metaData.get_field<field_type>(i, name);
+    if (thisfield != NULL) {
+      if (field == NULL) {
+        field = thisfield;
+      }
+      ++num_nonnull_fields;
+    }
+  }
+
+  if (num_nonnull_fields > 1) {
+    std::cerr << "get_field_by_name WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
+      <<". Returning the first one."<<std::endl;
+  }
+
+  return field;
+}
+
+FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData );
+
 } // namespace mesh
 } // namespace stk
 

@@ -1168,6 +1168,28 @@ FieldBase* MetaData::get_field( const std::string& name ) const
   return field;
 }
 
+FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData )
+{
+  FieldBase* field = NULL;
+  unsigned num_nonnull_fields = 0;
+  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
+    FieldBase* thisfield = metaData.get_field(i, name);
+    if (thisfield != NULL) {
+      if (field == NULL) {
+        field = thisfield;
+      }
+      ++num_nonnull_fields;
+    }
+  }
+
+  if (num_nonnull_fields > 1) {
+    std::cerr << "get_field_by_name WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
+      <<". Returning the first one."<<std::endl;
+  }
+
+  return field;
+}
+
 void MetaData::dump_all_meta_info(std::ostream& out) const
 {
   out << "MetaData info...\n";
