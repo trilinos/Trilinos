@@ -7059,6 +7059,9 @@ be documented in <a class="reference external" href="../build_quick_ref/TribitsB
 a given TriBITS project are:</p>
 <ul class="simple">
 <li><a class="reference internal" href="#project-name-disable-enabled-forward-dep-packages">${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES</a></li>
+<li><a class="reference internal" href="#project-name-enable-c">${PROJECT_NAME}_ENABLE_C</a></li>
+<li><a class="reference internal" href="#project-name-enable-cxx">${PROJECT_NAME}_ENABLE_CXX</a></li>
+<li><a class="reference internal" href="#project-name-enable-cxx11">${PROJECT_NAME}_ENABLE_CXX11</a></li>
 <li><a class="reference internal" href="#project-name-enable-fortran">${PROJECT_NAME}_ENABLE_Fortran</a></li>
 <li><a class="reference internal" href="#project-name-install-libraries-and-headers">${PROJECT_NAME}_INSTALL_LIBRARIES_AND_HEADERS</a></li>
 <li><a class="reference internal" href="#project-name-enable-export-makefiles">${PROJECT_NAME}_ENABLE_EXPORT_MAKEFILES</a></li>
@@ -7086,13 +7089,49 @@ conflict</a>.  A project can define a different default value by setting:</p>
 SET(${PROJECT_NAME}_DISABLE_ENABLED_FORWARD_DEP_PACKAGES_DEFAULT FALSE)
 </pre>
 </blockquote>
+<p id="project-name-enable-c"><strong>${PROJECT_NAME}_ENABLE_C</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_C</tt> is <tt class="docutils literal">ON</tt>, then C language support for the
+project will be enabled and the C compiler must be found.  By default,
+TriBITS sets this to <tt class="docutils literal">ON</tt> for all systems.  A project never requires C can
+set this to off by default by setting:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)</blockquote>
+<p>If a project does not have any native C code a good default would be:</p>
+<pre class="literal-block">
+SET(${PROJECT_NAME}_ENABLE_C_DEFAULT FALSE)
+</pre>
+<p>NOTE: It is usually not a good idea to always force off C, or any compiler,
+because extra repositories and packages might be added by someone that might
+require the compiler and we don't want to unnecessarily limit the generality
+of a given TriBITS build.  Setting the default for all platforms should be
+sufficient.</p>
+</blockquote>
+<p id="project-name-enable-cxx"><strong>${PROJECT_NAME}_ENABLE_CXX</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_CXX</tt> is <tt class="docutils literal">ON</tt>, then C++ language support for
+the project will be enabled and the C++ compiler must be found.  By default,
+TriBITS sets this to <tt class="docutils literal">ON</tt> for all systems.  A project never requires C++
+can set this to off by default by setting:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT FALSE)</blockquote>
+</blockquote>
+<p id="project-name-enable-cxx11"><strong>${PROJECT_NAME}_ENABLE_CXX11</strong></p>
+<blockquote>
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_CXX11</tt> is <tt class="docutils literal">ON</tt>, then C++ compiler options
+that turn on C++11 support will be searched for.  By default, TriBITS sets
+this to <tt class="docutils literal">OFF</tt> for all systems.  However, if project requires C++11 support
+by default, then the project should set the default:</p>
+<blockquote>
+SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT TRUE)</blockquote>
+</blockquote>
 <p id="project-name-enable-fortran"><strong>${PROJECT_NAME}_ENABLE_Fortran</strong></p>
 <blockquote>
-<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_Fortran</tt> is <tt class="docutils literal">ON</tt>, then Fortran support for the
-project will be enabled and the Fortran compiler(s) must be found.  By
+<p>If <tt class="docutils literal">${PROJECT_NAME}_ENABLE_Fortran</tt> is <tt class="docutils literal">ON</tt>, then Fortran support for
+the project will be enabled and the Fortran compiler(s) must be found.  By
 default, TriBITS sets this to <tt class="docutils literal">ON</tt> for non-Windows systems (i.e. <tt class="docutils literal">WIN32</tt>
-is not set by CMake) but is <tt class="docutils literal">OFF</tt> for a Windows system.  A project always
-requires Fortran, for example, it can set the default:</p>
+is not set by CMake) but is <tt class="docutils literal">OFF</tt> for a Windows system.  A project that
+always requires Fortran, for example, it can set the default:</p>
 <pre class="literal-block">
 SET(${PROJECT_NAME}_ENABLE_Fortran_DEFAULT TRUE)
 </pre>
@@ -11114,6 +11153,7 @@ Options:
                         Do not check the versions of eg and git, just trust
                         they are okay.
   --src-dir=SRCDIR      The source base directory for code to be tested.
+                        Default assumes is &lt;tribitsDir&gt;/../..
   --trilinos-src-dir=SRCDIR
                         [DEPRECATED] Use --src-dir instead. This argument is
                         for backwards compatibility only.

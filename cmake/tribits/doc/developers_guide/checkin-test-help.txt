@@ -599,6 +599,7 @@ Options:
                         Do not check the versions of eg and git, just trust
                         they are okay.
   --src-dir=SRCDIR      The source base directory for code to be tested.
+                        Default assumes is <tribitsDir>/../..
   --trilinos-src-dir=SRCDIR
                         [DEPRECATED] Use --src-dir instead. This argument is
                         for backwards compatibility only.

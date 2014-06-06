@@ -203,13 +203,26 @@ MACRO(TRIBITS_DEFINE_GLOBAL_OPTIONS_AND_DEFINE_EXTRA_REPOS)
     "Removes all default disables from the packages list.  Used for testing etc."
     OFF )
   
+  IF ("${${PROJECT_NAME}_ENABLE_C_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_C_DEFAULT ON)
+  ENDIF()
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_C
     "Enable the C compiler and related code"
-    ON )
+    ${${PROJECT_NAME}_ENABLE_C_DEFAULT} )
   
+  IF ("${${PROJECT_NAME}_ENABLE_CXX_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_CXX_DEFAULT ON)
+  ENDIF()
   ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX
     "Enable the C++ compiler and related code"
-    ON )
+    ${${PROJECT_NAME}_ENABLE_CXX_DEFAULT} )
+ 
+  IF ("${${PROJECT_NAME}_ENABLE_CXX11_DEFAULT}" STREQUAL "")
+    SET(${PROJECT_NAME}_ENABLE_CXX11_DEFAULT OFF)
+  ENDIF()
+  ADVANCED_OPTION(${PROJECT_NAME}_ENABLE_CXX11
+    "Enable the C++11 compiler options and related code (see ${PROJECT_NAME}_CXX11_FLAGS)"
+    ${${PROJECT_NAME}_ENABLE_CXX11_DEFAULT} )
 
   IF(WIN32 AND NOT CYGWIN)
     IF ("${${PROJECT_NAME}_ENABLE_Fortran}" STREQUAL "")
