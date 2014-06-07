@@ -529,7 +529,9 @@ GCRODRSolMgr<ScalarType,MV,OP>::outputStream_default_ = Teuchos::rcpFromRef (std
 
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
-GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr()
+GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr():
+  achievedTol_(0.0),
+  numIters_(0)
 {
   init ();
 }
@@ -539,7 +541,9 @@ GCRODRSolMgr<ScalarType,MV,OP>::GCRODRSolMgr()
 template<class ScalarType, class MV, class OP>
 GCRODRSolMgr<ScalarType,MV,OP>::
 GCRODRSolMgr(const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> >& problem,
-             const Teuchos::RCP<Teuchos::ParameterList>& pl)
+             const Teuchos::RCP<Teuchos::ParameterList>& pl):
+  achievedTol_(0.0),
+  numIters_(0)
 {
   // Initialize local pointers to null, and initialize local variables
   // to default values.
