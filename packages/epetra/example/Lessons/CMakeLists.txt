@@ -8,4 +8,4 @@ ADD_SUBDIRECTORY(Lesson03-Power-Method)
 # add one or more examples to that directory that do require building
 # and testing, please add that subdirectory here.
 
-#ADD_SUBDIRECTORY(Lesson05-Redistribution)
+ADD_SUBDIRECTORY(Lesson05-Redistribution)
