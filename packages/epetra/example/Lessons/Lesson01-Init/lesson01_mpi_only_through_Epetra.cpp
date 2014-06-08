@@ -91,7 +91,7 @@ main (int argc, char *argv[])
   exampleRoutine (comm, cout);
 
   // This tells the Trilinos test framework that the test passed.
-  if (myRank == 0) {
+  if (comm.MyPID () == 0) {
     cout << "End Result: TEST PASSED" << endl;
   }
 
