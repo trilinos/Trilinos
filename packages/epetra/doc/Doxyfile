@@ -244,7 +244,12 @@ WARN_FORMAT            = "$file:$line: $text"
 # directories like "/usr/src/myproject". Separate the files or directories
 # with spaces.
 
-INPUT                  = index.doc ../src ../../aztecoo/src
+INPUT                  = index.doc ../src ../../aztecoo/src \
+                         ../example/Lesson01-Init/index.doc \
+                         ../example/Lesson02-Map-Vector/index.doc \
+                         ../example/Lesson03-Power-Method/index.doc \
+                         ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../example/Lesson05-Redistribution/index.doc
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
