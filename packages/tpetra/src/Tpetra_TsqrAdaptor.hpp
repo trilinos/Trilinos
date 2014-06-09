@@ -362,10 +362,12 @@ namespace Tpetra {
       // have to copy and pack into a matrix with constant stride, and
       // then unpack on exit.  For now we choose just to raise an
       // exception.
-      TEUCHOS_TEST_FOR_EXCEPTION(! A.isConstantStride(), std::invalid_argument,
-                                 "TSQR does not currently support Tpetra::MultiVector "
-                                 "inputs that do not have constant stride.");
-      return A.getLocalMVNonConst();
+      TEUCHOS_TEST_FOR_EXCEPTION(
+        ! A.isConstantStride(), std::invalid_argument,
+        "Tpetra::TsqrAdaptor::getNonConstView: TSQR does not currently "
+        "support Tpetra::MultiVector inputs that do not have constant "
+        "stride.");
+      return A.getLocalMV ();
     }
   };
 

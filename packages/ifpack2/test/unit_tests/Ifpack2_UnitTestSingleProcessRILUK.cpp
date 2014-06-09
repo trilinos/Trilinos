@@ -513,80 +513,88 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, IgnoreRowMapGIDs, S
 
 TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(Ifpack2RILUKSingleProcess, TestGIDConsistency, Scalar, LocalOrdinal, GlobalOrdinal)
 {
-  // Test that ILU(k) throws an exception if the ordering of the GIDs in the rowmap is
-  // not the same as the ordering of the local GIDs in the column map.
-  // The ILU(k) setup and algorithm assumes this for the moment.
+  // Test that ILU(k) throws an exception if the ordering of the GIDs
+  // in the row Map is not the same as the ordering of the local GIDs
+  // in the column Map.  The ILU(k) setup and algorithm assumes this
+  // for the moment.
 
-  // 25April2014 JJH: The local filter appears to fix the column map in parallel so that it's
-  //                  consistently ordered with the row map.  In otherwords, I can't get this
+  // 25April2014 JJH: The local filter appears to fix the column Map in parallel so that it's
+  //                  consistently ordered with the row Map.  In otherwords, I can't get this
   //                  test to fail in parallel.  So this check is only necessary in serial.
-
-  typedef Tpetra::MultiVector<Scalar,LocalOrdinal,GlobalOrdinal,Node> multivector_type;
-  typedef Tpetra::CrsMatrix<Scalar,LocalOrdinal,GlobalOrdinal,Node>   crs_matrix_type;
-  typedef Tpetra::MatrixMarket::Reader<crs_matrix_type>               reader_type;
-  typedef typename Teuchos::ScalarTraits<Scalar>::magnitudeType       magnitudeType;
-  typedef Tpetra::Map<LocalOrdinal,GlobalOrdinal,Node>                map_type;
-  typedef Teuchos::ScalarTraits<Scalar>                               TST;
 
   using Teuchos::RCP;
   using Teuchos::rcp;
-  const global_size_t INVALID = Teuchos::OrdinalTraits<global_size_t>::invalid();
+  using std::endl;
+  typedef LocalOrdinal LO;
+  typedef GlobalOrdinal GO;
+  typedef Tpetra::CrsMatrix<Scalar, LO, GO, Node> crs_matrix_type;
+  typedef Tpetra::Map<LO, GO, Node> map_type;
+  typedef Tpetra::global_size_t GST;
 
-  Tpetra::DefaultPlatform::DefaultPlatformType& platform = Tpetra::DefaultPlatform::getDefaultPlatform();
-  RCP<const Teuchos::Comm<int> > comm = platform.getComm();
+  const GST INVALID = Teuchos::OrdinalTraits<GST>::invalid ();
+  RCP<const Teuchos::Comm<int> > comm =
+    Tpetra::DefaultPlatform::getDefaultPlatform ().getComm ();
 
-  if (comm->getSize() > 1) {
-    out << std::endl;
-    out << "This test only runs in serial." << std::endl;
+  if (comm->getSize () > 1) {
+    out << endl << "This test only runs in serial." << endl;
     return;
   }
+  out << "Ifpack2::Version(): " << Ifpack2::Version () << endl;
 
-  std::string version = Ifpack2::Version();
-  out << "Ifpack2::Version(): " << version << std::endl;
+  // Create matrix: 5 rows per process, 3 entries per row
+  const LO indexBase = 0;
+  GST numRowsPerProc = 5;
+  RCP<map_type> rowMap =
+    rcp (new map_type (INVALID, numRowsPerProc, indexBase, comm));
 
-  //create matrix: 5 rows per processor, 3 entries per row
-  const LocalOrdinal indexBase = 0;
-  global_size_t numRowsPerProc = 5;
-  RCP<map_type> rowMap = Teuchos::rcp(new map_type(INVALID, numRowsPerProc, indexBase, comm));
+  // Create a column Map with the same GIDs at the row Map, but in
+  // permuted order.  The first entry is the same as the row Map, the
+  // remainder are in descending order.
+  Teuchos::ArrayView<const GO> rowGIDs = rowMap->getNodeElementList ();
+  Teuchos::Array<GO> colElements (rowGIDs.size ());
+  colElements[0] = rowGIDs[0];
+  for (GO i = 1; i < rowGIDs.size (); ++i) {
+    colElements[i] = rowGIDs[rowGIDs.size () - i];
+  }
 
-  //Create a column map with the same GIDs at the row map, but in permuted order.
-  //The first entry is the same as the row map, the remainder are in descending order.
-  Teuchos::ArrayView<const GlobalOrdinal> rowGIDs = rowMap->getNodeElementList();
-  Teuchos::Array<GlobalOrdinal> colElements(rowGIDs.size());
-  colElements[0]=rowGIDs[0];
-  for (GlobalOrdinal i=1; i<rowGIDs.size(); ++i)
-    colElements[i] = rowGIDs[rowGIDs.size()-i];
-    
-  Teuchos::RCP<const map_type> colMap = Teuchos::rcp(new map_type(INVALID, colElements(), indexBase, comm));
-  RCP<crs_matrix_type> A = rcp(new crs_matrix_type(rowMap, colMap, 3));
+  RCP<const map_type> colMap =
+    rcp (new map_type (INVALID, colElements (), indexBase, comm));
+  RCP<crs_matrix_type> A = rcp (new crs_matrix_type (rowMap, colMap, 3));
 
-  //Construct a nondiagonal matrix.  It's not tridiagonal because of processor boundaries.
-  const Scalar one = Teuchos::ScalarTraits<Scalar>::one();
+  // Construct a nondiagonal matrix.  It's not tridiagonal because of
+  // process boundaries.
+  const Scalar one = Teuchos::ScalarTraits<Scalar>::one ();
   const Scalar two = one + one;
-  Teuchos::Array<GlobalOrdinal> col(3);
-  Teuchos::Array<Scalar>        val(3);
-  size_t numLocalElts = rowMap->getNodeNumElements();
-  for(LocalOrdinal l_row = 0; (size_t) l_row < numLocalElts; l_row++) {
-    GlobalOrdinal g_row = rowMap->getGlobalElement(l_row);
-    size_t i=0;
+  Teuchos::Array<GO> col (3);
+  Teuchos::Array<Scalar> val (3);
+  size_t numLocalElts = rowMap->getNodeNumElements ();
+  for (LO l_row = 0; static_cast<size_t> (l_row) < numLocalElts; ++l_row) {
+    const GO g_row = rowMap->getGlobalElement (l_row);
+    size_t i = 0;
     col[i] = g_row;
     val[i++] = two;
-    if (l_row>0)              {col[i] = rowMap->getGlobalElement(l_row-1); val[i++] = -one;}
-    if ((size_t)l_row<numLocalElts-1) {col[i] = rowMap->getGlobalElement(l_row+1); val[i++] = -one;}
-    A->insertGlobalValues(g_row, col(0,i), val(0,i));
+    if (l_row>0) {
+      col[i] = rowMap->getGlobalElement (l_row - 1);
+      val[i++] = -one;
+    }
+    if (static_cast<size_t> (l_row) < numLocalElts - 1) {
+      col[i] = rowMap->getGlobalElement (l_row + 1);
+      val[i++] = -one;
+    }
+    A->insertGlobalValues (g_row, col (0, i), val (0, i));
   }
-  A->fillComplete();
+  A->fillComplete ();
 
   RCP<const crs_matrix_type> constA = A;
-  Ifpack2::RILUK<crs_matrix_type> prec(constA);
+  Ifpack2::RILUK<crs_matrix_type> prec (constA);
 
   Teuchos::ParameterList params;
-  GlobalOrdinal lof=1;
-  params.set("fact: iluk level-of-fill", lof);
-  params.set("fact: iluk level-of-overlap", 0);
+  GO lof = 1;
+  params.set ("fact: iluk level-of-fill", lof);
+  params.set ("fact: iluk level-of-overlap", 0);
 
-  prec.setParameters(params);
-  TEST_THROW(prec.initialize(),std::runtime_error);
+  prec.setParameters (params);
+  TEST_THROW( prec.initialize (), std::runtime_error);
 
 } //unit test TestGIDConsistency()
 

@@ -451,7 +451,8 @@ PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr() :
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
   label_(label_default_),
-  isSet_(false)
+  isSet_(false),
+  dimU_(0)
 {}
 
 
@@ -474,7 +475,8 @@ PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr(
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
   label_(label_default_),
-  isSet_(false)
+  isSet_(false),
+  dimU_(0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 

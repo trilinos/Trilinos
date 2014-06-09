@@ -434,7 +434,8 @@ StatusTestImpResNorm (MagnitudeType Tolerance, int quorum, bool showMaxResNormOn
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
     firstcallDefineScaleForm_(true),
-    lossDetected_(false)
+    lossDetected_(false),
+    curNumRHS_(0)
 {
   // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
   // the implicit residual vector.

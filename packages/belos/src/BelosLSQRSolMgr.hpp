@@ -503,7 +503,22 @@ private:
 template<class ScalarType, class MV, class OP>
 LSQRSolMgr<ScalarType,MV,OP,false>::LSQRSolMgr() :
   isSet_(false),
-  loaDetected_(false)
+  loaDetected_(false),
+  lambda_(0.0),
+  relRhsErr_(0.0),
+  relMatErr_(0.0),
+  condMax_(0.0),
+  maxIters_(0),
+  termIterMax_(0.0),
+  orthoKappa_(0.0),
+  verbosity_(0),
+  outputStyle_(0),
+  outputFreq_(0),
+  numIters_(0),
+  matCondNum_(0),
+  matNorm_(0.0),
+  resNorm_(0.0),
+  matResNorm_(0.0)
 {}
 
 
@@ -514,7 +529,22 @@ LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
             const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
   isSet_(false),
-  loaDetected_(false)
+  loaDetected_(false),
+  lambda_(0.0),
+  relRhsErr_(0.0),
+  relMatErr_(0.0),
+  condMax_(0.0),
+  maxIters_(0),
+  termIterMax_(0),
+  orthoKappa_(0.0),
+  verbosity_(0),
+  outputStyle_(0),
+  outputFreq_(0),
+  numIters_(0),
+  matCondNum_(0.0),
+  matNorm_(0.0),
+  resNorm_(0.0),
+  matResNorm_(0.0)
 {
   // The linear problem to solve is allowed to be null here.  The user
   // must then set a nonnull linear problem (by calling setProblem())

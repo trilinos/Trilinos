@@ -16,6 +16,7 @@
 #include "uns_inline_decomp.h"
 #include <sstream>
 #include <string>
+#include <set>
 
 class Inline_Mesh_Desc;
 
@@ -107,17 +108,13 @@ public:
 
   virtual void setStrides();
 
-  virtual void Calc_Serial_Component(Partition * my_part,
-			     std::vector <long long> & element_vector,
-			     std::list <long long> & global_node_list,
-			     std::vector<long long> & global_node_vector,
-			     std::map <long long, long long> & global_node_map,
-			     std::map <long long, long long> & global_element_map);
+  virtual void Calc_Serial_Component(const std::set <long long> & gloabl_element_ids,
+			     const std::vector<long long> & global_node_vector);
 
 virtual  void Calc_Parallel_Info(
-			 std::vector <long long> & element_vector,
-			 std::vector<long long> & global_node_vector,
-			 std::map <long long, long long> & global_node_map,                             
+			 const std::vector <long long> & element_vector,
+			 const std::vector<long long> & global_node_vector,
+			 const std::map <long long, long long> & global_node_map,                             
 			 std::list <long long> & internal_node_list,
 			 std::list <long long> & border_nodes_list,
 			 std::list <long long> & internal_element_list,
@@ -316,19 +313,19 @@ virtual  void Calc_Parallel_Info(
   
   std::vector <long long> * element_block_lists;
 
-  long long get_map_entry(std::map < long long, long long > & the_map, const long long & key);
+  long long get_map_entry(const std::map < long long, long long > & the_map, const long long & key);
 
 
   Partition * base_partition;
 
-  virtual void Build_Global_Lists(std::list <long long> & element_list, 
+  virtual void Build_Global_Lists(const std::set <long long> & element_list, 
 			  std::vector <long long> & element_vector,
 			  std::list <long long> & global_node_list,
 			  std::vector <long long> & global_node_vector,
 			  std::map <long long, long long> & global_node_map,
 			  std::map <long long, long long> & global_element_map);
   virtual long long Element_Proc(long long);
-  virtual Partition * Decompose(std::list <long long> & global_el_ids,long long & err_code);
+  virtual long long Decompose(std::set <long long> & global_el_ids);
   long long get_block_index(long long ordinal_val, long long count, long long * cumulative);
   
   unsigned my_rank;

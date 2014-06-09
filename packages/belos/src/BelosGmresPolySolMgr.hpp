@@ -454,7 +454,9 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   isSet_ (false),
   isSTSet_ (false),
   expResTest_ (false),
-  loaDetected_ (false)
+  loaDetected_ (false),
+  numIters_(0),
+  poly_dim_(0)
 {}
 
 
@@ -485,7 +487,9 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   isSet_ (false),
   isSTSet_ (false),
   expResTest_ (false),
-  loaDetected_ (false)
+  loaDetected_ (false),
+  numIters_(0),
+  poly_dim_(0)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     problem_.is_null (), std::invalid_argument,

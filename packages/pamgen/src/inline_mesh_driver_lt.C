@@ -60,10 +60,19 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   // 'global' ordering in the entire i,j,k domain. 
 
   //make up list of global elements on processor
-  std::list <long long> global_el_ids;
-  long long error_code = 0;
-  PAMGEN_NEVADA::Partition * my_part = imd->Decompose(global_el_ids,error_code);
-  if(error_code){return NULL;}
+  std::set <long long> global_el_ids;
+  {
+    long long error_code = imd->Decompose(global_el_ids);
+    if(error_code){return NULL;}
+  }
+//   for(std::list <long long >::iterator lit = global_el_ids.begin();lit != global_el_ids.end();lit++){
+//     std::cout << " geid " << *lit << std::endl;
+//   }
+ 
+//   global_el_ids.erase(0);
+//   global_el_ids.erase(1);
+//   global_el_ids.erase(2);
+//   global_el_ids.erase(3);
 
   // reads in all the serial component of the mesh specification
   // including the maps
@@ -111,12 +120,8 @@ ms_lt::Mesh_Specification * buildMeshSpecification_LT(PAMGEN_NEVADA::Inline_Mesh
   coord_names[2] = "Z";
   }
 
-  imd->Calc_Serial_Component(my_part,
-                        element_vector,
-                        global_node_list,
-                        global_node_vector,
-                        global_node_map,
-                        global_element_map);
+  imd->Calc_Serial_Component(global_el_ids,
+			     global_node_vector);
 
   long long err_code = imd->Calc_Coord_Vectors();
   if(err_code){return NULL;}

@@ -137,10 +137,10 @@ long long Inline_Mesh_Desc::reportSize(const long long & total_el_count,
 //! behaviour of always returning an entry for every [] operator
 //! query.
 /****************************************************************************/
-long long Inline_Mesh_Desc::get_map_entry(std::map < long long, long long > & the_map, const long long & key)
+long long Inline_Mesh_Desc::get_map_entry(const std::map < long long, long long > & the_map, const long long & key)
 /****************************************************************************/
 {
-  std::map <long long, long long > ::iterator foo;
+  std::map <long long, long long > ::const_iterator foo;
   foo = the_map.find(key);
   if(foo == the_map.end()){
     error_stream << "Looking for but not finding key entry " << key << "\n";
@@ -203,7 +203,7 @@ long long Inline_Mesh_Desc::Element_Proc(long long global_element_id)
 //! Zoltan could be used for this. The elements on the processor are
 //! packed into the stl list.
 /****************************************************************************/
-Partition * Inline_Mesh_Desc::Decompose(std::list <long long> & global_el_ids,long long & err_code)
+long long Inline_Mesh_Desc::Decompose(std::set <long long> & global_el_ids)
 /****************************************************************************/
 {
   //Recursive Bisection decomposition
@@ -252,8 +252,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
 		 << inline_nprocs[0] << " X " 
 		 << inline_nprocs[1] << " X " 
 		 << inline_nprocs[2] << " does not correspond to the number of processors " << num_processors << "." ;
-    err_code = 1;
-    return NULL;
+    return 1;
    }
     inc_nels[0] = nelx_tot/inline_nprocs[0];
     inc_nels[1] = nely_tot/inline_nprocs[1];
@@ -264,24 +263,21 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in I direction " << inline_nprocs[0] 
 		   << " is greater than the number of elements in I " << nelx_tot << ".";
-      err_code = 1;
-      return NULL;
+      return 1;
     }
 
     if(inc_nels[1] == 0 ){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in J direction " << inline_nprocs[1] 
 		   << " is greater than the number of elements in J " << nely_tot << ".";
-      err_code = 1;
-      return NULL;
+      return 1;
     }
 
     if(inc_nels[2] == 0 ){
       error_stream << "Inline_Mesh_Desc::Decompose"
 		   << " Value for numprocs specified in K direction " << inline_nprocs[2] 
 		   << " is greater than the number of elements in K " << nelz_tot << ".";
-      err_code = 1;
-      return NULL;
+      return 1;
     }
     
     info_stream << "Using PROCESSOR LAYOUT decomposition.\n";
@@ -322,8 +318,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
       error_stream << "Terminating from Inline_Mesh_Desc::Decompose, ";
       error_stream << "non-zero return value from dom_decomp_2/3d ";
       error_stream << decomp_result;
-      err_code = 1;
-      return NULL;
+      return 1;
     }
 
   if(dimension == 3){
@@ -377,9 +372,9 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
       SRANDOM(i);
       long long rand_num = RANDOM();
       unsigned proc = rand_num%num_processors;
-      if(proc == my_rank)global_el_ids.push_back(i);
+      if(proc == my_rank)global_el_ids.insert(i);
     }
-    return base_partition;
+    return 0;
   }
   else if(inline_decomposition_type == SEQUENTIAL){
     long long total = kestride * nelz_tot;
@@ -390,9 +385,9 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     if(my_rank == num_processors-1)my_end +=remainder;
 
     for(long long mtotal = my_start; mtotal < my_end; mtotal ++){
-      global_el_ids.push_back(mtotal);
+      global_el_ids.insert(mtotal);
     }
-    return base_partition;
+    return 0;
   }  
 
   std::sort(sorted_partition_list.begin(),sorted_partition_list.end(),part_compare_centroid);//sorted_partition_list.sort();
@@ -413,7 +408,7 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
     for(long long j = my_part->lows[1]; j < my_part->highs[1]; j++){
       for(long long i = my_part->lows[0]; i < my_part->highs[0]; i++){
         long long elnum = iestride*i+jestride*j+kestride*k;
-        global_el_ids.push_back(elnum);
+        global_el_ids.insert(elnum);
       }
     }
   }
@@ -421,12 +416,12 @@ if(inline_decomposition_type == PROCESSOR_LAYOUT){
   if( Debug_Location())
     std::cout << "Inline_Mesh_Desc::Leaving-Decompose()" << std::endl;
 
-  return my_part;
+  return 0;
 }
 
 //! A utility function to build up required bookkeeping objects.
 /****************************************************************************/
-void Inline_Mesh_Desc::Build_Global_Lists(std::list <long long> & element_list,
+void Inline_Mesh_Desc::Build_Global_Lists(const std::set <long long> & global_element_ids,
                                        std::vector <long long> & element_vector,
                                        std::list <long long> & global_node_list,
                                        std::vector <long long> & global_node_vector,
@@ -437,13 +432,13 @@ void Inline_Mesh_Desc::Build_Global_Lists(std::list <long long> & element_list,
   if( Debug_Location()) 
     std::cout << "Inline_Mesh_Desc::Build_Global_Lists()" << std::endl;
 
-  for(std::list <long long>::iterator the_it = element_list.begin();the_it != element_list.end();the_it++){
+  for(std::set <long long>::iterator the_it = global_element_ids.begin();the_it != global_element_ids.end();the_it++){
     element_vector.push_back(*the_it);
   }
   element_block_lists = new std::vector <long long> [numBlocks()];
 
-  std::list <long long> ::iterator lit;
-  for(lit = element_list.begin();lit != element_list.end();lit ++){
+  std::set <long long> ::iterator lit;
+  for(lit = global_element_ids.begin();lit != global_element_ids.end();lit ++){
     long long the_element = *lit;
     // These are the indices of the element in the entire domain
     long long global_k = the_element/(kestride);
@@ -1695,9 +1690,9 @@ void Inline_Mesh_Desc::get_face_nodes(Topo_Loc tl,
 
 /****************************************************************************/
 void Inline_Mesh_Desc::Calc_Parallel_Info(                                          
-					  std::vector <long long> & element_vector,
-					  std::vector<long long> & global_node_vector,   
-					  std::map <long long, long long> & global_node_map,                          
+					  const std::vector <long long> & element_vector,
+					  const std::vector<long long> & global_node_vector,   
+					  const std::map <long long, long long> & global_node_map,                          
 					  std::list   <long long> & internal_node_list,	
 					  std::list   <long long> & border_nodes_list,
 					  std::list   <long long> & internal_element_list,
@@ -1940,12 +1935,8 @@ void Inline_Mesh_Desc::Calc_Parallel_Info(
 
 //! Reads in/creates the serial component of the unstructured mesh in parallel
 /****************************************************************************/
-void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
-                                          std::vector <long long> & element_vector,
-                                          std::list <long long> & global_node_list,
-                                          std::vector<long long> & global_node_vector,
-                                          std::map <long long, long long> & global_node_map,
-                                          std::map <long long, long long> & global_element_map)
+void Inline_Mesh_Desc::Calc_Serial_Component(const std::set <long long> & global_element_ids,
+					     const std::vector<long long> & global_node_vector)
 /****************************************************************************/
 {
   //NODESETS
@@ -2042,8 +2033,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 	  for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	    for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	      long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	      long long the_proc_id = Element_Proc(elnumber);
-	      if(the_proc_id == my_rank){// add only if on this proc	  
+	      if(global_element_ids.find(elnumber)!=global_element_ids.end()){
 		std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 		sideset_vectors[nsct].push_back(el_loc_pair);
 	      }
@@ -2056,8 +2046,7 @@ void Inline_Mesh_Desc::Calc_Serial_Component(Partition * my_part,
 	for ( long long _nj_ = ll.js; _nj_ < ll.je; _nj_ ++){ 
 	  for ( long long _ni_ = ll.is; _ni_ < ll.ie; _ni_ ++) {
 	    long long elnumber = get_element_number_from_l_i_j_k(trisection_blocks,_ni_,_nj_,_nk_);
-	    long long the_proc_id = Element_Proc(elnumber);
-	    if(the_proc_id == my_rank){// add only if on this proc	  
+	    if(global_element_ids.find(elnumber)!=global_element_ids.end()){	  
 	      std::pair <long long ,Topo_Loc > el_loc_pair(elnumber,the_location);
 	      sideset_vectors[nsct].push_back(el_loc_pair);
 	    }
