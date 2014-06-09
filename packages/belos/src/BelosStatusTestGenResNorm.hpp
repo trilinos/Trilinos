@@ -397,8 +397,7 @@ StatusTestGenResNorm<ScalarType,MV,OP>::StatusTestGenResNorm( MagnitudeType Tole
     numrhs_(0),
     firstcallCheckStatus_(true),
     firstcallDefineResForm_(true),
-    firstcallDefineScaleForm_(true),
-    curNumRHS_(0)
+    firstcallDefineScaleForm_(true)
 {
   // This constructor will compute the residual ||r_i||/||r0_i|| <= tolerance using the 2-norm of
   // the implicit residual std::vector.
