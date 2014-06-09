@@ -45,7 +45,7 @@ initialize MPI (if available) and get a Teuchos::Comm corresponding
 to MPI_COMM_WORLD.  The example works whether or not Trilinos was
 build with MPI support.
 
-\include lesson01_mpi_on_its_own.cpp
+\include lesson01_mpi_only_through_Tpetra.cpp
 
 \section Tpetra_Lesson01_ExistingMpiCode Initialization for an existing MPI code
 

@@ -11,17 +11,21 @@
 #include <Tpetra_Version.hpp>
 #include <Teuchos_oblackholestream.hpp>
 
+// Do something with the given communicator.  In this case, we just
+// print Tpetra's version to stdout on Process 0.
 void
-exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm,
-                std::ostream& out)
+exampleRoutine (const Teuchos::RCP<const Teuchos::Comm<int> >& comm)
 {
-  // Print out the Tpetra software version information.
-  out << Tpetra::version() << std::endl << std::endl;
+  if (comm->getRank () == 0) {
+    // On Process 0, print out the Tpetra software version.
+    std::cout << Tpetra::version () << std::endl << std::endl;
+  }
 }
 
 int
 main (int argc, char *argv[])
 {
+  using std::cout;
   using std::endl;
   using Teuchos::Comm;
   using Teuchos::SerialComm;
@@ -30,12 +34,16 @@ main (int argc, char *argv[])
 
   // Make a "serial" (non-MPI) communicator.
   // It doesn't actually "communicate," because it only has one process.
-  RCP<const Comm<int> > comm = rcp (new SerialComm<int>);
+  RCP<const Comm<int> > comm = rcp (new SerialComm<int> ());
 
   // With a "serial" communicator, the rank is always 0,
   // and the number of processes is always 1.
   const int myRank = comm->getRank();
   const int numProcs = comm->getSize();
+
+  if (myRank == 0) {
+    cout << "Total number of processes: " << numProcs << endl;
+  }
 
   // Test the two assertions in the previous comment.
   // TEUCHOS_TEST_FOR_EXCEPTION is a macro defined in the Teuchos
@@ -57,16 +65,12 @@ main (int argc, char *argv[])
     "This is a serial (non-MPI) example, but the number of processes in "
     "the Teuchos::Comm is " << numProcs << " != 1.  Please report this bug.");
 
-  Teuchos::oblackholestream blackHole;
-  std::ostream& out = (myRank == 0) ? std::cout : blackHole;
-
-  // We have a communicator and an output stream.
-  // Let's do something with them!
-  exampleRoutine (comm, out);
+  // Do something with the new communicator.
+  exampleRoutine (comm);
 
   // This tells the Trilinos test framework that the test passed.
   if (myRank == 0) {
-    std::cout << "End Result: TEST PASSED" << std::endl;
+    cout << "End Result: TEST PASSED" << endl;
   }
 
   return 0;
