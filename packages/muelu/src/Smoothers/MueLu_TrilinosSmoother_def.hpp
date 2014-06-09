@@ -170,6 +170,7 @@ namespace MueLu {
     if (type == "ILUT")       { return "ILUT";                         }
     if (type == "RILUK")      { return "ILU";                          }
     if (type == "ILU")        { return "ILU";                          }
+    if (type == "Amesos")     { return "Amesos";                       }
 
     TEUCHOS_TEST_FOR_EXCEPTION(true, Exceptions::RuntimeError, "Cannot convert Ifpack2 preconditioner name to Ifpack: unknown type: " + type);
   }

@@ -326,7 +326,7 @@ namespace MueLu {
                                  Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
 
       // Default values
-      const int overlap = 0;
+      int overlap = 0;
       ParameterList defaultSmootherParams;
       defaultSmootherParams.set("relaxation: type",           "Symmetric Gauss-Seidel");
       defaultSmootherParams.set("relaxation: sweeps",         Teuchos::OrdinalTraits<LO>::one());
@@ -335,6 +335,10 @@ namespace MueLu {
       RCP<SmootherPrototype> preSmoother = Teuchos::null, postSmoother = Teuchos::null;
       std::string            preSmootherType,             postSmootherType;
       ParameterList          preSmootherParams,           postSmootherParams;
+
+      if (paramList.isParameter("smoother: overlap"))
+        overlap = paramList.get<int>("smoother: overlap");
+
       if (PreOrPost == "pre" || PreOrPost == "both") {
         if (paramList.isParameter("smoother: pre type")) {
           preSmootherType = paramList.get<std::string>("smoother: pre type");
@@ -342,6 +346,8 @@ namespace MueLu {
           MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: type", std::string, "RELAXATION", preSmootherTypeTmp);
           preSmootherType = preSmootherTypeTmp;
         }
+        if (paramList.isParameter("smoother: pre overlap"))
+          overlap = paramList.get<int>("smoother: pre overlap");
 
         if (paramList.isSublist("smoother: pre params"))
           preSmootherParams = paramList.sublist("smoother: pre params");
@@ -371,6 +377,8 @@ namespace MueLu {
           postSmootherParams = defaultList.sublist("smoother: params");
         else if (postSmootherType == "RELAXATION")
           postSmootherParams = defaultSmootherParams;
+        if (paramList.isParameter("smoother: post overlap"))
+          overlap = paramList.get<int>("smoother: post overlap");
 
         if (postSmootherType == preSmootherType && areSame(preSmootherParams, postSmootherParams))
           postSmoother = preSmoother;
