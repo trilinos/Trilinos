@@ -165,6 +165,7 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
   }
   
   if(workset.num_cells>0) {
+/*
     Intrepid::FieldContainer<double> weighted_curl_basis = (workset.bases[basis_index])->weighted_curl_basis;
 
     // assign ScalarT "dof_orientation" to double "orientation"
@@ -182,6 +183,11 @@ PHX_EVALUATE_FIELDS(Integrator_CurlBasisDotVector,workset)
      Intrepid::FunctionSpaceTools::
        integrate<ScalarT>(residual, tmp, 
                        weighted_curl_basis, 
+		       Intrepid::COMP_BLAS);
+*/
+     Intrepid::FunctionSpaceTools::
+       integrate<ScalarT>(residual, tmp, 
+                       workset.bases[basis_index]->weighted_curl_basis, 
 		       Intrepid::COMP_BLAS);
   }
 }

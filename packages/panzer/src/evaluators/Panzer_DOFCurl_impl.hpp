@@ -105,6 +105,7 @@ PHX_EVALUATE_FIELDS(DOFCurl,workset)
     dof_curl[i] = 0.0;
 
   if(workset.num_cells>0) {
+/*
     Intrepid::FieldContainer<double> curls = (workset.bases[basis_index])->curl_basis;
 
     // assign ScalarT "dof_orientation" to double "orientation"
@@ -121,6 +122,9 @@ PHX_EVALUATE_FIELDS(DOFCurl,workset)
 
     // evaluate at quadrature points
     Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,curls);
+*/
+    // evaluate at quadrature points
+    Intrepid::FunctionSpaceTools::evaluate<ScalarT>(dof_curl,dof_value,workset.bases[basis_index]->curl_basis);
   }
 }
 

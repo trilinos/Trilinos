@@ -140,6 +140,7 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
   }
 
   if(workset.num_cells>0) {
+/*
     Intrepid::FieldContainer<double> weighted_basis = (workset.bases[basis_index])->weighted_basis;
 
     // assign ScalarT "dof_orientation" to double "orientation"
@@ -157,6 +158,12 @@ PHX_EVALUATE_FIELDS(Integrator_BasisTimesVector,workset)
     Intrepid::FunctionSpaceTools::
       integrate<ScalarT>(residual, tmp, 
   		            weighted_basis,
+		            Intrepid::COMP_BLAS);
+*/
+
+    Intrepid::FunctionSpaceTools::
+      integrate<ScalarT>(residual, tmp, 
+  		            workset.bases[basis_index]->weighted_basis,
 		            Intrepid::COMP_BLAS);
   }
 }

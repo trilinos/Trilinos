@@ -386,13 +386,6 @@ namespace panzer_stk {
     if(p.sublist("Output").get<bool>("Write to Exodus"))
       mesh->setupTransientExodusFile(p.sublist("Output").get<std::string>("File Name"));
 
-    // build worksets
-    //////////////////////////////////////////////////////////////
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
-    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
-       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
-
     // build DOF Manager
     /////////////////////////////////////////////////////////////
 
@@ -539,8 +532,20 @@ namespace panzer_stk {
     // print out load balancing information
     fout << "Degree of freedom load balancing: " << loadBalanceString << std::endl;
 
+    // build worksets
+    //////////////////////////////////////////////////////////////
+
+    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory
+       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
+       = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physicsBlocks,workset_size));
+
+    // set the global indexer so the orientations are evaluated
+    wkstContainer->setGlobalIndexer(globalIndexer);
+
     // Add mesh objects to user data to make available to user ctors
     /////////////////////////////////////////////////////////////
+
     panzer_data_params.set("STK Mesh", mesh);
     panzer_data_params.set("DOF Manager", globalIndexer);
     panzer_data_params.set("Linear Object Factory", linObjFactory);

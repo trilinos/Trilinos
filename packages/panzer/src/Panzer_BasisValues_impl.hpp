@@ -217,6 +217,26 @@ namespace panzer {
   PureBasis::EElementSpace BasisValues<Scalar,Array>::getElementSpace() const
   { return basis_layout->getBasis()->getElementSpace(); }
 
-}
+  // **************************************************************
+
+  // method for applying orientations
+  template<typename Scalar,typename Array>
+  void BasisValues<Scalar,Array>::
+  applyOrientations(const Array& orientations)
+  {
+    PureBasis::EElementSpace elmtspace = getElementSpace();
+
+    if(elmtspace==PureBasis::HCURL) {
+       // setup the orientations for the trial space
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(basis,orientations);
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(curl_basis,orientations);
+
+       // setup the orientations for the test space
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_basis,orientations);
+       Intrepid::FunctionSpaceTools::applyFieldSigns<Scalar>(weighted_curl_basis,orientations);
+    }
+  }
+
+} // end namespace panzer
 
 #endif

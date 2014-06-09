@@ -73,6 +73,7 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
 
   if(num_cells>0) {
     if(requires_orientation) {
+/*
        // copy basis values, this will be modified by the orientation, so we don't
        // necessarily want to wipe them out
        Teuchos::Array<int> dimension; 
@@ -97,6 +98,9 @@ inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDFiel
        // evaluate at quadrature points
        Intrepid::FunctionSpaceTools::
          evaluate<ScalarT>(dof_ip,dof_basis,bases);
+*/
+       Intrepid::FunctionSpaceTools::
+         evaluate<ScalarT>(dof_ip,dof_basis,basisValues.basis);
     }
     else // no orientation needed
        Intrepid::FunctionSpaceTools::
