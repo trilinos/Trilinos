@@ -25,6 +25,7 @@
 #include <vector>                       // for vector
 #include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_util/diag/Timer.hpp"      // for getEnabledTimerMetricsMask, etc
+#include "stk_util/environment/WallTime.hpp"
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
 namespace stk { namespace diag { namespace { struct ParallelTimer; } } }
@@ -688,21 +689,29 @@ printTable(
 
 } // namespace <empty>
 
+void printTimeToPrintTable(std::ostream& os, double durationToPrintTable)
+{
+    os << "Took " << durationToPrintTable << " seconds to generate the table above." << std::endl;
+}
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint)
 {
+  double startTimeToPrintTable = stk::wall_time();
   stk::PrintTable print_table;
 
   printTable(print_table, root_timer, metrics_mask, 40, timer_checkpoint);
 
   os << print_table;
 
+  double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
+  printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
 
 
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine)
 {
+  double startTimeToPrintTable = stk::wall_time();
   stk::PrintTable print_table;
   
   int parallel_size = parallel_machine_size(parallel_machine);
@@ -713,6 +722,8 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
   
   os << print_table;
   
+  double durationToPrintTable = stk::wall_time() - startTimeToPrintTable;
+  printTimeToPrintTable(os, durationToPrintTable);
   return os;
 }
 

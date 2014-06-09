@@ -30,6 +30,8 @@ TEST(StkDiagTimerHowTo, useTheRootTimer)
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
 totalTestRuntime                           1        0.001 SKIP             0.100 SKIP      \
+                                                                                           \
+Took 0.0001 seconds to generate the table above.                                           \
     ";
         EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
     }
@@ -71,11 +73,14 @@ totalTestRuntime                             1        0.000  SKIP        0.100 S
   childTimer1                                1        0.000  SKIP        0.100 SKIP        \
   childTimer2                                1        0.000  SKIP        0.100 SKIP        \
                                                                                            \
+Took 0.0001 seconds to generate the table above.                                           \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
 totalTestRuntime                             1        0.000  SKIP        0.200 SKIP        \
   childTimer1                                2        0.000  SKIP        0.200 SKIP        \
   childTimer2                                1        0.000  SKIP        0.100 SKIP        \
+                                                                                           \
+Took 0.0001 seconds to generate the table above.                                           \
             ";
     EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 
@@ -115,10 +120,13 @@ TEST(StkDiagTimerHowTo, disableChildTimers)
 totalTestRuntime                             1        0.000  SKIP        0.100 SKIP        \
   enabledTimer                               1        0.000  SKIP        0.100 SKIP        \
                                                                                            \
+Took 0.0001 seconds to generate the table above.                                           \
                  Timer                   Count       CPU Time              Wall Time       \
 ---------------------------------------- ----- --------------------- --------------------- \
 totalTestRuntime                             1        0.000  SKIP        0.200 SKIP        \
   enabledTimer                               1        0.000  SKIP        0.100 SKIP        \
+                                                                                           \
+Took 0.0001 seconds to generate the table above.                                           \
             ";
     EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
 

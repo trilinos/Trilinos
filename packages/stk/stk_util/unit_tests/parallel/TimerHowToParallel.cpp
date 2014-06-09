@@ -50,6 +50,8 @@ totalTestRuntime  2            0.001 SKIP          0.000 SKIP          0.001 SKI
                                0.200 SKIP          0.100 SKIP          0.100 SKIP           \
   childTimer1     2            0.001 SKIP          0.000 SKIP          0.001 SKIP           \
                                0.200 SKIP          0.100 SKIP          0.100 SKIP           \
+                                                                                            \
+Took 0.0004 seconds to generate the table above.                                            \
                     ";
             EXPECT_TRUE(unitTestUtils::areStringsEqualWithToleranceForNumbers(expectedOutput, outputStream.str(), tolerance));
         }
