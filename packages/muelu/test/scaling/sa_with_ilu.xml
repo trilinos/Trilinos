@@ -13,7 +13,8 @@
   <!-- <Parameter        name="aggregation: drop tol"                type="double"   value="0.1"/> -->
 
   <!-- ===========  SMOOTHING  =========== -->
-  <!-- Additive Schwarz, overlap=1, subdomain solver ILU(2) -->
+  <!-- Ifpack2: Additive Schwarz, overlap=1, subdomain solver ILU(2) -->
+  <!--
   <Parameter name="smoother: type" type="string" value="SCHWARZ"/>
   <ParameterList    name="smoother: params">
     <Parameter name="schwarz: overlap level"            type="int"    value="1"/>
@@ -31,6 +32,21 @@
       <Parameter name= "fact: relax value"                type="double" value="0."/>
     </ParameterList>
   </ParameterList>
+  -->
+
+  <!-- Ifpack1: Additive Schwarz, overlap=1, subdomain solver KLU for pre and post -->
+  <!--
+  <Parameter        name="smoother: type"                       type="string"   value="Amesos"/>
+  <Parameter        name="smoother: overlap"                    type="int"   value="1"/>
+  -->
+
+  <!-- Ifpack1: Additive Schwarz, specifying different overlap and subdomains solvers for pre and post -->
+  <!--
+  <Parameter        name="smoother: pre overlap"                type="int"   value="1"/>
+  <Parameter        name="smoother: pre type"                   type="string"   value="Amesos"/>
+  <Parameter        name="smoother: post overlap"                type="int"   value="0"/>
+  <Parameter        name="smoother: post type"                  type="string"   value="ILU"/>
+  -->
 
   <!-- ===========  REPARTITIONING  =========== -->
   <Parameter        name="repartition: enable"                  type="bool"     value="true"/>
