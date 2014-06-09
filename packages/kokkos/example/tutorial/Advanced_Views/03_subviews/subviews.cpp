@@ -49,17 +49,17 @@
 
 typedef Kokkos::View<double***, Kokkos::LayoutRight> mesh_type;
 typedef Kokkos::View<double**, Kokkos::LayoutStride> xz_plane_type;
-typedef Kokkos::View<double**, Kokkos::LayoutStride> yz_plane_type;
+typedef Kokkos::View<double**, Kokkos::LayoutRight> yz_plane_type;
 typedef Kokkos::View<double**, Kokkos::LayoutStride> xy_plane_type;
-typedef Kokkos::View<double***, Kokkos::LayoutRight> inner_mesh_type;
+typedef Kokkos::View<double***, Kokkos::LayoutStride> inner_mesh_type;
 
 
 
 template<class ViewType>
-struct boundary {
+struct set_boundary {
   ViewType a;
   double value;
-  boundary(ViewType a_, double value_):a(a_),value(value_) {};
+  set_boundary(ViewType a_, double value_):a(a_),value(value_) {};
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i) const {
@@ -68,31 +68,37 @@ struct boundary {
   }
 };
 
-/*template<class ViewType1, class ViewType2>
-struct contraction {
-  view_type a;
-  typename ViewType1::const_type v1;
-  typename ViewType2::const_type v2;
-  contraction(view_type a_, ViewType1 v1_, 
-              ViewType2 v2_):a(a_),v1(v1_),v2(v2_) {}
+template<class ViewType>
+struct set_inner {
+  ViewType a;
+  double value;
+  set_inner(ViewType a_, double value_):a(a_),value(value_) {};
 
   KOKKOS_INLINE_FUNCTION
   void operator() (int i) const {
-    for(int j = 0; j < v1.dimension_1(); j++)
-      a(i) = v1(i,j)*v2(j,i);
+    for(int j = 0; j < a.dimension_1(); j++)
+      for(int k = 0; k < a.dimension_2(); k++)
+        a(i,j,k) = value;
   }
 };
 
-struct dot {
-  view_type a;
-  dot(view_type a_):a(a_) {};
+template<class ViewType>
+struct update {
+  ViewType a;
+  double dt;
+  update(ViewType a_, double dt_):a(a_),dt(dt_) {};
 
   KOKKOS_INLINE_FUNCTION
-  void operator() (int i, double &lsum) const {
-    lsum+= a(i)*a(i);
+  void operator() (int i) const {
+    i++;
+    for(int j = 1; j < a.dimension_1()-1; j++)
+      for(int k = 1; k < a.dimension_2()-1; k++)
+        a(i,j,k) += dt*(a(i,j,k+1)-a(i,j,k-1) +
+                        a(i,j+1,k)-a(i,j-1,k) +
+                        a(i+1,j,k)-a(i-1,j,k));
   }
 };
- */
+
 
 int main(int narg, char* arg[]) {
   Kokkos::initialize(narg,arg);
@@ -111,45 +117,32 @@ int main(int narg, char* arg[]) {
                (A,Kokkos::ALL(),Kokkos::ALL(),101);
 
   xz_plane_type Yneg_halo = 
-       Kokkos::subview<xy_plane_type>
+       Kokkos::subview<xz_plane_type>
                (A,Kokkos::ALL(),0,Kokkos::ALL());
   xz_plane_type Ypos_halo =
-       Kokkos::subview<xy_plane_type>
+       Kokkos::subview<xz_plane_type>
                (A,Kokkos::ALL(),101,Kokkos::ALL());
 
   yz_plane_type Xneg_halo = 
-       Kokkos::subview<xy_plane_type>
+       Kokkos::subview<yz_plane_type>
                (A,0,Kokkos::ALL(),Kokkos::ALL());
   yz_plane_type Xpos_halo =
-       Kokkos::subview<xy_plane_type>
+       Kokkos::subview<yz_plane_type>
                (A,101,Kokkos::ALL(),Kokkos::ALL());
 
-  Kokkos::parallel_for(Zneg_halo.dimension_0(),boundary<xy_plane_type>(Zneg_halo,1));
-
-/*  Kokkos::parallel_for(size,init_view<left_type>(l));
-  Kokkos::parallel_for(size,init_view<right_type>(r));
-  Kokkos::fence();
-
-  Kokkos::Impl::Timer time1;
-  Kokkos::parallel_for(size,contraction<left_type,right_type>(a,l,r));
-  Kokkos::fence();  
-  double sec1 = time1.seconds();
-
-  double sum1 = 0;
-  Kokkos::parallel_reduce(size,dot(a),sum1);
-  Kokkos::fence();
+  Kokkos::parallel_for(Zneg_halo.dimension_0(),set_boundary<xy_plane_type>(Zneg_halo,1));
+  Kokkos::parallel_for(Zpos_halo.dimension_0(),set_boundary<xy_plane_type>(Zpos_halo,-1));
+  Kokkos::parallel_for(Yneg_halo.dimension_0(),set_boundary<xz_plane_type>(Yneg_halo,2));
+  Kokkos::parallel_for(Ypos_halo.dimension_0(),set_boundary<xz_plane_type>(Ypos_halo,-2));
+  Kokkos::parallel_for(Xneg_halo.dimension_0(),set_boundary<yz_plane_type>(Xneg_halo,3));
+  Kokkos::parallel_for(Xpos_halo.dimension_0(),set_boundary<yz_plane_type>(Xpos_halo,-3));
+  Kokkos::parallel_for(Ai.dimension_0(),set_inner<inner_mesh_type>(Ai,0));
+  Kokkos::parallel_for(Ai.dimension_0(),update<mesh_type>(A,0.1));
   
-  Kokkos::Impl::Timer time2;
-  Kokkos::parallel_for(size,contraction<right_type,left_type>(a,r,l));
-  Kokkos::fence();
-  double sec2 = time2.seconds();
-
-  double sum2 = 0;
-  Kokkos::parallel_reduce(size,dot(a),sum2);
 
 
-  printf("Result Left/Rigth %lf Right/Left %lf  (equal result: %i)\n",sec1,sec2,sum2==sum1);  
+  printf("Done\n");
 
-  Kokkos::finalize();*/
+  Kokkos::finalize();
 }
 

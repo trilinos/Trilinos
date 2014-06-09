@@ -18,16 +18,19 @@ endif
 DEPFLAGS = -M
 
 OBJ = $(SRC:.cpp=.o)
-LIB = libkokkoscore.a
+LIB =
 
-include ../../../Makefile.kokkos
+include $(KOKKOS_PATH)/Makefile.kokkos
 
 EXTRA_INC = $(KOKKOS_INC)
-EXTRA_LIB = $(KOKKOS_LIB)
+EXTRA_LIB = $(KOKKOS_LINK)
 
 all: $(OBJ)
 	$(LINK) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(EXTRA_LIB) $(LIB) -o $(EXE)
 	rm *.o *.d libkokkoscore.a kokkos_depend.cpp
+
+clean: 
+	rm *.o *.d libkokkoscore.a kokkos_depend.cpp *.cuda *.host
 
 # Compilation rules
 

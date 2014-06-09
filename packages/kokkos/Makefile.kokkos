@@ -1,6 +1,6 @@
 # This Makefile is intended to be include in an application Makefile.
 # It will append the OBJ variable with objects which need to be build for Kokkos. 
-# It also will produce a KOKKOS_INC and a KOKKOS_LIB variable which must be 
+# It also will produce a KOKKOS_INC and a KOKKOS_LINK variable which must be 
 # appended to the compile and link flags of the application Makefile.
 # Note that you cannot compile and link at the same time!
 # If you want to include dependencies (i.e. trigger a rebuild of the application
@@ -57,13 +57,14 @@ KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/containers/src/*.hpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/linalg/src/*.hpp)
 
 SRC_KOKKOS = $(wildcard $(KOKKOS_PATH)/core/src/impl/*.cpp)
-USRLIB = libkokkoscore.a
+KOKKOS_LIB = libkokkoscore.a
+
 ifeq ($(CUDA), yes)
 KOKKOS_INC += -x cu -DKOKKOS_HAVE_CUDA  
 SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.cpp)
 SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.cu)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Cuda/*.hpp)
-USRLIB += -L$(CUDA_PATH)/lib64 -lcudart -lcuda 
+KOKKOS_LINK += -L$(CUDA_PATH)/lib64 -lcudart -lcuda 
 ifeq ($(CUDA_UVM), yes)
 KOKKOS_INC += -DKOKKOS_USE_UVM
 endif
@@ -71,16 +72,17 @@ endif
 
 ifeq ($(CUSPARSE), yes)
 KOKKOS_INC += -DKOKKOS_USE_CUSPARSE
-USRLIB += -lcusparse
+KOKKOS_LIB += -lcusparse
 endif
 
 ifeq ($(CUBLAS), yes)
 KOKKOS_INC += -DKOKKOS_USE_CUBLAS
-USRLIB += -lcublas
+KOKKOS_LIB += -lcublas
 endif
 
 ifeq ($(MIC), yes)
 KOKKOS_INC += -mmic
+KOKKOS_LINK += -mmic
 AVX = no
 endif
 
@@ -90,7 +92,7 @@ KOKKOS_INC += -Xcompiler -mavx
 else
 KOKKOS_INC += -mavx
 endif
-LINKFLAGS += -mavx
+KOKKOS_LINK += -mavx
 endif
 
 
@@ -104,17 +106,17 @@ KOKKOS_INC += -Xcompiler -fopenmp
 else
 KOKKOS_INC += -fopenmp
 endif
-LINKFLAGS += -fopenmp
+KOKKOS_LINK += -fopenmp
 else
 KOKKOS_INC += -DKOKKOS_HAVE_PTHREAD
-USRLIB += -lpthread
+KOKKOS_LIB += -lpthread
 SRC_KOKKOS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.cpp)
 KOKKOS_HEADERS += $(wildcard $(KOKKOS_PATH)/core/src/Threads/*.hpp)
 endif
 
 ifeq ($(HWLOC),yes)
 KOKKOS_INC += -DKOKKOS_HAVE_HWLOC -I$(HWLOC_PATH)/include
-USRLIB += -L$(HWLOC_PATH)/lib -lhwloc
+KOKKOS_LINK += -L$(HWLOC_PATH)/lib -lhwloc
 endif
 
 ifeq ($(RED_PREC), yes)
@@ -122,13 +124,16 @@ KOKKOS_INC += --use_fast_math
 endif
 
 ifeq ($(DEBUG), yes)
-KOKKOS_INC += -g -G -DKOKKOSARRAY_EXPRESSION_CHECK -DENABLE_TRACEBACK
-LINKFLAGS += -g
+ifeq ($(CUDA), yes)
+KOKKOS_INC += -G
+endif
+KOKKOS_INC += -g -DKOKKOSARRAY_EXPRESSION_CHECK -DENABLE_TRACEBACK
+KOKKOS_LINK += -g -ldl
 endif
 
 ifeq ($(LIBRT),yes)
 KOKKOS_INC += -DKOKKOS_USE_LIBRT -DPREC_TIMER
-USRLIB += -lrt
+KOKKOS_LIB += -lrt
 endif
 
 ifeq ($(CUDA_LDG), yes)
@@ -149,4 +154,4 @@ kokkos_depend.o: libkokkoscore.a
 	$(CC) $(CCFLAGS) $(SHFLAGS) $(EXTRA_INC) -c kokkos_depend.cpp
  	
 
-KOKKOS_LIB = -L./ $(LINKFLAGS) $(USRLIB)
+KOKKOS_LINK += -L./ $(KOKKOS_LIB)

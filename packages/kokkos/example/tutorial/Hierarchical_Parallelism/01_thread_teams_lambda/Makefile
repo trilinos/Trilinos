@@ -3,14 +3,14 @@ SRC = $(wildcard *.cpp)
 
 ifeq ($(CUDA), yes)
 CC = nvcc
-CCFLAGS = -O3 -arch=sm_35  
+CCFLAGS = -O3 -arch=sm_35 --std=c++11
 LINK = g++
 LINKFLAGS = 
 EXE = $(SRC:.cpp=.cuda)
 else
-CC = g++
-CCFLAGS = -O3
-LINK = g++
+CC = icpc 
+CCFLAGS = -O3 --std=c++11
+LINK = icpc
 LINKFLAGS =  
 EXE = $(SRC:.cpp=.host)
 endif

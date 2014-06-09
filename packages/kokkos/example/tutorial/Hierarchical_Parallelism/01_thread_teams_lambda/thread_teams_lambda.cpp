@@ -48,22 +48,16 @@
 
 typedef Kokkos::Impl::DefaultDeviceType device_type;
 
-struct hello_world {
-
-  KOKKOS_INLINE_FUNCTION
-  void operator() (device_type dev, int& sum) const {
-    sum+=1;
-    printf("Hello World: %i %i // %i %i\n",dev.league_rank(),dev.team_rank(),dev.league_size(),dev.team_size());
-  }
-};
-
 int main(int narg, char* args[]) {
   Kokkos::initialize(narg,args);
   
   int sum = 0;
   Kokkos::parallel_reduce(
       Kokkos::ParallelWorkRequest(12,device_type::team_max()),
-      hello_world(),sum);
+      [=](device_type dev, int& lsum) {
+          lsum+=1;
+          printf("Hello World: %i %i // %i %i\n",dev.league_rank(),dev.team_rank(),dev.league_size(),dev.team_size());
+        },sum);
   printf("Result %i\n",sum);
 
   Kokkos::finalize();

@@ -3,14 +3,14 @@ SRC = $(wildcard *.cpp)
 
 ifeq ($(CUDA), yes)
 CC = nvcc
-CCFLAGS = -O3 -arch=sm_35  
+CCFLAGS = -O3 -arch=sm_35 --std=c++11
 LINK = g++
 LINKFLAGS = 
 EXE = $(SRC:.cpp=.cuda)
 else
-CC = g++
-CCFLAGS = -O3
-LINK = g++
+CC = icpc 
+CCFLAGS = -O3 --std=c++11
+LINK = icpc
 LINKFLAGS =  
 EXE = $(SRC:.cpp=.host)
 endif
@@ -18,16 +18,19 @@ endif
 DEPFLAGS = -M
 
 OBJ = $(SRC:.cpp=.o)
-LIB = libkokkoscore.a
+LIB =
 
-include ../../../Makefile.kokkos
+include $(KOKKOS_PATH)/Makefile.kokkos
 
 EXTRA_INC = $(KOKKOS_INC)
-EXTRA_LIB = $(KOKKOS_LIB)
+EXTRA_LIB = $(KOKKOS_LINK)
 
 all: $(OBJ)
 	$(LINK) $(LINKFLAGS) $(EXTRA_PATH) $(OBJ) $(EXTRA_LIB) $(LIB) -o $(EXE)
 	rm *.o *.d libkokkoscore.a kokkos_depend.cpp
+
+clean: 
+	rm *.o *.d libkokkoscore.a kokkos_depend.cpp *.cuda *.host
 
 # Compilation rules
 
