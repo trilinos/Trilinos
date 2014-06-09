@@ -392,6 +392,7 @@ StatusTestGenResNorm<ScalarType,MV,OP>::StatusTestGenResNorm( MagnitudeType Tole
     scalevalue_(1.0),
     status_(Undefined),
     curBlksz_(0),
+    curNumRHS_(0),
     curLSNum_(0),
     numrhs_(0),
     firstcallCheckStatus_(true),
