@@ -2251,7 +2251,7 @@ bool verify_parallel_attributes_for_bucket( BulkData& M, Bucket const& bucket, s
     if ( ! this_result ) {
       result = false ;
       error_log << "P" << M.parallel_rank() << ": " ;
-      error_log << M.identifier(entity);
+      error_log << M.identifier(entity) << " rank " << M.entity_rank(entity);
       error_log << " ERROR: owner(" << p_owner
                 << ") owns(" << has_owns_part
                 << ") shares(" << has_shares_part
