@@ -230,8 +230,12 @@ namespace MueLu {
 
   std::string IfpackSmoother::description() const {
     std::ostringstream out;
-    out << SmootherPrototype::description();
-    out << "{type = " << type_ << "}";
+    if (prec_ == Teuchos::null) {
+      out << SmootherPrototype::description();
+      out << "{type = " << type_ << "}";
+    } else {
+      out << prec_->Label();
+    }
     return out.str();
   }
 
