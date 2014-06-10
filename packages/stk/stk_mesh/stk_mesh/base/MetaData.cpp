@@ -346,8 +346,6 @@ void MetaData::synchronize_part_fields_with_parts()
 
 Part & MetaData::declare_part( const std::string & p_name )
 {
-  require_not_committed();
-
   const EntityRank rank = InvalidEntityRank;
 
   add_new_part_in_part_fields();
@@ -362,7 +360,6 @@ Part & MetaData::declare_internal_part( const std::string & p_name )
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool arg_force_no_induce )
 {
-  require_not_committed();
   require_valid_entity_rank(rank);
 
   add_new_part_in_part_fields();
@@ -377,7 +374,6 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
 
 void MetaData::declare_custom_ghosting_parts(unsigned num_custom_ghostings)
 {
-    require_not_committed();
     ThrowRequireMsg(m_custom_ghosting_parts.size() == 0,"MetaData::declare_custom_ghosting_parts can only be called once");
 
      for(unsigned i=0; i<num_custom_ghostings; ++i) {
@@ -462,7 +458,6 @@ void MetaData::declare_field_restriction(
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
   require_same_mesh_meta_data( MetaData::get(arg_field) );
   require_same_mesh_meta_data( MetaData::get(arg_part) );
 
@@ -487,7 +482,6 @@ void MetaData::declare_field_restriction(
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
   require_same_mesh_meta_data( MetaData::get(arg_field) );
 
   m_field_repo.declare_field_restriction(
