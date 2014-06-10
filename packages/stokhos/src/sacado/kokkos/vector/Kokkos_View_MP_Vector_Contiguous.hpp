@@ -1140,6 +1140,8 @@ namespace Impl {
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::MP::Vector< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::MP::Vector as an atomic scalar.
  */
 template< class StorageType >
 struct AnalyzeShape< Sacado::MP::Vector< StorageType > >
@@ -1155,21 +1157,9 @@ public:
 
   typedef Shape< sizeof(Sacado::MP::Vector< StorageType >) , 0 > shape ;
 
-  // If ( ! StorageType::is_static ) then 0 == StorageType::static_size and the first array declaration is not used.
-  // However, the compiler will still generate this type declaration and it must not have a zero length.
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::array_type *
-        >::type array_type ;
-
-  typedef typename
-    if_c< StorageType::is_static
-        , typename nested::const_array_type [ StorageType::is_static ? StorageType::static_size : 1 ]
-        , typename nested::const_array_type *
-        >::type const_array_type ;
-
-  typedef array_type non_const_array_type ;
+  typedef       Sacado::MP::Vector< StorageType >  array_type ;
+  typedef const Sacado::MP::Vector< StorageType >  const_array_type ;
+  typedef       Sacado::MP::Vector< StorageType >  non_const_array_type ;
 
   typedef       Sacado::MP::Vector< StorageType >  type ;
   typedef const Sacado::MP::Vector< StorageType >  const_type ;
@@ -1185,6 +1175,8 @@ public:
  *  This specialization is required so that the array shape of
  *  Kokkos::View< Sacado::MP::Vector< StorageType > , ... >
  *  can be determined at compile-time.
+ *
+ *  This treats Sacado::MP::Vector as an array.
  */
 template< class StorageType, class Layout >
 struct AnalyzeSacadoShape< Sacado::MP::Vector< StorageType >, Layout >
