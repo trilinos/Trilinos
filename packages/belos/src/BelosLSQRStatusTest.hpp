@@ -237,7 +237,11 @@ private:
 };
 
 template <class ScalarType, class MV, class OP>
-LSQRStatusTest<ScalarType,MV,OP>::LSQRStatusTest( MagnitudeType condMax /* = 0 */, int term_iter_max /* = 1 */, MagnitudeType rel_rhs_err /* = 0 */, MagnitudeType rel_mat_err /* = 0 */)
+LSQRStatusTest<ScalarType,MV,OP>::
+LSQRStatusTest (MagnitudeType condMax /* = 0 */,
+                int term_iter_max /* = 1 */,
+                MagnitudeType rel_rhs_err /* = 0 */,
+                MagnitudeType rel_mat_err /* = 0 */)
   : condMax_(condMax),
     term_iter_max_ (term_iter_max),
     rel_rhs_err_ (rel_rhs_err),
@@ -268,11 +272,11 @@ Belos::StatusType LSQRStatusTest<ScalarType,MV,OP>::checkStatus( Belos::Iteratio
   const MagnitudeType MTone = Teuchos::ScalarTraits<MagnitudeType>::one();
   if (condMax_ > MTzero )
     {
-	rcondMin_ = MTone / condMax_;
+        rcondMin_ = MTone / condMax_;
     }
   else
     {
-	rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
+        rcondMin_ = Teuchos::ScalarTraits< MagnitudeType >::eps();
     }
 
   bool termIterFlag = false;

@@ -450,15 +450,15 @@ namespace Belos {
   //
   template<class ScalarType, class MV, class OP>
   MinresSolMgr<ScalarType,MV,OP>::MinresSolMgr () :
-    numIters_ (0),
-    parametersSet_ (false),
     convtol_(0.0),
     achievedTol_(0.0),
     maxIters_(0),
+    numIters_ (0),
     blockSize_(0),
     verbosity_(0),
     outputStyle_(0),
-    outputFreq_(0)
+    outputFreq_(0),
+    parametersSet_ (false)
   {}
 
   //
