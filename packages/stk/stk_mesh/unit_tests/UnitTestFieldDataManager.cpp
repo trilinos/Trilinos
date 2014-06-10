@@ -407,8 +407,8 @@ TEST(ContiguousFieldDataManagerTest, nodalFieldNotOnAllNodeBuckets)
 
         bulkData.allocate_field_data();
 
-        stk::mesh::Field<double> &field1 = *meshMetaData.get_field<stk::mesh::Field<double> >("field1");
-        stk::mesh::Field<double> &field2 = *meshMetaData.get_field<stk::mesh::Field<double> >("field2");
+        stk::mesh::Field<double> &field1 = *meshMetaData.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field1");
+        stk::mesh::Field<double> &field2 = *meshMetaData.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "field2");
         testPartToNodeMapping(bulkData, part1, part1Nodes, field1, field2);
         testPartToNodeMapping(bulkData, part2, part2Nodes, field2, field1);
     }

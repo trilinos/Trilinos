@@ -56,7 +56,7 @@ TEST(FieldNamesTest, FieldNameRenameTwice)
 
         size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
 
-        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
+        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(stk::topology::NODE_RANK, internalClientFieldName);
         stkIo.add_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 
         requestedFieldNameForResultsOutput = "jeSSe";
@@ -88,7 +88,7 @@ TEST(FieldNamesTest, FieldNameWithRestart)
         createNamedFieldOnMesh(stkMeshMetaData, internalClientFieldName);
         stkIo.populate_bulk_data();
         
-        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
+        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(stk::topology::NODE_RANK, internalClientFieldName);
 
         size_t fileIndex = stkIo.create_output_mesh(restartFilename, stk::io::WRITE_RESTART);
         stkIo.add_field(fileIndex, *field0);
@@ -125,7 +125,7 @@ TEST(FieldNamesTest, FieldNameWithResultsAndRestart)
         stkIo.populate_bulk_data();
 
         size_t results_output_index = stkIo.create_output_mesh(outputFileName, stk::io::WRITE_RESULTS);
-        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(internalClientFieldName);
+        stk::mesh::FieldBase *field0 = stkMeshMetaData.get_field(stk::topology::NODE_RANK, internalClientFieldName);
         std::string requestedFieldNameForResultsOutput("jeSSe");
         stkIo.add_field(results_output_index, *field0, requestedFieldNameForResultsOutput);
 

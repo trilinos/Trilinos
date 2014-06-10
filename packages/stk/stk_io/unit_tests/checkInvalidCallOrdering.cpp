@@ -32,7 +32,7 @@ TEST(StkMeshIoBroker, CheckInvalidCallOrdering)
     {
       size_t results_output_index = stkIo.create_output_mesh(outputFilename, stk::io::WRITE_RESULTS);
 
-      stk::mesh::FieldBase *field0a = stkMeshMetaData.get_field("displacement");
+      stk::mesh::FieldBase *field0a = stkMeshMetaData.get_field(stk::topology::NODE_RANK, "displacement");
       stkIo.add_field(results_output_index, *field0a);
       stkIo.add_global(results_output_index, "NotTooLate", "scalar", Ioss::Field::DOUBLE);
 

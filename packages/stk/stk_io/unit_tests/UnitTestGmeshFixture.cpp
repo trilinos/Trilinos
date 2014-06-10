@@ -47,7 +47,7 @@ TEST(UnitTestGmeshFixture, testUnit)
 
   // Needed to test field data
   stk::mesh::Field<double,stk::mesh::Cartesian> * coord_field =
-    fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+    fixture.getMetaData().get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
   ASSERT_TRUE( coord_field );
 
   const stk::mesh::PartVector & side_parts = fixture.getSideParts();

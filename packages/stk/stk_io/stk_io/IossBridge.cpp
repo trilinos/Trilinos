@@ -1703,7 +1703,7 @@ void output_node_set(Ioss::NodeSet *ns, const stk::mesh::BulkData &bulk,
     throw std::runtime_error( msg.str() );
   }
 
-  stk::mesh::Field<double> *df_field = meta_data.get_field<stk::mesh::Field<double> >("distribution_factors");
+  stk::mesh::Field<double> *df_field = meta_data.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
   if (df_field != NULL) {
     const stk::mesh::FieldBase::Restriction &res = stk::mesh::find_restriction(*df_field, stk::topology::NODE_RANK, *part);
     if (res.num_scalars_per_entity() > 0) {

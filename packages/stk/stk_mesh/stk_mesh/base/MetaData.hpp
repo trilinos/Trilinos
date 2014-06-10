@@ -334,10 +334,6 @@ public:
   template< class field_type >
   field_type * get_field( stk::mesh::EntityRank entity_rank, const std::string & name ) const ;
 
-  // Deprecated:
-  template< class field_type >
-  field_type * get_field( const std::string & name ) const ;
-
   /**
    * \brief Get a field by name with unknown type, NULL if does not exist
    *
@@ -345,9 +341,6 @@ public:
    * E.g., 'TEMPERATURE' is the same as 'temperature'.
    */
   FieldBase* get_field( stk::mesh::EntityRank entity_rank, const std::string& name ) const;
-
-  // Deprecated:
-  FieldBase* get_field( const std::string& name ) const;
 
   /** \brief  Get/Set the coordinate field */
   FieldBase const* coordinate_field() const;
@@ -776,30 +769,6 @@ field_type * MetaData::get_field( stk::mesh::EntityRank arg_entity_rank, const s
   else {
     return dynamic_cast< field_type * >( field );
   }
-}
-
-template< class field_type >
-inline
-field_type * MetaData::get_field( const std::string & name ) const
-{
-  field_type* field = NULL;
-  unsigned num_nonnull_fields = 0;
-  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
-    field_type* thisfield = get_field<field_type>(i, name);
-    if (thisfield != NULL) {
-      if (field == NULL) {
-        field = thisfield;
-      }
-      ++num_nonnull_fields;
-    }
-  }
-
-  if (num_nonnull_fields > 1) {
-    std::cerr << "MetaData::get_field WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
-      <<". Returning the first one."<<std::endl;
-  }
-
-  return field;
 }
 
 

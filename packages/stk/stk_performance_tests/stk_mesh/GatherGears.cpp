@@ -42,7 +42,7 @@ void do_stk_gather_gears_test(stk::mesh::BulkData& bulk, std::vector<double>& su
 
   std::vector<double> elem_centroid(spatial_dim, 0);
 
-  const VectorField& coord_field = *meta.get_field<VectorField>("coordinates");
+  const VectorField& coord_field = *meta.get_field<VectorField>(stk::topology::NODE_RANK, "coordinates");
   ThrowAssert(&coord_field != NULL);
 
   Selector local = meta.locally_owned_part();

@@ -26,7 +26,7 @@ namespace {
     // ============================================================
     //+ EXAMPLE -- Two results output files
     stk::mesh::FieldBase *displacementField =
-      meta_data.get_field(displacementFieldName);
+      meta_data.get_field(stk::topology::NODE_RANK, displacementFieldName);
 
     //+ For file one, set up results and global variables
     size_t file1Handle = stkIo.create_output_mesh(resultsFilename1,
@@ -40,7 +40,7 @@ namespace {
 						  stk::io::WRITE_RESULTS);
     std::string nameOnOutputFile("deformations");
     stkIo.add_field(file2Handle, *displacementField, nameOnOutputFile);
-    stk::mesh::FieldBase *velocityField = meta_data.get_field(velocityFieldName);
+    stk::mesh::FieldBase *velocityField = meta_data.get_field(stk::topology::NODE_RANK, velocityFieldName);
     stkIo.add_field(file2Handle, *velocityField);
     std::string globalVarNameFile2 = "kineticEnergy";
     stkIo.add_global(file2Handle, globalVarNameFile2, Ioss::Field::REAL);

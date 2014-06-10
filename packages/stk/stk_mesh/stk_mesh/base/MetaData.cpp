@@ -77,18 +77,18 @@ stk::mesh::FieldBase* try_to_find_coord_field(const stk::mesh::MetaData& meta)
   //the coordinates field using set_coordinate_field, but this is an
   //attempt to be helpful for existing client codes which aren't yet calling that.
 
-  stk::mesh::FieldBase* coord_field = meta.get_field("mesh_model_coordinates");
+  stk::mesh::FieldBase* coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates");
   if (coord_field == NULL) {
-    coord_field = meta.get_field("mesh_model_coordinates_0");
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "mesh_model_coordinates_0");
   }
   if (coord_field == NULL) {
-    coord_field = meta.get_field("model_coordinates");
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates");
   }
   if (coord_field == NULL) {
-    coord_field = meta.get_field("model_coordinates_0");
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "model_coordinates_0");
   }
   if (coord_field == NULL) {
-    coord_field = meta.get_field("coordinates");
+    coord_field = meta.get_field(stk::topology::NODE_RANK, "coordinates");
   }
 
   return coord_field;
@@ -1135,6 +1135,8 @@ CellTopology get_cell_topology(stk::topology t)
   return CellTopology(NULL);
 }
 //end-get_cell_topology
+
+
 FieldBase* MetaData::get_field(stk::mesh::EntityRank entity_rank, const std::string& name ) const
 {
   const FieldVector& fields = m_field_repo.get_fields(static_cast<stk::topology::rank_t>(entity_rank));
@@ -1146,27 +1148,6 @@ FieldBase* MetaData::get_field(stk::mesh::EntityRank entity_rank, const std::str
   return NULL;
 }
 
-FieldBase* MetaData::get_field( const std::string& name ) const
-{
-  FieldBase* field = NULL;
-  unsigned num_nonnull_fields = 0;
-  for(stk::topology::rank_t i=stk::topology::NODE_RANK; i<=stk::topology::CONSTRAINT_RANK; ++i) {
-    FieldBase* thisfield = get_field(i, name);
-    if (thisfield != NULL) {
-      if (field == NULL) {
-        field = thisfield;
-      }
-      ++num_nonnull_fields;
-    }
-  }
-
-  if (num_nonnull_fields > 1) {
-    std::cerr << "MetaData::get_field WARNING, found "<<num_nonnull_fields<<" fields with name="<<name
-      <<". Returning the first one."<<std::endl;
-  }
-
-  return field;
-}
 
 FieldBase* get_field_by_name( const std::string& name, const MetaData & metaData )
 {

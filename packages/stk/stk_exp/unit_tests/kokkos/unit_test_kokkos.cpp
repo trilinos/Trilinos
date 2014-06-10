@@ -318,10 +318,10 @@ void createMetaAndBulkData(stk::io::StkMeshIoBroker &exodusFileReader, stk::mesh
 //{
 //    std::string numIterationsString = getOption("-numIter", "1");
 //    const int numIterations = std::atoi(numIterationsString.c_str());
-//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("disp");
-//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("vel");
-//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &acc_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("acc");
-//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("force");
+//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
+//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");
+//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &acc_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "acc");
+//    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "force");
 //
 //    const stk::mesh::BucketVector& allNodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
 //    const size_t numNodeBuckets = allNodeBuckets.size();
@@ -363,7 +363,7 @@ void testGoldValues(stk::mesh::MetaData &stkMeshMetaData, stk::mesh::BulkData &s
     double goldY = initial_value1[1] * (alpha + beta + gamma);
     double goldZ = initial_value1[2] * (alpha + beta + gamma);
 
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("force");
+    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "force");
     double tol = 1.0e-4;
     const stk::mesh::BucketVector& buckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
     for(size_t bucketIndex = 0; bucketIndex < buckets.size(); ++bucketIndex)
@@ -399,10 +399,10 @@ void test1ToNSumOfNodalFields(stk::mesh::ContiguousFieldDataManager *fieldDataMa
     std::string numIterationsString = unitTestUtils::getOption("-numIter", "1");
     const int numIterations = std::atoi(numIterationsString.c_str());
 
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("disp");
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("vel");
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &acc_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("acc");
-    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >("force");
+    stk::mesh::Field<double, stk::mesh::Cartesian3d> &disp_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "disp");
+    stk::mesh::Field<double, stk::mesh::Cartesian3d> &vel_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "vel");
+    stk::mesh::Field<double, stk::mesh::Cartesian3d> &acc_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "acc");
+    stk::mesh::Field<double, stk::mesh::Cartesian3d> &force_field = *stkMeshMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian3d> >(stk::topology::NODE_RANK, "force");
 
     const stk::mesh::BucketVector& allNodeBuckets = stkMeshBulkData.buckets(stk::topology::NODE_RANK);
 

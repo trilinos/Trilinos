@@ -532,7 +532,7 @@ void process_surface_entity_df(const Ioss::SideSet* sset, stk::mesh::BulkData & 
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, sides, block, *I);
       }
@@ -649,7 +649,7 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
   // name "implicit_node_ids", then populate the field with the correct
   // data.
   const stk::mesh::MetaData &meta = stk::mesh::MetaData::get(bulk);
-  stk::mesh::FieldBase *implicit_node_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_node_ids");
+  stk::mesh::FieldBase *implicit_node_id_field = meta.get_field<stk::mesh::FieldBase> (stk::topology::NODE_RANK, "implicit_node_ids");
   if (implicit_node_id_field) {
     stk::io::field_data_from_ioss(bulk, implicit_node_id_field, nodes, nb, "implicit_ids");
   }
@@ -666,7 +666,7 @@ void process_node_coords_and_attributes(Ioss::Region &region, stk::mesh::BulkDat
   for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
     if(*I == "attribute" && names.size() > 1)
       continue;
-    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+    stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
     if (field)
       stk::io::field_data_from_ioss(bulk, field, nodes, nb, *I);
   }
@@ -751,14 +751,14 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       Ioss::NameList names;
       entity->field_describe(Ioss::Field::ATTRIBUTE, &names);
 
-      stk::mesh::FieldBase *implicit_elem_id_field = meta.get_field<stk::mesh::FieldBase> ("implicit_element_ids");
+      stk::mesh::FieldBase *implicit_elem_id_field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, "implicit_element_ids");
       if (implicit_elem_id_field) {
         elements_needed = true;
       } else {
         for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
           if(*I == "attribute" && names.size() > 1)
             continue;
-          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+          stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
           if (field) {
             elements_needed = true;
             break;
@@ -797,7 +797,7 @@ void process_elem_attributes_and_implicit_ids(Ioss::Region &region, stk::mesh::B
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
       }
@@ -942,7 +942,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
       }
 
       stk::mesh::Field<double> *df_field =
-          meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+          meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
       if (df_field != NULL) {
         stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
@@ -951,7 +951,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
       std::string distributionFactorsPerNodesetFieldName = "distribution_factors_" + part->name();
 
       stk::mesh::Field<double> *df_field_per_nodeset =
-                meta.get_field<stk::mesh::Field<double> >(distributionFactorsPerNodesetFieldName);
+                meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, distributionFactorsPerNodesetFieldName);
 
       if (df_field_per_nodeset != NULL) {
         stk::io::field_data_from_ioss(bulk, df_field_per_nodeset, nodes, entity, "distribution_factors");
@@ -965,7 +965,7 @@ void process_nodesets_df(Ioss::Region &region, stk::mesh::BulkData &bulk, INT /*
       for(Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
         if(*I == "attribute" && names.size() > 1)
           continue;
-        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (*I);
+        stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase> (stk::topology::ELEMENT_RANK, *I);
         if (field)
           stk::io::field_data_from_ioss(bulk, field, nodes, entity, *I);
       }

@@ -218,7 +218,7 @@ namespace app {
     /// looking it up each time it is needed.
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
-      meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+      meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
     stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
   }
@@ -270,7 +270,7 @@ namespace app {
 	for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
 	  if (*I == "attribute" && names.size() > 1)
 	    continue;
-	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
+	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(stk::topology::ELEMENT_RANK, *I);
 	  stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
 	}
@@ -311,7 +311,7 @@ namespace app {
 	/// (and others) somewhere after the declaration instead of
 	/// looking it up each time it is needed.
 	stk::mesh::Field<double> *df_field =
-	  meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+	  meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
 	if (df_field != NULL) {
 	  stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
