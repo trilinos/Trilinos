@@ -60,9 +60,9 @@ namespace MueLu {
       typedef Teuchos::StringToIntegralParameterEntryValidator<int> validator_type;
 
       Teuchos::ParameterList paramList(pL); // make a copy to avoid setting [use]/[unused] flags here. Even if the input list is const, these flags are modified!
-      RCP<ParameterList> validParamList = rcp(new ParameterList()); // output list
+      RCP<ParameterList> validParamList = Teuchos::rcp(new ParameterList()); // output list
 
-      validParamList->set("Solver", "ILUT", "The type of solver to use.", rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
+      validParamList->set("Solver", "ILUT", "The type of solver to use.", Teuchos::rcp(new validator_type(Teuchos::tuple<std::string>("ILUT", "ILUK"), "Solver")));
 
       if (paramList.isParameter("Solver")) {
         // conditional parameters

@@ -74,6 +74,7 @@
 namespace Belos { // should be moved to Belos or Xpetra?
 
   using Teuchos::RCP;
+  using Teuchos::rcp;
 
   ////////////////////////////////////////////////////////////////////
   //
