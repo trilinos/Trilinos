@@ -73,6 +73,7 @@ class AlgSerialGreedy
   {
   }
 
+  // Main entry point for graph coloring.
   void color(
     const RCP<ColoringSolution<Adapter> > &solution,
     const RCP<Teuchos::ParameterList> &pl
@@ -96,7 +97,7 @@ class AlgSerialGreedy
     cout << "rank " << comm_->getRank() << ": edgeIds: " << edgeIds << endl;
     cout << "rank " << comm_->getRank() << ": offsets: " << offsets << endl;
 #endif
-  
+
     // Get color array to fill.
     // TODO: Allow user to input an old coloring.
     ArrayRCP<int> colors = solution->getColorsRCP();
@@ -104,6 +105,22 @@ class AlgSerialGreedy
       colors[i] = 0;
     }
 
+    // Let colorCrsGraph do the real work.
+    colorCrsGraph(nVtx, edgeIds, offsets, colors, pl);
+    return;
+  }
+  
+  // Color graph given by two arrays. API may change. Expert users only!
+  void colorCrsGraph(
+    const lno_t nVtx,
+    ArrayView<const lno_t> edgeIds,
+    ArrayView<const lno_t> offsets,
+    ArrayRCP<int> colors,
+    const RCP<Teuchos::ParameterList> &pl
+  )
+  {
+    HELLO;
+  
     // Find max degree, since (max degree)+1 is an upper bound.
     lno_t maxDegree = 0; 
     for (lno_t i=0; i<nVtx; i++){
