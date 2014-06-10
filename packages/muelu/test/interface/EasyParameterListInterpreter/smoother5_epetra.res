@@ -10,6 +10,7 @@ aggregation: type = uncoupled   [default]
 multigrid algorithm = sa   [default]
 repartition: enable = 0   [default]
 
+Warning: Changing matrix block size to 1 via parameter list option "number of equations".
 Level 0
  Setup Smoother (MueLu::IfpackSmoother{type = Chebyshev})
  chebyshev: ratio eigenvalue = 20   [unused]
