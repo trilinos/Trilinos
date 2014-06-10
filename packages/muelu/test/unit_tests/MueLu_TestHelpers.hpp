@@ -47,7 +47,9 @@
 #define MUELU_TEST_HELPERS_H
 
 #include <string>
+#ifndef _MSC_VER
 #include <dirent.h>
+#endif
 
 // Teuchos
 #include "Teuchos_Comm.hpp"
