@@ -56,7 +56,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_BlockMap& map, bool ze
     Allocated_(false)
 {
   if(!map.GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   AllocateForCopy();
   if(zeroOut) PutValue(0); // Zero out values
@@ -69,7 +69,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(const Epetra_LongLongVector& Source
     Allocated_(false)
 {
   if(!Source.Map().GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   AllocateForCopy();
   DoCopy(Source.Values_);
@@ -82,7 +82,7 @@ Epetra_LongLongVector::Epetra_LongLongVector(Epetra_DataAccess CV, const Epetra_
     Allocated_(false)
 {
   if(!map.GlobalIndicesLongLong())
-     throw ReportError("Epetra_IntVector::Epetra_IntVector: cannot be called with non long long map index type", -1);
+     throw ReportError("Epetra_LongLongVector::Epetra_LongLongVector: cannot be called with non long long map index type", -1);
 
   if (CV==Copy) {
     AllocateForCopy();
@@ -263,10 +263,18 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
                                      int NumPermuteIDs,
                                      int * PermuteToLIDs,
                                      int *PermuteFromLIDs,
-                                     const Epetra_OffsetIndex * Indexor)
+                                     const Epetra_OffsetIndex * Indexor,
+                                     Epetra_CombineMode CombineMode)
 {
   (void)Indexor;
   const Epetra_LongLongVector & A = dynamic_cast<const Epetra_LongLongVector &>(Source);
+
+  if(    CombineMode != Add
+      && CombineMode != Zero
+      && CombineMode != Insert
+      && CombineMode != Average
+      && CombineMode != AbsMax )
+    EPETRA_CHK_ERR(-1); //Unsupported CombinedMode, will default to Zero
 
   long long * From;
   A.ExtractView(&From);
@@ -310,8 +318,18 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
   // Do copy first
   if (NumSameIDs>0)
     if (To!=From) {
-  for (j=0; j<NumSameEntries; j++)
-    To[j] = From[j];
+      if (CombineMode==Add)
+  for (j=0; j<NumSameEntries; j++) To[j] += From[j]; // Add to existing value
+      else if(CombineMode==Insert)
+  for (j=0; j<NumSameEntries; j++) To[j] = From[j];
+      else if(CombineMode==AbsMax)
+        for (j=0; j<NumSameEntries; j++) {
+    To[j] = EPETRA_MAX( To[j],From[j]);
+  }
+      // Note:  The following form of averaging is not a true average if more that one value is combined.
+      //        This might be an issue in the future, but we leave this way for now.
+      else if(CombineMode==Average)
+  for (j=0; j<NumSameEntries; j++) {To[j] += From[j]; To[j] /= 2;}
     }
   // Do local permutation next
   if (NumPermuteIDs>0) {
@@ -319,23 +337,67 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     // Point entry case
     if (Case1) {
 
-      for (j=0; j<NumPermuteIDs; j++)
-  To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+      if (CombineMode==Add)
+  for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; // Add to existing value
+      else if(CombineMode==Insert)
+  for (j=0; j<NumPermuteIDs; j++) To[PermuteToLIDs[j]] = From[PermuteFromLIDs[j]];
+      else if(CombineMode==AbsMax)
+        for (j=0; j<NumPermuteIDs; j++) {
+    To[PermuteToLIDs[j]] = EPETRA_MAX( To[PermuteToLIDs[j]],From[PermuteFromLIDs[j]]);
+  }
+      // Note:  The following form of averaging is not a true average if more that one value is combined.
+      //        This might be an issue in the future, but we leave this way for now.
+      else if(CombineMode==Average)
+  for (j=0; j<NumPermuteIDs; j++) {To[PermuteToLIDs[j]] += From[PermuteFromLIDs[j]]; To[PermuteToLIDs[j]] /= 2;}
     }
     // constant element size case
     else if (Case2) {
 
+      if (CombineMode==Add)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else if(CombineMode==Insert)
       for (j=0; j<NumPermuteIDs; j++) {
   jj = MaxElementSize*PermuteToLIDs[j];
   jjj = MaxElementSize*PermuteFromLIDs[j];
     for (k=0; k<MaxElementSize; k++)
       To[jj+k] = From[jjj+k];
       }
+      else if(CombineMode==AbsMax)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+    To[jj+k] = EPETRA_MAX( To[jj+k],From[jjj+k]);
+      }
+      // Note:  The following form of averaging is not a true average if more that one value is combined.
+      //        This might be an issue in the future, but we leave this way for now.
+      else if(CombineMode==Average)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = MaxElementSize*PermuteToLIDs[j];
+  jjj = MaxElementSize*PermuteFromLIDs[j];
+    for (k=0; k<MaxElementSize; k++)
+      {To[jj+k] += From[jjj+k]; To[jj+k] /= 2;}
+      }
+
     }
 
     // variable element size case
     else {
 
+      if (CombineMode==Add)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] += From[jjj+k];
+      }
+      else if(CombineMode==Insert)
       for (j=0; j<NumPermuteIDs; j++) {
   jj = ToFirstPointInElementList[PermuteToLIDs[j]];
   jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
@@ -343,6 +405,23 @@ int Epetra_LongLongVector::CopyAndPermute(const Epetra_SrcDistObject& Source,
     for (k=0; k<ElementSize; k++)
       To[jj+k] = From[jjj+k];
       }
+      else if(CombineMode==AbsMax)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      To[jj+k] = EPETRA_MAX( To[jj+k],From[jjj+k]);
+      }
+      else if(CombineMode==Average)
+      for (j=0; j<NumPermuteIDs; j++) {
+  jj = ToFirstPointInElementList[PermuteToLIDs[j]];
+  jjj = FromFirstPointInElementList[PermuteFromLIDs[j]];
+  int ElementSize = FromElementSizeList[PermuteFromLIDs[j]];
+    for (k=0; k<ElementSize; k++)
+      {To[jj+k] += From[jjj+k]; To[jj+k] /= 2;}
+      }
+
     }
   }
   return(0);
