@@ -197,6 +197,9 @@ Rather than implementing all possible algorithms, \muelu relies on other \trilin
 \cbc{smoother: sweeps}                   {int}       {2}             {Number of smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
 \cbc{smoother: pre sweeps}               {int}       {2}             {Number of pre-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
 \cbc{smoother: post sweeps}              {int}       {2}             {Number of post-smoother sweeps for relaxation methods, or the order of polynomial for Chebyshev.}
+\cbb{smoother: overlap}                  {int}       {0}             {Smoother subdomain overlap.}
+\cbb{smoother: pre overlap}              {int}       {0}             {Pre-smoother subdomain overlap.}
+\cbb{smoother: post overlap}             {int}       {0}             {Post-smoother subdomain overlap.}
 
 \cbb{coarse: type}                       {string}    {"SuperLU"}     {Coarse solver. Possible values: see Table~\ref{t:coarse_solvers}.}
 \cba{coarse: params}                     {\parameterlist}            {Coarse solver parameters. \muelu passes them directly to coarse solver.}

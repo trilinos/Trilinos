@@ -300,9 +300,10 @@ namespace MueLu {
     // === Smoothing ===
     bool isCustomSmoother =
         paramList.isParameter("smoother: pre or post") ||
-        paramList.isParameter("smoother: type")   || paramList.isParameter("smoother: pre type")   || paramList.isParameter("smoother: post type") ||
-        paramList.isSublist("smoother: params")   || paramList.isSublist("smoother: pre params")   || paramList.isSublist("smoother: post params") ||
-        paramList.isParameter("smoother: sweeps") || paramList.isParameter("smoother: pre sweeps") || paramList.isParameter("smoother: post sweeps");
+        paramList.isParameter("smoother: type")    || paramList.isParameter("smoother: pre type")    || paramList.isParameter("smoother: post type")   ||
+        paramList.isSublist  ("smoother: params")  || paramList.isSublist  ("smoother: pre params")  || paramList.isSublist  ("smoother: post params") ||
+        paramList.isParameter("smoother: sweeps")  || paramList.isParameter("smoother: pre sweeps")  || paramList.isParameter("smoother: post sweeps") ||
+        paramList.isParameter("smoother: overlap") || paramList.isParameter("smoother: pre overlap") || paramList.isParameter("smoother: post overlap");;
     MUELU_READ_2LIST_PARAM(paramList, defaultList, "smoother: pre or post", std::string, "both", PreOrPost);
     if (PreOrPost == "none") {
       manager.SetFactory("Smoother", Teuchos::null);
@@ -311,18 +312,21 @@ namespace MueLu {
       // FIXME: get default values from the factory
       // NOTE: none of the smoothers at the moment use parameter validation framework, so we
       // cannot get the default values from it.
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: pre type"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: pre type\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: type") && paramList.isParameter("smoother: post type"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: type\" and \"smoother: post type\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: pre sweeps"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: pre sweeps\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter("smoother: sweeps") && paramList.isParameter("smoother: post sweeps"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: sweeps\" and \"smoother: post sweeps\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
-      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist("smoother: params") && paramList.isSublist("smoother: pre params"),
-                                 Exceptions::InvalidArgument, "You cannot specify both \"smoother: params\" and \"smoother: pre params\"");
+#define TEST_MUTUALLY_EXCLUSIVE(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isParameter(#arg1) && paramList.isParameter(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+#define TEST_MUTUALLY_EXCLUSIVE_S(arg1,arg2) \
+      TEUCHOS_TEST_FOR_EXCEPTION(paramList.isSublist(#arg1) && paramList.isSublist(#arg2), \
+                                 Exceptions::InvalidArgument, "You cannot specify both \""#arg1"\" and \""#arg2"\"");
+
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: pre type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: type",    "smoother: post type");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: pre sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: sweeps",  "smoother: post sweeps");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: pre overlap");
+      TEST_MUTUALLY_EXCLUSIVE  ("smoother: overlap", "smoother: post overlap");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: pre params");
+      TEST_MUTUALLY_EXCLUSIVE_S("smoother: params",  "smoother: post params");
       TEUCHOS_TEST_FOR_EXCEPTION(PreOrPost == "both" && (paramList.isParameter("smoother: pre type") != paramList.isParameter("smoother: post type")),
                                  Exceptions::InvalidArgument, "You must specify both \"smoother: pre type\" and \"smoother: post type\"");
 
