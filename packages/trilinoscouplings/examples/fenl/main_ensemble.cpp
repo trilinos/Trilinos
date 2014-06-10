@@ -43,6 +43,8 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   params.set("Verbose",     0);
   if ( cmd[ CMD_USE_THREADS ] )
     params.set("Num Threads", cmd[CMD_USE_THREADS]);
+  else if ( cmd[ CMD_USE_OPENMP ] )
+    params.set("Num Threads", cmd[CMD_USE_OPENMP]);
   if ( cmd[ CMD_USE_NUMA ] && cmd[ CMD_USE_CORE_PER_NUMA ] ) {
     params.set("Num NUMA", cmd[ CMD_USE_NUMA ]);
     params.set("Num CoresPerNUMA", cmd[ CMD_USE_CORE_PER_NUMA ]);

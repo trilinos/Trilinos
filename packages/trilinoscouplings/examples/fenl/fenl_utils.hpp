@@ -205,9 +205,9 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 {
   Teuchos::ParameterList params;
   Teuchos::CommandLineProcessor clp(false);
-  cmdline[CMD_USE_THREADS] = 0;       clp.setOption("threads",                 cmdline+CMD_USE_THREADS,  "number of threads");
+  cmdline[CMD_USE_THREADS] = 0;       clp.setOption("threads",                 cmdline+CMD_USE_THREADS,  "number of pthreads threads");
 
-  bool useOpenMP = false;             clp.setOption("openmp", "no-openmp",     &useOpenMP,  "use OpenMP");
+  cmdline[CMD_USE_OPENMP] = 0;        clp.setOption("openmp",                 cmdline+CMD_USE_OPENMP,  "number of openmp threads");
 
   cmdline[CMD_USE_NUMA] = 0;          clp.setOption("numa",                    cmdline+CMD_USE_NUMA,  "number of numa nodes");
 
@@ -256,7 +256,6 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   }
 
   // cmdline is of type int*, which means we can't use it directly in CommandLineProcessor::setOptions for bools.
-  cmdline[CMD_USE_OPENMP]            = useOpenMP;
   cmdline[CMD_USE_CUDA]              = useCuda;
   cmdline[CMD_USE_CUDA_DEV]          = useCudaDev;
   if (useCudaDev)
