@@ -52,6 +52,10 @@
 #include <Teuchos_RCP.hpp>
 #include <Teuchos_VerboseObject.hpp>
 
+#if defined(_MSC_VER) && !defined(M_PI)
+#define M_PI 3.14159265358979323846
+#endif
+
 namespace Galeri {
 
   namespace Xpetra {
