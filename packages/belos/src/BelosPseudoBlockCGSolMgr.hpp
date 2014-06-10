@@ -349,6 +349,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -357,8 +358,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
-  isSet_(false),
-  numIters_(0)
+  isSet_(false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
 

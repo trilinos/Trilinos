@@ -242,13 +242,13 @@ LSQRStatusTest<ScalarType,MV,OP>::LSQRStatusTest( MagnitudeType condMax /* = 0 *
     term_iter_max_ (term_iter_max),
     rel_rhs_err_ (rel_rhs_err),
     rel_mat_err_ (rel_mat_err),
+    rcondMin_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
     status_ (Belos::Undefined),
     term_iter_ (0),
     matCondNum_ ( Teuchos::ScalarTraits<MagnitudeType>::one() ),
     matNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
     resNorm_  ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
-    matResNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() ),
-    rcondMin_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() )
+    matResNorm_ ( Teuchos::ScalarTraits<MagnitudeType>::zero() )
 {}
 
 template <class ScalarType, class MV, class OP>
