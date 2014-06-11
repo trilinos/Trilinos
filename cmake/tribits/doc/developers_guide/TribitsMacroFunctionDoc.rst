@@ -31,6 +31,7 @@ Usage::
     [FINAL_PASS_REGULAR_EXPRESSION <regex> |
       FINAL_FAIL_REGULAR_EXPRESSION <regex>]
     [ENVIRONMENT <var1>=<value1> <var2>=<value2> ...]
+    [TIMEOUT <maxSeconds>]
     )
 
 This function allows one to add a single CTest test that is actually a
@@ -175,6 +176,12 @@ Ordering (TRIBITS_ADD_ADVANCED_TEST())`_).
     If passed in, the listed environment variables will be set before
     calling the test.  This is set using the built-in CTest test property
     ``ENVIRONMENT``.
+
+  ``TIMEOUT <maxSeconds>``
+
+    If passed in, gives maximum number of seconds the test will be allowed
+    to run before being timed-out (see `TRIBITS_ADD_TEST()`_).  This is for
+    the full CTest test, not individual ``TEST_<idx>`` commands!
 
 .. _TEST_<idx> Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST()):
 
