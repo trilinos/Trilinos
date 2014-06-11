@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
+#if defined ( STK_HAS_MPI )
 #include <mpi.h>
+#endif
 
 int gl_argc=0;
 char** gl_argv=0;
@@ -43,8 +45,10 @@ class MinimalistPrinter : public ::testing::EmptyTestEventListener
 
 int main(int argc, char **argv)
 {
+#if defined ( STK_HAS_MPI )
     MPI_Init(&argc, &argv);
     MPI_Comm_rank(MPI_COMM_WORLD, &proc_id);
+#endif
     testing::InitGoogleTest(&argc, argv);
 
     gl_argc = argc;
@@ -56,6 +60,9 @@ int main(int argc, char **argv)
 
     int returnVal = RUN_ALL_TESTS();
 
+
+#if defined ( STK_HAS_MPI )
     MPI_Finalize();
+#endif
     return returnVal;
 }
