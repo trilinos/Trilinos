@@ -17,6 +17,10 @@
 #include <stk_util/STK_config.h>
 #ifdef HAVE_MPI
 #define STK_HAS_MPI
+#else
+#ifndef MPI_Comm
+#define MPI_Comm int
+#endif
 #endif
 #endif
 

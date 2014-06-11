@@ -6,13 +6,15 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/parallel/BroadcastArg.hpp>
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for copy
 #include <string>                       // for basic_string, string
-#include "mpi.h"                        // for MPI_Bcast, MPI_BYTE, etc
+#if defined( STK_HAS_MPI)
+#  include "mpi.h"                      // for MPI_Bcast, MPI_BYTE, etc
+#endif
 #include "stk_util/parallel/Parallel.hpp"  // for parallel_machine_rank, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
 
 namespace stk {

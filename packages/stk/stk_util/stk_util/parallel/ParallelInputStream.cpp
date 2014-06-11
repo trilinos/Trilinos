@@ -6,15 +6,17 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/parallel/ParallelInputStream.hpp>
 #include <cstdio>                       // for NULL, EOF, fclose, fopen, etc
 #include <cstring>                      // for memset
 #include <iostream>                     // for cerr
 #include <stdexcept>                    // for runtime_error
 #include <string>                       // for string
-#include "mpi.h"                        // for ompi_communicator_t, etc
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                        // for ompi_communicator_t, etc
+#endif
 #include "stk_util/parallel/Parallel.hpp"  // for ParallelMachine, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 
 /*--------------------------------------------------------------------*/
 

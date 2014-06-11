@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/environment/RuntimeMessage.hpp>
 #include <algorithm>                    // for max, stable_sort
 #include <functional>                   // for equal_to, binary_function
@@ -19,8 +20,9 @@
 #include <vector>                       // for vector, etc
 #include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
 #include "boost/unordered/unordered_map.hpp"
-#include "mpi.h"                        // for MPI_CHAR, MPI_Comm_rank, etc
-#include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                      // for MPI_CHAR, MPI_Comm_rank, etc
+#endif
 
 
 namespace stk {

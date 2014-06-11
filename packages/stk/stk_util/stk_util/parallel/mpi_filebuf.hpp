@@ -5,7 +5,11 @@
 #ifndef STK_UTIL_PARALLEL_mpi_filebuf_hpp
 #define STK_UTIL_PARALLEL_mpi_filebuf_hpp
 
+#include <stk_util/stk_config.h>
+
+#if defined( STK_HAS_MPI )
 #include <mpi.h>                        // for MPI_Comm, etc
+#endif
 #include <stddef.h>                     // for size_t
 #include <cstdio>                       // for NULL, EOF, FILE
 #include <ios>                          // for streambuf, ios_base, etc

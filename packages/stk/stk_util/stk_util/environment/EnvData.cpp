@@ -1,6 +1,9 @@
 
+#include <stk_util/stk_config.h>
 #include <stk_util/environment/EnvData.hpp>
-#include <mpi.h>                        // for MPI_COMM_NULL, MPI_Comm, etc
+#if defined( STK_HAS_MPI)
+#  include <mpi.h>                        // for MPI_COMM_NULL, MPI_Comm, etc
+#endif
 #include <time.h>                       // for time, NULL
 #include <iostream>                     // for cout, cerr
 #include <stk_util/environment/OutputLog.hpp>  // for register_ostream, etc

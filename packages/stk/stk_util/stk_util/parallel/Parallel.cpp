@@ -7,8 +7,10 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/parallel/Parallel.hpp>
-#include "mpi.h"                        // for MPI_COMM_NULL, etc
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                      // for MPI_COMM_NULL, etc
+#endif
 
 /*--------------------------------------------------------------------*/
 /* Parallel operations */

@@ -7,10 +7,12 @@
  *    ------------------------------------------------------------
  */
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
+
 #include <stk_util/parallel/MPI.hpp>
 #include <sstream>                      // for ostringstream, etc
 #include "mpi.h"                        // for MPI_Datatype, etc
-
 
 namespace sierra {
 namespace MPI {
@@ -319,3 +321,5 @@ AllReduce(
 
 } // namespace MPI
 } // namespace sierra
+
+#endif // if defined( STK_HAS_MPI )

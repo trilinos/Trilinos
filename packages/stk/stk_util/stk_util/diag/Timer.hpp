@@ -9,7 +9,10 @@
 #ifndef STK_UTIL_DIAG_Timer_hpp
 #define STK_UTIL_DIAG_Timer_hpp
 
-#include <mpi.h>                        // for ompi_communicator_t
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI )
+#  include <mpi.h>                      // for ompi_communicator_t
+#endif
 #include <stddef.h>                     // for size_t
 #include <list>                         // for list
 #include <stk_util/diag/Option.hpp>     // for OptionMask, etc

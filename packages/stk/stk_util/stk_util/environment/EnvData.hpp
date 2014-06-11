@@ -9,7 +9,10 @@
 #ifndef STK_UTIL_ENVIRONMENT_EnvData_h
 #define STK_UTIL_ENVIRONMENT_EnvData_h
 
-#include <mpi.h>
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI)
+#  include <mpi.h>
+#endif
 #include <iosfwd>
 #include <map>
 #include <string>

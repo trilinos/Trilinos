@@ -7,6 +7,7 @@
  *    ------------------------------------------------------------
  */
 
+#include <stk_util/stk_config.h>
 #include <stk_util/environment/Env.hpp>
 #include <time.h>                       // for localtime, strftime, time_t
 #include <limits.h>                     // for PATH_MAX
@@ -28,7 +29,6 @@
 #include "boost/program_options/detail/parsers.hpp"
 #include "boost/program_options/errors.hpp"  // for program_options
 #include "boost/program_options/variables_map.hpp"  // for variables_map, etc
-#include "mpi.h"                        // for MPI_COMM_NULL, MPI_Comm, etc
 #include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequire
 namespace boost { namespace program_options { class options_description; } }
 

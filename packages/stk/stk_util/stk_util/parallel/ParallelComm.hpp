@@ -9,9 +9,12 @@
 #ifndef stk_util_parallel_ParallelComm_hpp
 #define stk_util_parallel_ParallelComm_hpp
 
+#include <stk_util/stk_config.h>
 #include <cstddef>                      // for size_t, ptrdiff_t
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
-#include "mpi.h"                        // for ompi_communicator_t
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                      // for ompi_communicator_t
+#endif
 
 // #define TRACKABLE_STK_PARALLEL_COMM
 

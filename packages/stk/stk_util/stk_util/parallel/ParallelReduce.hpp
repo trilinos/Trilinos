@@ -9,13 +9,16 @@
 #ifndef stk_util_parallel_ParallelReduce_hpp
 #define stk_util_parallel_ParallelReduce_hpp
 
+#include <stk_util/stk_config.h>
 #include <stdint.h>                     // for int64_t
 #include <cstddef>                      // for size_t
 #include <iosfwd>                       // for ostream
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
 #include <stk_util/util/SimpleArrayOps.hpp>  // for BitAnd, BitOr, Copy, etc
 #include <string>                       // for string
-#include "mpi.h"                        // for ompi_communicator_t
+#if defined( STK_HAS_MPI)
+#  include "mpi.h"                      // for ompi_communicator_t
+#endif
 
 //------------------------------------------------------------------------
 

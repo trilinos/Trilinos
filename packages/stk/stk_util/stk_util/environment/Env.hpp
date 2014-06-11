@@ -9,7 +9,10 @@
 #ifndef STK_UTIL_DIAG_Env_h
 #define STK_UTIL_DIAG_Env_h
 
-#include <mpi.h>                        // for MPI_Comm
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <ios>                          // for ostream
 #include <string>                       // for string
 
@@ -364,7 +367,6 @@ bool is_shutdown_requested();
  */
 void abort();
 
-
 /**
  * @brief Function <b>parallel_comm</b> returns the current MPI communicator used by
  * the sierra environment.
@@ -382,7 +384,6 @@ MPI_Comm parallel_comm();
  *				communicator.
  */
 MPI_Comm parallel_world_comm();
-
 
 /**
  * @brief Function <b>peer_group</b> returns the peer group rank for an application of type

@@ -7,6 +7,7 @@
  *    ------------------------------------------------------------
  */
 
+#include <stk_util/stk_config.h>
 #include <cstdlib>
 #include <cstring>
 #include <fstream>
@@ -22,6 +23,14 @@ enum { buffer_putback_length =   16 };
 // --------------------------------------------------------------------
 namespace {
   void add_aprepro_defines(SEAMS::Aprepro &aprepro, const std::string &defines);
+  double mpi_wall_time()
+  {
+#if defined(STK_HAS_MPI)
+    return MPI_Wtime();
+#else
+    return 0.0;
+#endif
+  }
 }
 // --------------------------------------------------------------------
 
@@ -61,13 +70,14 @@ mpi_filebuf * mpi_filebuf::set_buffer_length( const size_t len )
 
 /*--------------------------------------------------------------------*/
 
+#if defined( STK_HAS_MPI )
 mpi_filebuf * mpi_filebuf::open(
 	MPI_Comm       communicator ,
   const int            root_processor ,
   const std::ios_base::openmode file_mode ,
   const char * const   file_name )
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
   // If already open then abort
   if ( NULL != comm_buffer ) return NULL ;
@@ -77,8 +87,9 @@ mpi_filebuf * mpi_filebuf::open(
     ( std::ios::out == file_mode ) ? 'w' : (
     ( std::ios::app == file_mode ) ? 'a' : -1 ) );
 
-  int err = 0 ;
+
   int rank = 0 ;
+  int err = 0 ;
   int local = 0, global = 0 ;
   int data[3] ;
 
@@ -100,7 +111,7 @@ mpi_filebuf * mpi_filebuf::open(
     MPI_Abort( communicator , err );
 
   if ( global ) {
-    comm_time += MPI_Wtime() - start_time ;
+    comm_time += mpi_wall_time() - start_time ;
     return NULL ;
   }
 
@@ -138,7 +149,7 @@ mpi_filebuf * mpi_filebuf::open(
   if ( global ) {
     if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
     if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
-    comm_time += MPI_Wtime() - start_time ;
+    comm_time += mpi_wall_time() - start_time ;
     return NULL ;
   }
 
@@ -185,11 +196,72 @@ mpi_filebuf * mpi_filebuf::open(
   // If output then set up put-buffer
   if ( comm_output ) setp( comm_buffer, comm_buffer + comm_buffer_len );
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
   return this ;
 }
+#else
+mpi_filebuf * mpi_filebuf::open(
+				MPI_Comm      /* communicator */,
+				const int            root_processor ,
+				const std::ios_base::openmode file_mode ,
+				const char * const   file_name )
+{
+  // If already open then abort
+  if ( NULL != comm_buffer ) return NULL ;
 
+  const int mode =
+    ( std::ios::in  == file_mode ) ? 'r' : (
+    ( std::ios::out == file_mode ) ? 'w' : (
+    ( std::ios::app == file_mode ) ? 'a' : -1 ) );
+
+  char * const tmp_buf = static_cast<char*>(std::malloc( comm_buffer_len ));
+  std::FILE *       tmp_fp  = std::fopen( file_name , ( ( ( mode == 'r' ) ? "r" :
+							  ( mode == 'w' ) ? "w" : "a" ) ) );
+  // If input and use_aprepro, parse the file and store parsed results
+  // into buffer on root_processor.
+  if (use_aprepro && !comm_output) {
+    // Note that file is double-opened.  Aprepro uses an std::fstream
+    std::fstream infile(file_name, std::fstream::in);
+    if (!infile.good()) {
+      if ( NULL != tmp_buf ) std::free(   tmp_buf ); // Deallocate
+      if ( NULL != tmp_fp  ) std::fclose( tmp_fp );  // Close the file
+      std::cerr << "APREPRO: Could not open file: " << file_name << std::endl;
+      return NULL;
+    }
+
+    SEAMS::Aprepro aprepro;
+
+    add_aprepro_defines(aprepro, aprepro_defines);
+
+    bool result = aprepro.parse_stream(infile);
+    if (result) {
+      // Get size of buffer needed to store the parsed data...
+      std::string tmp = aprepro.parsing_results().str();
+      aprepro.clear_results();
+      aprepro_buffer_len = tmp.size();
+      aprepro_buffer_ptr = 0; // At beginning of buffer...
+      aprepro_buffer = static_cast<char*>(std::malloc(aprepro_buffer_len));
+      std::memcpy(aprepro_buffer, tmp.data(), aprepro_buffer_len);
+    }
+  }
+
+  //--------------------------------------------------------------------
+  // All memory allocated and root processor opened the file
+  // Update the internal members accordingly.
+
+  comm         = communicator ;
+  comm_root    = root_processor ;
+  comm_root_fp = tmp_fp ;
+  comm_buffer  = tmp_buf ;
+  comm_output  = mode != 'r' ;
+
+  // If output then set up put-buffer
+  if ( comm_output ) setp( comm_buffer, comm_buffer + comm_buffer_len );
+
+  return this ;
+}
+#endif
 /*--------------------------------------------------------------------*/
 
 mpi_filebuf * mpi_filebuf::close()
@@ -236,7 +308,7 @@ mpi_filebuf * mpi_filebuf::close()
 
 int mpi_filebuf::underflow()
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
   if ( NULL != comm_buffer && ! comm_output &&
        (gptr() == NULL || gptr() >= egptr()) ) { // valid get buffer
@@ -261,22 +333,25 @@ int mpi_filebuf::underflow()
       }
     }
 
+#if defined( STK_HAS_MPI )
     int err = MPI_Bcast(&nread, 1, MPI_INT, comm_root, comm );
     if (err != MPI_SUCCESS)
       MPI_Abort(comm,err);
-
+#endif
+    
     // If the read is successfull then update the get buffer pointers:
     if (nread > 0) {
+#if defined( STK_HAS_MPI )
       // Broadcast the read buffer to all processors:
       err = MPI_Bcast(buf, nread, MPI_BYTE, comm_root, comm);
       if (err != MPI_SUCCESS)
 	MPI_Abort(comm,err);
-
+#endif
       // Set the get buffer:
       setg( comm_buffer, buf, buf + nread );
 
       // Return the next character from the file:
-      comm_time += MPI_Wtime() - start_time ;
+      comm_time += mpi_wall_time() - start_time ;
 
       return *buf ;
     }
@@ -285,7 +360,7 @@ int mpi_filebuf::underflow()
   // Failed: set the get buffer to NULL and return EOF
   setg(NULL, NULL, NULL);
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
   return EOF;
 }
@@ -345,9 +420,10 @@ int mpi_filebuf::overflow( int c )
    write them to the output file.
 */
 
+#if defined( STK_HAS_MPI )
 mpi_filebuf * mpi_filebuf::flush()
 {
-  const double start_time = MPI_Wtime();
+  const double start_time = mpi_wall_time();
 
   int result = -1 ; // Failure return value
 
@@ -368,19 +444,18 @@ mpi_filebuf * mpi_filebuf::flush()
     int  * recv_len  = NULL ;
     int  * recv_disp = NULL ;
 
-    int nproc = 0 ;
+    int nproc = 1 ;
 
 
 //  if ( NULL != comm_root_fp ) {
 
-//  It should no be neccessary to allocate recv_len on non-root
+//  It should not be neccessary to allocate recv_len on non-root
 //  nodes, but the MPI_Gatherv on Janus always accesses recv_len
 //  even on non-root processors which causes a segmentaion
 //  violation if recv_len is set to NULL.
 
     if ( MPI_SUCCESS != ( err = MPI_Comm_size(comm,&nproc) ) )
       MPI_Abort( comm , err );
-
     recv_len = static_cast<int*>(std::malloc( sizeof(int) * nproc ));
 
     if ( NULL == recv_len ) MPI_Abort( comm , MPI_ERR_UNKNOWN );
@@ -487,11 +562,16 @@ mpi_filebuf * mpi_filebuf::flush()
     if ( NULL != recv_disp ) std::free( recv_disp );
   }
 
-  comm_time += MPI_Wtime() - start_time ;
+  comm_time += mpi_wall_time() - start_time ;
 
   return -1 == result ? NULL : this ;
 }
-
+#else
+mpi_filebuf * mpi_filebuf::flush()
+{
+  return sync();
+}
+#endif
 /*--------------------------------------------------------------------*/
 
 int mpi_filebuf::sync()
