@@ -245,11 +245,11 @@ WARN_FORMAT            = "$file:$line: $text"
 # with spaces.
 
 INPUT                  = index.doc ../src ../../aztecoo/src \
-                         ../example/Lesson01-Init/index.doc \
-                         ../example/Lesson02-Map-Vector/index.doc \
-                         ../example/Lesson03-Power-Method/index.doc \
-                         ../example/Lesson04-Sparse-Matrix-Fill/index.doc \
-                         ../example/Lesson05-Redistribution/index.doc
+                         ../example/Lessons/Lesson01-Init/index.doc \
+                         ../example/Lessons/Lesson02-Map-Vector/index.doc \
+                         ../example/Lessons/Lesson03-Power-Method/index.doc \
+                         ../example/Lessons/Lesson04-Sparse-Matrix-Fill/index.doc \
+                         ../example/Lessons/Lesson05-Redistribution/index.doc
 
 # If the value of the INPUT tag contains directories, you can use the
 # FILE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
@@ -282,7 +282,12 @@ EXCLUDE_PATTERNS       = *.x \
 # directories that contain example code fragments that are included (see
 # the \include command).
 
-EXAMPLE_PATH           = ../example/petra_power_method/cxx_main.cpp
+EXAMPLE_PATH           = ../example/petra_power_method/cxx_main.cpp \
+                         ../example/Lessons/Lesson01-Init \
+                         ../example/Lessons/Lesson02-Map-Vector \
+                         ../example/Lessons/Lesson03-Power-Method \
+                         ../example/Lessons/Lesson04-Sparse-Matrix-Fill \
+                         ../example/Lessons/Lesson05-Redistribution
 
 # If the value of the EXAMPLE_PATH tag contains directories, you can use the
 # EXAMPLE_PATTERNS tag to specify one or more wildcard pattern (like *.cpp
