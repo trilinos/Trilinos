@@ -182,6 +182,12 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
   stk::mesh::EntityVector nodesInFirstPart;
   stk::mesh::get_selected_entities(firstPart, stkMeshBulkData.buckets(stk::topology::NODE_RANK), nodesInFirstPart);
 
+  for(size_t i=0; i<nodesInFirstPart.size(); i++)
+  {
+      double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
+      *fieldPtr = stkMeshBulkData.identifier(nodesInFirstPart[i]);
+  }
+
   stk::mesh::Part& partAfterCommit = stkMeshMetaData.declare_part("partAfterCommit", stk::topology::ELEMENT_RANK);
 
   stkMeshBulkData.modification_begin();
@@ -197,7 +203,11 @@ TEST(UnitTestPartsAfterCommit, PartInduction)
     EXPECT_EQ(nodesInFirstPart[i], nodesInPartDeclaredAfterCommit[i]);
   }
 
-  testFieldOnNodes(stkMeshBulkData, nodesInPartDeclaredAfterCommit, partAfterCommit, nodeField1);
+  for(size_t i = 0; i < nodesInFirstPart.size(); ++i)
+  {
+    double* fieldPtr = stk::mesh::field_data(nodeField1, nodesInFirstPart[i]);
+    EXPECT_NEAR(static_cast<double>(stkMeshBulkData.identifier(nodesInFirstPart[i])), *fieldPtr, 1e-10);
+  }
 }
 
 TEST(UnitTestPartsAfterCommit, SelectorOps)
