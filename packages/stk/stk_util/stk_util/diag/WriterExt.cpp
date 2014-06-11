@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
 #include <stk_util/diag/WriterExt.hpp>
 #include <stk_util/diag/String.hpp>     // for Identifier, String
 #include <stk_util/environment/Demangle.hpp>  // for demangle
@@ -50,6 +51,7 @@ operator<<(
 }
 
 
+#if defined ( STK_HAS_MPI )
 Writer &
 operator<<(
   Writer &        dout,
@@ -92,7 +94,7 @@ operator<<(
     dout << loc.m_value << " " << loc.m_other << "@" << loc.m_loc;
   return dout;
 }
-
+#endif
 
 } // namespace diag
 } // namespace stk

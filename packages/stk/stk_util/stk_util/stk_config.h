@@ -18,9 +18,15 @@
 #ifdef HAVE_MPI
 #define STK_HAS_MPI
 #else
+
 #ifndef MPI_Comm
 #define MPI_Comm int
 #endif
+
+#ifndef MPI_COMM_NULL
+#define MPI_COMM_NULL 0
+#endif
+
 #endif
 #endif
 

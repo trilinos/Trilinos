@@ -1,5 +1,6 @@
+#include <stk_util/stk_config.h>
 #include <stk_util/environment/Scheduler.hpp>
-#ifdef SIERRA_PARALLEL_MPI
+#if defined(STK_HAS_MPI)
 #include <mpi.h>
 #endif
 #include <stk_util/environment/EnvData.hpp>
@@ -301,6 +302,7 @@ bool Scheduler::force_schedule()
   // It is possible that the forceSchedule_flag has been set on only one
   // processor so we need to see if it is true on any processor...
   bool result = forceSchedule_;
+#if defined(STK_HAS_MPI)
   if (EnvData::parallel_size() > 1) {
     static int inbuf[1], outbuf[1];
     inbuf[0] = forceSchedule_ ? 1 : 0;
@@ -314,6 +316,7 @@ bool Scheduler::force_schedule()
 
     result = outbuf[0] > 0;
   }
+#endif
   forceSchedule_ = false;
   return result;
 }

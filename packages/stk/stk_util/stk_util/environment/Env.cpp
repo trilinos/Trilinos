@@ -315,7 +315,11 @@ is_shutdown_requested()
   int shutdown_requested_in = stk::EnvData::instance().m_shutdownRequested || Env::HUP_received();
   int shutdown_requested = -1;
 
+#if defined(STK_HAS_MPI)
   MPI_Allreduce(&shutdown_requested_in, &shutdown_requested, 1, MPI_INT, MPI_SUM, Env::parallel_comm());
+#else
+  shutdown_requested = shutdown_requested_in;
+#endif
 
   return shutdown_requested != 0;
 }
@@ -344,7 +348,9 @@ void abort() {
 
   ::sleep(1);					// Give the other processors a chance at
 						// catching up, seems to help hanging problems.
+#if defined(STK_HAS_MPI)
   MPI_Abort(env_data.m_parallelComm, MPI_ERR_OTHER);	// First try to die
+#endif
   std::exit( EXIT_FAILURE );                    // Second try to die
 }
 

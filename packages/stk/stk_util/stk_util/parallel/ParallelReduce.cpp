@@ -346,6 +346,12 @@ void all_reduce_sum( ParallelMachine ,
 }
 
 void all_reduce_sum( ParallelMachine ,
+                     const long * local , long * global , unsigned count )
+{
+  for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }
+}
+
+void all_reduce_sum( ParallelMachine ,
                      const size_t * local , size_t * global , unsigned count )
 {
   for ( unsigned i = 0 ; i < count ; ++i ) { global[i] = local[i] ; }

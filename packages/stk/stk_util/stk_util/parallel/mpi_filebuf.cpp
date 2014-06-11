@@ -202,7 +202,7 @@ mpi_filebuf * mpi_filebuf::open(
 }
 #else
 mpi_filebuf * mpi_filebuf::open(
-				MPI_Comm      /* communicator */,
+				      MPI_Comm       communicator,
 				const int            root_processor ,
 				const std::ios_base::openmode file_mode ,
 				const char * const   file_name )
@@ -569,7 +569,8 @@ mpi_filebuf * mpi_filebuf::flush()
 #else
 mpi_filebuf * mpi_filebuf::flush()
 {
-  return sync();
+  sync();
+  return this;
 }
 #endif
 /*--------------------------------------------------------------------*/
