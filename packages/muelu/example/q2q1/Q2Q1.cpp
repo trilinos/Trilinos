@@ -78,6 +78,9 @@
 #include <MueLu_Utilities.hpp>
 
 #include <MueLu_UseDefaultTypes.hpp>
+#include "MueLu_SmootherFactory.hpp"
+#include <MueLu_Ifpack2Smoother.hpp>
+#include "MueLu_TrilinosSmoother.hpp"
 
 #ifdef HAVE_MUELU_BELOS
 #include <BelosConfigDefs.hpp>
@@ -139,8 +142,8 @@ int main(int argc, char *argv[]) {
 
   std::string xmlFileName  = "driver.xml";   clp.setOption("xml",      &xmlFileName,   "read parameters from a file [default = 'driver.xml']");
   double      tol          = 1e-12;          clp.setOption("tol",      &tol,           "solver convergence tolerance");
-  int         n            = 9;              clp.setOption("n",        &n,             "problem size (1D)");
-  int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
+  int         n            = 65;              clp.setOption("n",        &n,             "problem size (1D)");
+  int         maxLevels    = 3;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
   int         compare      = 0;              clp.setOption("compare",  &compare,       "compare block and point hierarchies");
 
 
@@ -214,7 +217,7 @@ int main(int argc, char *argv[]) {
   A->setMatrix(1, 1, A_22_crs);
 #endif
   A->fillComplete();
-  A->Merge();
+  A->Merge();           // rst: do we need this merge? 
 
   // Step 3: construct coordinates
   const int NDim = 2;
@@ -264,6 +267,17 @@ int main(int argc, char *argv[]) {
   H[0]->GetLevel(0)->Set("CoordinatesVelocity", coords1);
   H[0]->GetLevel(0)->Set("CoordinatesPressure", coords2);
   H[0]->SetMaxCoarseSize(1);
+
+  // The 1st invocation of Setup() builds the hierarchy using
+  // the filtered matrix. This build includes the grid transfers
+  // but not the creation of the smoothers. Note: we need to indicate
+  // what should be kept from the 1st invocation for the 2nd
+  // invocation, which then focuses on building the smoothers
+  // for the unfiltered matrix.
+
+  H[0]->Keep("P", M.GetFactory("P").get());
+  H[0]->Keep("R", M.GetFactory("R").get());
+  H[0]->Keep("Ptent", M.GetFactory("Ptent").get());
   H[0]->Setup(M, 0, maxLevels);
 
   // =========================================================================
@@ -278,6 +292,31 @@ int main(int argc, char *argv[]) {
     H[1]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(rcp(new CrsMatrixWrap(A->Merge()))));
     mueLuFactory->SetupHierarchy(*H[1]);
   }
+
+  // Set up Vanka smoothing via a combination of Schwarz and
+  // block relaxation. 
+
+  Teuchos::ParameterList OuterList;
+  OuterList.set("schwarz: overlap level", (int) 0);
+  OuterList.set("schwarz: zero starting solution", false);
+  OuterList.set("subdomain solver name", "Block_Relaxation");
+  Teuchos::ParameterList& InnerList = OuterList.sublist("subdomain solver parameters");
+  InnerList.set("partitioner: type","user");
+  InnerList.set("partitioner: overlap"    ,(int) 1);
+  InnerList.set("relaxation: type"        ,"Gauss-Seidel");
+  InnerList.set("relaxation: sweeps"      ,(int) 1);
+  InnerList.set("relaxation: damping factor",0.5);
+//InnerList.set("relaxation: backward mode",true);  NOT SUPPORTED YET
+  InnerList.set("relaxation: zero starting solution", false);
+  std::string ifpackType = "SCHWARZ";
+  RCP<SmootherPrototype> smootherPrototype = rcp(new TrilinosSmoother(ifpackType, OuterList));
+  M.SetFactory("Smoother", rcp(new SmootherFactory(smootherPrototype)));
+  M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
+
+  // For the smoother setup use the unfiltered matrix
+
+  H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
+  H[0]->Setup(M, 0, H[0]->GetNumLevels());
 
   // =========================================================================
   // System solution (Ax = b) - I (block)
@@ -303,7 +342,6 @@ int main(int argc, char *argv[]) {
   // Define Belos Operator
   Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
 
-
   // Belos parameter list
   int maxIts = 2000;
   Teuchos::ParameterList belosList;
@@ -321,7 +359,7 @@ int main(int argc, char *argv[]) {
 
     // Construct a Belos LinearProblem object
     RCP<Belos::LinearProblem<SC, MV, OP> > belosProblem = rcp(new Belos::LinearProblem<SC, MV, OP>(belosOp, X, B));
-    belosProblem->setLeftPrec(belosPrec);
+    belosProblem->setRightPrec(belosPrec);
 
     bool set = belosProblem->setProblem();
     if (set == false) {
