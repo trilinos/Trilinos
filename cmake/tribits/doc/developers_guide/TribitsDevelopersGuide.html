@@ -7366,6 +7366,7 @@ TRIBITS_ADD_ADVANCED_TEST(
   [FINAL_PASS_REGULAR_EXPRESSION &lt;regex&gt; |
     FINAL_FAIL_REGULAR_EXPRESSION &lt;regex&gt;]
   [ENVIRONMENT &lt;var1&gt;=&lt;value1&gt; &lt;var2&gt;=&lt;value2&gt; ...]
+  [TIMEOUT &lt;maxSeconds&gt;]
   )
 </pre>
 <p>This function allows one to add a single CTest test that is actually a
@@ -7494,6 +7495,11 @@ The list of host types for which <strong>not</strong> to enable the test (see
 If passed in, the listed environment variables will be set before
 calling the test.  This is set using the built-in CTest test property
 <tt class="docutils literal">ENVIRONMENT</tt>.</blockquote>
+<p><tt class="docutils literal">TIMEOUT &lt;maxSeconds&gt;</tt></p>
+<blockquote>
+If passed in, gives maximum number of seconds the test will be allowed
+to run before being timed-out (see <a class="reference internal" href="#tribits-add-test">TRIBITS_ADD_TEST()</a>).  This is for
+the full CTest test, not individual <tt class="docutils literal">TEST_&lt;idx&gt;</tt> commands!</blockquote>
 </blockquote>
 <p id="test-idx-test-blocks-and-arguments-tribits-add-advanced-test"><strong>TEST_&lt;idx&gt; Test Blocks and Arguments (TRIBITS_ADD_ADVANCED_TEST())</strong></p>
 <p>Each test command block <tt class="docutils literal">TEST_&lt;idx&gt;</tt> runs either a package-built test
