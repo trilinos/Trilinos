@@ -239,7 +239,8 @@ int Epetra_DistObject::DoTransfer(const Epetra_SrcDistObject& A,
   EPETRA_CHK_ERR(CheckSizes(A));
 
   if (NumSameIDs + NumPermuteIDs > 0) {
-    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor));
+    // Ensure that for CopyAndPermute the behavior is like pre-bug 6079 fix.
+    EPETRA_CHK_ERR(CopyAndPermute(A, NumSameIDs, NumPermuteIDs, PermuteToLIDs, PermuteFromLIDs,Indexor, CombineMode == Zero ? Insert : CombineMode));
   }
 
   if (CombineMode==Zero)

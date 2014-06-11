@@ -136,7 +136,7 @@ namespace Belos {
      *   - "Convergence Tolerance" - a \c MagnitudeType specifying the level that residual norms must reach to decide convergence.
      */
     PseudoBlockCGSolMgr( const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-	                 const Teuchos::RCP<Teuchos::ParameterList> &pl );
+                         const Teuchos::RCP<Teuchos::ParameterList> &pl );
 
     //! Destructor.
     virtual ~PseudoBlockCGSolMgr() {};
@@ -328,6 +328,7 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
   maxIters_(maxIters_default_),
+  numIters_(0),
   verbosity_(verbosity_default_),
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
@@ -336,15 +337,14 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr() :
   showMaxResNormOnly_(showMaxResNormOnly_default_),
   resScale_(resScale_default_),
   label_(label_default_),
-  isSet_(false),
-  numIters_(0)
+  isSet_(false)
 {}
 
 // Basic Constructor
 template<class ScalarType, class MV, class OP>
-PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
-							 const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
-							 const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
+PseudoBlockCGSolMgr<ScalarType,MV,OP>::
+PseudoBlockCGSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
+                     const Teuchos::RCP<Teuchos::ParameterList> &pl ) :
   problem_(problem),
   outputStream_(outputStream_default_),
   convtol_(convtol_default_),
@@ -360,12 +360,15 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::PseudoBlockCGSolMgr(
   label_(label_default_),
   isSet_(false)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    problem_.is_null (), std::invalid_argument,
+    "Belos::PseudoBlockCGSolMgr two-argument constructor: "
+    "'problem' is null.  You must supply a non-null Belos::LinearProblem "
+    "instance when calling this constructor.");
 
-  // If the parameter list pointer is null, then set the current parameters to the default parameter list.
-  if (!is_null(pl)) {
+  if (! pl.is_null ()) {
     // Set the parameters using the list that was passed in.
-    setParameters( pl );
+    setParameters (pl);
   }
 }
 
@@ -522,10 +525,10 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
       // Update parameter in our list and residual tests, using the
       // given parameter name.
       if (implicitResidualScalingName) {
-	params_->set ("Implicit Residual Scaling", resScale_);
+        params_->set ("Implicit Residual Scaling", resScale_);
       }
       else {
-	params_->set ("Residual Scaling", resScale_);
+        params_->set ("Residual Scaling", resScale_);
       }
 
       if (! convTest_.is_null()) {
@@ -533,8 +536,8 @@ void PseudoBlockCGSolMgr<ScalarType,MV,OP>::setParameters( const Teuchos::RCP<Te
           convTest_->defineScaleForm( resScaleType, Belos::TwoNorm );
         }
         catch (std::exception& e) {
-	  // Make sure the convergence test gets constructed again.
-	  newResTest = true;
+          // Make sure the convergence test gets constructed again.
+          newResTest = true;
         }
       }
     }
@@ -635,8 +638,8 @@ PseudoBlockCGSolMgr<ScalarType,MV,OP>::getValidParameters() const
     // Scaling").  The new name was added for compatibility with other
     // solvers, none of which use "Residual Scaling".
     pl->set("Residual Scaling", resScale_default_,
-	    "The type of scaling used in the residual convergence test.  This "
-	    "name is deprecated; the new name is \"Implicit Residual Scaling\".");
+            "The type of scaling used in the residual convergence test.  This "
+            "name is deprecated; the new name is \"Implicit Residual Scaling\".");
     pl->set("Timer Label", label_default_,
       "The string to use as a prefix for the timer labels.");
     //  defaultParams_->set("Restart Timers", restartTimers_);
@@ -721,90 +724,90 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
       while(1) {
 
-	// tell block_gmres_iter to iterate
-	try {
-	  block_cg_iter->iterate();
+        // tell block_gmres_iter to iterate
+        try {
+          block_cg_iter->iterate();
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check convergence first
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  if ( convTest_->getStatus() == Passed ) {
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check convergence first
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          if ( convTest_->getStatus() == Passed ) {
 
-	    // Figure out which linear systems converged.
-	    std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
+            // Figure out which linear systems converged.
+            std::vector<int> convIdx = Teuchos::rcp_dynamic_cast<StatusTestGenResNorm<ScalarType,MV,OP> >(convTest_)->convIndices();
 
-	    // If the number of converged linear systems is equal to the
+            // If the number of converged linear systems is equal to the
             // number of current linear systems, then we are done with this block.
-	    if (convIdx.size() == currRHSIdx.size())
-	      break;  // break from while(1){block_cg_iter->iterate()}
+            if (convIdx.size() == currRHSIdx.size())
+              break;  // break from while(1){block_cg_iter->iterate()}
 
-	    // Inform the linear problem that we are finished with this current linear system.
-	    problem_->setCurrLS();
+            // Inform the linear problem that we are finished with this current linear system.
+            problem_->setCurrLS();
 
-	    // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
-	    int have = 0;
+            // Reset currRHSIdx to have the right-hand sides that are left to converge for this block.
+            int have = 0;
             std::vector<int> unconvIdx(currRHSIdx.size());
-	    for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
-	      bool found = false;
-	      for (unsigned int j=0; j<convIdx.size(); ++j) {
-		if (currRHSIdx[i] == convIdx[j]) {
-		  found = true;
-		  break;
-		}
-	      }
-	      if (!found) {
+            for (unsigned int i=0; i<currRHSIdx.size(); ++i) {
+              bool found = false;
+              for (unsigned int j=0; j<convIdx.size(); ++j) {
+                if (currRHSIdx[i] == convIdx[j]) {
+                  found = true;
+                  break;
+                }
+              }
+              if (!found) {
                 currIdx2[have] = currIdx2[i];
-		currRHSIdx[have++] = currRHSIdx[i];
-	      }
-	    }
-	    currRHSIdx.resize(have);
-	    currIdx2.resize(have);
+                currRHSIdx[have++] = currRHSIdx[i];
+              }
+            }
+            currRHSIdx.resize(have);
+            currIdx2.resize(have);
 
-	    // Set the remaining indices after deflation.
-	    problem_->setLSIndex( currRHSIdx );
+            // Set the remaining indices after deflation.
+            problem_->setLSIndex( currRHSIdx );
 
-	    // Get the current residual vector.
-	    std::vector<MagnitudeType> norms;
+            // Get the current residual vector.
+            std::vector<MagnitudeType> norms;
             R_0 = MVT::CloneCopy( *(block_cg_iter->getNativeResiduals(&norms)),currIdx2 );
-	    for (int i=0; i<have; ++i) { currIdx2[i] = i; }
+            for (int i=0; i<have; ++i) { currIdx2[i] = i; }
 
-	    // Set the new state and initialize the solver.
-	    CGIterationState<ScalarType,MV> defstate;
-	    defstate.R = R_0;
-	    block_cg_iter->initializeCG(defstate);
-	  }
+            // Set the new state and initialize the solver.
+            CGIterationState<ScalarType,MV> defstate;
+            defstate.R = R_0;
+            block_cg_iter->initializeCG(defstate);
+          }
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // check for maximum iterations
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  else if ( maxIterTest_->getStatus() == Passed ) {
-	    // we don't have convergence
-	    isConverged = false;
-	    break;  // break from while(1){block_cg_iter->iterate()}
-	  }
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // check for maximum iterations
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
+          else if ( maxIterTest_->getStatus() == Passed ) {
+            // we don't have convergence
+            isConverged = false;
+            break;  // break from while(1){block_cg_iter->iterate()}
+          }
 
-	  ////////////////////////////////////////////////////////////////////////////////////
-	  //
-	  // we returned from iterate(), but none of our status tests Passed.
-	  // something is wrong, and it is probably our fault.
-	  //
-	  ////////////////////////////////////////////////////////////////////////////////////
+          ////////////////////////////////////////////////////////////////////////////////////
+          //
+          // we returned from iterate(), but none of our status tests Passed.
+          // something is wrong, and it is probably our fault.
+          //
+          ////////////////////////////////////////////////////////////////////////////////////
 
-	  else {
-	    TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
-			       "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
-	  }
-	}
-	catch (const std::exception &e) {
-	  printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration "
-				   << block_cg_iter->getNumIters() << std::endl
-				   << e.what() << std::endl;
-	  throw;
-	}
+          else {
+            TEUCHOS_TEST_FOR_EXCEPTION(true,std::logic_error,
+                               "Belos::PseudoBlockCGSolMgr::solve(): Invalid return from PseudoBlockCGIter::iterate().");
+          }
+        }
+        catch (const std::exception &e) {
+          printer_->stream(Errors) << "Error! Caught std::exception in PseudoBlockCGIter::iterate() at iteration "
+                                   << block_cg_iter->getNumIters() << std::endl
+                                   << e.what() << std::endl;
+          throw;
+        }
       }
 
       // Inform the linear problem that we are finished with this block linear system.
@@ -816,17 +819,17 @@ ReturnType PseudoBlockCGSolMgr<ScalarType,MV,OP>::solve() {
 
       if ( numRHS2Solve > 0 ) {
 
-	numCurrRHS = numRHS2Solve;
-	currIdx.resize( numCurrRHS );
-	currIdx2.resize( numCurrRHS );
-	for (int i=0; i<numCurrRHS; ++i)
-	  { currIdx[i] = startPtr+i; currIdx2[i] = i; }
+        numCurrRHS = numRHS2Solve;
+        currIdx.resize( numCurrRHS );
+        currIdx2.resize( numCurrRHS );
+        for (int i=0; i<numCurrRHS; ++i)
+          { currIdx[i] = startPtr+i; currIdx2[i] = i; }
 
-	// Set the next indices.
-	problem_->setLSIndex( currIdx );
+        // Set the next indices.
+        problem_->setLSIndex( currIdx );
       }
       else {
-	currIdx.resize( numRHS2Solve );
+        currIdx.resize( numRHS2Solve );
       }
 
     }// while ( numRHS2Solve > 0 )

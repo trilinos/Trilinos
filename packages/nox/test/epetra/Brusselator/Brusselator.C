@@ -495,7 +495,7 @@ bool Brusselator::evaluate(NOX::Epetra::Interface::Required::FillType fType,
 
   // Do an assemble for overlap nodes
   if( overlapType == NODES )
-    tmp_rhs->Export(*rhs, *Importer, Add);
+    tmp_rhs->Export(*rhs, *Importer, Insert);
 
 //  Comm->Barrier();
 //  std::cout << "Returned tmp_rhs residual vector :\n" << std::endl << *tmp_rhs << std::endl;

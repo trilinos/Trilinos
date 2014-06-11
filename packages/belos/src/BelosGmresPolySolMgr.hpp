@@ -439,6 +439,7 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
+  numIters_ (0),
   blockSize_ (blockSize_default_),
   numBlocks_ (numBlocks_default_),
   verbosity_ (verbosity_default_),
@@ -449,14 +450,13 @@ GmresPolySolMgr<ScalarType,MV,OP>::GmresPolySolMgr () :
   orthoType_ (orthoType_default_),
   impResScale_ (impResScale_default_),
   expResScale_ (expResScale_default_),
+  poly_dim_ (0),
   label_ (label_default_),
   isPolyBuilt_ (false),
   isSet_ (false),
   isSTSet_ (false),
   expResTest_ (false),
-  loaDetected_ (false),
-  numIters_(0),
-  poly_dim_(0)
+  loaDetected_ (false)
 {}
 
 
@@ -472,6 +472,7 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   maxDegree_ (maxDegree_default_),
   maxRestarts_ (maxRestarts_default_),
   maxIters_ (maxIters_default_),
+  numIters_ (0),
   blockSize_ (blockSize_default_),
   numBlocks_ (numBlocks_default_),
   verbosity_ (verbosity_default_),
@@ -482,14 +483,13 @@ GmresPolySolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
   orthoType_ (orthoType_default_),
   impResScale_ (impResScale_default_),
   expResScale_ (expResScale_default_),
+  poly_dim_ (0),
   label_ (label_default_),
   isPolyBuilt_ (false),
   isSet_ (false),
   isSTSet_ (false),
   expResTest_ (false),
-  loaDetected_ (false),
-  numIters_(0),
-  poly_dim_(0)
+  loaDetected_ (false)
 {
   TEUCHOS_TEST_FOR_EXCEPTION(
     problem_.is_null (), std::invalid_argument,

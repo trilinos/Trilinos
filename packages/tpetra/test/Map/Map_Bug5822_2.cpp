@@ -177,7 +177,7 @@ TEUCHOS_UNIT_TEST( Map, Bug5822_StartWithZeroThenSkipTo3Billion )
   RCP<const map_type> map;
   try {
     TEUCHOS_FUNC_TIME_MONITOR("Construct Map");
-    map = rcp (new map_type (globalNumElts, myGids (), indexBase, comm, node));
+    map = Teuchos::rcp (new map_type (globalNumElts, myGids (), indexBase, comm, node));
   }
   catch (std::exception& e) {
     locallyThrew = 1;

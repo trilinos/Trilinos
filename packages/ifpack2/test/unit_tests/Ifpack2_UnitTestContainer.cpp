@@ -270,7 +270,7 @@ TEUCHOS_UNIT_TEST_TEMPLATE_3_DECL(DenseContainer, FullMatrixSameScalar, Scalar, 
   out << "DenseContainer constructor" << endl;
   RCP<container_type> MyContainer;
   try {
-    MyContainer = rcp (new container_type (A, localRows));
+    MyContainer = Teuchos::rcp (new container_type (A, localRows));
     localSuccess = 1;
   } catch (std::exception& e) {
     localSuccess = 0;

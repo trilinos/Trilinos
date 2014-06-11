@@ -47,6 +47,7 @@
 #include "Tpetra_BlockMap.hpp"
 #include "Tpetra_SrcDistObject.hpp"
 #include "Tpetra_Packable.hpp"
+#include <Tpetra_Distributor.hpp> // avoid error C2027: use of undefined type 'Tpetra::Distributor' at (void) distor below
 #include <map>
 
 /** \file Tpetra_VbrUtils.hpp

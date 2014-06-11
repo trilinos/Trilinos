@@ -502,23 +502,23 @@ private:
 // Empty Constructor
 template<class ScalarType, class MV, class OP>
 LSQRSolMgr<ScalarType,MV,OP,false>::LSQRSolMgr() :
-  isSet_(false),
-  loaDetected_(false),
-  lambda_(0.0),
-  relRhsErr_(0.0),
-  relMatErr_(0.0),
-  condMax_(0.0),
+  lambda_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relRhsErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relMatErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  condMax_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   maxIters_(0),
-  termIterMax_(0.0),
-  orthoKappa_(0.0),
+  termIterMax_(0),
+  orthoKappa_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   verbosity_(0),
   outputStyle_(0),
   outputFreq_(0),
   numIters_(0),
-  matCondNum_(0),
-  matNorm_(0.0),
-  resNorm_(0.0),
-  matResNorm_(0.0)
+  matCondNum_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  resNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matResNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  isSet_(false),
+  loaDetected_(false)
 {}
 
 
@@ -528,23 +528,23 @@ LSQRSolMgr<ScalarType,MV,OP,false>::
 LSQRSolMgr (const Teuchos::RCP<LinearProblem<ScalarType,MV,OP> > &problem,
             const Teuchos::RCP<Teuchos::ParameterList> &pl) :
   problem_(problem),
-  isSet_(false),
-  loaDetected_(false),
-  lambda_(0.0),
-  relRhsErr_(0.0),
-  relMatErr_(0.0),
-  condMax_(0.0),
+  lambda_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relRhsErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  relMatErr_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  condMax_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   maxIters_(0),
   termIterMax_(0),
-  orthoKappa_(0.0),
+  orthoKappa_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
   verbosity_(0),
   outputStyle_(0),
   outputFreq_(0),
   numIters_(0),
-  matCondNum_(0.0),
-  matNorm_(0.0),
-  resNorm_(0.0),
-  matResNorm_(0.0)
+  matCondNum_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  resNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  matResNorm_(Teuchos::ScalarTraits<MagnitudeType>::zero ()),
+  isSet_(false),
+  loaDetected_(false)
 {
   // The linear problem to solve is allowed to be null here.  The user
   // must then set a nonnull linear problem (by calling setProblem())

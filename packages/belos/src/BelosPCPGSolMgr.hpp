@@ -450,9 +450,9 @@ PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr() :
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
+  dimU_(0),
   label_(label_default_),
-  isSet_(false),
-  dimU_(0)
+  isSet_(false)
 {}
 
 
@@ -474,15 +474,19 @@ PCPGSolMgr<ScalarType,MV,OP,false>::PCPGSolMgr(
   outputStyle_(outputStyle_default_),
   outputFreq_(outputFreq_default_),
   orthoType_(orthoType_default_),
+  dimU_(0),
   label_(label_default_),
-  isSet_(false),
-  dimU_(0)
+  isSet_(false)
 {
-  TEUCHOS_TEST_FOR_EXCEPTION(problem_ == Teuchos::null, std::invalid_argument, "Problem not given to solver manager.");
+  TEUCHOS_TEST_FOR_EXCEPTION(
+    problem_.is_null (), std::invalid_argument,
+    "Belos::PCPGSolMgr two-argument constructor: "
+    "'problem' is null.  You must supply a non-null Belos::LinearProblem "
+    "instance when calling this constructor.");
 
-  if (!is_null(pl)) {
+  if (! pl.is_null ()) {
     // Set the parameters using the list that was passed in.
-    setParameters( pl );
+    setParameters (pl);
   }
 }
 

@@ -143,10 +143,10 @@ namespace {
     //int localMapCtorSuccess = 0;
     RCP<map_type> map;
 
-    map = rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
+    map = Teuchos::rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
 
     // try {
-    //   map = rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
+    //   map = Teuchos::rcp (new map_type (GINV, elements(), baseIndexIsNegOne, comm));
     //   int localMapCtorSuccess = 1;
     // } catch (std::exception& e) {
     //   out << "Process " << myRank << ": Noncontiguous Map constructor failed "
