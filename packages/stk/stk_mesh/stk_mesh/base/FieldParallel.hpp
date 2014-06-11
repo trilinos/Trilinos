@@ -9,6 +9,8 @@
 #ifndef stk_mesh_FieldParallel_hpp
 #define stk_mesh_FieldParallel_hpp
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI)
 #include <stk_mesh/base/FieldParallel_helpers.hpp>
 #include <stk_mesh/base/Types.hpp>      // for EntityProc
 #include <stk_mesh/base/FieldBase.hpp>  // for FieldBase
@@ -253,5 +255,6 @@ void parallel_data_exchange_sym_t(std::vector< std::vector<T> > &send_lists,
 } // namespace mesh
 } // namespace stk
 
+#endif
 #endif
 

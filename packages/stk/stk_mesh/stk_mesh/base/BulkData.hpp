@@ -11,6 +11,10 @@
 
 //----------------------------------------------------------------------
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stddef.h>                     // for size_t, NULL
 #include <stdint.h>                     // for uint16_t
 #include <algorithm>                    // for max
@@ -36,7 +40,6 @@
 #include "boost/functional/hash/extensions.hpp"  // for hash
 #include "boost/tuple/detail/tuple_basic.hpp"  // for get
 #include "boost/unordered/unordered_map.hpp"  // for unordered_map
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::size_type, etc
 #include "stk_mesh/base/BucketConnectivity.hpp"  // for BucketConnectivity
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology

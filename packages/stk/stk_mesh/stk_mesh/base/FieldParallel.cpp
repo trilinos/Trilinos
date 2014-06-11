@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI)
+#include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_util/parallel/ParallelComm.hpp>  // for CommAll, CommBuffer
 #include <stk_util/parallel/ParallelReduce.hpp>  // for Reduce, ReduceSum, etc
 #include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
 #include <stk_util/util/PairIter.hpp>   // for PairIter
 
-#include <stk_mesh/base/FieldParallel.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/Entity.hpp>     // for Entity
 #include <stk_mesh/base/Ghosting.hpp>   // for Ghosting
@@ -541,3 +543,4 @@ std::vector<int> compute_receive_list(std::vector<int>& sendSizeArray, MPI_Comm 
 
 } // namespace mesh
 } // namespace stk
+#endif

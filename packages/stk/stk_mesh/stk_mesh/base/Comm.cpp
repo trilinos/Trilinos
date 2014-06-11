@@ -6,11 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stk_mesh/base/Comm.hpp>
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for has_superset, Bucket
 #include "stk_mesh/base/Types.hpp"      // for EntityRank
 #include "stk_topology/topology.hpp"    // for topology, etc

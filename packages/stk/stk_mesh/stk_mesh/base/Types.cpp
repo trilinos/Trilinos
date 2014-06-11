@@ -1,4 +1,8 @@
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stk_mesh/base/Types.hpp>
 #include <algorithm>                    // for sort
 #include <iomanip>                      // for operator<<, setw
@@ -8,7 +12,6 @@
 #include <stk_util/util/AllocatorMemoryUsage.hpp>
 #include <stk_util/util/human_bytes.hpp>  // for human_bytes
 #include <string>                       // for string, operator<<
-#include "mpi.h"                        // for MPI_Gather, MPI_LONG_LONG, etc
 namespace stk { namespace parallel { class DistributedIndex; } }
 
 
@@ -80,14 +83,16 @@ void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_
         }
       }
 
+#if defined ( STK_HAS_MPI )
       size_t send_buf[] = {sum_max_capacity, sum_abandoned_space, sum_unused_chunk_capacity, sum_num_growths, sum_num_entity_relocations, sum_total_unused_memory, sum_unused_capactity, sum_total_num_conn, num_connectivity_objs};
       static const int buf_size = sizeof(send_buf) / sizeof(size_t);
       size_t recv_buf[buf_size];
       int err = MPI_Reduce(static_cast<void*>(send_buf), static_cast<void*>(recv_buf), buf_size, MPI_LONG_LONG, MPI_SUM, 0 /*root*/, parallel);
       ThrowRequire(err == MPI_SUCCESS);
-
+#endif
       if (parallel_rank == 0) {
 
+#if defined ( STK_HAS_MPI )
         size_t global_sum_max_capacity = recv_buf[0];
         size_t global_sum_abandoned_space = recv_buf[1];
         size_t global_sum_unused_chunk_capacity = recv_buf[2];
@@ -97,7 +102,17 @@ void print_dynamic_connectivity_profile( ParallelMachine parallel, int parallel_
         size_t global_sum_unused_capacity = recv_buf[6];
         size_t global_sum_total_num_conn = recv_buf[7];
         size_t global_num_connectivity_objs = recv_buf[8];
-
+#else
+        size_t global_sum_max_capacity = sum_max_capacity;
+        size_t global_sum_abandoned_space = sum_abandoned_space;
+        size_t global_sum_unused_chunk_capacity = sum_unused_chunk_capacity;
+        size_t global_sum_num_growths = sum_num_growths;
+        size_t global_sum_num_entity_relocations = sum_num_entity_relocations;
+        size_t global_sum_total_unused_memory = sum_total_unused_memory;
+        size_t global_sum_unused_capacity = sum_unused_capacity;
+        size_t global_sum_total_num_conn = sum_total_num_conn;
+        size_t global_num_connectivity_objs = num_connectivity_objs;
+#endif
         if (global_sum_max_capacity != 0) {
           std::ostringstream oss;
 
@@ -184,12 +199,16 @@ void print_max_stk_memory_usage( ParallelMachine parallel, int parallel_rank, st
 
   assemble_data<VolatileFastSharedCommMapTag>(names, memory, "Volatile Fast Shared Comm Map");
 
+#if defined ( STK_HAS_MPI )
   std::vector<size_t> max_memory(memory.size()*parallel_machine_size(parallel),0);
 
   MPI_Gather(static_cast<void*>(&memory[0]), memory.size(), MPI_LONG_LONG,
 	           static_cast<void*>(&max_memory[0]), memory.size(), MPI_LONG_LONG,
 	           0, parallel);
-
+#else
+  std::vector<size_t> max_memory(memory);
+#endif
+  
   const int nproc = parallel_machine_size(parallel);
 
   if (parallel_rank == 0) {

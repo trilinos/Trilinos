@@ -34,7 +34,6 @@
 #include "boost/mpl/bool.hpp"           // for bool_
 #include "boost/mpl/bool_fwd.hpp"       // for false_
 #include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
-#include "mpi.h"                        // for ompi_communicator_t, etc
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<, etc
 #include "stk_mesh/base/EntityCommDatabase.hpp"  // for pack_entity_info, etc

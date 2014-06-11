@@ -6,6 +6,7 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
 #include <stk_mesh/fixtures/GearsFixture.hpp>
 #include <Shards_BasicTopologies.hpp>   // for Hexahedron, Wedge
 #include <algorithm>                    // for min
@@ -19,7 +20,6 @@
 #include <stk_mesh/base/Selector.hpp>   // for Selector
 #include <stk_mesh/base/Types.hpp>      // for BucketVector, EntityProcVec, etc
 #include <stk_mesh/fixtures/Gear.hpp>   // for Gear, TWO_PI
-#include "mpi.h"                        // for ompi_communicator_t
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Field.hpp"      // for Field
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
@@ -167,7 +167,9 @@ void GearsFixture::communicate_model_fields()
   fields.push_back(& displacement_field.field_of_state(stk::mesh::StateOld));
 
   // Parallel collective call:
+#if defined( STK_HAS_MPI)
   communicate_field_data(bulk_data.shared_aura(), fields);
+#endif
 }
 
 
