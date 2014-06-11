@@ -16,7 +16,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <gtest/gtest.h>
 #include "Shards_CellTopologyData.h"    // for CellTopologyData
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/CellTopology.hpp"  // for CellTopology
 #include "stk_mesh/base/Types.hpp"      // for EntityId, PartVector, etc
 #include "stk_topology/topology.hpp"    // for topology, etc

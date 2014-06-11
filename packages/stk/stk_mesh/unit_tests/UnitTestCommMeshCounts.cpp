@@ -1,6 +1,9 @@
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI)
+#  include <mpi.h>
+#endif
 #include <gtest/gtest.h>
 #include <sstream>
-#include <mpi.h>
 
 // macro for short term solution to not break builds for Trilinos.
 // Dependency on unitTestUtils here is the main worry.
@@ -23,9 +26,11 @@ std::string getGeneratedMeshString(const int xdim, const int ydim, const int zdi
 //DocTest1
 TEST( CommMeshCounts, Serial )
 {
+    int numprocs = 1;
+#if defined( STK_HAS_MPI)
     MPI_Comm communicator = MPI_COMM_WORLD;
-    int numprocs = -1;
     MPI_Comm_size(communicator, &numprocs);
+#endif
     if ( numprocs == 1 )
     {
         const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2);
@@ -41,9 +46,11 @@ TEST( CommMeshCounts, Serial )
 //DocTest2
 TEST( CommMeshCounts, Parallel )
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
     int numprocs = 1;
+#if defined( STK_HAS_MPI)
+    MPI_Comm communicator = MPI_COMM_WORLD;
     MPI_Comm_size(communicator, &numprocs);
+#endif
 
     const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2*numprocs);
     unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);
@@ -57,9 +64,11 @@ TEST( CommMeshCounts, Parallel )
 //DocTest3
 TEST( CommMeshCountsWithStats, Parallel )
 {
-    MPI_Comm communicator = MPI_COMM_WORLD;
     int numprocs = 1;
+#if defined( STK_HAS_MPI)
+    MPI_Comm communicator = MPI_COMM_WORLD;
     MPI_Comm_size(communicator, &numprocs);
+#endif
 
     const std::string generatedMeshSpec = getGeneratedMeshString(10,20,2*numprocs);
     unitTestUtils::exampleMeshes::StkMeshCreator stkMesh(generatedMeshSpec, communicator);

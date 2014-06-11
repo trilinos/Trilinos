@@ -20,7 +20,6 @@
 #include <string>                       // for string
 #include <utility>                      // for pair, make_pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, Bucket::iterator
 #include "stk_mesh/base/BulkData.hpp"   // for BulkData, EntityLess, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity

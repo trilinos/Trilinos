@@ -9,6 +9,10 @@
  * UnitTestCreateFaces.C created by tcfishe on Feb 20, 2014
  */
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/Comm.hpp>       // for comm_mesh_counts
@@ -22,7 +26,6 @@
 #include <stk_mesh/fixtures/heterogeneous_mesh.hpp>
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -649,7 +652,9 @@ TEST ( UnitTestCreateFaces, Gears )
 TEST ( UnitTestCreateFaces, Heterogeneous )
 {
   int numprocs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+#endif
   if (numprocs > 1)
     return;
   
@@ -733,7 +738,9 @@ TEST ( UnitTestCreateFaces, Heterogeneous )
 TEST ( UnitTestCreateFaces, Degenerate )
 {
   int numprocs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(MPI_COMM_WORLD, &numprocs);
+#endif
   if (numprocs > 1)
     return;
 

@@ -6,6 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stdexcept>                    // for runtime_error
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
@@ -16,7 +20,6 @@
 #include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
 #include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
@@ -57,8 +60,9 @@ TEST(UnitTestingOfRelation, testRelationCoverage)
   // Test some relation error cases
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier ( MPI_COMM_WORLD );
-
+#endif
   // Just use any random fixture for convenience
   HexFixture fixture(pm, 3 /*x*/, 3 /*y*/, 3 /*z*/);
   MetaData& meta  = fixture.m_meta;
@@ -179,8 +183,9 @@ TEST(UnitTestingOfRelation, testDegenerateRelation)
   // to the same node and then delete them one by one.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-
+#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
@@ -404,8 +409,9 @@ TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // the owner to declare relations, that should be tested here.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-
+#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);

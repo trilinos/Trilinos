@@ -1,5 +1,8 @@
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_EQ, etc
-#include <mpi.h>                        // for MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
@@ -19,14 +22,18 @@ void runTwoHexParallelBucketTests(const std::string &generatedMeshSpecification,
 int getNumberOfProcessors(MPI_Comm comm)
 {
   int numProcs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(comm, &numProcs);
+#endif
   return numProcs;
 }
 
 int getProcessorId(MPI_Comm comm)
 {
-  int procId = 1;
+  int procId = 0;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_rank(comm, &procId);
+#endif
   return procId;
 }
 

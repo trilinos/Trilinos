@@ -8,7 +8,6 @@
 #include <stk_mesh/fixtures/QuadFixture.hpp>  // for QuadFixture
 #include <gtest/gtest.h>
 #include <vector>                       // for vector, vector<>::iterator
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Types.hpp"      // for BucketVector, PartVector

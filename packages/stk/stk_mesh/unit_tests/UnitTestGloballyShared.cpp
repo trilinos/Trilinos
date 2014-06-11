@@ -12,7 +12,6 @@
 #include <stk_topology/topology.hpp>    // for topology, etc
 #include <gtest/gtest.h>
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Types.hpp"      // for EntityId, EntityRank

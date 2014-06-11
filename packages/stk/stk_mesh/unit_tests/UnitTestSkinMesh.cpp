@@ -7,7 +7,6 @@
 #include <stk_util/parallel/ParallelReduce.hpp>  // for all_reduce_sum
 #include <gtest/gtest.h>
 #include "gtest/gtest.h"                // for AssertHelper, EXPECT_EQ, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/MetaData.hpp"   // for MetaData
 #include "stk_mesh/base/Part.hpp"       // for Part
 #include "stk_mesh/base/Selector.hpp"   // for operator&

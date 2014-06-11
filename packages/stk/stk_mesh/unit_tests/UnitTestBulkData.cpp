@@ -7,6 +7,10 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for exit
 #include <exception>                    // for exception
@@ -29,7 +33,6 @@
 #include <unit_tests/UnitTestRingFixture.hpp>  // for test_shift_ring
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -201,7 +204,9 @@ TEST(UnitTestingOfBulkData, testBulkData)
   // Unit test the Part functionality in isolation:
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
+#endif
 
   std::vector<std::string> entity_names(5);
   for ( size_t i = 0 ; i < 5 ; ++i ) {
@@ -255,8 +260,9 @@ TEST(UnitTestingOfBulkData, testBulkData)
 TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   enum { nPerProc = 10 };
   const int p_rank = stk::parallel_machine_rank( pm );
   const int p_size = stk::parallel_machine_size( pm );
@@ -369,8 +375,9 @@ TEST(UnitTestingOfBulkData, testChangeOwner_nodes)
 TEST(UnitTestingOfBulkData, testCreateMore)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   enum { nPerProc = 10 };
 
   const int p_size = stk::parallel_machine_size( pm );
@@ -458,8 +465,9 @@ TEST(UnitTestingOfBulkData, testCreateMore)
 TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   const int p_size = stk::parallel_machine_size( pm );
   if (p_size != 1) {
     return;
@@ -532,8 +540,9 @@ TEST(UnitTestingOfBulkData, testBulkDataRankBeginEnd)
 TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   enum { nPerProc = 10 };
   const int p_rank = stk::parallel_machine_rank( pm );
   const int p_size = stk::parallel_machine_size( pm );
@@ -782,8 +791,9 @@ TEST(UnitTestingOfBulkData, testChangeOwner_ring)
 TEST(UnitTestingOfBulkData, testChangeOwner_box)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   const int root_box[3][2] = { { 0 , 4 } , { 0 , 5 } , { 0 , 6 } };
 
   const int p_size = stk::parallel_machine_size( pm );
@@ -883,8 +893,9 @@ TEST(UnitTestingOfBulkData, testModifyPropagation)
   // checking that its element also gets marked as modified.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   const unsigned nPerProc = 2;
   const int p_size = stk::parallel_machine_size( pm );
 
@@ -1794,8 +1805,9 @@ static void test_sync_1(stk::mesh::BulkData& eMesh, PressureFieldType& pressure_
 TEST(UnitTestingOfBulkData, testFieldComm)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   // run this with exercise_field_sync_bug = true, and 3 <= nprocs <= 4 to show the possible bug
   bool exercise_field_sync_bug = true;
 
@@ -1903,8 +1915,9 @@ TEST(UnitTestingOfBulkData, testCommList)
    */
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
-
+#endif
   const unsigned p_size = stk::parallel_machine_size( pm );
   const unsigned p_rank = stk::parallel_machine_rank( pm );
 
@@ -2164,7 +2177,9 @@ TEST(UnitTestBulkData, ChangeSharedOwner)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   int numProcs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(communicator, &numProcs);
+#endif
   if (numProcs != 3) {
     return;
   }

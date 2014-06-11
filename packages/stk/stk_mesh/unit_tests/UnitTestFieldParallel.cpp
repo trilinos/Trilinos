@@ -6,6 +6,8 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
 #include <stddef.h>                     // for size_t
 #include <algorithm>                    // for max, min
 #include <iostream>                     // for basic_ostream::operator<<
@@ -269,3 +271,4 @@ TEST(FieldParallel, parallel_max)
 }
 
 } //namespace <anonymous>
+#endif

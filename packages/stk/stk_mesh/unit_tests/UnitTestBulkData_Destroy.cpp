@@ -6,6 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stddef.h>                     // for size_t
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
@@ -13,7 +17,6 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/ConnectivityMap.hpp"  // for ConnectivityMap
 #include "stk_mesh/base/Entity.hpp"     // for Entity
@@ -42,7 +45,9 @@ using stk::mesh::fixtures::RingFixture;
 TEST(UnitTestingOfBulkData, testDestroy_nodes)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
+#endif
 
   enum { nPerProc = 10 };
   const int p_rank = stk::parallel_machine_rank( pm );
@@ -119,7 +124,9 @@ void assert_is_destroyed(const BulkData& mesh, const Entity entity )
 TEST(UnitTestingOfBulkData, testDestroy_ring)
 {
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( pm );
+#endif
 
   enum { nPerProc = 10 };
   const int p_rank = stk::parallel_machine_rank( pm );

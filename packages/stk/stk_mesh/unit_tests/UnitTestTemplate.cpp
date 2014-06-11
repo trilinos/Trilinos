@@ -10,8 +10,10 @@
 #include <ostream>                      // for basic_ostream::operator<<
 #include <gtest/gtest.h>
 #include "gtest/gtest.h"                // for AssertHelper
-#include "mpi.h"                        // for MPI_Comm_rank, etc
 #include "stk_util/stk_config.h"        // for STK_HAS_MPI
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 
 TEST(UnitTestTemplate, testUnit)
 {

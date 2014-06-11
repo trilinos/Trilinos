@@ -6,6 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined( STK_HAS_MPI)
+#  include <mpi.h>
+#endif
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData, etc
 #include <stk_mesh/base/GetEntities.hpp>  // for count_entities, etc
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData
@@ -13,7 +17,6 @@
 #include <gtest/gtest.h>
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
 #include "stk_mesh/base/Part.hpp"       // for Part
@@ -43,8 +46,9 @@ TEST( UnitTestBoxFixture, verifyRingFixture )
   // A unit test to verify the correctness of the RingFixture fixture.
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined( STK_HAS_MPI)
   MPI_Barrier( pm );
-
+#endif
   // Create the ring fixture we'll be testing
 
   RingFixture fixture(pm);

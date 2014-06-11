@@ -7,6 +7,10 @@
 /*------------------------------------------------------------------------*/
 
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stddef.h>                     // for size_t
 #include <stdlib.h>                     // for exit
 #include <exception>                    // for exception
@@ -23,7 +27,6 @@
 #include <string>                       // for string, basic_string, etc
 #include <utility>                      // for pair
 #include <vector>                       // for vector, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD, MPI_Barrier, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket, has_superset
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/EntityKey.hpp"  // for EntityKey
@@ -45,7 +48,9 @@ TEST(UnitTestGhostParts, Aura)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   int numProcs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(communicator, &numProcs);
+#endif
   if (numProcs != 2) {
     return;
   }
@@ -94,7 +99,9 @@ TEST(UnitTestGhostParts, Custom1)
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
   int numProcs = 1;
+#if defined ( STK_HAS_MPI )
   MPI_Comm_size(communicator, &numProcs);
+#endif
   if (numProcs != 2) {
     return;
   }

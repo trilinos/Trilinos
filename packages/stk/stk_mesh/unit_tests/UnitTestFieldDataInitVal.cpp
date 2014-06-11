@@ -6,6 +6,10 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <stk_util/stk_config.h>
+#if defined ( STK_HAS_MPI )
+#  include <mpi.h>                        // for MPI_Comm
+#endif
 #include <stk_mesh/base/BulkData.hpp>   // for BulkData
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian2d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
@@ -13,7 +17,6 @@
 #include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
 #include <gtest/gtest.h>
 #include <vector>                       // for operator!=
-#include "mpi.h"                        // for MPI_Barrier, MPI_COMM_WORLD, etc
 #include "stk_mesh/base/Bucket.hpp"     // for Bucket
 #include "stk_mesh/base/Entity.hpp"     // for Entity
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data
@@ -42,7 +45,9 @@ TEST(UnitTestFieldDataInitVal, test_scalar_field)
   //
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
+#endif
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
@@ -88,8 +93,9 @@ TEST(UnitTestFieldDataInitVal, test_vector_field)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-
+#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
@@ -137,8 +143,9 @@ TEST(UnitTestFieldDataInitVal, test_vector_field_move_bucket)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-
+#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
@@ -200,8 +207,9 @@ TEST(UnitTestFieldDataInitVal, test_multi_state_vector_field)
   typedef stk::mesh::Field<double,stk::mesh::Cartesian2d> VectorField;
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
+#if defined ( STK_HAS_MPI )
   MPI_Barrier( MPI_COMM_WORLD );
-
+#endif
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
   MetaData meta_data(spatial_dim);
