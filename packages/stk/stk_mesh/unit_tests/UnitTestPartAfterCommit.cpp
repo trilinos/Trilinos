@@ -79,7 +79,7 @@ void testAddingNodesToPart(stk::mesh::BulkData &stkMeshBulkData,
     testNodesAreSelected(stkMeshBulkData, nodes, part1Selector);
 }
 
-TEST(UnitTestParts, CreateAfterCommit)
+TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
 
@@ -113,3 +113,44 @@ TEST(UnitTestParts, CreateAfterCommit)
   testNodesAreSelected(stkMeshBulkData, nodes, newPartSelector);
 }
 
+TEST(UnitTestPartsAfterCommit, PartInduction)
+{
+  stk::ParallelMachine communicator = MPI_COMM_WORLD;
+
+  stk::io::StkMeshIoBroker stkMeshIoBroker(communicator);
+  const std::string generatedMeshSpecification = "generated:1x1x4";
+  stkMeshIoBroker.add_mesh_database(generatedMeshSpecification, stk::io::READ_MESH);
+  stkMeshIoBroker.create_input_mesh();
+
+  stk::mesh::MetaData &stkMeshMetaData = stkMeshIoBroker.meta_data();
+  stk::mesh::Part& firstPart = stkMeshMetaData.declare_part("firstPart", stk::topology::ELEMENT_RANK);
+  stkMeshIoBroker.populate_bulk_data();
+
+  stk::mesh::BulkData& stkMeshBulkData = stkMeshIoBroker.bulk_data();
+
+  stk::mesh::EntityVector locallyOwnedElements;
+  stk::mesh::get_selected_entities(stkMeshMetaData.locally_owned_part(), stkMeshBulkData.buckets(stk::topology::ELEMENT_RANK), locallyOwnedElements);
+  ASSERT_TRUE(!locallyOwnedElements.empty());
+
+  stkMeshBulkData.modification_begin();
+  stk::mesh::PartVector addParts(1, &firstPart);
+  stkMeshBulkData.change_entity_parts(locallyOwnedElements[0], addParts);
+  stkMeshBulkData.modification_end();
+
+  stk::mesh::EntityVector nodesInFirstPart;
+  stk::mesh::get_selected_entities(firstPart, stkMeshBulkData.buckets(stk::topology::NODE_RANK), nodesInFirstPart);
+
+  stk::mesh::Part& partAfterCommit = stkMeshMetaData.declare_part("partAfterCommit", stk::topology::ELEMENT_RANK);
+  stkMeshBulkData.modification_begin();
+  addParts[0] = &partAfterCommit;
+  stkMeshBulkData.change_entity_parts(locallyOwnedElements[0], addParts);
+  stkMeshBulkData.modification_end();
+
+  stk::mesh::EntityVector nodesInPartDeclaredAfterCommit;
+  stk::mesh::get_selected_entities(partAfterCommit, stkMeshBulkData.buckets(stk::topology::NODE_RANK), nodesInPartDeclaredAfterCommit);
+  ASSERT_EQ(nodesInFirstPart.size(), nodesInPartDeclaredAfterCommit.size());
+  for(size_t i=0; i<nodesInFirstPart.size(); i++)
+  {
+    EXPECT_EQ(nodesInFirstPart[i], nodesInPartDeclaredAfterCommit[i]);
+  }
+}
