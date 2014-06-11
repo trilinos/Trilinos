@@ -3448,11 +3448,10 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
     m_ghost_parts.push_back(&aura_part);
   }
   else {
-    //We aren't decorating this name with curly braces like we are for the aura part above,
-    //because this is a custom-ghosting part, so it doesn't automatically exist. Only exists if the
-    //client creates a custom-ghosting.
-    unsigned custom_ghost_part_index = m_ghost_parts.size() - 2;
-    Part& ghost_part = mesh_meta_data().get_custom_ghosting_part(custom_ghost_part_index);
+    std::ostringstream oss;
+    oss << "custom_ghosting_" << m_ghost_parts.size();
+    std::string ghostPartName = stk::mesh::convert_to_internal_name(oss.str());
+    Part& ghost_part = mesh_meta_data().declare_part(ghostPartName);
     ghost_part.entity_membership_is_parallel_consistent(false);
     m_ghost_parts.push_back(&ghost_part);
   }

@@ -372,17 +372,6 @@ Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank 
   return declare_part(internal_name, rank);
 }
 
-void MetaData::declare_custom_ghosting_parts(unsigned num_custom_ghostings)
-{
-    ThrowRequireMsg(m_custom_ghosting_parts.size() == 0,"MetaData::declare_custom_ghosting_parts can only be called once");
-
-     for(unsigned i=0; i<num_custom_ghostings; ++i) {
-         std::ostringstream oss;
-         oss<<"{custom_ghosting_"<<i<<"}";
-         m_custom_ghosting_parts.push_back(&declare_part(oss.str()));
-     }
-}
-
 void MetaData::declare_part_subset( Part & superset , Part & subset )
 {
   if (!is_initialized()) {
@@ -501,10 +490,6 @@ void MetaData::commit()
 {
   require_not_committed();
 
-  if (m_custom_ghosting_parts.size() == 0) {
-      unsigned num_custom_ghostings = 10;
-      declare_custom_ghosting_parts(num_custom_ghostings);
-  }
   m_commit = true ; // Cannot add or change parts or fields now
 
   synchronize_part_fields_with_parts();
