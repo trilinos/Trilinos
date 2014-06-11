@@ -45,7 +45,7 @@ void testNodesAreSelected(stk::mesh::BulkData &stkMeshBulkData,
 {
     stk::mesh::EntityVector selectedNodes;
     stk::mesh::get_selected_entities(part1Selector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
-    EXPECT_EQ(selectedNodes.size(), nodes.size());
+    ASSERT_EQ(selectedNodes.size(), nodes.size());
     for(size_t i = 0; i < nodes.size(); i++)
     {
         EXPECT_EQ(nodes[i], selectedNodes[i]);
@@ -79,6 +79,34 @@ void testAddingNodesToPart(stk::mesh::BulkData &stkMeshBulkData,
     testNodesAreSelected(stkMeshBulkData, nodes, part1Selector);
 }
 
+void testRemovingNodesFromPart(stk::mesh::BulkData &stkMeshBulkData,
+                               const stk::mesh::EntityVector &nodes,
+                               stk::mesh::Part &nodePart,
+                               stk::mesh::Selector partSelector,
+                               stk::mesh::Field<double> &nodeField1)
+{
+    stkMeshBulkData.modification_begin();
+    stk::mesh::PartVector emptyAddParts;
+    stk::mesh::PartVector removeParts(1, &nodePart);
+    for(size_t i = 0; i < nodes.size(); ++i)
+    {
+        if(stkMeshBulkData.parallel_owner_rank(nodes[i]) == stkMeshBulkData.parallel_rank())
+        {
+            stkMeshBulkData.change_entity_parts(nodes[i], emptyAddParts, removeParts);
+        }
+    }
+    stkMeshBulkData.modification_end();
+
+    for(size_t i = 0; i < nodes.size(); ++i)
+    {
+        EXPECT_FALSE(stkMeshBulkData.bucket(nodes[i]).member(nodePart));
+    }
+
+    stk::mesh::EntityVector selectedNodes;
+    stk::mesh::get_selected_entities(partSelector, stkMeshBulkData.buckets(stk::topology::NODE_RANK), selectedNodes);
+    EXPECT_EQ(0u, selectedNodes.size());
+}
+
 TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
 {
   stk::ParallelMachine communicator = MPI_COMM_WORLD;
@@ -105,12 +133,14 @@ TEST(UnitTestPartsAfterCommit, FieldsAndSelectors)
 
   EXPECT_TRUE(stkMeshMetaData.is_commit());
 
-  stk::mesh::Part& new_part = stkMeshMetaData.declare_part("new_part");
+  stk::mesh::Part& partAfterCommit = stkMeshMetaData.declare_part("new_part");
 
-  testAddingNodesToPart(stkMeshBulkData, nodes, new_part, part1Selector, nodeField1);
+  testAddingNodesToPart(stkMeshBulkData, nodes, partAfterCommit, part1Selector, nodeField1);
 
-  stk::mesh::Selector newPartSelector = new_part;
+  stk::mesh::Selector newPartSelector = partAfterCommit;
   testNodesAreSelected(stkMeshBulkData, nodes, newPartSelector);
+
+  testRemovingNodesFromPart(stkMeshBulkData, nodes, partAfterCommit, newPartSelector, nodeField1);
 }
 
 TEST(UnitTestPartsAfterCommit, PartInduction)
