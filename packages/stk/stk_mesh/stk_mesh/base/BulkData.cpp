@@ -3450,7 +3450,7 @@ Ghosting & BulkData::create_ghosting( const std::string & name )
   else {
     std::ostringstream oss;
     oss << "custom_ghosting_" << m_ghost_parts.size();
-    std::string ghostPartName = stk::mesh::convert_to_internal_name(oss.str());
+    std::string ghostPartName = stk::mesh::impl::convert_to_internal_name(oss.str());
     Part& ghost_part = mesh_meta_data().declare_part(ghostPartName);
     ghost_part.entity_membership_is_parallel_consistent(false);
     m_ghost_parts.push_back(&ghost_part);

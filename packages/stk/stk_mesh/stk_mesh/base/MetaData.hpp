@@ -1195,9 +1195,7 @@ inline
 bool
 is_auto_declared_part(const Part &part)
 {
-  const std::string &part_name = part.name();
-
-  return !part_name.empty() && part_name[0] == '{';
+  return stk::mesh::impl::is_internal_part(part);
 }
 
 template< class field_type >

@@ -354,7 +354,7 @@ Part & MetaData::declare_part( const std::string & p_name )
 
 Part & MetaData::declare_internal_part( const std::string & p_name )
 {
-  std::string internal_name = convert_to_internal_name(p_name);
+  std::string internal_name = impl::convert_to_internal_name(p_name);
   return declare_part(internal_name);
 }
 
@@ -368,7 +368,7 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, boo
 
 Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank rank )
 {
-  std::string internal_name = convert_to_internal_name(p_name);
+  std::string internal_name = impl::convert_to_internal_name(p_name);
   return declare_part(internal_name, rank);
 }
 
@@ -660,7 +660,7 @@ CellTopology
 MetaData::get_cell_topology(
   const std::string &   topology_name) const
 {
-  std::string part_name = convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
+  std::string part_name = impl::convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
 
   Part *part = get_part(part_name);
   if (part)
