@@ -3,7 +3,6 @@
 #include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian3d, etc
 #include <stk_mesh/base/Field.hpp>      // for Field
 #include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names, etc
-#include "mpi.h"                        // for MPI_COMM_WORLD
 #include "stk_mesh/base/FieldBase.hpp"  // for field_data, etc
 #include "stk_topology/topology.hpp"    // for topology, etc
 namespace stk { namespace mesh { class Part; } }

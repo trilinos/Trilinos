@@ -1,5 +1,4 @@
 #include <gtest/gtest.h>                // for AssertHelper, EXPECT_NE, etc
-#include <mpi.h>                        // for MPI_COMM_WORLD, MPI_Comm, etc
 #include <stddef.h>                     // for size_t
 #include <limits>                       // for numeric_limits
 #include <stk_io/StkMeshIoBroker.hpp>   // for StkMeshIoBroker
