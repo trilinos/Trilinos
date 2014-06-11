@@ -70,3 +70,4 @@ template class MueLu::PatternFactory<std::complex<double>, int, int, KokkosClass
 # endif
 #endif
 
+
