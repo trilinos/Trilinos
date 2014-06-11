@@ -67,7 +67,7 @@ template <typename EvalT,typename TraitsT>
 class ScatterFields : public PHX::EvaluatorWithBaseImpl<TraitsT>,
                       public PHX::EvaluatorDerived<EvalT, TraitsT>  { 
   typedef typename EvalT::ScalarT ScalarT;
-  typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
+  typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
 
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::NODE> > scatterFields_;
   Teuchos::RCP<STK_Interface> mesh_;

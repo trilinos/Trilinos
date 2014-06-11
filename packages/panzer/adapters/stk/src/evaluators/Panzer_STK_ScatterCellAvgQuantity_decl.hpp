@@ -66,10 +66,10 @@ namespace panzer_stk {
   * "Scatter Name" string specifying the name of this evaulator
   * "Field Names" of type this is a comma seperated list of strings,
   * "IR" of type <code>Teuchos::RCP<panzer::IntegrationRule></code> and
-  * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
+  * "Mesh" of type <code>Teuchos::RCP<const panzer_stk_classic::STK_Interface></code>.
   */
 PHX_EVALUATOR_CLASS(ScatterCellAvgQuantity)
-  typedef panzer_stk::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
+  typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField; // this is weird, but the correct thing
 
   std::size_t numValues_;
  

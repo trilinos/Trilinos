@@ -122,18 +122,18 @@ Teuchos::RCP<std::vector<std::size_t> >
 getLocalSideIds(const STK_Interface & mesh,
                 const std::string & sideName)
 {
-   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
    std::stringstream ss;
    ss << "Can't find part=\"" << sideName << "\"" << std::endl;
-   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
-   stk::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
+   stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
+   stk_classic::mesh::Selector mySides = *side & (metaData->locally_owned_part() | metaData->globally_shared_part());
  
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
+   std::vector<stk_classic::mesh::Bucket*> nodeBuckets;
+   stk_classic::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
 
    // build id vector
    ////////////////////////////////////////////
@@ -146,7 +146,7 @@ getLocalSideIds(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
+      stk_classic::mesh::Bucket & bucket = *nodeBuckets[b]; 
          
       for(std::size_t n=0;n<bucket.size();n++,index++)
          (*sideIds)[index] = bucket[n].identifier();
@@ -162,18 +162,18 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 {
    unsigned physicalDim = mesh.getDimension();
    
-   Teuchos::RCP<stk::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
-   Teuchos::RCP<stk::mesh::BulkData> bulkData = mesh.getBulkData();
+   Teuchos::RCP<stk_classic::mesh::fem::FEMMetaData> metaData = mesh.getMetaData();
+   Teuchos::RCP<stk_classic::mesh::BulkData> bulkData = mesh.getBulkData();
 
    // grab nodes owned by requested side
    /////////////////////////////////////////////
    std::stringstream ss;
    ss << "Can't find part=\"" << sideName << "\"" << std::endl;
-   stk::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
-   stk::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
+   stk_classic::mesh::Part * side = metaData->get_part(sideName,ss.str().c_str());
+   stk_classic::mesh::Selector mySides = (*side) & metaData->locally_owned_part();
  
-   std::vector<stk::mesh::Bucket*> nodeBuckets;
-   stk::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
+   std::vector<stk_classic::mesh::Bucket*> nodeBuckets;
+   stk_classic::mesh::get_buckets(mySides,bulkData->buckets(mesh.getNodeRank()),nodeBuckets);
 
    // build id vector
    ////////////////////////////////////////////
@@ -188,8 +188,8 @@ getLocalSideIdsAndCoords(const STK_Interface & mesh,
 
    // loop over node buckets
    for(std::size_t b=0,index=0;b<nodeBuckets.size();b++) {
-      stk::mesh::Bucket & bucket = *nodeBuckets[b]; 
-      stk::mesh::BucketArray<STK_Interface::VectorFieldType> array(mesh.getCoordinatesField(),bucket);
+      stk_classic::mesh::Bucket & bucket = *nodeBuckets[b]; 
+      stk_classic::mesh::BucketArray<STK_Interface::VectorFieldType> array(mesh.getCoordinatesField(),bucket);
          
       for(std::size_t n=0;n<bucket.size();n++,index++) {
          (*sideIds)[index] = bucket[n].identifier();
