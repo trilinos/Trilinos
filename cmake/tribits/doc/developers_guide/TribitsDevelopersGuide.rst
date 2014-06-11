@@ -562,9 +562,9 @@ units are:
 .. _TriBITS Projects:
 
 * `TriBITS Project`_: A collection of `TriBITS Repositories`_ and `TriBITS
-  Packages`_ that defines a CMake ``PROJECT`` defining software which can be
+  Packages`_ that defines a complete CMake ``PROJECT`` defining software which can be
   directly configured with ``cmake`` and then be built, tested, installed,
-  etc..
+  etc.
 
 .. _TriBITS Meta-Project:
 .. _TriBITS Meta-Projects:
