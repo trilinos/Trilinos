@@ -942,11 +942,6 @@ namespace MueLu {
 
       const LO* curFCs = myCpts(curF);
 
-      std::cout << "Looking at " << curF << " [";
-      for (int j = 0; j < numCpts[curF]; j++)
-        std::cout << " " << curFCs[j];
-      std::cout << " ]" << std::endl;
-
       for (int j = 0; j < numCpts[curF]; j++)
         inNearbyCs[curFCs[j]] = 'y';
 
@@ -968,11 +963,6 @@ namespace MueLu {
         for (int k = nextLayerStart; k <= nextLayerEnd; k++) {
           LO        curNeigh = neighs[k];
           const LO* neighCs  = myCpts(curNeigh);
-
-          // std::cout << "current neighbor = " << curNeigh << " [";
-          // for (int j = 0; j < numCpts[curNeigh]; j++)
-            // std::cout << " " << neighCs[j];
-          // std::cout << " ]" << std::endl;
 
           // Check if subset of this neighbor's CPOINT dependencies include all
           // the CPOINT dependencies of curF
@@ -1007,11 +997,6 @@ namespace MueLu {
       for (int j = 0; j < numCpts[curF]; j++)
         inNearbyCs[curFCs[j]] = 'n';
 
-      std::cout << "Same group:";
-      for (int j = 0; j  < numSameGrp; j++)
-        std::cout << " " << sameCGroup[j];
-      std::cout << std::endl;
-
       // At this point we have now constructed a group of possible mid points
       // all with the same Cpt dependencies. Now, we need to find the one in
       // this group which is closest to the target midpoint coordinates.
@@ -1029,7 +1014,6 @@ namespace MueLu {
           smallestIndex = sameCGroup[j];
         }
       }
-      std::cout << "closest index: " << smallestIndex << std::endl;
 
       // So now smallestIndex is the best midpoint candidate within sameCGroup.
       // We now need to check if smallestIndex is really close to an already
@@ -1081,8 +1065,6 @@ namespace MueLu {
           }
         }
 
-        std::cout << "delta = " << delta << std::endl;
-        std::cout << "close = " << close << std::endl;
         if  (close/delta > .0015) {
           isMidPoint[smallestIndex] = 'y';
           numMidPoints++;
