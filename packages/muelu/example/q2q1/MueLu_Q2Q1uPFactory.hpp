@@ -67,11 +67,11 @@
 namespace MueLu {
 
   template<class LocalOrdinal = int>
-  class MyCptList {
+  class MyCptList_ {
     typedef LocalOrdinal LO;
 
   public:
-    MyCptList(int n, int nnzPerRow) {
+    MyCptList_(int n, int nnzPerRow) {
       TEUCHOS_TEST_FOR_EXCEPTION(nnzPerRow <= 0, Exceptions::RuntimeError, "Why nnzPerRow is " << nnzPerRow << "?");
 
       nnzPerRow_ = nnzPerRow;
@@ -105,7 +105,7 @@ namespace MueLu {
   template <class Scalar = double, class LocalOrdinal = int, class GlobalOrdinal = LocalOrdinal, class Node = KokkosClassic::DefaultNode::DefaultNodeType, class LocalMatOps = typename KokkosClassic::DefaultKernels<void,LocalOrdinal,Node>::SparseOps>
   class Q2Q1uPFactory : public PFactory {
 #include "MueLu_UseShortNames.hpp"
-  typedef MyCptList<LocalOrdinal> MyCptList;
+  typedef MyCptList_<LocalOrdinal> MyCptList;
 
   private:
     enum Status {
@@ -412,9 +412,10 @@ namespace MueLu {
     std::vector<LO> candidateList(n, 0);
 
     // Determine CPOINTs
-    int i = 0;
     int dumpCount = 0;
     DumpStatus(status, st + i2s(dumpCount++));
+
+    int i = 0;
     while (i < n) {
       LO newCpt = -1;
 
@@ -577,10 +578,10 @@ namespace MueLu {
     const double graphWeight  = 0.8;
     const double orientWeight = 0.5;
     for (int numCDepends = 1; numCDepends <= 2; numCDepends++) {
-      int numCandidates = 0;
+      numCandidates = 0;
 
       std::vector<int> candidates;
-      for (int i = 0; i < n; i++)
+      for (i = 0; i < n; i++)
         if (status[i] != CPOINT && numCpts[i] == numCDepends) {
           candidates.push_back(i);
           numCandidates++;
@@ -692,7 +693,7 @@ namespace MueLu {
 
     // Build up the CPOINT list
     Array<LO>& Cptlist = myCpts.getCList();
-    for (LO i = 0; i < n; i++)
+    for (i = 0; i < n; i++)
       if (status[i] == CPOINT)
         Cptlist.push_back(i);
   }

@@ -103,7 +103,9 @@ namespace MueLuTests {
 
 }
 
-#define PRESSURE_FIRST
+// #define PRESSURE_FIRST
+
+bool ISSTRUCTURED = true;
 
 int main(int argc, char *argv[]) {
 #include <MueLu_UseShortNames.hpp>
@@ -146,7 +148,7 @@ int main(int argc, char *argv[]) {
   int         n            = 9;              clp.setOption("n",        &n,             "problem size (1D)");
   int         maxLevels    = 2;              clp.setOption("nlevels",  &maxLevels,     "max num levels");
   int         compare      = 0;              clp.setOption("compare",  &compare,       "compare block and point hierarchies");
-
+  std::string type         = "structured";   clp.setOption("type",     &type,          "structured/unstructured");
 
   switch (clp.parse(argc, argv)) {
     case Teuchos::CommandLineProcessor::PARSE_HELP_PRINTED:        return EXIT_SUCCESS;
@@ -154,6 +156,7 @@ int main(int argc, char *argv[]) {
     case Teuchos::CommandLineProcessor::PARSE_UNRECOGNIZED_OPTION: return EXIT_FAILURE;
     case Teuchos::CommandLineProcessor::PARSE_SUCCESSFUL:          break;
   }
+  ISSTRUCTURED = (type == "structured");
 
   Xpetra::UnderlyingLib lib = xpetraParameters.GetLib();
 
@@ -170,7 +173,7 @@ int main(int argc, char *argv[]) {
   Xpetra::global_size_t numElements     = numVelElements + numPresElements;
 
   const GO indexBase = 0;
-  std::vector<size_t> stridingInfo(1,1);
+  std::vector<size_t> stridingInfo(1, 1);
   int stridedBlockId = -1;
 
   Array<GO> elementList(numElements);
@@ -281,9 +284,8 @@ int main(int argc, char *argv[]) {
   H[0]->Keep("Ptent", M.GetFactory("Ptent").get());
   H[0]->Setup(M, 0, maxLevels);
 
-#if 0
   // -------------------------------------------------------------------------
-  // Preconditioner construction - I.b (Vanka smoothers)
+  // Preconditioner construction - I.b (Vanka smoothers for unfiltered matrix)
   // -------------------------------------------------------------------------
   // Set up Vanka smoothing via a combination of Schwarz and block relaxation.
   Teuchos::ParameterList schwarzList;
@@ -305,10 +307,9 @@ int main(int argc, char *argv[]) {
   M.SetFactory("Smoother",     rcp(new SmootherFactory(smootherPrototype)));
   M.SetFactory("CoarseSolver", rcp(new SmootherFactory(smootherPrototype)));
 
-  // For the smoother setup use the unfiltered matrix
+  M.ResetDebugData();
   H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(A));
   H[0]->Setup(M, 0, H[0]->GetNumLevels());
-#endif
 
   // =========================================================================
   // Preconditioner construction - II (point)
@@ -350,9 +351,9 @@ int main(int argc, char *argv[]) {
   Teuchos::RCP<OP> belosOp = rcp(new Belos::XpetraOp<SC, LO, GO, NO, LMO>(A)); // Turns a Xpetra::Matrix object into a Belos operator
 
   // Belos parameter list
-  int maxIts = 2000;
+  int maxIts = 20;
   Teuchos::ParameterList belosList;
-  belosList.set("Maximum Iterations",    20);
+  belosList.set("Maximum Iterations",    maxIts);
   belosList.set("Convergence Tolerance", 1e-12);
   belosList.set("Verbosity",             Belos::Errors + Belos::Warnings + Belos::StatusTestDetails);
   belosList.set("Output Frequency",      1);
@@ -485,12 +486,17 @@ namespace MueLuTests {
     AFact->SetParameter("block col", Teuchos::ParameterEntry(col));
     M.SetFactory("A", AFact);
 
-    // RCP<Q2Q1PFactory>  Q2Q1Fact = rcp(new Q2Q1PFactory);
-    RCP<Q2Q1uPFactory> Q2Q1Fact = rcp(new Q2Q1uPFactory);
-    ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
-    q2q1ParamList.set("mode", mode);
-    // q2q1ParamList.set("phase2", false);
-    Q2Q1Fact->SetParameterList(q2q1ParamList);
+    RCP<Factory> Q2Q1Fact;
+    if (ISSTRUCTURED) {
+      Q2Q1Fact = rcp(new Q2Q1PFactory);
+
+    } else {
+      RCP<Q2Q1uPFactory> Q2Q1Fact = rcp(new Q2Q1uPFactory);
+      ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
+      q2q1ParamList.set("mode", mode);
+      // q2q1ParamList.set("phase2", false);
+      Q2Q1Fact->SetParameterList(q2q1ParamList);
+    }
     Q2Q1Fact->SetFactory("A", AFact);
     M.SetFactory("Ptent", Q2Q1Fact);
 
