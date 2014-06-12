@@ -306,8 +306,10 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   cmdline[CMD_USE_UQ_ENSEMBLE]       = useEnsemble;
   cmdline[CMD_USE_SPARSE]            = useSparse;
   cmdline[CMD_USE_ATOMIC]            = useAtomic;
-  cmdline[CMD_USE_BELOS]             = useBelos;
   cmdline[CMD_USE_MUELU]             = useMueLu;
+  if (useMueLu)
+    useBelos = true;
+  cmdline[CMD_USE_BELOS]             = useBelos;
   cmdline[CMD_PRINT]                 = doPrint;
   cmdline[CMD_SUMMARIZE]             = doSummarize;
   sscanf( fixtureSpec.c_str() , "%dx%dx%d" ,
