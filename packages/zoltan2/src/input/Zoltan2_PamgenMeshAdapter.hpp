@@ -262,8 +262,8 @@ PamgenMeshAdapter<User>::PamgenMeshAdapter(string typestr = "region"):
 
   Acoords_ = new double [num_elem_ * dimension_];
   long long a = 0;
-  /*std::vector<std::vector<long long> > sur_elem;
-    sur_elem.resize(num_nodes_);*/
+  std::vector<std::vector<long long> > sur_elem;
+  sur_elem.resize(num_nodes_);
 
   for(long long b = 0; b < num_elem_blk; b++) {
     connect[b] = new long long [num_nodes_per_elem[b]*num_elem_this_blk[b]];
