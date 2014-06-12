@@ -4,6 +4,7 @@ import matplotlib.pyplot as plt
 import matplotlib.colors as mcolors
 import numpy as np
 import re
+import optparse
 
 
 def sort_nicely(l):
@@ -21,20 +22,35 @@ def make_colormap(seq):
     """
     return mcolors.LinearSegmentedColormap.from_list('CustomMap', seq, N=len(seq))
 
+def moveon(event):
+  plt.close()
+
 def main():
-  N = 17
-  V = 'v'
-  interactive = False
+  p = optparse.OptionParser()
 
-  if V == 'v':
-    N = 2*N-1
+  # env arguments
+  p.add_option('-p',                  dest="pv",   action="store_const", const='p', default='p')
+  p.add_option('-v',                  dest="pv",   action="store_const", const='v')
+  p.add_option('-l', '--level',       dest="L",    default=0, type='int')
+  p.add_option('-i', '--interactive', dest="ui",   action="store_true", default=True)
+  p.add_option('-b', '--batch',       dest="ui",   action="store_false")
+  p.add_option('-s', '--skip',        dest="skip", default=0, type='int')
 
-  x = np.zeros(N*N)
-  y = np.zeros(N*N)
-  for j in range(N):
-      for i in range(N):
-          x[j*N+i] = i
-          y[j*N+i] = j
+  # parse
+  options, arguments = p.parse_args()
+
+  V    = options.pv
+  L    = options.L
+  ui   = options.ui
+  skip = options.skip
+
+  coords = np.loadtxt("coord-l" + str(L) + "-" + V)
+  if V == 'p':
+    x = coords[:, 0]
+    y = coords[:, 1]
+  else:
+    x = coords[0:-1:2, 0]
+    y = coords[0:-1:2, 1]
 
   area = 90
 
@@ -45,9 +61,17 @@ def main():
   min_color = 0
   max_color = len(cvals)-1
 
-  for file in sort_nicely(glob.glob("status-" + V + "-*" + ("" if V == 'p' else ".1"))):
+  k = 0
+  for file in sort_nicely(glob.glob("status-l" + str(L) + "-" + V + "-*" + ("" if V == 'p' else ".1"))):
+    k = k+1
+    if k <= skip:
+      continue
+
     colors = np.loadtxt(file)
-    assert len(colors) == N*N
+    assert len(colors) == len(x)
+
+    # one can use any key on keyboard to progress to the next plot
+    cid = plt.figure().canvas.mpl_connect('key_press_event', moveon)
 
     if V == 'v':
       plt.subplot(121)
@@ -67,8 +91,8 @@ def main():
 
       plt.title(file2)
 
-    if interactive == False:
-      plt.savefig(file + '.png')
+    if ui == False:
+      plt.savefig(file + '.png', format='png')
     else:
       plt.show()
 
