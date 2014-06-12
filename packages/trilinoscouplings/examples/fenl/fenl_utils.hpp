@@ -204,15 +204,17 @@ void print_perf_value( std::ostream & s ,
   s << std::setw(widths[i++]) << perf.global_node_count << " ,";
 
   if ( cmd[ CMD_USE_UQ_DIM ] ) {
+    // Note:  cg_iter_count is already a sum across all samples,
+    // so don't scale cg times by uq_count
     s << std::setw(widths[i++]) << perf.uq_count << " ,";
     s << std::setw(widths[i++]) << double(perf.newton_iter_count) / perf.uq_count << " ,";
-  s << std::setw(widths[i++]) << double(perf.cg_iter_count) / perf.uq_count << " ,";
+    s << std::setw(widths[i++]) << double(perf.cg_iter_count) / perf.uq_count << " ,";
     s << std::setw(widths[i++]) << ( perf.import_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
     s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
     s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-    s << std::setw(widths[i++]) << ( ( perf.mat_vec_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count*perf.uq_count) << " ,";
-    s << std::setw(widths[i++]) << ( ( perf.cg_iter_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count*perf.uq_count) << " ,";
-    s << std::setw(widths[i++]) << ( ( perf.prec_apply_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count*perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.mat_vec_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.cg_iter_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.prec_apply_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
     s << std::setw(widths[i++]) << ( perf.prec_setup_time * 1000.0 ) / (perf.uq_count) << " ,";
     s << std::setw(widths[i++]) << ( perf.cg_total_time * 1000.0 ) / (perf.uq_count) << " ,";
     s << std::setw(widths[i++]) << perf.response_mean << " ,";
