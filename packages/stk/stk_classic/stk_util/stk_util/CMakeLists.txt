@@ -8,7 +8,8 @@ IF ( ${PACKAGE_NAME}_ENABLE_SEACASIoss )
   ADD_SUBDIRECTORY(unit_test_support)
 ENDIF()
 
-IF ( STK_ENABLE_BoostLib )
+
+IF ( ${PACKAGE_NAME}_ENABLE_BoostLib )
   ADD_SUBDIRECTORY(use_cases)
 ENDIF()
 

@@ -16,7 +16,7 @@ FILE(GLOB SOURCES *.cpp)
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     stk_mesh_unit_tests
     SOURCES ${SOURCES}
-    DEPLIBS stk_util_use_cases
+    DEPLIBS stkclassic_util_use_cases
     ARGS ""
     COMM serial mpi
     NUM_MPI_PROCS 1-4
