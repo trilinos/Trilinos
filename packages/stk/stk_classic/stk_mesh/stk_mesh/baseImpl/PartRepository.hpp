@@ -83,7 +83,7 @@ PartRepository::remove_attribute( Part & p, const T * a )
 
 } // namespace impl 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 
 #endif // stk_mesh_PartRepository_hpp

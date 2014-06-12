@@ -88,4 +88,4 @@ SelectedBucketRangeEntityIteratorRange get_selected_bucket_entity_range(const Al
 #endif
 
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic

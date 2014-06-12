@@ -551,6 +551,6 @@ std::vector<std::string> entity_rank_names(size_t spatial_dimension);
 
 } // namespace fem
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif //  stk_mesh_FEMMetaData_hpp

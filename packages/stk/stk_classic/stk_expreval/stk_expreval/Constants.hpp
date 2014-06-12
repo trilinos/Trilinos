@@ -36,6 +36,6 @@ const double s_pi	= 3.14159265358979323846;
 ConstantMap &getConstantMap();
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_expreval_Constants_hpp

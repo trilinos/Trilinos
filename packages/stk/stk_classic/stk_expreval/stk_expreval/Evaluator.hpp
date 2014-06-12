@@ -281,6 +281,6 @@ private:
 };
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // SIERRA_ExprEval_h

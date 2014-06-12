@@ -61,7 +61,7 @@ bool use_case_24_driver( MPI_Comm comm,
                          const std::string &outputName );
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 
 
 namespace {

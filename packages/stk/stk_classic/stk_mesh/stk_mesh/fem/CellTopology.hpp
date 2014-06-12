@@ -32,7 +32,7 @@ int findPermutation( const CellTopology top ,
 
 } // namespace fem
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #undef STK_MESH_FEM_CHECK_REQUIRE
 

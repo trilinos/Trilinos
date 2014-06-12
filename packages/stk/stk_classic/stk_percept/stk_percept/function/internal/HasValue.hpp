@@ -1,7 +1,7 @@
 #ifndef stk_percept_function_HasValue_hpp
 #define stk_percept_function_HasValue_hpp
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

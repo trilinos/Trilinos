@@ -79,7 +79,7 @@ void verify_convertible_to_int(T id, const char* caller)
 
 }//namespace impl
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

@@ -195,5 +195,5 @@ AggregateLinearSystem::solve(int &status, const Teuchos::ParameterList & params 
 }
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 

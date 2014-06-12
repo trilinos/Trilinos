@@ -284,4 +284,4 @@ BucketImpl::BucketImpl( BulkData & arg_mesh,
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

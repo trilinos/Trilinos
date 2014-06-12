@@ -34,7 +34,7 @@
 #include <stk_adapt/NodeRegistry.hpp>
 #include <stk_percept/fixtures/Fixture.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace adapt
   {
@@ -507,5 +507,5 @@ namespace stk
 
     }//    namespace unit_tests
   }//  namespace adapt
-}// namespace stk
+}// namespace stk_classic
 

@@ -98,7 +98,7 @@ INDEX_LIST_AT_SPECIALIZATION( 31 , I31 )
 
 #undef INDEX_LIST_AT_SPECIALIZATION
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_util_IndexList_h
 

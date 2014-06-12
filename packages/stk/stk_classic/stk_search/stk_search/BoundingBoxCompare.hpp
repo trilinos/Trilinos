@@ -144,6 +144,6 @@ class Partition<BoundingBox, KEY> {
 } // namespace compare
 } // namespace box
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_search_BoundingBoxCompare_hpp

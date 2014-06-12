@@ -42,7 +42,7 @@ class Writer;
 typedef unsigned long PrintMask;
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 

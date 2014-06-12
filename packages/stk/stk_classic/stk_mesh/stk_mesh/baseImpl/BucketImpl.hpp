@@ -165,7 +165,7 @@ class BucketImpl {
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 
 #endif // stk_mesh_BucketImpl_hpp

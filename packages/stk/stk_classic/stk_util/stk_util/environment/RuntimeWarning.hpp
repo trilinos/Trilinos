@@ -385,6 +385,6 @@ private:
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_ENVIRONMENT_RUNTIMEWARNING_HPP

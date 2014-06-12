@@ -495,4 +495,4 @@ std::ostream & print( std::ostream & s ,
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

@@ -312,6 +312,6 @@ private:
 /** \} */
 
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif //stk_mesh_fem_CoordinateSystems_hpp

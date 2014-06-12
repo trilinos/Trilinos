@@ -195,7 +195,7 @@ AlgorithmRunnerInterface * algorithm_runner_tbb( int nthreads )
   return & runner ;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #else
 
@@ -206,7 +206,7 @@ AlgorithmRunnerInterface * algorithm_runner_tbb( int nthreads )
   return NULL ;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif
 

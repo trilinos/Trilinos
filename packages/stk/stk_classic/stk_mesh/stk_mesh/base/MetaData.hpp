@@ -551,7 +551,7 @@ field_type & put_field( field_type & field ,
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -1016,7 +1016,7 @@ is_auto_declared_part(const Part &part)
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* DOXYGEN_COMPILE */
 

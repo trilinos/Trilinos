@@ -162,7 +162,7 @@ Writer &oct(Writer &dout);
 ///
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 namespace Diag {

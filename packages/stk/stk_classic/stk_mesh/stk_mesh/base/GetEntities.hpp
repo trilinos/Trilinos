@@ -66,7 +66,7 @@ SelectedBucketRangeEntityIteratorRange get_selected_entities( const Selector & s
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

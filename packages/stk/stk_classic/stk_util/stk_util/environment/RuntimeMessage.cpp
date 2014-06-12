@@ -486,4 +486,4 @@ operator<<(
   return os;
 }
 
-} // namespace stk
+} // namespace stk_classic

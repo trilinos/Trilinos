@@ -108,6 +108,6 @@ void get_involved_parts(
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 

@@ -328,5 +328,5 @@ void communicate_field_data_verify_read( CommAll & sparse )
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

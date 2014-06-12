@@ -42,7 +42,7 @@ SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag1 )
   SHARDS_ARRAY_DIM_TAG_SIMPLE_DECLARATION( Tag4 )
 
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -594,7 +594,7 @@ namespace stk
 
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 
 #endif

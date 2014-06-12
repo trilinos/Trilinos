@@ -446,5 +446,5 @@ void BulkData::internal_propagate_part_changes(
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

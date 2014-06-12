@@ -751,4 +751,4 @@ Marshal &operator>>(Marshal &min, diag::ParallelTimer &t) {
   return min;
 }
 
-} // namespace stk
+} // namespace stk_classic

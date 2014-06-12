@@ -383,6 +383,6 @@ operator<<(std::basic_ostream<Ch, Tr> &os, IndentFlags indent_flags) {
 
 typedef stk_classic::basic_indent_streambuf<char> indent_streambuf;
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif //  STK_UTIL_UTIL_INDENTSTREAMBUF_HPP

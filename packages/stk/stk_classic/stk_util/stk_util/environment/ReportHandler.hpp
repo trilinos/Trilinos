@@ -152,7 +152,7 @@ void handle_invalid_arg(const char* expr,
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 ///
 /// @addtogroup runtime_message_detail

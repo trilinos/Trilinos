@@ -30,7 +30,7 @@ void find_closure( const BulkData & bulk,
     std::vector< Entity *> & entities_closure);
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 
 #endif // STK_MESH_BASE_BULK_MODIFICATION_HPP

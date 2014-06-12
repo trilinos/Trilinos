@@ -89,5 +89,5 @@ struct OffsetScaleOp : public Op
 };
 
 } // namespace search_util
-} // namespace stk
+} // namespace stk_classic
 #endif // stk_search_util_stk_mesh_CreateBoundingBox_hpp

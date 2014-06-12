@@ -23,6 +23,6 @@ void test_shift_ring( stk_classic::mesh::fixtures::RingFixture& ring,
                       bool generate_aura=true );
 
 } // namespace unit_test
-} // namespace stk
+} // namespace stk_classic
 
 #endif

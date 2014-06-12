@@ -89,7 +89,7 @@ generic_mesh_traits<Mesh>::null_relation()
 { return Mesh::null_relation(); }
 
 
-} // namespace stk
+} // namespace stk_classic
 
 
 #endif // STK_UTIL_GENERIC_MESH_TRAITS_HPP

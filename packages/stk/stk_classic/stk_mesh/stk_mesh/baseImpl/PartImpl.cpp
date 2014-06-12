@@ -101,6 +101,6 @@ void PartImpl::set_primary_entity_rank( EntityRank entity_rank )
 } // namespace impl
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 

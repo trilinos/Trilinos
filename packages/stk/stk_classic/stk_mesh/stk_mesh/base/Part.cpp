@@ -201,5 +201,5 @@ std::string convert_to_internal_name(const std::string& part_name)
 
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

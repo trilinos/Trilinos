@@ -122,7 +122,7 @@ private:
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 
 #endif // stk_mesh_BucketRepository_hpp

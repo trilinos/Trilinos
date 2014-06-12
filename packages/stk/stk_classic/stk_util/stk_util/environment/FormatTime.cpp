@@ -61,4 +61,4 @@ formatTime(
   return oss.str();
 }
 
-} // namespace stk
+} // namespace stk_classic

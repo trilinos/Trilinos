@@ -30,6 +30,6 @@ bool modification_end_wrapper(stk_classic::mesh::BulkData& mesh, bool generate_a
 
 } // namespace unit_test
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif

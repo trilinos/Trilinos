@@ -42,4 +42,4 @@ namespace mesh {
   }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

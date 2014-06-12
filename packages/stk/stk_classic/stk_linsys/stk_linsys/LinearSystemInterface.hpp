@@ -74,7 +74,7 @@ class LinearSystemInterface {
 };//class LinearSystemInterface
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

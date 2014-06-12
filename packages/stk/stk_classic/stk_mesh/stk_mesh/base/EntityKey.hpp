@@ -187,7 +187,7 @@ size_t hash_value( EntityKey key) {
 
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* stk_mesh_EntityKey_hpp */
 

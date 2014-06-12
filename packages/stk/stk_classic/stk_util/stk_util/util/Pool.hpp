@@ -69,7 +69,7 @@ inline void Pool::free(void* b)
 }
 
 }//namespace util
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

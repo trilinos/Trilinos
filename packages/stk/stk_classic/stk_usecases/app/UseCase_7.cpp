@@ -568,7 +568,7 @@ void use_case_7_initialize_data(
 }
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -740,5 +740,5 @@ void use_case_7_generate_mesh(
 }
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 

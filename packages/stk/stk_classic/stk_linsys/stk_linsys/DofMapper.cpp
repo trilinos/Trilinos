@@ -190,5 +190,5 @@ DofMapper::get_dof(int global_index,
 }
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 

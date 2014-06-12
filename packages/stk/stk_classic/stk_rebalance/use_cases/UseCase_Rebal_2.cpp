@@ -248,6 +248,6 @@ bool test_heavy_nodes( stk_classic::ParallelMachine pm )
 
 } //namespace use_cases
 } //namespace rebalance
-} //namespace stk
+} //namespace stk_classic
 
 

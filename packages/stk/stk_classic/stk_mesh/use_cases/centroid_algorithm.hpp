@@ -207,6 +207,6 @@ bool centroid_algorithm_unit_test_dimensions(
 
 } // namespace use_cases
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // centroid_algorithm_hpp

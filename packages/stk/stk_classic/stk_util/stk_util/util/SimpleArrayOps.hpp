@@ -375,7 +375,7 @@ struct Compare {
 
 //-----------------------------------
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif
 

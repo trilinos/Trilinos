@@ -148,4 +148,4 @@ LogControl::next()
 }
 
 
-} // namespace stk
+} // namespace stk_classic

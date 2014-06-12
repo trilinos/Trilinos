@@ -129,6 +129,6 @@ class IO_Fixture
 
 } // namespace util
 } // namespace io
-} // namespace stk
+} // namespace stk_classic
 
 #endif //STK_IO_UTIL_IO_FIXTURE_HPP

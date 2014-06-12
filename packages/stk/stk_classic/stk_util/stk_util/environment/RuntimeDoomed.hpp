@@ -401,6 +401,6 @@ private:
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_ENVIRONMENT_RUNTIMEDOOMED_HPP

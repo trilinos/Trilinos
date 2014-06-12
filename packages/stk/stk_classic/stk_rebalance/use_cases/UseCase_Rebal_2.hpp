@@ -19,7 +19,7 @@ namespace use_cases {
 
 } //namespace use_cases
 } //namespace rebalance
-} //namespace stk
+} //namespace stk_classic
 
 #endif // Stk_Rebalance_Use_Cases_UseCase_2_hpp
 

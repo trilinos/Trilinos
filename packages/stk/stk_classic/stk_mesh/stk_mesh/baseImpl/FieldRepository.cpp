@@ -222,4 +222,4 @@ FieldRepository::~FieldRepository() {
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

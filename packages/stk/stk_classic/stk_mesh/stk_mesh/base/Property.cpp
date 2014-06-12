@@ -60,5 +60,5 @@ MetaData::get_property_base( const std::string    & name ,
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

@@ -21,7 +21,7 @@ stk_classic::diag::Writer &operator<<(stk_classic::diag::Writer &dout, const Ent
   return dout << entity_rank(entity_key) << ":" << entity_id(entity_key);
 }
 
-} // namespace stk
+} // namespace stk_classic
 } // namespace mesh
 
 #endif // stk_mesh_diag_EntityKey_hpp

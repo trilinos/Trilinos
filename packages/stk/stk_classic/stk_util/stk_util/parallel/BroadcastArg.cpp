@@ -85,4 +85,4 @@ BroadcastArg::~BroadcastArg()
   delete[] m_argv;
 }
 
-} // namespace stk
+} // namespace stk_classic

@@ -75,6 +75,6 @@ private:
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_UTIL_BOOTSTRAP_HPP

@@ -99,7 +99,7 @@ namespace stk_classic {
         const CartesianField & node_velocity );
 
   }//namespace app
-}//namespace stk
+}//namespace stk_classic
 
 namespace lame {
   typedef std::map<std::string, std::vector<double> > MatProps;

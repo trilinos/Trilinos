@@ -146,7 +146,7 @@ class DofMapper {
 /** \} */
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

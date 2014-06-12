@@ -483,4 +483,4 @@ namespace stk_classic { namespace adapt {
 
   } // namespace Elem
 } // namespace adapt
-} // namespace stk
+} // namespace stk_classic

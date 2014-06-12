@@ -162,6 +162,6 @@ inline void setStream(std::ostream& stream) { }
 #endif
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif

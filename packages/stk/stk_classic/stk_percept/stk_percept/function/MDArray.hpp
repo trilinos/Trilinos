@@ -6,7 +6,7 @@
 #include <vector>
 #include "Intrepid_FieldContainer.hpp"
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

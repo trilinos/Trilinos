@@ -101,6 +101,6 @@ AlgorithmRunnerInterface * algorithm_runner_non_thread()
   return & runner ;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 

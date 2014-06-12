@@ -4,7 +4,7 @@
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/function/internal/HasValue.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -74,5 +74,5 @@ namespace stk
     };
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 #endif

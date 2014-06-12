@@ -104,7 +104,7 @@ class LinearSystem : public LinearSystemInterface {
 };//class LinearSystem
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

@@ -78,7 +78,7 @@ void get_involved_parts( const PartVector & union_parts,
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

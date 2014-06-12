@@ -28,6 +28,6 @@ stk_classic::diag::Writer &operator<<(stk_classic::diag::Writer &dout, const Ide
 
 } // namespace ident
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_search_diag_IdentProc_hpp

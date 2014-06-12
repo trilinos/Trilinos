@@ -544,5 +544,5 @@ bool unpack_not_owned_verify( CommAll & comm_all ,
 } // namespace<>
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

@@ -130,7 +130,7 @@ AlgorithmRunnerInterface * algorithm_runner_tpi( int nthreads )
   return runner.result ? & runner : NULL ;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #else
 
@@ -141,7 +141,7 @@ AlgorithmRunnerInterface * algorithm_runner_tpi( int nthreads )
   return NULL ;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif
 

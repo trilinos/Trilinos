@@ -510,4 +510,4 @@ void oct_tree_partition_private(
 }
 
 } // namespace search
-} // namespace stk
+} // namespace stk_classic

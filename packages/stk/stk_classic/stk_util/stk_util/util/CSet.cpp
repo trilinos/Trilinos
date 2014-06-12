@@ -135,6 +135,6 @@ CSet::~CSet()
 
 CSet::CSet() : m_manager(), m_value() {}
 
-} // namespace stk
+} // namespace stk_classic
 
 

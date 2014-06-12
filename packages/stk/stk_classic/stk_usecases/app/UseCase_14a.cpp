@@ -1220,4 +1220,4 @@ bool use_case_14a_driver(MPI_Comm comm,
 //----------------------------------------------------------------------
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic

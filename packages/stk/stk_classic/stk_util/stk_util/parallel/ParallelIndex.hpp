@@ -297,7 +297,7 @@ private:
 };
 
 } // namespace util
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 

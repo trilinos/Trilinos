@@ -58,7 +58,7 @@ CudaDeviceMgr::CudaDeviceMgr(int device)
     << std::endl;
 }
 
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

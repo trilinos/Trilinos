@@ -185,5 +185,5 @@ bool oct_tree_bih_tree_proximity_search(
 }
 
 } //namespace search
-} //namespace stk
+} //namespace stk_classic
 #endif //stk_search_BihTreeParallelOps_hpp

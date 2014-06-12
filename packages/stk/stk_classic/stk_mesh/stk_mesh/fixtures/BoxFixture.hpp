@@ -79,6 +79,6 @@ private:
 
 } // namespace fixtures
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif

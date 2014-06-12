@@ -51,6 +51,6 @@ enum { MaximumFieldStates = 6 };
 /** \} */
 
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif //stk_mesh_FieldState_hpp

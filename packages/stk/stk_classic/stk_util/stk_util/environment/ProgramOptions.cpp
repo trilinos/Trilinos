@@ -26,4 +26,4 @@ get_variables_map()
   return s_variablesMap;
 }
 
-} // namespace stk
+} // namespace stk_classic

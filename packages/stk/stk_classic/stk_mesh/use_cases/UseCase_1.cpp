@@ -41,6 +41,6 @@ UseCase_1_Mesh::~UseCase_1_Mesh()
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 

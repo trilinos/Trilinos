@@ -38,4 +38,4 @@ Bootstrap::Bootstrap(
     (*f)();
 }
 
-} // namespace stk
+} // namespace stk_classic

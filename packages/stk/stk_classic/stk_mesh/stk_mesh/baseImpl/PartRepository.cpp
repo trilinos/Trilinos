@@ -319,5 +319,5 @@ PartRepository::~PartRepository()
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

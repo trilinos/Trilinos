@@ -63,7 +63,7 @@ void set_owners(BulkData& mesh_bulk_data)
 }
 
 }//namespace mesh
-}//namespace stk
+}//namespace stk_classic
 
 #endif // stk_mesh_SetOwner_hpp
 

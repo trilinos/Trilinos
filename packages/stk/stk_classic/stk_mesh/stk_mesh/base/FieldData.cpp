@@ -26,5 +26,5 @@ const char * EntityDimension::name() const
 //----------------------------------------------------------------------
 
 }//namespace mesh
-}//namespace stk
+}//namespace stk_classic
 

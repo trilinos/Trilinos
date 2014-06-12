@@ -21,6 +21,6 @@ double wall_time();
 
 double wall_dtime(double &t);
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_environment_WallTime_hpp

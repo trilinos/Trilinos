@@ -406,7 +406,7 @@ inline diag::Writer &operator<<(diag::Writer &dout, const PrintTable &table){
   return table.verbose_print(dout);
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 //namespace sierra {
 //

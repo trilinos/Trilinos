@@ -68,7 +68,7 @@ property_data( property_type & prop , const Part & part )
 /** \} */
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* stk_mesh_Property_hpp */
 

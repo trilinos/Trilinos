@@ -105,4 +105,4 @@ const char *demangle(const char *symbol) {
 }
 #endif // STK_USE_PLATFORM_DEMANGLER
 
-} // namespace stk
+} // namespace stk_classic

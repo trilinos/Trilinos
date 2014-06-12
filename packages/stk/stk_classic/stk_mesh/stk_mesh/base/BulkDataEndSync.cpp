@@ -1113,5 +1113,5 @@ void BulkData::internal_resolve_shared_membership()
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

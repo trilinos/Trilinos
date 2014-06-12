@@ -34,7 +34,7 @@
 #include <stk_util/util/MallocUsed.h>
 
 
-namespace stk
+namespace stk_classic
 {
   namespace adapt
   {

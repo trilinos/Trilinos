@@ -86,7 +86,7 @@ STKUNIT_UNIT_TEST(topo, test1)
 } // namespace SEncr
 
 
-namespace stk
+namespace stk_classic
 {
 namespace percept
 {

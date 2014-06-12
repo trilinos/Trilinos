@@ -43,6 +43,6 @@ Writer &operator<<(Writer &dout, const T &t) {
 ///
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_DIAG_WRITEROSTREAM_HPP

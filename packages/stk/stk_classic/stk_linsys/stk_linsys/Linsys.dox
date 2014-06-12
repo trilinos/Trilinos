@@ -2,7 +2,7 @@
 namespace stk_classic {
 namespace linsys {
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 /** \defgroup stk_linsys_module Sierra Toolkit Linear-System Assembly
  */

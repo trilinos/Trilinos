@@ -38,7 +38,7 @@
 #include <stk_percept/ExceptionWatch.hpp>
 
 
-namespace stk
+namespace stk_classic
 {
   namespace adapt
   {
