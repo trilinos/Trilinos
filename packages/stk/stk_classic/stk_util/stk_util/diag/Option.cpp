@@ -128,4 +128,4 @@ OptionMaskName::describe(
 }
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic

@@ -43,6 +43,6 @@ int element_node_stencil( EntityRank from_type , EntityRank to_type , unsigned i
 
 } // namespace fem
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif //  stk_mesh_Stencils_hpp

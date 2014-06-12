@@ -59,7 +59,7 @@
 
 #include <stk_percept/function/ElementOp.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace adapt
   {

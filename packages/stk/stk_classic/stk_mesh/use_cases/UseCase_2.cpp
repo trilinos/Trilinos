@@ -603,6 +603,6 @@ void usecase_2_node_coordinates( stk_classic::mesh::EntityId node_id , double co
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 

@@ -47,6 +47,6 @@ private:
   BroadcastArg &operator=(const BroadcastArg &argv);
 };
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_PARALLEL_BROADCASTARG_HPP

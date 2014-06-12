@@ -346,8 +346,6 @@ void MetaData::synchronize_part_fields_with_parts()
 
 Part & MetaData::declare_part( const std::string & p_name )
 {
-  require_not_committed();
-
   const EntityRank rank = InvalidEntityRank;
 
   add_new_part_in_part_fields();
@@ -356,13 +354,12 @@ Part & MetaData::declare_part( const std::string & p_name )
 
 Part & MetaData::declare_internal_part( const std::string & p_name )
 {
-  std::string internal_name = convert_to_internal_name(p_name);
+  std::string internal_name = impl::convert_to_internal_name(p_name);
   return declare_part(internal_name);
 }
 
 Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, bool arg_force_no_induce )
 {
-  require_not_committed();
   require_valid_entity_rank(rank);
 
   add_new_part_in_part_fields();
@@ -371,20 +368,8 @@ Part & MetaData::declare_part( const std::string & p_name , EntityRank rank, boo
 
 Part & MetaData::declare_internal_part( const std::string & p_name , EntityRank rank )
 {
-  std::string internal_name = convert_to_internal_name(p_name);
+  std::string internal_name = impl::convert_to_internal_name(p_name);
   return declare_part(internal_name, rank);
-}
-
-void MetaData::declare_custom_ghosting_parts(unsigned num_custom_ghostings)
-{
-    require_not_committed();
-    ThrowRequireMsg(m_custom_ghosting_parts.size() == 0,"MetaData::declare_custom_ghosting_parts can only be called once");
-
-     for(unsigned i=0; i<num_custom_ghostings; ++i) {
-         std::ostringstream oss;
-         oss<<"{custom_ghosting_"<<i<<"}";
-         m_custom_ghosting_parts.push_back(&declare_part(oss.str()));
-     }
 }
 
 void MetaData::declare_part_subset( Part & superset , Part & subset )
@@ -462,7 +447,6 @@ void MetaData::declare_field_restriction(
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
   require_same_mesh_meta_data( MetaData::get(arg_field) );
   require_same_mesh_meta_data( MetaData::get(arg_part) );
 
@@ -487,7 +471,6 @@ void MetaData::declare_field_restriction(
   static const char method[] =
     "std::mesh::MetaData::declare_field_restriction" ;
 
-  //require_not_committed(); // Moved to FieldBaseImpl::declare_field_restriction
   require_same_mesh_meta_data( MetaData::get(arg_field) );
 
   m_field_repo.declare_field_restriction(
@@ -507,10 +490,6 @@ void MetaData::commit()
 {
   require_not_committed();
 
-  if (m_custom_ghosting_parts.size() == 0) {
-      unsigned num_custom_ghostings = 10;
-      declare_custom_ghosting_parts(num_custom_ghostings);
-  }
   m_commit = true ; // Cannot add or change parts or fields now
 
   synchronize_part_fields_with_parts();
@@ -681,7 +660,7 @@ CellTopology
 MetaData::get_cell_topology(
   const std::string &   topology_name) const
 {
-  std::string part_name = convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
+  std::string part_name = impl::convert_to_internal_name(std::string("FEM_ROOT_CELL_TOPOLOGY_PART_") + topology_name);
 
   Part *part = get_part(part_name);
   if (part)

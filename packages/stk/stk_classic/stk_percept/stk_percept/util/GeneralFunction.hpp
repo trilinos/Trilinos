@@ -124,6 +124,6 @@ namespace stk_classic {
 
     } // namespace util
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 
 #endif

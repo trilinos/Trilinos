@@ -34,7 +34,7 @@
 
 #include <stk_percept/fixtures/Fixture.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -308,5 +308,5 @@ namespace stk
 
     }//    namespace unit_tests
   }//  namespace percept
-}// namespace stk
+}// namespace stk_classic
 

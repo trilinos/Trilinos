@@ -93,7 +93,7 @@ private:
   CSet & operator = ( const CSet & );
 };
 
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------
@@ -140,7 +140,7 @@ inline
 bool CSet::remove( const T * arg_value )
 { return p_remove( typeid(T) , arg_value ); }
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* DOXYGEN_COMPILE */
 

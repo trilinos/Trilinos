@@ -575,6 +575,6 @@ void BucketRepository::internal_propagate_relocation( Entity & entity )
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 

@@ -1077,4 +1077,4 @@ void get_element_block_sizes(MeshData &mesh_data,
 template void get_element_block_sizes(MeshData &mesh_data, std::vector<int>& el_blocks);
 template void get_element_block_sizes(MeshData &mesh_data, std::vector<int64_t>& el_blocks);
 } // namespace io
-} // namespace stk
+} // namespace stk_classic

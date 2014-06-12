@@ -466,7 +466,7 @@ public:
   enum { unique = TypeListUnique<type>::value };
 };
 
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 

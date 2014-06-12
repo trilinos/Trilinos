@@ -428,4 +428,4 @@ Marshal &operator>>(Marshal &min, std::string &s)  {
   return min;
 }
 
-} // namespace stk
+} // namespace stk_classic

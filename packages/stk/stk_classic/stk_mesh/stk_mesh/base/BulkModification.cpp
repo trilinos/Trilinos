@@ -176,5 +176,5 @@ void find_closure( const BulkData & bulk,
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

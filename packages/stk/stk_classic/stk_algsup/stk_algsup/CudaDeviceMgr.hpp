@@ -29,7 +29,7 @@ class CudaDeviceMgr {
   int m_device;
 };//class CudaMemoryMgr
 
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

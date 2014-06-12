@@ -195,6 +195,6 @@ std::ostream & print( std::ostream & ,
                       const char * const , const FieldBase & );
 
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif //stk_mesh_base_FieldBase_hpp

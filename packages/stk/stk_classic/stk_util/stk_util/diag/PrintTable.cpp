@@ -310,4 +310,4 @@ PrintTable::verbose_print(
   return dout;
 }
 
-} // namespace stk
+} // namespace stk_classic

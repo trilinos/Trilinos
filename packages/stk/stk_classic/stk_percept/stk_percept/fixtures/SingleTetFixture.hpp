@@ -86,6 +86,6 @@ namespace stk_classic {
     //bool verifyMesh( const SingleTetFixture & mesh );
 
   } //namespace percept
-} //namespace stk
+} //namespace stk_classic
 
 #endif // Stk_Mesh_Use_Cases_UseCase_3_hpp

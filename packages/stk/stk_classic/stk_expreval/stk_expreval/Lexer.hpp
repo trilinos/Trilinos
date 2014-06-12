@@ -130,6 +130,6 @@ typedef std::vector<Lexem> LexemVector;
 LexemVector tokenize(const std::string &expression);
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_expreval_lexer_hpp

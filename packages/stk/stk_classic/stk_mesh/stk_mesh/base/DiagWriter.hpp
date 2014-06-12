@@ -72,7 +72,7 @@ stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const E
 stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const EntityProc& entity_proc);
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STKMESH_TRACE_ENABLED
 

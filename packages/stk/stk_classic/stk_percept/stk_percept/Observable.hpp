@@ -5,7 +5,7 @@
 #include <vector>
 #include <algorithm>
 
-namespace stk
+namespace stk_classic
 {
 namespace percept
 {

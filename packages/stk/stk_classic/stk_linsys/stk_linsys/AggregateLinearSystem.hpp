@@ -131,7 +131,7 @@ class AggregateLinearSystem : public LinearSystemInterface {
 };//class AggregateLinearSystem
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 
 #endif
 

@@ -32,6 +32,6 @@ std::string demangle(const char *symbol);
 const char *demangle(const char *symbol);
 #endif
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_environment_Demangle_hpp

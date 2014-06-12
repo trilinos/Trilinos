@@ -87,5 +87,5 @@ int entityid_to_int(stk_classic::mesh::EntityId id)
 
 }//namespace impl
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 

@@ -108,6 +108,6 @@ class FieldRepository {
 
 } // namespace impl
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif //stk_mesh_baseImpl_FieldRepository_hpp

@@ -237,7 +237,7 @@ bool operator!=(const IdentifierB &s1, const IdentifierB &s2);
 
 bool operator!=(const IdentifierB &s1, const char *s2);
 
-} // namespace stk
+} // namespace stk_classic
 
 namespace boost {
 

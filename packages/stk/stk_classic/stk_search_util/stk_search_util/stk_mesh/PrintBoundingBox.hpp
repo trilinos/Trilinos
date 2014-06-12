@@ -161,6 +161,6 @@ operator<<(
 
 } // namespace box
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif //  stk_util_search_PrintBoundingBox_hpp

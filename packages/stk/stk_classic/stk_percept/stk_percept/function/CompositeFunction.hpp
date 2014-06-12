@@ -8,7 +8,7 @@
 
 #include <stk_percept/function/Function.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -75,5 +75,5 @@ namespace stk
     };
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 #endif

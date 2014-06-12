@@ -303,6 +303,6 @@ Selector selectField( const FieldBase& field )
 
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 

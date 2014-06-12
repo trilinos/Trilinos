@@ -85,5 +85,5 @@ void print_stk_mesh_relation_map(stk_classic::diag::Writer &writer,
                                  const std::vector<std::string> &entity_names,
                                  IdentProcRelation relation);
 } // namespace search_util
-} // namespace stk
+} // namespace stk_classic
 #endif

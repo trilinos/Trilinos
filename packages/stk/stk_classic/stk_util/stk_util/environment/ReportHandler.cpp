@@ -187,4 +187,4 @@ void handle_invalid_arg(const char* expr,
   (*s_invalid_arg_handler)(expr, location, message);
 }
 
-} // namespace stk
+} // namespace stk_classic

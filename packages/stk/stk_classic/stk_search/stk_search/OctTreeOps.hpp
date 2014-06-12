@@ -1018,7 +1018,7 @@ bool oct_tree_proximity_search(
 //----------------------------------------------------------------------
 
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif
 

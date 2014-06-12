@@ -238,5 +238,5 @@ unsigned get_derived_type(const Entity& entity)
 
 } //namespace fem
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 #endif

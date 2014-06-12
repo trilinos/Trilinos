@@ -309,6 +309,6 @@ struct AxisAlignedBoundingBox
 
 } // namespace box
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_search_BoundingBox_hpp

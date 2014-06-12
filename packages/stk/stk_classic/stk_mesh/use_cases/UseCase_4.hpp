@@ -99,6 +99,6 @@ bool verifyMesh( const UseCase_4_Mesh & mesh );
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic
 
 #endif // Stk_Mesh_Use_Cases_UseCase_4_hpp

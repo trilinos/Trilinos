@@ -56,4 +56,4 @@ get_element_node_stencil(
 
 } // namespace fem
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

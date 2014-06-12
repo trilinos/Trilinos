@@ -1734,5 +1734,5 @@ void set_field_role(stk_classic::mesh::FieldBase &f, const Ioss::Field::RoleType
 }
 
 }//namespace io
-}//namespace stk
+}//namespace stk_classic
 

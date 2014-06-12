@@ -51,7 +51,7 @@
 //using namespace std;
 using namespace Intrepid;
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

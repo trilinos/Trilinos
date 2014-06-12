@@ -38,7 +38,7 @@
 
 #include <stk_percept/norm/IntrepidManager.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

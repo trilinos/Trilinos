@@ -234,6 +234,6 @@ void pack_field_values( CommBuffer & , Entity & );
 bool unpack_field_values( CommBuffer & , Entity & , std::ostream & error_msg );
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif

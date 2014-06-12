@@ -534,5 +534,5 @@ void BulkData::change_entity_owner( const std::vector<EntityProc> & arg_change )
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

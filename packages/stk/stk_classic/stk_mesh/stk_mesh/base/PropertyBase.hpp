@@ -206,7 +206,7 @@ public:
 
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_base_PropertyBase_hpp
 

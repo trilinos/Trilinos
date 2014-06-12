@@ -139,6 +139,6 @@ class Gmesh_STKmesh_Fixture
 
 }//namespace util
 }//namespace io
-}//namespace stk
+}//namespace stk_classic
 
 #endif

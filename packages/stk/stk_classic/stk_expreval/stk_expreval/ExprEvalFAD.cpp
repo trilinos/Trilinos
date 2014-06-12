@@ -1250,4 +1250,4 @@ Eval::evaluate() const
 
 } // namespace fad
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic

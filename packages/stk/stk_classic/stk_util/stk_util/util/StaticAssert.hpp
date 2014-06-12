@@ -29,7 +29,7 @@ template<> struct StaticAssert<true> {
 
 //----------------------------------------------------------------------
 
-} //namespace stk
+} //namespace stk_classic
 
 #endif // STK_UTIL_UTIL_StaticAssert_hpp
 

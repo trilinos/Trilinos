@@ -48,5 +48,5 @@ Pool::grow()
 }
 
 }//namespace util
-}//namespace stk
+}//namespace stk_classic
 

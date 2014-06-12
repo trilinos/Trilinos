@@ -155,6 +155,6 @@ protected:
 /** \} */
 
 }
-} // namespace stk
+} // namespace stk_classic
 
 #endif

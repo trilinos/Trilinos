@@ -27,7 +27,7 @@ struct SameType<T,T>
 
 //----------------------------------------------------------------------
 
-} //namespace stk
+} //namespace stk_classic
 
 #endif
 

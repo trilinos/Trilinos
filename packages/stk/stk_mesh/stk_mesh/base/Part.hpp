@@ -156,21 +156,6 @@ private:
 #endif /* DOXYGEN_COMPILE */
 };
 
-static const char INTERNAL_PART_PREFIX  = '{';
-static const char INTERNAL_PART_POSTFIX = '}';
-
-inline
-bool is_internal(const std::string& part_name)
-{
-  return part_name.size() > 2 && *part_name.begin() == INTERNAL_PART_PREFIX && *part_name.rbegin() == INTERNAL_PART_POSTFIX;
-}
-
-inline
-bool is_internal(const Part& part)
-{ return is_internal(part.name()); }
-
-std::string convert_to_internal_name(const std::string& part_name);
-
 //----------------------------------------------------------------------
 /** \brief  Ordering operator for parts. */
 struct PartLess {

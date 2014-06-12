@@ -97,4 +97,4 @@ formatMemorySize(
   return result;
 }
 
-} // namespace stk
+} // namespace stk_classic

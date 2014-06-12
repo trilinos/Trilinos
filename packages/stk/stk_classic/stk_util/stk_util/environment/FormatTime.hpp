@@ -26,6 +26,6 @@ enum {
 
 std::string formatTime(double time, TimeFormat time_format = TIMEFORMAT_HMS | TIMEFORMAT_MILLIS);
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_environment_FormatTime_hpp

@@ -65,5 +65,5 @@ bool comm_mesh_counts( BulkData & M ,
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

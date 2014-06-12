@@ -43,6 +43,6 @@ boost::program_options::variables_map &get_variables_map();
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_ENVIRONMENT_PROGRAMOPTIONS_HPP

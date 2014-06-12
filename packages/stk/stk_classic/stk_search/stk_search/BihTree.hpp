@@ -490,6 +490,6 @@ void BihTree<RangeBoundingVolume, COMPARE_MODE>::intersect_helper(
 
 } // namespace bih
 } // namespace search
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_search_BihTree_hpp

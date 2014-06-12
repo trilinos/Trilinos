@@ -118,5 +118,5 @@ RuntimeDoomedDeferred::~RuntimeDoomedDeferred()
   {}
 }
 
-} // namespace stk
+} // namespace stk_classic
 

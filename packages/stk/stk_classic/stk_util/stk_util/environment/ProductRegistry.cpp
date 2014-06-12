@@ -168,7 +168,7 @@ ProductRegistry::setProductAttribute(
   m_productMap[name][attribute] = value;
 }
 
-} // namespace stk
+} // namespace stk_classic
 
 extern "C" {
 

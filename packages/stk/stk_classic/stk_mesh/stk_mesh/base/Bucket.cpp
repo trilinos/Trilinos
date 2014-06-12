@@ -285,5 +285,5 @@ print( std::ostream & os , const std::string & indent , const Bucket & bucket )
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

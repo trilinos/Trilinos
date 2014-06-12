@@ -534,5 +534,5 @@ void verify_parallel_consistency( const MetaData & s , ParallelMachine pm )
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

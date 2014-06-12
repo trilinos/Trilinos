@@ -491,5 +491,5 @@ void verify_elem_node_coord(
 }
 
 }//namespace app
-}//namespace stk
+}//namespace stk_classic
 

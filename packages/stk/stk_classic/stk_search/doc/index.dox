@@ -1,7 +1,7 @@
 
 /** @brief Sierra Toolkit */
 namespace stk_classic {
-}//namespace stk
+}//namespace stk_classic
 
 /**
  * \mainpage Sierra Toolkit Search Product

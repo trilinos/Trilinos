@@ -411,7 +411,7 @@ bool use_case_14_driver(MPI_Comm comm,
 //----------------------------------------------------------------------
 
 } // namespace app
-} // namespace stk
+} // namespace stk_classic
 
 MyHexInternalForceAlg::MyHexInternalForceAlg(
   const stk_classic::app::Fields &    fields,

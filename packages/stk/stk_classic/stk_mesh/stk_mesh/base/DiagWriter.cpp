@@ -149,7 +149,7 @@ stk_classic::diag::Writer& operator<<(stk_classic::diag::Writer& writer, const E
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #else
 int dummy_DiagWriter()

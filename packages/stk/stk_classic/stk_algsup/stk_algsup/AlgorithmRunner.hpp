@@ -362,7 +362,7 @@ void AlgorithmRunnerInterface::run_parts(
 
 //----------------------------------------------------------------------
 
-} //namespace stk
+} //namespace stk_classic
 
 #endif
 

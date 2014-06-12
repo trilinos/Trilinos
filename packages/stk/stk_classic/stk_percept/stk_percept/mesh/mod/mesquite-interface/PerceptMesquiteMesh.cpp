@@ -1374,6 +1374,6 @@ namespace stk_classic {
 
 
   } // namespace percept
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_BUILT_IN_SIERRA

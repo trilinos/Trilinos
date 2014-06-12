@@ -10,7 +10,7 @@
 
 #include <stk_percept/norm/Norm.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

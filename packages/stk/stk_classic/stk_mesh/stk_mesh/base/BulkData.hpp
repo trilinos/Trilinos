@@ -717,7 +717,7 @@ void BulkData::change_entity_parts( Entity & entity,
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 //----------------------------------------------------------------------
 //----------------------------------------------------------------------

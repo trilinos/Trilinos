@@ -944,4 +944,4 @@ Eval::undefinedFunction() const
 }
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic

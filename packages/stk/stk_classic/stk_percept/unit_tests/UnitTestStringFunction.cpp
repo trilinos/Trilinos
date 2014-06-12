@@ -699,5 +699,5 @@ STKUNIT_UNIT_TEST(function, stringFunction_timing)
 
 } // namespace unit_tests
 } // namespace percept
-} // namespace stk
+} // namespace stk_classic
 

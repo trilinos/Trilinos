@@ -17,7 +17,7 @@ typedef shards::ArrayVector<unsigned, shards::NaturalOrder,Tag1,Tag2> ArrayInt2 
 
 ///#define NUM_ELEM_CPP_ARRAY(arr, nodes_per_elem)  (sizeof(arr)/(nodes_per_elem*sizeof(arr[0])))   // drop sentinel
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -450,4 +450,4 @@ namespace stk
 
     }//namespace unit_tests
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic

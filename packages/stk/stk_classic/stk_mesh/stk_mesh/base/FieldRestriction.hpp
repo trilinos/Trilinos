@@ -135,6 +135,6 @@ std::string print_restriction(
     );
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_mesh_baseImpl_FieldRestriction_hpp

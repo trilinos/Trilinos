@@ -12,4 +12,4 @@ VariableMap::getDefaultResolver()
 }
 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic

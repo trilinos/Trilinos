@@ -38,4 +38,4 @@ cpu_time()
 #endif
 }
 
-} // namespace stk
+} // namespace stk_classic

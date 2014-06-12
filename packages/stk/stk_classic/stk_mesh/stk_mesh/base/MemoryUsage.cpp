@@ -139,6 +139,6 @@ void print_memory_usage(const MemoryUsage& mem_usage, std::ostream& os)
 }
 
 }//namespace mesh
-}//namespace stk
+}//namespace stk_classic
 
 

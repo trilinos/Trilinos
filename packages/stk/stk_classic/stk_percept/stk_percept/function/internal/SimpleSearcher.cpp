@@ -8,7 +8,7 @@
 #include <stk_percept/function/FieldFunction.hpp>
 #include <stk_percept/function/internal/SimpleSearcher.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

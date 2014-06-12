@@ -2851,4 +2851,4 @@ namespace stk_classic {
   } // namespace StdMeshObjTopologies
 } // namespace Elem
 } // namespace adapt
-} // namespace stk
+} // namespace stk_classic

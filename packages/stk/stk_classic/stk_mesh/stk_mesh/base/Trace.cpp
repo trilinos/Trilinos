@@ -35,4 +35,4 @@ std::vector<Watch*>& watch_vector()
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

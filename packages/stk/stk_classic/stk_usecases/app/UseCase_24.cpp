@@ -457,6 +457,6 @@ void use_case_24_boundary_algorithm(
             << "' processed " << count << " faces" << std::endl ;
 }
 
-} // end namespace stk
+} // end namespace stk_classic
 } // end namespace app
 

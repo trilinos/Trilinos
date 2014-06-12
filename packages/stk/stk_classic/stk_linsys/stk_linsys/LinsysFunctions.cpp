@@ -321,5 +321,5 @@ void add_vector_to_vector(double scalar,
 }
 
 }//namespace linsys
-}//namespace stk
+}//namespace stk_classic
 

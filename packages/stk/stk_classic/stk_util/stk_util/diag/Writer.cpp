@@ -323,7 +323,7 @@ operator<<(
 
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 namespace Diag {

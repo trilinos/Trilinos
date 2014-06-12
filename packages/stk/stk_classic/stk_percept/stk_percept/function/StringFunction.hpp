@@ -10,7 +10,7 @@
 #include <stk_percept/function/Function.hpp>
 #include <stk_percept/Name.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {
@@ -108,5 +108,5 @@ namespace stk
 #endif
 
   }//namespace percept
-}//namespace stk
+}//namespace stk_classic
 #endif

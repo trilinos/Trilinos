@@ -173,5 +173,5 @@ template<> const DataTraits & data_traits< T >()   \
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 

@@ -191,7 +191,7 @@ min( const Field<Type,Tag1,Tag2,Tag3,Tag4,Tag5,Tag6,Tag7> & f )
 }
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
 
 #endif
 

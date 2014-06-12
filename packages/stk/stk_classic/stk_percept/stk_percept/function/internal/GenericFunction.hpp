@@ -5,7 +5,7 @@
 #include <stk_percept/function/MDArray.hpp>
 #include <stk_percept/function/internal/Dimensions.hpp>
 
-namespace stk
+namespace stk_classic
 {
   namespace percept
   {

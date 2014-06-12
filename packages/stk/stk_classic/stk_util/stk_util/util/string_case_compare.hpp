@@ -132,7 +132,7 @@ struct GreaterEqualCase : public std::binary_function<std::string,std::string,bo
 
 /** \} */
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif /* stk_util_string_case_compare_hpp */
 

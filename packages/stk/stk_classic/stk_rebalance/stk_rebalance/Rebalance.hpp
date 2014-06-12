@@ -68,6 +68,6 @@ bool rebalance(mesh::BulkData & bulk_data ,
 /** \} */
 
 }
-} // namespace stk
+} // namespace stk_classic
 
 #endif

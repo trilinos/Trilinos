@@ -24,6 +24,6 @@ std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask m
 std::ostream &printTimersTable(std::ostream& os, Timer root_timer, MetricsMask metrics_mask, bool timer_checkpoint, ParallelMachine parallel_machine);
 
 } // namespace diag
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_UTIL_DIAG_PrintTimer_hpp

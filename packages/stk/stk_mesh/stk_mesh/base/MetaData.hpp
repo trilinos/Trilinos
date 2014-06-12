@@ -175,19 +175,6 @@ public:
    */
   Part & aura_part() const { return *m_aura_part ; }
 
-  //temporary method for clients to specify up front how many custom ghostings they will need
-  //so that the parts can be declared now.
-  //This method may only be called once, and must only be called before commit().
-  void declare_custom_ghosting_parts(unsigned num_custom_ghostings);
-
-  //temporary method to access the custom ghosting parts declared by the above method
-  Part & get_custom_ghosting_part(unsigned custom_ghosting_part_index) const
-  {
-      ThrowRequireMsg(custom_ghosting_part_index < m_custom_ghosting_parts.size(),
-                      "MetaData::get_custom_ghosting_part ERROR, index ("<<custom_ghosting_part_index<<") out of range. Must be less than "<<m_custom_ghosting_parts.size());
-      return *m_custom_ghosting_parts[custom_ghosting_part_index];
-  }
-
   /** \} */
   //------------------------------------
   /** \name  Declare and query parts
@@ -557,7 +544,6 @@ private:
   Part * m_owns_part ;
   Part * m_shares_part ;
   Part * m_aura_part ;
-  std::vector<Part*> m_custom_ghosting_parts;
 
   impl::FieldRepository        m_field_repo ;
   mutable FieldBase* m_coord_field;
@@ -1209,9 +1195,7 @@ inline
 bool
 is_auto_declared_part(const Part &part)
 {
-  const std::string &part_name = part.name();
-
-  return !part_name.empty() && part_name[0] == '{';
+  return stk::mesh::impl::is_internal_part(part);
 }
 
 template< class field_type >

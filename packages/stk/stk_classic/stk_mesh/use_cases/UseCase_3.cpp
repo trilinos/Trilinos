@@ -265,4 +265,4 @@ bool verifyMesh( const UseCase_3_Mesh & mesh )
 
 } //namespace use_cases
 } //namespace mesh
-} //namespace stk
+} //namespace stk_classic

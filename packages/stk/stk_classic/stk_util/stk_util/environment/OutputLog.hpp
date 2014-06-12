@@ -205,7 +205,7 @@ std::ostream *get_ostream_tee_ostream(const std::string &name);
 /// @}
 ///
 
-} // namespace stk
+} // namespace stk_classic
 
 namespace sierra {
 

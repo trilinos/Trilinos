@@ -99,7 +99,7 @@ const PartVector PartRepository::get_mesh_parts() const
 {
   PartVector non_internal_parts;
   for (size_t i=0 ; i<m_all_parts.size() ; ++i) {
-    if (!is_internal(*m_all_parts[i])) {
+    if (!is_internal_part(*m_all_parts[i])) {
       non_internal_parts.push_back(m_all_parts[i]);
     }
   }
@@ -191,6 +191,20 @@ PartRepository::~PartRepository()
       try { delete part ; } catch(...) {}
     }
   } catch(...){}
+}
+
+static const char INTERNAL_PART_PREFIX  = '{';
+static const char INTERNAL_PART_POSTFIX = '}';
+bool is_internal_part(const Part& part)
+{
+    return part.name().size() > 2 && *part.name().begin() == INTERNAL_PART_PREFIX && *part.name().rbegin() == INTERNAL_PART_POSTFIX;
+}
+std::string convert_to_internal_name(const std::string& part_name)
+{
+  std::ostringstream out;
+  out << INTERNAL_PART_PREFIX << part_name << INTERNAL_PART_POSTFIX;
+  std::string out_str = out.str();
+  return out_str;
 }
 
 } // namespace impl

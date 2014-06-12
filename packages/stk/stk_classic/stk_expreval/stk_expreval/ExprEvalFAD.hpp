@@ -749,6 +749,6 @@ private:
 
 } // namespace fad 
 } // namespace expreval
-} // namespace stk
+} // namespace stk_classic
 
 #endif // STK_ExprEvalFAD_hpp

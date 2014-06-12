@@ -25,7 +25,7 @@ ENDIF()
 TRIBITS_ADD_EXECUTABLE_AND_TEST(
     util_UnitTest
     SOURCES ${SOURCES}
-    DEPLIBS stk_util_parallel stk_util_diag
+    DEPLIBS stkclassic_util_parallel stkclassic_util_diag
     COMM serial mpi
     NUM_MPI_PROCS 1
     STANDARD_PASS_OUTPUT

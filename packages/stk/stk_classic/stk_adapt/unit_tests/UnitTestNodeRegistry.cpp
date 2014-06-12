@@ -726,5 +726,5 @@ STKUNIT_UNIT_TEST(nodeRegistry, test_serial_hex8_tet4_24_1)
 
 } // namespace unit_tests
 } // namespace adapt
-} // namespace stk
+} // namespace stk_classic
 

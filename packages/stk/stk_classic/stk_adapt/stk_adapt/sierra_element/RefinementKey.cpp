@@ -96,4 +96,4 @@ bool Elem::RefinementKey::full_refinement( UInt numEdges )
 
 } // namespace Elem
 } // namespace adapt
-} // namespace stk
+} // namespace stk_classic

@@ -18,6 +18,6 @@ typedef size_t MemorySize;
 std::string formatMemorySize(double time);
 std::string formatMemorySize(MemorySize time);
 
-} // namespace stk
+} // namespace stk_classic
 
 #endif // stk_util_environment_FormatMemorySize_hpp

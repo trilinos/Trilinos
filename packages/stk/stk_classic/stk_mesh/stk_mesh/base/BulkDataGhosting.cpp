@@ -715,4 +715,4 @@ void BulkData::internal_regenerate_shared_aura()
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic

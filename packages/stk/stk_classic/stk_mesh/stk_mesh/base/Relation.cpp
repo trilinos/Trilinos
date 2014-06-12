@@ -307,4 +307,4 @@ void induced_part_membership( const Entity     & entity ,
 //----------------------------------------------------------------------
 
 } // namespace mesh
-} // namespace stk
+} // namespace stk_classic
