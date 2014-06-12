@@ -176,6 +176,9 @@ namespace MueLu {
 
     //! Compute P11^{T}*A*P11 efficiently
     void formCoarseMatrix();
+    
+    //! Reset system matrix
+    void resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new);
 
     //! apply Hiptmair smoothing
     void applyHiptmairSmoother(const XTMV& RHS, XTMV& X) const;
