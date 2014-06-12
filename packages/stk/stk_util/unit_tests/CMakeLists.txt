@@ -7,9 +7,11 @@ if ( TPL_ENABLE_MPI )
   ADD_SUBDIRECTORY(parallel)
 ENDIF()
 
-TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
+INCLUDE_DIRECTORIES(${${PACKAGE_NAME}_BINARY_DIR}/stk_util)
 
 FILE(GLOB SOURCES diag/*.cpp environment/*.cpp util/*.cpp)
+#removing due to dependency on Sierra's unitTestUtils/comparison/stringAndNumberComparisons.h
+LIST(REMOVE_ITEM SOURCES ${CMAKE_CURRENT_SOURCE_DIR}/diag/TimerHowTo.cpp)
 
 APPEND_SET( SOURCES
  UnitTestBoost.cpp
@@ -28,7 +30,6 @@ TRIBITS_ADD_EXECUTABLE_AND_TEST(
     DEPLIBS stk_util_parallel stk_util_diag
     COMM serial mpi
     NUM_MPI_PROCS 1
-    STANDARD_PASS_OUTPUT
     )
 
 

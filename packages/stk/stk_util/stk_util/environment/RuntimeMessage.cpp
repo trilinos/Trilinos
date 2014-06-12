@@ -6,17 +6,24 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <list>
-#include <string>
-#include <sstream>
-#include <utility>
-#include <vector>
-#include <boost/unordered_map.hpp>
-
+#include "stk_util/stk_config.h"        // for STK_HAS_MPI
 #include <stk_util/environment/RuntimeMessage.hpp>
-#include <stk_util/environment/ReportHandler.hpp>
-#include <stk_util/util/Bootstrap.hpp>
-#include <stk_util/util/Marshal.hpp>
+#include <algorithm>                    // for max, stable_sort
+#include <functional>                   // for equal_to, binary_function
+#include <sstream>                      // for operator<<, basic_ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/environment/ReportHandler.hpp>  // for report
+#include <stk_util/util/Bootstrap.hpp>  // for Bootstrap
+#include <stk_util/util/Marshal.hpp>    // for Marshal, operator<<, etc
+#include <string>                       // for string, char_traits, etc
+#include <utility>                      // for pair, operator==
+#include <vector>                       // for vector, etc
+#include "boost/unordered/detail/buckets.hpp"  // for iterator, etc
+#include "boost/unordered/unordered_map.hpp"
+#if defined( STK_HAS_MPI )
+#  include "mpi.h"                      // for MPI_CHAR, MPI_Comm_rank, etc
+#endif
+
 
 namespace stk {
 
@@ -289,12 +296,14 @@ add_deferred_message(
 
 void
 report_deferred_messages(
-  ParallelMachine       comm)
+  MPI_Comm       comm)
 {
 #ifdef STK_HAS_MPI
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = 1;
+  MPI_Comm_size(comm, &p_size);
+  int p_rank = 0;
+  MPI_Comm_rank(comm, &p_rank);
 
   for (DeferredMessageVector::iterator it = s_deferredMessageVector.begin(); it != s_deferredMessageVector.end(); ++it)
     (*it).m_rank = p_rank;
@@ -332,10 +341,10 @@ report_deferred_messages(
 
   {
     const char * const send_ptr = send_string.data();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void *) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
     if (MPI_SUCCESS != result) {
@@ -396,7 +405,7 @@ report_deferred_messages(
 
 void
 aggregate_messages(
-  ParallelMachine       comm,
+  MPI_Comm       comm,
   std::ostringstream &  os,
   const char *          separator)
 {
@@ -405,10 +414,12 @@ aggregate_messages(
   os.str("");
   
   const int p_root = 0 ;
-  const int p_size = parallel_machine_size(comm);
-  const int p_rank = parallel_machine_rank(comm);
+  int p_size = 1;
+  MPI_Comm_size(comm, &p_size);
+  int p_rank = 0;
+  MPI_Comm_rank(comm, &p_rank);
   
-  int result ;
+  int result =-1;
 
   // Gather the send counts on root processor
 
@@ -441,10 +452,10 @@ aggregate_messages(
 
   {
     const char * const send_ptr = message.c_str();
-    char * const recv_ptr = recv_size ? & buffer[0] : (char *) NULL ;
+    char * const recv_ptr = recv_size ? & buffer[0] : NULL ;
     int * const recv_displ_ptr = & recv_displ[0] ;
 
-    result = MPI_Gatherv((void*) send_ptr, send_count, MPI_CHAR,
+    result = MPI_Gatherv(const_cast<char*>(send_ptr), send_count, MPI_CHAR,
                          recv_ptr, recv_count_ptr, recv_displ_ptr, MPI_CHAR,
                          p_root, comm);
   }
@@ -455,7 +466,7 @@ aggregate_messages(
     throw std::runtime_error(s.str());
   }
 
-  if (p_root == (int) p_rank) {
+  if (p_root == static_cast<int>(p_rank)) {
     bool first = true;
     for (int i = 0 ; i < p_size ; ++i) {
       if (recv_count[i]) {

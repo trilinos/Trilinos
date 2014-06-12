@@ -16,11 +16,6 @@
 #ifndef STK_UTIL_UTIL_TypeUtil_hpp
 #define STK_UTIL_UTIL_TypeUtil_hpp
 
-/**
- * @file
- *
- */
-
 namespace sierra {
 
 //-----------------------------------

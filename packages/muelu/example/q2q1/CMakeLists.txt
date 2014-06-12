@@ -15,7 +15,6 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
       SOURCE_FILES driver.xml
       Q2Q1_9x9_A.dat   Q2Q1_9x9_B.dat
       Q2Q1_17x17_A.dat Q2Q1_17x17_B.dat
-      Q2Q1_65x65_A.dat Q2Q1_65x65_B.dat
       )
 
 ENDIF()
@@ -27,8 +26,9 @@ ENDIF()
 INCLUDE(XpetraAddTest)
 
 IF (${PACKAGE_NAME}_ENABLE_Tpetra AND ${PACKAGE_NAME}_ENABLE_Ifpack2 AND ${PACKAGE_NAME}_ENABLE_Amesos2)
-  XPETRA_ADD_TEST_TPETRA(Q2Q1 4)
+  XPETRA_ADD_TEST_TPETRA(Q2Q1 1)
 ENDIF()
 IF (${PACKAGE_NAME}_ENABLE_Epetra AND ${PACKAGE_NAME}_ENABLE_Ifpack  AND ${PACKAGE_NAME}_ENABLE_Amesos)
-  XPETRA_ADD_TEST_EPETRA(Q2Q1 4)
+  # Disabling Epetra as Vanka is unavailable
+  # XPETRA_ADD_TEST_EPETRA(Q2Q1 1)
 ENDIF()

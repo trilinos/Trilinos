@@ -17,30 +17,30 @@
 namespace stk {
 namespace mesh {
 
-typedef std::less<unsigned> LowestRankSharingProcOwns;
-typedef std::greater<unsigned> HighestRankSharingProcOwns;
+typedef std::less<int> LowestRankSharingProcOwns;
+typedef std::greater<int> HighestRankSharingProcOwns;
 
 /** Sets the owner for shared entities according to the template parameter OwnershipRule.
  * OwnershipRule is used as a the comparison operator in a std::set.
  * The default behavior of stk::mesh is to give ownership to the highest-rank sharing proc.
 */
 template<class OwnershipRule>
-void set_owners(BulkData& mesh_bulk_data)
+void set_owners(BulkData& mesh)
 {
-  typedef std::set<unsigned,OwnershipRule> ProcSet ;
+  typedef std::set<int,OwnershipRule> ProcSet ;
 
-  const unsigned local_proc = mesh_bulk_data.parallel_rank();
+  const int local_proc = mesh.parallel_rank();
 
   std::vector<EntityProc> entity_new_owners;
 
-  const std::vector<Entity*>& entity_comm = mesh_bulk_data.entity_comm();
+  const EntityCommListInfoVector& entity_comm = mesh.comm_list();
 
   for ( size_t i=0; i<entity_comm.size(); ++i) {
-    Entity * const entity = entity_comm[i] ;
+    Entity const entity = entity_comm[i].entity;;
 
-    const PairIterEntityComm sharing = entity->sharing();
+    const PairIterEntityComm sharing = mesh.entity_comm_sharing(entity_comm[i].key);
 
-    if ( ! sharing.empty() && entity->owner_rank() == local_proc ) {
+    if ( ! sharing.empty() && entity_comm[i].owner == local_proc ) {
       ProcSet proc_set ;
 
       proc_set.insert( local_proc );
@@ -49,21 +49,20 @@ void set_owners(BulkData& mesh_bulk_data)
         proc_set.insert( sharing[j].proc );
       }
 
-      const unsigned new_owner_proc = *proc_set.begin();
+      const int new_owner_proc = *proc_set.begin();
 
       entity_new_owners.push_back(std::make_pair( entity, new_owner_proc ) );
     }
   }
 
-  mesh_bulk_data.modification_begin();
+  mesh.modification_begin();
 
-  mesh_bulk_data.change_entity_owner( entity_new_owners );
+  mesh.change_entity_owner( entity_new_owners );
 
-  mesh_bulk_data.modification_end();
+  mesh.modification_end();
 }
 
 }//namespace mesh
 }//namespace stk
 
 #endif // stk_mesh_SetOwner_hpp
-

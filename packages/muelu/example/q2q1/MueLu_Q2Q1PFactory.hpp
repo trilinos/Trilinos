@@ -176,8 +176,6 @@ namespace MueLu {
     int nnzEstimate = 4;
     RCP<Matrix> P = MatrixFactory::Build(rowMap, coarseMap, nnzEstimate);
 
-    Utils::Write("col.map", *P->getColMap());
-
     Array<GO> inds(nnzEstimate), inds1(nnzEstimate);
     Array<SC> vals(nnzEstimate, one);
     int sz;

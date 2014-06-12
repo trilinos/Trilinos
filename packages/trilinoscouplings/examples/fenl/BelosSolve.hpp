@@ -63,6 +63,8 @@
 // MueLu
 #include "MueLu_CreateTpetraPreconditioner.hpp"
 
+#include "Teuchos_TimeMonitor.hpp"
+
 //----------------------------------------------------------------------------
 //----------------------------------------------------------------------------
 
@@ -91,10 +93,21 @@ belos_solve(
   using Teuchos::rcp;
   using Teuchos::ParameterList;
 
+  // Create some timers used by Belos so we can access them
+  Teuchos::RCP<Teuchos::Time> time_mat_vec =
+    Teuchos::TimeMonitor::getNewTimer("Belos: Operation Op*x");
+  Teuchos::RCP<Teuchos::Time> time_prec_apply =
+    Teuchos::TimeMonitor::getNewTimer("Belos: Operation Prec*x");
+  Teuchos::RCP<Teuchos::Time> time_total =
+    Teuchos::TimeMonitor::getNewTimer("Belos: PseudoBlockCGSolMgr total solve time");
+  Teuchos::RCP<Teuchos::Time> time_prec_setup =
+    Teuchos::TimeMonitor::getNewTimer("Total MueLu setup time");
+
   //--------------------------------
   // Create preconditioner
   RCP<PreconditionerType> mueluPreconditioner;
   if (use_muelu) {
+    Teuchos::TimeMonitor timeMon(*time_prec_setup);
     std::string xmlFileName="muelu.xml";
     mueluPreconditioner = MueLu::CreateTpetraPreconditioner(A,xmlFileName);
   }
@@ -126,13 +139,21 @@ belos_solve(
   cgsolve.iteration = solver->getNumIters();
   //cgsolve.norm_res = solver->achievedTol();
 
-  Teuchos::Array< RCP<Teuchos::Time> > timers = solver->getTimers();
-  for (int i=0; i<timers.size(); ++i) {
-    if (timers[i]->name() == "Belos: PseudoBlockCGSolMgr total solve time")
-      cgsolve.iter_time = timers[i]->totalElapsedTime();
-    else if (timers[i]->name() == "Belos: Operation Op*x")
-      cgsolve.matvectime = timers[i]->totalElapsedTime();
-  }
+  // Teuchos::Array< RCP<Teuchos::Time> > timers = solver->getTimers();
+  // for (int i=0; i<timers.size(); ++i) {
+  //   if (timers[i]->name() == "Belos: PseudoBlockCGSolMgr total solve time") {
+  //     cgsolve.iter_time = timers[i]->totalElapsedTime();
+  //     cgsolve.total_time = timers[i]->totalElapsedTime();
+  //   }
+  //   else if (timers[i]->name() == "Belos: Operation Op*x")
+  //     cgsolve.matvec_time = timers[i]->totalElapsedTime();
+  // }
+
+  cgsolve.iter_time = time_total->totalElapsedTime();
+  cgsolve.total_time = time_total->totalElapsedTime();
+  cgsolve.matvec_time = time_mat_vec->totalElapsedTime();
+  cgsolve.prec_apply_time = time_prec_apply->totalElapsedTime();
+  cgsolve.prec_setup_time = time_prec_setup->totalElapsedTime();
 
   return cgsolve;
 }

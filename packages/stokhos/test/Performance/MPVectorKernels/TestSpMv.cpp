@@ -82,9 +82,6 @@ int main(int argc, char *argv[])
     CLP.setOption("n", &nGrid, "Number of mesh points in the each direction");
     int nIter = 10;
     CLP.setOption("ni", &nIter, "Number of multiply iterations");
-#ifdef KOKKOS_HAVE_PTHREAD
-    bool threads = true;
-    CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
     int num_cores = num_cores_per_socket * num_sockets;
     CLP.setOption("cores", &num_cores,
                   "Number of CPU cores to use (defaults to all)");
@@ -94,6 +91,13 @@ int main(int argc, char *argv[])
     int threads_per_vector = 1;
     CLP.setOption("threads_per_vector", &threads_per_vector,
                   "Number of threads to use within each vector");
+#ifdef KOKKOS_HAVE_PTHREAD
+    bool threads = true;
+    CLP.setOption("threads", "no-threads", &threads, "Enable Threads device");
+#endif
+#ifdef KOKKOS_HAVE_OPENMP
+    bool openmp = true;
+    CLP.setOption("openmp", "no-openmp", &openmp, "Enable OpenMP device");
 #endif
 #ifdef KOKKOS_HAVE_CUDA
     bool cuda = true;
@@ -133,6 +137,27 @@ int main(int argc, char *argv[])
       mainHost<Storage>(nGrid, nIter, dev_config);
 
       Kokkos::Threads::finalize();
+    }
+#endif
+
+#ifdef KOKKOS_HAVE_OPENMP
+    if (openmp) {
+      typedef Kokkos::OpenMP Device;
+      typedef Stokhos::StaticFixedStorage<Ordinal,Scalar,1,Device> Storage;
+
+      Kokkos::OpenMP::initialize(num_cores*num_hyper_threads);
+
+      std::cout << std::endl
+                << "OpenMP performance with " << num_cores*num_hyper_threads
+                << " threads:" << std::endl;
+
+      Kokkos::DeviceConfig dev_config(num_cores,
+                                       threads_per_vector,
+                                       num_hyper_threads / threads_per_vector);
+
+      mainHost<Storage>(nGrid, nIter, dev_config);
+
+      Kokkos::OpenMP::finalize();
     }
 #endif
 

@@ -6,17 +6,23 @@
 /*    a license from the United States Government.                    */
 /*--------------------------------------------------------------------*/
 
-#ifdef STK_MESH_TRACE_ENABLED
-
-#include <stk_util/util/Bootstrap.hpp>
-
 #include <stk_mesh/base/DiagWriter.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/Bucket.hpp>
-#include <stk_mesh/base/MetaData.hpp>
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/Types.hpp>      // for EntityProc, EntityState
+#include <string>                       // for string
+#include "stk_mesh/base/Part.hpp"       // for Part
+#include "stk_util/environment/ReportHandler.hpp"  // for ThrowRequireMsg
+#include "stk_mesh/baseImpl/Partition.hpp"
+
+#ifdef STK_MESH_TRACE_ENABLED
+#include <stk_util/util/Bootstrap.hpp>
+#endif
 
 namespace stk {
 namespace mesh {
+
+#ifdef STK_MESH_TRACE_ENABLED
 
 namespace {
 
@@ -46,10 +52,12 @@ DiagWriterParser & theDiagWriterParser()
 DiagWriterParser::DiagWriterParser()
   : stk::diag::WriterParser()
 {
-  mask("entity", (unsigned long) (LOG_ENTITY), "Display entity diagnostic information");
-  mask("bucket", (unsigned long) (LOG_BUCKET), "Display bucket diagnostic information");
-  mask("part",   (unsigned long) (LOG_PART),   "Display bucket diagnostic information");
-  mask("field",  (unsigned long) (LOG_FIELD),  "Display bucket diagnostic information");
+  mask("entity",       static_cast<unsigned long>(LOG_ENTITY),       "Display entity diagnostic information");
+  mask("bucket",       static_cast<unsigned long>(LOG_BUCKET),       "Display bucket diagnostic information");
+  mask("part",         static_cast<unsigned long>(LOG_PART),         "Display part diagnostic information");
+  mask("field",        static_cast<unsigned long>(LOG_FIELD),        "Display field diagnostic information");
+  mask("partition",    static_cast<unsigned long>(LOG_PARTITION),    "Display partition diagnostic information");
+  mask("connectivity", static_cast<unsigned long>(LOG_CONNECTIVITY), "Display connectivity diagnostic information");
 }
 
 namespace {
@@ -57,26 +65,6 @@ namespace {
 void bootstrap()
 {
 //  diag::registerWriter("meshlog", meshlog, theDiagWriterParser());
-}
-
-std::string log_to_str(EntityModificationLog log)
-{
-  if (log == 0) {
-    return "Not changed";
-  }
-  else if (log == 1) {
-    return "Created";
-  }
-  else if (log == 2) {
-    return "Modified";
-  }
-  else if (log == 3) {
-    return "Marked deleted";
-  }
-  else {
-    ThrowRequireMsg(false, "Unknown log " << log);
-  }
-  return "";
 }
 
 stk::Bootstrap x(&bootstrap);
@@ -88,56 +76,6 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Part& part)
   return writer << "Part[" << part.name() << ", " << part.mesh_meta_data_ordinal() << "]";
 }
 
-stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Entity& entity)
-{
-  // Get bucket of entity
-  Bucket* bucket = NULL;
-  try {
-    bucket = &(entity.bucket());
-  }
-  catch (...) {} // leave bucket as NULL if it's not found
-
-  std::string ownership_info = "unregistered";
-  std::string entity_key_str;
-  EntityKey key = entity.key();
-  if (bucket) {
-    MetaData& meta_data = MetaData::get(*bucket);
-    Part &   owned  = meta_data.locally_owned_part();
-    Part &   shared = meta_data.globally_shared_part();
-    if (bucket->member(owned)) {
-      ownership_info = "owned";
-    }
-    else if (bucket->member(shared)) {
-      ownership_info = "shared";
-    }
-    else if (bucket->size() == 0) {
-      ownership_info = "marked deleted";
-    }
-    else {
-      ownership_info = "ghosted";
-    }
-    entity_key_str = print_entity_key(meta_data, key);
-  }
-  else {
-    std::ostringstream out;
-    out << "(rank:" << key.rank() << ",id:" << key.id() << ")";
-    entity_key_str = out.str();
-  }
-
-  writer << "Entity[key:" << entity_key_str <<
-                 ", ownership:" << ownership_info <<
-                 ", log:" << log_to_str(entity.log_query()) <<
-                 ", owner:" << entity.owner_rank();
-
-  // print comm info
-  writer << ", COMM: ";
-  PairIterEntityComm comm_itr = entity.comm();
-  for ( ; !comm_itr.empty(); ++comm_itr ) {
-    writer << "(ghost:" << comm_itr->ghost_id << ", proc:" << comm_itr->proc << ") ";
-  }
-  return writer << "]";
-}
-
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
 {
   return writer << "Entity[rank:" << key.rank() << ", id:" << key.id() << "]";
@@ -145,17 +83,35 @@ stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityKey& key)
 
 stk::diag::Writer& operator<<(stk::diag::Writer& writer, const EntityProc& entity_proc)
 {
-  return writer << "EntityProc[entity:" << *entity_proc.first << ", proc: " << entity_proc.second << "]";
+  return writer << "EntityProc[entity:" << entity_proc.first.local_offset() << ", proc: " << entity_proc.second << "]";
 }
+
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Bucket& bucket)
+{
+  std::ostringstream out;
+  out << bucket;
+  return writer << out.str();
+}
+
+namespace impl {
+
+stk::diag::Writer& operator<<(stk::diag::Writer& writer, const Partition& partition)
+{
+  std::ostringstream out;
+  out << partition;
+  return writer << out.str();
+}
+
+}
+
+#endif
 
 } // namespace mesh
 } // namespace stk
 
-#else
 int dummy_DiagWriter()
 {
   // This function is present just to put a symbol in the object
   // file and eliminate a "empty object file" warning on the mac...
   return 1;
 }
-#endif // STK_MESH_TRACE_ENABLED

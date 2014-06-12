@@ -55,7 +55,7 @@
 /*!  \class LSQRStatusTest:
   \brief A Belos::StatusTest class for specifying convergence of LSQR.  The outer status tests passes if an inner
   status passes a user specified number of times consecutively.  The inner status test depends on information
-  specificto LSQR iteration.
+  specific to LSQR iteration.
 */
 
 namespace Belos {

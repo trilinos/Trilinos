@@ -42,6 +42,7 @@ enum { CMD_USE_THREADS = 0
        , CMD_USE_UQ_ORDER
        , CMD_USE_SPARSE
        , CMD_PRINT
+       , CMD_SUMMARIZE
        , CMD_ECHO
        , CMD_ERROR
        , CMD_COUNT };
@@ -107,6 +108,9 @@ void print_cmdline( std::ostream & s , const int cmd[] )
   if ( cmd[ CMD_PRINT ] ) {
     s << " PRINT" ;
   }
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    s << " SUMMARIZE" ;
+  }
   s << std::endl ;
 }
 
@@ -136,21 +140,37 @@ print_headers( std::ostream & s , const int cmd[] , const int comm_rank )
 
   headers.push_back(std::make_pair("ELEMS","count"));
   headers.push_back(std::make_pair("NODES","count"));
-  headers.push_back(std::make_pair("NEWTON","iter"));
-  headers.push_back(std::make_pair("CG","iter"));
-  headers.push_back(std::make_pair("MAP_RATIO","ratio"));
-  headers.push_back(std::make_pair("SET_FILL/NODE","millisec"));
-  headers.push_back(std::make_pair("SCAN/NODE","millisec"));
-  headers.push_back(std::make_pair("GRAPH_FILL/NODE","millisec"));
-  headers.push_back(std::make_pair("SORT/NODE","millisec"));
-  headers.push_back(std::make_pair("ELEM_GRAPH_FILL/NODE","millisec"));
-  headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
-  headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
-  headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
-  headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
-  headers.push_back(std::make_pair("ERROR","ratio"));
-  headers.push_back(std::make_pair("RESPONSE","mean"));
-  headers.push_back(std::make_pair("RESPONSE","std.dev."));
+  if ( cmd[ CMD_USE_UQ_DIM ] ) {
+    headers.push_back(std::make_pair("SAMPLES","count"));
+    headers.push_back(std::make_pair("NEWTON","iter"));
+    headers.push_back(std::make_pair("CG","iter"));
+    headers.push_back(std::make_pair("IMPORT/NODE","millisec"));
+    headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
+    headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+    headers.push_back(std::make_pair("MAT_VEC/ITER/ROW","millisec"));
+    headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
+    headers.push_back(std::make_pair("PREC/ITER/ROW","millisec"));
+    headers.push_back(std::make_pair("PREC SETUP","millisec"));
+    headers.push_back(std::make_pair("CG TOTAL","millisec"));
+    headers.push_back(std::make_pair("RESPONSE","mean"));
+    headers.push_back(std::make_pair("RESPONSE","std.dev."));
+  }
+  else {
+    headers.push_back(std::make_pair("NEWTON","iter"));
+    headers.push_back(std::make_pair("CG","iter"));
+    headers.push_back(std::make_pair("MAP_RATIO","ratio"));
+    headers.push_back(std::make_pair("SET_FILL/NODE","millisec"));
+    headers.push_back(std::make_pair("SCAN/NODE","millisec"));
+    headers.push_back(std::make_pair("GRAPH_FILL/NODE","millisec"));
+    headers.push_back(std::make_pair("SORT/NODE","millisec"));
+    headers.push_back(std::make_pair("ELEM_GRAPH_FILL/NODE","millisec"));
+    headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
+    headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
+    headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+    headers.push_back(std::make_pair("MAT_VEC/ITER/ROW","millisec"));
+    headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
+    headers.push_back(std::make_pair("ERROR","ratio"));
+  }
 
   // find print widths
   size_t min_width = 10;
@@ -176,28 +196,48 @@ print_headers( std::ostream & s , const int cmd[] , const int comm_rank )
 }
 
 void print_perf_value( std::ostream & s ,
+                       const int cmd[] ,
                        const std::vector<size_t> & widths ,
                        const Kokkos::Example::FENL::Perf & perf )
 {
   int i=0;
   s << std::setw(widths[i++]) << perf.global_elem_count << " ,";
   s << std::setw(widths[i++]) << perf.global_node_count << " ,";
-  s << std::setw(widths[i++]) << double(perf.newton_iter_count) / perf.uq_count << " ,";
+
+  if ( cmd[ CMD_USE_UQ_DIM ] ) {
+    // Note:  cg_iter_count is already a sum across all samples,
+    // so don't scale cg times by uq_count
+    s << std::setw(widths[i++]) << perf.uq_count << " ,";
+    s << std::setw(widths[i++]) << double(perf.newton_iter_count) / perf.uq_count << " ,";
+    s << std::setw(widths[i++]) << double(perf.cg_iter_count) / perf.uq_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.import_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.mat_vec_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.cg_iter_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.prec_apply_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count) << " ,";
+    s << std::setw(widths[i++]) << ( perf.prec_setup_time * 1000.0 ) / (perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << ( perf.cg_total_time * 1000.0 ) / (perf.uq_count) << " ,";
+    s << std::setw(widths[i++]) << perf.response_mean << " ,";
+    s << std::setw(widths[i])   << perf.response_std_dev;
+  }
+  else {
+    s << std::setw(widths[i++]) << double(perf.newton_iter_count) / perf.uq_count << " ,";
   s << std::setw(widths[i++]) << double(perf.cg_iter_count) / perf.uq_count << " ,";
-  s << std::setw(widths[i++]) << perf.map_ratio << " ,";
-  s << std::setw(widths[i++]) << ( perf.fill_node_set * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.scan_node_count * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.fill_graph_entries * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.sort_graph_entries * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.fill_element_graph * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << ( ( perf.cg_time * 1000.0 ) / perf.cg_iter_count ) / (perf.global_node_count*perf.uq_count) << " ,";
-  s << std::setw(widths[i++]) << perf.error_max / perf.uq_count << " ,";
-  s << std::setw(widths[i++]) << perf.response_mean << " ,";
-  s << std::setw(widths[i])   << perf.response_std_dev;
-  s << std::endl ;
+    s << std::setw(widths[i++]) << perf.map_ratio << " ,";
+    s << std::setw(widths[i++]) << ( perf.fill_node_set * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.scan_node_count * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.fill_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.sort_graph_entries * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.fill_element_graph * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.mat_vec_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.cg_iter_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << perf.error_max << " ,";
+  }
+    s << std::endl ;
 }
 
 clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
@@ -246,6 +286,8 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
 
   bool doPrint = false;               clp.setOption("print", "no-print",        &doPrint,  "print detailed test output");
 
+  bool doSummarize = false;               clp.setOption("summarize", "no-summarize",        &doSummarize,  "summarize Teuchos timers at end of run");
+
   bool doDryRun = false;              clp.setOption("echo", "no-echo",          &doDryRun,  "dry-run only");
 
   switch (clp.parse(argc, argv)) {
@@ -267,6 +309,7 @@ clp_return_type parse_cmdline( int argc , char ** argv, int cmdline[],
   cmdline[CMD_USE_BELOS]             = useBelos;
   cmdline[CMD_USE_MUELU]             = useMueLu;
   cmdline[CMD_PRINT]                 = doPrint;
+  cmdline[CMD_SUMMARIZE]             = doSummarize;
   sscanf( fixtureSpec.c_str() , "%dx%dx%d" ,
           cmdline + CMD_USE_FIXTURE_X ,
           cmdline + CMD_USE_FIXTURE_Y ,

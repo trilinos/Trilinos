@@ -64,10 +64,10 @@ namespace panzer_stk {
   * that is required to contain the following two fields
   * "Field Names" of type <code>Teuchos::RCP<std::vector<std::string> ></code>,
   * "Basis" of type <code>Teuchos::RCP<panzer::BasisIRLayout></code> and
-  * "Mesh" of type <code>Teuchos::RCP<const panzer_stk::STK_Interface></code>.
+  * "Mesh" of type <code>Teuchos::RCP<const panzer_stk_classic::STK_Interface></code>.
   */
 PHX_EVALUATOR_CLASS(ScatterVectorFields)
-  typedef panzer_stk::STK_Interface::SolutionFieldType VariableField;
+  typedef panzer_stk_classic::STK_Interface::SolutionFieldType VariableField;
 
   std::vector<std::string> names_;
   std::vector< PHX::MDField<ScalarT,panzer::Cell,panzer::IP,panzer::Dim> > scatterFields_;

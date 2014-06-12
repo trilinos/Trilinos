@@ -22,10 +22,17 @@ We call adding entries to a sparse matrix <i>filling</i> it, and call
 the general procedure "sparse matrix fill" or just <i>fill</i>.  Often
 people have finite element assembly in mind when they use this
 expression, but fill here means adding entries for any reason.  For
-example, you might want to solve an optimization problem with a set of
-linear constraints, so you would add one row to the sparse matrix for
-each constraint.  Also, by extension, "fill" might refer to modifying
-existing entries of a sparse matrix.
+example, you might want to
+<ul>
+<li> solve an optimization problem with a set of linear constraints,
+so you would add one row to the sparse matrix for each constraint; or
+</li>
+<li> represent a weighted graph as a sparse matrix, so that each row
+of the matrix represents a vertex's adjacency list and corresponding
+edge weights. </li>
+</ul>
+Also, by extension, "fill" might refer to modifying existing entries
+of a sparse matrix.
 
 \section Epetra_Lesson04_Rowwise Rowwise access, not rowwise distribution
 

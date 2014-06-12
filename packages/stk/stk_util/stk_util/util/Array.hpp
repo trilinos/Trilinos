@@ -20,7 +20,7 @@
 #include <algorithm>
 #include <stdexcept>
 #include <stk_util/util/TypeList.hpp>
-#include <stk_util/diag/FArray.hpp>
+#include <stk_util/util/FArray.hpp>
 
 namespace sierra {
 
@@ -36,7 +36,7 @@ namespace sierra {
  *
  * @par Dimension tagging
  *
- * @brief Multidimensional array of contiguous memory.  The memory is not owned by the
+ * Multidimensional array of contiguous memory.  The memory is not owned by the
  * array, but container access semantics are enforced, i.e. const Array<> elements cannot
  * be assigned to.
  *

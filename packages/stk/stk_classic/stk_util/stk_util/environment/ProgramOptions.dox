@@ -1,0 +1,87 @@
+///
+/// \addtogroup stk_util_command_line_options_detail
+/// @{
+///
+/// @brief Parses command line options in a parallel environment.  Also formats and writes <B>--help</B>
+/// and <B>-h</B> command line option output.
+///
+/// Each module can utilize the bootstrapping mechanism to add command line options to be
+/// processed as application startup.  Processing of command line options requries three
+/// operations to be performed, the accumulation of command line option descriptions, the
+/// broadcasting of the command line options (argc, argv) from the rank 0 processor to the
+/// other processors and the actual parsing of the command line options.
+///
+/// Refer to the boost program options library for details on utilizing the command line
+/// option descriptions and variable map.
+///
+/// Command line option descriptions describe the options available to the user from the
+/// command line.  These desciptions also provide help documentation and grouping.  Since
+/// many modules may be interested in adding command line option desciptions to the
+/// system, the singleton stk_classic::env::get_options_description() provides the global command
+/// line option descriptions.  Each module utilizes the bootstrapping mechanism to add its
+/// options to this description.
+///
+/// For example:
+///
+/// \code
+///
+/// #include <stk_util/util/Bootstrap.hpp>
+/// 
+/// namespace {
+/// 
+/// void bootstrap()
+/// {
+///   boost::program_options::options_description desc("Use case options");
+///   desc.add_options()
+///     ("performance", "run performance test")
+///     ("mesh", boost::program_options::value<std::string>(), "run mesh file performance test");
+/// 
+///   stk_classic::env::get_options_description().add(desc);
+/// }
+/// 
+/// stk_classic::Bootstrap x(&bootstrap);
+/// 
+/// } // namespace <empty>
+///
+/// \endcode
+///
+///
+/// The applications main executes the bootstrap functions causing the command line
+/// description to be fully populated.
+///
+/// The parsing of the command line options requires that the arguments specified on the
+/// command line on processor zero be broadcast to the remaining processors (some MPI's
+/// seem to not handle this properly).  The BroadcastArg class takes <b>argc</b> and
+/// <b>argv</b> and broadcasts to all of the processors.  These broadcast arguments are
+/// then provided to the boost::parse_command_line() function.
+///
+/// For example:
+///
+/// \code
+/// 
+/// int
+/// main(
+///   int           argc,
+///   char **       argv)
+/// {
+///   &nbsp;// Execute product bootstraps
+///   stk_classic::Bootstrap::bootstrap();
+/// 
+///   &nbsp;// Initialize parallel machine
+///   stk_classic::ParallelMachine parallel_machine;
+///   parallel_machine = stk_classic::parallel_machine_init(&argc, &argv);
+/// 
+///   &nbsp;// Broadcast argc and argv to all processors.
+///   stk_classic::BroadcastArg b_arg(parallel_machine, argc, argv);
+/// 
+///   &nbsp;// Process the broadcast command line arguments
+///   namespace opt = boost::program_options;
+///   
+///   opt::variables_map vm;                
+///   opt::store(opt::parse_command_line(b_arg.m_argc, b_arg.m_argv, stk_classic::env::get_options_description()), vm);
+///   opt::notify(vm);
+/// 
+/// \endcode
+///
+/// @}
+///

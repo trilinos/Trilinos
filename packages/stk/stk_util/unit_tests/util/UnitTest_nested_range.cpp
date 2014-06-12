@@ -1,11 +1,11 @@
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-#include <stk_util/util/nested_range.hpp>
-#include <boost/foreach.hpp>
+#include <stddef.h>                     // for NULL
+#include <gtest/gtest.h>
+#include <stk_util/util/nested_range.hpp>  // for nested_range
+#include <utility>                      // for pair, make_pair
+#include <vector>                       // for vector
+#include "boost/optional/optional.hpp"  // for operator!=
 
-#include <vector>
-#include <list>
-#include <iostream>
 
 namespace vector_vector_int {
 
@@ -17,8 +17,10 @@ typedef stk::util::nested_range< nested_pair_type > pair_range;
 
 
 }
+/// srk 12/20/12 - these tests seem to hang on boost 1.50 / Trilinos build
+#if defined(STK_BUILT_IN_SIERRA)
 
-STKUNIT_UNIT_TEST ( nested_range, basic)
+TEST ( nested_range, basic)
 {
   using namespace vector_vector_int;
 
@@ -70,7 +72,7 @@ prng.begin();
 //
 //}
 //
-//STKUNIT_UNIT_TEST ( nested_range, nested_ptr)
+//TEST ( nested_range, nested_ptr)
 //{
 //  using namespace vector_vector_int;
 //
@@ -103,3 +105,4 @@ prng.begin();
 //
 //}
 
+#endif

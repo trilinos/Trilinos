@@ -6,35 +6,29 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-#include <Shards_BasicTopologies.hpp>
+#include <iostream>                     // for cout, endl
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/Entity.hpp>     // for Entity
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank, etc
+#include <stk_mesh/fixtures/GridFixture.hpp>  // for GridFixture
+#include <stk_util/parallel/Parallel.hpp>  // for parallel_machine_rank, etc
+#include <gtest/gtest.h>
+#include <vector>                       // for vector
+#include "mpi.h"                        // for MPI_COMM_WORLD
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Selector; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Entity.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Selector.hpp>
-#include <stk_mesh/base/GetBuckets.hpp>
-#include <stk_mesh/base/BulkModification.hpp>
 
-#include <stk_mesh/fem/BoundaryAnalysis.hpp>
-#include <stk_mesh/fem/SkinMesh.hpp>
 
-#include <stk_mesh/fixtures/GridFixture.hpp>
 
-#include <stk_util/parallel/ParallelReduce.hpp>
 
-#include <iomanip>
-#include <algorithm>
 
 using stk::mesh::MetaData;
-using stk::mesh::fem::FEMMetaData;
 using stk::mesh::Part;
 using stk::mesh::PartVector;
-using stk::mesh::PartRelation;
 using stk::mesh::Entity;
 using stk::mesh::EntityVector;
 using stk::mesh::EntityRank;
@@ -44,7 +38,7 @@ using stk::ParallelMachine;
 using std::cout;
 using std::endl;
 
-STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
+TEST( UnitTestGridFixture, test_gridfixture )
 {
   //Coverage of GridFixture, Hexfixture, BoxFixture,QuadFixture
   //and RingFixture in fixture directory for more than one
@@ -52,16 +46,14 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::fixtures::GridFixture grid_mesh(MPI_COMM_WORLD);
 
   stk::mesh::BulkData& bulk_data = grid_mesh.bulk_data();
-  stk::mesh::fem::FEMMetaData& fem_meta = grid_mesh.fem_meta();
-  const stk::mesh::EntityRank elem_rank = fem_meta.element_rank();
-  
-  int  size , rank;
-  rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
-  size = stk::parallel_machine_size( MPI_COMM_WORLD );
+  stk::mesh::MetaData& fem_meta = grid_mesh.fem_meta();
+  const stk::mesh::EntityRank elem_rank = stk::topology::ELEMENT_RANK;
+
+  int rank = stk::parallel_machine_rank( MPI_COMM_WORLD );
+  int size = stk::parallel_machine_size( MPI_COMM_WORLD );
 
   // Create a part for the shells
-  stk::mesh::fem::CellTopology line_top(shards::getCellTopologyData<shards::ShellLine<2> >());
-  stk::mesh::Part & shell_part = fem_meta.declare_part("shell_part", line_top);
+  stk::mesh::Part & shell_part = fem_meta.declare_part_with_topology("shell_part", stk::topology::SHELL_LINE_2);
 
   fem_meta.commit();
 
@@ -80,7 +72,7 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   stk::mesh::PartVector shell_parts;
   shell_parts.push_back(&shell_part);
 
-  std::vector<stk::mesh::Entity*> shell_faces;
+  std::vector<stk::mesh::Entity> shell_faces;
 
   unsigned id_base = 0;
   unsigned id_offset = 500; // a safe offset to avoid id overlap
@@ -88,10 +80,10 @@ STKUNIT_UNIT_TEST( UnitTestGridFixture, test_gridfixture )
   for (id_base = 1; id_base <= num_shell_faces; ++id_base) {
 
     int new_id = rank * num_shell_faces + id_base;
-    stk::mesh::Entity& new_shell = bulk_data.declare_entity(elem_rank,
+    stk::mesh::Entity new_shell = bulk_data.declare_entity(elem_rank,
                                                             id_offset + new_id,
                                                             shell_parts);
-    shell_faces.push_back(&new_shell);
+    shell_faces.push_back(new_shell);
   }
 
    bulk_data.modification_end();

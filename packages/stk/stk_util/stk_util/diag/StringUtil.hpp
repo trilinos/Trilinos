@@ -1,14 +1,19 @@
 #ifndef STK_UTIL_DIAG_StringUtil_h
 #define STK_UTIL_DIAG_StringUtil_h
 
-#include <algorithm>
-#include <functional>
-#include <string>
-#include <cctype>
-#include <limits>
-
+#include <stddef.h>                     // for size_t, NULL
+#include <algorithm>                    // for transform
+#include <cctype>                       // for tolower, isspace, toupper
+#include <functional>                   // for binary_function
+#include <limits>                       // for numeric_limits, etc
+#include <sstream>                      // for operator<<, ostream, etc
+#include <stdexcept>                    // for runtime_error
+#include <stk_util/diag/String.hpp>     // for String, operator<<
 #include <stk_util/util/FeatureTest.hpp>
-#include <stk_util/diag/String.hpp>
+#include <string>                       // for string, char_traits, etc
+#include <typeinfo>                     // for type_info
+#include <vector>                       // for vector
+
 
 namespace sierra {
 
@@ -256,6 +261,23 @@ trim(
   return name = T(it0, it1);
 }
 
+template <class T>
+T convert_cast(const String &s)
+{
+  /* %TRACE% */  /* %TRACE% */
+  std::istringstream is(s.c_str());
+  T t = 0;
+
+  is >> t;
+
+  if (!is) {
+    std::ostringstream msg;
+    msg << "Unable to convert \"" << s << "\" to type " << typeid(T).name();
+    throw std::runtime_error(msg.str().c_str());
+  }
+  return t;
+}
+
 /**
  * @brief Function <b>title</b> returns a first letter of each word capitalized of the
  * string.
@@ -335,18 +357,6 @@ std::string demangle(const char *symbol);
 #else
 const char *demangle(const char *symbol);
 #endif
-
-/**
- * @brief Function <b>format_time</b> encodes the time using the format specified.
- * The format is described in <b>stdftime</b>.
- *
- * @param t		a <b>time_t</b> value of the time to format.
- *
- * @param format	a <b>char</b> const pointer to the format.
- *
- * @return		a <b>String</b> value of the encoded time.
- */
-std::string format_time(double t, const char *format = "%b %e %Y %H:%M:%S");
 
 /**
  * @brief Function <b>word_wrap</b> reformats a string into multiple lines, none longer
@@ -762,8 +772,9 @@ size_t hash_string_nocase(
   const char *		p)
 {
   size_t h = 0;
+  size_t byt = 0xF;
   const size_t sr = std::numeric_limits<unsigned char>::digits *  sizeof(size_t) - 8;
-  const size_t mask = ((size_t) 0xF) << (sr + 4);
+  const size_t mask = byt << (sr + 4);
   while (*p) {
     h = (h << 4) + std::tolower(*p++);
     size_t g = h & mask;
@@ -852,8 +863,15 @@ struct hash_nocase<String>
 /// @}
 ///
 
-template <class T>
-T convert_cast(const String &s);
+inline
+void convertCharArrayToStringVector(int numArgs, const char** charArray, std::vector<std::string> &stringVector)
+{
+    stringVector.resize(numArgs);
+    for(int i=0; i < numArgs; i++)
+    {
+        stringVector[i] = std::string(charArray[i]);
+    }
+}
 
 } // namespace sierra
 

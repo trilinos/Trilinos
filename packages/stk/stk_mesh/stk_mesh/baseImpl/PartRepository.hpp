@@ -9,18 +9,16 @@
 #ifndef stk_mesh_PartRepository_hpp
 #define stk_mesh_PartRepository_hpp
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/Part.hpp>
-#include <stk_mesh/baseImpl/PartImpl.hpp>
-
+#include <stk_mesh/base/Part.hpp>       // for Part
+#include <stk_mesh/base/Types.hpp>      // for PartVector, EntityRank
+#include <string>                       // for string
+namespace stk { namespace mesh { class MetaData; } }
 
 namespace stk {
 namespace mesh {
 
-class MetaData;
 
 namespace impl {
-
 
 class PartRepository {
 public:
@@ -29,12 +27,11 @@ public:
 
   Part * universal_part() const;
 
-  const PartVector & get_all_parts() const;
+  const PartVector & get_all_parts()  const;  // returns all parts
+  const PartVector   get_mesh_parts() const; // returns the non-internal parts
 
-  Part * declare_part( const std::string & arg_name , EntityRank arg_rank );
-  Part * declare_part( const PartVector & part_intersect );
+  Part * declare_part( const std::string & arg_name , EntityRank arg_rank, bool force_no_induce=false );
   void declare_subset( Part & superset, Part & subset );
-  void declare_part_relation( Part & root_part, PartRelation relation, Part & target_part );
 
   template<class T>
   const T * declare_attribute_with_delete( Part & , const T *);
@@ -47,8 +44,8 @@ private:
   PartRepository();
   PartRepository(const PartRepository & );
   PartRepository & operator = ( const PartRepository & );
-  
-  Part * declare_part_impl( const std::string & name, EntityRank rank);
+
+  Part * declare_part_impl( const std::string & name, EntityRank rank, bool force_no_induce );
   void declare_subset_impl( Part & superset, Part & subset );
 
   MetaData * m_meta_data;
@@ -80,10 +77,8 @@ PartRepository::remove_attribute( Part & p, const T * a )
   return p.m_partImpl.remove_attribute<T>( a );
 }
 
-
-} // namespace impl 
+} // namespace impl
 } // namespace mesh
 } // namespace stk
-
 
 #endif // stk_mesh_PartRepository_hpp

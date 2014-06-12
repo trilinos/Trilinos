@@ -14,12 +14,11 @@
 #include <Ioss_SubSystem.h>
 
 #include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
 #include <stk_mesh/base/MetaData.hpp>
 #include <stk_mesh/base/BulkData.hpp>
-
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
+#include <stk_mesh/base/TopologyDimensions.hpp>
+#include <stk_mesh/base/FEMHelpers.hpp>
+#include <stk_mesh/base/CoordinateSystems.hpp>
 
 #include <stk_io/IossBridge.hpp>
 
@@ -29,7 +28,7 @@ namespace stk_examples {
 namespace app {
 
   // ========================================================================
-  void process_nodeblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+  void process_nodeblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::NodeBlockContainer& node_blocks = region.get_node_blocks();
     assert(node_blocks.size() == 1);
@@ -41,19 +40,19 @@ namespace app {
     int spatial_dim = coordinates.transformed_storage()->component_count();
 
     stk::mesh::Field<double,stk::mesh::Cartesian> & coord_field =
-      meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+      meta.declare_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-    stk::mesh::put_field( coord_field, stk::mesh::fem::FEMMetaData::NODE_RANK, meta.universal_part(),
+    stk::mesh::put_field( coord_field, meta.universal_part(),
                           spatial_dim);
 
     /// \todo IMPLEMENT truly handle fields... For this case we
     /// are just defining a field for each transient field that is
     /// present in the mesh...
-    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::mesh::fem::FEMMetaData::NODE_RANK);
+    stk::io::define_io_fields(nb, Ioss::Field::TRANSIENT, meta.universal_part(),stk::topology::NODE_RANK);
   }
 
   // ========================================================================
-  void process_elementblocks(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+  void process_elementblocks(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::ElementBlockContainer& elem_blocks = region.get_element_blocks();
     stk::io::default_part_processing(elem_blocks, meta);
@@ -91,7 +90,7 @@ namespace app {
   }
 
   // ========================================================================
-  void process_nodesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+  void process_nodesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::NodeSetContainer& node_sets = region.get_nodesets();
     stk::io::default_part_processing(node_sets, meta);
@@ -100,7 +99,7 @@ namespace app {
     /// that is automatically declared on all objects that it exists
     /// on as is done in current framework?
     stk::mesh::Field<double> & distribution_factors_field =
-      meta.declare_field<stk::mesh::Field<double> >("distribution_factors");
+      meta.declare_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
     /// \todo REFACTOR How to associate distribution_factors field
     /// with the nodeset part if a node is a member of multiple
@@ -117,7 +116,7 @@ namespace app {
 
         const stk::mesh::EntityRank part_rank = part->primary_entity_rank();
 
-	stk::mesh::put_field(distribution_factors_field, stk::mesh::fem::FEMMetaData::NODE_RANK, *part);
+	stk::mesh::put_field(distribution_factors_field, *part);
 
 	/// \todo IMPLEMENT truly handle fields... For this case we
 	/// are just defining a field for each transient field that is
@@ -129,7 +128,7 @@ namespace app {
   }
 
   // ========================================================================
-  void process_surface_entity(Ioss::SideSet *sset, stk::mesh::fem::FEMMetaData &meta)
+  void process_surface_entity(Ioss::SideSet *sset, stk::mesh::MetaData &meta)
   {
     assert(sset->type() == Ioss::SIDESET);
     const Ioss::SideBlockContainer& blocks = sset->get_side_blocks();
@@ -161,14 +160,13 @@ namespace app {
 	  if (!surface_df_defined) {
 	    std::string field_name = sset->name() + "_distribution_factors";
 	    distribution_factors_field =
-	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(field_name);
+	      &meta.declare_field<stk::mesh::Field<double, stk::mesh::ElementNode> >(static_cast<stk::topology::rank_t>(part_rank), field_name);
 	    stk::io::set_distribution_factor_field(*sideset_part, *distribution_factors_field);
 	    surface_df_defined = true;
 	  }
 	  stk::io::set_distribution_factor_field(*sideblock_part, *distribution_factors_field);
 	  int side_node_count = sideblock->topology()->number_nodes();
 	  stk::mesh::put_field(*distribution_factors_field,
-                               part_rank ,
                                *sideblock_part, side_node_count);
 	}
 
@@ -182,7 +180,7 @@ namespace app {
   }
 
   // ========================================================================
-  void process_sidesets(Ioss::Region &region, stk::mesh::fem::FEMMetaData &meta)
+  void process_sidesets(Ioss::Region &region, stk::mesh::MetaData &meta)
   {
     const Ioss::SideSetContainer& side_sets = region.get_sidesets();
     stk::io::default_part_processing(side_sets, meta);
@@ -212,17 +210,17 @@ namespace app {
 
     Ioss::NodeBlock *nb = node_blocks[0];
 
-    std::vector<stk::mesh::Entity*> nodes;
-    stk::io::get_entity_list(nb, stk::mesh::fem::FEMMetaData::NODE_RANK, bulk, nodes);
+    std::vector<stk::mesh::Entity> nodes;
+    stk::io::get_entity_list(nb, stk::topology::NODE_RANK, bulk, nodes);
 
     /// \todo REFACTOR Application would probably store this field
     /// (and others) somewhere after the declaration instead of
     /// looking it up each time it is needed.
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
     stk::mesh::Field<double,stk::mesh::Cartesian> *coord_field =
-      meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >("coordinates");
+      meta.get_field<stk::mesh::Field<double,stk::mesh::Cartesian> >(stk::topology::NODE_RANK, "coordinates");
 
-    stk::io::field_data_from_ioss(coord_field, nodes, nb, "mesh_model_coordinates");
+    stk::io::field_data_from_ioss(bulk, coord_field, nodes, nb, "mesh_model_coordinates");
   }
 
   // ========================================================================
@@ -240,7 +238,7 @@ namespace app {
 	stk::mesh::Part* const part = meta.get_part(name);
 	assert(part != NULL);
 
-        const CellTopologyData* cell_topo = stk::mesh::fem::FEMMetaData::get(bulk).get_cell_topology(*part).getCellTopologyData();
+        const CellTopologyData* cell_topo = stk::mesh::MetaData::get(bulk).get_cell_topology(*part).getCellTopologyData();
 	assert(cell_topo != NULL);
 
 	std::vector<int> elem_ids ;
@@ -251,16 +249,16 @@ namespace app {
 	entity->get_field_data("connectivity", connectivity);
         connectivity2.reserve(connectivity.size());
         std::copy(connectivity.begin(), connectivity.end(), std::back_inserter(connectivity2));
-          
+
 	int element_count = elem_ids.size();
 	int nodes_per_elem = cell_topo->node_count ;
 
-	std::vector<stk::mesh::Entity*> elements(element_count);
+	std::vector<stk::mesh::Entity> elements(element_count);
 	for(int i=0; i<element_count; ++i) {
 	  /// \todo REFACTOR cast from int to unsigned is unsafe and ugly.
 	  /// change function to take int[] argument.
 	  stk::mesh::EntityId *conn = &connectivity2[i*nodes_per_elem];
-	  elements[i] = &stk::mesh::fem::declare_element(bulk, *part, elem_ids[i], conn);
+	  elements[i] = stk::mesh::declare_element(bulk, *part, elem_ids[i], conn);
 	}
 
 	// For this example, we are just taking all attribute fields
@@ -272,8 +270,8 @@ namespace app {
 	for (Ioss::NameList::const_iterator I = names.begin(); I != names.end(); ++I) {
 	  if (*I == "attribute" && names.size() > 1)
 	    continue;
-	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(*I);
-	  stk::io::field_data_from_ioss(field, elements, entity, *I);
+	  stk::mesh::FieldBase *field = meta.get_field<stk::mesh::FieldBase>(stk::topology::ELEMENT_RANK, *I);
+	  stk::io::field_data_from_ioss(bulk, field, elements, entity, *I);
 
 	}
       }
@@ -301,11 +299,11 @@ namespace app {
 	std::vector<int> node_ids ;
 	int node_count = entity->get_field_data("ids", node_ids);
 
-	std::vector<stk::mesh::Entity*> nodes(node_count);
+	std::vector<stk::mesh::Entity> nodes(node_count);
 	for(int i=0; i<node_count; ++i) {
-	  nodes[i] = bulk.get_entity( stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i] );
-	  if (nodes[i] != NULL)
-	    bulk.declare_entity(stk::mesh::fem::FEMMetaData::NODE_RANK, node_ids[i], add_parts );
+	  nodes[i] = bulk.get_entity( stk::topology::NODE_RANK, node_ids[i] );
+	  if (bulk.is_valid(nodes[i]))
+	    bulk.declare_entity(stk::topology::NODE_RANK, node_ids[i], add_parts );
 	}
 
 
@@ -313,10 +311,10 @@ namespace app {
 	/// (and others) somewhere after the declaration instead of
 	/// looking it up each time it is needed.
 	stk::mesh::Field<double> *df_field =
-	  meta.get_field<stk::mesh::Field<double> >("distribution_factors");
+	  meta.get_field<stk::mesh::Field<double> >(stk::topology::NODE_RANK, "distribution_factors");
 
 	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, nodes, entity, "distribution_factors");
+	  stk::io::field_data_from_ioss(bulk, df_field, nodes, entity, "distribution_factors");
 	}
       }
     }
@@ -327,9 +325,8 @@ namespace app {
   {
     assert(io->type() == Ioss::SIDESET);
     const stk::mesh::MetaData& meta = stk::mesh::MetaData::get(bulk);
-    stk::mesh::fem::FEMMetaData &fem = stk::mesh::fem::FEMMetaData::get(meta);
 
-    const stk::mesh::EntityRank element_rank = fem.element_rank();
+    const stk::mesh::EntityRank element_rank = stk::topology::ELEMENT_RANK;
 
     int block_count = io->block_count();
     for (int i=0; i < block_count; i++) {
@@ -347,10 +344,10 @@ namespace app {
 	stk::mesh::PartVector add_parts( 1 , fb_part );
 
 	int side_count = side_ids.size();
-	std::vector<stk::mesh::Entity*> sides(side_count);
+	std::vector<stk::mesh::Entity> sides(side_count);
 	for(int is=0; is<side_count; ++is) {
 
-	  stk::mesh::Entity* const elem = bulk.get_entity(element_rank, elem_side[is*2]);
+	  stk::mesh::Entity const elem = bulk.get_entity(element_rank, elem_side[is*2]);
 	  // If NULL, then the element was probably assigned to an
 	  // Ioss uses 1-based side ordinal, stk::mesh uses 0-based.
 	  // Hence the '-1' in the following line.
@@ -359,20 +356,19 @@ namespace app {
 	  // element block that appears in the database, but was
 	  // subsetted out of the analysis mesh. Only process if
 	  // non-null.
-	  if (elem != NULL) {
-	    stk::mesh::Entity& side =
-	      stk::mesh::fem::declare_element_side(bulk, side_ids[is], *elem, side_ordinal);
+	  if (bulk.is_valid(elem)) {
+	    stk::mesh::Entity side =
+	      stk::mesh::declare_element_side(bulk, side_ids[is], elem, side_ordinal);
 	    bulk.change_entity_parts( side, add_parts );
-	    sides[is] = &side;
+	    sides[is] = side;
 	  } else {
-	    sides[is] = NULL;
+	    sides[is] = stk::mesh::Entity();
 	  }
 	}
 
-	const stk::mesh::Field<double, stk::mesh::ElementNode> *df_field =
-	  stk::io::get_distribution_factor_field(*fb_part);
+	const stk::mesh::FieldBase *df_field = stk::io::get_distribution_factor_field(*fb_part);
 	if (df_field != NULL) {
-	  stk::io::field_data_from_ioss(df_field, sides, block, "distribution_factors");
+	  stk::io::field_data_from_ioss(bulk, df_field, sides, block, "distribution_factors");
 	}
       }
     }
@@ -400,18 +396,17 @@ namespace app {
 		      Ioss::GroupingEntity *io_entity,
 		      Ioss::Field::RoleType filter_role)
   {
-    std::vector<stk::mesh::Entity*> entities;
+    std::vector<stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
     std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
-      if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
-	stk::io::field_data_from_ioss(f, entities, io_entity, f->name());
+      if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
+	stk::io::field_data_from_ioss(bulk, f, entities, io_entity, f->name());
       }
     }
   }
@@ -426,7 +421,7 @@ namespace app {
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
     // ??? Get field data from nodeblock...
-    app::get_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
+    app::get_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 			region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -471,18 +466,17 @@ namespace app {
 		      Ioss::GroupingEntity *io_entity,
 		      Ioss::Field::RoleType filter_role)
   {
-    std::vector<stk::mesh::Entity*> entities;
+    std::vector<stk::mesh::Entity> entities;
     stk::io::get_entity_list(io_entity, part_type, bulk, entities);
 
     stk::mesh::MetaData & meta = stk::mesh::MetaData::get(part);
-    stk::mesh::Part &universal = meta.universal_part();
     const std::vector<stk::mesh::FieldBase*> &fields = meta.get_fields();
 
     std::vector<stk::mesh::FieldBase *>::const_iterator I = fields.begin();
     while (I != fields.end()) {
       const stk::mesh::FieldBase *f = *I; ++I;
-      if (stk::io::is_valid_part_field(f, part_type, part, universal, filter_role)) {
-	stk::io::field_data_to_ioss(f, entities, io_entity, f->name(), filter_role);
+      if (stk::io::is_valid_part_field(f, part_type, part, filter_role)) {
+	stk::io::field_data_to_ioss(bulk, f, entities, io_entity, f->name(), filter_role);
       }
     }
   }
@@ -495,7 +489,7 @@ namespace app {
     // Special processing for nodeblock (all nodes in model)...
     const stk::mesh::MetaData & meta = stk::mesh::MetaData::get(bulk);
 
-    app::put_field_data(bulk, meta.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
+    app::put_field_data(bulk, meta.universal_part(), stk::topology::NODE_RANK,
 			region.get_node_blocks()[0], Ioss::Field::TRANSIENT);
 
     const stk::mesh::PartVector & all_parts = meta.get_parts();
@@ -603,7 +597,7 @@ namespace app {
 
     //----------------------------------
     // Process Entity Types. Subsetting is possible.
-    stk::mesh::fem::FEMMetaData meta_data( spatial_dimension );
+    stk::mesh::MetaData meta_data( spatial_dimension );
     app::process_elementblocks(in_region, meta_data);
     app::process_nodeblocks(in_region,    meta_data);
     app::process_sidesets(in_region,      meta_data);
@@ -615,7 +609,7 @@ namespace app {
 
     //----------------------------------
     // Process Bulkdata for all Entity Types. Subsetting is possible.
-    stk::mesh::BulkData bulk_data(meta_data.get_meta_data(meta_data), comm);
+    stk::mesh::BulkData bulk_data(meta_data, comm);
     bulk_data.modification_begin();
     app::process_elementblocks(in_region, bulk_data);
     app::process_nodeblocks(in_region,    bulk_data);
@@ -662,7 +656,7 @@ namespace app {
     out_region.begin_mode(Ioss::STATE_DEFINE_TRANSIENT);
 
     // Special processing for nodeblock (all nodes in model)...
-    stk::io::ioss_add_fields(meta_data.universal_part(), stk::mesh::fem::FEMMetaData::NODE_RANK,
+    stk::io::ioss_add_fields(meta_data.universal_part(), stk::topology::NODE_RANK,
 			     out_region.get_node_blocks()[0],
 			     Ioss::Field::TRANSIENT);
 
@@ -717,7 +711,7 @@ namespace app {
       app::process_output_request(out_region, bulk_data, out_step);
     }
     out_region.end_mode(Ioss::STATE_TRANSIENT);
-
+    stk::io::delete_selector_property(out_region);
   }
 } // namespace stk_examples
 

@@ -97,13 +97,11 @@ namespace MueLuTests {
 #include <MueLu_UseShortNames.hpp>
   Teuchos::RCP<Matrix> FilterMatrix(Matrix& A, SC dropTol);
 
-  void SetDependencyTree(FactoryManager& M, const std::string& mode1, const std::string& mode2);
+  void SetDependencyTree(FactoryManager& M);
 
   Teuchos::RCP<MultiVector> BuildCoords(Teuchos::RCP<const Map> map, int NDim);
 
 }
-
-// #define PRESSURE_FIRST
 
 bool ISSTRUCTURED = true;
 
@@ -186,13 +184,7 @@ int main(int argc, char *argv[]) {
                                          stridingInfo, comm);
   partMaps[1] = StridedMapFactory::Build(lib, numPresElements, elementList(numVelElements, numPresElements), indexBase,
                                          stridingInfo, comm, stridedBlockId, numVelElements);
-#ifdef PRESSURE_FIRST
-  std::vector<RCP<const Map> > partMaps1 = partMaps;
-  std::swap(partMaps1[0], partMaps1[1]);
-  RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(fullMap, partMaps1);
-#else
   RCP<const MapExtractor> mapExtractor = MapExtractorFactory::Build(fullMap, partMaps);
-#endif
 
   // Step 2: read in matrices
   std::string matrixPrefix = "Q2Q1_" + MueLu::toString(n) + "x" + MueLu::toString(n);
@@ -209,23 +201,22 @@ int main(int argc, char *argv[]) {
   RCP<CrsMatrix> A_22_crs = Teuchos::null;
 
   RCP<BlockedCrsMatrix> A = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-#ifdef PRESSURE_FIRST
-  A->setMatrix(0, 0, A_22_crs);
-  A->setMatrix(0, 1, A_21_crs);
-  A->setMatrix(1, 0, A_12_crs);
-  A->setMatrix(1, 1, A_11_crs);
-#else
   A->setMatrix(0, 0, A_11_crs);
   A->setMatrix(0, 1, A_12_crs);
   A->setMatrix(1, 0, A_21_crs);
   A->setMatrix(1, 1, A_22_crs);
-#endif
   A->fillComplete();
 
   // Step 3: construct coordinates
   const int NDim = 2;
-  RCP<MultiVector> coords1 = BuildCoords(partMaps[0], NDim);
-  RCP<MultiVector> coords2 = BuildCoords(partMaps[1], NDim);
+  RCP<MultiVector> coordsVel  = BuildCoords(partMaps[0], NDim);
+  RCP<MultiVector> coordsPres = BuildCoords(partMaps[1], NDim);
+
+  // Step 4: construct pressure to 1st velocity mapping
+  Array<LO> p2vMap(n*n);
+  for (int j = 0; j < n; j++)
+    for (int i = 0; i < n; i++)
+      p2vMap[j*n+i] = 2*(2*j*(2*n-1) + 2*i);
 
   // =========================================================================
   // Preconditioner construction - I (block)
@@ -243,34 +234,25 @@ int main(int argc, char *argv[]) {
   RCP<CrsMatrix> fA_22_crs = rcp_dynamic_cast<CrsMatrixWrap>(filteredB)->getCrsMatrix();
 
   RCP<BlockedCrsMatrix> fA = rcp(new BlockedCrsMatrix(mapExtractor, mapExtractor, 10));
-#ifdef PRESSURE_FIRST
-  fA->setMatrix(0, 0, fA_22_crs);
-  fA->setMatrix(0, 1, fA_12_crs);
-  fA->setMatrix(1, 0, fA_21_crs);
-  fA->setMatrix(1, 1, fA_11_crs);
-#else
   fA->setMatrix(0, 0, fA_11_crs);
   fA->setMatrix(0, 1, fA_12_crs);
   fA->setMatrix(1, 0, fA_21_crs);
   fA->setMatrix(1, 1, fA_22_crs);
-#endif
   fA->fillComplete();
 
   // -------------------------------------------------------------------------
   // Preconditioner construction - I.a (filtered hierarchy)
   // -------------------------------------------------------------------------
   FactoryManager M;
-#ifdef PRESSURE_FIRST
-  SetDependencyTree(M, "pressure", "velocity");
-#else
-  SetDependencyTree(M, "velocity", "pressure");
-#endif
+  SetDependencyTree(M);
 
   std::vector<RCP<Hierarchy> > H(compare+1);
   H[0] = rcp(new Hierarchy);
-  H[0]->GetLevel(0)->Set("A", rcp_dynamic_cast<Matrix>(fA));
-  H[0]->GetLevel(0)->Set("CoordinatesVelocity", coords1);
-  H[0]->GetLevel(0)->Set("CoordinatesPressure", coords2);
+  RCP<Level> finestLevel = H[0]->GetLevel(0);
+  finestLevel->Set("A",                     rcp_dynamic_cast<Matrix>(fA));
+  finestLevel->Set("p2vMap",                p2vMap);
+  finestLevel->Set("CoordinatesVelocity",   coordsVel);
+  finestLevel->Set("CoordinatesPressure",   coordsPres);
   H[0]->SetMaxCoarseSize(1);
 
   // The first invocation of Setup() builds the hierarchy using the filtered
@@ -442,17 +424,20 @@ namespace MueLuTests {
 
   void SetBlockDependencyTree(FactoryManager& M, int row, int col, const std::string&);
 
-  void SetDependencyTree(FactoryManager& M, const std::string& mode1, const std::string& mode2) {
+  void SetDependencyTree(FactoryManager& M) {
     using Teuchos::RCP;
     using Teuchos::rcp;
 
     RCP<FactoryManager> M11 = rcp(new FactoryManager);
-    SetBlockDependencyTree(*M11, 0, 0, mode1);
+    SetBlockDependencyTree(*M11, 0, 0, "velocity");
 
     RCP<FactoryManager> M22 = rcp(new FactoryManager);
-    SetBlockDependencyTree(*M22, 1, 1, mode2);
+    SetBlockDependencyTree(*M22, 1, 1, "pressure");
 
     RCP<BlockedPFactory> PFact = rcp(new BlockedPFactory());
+    ParameterList pParamList = *(PFact->GetValidParameterList());
+    pParamList.set("backwards", true);      // do pressure first
+    PFact->SetParameterList(pParamList);
     PFact->AddFactoryManager(M11);
     PFact->AddFactoryManager(M22);
     M.SetFactory("P", PFact);
@@ -491,7 +476,7 @@ namespace MueLuTests {
       Q2Q1Fact = rcp(new Q2Q1PFactory);
 
     } else {
-      RCP<Q2Q1uPFactory> Q2Q1Fact = rcp(new Q2Q1uPFactory);
+      Q2Q1Fact = rcp(new Q2Q1uPFactory);
       ParameterList q2q1ParamList = *(Q2Q1Fact->GetValidParameterList());
       q2q1ParamList.set("mode", mode);
       // q2q1ParamList.set("phase2", false);

@@ -6,12 +6,14 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stdexcept>
-#include <map>
-#include <cstring>
-
 #include <stk_util/util/Marshal.hpp>
-#include <iostream>
+#include <stdint.h>                     // for uint32_t
+#include <algorithm>                    // for fill
+#include <cstring>                      // for strlen
+#include <map>                          // for _Rb_tree_const_iterator, etc
+#include <stdexcept>                    // for runtime_error
+#include <utility>                      // for make_pair, pair
+
 
 namespace stk {
 
@@ -96,13 +98,13 @@ crc32_write(
   const char *name = typeinfo.name();
   unsigned length = std::strlen(name);
   
-  uint32_t      crc = crc32((const unsigned char *) name, length);
+  uint32_t      crc = crc32(reinterpret_cast<const unsigned char *>(name), length);
 
   TypeNameMap::iterator it = s_typeNameMap.find(crc);
   if (it == s_typeNameMap.end())
     s_typeNameMap.insert(std::make_pair(crc, std::string(name)));
                          
-  os.write((const char *) &crc, sizeof(uint32_t));
+  os.write(reinterpret_cast<char*>(&crc), sizeof(uint32_t));
 }
 
 
@@ -117,7 +119,7 @@ crc32_check(
   const char *name = typeinfo.name();
   unsigned length = std::strlen(name);
   
-  uint32_t      crc_check = crc32((const unsigned char *) name, length);
+  uint32_t      crc_check = crc32(reinterpret_cast<const unsigned char *>(name), length);
   uint32_t      crc = 0;
   
   {
@@ -126,7 +128,7 @@ crc32_check(
       s_typeNameMap.insert(std::make_pair(crc_check, std::string(name)));
   }
                          
-  is.read((char *) &crc, sizeof(uint32_t));
+  is.read(reinterpret_cast<char *>(&crc), sizeof(uint32_t));
 
   if (crc_check != crc) {
     std::ostringstream ss;

@@ -6,18 +6,18 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <string>
-#include <iostream>
-#include <sstream>
-#include <vector>
-#include <cmath>
-#include <unistd.h>
+#include <stddef.h>                     // for size_t
+#include <unistd.h>                     // for sleep
+#include <cmath>                        // for sin
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/diag/PrintTimer.hpp>  // for printTimersTable
+#include <stk_util/diag/Timer.hpp>      // for Timer, TimeBlock, etc
+#include <gtest/gtest.h>
+#include <string>                       // for string, operator<<, etc
+#include <vector>                       // for vector
+#include "stk_util/diag/TimerMetricTraits.hpp"  // for LapCount (ptr only), etc
 
-#include <stk_util/diag/Timer.hpp>
-#include <stk_util/diag/PrintTimer.hpp>
-#include <stk_util/diag/Writer.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
 enum {
   TIMER_DOMAIN		= 0x00001000,		///< Enable domain timers
@@ -51,9 +51,10 @@ quick_work()
 {
   double x = 1.0;
 
-  for (int i = 0; i < 10000; ++i) 
-    x += std::sin((double) i);
-
+  for (int i = 0; i < 10000; ++i) {
+    double di = i;
+    x += std::sin(di);
+  }
   return x;
 }
 
@@ -63,10 +64,11 @@ work()
 {
   double x = 1.0;
 
-  for (int i = 0; i < 100000; ++i) 
+  for (int i = 0; i < 100000; ++i) {
 //  for (int i = 0; i < 100; ++i) 
-    x += std::sin((double) i);
-
+    double di = i;
+    x += std::sin(di);
+  }
   return x;
 }
 
@@ -140,7 +142,7 @@ struct Object
 
 } // namespace <empty>
 
-STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
+TEST(UnitTestTimer, UnitTest)
 {
   stk::diag::TimeBlock root_time_block(unitTestTimer());
 
@@ -152,7 +154,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     
     stk::diag::TimeBlock _time(lap_timer);
     double x = quick_work();
-    x = x;
+    static_cast<void>(x);
     std::ostringstream oss;
     oss << x << std::endl;
     
@@ -162,7 +164,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     
     stk::diag::MetricTraits<stk::diag::WallTime>::Type lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    STKUNIT_ASSERT(lap_time >= 1.0);
+    ASSERT_TRUE(lap_time >= 1.0);
 
     ::sleep(1);
 
@@ -170,7 +172,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     
     lap_time = lap_timer.getMetric<stk::diag::WallTime>().getLap();
   
-    STKUNIT_ASSERT(lap_time >= 2.0);
+    ASSERT_TRUE(lap_time >= 2.0);
   }
 
   // 
@@ -184,7 +186,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT(lap_count == 100);
+    ASSERT_TRUE(lap_count == 100);
   }
 
   // Create second timer set
@@ -213,7 +215,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = run_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT(lap_count == 200);
+    ASSERT_TRUE(lap_count == 200);
   }
 
   // Create root object
@@ -222,7 +224,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
   {
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = root_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT(lap_count == 0);
+    ASSERT_TRUE(lap_count == 0);
   }
 
   // Create object
@@ -235,7 +237,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
 
     stk::diag::MetricTraits<stk::diag::LapCount>::Type lap_count = time_object.m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT(lap_count == 100);
+    ASSERT_TRUE(lap_count == 100);
   }
 
   // Create object tree
@@ -262,7 +264,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
+    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(0));
 
     for (size_t j = 0; j < object_vector.size(); ++j) 
       object_vector[j].run();
@@ -273,7 +275,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
 
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
+    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(object_vector.size()));
 
     for (size_t i = 1; i < 100; ++i) 
       for (size_t j = 0; j < object_vector.size(); ++j) 
@@ -285,7 +287,7 @@ STKUNIT_UNIT_TEST(UnitTestTimer, UnitTest)
     for (size_t j = 0; j < object_vector.size(); ++j) 
       lap_count += object_vector[j].m_timer.getMetric<stk::diag::LapCount>().getAccumulatedLap(false);
   
-    STKUNIT_ASSERT_EQUAL(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
+    ASSERT_EQ(lap_count, stk::diag::MetricTraits<stk::diag::LapCount>::Type(100*object_vector.size()));
 
     stk::diag::printTimersTable(strout, unitTestTimer(), stk::diag::METRICS_ALL, true);
 

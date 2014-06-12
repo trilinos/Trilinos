@@ -54,7 +54,6 @@ namespace sierra {
  *  All non-modifying query operations conform to
  *  either the constant or logarithmic complexity.
  */
-
 template <class Key, class Compare = std::less<Key> >
 class vecset {
 private:
@@ -235,6 +234,13 @@ public:
     // b = v != *ip
     if ( b ) ip = Storage.insert(ip,v);
     return std::pair<iterator,bool>( ip, b );
+  }
+
+  template< typename FORWARD_ITERATOR >
+  void insert( FORWARD_ITERATOR b, FORWARD_ITERATOR e) {
+    for (FORWARD_ITERATOR it = b ; it != e ; ++it) {
+        insert(*it);
+    }
   }
 
   void erase( iterator i ) {

@@ -6,14 +6,30 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
+#include <gtest/gtest.h>
+#include <mpi.h>
 
-#include <cstdlib>
-#include <cstring>
-#include <iostream>
-#include <utility>
+int gl_argc=0;
+char** gl_argv=0;
 
-#include <stk_util/parallel/Parallel.hpp>
+int main(int argc, char **argv)
+{
+#ifdef STK_MESH_TRACE_ENABLED
+    use_case::UseCaseEnvironment use_case_environment(&argc, &argv); 
+#else
+    MPI_Init(&argc, &argv);
+#endif
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+    testing::InitGoogleTest(&argc, argv);
 
-STKUNIT_MAIN(argc,argv)
+    gl_argc = argc;
+    gl_argv = argv;
+
+    int returnVal = RUN_ALL_TESTS();
+
+#ifndef STK_MESH_TRACE_ENABLED
+    MPI_Finalize();
+#endif
+
+    return returnVal;
+}

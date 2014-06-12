@@ -9,19 +9,21 @@
 #ifndef STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_QUAD_MESH_FIXTURE_HPP
 
-#include <Shards_BasicTopologies.hpp>
+#include <ostream>                      // for basic_ostream::operator<<
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for EntityId
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+#include <string>                       // for string
+#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_util/parallel/Parallel.hpp>
 
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/DataTraits.hpp>
 
-#include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
-#include <stk_mesh/fem/FEMMetaData.hpp>
 
 namespace stk {
 namespace mesh {
@@ -38,22 +40,20 @@ class QuadFixture
  public:
   typedef int Scalar ;
   typedef Field<Scalar, Cartesian>    CoordFieldType;
-  typedef Field<Scalar*,ElementNode>  CoordGatherFieldType;
 
   /**
    * Set up meta data to support this fixture. Meta data is left uncommitted
    * to allow additional modifications by the client.
    */
-  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny );
+  QuadFixture( stk::ParallelMachine pm, unsigned nx , unsigned ny, const std::vector<std::string>& rank_names = std::vector<std::string>() );
 
   ~QuadFixture() {}
 
   const unsigned                m_spatial_dimension;
-  fem::FEMMetaData              m_fem_meta ;
+  MetaData                      m_meta ;
   BulkData                      m_bulk_data ;
   Part &                        m_quad_part ;
   CoordFieldType &              m_coord_field ;
-  CoordGatherFieldType &        m_coord_gather_field ;
   const unsigned                m_nx ;
   const unsigned                m_ny ;
 
@@ -76,16 +76,16 @@ class QuadFixture
    * the (x, y) position. Return NULL if this process doesn't know about
    * this node.
    */
-  Entity * node( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( fem::FEMMetaData::NODE_RANK , node_id(x, y) ); }
+  Entity node( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( stk::topology::NODE_RANK , node_id(x, y) ); }
 
   /**
    * Thinking in terms of rows and columns of elements, get the element in
    * the (x, y) position. Return NULL if this process doesn't know about
    * this element.
    */
-  Entity * elem( unsigned x , unsigned y ) const
-  { return m_bulk_data.get_entity( m_fem_meta.element_rank(), elem_id(x, y)); }
+  Entity elem( unsigned x , unsigned y ) const
+  { return m_bulk_data.get_entity( stk::topology::ELEMENT_RANK, elem_id(x, y)); }
 
   /**
    * Thinking in terms of a 2D grid of nodes, compute the (x, y) position
@@ -104,8 +104,8 @@ class QuadFixture
    */
   void generate_mesh();
 
- private:
   void generate_mesh( std::vector<EntityId> & element_ids_on_this_processor );
+ private:
 
   QuadFixture();
   QuadFixture( const QuadFixture & );

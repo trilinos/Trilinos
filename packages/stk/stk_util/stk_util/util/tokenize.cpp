@@ -1,4 +1,5 @@
 #include "tokenize.hpp"
+#include <stddef.h>                     // for size_t
 
 void stk::util::tokenize(const std::string& str, const std::string& separators,
 			 std::vector<std::string>& tokens)
