@@ -718,6 +718,33 @@ TRIBITS_ADD_TEST(
 
 TRIBITS_ADD_TEST(
   MDVector_SliceTests
+  NAME MDVector_SliceTests_2D_1_4
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=1,4"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_2D_2_2
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=2,2"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_2D_4_1
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=2 --commDims=4,1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
   NAME MDVector_SliceTests_3D_1_1_1
   COMM mpi
   NUM_MPI_PROCS 1
@@ -749,5 +776,59 @@ TRIBITS_ADD_TEST(
   COMM mpi
   NUM_MPI_PROCS 2
   ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,1,1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_1_1_4
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,1,4"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_1_2_2
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,2,2"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_1_4_1
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=1,4,1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_2_1_2
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,1,2"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_2_2_1
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=2,2,1"
+  STANDARD_PASS_OUTPUT
+  )
+
+TRIBITS_ADD_TEST(
+  MDVector_SliceTests
+  NAME MDVector_SliceTests_3D_4_1_1
+  COMM mpi
+  NUM_MPI_PROCS 4
+  ARGS "--teuchos-suppress-startup-banner --numDims=3 --commDims=4,1,1"
   STANDARD_PASS_OUTPUT
   )
