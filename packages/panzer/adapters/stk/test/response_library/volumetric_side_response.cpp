@@ -89,8 +89,8 @@ namespace panzer_stk {
   void testInitialzation(const Teuchos::RCP<Teuchos::ParameterList>& ipb,
 			 std::vector<panzer::BC>& bcs);
 
-  RCP<panzer_stk::STK_Interface> buildMesh(bool flag=false);
-  void buildPhysicsBlocks(panzer_stk::STK_Interface & mesh,
+  RCP<panzer_stk_classic::STK_Interface> buildMesh(bool flag=false);
+  void buildPhysicsBlocks(panzer_stk_classic::STK_Interface & mesh,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                           panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           Teuchos::ParameterList & closure_models,
@@ -122,10 +122,10 @@ namespace panzer_stk {
     Teuchos::ParameterList closure_models("Closure Models");
     Teuchos::ParameterList user_data("User Data");
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(); 
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(); 
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
@@ -198,10 +198,10 @@ namespace panzer_stk {
     Teuchos::ParameterList closure_models("Closure Models");
     Teuchos::ParameterList user_data("User Data");
 
-    Teuchos::RCP<panzer_stk::STK_Interface> mesh = buildMesh(true); 
+    Teuchos::RCP<panzer_stk_classic::STK_Interface> mesh = buildMesh(true); 
 
-    RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
 
     buildPhysicsBlocks(*mesh,physics_blocks,cm_factory,closure_models,user_data);
 
@@ -412,7 +412,7 @@ namespace panzer_stk {
     }
   }
 
-  RCP<panzer_stk::STK_Interface> buildMesh(bool flag)
+  RCP<panzer_stk_classic::STK_Interface> buildMesh(bool flag)
   {
     using Teuchos::RCP;
 
@@ -422,11 +422,11 @@ namespace panzer_stk {
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
   #endif
 
-    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk::STK_Interface> mesh; 
+    RCP<panzer_stk_classic::STK_Interface> mesh; 
     if(!flag) {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Blocks",2);
@@ -451,7 +451,7 @@ namespace panzer_stk {
     return mesh;
   }
 
-  void buildPhysicsBlocks(panzer_stk::STK_Interface & mesh,
+  void buildPhysicsBlocks(panzer_stk_classic::STK_Interface & mesh,
                           std::vector<Teuchos::RCP<panzer::PhysicsBlock> > & physics_blocks,
                           panzer::ClosureModelFactory_TemplateManager<panzer::Traits> & cm_factory,
                           Teuchos::ParameterList & closure_models,
@@ -506,7 +506,7 @@ namespace panzer_stk {
      Teuchos::RCP<Teuchos::Comm<int> > tcomm = Teuchos::rcp(new Teuchos::SerialComm<int>);
   #endif
 
-    panzer_stk::SquareQuadMeshFactory mesh_factory;
+    panzer_stk_classic::SquareQuadMeshFactory mesh_factory;
     Teuchos::RCP<user_app::MyFactory> eqset_factory = Teuchos::rcp(new user_app::MyFactory);
     user_app::BCFactory bc_factory;
     const std::size_t workset_size = 3;
@@ -515,7 +515,7 @@ namespace panzer_stk {
 
     // setup mesh
     /////////////////////////////////////////////
-    RCP<panzer_stk::STK_Interface> mesh;
+    RCP<panzer_stk_classic::STK_Interface> mesh;
     {
        RCP<Teuchos::ParameterList> pl = rcp(new Teuchos::ParameterList);
        pl->set("X Procs",1);
@@ -565,15 +565,15 @@ namespace panzer_stk {
      mesh->getElementBlockNames(validEBlocks);
 
     // build WorksetContainer
-    Teuchos::RCP<panzer_stk::WorksetFactory> wkstFactory 
-       = Teuchos::rcp(new panzer_stk::WorksetFactory(mesh)); // build STK workset factory
+    Teuchos::RCP<panzer_stk_classic::WorksetFactory> wkstFactory 
+       = Teuchos::rcp(new panzer_stk_classic::WorksetFactory(mesh)); // build STK workset factory
     Teuchos::RCP<panzer::WorksetContainer> wkstContainer     // attach it to a workset container (uses lazy evaluation)
        = Teuchos::rcp(new panzer::WorksetContainer(wkstFactory,physics_blocks,workset_size));
  
     // setup DOF manager
     /////////////////////////////////////////////
     const Teuchos::RCP<panzer::ConnManager<int,int> > conn_manager 
-           = Teuchos::rcp(new panzer_stk::STKConnManager<int>(mesh));
+           = Teuchos::rcp(new panzer_stk_classic::STKConnManager<int>(mesh));
 
     Teuchos::RCP<const panzer::UniqueGlobalIndexerFactory<int,int,int,int> > indexerFactory
           = Teuchos::rcp(new panzer::DOFManagerFactory<int,int>);

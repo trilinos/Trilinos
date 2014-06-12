@@ -22,9 +22,9 @@ def make_colormap(seq):
     return mcolors.LinearSegmentedColormap.from_list('CustomMap', seq, N=len(seq))
 
 def main():
-  N = 9
+  N = 17
   V = 'v'
-  interactive = True
+  interactive = False
 
   if V == 'v':
     N = 2*N-1
@@ -38,8 +38,8 @@ def main():
 
   area = 90
 
-  c = mcolors.ColorConverter().to_rgb
-  cvals = [c('k'), c('y'), c('b'), c('r'), c('m')]
+  cc = mcolors.ColorConverter().to_rgb
+  cvals = [cc('w'), cc('y'), cc('b'), cc('m'), cc('r'), cc('c')]
   q2q1 = make_colormap(cvals)
 
   min_color = 0
@@ -47,12 +47,13 @@ def main():
 
   for file in sort_nicely(glob.glob("status-" + V + "-*" + ("" if V == 'p' else ".1"))):
     colors = np.loadtxt(file)
+    assert len(colors) == N*N
 
     if V == 'v':
       plt.subplot(121)
 
     s = plt.scatter(x, y, c=colors, vmin=min_color, vmax=max_color, s=area, cmap=q2q1)
-    # s.set_alpha(0.75)
+    s.set_alpha(0.75)
     plt.title(file)
 
     if V == 'v':
@@ -62,7 +63,7 @@ def main():
       plt.subplot(122)
 
       s = plt.scatter(x, y, c=colors2, vmin=min_color, vmax=max_color, s=area, cmap=q2q1)
-      # s.set_alpha(0.75)
+      s.set_alpha(0.75)
 
       plt.title(file2)
 

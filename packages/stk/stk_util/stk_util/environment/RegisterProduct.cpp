@@ -7,9 +7,10 @@
  *    ------------------------------------------------------------
  */
 
+#include <stk_util/environment/RegisterProduct.hpp>
+#include <map>                          // for map<>::mapped_type
 #include <stk_util/environment/ProductRegistry.hpp>
 
-#include <stk_util/environment/RegisterProduct.hpp>
 
 namespace sierra {
 
@@ -23,10 +24,10 @@ void
 register_product()
 {
   // Register utility
-  ProductRegistry::AttributeMap &attr_map = ProductRegistry::instance().addProduct(get_product_name());
-  attr_map[ProductRegistry::VERSION]      = ProductRegistry::version();
-  attr_map[ProductRegistry::TITLE] = "Utility library routines";
-  attr_map[ProductRegistry::CONTACT] = "framework-developers@sourceforge.sandia.gov";
+  stk::ProductRegistry::AttributeMap &attr_map = stk::ProductRegistry::instance().addProduct(get_product_name());
+  attr_map[stk::ProductRegistry::VERSION]      = stk::ProductRegistry::version();
+  attr_map[stk::ProductRegistry::TITLE] = "Utility library routines";
+  attr_map[stk::ProductRegistry::CONTACT] = "framework-developers@sourceforge.sandia.gov";
 
   // Register TPL's and other things which may not be properly registered but used directly.
 

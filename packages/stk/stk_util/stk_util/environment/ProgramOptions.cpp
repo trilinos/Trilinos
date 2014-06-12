@@ -7,6 +7,8 @@
 /*------------------------------------------------------------------------*/
 
 #include <stk_util/environment/ProgramOptions.hpp>
+#include "boost/program_options/options_description.hpp"
+#include "boost/program_options/variables_map.hpp"  // for variables_map
 
 namespace stk {
 

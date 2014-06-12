@@ -13,7 +13,13 @@
 #include <vector>
 #include <cstddef>
 
-#include <stk_util/parallel/Parallel.hpp>
+#include <stk_util/stk_config.h>
+
+#if defined( STK_HAS_MPI )
+#include <mpi.h>
+#else
+#define MPI_Comm int
+#endif
 
 namespace stk {
 
@@ -134,7 +140,7 @@ struct MessageCode
    *
    */
   MessageCode(size_t throttle_cutoff = 5, int throttle_group = MSG_APPLICATION)
-    : m_id(&m_id - (MessageId *) 0),
+    : m_id(&m_id - static_cast<MessageId *>(0)),
       m_throttle(throttle_cutoff, throttle_group)
   {}
 
@@ -239,7 +245,6 @@ void reset_throttle_group(int throttle_group);
  *
  * @param message_code		a <b>MessageCode</b> ...
  *
- * @return			an <b>unsigned int</b> ...
  */
 void report_message(const char *message, unsigned message_type, const MessageCode &message_code);
 
@@ -270,7 +275,7 @@ void add_deferred_message(int message_type, MessageId message_id, size_t throttl
  * @param comm			a <b>ParallelMachine</b> communicator.
  *
  */
-void report_deferred_messages(ParallelMachine comm);
+void report_deferred_messages(MPI_Comm comm);
 
 /**
  * @brief Function <b>aggregate_messages</b> writes a message message to the output string by
@@ -285,7 +290,7 @@ void report_deferred_messages(ParallelMachine comm);
  * @param separator		a <b>char</b> const pointer to the separation string.
  *
  */
-void aggregate_messages(ParallelMachine comm, std::ostringstream &os, const char *separator = ", ");
+void aggregate_messages(MPI_Comm comm, std::ostringstream &os, const char *separator = ", ");
 
 /**
  * @brief Function <b>operator<<</b> writes the message type name to the output stream.  If the

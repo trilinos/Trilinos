@@ -45,7 +45,7 @@ ADD_TEST(Install_Trilinos ${PYTHON_EXE}
   "--no-dashboard"
   "--working-dir=${INSTALLATION_WORKING_DIR}"
   "--install-dir=${INSTALLATION_DIR}"
-  "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.49.0"
+  "--boost-dir=/home/trilinos/tpl/gcc4.1.2/boost-1.55.0"
   "--netcdf-dir=/home/trilinos/tpl/gcc4.1.2/pnetcdf_4.2"
   "--verbose-errors"
   "-j ${CTEST_PARALLEL_LEVEL}"

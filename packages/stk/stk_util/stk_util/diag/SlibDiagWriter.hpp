@@ -1,11 +1,8 @@
 #ifndef STK_UTIL_DIAG_SlibDiagWriter_h
 #define STK_UTIL_DIAG_SlibDiagWriter_h
 
-#include <stk_util/diag/Trace.hpp>
-#include <stk_util/diag/Writer.hpp>
-#include <stk_util/diag/WriterParser.hpp>
-
-#include <stk_util/diag/Writer_fwd.hpp>
+#include <stk_util/environment/Trace.hpp>      // for Trace, Traceback, Tracespec
+#include <stk_util/util/Writer.hpp>     // for dendl, pop, push
 
 namespace sierra {
 namespace Slib {

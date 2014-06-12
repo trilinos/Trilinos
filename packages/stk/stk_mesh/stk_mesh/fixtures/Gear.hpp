@@ -9,23 +9,23 @@
 #ifndef STK_MESH_FIXTURES_GEAR_HPP
 #define STK_MESH_FIXTURES_GEAR_HPP
 
-#include <vector>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Field.hpp>
+#include <stddef.h>                     // for size_t
+#include <stk_mesh/base/CoordinateSystems.hpp>  // for Cartesian
+#include <stk_mesh/base/Field.hpp>      // for Field
+#include <stk_mesh/base/Types.hpp>      // for EntityId, EntityVector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/FieldState.hpp"  // for FieldState
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { class MetaData; } }
+namespace stk { namespace mesh { class Part; } }
 
-#include <stk_mesh/fem/FEMMetaData.hpp>
-#include <stk_mesh/fem/CoordinateSystems.hpp>
-#include <stk_mesh/fem/TopologyDimensions.hpp>
 
 namespace {
 
 const double PI     = 3.14159265358979;
 const double TWO_PI = 2 * PI;
 
-} // namespace 
-
+} // namespace
 
 namespace stk {
 namespace mesh {
@@ -64,7 +64,7 @@ class Gear {
 
  public:
   Gear(
-       fem::FEMMetaData & meta,
+       MetaData & meta,
        BulkData & bulk,
        Part & gear,
        Part & cylindrical_coord,
@@ -96,8 +96,8 @@ class Gear {
   const size_t num_elements;
   const size_t num_nodes;
 
-  fem::FEMMetaData & meta_data;
-  BulkData         & bulk_data;
+  MetaData & meta_data;
+  BulkData & bulk_data;
 
   Part & gear_part;
 
@@ -106,22 +106,21 @@ class Gear {
 
   void move( const GearMovement & data );
 
- private:
 
-  Entity & get_node (
+  Entity get_node (
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return * gear_entities[ node_index(iz,ir,ia)];
+    return gear_entities[ node_index(iz,ir,ia)];
   }
 
-    Entity & get_element(
+    Entity get_element(
         size_t iz ,       // Thickness index
         size_t ir ,       // Radial index
         size_t ia ) const // Angle index
   {
-    return * gear_entities[ elem_index(iz,ir,ia)];
+    return gear_entities[ elem_index(iz,ir,ia)];
   }
 
     EntityId node_index(
@@ -151,6 +150,7 @@ class Gear {
   CartesianField    & translation_field ;
   CylindricalField  & cylindrical_coord_field ;
 
+ private:
   EntityVector gear_entities;
 
   Gear(const Gear &);

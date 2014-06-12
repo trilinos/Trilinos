@@ -2420,7 +2420,7 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
       Nghost = AAA->getrow->pre_comm->total_rcv_length;
     }
 
-    tmp = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+    tmp = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
     for (i = 0 ; i < Nghost + n ; ++i)
       tmp[i] = 0.0;
 
@@ -2430,7 +2430,7 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
     if (in_x_coord)
     {
       NumDimensions++;
-      x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      x_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_x_coord[i];
@@ -2447,7 +2447,7 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
     if (in_y_coord)
     {
       NumDimensions++;
-      y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      y_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_y_coord[i];
@@ -2464,7 +2464,7 @@ int ML_SetupCoordinates(ML *ml_ptr, int level, int NumPDEEqns,
     if (in_z_coord)
     {
       NumDimensions++;
-      z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n));
+      z_coord = (double *) ML_allocate(sizeof(double) * (Nghost+n+1));
 
       for (i = 0 ; i < n ; ++i)
         tmp[i * NumPDEEqns] = in_z_coord[i];

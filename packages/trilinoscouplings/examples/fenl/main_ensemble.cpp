@@ -139,9 +139,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
         qp_begin+VectorSize : num_quad_points;
 
       // Set random variables
-      for (int i=0; i<dim; ++i)
-        for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
+      for (int qp=qp_begin, j=0; qp<qp_end; ++qp, ++j)
+        for (int i=0; i<dim; ++i)
           hrv(i).fastAccessCoeff(j) = quad_points[qp][i];
+      if (qp_end - qp_begin < VectorSize)
+        for (int j=qp_end-qp_begin; j<VectorSize; ++j)
+          for (int i=0; i<dim; ++i)
+            hrv(i).fastAccessCoeff(j) = quad_points[qp_end-1][i];
       Kokkos::deep_copy( rv, hrv );
 
       // Evaluate response on qp block
@@ -242,7 +246,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   perf_total.response_mean = response_pce.mean();
   perf_total.response_std_dev = response_pce.standard_deviation();
 
-  if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf_total ); }
+  if ( 0 == comm_rank ) {
+    print_perf_value( std::cout , cmd , widths , perf_total );
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

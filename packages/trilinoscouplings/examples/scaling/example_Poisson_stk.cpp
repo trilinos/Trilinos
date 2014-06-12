@@ -369,38 +369,38 @@ int main(int argc, char *argv[]) {
     Ioss::Init::Initializer io;
 
    // define meta data
-    stk::mesh::fem::FEMMetaData femMetaData(spaceDim);
-    stk::mesh::MetaData &metaData = stk::mesh::fem::FEMMetaData::get_meta_data(femMetaData);
+    stk_classic::mesh::fem::FEMMetaData femMetaData(spaceDim);
+    stk_classic::mesh::MetaData &metaData = stk_classic::mesh::fem::FEMMetaData::get_meta_data(femMetaData);
 
    // read in mesh from file
-    stk::io::MeshData meshData;
-    stk::io::create_input_mesh("exodusii",argv[1],MPI_COMM_WORLD,femMetaData,meshData);
+    stk_classic::io::MeshData meshData;
+    stk_classic::io::create_input_mesh("exodusii",argv[1],MPI_COMM_WORLD,femMetaData,meshData);
 
    // commit meta data
     femMetaData.commit();
 
    // populate mesh entities (nodes, elements, etc.)
-    stk::mesh::BulkData  bulkData(metaData,MPI_COMM_WORLD);
-    stk::io::populate_bulk_data(bulkData, meshData);
+    stk_classic::mesh::BulkData  bulkData(metaData,MPI_COMM_WORLD);
+    stk_classic::io::populate_bulk_data(bulkData, meshData);
 
   /*  Not necessary for Poisson problem
    // create adjacent entities
-     stk::mesh::PartVector empty_add_parts;
-     stk::mesh::create_adjacent_entities(bulkData, empty_add_parts);
+     stk_classic::mesh::PartVector empty_add_parts;
+     stk_classic::mesh::create_adjacent_entities(bulkData, empty_add_parts);
   */
 
    // get entity ranks
-    const stk::mesh::EntityRank elementRank = femMetaData.element_rank();
-    const stk::mesh::EntityRank nodeRank    = femMetaData.node_rank();
+    const stk_classic::mesh::EntityRank elementRank = femMetaData.element_rank();
+    const stk_classic::mesh::EntityRank nodeRank    = femMetaData.node_rank();
 
    // get nodes
-    std::vector<stk::mesh::Entity*> nodes;
-    stk::mesh::get_entities(bulkData, nodeRank, nodes);
+    std::vector<stk_classic::mesh::Entity*> nodes;
+    stk_classic::mesh::get_entities(bulkData, nodeRank, nodes);
     int numNodes = nodes.size();
 
    // get elems
-    std::vector<stk::mesh::Entity*> elems;
-    stk::mesh::get_entities(bulkData, elementRank, elems);
+    std::vector<stk_classic::mesh::Entity*> elems;
+    stk_classic::mesh::get_entities(bulkData, elementRank, elems);
     int numElems = elems.size();
 
     if (MyPID == 0) {
@@ -409,26 +409,26 @@ int main(int argc, char *argv[]) {
     }
 
    // get coordinates field
-    stk::mesh::Field<double, stk::mesh::Cartesian> *coords =
-       femMetaData.get_field<stk::mesh::Field<double, stk::mesh::Cartesian> >("coordinates");
+    stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> *coords =
+       femMetaData.get_field<stk_classic::mesh::Field<double, stk_classic::mesh::Cartesian> >("coordinates");
 
    // get buckets containing entities of node rank
-    const std::vector<stk::mesh::Bucket*> & nodeBuckets = bulkData.buckets( nodeRank );
-    std::vector<stk::mesh::Entity*> bcNodes;
+    const std::vector<stk_classic::mesh::Bucket*> & nodeBuckets = bulkData.buckets( nodeRank );
+    std::vector<stk_classic::mesh::Entity*> bcNodes;
 
    // loop over all mesh parts
-    const stk::mesh::PartVector & all_parts = femMetaData.get_parts();
-    for (stk::mesh::PartVector::const_iterator i  = all_parts.begin();
+    const stk_classic::mesh::PartVector & all_parts = femMetaData.get_parts();
+    for (stk_classic::mesh::PartVector::const_iterator i  = all_parts.begin();
                                                 i != all_parts.end(); ++i) {
 
-         stk::mesh::Part & part = **i ;
+         stk_classic::mesh::Part & part = **i ;
 
         // if part only contains nodes, then it is a node set
         //   ! this assumes that the only node set defined is the set
         //   ! of boundary nodes
          if (part.primary_entity_rank() == nodeRank) {
-            stk::mesh::Selector bcNodeSelector(part);
-            stk::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
+            stk_classic::mesh::Selector bcNodeSelector(part);
+            stk_classic::mesh::get_selected_entities(bcNodeSelector, nodeBuckets, bcNodes);
          }
 
     } // end loop over mesh parts
@@ -454,11 +454,11 @@ int main(int argc, char *argv[]) {
    // containing elements with a different topology).
 
    // get the part labeled block_1
-    stk::mesh::Part* const part = femMetaData.get_part("block_1");
+    stk_classic::mesh::Part* const part = femMetaData.get_part("block_1");
 
    // get the topology of this part
-   //  (stk::mesh::fem::CellTopology is shards::CellTopology)
-    stk::mesh::fem::CellTopology cellType = femMetaData.get_cell_topology( *part );
+   //  (stk_classic::mesh::fem::CellTopology is shards::CellTopology)
+    stk_classic::mesh::fem::CellTopology cellType = femMetaData.get_cell_topology( *part );
 
    // Get dimensions
     int numNodesPerElem = cellType.getNodeCount();
@@ -542,7 +542,7 @@ int main(int argc, char *argv[]) {
      for (size_t j = 0; j < elems.size(); j++) {
 
        // get nodes attached to this element
-        const stk::mesh::PairIterRelation elem_nodes = elems[j]->relations(nodeRank);
+        const stk_classic::mesh::PairIterRelation elem_nodes = elems[j]->relations(nodeRank);
 
        // loop over nodes and fill element to node map
            // local ids
@@ -550,7 +550,7 @@ int main(int argc, char *argv[]) {
            //       node id: elem_nodes[i].entity()->identifier()-1
         for (size_t i = 0; i < elem_nodes.size(); i++) {
           elem2node[i][elems[j]->identifier()-1] = elem_nodes[i].entity()->identifier() - 1;
-          double * coord = stk::mesh::field_data(*coords, *elem_nodes[i].entity());
+          double * coord = stk_classic::mesh::field_data(*coords, *elem_nodes[i].entity());
           nCoord[0][elem_nodes[i].entity()->identifier()-1] = coord[0];
           nCoord[1][elem_nodes[i].entity()->identifier()-1] = coord[1];
           nCoord[2][elem_nodes[i].entity()->identifier()-1] = coord[2];
@@ -582,8 +582,8 @@ int main(int argc, char *argv[]) {
         bcNodeVec[i] = bcNodeId;
 
         // get coordinates for this node
-        stk::mesh::Entity * bcnode = bulkData.get_entity(nodeRank,bcNodes[i]->identifier());
-        double * coord = stk::mesh::field_data(*coords, *bcnode);
+        stk_classic::mesh::Entity * bcnode = bulkData.get_entity(nodeRank,bcNodes[i]->identifier());
+        double * coord = stk_classic::mesh::field_data(*coords, *bcnode);
 
         // look up exact value of function on boundary
         double x  = coord[0];
@@ -634,14 +634,14 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Get element entity from id of cell
-           stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
+           stk_classic::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
           // get nodes attached to this element
-           const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
+           const stk_classic::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
 
           // loop over nodes and get coordinates to fill workset array
            for (size_t i = 0; i < worksetNodes.size(); i++) {
-               double * coord = stk::mesh::field_data(*coords, *worksetNodes[i].entity());
+               double * coord = stk_classic::mesh::field_data(*coords, *worksetNodes[i].entity());
                cellWorkset(cellCounter, i, 0) = coord[0];
                cellWorkset(cellCounter, i, 1) = coord[1];
                cellWorkset(cellCounter, i, 2) = coord[2];
@@ -775,10 +775,10 @@ int main(int argc, char *argv[]) {
          int worksetCellOrdinal = cell - worksetBegin;
 
         // Get element entity from id of cell
-         stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
+         stk_classic::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
          // get nodes attached to this element
-          const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
+          const stk_classic::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
 
          // "CELL EQUATION" loop for the workset cell: cellRow is relative to the cell DoF numbering
           for (int cellRow = 0; cellRow < numFieldsG; cellRow++){
@@ -861,8 +861,8 @@ int main(int argc, char *argv[]) {
         int nodeId = nodes[inode]->identifier() - 1;
 
         // get coordinates for this node
-        stk::mesh::Entity * currentNode = bulkData.get_entity(nodeRank,nodes[inode]->identifier());
-        double * coord = stk::mesh::field_data(*coords, *currentNode);
+        stk_classic::mesh::Entity * currentNode = bulkData.get_entity(nodeRank,nodes[inode]->identifier());
+        double * coord = stk_classic::mesh::field_data(*coords, *currentNode);
 
         // look up exact value of function
         double x  = coord[0];
@@ -949,14 +949,14 @@ int main(int argc, char *argv[]) {
         for(int cell = worksetBegin; cell < worksetEnd; cell++){
 
           // Get element entity from id of cell
-           stk::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
+           stk_classic::mesh::Entity * worksetElem = bulkData.get_entity(elementRank,cell+1);
 
           // get nodes attached to this element
-           const stk::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
+           const stk_classic::mesh::PairIterRelation worksetNodes = worksetElem->relations(nodeRank);
 
           // loop over nodes and get coordinates to fill workset array
            for (size_t i = 0; i < worksetNodes.size(); i++) {
-               double * coord = stk::mesh::field_data(*coords, *worksetNodes[i].entity());
+               double * coord = stk_classic::mesh::field_data(*coords, *worksetNodes[i].entity());
                cellWorksetEr(cellCounter, i, 0) = coord[0];
                cellWorksetEr(cellCounter, i, 1) = coord[1];
                cellWorksetEr(cellCounter, i, 2) = coord[2];

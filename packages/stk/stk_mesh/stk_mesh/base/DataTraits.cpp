@@ -7,14 +7,13 @@
 /*------------------------------------------------------------------------*/
 
 
-#include <cstddef>
-#include <stdexcept>
-
-#include <stk_util/environment/ReportHandler.hpp>
-
 #include <stk_mesh/base/DataTraits.hpp>
-#include <stk_mesh/base/DataTraitsEnum.hpp>
-#include <stk_mesh/base/DataTraitsClass.hpp>
+#include <cstddef>                      // for size_t, NULL
+#include <ostream>                      // for operator<<, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowErrorMsg
+#include <stk_util/parallel/ParallelComm.hpp>
+
+
 
 namespace stk {
 namespace mesh {
@@ -271,7 +270,7 @@ public:
 template< typename T >
 class DataTraitsIntegral : public DataTraitsNumeric<T> {
 public:
-  DataTraitsIntegral( const char * name ) : DataTraitsNumeric<T>( name ) {}
+  DataTraitsIntegral( const char * name_ ) : DataTraitsNumeric<T>( name_ ) {}
 
   virtual void bit_and( void * vx , const void * vy , std::size_t n ) const
   {
@@ -360,6 +359,8 @@ DATA_TRAITS_INTEGRAL( int )
 DATA_TRAITS_INTEGRAL( unsigned int )
 DATA_TRAITS_INTEGRAL( long )
 DATA_TRAITS_INTEGRAL( unsigned long )
+DATA_TRAITS_INTEGRAL( long long )
+DATA_TRAITS_INTEGRAL( unsigned long long )
 DATA_TRAITS_NUMERIC( float )
 DATA_TRAITS_NUMERIC( double )
 DATA_TRAITS_COMPLEX( std::complex<float> ) // TODO: Probably not right
@@ -440,7 +441,9 @@ DATA_TRAITS_POINTER( unsigned short )
 DATA_TRAITS_POINTER( int )
 DATA_TRAITS_POINTER( unsigned int )
 DATA_TRAITS_POINTER( long )
+DATA_TRAITS_POINTER( long long )
 DATA_TRAITS_POINTER( unsigned long )
+DATA_TRAITS_POINTER( unsigned long long )
 DATA_TRAITS_POINTER( float )
 DATA_TRAITS_POINTER( double )
 DATA_TRAITS_POINTER( void )

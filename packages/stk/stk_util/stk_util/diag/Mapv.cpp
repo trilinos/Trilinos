@@ -70,7 +70,7 @@ iterators invalidated are those referring to the deleted node.
 
 #include <stdexcept>
 #if defined(SIERRA_IA64_OPTIMIZER_WARN)
-#include <stk_util/diag/Env.hpp>
+#include <stk_util/environment/Env.hpp>
 #endif
 #include <string>
 

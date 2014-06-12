@@ -10,10 +10,13 @@
 #ifndef stk_mesh_Ghosting_hpp
 #define stk_mesh_Ghosting_hpp
 
-#include <vector>
-#include <string>
-#include <iosfwd>
-#include <stk_mesh/base/Types.hpp>
+#include <stddef.h>                     // for size_t
+#include <iosfwd>                       // for ostream
+#include <stk_mesh/base/Types.hpp>      // for EntityProc
+#include <string>                       // for string
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
+namespace stk { namespace mesh { struct EntityKey; } }
 
 namespace stk {
 namespace mesh {
@@ -51,7 +54,7 @@ public:
    *          This generated communication list for receiving updates
    *          is sorted by entity key.
    */
-  void receive_list( std::vector< Entity * > & ) const ;
+  void receive_list( std::vector<EntityKey> & ) const ;
 
   /** \brief  Print the details of this object for debugging
    */

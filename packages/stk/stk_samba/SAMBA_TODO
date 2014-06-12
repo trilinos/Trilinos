@@ -1,0 +1,37 @@
+Top priority:
+* Unit-test connectivity (tied to induced parts)
+* More unit-tests, esp fields
+* Much more-aggressive precondition, invariant, assumption checking around the code, esp mesh-impl
+  - Error-checking for use of stale proxies (use modification count)
+* Create rank index
+* Finish topology information (permutations etc)
+  * Add rank meta function, fix for particle, shells, etc
+  * Add spatial dim to entity_key / partition_index / rank index, 1-bit
+* Change spatial_dimension to an unsigned
+* Make a get_entities that takes a rank and a set_expression
+* Implement new field types that minimize jumps (Rank index field)
+* split block concept into 2: block, set
+* local-ids span over ranks, not topologies
+* get rid of field_state
+* rename process_id -> mpi_rank
+* Investigate: Add coordinate and exodus-id fields to mesh handle
+
+Medium priority:
+* Induced stencils
+* Nodal-based tet performance test
+* operator[](entity_block_key) to get back block properties?
+* operator[](set_expression) returns partition_range. Heavy iterators?
+* Lazy fields (tied to modification cycles)
+
+Low priority:
+* Row-storage based fields
+* Refinement performance test (modification-heavy)
+* Parallel domain design (tied to signal API)
+* Mesh writer
+* Doxygen for public API
+* Run static analyses on code
+* Examine signal API (tied to parallel domain design)
+
+JGF: These changes appeared to make things slower
+* Change partition_view to have an iterator instead of a vector pointer
+* Change partition_view to have a raw data_type pointer instead of a vector pointer

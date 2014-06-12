@@ -6,13 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <iostream>
+#include <iostream>                     // for ostringstream, etc
+#include <stk_util/environment/CPUTime.hpp>  // for cpu_time
+#include <gtest/gtest.h>
 
-#include <stk_util/environment/CPUTime.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
+TEST(UnitTestCPUTime, testUnit)
 {
   std::ostringstream oss;
   
@@ -28,5 +28,5 @@ STKUNIT_UNIT_TEST(UnitTestCPUTime, testUnit)
   
   double cpu_delta = stk::cpu_time() - cpu_now;
   
-  STKUNIT_ASSERT(cpu_delta >= 0.0 && cpu_delta <= 1.0);
+  ASSERT_TRUE(cpu_delta >= 0.0 && cpu_delta <= 1.0);
 }

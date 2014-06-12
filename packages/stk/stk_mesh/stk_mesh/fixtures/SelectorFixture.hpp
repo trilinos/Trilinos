@@ -9,9 +9,13 @@
 #ifndef stk_mesh_fixture_SelectorFixture_hpp
 #define stk_mesh_fixture_SelectorFixture_hpp
 
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_mesh/base/Types.hpp>      // for PartVector
+#include <vector>                       // for vector
+#include "stk_mesh/base/Entity.hpp"     // for Entity
+#include "stk_mesh/base/Field.hpp"      // for Field
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
@@ -60,11 +64,11 @@ class SelectorFixture {
   stk::mesh::Part & m_partC ;
   stk::mesh::Part & m_partD ;
 
-  stk::mesh::Entity * m_entity1 ;
-  stk::mesh::Entity * m_entity2 ;
-  stk::mesh::Entity * m_entity3 ;
-  stk::mesh::Entity * m_entity4 ;
-  stk::mesh::Entity * m_entity5 ;
+  stk::mesh::Entity m_entity1 ;
+  stk::mesh::Entity m_entity2 ;
+  stk::mesh::Entity m_entity3 ;
+  stk::mesh::Entity m_entity4 ;
+  stk::mesh::Entity m_entity5 ;
 
   stk::mesh::Field<double>& m_fieldA;
   stk::mesh::Field<double>& m_fieldABC;
@@ -85,7 +89,7 @@ class VariableSelectorFixture {
   stk::mesh::BulkData m_BulkData ;
 
   stk::mesh::PartVector m_declared_part_vector;
-  std::vector<stk::mesh::Entity*> m_entities ;
+  std::vector<stk::mesh::Entity> m_entities ;
 
  private:
   VariableSelectorFixture( const VariableSelectorFixture & );

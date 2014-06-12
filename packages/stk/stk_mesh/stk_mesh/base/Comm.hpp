@@ -9,14 +9,16 @@
 #ifndef stk_mesh_Comm_hpp
 #define stk_mesh_Comm_hpp
 
-#include <vector>
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
+#include <stddef.h>                     // for size_t
+#include <vector>                       // for vector
+namespace stk { namespace mesh { class BulkData; } }
 
 //----------------------------------------------------------------------
 
 namespace stk {
 namespace mesh {
+
+class Selector;
 
 //----------------------------------------------------------------------
 /** \addtogroup stk_mesh_bulk_data_parallel
@@ -24,9 +26,15 @@ namespace mesh {
  */
 
 /** \brief Global counts for a mesh's entities. */
-bool comm_mesh_counts( BulkData & ,
+void comm_mesh_counts( const BulkData &bulk_data ,
                        std::vector<size_t> & counts ,
-                       bool = false );
+                       const Selector *select = 0);
+
+void comm_mesh_counts( const BulkData & M ,
+                       std::vector<size_t> & counts,
+                       std::vector<size_t> & min_counts,
+                       std::vector<size_t> & max_counts,
+                       const Selector *selector = 0);
 
 //----------------------------------------------------------------------
 

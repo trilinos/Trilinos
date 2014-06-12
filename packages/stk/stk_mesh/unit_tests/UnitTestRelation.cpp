@@ -6,30 +6,33 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <sstream>
-#include <stdexcept>
-#include <iostream>
-
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
-
-#include <stk_util/parallel/Parallel.hpp>
-
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/base/GetEntities.hpp>
-#include <stk_mesh/base/Field.hpp>
-#include <stk_mesh/base/FieldData.hpp>
-#include <stk_mesh/base/Comm.hpp>
-#include <stk_mesh/base/EntityComm.hpp>
-#include <stk_mesh/base/Ghosting.hpp>
-
-#include <stk_mesh/fem/FEMMetaData.hpp>
-
-#include <stk_mesh/fixtures/BoxFixture.hpp>
-#include <stk_mesh/fixtures/RingFixture.hpp>
-
+#include <stdexcept>                    // for runtime_error
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData, entity_rank_names
+#include <stk_mesh/fixtures/HexFixture.hpp>  // for HexFixture
+#include <stk_mesh/fixtures/RingFixture.hpp>  // for RingFixture
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine, etc
+#include <gtest/gtest.h>
+#include <string>                       // for string
 #include <unit_tests/UnitTestModificationEndWrapper.hpp>
+#include <vector>                       // for vector, vector<>::iterator
+#include "mpi.h"                        // for MPI_COMM_WORLD, etc
+#include "stk_mesh/base/Bucket.hpp"     // for Bucket
+#include "stk_mesh/base/Entity.hpp"     // for Entity, operator<<
+#include "stk_mesh/base/Types.hpp"      // for ConnectivityOrdinal, etc
+#include "stk_topology/topology.hpp"    // for topology, etc
+namespace stk { namespace mesh { class Ghosting; } }
+namespace stk { namespace mesh { class Part; } }
+namespace stk { namespace mesh { class Relation; } }
+namespace stk { namespace mesh { class Selector; } }
+namespace stk { namespace mesh { namespace fixtures { class BoxFixture; } } }
 
-#include <Shards_BasicTopologies.hpp>
+
+
+
+
+
+
 
 using stk::mesh::Entity;
 using stk::mesh::EntityRank;
@@ -38,235 +41,135 @@ using stk::mesh::Part;
 using stk::mesh::Relation;
 using stk::mesh::Selector;
 using stk::mesh::EntityId;
-using stk::mesh::fem::FEMMetaData;
+using stk::mesh::MetaData;
 using stk::mesh::BulkData;
 using stk::mesh::Ghosting;
 using stk::mesh::fixtures::BoxFixture;
+using stk::mesh::fixtures::HexFixture;
 using stk::mesh::fixtures::RingFixture;
 
 namespace {
 
-const EntityRank NODE_RANK = FEMMetaData::NODE_RANK;
+const EntityRank NODE_RANK = stk::topology::NODE_RANK;
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelation)
+TEST(UnitTestingOfRelation, testRelationCoverage)
 {
-  (void)test_info_;
-  // Unit test the Part functionality in isolation:
+  // Test some relation error cases
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
   MPI_Barrier ( MPI_COMM_WORLD );
 
-  typedef stk::mesh::Field<double>  ScalarFieldType;
- // static const char method[] = "stk::mesh::UnitTestRelation" ;
+  // Just use any random fixture for convenience
+  HexFixture fixture(pm, 3 /*x*/, 3 /*y*/, 3 /*z*/);
+  MetaData& meta  = fixture.m_meta;
+  BulkData& bulk  = fixture.m_bulk_data;
 
-  std::vector<std::string> entity_names(10);
-  for ( size_t i = 0 ; i < 10 ; ++i ) {
-    std::ostringstream name ;
-    name << "EntityRank" << i ;
-    entity_names[i] = name.str();
-  }
-
-  unsigned max_bucket_size = 4;
-
-  BoxFixture fixture1(pm , max_bucket_size, entity_names),
-             fixture2(pm , max_bucket_size, entity_names);
-
-  FEMMetaData& meta  = fixture1.fem_meta();
-  FEMMetaData& meta2 = fixture2.fem_meta();
-  const int spatial_dimension = 3;
-  const EntityRank element_rank = meta.element_rank();
-
-  BulkData& bulk  = fixture1.bulk_data();
-  BulkData& bulk2 = fixture2.bulk_data();
-
-  ScalarFieldType & temperature =
-    meta.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  ScalarFieldType & volume =
-    meta.declare_field < ScalarFieldType > ( "volume" , 4 );
-  ScalarFieldType & temperature2 =
-    meta2.declare_field < ScalarFieldType > ( "temperature" , 4 );
-  ScalarFieldType & volume2 =
-    meta2.declare_field < ScalarFieldType > ( "volume" , 4 );
-
-  Part & universal  = meta.universal_part ();
-  Part & universal2 = meta2.universal_part ();
-  Part & owned      = meta.locally_owned_part ();
-
-  stk::mesh::put_field ( temperature , NODE_RANK , universal );
-  stk::mesh::put_field ( volume , element_rank  , universal );
   meta.commit();
-  stk::mesh::put_field ( temperature2 , NODE_RANK , universal2 );
-  stk::mesh::put_field ( volume2 , element_rank  , universal2 );
 
-  meta2.commit();
+  fixture.generate_mesh();
+
+  Entity node0 = (*bulk.buckets(stk::topology::NODE_RANK)[0])[0];
 
   bulk.modification_begin();
-  bulk2.modification_begin();
-
-  const int root_box[3][2] = { { 0,4 } , { 0,5 } , { 0,6 } };
-  int local_box1[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
-  int local_box2[3][2] = { { 0,0 } , { 0,0 } , { 0,0 } };
-
-  {
-    bulk.modification_begin();
-    fixture1.generate_boxes(root_box, local_box1);
-
-    const Ghosting & gg = bulk.create_ghosting( std::string("shared") );
-
-    // Test for coverage of comm_procs in EntityComm.cpp
-    EntityVector nodes;
-    stk::mesh::get_entities(bulk, NODE_RANK, nodes);
-    std::vector<unsigned> procs ;
-    STKUNIT_ASSERT(!nodes.empty());
-    stk::mesh::comm_procs( gg, *nodes.front() , procs );
-
-    STKUNIT_ASSERT(bulk.modification_end());
-
-    bulk.modification_begin();
-    bulk.destroy_all_ghosting();
-    STKUNIT_ASSERT(bulk.modification_end());
-  }
-
-  {
-    bulk2.modification_begin();
-    fixture2.generate_boxes(root_box, local_box2);
-
-    bulk2.create_ghosting( std::string("shared") );
-
-    STKUNIT_ASSERT(bulk2.modification_end());
-
-    bulk2.modification_begin();
-    bulk2.destroy_all_ghosting();
-    STKUNIT_ASSERT(bulk2.modification_end());
-  }
-
-  Entity &cell = *(bulk.buckets (3)[0]->begin());
-  Entity &node = bulk.buckets (0)[0]-> operator [] ( 0 );
-  Entity &nodeb = bulk.buckets (0)[0]-> operator [] ( 2 );
-
-  std::vector<Part *> parts;
-  parts.push_back ( &universal );
-  parts.push_back ( &owned );
-  bulk.modification_begin();
+  std::vector<Part*> empty_parts;
   stk::mesh::EntityId  new_id = bulk.parallel_rank() + 1;
-  Entity &edge = bulk.declare_entity ( 1 , new_id , parts );
+  Entity edge = bulk.declare_entity( stk::topology::EDGE_RANK , new_id , empty_parts );
 
-  Entity &cell2 = *(bulk2.buckets (3)[0]->begin());
-  Entity &node2 = *(bulk2.buckets (0)[0]->begin());
-
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( node , cell , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell , node2 , 0 ) , std::runtime_error );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( cell2 , node , 0 ) , std::runtime_error );
-
-  bulk.declare_relation ( edge , node , 1 );
-  STKUNIT_ASSERT_THROW ( bulk.declare_relation ( edge , nodeb , 1 ) , std::runtime_error );
-  bulk.declare_relation ( edge , nodeb , 2 );
-
-  std::stringstream s;
-  s << *edge.relations().first ;
+  // Cannot declare a back relation
+  ASSERT_THROW ( bulk.declare_relation ( node0 , edge , 0 /*rel ord*/) , std::runtime_error );
 
   bulk.modification_end();
+}
 
-  //Testing on in_send_ghost and in_shared in EntityComm.cpp
-  enum { nPerProc = 10 };
+TEST(UnitTestingOfRelation, testRelationNoGhosting)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
   const unsigned p_rank = stk::parallel_machine_rank( pm );
   const unsigned p_size = stk::parallel_machine_size( pm );
 
-  const unsigned nLocalEdge = nPerProc ;
-  FEMMetaData meta3( spatial_dimension );
+  const unsigned nPerProc = 10;
 
-  meta3.commit();
+  const bool aura_flag = false;
+  RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+  mesh.m_meta_data.commit();
 
-  Selector select_owned( meta3.locally_owned_part() );
-  Selector select_used = meta3.locally_owned_part() ;
-  Selector select_all(  meta3.universal_part() );
+  BulkData& ring_bulk = mesh.m_bulk_data;
 
-  stk::mesh::PartVector no_parts ;
+  ring_bulk.modification_begin();
+  mesh.generate_mesh( );
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
+                                                          aura_flag));
+  ring_bulk.modification_begin();
+  mesh.fixup_node_ownership( );
+  ASSERT_TRUE(stk::unit_test::modification_end_wrapper(ring_bulk,
+                                                          aura_flag));
 
-  std::vector<unsigned> local_count ;
+  // This process' first element in the loop
+  // if a parallel mesh has a shared node
 
-  //------------------------------
-  { // No ghosting
-    bool aura_flag = false;
-    RingFixture mesh2( pm , nPerProc , false /* No edge parts */ );
-    mesh2.m_meta_data.commit();
+  Entity elementnew = ring_bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
 
-    mesh2.m_bulk_data.modification_begin();
-    mesh2.generate_mesh( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
-                                                            aura_flag));
-    mesh2.m_bulk_data.modification_begin();
-    mesh2.fixup_node_ownership( );
-    STKUNIT_ASSERT(stk::unit_test::modification_end_wrapper(mesh2.m_bulk_data,
-                                                            aura_flag));
-
-    // This process' first element in the loop
-    // if a parallel mesh has a shared node
-
-    Entity * edgenew = mesh2.m_bulk_data.get_entity( 1 , mesh2.m_edge_ids[ nLocalEdge * p_rank ] );
-
-    mesh2.m_bulk_data.modification_begin();
-    for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      STKUNIT_ASSERT_EQUAL( in_shared( *edgenew , p ), false );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *edgenew , p ), false );
+  ring_bulk.modification_begin();
+  for ( unsigned p = 0 ; p < p_size ; ++p ) {
+    if ( p != p_rank ) {
+      ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(elementnew) , p ), false );
+      ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p ), false );
     }
-
-    Entity * edgenew2 = mesh2.m_bulk_data.get_entity( 1 , mesh2.m_edge_ids[ nLocalEdge * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( *edgenew2 , p_rank+100 ), false );
-
-    Entity * node3 = mesh2.m_bulk_data.get_entity( 0 , mesh2.m_node_ids[ nLocalEdge * p_rank ] );
-    STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p_rank+100 ), false );
   }
 
-  { //ghosting
+  elementnew = ring_bulk.get_entity( stk::topology::ELEMENT_RANK , mesh.m_element_ids[ nPerProc * p_rank ] );
+  ASSERT_EQ( ring_bulk.in_send_ghost( ring_bulk.entity_key(elementnew) , p_rank+100 ), false );
+
+  Entity node = ring_bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
+  ASSERT_EQ( ring_bulk.in_shared( ring_bulk.entity_key(node) , p_rank+100 ), false );
+}
+
+TEST(UnitTestingOfRelation, testRelationWithGhosting)
+{
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned p_rank = stk::parallel_machine_rank( pm );
+  const unsigned p_size = stk::parallel_machine_size( pm );
+
+  const unsigned nPerProc = 10;
 
   if ( 1 < p_size ) { // With ghosting
-    RingFixture mesh3( pm , nPerProc , false /* No edge parts */ );
-    mesh3.m_meta_data.commit();
+    RingFixture mesh( pm , nPerProc , false /* No element parts */ );
+    mesh.m_meta_data.commit();
+    BulkData& bulk = mesh.m_bulk_data;
 
-    mesh3.m_bulk_data.modification_begin();
-    mesh3.generate_mesh();
-    STKUNIT_ASSERT(mesh3.m_bulk_data.modification_end());
+    bulk.modification_begin();
+    mesh.generate_mesh();
+    ASSERT_TRUE(bulk.modification_end());
 
-    mesh3.m_bulk_data.modification_begin();
-    mesh3.fixup_node_ownership();
-    STKUNIT_ASSERT(mesh3.m_bulk_data.modification_end());
+    bulk.modification_begin();
+    mesh.fixup_node_ownership();
+    ASSERT_TRUE(bulk.modification_end());
 
     const unsigned nNotOwned = nPerProc * p_rank ;
 
     // The not-owned shared entity:
-    Entity * node3 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
-    Entity * node4 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nNotOwned ] );
+    Entity node = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nNotOwned ] );
 
-    //EntityId node_edge_ids[2] ;
-    //node_edge_ids[0] = node3->relations()[0].entity()->identifier();
-    //node_edge_ids[1] = node3->relations()[1].entity()->identifier();
+    bulk.modification_begin();
 
-    mesh3.m_bulk_data.modification_begin();
-
-    for ( unsigned p = 0 ; p < p_size ; ++p ) if ( p != p_rank ) {
-      //FIXME for Carol the check below did not pass for -np 3 or 4
-      //STKUNIT_ASSERT_EQUAL( in_shared( *node3 , p ), true );
-      STKUNIT_ASSERT_EQUAL( in_send_ghost( *node3 , p ), false );
+    for ( unsigned p = 0 ; p < p_size ; ++p ) {
+      if ( p != p_rank ) {
+        ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p ), false );
+      }
     }
 
     //not owned and not shared
-    Entity * node5 = mesh3.m_bulk_data.get_entity( 0 , mesh3.m_node_ids[ nLocalEdge * p_rank ] );
+    Entity node2 = bulk.get_entity( stk::topology::NODE_RANK , mesh.m_node_ids[ nPerProc * p_rank ] );
 
-    //node_edge_ids[0] = node5->relations()[0].entity()->identifier();
-    //node_edge_ids[1] = node5->relations()[1].entity()->identifier();
-
-    STKUNIT_ASSERT_EQUAL( in_shared( *node5 , p_rank+100 ), false );
-    STKUNIT_ASSERT_EQUAL( in_send_ghost( *node4 , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_shared( bulk.entity_key(node2) , p_rank+100 ), false );
+    ASSERT_EQ( bulk.in_send_ghost( bulk.entity_key(node) , p_rank+100 ), false );
   }
-
-  }
-
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
+TEST(UnitTestingOfRelation, testDegenerateRelation)
 {
-  (void)test_info_;
   // Test that, if you set up degenerate relations, only of the relations
   // is deleted when you destroy one of the degenerate relations.
   // BulkData::destroy_relation has been changed to take a relation-id so
@@ -280,9 +183,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create the entities and relations
@@ -292,11 +195,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = meta_data.element_rank();
-  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
+  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
 
   // Add degenerate relations
   const unsigned nodes_per_elem = 4;
@@ -305,30 +208,29 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDegenerateRelation)
   }
 
   // Elem should have nodes-per-elem relations
-  STKUNIT_ASSERT_EQUAL( nodes_per_elem, elem.relations().size() );
+  ASSERT_EQ( nodes_per_elem, static_cast<unsigned>(mesh.num_nodes(elem)) );
 
   // Destroy relation one-by-one, always checking that appropriate number
   // of relations remain.
   for (unsigned i = 0; i < nodes_per_elem; ++i) {
     mesh.destroy_relation( elem, node, i );
-    STKUNIT_ASSERT_EQUAL( nodes_per_elem - (i+1), elem.relations().size() );
+    ASSERT_EQ( nodes_per_elem - (i+1), static_cast<unsigned>(mesh.num_nodes(elem)) );
   }
 
   mesh.modification_end();
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
+TEST(UnitTestingOfRelation, testRelationAttribute)
 {
-  (void)test_info_;
   // Test relation attribute
 
   stk::ParallelMachine pm = MPI_COMM_WORLD;
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
 
   // Begin modification cycle so we can create the entities and relations
@@ -338,25 +240,153 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testRelationAttribute)
   stk::mesh::PartVector empty_parts;
 
   // Create element
-  const EntityRank entity_rank = meta_data.element_rank();
-  Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
+  const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
+  Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
   // Create node
-  Entity & node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
+  Entity node = mesh.declare_entity(NODE_RANK, p_rank+1 /*node_id*/, empty_parts);
 
   mesh.declare_relation( elem, node, 0 );
 
-  const Relation & my_relation = *(elem.relations(NODE_RANK).begin());
-  my_relation.set_attribute(6u);
-
-  STKUNIT_ASSERT_EQUAL( my_relation.attribute(), 6u);
+  //// Tests a deprecated feature?
+  ////
+  //  const Relation & my_relation = *(mesh.nodes(elem).begin());
+  //  my_relation.set_attribute(6u);
+  //
+  //  ASSERT_EQ( my_relation.attribute(), 6u);
 
   mesh.modification_end();
 }
 
-STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
+
+TEST(UnitTestingOfRelation, testRelationExtendedRanks)
 {
- (void)test_info_;
+  stk::ParallelMachine pm = MPI_COMM_WORLD;
+
+  const unsigned spatial_dim = 3;
+  const unsigned num_ext_ranks = 3;
+  const char * ext_rank_names[num_ext_ranks] = { "EXT_RANK_0", "EXT_RANK_1", "EXT_RANK_2" };
+  std::vector<std::string> entity_rank_names = stk::mesh::entity_rank_names();
+  for (unsigned i = 0; i < num_ext_ranks; ++i) {
+      entity_rank_names.push_back(ext_rank_names[i]);
+  }
+
+  MetaData meta_data(spatial_dim, entity_rank_names);
+  meta_data.commit();
+  BulkData mesh(meta_data, pm);
+
+  std::vector<EntityRank> ext_ranks;
+  for (unsigned i = 0;  i < num_ext_ranks; ++i) {
+    ext_ranks.push_back(meta_data.entity_rank(ext_rank_names[i]));
+  }
+
+  const unsigned p_rank = mesh.parallel_rank();
+  stk::mesh::PartVector empty_parts;
+  unsigned new_ent_id = (p_rank << 16) + 1;
+
+  // baseline
+  mesh.modification_begin();
+  Entity elem = mesh.declare_entity(stk::topology::ELEMENT_RANK, new_ent_id++, empty_parts);
+  Entity node = mesh.declare_entity(stk::topology::NODE_RANK, new_ent_id++, empty_parts);
+  mesh.declare_relation(elem, node, 0);
+  mesh.modification_end();
+
+  ASSERT_FALSE(mesh.num_connectivity(elem, ext_ranks[0]));
+
+  stk::mesh::ConnectivityOrdinal ord_count = static_cast<stk::mesh::ConnectivityOrdinal>(0);
+
+  // simplest test for get_others_offset_range(..) and other_entities_have_single_rank(..)
+  mesh.modification_begin();
+  Entity ere_0_0 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
+  Entity ere_0_1 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
+  mesh.declare_relation(ere_0_0, node, ++ord_count);
+  stk::mesh::ConnectivityOrdinal node_rel_to_destroy = ord_count;
+  mesh.declare_relation(ere_0_1, node, ++ord_count);
+  mesh.declare_relation(ere_0_0, elem, ++ord_count);
+  mesh.declare_relation(ere_0_1, elem, ++ord_count);
+  mesh.modification_end();
+  {
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[0]), 2u);
+  }
+
+  // add relations of a second extended rank
+  mesh.modification_begin();
+  Entity ere_1_0 = mesh.declare_entity(ext_ranks[1], new_ent_id++, empty_parts);
+  Entity ere_1_1 = mesh.declare_entity(ext_ranks[1], new_ent_id++, empty_parts);
+  mesh.declare_relation(ere_1_0, elem, ++ord_count);
+  stk::mesh::ConnectivityOrdinal elem_rel_to_destroy = ord_count;
+  mesh.declare_relation(ere_1_1, elem, ++ord_count);
+
+  mesh.modification_end();
+  {
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
+    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
+    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
+    EXPECT_EQ(beg_rank4s + 2u, beg_rank5s);
+    stk::mesh::ConnectivityOrdinal const * const rank5_ords = mesh.begin_ordinals(elem, ext_ranks[1]);
+    EXPECT_EQ(rank5_ords[1], ord_count);
+  }
+
+  // destroy relations of extended ranks
+  {
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 1u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 1u);
+
+    mesh.modification_begin();
+    mesh.destroy_relation(ere_0_0, node, node_rel_to_destroy);
+    mesh.destroy_relation(ere_1_0, elem, elem_rel_to_destroy);
+    mesh.modification_end();
+
+    EXPECT_EQ(mesh.num_connectivity(node, ext_ranks[0]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, stk::topology::NODE_RANK), 0u);
+    EXPECT_EQ(mesh.num_connectivity(elem, ext_ranks[1]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, stk::topology::ELEMENT_RANK), 0u);
+  }
+
+  // test out-of-order relation creation; test queries inside modification
+  mesh.modification_begin();
+  Entity ere_0_2 = mesh.declare_entity(ext_ranks[0], new_ent_id++, empty_parts);
+  mesh.declare_relation(ere_0_2, elem, ++ord_count);
+  {
+    stk::mesh::Entity const * const beg_rank4s = mesh.begin(elem, ext_ranks[0]);
+    stk::mesh::Entity const * const beg_rank5s = mesh.begin(elem, ext_ranks[1]);
+    EXPECT_EQ(beg_rank4s + 3u, beg_rank5s);
+    stk::mesh::ConnectivityOrdinal const * const rank4_ords = mesh.begin_ordinals(elem, ext_ranks[0]);
+    EXPECT_EQ(rank4_ords[2], ord_count);
+  }
+  mesh.modification_end();
+
+  // test relations among entities of rank higher than ELEMENT_RANK
+  mesh.modification_begin();
+  Entity ere_2_0 = mesh.declare_entity(ext_ranks[2], new_ent_id++, empty_parts);
+  mesh.declare_relation(ere_2_0, ere_0_0, ++ord_count);
+  mesh.declare_relation(ere_2_0, ere_1_0, ++ord_count);
+  stk::mesh::ConnectivityOrdinal ext_rank_rel_to_destroy = ord_count;
+  mesh.declare_relation(ere_2_0, ere_0_1, ++ord_count);
+  mesh.declare_relation(ere_2_0, ere_1_1, ++ord_count);
+  mesh.modification_end();
+  {
+    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[0]), 2u);
+    EXPECT_EQ(mesh.num_connectivity(ere_0_0, ext_ranks[2]), 1u);
+    stk::mesh::Entity const * const rel_2_0_entities = mesh.begin(ere_2_0, ext_ranks[0]);
+    EXPECT_EQ(rel_2_0_entities[1], ere_0_1);
+    stk::mesh::ConnectivityOrdinal const * const rel_2_1_ords = mesh.begin_ordinals(ere_2_0, ext_ranks[1]);
+    EXPECT_EQ(rel_2_1_ords[1], ord_count);
+
+    mesh.modification_begin();
+    mesh.destroy_relation(ere_2_0, ere_1_0, ext_rank_rel_to_destroy);
+    mesh.modification_end();
+
+    EXPECT_EQ(mesh.num_connectivity(ere_2_0, ext_ranks[1]), 1u);
+    EXPECT_EQ(mesh.num_connectivity(ere_1_0, ext_ranks[2]), 0u);
+  }
+}
+
+TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
+{
   // It should be legal to declare the same relation between shared
   // entities on two procs.
   //
@@ -378,9 +408,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
 
   // Set up meta and bulk data
   const unsigned spatial_dim = 2;
-  FEMMetaData meta_data(spatial_dim);
+  MetaData meta_data(spatial_dim);
   meta_data.commit();
-  BulkData mesh(FEMMetaData::get_meta_data(meta_data), pm);
+  BulkData mesh(meta_data, pm);
   unsigned p_rank = mesh.parallel_rank();
   unsigned p_size = mesh.parallel_size();
 
@@ -392,8 +422,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
   // Begin modification cycle so we can create the entities and relations
   mesh.modification_begin();
 
-  Entity* elem_ptr = NULL;
-  Entity* edge_ptr = NULL;
+  Entity edge = Entity();
   EntityVector nodes;
   const unsigned nodes_per_elem = 4, nodes_per_side = 2;
 
@@ -402,29 +431,27 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     stk::mesh::PartVector empty_parts;
 
     // Create element
-    const EntityRank entity_rank = meta_data.element_rank();
-    Entity & elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
-    elem_ptr = &elem;
+    const EntityRank entity_rank = stk::topology::ELEMENT_RANK;
+    Entity elem = mesh.declare_entity(entity_rank, p_rank+1 /*elem_id*/, empty_parts);
 
     // Create nodes
     const unsigned starting_node_id = p_rank * nodes_per_side + 1;
     for (unsigned id = starting_node_id; id < starting_node_id + nodes_per_elem; ++id) {
-      nodes.push_back(&mesh.declare_entity(NODE_RANK, id, empty_parts));
+      nodes.push_back(mesh.declare_entity(NODE_RANK, id, empty_parts));
     }
 
     // Add relations to nodes
     unsigned rel_id = 0;
     for (EntityVector::iterator itr = nodes.begin(); itr != nodes.end(); ++itr, ++rel_id) {
-      mesh.declare_relation( elem, **itr, rel_id );
+      mesh.declare_relation( elem, *itr, rel_id );
     }
 
     // Create edge
     const EntityRank edge_rank = meta_data.side_rank();
-    Entity & edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
-    edge_ptr = &edge;
+    edge = mesh.declare_entity(edge_rank, 1 /*id*/, empty_parts);
 
     // Set up relation from elem to edge
-    mesh.declare_relation( *elem_ptr, *edge_ptr, 0 /*rel-id*/ );
+    mesh.declare_relation( elem, edge, 0 /*rel-id*/ );
   }
 
   mesh.modification_end();
@@ -438,7 +465,7 @@ STKUNIT_UNIT_TEST(UnitTestingOfRelation, testDoubleDeclareOfRelation)
     for (unsigned node_idx = starting_node_idx;
          node_idx < starting_node_idx + nodes_per_side;
          ++node_idx, ++rel_id) {
-      mesh.declare_relation( *edge_ptr, *nodes[node_idx], rel_id );
+      mesh.declare_relation( edge, nodes[node_idx], rel_id );
     }
   }
 

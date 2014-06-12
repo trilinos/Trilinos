@@ -2,13 +2,16 @@
 #define STK_UTIL_PARALLEL_MPI_hpp
 
 #include <stk_util/stk_config.h>
-#if defined( STK_HAS_MPI )
+#if defined ( STK_HAS_MPI )
 
-#include <mpi.h>
-#include <vector>
-#include <iterator>
-#include <stdexcept>
-#include <complex>
+#include <mpi.h>                        // for MPI_Datatype, etc
+#include <stddef.h>                     // for size_t
+#include <algorithm>                    // for min, max
+#include <complex>                      // for complex
+#include <iterator>                     // for iterator_traits, etc
+#include <stdexcept>                    // for runtime_error
+#include <vector>                       // for vector
+namespace sierra { namespace MPI { template <typename T> struct Datatype; } }
 
 namespace sierra {
 namespace MPI {
@@ -108,12 +111,12 @@ struct Loc
     : m_value(),
       m_loc(0)
   {}
-  
+
   Loc(const T &value, int loc)
     : m_value(value),
       m_loc(loc)
   {}
-  
+
   T		m_value;
   int		m_loc;
 };
@@ -125,13 +128,13 @@ struct TempLoc
       m_other(),
       m_loc(0)
   {}
-  
+
   TempLoc(double value, double other, int loc)
     : m_value(value),
       m_other(other),
       m_loc(loc)
   {}
-  
+
   double        m_value;
   double        m_other;
   int		m_loc;
@@ -146,8 +149,6 @@ struct TempLoc
  * The <b>type()</b> function returns the MPI data type.
  *
  */
-template <typename T>
-struct Datatype;
 
 template <>
 struct Datatype<char>
@@ -363,7 +364,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
 {
   std::vector<T> source(src_dest, src_dest + size);
 
-  if (MPI_Allreduce(&source[0], &src_dest[0], (int) size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &src_dest[0], size, Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -375,12 +376,8 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, T *src_dest, size_t size)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src_dest	a <code>std::vector<T></code> reference to be copied for the
+ * @param dest	        a <code>std::vector<T></code> reference to be copied for the
  *			source and used as the destination.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -388,7 +385,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
 {
   std::vector<T> source(dest);
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -400,15 +397,11 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &dest)
  *
  * @param op		a <code>MPI_Op</code> value of the MPI operation.
  *
- * @param src		a <code>std::vector<T></code> reference to the source data for the
+ * @param source	a <code>std::vector<T></code> reference to the source data for the
  *			MPI op.
  *
  * @param dest		a <code>std::vector<T></code> reference to the destination data
  *			for the MPI op.
- *
- * @param size		a <code>size_t</code> value of the length of the array pointed to
- *			by <b>src_dest</b>
- *
  */
 template<class T>
 inline void
@@ -417,7 +410,7 @@ AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &
   if (source.size() != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allreduce(&source[0], &dest[0], (int) dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
+  if (MPI_Allreduce(&source[0], &dest[0], dest.size(), Datatype<T>::type(), op, mpi_comm) != MPI_SUCCESS )
     throw std::runtime_error("MPI_Allreduce failed");
 }
 
@@ -431,8 +424,8 @@ AllGather(MPI_Comm mpi_comm, std::vector<T> &source, std::vector<T> &dest)
   if (source.size()*nproc != dest.size())
     throw std::runtime_error("sierra::MPI::AllReduce(MPI_Comm mpi_comm, MPI_Op op, std::vector<T> &source, std::vector<T> &dest) vector lengths not equal");
 
-  if (MPI_Allgather(&source[0], (int)source.size(), Datatype<T>::type(),
-                    &dest[0],   (int)source.size(), Datatype<T>::type(),
+  if (MPI_Allgather(&source[0], source.size(), Datatype<T>::type(),
+                    &dest[0],   source.size(), Datatype<T>::type(),
                     mpi_comm) != MPI_SUCCESS ){
     throw std::runtime_error("MPI_Allreduce failed");
   }
@@ -454,10 +447,10 @@ T *align_cast(void *p)
   enum {mask = alignment - 1};
 
   char * c = reinterpret_cast<char *>(p);
-  size_t front_misalign = (c - (char *)0) & mask;
+  size_t front_misalign = (c - static_cast<char*>(0)) & mask;
   if (front_misalign > 0) {
     size_t correction = alignment - front_misalign;
-    T *q = reinterpret_cast<T *>((c - (char *)0) + correction);
+    T *q = reinterpret_cast<T *>((c - static_cast<char*>(0)) + correction);
     return q;
   }
 
@@ -1000,7 +993,7 @@ AllReduceCollected(MPI_Comm mpi_comm, MPI_Op op, U collector)
 
 
   std::vector<int> local_array_len(num_proc, 0);
-  local_array_len[my_proc] == size;
+  local_array_len[my_proc] = size;
   std::vector<int> global_array_len(num_proc, 0);
 
   MPI_Allreduce(&local_array_len[0], &global_array_len[0], num_proc, MPI_INT, MPI_SUM, mpi_comm);

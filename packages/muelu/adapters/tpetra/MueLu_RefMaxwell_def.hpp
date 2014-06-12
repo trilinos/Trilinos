@@ -86,17 +86,13 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::compute() {
     buildProlongator();
   }
   // build coarse grid operator for (1,1)-block
-  if(A11_==Teuchos::null) {
-    formCoarseMatrix();
-  }
+  formCoarseMatrix();
   // build fine grid operator for (2,2)-block, D0* M1 D0
-  if(A22_==Teuchos::null) {
-    Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),100);
-    Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
-    A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
-    Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
-    A22_->SetFixedBlockSize(1);
-  }
+  Teuchos::RCP<XMat> C = MatrixFactory::Build(M1_Matrix_->getRowMap(),100);
+  Xpetra::MatrixMatrix::Multiply(*M1_Matrix_,false,*D0_Matrix_,false,*C,true,true);
+  A22_=MatrixFactory::Build(D0_Matrix_->getDomainMap(),100);
+  Xpetra::MatrixMatrix::Multiply(*D0_Matrix_,true,*C,false,*A22_,true,true);
+  A22_->SetFixedBlockSize(1);
   // build stuff for hierarchies
   Teuchos::RCP<FactoryManager> Manager11 = Teuchos::rcp( new FactoryManager );
   Teuchos::RCP<FactoryManager> Manager22 = Teuchos::rcp( new FactoryManager );
@@ -258,6 +254,13 @@ void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::formCoarseM
   size_t dim = Nullspace_->getNumVectors();
   A11_->SetFixedBlockSize(dim);
 
+}
+
+template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>
+void RefMaxwell<Scalar,LocalOrdinal,GlobalOrdinal,Node,LocalMatOps>::resetMatrix(Teuchos::RCP<TCRS> SM_Matrix_new) {
+  // convert Tpetra matrices to Xpetra
+  Teuchos::RCP<XCRS> SM_tmp = Teuchos::rcp( new XTCRS(SM_Matrix_new) );
+  SM_Matrix_ = Teuchos::rcp( new XCrsWrap(SM_tmp) );
 }
 
 template<class Scalar, class LocalOrdinal, class GlobalOrdinal, class Node, class LocalMatOps>

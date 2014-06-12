@@ -166,7 +166,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
 
   //std::cout << std::endl << response << std::endl;
 
-  if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+  if ( 0 == comm_rank ) {
+    print_perf_value( std::cout , cmd , widths , perf );
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

@@ -6,12 +6,13 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
+#include <iostream>                     // for ostringstream, etc
+#include <stdexcept>                    // for logic_error, runtime_error, etc
+#include <stk_util/environment/ReportHandler.hpp>  // for ThrowRequireMsg, etc
+#include <gtest/gtest.h>
+#include <string>                       // for string
 
-#include <iostream>
-#include <stdexcept>
 
-#include <stk_util/environment/ReportHandler.hpp>
 
 namespace {
 
@@ -97,24 +98,24 @@ void test_no_expr_error()
 
 } // namespace <empty>
 
-STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
+TEST(UnitTestingOfThrowMacros, testUnit)
 {
   // Setting assert handler to NULL should cause exception
-  STKUNIT_ASSERT_THROW(stk::set_assert_handler(0), std::runtime_error);
+  ASSERT_THROW(stk::set_assert_handler(0), std::runtime_error);
 
   // Check that Throw*Msg works
-  STKUNIT_ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
-  STKUNIT_ASSERT_THROW(force_throw_error_trigger(), std::runtime_error);
-  STKUNIT_ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
+  ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
+  ASSERT_THROW(force_throw_error_trigger(), std::runtime_error);
+  ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
 
   // Check that Throw* works
-  STKUNIT_ASSERT_THROW(force_throw_require_trigger(false), std::logic_error);
-  STKUNIT_ASSERT_THROW(force_throw_error_trigger(false), std::runtime_error);
-  STKUNIT_ASSERT_THROW(force_throw_invarg_trigger(false), std::invalid_argument);
+  ASSERT_THROW(force_throw_require_trigger(false), std::logic_error);
+  ASSERT_THROW(force_throw_error_trigger(false), std::runtime_error);
+  ASSERT_THROW(force_throw_invarg_trigger(false), std::invalid_argument);
 
   // Check that macro interacts appropriately with if statements
-  STKUNIT_ASSERT_THROW(check_interaction_with_if(), std::logic_error);
-  STKUNIT_ASSERT_THROW(check_interaction_with_if(false), std::logic_error);
+  ASSERT_THROW(check_interaction_with_if(), std::logic_error);
+  ASSERT_THROW(check_interaction_with_if(false), std::logic_error);
 
   // Check that usage of ThrowRequireMsg/ThrowAssertMsg does not change program
   // semantics. Code blocks that are not contained within braces seem to be
@@ -125,21 +126,21 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
     ThrowRequireMsg(false, "test");
   else
     expected_execution_path = true;
-  STKUNIT_ASSERT(expected_execution_path);
+  ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
     ThrowAssertMsg(false, "test");
   else
     expected_execution_path = true;
-  STKUNIT_ASSERT(expected_execution_path);
+  ASSERT_TRUE(expected_execution_path);
 
   expected_execution_path = false;
   if (false)
     ThrowErrorMsg("test");
   else
     expected_execution_path = true;
-  STKUNIT_ASSERT(expected_execution_path);
+  ASSERT_TRUE(expected_execution_path);
 
   // These next four statements are to check compilation success
 
@@ -174,12 +175,12 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
 #ifdef NDEBUG
   force_throw_assert();
 #else
-  STKUNIT_ASSERT_THROW(force_throw_assert(), std::logic_error);
+  ASSERT_THROW(force_throw_assert(), std::logic_error);
 #endif
 
   // Check that ThrowErrorMsg works
 
-  STKUNIT_ASSERT_THROW(test_no_expr_error(), std::runtime_error);
+  ASSERT_THROW(test_no_expr_error(), std::runtime_error);
   
   // Check that setting handler for asserts works.
 
@@ -187,11 +188,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
 
   ThrowRequireMsg(false, "test");
 
-  STKUNIT_ASSERT(test_assert_handler_called);
+  ASSERT_TRUE(test_assert_handler_called);
 
   stk::set_assert_handler(orig);
 
-  STKUNIT_ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
+  ASSERT_THROW(force_throw_require_trigger(), std::logic_error);
 
   // Check that setting handler for errors works.
 
@@ -199,11 +200,11 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
 
   ThrowErrorMsgIf(true, "test");
 
-  STKUNIT_ASSERT(test_error_handler_called);
+  ASSERT_TRUE(test_error_handler_called);
 
   stk::set_error_handler(orig);
 
-  STKUNIT_ASSERT_THROW(force_throw_error_trigger(), std::runtime_error);
+  ASSERT_THROW(force_throw_error_trigger(), std::runtime_error);
 
   // Check that setting handler for invalid args works.
 
@@ -211,9 +212,9 @@ STKUNIT_UNIT_TEST(UnitTestingOfThrowMacros, testUnit)
 
   ThrowInvalidArgMsgIf(true, "test");
 
-  STKUNIT_ASSERT(test_invarg_handler_called);
+  ASSERT_TRUE(test_invarg_handler_called);
 
   stk::set_invalid_arg_handler(orig);
 
-  STKUNIT_ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
+  ASSERT_THROW(force_throw_invarg_trigger(), std::invalid_argument);
 }

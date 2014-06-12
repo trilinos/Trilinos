@@ -6,57 +6,57 @@
 /*  United States Government.                                             */
 /*------------------------------------------------------------------------*/
 
-#include <utility>
-#include <map>
-#include <iostream>
+#include <iostream>                     // for ostream, cout, endl
+#include <map>                          // for map, map<>::value_compare
+#include <gtest/gtest.h>
+#include <stk_util/util/Identifier.hpp>  // for IdentifierA, IdentifierB, etc
+#include <string>                       // for string, basic_string
 
-#include <stk_util/util/Identifier.hpp>
 
-#include <stk_util/unit_test_support/stk_utest_macros.hpp>
 
-STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
+TEST( UnitTestIdentifier, UnitTest)
 {
   {
     stk::IdentifierA id1("identifier1");
 
-    STKUNIT_ASSERT(id1 == "identifier1");
-    STKUNIT_ASSERT(id1 == "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 == std::string("identifier1"));
-    STKUNIT_ASSERT(std::string("identifier1") == id1);
-    STKUNIT_ASSERT(id1 < "idf");
-    STKUNIT_ASSERT(id1 < "IDF");
-    STKUNIT_ASSERT(id1 < std::string("idf"));
-    STKUNIT_ASSERT(id1 <= "idf");
-    STKUNIT_ASSERT(id1 <= "IDF");
-    STKUNIT_ASSERT(id1 <= std::string("idf"));
-    STKUNIT_ASSERT(id1 > "idd");
-    STKUNIT_ASSERT(id1 > "IDD");
-    STKUNIT_ASSERT(id1 > std::string("idd"));
-    STKUNIT_ASSERT(id1 >= "idd");
-    STKUNIT_ASSERT(id1 >= "IDD");
-    STKUNIT_ASSERT(id1 >= std::string("idd"));
+    ASSERT_TRUE(id1 == "identifier1");
+    ASSERT_TRUE(id1 == "IDENTIFIER1");
+    ASSERT_TRUE(id1 == std::string("identifier1"));
+    ASSERT_TRUE(std::string("identifier1") == id1);
+    ASSERT_TRUE(id1 < "idf");
+    ASSERT_TRUE(id1 < "IDF");
+    ASSERT_TRUE(id1 < std::string("idf"));
+    ASSERT_TRUE(id1 <= "idf");
+    ASSERT_TRUE(id1 <= "IDF");
+    ASSERT_TRUE(id1 <= std::string("idf"));
+    ASSERT_TRUE(id1 > "idd");
+    ASSERT_TRUE(id1 > "IDD");
+    ASSERT_TRUE(id1 > std::string("idd"));
+    ASSERT_TRUE(id1 >= "idd");
+    ASSERT_TRUE(id1 >= "IDD");
+    ASSERT_TRUE(id1 >= std::string("idd"));
 
-    STKUNIT_ASSERT(id1 <= "identifier1");
-    STKUNIT_ASSERT(id1 <= "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 <= std::string("identifier1"));
-    STKUNIT_ASSERT(id1 >= "identifier1");
-    STKUNIT_ASSERT(id1 >= "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 >= std::string("identifier1"));
+    ASSERT_TRUE(id1 <= "identifier1");
+    ASSERT_TRUE(id1 <= "IDENTIFIER1");
+    ASSERT_TRUE(id1 <= std::string("identifier1"));
+    ASSERT_TRUE(id1 >= "identifier1");
+    ASSERT_TRUE(id1 >= "IDENTIFIER1");
+    ASSERT_TRUE(id1 >= std::string("identifier1"));
 
     stk::IdentifierA id2(id1);
 
-    STKUNIT_ASSERT(id1 == id2);
+    ASSERT_TRUE(id1 == id2);
 
     std::cout << id1 << std::endl;
 
     stk::IdentifierA id3 = id1 + "test1";
-    STKUNIT_ASSERT(id3 == "identifier1test1");
+    ASSERT_TRUE(id3 == "identifier1test1");
 
     id3 += "test2";
-    STKUNIT_ASSERT(id3 == "identifier1test1test2");
+    ASSERT_TRUE(id3 == "identifier1test1test2");
 
     id3 = "identifier3";
-    STKUNIT_ASSERT(id3 == "identifier3");
+    ASSERT_TRUE(id3 == "identifier3");
 
     typedef std::map<stk::IdentifierA, int> IdIntMap;
 
@@ -65,7 +65,7 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     id_int_map[stk::IdentifierA("identifier1")] = 1;
     id_int_map[stk::IdentifierA("IDENTIFIER1")] = 2;
 
-    STKUNIT_ASSERT(id_int_map[stk::IdentifierA("identifier1")] == 2);
+    ASSERT_TRUE(id_int_map[stk::IdentifierA("identifier1")] == 2);
   }
 
 
@@ -73,44 +73,44 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     stk::IdentifierB id1("identifier1");
 
 
-    STKUNIT_ASSERT(id1 == "identifier1");
-    STKUNIT_ASSERT(id1 == "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 == std::string("identifier1"));
-    STKUNIT_ASSERT(std::string("identifier1") == id1);
-    STKUNIT_ASSERT(id1 < "idf");
-    STKUNIT_ASSERT(id1 < "IDF");
-    STKUNIT_ASSERT(id1 < std::string("idf"));
-    STKUNIT_ASSERT(id1 <= "idf");
-    STKUNIT_ASSERT(id1 <= "IDF");
-    STKUNIT_ASSERT(id1 <= std::string("idf"));
-    STKUNIT_ASSERT(id1 > "idd");
-    STKUNIT_ASSERT(id1 > "IDD");
-    STKUNIT_ASSERT(id1 > std::string("idd"));
-    STKUNIT_ASSERT(id1 >= "idd");
-    STKUNIT_ASSERT(id1 >= "IDD");
-    STKUNIT_ASSERT(id1 >= std::string("idd"));
+    ASSERT_TRUE(id1 == "identifier1");
+    ASSERT_TRUE(id1 == "IDENTIFIER1");
+    ASSERT_TRUE(id1 == std::string("identifier1"));
+    ASSERT_TRUE(std::string("identifier1") == id1);
+    ASSERT_TRUE(id1 < "idf");
+    ASSERT_TRUE(id1 < "IDF");
+    ASSERT_TRUE(id1 < std::string("idf"));
+    ASSERT_TRUE(id1 <= "idf");
+    ASSERT_TRUE(id1 <= "IDF");
+    ASSERT_TRUE(id1 <= std::string("idf"));
+    ASSERT_TRUE(id1 > "idd");
+    ASSERT_TRUE(id1 > "IDD");
+    ASSERT_TRUE(id1 > std::string("idd"));
+    ASSERT_TRUE(id1 >= "idd");
+    ASSERT_TRUE(id1 >= "IDD");
+    ASSERT_TRUE(id1 >= std::string("idd"));
 
-    STKUNIT_ASSERT(id1 <= "identifier1");
-    STKUNIT_ASSERT(id1 <= "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 <= std::string("identifier1"));
-    STKUNIT_ASSERT(id1 >= "identifier1");
-    STKUNIT_ASSERT(id1 >= "IDENTIFIER1");
-    STKUNIT_ASSERT(id1 >= std::string("identifier1"));
+    ASSERT_TRUE(id1 <= "identifier1");
+    ASSERT_TRUE(id1 <= "IDENTIFIER1");
+    ASSERT_TRUE(id1 <= std::string("identifier1"));
+    ASSERT_TRUE(id1 >= "identifier1");
+    ASSERT_TRUE(id1 >= "IDENTIFIER1");
+    ASSERT_TRUE(id1 >= std::string("identifier1"));
 
     stk::IdentifierB id2(id1);
 
-    STKUNIT_ASSERT(id1 == id2);
+    ASSERT_TRUE(id1 == id2);
 
     std::cout << id1 << std::endl;
 
     stk::IdentifierB id3 = id1 + "test1";
-    STKUNIT_ASSERT(id3 == "identifier1test1");
+    ASSERT_TRUE(id3 == "identifier1test1");
 
     id3 += "test2";
-    STKUNIT_ASSERT(id3 == "identifier1test1test2");
+    ASSERT_TRUE(id3 == "identifier1test1test2");
 
     id3 = "identifier3";
-    STKUNIT_ASSERT(id3 == "identifier3");
+    ASSERT_TRUE(id3 == "identifier3");
 
     typedef std::map<stk::IdentifierB, int> IdIntMap;
 
@@ -119,7 +119,7 @@ STKUNIT_UNIT_TEST( UnitTestIdentifier, UnitTest)
     id_int_map[stk::IdentifierB("identifier1")] = 1;
     id_int_map[stk::IdentifierB("IDENTIFIER1")] = 2;
 
-    STKUNIT_ASSERT(id_int_map[stk::IdentifierB("identifier1")] == 2);
+    ASSERT_TRUE(id_int_map[stk::IdentifierB("identifier1")] == 2);
   }
 }
 

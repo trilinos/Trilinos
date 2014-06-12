@@ -9,11 +9,10 @@
 #ifndef STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 #define STK_MESH_FIXTURES_GRID_MESH_FIXTURE_HPP
 
-#include <stk_util/parallel/Parallel.hpp>
-#include <stk_mesh/base/Types.hpp>
-#include <stk_mesh/base/MetaData.hpp>
-#include <stk_mesh/base/BulkData.hpp>
-#include <stk_mesh/fem/FEMMetaData.hpp>
+#include <stk_mesh/base/BulkData.hpp>   // for BulkData
+#include <stk_mesh/base/MetaData.hpp>   // for MetaData
+#include <stk_util/parallel/Parallel.hpp>  // for ParallelMachine
+namespace stk { namespace mesh { class Part; } }
 
 namespace stk {
 namespace mesh {
@@ -26,7 +25,7 @@ public:
 
   ~GridFixture();
 
-  fem::FEMMetaData& fem_meta() { return m_fem_meta; }
+  MetaData& fem_meta() { return m_fem_meta; }
   BulkData& bulk_data() { return m_bulk_data; }
 
   Part* quad_part() const { return & m_quad_part; }
@@ -36,10 +35,10 @@ public:
 
   const unsigned m_spatial_dimension;
 
-  fem::FEMMetaData  m_fem_meta;
-  BulkData          m_bulk_data;
-  Part &            m_quad_part;
-  Part &            m_dead_part;
+  MetaData  m_fem_meta;
+  BulkData  m_bulk_data;
+  Part &    m_quad_part;
+  Part &    m_dead_part;
 };
 
 } // fixtures

@@ -5,8 +5,6 @@ INCLUDE(TribitsLibraryMacros)
 # A) Package-specific configuration options
 #
 
-# TRIBITS_CONFIGURE_FILE(${PACKAGE_NAME}_config.h)
-
 #
 # B) Define the header and source files (and directories)
 #
@@ -18,16 +16,6 @@ INCLUDE(TribitsLibraryMacros)
 SET(HEADERS "")
 SET(SOURCES "")
 
-#SET(HEADERS_IMPL "")
-#SET(SOURCES_IMPL "")
-
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_BINARY_DIR})
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/)
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../)
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../)
-#INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR}/../../../stk_util)
-#INCLUDE_DIRECTORIES(${Boost_INCLUDE_DIRS}/..)
-
 #
 # Core headers
 #
@@ -36,9 +24,6 @@ INCLUDE_DIRECTORIES(${CMAKE_CURRENT_SOURCE_DIR})
 
 FILE(GLOB HEADERS *.hpp)
 FILE(GLOB SOURCES *.cpp)
-
-#FILE(GLOB HEADERS_IMPL ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.hpp)
-#FILE(GLOB SOURCES_IMPL ${CMAKE_CURRENT_SOURCE_DIR}/../baseImpl/*.cpp)
 
 IF (TPL_ENABLE_MPI)
 ENDIF()
@@ -50,9 +35,8 @@ ENDIF()
 TRIBITS_ADD_LIBRARY(
   stk_mesh_fixtures
   NOINSTALLHEADERS ${HEADERS}
-  DEPLIBS stk_mesh_base stk_mesh_fem
   SOURCES ${SOURCES}
   )
 
 INSTALL(FILES ${HEADERS} DESTINATION
-    ${CMAKE_INSTALL_PREFIX}/${Trilinos_INSTALL_INCLUDE_DIR}/stk_mesh/fixtures/)
+    ${CMAKE_INSTALL_PREFIX}/include/stk_mesh/fixtures/)
