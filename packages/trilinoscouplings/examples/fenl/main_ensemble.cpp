@@ -242,7 +242,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
   perf_total.response_mean = response_pce.mean();
   perf_total.response_std_dev = response_pce.standard_deviation();
 
-  if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf_total ); }
+  if ( 0 == comm_rank ) {
+    print_perf_value( std::cout , cmd , widths , perf_total );
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
+  }
 
   }
   TEUCHOS_STANDARD_CATCH_STATEMENTS(true, std::cerr, success);

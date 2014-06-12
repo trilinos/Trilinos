@@ -93,7 +93,9 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
       perf.response_mean = response;
       perf.response_std_dev = 0.0;
 
-      if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+      if ( 0 == comm_rank ) {
+        print_perf_value( std::cout , cmd , widths , perf );
+      }
     }
   }
   else {
@@ -120,7 +122,13 @@ bool run( const Teuchos::RCP<const Teuchos::Comm<int> > & comm ,
     perf.response_mean = response;
     perf.response_std_dev = 0.0;
 
-    if ( 0 == comm_rank ) { print_perf_value( std::cout , widths, perf ); }
+    if ( 0 == comm_rank ) {
+      print_perf_value( std::cout , cmd , widths , perf );
+    }
+  }
+
+  if ( cmd[ CMD_SUMMARIZE ] ) {
+    Teuchos::TimeMonitor::report (comm.ptr (), std::cout);
   }
 
   }
