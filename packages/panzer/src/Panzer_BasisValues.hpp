@@ -56,8 +56,9 @@ namespace panzer {
     * orientations must be applied using the  
     * <code>applyOrientations</code> method.
     */
-  template<typename Scalar,typename Array>
+  template<typename Scalar,typename Array,typename ArrayOrientation=Array>
   struct BasisValues { 
+
     static const Array dummyArray;    
  
     //! Sizes/allocates memory for arrays
@@ -84,7 +85,7 @@ namespace panzer {
 			const Array& node_coordinates);
 
     //! Method to apply orientaitons to a basis values container. 
-    void applyOrientations(const Array& orientations);
+    void applyOrientations(const ArrayOrientation & orientations);
 
     PureBasis::EElementSpace getElementSpace() const; 
 

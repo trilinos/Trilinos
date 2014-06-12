@@ -118,7 +118,8 @@ WorksetContainer::getWorksets(const WorksetDescriptor & wd)
       worksetVector = wkstFactory_->getWorksets(wd,pb);
 
       // apply orientations to the just constructed worksets
-      applyOrientations(wd.getElementBlock(),*worksetVector);
+      if(worksetVector!=Teuchos::null)
+        applyOrientations(wd.getElementBlock(),*worksetVector);
 
       // store vector for reuse in the future
       volWorksets_[wd] = worksetVector;
@@ -143,7 +144,8 @@ WorksetContainer::getSideWorksets(const BC & bc)
       worksetMap = wkstFactory_->getSideWorksets(bc,pb);
 
       // apply orientations to the worksets for this side
-      applyOrientations(side,*worksetMap);
+      if(worksetMap!=Teuchos::null)
+        applyOrientations(side,*worksetMap);
 
       // store map for reuse in the future
       sideWorksets_[side] = worksetMap;
@@ -167,7 +169,8 @@ void WorksetContainer::allocateVolumeWorksets(const std::vector<std::string> & e
       volWorksets_[eBlock] = wkstFactory_->getWorksets(wd,pb);
 
       // apply orientations to the worksets for this side
-      applyOrientations(eBlock,*volWorksets_[eBlock]);
+      if(volWorksets_[eBlock]!=Teuchos::null)
+        applyOrientations(eBlock,*volWorksets_[eBlock]);
    }
 }
 
@@ -184,7 +187,8 @@ void WorksetContainer::allocateSideWorksets(const std::vector<BC> & bcs)
       sideWorksets_[side] = wkstFactory_->getSideWorksets(bc,pb);
 
       // apply orientations to the worksets for this side
-      applyOrientations(side,*sideWorksets_[side]);
+      if(sideWorksets_[side]!=Teuchos::null)
+        applyOrientations(side,*sideWorksets_[side]);
    }
 }
 
@@ -234,7 +238,15 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
   /////////////////////////////////
 
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) return;
+  if(globalIndexer_==Teuchos::null) { 
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    fout.setOutputToRootOnly(0);
+ 
+    fout << "Panzer Warning: No global indexer assigned to a workset container. "
+         << "Orientation of the basis for edge basis functions cannot be applied, "
+         << "if those basis functions are used, there will be problems!";
+    return;
+  }
 
   // extract a map from basis name to string/basis pairs that require orientations
   //////////////////////////////////////////////////////////////////////////////////
@@ -277,7 +289,6 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
     int array0_sz = basis.functional->dimension(0);
     int array1_sz = basis.functional->dimension(1);
     IntrepidFieldContainerFactory fc_factory;
-    Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
  
     // loop over worksets compute and apply orientations
     for(std::size_t i=0;i<worksets.size();i++) {
@@ -285,6 +296,10 @@ applyOrientations(const std::string & eBlock,std::vector<Workset> & worksets) co
 
         // break out of the workset loop
         if(worksets[i].num_cells<=0) continue;
+
+        int array0_sz = worksets[i].num_cells;
+        int array1_sz = basis.functional->dimension(1);
+        Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
 
         WorksetDetails & details = *worksets[i].details[j];
 
@@ -319,7 +334,15 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
   /////////////////////////////////
 
   // short circuit if no global indexer exists
-  if(globalIndexer_==Teuchos::null) return;
+  if(globalIndexer_==Teuchos::null) { 
+    Teuchos::FancyOStream fout(Teuchos::rcpFromRef(std::cout));
+    fout.setOutputToRootOnly(0);
+ 
+    fout << "Panzer Warning: No global indexer assigned to a workset container. "
+         << "Orientation of the basis for edge basis functions cannot be applied, "
+         << "if those basis functions are used, there will be problems!";
+    return;
+  }
 
   // extract a map from basis name to string/basis pairs that require orientations
   //////////////////////////////////////////////////////////////////////////////////
@@ -358,16 +381,21 @@ applyOrientations(const SideId & sideId,std::map<unsigned,Workset> & worksets) c
     // build accessors for orientation fields
     RCP<const OrientationContainerBase<Scalar,Array> > orientationContainer 
         = buildOrientationContainer<Scalar,Array>(globalIndexer_,fieldName); 
-
-    int array0_sz = basis.functional->dimension(0);
-    int array1_sz = basis.functional->dimension(1);
-    IntrepidFieldContainerFactory fc_factory;
-    Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
  
     // loop over worksets compute and apply orientations
     for(std::map<unsigned,Workset>::iterator itr=worksets.begin();
         itr!=worksets.end();++itr) {
+
+      // break out of the workset loop
+      if(itr->second.num_cells<=0) continue;
+
+      int array0_sz = itr->second.num_cells;
+      int array1_sz = basis.functional->dimension(1);
+      IntrepidFieldContainerFactory fc_factory;
+      Array orientations = fc_factory.buildArray<double,panzer::Cell,panzer::BASIS>("orientations",array0_sz,array1_sz);
+
       for(std::size_t j=0;j<itr->second.details.size();j++) {
+
         WorksetDetails & details = *itr->second.details[j];
 
         // compute orientations using the orientation container (and global indexer eventually)

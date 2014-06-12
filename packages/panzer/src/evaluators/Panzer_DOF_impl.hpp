@@ -61,11 +61,12 @@ namespace {
 // this code is needed twice, once for a DOF evaluator pulling from
 // the workset and once for a DOF evaluator pulling from the field
 // manager.
-template <typename ScalarT,typename ArrayScalarT, typename ArrayT>
+template <typename ScalarT,typename ArrayScalarT, typename ArrayT,typename ArrayOrientationT>
+// template <typename ScalarT,typename ArrayScalarT, typename ArrayT>
 inline void evaluateDOF(PHX::MDField<ScalarT,Cell,Point> & dof_basis,PHX::MDField<ScalarT> & dof_ip,
                         PHX::MDField<ScalarT,Cell,BASIS> & dof_orientation,bool requires_orientation,
                         int num_cells,
-                        panzer::BasisValues<ArrayScalarT,ArrayT> & basisValues)
+                        panzer::BasisValues<ArrayScalarT,ArrayT,ArrayOrientationT> & basisValues)
 { 
   // Zero out arrays (intrepid does a sum! 1/17/2012)
   for (int i = 0; i < dof_ip.size(); ++i)
@@ -137,6 +138,7 @@ PHX_EVALUATOR_CTOR(DOF,p) :
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
+/*
   if(requires_orientation) {
      // unless otherwise specified (with "Orientation Field Name") use the default
      std::string orientationFieldName = p.get<std::string>("Name")+" Orientation";
@@ -148,6 +150,7 @@ PHX_EVALUATOR_CTOR(DOF,p) :
      
      this->addDependentField(dof_orientation);
   }
+*/
   
   std::string n = "DOF: " + dof_basis.fieldTag().name() + " ("+PHX::TypeString<EvalT>::value+")";
   this->setName(n);
@@ -159,8 +162,8 @@ PHX_POST_REGISTRATION_SETUP(DOF,sd,fm)
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
-  if(requires_orientation)
-     this->utils.setFieldData(dof_orientation,fm);
+  // if(requires_orientation)
+  //    this->utils.setFieldData(dof_orientation,fm);
 
   basis_index = panzer::getBasisIndex(basis_name, (*sd.worksets_)[0]);
 }
@@ -208,6 +211,7 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
   this->addEvaluatedField(dof_ip);
   this->addDependentField(dof_basis);
 
+/*
   if(requires_orientation) {
      // unless otherwise specified (with "Orientation Field Name") use the default
      std::string orientationFieldName = fieldName+" Orientation";
@@ -219,6 +223,7 @@ PHX_EVALUATOR_CTOR(DOF_PointValues,p)
      
      this->addDependentField(dof_orientation);
   }
+*/
 
   // setup all basis fields that are required
   Teuchos::RCP<BasisIRLayout> layout = Teuchos::rcp(new BasisIRLayout(basis,*pointRule));
@@ -250,8 +255,10 @@ PHX_POST_REGISTRATION_SETUP(DOF_PointValues,sd,fm)
   this->utils.setFieldData(dof_basis,fm);
   this->utils.setFieldData(dof_ip,fm);
 
+/*
   if(requires_orientation)
      this->utils.setFieldData(dof_orientation,fm);
+*/
 
   // setup the pointers for the basis values data structure
   this->utils.setFieldData(basisValues.basis_ref,fm);      

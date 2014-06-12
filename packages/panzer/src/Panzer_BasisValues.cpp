@@ -50,9 +50,9 @@
 
 namespace panzer {
 
-template<typename Scalar,typename Array>
+template<typename Scalar,typename Array,typename ArrayOrientation>
 template <typename ArrayFactory>
-void panzer::BasisValues<Scalar,Array>::
+void panzer::BasisValues<Scalar,Array,ArrayOrientation>::
 setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
             const ArrayFactory & af)
 {
@@ -162,13 +162,13 @@ setupArrays(const Teuchos::RCP<const panzer::BasisIRLayout>& layout,
 
 #define BASIS_VALUES_INSTANTIATION(SCALAR) \
 template class BasisValues<SCALAR,Intrepid::FieldContainer<SCALAR> >;\
-template class BasisValues<SCALAR,PHX::MDField<SCALAR> >;\
+template class BasisValues<SCALAR,PHX::MDField<SCALAR>,PHX::MDField<SCALAR,panzer::Cell,panzer::BASIS> >;\
 template \
 void BasisValues<SCALAR,Intrepid::FieldContainer<SCALAR> >::setupArrays<IntrepidFieldContainerFactory>( \
                    const Teuchos::RCP<const panzer::BasisIRLayout>& basis, \
                    const IntrepidFieldContainerFactory & af); \
 template \
-void BasisValues<SCALAR,PHX::MDField<SCALAR> >::setupArrays<MDFieldArrayFactory>( \
+void BasisValues<SCALAR,PHX::MDField<SCALAR>,PHX::MDField<SCALAR,panzer::Cell,panzer::BASIS> >::setupArrays<MDFieldArrayFactory>( \
                    const Teuchos::RCP<const panzer::BasisIRLayout>& basis, \
                    const MDFieldArrayFactory & af);
 

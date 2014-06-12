@@ -107,6 +107,11 @@ void BasisValues_Evaluator<EvalT,TraitsT>::initialize(const Teuchos::RCP<const p
   if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
     this->addEvaluatedField(basisValues.curl_basis_ref);     
     this->addEvaluatedField(basisValues.curl_basis);          
+
+    std::string orientationFieldName = basis->name()+" Orientation";
+    orientation = PHX::MDField<ScalarT,panzer::Cell,panzer::BASIS>(orientationFieldName,
+                                        basis->functional);
+    this->addDependentField(orientation);
   }
 
   std::string n = "BasisValues_Evaluator: " +basis->name() + "_" + pointRule->getName();
@@ -136,6 +141,8 @@ PHX_POST_REGISTRATION_SETUP(BasisValues_Evaluator,sd,fm)
   if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
     this->utils.setFieldData(basisValues.curl_basis_ref,fm);     
     this->utils.setFieldData(basisValues.curl_basis,fm);          
+
+    this->utils.setFieldData(orientation,fm);        
   }
 }
 
@@ -147,6 +154,10 @@ PHX_EVALUATE_FIELDS(BasisValues_Evaluator,workset)
                              pointValues.jac,
                              pointValues.jac_det,
                              pointValues.jac_inv);
+
+  if(basis->getElementSpace()==panzer::PureBasis::HCURL) {
+    basisValues.applyOrientations(orientation);
+  }
 }
 
 //**********************************************************************

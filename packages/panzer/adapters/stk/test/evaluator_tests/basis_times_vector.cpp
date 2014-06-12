@@ -57,7 +57,6 @@ using Teuchos::rcp;
 #include "Panzer_BasisIRLayout.hpp"
 #include "Panzer_Workset.hpp"
 #include "Panzer_Integrator_BasisTimesVector.hpp"
-#include "Panzer_GatherOrientation.hpp"
 #include "Panzer_WorksetContainer.hpp"
 
 #include "Panzer_STK_Version.hpp"
@@ -161,21 +160,6 @@ namespace panzer {
     /////////////////////////////////////////////////////////////
  
     PHX::FieldManager<panzer::Traits> fm;
-
-    {
-       Teuchos::RCP<std::vector<std::string> > dofNames = Teuchos::rcp(new std::vector<std::string>);
-       dofNames->push_back(fieldName_qedge1);
-
-       Teuchos::ParameterList pl;
-       pl.set("Indexer Names",dofNames);
-       pl.set("DOF Names",dofNames);
-       pl.set("Basis",basis_qedge1);
-
-       Teuchos::RCP<PHX::Evaluator<panzer::Traits> > evaluator  
-          = Teuchos::rcp(new panzer::GatherOrientation<panzer::Traits::Residual,panzer::Traits,int,int>(dofManager,pl));
-
-       fm.registerEvaluator<panzer::Traits::Residual>(evaluator);
-    }
 
     {
        Teuchos::ParameterList pl;

@@ -137,7 +137,7 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_q1 = evaluator->evaluatedFields()[0];
 
-       TEST_EQUALITY(evalField_q1->name(),fieldName_q1+" Orientation");
+       TEST_EQUALITY(evalField_q1->name(),basis_q1->name()+" Orientation");
        TEST_EQUALITY(evalField_q1->dataLayout().dimension(0),basis_q1->functional->dimension(0));
        TEST_EQUALITY(evalField_q1->dataLayout().dimension(1),basis_q1->functional->dimension(1));
 
@@ -159,7 +159,7 @@ namespace panzer {
        TEST_EQUALITY(evaluator->evaluatedFields().size(),1);
        evalField_qedge1 = evaluator->evaluatedFields()[0];
 
-       TEST_EQUALITY(evalField_qedge1->name(),fieldName_qedge1+" Orientation");
+       TEST_EQUALITY(evalField_qedge1->name(),basis_qedge1->name()+" Orientation");
        TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(0),basis_qedge1->functional->dimension(0));
        TEST_EQUALITY(evalField_qedge1->dataLayout().dimension(1),basis_qedge1->functional->dimension(1));
 
