@@ -15,7 +15,6 @@ IF( (${PACKAGE_NAME}_ENABLE_Tpetra                                      AND ${PA
       SOURCE_FILES driver.xml
       Q2Q1_9x9_A.dat   Q2Q1_9x9_B.dat
       Q2Q1_17x17_A.dat Q2Q1_17x17_B.dat
-      Q2Q1_65x65_A.dat Q2Q1_65x65_B.dat
       )
 
 ENDIF()
