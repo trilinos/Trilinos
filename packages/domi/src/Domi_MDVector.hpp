@@ -917,10 +917,16 @@ public:
    *  <tt>MDVector</tt> will have the same number of dimensions as the
    *  calling <tt>MDVector</tt>.
    *
-   * \param slice [in] index of the desired sub-vector.  Note that to
-   *        obtain expected behavior, you should always chain together
-   *        <tt>n</tt> square bracket operators when referencing an
+   * \param slice [in] a Slice of global indexes that specifies the
+   *        desired sub-vector.  Note that to obtain expected
+   *        behavior, you should always chain together <tt>n</tt>
+   *        square bracket operators when referencing an
    *        <tt>n</tt>-dimensional <tt>MDVector</tt>.
+   *
+   * Note that if you wish to obtain a sub-vector that has boundary
+   * padding along the axis being sliced, you will have to use the
+   * MDVector constructor that takes a parent MDVector, an axis, a
+   * Slice, and a boundary padding specification.
    */
   MDVector< Scalar, Node >
   operator[](Slice slice) const;
@@ -949,10 +955,6 @@ private:
   // a specific axis, namely this internally stored and updated next
   // axis
   int _nextAxis;
-
-  // The operator[](Slice) method calls a constructor that can take a
-  // boundary pad size, which we store internally here
-  Teuchos::Array< int > _sliceBndryPad;
 
   // Define a struct for storing all the information needed for a
   // single message: a pointer to the buffer, a reference to the
@@ -1009,7 +1011,6 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1041,7 +1042,6 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(_mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1070,7 +1070,6 @@ MDVector(const Teuchos::RCP< const MDMap< Node > > & mdMap,
   _mdArrayRcp(source),
   _mdArrayView(_mdArrayRcp()),
   _nextAxis(0),
-  _sliceBndryPad(mdMap->numDims()),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1103,7 +1102,6 @@ MDVector(const MDVector< Scalar, Node > & source) :
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(source._sliceBndryPad),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1144,7 +1142,6 @@ MDVector(const TeuchosCommRCP teuchosComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1172,11 +1169,6 @@ MDVector(const TeuchosCommRCP teuchosComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
-
-  //  Set the slice boundary padding
-  _sliceBndryPad.resize(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    _sliceBndryPad[axis] = _mdMap->getBndryPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1192,7 +1184,6 @@ MDVector(const MDCommRCP mdComm,
   _mdArrayRcp(),
   _mdArrayView(),
   _nextAxis(0),
-  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1220,11 +1211,6 @@ MDVector(const MDCommRCP mdComm,
   // Resize the MDArrayRCP and set the MDArrayView
   _mdArrayRcp.resize(dims);
   _mdArrayView = _mdArrayRcp();
-
-  //  Set the slice boundary padding
-  _sliceBndryPad.resize(numDims);
-  for (int axis = 0; axis < numDims; ++axis)
-    _sliceBndryPad[axis] = _mdMap->getBndryPadSize(axis);
 }
 
 ////////////////////////////////////////////////////////////////////////
@@ -1240,7 +1226,6 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -1274,11 +1259,6 @@ MDVector(const MDVector< Scalar, Node > & parent,
     // Obtain the new MDArrayView using the local index
     MDArrayView< Scalar > newView(_mdArrayView, axis, localIndex);
     _mdArrayView = newView;
-
-    // Compute the new slice boundary padding
-    for (int myAxis = 0; myAxis < parentMdMap->numDims(); ++axis)
-      if (myAxis != axis)
-        _sliceBndryPad.append(parent._sliceBndryPad[myAxis]);
   }
   else
   {
@@ -1303,7 +1283,6 @@ MDVector(const MDVector< Scalar, Node > & parent,
   _mdArrayRcp(parent._mdArrayRcp),
   _mdArrayView(parent._mdArrayView),
   _nextAxis(0),
-  _sliceBndryPad(parent._sliceBndryPad),
   _sendMessages(),
   _recvMessages(),
   _requests()
@@ -2758,8 +2737,7 @@ operator[](Slice slice) const
 {
   MDVector< Scalar, Node > result(*this,
                                   _nextAxis,
-                                  slice,
-                                  _sliceBndryPad[_nextAxis]);
+                                  slice     );
   int newAxis = _nextAxis + 1;
   if (newAxis >= result.numDims()) newAxis = 0;
   result._nextAxis = newAxis;
