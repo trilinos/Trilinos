@@ -167,6 +167,7 @@ print_headers( std::ostream & s , const int cmd[] , const int comm_rank )
     headers.push_back(std::make_pair("MATRIX_CREATE/NODE","millisec"));
     headers.push_back(std::make_pair("MATRIX_FILL/NODE","millisec"));
     headers.push_back(std::make_pair("BOUNDARY/NODE","millisec"));
+    headers.push_back(std::make_pair("MAT_VEC/ITER/ROW","millisec"));
     headers.push_back(std::make_pair("CG/ITER/ROW","millisec"));
     headers.push_back(std::make_pair("ERROR","ratio"));
   }
@@ -232,6 +233,7 @@ void print_perf_value( std::ostream & s ,
     s << std::setw(widths[i++]) << ( perf.create_sparse_matrix * 1000.0 ) / perf.global_node_count << " ,";
     s << std::setw(widths[i++]) << ( perf.fill_time * 1000.0 ) / perf.global_node_count << " ,";
     s << std::setw(widths[i++]) << ( perf.bc_time * 1000.0 ) / perf.global_node_count << " ,";
+    s << std::setw(widths[i++]) << ( ( perf.mat_vec_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
     s << std::setw(widths[i++]) << ( ( perf.cg_iter_time * 1000.0 ) / perf.cg_iter_count ) / perf.global_node_count << " ,";
     s << std::setw(widths[i++]) << perf.error_max << " ,";
   }
